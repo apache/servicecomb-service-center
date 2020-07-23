@@ -17,8 +17,8 @@
 package event
 
 import (
+	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"github.com/apache/servicecomb-service-center/server/service/metrics"
 )
@@ -34,9 +34,9 @@ func (h *DomainEventHandler) Type() discovery.Type {
 func (h *DomainEventHandler) OnEvent(evt discovery.KvEvent) {
 	action := evt.Type
 	switch action {
-	case pb.EVT_INIT, pb.EVT_CREATE:
+	case registry.EVT_INIT, registry.EVT_CREATE:
 		metrics.ReportDomains(1)
-	case pb.EVT_DELETE:
+	case registry.EVT_DELETE:
 		metrics.ReportDomains(-1)
 	}
 }

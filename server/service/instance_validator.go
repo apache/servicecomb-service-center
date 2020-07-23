@@ -18,9 +18,9 @@
 package service
 
 import (
+	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/pkg/validate"
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	"math"
 	"regexp"
 )
@@ -37,9 +37,9 @@ var (
 
 var (
 	instStatusRegex, _ = regexp.Compile("^(" + util.StringJoin([]string{
-		pb.MSI_UP, pb.MSI_DOWN, pb.MSI_STARTING, pb.MSI_TESTING, pb.MSI_OUTOFSERVICE}, "|") + ")?$")
+		registry.MSI_UP, registry.MSI_DOWN, registry.MSI_STARTING, registry.MSI_TESTING, registry.MSI_OUTOFSERVICE}, "|") + ")?$")
 	updateInstStatusRegex, _ = regexp.Compile("^(" + util.StringJoin([]string{
-		pb.MSI_UP, pb.MSI_DOWN, pb.MSI_STARTING, pb.MSI_TESTING, pb.MSI_OUTOFSERVICE}, "|") + ")$")
+		registry.MSI_UP, registry.MSI_DOWN, registry.MSI_STARTING, registry.MSI_TESTING, registry.MSI_OUTOFSERVICE}, "|") + ")$")
 	hbModeRegex, _               = regexp.Compile(`^(push|pull)$`)
 	urlRegex, _                  = regexp.Compile(`^\S*$`)
 	epRegex, _                   = regexp.Compile(`\S+`)

@@ -21,8 +21,8 @@ import (
 	"errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
+	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/validate"
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	"reflect"
 	"regexp"
 )

@@ -18,10 +18,11 @@ package counter
 import (
 	"context"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"github.com/astaxie/beego"
@@ -48,9 +49,9 @@ func (h *ServiceIndexEventHandler) OnEvent(evt discovery.KvEvent) {
 	}
 
 	switch evt.Type {
-	case pb.EVT_INIT, pb.EVT_CREATE:
+	case registry.EVT_INIT, registry.EVT_CREATE:
 		GetCounters().OnCreate(h.Type(), key.Tenant)
-	case pb.EVT_DELETE:
+	case registry.EVT_DELETE:
 		GetCounters().OnDelete(h.Type(), key.Tenant)
 	default:
 	}
@@ -78,20 +79,20 @@ func (h *InstanceEventHandler) OnEvent(evt discovery.KvEvent) {
 	}
 
 	switch evt.Type {
-	case pb.EVT_INIT, pb.EVT_CREATE:
+	case registry.EVT_INIT, registry.EVT_CREATE:
 		if domainProject == core.RegistryDomainProject {
 			service, err := serviceUtil.GetService(context.Background(), domainProject, serviceID)
 			if service == nil || err != nil {
 				log.Errorf(err, "GetService[%s] failed", key)
 				return
 			}
-			if core.IsShared(pb.MicroServiceToKey(domainProject, service)) {
+			if core.IsShared(proto.MicroServiceToKey(domainProject, service)) {
 				SharedServiceIds.Put(key, struct{}{})
 				return
 			}
 		}
 		GetCounters().OnCreate(h.Type(), domainProject)
-	case pb.EVT_DELETE:
+	case registry.EVT_DELETE:
 		GetCounters().OnDelete(h.Type(), domainProject)
 	}
 }

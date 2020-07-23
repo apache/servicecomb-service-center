@@ -13,18 +13,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sc
+package client
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 
-	"github.com/apache/servicecomb-service-center/server/core"
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 )
 
@@ -36,12 +35,11 @@ const (
 	apiInstanceHeartbeatURL  = "/v4/%s/registry/microservices/%s/instances/%s/heartbeat"
 )
 
-func (c *Client) RegisterInstance(ctx context.Context, domainProject, serviceID string, instance *pb.MicroServiceInstance) (string, *scerr.Error) {
-	domain, project := core.FromDomainProject(domainProject)
+func (c *Client) RegisterInstance(ctx context.Context, domain, project, serviceID string, instance *registry.MicroServiceInstance) (string, *scerr.Error) {
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 
-	reqBody, err := json.Marshal(&pb.RegisterInstanceRequest{Instance: instance})
+	reqBody, err := json.Marshal(&registry.RegisterInstanceRequest{Instance: instance})
 	if err != nil {
 		return "", scerr.NewError(scerr.ErrInternal, err.Error())
 	}
@@ -63,7 +61,7 @@ func (c *Client) RegisterInstance(ctx context.Context, domainProject, serviceID 
 		return "", c.toError(body)
 	}
 
-	instancesResp := &pb.RegisterInstanceResponse{}
+	instancesResp := &registry.RegisterInstanceResponse{}
 	err = json.Unmarshal(body, instancesResp)
 	if err != nil {
 		return "", scerr.NewError(scerr.ErrInternal, err.Error())
@@ -71,8 +69,7 @@ func (c *Client) RegisterInstance(ctx context.Context, domainProject, serviceID 
 	return instancesResp.InstanceId, nil
 }
 
-func (c *Client) UnregisterInstance(ctx context.Context, domainProject, serviceID, instanceID string) *scerr.Error {
-	domain, project := core.FromDomainProject(domainProject)
+func (c *Client) UnregisterInstance(ctx context.Context, domain, project, serviceID, instanceID string) *scerr.Error {
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 
@@ -96,8 +93,7 @@ func (c *Client) UnregisterInstance(ctx context.Context, domainProject, serviceI
 	return nil
 }
 
-func (c *Client) DiscoveryInstances(ctx context.Context, domainProject, consumerID, providerAppID, providerServiceName, providerVersionRule string) ([]*pb.MicroServiceInstance, *scerr.Error) {
-	domain, project := core.FromDomainProject(domainProject)
+func (c *Client) DiscoveryInstances(ctx context.Context, domain, project, consumerID, providerAppID, providerServiceName, providerVersionRule string) ([]*registry.MicroServiceInstance, *scerr.Error) {
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 	headers.Set("X-ConsumerId", consumerID)
@@ -124,7 +120,7 @@ func (c *Client) DiscoveryInstances(ctx context.Context, domainProject, consumer
 		return nil, c.toError(body)
 	}
 
-	instancesResp := &pb.GetInstancesResponse{}
+	instancesResp := &registry.GetInstancesResponse{}
 	err = json.Unmarshal(body, instancesResp)
 	if err != nil {
 		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
@@ -133,8 +129,7 @@ func (c *Client) DiscoveryInstances(ctx context.Context, domainProject, consumer
 	return instancesResp.Instances, nil
 }
 
-func (c *Client) Heartbeat(ctx context.Context, domainProject, serviceID, instanceID string) *scerr.Error {
-	domain, project := core.FromDomainProject(domainProject)
+func (c *Client) Heartbeat(ctx context.Context, domain, project, serviceID, instanceID string) *scerr.Error {
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 
@@ -158,12 +153,11 @@ func (c *Client) Heartbeat(ctx context.Context, domainProject, serviceID, instan
 	return nil
 }
 
-func (c *Client) HeartbeatSet(ctx context.Context, domainProject string, instances ...*pb.HeartbeatSetElement) ([]*pb.InstanceHbRst, *scerr.Error) {
-	domain, project := core.FromDomainProject(domainProject)
+func (c *Client) HeartbeatSet(ctx context.Context, domain, project string, instances ...*registry.HeartbeatSetElement) ([]*registry.InstanceHbRst, *scerr.Error) {
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 
-	reqBody, err := json.Marshal(&pb.HeartbeatSetRequest{Instances: instances})
+	reqBody, err := json.Marshal(&registry.HeartbeatSetRequest{Instances: instances})
 	if err != nil {
 		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
 	}
@@ -185,7 +179,7 @@ func (c *Client) HeartbeatSet(ctx context.Context, domainProject string, instanc
 		return nil, c.toError(body)
 	}
 
-	instancesResp := &pb.HeartbeatSetResponse{}
+	instancesResp := &registry.HeartbeatSetResponse{}
 	err = json.Unmarshal(body, instancesResp)
 	if err != nil {
 		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
@@ -194,8 +188,7 @@ func (c *Client) HeartbeatSet(ctx context.Context, domainProject string, instanc
 	return instancesResp.Instances, nil
 }
 
-func (c *Client) GetInstancesByServiceID(ctx context.Context, domainProject, providerID, consumerID string) ([]*pb.MicroServiceInstance, *scerr.Error) {
-	domain, project := core.FromDomainProject(domainProject)
+func (c *Client) GetInstancesByServiceID(ctx context.Context, domain, project, providerID, consumerID string) ([]*registry.MicroServiceInstance, *scerr.Error) {
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 	headers.Set("X-ConsumerId", consumerID)
@@ -216,7 +209,7 @@ func (c *Client) GetInstancesByServiceID(ctx context.Context, domainProject, pro
 		return nil, c.toError(body)
 	}
 
-	instancesResp := &pb.GetInstancesResponse{}
+	instancesResp := &registry.GetInstancesResponse{}
 	err = json.Unmarshal(body, instancesResp)
 	if err != nil {
 		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
@@ -225,8 +218,7 @@ func (c *Client) GetInstancesByServiceID(ctx context.Context, domainProject, pro
 	return instancesResp.Instances, nil
 }
 
-func (c *Client) GetInstanceByInstanceID(ctx context.Context, domainProject, providerID, instanceID, consumerID string) (*pb.MicroServiceInstance, *scerr.Error) {
-	domain, project := core.FromDomainProject(domainProject)
+func (c *Client) GetInstanceByInstanceID(ctx context.Context, domain, project, providerID, instanceID, consumerID string) (*registry.MicroServiceInstance, *scerr.Error) {
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 	headers.Set("X-ConsumerId", consumerID)
@@ -247,7 +239,7 @@ func (c *Client) GetInstanceByInstanceID(ctx context.Context, domainProject, pro
 		return nil, c.toError(body)
 	}
 
-	instanceResp := &pb.GetOneInstanceResponse{}
+	instanceResp := &registry.GetOneInstanceResponse{}
 	err = json.Unmarshal(body, instanceResp)
 	if err != nil {
 		return nil, scerr.NewError(scerr.ErrInternal, err.Error())

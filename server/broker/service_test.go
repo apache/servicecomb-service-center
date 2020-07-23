@@ -18,13 +18,14 @@ package broker_test
 
 import (
 	"fmt"
+	"github.com/apache/servicecomb-service-center/server/core/proto"
 
 	"context"
+	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/broker"
 	"github.com/apache/servicecomb-service-center/server/broker/brokerpb"
 	"github.com/apache/servicecomb-service-center/server/core"
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -67,7 +68,7 @@ var _ = Describe("Controller", func() {
 
 				Expect(err).To(BeNil())
 				consumerServiceId = resp.ServiceId
-				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
 
 				//(2) create provider service
 				resp, err = core.ServiceAPI.Create(getContext(), &pb.CreateServiceRequest{
@@ -85,7 +86,7 @@ var _ = Describe("Controller", func() {
 				})
 				Expect(err).To(BeNil())
 				providerServiceId = resp.ServiceId
-				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
 
 				//(3) publish a pact between two services
 				respPublishPact, err := brokerResource.PublishPact(getContext(),
@@ -97,7 +98,7 @@ var _ = Describe("Controller", func() {
 					})
 
 				Expect(err).To(BeNil())
-				Expect(respPublishPact.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respPublishPact.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
 			})
 
 			It("PublishPact-noProviderServiceId", func() {
@@ -111,7 +112,7 @@ var _ = Describe("Controller", func() {
 					Pact:       []byte("hello"),
 				})
 
-				Expect(respPublishPact.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respPublishPact.Response.GetCode()).ToNot(Equal(proto.Response_SUCCESS))
 			})
 
 			It("PublishPact-noConumerServiceId", func() {
@@ -125,7 +126,7 @@ var _ = Describe("Controller", func() {
 					Pact:       []byte("hello"),
 				})
 
-				Expect(respPublishPact.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respPublishPact.Response.GetCode()).ToNot(Equal(proto.Response_SUCCESS))
 			})
 
 			It("PublishPact-noConumerVersion", func() {
@@ -139,7 +140,7 @@ var _ = Describe("Controller", func() {
 					Pact:       []byte("hello"),
 				})
 
-				Expect(respPublishPact.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respPublishPact.Response.GetCode()).ToNot(Equal(proto.Response_SUCCESS))
 			})
 
 			It("GetBrokerHome", func() {
@@ -166,7 +167,7 @@ var _ = Describe("Controller", func() {
 						}})
 
 				Expect(respGetAllProviderPacts).NotTo(BeNil())
-				Expect(respGetAllProviderPacts.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respGetAllProviderPacts.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
 			})
 
 			It("GetBrokerPactsOfProvider", func() {
@@ -183,7 +184,7 @@ var _ = Describe("Controller", func() {
 						}})
 
 				Expect(respGetAllProviderPacts).NotTo(BeNil())
-				Expect(respGetAllProviderPacts.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respGetAllProviderPacts.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
 			})
 
 			It("PublishVerificationResults", func() {
@@ -200,7 +201,7 @@ var _ = Describe("Controller", func() {
 					})
 
 				Expect(respResults).NotTo(BeNil())
-				Expect(respResults.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respResults.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
 			})
 
 			It("RetrieveVerificationResults", func() {
@@ -213,7 +214,7 @@ var _ = Describe("Controller", func() {
 					})
 
 				Expect(respVerification).NotTo(BeNil())
-				Expect(respVerification.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respVerification.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
 			})
 
 			It("RetrieveProviderPacts", func() {
@@ -229,7 +230,7 @@ var _ = Describe("Controller", func() {
 					})
 
 				Expect(respProviderPact).NotTo(BeNil())
-				Expect(respProviderPact.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respProviderPact.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
 			})
 		})
 	})

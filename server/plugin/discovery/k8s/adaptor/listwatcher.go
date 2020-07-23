@@ -18,13 +18,14 @@ package adaptor
 import (
 	"context"
 	"github.com/apache/servicecomb-service-center/pkg/queue"
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	pb "github.com/apache/servicecomb-service-center/pkg/registry"
+	"github.com/apache/servicecomb-service-center/pkg/types"
 	"k8s.io/client-go/tools/cache"
 	"reflect"
 )
 
 type K8sEvent struct {
-	EventType  pb.EventType
+	EventType  types.EventType
 	Object     interface{}
 	PrevObject interface{}
 }

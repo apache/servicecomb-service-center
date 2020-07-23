@@ -17,12 +17,14 @@
 package service_test
 
 // initialize
-import _ "github.com/apache/servicecomb-service-center/server/bootstrap"
+import (
+	_ "github.com/apache/servicecomb-service-center/server/bootstrap"
+	"github.com/apache/servicecomb-service-center/server/core/proto"
+)
 import (
 	"context"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/service"
 	"github.com/astaxie/beego"
 	. "github.com/onsi/ginkgo"
@@ -31,8 +33,8 @@ import (
 	"testing"
 )
 
-var serviceResource pb.ServiceCtrlServer
-var instanceResource pb.ServiceInstanceCtrlServerEx
+var serviceResource proto.ServiceCtrlServer
+var instanceResource proto.ServiceInstanceCtrlServerEx
 
 func init() {
 	beego.AppConfig.Set("registry_plugin", "etcd")

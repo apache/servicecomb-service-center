@@ -17,7 +17,8 @@
 package service_test
 
 import (
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	pb "github.com/apache/servicecomb-service-center/pkg/registry"
+	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	. "github.com/onsi/ginkgo"
@@ -43,7 +44,7 @@ var _ = Describe("'Rule' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(respCreateService.Response.Code).To(Equal(pb.Response_SUCCESS))
+			Expect(respCreateService.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
 			serviceId1 = respCreateService.ServiceId
 
 			respCreateService, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
@@ -56,7 +57,7 @@ var _ = Describe("'Rule' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(respCreateService.Response.Code).To(Equal(pb.Response_SUCCESS))
+			Expect(respCreateService.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
 			serviceId2 = respCreateService.ServiceId
 		})
 
@@ -75,7 +76,7 @@ var _ = Describe("'Rule' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddRule.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respAddRule.Response.GetCode()).ToNot(Equal(proto.Response_SUCCESS))
 
 				By("attribute is tag but name is invalid")
 				respAddRule, err = serviceResource.AddRule(getContext(), &pb.AddServiceRulesRequest{
@@ -90,7 +91,7 @@ var _ = Describe("'Rule' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddRule.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respAddRule.Response.GetCode()).ToNot(Equal(proto.Response_SUCCESS))
 
 				By("attribute is a invalid field name")
 				respAddRule, err = serviceResource.AddRule(getContext(), &pb.AddServiceRulesRequest{
@@ -105,7 +106,7 @@ var _ = Describe("'Rule' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddRule.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respAddRule.Response.GetCode()).ToNot(Equal(proto.Response_SUCCESS))
 
 				By("service does not exist")
 				respAddRule, err = serviceResource.AddRule(getContext(), &pb.AddServiceRulesRequest{
@@ -120,7 +121,7 @@ var _ = Describe("'Rule' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddRule.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respAddRule.Response.GetCode()).ToNot(Equal(proto.Response_SUCCESS))
 
 				By("service id is empty")
 				respAddRule, err = serviceResource.AddRule(getContext(), &pb.AddServiceRulesRequest{
@@ -135,14 +136,14 @@ var _ = Describe("'Rule' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddRule.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respAddRule.Response.GetCode()).ToNot(Equal(proto.Response_SUCCESS))
 
 				By("rules is nil")
 				respAddRule, err = serviceResource.AddRule(getContext(), &pb.AddServiceRulesRequest{
 					ServiceId: serviceId1,
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddRule.Response.Code).To(Equal(scerr.ErrInvalidParams))
+				Expect(respAddRule.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
 			})
 		})
 
@@ -161,7 +162,7 @@ var _ = Describe("'Rule' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddRule.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respAddRule.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
 				ruleId := respAddRule.RuleIds[0]
 				Expect(ruleId).ToNot(Equal(""))
 
@@ -178,7 +179,7 @@ var _ = Describe("'Rule' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddRule.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respAddRule.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
 				Expect(len(respAddRule.RuleIds)).To(Equal(0)) // no changed
 
 				By("create a new white list when black list already exists")
@@ -194,7 +195,7 @@ var _ = Describe("'Rule' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddRule.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respAddRule.Response.GetCode()).ToNot(Equal(proto.Response_SUCCESS))
 			})
 		})
 
@@ -215,21 +216,21 @@ var _ = Describe("'Rule' service", func() {
 					Rules:     rules,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.Code).To(Equal(scerr.ErrInvalidParams))
+				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
 
 				resp, err = serviceResource.AddRule(getContext(), &pb.AddServiceRulesRequest{
 					ServiceId: serviceId2,
 					Rules:     rules[:size-1],
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
 
 				resp, err = serviceResource.AddRule(getContext(), &pb.AddServiceRulesRequest{
 					ServiceId: serviceId2,
 					Rules:     rules[size-1:],
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.Code).To(Equal(scerr.ErrNotEnoughQuota))
+				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrNotEnoughQuota))
 			})
 		})
 	})
@@ -251,7 +252,7 @@ var _ = Describe("'Rule' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(respCreateService.Response.Code).To(Equal(pb.Response_SUCCESS))
+			Expect(respCreateService.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
 			serviceId = respCreateService.ServiceId
 
 			respAddRule, err := serviceResource.AddRule(getContext(), &pb.AddServiceRulesRequest{
@@ -266,7 +267,7 @@ var _ = Describe("'Rule' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(respAddRule.Response.Code).To(Equal(pb.Response_SUCCESS))
+			Expect(respAddRule.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
 			ruleId = respAddRule.RuleIds[0]
 			Expect(ruleId).ToNot(Equal(""))
 		})
@@ -278,20 +279,20 @@ var _ = Describe("'Rule' service", func() {
 					ServiceId: "",
 				})
 				Expect(err).To(BeNil())
-				Expect(respGetRule.Response.Code).To(Equal(scerr.ErrInvalidParams))
+				Expect(respGetRule.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
 
 				respGetRule, err = serviceResource.GetRule(getContext(), &pb.GetServiceRulesRequest{
 					ServiceId: TOO_LONG_SERVICEID,
 				})
 				Expect(err).To(BeNil())
-				Expect(respGetRule.Response.Code).To(Equal(scerr.ErrInvalidParams))
+				Expect(respGetRule.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
 
 				By("service does not exist")
 				respGetRule, err = serviceResource.GetRule(getContext(), &pb.GetServiceRulesRequest{
 					ServiceId: "notexist",
 				})
 				Expect(err).To(BeNil())
-				Expect(respGetRule.Response.Code).To(Equal(scerr.ErrServiceNotExists))
+				Expect(respGetRule.Response.GetCode()).To(Equal(scerr.ErrServiceNotExists))
 			})
 		})
 
@@ -301,7 +302,7 @@ var _ = Describe("'Rule' service", func() {
 					ServiceId: serviceId,
 				})
 				Expect(err).To(BeNil())
-				Expect(respGetRule.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respGetRule.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
 				Expect(respGetRule.Rules[0].RuleId).To(Equal(ruleId))
 			})
 		})
@@ -324,7 +325,7 @@ var _ = Describe("'Rule' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(respCreateService.Response.Code).To(Equal(pb.Response_SUCCESS))
+			Expect(respCreateService.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
 			serviceId = respCreateService.ServiceId
 
 			respAddRule, err := serviceResource.AddRule(getContext(), &pb.AddServiceRulesRequest{
@@ -339,7 +340,7 @@ var _ = Describe("'Rule' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(respAddRule.Response.Code).To(Equal(pb.Response_SUCCESS))
+			Expect(respAddRule.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
 			ruleId = respAddRule.RuleIds[0]
 			Expect(ruleId).ToNot(Equal(""))
 		})
@@ -359,7 +360,7 @@ var _ = Describe("'Rule' service", func() {
 					Rule:      rule,
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddRule.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respAddRule.Response.GetCode()).ToNot(Equal(proto.Response_SUCCESS))
 
 				By("service does not exist")
 				respAddRule, err = serviceResource.UpdateRule(getContext(), &pb.UpdateServiceRuleRequest{
@@ -368,7 +369,7 @@ var _ = Describe("'Rule' service", func() {
 					Rule:      rule,
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddRule.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respAddRule.Response.GetCode()).ToNot(Equal(proto.Response_SUCCESS))
 
 				By("rule id is empty")
 				respAddRule, err = serviceResource.UpdateRule(getContext(), &pb.UpdateServiceRuleRequest{
@@ -377,7 +378,7 @@ var _ = Describe("'Rule' service", func() {
 					Rule:      rule,
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddRule.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respAddRule.Response.GetCode()).ToNot(Equal(proto.Response_SUCCESS))
 
 				By("rule does not exist")
 				respAddRule, err = serviceResource.UpdateRule(getContext(), &pb.UpdateServiceRuleRequest{
@@ -386,7 +387,7 @@ var _ = Describe("'Rule' service", func() {
 					Rule:      rule,
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddRule.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respAddRule.Response.GetCode()).ToNot(Equal(proto.Response_SUCCESS))
 
 				By("rule type is invalid")
 				respAddRule, err = serviceResource.UpdateRule(getContext(), &pb.UpdateServiceRuleRequest{
@@ -400,7 +401,7 @@ var _ = Describe("'Rule' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddRule.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respAddRule.Response.GetCode()).ToNot(Equal(proto.Response_SUCCESS))
 
 				By("attribute is a invalid field name")
 				respAddRule, err = serviceResource.UpdateRule(getContext(), &pb.UpdateServiceRuleRequest{
@@ -414,7 +415,7 @@ var _ = Describe("'Rule' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddRule.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respAddRule.Response.GetCode()).ToNot(Equal(proto.Response_SUCCESS))
 
 				By("attribute is tag but name is invalid")
 				respAddRule, err = serviceResource.UpdateRule(getContext(), &pb.UpdateServiceRuleRequest{
@@ -428,7 +429,7 @@ var _ = Describe("'Rule' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddRule.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respAddRule.Response.GetCode()).ToNot(Equal(proto.Response_SUCCESS))
 
 				By("change rule type")
 				respAddRule, err = serviceResource.UpdateRule(getContext(), &pb.UpdateServiceRuleRequest{
@@ -442,7 +443,7 @@ var _ = Describe("'Rule' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddRule.Response.Code).ToNot(Equal(pb.Response_SUCCESS))
+				Expect(respAddRule.Response.GetCode()).ToNot(Equal(proto.Response_SUCCESS))
 			})
 		})
 
@@ -459,7 +460,7 @@ var _ = Describe("'Rule' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddRule.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respAddRule.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
 			})
 		})
 	})
@@ -481,7 +482,7 @@ var _ = Describe("'Rule' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(respCreateService.Response.Code).To(Equal(pb.Response_SUCCESS))
+			Expect(respCreateService.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
 			serviceId = respCreateService.ServiceId
 
 			respAddRule, err := serviceResource.AddRule(getContext(), &pb.AddServiceRulesRequest{
@@ -496,7 +497,7 @@ var _ = Describe("'Rule' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(respAddRule.Response.Code).To(Equal(pb.Response_SUCCESS))
+			Expect(respAddRule.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
 			ruleId = respAddRule.RuleIds[0]
 			Expect(ruleId).ToNot(Equal(""))
 		})
@@ -509,7 +510,7 @@ var _ = Describe("'Rule' service", func() {
 					RuleIds:   []string{"1000000"},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddRule.Response.Code).To(Equal(scerr.ErrInvalidParams))
+				Expect(respAddRule.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
 
 				By("service does not exist")
 				respAddRule, err = serviceResource.DeleteRule(getContext(), &pb.DeleteServiceRulesRequest{
@@ -517,7 +518,7 @@ var _ = Describe("'Rule' service", func() {
 					RuleIds:   []string{"1000000"},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddRule.Response.Code).To(Equal(scerr.ErrServiceNotExists))
+				Expect(respAddRule.Response.GetCode()).To(Equal(scerr.ErrServiceNotExists))
 
 				By("rule does not exist")
 				respAddRule, err = serviceResource.DeleteRule(getContext(), &pb.DeleteServiceRulesRequest{
@@ -525,14 +526,14 @@ var _ = Describe("'Rule' service", func() {
 					RuleIds:   []string{"notexistrule"},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddRule.Response.Code).To(Equal(scerr.ErrRuleNotExists))
+				Expect(respAddRule.Response.GetCode()).To(Equal(scerr.ErrRuleNotExists))
 
 				By("rules is empty")
 				respAddRule, err = serviceResource.DeleteRule(getContext(), &pb.DeleteServiceRulesRequest{
 					ServiceId: serviceId,
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddRule.Response.Code).To(Equal(scerr.ErrInvalidParams))
+				Expect(respAddRule.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
 
 				By("rules is invalid")
 				var arr []string
@@ -544,7 +545,7 @@ var _ = Describe("'Rule' service", func() {
 					RuleIds:   arr,
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddRule.Response.Code).To(Equal(scerr.ErrInvalidParams))
+				Expect(respAddRule.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
 
 			})
 		})
@@ -556,13 +557,13 @@ var _ = Describe("'Rule' service", func() {
 					RuleIds:   []string{ruleId},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddRule.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respAddRule.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
 
 				respGetRule, err := serviceResource.GetRule(getContext(), &pb.GetServiceRulesRequest{
 					ServiceId: serviceId,
 				})
 				Expect(err).To(BeNil())
-				Expect(respGetRule.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respGetRule.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
 				Expect(len(respGetRule.Rules)).To(Equal(0))
 			})
 		})
@@ -587,7 +588,7 @@ var _ = Describe("'Rule' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(respCreate.Response.Code).To(Equal(pb.Response_SUCCESS))
+			Expect(respCreate.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
 			consumerVersion = respCreate.ServiceId
 
 			respCreate, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
@@ -600,7 +601,7 @@ var _ = Describe("'Rule' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(respCreate.Response.Code).To(Equal(pb.Response_SUCCESS))
+			Expect(respCreate.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
 			providerBlack = respCreate.ServiceId
 
 			resp, err := serviceResource.AddRule(getContext(), &pb.AddServiceRulesRequest{
@@ -619,7 +620,7 @@ var _ = Describe("'Rule' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
+			Expect(resp.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
 
 			respCreate, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
 				Service: &pb.MicroService{
@@ -631,7 +632,7 @@ var _ = Describe("'Rule' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(respCreate.Response.Code).To(Equal(pb.Response_SUCCESS))
+			Expect(respCreate.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
 			providerWhite = respCreate.ServiceId
 
 			resp, err = serviceResource.AddRule(getContext(), &pb.AddServiceRulesRequest{
@@ -650,7 +651,7 @@ var _ = Describe("'Rule' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
+			Expect(resp.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
 
 			respCreate, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
 				Service: &pb.MicroService{
@@ -662,7 +663,7 @@ var _ = Describe("'Rule' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(respCreate.Response.Code).To(Equal(pb.Response_SUCCESS))
+			Expect(respCreate.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
 			consumerTag = respCreate.ServiceId
 
 			resp1, err := serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
@@ -670,7 +671,7 @@ var _ = Describe("'Rule' service", func() {
 				Tags:      map[string]string{"a": "b"},
 			})
 			Expect(err).To(BeNil())
-			Expect(resp1.Response.Code).To(Equal(pb.Response_SUCCESS))
+			Expect(resp1.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
 		})
 
 		Context("when query instances", func() {
@@ -681,7 +682,7 @@ var _ = Describe("'Rule' service", func() {
 					ProviderServiceId: providerBlack,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.Code).To(Equal(scerr.ErrServiceNotExists))
+				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrServiceNotExists))
 
 				By("consumer tag in black list")
 				resp, err = instanceResource.GetInstances(getContext(), &pb.GetInstancesRequest{
@@ -689,7 +690,7 @@ var _ = Describe("'Rule' service", func() {
 					ProviderServiceId: providerBlack,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.Code).To(Equal(scerr.ErrServiceNotExists))
+				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrServiceNotExists))
 
 				By("find should return 200 even if consumer permission deny")
 				respFind, err := instanceResource.Find(getContext(), &pb.FindInstancesRequest{
@@ -699,7 +700,7 @@ var _ = Describe("'Rule' service", func() {
 					VersionRule:       "0+",
 				})
 				Expect(err).To(BeNil())
-				Expect(respFind.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respFind.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
 				Expect(len(respFind.Instances)).To(Equal(0))
 				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: consumerTag,
@@ -708,7 +709,7 @@ var _ = Describe("'Rule' service", func() {
 					VersionRule:       "0+",
 				})
 				Expect(err).To(BeNil())
-				Expect(respFind.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(respFind.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
 				Expect(len(respFind.Instances)).To(Equal(0))
 
 				By("consumer not in black list")
@@ -717,7 +718,7 @@ var _ = Describe("'Rule' service", func() {
 					ProviderServiceId: providerBlack,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
 
 				By("consumer not in white list")
 				resp, err = instanceResource.GetInstances(getContext(), &pb.GetInstancesRequest{
@@ -725,7 +726,7 @@ var _ = Describe("'Rule' service", func() {
 					ProviderServiceId: providerWhite,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.Code).To(Equal(scerr.ErrServiceNotExists))
+				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrServiceNotExists))
 
 				By("consumer version in white list")
 				resp, err = instanceResource.GetInstances(getContext(), &pb.GetInstancesRequest{
@@ -733,7 +734,7 @@ var _ = Describe("'Rule' service", func() {
 					ProviderServiceId: providerWhite,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
 
 				By("consumer tag in white list")
 				resp, err = instanceResource.GetInstances(getContext(), &pb.GetInstancesRequest{
@@ -741,7 +742,7 @@ var _ = Describe("'Rule' service", func() {
 					ProviderServiceId: providerWhite,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.Code).To(Equal(pb.Response_SUCCESS))
+				Expect(resp.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
 			})
 		})
 	})

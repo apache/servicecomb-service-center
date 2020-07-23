@@ -16,7 +16,7 @@
 package discovery
 
 import (
-	"github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"testing"
 )
 
@@ -41,19 +41,19 @@ func TestNewCommonCacher(t *testing.T) {
 		t.Fatalf("TestNewCommonCacher failed")
 	}
 
-	cacher.Notify(proto.EVT_CREATE, "/a", &KeyValue{Version: 1})
-	if e.Type == proto.EVT_CREATE || cache.Get("/a").Version != 1 {
+	cacher.Notify(registry.EVT_CREATE, "/a", &KeyValue{Version: 1})
+	if e.Type == registry.EVT_CREATE || cache.Get("/a").Version != 1 {
 		t.Fatalf("TestNewCommonCacher failed")
 	}
 	cfg.WithEventFunc(func(evt KvEvent) {
 		e = evt
 	})
-	cacher.Notify(proto.EVT_CREATE, "/a", &KeyValue{Version: 1})
-	if e.Type != proto.EVT_CREATE || cache.Get("/a").Version != 1 {
+	cacher.Notify(registry.EVT_CREATE, "/a", &KeyValue{Version: 1})
+	if e.Type != registry.EVT_CREATE || cache.Get("/a").Version != 1 {
 		t.Fatalf("TestNewCommonCacher failed")
 	}
-	cacher.Notify(proto.EVT_DELETE, "/a", &KeyValue{Version: 1})
-	if e.Type != proto.EVT_DELETE || cache.Get("/a") != nil {
+	cacher.Notify(registry.EVT_DELETE, "/a", &KeyValue{Version: 1})
+	if e.Type != registry.EVT_DELETE || cache.Get("/a") != nil {
 		t.Fatalf("TestNewCommonCacher failed")
 	}
 	cacher.Stop()

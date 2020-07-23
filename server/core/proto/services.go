@@ -18,16 +18,17 @@ package proto
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/gorilla/websocket"
 )
 
 type ServiceInstanceCtrlServerEx interface {
 	ServiceInstanceCtrlServer
 
-	BatchFind(ctx context.Context, in *BatchFindInstancesRequest) (*BatchFindInstancesResponse, error)
+	BatchFind(ctx context.Context, in *registry.BatchFindInstancesRequest) (*registry.BatchFindInstancesResponse, error)
 
-	WebSocketWatch(ctx context.Context, in *WatchInstanceRequest, conn *websocket.Conn)
-	WebSocketListAndWatch(ctx context.Context, in *WatchInstanceRequest, conn *websocket.Conn)
+	WebSocketWatch(ctx context.Context, in *registry.WatchInstanceRequest, conn *websocket.Conn)
+	WebSocketListAndWatch(ctx context.Context, in *registry.WatchInstanceRequest, conn *websocket.Conn)
 
-	ClusterHealth(ctx context.Context) (*GetInstancesResponse, error)
+	ClusterHealth(ctx context.Context) (*registry.GetInstancesResponse, error)
 }

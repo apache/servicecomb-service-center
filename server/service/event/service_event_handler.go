@@ -19,9 +19,10 @@ package event
 import (
 	"context"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"github.com/apache/servicecomb-service-center/server/service/cache"
 	"github.com/apache/servicecomb-service-center/server/service/metrics"
@@ -69,7 +70,7 @@ func (h *ServiceEventHandler) OnEvent(evt discovery.KvEvent) {
 		evt.Type, ms.ServiceId, ms.Environment, ms.AppId, ms.ServiceName, ms.Version)
 
 	// cache
-	providerKey := pb.MicroServiceToKey(domainProject, ms)
+	providerKey := proto.MicroServiceToKey(domainProject, ms)
 	cache.FindInstances.Remove(providerKey)
 }
 

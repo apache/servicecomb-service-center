@@ -18,8 +18,8 @@
 package core
 
 import (
+	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 )
 
 const (
@@ -157,7 +157,7 @@ func GenerateRuleIndexKey(domainProject string, serviceID string, attr string, p
 	}, SPLIT)
 }
 
-func GenerateServiceIndexKey(key *pb.MicroServiceKey) string {
+func GenerateServiceIndexKey(key *registry.MicroServiceKey) string {
 	return util.StringJoin([]string{
 		GetServiceIndexRootKey(key.Tenant),
 		key.Environment,
@@ -167,7 +167,7 @@ func GenerateServiceIndexKey(key *pb.MicroServiceKey) string {
 	}, SPLIT)
 }
 
-func GenerateServiceAliasKey(key *pb.MicroServiceKey) string {
+func GenerateServiceAliasKey(key *registry.MicroServiceKey) string {
 	return util.StringJoin([]string{
 		GetServiceAliasRootKey(key.Tenant),
 		key.Environment,
@@ -233,7 +233,7 @@ func GenerateInstanceLeaseKey(domainProject string, serviceID string, instanceID
 	}, SPLIT)
 }
 
-func GenerateServiceDependencyRuleKey(serviceType string, domainProject string, in *pb.MicroServiceKey) string {
+func GenerateServiceDependencyRuleKey(serviceType string, domainProject string, in *registry.MicroServiceKey) string {
 	if in == nil {
 		return util.StringJoin([]string{
 			GetServiceDependencyRuleRootKey(domainProject),
@@ -258,11 +258,11 @@ func GenerateServiceDependencyRuleKey(serviceType string, domainProject string, 
 	}, SPLIT)
 }
 
-func GenerateConsumerDependencyRuleKey(domainProject string, in *pb.MicroServiceKey) string {
+func GenerateConsumerDependencyRuleKey(domainProject string, in *registry.MicroServiceKey) string {
 	return GenerateServiceDependencyRuleKey(DepsConsumer, domainProject, in)
 }
 
-func GenerateProviderDependencyRuleKey(domainProject string, in *pb.MicroServiceKey) string {
+func GenerateProviderDependencyRuleKey(domainProject string, in *registry.MicroServiceKey) string {
 	return GenerateServiceDependencyRuleKey(DepsProvider, domainProject, in)
 }
 

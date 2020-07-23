@@ -16,7 +16,10 @@
 package task_test
 
 // initialize
-import _ "github.com/apache/servicecomb-service-center/server/bootstrap"
+import (
+	_ "github.com/apache/servicecomb-service-center/server/bootstrap"
+	"github.com/apache/servicecomb-service-center/server/core/proto"
+)
 import _ "github.com/apache/servicecomb-service-center/server"
 
 import (
@@ -25,9 +28,9 @@ import (
 	"testing"
 	"time"
 
+	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/task"
 	"github.com/astaxie/beego"
 
@@ -90,7 +93,7 @@ func createService(domain string, project string, name string, withInstance bool
 	svcResp, err := apt.ServiceAPI.Create(ctx, svc)
 	Expect(err).To(BeNil())
 	Expect(svcResp).NotTo(BeNil())
-	Expect(svcResp.Response.GetCode()).To(Equal(pb.Response_SUCCESS))
+	Expect(svcResp.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
 	info := &serviceCleanInfo{
 		ServiceName:  name,
 		ServiceId:    svcResp.ServiceId,
@@ -118,7 +121,7 @@ func checkServiceCleared(domain string, project string) {
 		getSvcResp, err := apt.ServiceAPI.GetOne(ctx, getSvcReq)
 		Expect(err).To(BeNil())
 		Expect(getSvcResp).NotTo(BeNil())
-		Expect(getSvcResp.Response.GetCode() == pb.Response_SUCCESS).To(Equal(!v.ShouldClear))
+		Expect(getSvcResp.Response.GetCode() == proto.Response_SUCCESS).To(Equal(!v.ShouldClear))
 	}
 }
 

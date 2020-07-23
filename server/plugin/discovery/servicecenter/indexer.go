@@ -16,7 +16,7 @@
 package servicecenter
 
 import (
-	"github.com/apache/servicecomb-service-center/pkg/client/sc"
+	"github.com/apache/servicecomb-service-center/client"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
@@ -24,6 +24,7 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
+	"strings"
 
 	"context"
 )
@@ -60,7 +61,7 @@ func (i *ClusterIndexer) search(ctx context.Context, opts ...registry.PluginOpOp
 	op := registry.OpGet(opts...)
 	key := util.BytesToStringWithNoCopy(op.Key)
 
-	ctx = context.WithValue(ctx, sc.QueryGlobal, "0")
+	ctx = context.WithValue(ctx, client.QueryGlobal, "0")
 	switch i.Type {
 	case backend.SCHEMA:
 		r, err = i.searchSchemas(ctx, op)
@@ -96,10 +97,11 @@ func (i *ClusterIndexer) searchInstances(ctx context.Context, op registry.Plugin
 		scErr *scerr.Error
 	)
 	serviceID, instanceID, domainProject := core.GetInfoFromInstKV(op.Key)
+	dp := strings.Split(domainProject, "/")
 	if op.Prefix && len(instanceID) == 0 {
-		resp, scErr = i.Client.GetInstancesByServiceID(ctx, domainProject, serviceID, "")
+		resp, scErr = i.Client.GetInstancesByServiceID(ctx, dp[0], dp[1], serviceID, "")
 	} else {
-		resp, scErr = i.Client.GetInstanceByInstanceID(ctx, domainProject, serviceID, instanceID, "")
+		resp, scErr = i.Client.GetInstanceByInstanceID(ctx, dp[0], dp[1], serviceID, instanceID, "")
 	}
 	if scErr != nil {
 		return nil, scErr

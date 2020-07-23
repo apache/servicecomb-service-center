@@ -18,6 +18,7 @@ package util
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"net/http"
@@ -27,7 +28,7 @@ import (
 func TestRuleFilter_Filter(t *testing.T) {
 	rf := RuleFilter{
 		DomainProject: "",
-		ProviderRules: []*proto.ServiceRule{},
+		ProviderRules: []*registry.ServiceRule{},
 	}
 	_, err := rf.Filter(context.Background(), "")
 	if err != nil {
@@ -37,7 +38,7 @@ func TestRuleFilter_Filter(t *testing.T) {
 	if err != nil {
 		t.Fatalf("RuleFilter FilterAll failed")
 	}
-	rf.ProviderRules = []*proto.ServiceRule{
+	rf.ProviderRules = []*registry.ServiceRule{
 		{},
 	}
 	_, _, err = rf.FilterAll(context.Background(), []string{""})
@@ -76,66 +77,66 @@ func TestGetServiceRuleType(t *testing.T) {
 }
 
 func TestAllowAcrossApp(t *testing.T) {
-	err := AllowAcrossDimension(context.Background(), &proto.MicroService{
+	err := AllowAcrossDimension(context.Background(), &registry.MicroService{
 		AppId: "a",
-	}, &proto.MicroService{
+	}, &registry.MicroService{
 		AppId: "a",
 	})
 	if err != nil {
 		t.Fatalf("AllowAcrossApp with the same appId and no property failed")
 	}
 
-	err = AllowAcrossDimension(context.Background(), &proto.MicroService{
+	err = AllowAcrossDimension(context.Background(), &registry.MicroService{
 		AppId: "a",
-	}, &proto.MicroService{
+	}, &registry.MicroService{
 		AppId: "c",
 	})
 	if err == nil {
 		t.Fatalf("AllowAcrossApp with the diff appId and no property failed")
 	}
 
-	err = AllowAcrossDimension(context.Background(), &proto.MicroService{
+	err = AllowAcrossDimension(context.Background(), &registry.MicroService{
 		AppId: "a",
 		Properties: map[string]string{
 			proto.PROP_ALLOW_CROSS_APP: "true",
 		},
-	}, &proto.MicroService{
+	}, &registry.MicroService{
 		AppId: "a",
 	})
 	if err != nil {
 		t.Fatalf("AllowAcrossApp with the same appId and allow property failed")
 	}
 
-	err = AllowAcrossDimension(context.Background(), &proto.MicroService{
+	err = AllowAcrossDimension(context.Background(), &registry.MicroService{
 		AppId: "a",
 		Properties: map[string]string{
 			proto.PROP_ALLOW_CROSS_APP: "true",
 		},
-	}, &proto.MicroService{
+	}, &registry.MicroService{
 		AppId: "b",
 	})
 	if err != nil {
 		t.Fatalf("AllowAcrossApp with the diff appId and allow property failed")
 	}
 
-	err = AllowAcrossDimension(context.Background(), &proto.MicroService{
+	err = AllowAcrossDimension(context.Background(), &registry.MicroService{
 		AppId: "a",
 		Properties: map[string]string{
 			proto.PROP_ALLOW_CROSS_APP: "false",
 		},
-	}, &proto.MicroService{
+	}, &registry.MicroService{
 		AppId: "b",
 	})
 	if err == nil {
 		t.Fatalf("AllowAcrossApp with the diff appId and deny property failed")
 	}
 
-	err = AllowAcrossDimension(context.Background(), &proto.MicroService{
+	err = AllowAcrossDimension(context.Background(), &registry.MicroService{
 		AppId: "a",
 		Properties: map[string]string{
 			proto.PROP_ALLOW_CROSS_APP: "",
 		},
-	}, &proto.MicroService{
+	}, &registry.MicroService{
 		AppId: "b",
 	})
 	if err == nil {
@@ -144,7 +145,7 @@ func TestAllowAcrossApp(t *testing.T) {
 }
 
 func TestMatchRules(t *testing.T) {
-	err := MatchRules([]*proto.ServiceRule{
+	err := MatchRules([]*registry.ServiceRule{
 		{
 			RuleType:  "WHITE",
 			Attribute: "",
@@ -155,102 +156,102 @@ func TestMatchRules(t *testing.T) {
 		t.Fatalf("MatchRules nil failed")
 	}
 
-	err = MatchRules([]*proto.ServiceRule{
+	err = MatchRules([]*registry.ServiceRule{
 		{
 			RuleType:  "WHITE",
 			Attribute: "",
 			Pattern:   "",
 		},
-	}, &proto.MicroService{}, nil)
+	}, &registry.MicroService{}, nil)
 	if err == nil {
 		t.Fatalf("MatchRules invalid WHITE failed")
 	}
 
-	err = MatchRules([]*proto.ServiceRule{
+	err = MatchRules([]*registry.ServiceRule{
 		{
 			RuleType:  "WHITE",
 			Attribute: "ServiceName",
 			Pattern:   "^a.*",
 		},
-	}, &proto.MicroService{
+	}, &registry.MicroService{
 		ServiceName: "a",
 	}, nil)
 	if err != nil {
 		t.Fatalf("MatchRules WHITE with field ServiceName failed")
 	}
 
-	err = MatchRules([]*proto.ServiceRule{
+	err = MatchRules([]*registry.ServiceRule{
 		{
 			RuleType:  "WHITE",
 			Attribute: "tag_a",
 			Pattern:   "^b.*",
 		},
-	}, &proto.MicroService{}, map[string]string{
+	}, &registry.MicroService{}, map[string]string{
 		"a": "b",
 	})
 	if err != nil {
 		t.Fatalf("MatchRules WHITE with tag b failed")
 	}
 
-	err = MatchRules([]*proto.ServiceRule{
+	err = MatchRules([]*registry.ServiceRule{
 		{
 			RuleType:  "WHITE",
 			Attribute: "tag_a",
 			Pattern:   "^b.*",
 		},
-	}, &proto.MicroService{}, map[string]string{
+	}, &registry.MicroService{}, map[string]string{
 		"a": "c",
 	})
 	if err == nil {
 		t.Fatalf("MatchRules WHITE with tag c failed")
 	}
 
-	err = MatchRules([]*proto.ServiceRule{
+	err = MatchRules([]*registry.ServiceRule{
 		{
 			RuleType:  "BLACK",
 			Attribute: "tag_a",
 			Pattern:   "^b.*",
 		},
-	}, &proto.MicroService{}, map[string]string{
+	}, &registry.MicroService{}, map[string]string{
 		"a": "b",
 	})
 	if err == nil {
 		t.Fatalf("MatchRules BLACK with tag b failed")
 	}
 
-	err = MatchRules([]*proto.ServiceRule{
+	err = MatchRules([]*registry.ServiceRule{
 		{
 			RuleType:  "BLACK",
 			Attribute: "ServiceName",
 			Pattern:   "^a.*",
 		},
-	}, &proto.MicroService{
+	}, &registry.MicroService{
 		ServiceName: "a",
 	}, nil)
 	if err == nil {
 		t.Fatalf("MatchRules BLACK with field ServiceName failed")
 	}
 
-	err = MatchRules([]*proto.ServiceRule{
+	err = MatchRules([]*registry.ServiceRule{
 		{
 			RuleType:  "BLACK",
 			Attribute: "tag_a",
 			Pattern:   "^b.*",
 		},
-	}, &proto.MicroService{}, map[string]string{
+	}, &registry.MicroService{}, map[string]string{
 		"a": "c",
 	})
 	if err != nil {
 		t.Fatalf("MatchRules BLACK with tag c failed")
 	}
 
-	err = MatchRules([]*proto.ServiceRule{
+	err = MatchRules([]*registry.ServiceRule{
 		{
 			RuleType:  "BLACK",
 			Attribute: "tag_a",
 			Pattern:   "^b.*",
 		},
-	}, &proto.MicroService{}, map[string]string{
+	}, &registry.MicroService{}, map[string]string{
 		"b": "b",
 	})
 	if err != nil {
@@ -259,12 +260,12 @@ func TestMatchRules(t *testing.T) {
 }
 
 func TestGetConsumer(t *testing.T) {
-	_, _, err := GetAllProviderIds(context.Background(), "", &proto.MicroService{})
+	_, _, err := GetAllProviderIds(context.Background(), "", &registry.MicroService{})
 	if err != nil {
 		t.Fatalf("GetConsumerIdsByProvider invalid failed")
 	}
 
-	_, _, err = GetAllConsumerIds(context.Background(), "", &proto.MicroService{
+	_, _, err = GetAllConsumerIds(context.Background(), "", &registry.MicroService{
 		ServiceId: "a",
 	})
 	if err != nil {
@@ -272,7 +273,7 @@ func TestGetConsumer(t *testing.T) {
 	}
 
 	_, err = GetConsumerIds(context.Background(), "",
-		&proto.MicroService{
+		&registry.MicroService{
 			ServiceId: "a",
 		})
 	if err != nil {
@@ -282,14 +283,14 @@ func TestGetConsumer(t *testing.T) {
 
 func TestGetProvider(t *testing.T) {
 	_, err := GetProviderIds(context.Background(), "",
-		&proto.MicroService{
+		&registry.MicroService{
 			ServiceId: "a",
 		})
 	if err != nil {
 		t.Fatalf("GetProviderIds WithCacheOnly failed")
 	}
 
-	_, _, err = GetAllProviderIds(context.Background(), "", &proto.MicroService{})
+	_, _, err = GetAllProviderIds(context.Background(), "", &registry.MicroService{})
 	if err != nil {
 		t.Fatalf("GetAllProviderIds WithCacheOnly failed")
 	}

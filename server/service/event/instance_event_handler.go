@@ -19,10 +19,11 @@ package event
 import (
 	"context"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/notify"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"github.com/apache/servicecomb-service-center/server/service/cache"
@@ -113,7 +114,7 @@ func (h *InstanceEventHandler) OnEvent(evt discovery.KvEvent) {
 		return
 	}
 
-	PublishInstanceEvent(evt, domainProject, pb.MicroServiceToKey(domainProject, ms), consumerIDs)
+	PublishInstanceEvent(evt, domainProject, proto.MicroServiceToKey(domainProject, ms), consumerIDs)
 }
 
 func NewInstanceEventHandler() *InstanceEventHandler {
@@ -128,7 +129,7 @@ func PublishInstanceEvent(evt discovery.KvEvent, domainProject string, serviceKe
 	}
 
 	response := &pb.WatchInstanceResponse{
-		Response: pb.CreateResponse(pb.Response_SUCCESS, "Watch instance successfully."),
+		Response: proto.CreateResponse(proto.Response_SUCCESS, "Watch instance successfully."),
 		Action:   string(evt.Type),
 		Key:      serviceKey,
 		Instance: evt.KV.Value.(*pb.MicroServiceInstance),

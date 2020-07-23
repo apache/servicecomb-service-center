@@ -18,12 +18,12 @@ package etcd
 
 import (
 	"fmt"
+	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"strings"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 
@@ -34,7 +34,7 @@ import (
 // Indexer searches data from etcd server.
 type Indexer struct {
 	Client registry.Registry
-	Parser pb.Parser
+	Parser proto.Parser
 	Root   string
 }
 
@@ -88,6 +88,6 @@ func (i *Indexer) Creditable() bool {
 	return true
 }
 
-func NewEtcdIndexer(root string, p pb.Parser) (indexer *Indexer) {
+func NewEtcdIndexer(root string, p proto.Parser) (indexer *Indexer) {
 	return &Indexer{Client: backend.Registry(), Parser: p, Root: root}
 }

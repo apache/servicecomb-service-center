@@ -19,8 +19,8 @@ import (
 	"encoding/json"
 	"fmt"
 	simple "github.com/apache/servicecomb-service-center/pkg/time"
+	"github.com/apache/servicecomb-service-center/pkg/types"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	"strconv"
 	"time"
@@ -85,7 +85,7 @@ type Response struct {
 
 type KvEvent struct {
 	Revision int64
-	Type     pb.EventType
+	Type     types.EventType
 	KV       *KeyValue
 	CreateAt simple.Time
 }
@@ -97,6 +97,6 @@ type KvEventHandler interface {
 	OnEvent(evt KvEvent)
 }
 
-func NewKvEvent(action pb.EventType, kv *KeyValue, rev int64) KvEvent {
+func NewKvEvent(action types.EventType, kv *KeyValue, rev int64) KvEvent {
 	return KvEvent{Type: action, KV: kv, Revision: rev, CreateAt: simple.FromTime(time.Now())}
 }

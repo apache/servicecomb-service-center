@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sc
+package client
 
 import (
 	"context"
@@ -23,8 +23,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/apache/servicecomb-service-center/server/core"
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 )
 
@@ -34,8 +33,7 @@ const (
 	apiMicroServiceURL  = "/v4/%s/registry/microservices/%s"
 )
 
-func (c *Client) CreateService(ctx context.Context, domainProject string, service *pb.MicroService) (string, *scerr.Error) {
-	domain, project := core.FromDomainProject(domainProject)
+func (c *Client) CreateService(ctx context.Context, domain, project string, service *pb.MicroService) (string, *scerr.Error) {
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 
@@ -69,8 +67,7 @@ func (c *Client) CreateService(ctx context.Context, domainProject string, servic
 	return serviceResp.ServiceId, nil
 }
 
-func (c *Client) DeleteService(ctx context.Context, domainProject, serviceID string) *scerr.Error {
-	domain, project := core.FromDomainProject(domainProject)
+func (c *Client) DeleteService(ctx context.Context, domain, project, serviceID string) *scerr.Error {
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 
@@ -94,7 +91,7 @@ func (c *Client) DeleteService(ctx context.Context, domainProject, serviceID str
 	return nil
 }
 
-func (c *Client) ServiceExistence(ctx context.Context, domainProject string, appID, serviceName, versionRule, env string) (string, *scerr.Error) {
+func (c *Client) ServiceExistence(ctx context.Context, domain, project string, appID, serviceName, versionRule, env string) (string, *scerr.Error) {
 	query := url.Values{}
 	query.Set("type", "microservice")
 	query.Set("env", env)
@@ -102,7 +99,7 @@ func (c *Client) ServiceExistence(ctx context.Context, domainProject string, app
 	query.Set("serviceName", serviceName)
 	query.Set("version", versionRule)
 
-	resp, err := c.existence(ctx, domainProject, query)
+	resp, err := c.existence(ctx, domain, project, query)
 	if err != nil {
 		return "", err
 	}
@@ -110,8 +107,7 @@ func (c *Client) ServiceExistence(ctx context.Context, domainProject string, app
 	return resp.ServiceId, nil
 }
 
-func (c *Client) existence(ctx context.Context, domainProject string, query url.Values) (*pb.GetExistenceResponse, *scerr.Error) {
-	domain, project := core.FromDomainProject(domainProject)
+func (c *Client) existence(ctx context.Context, domain, project string, query url.Values) (*pb.GetExistenceResponse, *scerr.Error) {
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 

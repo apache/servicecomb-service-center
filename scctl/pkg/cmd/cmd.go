@@ -17,7 +17,7 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/apache/servicecomb-service-center/pkg/client/sc"
+	"github.com/apache/servicecomb-service-center/client"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/version"
 	"github.com/spf13/cobra"
@@ -34,7 +34,7 @@ var rootCmd = &cobra.Command{
 	Use:   version.TOOL_NAME + " <command>",
 	Short: "The admin control command of service center",
 }
-var ScClientConfig sc.Config
+var ScClientConfig client.Config
 
 func init() {
 	var timeout string

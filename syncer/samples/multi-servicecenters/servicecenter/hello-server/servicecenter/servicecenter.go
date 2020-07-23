@@ -20,9 +20,9 @@ package servicecenter
 import (
 	"context"
 	"fmt"
-	"github.com/apache/servicecomb-service-center/pkg/client/sc"
+	client2 "github.com/apache/servicecomb-service-center/client"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/syncer/pkg/ticker"
 	"net/http"
 	"net/url"
@@ -31,27 +31,27 @@ import (
 )
 
 var (
-	domainProject         string
-	cli                   *sc.Client
+	domain, project       string
+	cli                   *client2.Client
 	once                  sync.Once
 	heartbeatInterval     = 30
 	providerCaches        = &sync.Map{}
-	service               *proto.MicroService
-	instance              *proto.MicroServiceInstance
+	service               *registry.MicroService
+	instance              *registry.MicroServiceInstance
 	retryDiscover         = 3
 	retryDiscoverInterval = 30
 )
 
 func Start(ctx context.Context, conf *Config) (err error) {
 	once.Do(func() {
-		cli, err = sc.NewSCClient(sc.Config{Endpoints: conf.Registry.Endpoints})
+		cli, err = client2.NewSCClient(client2.Config{Endpoints: conf.Registry.Endpoints})
 		if err != nil {
 			log.Error("new service center client failed", err)
 			return
 		}
 
 		if conf.Tenant != nil {
-			domainProject = conf.Tenant.Domain + "/" + conf.Tenant.Project
+			domain, project = conf.Tenant.Domain, conf.Tenant.Project
 		}
 
 		consumerID := ""
@@ -96,7 +96,7 @@ func Start(ctx context.Context, conf *Config) (err error) {
 func Stop(ctx context.Context) error {
 	if instance != nil {
 		// 注销微服务实例
-		err := cli.UnregisterInstance(ctx, domainProject, instance.ServiceId, instance.InstanceId)
+		err := cli.UnregisterInstance(ctx, domain, project, instance.ServiceId, instance.InstanceId)
 		if err != nil {
 			return err
 		}
@@ -105,7 +105,7 @@ func Stop(ctx context.Context) error {
 	// 实例注销后，服务中心清理数据需要一些时间，稍作延后
 	time.Sleep(time.Second * 3)
 	// 注销微服务
-	return cli.DeleteService(ctx, domainProject, service.ServiceId)
+	return cli.DeleteService(ctx, domain, project, service.ServiceId)
 }
 
 func Do(ctx context.Context, method, addr string, headers http.Header, body []byte) (resp *http.Response, err error) {
@@ -115,7 +115,7 @@ func Do(ctx context.Context, method, addr string, headers http.Header, body []by
 	}
 	endpoints, err := serverNameToEndpoints(raw.Hostname())
 
-	client, err := sc.NewLBClient(endpoints, (&sc.Config{Endpoints: endpoints}).Merge())
+	client, err := client2.NewLBClient(endpoints, (&client2.Config{Endpoints: endpoints}).Merge())
 	if err != nil {
 		return nil, err
 	}
@@ -123,14 +123,14 @@ func Do(ctx context.Context, method, addr string, headers http.Header, body []by
 	return client.RestDoWithContext(ctx, method, raw.Path, headers, body)
 }
 
-func createService(ctx context.Context, svc *MicroService) (*proto.MicroService, error) {
+func createService(ctx context.Context, svc *MicroService) (*registry.MicroService, error) {
 	service := transformMicroService(svc)
 
 	// 检测微服务是否存在
-	serviceID, err := cli.ServiceExistence(ctx, domainProject, service.AppId, service.ServiceName, service.Version, "")
+	serviceID, err := cli.ServiceExistence(ctx, domain, project, service.AppId, service.ServiceName, service.Version, "")
 	if serviceID == "" {
 		// 注册微服务
-		serviceID, err = cli.CreateService(ctx, domainProject, service)
+		serviceID, err = cli.CreateService(ctx, domain, project, service)
 		if err != nil {
 			return nil, err
 		}
@@ -139,9 +139,9 @@ func createService(ctx context.Context, svc *MicroService) (*proto.MicroService,
 	return service, nil
 }
 
-func registerInstance(ctx context.Context, serviceID string, ins *Instance) (*proto.MicroServiceInstance, error) {
+func registerInstance(ctx context.Context, serviceID string, ins *Instance) (*registry.MicroServiceInstance, error) {
 	instance := transformInstance(ins)
-	instanceID, err := cli.RegisterInstance(ctx, domainProject, serviceID, instance)
+	instanceID, err := cli.RegisterInstance(ctx, domain, project, serviceID, instance)
 	if err != nil {
 		return nil, err
 	}
@@ -150,13 +150,13 @@ func registerInstance(ctx context.Context, serviceID string, ins *Instance) (*pr
 	return instance, nil
 }
 
-func heartbeat(ctx context.Context, ins *proto.MicroServiceInstance) {
+func heartbeat(ctx context.Context, ins *registry.MicroServiceInstance) {
 	// 启动定时器：间隔30s
 	t := ticker.NewTaskTicker(heartbeatInterval, func(ctx context.Context) {
 		// 定时发送心跳
-		err := cli.Heartbeat(ctx, domainProject, ins.ServiceId, ins.InstanceId)
+		err := cli.Heartbeat(ctx, domain, project, ins.ServiceId, ins.InstanceId)
 		if err != nil {
-			log.Errorf(err, "send heartbeat failed, domain = %s, serviceID = %s, instanceID = %s", domainProject, ins.ServiceId, ins.InstanceId)
+			log.Errorf(err, "send heartbeat failed, domain = %s, serviceID = %s, instanceID = %s", domain, project, ins.ServiceId, ins.InstanceId)
 			return
 		}
 		log.Debug("send heartbeat success")
@@ -167,7 +167,7 @@ func heartbeat(ctx context.Context, ins *proto.MicroServiceInstance) {
 
 func discoveryToCaches(ctx context.Context, consumerID string, provider *MicroService) error {
 	service := transformMicroService(provider)
-	list, err := cli.DiscoveryInstances(ctx, domainProject, consumerID, service.AppId, service.ServiceName, service.Version)
+	list, err := cli.DiscoveryInstances(ctx, domain, project, consumerID, service.AppId, service.ServiceName, service.Version)
 	if err != nil || len(list) == 0 {
 		return fmt.Errorf("provider not found, serviceName: %s appID: %s, version: %s",
 			provider.Name, provider.AppID, provider.Version)
@@ -179,14 +179,14 @@ func discoveryToCaches(ctx context.Context, consumerID string, provider *MicroSe
 }
 
 func watchAndRenewCaches(ctx context.Context, provider *MicroService) {
-	err := cli.Watch(ctx, domainProject, provider.ID, func(result *proto.WatchInstanceResponse) {
+	err := cli.Watch(ctx, domain, project, provider.ID, func(result *registry.WatchInstanceResponse) {
 		log.Debug("reply from watch service")
 		list, ok := providerCaches.Load(result.Instance.ServiceId)
 		if !ok {
 			log.Infof("provider \"%s\" not found", result.Instance.ServiceId)
 			return
 		}
-		providerList := list.([]*proto.MicroServiceInstance)
+		providerList := list.([]*registry.MicroServiceInstance)
 
 		renew := false
 		for i, item := range providerList {
@@ -217,7 +217,7 @@ func serverNameToEndpoints(name string) ([]string, error) {
 	if !ok {
 		return nil, fmt.Errorf("provider \"%s\" not found", name)
 	}
-	providerList := list.([]*proto.MicroServiceInstance)
+	providerList := list.([]*registry.MicroServiceInstance)
 	endpointList := make([]string, 0, len(providerList))
 	for i := 0; i < len(providerList); i++ {
 		endpoints := providerList[i].Endpoints
@@ -236,8 +236,8 @@ func serverNameToEndpoints(name string) ([]string, error) {
 	return endpointList, nil
 }
 
-func transformMicroService(service *MicroService) *proto.MicroService {
-	return &proto.MicroService{
+func transformMicroService(service *MicroService) *registry.MicroService {
+	return &registry.MicroService{
 		AppId:       service.AppID,
 		ServiceId:   service.ID,
 		ServiceName: service.Name,
@@ -245,8 +245,8 @@ func transformMicroService(service *MicroService) *proto.MicroService {
 	}
 }
 
-func transformInstance(instance *Instance) *proto.MicroServiceInstance {
-	return &proto.MicroServiceInstance{
+func transformInstance(instance *Instance) *registry.MicroServiceInstance {
+	return &registry.MicroServiceInstance{
 		InstanceId: instance.ID,
 		HostName:   instance.Hostname,
 		Endpoints:  []string{instance.Protocol + "://" + instance.ListenAddress},

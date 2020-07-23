@@ -22,10 +22,11 @@ import (
 	"errors"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"strings"
@@ -159,7 +160,7 @@ func dependencyRuleExistUtil(ctx context.Context, key string, target *pb.MicroSe
 
 func AddServiceVersionRule(ctx context.Context, domainProject string, consumer *pb.MicroService, provider *pb.MicroServiceKey) error {
 	//创建依赖一致
-	consumerKey := pb.MicroServiceToKey(domainProject, consumer)
+	consumerKey := proto.MicroServiceToKey(domainProject, consumer)
 	exist, err := DependencyRuleExist(ctx, provider, consumerKey)
 	if exist || err != nil {
 		return err
@@ -360,7 +361,7 @@ func BadParamsResponse(detailErr string) *pb.CreateDependenciesResponse {
 		detailErr = "Request params is invalid."
 	}
 	return &pb.CreateDependenciesResponse{
-		Response: pb.CreateResponse(scerr.ErrInvalidParams, detailErr),
+		Response: proto.CreateResponse(scerr.ErrInvalidParams, detailErr),
 	}
 }
 

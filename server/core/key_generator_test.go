@@ -16,7 +16,7 @@
 package core
 
 import (
-	"github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -33,7 +33,7 @@ func TestGenerateDependencyRuleKey(t *testing.T) {
 	if k != "/cse-sr/ms/dep-rules/a/c" {
 		t.Fatalf("TestGenerateDependencyRuleKey failed")
 	}
-	k = GenerateConsumerDependencyRuleKey("a", &proto.MicroServiceKey{
+	k = GenerateConsumerDependencyRuleKey("a", &registry.MicroServiceKey{
 		Environment: "1",
 		AppId:       "2",
 		ServiceName: "3",
@@ -42,7 +42,7 @@ func TestGenerateDependencyRuleKey(t *testing.T) {
 	if k != "/cse-sr/ms/dep-rules/a/c/1/2/3/4" {
 		t.Fatalf("TestGenerateDependencyRuleKey failed")
 	}
-	k = GenerateConsumerDependencyRuleKey("a", &proto.MicroServiceKey{
+	k = GenerateConsumerDependencyRuleKey("a", &registry.MicroServiceKey{
 		Environment: "1",
 		AppId:       "2",
 		ServiceName: "*",
@@ -57,7 +57,7 @@ func TestGenerateDependencyRuleKey(t *testing.T) {
 	if k != "/cse-sr/ms/dep-rules/a/p" {
 		t.Fatalf("TestGenerateDependencyRuleKey failed")
 	}
-	k = GenerateProviderDependencyRuleKey("a", &proto.MicroServiceKey{
+	k = GenerateProviderDependencyRuleKey("a", &registry.MicroServiceKey{
 		Environment: "1",
 		AppId:       "2",
 		ServiceName: "3",
@@ -66,7 +66,7 @@ func TestGenerateDependencyRuleKey(t *testing.T) {
 	if k != "/cse-sr/ms/dep-rules/a/p/1/2/3/4" {
 		t.Fatalf("TestGenerateDependencyRuleKey failed")
 	}
-	k = GenerateProviderDependencyRuleKey("a", &proto.MicroServiceKey{
+	k = GenerateProviderDependencyRuleKey("a", &registry.MicroServiceKey{
 		Environment: "1",
 		AppId:       "2",
 		ServiceName: "*",

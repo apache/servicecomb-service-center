@@ -17,8 +17,9 @@ package discovery
 
 import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/registry"
+	"github.com/apache/servicecomb-service-center/pkg/types"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 )
 
 // CommonCacher implements discovery.Cacher.
@@ -36,9 +37,9 @@ func (c *CommonCacher) Cache() CacheReader {
 	return c.cache
 }
 
-func (c *CommonCacher) Notify(action proto.EventType, key string, kv *KeyValue) {
+func (c *CommonCacher) Notify(action types.EventType, key string, kv *KeyValue) {
 	switch action {
-	case proto.EVT_DELETE:
+	case registry.EVT_DELETE:
 		c.cache.Remove(key)
 	default:
 		c.cache.Put(key, kv)

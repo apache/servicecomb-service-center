@@ -16,28 +16,11 @@
 package proto
 
 import (
+	"github.com/apache/servicecomb-service-center/pkg/registry"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 )
 
 const (
-	EVT_INIT   EventType = "INIT"
-	EVT_CREATE EventType = "CREATE"
-	EVT_UPDATE EventType = "UPDATE"
-	EVT_DELETE EventType = "DELETE"
-	EVT_EXPIRE EventType = "EXPIRE"
-	EVT_ERROR  EventType = "ERROR"
-	MS_UP      string    = "UP"
-	MS_DOWN    string    = "DOWN"
-
-	MSI_UP           string = "UP"
-	MSI_DOWN         string = "DOWN"
-	MSI_STARTING     string = "STARTING"
-	MSI_TESTING      string = "TESTING"
-	MSI_OUTOFSERVICE string = "OUTOFSERVICE"
-
-	CHECK_BY_HEARTBEAT string = "push"
-	CHECK_BY_PLATFORM  string = "pull"
-
 	EXISTENCE_MS     string = "microservice"
 	EXISTENCE_SCHEMA string = "schema"
 
@@ -45,35 +28,26 @@ const (
 
 	Response_SUCCESS int32 = 0
 
-	ENV_DEV    string = "development"
-	ENV_TEST   string = "testing"
-	ENV_ACCEPT string = "acceptance"
-	ENV_PROD   string = "production"
-
-	REGISTERBY_SDK      string = "SDK"
-	REGISTERBY_SIDECAR  string = "SIDECAR"
-	REGISTERBY_PLATFORM string = "PLATFORM"
-
 	APP_ID  = "default"
 	VERSION = "0.0.1"
 )
 
-func CreateResponse(code int32, message string) *Response {
-	resp := &Response{
+func CreateResponse(code int32, message string) *registry.Response {
+	resp := &registry.Response{
 		Code:    code,
 		Message: message,
 	}
 	return resp
 }
 
-func CreateResponseWithSCErr(err *scerr.Error) *Response {
-	return &Response{
+func CreateResponseWithSCErr(err *scerr.Error) *registry.Response {
+	return &registry.Response{
 		Code:    err.Code,
 		Message: err.Detail,
 	}
 }
 
-func DependenciesToKeys(in []*MicroServiceKey, domainProject string) []*MicroServiceKey {
+func DependenciesToKeys(in []*registry.MicroServiceKey, domainProject string) []*registry.MicroServiceKey {
 	for _, value := range in {
 		if len(value.Tenant) == 0 {
 			value.Tenant = domainProject
@@ -82,8 +56,8 @@ func DependenciesToKeys(in []*MicroServiceKey, domainProject string) []*MicroSer
 	return in
 }
 
-func MicroServiceToKey(domainProject string, in *MicroService) *MicroServiceKey {
-	return &MicroServiceKey{
+func MicroServiceToKey(domainProject string, in *registry.MicroService) *registry.MicroServiceKey {
+	return &registry.MicroServiceKey{
 		Tenant:      domainProject,
 		Environment: in.Environment,
 		AppId:       in.AppId,

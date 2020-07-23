@@ -20,10 +20,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"reflect"
@@ -153,12 +154,12 @@ func AllowAcrossDimension(ctx context.Context, providerService *pb.MicroService,
 			return fmt.Errorf("not allow across app access")
 		}
 
-		if allowCrossApp, ok := providerService.Properties[pb.PROP_ALLOW_CROSS_APP]; !ok || strings.ToLower(allowCrossApp) != "true" {
+		if allowCrossApp, ok := providerService.Properties[proto.PROP_ALLOW_CROSS_APP]; !ok || strings.ToLower(allowCrossApp) != "true" {
 			return fmt.Errorf("not allow across app access")
 		}
 	}
 
-	if !apt.IsShared(pb.MicroServiceToKey(util.ParseTargetDomainProject(ctx), providerService)) &&
+	if !apt.IsShared(proto.MicroServiceToKey(util.ParseTargetDomainProject(ctx), providerService)) &&
 		providerService.Environment != consumerService.Environment {
 		return fmt.Errorf("not allow across environment access")
 	}

@@ -17,7 +17,7 @@ package core
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/astaxie/beego"
 	"os"
 	"testing"
@@ -54,28 +54,28 @@ func TestPrepareSelfRegistration(t *testing.T) {
 
 func TestSetSharedMode(t *testing.T) {
 	SetSharedMode()
-	if IsShared(&proto.MicroServiceKey{}) {
+	if IsShared(&registry.MicroServiceKey{}) {
 		t.Fatalf("TestSetSharedMode failed")
 	}
-	if IsShared(&proto.MicroServiceKey{Tenant: "default"}) {
+	if IsShared(&registry.MicroServiceKey{Tenant: "default"}) {
 		t.Fatalf("TestSetSharedMode failed")
 	}
-	if IsShared(&proto.MicroServiceKey{Tenant: "default/default"}) {
+	if IsShared(&registry.MicroServiceKey{Tenant: "default/default"}) {
 		t.Fatalf("TestSetSharedMode failed")
 	}
-	if IsShared(&proto.MicroServiceKey{Tenant: "default/default", AppId: "default"}) {
+	if IsShared(&registry.MicroServiceKey{Tenant: "default/default", AppId: "default"}) {
 		t.Fatalf("TestSetSharedMode failed")
 	}
 
 	os.Setenv("CSE_SHARED_SERVICES", "shared")
 	SetSharedMode()
-	if IsShared(&proto.MicroServiceKey{Tenant: "default/default", AppId: "default", ServiceName: "no-shared"}) {
+	if IsShared(&registry.MicroServiceKey{Tenant: "default/default", AppId: "default", ServiceName: "no-shared"}) {
 		t.Fatalf("TestSetSharedMode failed")
 	}
-	if !IsShared(&proto.MicroServiceKey{Tenant: "default/default", AppId: "default", ServiceName: "shared"}) {
+	if !IsShared(&registry.MicroServiceKey{Tenant: "default/default", AppId: "default", ServiceName: "shared"}) {
 		t.Fatalf("TestSetSharedMode failed")
 	}
-	if !IsShared(&proto.MicroServiceKey{Tenant: "default/default", AppId: "default", Alias: "shared"}) {
+	if !IsShared(&registry.MicroServiceKey{Tenant: "default/default", AppId: "default", Alias: "shared"}) {
 		t.Fatalf("TestSetSharedMode failed")
 	}
 }

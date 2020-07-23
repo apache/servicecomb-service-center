@@ -19,7 +19,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/apache/servicecomb-service-center/pkg/client/sc"
+	"github.com/apache/servicecomb-service-center/client"
 	"github.com/apache/servicecomb-service-center/pkg/model"
 	"github.com/apache/servicecomb-service-center/scctl/etcd"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/cmd"
@@ -48,7 +48,7 @@ type etcdResponse map[string][]*mvccpb.KeyValue
 
 func DiagnoseCommandFunc(_ *cobra.Command, args []string) {
 	// initialize sc/etcd clients
-	scClient, err := sc.NewSCClient(cmd.ScClientConfig)
+	scClient, err := client.NewSCClient(cmd.ScClientConfig)
 	if err != nil {
 		cmd.StopAndExit(cmd.ExitError, err)
 	}

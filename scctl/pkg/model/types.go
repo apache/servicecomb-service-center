@@ -17,21 +17,21 @@ package model
 
 import (
 	"github.com/apache/servicecomb-service-center/pkg/model"
+	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"strconv"
 	"time"
 )
 
-func GetDomainProject(resouce interface{}) (domainProject string) {
-	switch resouce.(type) {
+func GetDomainProject(resource interface{}) (domainProject string) {
+	switch resource.(type) {
 	case *model.Microservice:
 		_, domainProject = core.GetInfoFromSvcKV(
-			util.StringToBytesWithNoCopy(resouce.(*model.Microservice).Key))
+			util.StringToBytesWithNoCopy(resource.(*model.Microservice).Key))
 	case *model.Instance:
 		_, _, domainProject = core.GetInfoFromInstKV(
-			util.StringToBytesWithNoCopy(resouce.(*model.Instance).Key))
+			util.StringToBytesWithNoCopy(resource.(*model.Instance).Key))
 	}
 	return
 }
@@ -42,7 +42,7 @@ type Service struct {
 	AppId         string
 	ServiceName   string
 	Versions      []string
-	Frameworks    []*proto.FrameWorkProperty
+	Frameworks    []*registry.FrameWorkProperty
 	Endpoints     []string
 	Timestamp     int64 // the seconds from 0 to now
 }
@@ -51,7 +51,7 @@ func (s *Service) AppendVersion(v string) {
 	s.Versions = append(s.Versions, v)
 }
 
-func (s *Service) AppendFramework(property *proto.FrameWorkProperty) {
+func (s *Service) AppendFramework(property *registry.FrameWorkProperty) {
 	if property == nil || property.Name == "" {
 		return
 	}
@@ -89,17 +89,17 @@ type Instance struct {
 	AppId         string
 	ServiceName   string
 	Version       string
-	Framework     *proto.FrameWorkProperty
+	Framework     *registry.FrameWorkProperty
 	Lease         int64 // seconds
 	Timestamp     int64 // the seconds from 0 to now
 }
 
-func (s *Instance) SetLease(hc *proto.HealthCheck) {
+func (s *Instance) SetLease(hc *registry.HealthCheck) {
 	if hc == nil {
 		s.Lease = -1
 		return
 	}
-	if hc.Mode == proto.CHECK_BY_PLATFORM {
+	if hc.Mode == registry.CHECK_BY_PLATFORM {
 		s.Lease = 0
 		return
 	}

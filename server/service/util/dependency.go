@@ -20,20 +20,20 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	rmodel "github.com/apache/servicecomb-service-center/pkg/registry"
 	apt "github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 )
 
 type Dependency struct {
 	DomainProject string
 	// store the consumer Dependency from dep-queue object
-	Consumer      *pb.MicroServiceKey
-	ProvidersRule []*pb.MicroServiceKey
+	Consumer      *rmodel.MicroServiceKey
+	ProvidersRule []*rmodel.MicroServiceKey
 	// store the parsed rules from Dependency object
-	DeleteDependencyRuleList []*pb.MicroServiceKey
-	CreateDependencyRuleList []*pb.MicroServiceKey
+	DeleteDependencyRuleList []*rmodel.MicroServiceKey
+	CreateDependencyRuleList []*rmodel.MicroServiceKey
 }
 
 func (dep *Dependency) removeConsumerOfProviderRule(ctx context.Context) ([]registry.PluginOp, error) {
@@ -100,7 +100,7 @@ func (dep *Dependency) updateProvidersRuleOfConsumer(_ context.Context) ([]regis
 		return []registry.PluginOp{registry.OpDel(registry.WithStrKey(conKey))}, nil
 	}
 
-	dependency := &pb.MicroServiceDependency{
+	dependency := &rmodel.MicroServiceDependency{
 		Dependency: dep.ProvidersRule,
 	}
 	data, err := json.Marshal(dependency)

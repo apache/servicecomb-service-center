@@ -18,6 +18,7 @@ package proto
 import (
 	"encoding/json"
 	"errors"
+	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
@@ -34,11 +35,11 @@ var (
 	newString CreateValueFunc = func() interface{} { return "" }
 	newMap    CreateValueFunc = func() interface{} { return make(map[string]string) }
 
-	newService         CreateValueFunc = func() interface{} { return new(MicroService) }
-	newInstance        CreateValueFunc = func() interface{} { return new(MicroServiceInstance) }
-	newRule            CreateValueFunc = func() interface{} { return new(ServiceRule) }
-	newDependencyRule  CreateValueFunc = func() interface{} { return new(MicroServiceDependency) }
-	newDependencyQueue CreateValueFunc = func() interface{} { return new(ConsumerDependency) }
+	newService         CreateValueFunc = func() interface{} { return new(registry.MicroService) }
+	newInstance        CreateValueFunc = func() interface{} { return new(registry.MicroServiceInstance) }
+	newRule            CreateValueFunc = func() interface{} { return new(registry.ServiceRule) }
+	newDependencyRule  CreateValueFunc = func() interface{} { return new(registry.MicroServiceDependency) }
+	newDependencyQueue CreateValueFunc = func() interface{} { return new(registry.ConsumerDependency) }
 )
 
 // parse

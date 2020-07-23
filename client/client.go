@@ -13,36 +13,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sc
+package client
 
 import (
-	"github.com/apache/servicecomb-service-center/pkg/rest"
-	"io/ioutil"
-	"strings"
-	"time"
+	"context"
+	"net/http"
 )
 
-const defaultRequestTimeout = 10 * time.Second
-
-type Config struct {
-	rest.URLClientOption
-	Name      string
-	Endpoints []string
-	// TODO Expandable header not only token header
-	Token          string
-	CertKeyPWDPath string
+func NewSCClient(cfg Config) (*Client, error) {
+	client, err := NewLBClient(cfg.Endpoints, cfg.Merge())
+	if err != nil {
+		return nil, err
+	}
+	return &Client{LBClient: client, Cfg: cfg}, nil
 }
 
-func (cfg *Config) Merge() rest.URLClientOption {
-	ssl := strings.Contains(cfg.Endpoints[0], "https://")
-	if ssl && len(cfg.CertKeyPWD) == 0 && len(cfg.CertKeyPWDPath) > 0 {
-		content, _ := ioutil.ReadFile(cfg.CertKeyPWDPath)
-		cfg.CertKeyPWD = string(content)
+type Client struct {
+	*LBClient
+	Cfg Config
+}
+
+func (c *Client) CommonHeaders(ctx context.Context) http.Header {
+	var headers = make(http.Header)
+	// TODO overwrote by context values
+	if len(c.Cfg.Token) > 0 {
+		headers.Set("X-Auth-Token", c.Cfg.Token)
 	}
-	cfg.SSLEnabled = ssl
-	if cfg.RequestTimeout == 0 {
-		cfg.RequestTimeout = defaultRequestTimeout
-	}
-	cfg.Compressed = true
-	return cfg.URLClientOption
+	return headers
 }

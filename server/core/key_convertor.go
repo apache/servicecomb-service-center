@@ -17,8 +17,8 @@ package core
 
 import (
 	"fmt"
+	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	"strings"
 )
 
@@ -92,14 +92,14 @@ func GetInfoFromTagKV(key []byte) (serviceID, domainProject string) {
 	return
 }
 
-func GetInfoFromSvcIndexKV(key []byte) *pb.MicroServiceKey {
+func GetInfoFromSvcIndexKV(key []byte) *registry.MicroServiceKey {
 	keys := KvToResponse(key)
 	l := len(keys)
 	if l < 6 {
 		return nil
 	}
 	domainProject := fmt.Sprintf("%s/%s", keys[l-6], keys[l-5])
-	return &pb.MicroServiceKey{
+	return &registry.MicroServiceKey{
 		Tenant:      domainProject,
 		Environment: keys[l-4],
 		AppId:       keys[l-3],
@@ -108,7 +108,7 @@ func GetInfoFromSvcIndexKV(key []byte) *pb.MicroServiceKey {
 	}
 }
 
-func GetInfoFromSvcAliasKV(key []byte) *pb.MicroServiceKey {
+func GetInfoFromSvcAliasKV(key []byte) *registry.MicroServiceKey {
 	return GetInfoFromSvcIndexKV(key)
 }
 
@@ -144,21 +144,21 @@ func GetInfoFromDependencyQueueKV(key []byte) (consumerID, domainProject, uuid s
 	return
 }
 
-func GetInfoFromDependencyRuleKV(key []byte) (t string, _ *pb.MicroServiceKey) {
+func GetInfoFromDependencyRuleKV(key []byte) (t string, _ *registry.MicroServiceKey) {
 	keys := KvToResponse(key)
 	l := len(keys)
 	if l < 5 {
 		return "", nil
 	}
 	if keys[l-1] == "*" {
-		return keys[l-3], &pb.MicroServiceKey{
+		return keys[l-3], &registry.MicroServiceKey{
 			Tenant:      fmt.Sprintf("%s/%s", keys[l-5], keys[l-4]),
 			Environment: keys[l-2],
 			ServiceName: keys[l-1],
 		}
 	}
 
-	return keys[l-5], &pb.MicroServiceKey{
+	return keys[l-5], &registry.MicroServiceKey{
 		Tenant:      fmt.Sprintf("%s/%s", keys[l-7], keys[l-6]),
 		Environment: keys[l-4],
 		AppId:       keys[l-3],

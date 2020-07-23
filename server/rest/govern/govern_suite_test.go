@@ -17,12 +17,14 @@
 package govern_test
 
 // initialize
-import _ "github.com/apache/servicecomb-service-center/server/bootstrap"
+import (
+	_ "github.com/apache/servicecomb-service-center/server/bootstrap"
+	"github.com/apache/servicecomb-service-center/server/core/proto"
+)
 import (
 	"context"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
-	pb "github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/rest/govern"
 	"github.com/apache/servicecomb-service-center/server/service"
 	"github.com/astaxie/beego"
@@ -44,7 +46,7 @@ func TestGovern(t *testing.T) {
 	RunSpecsWithDefaultAndCustomReporters(t, "model Suite", []Reporter{junitReporter})
 }
 
-var governService pb.GovernServiceCtrlServer
+var governService proto.GovernServiceCtrlServer
 
 var _ = BeforeSuite(func() {
 	//init plugin

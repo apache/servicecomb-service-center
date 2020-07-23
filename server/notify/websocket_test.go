@@ -19,6 +19,7 @@ package notify
 import (
 	"context"
 	"errors"
+	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
 	_ "github.com/apache/servicecomb-service-center/server/plugin/discovery/etcd"
@@ -65,12 +66,12 @@ func TestDoWebSocketListAndWatch(t *testing.T) {
 
 	EstablishWebSocketError(conn, errors.New("error"))
 
-	w := NewInstanceEventListWatcher("g", "s", func() (results []*proto.WatchInstanceResponse, rev int64) {
-		results = append(results, &proto.WatchInstanceResponse{
+	w := NewInstanceEventListWatcher("g", "s", func() (results []*registry.WatchInstanceResponse, rev int64) {
+		results = append(results, &registry.WatchInstanceResponse{
 			Response: proto.CreateResponse(proto.Response_SUCCESS, "ok"),
-			Action:   string(proto.EVT_CREATE),
-			Key:      &proto.MicroServiceKey{},
-			Instance: &proto.MicroServiceInstance{},
+			Action:   string(registry.EVT_CREATE),
+			Key:      &registry.MicroServiceKey{},
+			Instance: &registry.MicroServiceInstance{},
 		})
 		return
 	})
@@ -90,7 +91,7 @@ func TestDoWebSocketListAndWatch(t *testing.T) {
 	go func() {
 		DoWebSocketListAndWatch(context.Background(), "", nil, conn)
 
-		w2 := NewInstanceEventListWatcher("g", "s", func() (results []*proto.WatchInstanceResponse, rev int64) {
+		w2 := NewInstanceEventListWatcher("g", "s", func() (results []*registry.WatchInstanceResponse, rev int64) {
 			return
 		})
 		ws2 := &WebSocket{
@@ -109,11 +110,11 @@ func TestDoWebSocketListAndWatch(t *testing.T) {
 	w.OnMessage(nil)
 	w.OnMessage(&InstanceEvent{})
 
-	GetNotifyCenter().Publish(NewInstanceEvent("g", "s", 1, &proto.WatchInstanceResponse{
+	GetNotifyCenter().Publish(NewInstanceEvent("g", "s", 1, &registry.WatchInstanceResponse{
 		Response: proto.CreateResponse(proto.Response_SUCCESS, "ok"),
-		Action:   string(proto.EVT_CREATE),
-		Key:      &proto.MicroServiceKey{},
-		Instance: &proto.MicroServiceInstance{},
+		Action:   string(registry.EVT_CREATE),
+		Key:      &registry.MicroServiceKey{},
+		Instance: &registry.MicroServiceInstance{},
 	}))
 
 	<-time.After(time.Second)

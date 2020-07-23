@@ -17,16 +17,16 @@ package diagnose
 
 import (
 	model2 "github.com/apache/servicecomb-service-center/pkg/model"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"testing"
 )
 
 func TestAbstractCompareHolder_Compare(t *testing.T) {
 	services := model2.MicroserviceSlice{
-		model2.NewMicroservice(&model2.KV{Key: "1", Rev: 1, Value: &proto.MicroService{ServiceId: "1"}}), // greater
-		model2.NewMicroservice(&model2.KV{Key: "2", Rev: 1, Value: &proto.MicroService{ServiceId: "2"}}), // mismatch
-		model2.NewMicroservice(&model2.KV{Key: "4", Rev: 2, Value: &proto.MicroService{ServiceId: "4"}}), // pass
+		model2.NewMicroservice(&model2.KV{Key: "1", Rev: 1, Value: &registry.MicroService{ServiceId: "1"}}), // greater
+		model2.NewMicroservice(&model2.KV{Key: "2", Rev: 1, Value: &registry.MicroService{ServiceId: "2"}}), // mismatch
+		model2.NewMicroservice(&model2.KV{Key: "4", Rev: 2, Value: &registry.MicroService{ServiceId: "4"}}), // pass
 	}
 	kvs := []*mvccpb.KeyValue{
 		{Key: []byte("2"), ModRevision: 2, Value: []byte(`{"ServiceID":"22"}`)},

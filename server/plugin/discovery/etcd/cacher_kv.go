@@ -23,10 +23,10 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/backoff"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	rmodel "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	"github.com/coreos/etcd/mvcc/mvccpb"
@@ -163,14 +163,14 @@ func (c *KvCacher) handleWatcher(watcher Watcher) error {
 		rev := resp.Revision
 		evts := make([]discovery.KvEvent, 0, len(resp.Kvs))
 		for _, kv := range resp.Kvs {
-			evt := discovery.NewKvEvent(proto.EVT_CREATE, nil, kv.ModRevision)
+			evt := discovery.NewKvEvent(rmodel.EVT_CREATE, nil, kv.ModRevision)
 			switch {
 			case resp.Action == registry.Put && kv.Version == 1:
-				evt.Type, evt.KV = proto.EVT_CREATE, c.doParse(kv)
+				evt.Type, evt.KV = rmodel.EVT_CREATE, c.doParse(kv)
 			case resp.Action == registry.Put:
-				evt.Type, evt.KV = proto.EVT_UPDATE, c.doParse(kv)
+				evt.Type, evt.KV = rmodel.EVT_UPDATE, c.doParse(kv)
 			case resp.Action == registry.Delete:
-				evt.Type = proto.EVT_DELETE
+				evt.Type = rmodel.EVT_DELETE
 				if kv.Value == nil {
 					// it will happen in embed mode, and then need to get the cache value not unmarshal
 					evt.KV = c.cache.Get(util.BytesToStringWithNoCopy(kv.Key))
@@ -284,7 +284,7 @@ func (c *KvCacher) filterDelete(newStore map[string]*mvccpb.KeyValue,
 			i = 0
 		}
 
-		block[i] = discovery.NewKvEvent(proto.EVT_DELETE, v, rev)
+		block[i] = discovery.NewKvEvent(rmodel.EVT_DELETE, v, rev)
 		i++
 		return
 	})
@@ -311,7 +311,7 @@ func (c *KvCacher) filterCreateOrUpdate(newStore map[string]*mvccpb.KeyValue,
 			}
 
 			if kv := c.doParse(v); kv != nil {
-				block[i] = discovery.NewKvEvent(proto.EVT_CREATE, kv, rev)
+				block[i] = discovery.NewKvEvent(rmodel.EVT_CREATE, kv, rev)
 				i++
 			}
 			continue
@@ -328,7 +328,7 @@ func (c *KvCacher) filterCreateOrUpdate(newStore map[string]*mvccpb.KeyValue,
 		}
 
 		if kv := c.doParse(v); kv != nil {
-			block[i] = discovery.NewKvEvent(proto.EVT_UPDATE, kv, rev)
+			block[i] = discovery.NewKvEvent(rmodel.EVT_UPDATE, kv, rev)
 			i++
 		}
 	}
@@ -411,23 +411,23 @@ func (c *KvCacher) buildCache(evts []discovery.KvEvent) {
 		ok := prevKv != nil
 
 		switch evt.Type {
-		case proto.EVT_CREATE, proto.EVT_UPDATE:
+		case rmodel.EVT_CREATE, rmodel.EVT_UPDATE:
 			switch {
 			case init:
-				evt.Type = proto.EVT_INIT
-			case !ok && evt.Type != proto.EVT_CREATE:
+				evt.Type = rmodel.EVT_INIT
+			case !ok && evt.Type != rmodel.EVT_CREATE:
 				log.Warnf("unexpected %s event! it should be %s key %s",
-					evt.Type, proto.EVT_CREATE, key)
-				evt.Type = proto.EVT_CREATE
-			case ok && evt.Type != proto.EVT_UPDATE:
+					evt.Type, rmodel.EVT_CREATE, key)
+				evt.Type = rmodel.EVT_CREATE
+			case ok && evt.Type != rmodel.EVT_UPDATE:
 				log.Warnf("unexpected %s event! it should be %s key %s",
-					evt.Type, proto.EVT_UPDATE, key)
-				evt.Type = proto.EVT_UPDATE
+					evt.Type, rmodel.EVT_UPDATE, key)
+				evt.Type = rmodel.EVT_UPDATE
 			}
 
 			c.cache.Put(key, evt.KV)
 			evts[i] = evt
-		case proto.EVT_DELETE:
+		case rmodel.EVT_DELETE:
 			if !ok {
 				log.Warnf("unexpected %s event! key %s does not cache",
 					evt.Type, key)
