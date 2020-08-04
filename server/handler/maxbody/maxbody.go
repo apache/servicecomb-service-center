@@ -25,15 +25,11 @@ import (
 )
 
 const (
-	microserviceSize = 5 * 1024 // 5KB
-	instanceSize     = 5 * 1024 // 5KB
-	propertiesSize   = 3 * 1024 // 3KB
+	instanceSize   = 5 * 1024 // 5KB
+	propertiesSize = 3 * 1024 // 3KB
 )
 
 var resourcesMap = map[string]int64{
-	"/registry/v3/microservices":          microserviceSize,
-	"/v4/:project/registry/microservices": microserviceSize,
-
 	"/registry/v3/microservices/:serviceId/instances":          instanceSize,
 	"/v4/:project/registry/microservices/:serviceId/instances": instanceSize,
 
