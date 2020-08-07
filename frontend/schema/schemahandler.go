@@ -27,7 +27,18 @@ import (
 	"github.com/labstack/echo"
 )
 
-func SchemaHandleFunc(c echo.Context) (err error) {
+type Mux struct {
+	// Disable represents frontend proxy service api or not
+	Disable bool
+}
+
+func (m *Mux) SchemaHandleFunc(c echo.Context) (err error) {
+	if m.Disable {
+		c.Response().WriteHeader(http.StatusForbidden)
+		_, _ = c.Response().Write([]byte("schema is disabled"))
+		return
+	}
+
 	r := c.Request()
 
 	//	protocol:= r.Header.Get("X-InstanceProtocol")

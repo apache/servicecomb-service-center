@@ -139,6 +139,8 @@ func newInfo() proto.ServerInformation {
 			ServiceClearEnabled:  os.Getenv("SERVICE_CLEAR_ENABLED") == "true",
 			ServiceClearInterval: serviceClearInterval,
 			ServiceTTL:           serviceTTL,
+
+			SchemaDisable: os.Getenv("SCHEMA_DISABLE") == "true",
 		},
 	}
 }

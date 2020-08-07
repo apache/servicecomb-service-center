@@ -67,6 +67,9 @@ type ServerConfig struct {
 	ServiceTTL time.Duration `json:"serviceTTL"`
 	//CacheTTL is the ttl of cache
 	CacheTTL time.Duration `json:"cacheTTL"`
+
+	// if want disable Test Schema, SchemaDisable set true
+	SchemaDisable bool `json:"schemaDisable"`
 }
 
 type ServerInformation struct {

@@ -36,13 +36,25 @@ type SchemaService struct {
 }
 
 func (s *SchemaService) URLPatterns() []rest.Route {
-	return []rest.Route{
+	var r = []rest.Route{
 		{Method: rest.HTTPMethodGet, Path: "/v4/:project/registry/microservices/:serviceId/schemas/:schemaId", Func: s.GetSchemas},
-		{Method: rest.HTTPMethodPut, Path: "/v4/:project/registry/microservices/:serviceId/schemas/:schemaId", Func: s.ModifySchema},
 		{Method: rest.HTTPMethodDelete, Path: "/v4/:project/registry/microservices/:serviceId/schemas/:schemaId", Func: s.DeleteSchemas},
 		{Method: rest.HTTPMethodPost, Path: "/v4/:project/registry/microservices/:serviceId/schemas", Func: s.ModifySchemas},
 		{Method: rest.HTTPMethodGet, Path: "/v4/:project/registry/microservices/:serviceId/schemas", Func: s.GetAllSchemas},
 	}
+
+	if !core.ServerInfo.Config.SchemaDisable {
+		r = append(r, rest.Route{Method: rest.HTTPMethodPut, Path: "/v4/:project/registry/microservices/:serviceId/schemas/:schemaId", Func: s.ModifySchema})
+	} else {
+		r = append(r, rest.Route{Method: rest.HTTPMethodPut, Path: "/v4/:project/registry/microservices/:serviceId/schemas/:schemaId", Func: s.DisableSchema})
+	}
+
+	return r
+}
+
+func (s *SchemaService) DisableSchema(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusForbidden)
+	_, _ = w.Write([]byte("schema modify is disabled"))
 }
 
 func (s *SchemaService) GetSchemas(w http.ResponseWriter, r *http.Request) {
