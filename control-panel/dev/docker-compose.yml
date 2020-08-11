@@ -1,0 +1,16 @@
+version: '3'
+services:
+  frontend:
+    build:
+      context: ../cp-frontend
+      dockerfile: ./Dockerfile.dev
+    ports:
+      - '4200:4200'
+    volumes:
+      - '../cp-frontend:/app'
+  backend:
+    build:
+      context: ../cp-backend
+      dockerfile: ./Dockerfile
+    ports:
+      - '3000:3000'
