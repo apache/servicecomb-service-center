@@ -42,8 +42,7 @@ require (
 	github.com/jonboulle/clockwork v0.1.0 // indirect
 	github.com/karlseguin/ccache v2.0.3-0.20170217060820-3ba9789cfd2c+incompatible
 	github.com/karlseguin/expect v1.0.1 // indirect
-	github.com/labstack/echo v3.2.2-0.20180316170059-a5d81b8d4a62+incompatible
-	github.com/labstack/gommon v0.2.1 // indirect
+	github.com/labstack/echo/v4 v4.1.16
 	github.com/mattn/go-runewidth v0.0.3 // indirect
 	github.com/natefinch/lumberjack v0.0.0-20170531160350-a96e63847dc3
 	github.com/olekukonko/tablewriter v0.0.0-20180506121414-d4647c9c7a84
@@ -67,15 +66,13 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.4.0
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5 // indirect
-	github.com/valyala/bytebufferpool v1.0.0 // indirect
-	github.com/valyala/fasttemplate v0.0.0-20170224212429-dcecefd839c4 // indirect
 	github.com/widuu/gojson v0.0.0-20170212122013-7da9d2cd949b
 	github.com/wsxiaoys/terminal v0.0.0-20160513160801-0940f3fc43a0 // indirect
 	github.com/xiang90/probing v0.0.0-20160813154853-07dd2e8dfe18 // indirect
 	go.etcd.io/bbolt v1.3.4 // indirect
 	go.etcd.io/etcd v3.3.22+incompatible
 	go.uber.org/zap v1.10.0
-	golang.org/x/crypto v0.0.0-20190820162420-60c769a6c586
+	golang.org/x/crypto v0.0.0-20200221231518-2aa609cf4a9d
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4
 	google.golang.org/grpc v1.19.0
 	gopkg.in/cheggaaa/pb.v1 v1.0.28 // indirect

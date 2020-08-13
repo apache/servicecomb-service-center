@@ -2,30 +2,45 @@ package pusher
 
 import (
 	"encoding/json"
-	"github.com/alec-z/cp-backend/model"
+	"github.com/apache/servicecomb-service-center/control-panel/cp-backend/model"
+	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
-	"golang.org/x/net/websocket"
+	"net/http"
 )
+
 var Events chan model.ServerEvent
 
+var clients = make(map[*websocket.Conn]bool) // connected clients
+
+// Configure the upgrader
+var upgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
+}
+
 func Websocket(c echo.Context) error {
-	websocket.Handler(func(ws *websocket.Conn) {
-		defer ws.Close()
-		for {
-			event, ok := <- Events
-			if !ok {
-				c.Logger().Error("The main event chan is closed!")
-			}
-			b, err := json.Marshal(event)
-			if err != nil {
-				c.Logger().Error(err)
-				continue
-			}
-			err = websocket.Message.Send(ws, string(b))
-			if err != nil {
-				c.Logger().Error(err)
-			}
+	ws, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
+	if err != nil {
+		c.Logger().Error("upgrade errors:", err)
+	}
+	defer ws.Close()
+
+	clients[ws] = true
+	for {
+		event, ok := <-Events
+		if !ok {
+			c.Logger().Error("The main event chan is closed!")
 		}
-	}).ServeHTTP(c.Response(), c.Request())
-	return nil
+		b, err := json.Marshal(event)
+		if err != nil {
+			c.Logger().Error(err)
+			continue
+		}
+		err = ws.WriteMessage(1, b)
+		if err != nil {
+			c.Logger().Error(err)
+			delete(clients, ws)
+		}
+	}
 }

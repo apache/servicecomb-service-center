@@ -1,7 +1,7 @@
 package change_decter
 
 import (
-	"github.com/alec-z/cp-backend/model"
+	"github.com/apache/servicecomb-service-center/control-panel/cp-backend/model"
 	"time"
 )
 
@@ -17,7 +17,7 @@ func SampleWorker() {
 	for {
 		event := model.ServerEvent{
 			EventType: "ServiceChanged",
-			Content: "Service A is down, Service B is up",
+			Content:   "Service A is down, Service B is up",
 			CreatedAt: time.Now(),
 		}
 		time.Sleep(3 * time.Second)
