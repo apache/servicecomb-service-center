@@ -6,13 +6,14 @@ import (
 	"github.com/labstack/echo/v4"
 	"golang.org/x/net/websocket"
 )
+
 var Events chan model.ServerEvent
 
 func Websocket(c echo.Context) error {
 	websocket.Handler(func(ws *websocket.Conn) {
 		defer ws.Close()
 		for {
-			event, ok := <- Events
+			event, ok := <-Events
 			if !ok {
 				c.Logger().Error("The main event chan is closed!")
 			}

@@ -17,7 +17,7 @@ func SampleWorker() {
 	for {
 		event := model.ServerEvent{
 			EventType: "ServiceChanged",
-			Content: "Service A is down, Service B is up",
+			Content:   "Service A is down, Service B is up",
 			CreatedAt: time.Now(),
 		}
 		time.Sleep(3 * time.Second)

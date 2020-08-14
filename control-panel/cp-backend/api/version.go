@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func VersionGet(c echo.Context)  (err error) {
+func VersionGet(c echo.Context) (err error) {
 	version := model.Version{Name: "control-panel", Tag: "0.0.1"}
 	return c.JSON(http.StatusOK, version)
 }
