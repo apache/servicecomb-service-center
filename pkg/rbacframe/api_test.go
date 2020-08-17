@@ -49,8 +49,8 @@ func TestMustAuth(t *testing.T) {
 	rbacframe.Add2WhiteAPIList("/test")
 	assert.False(t, rbacframe.MustAuth("/test"))
 	assert.True(t, rbacframe.MustAuth("/auth"))
-	assert.False(t, rbacframe.MustAuth("/version"))
-	assert.False(t, rbacframe.MustAuth("/v4/a/registry/health"))
+	assert.True(t, rbacframe.MustAuth("/version"))
+	assert.True(t, rbacframe.MustAuth("/v4/a/registry/health"))
 }
 
 func TestAuthenticate(t *testing.T) {
