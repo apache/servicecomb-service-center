@@ -41,6 +41,7 @@ func Websocket(c echo.Context) error {
 		if err != nil {
 			c.Logger().Error(err)
 			delete(clients, ws)
+
 		}
 	}
 }
