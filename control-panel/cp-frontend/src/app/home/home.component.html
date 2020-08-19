@@ -11,6 +11,20 @@
     </mat-card-content>
   </mat-card>
 
+  <div class="micro-service-scope"  fxLayout="row" fxLayoutAlign="space-around">
+    <mat-card style="width:300px;" *ngFor="let ms of services">
+      <mat-card-header>
+        <mat-card-title>ServiceName: {{ ms.serviceName }}</mat-card-title>
+        <mat-card-subtitle>Version: {{ ms.version }}</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <p>
+          ServiceId: {{ms.serviceId}}
+        </p>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
   <mat-card style="margin: 10vh auto; width: 1000px;">
     <mat-card-header>
       <mat-card-title>Below text version is pushed by server through websocket</mat-card-title>
@@ -19,7 +33,7 @@
     <mat-card-content>
       <p><b>events from server:</b></p>
       <p *ngFor="let event of events">
-        {{event.eventType}} -- {{event.content}} -- {{event.createdAt}}
+        {{event.action}} -- {{event.key.appId}} -- {{event.key.serviceName}}
       </p>
     </mat-card-content>
   </mat-card>

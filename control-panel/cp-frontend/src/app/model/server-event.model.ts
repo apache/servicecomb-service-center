@@ -1,5 +1,4 @@
 export class ServerEventModel {
-  eventType: string;
-  content: string;
-  createdAt: Date;
+  action: string;
+  key: {tenant: string, appId: string, serviceName: string, version: string};
 }

@@ -2,13 +2,13 @@ package pusher
 
 import (
 	"encoding/json"
-	"github.com/apache/servicecomb-service-center/control-panel/cp-backend/model"
+	client "github.com/go-chassis/go-chassis/pkg/scclient"
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
 	"net/http"
 )
 
-var Events chan model.ServerEvent
+var Events chan *client.MicroServiceInstanceChangedEvent
 
 var clients = make(map[*websocket.Conn]bool) // connected clients
 
@@ -41,7 +41,6 @@ func Websocket(c echo.Context) error {
 		if err != nil {
 			c.Logger().Error(err)
 			delete(clients, ws)
-
 		}
 	}
 }

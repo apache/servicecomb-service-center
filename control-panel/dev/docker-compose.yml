@@ -14,3 +14,7 @@ services:
       dockerfile: ./Dockerfile
     ports:
       - '3000:3000'
+  servicecenter:
+    image: servicecomb/service-center
+    ports:
+      - '30100:30100'
