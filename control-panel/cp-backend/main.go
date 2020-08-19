@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/alec-z/cp-backend/api"
-	"github.com/alec-z/cp-backend/change_decter"
-	"github.com/alec-z/cp-backend/pusher"
+	"github.com/apache/servicecomb-service-center/control-panel/cp-backend/api"
+	"github.com/apache/servicecomb-service-center/control-panel/cp-backend/change_decter"
+	"github.com/apache/servicecomb-service-center/control-panel/cp-backend/pusher"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )

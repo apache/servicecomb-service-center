@@ -23,8 +23,8 @@ import (
 	"path/filepath"
 
 	"github.com/apache/servicecomb-service-center/frontend/schema"
-	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 func Serve(c Config) {

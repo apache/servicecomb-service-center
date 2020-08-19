@@ -1,7 +1,7 @@
 package change_decter
 
 import (
-	"github.com/alec-z/cp-backend/model"
+	"github.com/apache/servicecomb-service-center/control-panel/cp-backend/model"
 	"time"
 )
 
