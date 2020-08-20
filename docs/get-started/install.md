@@ -67,7 +67,7 @@ you can download dependencies directly using command `go mod`. Please follow bel
 download all the dependency.
 
 ```sh
-# greater then go1.11
+# greater than go1.11
 GO111MODULE=on go mod download
 GO111MODULE=on go mod vendor
 ```
