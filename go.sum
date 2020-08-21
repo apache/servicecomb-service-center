@@ -27,6 +27,7 @@ github.com/Shopify/toxiproxy v2.1.4+incompatible/go.mod h1:OXgGpZ6Cli1/URJOF1DMx
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
 github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf/go.mod h1:ybxpYRFXyAe+OPACYpWeL0wqObRcbAqCMya13uyzqw0=
 github.com/apache/servicecomb-kie v0.1.0/go.mod h1:UbinHy4mdkrTqM71CmmDtc/xGyq46mud04OgprdETkM=
+github.com/apache/servicecomb-service-center v0.0.0-20200723031815-784c3533a8f2/go.mod h1:jiw0zTHphl1PVLX+LgftTSebaECo7XX6qwCNUONSMvE=
 github.com/apache/thrift v0.0.0-20180125231006-3d556248a8b9 h1:ymi1nHra1RZXqjg5xvka4YVyK+3uKPk2B9HUlPRIiBc=
 github.com/apache/thrift v0.0.0-20180125231006-3d556248a8b9/go.mod h1:cp2SuWMxlEZw2r+iP2GNCdIi4C1qmUzdZFSVb+bacwQ=
 github.com/armon/circbuf v0.0.0-20150827004946-bbbad097214e/go.mod h1:3U/XgcO3hCbHZ8TKRvWD2dDTCfh9M9ya+I9JpbB7O8o=
@@ -128,6 +129,7 @@ github.com/go-chassis/go-chassis v0.0.0-20200709095636-48e710908928 h1:y464C11Tr
 github.com/go-chassis/go-chassis v0.0.0-20200709095636-48e710908928/go.mod h1:S7RbnpeTWBqZ4+UxGAs05a6qdhDyWKpTNuil8FYNiME=
 github.com/go-chassis/go-chassis v0.0.0-20200716073336-4183d5dd1246 h1:yxtoclu0QclYtwXxo4AYTCPJsYFM/Xo2/5C1HLRnzqg=
 github.com/go-chassis/go-chassis v0.0.0-20200716073336-4183d5dd1246/go.mod h1:S7RbnpeTWBqZ4+UxGAs05a6qdhDyWKpTNuil8FYNiME=
+github.com/go-chassis/go-chassis v0.0.0-20200820073047-a1c634b7bdd1/go.mod h1:nMWwWrgDEyDKnMQLE5Gt65RdwbgrQg5amt4BqNFY09g=
 github.com/go-chassis/go-chassis v1.8.1/go.mod h1:vI0rU2FNAtGi6owfYKXBVj6cvq633/n+8bqbsVfib7E=
 github.com/go-chassis/go-chassis v1.8.2-0.20200620015240-3621ca234c7c h1:Bu4xdnLMGYmupX5E6dV34fFOvEo3p0trcKQsThqyXAA=
 github.com/go-chassis/go-chassis v1.8.2-0.20200620015240-3621ca234c7c/go.mod h1:eQpXV6jY4aWolimDvC5jYzwYlxhlyO3fByfrXTbFN/g=
