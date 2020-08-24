@@ -21,10 +21,10 @@ auth_plugin = buildin # must set to buildin
 ```
 3.root account
 
-before you start server, you need to set env to set your root account password.  
+before you start server, you need to set env to set your root account password. Please note that password must conform to the [following set of rules](https://github.com/apache/servicecomb-service-center/blob/63722fadd511c26285e787eb2b4be516eab10b94/pkg/validate/matcher.go#L25): have more than 8 characters, have at least one upper alpha, have at least one lower alpha, have at least one digit and have at lease one special character.
 
 ```sh
-export SC_INIT_ROOT_PASSWORD=rootpwd
+export SC_INIT_ROOT_PASSWORD='P4$$word'
 ```
 at the first time service center cluster init, it will use this password to setup rbac module. 
 you can revoke password by rest API after cluster started. but you can not use this env to revoke password after cluster started.
@@ -39,7 +39,7 @@ token is the only credential to access rest API, before you access any API, you 
 curl -X POST \
   http://127.0.0.1:30100/v4/token \
   -d '{"name":"root",
-"password":"rootpwd"}'
+"password":"P4$$word"}'
 ```
 will return a token, token will expired after 30m
 ```json
@@ -65,7 +65,7 @@ curl -X PUT \
   http://127.0.0.1:30100/v4/account/root/password \
   -H 'Authorization: Bearer {your_token}' \
   -d '{
-	"currentPassword":"rootpwd",
+	"currentPassword":"P4$$word",
 	"password":"123"
 }'
 ```
