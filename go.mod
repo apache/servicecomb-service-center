@@ -11,7 +11,7 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-chassis/foundation v0.1.1-0.20200825060850-b16bf420f7b3
 	github.com/go-chassis/go-archaius v1.3.2
-	github.com/go-chassis/go-chassis v2.0.0+incompatible
+	github.com/go-chassis/go-chassis v0.0.0-20200826064053-d90be848aa10
 	github.com/go-chassis/paas-lager v1.1.1
 	github.com/gogo/protobuf v1.2.2-0.20190723190241-65acae22fc9d
 	github.com/golang/protobuf v1.3.2
