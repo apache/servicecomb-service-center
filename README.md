@@ -107,19 +107,14 @@ you can download dependencies directly using command `go mod`. Please follow bel
 download all the dependency.
 
 ```sh
-# greater then go1.11
 GO111MODULE=on go mod download
 GO111MODULE=on go mod vendor
 ```
-
 Build the Service-Center
-
 ```sh
 go build -o service-center github.com/apache/servicecomb-service-center/cmd/scserver
 ```
-
 First, you need to run a etcd(version: 3.x) as a database service and then modify the etcd IP and port in the Service Center configuration file (./etc/conf/app.conf : manager_cluster).
-
 ```sh
 wget https://github.com/coreos/etcd/releases/download/v3.1.8/etcd-v3.1.8-linux-amd64.tar.gz
 tar -xvf etcd-v3.1.8-linux-amd64.tar.gz
@@ -133,7 +128,11 @@ cp -r ./etc/conf .
 This will bring up Service Center listening on ip/port 127.0.0.1:30100 for service communication.If you want to change the listening ip/port, you can modify it in the Service Center configuration file (./conf/app.conf : httpaddr,httpport).
 
 [github-release]: https://github.com/servicecomb/service-center/releases/
-
+### Build docker image
+```sh
+sudo bash scripts/docker/build-image/build.sh
+```
+it builds a image servicecomb/service-center
 ### Running Frontend using the Release
 
 You can download our latest release from ServiceComb Website and then untar it and run start-frontend.sh/start-frontend.bat.

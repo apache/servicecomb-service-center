@@ -30,8 +30,25 @@ PACKAGE_PREFIX=apache-servicecomb-service-center
 
 PACKAGE_DIR=$SCRIPT_DIR/../$PACKAGE_PREFIX-$PACKAGE-linux-amd64
 
-source ${SCRIPT_DIR}/../../build/tools.sh
+docker_builder_pattern() {
+    local dockerfile_dir=${1:-"."}
+    local output=${2:-"."}
+    local builder_name=servicecomb/service-center:build
+    local builder_path=/go/src/github.com/apache/servicecomb-service-center
+    local app=$PACKAGE_PREFIX-$PACKAGE-linux-amd64
 
+    set +e
+
+    docker rmi $builder_name
+
+    set -e
+
+    cd $dockerfile_dir
+    docker build -t $builder_name . -f Dockerfile.build
+    docker create --name builder $builder_name
+    docker cp builder:$builder_path/$app $output
+    docker rm -f builder
+}
 if [ ! -d $PACKAGE_DIR ]; then
     docker_builder_pattern $BASE_DIR $SCRIPT_DIR/../
 fi
