@@ -16,7 +16,7 @@
 # limitations under the License.
 
 set -e
-
+export GOPROXY=https://goproxy.io
 export GOOS=${1:-"linux"}
 export GOARCH=${4:-"amd64"}
 export CGO_ENABLED=${CGO_ENABLED:-0} # prevent to compile cgo file

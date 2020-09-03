@@ -13,10 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM golang:1.11.2
+FROM golang:1.14
 
 WORKDIR /go/src/github.com/apache/servicecomb-service-center
 
 COPY . .
-
-RUN bash -x scripts/build/local.sh linux 1.1.0 latest
+RUN export GOPROXY=https://goproxy.io
+RUN bash -x scripts/build/local.sh linux 1.4.0 latest
