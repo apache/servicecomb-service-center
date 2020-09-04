@@ -565,7 +565,6 @@ func TestEtcdClient_HealthCheck(t *testing.T) {
 
 	etcdc.Endpoints = []string{endpoint}
 
-	etcdc.Close()
 	ctx, _ = context.WithTimeout(context.Background(), 1*time.Second)
 	go etcdc.healthCheckLoop(ctx)
 	for {
