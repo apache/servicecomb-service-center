@@ -300,6 +300,28 @@ type DeleteServiceTagsRequest struct {
 	Keys      []string `protobuf:"bytes,2,rep,name=keys" json:"keys,omitempty"`
 }
 
+type SetSuperConsumerRequest struct {
+	ServiceId     string           `protobuf:"bytes,1,opt,name=serviceId" json:"serviceId,omitempty"`
+	SuperConsumer *MicroServiceKey `protobuf:"bytes,2,opt,name=superConsumer" json:"superConsumer,omitempty"`
+}
+
+type SetSuperConsumerResponse struct {
+	Response *Response `protobuf:"bytes,1,opt,name=response" json:"response,omitempty"`
+}
+
+type UnsetSuperConsumerRequest struct {
+	ServiceId     string           `protobuf:"bytes,1,opt,name=serviceId" json:"serviceId,omitempty"`
+	SuperConsumer *MicroServiceKey `protobuf:"bytes,2,opt,name=superConsumer" json:"superConsumer,omitempty"`
+}
+
+type UnsetSuperConsumerResponse struct {
+	Response *Response `protobuf:"bytes,1,opt,name=response" json:"response,omitempty"`
+}
+
+type SuperConsumer struct {
+	SuperConsumer *MicroServiceKey `protobuf:"bytes,1,opt,name=superConsumer" json:"superConsumer,omitempty"`
+}
+
 type DeleteServiceTagsResponse struct {
 	Response *Response `protobuf:"bytes,1,opt,name=response" json:"response,omitempty"`
 }

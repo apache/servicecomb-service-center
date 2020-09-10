@@ -30,6 +30,8 @@ type ServiceCtrlServer interface {
 	GetOne(context.Context, *registry.GetServiceRequest) (*registry.GetServiceResponse, error)
 	GetServices(context.Context, *registry.GetServicesRequest) (*registry.GetServicesResponse, error)
 	UpdateProperties(context.Context, *registry.UpdateServicePropsRequest) (*registry.UpdateServicePropsResponse, error)
+	SetSuperConsumer(context.Context, *registry.SetSuperConsumerRequest) (*registry.SetSuperConsumerResponse, error)
+	UnsetSuperConsumer(context.Context, *registry.UnsetSuperConsumerRequest) (*registry.UnsetSuperConsumerResponse, error)
 	AddRule(context.Context, *registry.AddServiceRulesRequest) (*registry.AddServiceRulesResponse, error)
 	GetRule(context.Context, *registry.GetServiceRulesRequest) (*registry.GetServiceRulesResponse, error)
 	UpdateRule(context.Context, *registry.UpdateServiceRuleRequest) (*registry.UpdateServiceRuleResponse, error)

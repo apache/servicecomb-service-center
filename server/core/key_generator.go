@@ -46,6 +46,7 @@ const (
 	DepsQueueUUID            = "0"
 	DepsConsumer             = "c"
 	DepsProvider             = "p"
+	SuperConsumer            = "super-queue"
 )
 
 func GetRootKey() string {
@@ -289,6 +290,22 @@ func GenerateConsumerDependencyQueueKey(domainProject, consumerID, uuid string) 
 		GetServiceDependencyQueueRootKey(domainProject),
 		consumerID,
 		uuid,
+	}, SPLIT)
+}
+
+func GetSuperWatchConsumerRootKey(domainProject string) string {
+	return util.StringJoin([]string{
+		GetRootKey(),
+		RegistryServiceKey,
+		SuperConsumer,
+		domainProject,
+	}, SPLIT)
+}
+
+func GenerateSuperWatchConsumerDependencyQueueKey(domainProject, consumerID string) string {
+	return util.StringJoin([]string{
+		GetSuperWatchConsumerRootKey(domainProject),
+		consumerID,
 	}, SPLIT)
 }
 

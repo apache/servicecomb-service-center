@@ -68,12 +68,61 @@ func (s *MicroServiceService) Create(ctx context.Context, in *pb.CreateServiceRe
 		return rsp, err
 	}
 
+	//add dependency to super consumer
+	err = addSuperConsumerDependencyToService(ctx, in)
+	if err != nil {
+		log.Errorf(err, "add micro-service as super watch consumer to watch all services failed")
+	}
+
 	if !s.isCreateServiceEx(in) {
 		return rsp, err
 	}
 
 	//create tag,rule,instances
 	return s.CreateServiceEx(ctx, in, rsp.ServiceId)
+}
+
+func addSuperConsumerDependencyToService(ctx context.Context, in *pb.CreateServiceRequest) error {
+	domainProject := util.ParseDomainProject(ctx)
+	key := apt.GetSuperWatchConsumerRootKey(domainProject) + "/"
+	opts := serviceUtil.FromContext(ctx)
+	superOpts := append(opts, registry.WithStrKey(key), registry.WithPrefix())
+
+	resp, err := backend.Store().SuperConsumer().Search(ctx, superOpts...)
+	if err != nil {
+		return err
+	}
+
+	// super consumer not exist
+	if len(resp.Kvs) == 0 {
+		return nil
+	}
+
+	service := in.Service
+	serviceUtil.SetServiceDefaultValue(service)
+	serviceKey := &pb.MicroServiceKey{
+		Tenant:      domainProject,
+		Environment: service.Environment,
+		AppId:       service.AppId,
+		ServiceName: service.ServiceName,
+		Alias:       service.Alias,
+		Version:     service.Version,
+	}
+
+	mc := make([]*pb.ConsumerDependency, 0, len(resp.Kvs))
+	for _, kv := range resp.Kvs {
+		superConsumer := kv.Value.(*pb.SuperConsumer)
+		mc = append(mc, &pb.ConsumerDependency{
+			Consumer:  superConsumer.SuperConsumer,
+			Providers: []*pb.MicroServiceKey{serviceKey},
+		})
+	}
+
+	_, _ = core.ServiceAPI.AddDependenciesForMicroServices(ctx, &pb.AddDependenciesRequest{
+		Dependencies: mc,
+	})
+
+	return nil
 }
 
 func (s *MicroServiceService) CreateServicePri(ctx context.Context, in *pb.CreateServiceRequest) (*pb.CreateServiceResponse, error) {
@@ -335,6 +384,10 @@ func (s *MicroServiceService) DeleteServicePri(ctx context.Context, serviceID st
 	opts = append(opts, registry.OpDel(
 		registry.WithStrKey(apt.GenerateInstanceLeaseKey(domainProject, serviceID, "")),
 		registry.WithPrefix()))
+
+	//删除super consumer
+	opts = append(opts, registry.OpDel(
+		registry.WithStrKey(apt.GenerateSuperWatchConsumerDependencyQueueKey(domainProject, serviceID))))
 
 	//删除实例
 	err = serviceUtil.DeleteServiceAllInstances(ctx, serviceID)
@@ -778,4 +831,165 @@ func (s *MicroServiceService) isCreateServiceEx(in *pb.CreateServiceRequest) boo
 		return false
 	}
 	return true
+}
+
+func (s *MicroServiceService) SetSuperConsumer(ctx context.Context, in *pb.SetSuperConsumerRequest) (*pb.SetSuperConsumerResponse, error) {
+	domainProject := util.ParseDomainProject(ctx)
+	service, err := serviceUtil.GetService(ctx, domainProject, in.ServiceId)
+	if service == nil || err != nil {
+		log.Errorf(err, "service [%s] does not exist", in.ServiceId)
+		return &pb.SetSuperConsumerResponse{Response: proto.CreateResponse(scerr.ErrServiceNotExists, "Invalid 'serviceID' in request url.")}, nil
+	}
+
+	superConsumer := &pb.MicroServiceKey{
+		Tenant:      domainProject,
+		AppId:       service.AppId,
+		ServiceName: service.ServiceName,
+		Version:     service.Version,
+		Environment: service.Environment,
+	}
+	superConsumerFlag := util.StringJoin([]string{service.Environment, service.AppId, service.ServiceName, service.Version}, "/")
+
+	b, err := json.Marshal(pb.SuperConsumer{SuperConsumer: superConsumer})
+	if err != nil {
+		log.Errorf(err, "put request into super consumer queue failed, marshal consumer[%s] dependency failed",
+			superConsumerFlag)
+		return &pb.SetSuperConsumerResponse{
+			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+		}, err
+	}
+
+	superConsumerKey := apt.GenerateSuperWatchConsumerDependencyQueueKey(domainProject, in.ServiceId)
+	superOpt := []registry.PluginOp{
+		registry.OpPut(registry.WithStrKey(superConsumerKey), registry.WithValue(b)),
+	}
+
+	resp, err := backend.Registry().TxnWithCmp(ctx, superOpt,
+		[]registry.CompareOp{registry.OpCmp(
+			registry.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, in.ServiceId))),
+			registry.CmpNotEqual, 0)},
+		nil)
+
+	if err != nil {
+		log.Errorf(err, "register super watch micro-service[%s] failed", superConsumerFlag)
+		return &pb.SetSuperConsumerResponse{
+			Response: proto.CreateResponse(scerr.ErrUnavailableBackend, err.Error()),
+		}, err
+	}
+
+	if !resp.Succeeded {
+		log.Errorf(err, "save super consumer service [%s] failed", in.ServiceId)
+		return &pb.SetSuperConsumerResponse{
+			Response: proto.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+		}, nil
+	}
+
+	// 超级观察者关注所有服务
+	dependencyInfo := &pb.ConsumerDependency{
+		Consumer: superConsumer,
+		Providers: []*pb.MicroServiceKey{
+			{
+				ServiceName: "*",
+			},
+		},
+		Override: true,
+	}
+
+	data, err := json.Marshal(dependencyInfo)
+	if err != nil {
+		log.Errorf(err, "put request into dependency queue failed, marshal consumer[%s] dependency failed", superConsumerFlag)
+		return &pb.SetSuperConsumerResponse{
+			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+		}, err
+	}
+
+	key := apt.GenerateConsumerDependencyQueueKey(domainProject, in.ServiceId, apt.DepsQueueUUID)
+	// 覆盖式修改服务间的依赖关系
+	opts := []registry.PluginOp{
+		registry.OpPut(registry.WithStrKey(key), registry.WithValue(data)),
+	}
+
+	err = backend.BatchCommit(ctx, opts)
+	if err != nil {
+		log.Errorf(err, "put request into dependency queue failed, override: %v", dependencyInfo)
+		return &pb.SetSuperConsumerResponse{
+			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+		}, err
+	}
+	return &pb.SetSuperConsumerResponse{
+		Response: proto.CreateResponse(proto.Response_SUCCESS, "Create super consumer dependency successfully."),
+	}, nil
+}
+
+func (s *MicroServiceService) UnsetSuperConsumer(ctx context.Context, in *pb.UnsetSuperConsumerRequest) (*pb.UnsetSuperConsumerResponse, error) {
+	domainProject := util.ParseDomainProject(ctx)
+	service, err := serviceUtil.GetService(ctx, domainProject, in.ServiceId)
+	if service == nil || err != nil {
+		log.Errorf(err, "service [%s] does not exist", in.ServiceId)
+		return &pb.UnsetSuperConsumerResponse{Response: proto.CreateResponse(scerr.ErrServiceNotExists, "Invalid 'serviceID' in request url.")}, nil
+	}
+
+	superConsumer := &pb.MicroServiceKey{
+		Tenant:      domainProject,
+		AppId:       service.AppId,
+		ServiceName: service.ServiceName,
+		Version:     service.Version,
+		Environment: service.Environment,
+	}
+	superConsumerFlag := util.StringJoin([]string{service.Environment, service.AppId, service.ServiceName, service.Version}, "/")
+
+	opt := []registry.PluginOp{
+		registry.OpDel(registry.WithStrKey(apt.GenerateSuperWatchConsumerDependencyQueueKey(domainProject, in.ServiceId))),
+	}
+
+	resp, err := backend.Registry().TxnWithCmp(ctx, opt,
+		[]registry.CompareOp{registry.OpCmp(
+			registry.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, in.ServiceId))),
+			registry.CmpNotEqual, 0)},
+		nil)
+
+	if err != nil {
+		log.Errorf(err, "delete super consumer service[%s] failed", superConsumerFlag)
+		return &pb.UnsetSuperConsumerResponse{
+			Response: proto.CreateResponse(scerr.ErrUnavailableBackend, err.Error()),
+		}, err
+	}
+
+	if !resp.Succeeded {
+		log.Errorf(err, "delete super consumer service [%s] failed", in.ServiceId)
+		return &pb.UnsetSuperConsumerResponse{
+			Response: proto.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+		}, nil
+	}
+
+	// 删除所有依赖
+	dependencyInfo := &pb.ConsumerDependency{
+		Consumer:  superConsumer,
+		Providers: nil,
+		Override:  true,
+	}
+
+	data, err := json.Marshal(dependencyInfo)
+	if err != nil {
+		log.Errorf(err, "put request into super consumer dependency queue failed, marshal consumer[%s] dependency failed", superConsumerFlag)
+		return &pb.UnsetSuperConsumerResponse{
+			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+		}, err
+	}
+
+	key := apt.GenerateConsumerDependencyQueueKey(domainProject, in.ServiceId, apt.DepsQueueUUID)
+	opts := []registry.PluginOp{
+		registry.OpPut(registry.WithStrKey(key), registry.WithValue(data)),
+	}
+
+	err = backend.BatchCommit(ctx, opts)
+	if err != nil {
+		log.Errorf(err, "put request into dependency queue failed, override: %t, %v", dependencyInfo.Override, dependencyInfo)
+		return &pb.UnsetSuperConsumerResponse{
+			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+		}, err
+	}
+	return &pb.UnsetSuperConsumerResponse{
+		Response: proto.CreateResponse(proto.Response_SUCCESS, "Unset super consumer dependency successfully."),
+	}, nil
 }

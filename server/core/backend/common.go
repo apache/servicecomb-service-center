@@ -46,6 +46,7 @@ var (
 	SchemaSummary   discovery.Type
 	INSTANCE        discovery.Type
 	LEASE           discovery.Type
+	SuperConsumer   discovery.Type
 )
 
 func registerInnerTypes() {
@@ -92,4 +93,7 @@ func registerInnerTypes() {
 	PROJECT = Store().MustInstall(NewAddOn("PROJECT",
 		discovery.Configure().WithPrefix(core.GetProjectRootKey("")).
 			WithInitSize(100).WithParser(proto.StringParser)))
+	SuperConsumer = Store().MustInstall(NewAddOn("SUPER_CONSUMER",
+		discovery.Configure().WithPrefix(core.GetSuperWatchConsumerRootKey("")).
+			WithInitSize(100).WithParser(proto.SuperConsumerParser)))
 }

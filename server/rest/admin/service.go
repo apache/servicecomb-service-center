@@ -124,6 +124,7 @@ func (service *Service) dumpAllCache(ctx context.Context, cache *model.Cache) {
 		Do(func(_ context.Context) { setValue(backend.Store().DependencyRule(), &cache.DependencyRules) }).
 		Do(func(_ context.Context) { setValue(backend.Store().SchemaSummary(), &cache.Summaries) }).
 		Do(func(_ context.Context) { setValue(backend.Store().Instance(), &cache.Instances) }).
+		Do(func(_ context.Context) { setValue(backend.Store().SuperConsumer(), &cache.SuperConsumers) }).
 		Done()
 }
 

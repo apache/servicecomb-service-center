@@ -805,6 +805,70 @@ paths:
           description: 内部错误
           schema:
             $ref: '#/definitions/Error'
+  /v4/{project}/registry/microservices/{serviceId}/observer:
+    put:
+      description: |
+        添加超级观察者，关注所有服务。
+      operationId: setSuperConsumer
+      parameters:
+        - name: x-domain-name
+          in: header
+          type: string
+          default: default
+        - name: project
+          in: path
+          required: true
+          type: string
+        - name: serviceId
+          in: path
+          description: 微服务唯一标识。
+          required: true
+          type: string
+      tags:
+        - microservices
+      responses:
+        200:
+          description: 添加成功
+        400:
+          description: 错误的请求
+          schema:
+            $ref: '#/definitions/Error'
+        500:
+          description: 内部错误
+          schema:
+            $ref: '#/definitions/Error'
+  /v4/{project}/registry/microservices/{serviceId}/unsetobserver:
+    put:
+      description: |
+        取消超级观察者。
+      operationId: unsetSuperConsumer
+      parameters:
+        - name: x-domain-name
+          in: header
+          type: string
+          default: default
+        - name: project
+          in: path
+          required: true
+          type: string
+        - name: serviceId
+          in: path
+          description: 微服务唯一标识。
+          required: true
+          type: string
+      tags:
+        - microservices
+      responses:
+        200:
+          description: 取消成功
+        400:
+          description: 错误的请求
+          schema:
+            $ref: '#/definitions/Error'
+        500:
+          description: 内部错误
+          schema:
+            $ref: '#/definitions/Error'
   /v4/{project}/registry/microservices/{consumerId}/providers:
     get:
       description: |

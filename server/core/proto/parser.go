@@ -40,6 +40,7 @@ var (
 	newRule            CreateValueFunc = func() interface{} { return new(registry.ServiceRule) }
 	newDependencyRule  CreateValueFunc = func() interface{} { return new(registry.MicroServiceDependency) }
 	newDependencyQueue CreateValueFunc = func() interface{} { return new(registry.ConsumerDependency) }
+	newSuperConsumer   CreateValueFunc = func() interface{} { return new(registry.SuperConsumer) }
 )
 
 // parse
@@ -107,6 +108,7 @@ var (
 	RuleParser            = &CommonParser{newRule, JsonUnmarshal}
 	DependencyRuleParser  = &CommonParser{newDependencyRule, JsonUnmarshal}
 	DependencyQueueParser = &CommonParser{newDependencyQueue, JsonUnmarshal}
+	SuperConsumerParser   = &CommonParser{newSuperConsumer, JsonUnmarshal}
 )
 
 func check(src []byte, dist interface{}) error {

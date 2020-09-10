@@ -39,6 +39,7 @@ type MicroServiceRuleIndexSlice []*MicroServiceRuleIndex
 type MicroServiceDependencyRuleSlice []*MicroServiceDependencyRule
 type SummarySlice []*Summary
 type InstanceSlice []*Instance
+type SuperConsumerSlice []*SuperConsumer
 
 func (s *MicroserviceSlice) ForEach(f func(i int, v *KV) bool) {
 	for i, v := range *s {
@@ -112,6 +113,14 @@ func (s *InstanceSlice) ForEach(f func(i int, v *KV) bool) {
 		}
 	}
 }
+func (s *SuperConsumerSlice) ForEach(f func(i int, v *KV) bool) {
+	for i, v := range *s {
+		v.KV.Value = v.Value
+		if !f(i, v.KV) {
+			break
+		}
+	}
+}
 
 func (s *MicroserviceSlice) SetValue(v *KV)          { *s = append(*s, NewMicroservice(v)) }
 func (s *MicroserviceIndexSlice) SetValue(v *KV)     { *s = append(*s, NewMicroserviceIndex(v)) }
@@ -122,8 +131,9 @@ func (s *MicroServiceRuleSlice) SetValue(v *KV)      { *s = append(*s, NewMicroS
 func (s *MicroServiceDependencyRuleSlice) SetValue(v *KV) {
 	*s = append(*s, NewMicroServiceDependencyRule(v))
 }
-func (s *SummarySlice) SetValue(v *KV)  { *s = append(*s, NewSummary(v)) }
-func (s *InstanceSlice) SetValue(v *KV) { *s = append(*s, NewInstance(v)) }
+func (s *SummarySlice) SetValue(v *KV)       { *s = append(*s, NewSummary(v)) }
+func (s *InstanceSlice) SetValue(v *KV)      { *s = append(*s, NewInstance(v)) }
+func (s *SuperConsumerSlice) SetValue(v *KV) { *s = append(*s, NewSuperConsumer(v)) }
 
 func NewMicroservice(kv *KV) *Microservice {
 	return &Microservice{kv, kv.Value.(*registry.MicroService)}
@@ -148,6 +158,9 @@ func NewSummary(kv *KV) *Summary { return &Summary{kv, kv.Value.(string)} }
 func NewInstance(kv *KV) *Instance {
 	return &Instance{kv, kv.Value.(*registry.MicroServiceInstance)}
 }
+func NewSuperConsumer(kv *KV) *SuperConsumer {
+	return &SuperConsumer{kv, kv.Value.(*registry.SuperConsumer)}
+}
 
 type Cache struct {
 	Microservices   MicroserviceSlice               `json:"services,omitempty"`
@@ -159,6 +172,7 @@ type Cache struct {
 	DependencyRules MicroServiceDependencyRuleSlice `json:"dependencyRules,omitempty"`
 	Summaries       SummarySlice                    `json:"summaries,omitempty"`
 	Instances       InstanceSlice                   `json:"instances,omitempty"`
+	SuperConsumers  SuperConsumerSlice              `json:"superConsumers,omitempty"`
 }
 
 type KV struct {
@@ -210,6 +224,11 @@ type Tag struct {
 type Instance struct {
 	*KV
 	Value *registry.MicroServiceInstance `json:"value,omitempty"`
+}
+
+type SuperConsumer struct {
+	*KV
+	Value *registry.SuperConsumer `json:"value,omitempty"`
 }
 
 type DumpRequest struct {

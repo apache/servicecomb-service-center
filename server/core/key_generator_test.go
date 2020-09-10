@@ -76,3 +76,10 @@ func TestGenerateDependencyRuleKey(t *testing.T) {
 		t.Fatalf("TestGenerateDependencyRuleKey failed")
 	}
 }
+
+func TestGenerateSuperWatchConsumerDependencyQueueKey(t *testing.T) {
+	k := GenerateSuperWatchConsumerDependencyQueueKey("a", "1")
+	if k != "/cse-sr/ms/super-queue/a/1" {
+		t.Fatalf("TestGenerateSuperWatchConsumerDependencyQueueKey failed")
+	}
+}

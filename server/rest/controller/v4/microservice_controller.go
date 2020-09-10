@@ -43,6 +43,8 @@ func (s *MicroServiceService) URLPatterns() []rest.Route {
 		{Method: rest.HTTPMethodGet, Path: "/v4/:project/registry/microservices/:serviceId", Func: s.GetServiceOne},
 		{Method: rest.HTTPMethodPost, Path: "/v4/:project/registry/microservices", Func: s.Register},
 		{Method: rest.HTTPMethodPut, Path: "/v4/:project/registry/microservices/:serviceId/properties", Func: s.Update},
+		{Method: rest.HTTPMethodPut, Path: "/v4/:project/registry/microservices/:serviceId/observer", Func: s.SetSuperWatchConsumer},
+		{Method: rest.HTTPMethodPut, Path: "/v4/:project/registry/microservices/:serviceId/unsetobserver", Func: s.UnsetSuperWatchConsumer},
 		{Method: rest.HTTPMethodDelete, Path: "/v4/:project/registry/microservices/:serviceId", Func: s.Unregister},
 		{Method: rest.HTTPMethodDelete, Path: "/v4/:project/registry/microservices", Func: s.UnregisterServices},
 	}
@@ -180,4 +182,30 @@ func (s *MicroServiceService) UnregisterServices(w http.ResponseWriter, r *http.
 	respInternal := resp.Response
 	resp.Response = nil
 	controller.WriteResponse(w, respInternal, resp)
+}
+
+func (s *MicroServiceService) SetSuperWatchConsumer(w http.ResponseWriter, r *http.Request) {
+	serviceId := r.URL.Query().Get(":serviceId")
+	request := &pb.SetSuperConsumerRequest{
+		ServiceId: serviceId,
+	}
+
+	resp, err := core.ServiceAPI.SetSuperConsumer(r.Context(), request)
+	if err != nil {
+		controller.WriteError(w, scerr.ErrInternal, err.Error())
+	}
+	controller.WriteResponse(w, resp.Response, nil)
+}
+
+func (s *MicroServiceService) UnsetSuperWatchConsumer(w http.ResponseWriter, r *http.Request) {
+	serviceId := r.URL.Query().Get(":serviceId")
+	request := &pb.UnsetSuperConsumerRequest{
+		ServiceId: serviceId,
+	}
+
+	resp, err := core.ServiceAPI.UnsetSuperConsumer(r.Context(), request)
+	if err != nil {
+		controller.WriteError(w, scerr.ErrInternal, err.Error())
+	}
+	controller.WriteResponse(w, resp.Response, nil)
 }
