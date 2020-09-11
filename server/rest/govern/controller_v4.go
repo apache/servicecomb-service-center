@@ -67,7 +67,7 @@ func (governService *ResourceV4) GetGraph(w http.ResponseWriter, r *http.Request
 	}
 	nodes := make([]Node, 0, len(services))
 	for _, service := range services {
-		if !withShared && core.IsShared(proto.MicroServiceToKey(domainProject, service)) {
+		if governService.isSkipped(withShared, domainProject, service) {
 			continue
 		}
 
@@ -92,27 +92,37 @@ func (governService *ResourceV4) GetGraph(w http.ResponseWriter, r *http.Request
 		}
 
 		providers := proResp.Providers
-		countInner := len(providers)
-		if countInner <= 0 {
-			continue
-		}
-		for _, child := range providers {
-			if child == nil {
-				continue
-			}
-
-			if service.ServiceId == child.ServiceId {
-				continue
-			}
-			line := Line{}
-			line.From = node
-			line.To.Name = child.ServiceName
-			line.To.ID = child.ServiceId
-			graph.Lines = append(graph.Lines, line)
-		}
+		lines := governService.genLinesFromNode(withShared, domainProject, node, providers)
+		graph.Lines = append(graph.Lines, lines...)
 	}
 	graph.Nodes = nodes
 	controller.WriteResponse(w, nil, graph)
+}
+
+func (governService *ResourceV4) genLinesFromNode(withShared bool, domainProject string, node Node, providers []*pb.MicroService) []Line {
+	lines := make([]Line, 0)
+	for _, child := range providers {
+		if child == nil {
+			continue
+		}
+
+		if node.ID == child.ServiceId {
+			continue
+		}
+		if governService.isSkipped(withShared, domainProject, child) {
+			continue
+		}
+		line := Line{}
+		line.From = node
+		line.To.Name = child.ServiceName
+		line.To.ID = child.ServiceId
+		lines = append(lines, line)
+	}
+	return lines
+}
+
+func (governService *ResourceV4) isSkipped(withShared bool, domainProject string, service *pb.MicroService) bool {
+	return !withShared && core.IsShared(proto.MicroServiceToKey(domainProject, service))
 }
 
 // GetServiceDetail 查询服务详细信息
