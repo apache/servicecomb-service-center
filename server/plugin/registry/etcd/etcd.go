@@ -723,40 +723,43 @@ func (c *Client) HealthCheck() {
 }
 
 func (c *Client) healthCheckLoop(pctx context.Context) {
-	retries, start := 0, time.Now()
 	d := c.AutoSyncInterval
 	for {
+		var healthCheckErr error
 		select {
 		case <-pctx.Done():
 			return
 		case <-time.After(d):
-			var err error
-			ctx, cancel := context.WithTimeout(c.Client.Ctx(), healthCheckTimeout)
-			defer cancel()
-			if err = c.SyncMembers(ctx); err != nil {
-				d := backoff.GetBackoff().Delay(retries)
-				retries++
-				log.Errorf(err, "retry to sync members from etcd %s after %s", c.Endpoints, d)
+			for i := 0; i < healthCheckRetryTimes; i++ {
+				ctx, cancel := context.WithTimeout(c.Client.Ctx(), healthCheckTimeout)
+				healthCheckErr = c.SyncMembers(ctx)
+				cancel()
+				if healthCheckErr == nil {
+					break
+				}
+				d := backoff.GetBackoff().Delay(i)
+				log.Errorf(healthCheckErr, "retry to sync members from etcd %s after %s", c.Endpoints, d)
 				select {
 				case <-pctx.Done():
 					return
-				default:
-					continue
+				case <-time.After(d):
 				}
-			} else {
-				log.Info("sync members ok.")
-				if err := alarm.Clear(alarm.IDBackendConnectionRefuse); err != nil {
-					log.Error("", err)
-				}
-				if cerr := c.ReOpen(); cerr != nil {
-					log.Errorf(cerr, "retry to health check etcd %s after %s", c.Endpoints, c.AutoSyncInterval)
-				} else {
-					log.Infof("[%s]re-connected to etcd %s", time.Since(start), c.Endpoints)
-					continue
-				}
-				return
 			}
+		}
 
+		var alarmErr error
+		if healthCheckErr != nil {
+			log.Error("etcd health check failed", healthCheckErr)
+			alarmErr = alarm.Raise(alarm.IDBackendConnectionRefuse, alarm.AdditionalContext(healthCheckErr.Error()))
+			if err := c.ReOpen(); err != nil {
+				log.Error("re-connect to etcd failed", err)
+			}
+		} else {
+			alarmErr = alarm.Clear(alarm.IDBackendConnectionRefuse)
+		}
+
+		if alarmErr != nil {
+			log.Error("alarm failed", alarmErr)
 		}
 	}
 }

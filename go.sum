@@ -129,6 +129,7 @@ github.com/go-chassis/go-chassis v0.0.0-20200709095636-48e710908928 h1:y464C11Tr
 github.com/go-chassis/go-chassis v0.0.0-20200709095636-48e710908928/go.mod h1:S7RbnpeTWBqZ4+UxGAs05a6qdhDyWKpTNuil8FYNiME=
 github.com/go-chassis/go-chassis v0.0.0-20200716073336-4183d5dd1246 h1:yxtoclu0QclYtwXxo4AYTCPJsYFM/Xo2/5C1HLRnzqg=
 github.com/go-chassis/go-chassis v0.0.0-20200716073336-4183d5dd1246/go.mod h1:S7RbnpeTWBqZ4+UxGAs05a6qdhDyWKpTNuil8FYNiME=
+github.com/go-chassis/go-chassis v0.0.0-20200820073047-a1c634b7bdd1 h1:eAGcefnlCeBi8+01Bokh6nmRR/PjrC3QCqPRUarv6dw=
 github.com/go-chassis/go-chassis v0.0.0-20200820073047-a1c634b7bdd1/go.mod h1:nMWwWrgDEyDKnMQLE5Gt65RdwbgrQg5amt4BqNFY09g=
 github.com/go-chassis/go-chassis v1.8.1/go.mod h1:vI0rU2FNAtGi6owfYKXBVj6cvq633/n+8bqbsVfib7E=
 github.com/go-chassis/go-chassis v1.8.2-0.20200620015240-3621ca234c7c h1:Bu4xdnLMGYmupX5E6dV34fFOvEo3p0trcKQsThqyXAA=
