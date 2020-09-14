@@ -20,7 +20,7 @@ import (
 	"context"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	scpb "github.com/apache/servicecomb-service-center/pkg/registry"
-	"github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
 	"github.com/gogo/protobuf/proto"
 )
@@ -29,7 +29,7 @@ import (
 func (c *Client) CreateService(ctx context.Context, domainProject string, syncService *pb.SyncService) (string, error) {
 	service := toService(syncService)
 	service.ServiceId = ""
-	domain, project := core.FromDomainProject(domainProject)
+	domain, project := util.FromDomainProject(domainProject)
 	serviceID, err := c.cli.CreateService(ctx, domain, project, service)
 	if err != nil {
 		log.Debugf("create service err %v", err)
@@ -59,7 +59,7 @@ func (c *Client) CreateService(ctx context.Context, domainProject string, syncSe
 
 // DeleteService deletes service from servicecenter
 func (c *Client) DeleteService(ctx context.Context, domainProject, serviceId string) error {
-	domain, project := core.FromDomainProject(domainProject)
+	domain, project := util.FromDomainProject(domainProject)
 	err := c.cli.DeleteService(ctx, domain, project, serviceId)
 	if err != nil {
 		return err
@@ -70,7 +70,7 @@ func (c *Client) DeleteService(ctx context.Context, domainProject, serviceId str
 // ServiceExistence Checkes service exists in servicecenter
 func (c *Client) ServiceExistence(ctx context.Context, domainProject string, syncService *pb.SyncService) (string, error) {
 	service := toService(syncService)
-	domain, project := core.FromDomainProject(domainProject)
+	domain, project := util.FromDomainProject(domainProject)
 	serviceID, err := c.cli.ServiceExistence(ctx, domain, project, service.AppId, service.ServiceName, service.Version, service.Environment)
 	if err != nil {
 		return "", err

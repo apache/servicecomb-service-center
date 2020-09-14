@@ -19,7 +19,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/model"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/writer"
-	"github.com/apache/servicecomb-service-center/server/core"
 )
 
 const maxWidth = 35
@@ -55,7 +54,7 @@ func (s *ServiceRecord) AgeString() string {
 }
 
 func (s *ServiceRecord) Domain() string {
-	domain, _ := core.FromDomainProject(s.DomainProject)
+	domain, _ := util.FromDomainProject(s.DomainProject)
 	return domain
 }
 

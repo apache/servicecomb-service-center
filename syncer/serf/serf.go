@@ -49,11 +49,11 @@ type Server struct {
 	stopCh  chan struct{}
 
 	handlerMap *sync.Map
-	joinAddr   []string
+	peerAddr   []string
 }
 
 // NewServer new serf server with options
-func NewServer(join string, opts ...Option) *Server {
+func NewServer(peerAddr string, opts ...Option) *Server {
 	conf := serf.DefaultConfig()
 	conf.Tags = map[string]string{}
 	for _, opt := range opts {
@@ -63,9 +63,9 @@ func NewServer(join string, opts ...Option) *Server {
 	eventCh := make(chan serf.Event, 64)
 	conf.EventCh = eventCh
 
-	joinAddr := strings.Split(join, ",")
-	if len(join) == 0 {
-		joinAddr = []string{}
+	address := strings.Split(peerAddr, ",")
+	if len(peerAddr) == 0 {
+		address = []string{}
 	}
 	return &Server{
 		conf:       conf,
@@ -74,7 +74,7 @@ func NewServer(join string, opts ...Option) *Server {
 		readyCh:    make(chan struct{}),
 		stopCh:     make(chan struct{}),
 		handlerMap: &sync.Map{},
-		joinAddr:   joinAddr,
+		peerAddr:   address,
 	}
 }
 
@@ -88,7 +88,7 @@ func (s *Server) Start(ctx context.Context) {
 			return
 		}
 		s.serf = sf
-		s.Join(s.joinAddr)
+		s.Join(s.peerAddr)
 		close(s.readyCh)
 		go s.waitEvent(ctx)
 	})

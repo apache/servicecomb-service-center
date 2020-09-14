@@ -18,8 +18,7 @@ package servicecenter
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/server/core"
-
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
 )
 
@@ -28,7 +27,7 @@ func (c *Client) RegisterInstance(ctx context.Context, domainProject, serviceId 
 	instance := toInstance(syncInstance)
 	instance.InstanceId = ""
 	instance.ServiceId = serviceId
-	domain, project := core.FromDomainProject(domainProject)
+	domain, project := util.FromDomainProject(domainProject)
 	instanceID, err := c.cli.RegisterInstance(ctx, domain, project, serviceId, instance)
 	if err != nil {
 		return "", err
@@ -38,7 +37,7 @@ func (c *Client) RegisterInstance(ctx context.Context, domainProject, serviceId 
 
 // UnregisterInstance unregister instance from servicecenter
 func (c *Client) UnregisterInstance(ctx context.Context, domainProject, serviceId, instanceId string) error {
-	domain, project := core.FromDomainProject(domainProject)
+	domain, project := util.FromDomainProject(domainProject)
 	err := c.cli.UnregisterInstance(ctx, domain, project, serviceId, instanceId)
 	if err != nil {
 		return err
@@ -48,7 +47,7 @@ func (c *Client) UnregisterInstance(ctx context.Context, domainProject, serviceI
 
 // Heartbeat sends heartbeat to servicecenter
 func (c *Client) Heartbeat(ctx context.Context, domainProject, serviceId, instanceId string) error {
-	domain, project := core.FromDomainProject(domainProject)
+	domain, project := util.FromDomainProject(domainProject)
 	err := c.cli.Heartbeat(ctx, domain, project, serviceId, instanceId)
 	if err != nil {
 		return err

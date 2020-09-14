@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"github.com/apache/servicecomb-service-center/client"
 	model2 "github.com/apache/servicecomb-service-center/pkg/model"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/cmd"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/model"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/plugin/get"
@@ -66,7 +67,7 @@ func saveDirectory(root string, ms *model2.Microservice) string {
 	if len(root) == 0 {
 		return ""
 	}
-	domain, project := core.FromDomainProject(model.GetDomainProject(ms))
+	domain, project := util.FromDomainProject(model.GetDomainProject(ms))
 	if domain == core.RegistryDomain {
 		domain = ""
 	}
