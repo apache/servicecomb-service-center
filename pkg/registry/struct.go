@@ -204,7 +204,8 @@ type DeleteServiceResponse struct {
 }
 
 type GetServiceRequest struct {
-	ServiceId string `protobuf:"bytes,1,opt,name=serviceId" json:"serviceId,omitempty"`
+	ServiceId  string `protobuf:"bytes,1,opt,name=serviceId" json:"serviceId,omitempty"`
+	WithShared bool   `protobuf:"varint,2,opt,name=withShared" json:"withShared,omitempty"`
 }
 
 type GetServiceResponse struct {

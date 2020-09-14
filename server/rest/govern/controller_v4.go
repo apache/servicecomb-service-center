@@ -131,6 +131,7 @@ func (governService *ResourceV4) GetServiceDetail(w http.ResponseWriter, r *http
 	request := &pb.GetServiceRequest{
 		ServiceId: serviceID,
 	}
+	request.WithShared = util.StringTRUE(r.URL.Query().Get("withShared"))
 	ctx := r.Context()
 	resp, _ := ServiceAPI.GetServiceDetail(ctx, request)
 

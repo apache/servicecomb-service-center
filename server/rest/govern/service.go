@@ -87,13 +87,13 @@ func (governService *Service) GetServicesInfo(ctx context.Context, in *pb.GetSer
 			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
+	domainProject := util.ParseDomainProject(ctx)
+	if !in.WithShared {
+		services = governService.removeSharedService(domainProject, services)
+	}
 
 	allServiceDetails := make([]*pb.ServiceDetail, 0, len(services))
-	domainProject := util.ParseDomainProject(ctx)
 	for _, service := range services {
-		if !in.WithShared && apt.IsShared(proto.MicroServiceToKey(domainProject, service)) {
-			continue
-		}
 		if len(in.AppId) > 0 {
 			if in.AppId != service.AppId {
 				continue
@@ -115,6 +115,11 @@ func (governService *Service) GetServicesInfo(ctx context.Context, in *pb.GetSer
 			}, err
 		}
 		serviceDetail.MicroService = service
+		if !in.WithShared {
+			serviceDetail.MicroService.Providers = governService.removeSharedServiceKey(serviceDetail.MicroService.Providers)
+			serviceDetail.Consumers = governService.removeSharedService(domainProject, serviceDetail.Consumers)
+			serviceDetail.Providers = governService.removeSharedService(domainProject, serviceDetail.Providers)
+		}
 		allServiceDetails = append(allServiceDetails, serviceDetail)
 	}
 
@@ -123,6 +128,31 @@ func (governService *Service) GetServicesInfo(ctx context.Context, in *pb.GetSer
 		AllServicesDetail: allServiceDetails,
 		Statistics:        st,
 	}, nil
+}
+
+func (governService *Service) removeSharedService(domainProject string, old []*pb.MicroService) []*pb.MicroService {
+	if len(old) <= 0 {
+		return old
+	}
+	new := make([]*pb.MicroService, 0)
+	for _, m := range old {
+		if !apt.IsShared(proto.MicroServiceToKey(domainProject, m)) {
+			new = append(new, m)
+		}
+	}
+	return new
+}
+func (governService *Service) removeSharedServiceKey(old []*pb.MicroServiceKey) []*pb.MicroServiceKey {
+	if len(old) <= 0 {
+		return old
+	}
+	new := make([]*pb.MicroServiceKey, 0)
+	for _, m := range old {
+		if !apt.IsShared(m) {
+			new = append(new, m)
+		}
+	}
+	return new
 }
 
 func (governService *Service) GetServiceDetail(ctx context.Context, in *pb.GetServiceRequest) (*pb.GetServiceDetailResponse, error) {
@@ -138,17 +168,16 @@ func (governService *Service) GetServiceDetail(ctx context.Context, in *pb.GetSe
 	}
 
 	service, err := serviceUtil.GetService(ctx, domainProject, in.ServiceId)
-	if service == nil {
-		return &pb.GetServiceDetailResponse{
-			Response: proto.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
-		}, nil
-	}
 	if err != nil {
 		return &pb.GetServiceDetailResponse{
 			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
-
+	if service == nil {
+		return &pb.GetServiceDetailResponse{
+			Response: proto.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+		}, nil
+	}
 	key := &pb.MicroServiceKey{
 		Tenant:      domainProject,
 		Environment: service.Environment,
@@ -156,6 +185,12 @@ func (governService *Service) GetServiceDetail(ctx context.Context, in *pb.GetSe
 		ServiceName: service.ServiceName,
 		Version:     "",
 	}
+	if !in.WithShared && apt.IsShared(key) {
+		return &pb.GetServiceDetailResponse{
+			Response: proto.CreateResponse(scerr.ErrServiceNotExists, "Can not get shared service as 'withShared' param is not true"),
+		}, nil
+	}
+
 	versions, err := getServiceAllVersions(ctx, key)
 	if err != nil {
 		log.Errorf(err, "get service[%s/%s/%s] all versions failed",
@@ -178,6 +213,11 @@ func (governService *Service) GetServiceDetail(ctx context.Context, in *pb.GetSe
 
 	serviceInfo.MicroService = service
 	serviceInfo.MicroServiceVersions = versions
+	if !in.WithShared {
+		serviceInfo.MicroService.Providers = governService.removeSharedServiceKey(serviceInfo.MicroService.Providers)
+		serviceInfo.Consumers = governService.removeSharedService(domainProject, serviceInfo.Consumers)
+		serviceInfo.Providers = governService.removeSharedService(domainProject, serviceInfo.Providers)
+	}
 	return &pb.GetServiceDetailResponse{
 		Response: proto.CreateResponse(proto.Response_SUCCESS, "Get service successfully."),
 		Service:  serviceInfo,
