@@ -1,0 +1,31 @@
+{
+  "name": "traffic2adminAPI",
+  "spec": {
+    "matches": [
+      {
+        "headers": {
+          "X-User": {
+            "regex": "ja.*"
+          }
+        },
+        "apiPath": {
+          "exact": "/metrics"
+        },
+        "methods": [
+          "GET",
+          "POST"
+        ]
+      },
+      {
+        "apiPath": {
+          "exact": "/health"
+        },
+        "methods": [
+          "GET",
+          "POST"
+        ]
+      }
+    ]
+  }
+}
+
