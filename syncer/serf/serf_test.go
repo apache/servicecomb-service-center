@@ -56,6 +56,7 @@ func TestSerfServer(t *testing.T) {
 
 func TestServerFailed(t *testing.T) {
 	svr := NewServer(
+		"",
 		WithNode("syncer-test"),
 		WithTags(map[string]string{"test-key": "test-value"}),
 		WithAddTag("added-key", "added-value"),
@@ -149,6 +150,7 @@ func TestEventHandler(t *testing.T) {
 
 func defaultServer() *Server {
 	return NewServer(
+		"",
 		WithNode("syncer-test"),
 		WithBindAddr("127.0.0.1"),
 		WithBindPort(35151),
