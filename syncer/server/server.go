@@ -40,6 +40,7 @@ import (
 
 	// import plugins
 	_ "github.com/apache/servicecomb-service-center/syncer/plugins/eureka"
+	_ "github.com/apache/servicecomb-service-center/syncer/plugins/servicecenter"
 
 	// import task
 	_ "github.com/apache/servicecomb-service-center/syncer/task/idle"
@@ -184,7 +185,7 @@ func (s *Server) initialization() (err error) {
 		pb.RegisterSyncServer(svr, s)
 	})
 
-	s.serf = serf.NewServer(convertSerfOptions(s.conf)...)
+	s.serf = serf.NewServer(s.conf.Join.Address, convertSerfOptions(s.conf)...)
 	s.serf.OnceEventHandler(serf.NewEventHandler(serf.MemberJoinFilter(), s.waitClusterMembers))
 
 	s.etcd, err = etcd.NewServer(convertEtcdOptions(s.conf)...)

@@ -96,6 +96,8 @@ github.com/gin-gonic/gin v1.4.0/go.mod h1:OW2EZn3DO8Ln9oIKOvM++LBO+5UPHJJDH72/q/
 github.com/go-chassis/foundation v0.0.0-20190621030543-c3b63f787f4c/go.mod h1:21/ajGtgJlWTCeM0TxGJdRhO8bJkKirWyV8Stlh6g6c=
 github.com/go-chassis/foundation v0.1.1-0.20191113114104-2b05871e9ec4 h1:wx8JXvg/n4i8acXsBJ5zIkiK7EO2kn/HuEjKK3kSgv8=
 github.com/go-chassis/foundation v0.1.1-0.20191113114104-2b05871e9ec4/go.mod h1:21/ajGtgJlWTCeM0TxGJdRhO8bJkKirWyV8Stlh6g6c=
+github.com/go-chassis/foundation v0.1.1-0.20200825060850-b16bf420f7b3 h1:c+bwT0qLY69jSU8TmzuNcb9UL/QFAiU96kjuX5TMiQc=
+github.com/go-chassis/foundation v0.1.1-0.20200825060850-b16bf420f7b3/go.mod h1:21/ajGtgJlWTCeM0TxGJdRhO8bJkKirWyV8Stlh6g6c=
 github.com/go-chassis/glog v0.0.0-20180920075250-95a09b2413e9 h1:z6ezGZIJVMl2Yo0gOJlv8jOvCDFi9W3TLADQvJ6Z2t0=
 github.com/go-chassis/glog v0.0.0-20180920075250-95a09b2413e9/go.mod h1:tfdQUl8deEC8YmpbYjbSZJv7Y/7hC0ag9n3RVrjIoJs=
 github.com/go-chassis/go-archaius v0.20.0/go.mod h1:lMsxSkFbBju4zrc9DTvRc5uZZNUl7sqzJkzlggP7skg=
@@ -131,6 +133,8 @@ github.com/go-chassis/go-chassis v0.0.0-20200716073336-4183d5dd1246 h1:yxtoclu0Q
 github.com/go-chassis/go-chassis v0.0.0-20200716073336-4183d5dd1246/go.mod h1:S7RbnpeTWBqZ4+UxGAs05a6qdhDyWKpTNuil8FYNiME=
 github.com/go-chassis/go-chassis v0.0.0-20200820073047-a1c634b7bdd1 h1:eAGcefnlCeBi8+01Bokh6nmRR/PjrC3QCqPRUarv6dw=
 github.com/go-chassis/go-chassis v0.0.0-20200820073047-a1c634b7bdd1/go.mod h1:nMWwWrgDEyDKnMQLE5Gt65RdwbgrQg5amt4BqNFY09g=
+github.com/go-chassis/go-chassis v0.0.0-20200826064053-d90be848aa10 h1:eImN6UFx4pksyxJQnT1laHoVOwSlhEC1ONhJQc4Ix08=
+github.com/go-chassis/go-chassis v0.0.0-20200826064053-d90be848aa10/go.mod h1:ZzLCaQFgFHbkwf8grJrbzBLlE19iz+4LMgNtjGlnanU=
 github.com/go-chassis/go-chassis v1.8.1/go.mod h1:vI0rU2FNAtGi6owfYKXBVj6cvq633/n+8bqbsVfib7E=
 github.com/go-chassis/go-chassis v1.8.2-0.20200620015240-3621ca234c7c h1:Bu4xdnLMGYmupX5E6dV34fFOvEo3p0trcKQsThqyXAA=
 github.com/go-chassis/go-chassis v1.8.2-0.20200620015240-3621ca234c7c/go.mod h1:eQpXV6jY4aWolimDvC5jYzwYlxhlyO3fByfrXTbFN/g=

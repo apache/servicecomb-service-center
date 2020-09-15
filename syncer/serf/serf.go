@@ -19,6 +19,7 @@ package serf
 
 import (
 	"context"
+	"strings"
 	"sync"
 	"time"
 
@@ -48,10 +49,11 @@ type Server struct {
 	stopCh  chan struct{}
 
 	handlerMap *sync.Map
+	peerAddr   []string
 }
 
 // NewServer new serf server with options
-func NewServer(opts ...Option) *Server {
+func NewServer(peerAddr string, opts ...Option) *Server {
 	conf := serf.DefaultConfig()
 	conf.Tags = map[string]string{}
 	for _, opt := range opts {
@@ -61,6 +63,10 @@ func NewServer(opts ...Option) *Server {
 	eventCh := make(chan serf.Event, 64)
 	conf.EventCh = eventCh
 
+	address := strings.Split(peerAddr, ",")
+	if len(peerAddr) == 0 {
+		address = []string{}
+	}
 	return &Server{
 		conf:       conf,
 		running:    utils.NewAtomicBool(false),
@@ -68,6 +74,7 @@ func NewServer(opts ...Option) *Server {
 		readyCh:    make(chan struct{}),
 		stopCh:     make(chan struct{}),
 		handlerMap: &sync.Map{},
+		peerAddr:   address,
 	}
 }
 
@@ -81,6 +88,7 @@ func (s *Server) Start(ctx context.Context) {
 			return
 		}
 		s.serf = sf
+		s.Join(s.peerAddr)
 		close(s.readyCh)
 		go s.waitEvent(ctx)
 	})
