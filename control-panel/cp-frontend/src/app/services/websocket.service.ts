@@ -15,25 +15,30 @@
  * limitations under the License.
  */
 
-import {ActivatedRouteSnapshot, CanActivate, Router, RouterStateSnapshot} from '@angular/router';
 import {Injectable} from '@angular/core';
+import {Observable, Observer, Subject} from 'rxjs';
+import {map} from 'rxjs/operators';
 
-import {routes} from '../../../consts';
-
-@Injectable()
-export class AuthGuard implements CanActivate {
-  public routers: typeof routes = routes;
-
-  constructor(private router: Router) {
+@Injectable({
+  providedIn: 'root'
+})
+export class WebsocketService {
+  constructor() {
   }
 
-  canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): boolean {
-    const token = localStorage.getItem('token');
-
-    if (token) {
-      return true;
-    } else {
-      this.router.navigate([this.routers.LOGIN]);
-    }
+  connect(url): Subject<any> {
+    const ws = new WebSocket(url);
+    const observable = new Observable<MessageEvent>((obs: Observer<MessageEvent>) => {
+      ws.onmessage = obs.next.bind(obs);
+      ws.onclose = obs.complete.bind(obs);
+      ws.onerror = obs.error.bind(obs);
+      return ws.close.bind(ws);
+    });
+    const subject = new Subject<MessageEvent>();
+    const resSubject = subject.pipe<any>(map((me: MessageEvent) => {
+      return JSON.parse(me.data) as any;
+    })) as Subject<any>
+    observable.subscribe(subject);
+    return resSubject;
   }
 }
