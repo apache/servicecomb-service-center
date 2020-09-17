@@ -1,0 +1,27 @@
+<app-layout>
+  <mat-toolbar class="page-header" role="heading">
+    <h1>Service Overview</h1>
+    <div class="service-overview__content-stats">
+      <div>
+        <p class="service-overview__content-stats-title">Services</p>
+        <p class="service-overview__content-stats-data">
+          {{serviceN}}
+        </p>
+      </div>
+      <div style="margin-left:40px;">
+        <p class="service-overview__content-stats-title">Instances</p>
+        <p class="service-overview__content-stats-data">
+          {{instanceN}}
+        </p>
+      </div>
+
+    </div>
+    <button mat-flat-button>Show Latest</button>
+  </mat-toolbar>
+  <div class="charts-wrapper">
+    <div class="chart" *ngFor="let s of (services$ | async)">
+      <app-service-overview [service]="s"></app-service-overview>
+    </div>
+  </div>
+  <app-footer></app-footer>
+</app-layout>

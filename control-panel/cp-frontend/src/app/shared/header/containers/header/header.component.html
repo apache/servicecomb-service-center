@@ -1,0 +1,15 @@
+<mat-toolbar class="header">
+
+  <div class="header__title">
+    <button class="header__title-button" mat-mini-fab (click)="openMenu()">
+      <mat-icon *ngIf="!isMenuOpened" class="header__title-button-icon">menu</mat-icon>
+      <mat-icon *ngIf="isMenuOpened" class="header__title-button-icon">arrow_back</mat-icon>
+    </button>
+    <h6 class="header__title-text">ServiceComb Control Panel</h6>
+  </div>
+
+  <div class="header-toolbar">
+    <app-search></app-search>
+    <app-notifications></app-notifications>
+  </div>
+</mat-toolbar>

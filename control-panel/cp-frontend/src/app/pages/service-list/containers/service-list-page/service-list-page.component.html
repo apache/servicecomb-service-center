@@ -1,0 +1,11 @@
+<app-layout>
+  <mat-toolbar class="page-header" role="heading">
+    <h1>Instance List</h1>
+  </mat-toolbar>
+
+  <div class="tables-wrapper">
+    <app-services-table [servicesTableData$]="servicesTableData$"></app-services-table>
+  </div>
+
+  <app-footer></app-footer>
+</app-layout>

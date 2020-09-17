@@ -1,0 +1,414 @@
+// Custom Theming for Angular Material
+// For more information: https://material.angular.io/guide/theming
+@import '~@angular/material/theming';
+@import "src/app/styles/colors";
+@import "src/app/styles/variables";
+@import "src/app/styles/font";
+// Plus imports for other components in your app.
+
+// Include the common styles for Angular Material. We include this here so that you only
+// have to load a single css file for Angular Material in your app.
+// Be sure that you only ever include this mixin once!
+@include mat-core();
+
+// Define the palettes for your theme using the Material Design palettes available in palette.scss
+// (imported above). For each palette, you can optionally specify a default, lighter, and darker
+// hue. Available color palettes: https://material.io/design/color/
+$angular-material-admin-primary: mat-palette($mat-indigo);
+$angular-material-admin-accent: mat-palette($mat-pink, A200, A100, A400);
+
+// The warn palette is optional (defaults to red).
+$angular-material-admin-warn: mat-palette($mat-red);
+
+// Create the theme object (a Sass map containing all of the palettes).
+$angular-material-admin-theme: mat-light-theme($angular-material-admin-primary, $angular-material-admin-accent, $angular-material-admin-warn);
+
+// Include theme styles for core and each component used in your app.
+// Alternatively, you can import and @include the theme mixins for each component
+// that you are using.
+@include angular-material-theme($angular-material-admin-theme);
+
+
+$ama-yellow: (
+  50: $yellow,
+  100: #ECECEC,
+  200: $yellow,
+  300: $yellow,
+  400: $yellow,
+  500: $yellow,
+  600: $yellow,
+  700: $yellow,
+  800: $yellow,
+  900: $yellow,
+  A100: $yellow,
+  A200: $yellow,
+  A400: $yellow,
+  A700: $yellow,
+  contrast: (
+    50: $dark-primary-text,
+    100: $dark-primary-text,
+    200: $dark-primary-text,
+    300: $dark-primary-text,
+    400: $dark-primary-text,
+    500: $light-primary-text,
+    600: $light-primary-text,
+    700: $light-primary-text,
+    800: $light-primary-text,
+    900: $light-primary-text,
+    A100: $dark-primary-text,
+    A200: $dark-primary-text,
+    A400: $light-primary-text,
+    A700: $light-primary-text,
+  )
+);
+
+$ama-pink: (
+  50: $pink,
+  100: #ECECEC,
+  200: $pink,
+  300: $pink,
+  400: $pink,
+  500: $pink,
+  600: $pink,
+  700: $pink,
+  800: $pink,
+  900: $pink,
+  contrast: (
+    50: $dark-primary-text,
+    100: $dark-primary-text,
+    200: $dark-primary-text,
+    300: $dark-primary-text,
+    400: $dark-primary-text,
+    500: $light-primary-text,
+    600: $light-primary-text,
+    700: $light-primary-text,
+    800: $light-primary-text,
+    900: $light-primary-text,
+    A100: $dark-primary-text,
+    A200: $dark-primary-text,
+    A400: $light-primary-text,
+    A700: $light-primary-text,
+  )
+);
+
+$ama-blue: (
+  50: $blue,
+  100: #ECECEC,
+  200: $blue,
+  300: $blue,
+  400: $blue,
+  500: $blue,
+  600: $blue,
+  700: $blue,
+  800: $blue,
+  900: $blue,
+  A100: $blue,
+  A200: $blue,
+  A400: $blue,
+  A700: $blue,
+  contrast: (
+    50: $dark-primary-text,
+    100: $dark-primary-text,
+    200: $dark-primary-text,
+    300: $dark-primary-text,
+    400: $dark-primary-text,
+    500: $light-primary-text,
+    600: $light-primary-text,
+    700: $light-primary-text,
+    800: $light-primary-text,
+    900: $light-primary-text,
+    A100: $dark-primary-text,
+    A200: $dark-primary-text,
+    A400: $light-primary-text,
+    A700: $light-primary-text,
+  )
+);
+
+$ama-primary: mat-palette($ama-blue);
+$ama-accent: mat-palette($ama-yellow);
+$ama-warn: mat-palette($ama-pink);
+
+$ama-theme: mat-light-theme($ama-primary, $ama-accent, $ama-warn);
+@include angular-material-theme($ama-theme);
+
+button.mat-menu-item {
+  font-size: 16px;
+}
+
+button.mat-menu-item:hover:not([disabled]), .mat-menu-item.cdk-program-focused:not([disabled]), .mat-menu-item.cdk-keyboard-focused:not([disabled]), .mat-menu-item-highlighted:not([disabled]) {
+  font-size: 16px;
+}
+
+
+mat-select.mat-select {
+  width: auto;
+  display: inline;
+  font-size: 16px;
+  font-weight: 300;
+  color: $dark-grey;
+  border: 1px solid $light-grey;
+  border-radius: 4px;
+  padding: 8px 10px;
+
+  & .mat-select-value {
+    width: auto;
+    display: inline;
+  }
+
+  & .mat-select-arrow {
+    color: $light-grey;
+    margin-right: 0;
+  }
+}
+
+.mat-option {
+  font-size: 16px;
+  height: 36px;
+  padding: 6px 16px;
+  color: $dark-grey;
+
+  &.mat-focus-indicator.mat-selected.mat-active {
+    background-color: $blue-white;
+    color: $dark-grey;
+  }
+
+  &:hover:not(.mat-option-disabled) {
+    background-color: $blue-white;
+  }
+}
+
+.mat-form-field-underline {
+  display: none;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+}
+
+.mat-h1, .mat-headline, .mat-typography h1 {
+  font-weight: 400;
+  font-size: 48px;
+}
+
+.mat-h2, .mat-headline, .mat-typography h2 {
+  font-weight: 400;
+  font-size: 36px;
+}
+
+.mat-h3, .mat-headline, .mat-typography h3 {
+  font-weight: 400;
+  font-size: 26px;
+}
+
+.mat-h4, .mat-headline, .mat-typography h4 {
+  font-weight: 400;
+  font-size: 24px;
+}
+
+.mat-h5, .mat-headline, .mat-typography h5 {
+  font-weight: 400;
+  font-size: 21px;
+}
+
+.mat-h6, .mat-headline, .mat-typography h6 {
+  font-weight: 400;
+  font-size: 18px;
+}
+
+.mat-body p, .mat-body-1 p, .mat-typography p {
+  margin-bottom: 16px;
+  line-height: normal;
+}
+
+button.mat-fab .mat-button-wrapper {
+  padding: 0;
+}
+
+.mat-card {
+  color: $card-font-color;
+  margin: 16px;
+}
+
+.mat-card-title p {
+  font-size: 21px;
+  font-weight: 400;
+  color: $card-title-font-color;
+}
+
+mat-toolbar.page-header {
+  display: flex;
+  justify-content: space-between;
+  padding: 50px 24px 16px 24px;
+  background: none;
+  height: auto;
+
+  @media (max-width: $small) {
+    flex-direction: column;
+    align-items: baseline;
+  }
+}
+
+.mat-toolbar h1 {
+  font-weight: 400;
+  font-size: 38.4px;
+  color: $toolbar-title-font-color;
+  line-height: 1;
+  letter-spacing: -0.2186px;
+
+  @media (max-width: $small) {
+    white-space: normal;
+  }
+}
+
+.mat-toolbar button {
+  height: 41.6px;
+  width: auto;
+  color: $toolbar-button-font-color;
+  background-color: $toolbar-button-background-color;
+  line-height: 1.75;
+  font-size: 0.9375rem;
+  font-weight: 400;
+
+  @media (max-width: $small) {
+    margin-top: 16px;
+  }
+}
+
+.mat-toolbar button:hover {
+  background-color: $toolbar-button-background-color-active;
+}
+
+mat-tab-header .mat-tab-label, .mat-tab-link {
+  text-transform: uppercase;
+  color: $tabs-header-font-color;
+  font-weight: $fw-normal;
+  width: 50%;
+  min-width: 0;
+  padding: 0;
+  opacity: 1;
+}
+
+mat-tab-header .mat-tab-label-active {
+  color: $tabs-header-font-color-active;
+}
+
+mat-tab-group.mat-tab-group.mat-primary .mat-ink-bar {
+  background-color: $tabs-ink-bar-color;
+}
+
+mat-tab-body div.mat-tab-body-content {
+  overflow: hidden;
+}
+
+.toast-top-center {
+  top: 76px;
+}
+
+.toast-top-left {
+  top: 76px;
+}
+
+.toast-top-right {
+  top: 76px;
+}
+
+.toast-bottom-center {
+  bottom: 12px;
+}
+
+.toast-container .ngx-toastr {
+  padding: 16px;
+  border-radius: 45px;
+}
+
+.toast-container .ngx-toastr:hover {
+  box-shadow: 0 0 12px $light-grey;
+}
+
+.mat-icon {
+  padding-right: 3px;
+  padding-bottom: 5px;
+}
+
+.material-icons {
+  font-size: 28px;
+}
+
+button.mat-mini-fab .mat-button-wrapper {
+  padding: 0;
+}
+
+button.mat-mini-fab {
+  height: 36px;
+  width: 36px;
+}
+
+div.mat-menu-panel {
+  margin-top: 20px;
+}
+
+.fa {
+  font-size: 1.5em;
+}
+
+.apexcharts-xaxistooltip.apexcharts-xaxistooltip-bottom.apexcharts-theme-light {
+  background-color: $chart-tooltip-background-color;
+  color: $chart-tooltip-font-color;
+  border: none;
+}
+
+div.apexcharts-xaxistooltip-bottom:after {
+  border-bottom-color: $chart-tooltip-border-color;
+}
+
+.mat-drawer-backdrop.mat-drawer-shown {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 3px;
+}
+
+::-webkit-scrollbar-button {
+  display: none
+}
+
+::-webkit-scrollbar-track {
+  background-color: $scrollbar-track-color;
+}
+
+::-webkit-scrollbar-track-piece {
+  background-color: $scrollbar-track-piece-color;
+}
+
+::-webkit-scrollbar-thumb {
+  height: 50px;
+  background-color: $light-grey;
+  border-radius: 36px;
+}
+
+::-webkit-scrollbar-corner {
+  background-color: $scrollbar-corner-color;
+}
+
+::-webkit-resizer {
+  background-color: $dark-grey;
+}
+
+
+//global define
+a[cdk-describedby-host][ng-reflect-message] {
+  text-decoration: underline;
+  color: $light-blue;
+  cursor: pointer;
+}
+
+.tooltipBreakLine {
+  white-space: pre-line;
+}

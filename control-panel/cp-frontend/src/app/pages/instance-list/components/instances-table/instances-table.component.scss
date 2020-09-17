@@ -1,0 +1,130 @@
+@import 'src/app/styles/colors';
+@import 'src/app/styles/font';
+@import 'src/app/styles/variables';
+
+.employee-table-wrapper {
+  padding-left: 0;
+  padding-right: 0;
+  margin: 16px 16px 32px 16px;
+  box-shadow: 0 3px 11px 0 $shadow-white, 0 3px 3px -2px $shadow-grey, 0 1px 8px 0 $shadow-dark-grey;
+
+  &__header {
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    @media (max-width: $small) {
+      padding: 0 16px;
+    }
+  }
+
+  &__title {
+    margin: 0;
+  }
+
+  &__search {
+    display: flex;
+    align-items: center;
+  }
+
+  &__icon-wrapper {
+    height: 46px;
+    width: 46px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__icon {
+    color: inherit;
+  }
+
+  &__search-input {
+    font-size: $fs-normal;
+    height: 32px;
+    border: 0;
+    border-bottom: 1px solid $grey;
+    outline: none;
+
+    @media (max-width: $small) {
+      width: 150px;
+    }
+
+    &:focus {
+      border-bottom: 2px solid $blue;
+    }
+  }
+
+  &__button {
+    box-shadow: none;
+    background-color: inherit;
+    width: 46px;
+    height: 46px;
+    color: $grey;
+
+    &:hover {
+      background-color: $black-08;
+      color: $blue;
+    }
+  }
+}
+
+.employee-table {
+  &__content {
+    @media (max-width: $small) {
+      overflow-x: scroll;
+    }
+  }
+
+  &__table {
+    width: 100%;
+    box-shadow: none;
+
+    @media (max-width: $small) {
+      width: 200%;
+    }
+  }
+
+  &__table-checkbox {
+    width: 32px;
+    padding-left: 24px;
+  }
+
+  &__table-header {
+    font-size: $fs-small;
+  }
+
+  &__table-body {
+    font-size: $fs-small;
+  }
+
+  &__content-badge {
+    width: fit-content;
+    border-radius: 32px;
+    color: $white;
+    text-align: center;
+    padding: 5px 10px;
+    font-size: 13px;
+    box-sizing: border-box;
+    font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+    font-weight: $fw-lighter;
+    line-height: 1.75;
+    letter-spacing: 0.457px;
+
+    &::first-letter {
+      text-transform: uppercase;
+    }
+
+
+  }
+}
+
+
+.UP {
+  background-color: #3CD4A0;
+}
+
+.DOWN {
+  background-color: #ff4081;
+}

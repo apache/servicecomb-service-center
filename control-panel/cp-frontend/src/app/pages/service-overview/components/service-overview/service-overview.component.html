@@ -1,0 +1,47 @@
+<mat-card class="visits-chart">
+  <mat-card-title class="visits-chart__header">
+    <h5 class="visits-chart__title"><span
+      [routerLink]="['/services', service.serviceId]">{{service.serviceName}} {{service.version}}</span></h5>
+    <app-settings-menu></app-settings-menu>
+  </mat-card-title>
+
+  <mat-card-content class="visits-chart__content">
+    <div class="visits-chart__content_apis">
+      <app-api-short [apiModel]="api" *ngFor="let api of service.apis()"></app-api-short>
+    </div>
+    <div class="visits-chart__content-stats">
+      <div>
+        <p class="visits-chart__content-stats-title">Consumer</p>
+        <p class="visits-chart__content-stats-data">
+          <a [matTooltip]="service.consumersOverview()" matTooltipClass="tooltipBreakLine">
+            {{service.consumers.length}}
+          </a>
+        </p>
+      </div>
+      <div>
+        <p class="visits-chart__content-stats-title">Instance</p>
+        <p class="visits-chart__content-stats-data">
+          <a [matTooltip]="service.instancesOverview()"
+             matTooltipClass="tooltipBreakLine">{{service.instances.length}}</a>
+        </p>
+      </div>
+      <div>
+        <p class="visits-chart__content-stats-title">PreviousVersion</p>
+        <p class="visits-chart__content-stats-data">
+          <a [matTooltip]="service.previousVersionsOverview()" matTooltipClass="tooltipBreakLine">
+            {{service.previousVersionsNum()}}
+          </a>
+        </p>
+      </div>
+
+      <div>
+        <p class="visits-chart__content-stats-title">KieConf</p>
+        <p class="visits-chart__content-stats-data">
+          <a [matTooltip]="service.kieConfOverview()" matTooltipClass="tooltipBreakLine">
+            {{2}}
+          </a>
+        </p>
+      </div>
+    </div>
+  </mat-card-content>
+</mat-card>

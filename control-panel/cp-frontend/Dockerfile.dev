@@ -1,0 +1,6 @@
+FROM node:alpine
+WORKDIR /app
+COPY ./package.json ./package-lock.json ./
+RUN npm install
+COPY . .
+CMD ["npm", "start", "--", "--proxyConfig=proxy-docker.conf.json", "--host=0.0.0.0"]

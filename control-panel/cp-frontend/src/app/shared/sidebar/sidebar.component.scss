@@ -1,0 +1,86 @@
+@import "src/app/styles/colors";
+@import "src/app/styles/font";
+@import "src/app/styles/variables";
+
+.mat-list-base {
+  border-bottom: 1px solid $gray-80;
+  width: $sidebar-width;
+  padding-bottom: 16px;
+
+  & .mat-list-item {
+    display: flex;
+    cursor: pointer;
+    color: $sidebar-font-color;
+    width: auto;
+    padding-left: 4px;
+
+    &.active {
+      color: $sidebar-font-color-active;
+      background-color: $sidebar-background-color-active;
+      outline: none;
+
+      & .mat-icon {
+        color: $sidebar-icon-color-active;
+      }
+
+      & .circle {
+        background-color: $sidebar-icon-color-active;
+      }
+    }
+
+    &:hover {
+      background-color: $sidebar-background-color-hover;
+    }
+
+    &:focus {
+      outline: none;
+    }
+  }
+}
+
+.mat-icon {
+  margin-right: 15px;
+  color: $sidebar-icon-color;
+}
+
+
+.sidebar-title {
+  color: $sidebar-title-color;
+  font-size: $fs-normal;
+  text-transform: uppercase;
+  margin-top: 32px;
+  margin-left: 24px;
+  margin-bottom: 16px;
+}
+
+.mat-list-base .mat-list-item.ui-element {
+  padding-left: 40px;
+}
+
+.circle {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: $sidebar-circle-color;
+  margin-right: 30px;
+}
+
+.project-circle {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 15px;
+  margin-left: 8px;
+
+  &_yellow {
+    background-color: $yellow;
+  }
+
+  &_blue {
+    background-color: $blue;
+  }
+
+  &_pink {
+    background-color: $pink;
+  }
+}

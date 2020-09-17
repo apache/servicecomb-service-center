@@ -1,0 +1,32 @@
+<div class="auth-page">
+  <div class="auth-page__content-block">
+    <div class="auth-page__content-wrapper">
+      <mat-tab-group class="auth-page__group">
+        <mat-tab label="Login">
+          <h4 class="auth-page__group-title">Good Day! ServiceComb User</h4>
+
+          <div class="auth-page__border-wrapper">
+            <div class="auth-page__border-line"></div>
+            <p class="auth-page__border-title">or</p>
+            <div class="auth-page__border-line"></div>
+          </div>
+
+          <app-login-form (sendLoginForm)="sendLoginForm()"></app-login-form>
+
+        </mat-tab>
+        <mat-tab label="How to Login">
+          <h4 class="auth-page__group-title">Welcome!</h4>
+          <p class="auth-page__group-sub-title">Create you account in ServiceCenter config file</p>
+        </mat-tab>
+      </mat-tab-group>
+
+      <p class="auth-page__footer-title"></p>
+    </div>
+  </div>
+  <div class="auth-page__logo">
+    <div class="auth-page__logo-wrapper">
+      <img class="auth-page__logo-img" src="./assets/auth/servicecomb.png" alt="logo">
+      <h6 class="auth-page__logo-title">Control Panel</h6>
+    </div>
+  </div>
+</div>

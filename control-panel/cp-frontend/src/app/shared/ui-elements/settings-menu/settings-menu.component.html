@@ -1,0 +1,9 @@
+<button class="settings-button" mat-mini-fab [matMenuTriggerFor]="settings">
+  <mat-icon class="settings-button__icon">more_vert</mat-icon>
+</button>
+<div class="settings-menu">
+  <mat-menu #settings="matMenu" xPosition="before">
+    <button class="settings-menu__item" mat-menu-item (click)="openDialog()">Edit Kie Conf</button>
+    <button class="settings-menu__item" mat-menu-item>Go to Detail</button>
+  </mat-menu>
+</div>

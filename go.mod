@@ -36,7 +36,7 @@ require (
 	github.com/stretchr/testify v1.4.0
 	github.com/widuu/gojson v0.0.0-20170212122013-7da9d2cd949b
 	go.uber.org/zap v1.10.0
-	golang.org/x/crypto v0.0.0-20190820162420-60c769a6c586
+	golang.org/x/crypto v0.0.0-20200221231518-2aa609cf4a9d
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4
 	google.golang.org/grpc v1.19.0
 	gopkg.in/yaml.v2 v2.2.4
