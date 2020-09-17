@@ -41,9 +41,7 @@ require (
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jonboulle/clockwork v0.1.0 // indirect
 	github.com/karlseguin/ccache v2.0.3-0.20170217060820-3ba9789cfd2c+incompatible
-	github.com/karlseguin/expect v1.0.1 // indirect
-	github.com/labstack/echo/v4 v4.1.16
-	github.com/mattn/go-runewidth v0.0.3 // indirect
+	github.com/labstack/echo v3.2.2-0.20180316170059-a5d81b8d4a62+incompatible
 	github.com/natefinch/lumberjack v0.0.0-20170531160350-a96e63847dc3
 	github.com/olekukonko/tablewriter v0.0.0-20180506121414-d4647c9c7a84
 	github.com/onsi/ginkgo v1.10.1
@@ -65,7 +63,6 @@ require (
 	github.com/spf13/cobra v0.0.0-20170624150100-4d647c8944eb
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.4.0
-	github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5 // indirect
 	github.com/widuu/gojson v0.0.0-20170212122013-7da9d2cd949b
 	github.com/wsxiaoys/terminal v0.0.0-20160513160801-0940f3fc43a0 // indirect
 	github.com/xiang90/probing v0.0.0-20160813154853-07dd2e8dfe18 // indirect
