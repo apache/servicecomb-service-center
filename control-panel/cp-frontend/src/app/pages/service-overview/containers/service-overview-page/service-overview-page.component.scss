@@ -1,0 +1,50 @@
+@import 'src/app/styles/variables';
+@import "src/app/styles/font";
+
+.charts-wrapper {
+  display: flex;
+  margin: 0 8px;
+
+  @media (max-width: $normal) {
+    flex-wrap: wrap;
+  }
+}
+
+.chart {
+  width: 100%;
+
+  @media (max-width: $normal) {
+    width: 50%;
+  }
+
+  @media (max-width: $small) {
+    width: 100%;
+  }
+}
+
+.service-overview {
+  &__content-stats {
+    width: 40%;
+    flex-direction: row;
+    justify-content: start;
+    display: flex;
+
+    &-title {
+      margin: 0;
+      color: $grey;
+      font-weight: $fw-lighter;
+      font-size: $fs-small;
+      color: $light-grey;
+
+    }
+
+    &-data {
+      margin: 0;
+      line-height: 1.5;
+      font-weight: $fw-lighter;
+      font-size: $fs-medium;
+      color: $light-grey;
+    }
+
+  }
+}

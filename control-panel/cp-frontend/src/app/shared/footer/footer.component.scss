@@ -1,0 +1,57 @@
+@import 'src/app/styles/colors';
+@import 'src/app/styles/variables';
+
+.footer {
+  height: $footer-height;
+  margin-top: 40px;
+  width: $footer-width;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 24px 24px 24px;
+
+  @media (max-width: $small) {
+    flex-direction: column;
+    align-items: start;
+  }
+
+  &__link {
+    display: flex;
+    align-items: center;
+
+    @media (max-width: $small) {
+      margin-bottom: 8px;
+    }
+  }
+
+  &__icon {
+    @media (max-width: $small) {
+      margin: 0 0 8px -14px;
+    }
+  }
+
+  &__link-item {
+    margin-right: 16px;
+    color: $footer-link-color;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.mat-mini-fab {
+  box-shadow: none;
+  background-color: inherit;
+  width: 46px;
+  height: 46px;
+
+  &:hover {
+    background-color: $footer-icon-background-color-hover;
+  }
+}
+
+.mat-icon {
+  color: $footer-icon-color;
+  padding: 3px 0 0 0;
+}

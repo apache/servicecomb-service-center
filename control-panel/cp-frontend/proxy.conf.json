@@ -1,1 +1,1 @@
-{  "/api/*": {    "target": "http://backend:3000",    "secure": false,    "pathRewrite": {"^/api" : "/api"}  }}
+{  "/v4/*": {    "target": "http://127.0.0.1:30100",    "secure": false,    "pathRewrite": {"^/v4" : "/v4"}  }}

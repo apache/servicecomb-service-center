@@ -1,0 +1,18 @@
+<button class="notification-button" mat-mini-fab [matMenuTriggerFor]="bell">
+  <mat-icon matBadge="3" matBadgeColor="warn" class="notification-button__icon">notifications_none</mat-icon>
+</button>
+<mat-menu #bell="matMenu" xPosition="before" class="notification-menu">
+  <button mat-menu-item class="notification-menu__button">
+    <mat-icon class="notification-menu__icon_yellow">local_offer</mat-icon>
+    Kie 2.0.0 has release!
+  </button>
+  <button mat-menu-item class="notification-menu__button">
+    <mat-icon class="notification-menu__icon_green">thumb_up</mat-icon>
+    New Control Panel is Coming!
+  </button>
+  <button mat-menu-item class="notification-menu__button">
+    <mat-icon class="notification-menu__icon_pink">notifications_none</mat-icon>
+    There is a critical Bug in javachassis.
+  </button>
+
+</mat-menu>

@@ -1,0 +1,25 @@
+@import "src/app/styles/colors";
+
+.api-wrapper {
+  margin: 0px 0px 4px 0px;
+  border: 1px solid $api-get-color;
+  border-radius: 4px;
+  height: 20px;
+  display: flex;
+  align-items: stretch;
+  cursor: pointer;
+
+  &__method {
+    padding-left: 10px;
+    padding-right: 9px;
+    color: #FFF;
+    background: $api-get-color;
+    font-size: 14px;
+  }
+
+  &__path {
+    font-size: 12px;
+    color: $api-get-color;
+    padding-left: 10px;
+  }
+}

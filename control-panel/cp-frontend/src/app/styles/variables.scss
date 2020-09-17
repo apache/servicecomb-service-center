@@ -1,0 +1,86 @@
+@import "colors";
+
+//== Viewports
+
+$extra-small: 576px;
+$small: 576px;
+$medium: 768px;
+$normal: 1024px;
+$large: 992px;
+$extra-large: 1200px;
+
+
+//== Sidebar
+
+$sidebar-width: 210px;
+$sidebar-font-color: $gray-08;
+$sidebar-font-color-active: $dark-grey;
+$sidebar-background-color-active: $blue-white;
+$sidebar-background-color-hover: $blue-white;
+$sidebar-icon-color-active: $blue;
+$sidebar-icon-color: $gray-06;
+$sidebar-title-color: $sidebar-font-color;
+$sidebar-circle-color: $light-grey;
+
+//== Material Card
+//
+
+$card-font-color: $dark-grey;
+$card-title-font-color: $grey;
+
+//== Material Toolbar
+
+$toolbar-title-font-color: $light-grey;
+$toolbar-button-font-color: $white;
+$toolbar-button-background-color: $pink;
+$toolbar-button-background-color-active: $dark-pink;
+
+//== Material Sidebar Content
+
+$sidebar-content-padding: 48px;
+
+//== Material Tabs
+
+$tabs-header-font-color: $light-grey;
+$tabs-header-font-color-active: $blue;
+$tabs-ink-bar-color: $blue;
+
+
+//== Apex Chart X axis tooltip
+
+$chart-tooltip-background-color: $blue;
+$chart-tooltip-border-color: $blue;
+$chart-tooltip-font-color: $white;
+
+//== Scroll bar
+
+$scrollbar-track-color: $light-grey;
+$scrollbar-track-piece-color: $white;
+$scrollbar-thumb-color: $light-grey;
+$scrollbar-corner-color: $light-grey;
+
+//== Header
+
+$header-background-color: $blue;
+$header-height: 64px;
+$header-button-background-color: $blue;
+$header-button-background-color-hover: $black-08;
+$header-button-font-color: $white;
+$header-title-font-color: $white;
+
+//== Footer
+
+$footer-height: 48px;
+$footer-width: calc(100% - #{$sidebar-content-padding});
+$footer-link-color: $blue;
+$footer-icon-color: $gray-06;
+$footer-icon-background-color-hover: $black-08;
+
+//== Settings menu element
+
+$settings-button-background-color: $white;
+$settings-button-background-color-hover: $blue;
+$settings-button-color: $light-grey;
+$settings-button-color-hover: $white-35;
+$settings-menu-font-color: $dark-grey;
+$settings-menu-background-color-hover: $blue-white;

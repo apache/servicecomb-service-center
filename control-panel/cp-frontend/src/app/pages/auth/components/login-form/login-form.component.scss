@@ -1,0 +1,27 @@
+@import "src/app/styles/colors";
+@import "src/app/styles/font";
+
+.form {
+  width: 100%;
+
+  &__input {
+    width: 100%;
+    margin-top: 6px;
+  }
+}
+
+.form-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  &__login {
+    margin-right: 10px;
+  }
+
+  &__forget {
+    font-size: 12px;
+    font-weight: $fw-lighter;
+    color: $blue;
+  }
+}

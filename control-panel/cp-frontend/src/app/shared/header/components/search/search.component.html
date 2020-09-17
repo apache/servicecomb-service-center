@@ -1,0 +1,4 @@
+<div class="search" (click)="showInput()" [ngClass]="{'show-search-input': isShowInput}">
+  <mat-icon class="search-icon" [ngClass]="{'open-search': isShowInput}">search</mat-icon>
+  <input *ngIf="isShowInput" class="search-input" placeholder="Search...">
+</div>
