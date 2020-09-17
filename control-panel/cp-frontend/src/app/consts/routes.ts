@@ -16,10 +16,10 @@
  */
 
 export enum routes {
-  SERVICE_OVERVIEW = '/service_overview',
-  SERVICE_LIST = '/service_list',
+  OVERVIEW = '/overview',
+  SERVICES = '/services',
   SERVICE_TOPOLOGY = '/service_topology',
-  INSTANCE_LIST = '/instance_list',
-  SERVICE_DETAIL = '/service_detail',
+  INSTANCES = '/instances',
+  SERVICE = '/service_detail',
   LOGIN = '/login'
 }

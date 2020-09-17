@@ -27,13 +27,13 @@ import {ServiceDetailPageComponent} from './pages/service-detail/containers';
 
 const routes: Routes = [
   {
-    path: 'service_overview',
+    path: 'overview',
     pathMatch: 'full',
     canActivate: [AuthGuard],
     component: ServiceOverviewPageComponent
   },
   {
-    path: 'service_list',
+    path: 'services',
     pathMatch: 'full',
     canActivate: [AuthGuard],
     component: ServiceListPageComponent
@@ -45,13 +45,13 @@ const routes: Routes = [
     component: TopologyPageComponent
   },
   {
-    path: 'instance_list',
+    path: 'instances',
     pathMatch: 'full',
     canActivate: [AuthGuard],
     component: InstanceListPageComponent
   },
   {
-    path: 'service_detail/:serviceId',
+    path: 'services/:serviceId',
     pathMatch: 'full',
     canActivate: [AuthGuard],
     component: ServiceDetailPageComponent

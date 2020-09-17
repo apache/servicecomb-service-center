@@ -39,7 +39,7 @@ export class AuthPageComponent {
   public sendLoginForm(): void {
     this.service.login();
 
-    this.router.navigate([this.routers.SERVICE_OVERVIEW]).then();
+    this.router.navigate([this.routers.OVERVIEW]).then();
   }
 
 }
