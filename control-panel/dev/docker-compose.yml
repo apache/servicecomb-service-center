@@ -8,12 +8,6 @@ services:
       - '4200:4200'
     volumes:
       - '../cp-frontend:/app'
-  backend:
-    build:
-      context: ../cp-backend
-      dockerfile: ./Dockerfile
-    ports:
-      - '3000:3000'
   servicecenter:
     image: servicecomb/service-center
     ports:
