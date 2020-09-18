@@ -579,8 +579,23 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 		}, nil
 	}
 
-	domainProject := util.ParseDomainProject(ctx)
+	provider := &pb.MicroServiceKey{
+		Tenant:      util.ParseTargetDomainProject(ctx),
+		Environment: in.Environment,
+		AppId:       in.AppId,
+		ServiceName: in.ServiceName,
+		Alias:       in.ServiceName,
+		Version:     in.VersionRule,
+	}
+	if apt.IsShared(provider) {
+		return s.findSharedServiceInstance(ctx, in, provider)
+	}
+	return s.findInstance(ctx, in, provider)
+}
 
+func (s *InstanceService) findInstance(ctx context.Context, in *pb.FindInstancesRequest, provider *pb.MicroServiceKey) (*pb.FindInstancesResponse, error) {
+	var err error
+	domainProject := util.ParseDomainProject(ctx)
 	service := &pb.MicroService{Environment: in.Environment}
 	if len(in.ConsumerServiceId) > 0 {
 		service, err = serviceUtil.GetService(ctx, domainProject, in.ConsumerServiceId)
@@ -599,51 +614,30 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 					fmt.Sprintf("Consumer[%s] does not exist.", in.ConsumerServiceId)),
 			}, nil
 		}
+		provider.Environment = service.Environment
 	}
 
-	var findFlag func() string
-	provider := &pb.MicroServiceKey{
-		Tenant:      util.ParseTargetDomainProject(ctx),
-		Environment: service.Environment,
-		AppId:       in.AppId,
-		ServiceName: in.ServiceName,
-		Alias:       in.ServiceName,
-		Version:     in.VersionRule,
-	}
-	if apt.IsShared(provider) {
-		// it means the shared micro-services must be the same env with SC.
-		provider.Environment = apt.Service.Environment
+	// provider is not a shared micro-service,
+	// only allow shared micro-service instances found in different domains.
+	ctx = util.SetTargetDomainProject(ctx, util.ParseDomain(ctx), util.ParseProject(ctx))
+	provider.Tenant = util.ParseTargetDomainProject(ctx)
 
-		findFlag = func() string {
-			return fmt.Sprintf("Consumer[%s][%s/%s/%s/%s] find shared provider[%s/%s/%s/%s]",
-				in.ConsumerServiceId, service.Environment, service.AppId, service.ServiceName, service.Version,
-				provider.Environment, provider.AppId, provider.ServiceName, provider.Version)
-		}
-	} else {
-		// provider is not a shared micro-service,
-		// only allow shared micro-service instances found in different domains.
-		ctx = util.SetTargetDomainProject(ctx, util.ParseDomain(ctx), util.ParseProject(ctx))
-		provider.Tenant = util.ParseTargetDomainProject(ctx)
-
-		findFlag = func() string {
-			return fmt.Sprintf("Consumer[%s][%s/%s/%s/%s] find provider[%s/%s/%s/%s]",
-				in.ConsumerServiceId, service.Environment, service.AppId, service.ServiceName, service.Version,
-				provider.Environment, provider.AppId, provider.ServiceName, provider.Version)
-		}
-	}
+	findFlag := fmt.Sprintf("Consumer[%s][%s/%s/%s/%s] find provider[%s/%s/%s/%s]",
+		in.ConsumerServiceId, service.Environment, service.AppId, service.ServiceName, service.Version,
+		provider.Environment, provider.AppId, provider.ServiceName, provider.Version)
 
 	// cache
 	var item *cache.VersionRuleCacheItem
 	rev, _ := ctx.Value(util.CtxRequestRevision).(string)
 	item, err = cache.FindInstances.Get(ctx, service, provider, in.Tags, rev)
 	if err != nil {
-		log.Errorf(err, "FindInstancesCache.Get failed, %s failed", findFlag())
+		log.Errorf(err, "FindInstancesCache.Get failed, %s failed", findFlag)
 		return &pb.FindInstancesResponse{
 			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 	if item == nil {
-		mes := fmt.Errorf("%s failed, provider does not exist", findFlag())
+		mes := fmt.Errorf("%s failed, provider does not exist", findFlag)
 		log.Errorf(mes, "FindInstancesCache.Get failed")
 		return &pb.FindInstancesResponse{
 			Response: proto.CreateResponse(scerr.ErrServiceNotExists, mes.Error()),
@@ -661,22 +655,54 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 		if provider != nil {
 			err = serviceUtil.AddServiceVersionRule(ctx, domainProject, service, provider)
 		} else {
-			mes := fmt.Errorf("%s failed, provider does not exist", findFlag())
+			mes := fmt.Errorf("%s failed, provider does not exist", findFlag)
 			log.Errorf(mes, "AddServiceVersionRule failed")
 			return &pb.FindInstancesResponse{
 				Response: proto.CreateResponse(scerr.ErrServiceNotExists, mes.Error()),
 			}, nil
 		}
 		if err != nil {
-			log.Errorf(err, "AddServiceVersionRule failed, %s failed", findFlag())
+			log.Errorf(err, "AddServiceVersionRule failed, %s failed", findFlag)
 			return &pb.FindInstancesResponse{
 				Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
 			}, err
 		}
 	}
 
+	return s.genFindResult(ctx, rev, item)
+}
+
+func (s *InstanceService) findSharedServiceInstance(ctx context.Context, in *pb.FindInstancesRequest, provider *pb.MicroServiceKey) (*pb.FindInstancesResponse, error) {
+	var err error
+	service := &pb.MicroService{Environment: in.Environment}
+	// it means the shared micro-services must be the same env with SC.
+	provider.Environment = apt.Service.Environment
+	findFlag := fmt.Sprintf("find shared provider[%s/%s/%s/%s]", provider.Environment, provider.AppId, provider.ServiceName, provider.Version)
+
+	// cache
+	var item *cache.VersionRuleCacheItem
+	rev, _ := ctx.Value(util.CtxRequestRevision).(string)
+	item, err = cache.FindInstances.Get(ctx, service, provider, in.Tags, rev)
+	if err != nil {
+		log.Errorf(err, "FindInstancesCache.Get failed, %s failed", findFlag)
+		return &pb.FindInstancesResponse{
+			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+		}, err
+	}
+	if item == nil {
+		mes := fmt.Errorf("%s failed, provider does not exist", findFlag)
+		log.Errorf(mes, "FindInstancesCache.Get failed")
+		return &pb.FindInstancesResponse{
+			Response: proto.CreateResponse(scerr.ErrServiceNotExists, mes.Error()),
+		}, nil
+	}
+
+	return s.genFindResult(ctx, rev, item)
+}
+
+func (s *InstanceService) genFindResult(ctx context.Context, oldRev string, item *cache.VersionRuleCacheItem) (*pb.FindInstancesResponse, error) {
 	instances := item.Instances
-	if rev == item.Rev {
+	if oldRev == item.Rev {
 		instances = nil // for gRPC
 	}
 	// TODO support gRPC output context
