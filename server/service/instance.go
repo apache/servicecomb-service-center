@@ -587,13 +587,24 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 		Alias:       in.ServiceName,
 		Version:     in.VersionRule,
 	}
-	if apt.IsShared(provider) {
-		return s.findSharedServiceInstance(ctx, in, provider)
+
+	rev, ok := ctx.Value(util.CtxRequestRevision).(string)
+	if !ok {
+		err = errors.New("rev in context is not type string")
+		log.Error("", err)
+		return &pb.FindInstancesResponse{
+			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+		}, err
 	}
-	return s.findInstance(ctx, in, provider)
+
+	if apt.IsShared(provider) {
+		return s.findSharedServiceInstance(ctx, in, provider, rev)
+	}
+	return s.findInstance(ctx, in, provider, rev)
 }
 
-func (s *InstanceService) findInstance(ctx context.Context, in *pb.FindInstancesRequest, provider *pb.MicroServiceKey) (*pb.FindInstancesResponse, error) {
+func (s *InstanceService) findInstance(ctx context.Context, in *pb.FindInstancesRequest,
+	provider *pb.MicroServiceKey, rev string) (*pb.FindInstancesResponse, error) {
 	var err error
 	domainProject := util.ParseDomainProject(ctx)
 	service := &pb.MicroService{Environment: in.Environment}
@@ -628,7 +639,6 @@ func (s *InstanceService) findInstance(ctx context.Context, in *pb.FindInstances
 
 	// cache
 	var item *cache.VersionRuleCacheItem
-	rev, _ := ctx.Value(util.CtxRequestRevision).(string)
 	item, err = cache.FindInstances.Get(ctx, service, provider, in.Tags, rev)
 	if err != nil {
 		log.Errorf(err, "FindInstancesCache.Get failed, %s failed", findFlag)
@@ -672,7 +682,8 @@ func (s *InstanceService) findInstance(ctx context.Context, in *pb.FindInstances
 	return s.genFindResult(ctx, rev, item)
 }
 
-func (s *InstanceService) findSharedServiceInstance(ctx context.Context, in *pb.FindInstancesRequest, provider *pb.MicroServiceKey) (*pb.FindInstancesResponse, error) {
+func (s *InstanceService) findSharedServiceInstance(ctx context.Context, in *pb.FindInstancesRequest,
+	provider *pb.MicroServiceKey, rev string) (*pb.FindInstancesResponse, error) {
 	var err error
 	service := &pb.MicroService{Environment: in.Environment}
 	// it means the shared micro-services must be the same env with SC.
@@ -681,7 +692,6 @@ func (s *InstanceService) findSharedServiceInstance(ctx context.Context, in *pb.
 
 	// cache
 	var item *cache.VersionRuleCacheItem
-	rev, _ := ctx.Value(util.CtxRequestRevision).(string)
 	item, err = cache.FindInstances.Get(ctx, service, provider, in.Tags, rev)
 	if err != nil {
 		log.Errorf(err, "FindInstancesCache.Get failed, %s failed", findFlag)
