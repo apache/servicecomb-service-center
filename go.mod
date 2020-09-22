@@ -19,6 +19,7 @@ require (
 	github.com/hashicorp/serf v0.8.3
 	github.com/karlseguin/ccache v2.0.3-0.20170217060820-3ba9789cfd2c+incompatible
 	github.com/labstack/echo v3.2.2-0.20180316170059-a5d81b8d4a62+incompatible
+	github.com/labstack/echo/v4 v4.1.17
 	github.com/natefinch/lumberjack v0.0.0-20170531160350-a96e63847dc3
 	github.com/olekukonko/tablewriter v0.0.0-20180506121414-d4647c9c7a84
 	github.com/onsi/ginkgo v1.10.1
@@ -36,7 +37,7 @@ require (
 	github.com/stretchr/testify v1.4.0
 	github.com/widuu/gojson v0.0.0-20170212122013-7da9d2cd949b
 	go.uber.org/zap v1.10.0
-	golang.org/x/crypto v0.0.0-20200221231518-2aa609cf4a9d
+	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4
 	google.golang.org/grpc v1.19.0
 	gopkg.in/yaml.v2 v2.2.4
