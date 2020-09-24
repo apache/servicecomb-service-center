@@ -13,13 +13,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ms
+package ms_test
 
 import (
-	"context"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
-	"github.com/apache/servicecomb-service-center/pkg/util"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
+	"github.com/apache/servicecomb-service-center/server/service/ms"
 	"github.com/apache/servicecomb-service-center/server/service/ms/etcd"
 	"github.com/go-chassis/go-archaius"
 	"github.com/stretchr/testify/assert"
@@ -29,41 +26,21 @@ import (
 func TestInit(t *testing.T) {
 	_ = archaius.Init(archaius.WithMemorySource())
 	_ = archaius.Set("servicecomb.ms.name", "etcd")
-	t.Run("circuit microservice data source plugin", func(t *testing.T) {
-		err := Init(Options{
+	t.Run("init microservice data source plugin, should pass", func(t *testing.T) {
+		err := ms.Init(ms.Options{
 			Endpoint:       "",
 			PluginImplName: "",
 		})
 		assert.NoError(t, err)
 	})
-	t.Run("microservice data source plugin install and init", func(t *testing.T) {
-		Install("etcd", func(opts Options) (DataSource, error) {
+	t.Run("install and init microservice data source plugin, should pass", func(t *testing.T) {
+		ms.Install("etcd", func(opts ms.Options) (ms.DataSource, error) {
 			return etcd.NewDataSource(), nil
 		})
-		err := Init(Options{
+		err := ms.Init(ms.Options{
 			Endpoint:       "",
-			PluginImplName: ImplName(archaius.GetString("servicecomb.ms.name", "etcd")),
+			PluginImplName: ms.ImplName(archaius.GetString("servicecomb.ms.name", "etcd")),
 		})
 		assert.NoError(t, err)
 	})
-	t.Run("Register service,should success", func(t *testing.T) {
-		Install("etcd", func(opts Options) (DataSource, error) {
-			return etcd.NewDataSource(), nil
-		})
-
-		err := Init(Options{
-			Endpoint:       "",
-			PluginImplName: ImplName(archaius.GetString("servicecomb.ms.name", "etcd")),
-		})
-		assert.NoError(t, err)
-		resp, err := MicroService().RegisterService(getContext(), &pb.CreateServiceRequest{Service: nil})
-		assert.NotNil(t, resp)
-		assert.Equal(t, resp.Response.GetCode(), scerr.ErrInvalidParams)
-	})
-}
-
-func getContext() context.Context {
-	return util.SetContext(
-		util.SetDomainProject(context.Background(), "default", "default"),
-		util.CtxNocache, "1")
 }

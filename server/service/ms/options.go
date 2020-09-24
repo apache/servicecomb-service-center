@@ -19,4 +19,6 @@ package ms
 type Options struct {
 	Endpoint       string
 	PluginImplName ImplName
+
+	// TODO: pay attention to more net config like TLSConfig when coding
 }
