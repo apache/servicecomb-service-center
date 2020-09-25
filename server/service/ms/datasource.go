@@ -18,10 +18,11 @@ package ms
 import (
 	"context"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
+	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 )
 
 type DataSource interface {
-	RegisterService(ctx context.Context, service *pb.CreateServiceRequest) (*pb.CreateServiceResponse, error)
+	RegisterService(ctx context.Context, service *pb.CreateServiceRequest) (*registry.PluginResponse, error)
 	GetService(ctx context.Context, service *pb.GetServiceRequest)
 	UpdateService(ctx context.Context, service *pb.UpdateServicePropsRequest)
 	UnregisterService(ctx context.Context, service *pb.DeleteServiceRequest)

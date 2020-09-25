@@ -22,9 +22,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
-	"github.com/apache/servicecomb-service-center/server/service/ms"
-	"github.com/apache/servicecomb-service-center/server/service/ms/etcd"
-	"github.com/go-chassis/go-archaius"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"strconv"
@@ -49,22 +46,6 @@ var _ = Describe("'Micro-service' service", func() {
 				resp, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
 					Service: nil,
 				})
-				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
-			})
-
-			It("ms datasource etcd mode: should not be passed", func() {
-				ms.Install("etcd",
-					func(opts ms.Options) (ms.DataSource, error) {
-						return etcd.NewDataSource(), nil
-					})
-
-				// sc main function initialize step
-				err := ms.Init(ms.Options{
-					Endpoint:       "",
-					PluginImplName: ms.ImplName(archaius.GetString("servicecomb.ms.name", "etcd")),
-				})
-				resp, err := ms.MicroService().RegisterService(getContext(), &pb.CreateServiceRequest{Service: nil})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
 			})

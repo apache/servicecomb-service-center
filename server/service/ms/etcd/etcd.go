@@ -17,10 +17,18 @@ package etcd
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	apt "github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/core/backend"
+	"github.com/apache/servicecomb-service-center/server/plugin"
+	"github.com/apache/servicecomb-service-center/server/plugin/registry"
+	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
+	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
+	"strconv"
+	"time"
 )
 
 // TODO: define error with names here
@@ -37,7 +45,6 @@ func NewDataSource() *DataSource {
 	log.Warnf("microservice mgt data source enable etcd mode")
 
 	inst := &DataSource{}
-	// TODO: deal with exception
 	if err := inst.initialize(); err != nil {
 		return inst
 	}
@@ -49,14 +56,75 @@ func (ds *DataSource) initialize() error {
 	return nil
 }
 
-func (ds *DataSource) RegisterService(ctx context.Context, service *pb.CreateServiceRequest) (*pb.CreateServiceResponse, error) {
-	if service == nil || service.Service == nil {
-		log.Errorf(nil, "create micro-service failed: request body is empty")
-		return &pb.CreateServiceResponse{
-			Response: proto.CreateResponse(scerr.ErrInvalidParams, "Request body is empty"),
-		}, nil
+// RegisterService() implement:
+// 1. capsule request to etcd kv format
+// 2. invoke registry interface to store service information to etcd cluster
+// Attention: parameters validation && response check must be checked outside the method
+func (ds *DataSource) RegisterService(ctx context.Context, request *pb.CreateServiceRequest) (
+	*registry.PluginResponse, error) {
+	remoteIP := util.GetIPFromContext(ctx)
+	serviceBody := request.Service
+	serviceFlag := util.StringJoin([]string{
+		serviceBody.Environment, serviceBody.AppId, serviceBody.ServiceName, serviceBody.Version}, "/")
+
+	serviceUtil.SetServiceDefaultValue(serviceBody)
+
+	domainProject := util.ParseDomainProject(ctx)
+
+	serviceKey := &pb.MicroServiceKey{
+		Tenant:      domainProject,
+		Environment: serviceBody.Environment,
+		AppId:       serviceBody.AppId,
+		ServiceName: serviceBody.ServiceName,
+		Alias:       serviceBody.Alias,
+		Version:     serviceBody.Version,
 	}
-	return nil, nil
+
+	index := apt.GenerateServiceIndexKey(serviceKey)
+
+	// 产生全局service id
+	requestServiceID := serviceBody.ServiceId
+	if len(requestServiceID) == 0 {
+		ctx = util.SetContext(ctx, uuid.ContextKey, index)
+		serviceBody.ServiceId = plugin.Plugins().UUID().GetServiceID(ctx)
+	}
+	serviceBody.Timestamp = strconv.FormatInt(time.Now().Unix(), 10)
+	serviceBody.ModTimestamp = serviceBody.Timestamp
+
+	data, err := json.Marshal(serviceBody)
+	if err != nil {
+		log.Errorf(err, "create micro-serviceBody[%s] failed, json marshal serviceBody failed, operator: %s",
+			serviceFlag, remoteIP)
+		return nil, err
+	}
+
+	key := apt.GenerateServiceKey(domainProject, serviceBody.ServiceId)
+	keyBytes := util.StringToBytesWithNoCopy(key)
+	indexBytes := util.StringToBytesWithNoCopy(index)
+	aliasBytes := util.StringToBytesWithNoCopy(apt.GenerateServiceAliasKey(serviceKey))
+
+	opts := []registry.PluginOp{
+		registry.OpPut(registry.WithKey(keyBytes), registry.WithValue(data)),
+		registry.OpPut(registry.WithKey(indexBytes), registry.WithStrValue(serviceBody.ServiceId)),
+	}
+	uniqueCmpOpts := []registry.CompareOp{
+		registry.OpCmp(registry.CmpVer(indexBytes), registry.CmpEqual, 0),
+		registry.OpCmp(registry.CmpVer(keyBytes), registry.CmpEqual, 0),
+	}
+	failOpts := []registry.PluginOp{
+		registry.OpGet(registry.WithKey(indexBytes)),
+	}
+
+	if len(serviceKey.Alias) > 0 {
+		opts = append(opts, registry.OpPut(registry.WithKey(aliasBytes), registry.WithStrValue(serviceBody.ServiceId)))
+		uniqueCmpOpts = append(uniqueCmpOpts,
+			registry.OpCmp(registry.CmpVer(aliasBytes), registry.CmpEqual, 0))
+		failOpts = append(failOpts, registry.OpGet(registry.WithKey(aliasBytes)))
+	}
+
+	resp, err := backend.Registry().TxnWithCmp(ctx, opts, uniqueCmpOpts, failOpts)
+
+	return resp, err
 }
 
 func (ds *DataSource) GetService(ctx context.Context, service *pb.GetServiceRequest) {
