@@ -17,7 +17,9 @@ package etcd_test
 
 import (
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
+	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
+	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"github.com/apache/servicecomb-service-center/server/service/ms"
 	"github.com/apache/servicecomb-service-center/server/service/ms/etcd"
 	"github.com/go-chassis/go-archaius"
@@ -29,6 +31,7 @@ import (
 )
 
 var (
+	TooLongServiceId   = strings.Repeat("x", 66)
 	TooLongAppId       = strings.Repeat("x", 162)
 	TooLongSchemaId    = strings.Repeat("x", 162)
 	TooLongServiceName = strings.Repeat("x", 130)
@@ -39,7 +42,9 @@ var (
 func TestInit(t *testing.T) {
 	_ = archaius.Init(archaius.WithMemorySource())
 	_ = archaius.Set("servicecomb.ms.name", "etcd")
+}
 
+func TestEtcd_RegisterService(t *testing.T) {
 	t.Run("Register service after init & install, should pass", func(t *testing.T) {
 		ms.Install("etcd", func(opts ms.Options) (ms.DataSource, error) {
 			return etcd.NewDataSource(), nil
@@ -61,18 +66,18 @@ func TestInit(t *testing.T) {
 		}
 		request := &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
-				AppId:       TooLongAppId[:len(TooLongAppId)-1],
-				ServiceName: TooLongServiceName[:len(TooLongServiceName)-1],
+				AppId:       "service-ms-appID",
+				ServiceName: "service-ms-serviceName",
 				Version:     "32767.32767.32767.32767",
-				Alias:       TooLongAlias[:len(TooLongAlias)-1],
+				Alias:       "service-ms-alias",
 				Level:       "BACK",
 				Status:      "UP",
-				Schemas:     []string{TooLongSchemaId[:len(TooLongSchemaId)-1]},
+				Schemas:     []string{"service-ms-schema"},
 				Paths:       paths,
 				Properties:  properties,
 				Framework: &pb.FrameWorkProperty{
-					Name:    TooLongFramework[:len(TooLongFramework)-1],
-					Version: TooLongFramework[:len(TooLongFramework)-1],
+					Name:    "service-ms-frameworkName",
+					Version: "service-ms-frameworkVersion",
 				},
 				RegisterBy: "SDK",
 				Timestamp:  strconv.FormatInt(time.Now().Unix(), 10),
@@ -80,75 +85,230 @@ func TestInit(t *testing.T) {
 		}
 		request.Service.ModTimestamp = request.Service.Timestamp
 		resp, err := ms.MicroService().RegisterService(getContext(), request)
-
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.True(t, resp.Succeeded)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
 	})
 
-	t.Run("register service with framework name nil", func(t *testing.T) {
+	t.Run("register service with same key", func(t *testing.T) {
 		ms.Install("etcd", func(opts ms.Options) (ms.DataSource, error) {
 			return etcd.NewDataSource(), nil
 		})
-
 		err := ms.Init(ms.Options{
 			Endpoint:       "",
 			PluginImplName: ms.ImplName(archaius.GetString("servicecomb.ms.name", "etcd")),
 		})
 		assert.NoError(t, err)
 
-		request := &pb.CreateServiceRequest{
+		// serviceName: some-relay-ms-service-name
+		// alias: sr-ms-service-name
+		resp, err := ms.MicroService().RegisterService(getContext(), &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
-				ServiceName: "framework-test-ms",
+				ServiceName: "some-relay-ms-service-name",
+				Alias:       "sr-ms-service-name",
 				AppId:       "default",
-				Version:     "1.0.1",
-				Level:       "BACK",
-				Framework: &pb.FrameWorkProperty{
-					Version: "1.0.0",
+				Version:     "1.0.0",
+				Level:       "FRONT",
+				Schemas: []string{
+					"xxxxxxxx",
 				},
-				Properties: make(map[string]string),
-				Status:     "UP",
+				Status: "UP",
 			},
-		}
-
-		resp, err := ms.MicroService().RegisterService(getContext(), request)
-
+		})
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.True(t, resp.Succeeded)
-	})
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+		sameId := resp.ServiceId
 
-	t.Run("register service with framework version nil", func(t *testing.T) {
-		ms.Install("etcd", func(opts ms.Options) (ms.DataSource, error) {
-			return etcd.NewDataSource(), nil
-		})
-		err := ms.Init(ms.Options{
-			Endpoint:       "",
-			PluginImplName: ms.ImplName(archaius.GetString("servicecomb.ms.name", "etcd")),
-		})
-		assert.NoError(t, err)
-		request := &pb.CreateServiceRequest{
+		// serviceName: some-relay-ms-service-name
+		// alias: sr1-ms-service-name
+		resp, err = ms.MicroService().RegisterService(getContext(), &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
-				ServiceName: "framework-test-ms",
+				ServiceName: "some-relay-ms-service-name",
+				Alias:       "sr1-ms-service-name",
 				AppId:       "default",
-				Version:     "1.0.2",
-				Level:       "BACK",
-				Framework: &pb.FrameWorkProperty{
-					Name: "framework",
+				Version:     "1.0.0",
+				Level:       "FRONT",
+				Schemas: []string{
+					"xxxxxxxx",
 				},
-				Properties: make(map[string]string),
-				Status:     "UP",
+				Status: "UP",
 			},
-		}
-
-		resp, err := ms.MicroService().RegisterService(getContext(), request)
-
+		})
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.True(t, resp.Succeeded)
+		assert.Equal(t, scerr.ErrServiceAlreadyExists, resp.Response.GetCode())
+
+		// serviceName: some-relay1-ms-service-name
+		// alias: sr-ms-service-name
+		resp, err = ms.MicroService().RegisterService(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				ServiceName: "some-relay1-ms-service-name",
+				Alias:       "sr-ms-service-name",
+				AppId:       "default",
+				Version:     "1.0.0",
+				Level:       "FRONT",
+				Schemas: []string{
+					"xxxxxxxx",
+				},
+				Status: "UP",
+			},
+		})
+		assert.NotNil(t, resp)
+		assert.NoError(t, err)
+		assert.Equal(t, scerr.ErrServiceAlreadyExists, resp.Response.GetCode())
+
+		// serviceName: some-relay1-ms-service-name
+		// alias: sr-ms-service-name
+		// add serviceId field: sameId
+		resp, err = ms.MicroService().RegisterService(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				ServiceId:   sameId,
+				ServiceName: "some-relay1-ms-service-name",
+				Alias:       "sr-ms-service-name",
+				AppId:       "default",
+				Version:     "1.0.0",
+				Level:       "FRONT",
+				Schemas: []string{
+					"xxxxxxxx",
+				},
+				Status: "UP",
+			},
+		})
+		assert.NotNil(t, resp)
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+
+		// serviceName: some-relay-ms-service-name
+		// alias: sr1-ms-service-name
+		// serviceId: sameId
+		resp, err = ms.MicroService().RegisterService(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				ServiceId:   sameId,
+				ServiceName: "some-relay-ms-service-name",
+				Alias:       "sr1-ms-service-name",
+				AppId:       "default",
+				Version:     "1.0.0",
+				Level:       "FRONT",
+				Schemas: []string{
+					"xxxxxxxx",
+				},
+				Status: "UP",
+			},
+		})
+		assert.NotNil(t, resp)
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+
+		// serviceName: some-relay-ms-service-name
+		// alias: sr1-ms-service-name
+		// serviceId: custom-id-ms-service-id -- different
+		resp, err = ms.MicroService().RegisterService(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				ServiceId:   "custom-id-ms-service-id",
+				ServiceName: "some-relay-ms-service-name",
+				Alias:       "sr1-ms-service-name",
+				AppId:       "default",
+				Version:     "1.0.0",
+				Level:       "FRONT",
+				Schemas: []string{
+					"xxxxxxxx",
+				},
+				Status: "UP",
+			},
+		})
+		assert.NotNil(t, resp)
+		assert.NoError(t, err)
+		assert.Equal(t, scerr.ErrServiceAlreadyExists, resp.Response.GetCode())
+
+		// serviceName: some-relay1-ms-service-name
+		// alias: sr-ms-service-name
+		// serviceId: custom-id-ms-service-id -- different
+		resp, err = ms.MicroService().RegisterService(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				ServiceId:   "custom-id-ms-service-id",
+				ServiceName: "some-relay1-ms-service-name",
+				Alias:       "sr-ms-service-name",
+				AppId:       "default",
+				Version:     "1.0.0",
+				Level:       "FRONT",
+				Schemas: []string{
+					"xxxxxxxx",
+				},
+				Status: "UP",
+			},
+		})
+		assert.NotNil(t, resp)
+		assert.NoError(t, err)
+		assert.Equal(t, scerr.ErrServiceAlreadyExists, resp.Response.GetCode())
 	})
 
-	t.Run("register service with status is nil", func(t *testing.T) {
+	t.Run("same serviceId,different service, can not register again,error is same as the service register twice",
+		func(t *testing.T) {
+			ms.Install("etcd", func(opts ms.Options) (ms.DataSource, error) {
+				return etcd.NewDataSource(), nil
+			})
+			err := ms.Init(ms.Options{
+				Endpoint:       "",
+				PluginImplName: ms.ImplName(archaius.GetString("servicecomb.ms.name", "etcd")),
+			})
+			assert.NoError(t, err)
+
+			resp, err := ms.MicroService().RegisterService(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					ServiceId:   "same-serviceId-service-ms",
+					ServiceName: "serviceA-service-ms",
+					AppId:       "default-service-ms",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Schemas: []string{
+						"xxxxxxxx",
+					},
+					Status: "UP",
+				},
+			})
+
+			assert.NotNil(t, resp)
+			assert.NoError(t, err)
+			assert.Equal(t, resp.Response.GetCode(), proto.Response_SUCCESS)
+
+			// same serviceId with different service name
+			resp, err = ms.MicroService().RegisterService(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					ServiceId:   "same-serviceId-service-ms",
+					ServiceName: "serviceB-service-ms",
+					AppId:       "default-service-ms",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Schemas: []string{
+						"xxxxxxxx",
+					},
+					Status: "UP",
+				},
+			})
+			assert.NotNil(t, resp)
+			assert.NoError(t, err)
+			assert.Equal(t, scerr.ErrServiceAlreadyExists, resp.Response.GetCode())
+		})
+}
+
+func TestEtcd_GetService(t *testing.T) {
+	// get service test
+	t.Run("query all services, should pass", func(t *testing.T) {
+		ms.Install("etcd", func(opts ms.Options) (ms.DataSource, error) {
+			return etcd.NewDataSource(), nil
+		})
+		err := ms.Init(ms.Options{
+			Endpoint:       "",
+			PluginImplName: ms.ImplName(archaius.GetString("servicecomb.ms.name", "etcd")),
+		})
+		assert.NoError(t, err)
+		resp, err := ms.MicroService().GetServices(getContext(), &pb.GetServicesRequest{})
+		assert.NoError(t, err)
+		assert.Greater(t, len(resp.Services), 0)
+	})
+
+	t.Run("get a exist service, should pass", func(t *testing.T) {
 		ms.Install("etcd", func(opts ms.Options) (ms.DataSource, error) {
 			return etcd.NewDataSource(), nil
 		})
@@ -160,18 +320,42 @@ func TestInit(t *testing.T) {
 
 		request := &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
-				ServiceName: "status-test-ms",
+				ServiceId:   "ms-service-query-id",
+				ServiceName: "ms-service-query",
 				AppId:       "default",
-				Version:     "1.0.3",
+				Version:     "1.0.4",
 				Level:       "BACK",
 				Properties:  make(map[string]string),
 			},
 		}
 
 		resp, err := ms.MicroService().RegisterService(getContext(), request)
-
-		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.True(t, resp.Succeeded)
+		assert.Equal(t, resp.Response.GetCode(), proto.Response_SUCCESS)
+
+		// search service by serviceID
+		queryResp, err := ms.MicroService().GetService(getContext(), &pb.GetServiceRequest{
+			ServiceId: "ms-service-query-id",
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, queryResp.Response.GetCode(), proto.Response_SUCCESS)
+	})
+
+	t.Run("query a service by a not existed serviceId, should not pass", func(t *testing.T) {
+		ms.Install("etcd", func(opts ms.Options) (ms.DataSource, error) {
+			return etcd.NewDataSource(), nil
+		})
+		err := ms.Init(ms.Options{
+			Endpoint:       "",
+			PluginImplName: ms.ImplName(archaius.GetString("servicecomb.ms.name", "etcd")),
+		})
+		assert.NoError(t, err)
+
+		// not exist service
+		resp, err := ms.MicroService().GetService(getContext(), &pb.GetServiceRequest{
+			ServiceId: "no-exist-service",
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, resp.Response.GetCode(), scerr.ErrServiceNotExists)
 	})
 }
