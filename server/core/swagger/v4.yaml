@@ -1748,6 +1748,173 @@ paths:
       responses:
         200:
           description: cleared
+  /v4/token:
+    post:
+      description: token is the only credential to access rest API, before you access any API, you need to get a token
+      parameters:
+        - name: account
+          in: body
+          description: 用户账户请求结构体。
+          required: true
+          schema:
+            $ref: '#/definitions/Account'
+      tags:
+        - rbac
+      responses:
+        200:
+          description:  generate a token success
+          schema:
+            $ref: '#/definitions/Token'
+        400:
+          description: 错误的请求
+          schema:
+            $ref: '#/definitions/Error'
+        500:
+          description: 内部错误
+          schema:
+            $ref: '#/definitions/Error'
+  /v4/account:
+    get:
+      description: list all user accounts
+      operationId: listAccount
+      parameters:
+        - name: authorization
+          in: header
+          type: string
+          required: true
+          description: Bearer {token}
+      tags:
+        - rbac
+      responses:
+        200:
+          description:  get accout information success
+          schema:
+            $ref: '#/definitions/AccountResponse'
+        400:
+          description: 错误的请求
+          schema:
+            $ref: '#/definitions/Error'
+        500:
+          description: 内部错误
+          schema:
+            $ref: '#/definitions/Error'
+    post:
+      description: create user account
+      operationId: createAccount
+      parameters:
+        - name: authorization
+          in: header
+          type: string
+          required: true
+          description: Bearer {token}
+        - name: type
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Account'
+      tags:
+        - rbac
+      responses:
+        200:
+          description:  create new user accout success
+        400:
+          description: 错误的请求
+          schema:
+            $ref: '#/definitions/Error'
+        500:
+          description: 内部错误
+          schema:
+            $ref: '#/definitions/Error'
+  /v4/account/{name}:
+    get:
+      description: get account information by username
+      operationId: getAccount
+      parameters:
+        - name: authorization
+          in: header
+          type: string
+          required: true
+          description:  Bearer {token}
+        - name: name
+          in: path
+          required: true
+          description: 用户唯一标识
+          type: string
+      tags:
+        - rbac
+      responses:
+        200:
+          description:  get user accout success
+          schema:
+            $ref: '#/definitions/Account'
+        400:
+          description: 错误的请求
+          schema:
+            $ref: '#/definitions/Error'
+        500:
+          description: 内部错误
+          schema:
+            $ref: '#/definitions/Error'
+    delete:
+      description: delete account by username
+      operationId: deleteAccount
+      parameters:
+        - name: authorization
+          in: header
+          type: string
+          required: true
+          description:  Bearer {token}
+        - name: name
+          in: path
+          required: true
+          description: 用户唯一标识
+          type: string
+      tags:
+        - rbac
+      responses:
+        200:
+          description:  delete user account success
+        400:
+          description: 错误的请求
+          schema:
+            $ref: '#/definitions/Error'
+        500:
+          description: 内部错误
+          schema:
+            $ref: '#/definitions/Error'
+  /v4/account/{name}/password:
+    post:
+      description: Change user password, you must supply current password and token to update to new password
+      operationId: changePassword
+      parameters:
+        - name: authorization
+          in: header
+          type: string
+          required: true
+          description:  Bearer {token}
+        - name: name
+          in: path
+          required: true
+          description: 用户唯一标识
+          type: string
+        - name: type
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Account'
+      tags:
+        - rbac
+      responses:
+        200:
+          description: change password success
+        400:
+          description: 错误的请求
+          schema:
+            $ref: '#/definitions/Error'
+        500:
+          description: 内部错误
+          schema:
+            $ref: '#/definitions/Error'
 definitions:
   Version:
     type: object
@@ -2613,3 +2780,51 @@ definitions:
         type: string
       fields:
         $ref: '#/definitions/Properties'
+  AccountResponse:
+    type: object
+    description: account infomation
+    properties:
+      total:
+        type: integer
+        description: total accounts
+    additionalProperties:
+      type: array
+      items:
+        $ref: '#/definitions/Account'
+  Account:
+    type: object
+    description: user accout information
+    required:
+      - password
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+        description: the root account name is "root"
+      password:
+        type: string
+        description: password must conform to the following set of rules, have more than 8 characters, have at least one upper alpha, have at least one lower alpha, have at least one digit and have at lease one special character.
+      role:
+        type: string
+        description: admin|developer
+      tokenExprirationTime:
+        type: string
+        description: token will expired after 30m
+      currentPassword:
+        type: string
+        description: current password
+      status:
+        type: string
+        description: status
+  Token:
+    type: object
+    properties:
+      token:
+        type: string
+        description: token is the only credential to access rest API
+
+
+
+
+

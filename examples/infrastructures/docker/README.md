@@ -17,4 +17,4 @@ You can also point your browser to `http://${NODE}:30103` to view the dashboard 
 ## Next
 
 ServiceCenter already integrate with Prometheus,
-you can get more metrics of ServiceCenter in Grafana, [see](/docs/integration-grafana.md)
+you can get more metrics of ServiceCenter in Grafana, [see](https://service-center.readthedocs.io/en/latest/user-guides/integration-grafana.html)

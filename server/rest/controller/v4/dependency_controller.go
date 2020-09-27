@@ -62,6 +62,7 @@ func (s *DependencyService) AddDependenciesForMicroServices(w http.ResponseWrite
 	if err != nil {
 		controller.WriteError(w, scerr.ErrInternal, err.Error())
 	}
+	w.Header().Add("Deprecation", "version=\"v4\"")
 	controller.WriteResponse(w, resp.Response, nil)
 }
 
@@ -84,6 +85,7 @@ func (s *DependencyService) CreateDependenciesForMicroServices(w http.ResponseWr
 	if err != nil {
 		controller.WriteError(w, scerr.ErrInternal, err.Error())
 	}
+	w.Header().Add("Deprecation", "version=\"v4\"")
 	controller.WriteResponse(w, resp.Response, nil)
 }
 
