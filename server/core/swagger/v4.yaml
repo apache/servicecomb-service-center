@@ -516,7 +516,7 @@ paths:
           description: 内部错误
           schema:
             $ref: '#/definitions/Error'
-  /v4/{project}/registry/microservices/{serviceId}/rules/{rule_id}:
+  /v4/{project}/registry/microservices/{serviceId}/rules/{ruleId}:
     put:
       description: |
         为serviceId的服务更新黑白名单。
@@ -535,7 +535,7 @@ paths:
           description: 微服务唯一标识。
           required: true
           type: string
-        - name: rule_id
+        - name: ruleId
           in: path
           description: ruleId。
           required: true
@@ -581,7 +581,7 @@ paths:
           description: 微服务唯一标识。
           required: true
           type: string
-        - name: rule_id
+        - name: ruleId
           in: path
           description: ruleId。
           required: true
