@@ -16,30 +16,56 @@
 package ms_test
 
 import (
+	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/service/ms"
 	"github.com/apache/servicecomb-service-center/server/service/ms/etcd"
 	"github.com/go-chassis/go-archaius"
 	"github.com/stretchr/testify/assert"
+	"strconv"
+	"strings"
 	"testing"
 )
 
 func TestInit(t *testing.T) {
 	_ = archaius.Init(archaius.WithMemorySource())
 	_ = archaius.Set("servicecomb.ms.name", "etcd")
-	t.Run("init microservice data source plugin, should pass", func(t *testing.T) {
-		err := ms.Init(ms.Options{
+	_ = archaius.Set("servicecomb.instance.TTL", 1000)
+	_ = archaius.Set("servicecomb.instance.editable", "true")
+	t.Run("init microservice data source plugin, should not pass", func(t *testing.T) {
+		schemaEditableConfig := strings.ToLower(archaius.GetString("servicecomb.schema.editable", "true"))
+		schemaEditable := strings.Compare(schemaEditableConfig, "true") == 0
+		pluginName := ms.ImplName(archaius.GetString("servicecomb.ms.name", "etcd"))
+		TTL, err := strconv.ParseInt(archaius.GetString("servicecomb.instance.TTL", "1000"), 10, 0)
+		if err != nil {
+			log.Error("microservice etcd implement failed for INSTANCE_TTL config: %v", err)
+		}
+
+		err = ms.Init(ms.Options{
 			Endpoint:       "",
-			PluginImplName: "",
+			PluginImplName: pluginName,
+			TTL:            TTL,
+			SchemaEditable: schemaEditable,
 		})
-		assert.NoError(t, err)
+		assert.Error(t, err)
 	})
 	t.Run("install and init microservice data source plugin, should pass", func(t *testing.T) {
 		ms.Install("etcd", func(opts ms.Options) (ms.DataSource, error) {
-			return etcd.NewDataSource(), nil
+			return etcd.NewDataSource(opts), nil
 		})
-		err := ms.Init(ms.Options{
+
+		schemaEditableConfig := strings.ToLower(archaius.GetString("servicecomb.schema.editable", "true"))
+		schemaEditable := strings.Compare(schemaEditableConfig, "true") == 0
+		pluginName := ms.ImplName(archaius.GetString("servicecomb.ms.name", "etcd"))
+		TTL, err := strconv.ParseInt(archaius.GetString("servicecomb.instance.TTL", "1000"), 10, 0)
+		if err != nil {
+			log.Error("microservice etcd implement failed for INSTANCE_TTL config: %v", err)
+		}
+
+		err = ms.Init(ms.Options{
 			Endpoint:       "",
-			PluginImplName: ms.ImplName(archaius.GetString("servicecomb.ms.name", "etcd")),
+			PluginImplName: pluginName,
+			TTL:            TTL,
+			SchemaEditable: schemaEditable,
 		})
 		assert.NoError(t, err)
 	})

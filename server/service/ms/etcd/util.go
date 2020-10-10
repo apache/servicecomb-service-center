@@ -18,6 +18,7 @@ package etcd
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -33,6 +34,10 @@ import (
 	"strconv"
 	"strings"
 	"time"
+)
+
+var (
+	ErrLeaseIDNotExist = errors.New("leaseId not exist, instance not exist")
 )
 
 // service
@@ -485,4 +490,91 @@ func commitSchemaInfo(domainProject string, serviceID string, schema *pb.Schema)
 	key := apt.GenerateServiceSchemaKey(domainProject, serviceID, schema.SchemaId)
 	opt := registry.OpPut(registry.WithStrKey(key), registry.WithStrValue(schema.Schema))
 	return []registry.PluginOp{opt}
+}
+
+// instance util
+func HeartbeatUtil(ctx context.Context, domainProject string, serviceID string, instanceID string) (leaseID int64, ttl int64, _ *scerr.Error) {
+	leaseID, err := GetLeaseID(ctx, domainProject, serviceID, instanceID)
+	if err != nil {
+		return leaseID, ttl, scerr.NewError(scerr.ErrUnavailableBackend, err.Error())
+	}
+	ttl, err = KeepAliveLease(ctx, domainProject, serviceID, instanceID, leaseID)
+	if err != nil {
+		return leaseID, ttl, scerr.NewError(scerr.ErrInstanceNotExists, err.Error())
+	}
+	return leaseID, ttl, nil
+}
+
+func preProcessRegisterInstance(ctx context.Context, instance *pb.MicroServiceInstance) *scerr.Error {
+	if len(instance.Status) == 0 {
+		instance.Status = pb.MSI_UP
+	}
+
+	if len(instance.InstanceId) == 0 {
+		instance.InstanceId = plugin.Plugins().UUID().GetInstanceID(ctx)
+	}
+
+	instance.Timestamp = strconv.FormatInt(time.Now().Unix(), 10)
+	instance.ModTimestamp = instance.Timestamp
+
+	// 这里应该根据租约计时
+	renewalInterval := apt.RegistryDefaultLeaseRenewalinterval
+	retryTimes := apt.RegistryDefaultLeaseRetrytimes
+	if instance.HealthCheck == nil {
+		instance.HealthCheck = &pb.HealthCheck{
+			Mode:     pb.CHECK_BY_HEARTBEAT,
+			Interval: renewalInterval,
+			Times:    retryTimes,
+		}
+	} else {
+		// Health check对象仅用于呈现服务健康检查逻辑，如果CHECK_BY_PLATFORM类型，表明由sidecar代发心跳，实例120s超时
+		switch instance.HealthCheck.Mode {
+		case pb.CHECK_BY_HEARTBEAT:
+			d := instance.HealthCheck.Interval * (instance.HealthCheck.Times + 1)
+			if d <= 0 {
+				return scerr.NewError(scerr.ErrInvalidParams, "Invalid 'healthCheck' settings in request body.")
+			}
+		case pb.CHECK_BY_PLATFORM:
+			// 默认120s
+			instance.HealthCheck.Interval = renewalInterval
+			instance.HealthCheck.Times = retryTimes
+		}
+	}
+
+	domainProject := util.ParseDomainProject(ctx)
+	microservice, err := getService(ctx, domainProject, instance.ServiceId)
+	if microservice == nil || err != nil {
+		return scerr.NewError(scerr.ErrServiceNotExists, "Invalid 'serviceID' in request body.")
+	}
+	instance.Version = microservice.Version
+	return nil
+}
+
+// heartbeat util
+func GetLeaseID(ctx context.Context, domainProject string, serviceID string, instanceID string) (int64, error) {
+	opts := append(serviceUtil.FromContext(ctx),
+		registry.WithStrKey(apt.GenerateInstanceLeaseKey(domainProject, serviceID, instanceID)))
+	resp, err := backend.Store().Lease().Search(ctx, opts...)
+	if err != nil {
+		return -1, err
+	}
+	if len(resp.Kvs) <= 0 {
+		return -1, nil
+	}
+	leaseID, _ := strconv.ParseInt(resp.Kvs[0].Value.(string), 10, 64)
+	return leaseID, nil
+}
+
+func KeepAliveLease(ctx context.Context, domainProject, serviceID, instanceID string, leaseID int64) (
+	ttl int64, err error) {
+	if leaseID == -1 {
+		return ttl, ErrLeaseIDNotExist
+	}
+	ttl, err = backend.Store().KeepAlive(ctx,
+		registry.WithStrKey(apt.GenerateInstanceLeaseKey(domainProject, serviceID, instanceID)),
+		registry.WithLease(leaseID))
+	if err != nil {
+		return ttl, err
+	}
+	return ttl, nil
 }
