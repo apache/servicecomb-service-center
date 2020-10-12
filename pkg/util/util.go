@@ -168,3 +168,7 @@ func ToDomainProject(domain, project string) (domainProject string) {
 	domainProject = domain + "/" + project
 	return
 }
+
+func IsVersionOrHealthPattern(pattern string) bool {
+	return strings.HasSuffix(pattern, "/version") || strings.HasSuffix(pattern, "/health")
+}
