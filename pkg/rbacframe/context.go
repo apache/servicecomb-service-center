@@ -19,6 +19,9 @@ package rbacframe
 
 import (
 	"context"
+
+	"github.com/apache/servicecomb-service-center/pkg/util"
+
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
@@ -49,5 +52,8 @@ func Add2WhiteAPIList(path ...string) {
 }
 
 func MustAuth(pattern string) bool {
+	if util.IsVersionOrHealthPattern(pattern) {
+		return false
+	}
 	return !whiteAPIList.Has(pattern)
 }

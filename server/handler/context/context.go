@@ -37,7 +37,7 @@ func (c *Handler) Handle(i *chain.Invocation) {
 	)
 
 	switch {
-	case IsSkip(pattern):
+	case util.IsVersionOrHealthPattern(pattern):
 	case v3.IsMatch(r):
 		err = v3.Do(r)
 	case v4.IsMatch(r):
@@ -52,17 +52,6 @@ func (c *Handler) Handle(i *chain.Invocation) {
 	i.WithContext("x-remote-ip", util.GetRealIP(r))
 
 	i.Next()
-}
-
-func IsSkip(url string) bool {
-	l, vl, hl := len(url), len("/version"), len("/health")
-	if l >= vl && url[l-vl:] == "/version" {
-		return true
-	}
-	if l >= hl && url[l-hl:] == "/health" {
-		return true
-	}
-	return false
 }
 
 func RegisterHandlers() {

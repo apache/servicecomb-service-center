@@ -20,6 +20,8 @@ import (
 	"os"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestInt16ToInt64(t *testing.T) {
@@ -178,4 +180,13 @@ func TestBytesToStringWithNoCopy(t *testing.T) {
 	if s != "" {
 		t.Fatal("TestBytesToStringWithNoCopy failed")
 	}
+}
+
+func TestIsVersionOrHealthPattern(t *testing.T) {
+	assert.True(t, IsVersionOrHealthPattern("/version"))
+	assert.True(t, IsVersionOrHealthPattern("/v4/a/registry/version"))
+	assert.False(t, IsVersionOrHealthPattern("/version/a"))
+	assert.True(t, IsVersionOrHealthPattern("/health"))
+	assert.True(t, IsVersionOrHealthPattern("/v4/a/registry/health"))
+	assert.False(t, IsVersionOrHealthPattern("/health/a"))
 }
