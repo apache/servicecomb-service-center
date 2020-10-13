@@ -23,6 +23,7 @@ import (
 	"errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
+	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/service"
 	"github.com/apache/servicecomb-service-center/server/service/cipher"
 	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
@@ -71,6 +72,7 @@ func Init() {
 	readPrivateKey()
 	readPublicKey()
 	rbacframe.Add2WhiteAPIList("/v4/token")
+	core.ServerInfo.Config.EnableRBAC = true
 	log.Info("rbac is enabled")
 }
 func initResourceMap() {

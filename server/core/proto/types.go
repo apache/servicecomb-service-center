@@ -46,6 +46,8 @@ type ServerConfig struct {
 	EnablePProf bool `json:"enablePProf"`
 	EnableCache bool `json:"enableCache"`
 
+	EnableRBAC bool `json:"enableRBAC"`
+
 	LogRotateSize   int64  `json:"-"`
 	LogBackupCount  int64  `json:"-"`
 	LogFilePath     string `json:"-"`
