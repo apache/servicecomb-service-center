@@ -30,7 +30,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
-	depUtil "github.com/apache/servicecomb-service-center/server/service/dep/etcd"
 	"github.com/apache/servicecomb-service-center/server/service/ms"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"strconv"
@@ -92,9 +91,7 @@ func (ds *DataSource) RegisterService(ctx context.Context, request *pb.CreateSer
 
 func (ds *DataSource) GetServices(ctx context.Context, request *pb.GetServicesRequest) (
 	*pb.GetServicesResponse, error) {
-	domainProject := util.ParseDomainProject(ctx)
-
-	services, err := getAllServiceUtil(ctx, domainProject)
+	services, err := serviceUtil.GetAllServiceUtil(ctx)
 	if err != nil {
 		log.Errorf(err, "get all services by domain failed")
 		return &pb.GetServicesResponse{
@@ -111,7 +108,7 @@ func (ds *DataSource) GetServices(ctx context.Context, request *pb.GetServicesRe
 func (ds *DataSource) GetService(ctx context.Context, request *pb.GetServiceRequest) (
 	*pb.GetServiceResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
-	singleService, err := getSingleService(ctx, domainProject, request.ServiceId)
+	singleService, err := serviceUtil.GetService(ctx, domainProject, request.ServiceId)
 
 	if err != nil {
 		log.Errorf(err, "get micro-service[%s] failed, get service file failed", request.ServiceId)
@@ -137,7 +134,7 @@ func (ds *DataSource) ExistService(ctx context.Context, request *pb.GetExistence
 	serviceFlag := util.StringJoin([]string{
 		request.Environment, request.AppId, request.ServiceName, request.Version}, "/")
 
-	ids, exist, err := findServiceIds(ctx, request.Version, &pb.MicroServiceKey{
+	ids, exist, err := serviceUtil.FindServiceIds(ctx, request.Version, &pb.MicroServiceKey{
 		Environment: request.Environment,
 		AppId:       request.AppId,
 		ServiceName: request.ServiceName,
@@ -175,7 +172,7 @@ func (ds *DataSource) UpdateService(ctx context.Context, request *pb.UpdateServi
 	domainProject := util.ParseDomainProject(ctx)
 
 	key := apt.GenerateServiceKey(domainProject, request.ServiceId)
-	microservice, err := getService(ctx, domainProject, request.ServiceId)
+	microservice, err := serviceUtil.GetService(ctx, domainProject, request.ServiceId)
 	if err != nil {
 		log.Errorf(err, "update service[%s] properties failed, get service file failed, operator: %s",
 			request.ServiceId, remoteIP)
@@ -401,7 +398,7 @@ func (ds *DataSource) Heartbeat(ctx context.Context, request *pb.HeartbeatReques
 	domainProject := util.ParseDomainProject(ctx)
 	instanceFlag := util.StringJoin([]string{request.ServiceId, request.InstanceId}, "/")
 
-	_, ttl, err := HeartbeatUtil(ctx, domainProject, request.ServiceId, request.InstanceId)
+	_, ttl, err := serviceUtil.HeartbeatUtil(ctx, domainProject, request.ServiceId, request.InstanceId)
 	if err != nil {
 		log.Errorf(err, "heartbeat failed, instance[%s]. operator %s",
 			instanceFlag, remoteIP)
@@ -431,7 +428,7 @@ func (ds *DataSource) ModifySchemas(ctx context.Context, request *pb.ModifySchem
 	serviceID := request.ServiceId
 	domainProject := util.ParseDomainProject(ctx)
 
-	serviceInfo, err := getService(ctx, domainProject, serviceID)
+	serviceInfo, err := serviceUtil.GetService(ctx, domainProject, serviceID)
 	if err != nil {
 		log.Errorf(err, "modify service[%s] schemas failed, get service failed, operator: %s", serviceID, remoteIP)
 		return &pb.ModifySchemasResponse{
@@ -504,7 +501,7 @@ func (ds *DataSource) ExistSchema(ctx context.Context, request *pb.GetExistenceR
 	*pb.GetExistenceResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
 
-	if !serviceExist(ctx, domainProject, request.ServiceId) {
+	if !serviceUtil.ServiceExist(ctx, domainProject, request.ServiceId) {
 		log.Warnf("schema[%s/%s] exist failed, service does not exist", request.ServiceId, request.SchemaId)
 		return &pb.GetExistenceResponse{
 			Response: proto.CreateResponse(scerr.ErrServiceNotExists, "service does not exist."),
@@ -598,7 +595,7 @@ func (ds *DataSource) modifySchemas(ctx context.Context, domainProject string, s
 			}
 
 			service.Schemas = nonExistSchemaIds
-			opt, err := updateService(domainProject, serviceID, service)
+			opt, err := serviceUtil.UpdateService(domainProject, serviceID, service)
 			if err != nil {
 				log.Errorf(err, "modify service[%s] schemas failed, update service.Schemas failed, operator: %s",
 					serviceID, remoteIP)
@@ -665,7 +662,7 @@ func (ds *DataSource) modifySchemas(ctx context.Context, domainProject string, s
 		}
 
 		service.Schemas = schemaIDs
-		opt, err := updateService(domainProject, serviceID, service)
+		opt, err := serviceUtil.UpdateService(domainProject, serviceID, service)
 		if err != nil {
 			log.Errorf(err, "modify service[%s] schemas failed, update service.Schemas failed, operator: %s",
 				serviceID, remoteIP)
@@ -699,7 +696,7 @@ func (ds *DataSource) modifySchema(ctx context.Context, serviceID string, schema
 	domainProject := util.ParseDomainProject(ctx)
 	schemaID := schema.SchemaId
 
-	microService, err := getService(ctx, domainProject, serviceID)
+	microService, err := serviceUtil.GetService(ctx, domainProject, serviceID)
 	if err != nil {
 		log.Errorf(err, "modify schema[%s/%s] failed, get `microService failed, operator: %s",
 			serviceID, schemaID, remoteIP)
@@ -750,7 +747,7 @@ func (ds *DataSource) modifySchema(ctx context.Context, serviceID string, schema
 
 		if len(microService.Schemas) == 0 {
 			microService.Schemas = append(microService.Schemas, schemaID)
-			opt, err := updateService(domainProject, serviceID, microService)
+			opt, err := serviceUtil.UpdateService(domainProject, serviceID, microService)
 			if err != nil {
 				log.Errorf(err, "modify schema[%s/%s] failed, update microService.Schemas failed, operator: %s",
 					serviceID, schemaID, remoteIP)
@@ -761,7 +758,7 @@ func (ds *DataSource) modifySchema(ctx context.Context, serviceID string, schema
 	} else {
 		if !isExist {
 			microService.Schemas = append(microService.Schemas, schemaID)
-			opt, err := updateService(domainProject, serviceID, microService)
+			opt, err := serviceUtil.UpdateService(domainProject, serviceID, microService)
 			if err != nil {
 				log.Errorf(err, "modify schema[%s/%s] failed, update microService.Schemas failed, operator: %s",
 					serviceID, schemaID, remoteIP)
@@ -803,7 +800,7 @@ func (ds *DataSource) DeleteServicePri(ctx context.Context, serviceID string, fo
 		return proto.CreateResponse(scerr.ErrInvalidParams, err.Error()), nil
 	}
 
-	microservice, err := getService(ctx, domainProject, serviceID)
+	microservice, err := serviceUtil.GetService(ctx, domainProject, serviceID)
 	if err != nil {
 		log.Errorf(err, "%s micro-service[%s] failed, get service file failed, operator: %s",
 			title, serviceID, remoteIP)
@@ -865,7 +862,7 @@ func (ds *DataSource) DeleteServicePri(ctx context.Context, serviceID string, fo
 	}
 
 	//删除依赖规则
-	optDeleteDep, err := depUtil.DeleteDependencyForDeleteService(domainProject, serviceID, serviceKey)
+	optDeleteDep, err := serviceUtil.DeleteDependencyForDeleteService(domainProject, serviceID, serviceKey)
 	if err != nil {
 		log.Errorf(err, "%s micro-service[%s] failed, delete dependency failed, operator: %s",
 			title, serviceID, remoteIP)

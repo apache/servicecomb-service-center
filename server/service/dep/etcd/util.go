@@ -14,23 +14,3 @@
 // limitations under the License.
 
 package etcd
-
-import (
-	"encoding/json"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
-	apt "github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/plugin/registry"
-)
-
-func DeleteDependencyForDeleteService(domainProject string, serviceID string, service *pb.MicroServiceKey) (registry.PluginOp, error) {
-	key := apt.GenerateConsumerDependencyQueueKey(domainProject, serviceID, apt.DepsQueueUUID)
-	conDep := new(pb.ConsumerDependency)
-	conDep.Consumer = service
-	conDep.Providers = []*pb.MicroServiceKey{}
-	conDep.Override = true
-	data, err := json.Marshal(conDep)
-	if err != nil {
-		return registry.PluginOp{}, err
-	}
-	return registry.OpPut(registry.WithStrKey(key), registry.WithValue(data)), nil
-}
