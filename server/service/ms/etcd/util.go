@@ -18,7 +18,6 @@ package etcd
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -26,7 +25,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/core/backend"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin"
-	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
@@ -36,56 +34,7 @@ import (
 	"time"
 )
 
-var (
-	ErrLeaseIDNotExist = errors.New("leaseId not exist, instance not exist")
-)
-
 // service
-func getSingleService(ctx context.Context, domainProject string, serviceID string) (*pb.MicroService, error) {
-	key := apt.GenerateServiceKey(domainProject, serviceID)
-	opts := append(serviceUtil.FromContext(ctx), registry.WithStrKey(key))
-	serviceResp, err := backend.Store().Service().Search(ctx, opts...)
-	if err != nil {
-		return nil, err
-	}
-	if len(serviceResp.Kvs) == 0 {
-		return nil, nil
-	}
-	return serviceResp.Kvs[0].Value.(*pb.MicroService), nil
-}
-
-func getAllServiceUtil(ctx context.Context, domainProject string) ([]*pb.MicroService, error) {
-	services, err := getServicesByDomainProject(ctx, domainProject)
-	if err != nil {
-		return nil, err
-	}
-	return services, nil
-}
-
-func getServicesByDomainProject(ctx context.Context, domainProject string) ([]*pb.MicroService, error) {
-	kvs, err := getServicesRawData(ctx, domainProject)
-	if err != nil {
-		return nil, err
-	}
-	var services []*pb.MicroService
-	for _, kv := range kvs {
-		services = append(services, kv.Value.(*pb.MicroService))
-	}
-	return services, nil
-}
-
-func getServicesRawData(ctx context.Context, domainProject string) ([]*discovery.KeyValue, error) {
-	key := apt.GenerateServiceKey(domainProject, "")
-	opts := append(serviceUtil.FromContext(ctx),
-		registry.WithStrKey(key),
-		registry.WithPrefix())
-	resp, err := backend.Store().Service().Search(ctx, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return resp.Kvs, err
-}
-
 func capRegisterData(ctx context.Context, request *pb.CreateServiceRequest) (
 	[]registry.PluginOp, []registry.CompareOp, []registry.PluginOp, error) {
 	remoteIP := util.GetIPFromContext(ctx)
@@ -200,125 +149,6 @@ func newRegisterServiceResp(ctx context.Context, reqService *pb.MicroService, re
 	}, nil
 }
 
-func serviceExist(ctx context.Context, domainProject string, serviceID string) bool {
-	opts := append(serviceUtil.FromContext(ctx),
-		registry.WithStrKey(apt.GenerateServiceKey(domainProject, serviceID)),
-		registry.WithCountOnly())
-	resp, err := backend.Store().Service().Search(ctx, opts...)
-	if err != nil || resp.Count == 0 {
-		return false
-	}
-	return true
-}
-
-func findServiceIds(ctx context.Context, versionRule string, key *pb.MicroServiceKey) ([]string, bool, error) {
-	// 版本规则
-	match := serviceUtil.ParseVersionRule(versionRule)
-	if match == nil {
-		copyData := *key
-		copyData.Version = versionRule
-		serviceID, err := getServiceID(ctx, &copyData)
-		if err != nil {
-			return nil, false, err
-		}
-		if len(serviceID) > 0 {
-			return []string{serviceID}, true, nil
-		}
-		return nil, false, nil
-	}
-
-	searchAlias := false
-	alsoFindAlias := len(key.Alias) > 0
-
-FindRule:
-	resp, err := getServiceAllVersions(ctx, key, searchAlias)
-	if err != nil {
-		return nil, false, err
-	}
-	if len(resp.Kvs) == 0 {
-		if !alsoFindAlias {
-			return nil, false, nil
-		}
-		searchAlias = true
-		alsoFindAlias = false
-		goto FindRule
-	}
-	return match(resp.Kvs), true, nil
-}
-
-func getServiceID(ctx context.Context, key *pb.MicroServiceKey) (serviceID string, err error) {
-	serviceID, err = searchServiceID(ctx, key)
-	if err != nil {
-		return
-	}
-	if len(serviceID) == 0 {
-		// 别名查询
-		log.Debugf("could not search microservice[%s/%s/%s/%s] id by 'serviceName', now try 'alias'",
-			key.Environment, key.AppId, key.ServiceName, key.Version)
-		return searchServiceIDFromAlias(ctx, key)
-	}
-	return
-}
-
-func searchServiceID(ctx context.Context, key *pb.MicroServiceKey) (string, error) {
-	opts := append(serviceUtil.FromContext(ctx), registry.WithStrKey(apt.GenerateServiceIndexKey(key)))
-	resp, err := backend.Store().ServiceIndex().Search(ctx, opts...)
-	if err != nil {
-		return "", err
-	}
-	if len(resp.Kvs) == 0 {
-		return "", nil
-	}
-	return resp.Kvs[0].Value.(string), nil
-}
-
-func searchServiceIDFromAlias(ctx context.Context, key *pb.MicroServiceKey) (string, error) {
-	opts := append(serviceUtil.FromContext(ctx), registry.WithStrKey(apt.GenerateServiceAliasKey(key)))
-	resp, err := backend.Store().ServiceAlias().Search(ctx, opts...)
-	if err != nil {
-		return "", err
-	}
-	if len(resp.Kvs) == 0 {
-		return "", nil
-	}
-	return resp.Kvs[0].Value.(string), nil
-}
-
-func getServiceAllVersions(ctx context.Context, key *pb.MicroServiceKey, alias bool) (*discovery.Response, error) {
-	copyData := *key
-	copyData.Version = ""
-	var (
-		prefix  string
-		indexer discovery.Indexer
-	)
-	if alias {
-		prefix = apt.GenerateServiceAliasKey(&copyData)
-		indexer = backend.Store().ServiceAlias()
-	} else {
-		prefix = apt.GenerateServiceIndexKey(&copyData)
-		indexer = backend.Store().ServiceIndex()
-	}
-	opts := append(serviceUtil.FromContext(ctx),
-		registry.WithStrKey(prefix),
-		registry.WithPrefix(),
-		registry.WithDescendOrder())
-	resp, err := indexer.Search(ctx, opts...)
-	return resp, err
-}
-
-func updateService(domainProject string, serviceID string, service *pb.MicroService) (opt registry.PluginOp,
-	err error) {
-	opt = registry.PluginOp{}
-	key := apt.GenerateServiceKey(domainProject, serviceID)
-	data, err := json.Marshal(service)
-	if err != nil {
-		log.Errorf(err, "marshal service file failed")
-		return
-	}
-	opt = registry.OpPut(registry.WithStrKey(key), registry.WithValue(data))
-	return
-}
-
 // schema
 func getSchemaSummary(ctx context.Context, domainProject string, serviceID string, schemaID string) (string, error) {
 	key := apt.GenerateServiceSchemaSummaryKey(domainProject, serviceID, schemaID)
@@ -333,19 +163,6 @@ func getSchemaSummary(ctx context.Context, domainProject string, serviceID strin
 		return "", nil
 	}
 	return resp.Kvs[0].Value.(string), nil
-}
-
-func getService(ctx context.Context, domainProject string, serviceID string) (*pb.MicroService, error) {
-	key := apt.GenerateServiceKey(domainProject, serviceID)
-	opts := append(serviceUtil.FromContext(ctx), registry.WithStrKey(key))
-	serviceResp, err := backend.Store().Service().Search(ctx, opts...)
-	if err != nil {
-		return nil, err
-	}
-	if len(serviceResp.Kvs) == 0 {
-		return nil, nil
-	}
-	return serviceResp.Kvs[0].Value.(*pb.MicroService), nil
 }
 
 func getSchemasFromDatabase(ctx context.Context, domainProject string, serviceID string) ([]*pb.Schema, error) {
@@ -493,18 +310,6 @@ func commitSchemaInfo(domainProject string, serviceID string, schema *pb.Schema)
 }
 
 // instance util
-func HeartbeatUtil(ctx context.Context, domainProject string, serviceID string, instanceID string) (leaseID int64, ttl int64, _ *scerr.Error) {
-	leaseID, err := GetLeaseID(ctx, domainProject, serviceID, instanceID)
-	if err != nil {
-		return leaseID, ttl, scerr.NewError(scerr.ErrUnavailableBackend, err.Error())
-	}
-	ttl, err = KeepAliveLease(ctx, domainProject, serviceID, instanceID, leaseID)
-	if err != nil {
-		return leaseID, ttl, scerr.NewError(scerr.ErrInstanceNotExists, err.Error())
-	}
-	return leaseID, ttl, nil
-}
-
 func preProcessRegisterInstance(ctx context.Context, instance *pb.MicroServiceInstance) *scerr.Error {
 	if len(instance.Status) == 0 {
 		instance.Status = pb.MSI_UP
@@ -542,39 +347,10 @@ func preProcessRegisterInstance(ctx context.Context, instance *pb.MicroServiceIn
 	}
 
 	domainProject := util.ParseDomainProject(ctx)
-	microservice, err := getService(ctx, domainProject, instance.ServiceId)
+	microservice, err := serviceUtil.GetService(ctx, domainProject, instance.ServiceId)
 	if microservice == nil || err != nil {
 		return scerr.NewError(scerr.ErrServiceNotExists, "Invalid 'serviceID' in request body.")
 	}
 	instance.Version = microservice.Version
 	return nil
-}
-
-// heartbeat util
-func GetLeaseID(ctx context.Context, domainProject string, serviceID string, instanceID string) (int64, error) {
-	opts := append(serviceUtil.FromContext(ctx),
-		registry.WithStrKey(apt.GenerateInstanceLeaseKey(domainProject, serviceID, instanceID)))
-	resp, err := backend.Store().Lease().Search(ctx, opts...)
-	if err != nil {
-		return -1, err
-	}
-	if len(resp.Kvs) <= 0 {
-		return -1, nil
-	}
-	leaseID, _ := strconv.ParseInt(resp.Kvs[0].Value.(string), 10, 64)
-	return leaseID, nil
-}
-
-func KeepAliveLease(ctx context.Context, domainProject, serviceID, instanceID string, leaseID int64) (
-	ttl int64, err error) {
-	if leaseID == -1 {
-		return ttl, ErrLeaseIDNotExist
-	}
-	ttl, err = backend.Store().KeepAlive(ctx,
-		registry.WithStrKey(apt.GenerateInstanceLeaseKey(domainProject, serviceID, instanceID)),
-		registry.WithLease(leaseID))
-	if err != nil {
-		return ttl, err
-	}
-	return ttl, nil
 }
