@@ -31,10 +31,19 @@ type DataSource interface {
 	GetDeleteServiceFunc(ctx context.Context, serviceID string, force bool,
 		serviceRespChan chan<- *pb.DelServicesRspInfo) func(context.Context)
 
-	RegisterInstance(ctx context.Context, in *pb.RegisterInstanceRequest) (*pb.RegisterInstanceResponse, error)
-	SearchInstance()
-	UpdateInstance()
-	UnRegisterInstance()
+	RegisterInstance(ctx context.Context, request *pb.RegisterInstanceRequest) (*pb.RegisterInstanceResponse, error)
+	GetInstance(ctx context.Context, request *pb.GetOneInstanceRequest) (*pb.GetOneInstanceResponse, error)
+	GetInstances(ctx context.Context, request *pb.GetInstancesRequest) (*pb.GetInstancesResponse, error)
+	FindInstances(ctx context.Context, request *pb.FindInstancesRequest) (*pb.FindInstancesResponse, error)
+	UpdateInstanceStatus(ctx context.Context, request *pb.UpdateInstanceStatusRequest) (
+		*pb.UpdateInstanceStatusResponse, error)
+	UpdateInstanceProperties(ctx context.Context, request *pb.UpdateInstancePropsRequest) (
+		*pb.UpdateInstancePropsResponse, error)
+	UnregisterInstance(ctx context.Context, request *pb.UnregisterInstanceRequest) (*pb.UnregisterInstanceResponse,
+		error)
+	Heartbeat(ctx context.Context, request *pb.HeartbeatRequest) (*pb.HeartbeatResponse, error)
+	HeartbeatSet(ctx context.Context, request *pb.HeartbeatSetRequest) (*pb.HeartbeatSetResponse, error)
+	BatchFind(ctx context.Context, request *pb.BatchFindInstancesRequest) (*pb.BatchFindInstancesResponse, error)
 
 	ModifySchemas(ctx context.Context, request *pb.ModifySchemasRequest) (*pb.ModifySchemasResponse, error)
 	ModifySchema(ctx context.Context, request *pb.ModifySchemaRequest) (*pb.ModifySchemaResponse, error)
