@@ -13,13 +13,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ms
+package etcd
 
-//Options contains configuration for plugins
-type Options struct {
-	Endpoint       string
-	PluginImplName ImplName
-	SchemaEditable bool
-	TTL            int64
-	// TODO: pay attention to more net config like TLSConfig when coding
+import (
+	"encoding/json"
+	pb "github.com/apache/servicecomb-service-center/pkg/registry"
+	apt "github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/plugin/registry"
+)
+
+func DeleteDependencyForDeleteService(domainProject string, serviceID string, service *pb.MicroServiceKey) (registry.PluginOp, error) {
+	key := apt.GenerateConsumerDependencyQueueKey(domainProject, serviceID, apt.DepsQueueUUID)
+	conDep := new(pb.ConsumerDependency)
+	conDep.Consumer = service
+	conDep.Providers = []*pb.MicroServiceKey{}
+	conDep.Override = true
+	data, err := json.Marshal(conDep)
+	if err != nil {
+		return registry.PluginOp{}, err
+	}
+	return registry.OpPut(registry.WithStrKey(key), registry.WithValue(data)), nil
 }

@@ -28,8 +28,10 @@ type DataSource interface {
 	ExistService(ctx context.Context, request *pb.GetExistenceRequest) (*pb.GetExistenceResponse, error)
 	UpdateService(ctx context.Context, request *pb.UpdateServicePropsRequest) (*pb.UpdateServicePropsResponse, error)
 	UnregisterService(ctx context.Context, request *pb.DeleteServiceRequest) (*pb.DeleteServiceResponse, error)
+	GetDeleteServiceFunc(ctx context.Context, serviceID string, force bool,
+		serviceRespChan chan<- *pb.DelServicesRspInfo) func(context.Context)
 
-	RegisterInstance()
+	RegisterInstance(ctx context.Context, in *pb.RegisterInstanceRequest) (*pb.RegisterInstanceResponse, error)
 	SearchInstance()
 	UpdateInstance()
 	UnRegisterInstance()

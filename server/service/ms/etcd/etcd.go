@@ -17,6 +17,8 @@ package etcd
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
@@ -28,31 +30,34 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
-	"os"
-	"strings"
+	depUtil "github.com/apache/servicecomb-service-center/server/service/dep/etcd"
+	"github.com/apache/servicecomb-service-center/server/service/ms"
+	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
+	"strconv"
+	"time"
 )
 
 // TODO: define error with names here
 
-var schemaEditable bool
-
 func init() {
 	// TODO: set logger
 	// TODO: register storage plugin to plugin manager
-	schemaEditableConfig := strings.ToLower(os.Getenv("SCHEMA_EDITABLE"))
-	schemaEditable = strings.Compare(schemaEditableConfig, "true") == 0
 }
 
 type DataSource struct {
 	// schemaEditable determines whether schema modification is allowed for
 	SchemaEditable bool
+	ttlFromEnv     int64
 }
 
-func NewDataSource() *DataSource {
+func NewDataSource(opts ms.Options) *DataSource {
 	// TODO: construct a reasonable DataSource instance
 	log.Warnf("microservice mgt data source enable etcd mode")
 
-	inst := &DataSource{}
+	inst := &DataSource{
+		SchemaEditable: opts.SchemaEditable,
+		ttlFromEnv:     opts.TTL,
+	}
 	if err := inst.initialize(); err != nil {
 		return inst
 	}
@@ -61,7 +66,6 @@ func NewDataSource() *DataSource {
 
 func (ds *DataSource) initialize() error {
 	// TODO: init DataSource members
-	ds.SchemaEditable = schemaEditable
 	return nil
 }
 
@@ -165,18 +169,219 @@ func (ds *DataSource) ExistService(ctx context.Context, request *pb.GetExistence
 	}, nil
 }
 
-func (ds *DataSource) UpdateService(ctx context.Context, service *pb.UpdateServicePropsRequest) (
+func (ds *DataSource) UpdateService(ctx context.Context, request *pb.UpdateServicePropsRequest) (
 	*pb.UpdateServicePropsResponse, error) {
-	panic("implement me")
+	remoteIP := util.GetIPFromContext(ctx)
+	domainProject := util.ParseDomainProject(ctx)
+
+	key := apt.GenerateServiceKey(domainProject, request.ServiceId)
+	microservice, err := getService(ctx, domainProject, request.ServiceId)
+	if err != nil {
+		log.Errorf(err, "update service[%s] properties failed, get service file failed, operator: %s",
+			request.ServiceId, remoteIP)
+		return &pb.UpdateServicePropsResponse{
+			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+		}, err
+	}
+	if microservice == nil {
+		log.Errorf(nil, "update service[%s] properties failed, service does not exist, operator: %s",
+			request.ServiceId, remoteIP)
+		return &pb.UpdateServicePropsResponse{
+			Response: proto.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+		}, nil
+	}
+
+	copyServiceRef := *microservice
+	copyServiceRef.Properties = request.Properties
+	copyServiceRef.ModTimestamp = strconv.FormatInt(time.Now().Unix(), 10)
+
+	data, err := json.Marshal(copyServiceRef)
+	if err != nil {
+		log.Errorf(err, "update service[%s] properties failed, json marshal service failed, operator: %s",
+			request.ServiceId, remoteIP)
+		return &pb.UpdateServicePropsResponse{
+			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+		}, err
+	}
+
+	// Set key file
+	resp, err := backend.Registry().TxnWithCmp(ctx,
+		[]registry.PluginOp{registry.OpPut(registry.WithStrKey(key), registry.WithValue(data))},
+		[]registry.CompareOp{registry.OpCmp(
+			registry.CmpVer(util.StringToBytesWithNoCopy(key)),
+			registry.CmpNotEqual, 0)},
+		nil)
+	if err != nil {
+		log.Errorf(err, "update service[%s] properties failed, operator: %s", request.ServiceId, remoteIP)
+		return &pb.UpdateServicePropsResponse{
+			Response: proto.CreateResponse(scerr.ErrUnavailableBackend, err.Error()),
+		}, err
+	}
+	if !resp.Succeeded {
+		log.Errorf(err, "update service[%s] properties failed, service does not exist, operator: %s",
+			request.ServiceId, remoteIP)
+		return &pb.UpdateServicePropsResponse{
+			Response: proto.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+		}, nil
+	}
+
+	log.Infof("update service[%s] properties successfully, operator: %s", request.ServiceId, remoteIP)
+	return &pb.UpdateServicePropsResponse{
+		Response: proto.CreateResponse(proto.Response_SUCCESS, "update service successfully."),
+	}, nil
 }
 
-func (ds *DataSource) UnregisterService(ctx context.Context, service *pb.DeleteServiceRequest) (
+func (ds *DataSource) UnregisterService(ctx context.Context, request *pb.DeleteServiceRequest) (
 	*pb.DeleteServiceResponse, error) {
-	panic("implement me")
+	resp, err := ds.DeleteServicePri(ctx, request.ServiceId, request.Force)
+	return &pb.DeleteServiceResponse{
+		Response: resp,
+	}, err
 }
 
-func (ds *DataSource) RegisterInstance() {
-	panic("implement me")
+func (ds *DataSource) RegisterInstance(ctx context.Context, request *pb.RegisterInstanceRequest) (
+	*pb.RegisterInstanceResponse, error) {
+	remoteIP := util.GetIPFromContext(ctx)
+	instance := request.Instance
+
+	//允许自定义id
+	if len(instance.InstanceId) > 0 {
+		// keep alive the lease ttl
+		// there are two reasons for sending a heartbeat here:
+		// 1. in the scenario the instance has been removed,
+		//    the cast of registration operation can be reduced.
+		// 2. in the self-protection scenario, the instance is unhealthy
+		//    and needs to be re-registered.
+		resp, err := ds.Heartbeat(ctx, &pb.HeartbeatRequest{ServiceId: instance.ServiceId,
+			InstanceId: instance.InstanceId})
+		if resp == nil {
+			log.Errorf(err, "register service[%s]'s instance failed, endpoints %v, host '%s', operator %s",
+				instance.ServiceId, instance.Endpoints, instance.HostName, remoteIP)
+			return &pb.RegisterInstanceResponse{
+				Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+			}, nil
+		}
+		switch resp.Response.GetCode() {
+		case proto.Response_SUCCESS:
+			log.Infof("register instance successful, reuse instance[%s/%s], operator %s",
+				instance.ServiceId, instance.InstanceId, remoteIP)
+			return &pb.RegisterInstanceResponse{
+				Response:   resp.Response,
+				InstanceId: instance.InstanceId,
+			}, nil
+		case scerr.ErrInstanceNotExists:
+			// register a new one
+		default:
+			log.Errorf(err, "register instance failed, reuse instance[%s/%s], operator %s",
+				instance.ServiceId, instance.InstanceId, remoteIP)
+			return &pb.RegisterInstanceResponse{
+				Response: resp.Response,
+			}, err
+		}
+	}
+
+	if err := preProcessRegisterInstance(ctx, instance); err != nil {
+		log.Errorf(err, "register service[%s]'s instance failed, endpoints %v, host '%s', operator %s",
+			instance.ServiceId, instance.Endpoints, instance.HostName, remoteIP)
+		return &pb.RegisterInstanceResponse{
+			Response: proto.CreateResponseWithSCErr(err),
+		}, nil
+	}
+
+	ttl := int64(instance.HealthCheck.Interval * (instance.HealthCheck.Times + 1))
+	if ds.ttlFromEnv > 0 {
+		ttl = ds.ttlFromEnv
+	}
+	instanceFlag := fmt.Sprintf("ttl %ds, endpoints %v, host '%s', serviceID %s",
+		ttl, instance.Endpoints, instance.HostName, instance.ServiceId)
+
+	//先以domain/project的方式组装
+	domainProject := util.ParseDomainProject(ctx)
+
+	var reporter *quota.ApplyQuotaResult
+	if !apt.IsSCInstance(ctx) {
+		res := quota.NewApplyQuotaResource(quota.MicroServiceInstanceQuotaType,
+			domainProject, request.Instance.ServiceId, 1)
+		reporter = plugin.Plugins().Quota().Apply4Quotas(ctx, res)
+		defer reporter.Close(ctx)
+
+		if reporter.Err != nil {
+			log.Errorf(reporter.Err, "register instance failed, %s, operator %s",
+				instanceFlag, remoteIP)
+			response := &pb.RegisterInstanceResponse{
+				Response: proto.CreateResponseWithSCErr(reporter.Err),
+			}
+			if reporter.Err.InternalError() {
+				return response, reporter.Err
+			}
+			return response, nil
+		}
+	}
+
+	instanceID := instance.InstanceId
+	data, err := json.Marshal(instance)
+	if err != nil {
+		log.Errorf(err,
+			"register instance failed, %s, instanceID %s, operator %s",
+			instanceFlag, instanceID, remoteIP)
+		return &pb.RegisterInstanceResponse{
+			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+		}, err
+	}
+
+	leaseID, err := backend.Registry().LeaseGrant(ctx, ttl)
+	if err != nil {
+		log.Errorf(err, "grant lease failed, %s, operator: %s", instanceFlag, remoteIP)
+		return &pb.RegisterInstanceResponse{
+			Response: proto.CreateResponse(scerr.ErrUnavailableBackend, err.Error()),
+		}, err
+	}
+
+	// build the request options
+	key := apt.GenerateInstanceKey(domainProject, instance.ServiceId, instanceID)
+	hbKey := apt.GenerateInstanceLeaseKey(domainProject, instance.ServiceId, instanceID)
+
+	opts := []registry.PluginOp{
+		registry.OpPut(registry.WithStrKey(key), registry.WithValue(data),
+			registry.WithLease(leaseID)),
+		registry.OpPut(registry.WithStrKey(hbKey), registry.WithStrValue(fmt.Sprintf("%d", leaseID)),
+			registry.WithLease(leaseID)),
+	}
+
+	resp, err := backend.Registry().TxnWithCmp(ctx, opts,
+		[]registry.CompareOp{registry.OpCmp(
+			registry.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, instance.ServiceId))),
+			registry.CmpNotEqual, 0)},
+		nil)
+	if err != nil {
+		log.Errorf(err,
+			"register instance failed, %s, instanceID %s, operator %s",
+			instanceFlag, instanceID, remoteIP)
+		return &pb.RegisterInstanceResponse{
+			Response: proto.CreateResponse(scerr.ErrUnavailableBackend, err.Error()),
+		}, err
+	}
+	if !resp.Succeeded {
+		log.Errorf(nil,
+			"register instance failed, %s, instanceID %s, operator %s: service does not exist",
+			instanceFlag, instanceID, remoteIP)
+		return &pb.RegisterInstanceResponse{
+			Response: proto.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+		}, nil
+	}
+
+	if err := reporter.ReportUsedQuota(ctx); err != nil {
+		log.Errorf(err,
+			"register instance failed, %s, instanceID %s, operator %s",
+			instanceFlag, instanceID, remoteIP)
+	}
+
+	log.Infof("register instance %s, instanceID %s, operator %s",
+		instanceFlag, instanceID, remoteIP)
+	return &pb.RegisterInstanceResponse{
+		Response:   proto.CreateResponse(proto.Response_SUCCESS, "Register service instance successfully."),
+		InstanceId: instanceID,
+	}, nil
 }
 
 func (ds *DataSource) SearchInstance() {
@@ -189,6 +394,35 @@ func (ds *DataSource) UpdateInstance() {
 
 func (ds *DataSource) UnRegisterInstance() {
 	panic("implement me")
+}
+
+func (ds *DataSource) Heartbeat(ctx context.Context, request *pb.HeartbeatRequest) (*pb.HeartbeatResponse, error) {
+	remoteIP := util.GetIPFromContext(ctx)
+	domainProject := util.ParseDomainProject(ctx)
+	instanceFlag := util.StringJoin([]string{request.ServiceId, request.InstanceId}, "/")
+
+	_, ttl, err := HeartbeatUtil(ctx, domainProject, request.ServiceId, request.InstanceId)
+	if err != nil {
+		log.Errorf(err, "heartbeat failed, instance[%s]. operator %s",
+			instanceFlag, remoteIP)
+		resp := &pb.HeartbeatResponse{
+			Response: proto.CreateResponseWithSCErr(err),
+		}
+		if err.InternalError() {
+			return resp, err
+		}
+		return resp, nil
+	}
+
+	if ttl == 0 {
+		log.Errorf(errors.New("connect backend timed out"),
+			"heartbeat successful, but renew instance[%s] failed. operator %s", instanceFlag, remoteIP)
+	} else {
+		log.Infof("heartbeat successful, renew instance[%s] ttl to %d. operator %s", instanceFlag, ttl, remoteIP)
+	}
+	return &pb.HeartbeatResponse{
+		Response: proto.CreateResponse(proto.Response_SUCCESS, "Update service instance heartbeat successfully."),
+	}, nil
 }
 
 func (ds *DataSource) ModifySchemas(ctx context.Context, request *pb.ModifySchemasRequest) (
@@ -259,10 +493,6 @@ func (ds *DataSource) ModifySchema(ctx context.Context, request *pb.ModifySchema
 }
 
 func (ds *DataSource) GetSchema() {
-	panic("implement me")
-}
-
-func (ds *DataSource) UpdateSchema() {
 	panic("implement me")
 }
 
@@ -556,4 +786,164 @@ func (ds *DataSource) modifySchema(ctx context.Context, serviceID string, schema
 		return scerr.NewError(scerr.ErrServiceNotExists, "Service does not exist.")
 	}
 	return nil
+}
+
+func (ds *DataSource) DeleteServicePri(ctx context.Context, serviceID string, force bool) (*pb.Response, error) {
+	remoteIP := util.GetIPFromContext(ctx)
+	domainProject := util.ParseDomainProject(ctx)
+
+	title := "delete"
+	if force {
+		title = "force delete"
+	}
+
+	if serviceID == apt.Service.ServiceId {
+		err := errors.New("not allow to delete service center")
+		log.Errorf(err, "%s micro-service[%s] failed, operator: %s", title, serviceID, remoteIP)
+		return proto.CreateResponse(scerr.ErrInvalidParams, err.Error()), nil
+	}
+
+	microservice, err := getService(ctx, domainProject, serviceID)
+	if err != nil {
+		log.Errorf(err, "%s micro-service[%s] failed, get service file failed, operator: %s",
+			title, serviceID, remoteIP)
+		return proto.CreateResponse(scerr.ErrInternal, err.Error()), err
+	}
+
+	if microservice == nil {
+		log.Errorf(err, "%s micro-service[%s] failed, service does not exist, operator: %s",
+			title, serviceID, remoteIP)
+		return proto.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."), nil
+	}
+
+	// 强制删除，则与该服务相关的信息删除，非强制删除： 如果作为该被依赖（作为provider，提供服务,且不是只存在自依赖）或者存在实例，则不能删除
+	if !force {
+		dr := serviceUtil.NewProviderDependencyRelation(ctx, domainProject, microservice)
+		services, err := dr.GetDependencyConsumerIds()
+		if err != nil {
+			log.Errorf(err, "delete micro-service[%s] failed, get service dependency failed, operator: %s",
+				serviceID, remoteIP)
+			return proto.CreateResponse(scerr.ErrInternal, err.Error()), err
+		}
+		if l := len(services); l > 1 || (l == 1 && services[0] != serviceID) {
+			log.Errorf(nil, "delete micro-service[%s] failed, other services[%d] depend on it, operator: %s",
+				serviceID, l, remoteIP)
+			return proto.CreateResponse(scerr.ErrDependedOnConsumer, "Can not delete this service, other service rely it."), err
+		}
+
+		instancesKey := apt.GenerateInstanceKey(domainProject, serviceID, "")
+		rsp, err := backend.Store().Instance().Search(ctx,
+			registry.WithStrKey(instancesKey),
+			registry.WithPrefix(),
+			registry.WithCountOnly())
+		if err != nil {
+			log.Errorf(err, "delete micro-service[%s] failed, get instances failed, operator: %s",
+				serviceID, remoteIP)
+			return proto.CreateResponse(scerr.ErrUnavailableBackend, err.Error()), err
+		}
+
+		if rsp.Count > 0 {
+			log.Errorf(nil, "delete micro-service[%s] failed, service deployed instances[%s], operator: %s",
+				serviceID, rsp.Count, remoteIP)
+			return proto.CreateResponse(scerr.ErrDeployedInstance, "Can not delete the service deployed instance(s)."), err
+		}
+	}
+
+	serviceIDKey := apt.GenerateServiceKey(domainProject, serviceID)
+	serviceKey := &pb.MicroServiceKey{
+		Tenant:      domainProject,
+		Environment: microservice.Environment,
+		AppId:       microservice.AppId,
+		ServiceName: microservice.ServiceName,
+		Version:     microservice.Version,
+		Alias:       microservice.Alias,
+	}
+	opts := []registry.PluginOp{
+		registry.OpDel(registry.WithStrKey(apt.GenerateServiceIndexKey(serviceKey))),
+		registry.OpDel(registry.WithStrKey(apt.GenerateServiceAliasKey(serviceKey))),
+		registry.OpDel(registry.WithStrKey(serviceIDKey)),
+	}
+
+	//删除依赖规则
+	optDeleteDep, err := depUtil.DeleteDependencyForDeleteService(domainProject, serviceID, serviceKey)
+	if err != nil {
+		log.Errorf(err, "%s micro-service[%s] failed, delete dependency failed, operator: %s",
+			title, serviceID, remoteIP)
+		return proto.CreateResponse(scerr.ErrInternal, err.Error()), err
+	}
+	opts = append(opts, optDeleteDep)
+
+	//删除黑白名单
+	opts = append(opts, registry.OpDel(
+		registry.WithStrKey(apt.GenerateServiceRuleKey(domainProject, serviceID, "")),
+		registry.WithPrefix()))
+	opts = append(opts, registry.OpDel(registry.WithStrKey(
+		util.StringJoin([]string{apt.GetServiceRuleIndexRootKey(domainProject), serviceID, ""}, "/")),
+		registry.WithPrefix()))
+
+	//删除schemas
+	opts = append(opts, registry.OpDel(
+		registry.WithStrKey(apt.GenerateServiceSchemaKey(domainProject, serviceID, "")),
+		registry.WithPrefix()))
+	opts = append(opts, registry.OpDel(
+		registry.WithStrKey(apt.GenerateServiceSchemaSummaryKey(domainProject, serviceID, "")),
+		registry.WithPrefix()))
+
+	//删除tags
+	opts = append(opts, registry.OpDel(
+		registry.WithStrKey(apt.GenerateServiceTagKey(domainProject, serviceID))))
+
+	//删除instances
+	opts = append(opts, registry.OpDel(
+		registry.WithStrKey(apt.GenerateInstanceKey(domainProject, serviceID, "")),
+		registry.WithPrefix()))
+	opts = append(opts, registry.OpDel(
+		registry.WithStrKey(apt.GenerateInstanceLeaseKey(domainProject, serviceID, "")),
+		registry.WithPrefix()))
+
+	//删除实例
+	err = serviceUtil.DeleteServiceAllInstances(ctx, serviceID)
+	if err != nil {
+		log.Errorf(err, "%s micro-service[%s] failed, revoke all instances failed, operator: %s",
+			title, serviceID, remoteIP)
+		return proto.CreateResponse(scerr.ErrUnavailableBackend, err.Error()), err
+	}
+
+	resp, err := backend.Registry().TxnWithCmp(ctx, opts,
+		[]registry.CompareOp{registry.OpCmp(
+			registry.CmpVer(util.StringToBytesWithNoCopy(serviceIDKey)),
+			registry.CmpNotEqual, 0)},
+		nil)
+	if err != nil {
+		log.Errorf(err, "%s micro-service[%s] failed, operator: %s", title, serviceID, remoteIP)
+		return proto.CreateResponse(scerr.ErrUnavailableBackend, err.Error()), err
+	}
+	if !resp.Succeeded {
+		log.Errorf(err, "%s micro-service[%s] failed, service does not exist, operator: %s",
+			title, serviceID, remoteIP)
+		return proto.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."), nil
+	}
+
+	serviceUtil.RemandServiceQuota(ctx)
+
+	log.Infof("%s micro-service[%s] successfully, operator: %s", title, serviceID, remoteIP)
+	return proto.CreateResponse(proto.Response_SUCCESS, "Unregister service successfully."), nil
+}
+
+func (ds *DataSource) GetDeleteServiceFunc(ctx context.Context, serviceID string, force bool,
+	serviceRespChan chan<- *pb.DelServicesRspInfo) func(context.Context) {
+	return func(_ context.Context) {
+		serviceRst := &pb.DelServicesRspInfo{
+			ServiceId:  serviceID,
+			ErrMessage: "",
+		}
+		resp, err := ds.DeleteServicePri(ctx, serviceID, force)
+		if err != nil {
+			serviceRst.ErrMessage = err.Error()
+		} else if resp.GetCode() != proto.Response_SUCCESS {
+			serviceRst.ErrMessage = resp.GetMessage()
+		}
+
+		serviceRespChan <- serviceRst
+	}
 }

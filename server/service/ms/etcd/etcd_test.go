@@ -32,16 +32,6 @@ import (
 	"time"
 )
 
-var (
-	TooLongServiceId   = strings.Repeat("x", 66)
-	TooLongAppId       = strings.Repeat("x", 162)
-	TooLongSchemaId    = strings.Repeat("x", 162)
-	TooLongServiceName = strings.Repeat("x", 130)
-	TooLongExistence   = strings.Repeat("x", 128+160+2)
-	TooLongAlias       = strings.Repeat("x", 130)
-	TooLongFramework   = strings.Repeat("x", 66)
-)
-
 func TestInit(t *testing.T) {
 	_ = archaius.Init(archaius.WithMemorySource())
 	_ = archaius.Set("servicecomb.ms.name", "etcd")
@@ -50,7 +40,7 @@ func TestInit(t *testing.T) {
 func TestService_Register(t *testing.T) {
 	t.Run("Register service after init & install, should pass", func(t *testing.T) {
 		ms.Install("etcd", func(opts ms.Options) (ms.DataSource, error) {
-			return etcd.NewDataSource(), nil
+			return etcd.NewDataSource(opts), nil
 		})
 
 		err := ms.Init(ms.Options{
@@ -95,7 +85,7 @@ func TestService_Register(t *testing.T) {
 
 	t.Run("register service with same key", func(t *testing.T) {
 		ms.Install("etcd", func(opts ms.Options) (ms.DataSource, error) {
-			return etcd.NewDataSource(), nil
+			return etcd.NewDataSource(opts), nil
 		})
 		err := ms.Init(ms.Options{
 			Endpoint:       "",
@@ -249,7 +239,7 @@ func TestService_Register(t *testing.T) {
 	t.Run("same serviceId,different service, can not register again,error is same as the service register twice",
 		func(t *testing.T) {
 			ms.Install("etcd", func(opts ms.Options) (ms.DataSource, error) {
-				return etcd.NewDataSource(), nil
+				return etcd.NewDataSource(opts), nil
 			})
 			err := ms.Init(ms.Options{
 				Endpoint:       "",
@@ -299,7 +289,7 @@ func TestService_Get(t *testing.T) {
 	// get service test
 	t.Run("query all services, should pass", func(t *testing.T) {
 		ms.Install("etcd", func(opts ms.Options) (ms.DataSource, error) {
-			return etcd.NewDataSource(), nil
+			return etcd.NewDataSource(opts), nil
 		})
 		err := ms.Init(ms.Options{
 			Endpoint:       "",
@@ -313,7 +303,7 @@ func TestService_Get(t *testing.T) {
 
 	t.Run("get a exist service, should pass", func(t *testing.T) {
 		ms.Install("etcd", func(opts ms.Options) (ms.DataSource, error) {
-			return etcd.NewDataSource(), nil
+			return etcd.NewDataSource(opts), nil
 		})
 		err := ms.Init(ms.Options{
 			Endpoint:       "",
@@ -346,7 +336,7 @@ func TestService_Get(t *testing.T) {
 
 	t.Run("query a service by a not existed serviceId, should not pass", func(t *testing.T) {
 		ms.Install("etcd", func(opts ms.Options) (ms.DataSource, error) {
-			return etcd.NewDataSource(), nil
+			return etcd.NewDataSource(opts), nil
 		})
 		err := ms.Init(ms.Options{
 			Endpoint:       "",
@@ -370,7 +360,7 @@ func TestService_Exist(t *testing.T) {
 	)
 
 	ms.Install("etcd", func(opts ms.Options) (ms.DataSource, error) {
-		return etcd.NewDataSource(), nil
+		return etcd.NewDataSource(opts), nil
 	})
 
 	err := ms.Init(ms.Options{
@@ -535,9 +525,301 @@ func TestService_Exist(t *testing.T) {
 	})
 }
 
+func TestService_Update(t *testing.T) {
+	ms.Install("etcd", func(opts ms.Options) (ms.DataSource, error) {
+		return etcd.NewDataSource(opts), nil
+	})
+
+	err := ms.Init(ms.Options{
+		Endpoint:       "",
+		PluginImplName: ms.ImplName(archaius.GetString("servicecomb.ms.name", "etcd")),
+	})
+	assert.NoError(t, err)
+
+	var serviceId string
+
+	t.Run("create service", func(t *testing.T) {
+		resp, err := ms.MicroService().RegisterService(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				Alias:       "es_service_ms",
+				ServiceName: "update_prop_service_service_ms",
+				AppId:       "update_prop_appId_service_ms",
+				Version:     "1.0.0",
+				Level:       "FRONT",
+				Status:      "UP",
+			},
+		})
+		assert.NoError(t, err)
+		assert.NotNil(t, resp)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+		assert.NotEqual(t, "", resp.ServiceId)
+		serviceId = resp.ServiceId
+	})
+
+	t.Run("update properties while properties not nil", func(t *testing.T) {
+		log.Info("shuold pass")
+		request := &pb.UpdateServicePropsRequest{
+			ServiceId:  serviceId,
+			Properties: make(map[string]string),
+		}
+		request2 := &pb.UpdateServicePropsRequest{
+			ServiceId:  serviceId,
+			Properties: make(map[string]string),
+		}
+		request.Properties["test"] = "1"
+		request2.Properties["k"] = "v"
+		resp, err := ms.MicroService().UpdateService(getContext(), request)
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+
+		resp, err = ms.MicroService().UpdateService(getContext(), request2)
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+
+		respGetService, err := ms.MicroService().GetService(getContext(), &pb.GetServiceRequest{
+			ServiceId: serviceId,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, serviceId, respGetService.Service.ServiceId)
+		assert.Equal(t, "", respGetService.Service.Properties["test"])
+		assert.Equal(t, "v", respGetService.Service.Properties["k"])
+	})
+
+	t.Run("update service that does not exist", func(t *testing.T) {
+		log.Info("it should be failed")
+		r := &pb.UpdateServicePropsRequest{
+			ServiceId:  "not_exist_service_service_ms",
+			Properties: make(map[string]string),
+		}
+		resp, err := ms.MicroService().UpdateService(getContext(), r)
+		assert.NoError(t, err)
+		assert.NotEqual(t, proto.Response_SUCCESS, resp.Response.GetCode())
+	})
+
+	t.Run("update service by removing the properties", func(t *testing.T) {
+		log.Info("it should pass")
+		r := &pb.UpdateServicePropsRequest{
+			ServiceId:  serviceId,
+			Properties: nil,
+		}
+		resp, err := ms.MicroService().UpdateService(getContext(), r)
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+
+		log.Info("remove properties for service with empty serviceId")
+		r = &pb.UpdateServicePropsRequest{
+			ServiceId:  "",
+			Properties: map[string]string{},
+		}
+		resp, err = ms.MicroService().UpdateService(getContext(), r)
+		assert.NoError(t, err)
+		assert.NotEqual(t, proto.Response_SUCCESS, resp.Response.GetCode())
+	})
+}
+
+func TestService_Delete(t *testing.T) {
+	ms.Install("etcd", func(opts ms.Options) (ms.DataSource, error) {
+		return etcd.NewDataSource(opts), nil
+	})
+
+	err := ms.Init(ms.Options{
+		Endpoint:       "",
+		PluginImplName: ms.ImplName(archaius.GetString("servicecomb.ms.name", "etcd")),
+	})
+	assert.NoError(t, err)
+
+	var (
+		serviceContainInstId string
+		serviceNoInstId      string
+	)
+
+	t.Run("create service & instance", func(t *testing.T) {
+		respCreate, err := ms.MicroService().RegisterService(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				ServiceName: "delete_service_with_inst_ms",
+				AppId:       "delete_service_ms",
+				Version:     "1.0.0",
+				Level:       "FRONT",
+				Status:      "UP",
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, respCreate.Response.GetCode())
+		serviceContainInstId = respCreate.ServiceId
+
+		log.Info("attach instance")
+		instance := &pb.MicroServiceInstance{
+			ServiceId: serviceContainInstId,
+			Endpoints: []string{
+				"deleteService:127.0.0.1:8080",
+			},
+			HostName: "delete-host-ms",
+			Status:   pb.MSI_UP,
+		}
+		respCreateIns, err := ms.MicroService().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
+			Instance: instance,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, respCreateIns.Response.GetCode())
+
+		log.Info("create service without instance")
+		provider := &pb.MicroService{
+			ServiceName: "delete_service_no_inst_ms",
+			AppId:       "delete_service_ms",
+			Version:     "1.0.0",
+			Level:       "FRONT",
+			Status:      "UP",
+		}
+		respCreate, err = ms.MicroService().RegisterService(getContext(), &pb.CreateServiceRequest{
+			Service: provider,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, respCreate.Response.GetCode())
+		serviceNoInstId = respCreate.ServiceId
+
+		respCreate, err = ms.MicroService().RegisterService(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				ServiceName: "delete_service_consumer_ms",
+				AppId:       "delete_service_ms",
+				Version:     "1.0.0",
+				Level:       "FRONT",
+				Status:      "UP",
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, respCreate.Response.GetCode())
+	})
+
+	t.Run("delete a service which contains instances with no force flag", func(t *testing.T) {
+		log.Info("should not pass")
+		resp, err := ms.MicroService().UnregisterService(getContext(), &pb.DeleteServiceRequest{
+			ServiceId: serviceContainInstId,
+			Force:     false,
+		})
+		assert.NoError(t, err)
+		assert.NotEqual(t, proto.Response_SUCCESS, resp.Response.GetCode())
+	})
+
+	t.Run("delete a service which contains instances with force flag", func(t *testing.T) {
+		log.Info("should pass")
+		resp, err := ms.MicroService().UnregisterService(getContext(), &pb.DeleteServiceRequest{
+			ServiceId: serviceContainInstId,
+			Force:     true,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+	})
+
+	// todo: add delete service depended by consumer after finishing dependency management
+
+	t.Run("delete a service which depended by consumer with force flag", func(t *testing.T) {
+		log.Info("should pass")
+		resp, err := ms.MicroService().UnregisterService(getContext(), &pb.DeleteServiceRequest{
+			ServiceId: serviceNoInstId,
+			Force:     true,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+	})
+
+	t.Run("delete a service with no force flag", func(t *testing.T) {
+		log.Info("should not pass")
+		resp, err := ms.MicroService().UnregisterService(getContext(), &pb.DeleteServiceRequest{
+			ServiceId: serviceNoInstId,
+			Force:     false,
+		})
+		assert.NoError(t, err)
+		assert.NotEqual(t, proto.Response_SUCCESS, resp.Response.GetCode())
+	})
+}
+
+func TestInstance_Create(t *testing.T) {
+	ms.Install("etcd", func(opts ms.Options) (ms.DataSource, error) {
+		return etcd.NewDataSource(opts), nil
+	})
+
+	err := ms.Init(ms.Options{
+		Endpoint:       "",
+		PluginImplName: ms.ImplName(archaius.GetString("servicecomb.ms.name", "etcd")),
+	})
+	assert.NoError(t, err)
+
+	var serviceId string
+
+	t.Run("create service", func(t *testing.T) {
+		respCreateService, err := ms.MicroService().RegisterService(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				ServiceName: "create_instance_service_ms",
+				AppId:       "create_instance_ms",
+				Version:     "1.0.0",
+				Level:       "FRONT",
+				Status:      pb.MS_UP,
+			},
+		})
+
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, respCreateService.Response.GetCode())
+		serviceId = respCreateService.ServiceId
+	})
+
+	t.Run("register instance", func(t *testing.T) {
+		respCreateInst, err := ms.MicroService().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
+			Instance: &pb.MicroServiceInstance{
+				ServiceId: serviceId,
+				Endpoints: []string{
+					"createInstance_ms:127.0.0.1:8080",
+				},
+				HostName: "UT-HOST",
+				Status:   pb.MSI_UP,
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, respCreateInst.Response.GetCode())
+		assert.NotEqual(t, "", respCreateInst.InstanceId)
+
+		respCreateInst, err = ms.MicroService().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
+			Instance: &pb.MicroServiceInstance{
+				InstanceId: "customId_ms",
+				ServiceId:  serviceId,
+				Endpoints: []string{
+					"createInstance_ms:127.0.0.1:8080",
+				},
+				HostName: "UT-HOST",
+				Status:   pb.MSI_UP,
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, respCreateInst.Response.GetCode())
+		assert.Equal(t, "customId_ms", respCreateInst.InstanceId)
+	})
+
+	t.Run("update the same instance", func(t *testing.T) {
+		instance := &pb.MicroServiceInstance{
+			ServiceId: serviceId,
+			Endpoints: []string{
+				"sameInstance:127.0.0.1:8080",
+			},
+			HostName: "UT-HOST",
+			Status:   pb.MSI_UP,
+		}
+		resp, err := ms.MicroService().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
+			Instance: instance,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+
+		resp, err = ms.MicroService().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
+			Instance: instance,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+		assert.Equal(t, instance.InstanceId, resp.InstanceId)
+	})
+}
+
 func TestSchema_Create(t *testing.T) {
 	ms.Install("etcd", func(opts ms.Options) (ms.DataSource, error) {
-		return etcd.NewDataSource(), nil
+		return etcd.NewDataSource(opts), nil
 	})
 	err := ms.Init(ms.Options{
 		Endpoint:       "",
@@ -1264,7 +1546,7 @@ func TestSchema_Create(t *testing.T) {
 
 func TestSchema_Exist(t *testing.T) {
 	ms.Install("etcd", func(opts ms.Options) (ms.DataSource, error) {
-		return etcd.NewDataSource(), nil
+		return etcd.NewDataSource(opts), nil
 	})
 	err := ms.Init(ms.Options{
 		Endpoint:       "",
