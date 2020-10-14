@@ -13,23 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package auth
-
-import (
-	"context"
-	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
-)
+package lock
 
 type DataSource interface {
-	AccountExist(ctx context.Context, key string) (bool, error)
-	GetAccount(ctx context.Context, key string) (*rbacframe.Account, error)
-	ListAccount(ctx context.Context, key string) ([]*rbacframe.Account, int64, error)
-	DeleteAccount(ctx context.Context, key string) (bool, error)
-	UpdateAccount(ctx context.Context, key string, account *rbacframe.Account) error
-
-	AddDomain(ctx context.Context, domain string) (bool, error)
-	DomainExist(ctx context.Context, domain string) (bool, error)
-
-	AddProject(ctx context.Context, domain, project string) (bool, error)
-	ProjectExist(ctx context.Context, domain, project string) (bool, error)
+	NewDLock(key string, ttl int64, wait bool) (DLock, error)
 }

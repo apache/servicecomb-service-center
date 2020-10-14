@@ -16,10 +16,19 @@
 package etcd
 
 import (
+	"context"
+	"encoding/json"
+	"errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
+	"github.com/apache/servicecomb-service-center/server/core/backend"
+	"github.com/apache/servicecomb-service-center/server/plugin/registry"
+	utils "github.com/apache/servicecomb-service-center/server/service/util"
 )
 
 // TODO: define error with names here
+
+var ErrNotUnique = errors.New("kv result is not unique")
 
 func init() {
 	// TODO: set logger
@@ -45,50 +54,110 @@ func (ds *DataSource) initialize() error {
 	return nil
 }
 
-func (ds *DataSource) AddAccount() {
-	panic("implement me")
+func (ds *DataSource) AccountExist(ctx context.Context, key string) (bool, error) {
+	resp, err := backend.Registry().Do(ctx, registry.GET,
+		registry.WithStrKey(GenerateETCDAccountKey(key)))
+	if err != nil {
+		return false, err
+	}
+	if resp.Count == 0 {
+		return false, nil
+	}
+	return true, nil
 }
 
-func (ds *DataSource) GetAccount() {
-	panic("implement me")
+func (ds *DataSource) GetAccount(ctx context.Context, key string) (*rbacframe.Account, error) {
+	resp, err := backend.Registry().Do(ctx, registry.GET,
+		registry.WithStrKey(GenerateETCDAccountKey(key)))
+	if err != nil {
+		return nil, err
+	}
+	if resp.Count != 1 {
+		return nil, ErrNotUnique
+	}
+	account := &rbacframe.Account{}
+	err = json.Unmarshal(resp.Kvs[0].Value, account)
+	if err != nil {
+		log.Errorf(err, "account info format invalid")
+		return nil, err
+	}
+	return account, nil
+}
+func (ds *DataSource) ListAccount(ctx context.Context, key string) ([]*rbacframe.Account, int64, error) {
+	resp, err := backend.Registry().Do(ctx, registry.GET,
+		registry.WithStrKey(GenerateETCDAccountKey(key)), registry.WithPrefix())
+	if err != nil {
+		return nil, 0, err
+	}
+	accounts := make([]*rbacframe.Account, 0, resp.Count)
+	for _, v := range resp.Kvs {
+		a := &rbacframe.Account{}
+		err = json.Unmarshal(v.Value, a)
+		if err != nil {
+			log.Error("account info format invalid:", err)
+			continue //do not fail if some account is invalid
+		}
+		a.Password = ""
+		accounts = append(accounts, a)
+	}
+	return accounts, resp.Count, nil
+}
+func (ds *DataSource) DeleteAccount(ctx context.Context, key string) (bool, error) {
+	resp, err := backend.Registry().Do(ctx, registry.DEL,
+		registry.WithStrKey(GenerateETCDAccountKey(key)))
+	if err != nil {
+		return false, err
+	}
+	return resp.Count != 0, nil
+}
+func (ds *DataSource) UpdateAccount(ctx context.Context, key string, account *rbacframe.Account) error {
+	value, err := json.Marshal(account)
+	if err != nil {
+		log.Errorf(err, "account info is invalid")
+		return err
+	}
+	_, err = backend.Registry().Do(ctx, registry.PUT,
+		registry.WithStrKey(GenerateETCDAccountKey(key)),
+		registry.WithValue(value))
+	return err
 }
 
-func (ds *DataSource) UpdateAccount() {
-	panic("implement me")
+func (ds *DataSource) AddDomain(ctx context.Context, domain string) (bool, error) {
+	ok, err := backend.Registry().PutNoOverride(ctx,
+		registry.WithStrKey(GenerateETCDDomainKey(domain)))
+	if err != nil {
+		return false, err
+	}
+	return ok, nil
 }
 
-func (ds *DataSource) DeleteAccount() {
-	panic("implement me")
+func (ds *DataSource) DomainExist(ctx context.Context, domain string) (bool, error) {
+	opts := append(utils.FromContext(ctx),
+		registry.WithStrKey(GenerateETCDDomainKey(domain)),
+		registry.WithCountOnly())
+	rsp, err := backend.Store().Domain().Search(ctx, opts...)
+	if err != nil {
+		return false, err
+	}
+	return rsp.Count > 0, nil
 }
 
-func (ds *DataSource) AddDomain() {
-	panic("implement me")
+func (ds *DataSource) AddProject(ctx context.Context, domain, project string) (bool, error) {
+	ok, err := backend.Registry().PutNoOverride(ctx,
+		registry.WithStrKey(GenerateETCDProjectKey(domain, project)))
+	if err != nil {
+		return ok, err
+	}
+	return ok, nil
 }
 
-func (ds *DataSource) GetDomain() {
-	panic("implement me")
-}
-
-func (ds *DataSource) UpdateDomain() {
-	panic("implement me")
-}
-
-func (ds *DataSource) DeleteDomain() {
-	panic("implement me")
-}
-
-func (ds *DataSource) AddDomainProject() {
-	panic("implement me")
-}
-
-func (ds *DataSource) GetDomainProject() {
-	panic("implement me")
-}
-
-func (ds *DataSource) UpdateDomainProject() {
-	panic("implement me")
-}
-
-func (ds *DataSource) DeleteDomainProject() {
-	panic("implement me")
+func (ds *DataSource) ProjectExist(ctx context.Context, domain, project string) (bool, error) {
+	opts := append(utils.FromContext(ctx),
+		registry.WithStrKey(GenerateETCDProjectKey(domain, project)),
+		registry.WithCountOnly())
+	rsp, err := backend.Store().Project().Search(ctx, opts...)
+	if err != nil {
+		return false, err
+	}
+	return rsp.Count > 0, nil
 }
