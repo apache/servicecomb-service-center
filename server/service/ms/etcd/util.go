@@ -18,6 +18,7 @@ package etcd
 import (
 	"context"
 	"encoding/json"
+	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -352,5 +353,40 @@ func preProcessRegisterInstance(ctx context.Context, instance *pb.MicroServiceIn
 		return scerr.NewError(scerr.ErrServiceNotExists, "Invalid 'serviceID' in request body.")
 	}
 	instance.Version = microservice.Version
+	return nil
+}
+
+func getHeartbeatFunc(ctx context.Context, domainProject string, instancesHbRst chan<- *pb.InstanceHbRst, element *pb.HeartbeatSetElement) func(context.Context) {
+	return func(_ context.Context) {
+		hbRst := &pb.InstanceHbRst{
+			ServiceId:  element.ServiceId,
+			InstanceId: element.InstanceId,
+			ErrMessage: "",
+		}
+		_, _, err := serviceUtil.HeartbeatUtil(ctx, domainProject, element.ServiceId, element.InstanceId)
+		if err != nil {
+			hbRst.ErrMessage = err.Error()
+			log.Errorf(err, "heartbeat set failed, %s/%s", element.ServiceId, element.InstanceId)
+		}
+		instancesHbRst <- hbRst
+	}
+}
+
+func revokeInstance(ctx context.Context, domainProject string, serviceID string, instanceID string) *scerr.Error {
+	leaseID, err := serviceUtil.GetLeaseID(ctx, domainProject, serviceID, instanceID)
+	if err != nil {
+		return scerr.NewError(scerr.ErrUnavailableBackend, err.Error())
+	}
+	if leaseID == -1 {
+		return scerr.NewError(scerr.ErrInstanceNotExists, "Instance's leaseId not exist.")
+	}
+
+	err = backend.Registry().LeaseRevoke(ctx, leaseID)
+	if err != nil {
+		if _, ok := err.(errorsEx.InternalError); !ok {
+			return scerr.NewError(scerr.ErrInstanceNotExists, err.Error())
+		}
+		return scerr.NewError(scerr.ErrUnavailableBackend, err.Error())
+	}
 	return nil
 }
