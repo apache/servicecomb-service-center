@@ -13,23 +13,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package auth
+package etcd
 
 import (
-	"context"
-	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
+	"errors"
+	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
-type DataSource interface {
-	AccountExist(ctx context.Context, key string) (bool, error)
-	GetAccount(ctx context.Context, key string) (*rbacframe.Account, error)
-	ListAccount(ctx context.Context, key string) ([]*rbacframe.Account, int64, error)
-	DeleteAccount(ctx context.Context, key string) (bool, error)
-	UpdateAccount(ctx context.Context, key string, account *rbacframe.Account) error
+// TODO: define error with names here
 
-	AddDomain(ctx context.Context, domain string) (bool, error)
-	DomainExist(ctx context.Context, domain string) (bool, error)
+var ErrNotUnique = errors.New("kv result is not unique")
 
-	AddProject(ctx context.Context, domain, project string) (bool, error)
-	ProjectExist(ctx context.Context, domain, project string) (bool, error)
+func init() {
+	// TODO: set logger
+	// TODO: register storage plugin to plugin manager
+}
+
+type DataSource struct{}
+
+func NewDataSource() *DataSource {
+	// TODO: construct a reasonable DataSource instance
+	log.Warnf("dependency data source enable etcd mode")
+
+	inst := &DataSource{}
+	// TODO: deal with exception
+	if err := inst.initialize(); err != nil {
+		return inst
+	}
+	return inst
+}
+
+func (ds *DataSource) initialize() error {
+	// TODO: init dependency members
+	return nil
 }

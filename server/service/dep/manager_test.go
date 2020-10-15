@@ -16,7 +16,8 @@
 package dep
 
 import (
-	"github.com/apache/servicecomb-service-center/server/service/dep/etcd"
+	"github.com/apache/servicecomb-service-center/datasource"
+	etcd2 "github.com/apache/servicecomb-service-center/datasource/etcd"
 	"github.com/go-chassis/go-archaius"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -34,8 +35,8 @@ func TestInit(t *testing.T) {
 	})
 	t.Run(" dependency data source plugin install and init", func(t *testing.T) {
 		Install("etcd",
-			func(opts Options) (DataSource, error) {
-				return etcd.NewDataSource(), nil
+			func(opts Options) (datasource.DataSource, error) {
+				return etcd2.NewDataSource(), nil
 			})
 
 		// sc main function initialize step
