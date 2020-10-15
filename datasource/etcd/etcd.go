@@ -17,6 +17,7 @@ package etcd
 
 import (
 	"errors"
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
@@ -29,13 +30,20 @@ func init() {
 	// TODO: register storage plugin to plugin manager
 }
 
-type DataSource struct{}
+type DataSource struct {
+	// schemaEditable determines whether schema modification is allowed for
+	SchemaEditable bool
+	ttlFromEnv     int64
+}
 
-func NewDataSource() *DataSource {
+func NewDataSource(opts datasource.Options) *DataSource {
 	// TODO: construct a reasonable DataSource instance
 	log.Warnf("dependency data source enable etcd mode")
 
-	inst := &DataSource{}
+	inst := &DataSource{
+		SchemaEditable: opts.SchemaEditable,
+		ttlFromEnv:     opts.TTL,
+	}
 	// TODO: deal with exception
 	if err := inst.initialize(); err != nil {
 		return inst

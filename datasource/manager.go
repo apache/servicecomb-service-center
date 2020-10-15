@@ -41,12 +41,12 @@ func Init(opts Options) error {
 		return nil
 	}
 
-	authDataSourceEngine, ok := plugins[opts.PluginImplName]
+	dataSourceEngine, ok := plugins[opts.PluginImplName]
 	if !ok {
 		return fmt.Errorf("plugin implement not supported [%s]", opts.PluginImplName)
 	}
 	var err error
-	dataSourceInst, err = authDataSourceEngine(opts)
+	dataSourceInst, err = dataSourceEngine(opts)
 	if err != nil {
 		return err
 	}
@@ -54,12 +54,7 @@ func Init(opts Options) error {
 	return nil
 }
 
-// usage: auth.Auth().CreateAccount()
-func AccountMgr() DataSource {
-	return dataSourceInst
-}
-
-// usage: dep.DependencyMgr()
-func DependencyMgr() DataSource {
+// Instance is the instance of DataSource
+func Instance() DataSource {
 	return dataSourceInst
 }

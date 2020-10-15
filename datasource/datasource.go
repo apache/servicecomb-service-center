@@ -21,4 +21,5 @@ package datasource
 type DataSource interface {
 	AccountManager
 	DependencyManager
+	MetadataManager
 }

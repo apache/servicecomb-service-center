@@ -21,4 +21,7 @@ package datasource
 type Options struct {
 	Endpoint       string
 	PluginImplName ImplName
+	SchemaEditable bool
+	TTL            int64
+	// TODO: pay attention to more net config like TLSConfig when coding
 }
