@@ -17,9 +17,11 @@
 
 package datasource
 
-// DataSource is the DAO layer
-type DataSource interface {
-	AccountManager
-	DependencyManager
-	MetadataManager
+//Options contains configuration for plugins
+type Options struct {
+	Endpoint       string
+	PluginImplName ImplName
+	SchemaEditable bool
+	TTL            int64
+	// TODO: pay attention to more net config like TLSConfig when coding
 }

@@ -22,7 +22,8 @@ import (
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 )
 
-type Dependency interface {
+// DependencyManager contains the CRUD of microservice dependencies
+type DependencyManager interface {
 	AddDependency(ctx context.Context, request *pb.AddDependenciesRequest) (*pb.AddDependenciesResponse, error)
 	CreateDependency(ctx context.Context, request *pb.CreateDependenciesRequest) (*pb.CreateDependenciesResponse, error)
 	SearchProviderDependency(ctx context.Context, request *pb.GetDependenciesRequest) (*pb.GetProDependenciesResponse, error)
