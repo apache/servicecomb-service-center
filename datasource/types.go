@@ -17,8 +17,4 @@
 
 package datasource
 
-// DataSource is the DAO layer
-type DataSource interface {
-	AccountManager
-	DependencyManager
-}
+type ImplName string

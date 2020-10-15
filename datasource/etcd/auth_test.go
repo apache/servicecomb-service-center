@@ -8,7 +8,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery/etcd"
 	etcd2 "github.com/apache/servicecomb-service-center/server/plugin/registry/etcd"
 	"github.com/apache/servicecomb-service-center/server/plugin/tracing/pzipkin"
-	"github.com/apache/servicecomb-service-center/server/service/auth"
 	"github.com/astaxie/beego"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -39,10 +38,10 @@ func init() {
 	mgr.RegisterPlugin(mgr.Plugin{PName: mgr.DISCOVERY, Name: "buildin", New: etcd.NewRepository})
 	mgr.RegisterPlugin(mgr.Plugin{PName: mgr.DISCOVERY, Name: "etcd", New: etcd.NewRepository})
 	mgr.RegisterPlugin(mgr.Plugin{PName: mgr.TRACING, Name: "buildin", New: pzipkin.New})
-	auth.Install("etcd", func(opts auth.Options) (datasource.DataSource, error) {
+	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
 		return NewDataSource(), nil
 	})
-	err := auth.Init(auth.Options{
+	err := datasource.Init(datasource.Options{
 		Endpoint:       "",
 		PluginImplName: "etcd",
 	})
@@ -53,29 +52,29 @@ func init() {
 
 func TestAccount(t *testing.T) {
 	t.Run("add and get account", func(t *testing.T) {
-		err := auth.Auth().UpdateAccount(context.Background(), "test-account-key", &a1)
+		err := datasource.AccountMgr().UpdateAccount(context.Background(), "test-account-key", &a1)
 		assert.NoError(t, err)
-		r, err := auth.Auth().GetAccount(context.Background(), "test-account-key")
+		r, err := datasource.AccountMgr().GetAccount(context.Background(), "test-account-key")
 		assert.NoError(t, err)
 		assert.Equal(t, a1, *r)
 	})
 	t.Run("account should exist", func(t *testing.T) {
-		exist, err := auth.Auth().AccountExist(context.Background(), "test-account-key")
+		exist, err := datasource.AccountMgr().AccountExist(context.Background(), "test-account-key")
 		assert.NoError(t, err)
 		assert.True(t, exist)
 	})
 	t.Run("delete account", func(t *testing.T) {
-		err := auth.Auth().UpdateAccount(context.Background(), "test-account-key222", &a1)
+		err := datasource.AccountMgr().UpdateAccount(context.Background(), "test-account-key222", &a1)
 		assert.NoError(t, err)
-		_, err = auth.Auth().DeleteAccount(context.Background(), "test-account-key222")
+		_, err = datasource.AccountMgr().DeleteAccount(context.Background(), "test-account-key222")
 		assert.NoError(t, err)
 	})
 	t.Run("add two accounts and list", func(t *testing.T) {
-		err := auth.Auth().UpdateAccount(context.Background(), "key1", &a1)
+		err := datasource.AccountMgr().UpdateAccount(context.Background(), "key1", &a1)
 		assert.NoError(t, err)
-		err = auth.Auth().UpdateAccount(context.Background(), "key2", &a2)
+		err = datasource.AccountMgr().UpdateAccount(context.Background(), "key2", &a2)
 		assert.NoError(t, err)
-		accs, n, err := auth.Auth().ListAccount(context.Background(), "key")
+		accs, n, err := datasource.AccountMgr().ListAccount(context.Background(), "key")
 		assert.NoError(t, err)
 		assert.Equal(t, int64(2), n)
 		t.Log(accs)
@@ -84,9 +83,9 @@ func TestAccount(t *testing.T) {
 
 func TestDomain(t *testing.T) {
 	t.Run("test domain", func(t *testing.T) {
-		_, err := auth.Auth().AddDomain(context.Background(), "test-domain")
+		_, err := datasource.AccountMgr().AddDomain(context.Background(), "test-domain")
 		assert.NoError(t, err)
-		r, err := auth.Auth().DomainExist(context.Background(), "test-domain")
+		r, err := datasource.AccountMgr().DomainExist(context.Background(), "test-domain")
 		assert.NoError(t, err)
 		assert.Equal(t, true, r)
 	})
@@ -94,9 +93,9 @@ func TestDomain(t *testing.T) {
 
 func TestProject(t *testing.T) {
 	t.Run("test project", func(t *testing.T) {
-		_, err := auth.Auth().AddProject(context.Background(), "test-domain", "test-project")
+		_, err := datasource.AccountMgr().AddProject(context.Background(), "test-domain", "test-project")
 		assert.NoError(t, err)
-		r, err := auth.Auth().ProjectExist(context.Background(), "test-domain", "test-project")
+		r, err := datasource.AccountMgr().ProjectExist(context.Background(), "test-domain", "test-project")
 		assert.NoError(t, err)
 		assert.Equal(t, true, r)
 	})

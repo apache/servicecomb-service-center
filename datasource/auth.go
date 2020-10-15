@@ -22,7 +22,8 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 )
 
-type Auth interface {
+// AccountManager contains the RBAC CRUD
+type AccountManager interface {
 	AccountExist(ctx context.Context, key string) (bool, error)
 	GetAccount(ctx context.Context, key string) (*rbacframe.Account, error)
 	ListAccount(ctx context.Context, key string) ([]*rbacframe.Account, int64, error)

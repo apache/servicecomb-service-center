@@ -17,8 +17,8 @@
 
 package datasource
 
-// DataSource is the DAO layer
-type DataSource interface {
-	AccountManager
-	DependencyManager
+//Options contains configuration for plugins
+type Options struct {
+	Endpoint       string
+	PluginImplName ImplName
 }

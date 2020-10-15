@@ -17,8 +17,34 @@
 
 package datasource
 
-// DataSource is the DAO layer
-type DataSource interface {
-	AccountManager
-	DependencyManager
+import (
+	"github.com/apache/servicecomb-service-center/datasource/etcd"
+	"github.com/go-chassis/go-archaius"
+	"github.com/stretchr/testify/assert"
+	"testing"
+)
+
+func TestInit(t *testing.T) {
+	_ = archaius.Init(archaius.WithMemorySource())
+	_ = archaius.Set("servicecomb.datasource.name", "etcd")
+	t.Run("circuit datasource", func(t *testing.T) {
+		err := Init(Options{
+			Endpoint:       "",
+			PluginImplName: "",
+		})
+		assert.NoError(t, err)
+	})
+	t.Run("install and init", func(t *testing.T) {
+		Install("etcd",
+			func(opts Options) (DataSource, error) {
+				return etcd.NewDataSource(), nil
+			})
+
+		// sc main function initialize step
+		err := Init(Options{
+			Endpoint:       "",
+			PluginImplName: ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
+		})
+		assert.NoError(t, err)
+	})
 }
