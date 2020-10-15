@@ -18,41 +18,12 @@ package etcd
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	utils "github.com/apache/servicecomb-service-center/server/service/util"
 )
-
-// TODO: define error with names here
-
-var ErrNotUnique = errors.New("kv result is not unique")
-
-func init() {
-	// TODO: set logger
-	// TODO: register storage plugin to plugin manager
-}
-
-type DataSource struct{}
-
-func NewDataSource() *DataSource {
-	// TODO: construct a reasonable DataSource instance
-	log.Warnf("auth data source enable etcd mode")
-
-	inst := &DataSource{}
-	// TODO: deal with exception
-	if err := inst.initialize(); err != nil {
-		return inst
-	}
-	return inst
-}
-
-func (ds *DataSource) initialize() error {
-	// TODO: init DataSource members
-	return nil
-}
 
 func (ds *DataSource) AccountExist(ctx context.Context, key string) (bool, error) {
 	resp, err := backend.Registry().Do(ctx, registry.GET,

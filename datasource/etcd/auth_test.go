@@ -2,6 +2,7 @@ package etcd
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	mgr "github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery/etcd"
@@ -38,7 +39,7 @@ func init() {
 	mgr.RegisterPlugin(mgr.Plugin{PName: mgr.DISCOVERY, Name: "buildin", New: etcd.NewRepository})
 	mgr.RegisterPlugin(mgr.Plugin{PName: mgr.DISCOVERY, Name: "etcd", New: etcd.NewRepository})
 	mgr.RegisterPlugin(mgr.Plugin{PName: mgr.TRACING, Name: "buildin", New: pzipkin.New})
-	auth.Install("etcd", func(opts auth.Options) (auth.DataSource, error) {
+	auth.Install("etcd", func(opts auth.Options) (datasource.DataSource, error) {
 		return NewDataSource(), nil
 	})
 	err := auth.Init(auth.Options{

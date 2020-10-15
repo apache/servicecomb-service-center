@@ -15,14 +15,14 @@
  * limitations under the License.
  */
 
-package etcd_test
+package etcd
 
 import (
+	"github.com/apache/servicecomb-service-center/datasource"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"github.com/apache/servicecomb-service-center/server/service/dep"
-	"github.com/apache/servicecomb-service-center/server/service/dep/etcd"
 	"github.com/apache/servicecomb-service-center/server/service/event"
 	"github.com/go-chassis/go-archaius"
 	"github.com/stretchr/testify/assert"
@@ -34,8 +34,8 @@ var deh event.DependencyEventHandler
 
 func Test_Creat(t *testing.T) {
 
-	dep.Install("etcd", func(opts dep.Options) (dep.DataSource, error) {
-		return etcd.NewDataSource(), nil
+	dep.Install("etcd", func(opts dep.Options) (datasource.DataSource, error) {
+		return NewDataSource(), nil
 	})
 
 	err := dep.Init(dep.Options{
@@ -630,8 +630,8 @@ func Test_Creat(t *testing.T) {
 }
 
 func Test_Get(t *testing.T) {
-	dep.Install("etcd", func(opts dep.Options) (dep.DataSource, error) {
-		return etcd.NewDataSource(), nil
+	dep.Install("etcd", func(opts dep.Options) (datasource.DataSource, error) {
+		return NewDataSource(), nil
 	})
 
 	err := dep.Init(dep.Options{

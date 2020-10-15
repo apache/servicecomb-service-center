@@ -17,14 +17,15 @@ package dep
 
 import (
 	"fmt"
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
-type dataSourceEngine func(opts Options) (DataSource, error)
+type dataSourceEngine func(opts Options) (datasource.DataSource, error)
 
 var (
 	plugins           = make(map[ImplName]dataSourceEngine)
-	depDataSourceInst DataSource
+	depDataSourceInst datasource.DataSource
 )
 
 // load plugins configuration into plugins
@@ -53,6 +54,6 @@ func Init(opts Options) error {
 }
 
 // usage: dep.Dependency()
-func Dependency() DataSource {
+func Dependency() datasource.DataSource {
 	return depDataSourceInst
 }

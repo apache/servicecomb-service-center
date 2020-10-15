@@ -17,14 +17,15 @@ package auth
 
 import (
 	"fmt"
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
-type dataSourceEngine func(opts Options) (DataSource, error)
+type dataSourceEngine func(opts Options) (datasource.DataSource, error)
 
 var (
 	plugins            = make(map[ImplName]dataSourceEngine)
-	authDataSourceInst DataSource
+	authDataSourceInst datasource.DataSource
 )
 
 // load plugins configuration into plugins
@@ -53,6 +54,6 @@ func Init(opts Options) error {
 }
 
 // usage: auth.Auth().CreateAccount()
-func Auth() DataSource {
+func Auth() datasource.DataSource {
 	return authDataSourceInst
 }

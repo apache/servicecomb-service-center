@@ -16,7 +16,8 @@
 package auth
 
 import (
-	"github.com/apache/servicecomb-service-center/server/service/auth/etcd"
+	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/datasource/etcd"
 	"github.com/go-chassis/go-archaius"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -34,7 +35,7 @@ func TestInit(t *testing.T) {
 	})
 	t.Run("install and init", func(t *testing.T) {
 		Install("etcd",
-			func(opts Options) (DataSource, error) {
+			func(opts Options) (datasource.DataSource, error) {
 				return etcd.NewDataSource(), nil
 			})
 
