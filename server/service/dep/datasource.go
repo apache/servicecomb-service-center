@@ -15,9 +15,15 @@
 
 package dep
 
+import (
+	"context"
+	pb "github.com/apache/servicecomb-service-center/pkg/registry"
+)
+
 type DataSource interface {
-	AddDependency()
-	SearchDependency()
-	UpdateDependency()
+	AddDependency(ctx context.Context, request *pb.AddDependenciesRequest) (*pb.AddDependenciesResponse, error)
+	CreateDependency(ctx context.Context, request *pb.CreateDependenciesRequest) (*pb.CreateDependenciesResponse, error)
+	SearchProviderDependency(ctx context.Context, request *pb.GetDependenciesRequest) (*pb.GetProDependenciesResponse, error)
+	SearchConsumerDependency(ctx context.Context, request *pb.GetDependenciesRequest) (*pb.GetConDependenciesResponse, error)
 	DeleteDependency()
 }
