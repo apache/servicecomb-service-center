@@ -17,10 +17,14 @@
 
 package datasource
 
-// DataSource is the DAO layer
-type DataSource interface {
-	AccountManager
-	DependencyManager
-	MetadataManager
-	DLockManager
+// DLock contains the APIs of distribute lock instance
+type DLock interface {
+	ID() string
+	Lock(wait bool) (err error)
+	Unlock() (err error)
+}
+
+// DLockManager contains the APIs of distribute lock management
+type DLockManager interface {
+	NewDLock(key string, ttl int64, wait bool) (DLock, error)
 }

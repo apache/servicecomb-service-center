@@ -25,7 +25,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
-	"github.com/apache/servicecomb-service-center/server/service/lock"
 	"github.com/coreos/etcd/client"
 	"os"
 	"sync"
@@ -54,30 +53,6 @@ var (
 	hostname = util.HostName()
 	pid      = os.Getpid()
 )
-
-func init() {
-	// TODO: set logger
-	// TODO: register storage plugin to plugin manager
-}
-
-type DataSource struct{}
-
-func NewDataSource() *DataSource {
-	// TODO: construct a reasonable DataSource instance
-	log.Warnf("auth data source enable etcd mode")
-
-	inst := &DataSource{}
-	// TODO: deal with exception
-	if err := inst.initialize(); err != nil {
-		return inst
-	}
-	return inst
-}
-
-func (ds *DataSource) initialize() error {
-	// TODO: init DataSource members
-	return nil
-}
 
 func (m *DLock) ID() string {
 	return m.id
@@ -174,37 +149,4 @@ func (m *DLock) Unlock() (err error) {
 		}
 	}
 	return err
-}
-
-func (ds *DataSource) NewDLock(key string, ttl int64, wait bool) (lock.DLock, error) {
-	if len(key) == 0 {
-		return nil, nil
-	}
-	key = fmt.Sprintf("%s%s", RootPath, key)
-	if ttl < 1 {
-		ttl = DefaultLockTTL
-	}
-
-	now := time.Now()
-	l := &DLock{
-		key:      key,
-		ctx:      context.Background(),
-		ttl:      ttl,
-		id:       fmt.Sprintf("%v-%v-%v", hostname, pid, now.Format("20060102-15:04:05.999999999")),
-		createAt: now,
-		mutex:    &sync.Mutex{},
-	}
-	var err error
-	for try := 1; try <= DefaultRetryTimes; try++ {
-		err = l.Lock(wait)
-		if err == nil {
-			return l, nil
-		}
-		if !wait {
-			break
-		}
-	}
-	// failed
-	log.Errorf(err, "Lock key %s failed, id=%s", l.key, l.id)
-	return nil, err
 }
