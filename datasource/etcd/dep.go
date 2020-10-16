@@ -21,13 +21,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	registry "github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/backend"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
-	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 )
@@ -117,7 +117,7 @@ func (ds *DataSource) AddOrUpdateDependencies(ctx context.Context, dependencyInf
 		opts = append(opts, registry.OpPut(registry.WithStrKey(key), registry.WithValue(data)))
 	}
 
-	err := backend.BatchCommit(ctx, opts)
+	err := kv.BatchCommit(ctx, opts)
 	if err != nil {
 		log.Errorf(err, "put request into dependency queue failed, override: %t, %v", override, dependencyInfos)
 		return proto.CreateResponse(scerr.ErrInternal, err.Error()), err

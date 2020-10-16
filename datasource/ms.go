@@ -23,7 +23,7 @@ import (
 )
 
 // Attention: request validation must be finished before the following interface being invoked!!!
-// MetadataManager contains the CRUD of registry metadata
+// MetadataManager contains the CRUD of cache metadata
 type MetadataManager interface {
 	RegisterService(ctx context.Context, request *pb.CreateServiceRequest) (*pb.CreateServiceResponse, error)
 	GetServices(ctx context.Context, request *pb.GetServicesRequest) (*pb.GetServicesResponse, error)

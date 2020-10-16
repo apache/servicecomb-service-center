@@ -18,15 +18,15 @@ package etcd
 import (
 	"context"
 	"encoding/json"
+	registry "github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
-	"github.com/apache/servicecomb-service-center/server/core/backend"
-	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	utils "github.com/apache/servicecomb-service-center/server/service/util"
 )
 
 func (ds *DataSource) AccountExist(ctx context.Context, key string) (bool, error) {
-	resp, err := backend.Registry().Do(ctx, registry.GET,
+	resp, err := kv.Registry().Do(ctx, registry.GET,
 		registry.WithStrKey(GenerateETCDAccountKey(key)))
 	if err != nil {
 		return false, err
@@ -38,7 +38,7 @@ func (ds *DataSource) AccountExist(ctx context.Context, key string) (bool, error
 }
 
 func (ds *DataSource) GetAccount(ctx context.Context, key string) (*rbacframe.Account, error) {
-	resp, err := backend.Registry().Do(ctx, registry.GET,
+	resp, err := kv.Registry().Do(ctx, registry.GET,
 		registry.WithStrKey(GenerateETCDAccountKey(key)))
 	if err != nil {
 		return nil, err
@@ -55,7 +55,7 @@ func (ds *DataSource) GetAccount(ctx context.Context, key string) (*rbacframe.Ac
 	return account, nil
 }
 func (ds *DataSource) ListAccount(ctx context.Context, key string) ([]*rbacframe.Account, int64, error) {
-	resp, err := backend.Registry().Do(ctx, registry.GET,
+	resp, err := kv.Registry().Do(ctx, registry.GET,
 		registry.WithStrKey(GenerateETCDAccountKey(key)), registry.WithPrefix())
 	if err != nil {
 		return nil, 0, err
@@ -74,7 +74,7 @@ func (ds *DataSource) ListAccount(ctx context.Context, key string) ([]*rbacframe
 	return accounts, resp.Count, nil
 }
 func (ds *DataSource) DeleteAccount(ctx context.Context, key string) (bool, error) {
-	resp, err := backend.Registry().Do(ctx, registry.DEL,
+	resp, err := kv.Registry().Do(ctx, registry.DEL,
 		registry.WithStrKey(GenerateETCDAccountKey(key)))
 	if err != nil {
 		return false, err
@@ -87,14 +87,14 @@ func (ds *DataSource) UpdateAccount(ctx context.Context, key string, account *rb
 		log.Errorf(err, "account info is invalid")
 		return err
 	}
-	_, err = backend.Registry().Do(ctx, registry.PUT,
+	_, err = kv.Registry().Do(ctx, registry.PUT,
 		registry.WithStrKey(GenerateETCDAccountKey(key)),
 		registry.WithValue(value))
 	return err
 }
 
 func (ds *DataSource) AddDomain(ctx context.Context, domain string) (bool, error) {
-	ok, err := backend.Registry().PutNoOverride(ctx,
+	ok, err := kv.Registry().PutNoOverride(ctx,
 		registry.WithStrKey(GenerateETCDDomainKey(domain)))
 	if err != nil {
 		return false, err
@@ -106,7 +106,7 @@ func (ds *DataSource) DomainExist(ctx context.Context, domain string) (bool, err
 	opts := append(utils.FromContext(ctx),
 		registry.WithStrKey(GenerateETCDDomainKey(domain)),
 		registry.WithCountOnly())
-	rsp, err := backend.Store().Domain().Search(ctx, opts...)
+	rsp, err := kv.Store().Domain().Search(ctx, opts...)
 	if err != nil {
 		return false, err
 	}
@@ -114,7 +114,7 @@ func (ds *DataSource) DomainExist(ctx context.Context, domain string) (bool, err
 }
 
 func (ds *DataSource) AddProject(ctx context.Context, domain, project string) (bool, error) {
-	ok, err := backend.Registry().PutNoOverride(ctx,
+	ok, err := kv.Registry().PutNoOverride(ctx,
 		registry.WithStrKey(GenerateETCDProjectKey(domain, project)))
 	if err != nil {
 		return ok, err
@@ -126,7 +126,7 @@ func (ds *DataSource) ProjectExist(ctx context.Context, domain, project string) 
 	opts := append(utils.FromContext(ctx),
 		registry.WithStrKey(GenerateETCDProjectKey(domain, project)),
 		registry.WithCountOnly())
-	rsp, err := backend.Store().Project().Search(ctx, opts...)
+	rsp, err := kv.Store().Project().Search(ctx, opts...)
 	if err != nil {
 		return false, err
 	}

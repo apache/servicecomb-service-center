@@ -20,15 +20,15 @@ package etcd
 import (
 	"context"
 	"encoding/json"
+	registry "github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/backend"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin"
-	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
@@ -155,7 +155,7 @@ func newRegisterServiceResp(ctx context.Context, reqService *pb.MicroService, re
 // schema
 func getSchemaSummary(ctx context.Context, domainProject string, serviceID string, schemaID string) (string, error) {
 	key := apt.GenerateServiceSchemaSummaryKey(domainProject, serviceID, schemaID)
-	resp, err := backend.Store().SchemaSummary().Search(ctx,
+	resp, err := kv.Store().SchemaSummary().Search(ctx,
 		registry.WithStrKey(key),
 	)
 	if err != nil {
@@ -170,7 +170,7 @@ func getSchemaSummary(ctx context.Context, domainProject string, serviceID strin
 
 func getSchemasFromDatabase(ctx context.Context, domainProject string, serviceID string) ([]*pb.Schema, error) {
 	key := apt.GenerateServiceSchemaKey(domainProject, serviceID, "")
-	resp, err := backend.Store().Schema().Search(ctx,
+	resp, err := kv.Store().Schema().Search(ctx,
 		registry.WithPrefix(),
 		registry.WithStrKey(key))
 	if err != nil {
@@ -247,7 +247,7 @@ func schemasAnalysis(schemas []*pb.Schema, schemasFromDb []*pb.Schema, schemaIDs
 
 func checkSchemaInfoExist(ctx context.Context, key string) (bool, error) {
 	opts := append(serviceUtil.FromContext(ctx), registry.WithStrKey(key), registry.WithCountOnly())
-	resp, errDo := backend.Store().Schema().Search(ctx, opts...)
+	resp, errDo := kv.Store().Schema().Search(ctx, opts...)
 	if errDo != nil {
 		return false, errDo
 	}
@@ -259,7 +259,7 @@ func checkSchemaInfoExist(ctx context.Context, key string) (bool, error) {
 
 func isExistSchemaSummary(ctx context.Context, domainProject, serviceID, schemaID string) (bool, error) {
 	key := apt.GenerateServiceSchemaSummaryKey(domainProject, serviceID, schemaID)
-	resp, err := backend.Store().SchemaSummary().Search(ctx, registry.WithStrKey(key), registry.WithCountOnly())
+	resp, err := kv.Store().SchemaSummary().Search(ctx, registry.WithStrKey(key), registry.WithCountOnly())
 	if err != nil {
 		return true, err
 	}
@@ -383,7 +383,7 @@ func revokeInstance(ctx context.Context, domainProject string, serviceID string,
 		return scerr.NewError(scerr.ErrInstanceNotExists, "Instance's leaseId not exist.")
 	}
 
-	err = backend.Registry().LeaseRevoke(ctx, leaseID)
+	err = kv.Registry().LeaseRevoke(ctx, leaseID)
 	if err != nil {
 		if _, ok := err.(errorsEx.InternalError); !ok {
 			return scerr.NewError(scerr.ErrInstanceNotExists, err.Error())
