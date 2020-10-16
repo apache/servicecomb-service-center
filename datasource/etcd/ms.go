@@ -1068,8 +1068,66 @@ func (ds *DataSource) ExistSchema(ctx context.Context, request *pb.GetExistenceR
 	}, nil
 }
 
-func (ds *DataSource) AddTag() {
-	panic("implement me")
+func (ds *DataSource) AddTags(ctx context.Context, in *pb.AddServiceTagsRequest) (*pb.AddServiceTagsResponse, error) {
+	remoteIP := util.GetIPFromContext(ctx)
+	domainProject := util.ParseDomainProject(ctx)
+
+	// service id存在性校验
+	if !serviceUtil.ServiceExist(ctx, domainProject, in.ServiceId) {
+		log.Errorf(nil, "add service[%s]'s tags %v failed, service does not exist, operator: %s",
+			in.ServiceId, in.Tags, remoteIP)
+		return &pb.AddServiceTagsResponse{
+			Response: proto.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+		}, nil
+	}
+
+	addTags := in.Tags
+	res := quota.NewApplyQuotaResource(quota.TagQuotaType, domainProject, in.ServiceId, int64(len(addTags)))
+	rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
+	errQuota := rst.Err
+	if errQuota != nil {
+		log.Errorf(errQuota, "add service[%s]'s tags %v failed, operator: %s", in.ServiceId, addTags, remoteIP)
+		response := &pb.AddServiceTagsResponse{
+			Response: proto.CreateResponseWithSCErr(errQuota),
+		}
+		if errQuota.InternalError() {
+			return response, errQuota
+		}
+		return response, nil
+	}
+
+	dataTags, err := serviceUtil.GetTagsUtils(ctx, domainProject, in.ServiceId)
+	if err != nil {
+		log.Errorf(err, "add service[%s]'s tags %v failed, get existed tag failed, operator: %s",
+			in.ServiceId, addTags, remoteIP)
+		return &pb.AddServiceTagsResponse{
+			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+		}, err
+	}
+	for key, value := range dataTags {
+		if _, ok := addTags[key]; ok {
+			continue
+		}
+		addTags[key] = value
+	}
+	dataTags = addTags
+
+	checkErr := serviceUtil.AddTagIntoETCD(ctx, domainProject, in.ServiceId, dataTags)
+	if checkErr != nil {
+		log.Errorf(checkErr, "add service[%s]'s tags %v failed, operator: %s", in.ServiceId, in.Tags, remoteIP)
+		resp := &pb.AddServiceTagsResponse{
+			Response: proto.CreateResponseWithSCErr(checkErr),
+		}
+		if checkErr.InternalError() {
+			return resp, checkErr
+		}
+		return resp, nil
+	}
+
+	log.Infof("add service[%s]'s tags %v successfully, operator: %s", in.ServiceId, in.Tags, remoteIP)
+	return &pb.AddServiceTagsResponse{
+		Response: proto.CreateResponse(proto.Response_SUCCESS, "Add service tags successfully."),
+	}, nil
 }
 
 func (ds *DataSource) GetTag() {

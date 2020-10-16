@@ -2775,3 +2775,101 @@ func TestSchema_Exist(t *testing.T) {
 		assert.Equal(t, "", resp.Summary)
 	})
 }
+
+func TestTag_Add(t *testing.T) {
+	var (
+		serviceId1 string
+		serviceId2 string
+	)
+	// init
+	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
+		return NewDataSource(opts), nil
+	})
+	err := datasource.Init(datasource.Options{
+		Endpoint:       "",
+		PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
+	})
+	assert.NoError(t, err)
+	// create service
+	t.Run("create service", func(t *testing.T) {
+		svc1 := &pb.MicroService{
+			AppId:       "create_tag_group",
+			ServiceName: "create_tag_service",
+			Version:     "1.0.0",
+			Level:       "FRONT",
+			Status:      pb.MS_UP,
+		}
+		resp, err := datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
+			Service: svc1,
+		})
+		assert.NoError(t, err)
+		assert.NotEqual(t, "", resp.ServiceId)
+		serviceId1 = resp.ServiceId
+
+		svc2 := &pb.MicroService{
+			AppId:       "create_tag_group",
+			ServiceName: "create_tag_service",
+			Version:     "1.0.1",
+			Level:       "FRONT",
+			Status:      pb.MS_UP,
+		}
+		resp, err = datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
+			Service: svc2,
+		})
+		assert.NoError(t, err)
+		assert.NotNil(t, "", resp.ServiceId)
+		serviceId2 = resp.ServiceId
+	})
+
+	t.Run("the request is invalid", func(t *testing.T) {
+		log.Info("service does not exist")
+		resp, err := datasource.Instance().AddTags(getContext(), &pb.AddServiceTagsRequest{
+			ServiceId: "noServiceTest",
+			Tags: map[string]string{
+				"a": "test",
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, scerr.ErrServiceNotExists, resp.Response.GetCode())
+	})
+
+	t.Run("the request is valid", func(t *testing.T) {
+		log.Info("tag quota is equal to the default value and should be paas")
+		defaultQuota := quota.DefaultTagQuota
+		tags := make(map[string]string, defaultQuota)
+		for i := 0; i < defaultQuota; i++ {
+			s := "tag" + strconv.Itoa(i)
+			tags[s] = s
+		}
+		resp, err := datasource.Instance().AddTags(getContext(), &pb.AddServiceTagsRequest{
+			ServiceId: serviceId1,
+			Tags:      tags,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+	})
+
+	t.Run("tag's quota exceeded", func(t *testing.T) {
+		log.Info("insufficient tag quota")
+		size := quota.DefaultTagQuota / 2
+		tags := make(map[string]string, size)
+		for i := 0; i < size; i++ {
+			s := "tag" + strconv.Itoa(i)
+			tags[s] = s
+		}
+		resp, err := datasource.Instance().AddTags(getContext(), &pb.AddServiceTagsRequest{
+			ServiceId: serviceId2,
+			Tags:      tags,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+
+		tags["out"] = "range"
+		resp, _ = datasource.Instance().AddTags(getContext(), &pb.AddServiceTagsRequest{
+			ServiceId: serviceId2,
+			Tags:      tags,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, scerr.ErrNotEnoughQuota, resp.Response.GetCode())
+	})
+}
