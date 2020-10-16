@@ -54,7 +54,7 @@ type MetadataManager interface {
 	GetSchema()
 	DeleteSchema()
 
-	AddTag()
+	AddTags(ctx context.Context, in *pb.AddServiceTagsRequest) (*pb.AddServiceTagsResponse, error)
 	GetTag()
 	UpdateTag()
 	DeleteTag()
