@@ -594,8 +594,7 @@ func (ds *DataSource) reshapeProviderKey(ctx context.Context, provider *pb.Micro
 	return provider, nil
 }
 
-func (ds *DataSource) UpdateInstanceStatus(ctx context.Context, in *pb.UpdateInstanceStatusRequest) (*pb.
-	UpdateInstanceStatusResponse, error) {
+func (ds *DataSource) UpdateInstanceStatus(ctx context.Context, in *pb.UpdateInstanceStatusRequest) (*pb.UpdateInstanceStatusResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
 	updateStatusFlag := util.StringJoin([]string{in.ServiceId, in.InstanceId, in.Status}, "/")
 
@@ -1068,25 +1067,25 @@ func (ds *DataSource) ExistSchema(ctx context.Context, request *pb.GetExistenceR
 	}, nil
 }
 
-func (ds *DataSource) AddTags(ctx context.Context, in *pb.AddServiceTagsRequest) (*pb.AddServiceTagsResponse, error) {
+func (ds *DataSource) AddTags(ctx context.Context, request *pb.AddServiceTagsRequest) (*pb.AddServiceTagsResponse, error) {
 	remoteIP := util.GetIPFromContext(ctx)
 	domainProject := util.ParseDomainProject(ctx)
 
 	// service id存在性校验
-	if !serviceUtil.ServiceExist(ctx, domainProject, in.ServiceId) {
+	if !serviceUtil.ServiceExist(ctx, domainProject, request.ServiceId) {
 		log.Errorf(nil, "add service[%s]'s tags %v failed, service does not exist, operator: %s",
-			in.ServiceId, in.Tags, remoteIP)
+			request.ServiceId, request.Tags, remoteIP)
 		return &pb.AddServiceTagsResponse{
 			Response: proto.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 
-	addTags := in.Tags
-	res := quota.NewApplyQuotaResource(quota.TagQuotaType, domainProject, in.ServiceId, int64(len(addTags)))
+	addTags := request.Tags
+	res := quota.NewApplyQuotaResource(quota.TagQuotaType, domainProject, request.ServiceId, int64(len(addTags)))
 	rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
 	errQuota := rst.Err
 	if errQuota != nil {
-		log.Errorf(errQuota, "add service[%s]'s tags %v failed, operator: %s", in.ServiceId, addTags, remoteIP)
+		log.Errorf(errQuota, "add service[%s]'s tags %v failed, operator: %s", request.ServiceId, addTags, remoteIP)
 		response := &pb.AddServiceTagsResponse{
 			Response: proto.CreateResponseWithSCErr(errQuota),
 		}
@@ -1096,10 +1095,10 @@ func (ds *DataSource) AddTags(ctx context.Context, in *pb.AddServiceTagsRequest)
 		return response, nil
 	}
 
-	dataTags, err := serviceUtil.GetTagsUtils(ctx, domainProject, in.ServiceId)
+	dataTags, err := serviceUtil.GetTagsUtils(ctx, domainProject, request.ServiceId)
 	if err != nil {
 		log.Errorf(err, "add service[%s]'s tags %v failed, get existed tag failed, operator: %s",
-			in.ServiceId, addTags, remoteIP)
+			request.ServiceId, addTags, remoteIP)
 		return &pb.AddServiceTagsResponse{
 			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
@@ -1112,9 +1111,9 @@ func (ds *DataSource) AddTags(ctx context.Context, in *pb.AddServiceTagsRequest)
 	}
 	dataTags = addTags
 
-	checkErr := serviceUtil.AddTagIntoETCD(ctx, domainProject, in.ServiceId, dataTags)
+	checkErr := serviceUtil.AddTagIntoETCD(ctx, domainProject, request.ServiceId, dataTags)
 	if checkErr != nil {
-		log.Errorf(checkErr, "add service[%s]'s tags %v failed, operator: %s", in.ServiceId, in.Tags, remoteIP)
+		log.Errorf(checkErr, "add service[%s]'s tags %v failed, operator: %s", request.ServiceId, request.Tags, remoteIP)
 		resp := &pb.AddServiceTagsResponse{
 			Response: proto.CreateResponseWithSCErr(checkErr),
 		}
@@ -1124,22 +1123,164 @@ func (ds *DataSource) AddTags(ctx context.Context, in *pb.AddServiceTagsRequest)
 		return resp, nil
 	}
 
-	log.Infof("add service[%s]'s tags %v successfully, operator: %s", in.ServiceId, in.Tags, remoteIP)
+	log.Infof("add service[%s]'s tags %v successfully, operator: %s", request.ServiceId, request.Tags, remoteIP)
 	return &pb.AddServiceTagsResponse{
 		Response: proto.CreateResponse(proto.Response_SUCCESS, "Add service tags successfully."),
 	}, nil
 }
 
-func (ds *DataSource) GetTag() {
-	panic("implement me")
+func (ds *DataSource) GetTags(ctx context.Context, request *pb.GetServiceTagsRequest) (*pb.GetServiceTagsResponse, error) {
+	var err error
+	domainProject := util.ParseDomainProject(ctx)
+	if !serviceUtil.ServiceExist(ctx, domainProject, request.ServiceId) {
+		log.Errorf(err, "get service[%s]'s tags failed, service does not exist", request.ServiceId)
+		return &pb.GetServiceTagsResponse{
+			Response: proto.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+		}, nil
+	}
+	tags, err := serviceUtil.GetTagsUtils(ctx, domainProject, request.ServiceId)
+	if err != nil {
+		log.Errorf(err, "get service[%s]'s tags failed, get tags failed", request.ServiceId)
+		return &pb.GetServiceTagsResponse{
+			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+		}, err
+	}
+
+	return &pb.GetServiceTagsResponse{
+		Response: proto.CreateResponse(proto.Response_SUCCESS, "Get service tags successfully."),
+		Tags:     tags,
+	}, nil
 }
 
-func (ds *DataSource) UpdateTag() {
-	panic("implement me")
+func (ds *DataSource) UpdateTag(ctx context.Context, request *pb.UpdateServiceTagRequest) (*pb.UpdateServiceTagResponse, error) {
+	var err error
+	remoteIP := util.GetIPFromContext(ctx)
+	tagFlag := util.StringJoin([]string{request.Key, request.Value}, "/")
+	domainProject := util.ParseDomainProject(ctx)
+
+	if !serviceUtil.ServiceExist(ctx, domainProject, request.ServiceId) {
+		log.Errorf(err, "update service[%s]'s tag[%s] failed, service does not exist, operator: %s",
+			request.ServiceId, tagFlag, remoteIP)
+		return &pb.UpdateServiceTagResponse{
+			Response: proto.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+		}, nil
+	}
+
+	tags, err := serviceUtil.GetTagsUtils(ctx, domainProject, request.ServiceId)
+	if err != nil {
+		log.Errorf(err, "update service[%s]'s tag[%s] failed, get tag failed, operator: %s",
+			request.ServiceId, tagFlag, remoteIP)
+		return &pb.UpdateServiceTagResponse{
+			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+		}, err
+	}
+
+	//check if the tag exists
+	if _, ok := tags[request.Key]; !ok {
+		log.Errorf(nil, "update service[%s]'s tag[%s] failed, tag does not exist, operator: %s",
+			request.ServiceId, tagFlag, remoteIP)
+		return &pb.UpdateServiceTagResponse{
+			Response: proto.CreateResponse(scerr.ErrTagNotExists, "Tag does not exist, please add one first."),
+		}, nil
+	}
+
+	copyTags := make(map[string]string, len(tags))
+	for k, v := range tags {
+		copyTags[k] = v
+	}
+	copyTags[request.Key] = request.Value
+
+	checkErr := serviceUtil.AddTagIntoETCD(ctx, domainProject, request.ServiceId, copyTags)
+	if checkErr != nil {
+		log.Errorf(checkErr, "update service[%s]'s tag[%s] failed, operator: %s", request.ServiceId, tagFlag, remoteIP)
+		resp := &pb.UpdateServiceTagResponse{
+			Response: proto.CreateResponseWithSCErr(checkErr),
+		}
+		if checkErr.InternalError() {
+			return resp, checkErr
+		}
+		return resp, nil
+	}
+
+	log.Infof("update service[%s]'s tag[%s] successfully, operator: %s", request.ServiceId, tagFlag, remoteIP)
+	return &pb.UpdateServiceTagResponse{
+		Response: proto.CreateResponse(proto.Response_SUCCESS, "Update service tag success."),
+	}, nil
 }
 
-func (ds *DataSource) DeleteTag() {
-	panic("implement me")
+func (ds *DataSource) DeleteTags(ctx context.Context, request *pb.DeleteServiceTagsRequest) (*pb.DeleteServiceTagsResponse, error) {
+	remoteIP := util.GetIPFromContext(ctx)
+	domainProject := util.ParseDomainProject(ctx)
+
+	if !serviceUtil.ServiceExist(ctx, domainProject, request.ServiceId) {
+		log.Errorf(nil, "delete service[%s]'s tags %v failed, service does not exist, operator: %s",
+			request.ServiceId, request.Keys, remoteIP)
+		return &pb.DeleteServiceTagsResponse{
+			Response: proto.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+		}, nil
+	}
+
+	tags, err := serviceUtil.GetTagsUtils(ctx, domainProject, request.ServiceId)
+	if err != nil {
+		log.Errorf(err, "delete service[%s]'s tags %v failed, get service tags failed, operator: %s",
+			request.ServiceId, request.Keys, remoteIP)
+		return &pb.DeleteServiceTagsResponse{
+			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+		}, err
+	}
+
+	copyTags := make(map[string]string, len(tags))
+	for k, v := range tags {
+		copyTags[k] = v
+	}
+	for _, key := range request.Keys {
+		if _, ok := copyTags[key]; !ok {
+			log.Errorf(nil, "delete service[%s]'s tags %v failed, tag[%s] does not exist, operator: %s",
+				request.ServiceId, request.Keys, key, remoteIP)
+			return &pb.DeleteServiceTagsResponse{
+				Response: proto.CreateResponse(scerr.ErrTagNotExists, "Delete tags failed for this key "+key+" does not exist."),
+			}, nil
+		}
+		delete(copyTags, key)
+	}
+
+	// the capacity of tags may be 0
+	data, err := json.Marshal(copyTags)
+	if err != nil {
+		log.Errorf(err, "delete service[%s]'s tags %v failed, marshall service tags failed, operator: %s",
+			request.ServiceId, request.Keys, remoteIP)
+		return &pb.DeleteServiceTagsResponse{
+			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+		}, err
+	}
+
+	key := apt.GenerateServiceTagKey(domainProject, request.ServiceId)
+
+	resp, err := backend.Registry().TxnWithCmp(ctx,
+		[]registry.PluginOp{registry.OpPut(registry.WithStrKey(key), registry.WithValue(data))},
+		[]registry.CompareOp{registry.OpCmp(
+			registry.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, request.ServiceId))),
+			registry.CmpNotEqual, 0)},
+		nil)
+	if err != nil {
+		log.Errorf(err, "delete service[%s]'s tags %v failed, operator: %s",
+			request.ServiceId, request.Keys, remoteIP)
+		return &pb.DeleteServiceTagsResponse{
+			Response: proto.CreateResponse(scerr.ErrUnavailableBackend, err.Error()),
+		}, err
+	}
+	if !resp.Succeeded {
+		log.Errorf(err, "delete service[%s]'s tags %v failed, service does not exist, operator: %s",
+			request.ServiceId, request.Keys, remoteIP)
+		return &pb.DeleteServiceTagsResponse{
+			Response: proto.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+		}, nil
+	}
+
+	log.Infof("delete service[%s]'s tags %v successfully, operator: %s", request.ServiceId, request.Keys, remoteIP)
+	return &pb.DeleteServiceTagsResponse{
+		Response: proto.CreateResponse(proto.Response_SUCCESS, "Delete service tags successfully."),
+	}, nil
 }
 
 func (ds *DataSource) AddRule() {
