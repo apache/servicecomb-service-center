@@ -26,9 +26,7 @@ import (
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/backend"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
-	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 )
 
@@ -117,7 +115,7 @@ func (ds *DataSource) AddOrUpdateDependencies(ctx context.Context, dependencyInf
 		opts = append(opts, registry.OpPut(registry.WithStrKey(key), registry.WithValue(data)))
 	}
 
-	err := backend.BatchCommit(ctx, opts)
+	err := kv.BatchCommit(ctx, opts)
 	if err != nil {
 		log.Errorf(err, "put request into dependency queue failed, override: %t, %v", override, dependencyInfos)
 		return proto.CreateResponse(scerr.ErrInternal, err.Error()), err

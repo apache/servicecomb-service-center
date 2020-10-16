@@ -23,7 +23,7 @@ import (
 )
 
 // Attention: request validation must be finished before the following interface being invoked!!!
-// MetadataManager contains the CRUD of registry metadata
+// MetadataManager contains the CRUD of cache metadata
 type MetadataManager interface {
 	// Microservice management
 	RegisterService(ctx context.Context, request *pb.CreateServiceRequest) (*pb.CreateServiceResponse, error)

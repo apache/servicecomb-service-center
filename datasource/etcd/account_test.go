@@ -3,10 +3,10 @@ package etcd
 import (
 	"context"
 	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/cache/etcd"
+	etcd2 "github.com/apache/servicecomb-service-center/datasource/etcd/client/etcd"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	mgr "github.com/apache/servicecomb-service-center/server/plugin"
-	"github.com/apache/servicecomb-service-center/server/plugin/discovery/etcd"
-	etcd2 "github.com/apache/servicecomb-service-center/server/plugin/registry/etcd"
 	"github.com/apache/servicecomb-service-center/server/plugin/tracing/pzipkin"
 	"github.com/astaxie/beego"
 	"github.com/stretchr/testify/assert"

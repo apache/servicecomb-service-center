@@ -28,12 +28,10 @@ import (
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/backend"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
-	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"github.com/apache/servicecomb-service-center/server/service/cache"
 	"sort"
@@ -70,7 +68,7 @@ func (ds *DataSource) RegisterService(ctx context.Context, request *pb.CreateSer
 			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
-	resp, err := backend.Registry().TxnWithCmp(ctx, opts, uniqueCmpOpts, failOpts)
+	resp, err := kv.Registry().TxnWithCmp(ctx, opts, uniqueCmpOpts, failOpts)
 
 	return newRegisterServiceResp(ctx, serviceBody, resp, err)
 }
@@ -370,7 +368,7 @@ func (ds *DataSource) UpdateService(ctx context.Context, request *pb.UpdateServi
 	}
 
 	// Set key file
-	resp, err := backend.Registry().TxnWithCmp(ctx,
+	resp, err := kv.Registry().TxnWithCmp(ctx,
 		[]registry.PluginOp{registry.OpPut(registry.WithStrKey(key), registry.WithValue(data))},
 		[]registry.CompareOp{registry.OpCmp(
 			registry.CmpVer(util.StringToBytesWithNoCopy(key)),
@@ -494,7 +492,7 @@ func (ds *DataSource) RegisterInstance(ctx context.Context, request *pb.Register
 		}, err
 	}
 
-	leaseID, err := backend.Registry().LeaseGrant(ctx, ttl)
+	leaseID, err := kv.Registry().LeaseGrant(ctx, ttl)
 	if err != nil {
 		log.Errorf(err, "grant lease failed, %s, operator: %s", instanceFlag, remoteIP)
 		return &pb.RegisterInstanceResponse{
@@ -513,7 +511,7 @@ func (ds *DataSource) RegisterInstance(ctx context.Context, request *pb.Register
 			registry.WithLease(leaseID)),
 	}
 
-	resp, err := backend.Registry().TxnWithCmp(ctx, opts,
+	resp, err := kv.Registry().TxnWithCmp(ctx, opts,
 		[]registry.CompareOp{registry.OpCmp(
 			registry.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, instance.ServiceId))),
 			registry.CmpNotEqual, 0)},
@@ -2140,7 +2138,7 @@ func (ds *DataSource) modifySchemas(ctx context.Context, domainProject string, s
 	}
 
 	if len(pluginOps) != 0 {
-		resp, err := backend.BatchCommitWithCmp(ctx, pluginOps,
+		resp, err := kv.BatchCommitWithCmp(ctx, pluginOps,
 			[]registry.CompareOp{registry.OpCmp(
 				registry.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, serviceID))),
 				registry.CmpNotEqual, 0)},
@@ -2185,7 +2183,7 @@ func (ds *DataSource) modifySchema(ctx context.Context, serviceID string, schema
 		}
 
 		key := apt.GenerateServiceSchemaKey(domainProject, serviceID, schemaID)
-		respSchema, err := backend.Store().Schema().Search(ctx, registry.WithStrKey(key), registry.WithCountOnly())
+		respSchema, err := kv.Store().Schema().Search(ctx, registry.WithStrKey(key), registry.WithCountOnly())
 		if err != nil {
 			log.Errorf(err, "modify schema[%s/%s] failed, get schema summary failed, operator: %s",
 				serviceID, schemaID, remoteIP)
@@ -2239,7 +2237,7 @@ func (ds *DataSource) modifySchema(ctx context.Context, serviceID string, schema
 	opts := commitSchemaInfo(domainProject, serviceID, schema)
 	pluginOps = append(pluginOps, opts...)
 
-	resp, err := backend.Registry().TxnWithCmp(ctx, pluginOps,
+	resp, err := kv.Registry().TxnWithCmp(ctx, pluginOps,
 		[]registry.CompareOp{registry.OpCmp(
 			registry.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, serviceID))),
 			registry.CmpNotEqual, 0)},
@@ -2297,7 +2295,7 @@ func (ds *DataSource) DeleteServicePri(ctx context.Context, serviceID string, fo
 		}
 
 		instancesKey := apt.GenerateInstanceKey(domainProject, serviceID, "")
-		rsp, err := backend.Store().Instance().Search(ctx,
+		rsp, err := kv.Store().Instance().Search(ctx,
 			registry.WithStrKey(instancesKey),
 			registry.WithPrefix(),
 			registry.WithCountOnly())
@@ -2374,7 +2372,7 @@ func (ds *DataSource) DeleteServicePri(ctx context.Context, serviceID string, fo
 		return proto.CreateResponse(scerr.ErrUnavailableBackend, err.Error()), err
 	}
 
-	resp, err := backend.Registry().TxnWithCmp(ctx, opts,
+	resp, err := kv.Registry().TxnWithCmp(ctx, opts,
 		[]registry.CompareOp{registry.OpCmp(
 			registry.CmpVer(util.StringToBytesWithNoCopy(serviceIDKey)),
 			registry.CmpNotEqual, 0)},
