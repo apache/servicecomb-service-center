@@ -40,6 +40,7 @@ echo "${green}Etcd is running......${reset}"
 echo "${green}Preparing the env for UT....${reset}"
 ./scripts/prepare_env_ut.sh
 
+[ $? == 0 ] && ut_for_dir datasource
 [ $? == 0 ] && ut_for_dir pkg
 [ $? == 0 ] && ut_for_dir server
 [ $? == 0 ] && ut_for_dir scctl
