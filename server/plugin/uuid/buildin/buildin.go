@@ -21,10 +21,11 @@ import (
 	"context"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	mgr "github.com/apache/servicecomb-service-center/server/plugin"
+	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
 )
 
 func init() {
-	mgr.RegisterPlugin(mgr.Plugin{PName: mgr.UUID, Name: "buildin", New: New})
+	mgr.RegisterPlugin(mgr.Plugin{Kind: uuid.UUID, Name: "buildin", New: New})
 }
 
 func New() mgr.Instance {
@@ -35,7 +36,7 @@ type UUID struct {
 }
 
 func (du *UUID) GetServiceID(_ context.Context) string {
-	df, ok := mgr.DynamicPluginFunc(mgr.UUID, "GetServiceID").(func() string)
+	df, ok := mgr.DynamicPluginFunc(uuid.UUID, "GetServiceID").(func() string)
 	if ok {
 		return df()
 	}
@@ -43,7 +44,7 @@ func (du *UUID) GetServiceID(_ context.Context) string {
 }
 
 func (du *UUID) GetInstanceID(_ context.Context) string {
-	df, ok := mgr.DynamicPluginFunc(mgr.UUID, "GetInstanceID").(func() string)
+	df, ok := mgr.DynamicPluginFunc(uuid.UUID, "GetInstanceID").(func() string)
 	if ok {
 		return df()
 	}

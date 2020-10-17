@@ -34,6 +34,7 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
+	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"github.com/apache/servicecomb-service-center/server/service/cache"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
@@ -55,7 +56,7 @@ func (s *InstanceService) preProcessRegisterInstance(ctx context.Context, instan
 	}
 
 	if len(instance.InstanceId) == 0 {
-		instance.InstanceId = plugin.Plugins().UUID().GetInstanceID(ctx)
+		instance.InstanceId = uuid.Generator().GetInstanceID(ctx)
 	}
 
 	instance.Timestamp = strconv.FormatInt(time.Now().Unix(), 10)

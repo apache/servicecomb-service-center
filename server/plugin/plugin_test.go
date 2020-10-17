@@ -66,8 +66,8 @@ func TestPluginManager_New(t *testing.T) {
 			t.Fatalf("TestPluginManager_New failed")
 		}
 	}()
-	RegisterPlugin(Plugin{Name(999), "999", nil})
-	DynamicPluginFunc(Name(999), "999")
+	RegisterPlugin(Plugin{Kind(999), "999", nil})
+	DynamicPluginFunc(Kind(999), "999")
 
 	LoadPlugins()
 }

@@ -23,34 +23,19 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	"github.com/apache/servicecomb-service-center/server/plugin/tls"
 	"github.com/apache/servicecomb-service-center/server/plugin/tracing"
-	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
 	"github.com/go-chassis/foundation/security"
 )
 
 const (
-	UUID Name = iota
-	AuditLog
-	AUTH
-	CIPHER
-	QUOTA
-	REGISTRY
-	TRACING
-	TLS
-	DISCOVERY
-	typeEnd // for counting
+	AuditLog  Kind = "auditlog"
+	AUTH      Kind = "auth"
+	CIPHER    Kind = "cipher"
+	QUOTA     Kind = "quota"
+	REGISTRY  Kind = "registry"
+	TRACING   Kind = "tracing"
+	TLS       Kind = "ssl"
+	DISCOVERY Kind = "discovery"
 )
-
-var pluginNames = map[Name]string{
-	UUID:      "uuid",
-	AuditLog:  "auditlog",
-	AUTH:      "auth",
-	CIPHER:    "cipher",
-	QUOTA:     "quota",
-	REGISTRY:  "registry",
-	TRACING:   "trace",
-	DISCOVERY: "discovery",
-	TLS:       "ssl",
-}
 
 func (pm *Manager) Discovery() discovery.AdaptorRepository {
 	return pm.Instance(DISCOVERY).(discovery.AdaptorRepository)
@@ -58,7 +43,6 @@ func (pm *Manager) Discovery() discovery.AdaptorRepository {
 func (pm *Manager) Registry() registry.Registry {
 	return pm.Instance(REGISTRY).(registry.Registry)
 }
-func (pm *Manager) UUID() uuid.UUID { return pm.Instance(UUID).(uuid.UUID) }
 func (pm *Manager) AuditLog() auditlog.AuditLogger {
 	return pm.Instance(AuditLog).(auditlog.AuditLogger)
 }

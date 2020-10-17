@@ -26,7 +26,7 @@ import (
 )
 
 func init() {
-	mgr.RegisterPlugin(mgr.Plugin{PName: mgr.QUOTA, Name: "buildin", New: New})
+	mgr.RegisterPlugin(mgr.Plugin{Kind: mgr.QUOTA, Name: "buildin", New: New})
 	counter.RegisterCounterListener("buildin")
 }
 

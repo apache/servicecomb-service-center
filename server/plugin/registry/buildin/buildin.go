@@ -30,7 +30,7 @@ var (
 
 func init() {
 	close(closeCh)
-	mgr.RegisterPlugin(mgr.Plugin{PName: mgr.REGISTRY, Name: "buildin", New: NewRegistry})
+	mgr.RegisterPlugin(mgr.Plugin{Kind: mgr.REGISTRY, Name: "buildin", New: NewRegistry})
 }
 
 type Registry struct {

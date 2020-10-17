@@ -46,7 +46,7 @@ var firstEndpoint string
 
 func init() {
 	clientv3.SetLogger(&clientLogger{})
-	mgr.RegisterPlugin(mgr.Plugin{PName: mgr.REGISTRY, Name: "etcd", New: NewRegistry})
+	mgr.RegisterPlugin(mgr.Plugin{Kind: mgr.REGISTRY, Name: "etcd", New: NewRegistry})
 }
 
 type Client struct {
