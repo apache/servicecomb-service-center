@@ -16,13 +16,12 @@
 package aggregate
 
 import (
-	"github.com/apache/servicecomb-service-center/datasource/etcd"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/cache"
-	mgr "github.com/apache/servicecomb-service-center/server/plugin"
+	"github.com/apache/servicecomb-service-center/server/core"
 )
 
 func init() {
-	mgr.RegisterPlugin(mgr.Plugin{Kind: mgr.DISCOVERY, Name: Aggregate, New: NewRepository})
+	cache.Install(Aggregate, NewRepository)
 }
 
 type Repository struct {
@@ -32,13 +31,12 @@ func (r *Repository) New(t cache.Type, cfg *cache.Config) cache.Adaptor {
 	return NewAggregator(t, cfg)
 }
 
-func NewRepository() mgr.Instance {
+func NewRepository(opts cache.Options) cache.AdaptorRepository {
 	InitConfigs()
 	return &Repository{}
 }
 
 func InitConfigs() {
-	mgr.DISCOVERY.ActiveConfigs().
-		Set("config", etcd.Configuration()).
+	core.ServerInfo.Config.Plugins.Object("discovery").
 		Set("aggregateMode", repos)
 }

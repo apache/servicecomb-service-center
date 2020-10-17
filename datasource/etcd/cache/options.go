@@ -14,31 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package etcd
 
-import (
-	"github.com/apache/servicecomb-service-center/server/metric"
-	"github.com/astaxie/beego"
-	"testing"
-)
+package cache
 
-func init() {
-	beego.AppConfig.Set("httpaddr", "127.0.0.1")
-}
-
-func TestReportCacheSize(t *testing.T) {
-	ReportCacheSize("a", "b", 100)
-	err := metric.Gatherer.Collect()
-	if err != nil {
-		t.Fatalf("TestReportCacheSize failed")
-	}
-	if metric.Gatherer.Records.Summary("local_cache_size_bytes") != 100 {
-		t.Fatalf("TestReportCacheSize failed")
-	}
-
-	ReportCacheSize("", "b", 200)
-	err = metric.Gatherer.Collect()
-	if metric.Gatherer.Records.Summary("local_cache_size_bytes") != 100 {
-		t.Fatalf("TestReportCacheSize failed")
-	}
+//Options contains configuration for plugins
+type Options struct {
+	PluginImplName ImplName
 }

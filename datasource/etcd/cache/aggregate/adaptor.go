@@ -20,7 +20,6 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/core"
-	mgr "github.com/apache/servicecomb-service-center/server/plugin"
 )
 
 // Aggregator implements pkg.Adaptor.
@@ -88,7 +87,12 @@ func getLogConflictFunc(t cache.Type) func(origin, conflict *cache.KeyValue) {
 func NewAggregator(t cache.Type, cfg *cache.Config) *Aggregator {
 	as := &Aggregator{Type: t}
 	for _, name := range repos {
-		repo := mgr.Plugins().Get(mgr.DISCOVERY, mgr.ImplName(name)).New().(cache.AdaptorRepository)
+		// create and get all plugin instances
+		repo, err := cache.New(cache.Options{PluginImplName: cache.ImplName(name)})
+		if err != nil {
+			log.Errorf(err, "failed to new plugin instance[%s]", name)
+			continue
+		}
 		as.Adaptors = append(as.Adaptors, repo.New(t, cfg))
 	}
 	as.Indexer = NewAggregatorIndexer(as)

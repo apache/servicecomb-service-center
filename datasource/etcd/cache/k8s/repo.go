@@ -20,11 +20,10 @@ package k8s
 import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/cache"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/cache/k8s/adaptor"
-	mgr "github.com/apache/servicecomb-service-center/server/plugin"
 )
 
 func init() {
-	mgr.RegisterPlugin(mgr.Plugin{Kind: mgr.DISCOVERY, Name: "k8s", New: NewRepository})
+	cache.Install("k8s", NewRepository)
 }
 
 type Repository struct {
@@ -34,6 +33,6 @@ func (r *Repository) New(t cache.Type, cfg *cache.Config) cache.Adaptor {
 	return adaptor.NewK8sAdaptor(t, cfg)
 }
 
-func NewRepository() mgr.Instance {
+func NewRepository(opts cache.Options) cache.AdaptorRepository {
 	return &Repository{}
 }

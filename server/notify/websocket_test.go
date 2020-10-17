@@ -19,11 +19,11 @@ package notify
 import (
 	"context"
 	"errors"
+	_ "github.com/apache/servicecomb-service-center/datasource/etcd/cache/etcd"
+	_ "github.com/apache/servicecomb-service-center/datasource/etcd/client/buildin"
 	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
-	_ "github.com/apache/servicecomb-service-center/server/plugin/discovery/etcd"
-	_ "github.com/apache/servicecomb-service-center/server/plugin/registry/buildin"
 	"github.com/gorilla/websocket"
 	"net/http"
 	"net/http/httptest"

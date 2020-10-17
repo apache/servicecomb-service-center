@@ -22,11 +22,13 @@ import (
 	"errors"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/datasource/etcd"
+	"github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf"
 	"net/url"
 	"strconv"
 	"strings"
 	"time"
 
+	"context"
 	registry "github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/pkg/backoff"
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
@@ -34,9 +36,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/alarm"
-	mgr "github.com/apache/servicecomb-service-center/server/plugin"
-
-	"context"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/etcdserver/api/v3rpc/rpctypes"
 	"github.com/coreos/etcd/etcdserver/etcdserverpb"
@@ -47,7 +46,7 @@ var firstEndpoint string
 
 func init() {
 	clientv3.SetLogger(&clientLogger{})
-	mgr.RegisterPlugin(mgr.Plugin{Kind: mgr.REGISTRY, Name: "etcd", New: NewRegistry})
+	registry.Install("etcd", NewRegistry)
 }
 
 type Client struct {
@@ -75,7 +74,7 @@ func (c *Client) Initialize() (err error) {
 	if c.TLSConfig == nil && etcd.Configuration().SslEnabled {
 		var err error
 		// go client tls限制，提供身份证书、不认证服务端、不校验CN
-		c.TLSConfig, err = mgr.Plugins().TLS().ClientConfig()
+		c.TLSConfig, err = tlsconf.ClientConfig()
 		if err != nil {
 			log.Error("get etcd client tls config failed", err)
 			return err
@@ -866,7 +865,7 @@ func callback(action registry.ActionType, rev int64, kvs []*mvccpb.KeyValue, cb 
 	})
 }
 
-func NewRegistry() mgr.Instance {
+func NewRegistry(opts registry.Options) registry.Registry {
 	log.Warnf("enable etcd registry mode")
 
 	inst := &Client{}

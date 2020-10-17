@@ -29,8 +29,8 @@ import (
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/core/backend"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
-	"github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
@@ -271,7 +271,7 @@ func (ds *DataSource) RegisterInstance(ctx context.Context, request *pb.Register
 	if !apt.IsSCInstance(ctx) {
 		res := quota.NewApplyQuotaResource(quota.MicroServiceInstanceQuotaType,
 			domainProject, request.Instance.ServiceId, 1)
-		reporter = plugin.Plugins().Quota().Apply4Quotas(ctx, res)
+		reporter = quota.Apply(ctx, res)
 		defer reporter.Close(ctx)
 
 		if reporter.Err != nil {
@@ -1257,7 +1257,7 @@ func (ds *DataSource) AddTags(ctx context.Context, request *pb.AddServiceTagsReq
 
 	addTags := request.Tags
 	res := quota.NewApplyQuotaResource(quota.TagQuotaType, domainProject, request.ServiceId, int64(len(addTags)))
-	rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
+	rst := quota.Apply(ctx, res)
 	errQuota := rst.Err
 	if errQuota != nil {
 		log.Errorf(errQuota, "add service[%s]'s tags %v failed, operator: %s", request.ServiceId, addTags, remoteIP)
@@ -1472,7 +1472,7 @@ func (ds *DataSource) AddRule(ctx context.Context, request *pb.AddServiceRulesRe
 		}, nil
 	}
 	res := quota.NewApplyQuotaResource(quota.RuleQuotaType, domainProject, request.ServiceId, int64(len(request.Rules)))
-	rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
+	rst := quota.Apply(ctx, res)
 	errQuota := rst.Err
 	if errQuota != nil {
 		log.Errorf(errQuota, "add service[%s] rule failed, operator: %s", request.ServiceId, remoteIP)
@@ -1803,7 +1803,7 @@ func (ds *DataSource) modifySchemas(ctx context.Context, domainProject string, s
 	if !ds.isSchemaEditable(service) {
 		if len(service.Schemas) == 0 {
 			res := quota.NewApplyQuotaResource(quota.SchemaQuotaType, domainProject, serviceID, int64(len(nonExistSchemaIds)))
-			rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
+			rst := quota.Apply(ctx, res)
 			errQuota := rst.Err
 			if errQuota != nil {
 				log.Errorf(errQuota, "modify service[%s] schemas failed, operator: %s", serviceID, remoteIP)
@@ -1848,7 +1848,7 @@ func (ds *DataSource) modifySchemas(ctx context.Context, domainProject string, s
 		quotaSize := len(needAddSchemas) - len(needDeleteSchemas)
 		if quotaSize > 0 {
 			res := quota.NewApplyQuotaResource(quota.SchemaQuotaType, domainProject, serviceID, int64(quotaSize))
-			rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
+			rst := quota.Apply(ctx, res)
 			err := rst.Err
 			if err != nil {
 				log.Errorf(err, "modify service[%s] schemas failed, operator: %s", serviceID, remoteIP)

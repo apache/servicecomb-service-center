@@ -3,10 +3,13 @@ package etcd
 import (
 	"context"
 	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/cache"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/cache/etcd"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	etcd2 "github.com/apache/servicecomb-service-center/datasource/etcd/client/etcd"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	mgr "github.com/apache/servicecomb-service-center/server/plugin"
+	"github.com/apache/servicecomb-service-center/server/plugin/tracing"
 	"github.com/apache/servicecomb-service-center/server/plugin/tracing/pzipkin"
 	"github.com/astaxie/beego"
 	"github.com/stretchr/testify/assert"
@@ -34,10 +37,10 @@ var (
 
 func init() {
 	beego.AppConfig.Set("registry_plugin", "etcd")
-	mgr.RegisterPlugin(mgr.Plugin{Kind: mgr.REGISTRY, Name: "etcd", New: etcd2.NewRegistry})
-	mgr.RegisterPlugin(mgr.Plugin{Kind: mgr.DISCOVERY, Name: "buildin", New: etcd.NewRepository})
-	mgr.RegisterPlugin(mgr.Plugin{Kind: mgr.DISCOVERY, Name: "etcd", New: etcd.NewRepository})
-	mgr.RegisterPlugin(mgr.Plugin{Kind: mgr.TRACING, Name: "buildin", New: pzipkin.New})
+	client.Install("etcd", etcd2.NewRegistry)
+	cache.Install("buildin", etcd.NewRepository)
+	cache.Install("etcd", etcd.NewRepository)
+	mgr.RegisterPlugin(mgr.Plugin{Kind: tracing.TRACING, Name: "buildin", New: pzipkin.New})
 	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
 		return NewDataSource(opts), nil
 	})

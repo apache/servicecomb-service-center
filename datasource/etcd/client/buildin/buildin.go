@@ -20,7 +20,6 @@ package buildin
 import (
 	"context"
 	registry "github.com/apache/servicecomb-service-center/datasource/etcd/client"
-	mgr "github.com/apache/servicecomb-service-center/server/plugin"
 )
 
 var (
@@ -30,7 +29,7 @@ var (
 
 func init() {
 	close(closeCh)
-	mgr.RegisterPlugin(mgr.Plugin{Kind: mgr.REGISTRY, Name: "buildin", New: NewRegistry})
+	registry.Install("buildin", NewRegistry)
 }
 
 type Registry struct {
@@ -73,7 +72,7 @@ func (ec *Registry) Compact(ctx context.Context, reserve int64) error {
 func (ec *Registry) Close() {
 }
 
-func NewRegistry() mgr.Instance {
+func NewRegistry(opts registry.Options) registry.Registry {
 	return &Registry{
 		ready: make(chan int),
 	}

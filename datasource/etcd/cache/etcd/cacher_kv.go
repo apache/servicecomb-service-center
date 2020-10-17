@@ -20,8 +20,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	cache2 "github.com/apache/servicecomb-service-center/datasource/etcd/cache"
-	registry "github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/cache"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/pkg/backoff"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
@@ -41,7 +41,7 @@ import (
 // subscribers.
 // Use Cfg to set it's behaviors.
 type KvCacher struct {
-	Cfg *cache2.Config
+	Cfg *cache.Config
 
 	reListCount int
 
@@ -49,11 +49,11 @@ type KvCacher struct {
 	lw        ListWatch
 	mux       sync.Mutex
 	once      sync.Once
-	cache     cache2.Cache
+	cache     cache.Cache
 	goroutine *gopool.Pool
 }
 
-func (c *KvCacher) Config() *cache2.Config {
+func (c *KvCacher) Config() *cache.Config {
 	return c.Cfg
 }
 
@@ -161,15 +161,15 @@ func (c *KvCacher) handleWatcher(watcher Watcher) error {
 
 		start := time.Now()
 		rev := resp.Revision
-		evts := make([]cache2.KvEvent, 0, len(resp.Kvs))
+		evts := make([]cache.KvEvent, 0, len(resp.Kvs))
 		for _, kv := range resp.Kvs {
-			evt := cache2.NewKvEvent(rmodel.EVT_CREATE, nil, kv.ModRevision)
+			evt := cache.NewKvEvent(rmodel.EVT_CREATE, nil, kv.ModRevision)
 			switch {
-			case resp.Action == registry.Put && kv.Version == 1:
+			case resp.Action == client.Put && kv.Version == 1:
 				evt.Type, evt.KV = rmodel.EVT_CREATE, c.doParse(kv)
-			case resp.Action == registry.Put:
+			case resp.Action == client.Put:
 				evt.Type, evt.KV = rmodel.EVT_UPDATE, c.doParse(kv)
-			case resp.Action == registry.Delete:
+			case resp.Action == client.Delete:
 				evt.Type = rmodel.EVT_DELETE
 				if kv.Value == nil {
 					// it will happen in embed mode, and then need to get the cache value not unmarshal
@@ -194,7 +194,7 @@ func (c *KvCacher) handleWatcher(watcher Watcher) error {
 	return nil
 }
 
-func (c *KvCacher) needDeferHandle(evts []cache2.KvEvent) bool {
+func (c *KvCacher) needDeferHandle(evts []cache.KvEvent) bool {
 	if c.Cfg.DeferHandler == nil || !c.IsReady() {
 		return false
 	}
@@ -228,7 +228,7 @@ func (c *KvCacher) refresh(ctx context.Context) {
 }
 
 // keep the evts valid when call sync
-func (c *KvCacher) sync(evts []cache2.KvEvent) {
+func (c *KvCacher) sync(evts []cache.KvEvent) {
 	if len(evts) == 0 {
 		return
 	}
@@ -240,20 +240,20 @@ func (c *KvCacher) sync(evts []cache2.KvEvent) {
 	c.onEvents(evts)
 }
 
-func (c *KvCacher) filter(rev int64, items []*mvccpb.KeyValue) []cache2.KvEvent {
+func (c *KvCacher) filter(rev int64, items []*mvccpb.KeyValue) []cache.KvEvent {
 	nc := len(items)
 	newStore := make(map[string]*mvccpb.KeyValue, nc)
 	for _, kv := range items {
 		newStore[util.BytesToStringWithNoCopy(kv.Key)] = kv
 	}
 	filterStopCh := make(chan struct{})
-	eventsCh := make(chan [eventBlockSize]cache2.KvEvent, 2)
+	eventsCh := make(chan [eventBlockSize]cache.KvEvent, 2)
 
 	go c.filterDelete(newStore, rev, eventsCh, filterStopCh)
 
 	go c.filterCreateOrUpdate(newStore, rev, eventsCh, filterStopCh)
 
-	evts := make([]cache2.KvEvent, 0, nc)
+	evts := make([]cache.KvEvent, 0, nc)
 	for block := range eventsCh {
 		for _, e := range block {
 			if e.KV == nil {
@@ -266,11 +266,11 @@ func (c *KvCacher) filter(rev int64, items []*mvccpb.KeyValue) []cache2.KvEvent 
 }
 
 func (c *KvCacher) filterDelete(newStore map[string]*mvccpb.KeyValue,
-	rev int64, eventsCh chan [eventBlockSize]cache2.KvEvent, filterStopCh chan struct{}) {
-	var block [eventBlockSize]cache2.KvEvent
+	rev int64, eventsCh chan [eventBlockSize]cache.KvEvent, filterStopCh chan struct{}) {
+	var block [eventBlockSize]cache.KvEvent
 	i := 0
 
-	c.cache.ForEach(func(k string, v *cache2.KeyValue) (next bool) {
+	c.cache.ForEach(func(k string, v *cache.KeyValue) (next bool) {
 		next = true
 
 		_, ok := newStore[k]
@@ -280,11 +280,11 @@ func (c *KvCacher) filterDelete(newStore map[string]*mvccpb.KeyValue,
 
 		if i >= eventBlockSize {
 			eventsCh <- block
-			block = [eventBlockSize]cache2.KvEvent{}
+			block = [eventBlockSize]cache.KvEvent{}
 			i = 0
 		}
 
-		block[i] = cache2.NewKvEvent(rmodel.EVT_DELETE, v, rev)
+		block[i] = cache.NewKvEvent(rmodel.EVT_DELETE, v, rev)
 		i++
 		return
 	})
@@ -297,8 +297,8 @@ func (c *KvCacher) filterDelete(newStore map[string]*mvccpb.KeyValue,
 }
 
 func (c *KvCacher) filterCreateOrUpdate(newStore map[string]*mvccpb.KeyValue,
-	rev int64, eventsCh chan [eventBlockSize]cache2.KvEvent, filterStopCh chan struct{}) {
-	var block [eventBlockSize]cache2.KvEvent
+	rev int64, eventsCh chan [eventBlockSize]cache.KvEvent, filterStopCh chan struct{}) {
+	var block [eventBlockSize]cache.KvEvent
 	i := 0
 
 	for k, v := range newStore {
@@ -306,12 +306,12 @@ func (c *KvCacher) filterCreateOrUpdate(newStore map[string]*mvccpb.KeyValue,
 		if ov == nil {
 			if i >= eventBlockSize {
 				eventsCh <- block
-				block = [eventBlockSize]cache2.KvEvent{}
+				block = [eventBlockSize]cache.KvEvent{}
 				i = 0
 			}
 
 			if kv := c.doParse(v); kv != nil {
-				block[i] = cache2.NewKvEvent(rmodel.EVT_CREATE, kv, rev)
+				block[i] = cache.NewKvEvent(rmodel.EVT_CREATE, kv, rev)
 				i++
 			}
 			continue
@@ -323,12 +323,12 @@ func (c *KvCacher) filterCreateOrUpdate(newStore map[string]*mvccpb.KeyValue,
 
 		if i >= eventBlockSize {
 			eventsCh <- block
-			block = [eventBlockSize]cache2.KvEvent{}
+			block = [eventBlockSize]cache.KvEvent{}
 			i = 0
 		}
 
 		if kv := c.doParse(v); kv != nil {
-			block[i] = cache2.NewKvEvent(rmodel.EVT_UPDATE, kv, rev)
+			block[i] = cache.NewKvEvent(rmodel.EVT_UPDATE, kv, rev)
 			i++
 		}
 	}
@@ -359,7 +359,7 @@ func (c *KvCacher) deferHandle(ctx context.Context) {
 func (c *KvCacher) handleDeferEvents(ctx context.Context) {
 	defer log.Recover()
 	var (
-		evts = make([]cache2.KvEvent, eventBlockSize)
+		evts = make([]cache.KvEvent, eventBlockSize)
 		i    int
 	)
 	interval := 300 * time.Millisecond
@@ -376,7 +376,7 @@ func (c *KvCacher) handleDeferEvents(ctx context.Context) {
 
 			if i >= eventBlockSize {
 				c.onEvents(evts[:i])
-				evts = make([]cache2.KvEvent, eventBlockSize)
+				evts = make([]cache.KvEvent, eventBlockSize)
 				i = 0
 			}
 
@@ -392,18 +392,18 @@ func (c *KvCacher) handleDeferEvents(ctx context.Context) {
 			}
 
 			c.onEvents(evts[:i])
-			evts = make([]cache2.KvEvent, eventBlockSize)
+			evts = make([]cache.KvEvent, eventBlockSize)
 			i = 0
 		}
 	}
 }
 
-func (c *KvCacher) onEvents(evts []cache2.KvEvent) {
+func (c *KvCacher) onEvents(evts []cache.KvEvent) {
 	c.buildCache(evts)
 	c.notify(evts)
 }
 
-func (c *KvCacher) buildCache(evts []cache2.KvEvent) {
+func (c *KvCacher) buildCache(evts []cache.KvEvent) {
 	init := !c.IsReady()
 	for i, evt := range evts {
 		key := util.BytesToStringWithNoCopy(evt.KV.Key)
@@ -438,10 +438,10 @@ func (c *KvCacher) buildCache(evts []cache2.KvEvent) {
 			evts[i] = evt
 		}
 	}
-	cache2.ReportProcessEventCompleted(c.Cfg.Key, evts)
+	cache.ReportProcessEventCompleted(c.Cfg.Key, evts)
 }
 
-func (c *KvCacher) notify(evts []cache2.KvEvent) {
+func (c *KvCacher) notify(evts []cache.KvEvent) {
 	if c.Cfg.OnEvent == nil {
 		return
 	}
@@ -452,8 +452,8 @@ func (c *KvCacher) notify(evts []cache2.KvEvent) {
 	}
 }
 
-func (c *KvCacher) doParse(src *mvccpb.KeyValue) (kv *cache2.KeyValue) {
-	kv = cache2.NewKeyValue()
+func (c *KvCacher) doParse(src *mvccpb.KeyValue) (kv *cache.KeyValue) {
+	kv = cache.NewKeyValue()
 	if err := FromEtcdKeyValue(kv, src, c.Cfg.Parser); err != nil {
 		log.Errorf(err, "parse %s value failed", util.BytesToStringWithNoCopy(src.Key))
 		return nil
@@ -461,7 +461,7 @@ func (c *KvCacher) doParse(src *mvccpb.KeyValue) (kv *cache2.KeyValue) {
 	return
 }
 
-func (c *KvCacher) Cache() cache2.CacheReader {
+func (c *KvCacher) Cache() cache.CacheReader {
 	return c.cache
 }
 
@@ -509,7 +509,7 @@ func (c *KvCacher) reportMetrics(ctx context.Context) {
 	}
 }
 
-func NewKvCacher(cfg *cache2.Config, cache cache2.Cache) *KvCacher {
+func NewKvCacher(cfg *cache.Config, cache cache.Cache) *KvCacher {
 	return &KvCacher{
 		Cfg:   cfg,
 		cache: cache,

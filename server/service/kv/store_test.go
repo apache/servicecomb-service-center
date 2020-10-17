@@ -19,9 +19,11 @@ package kv_test
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/cache"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/cache/etcd"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	etcd2 "github.com/apache/servicecomb-service-center/datasource/etcd/client/etcd"
 	mgr "github.com/apache/servicecomb-service-center/server/plugin"
-	"github.com/apache/servicecomb-service-center/server/plugin/discovery/etcd"
-	etcd2 "github.com/apache/servicecomb-service-center/server/plugin/registry/etcd"
 	"github.com/apache/servicecomb-service-center/server/plugin/tracing"
 	"github.com/apache/servicecomb-service-center/server/plugin/tracing/pzipkin"
 	"github.com/apache/servicecomb-service-center/server/service/kv"
@@ -32,9 +34,9 @@ import (
 
 func init() {
 	beego.AppConfig.Set("registry_plugin", "etcd")
-	mgr.RegisterPlugin(mgr.Plugin{mgr.REGISTRY, "etcd", etcd2.NewRegistry})
-	mgr.RegisterPlugin(mgr.Plugin{mgr.DISCOVERY, "buildin", etcd.NewRepository})
-	mgr.RegisterPlugin(mgr.Plugin{mgr.DISCOVERY, "etcd", etcd.NewRepository})
+	client.Install("etcd", etcd2.NewRegistry)
+	cache.Install("buildin", etcd.NewRepository)
+	cache.Install("etcd", etcd.NewRepository)
 	mgr.RegisterPlugin(mgr.Plugin{tracing.TRACING, "buildin", pzipkin.New})
 
 }

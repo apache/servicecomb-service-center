@@ -16,13 +16,11 @@
 package servicecenter
 
 import (
-	"github.com/apache/servicecomb-service-center/datasource/etcd"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/cache"
-	mgr "github.com/apache/servicecomb-service-center/server/plugin"
 )
 
 func init() {
-	mgr.RegisterPlugin(mgr.Plugin{Kind: mgr.DISCOVERY, Name: "servicecenter", New: NewRepository})
+	cache.Install("servicecenter", NewRepository)
 }
 
 type Repository struct {
@@ -32,12 +30,6 @@ func (r *Repository) New(t cache.Type, cfg *cache.Config) cache.Adaptor {
 	return NewServiceCenterAdaptor(t, cfg)
 }
 
-func NewRepository() mgr.Instance {
-	InitConfigs()
+func NewRepository(opts cache.Options) cache.AdaptorRepository {
 	return &Repository{}
-}
-
-func InitConfigs() {
-	mgr.DISCOVERY.ActiveConfigs().
-		Set("config", etcd.Configuration())
 }
