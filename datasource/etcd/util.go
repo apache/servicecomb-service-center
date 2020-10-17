@@ -28,7 +28,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
-	"github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
@@ -60,7 +59,7 @@ func capRegisterData(ctx context.Context, request *pb.CreateServiceRequest) (
 	requestServiceID := serviceBody.ServiceId
 	if len(requestServiceID) == 0 {
 		ctx = util.SetContext(ctx, uuid.ContextKey, index)
-		serviceBody.ServiceId = plugin.Plugins().UUID().GetServiceID(ctx)
+		serviceBody.ServiceId = uuid.Generator().GetServiceID(ctx)
 	}
 	serviceBody.Timestamp = strconv.FormatInt(time.Now().Unix(), 10)
 	serviceBody.ModTimestamp = serviceBody.Timestamp
@@ -319,7 +318,7 @@ func preProcessRegisterInstance(ctx context.Context, instance *pb.MicroServiceIn
 	}
 
 	if len(instance.InstanceId) == 0 {
-		instance.InstanceId = plugin.Plugins().UUID().GetInstanceID(ctx)
+		instance.InstanceId = uuid.Generator().GetInstanceID(ctx)
 	}
 
 	instance.Timestamp = strconv.FormatInt(time.Now().Unix(), 10)

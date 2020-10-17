@@ -20,7 +20,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/queue"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
-	mgr "github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
 	"k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -109,5 +108,5 @@ func UUID(id types.UID) string {
 func generateServiceID(domainProject string, svc *v1.Service) string {
 	indexKey := core.GenerateServiceIndexKey(generateServiceKey(domainProject, svc))
 	ctx := context.WithValue(context.Background(), uuid.ContextKey, indexKey)
-	return mgr.Plugins().UUID().GetServiceID(ctx)
+	return uuid.Generator().GetServiceID(ctx)
 }
