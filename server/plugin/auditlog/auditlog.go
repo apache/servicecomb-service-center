@@ -17,8 +17,17 @@
 
 package auditlog
 
-import "net/http"
+import (
+	"github.com/apache/servicecomb-service-center/server/plugin"
+	"net/http"
+)
+
+const AUDITLOG plugin.Kind = "auditlog"
 
 type AuditLogger interface {
 	Record(r *http.Request, responseHeaders http.Header)
+}
+
+func Record(r *http.Request, responseHeaders http.Header) {
+	plugin.Plugins().Instance(AUDITLOG).(AuditLogger).Record(r, responseHeaders)
 }

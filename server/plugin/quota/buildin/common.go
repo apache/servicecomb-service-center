@@ -24,7 +24,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
-	mgr "github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
@@ -116,7 +115,7 @@ func resourceLimitHandler(ctx context.Context, res *quota.ApplyQuotaResource) (i
 }
 
 func InitConfigs() {
-	mgr.QUOTA.ActiveConfigs().
+	quota.QUOTA.ActiveConfigs().
 		Set("service", quota.DefaultServiceQuota).
 		Set("instance", quota.DefaultInstanceQuota).
 		Set("schema", quota.DefaultSchemaQuota).

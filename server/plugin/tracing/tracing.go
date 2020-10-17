@@ -20,12 +20,17 @@ package tracing
 import (
 	"context"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 )
 
-const CtxTraceSpan util.CtxKey = "x-trace-span"
+const (
+	TRACING      plugin.Kind = "tracing"
+	CtxTraceSpan util.CtxKey = "x-trace-span"
+)
 
 type Request interface{}
+
 type Span interface{}
 
 type Tracing interface {
@@ -39,4 +44,24 @@ type RegistryRequest struct {
 	Ctx      context.Context
 	Endpoint string
 	Options  registry.PluginOp
+}
+
+func Trace() Tracing {
+	return plugin.Plugins().Instance(TRACING).(Tracing)
+}
+
+func ServerBegin(operationName string, r Request) Span {
+	return Trace().ServerBegin(operationName, r)
+}
+
+func ServerEnd(span Span, code int, message string) {
+	Trace().ServerEnd(span, code, message)
+}
+
+func ClientBegin(operationName string, r Request) Span {
+	return Trace().ClientBegin(operationName, r)
+}
+
+func ClientEnd(span Span, code int, message string) {
+	Trace().ClientEnd(span, code, message)
 }

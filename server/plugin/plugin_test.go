@@ -17,6 +17,7 @@
 package plugin
 
 import (
+	"github.com/apache/servicecomb-service-center/server/plugin/auth"
 	"net/http"
 	"testing"
 )
@@ -33,7 +34,7 @@ func TestPluginManager_New(t *testing.T) {
 	pm := &Manager{}
 	pm.Initialize()
 
-	p := pm.Get(AUTH, "buildin")
+	p := pm.Get(auth.AUTH, "buildin")
 	if p != nil {
 		t.Fatalf("TestPluginManager_New failed")
 	}
@@ -41,22 +42,22 @@ func TestPluginManager_New(t *testing.T) {
 	times := 0
 	fn := func() Instance {
 		times++
-		AUTH.ActiveConfigs().Set("a", "a")
+		auth.AUTH.ActiveConfigs().Set("a", "a")
 		return &mockAuthPlugin{times}
 	}
-	pm.Register(Plugin{AUTH, "buildin", fn})
+	pm.Register(Plugin{auth.AUTH, "buildin", fn})
 
-	i := pm.Instance(AUTH)
-	if i != pm.Instance(AUTH) || AUTH.ActiveConfigs().String("a", "") != "a" {
+	i := pm.Instance(auth.AUTH)
+	if i != pm.Instance(auth.AUTH) || auth.AUTH.ActiveConfigs().String("a", "") != "a" {
 		t.Fatalf("TestPluginManager_New failed")
 	}
 
 	pm.ReloadAll()
-	if AUTH.ActiveConfigs().String("a", "") != "" {
+	if auth.AUTH.ActiveConfigs().String("a", "") != "" {
 		t.Fatalf("TestPluginManager_New failed")
 	}
 
-	n := pm.Instance(AUTH)
+	n := pm.Instance(auth.AUTH)
 	if i == n {
 		t.Fatalf("TestPluginManager_New failed")
 	}

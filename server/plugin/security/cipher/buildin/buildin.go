@@ -15,37 +15,36 @@
  * limitations under the License.
  */
 
-package buildin
+package plain
 
 import (
-	"crypto/tls"
 	mgr "github.com/apache/servicecomb-service-center/server/plugin"
+	"github.com/apache/servicecomb-service-center/server/plugin/security/cipher"
 )
 
 func init() {
-	mgr.RegisterPlugin(mgr.Plugin{Kind: mgr.TLS, Name: "buildin", New: New})
+	mgr.RegisterPlugin(mgr.Plugin{Kind: cipher.CIPHER, Name: "buildin", New: New})
 }
 
 func New() mgr.Instance {
-	return &DefaultTLS{}
+	return &DefaultCipher{}
 }
 
-// DefaultTLS support new the *tls.Config object from certs and private key with password
-type DefaultTLS struct {
+type DefaultCipher struct {
 }
 
-func (c *DefaultTLS) ClientConfig() (*tls.Config, error) {
-	df, ok := mgr.DynamicPluginFunc(mgr.TLS, "ClientConfig").(func() (*tls.Config, error))
+func (c *DefaultCipher) Encrypt(src string) (string, error) {
+	df, ok := mgr.DynamicPluginFunc(cipher.CIPHER, "Encrypt").(func(src string) (string, error))
 	if ok {
-		return df()
+		return df(src)
 	}
-	return GetClientTLSConfig()
+	return src, nil
 }
 
-func (c *DefaultTLS) ServerConfig() (*tls.Config, error) {
-	df, ok := mgr.DynamicPluginFunc(mgr.TLS, "ServerConfig").(func() (*tls.Config, error))
+func (c *DefaultCipher) Decrypt(src string) (string, error) {
+	df, ok := mgr.DynamicPluginFunc(cipher.CIPHER, "Decrypt").(func(src string) (string, error))
 	if ok {
-		return df()
+		return df(src)
 	}
-	return GetServerTLSConfig()
+	return src, nil
 }

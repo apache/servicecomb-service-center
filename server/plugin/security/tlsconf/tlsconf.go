@@ -15,12 +15,24 @@
  * limitations under the License.
  */
 
-package tls
+package tlsconf
 
-import "crypto/tls"
+import (
+	"crypto/tls"
+	"github.com/apache/servicecomb-service-center/server/plugin"
+)
 
-type TLS interface {
+const TLS plugin.Kind = "ssl"
+
+type TLSConfig interface {
 	ClientConfig() (*tls.Config, error)
-
 	ServerConfig() (*tls.Config, error)
+}
+
+func ClientConfig() (*tls.Config, error) {
+	return plugin.Plugins().Instance(TLS).(TLSConfig).ClientConfig()
+}
+
+func ServerConfig() (*tls.Config, error) {
+	return plugin.Plugins().Instance(TLS).(TLSConfig).ServerConfig()
 }

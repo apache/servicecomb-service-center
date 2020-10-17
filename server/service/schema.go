@@ -27,7 +27,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
-	"github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
@@ -360,7 +359,7 @@ func (s *MicroServiceService) modifySchemas(ctx context.Context, domainProject s
 	if !s.isSchemaEditable(service) {
 		if len(service.Schemas) == 0 {
 			res := quota.NewApplyQuotaResource(quota.SchemaQuotaType, domainProject, serviceID, int64(len(nonExistSchemaIds)))
-			rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
+			rst := quota.Apply(ctx, res)
 			errQuota := rst.Err
 			if errQuota != nil {
 				log.Errorf(errQuota, "modify service[%s] schemas failed, operator: %s", serviceID, remoteIP)
@@ -405,7 +404,7 @@ func (s *MicroServiceService) modifySchemas(ctx context.Context, domainProject s
 		quotaSize := len(needAddSchemas) - len(needDeleteSchemas)
 		if quotaSize > 0 {
 			res := quota.NewApplyQuotaResource(quota.SchemaQuotaType, domainProject, serviceID, int64(quotaSize))
-			rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
+			rst := quota.Apply(ctx, res)
 			err := rst.Err
 			if err != nil {
 				log.Errorf(err, "modify service[%s] schemas failed, operator: %s", serviceID, remoteIP)
@@ -576,7 +575,7 @@ func (s *MicroServiceService) canModifySchema(ctx context.Context, domainProject
 	}
 
 	res := quota.NewApplyQuotaResource(quota.SchemaQuotaType, domainProject, serviceID, 1)
-	rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
+	rst := quota.Apply(ctx, res)
 	errQuota := rst.Err
 	if errQuota != nil {
 		log.Errorf(errQuota, "update schema[%s/%s] failed, operator: %s", serviceID, schemaID, remoteIP)

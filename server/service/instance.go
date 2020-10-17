@@ -31,7 +31,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/core/backend"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/health"
-	"github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
@@ -157,7 +156,7 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 	if !apt.IsSCInstance(ctx) {
 		res := quota.NewApplyQuotaResource(quota.MicroServiceInstanceQuotaType,
 			domainProject, in.Instance.ServiceId, 1)
-		reporter = plugin.Plugins().Quota().Apply4Quotas(ctx, res)
+		reporter = quota.Apply(ctx, res)
 		defer reporter.Close(ctx)
 
 		if reporter.Err != nil {

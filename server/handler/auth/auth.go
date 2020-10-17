@@ -21,7 +21,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/chain"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
-	"github.com/apache/servicecomb-service-center/server/plugin"
+	"github.com/apache/servicecomb-service-center/server/plugin/auth"
 	"github.com/apache/servicecomb-service-center/server/rest/controller"
 	"github.com/apache/servicecomb-service-center/server/scerror"
 	"net/http"
@@ -32,7 +32,7 @@ type Handler struct {
 
 func (h *Handler) Handle(i *chain.Invocation) {
 	r := i.Context().Value(rest.CtxRequest).(*http.Request)
-	err := plugin.Plugins().Auth().Identify(r)
+	err := auth.Identify(r)
 	if err == nil {
 		i.Next()
 		return

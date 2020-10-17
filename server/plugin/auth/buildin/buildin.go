@@ -25,6 +25,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	mgr "github.com/apache/servicecomb-service-center/server/plugin"
+	"github.com/apache/servicecomb-service-center/server/plugin/auth"
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
 	"github.com/go-chassis/go-chassis/security/authr"
 	"github.com/go-chassis/go-chassis/server/restful"
@@ -33,7 +34,7 @@ import (
 )
 
 func init() {
-	mgr.RegisterPlugin(mgr.Plugin{Kind: mgr.AUTH, Name: "buildin", New: New})
+	mgr.RegisterPlugin(mgr.Plugin{Kind: auth.AUTH, Name: "buildin", New: New})
 }
 
 func New() mgr.Instance {
