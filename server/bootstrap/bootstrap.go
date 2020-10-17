@@ -19,23 +19,11 @@ package bootstrap
 //rest v3 api
 import _ "github.com/apache/servicecomb-service-center/server/rest/controller/v3"
 
-// rest v4 api
+//rest v4 api
 import _ "github.com/apache/servicecomb-service-center/server/rest/controller/v4"
 
-//registry is buildin
-import _ "github.com/apache/servicecomb-service-center/server/plugin/registry/buildin"
-
-//registry etcd
-import _ "github.com/apache/servicecomb-service-center/server/plugin/registry/etcd"
-
-//registry etcd
-import _ "github.com/apache/servicecomb-service-center/server/plugin/registry/embededetcd"
-
-//discovery
-import _ "github.com/apache/servicecomb-service-center/server/plugin/discovery/aggregate"
-import _ "github.com/apache/servicecomb-service-center/server/plugin/discovery/servicecenter"
-import _ "github.com/apache/servicecomb-service-center/server/plugin/discovery/etcd"
-import _ "github.com/apache/servicecomb-service-center/server/plugin/discovery/k8s"
+//etcd
+import _ "github.com/apache/servicecomb-service-center/datasource/etcd/bootstrap"
 
 //cipher
 import _ "github.com/apache/servicecomb-service-center/server/plugin/security/cipher/buildin"

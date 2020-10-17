@@ -20,7 +20,7 @@ package cache
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/apache/servicecomb-service-center/datasource/etcd"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	simple "github.com/apache/servicecomb-service-center/pkg/time"
 	"github.com/apache/servicecomb-service-center/pkg/types"
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -38,6 +38,8 @@ const (
 )
 
 type Type int
+
+type ImplName string
 
 func (st Type) String() string {
 	if int(st) < 0 {
@@ -77,7 +79,7 @@ func (kv *KeyValue) String() string {
 }
 
 func NewKeyValue() *KeyValue {
-	return &KeyValue{ClusterName: etcd.Configuration().ClusterName}
+	return &KeyValue{ClusterName: client.DefaultClusterName}
 }
 
 type Response struct {

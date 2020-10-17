@@ -20,7 +20,6 @@ package etcd
 import (
 	"context"
 	registry "github.com/apache/servicecomb-service-center/datasource/etcd/client"
-	"github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/tracing"
 	"net/http"
 )
@@ -31,13 +30,13 @@ func TracingBegin(ctx context.Context, operationName string, op registry.PluginO
 		Options:  op,
 		Endpoint: firstEndpoint,
 	}
-	return plugin.Plugins().Tracing().ClientBegin(operationName, r)
+	return tracing.ClientBegin(operationName, r)
 }
 
 func TracingEnd(span tracing.Span, err error) {
 	if err != nil {
-		plugin.Plugins().Tracing().ClientEnd(span, http.StatusInternalServerError, err.Error())
+		tracing.ClientEnd(span, http.StatusInternalServerError, err.Error())
 		return
 	}
-	plugin.Plugins().Tracing().ClientEnd(span, http.StatusOK, "")
+	tracing.ClientEnd(span, http.StatusOK, "")
 }

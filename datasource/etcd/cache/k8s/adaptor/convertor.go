@@ -16,6 +16,7 @@
 package adaptor
 
 import (
+	"github.com/apache/servicecomb-service-center/datasource/etcd"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/cache"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -118,5 +119,6 @@ func AsKeyValue(key string, v interface{}, resourceVersion string) *cache.KeyVal
 	kv.Key = util.StringToBytesWithNoCopy(key)
 	kv.Value = v
 	kv.ModRevision = rev
+	kv.ClusterName = etcd.Configuration().ClusterName
 	return kv
 }

@@ -27,7 +27,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/task"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/plugin"
 	"time"
 )
 
@@ -66,7 +65,7 @@ func (s *KvStore) InjectConfig(cfg *cache.Config) *cache.Config {
 }
 
 func (s *KvStore) repo() cache.AdaptorRepository {
-	return plugin.Plugins().Discovery()
+	return cache.Instance()
 }
 
 func (s *KvStore) getOrCreateAdaptor(t cache.Type) cache.Adaptor {

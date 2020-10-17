@@ -19,11 +19,13 @@ package buildin_test
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/cache"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/cache/etcd"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	etcd2 "github.com/apache/servicecomb-service-center/datasource/etcd/client/etcd"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	mgr "github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/auth/buildin"
-	"github.com/apache/servicecomb-service-center/server/plugin/discovery/etcd"
-	etcd2 "github.com/apache/servicecomb-service-center/server/plugin/registry/etcd"
 	"github.com/apache/servicecomb-service-center/server/plugin/security/cipher"
 	plain "github.com/apache/servicecomb-service-center/server/plugin/security/cipher/buildin"
 	"github.com/apache/servicecomb-service-center/server/plugin/tracing"
@@ -47,9 +49,9 @@ func init() {
 	beego.AppConfig.Set("rbac_enabled", "true")
 	beego.AppConfig.Set(rbac.PubFilePath, "./rbac.pub")
 	beego.AppConfig.Set("rbac_rsa_private_key_file", "./private.key")
-	mgr.RegisterPlugin(mgr.Plugin{mgr.REGISTRY, "etcd", etcd2.NewRegistry})
-	mgr.RegisterPlugin(mgr.Plugin{mgr.DISCOVERY, "buildin", etcd.NewRepository})
-	mgr.RegisterPlugin(mgr.Plugin{mgr.DISCOVERY, "etcd", etcd.NewRepository})
+	client.Install("etcd", etcd2.NewRegistry)
+	cache.Install("buildin", etcd.NewRepository)
+	cache.Install("etcd", etcd.NewRepository)
 	mgr.RegisterPlugin(mgr.Plugin{cipher.CIPHER, "buildin", plain.New})
 	mgr.RegisterPlugin(mgr.Plugin{tracing.TRACING, "buildin", pzipkin.New})
 

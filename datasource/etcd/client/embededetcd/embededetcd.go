@@ -27,7 +27,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	mgr "github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/coreos/etcd/compactor"
 	"github.com/coreos/etcd/embed"
 	"github.com/coreos/etcd/etcdserver"
@@ -41,7 +40,7 @@ import (
 )
 
 func init() {
-	mgr.RegisterPlugin(mgr.Plugin{Kind: mgr.REGISTRY, Name: "embeded_etcd", New: getEmbedInstance})
+	registry.Install("embeded_etcd", getEmbedInstance)
 }
 
 type EtcdEmbed struct {
@@ -528,7 +527,7 @@ func callback(action registry.ActionType, rev int64, kvs []*mvccpb.KeyValue, cb 
 	})
 }
 
-func getEmbedInstance() mgr.Instance {
+func getEmbedInstance(opts registry.Options) registry.Registry {
 	log.Warnf("enable embedded registry mode")
 
 	hostName := "sc-0"

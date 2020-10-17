@@ -16,6 +16,7 @@
 package etcd
 
 import (
+	"github.com/apache/servicecomb-service-center/datasource/etcd"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/cache"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/coreos/etcd/mvcc/mvccpb"
@@ -39,6 +40,7 @@ func init() {
 }
 
 func FromEtcdKeyValue(dist *cache.KeyValue, src *mvccpb.KeyValue, parser proto.Parser) (err error) {
+	dist.ClusterName = etcd.Configuration().ClusterName
 	dist.Key = src.Key
 	dist.Version = src.Version
 	dist.CreateRevision = src.CreateRevision

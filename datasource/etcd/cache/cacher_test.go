@@ -18,6 +18,7 @@
 package cache
 
 import (
+	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"testing"
 )
 

@@ -21,8 +21,7 @@ import (
 )
 
 const (
-	REGISTRY  Kind = "registry"
-	DISCOVERY Kind = "discovery"
+	REGISTRY Kind = "registry"
 )
 
 func (pm *Manager) Discovery() discovery.AdaptorRepository {

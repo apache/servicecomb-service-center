@@ -23,6 +23,8 @@ import (
 	"strconv"
 )
 
+type ImplName string
+
 type ActionType int
 
 func (at ActionType) String() string {

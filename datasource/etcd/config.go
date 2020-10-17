@@ -59,6 +59,9 @@ func Configuration() *client.Config {
 		if err != nil {
 			log.Errorf(err, "auto_sync_interval is invalid")
 		}
+
+		core.ServerInfo.Config.Plugins.Object("discovery").
+			Set("config", defaultRegistryConfig)
 	})
 	return &defaultRegistryConfig
 }

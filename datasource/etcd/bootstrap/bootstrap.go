@@ -15,28 +15,19 @@
  * limitations under the License.
  */
 
-package etcd
+package bootstrap
 
-import (
-	"context"
-	"github.com/apache/servicecomb-service-center/server/plugin/registry"
-	"github.com/apache/servicecomb-service-center/server/plugin/tracing"
-	"net/http"
-)
+//registry is buildin
+import _ "github.com/apache/servicecomb-service-center/datasource/etcd/client/buildin"
 
-func TracingBegin(ctx context.Context, operationName string, op registry.PluginOp) tracing.Span {
-	r := &tracing.RegistryRequest{
-		Ctx:      ctx,
-		Options:  op,
-		Endpoint: firstEndpoint,
-	}
-	return tracing.ClientBegin(operationName, r)
-}
+//registry etcd
+import _ "github.com/apache/servicecomb-service-center/datasource/etcd/client/etcd"
 
-func TracingEnd(span tracing.Span, err error) {
-	if err != nil {
-		tracing.ClientEnd(span, http.StatusInternalServerError, err.Error())
-		return
-	}
-	tracing.ClientEnd(span, http.StatusOK, "")
-}
+//registry etcd
+import _ "github.com/apache/servicecomb-service-center/datasource/etcd/client/embededetcd"
+
+//discovery
+import _ "github.com/apache/servicecomb-service-center/datasource/etcd/cache/aggregate"
+import _ "github.com/apache/servicecomb-service-center/datasource/etcd/cache/servicecenter"
+import _ "github.com/apache/servicecomb-service-center/datasource/etcd/cache/etcd"
+import _ "github.com/apache/servicecomb-service-center/datasource/etcd/cache/k8s"
