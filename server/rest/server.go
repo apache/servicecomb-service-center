@@ -21,7 +21,7 @@ import (
 	"crypto/tls"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/plugin"
+	"github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf"
 	"time"
 )
 
@@ -34,7 +34,7 @@ func LoadConfig() (srvCfg *rest.ServerConfig, err error) {
 	maxHeaderBytes := int(core.ServerInfo.Config.MaxHeaderBytes)
 	var tlsConfig *tls.Config
 	if core.ServerInfo.Config.SslEnabled {
-		tlsConfig, err = plugin.Plugins().TLS().ServerConfig()
+		tlsConfig, err = tlsconf.ServerConfig()
 		if err != nil {
 			return
 		}

@@ -32,7 +32,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/core"
 	apt "github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
-	"github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
@@ -219,7 +218,7 @@ func checkQuota(ctx context.Context, domainProject string) *quota.ApplyQuotaResu
 		return nil
 	}
 	res := quota.NewApplyQuotaResource(quota.MicroServiceQuotaType, domainProject, "", 1)
-	rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
+	rst := quota.Apply(ctx, res)
 	return rst
 }
 

@@ -15,35 +15,18 @@
  * limitations under the License.
  */
 
-package plain
+package cipher
 
 import (
-	mgr "github.com/apache/servicecomb-service-center/server/plugin"
+	"github.com/apache/servicecomb-service-center/server/plugin"
+	"github.com/go-chassis/foundation/security"
 )
 
-func init() {
-	mgr.RegisterPlugin(mgr.Plugin{Kind: mgr.CIPHER, Name: "buildin", New: New})
-}
+const CIPHER plugin.Kind = "cipher"
 
-func New() mgr.Instance {
-	return &DefaultCipher{}
+func Encrypt(src string) (string, error) {
+	return plugin.Plugins().Instance(CIPHER).(security.Cipher).Encrypt(src)
 }
-
-type DefaultCipher struct {
-}
-
-func (c *DefaultCipher) Encrypt(src string) (string, error) {
-	df, ok := mgr.DynamicPluginFunc(mgr.CIPHER, "Encrypt").(func(src string) (string, error))
-	if ok {
-		return df(src)
-	}
-	return src, nil
-}
-
-func (c *DefaultCipher) Decrypt(src string) (string, error) {
-	df, ok := mgr.DynamicPluginFunc(mgr.CIPHER, "Decrypt").(func(src string) (string, error))
-	if ok {
-		return df(src)
-	}
-	return src, nil
+func Decrypt(src string) (string, error) {
+	return plugin.Plugins().Instance(CIPHER).(security.Cipher).Decrypt(src)
 }

@@ -26,7 +26,6 @@ import (
 	apt "github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
-	"github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
@@ -56,7 +55,7 @@ func (s *MicroServiceService) AddRule(ctx context.Context, in *pb.AddServiceRule
 		}, nil
 	}
 	res := quota.NewApplyQuotaResource(quota.RuleQuotaType, domainProject, in.ServiceId, int64(len(in.Rules)))
-	rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
+	rst := quota.Apply(ctx, res)
 	errQuota := rst.Err
 	if errQuota != nil {
 		log.Errorf(errQuota, "add service[%s] rule failed, operator: %s", in.ServiceId, remoteIP)

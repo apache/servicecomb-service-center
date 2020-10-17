@@ -23,9 +23,9 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/model"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
-	mgr "github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
+	"github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"strings"
 	"sync"
@@ -44,7 +44,7 @@ func getClientTLS() (*tls.Config, error) {
 		return clientTLS, nil
 	}
 	var err error
-	clientTLS, err = mgr.Plugins().TLS().ClientConfig()
+	clientTLS, err = tlsconf.ClientConfig()
 	return clientTLS, err
 }
 

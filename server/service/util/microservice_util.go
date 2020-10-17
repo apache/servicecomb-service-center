@@ -26,7 +26,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
-	"github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
@@ -247,11 +246,11 @@ func GetAllServiceUtil(ctx context.Context) ([]*pb.MicroService, error) {
 }
 
 func RemandServiceQuota(ctx context.Context) {
-	plugin.Plugins().Quota().RemandQuotas(ctx, quota.MicroServiceQuotaType)
+	quota.Remand(ctx, quota.MicroServiceQuotaType)
 }
 
 func RemandInstanceQuota(ctx context.Context) {
-	plugin.Plugins().Quota().RemandQuotas(ctx, quota.MicroServiceInstanceQuotaType)
+	quota.Remand(ctx, quota.MicroServiceInstanceQuotaType)
 }
 
 func UpdateService(domainProject string, serviceID string, service *pb.MicroService) (opt registry.PluginOp, err error) {

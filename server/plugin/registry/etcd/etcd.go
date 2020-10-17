@@ -21,6 +21,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf"
 	"net/url"
 	"strconv"
 	"strings"
@@ -74,7 +75,7 @@ func (c *Client) Initialize() (err error) {
 	if c.TLSConfig == nil && registry.Configuration().SslEnabled {
 		var err error
 		// go client tls限制，提供身份证书、不认证服务端、不校验CN
-		c.TLSConfig, err = mgr.Plugins().TLS().ClientConfig()
+		c.TLSConfig, err = tlsconf.ClientConfig()
 		if err != nil {
 			log.Error("get etcd client tls config failed", err)
 			return err
