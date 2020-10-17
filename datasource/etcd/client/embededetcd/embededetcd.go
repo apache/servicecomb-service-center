@@ -41,7 +41,7 @@ import (
 )
 
 func init() {
-	mgr.RegisterPlugin(mgr.Plugin{PName: mgr.REGISTRY, Name: "embeded_etcd", New: getEmbedInstance})
+	mgr.RegisterPlugin(mgr.Plugin{Kind: mgr.REGISTRY, Name: "embeded_etcd", New: getEmbedInstance})
 }
 
 type EtcdEmbed struct {

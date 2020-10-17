@@ -34,10 +34,10 @@ var (
 
 func init() {
 	beego.AppConfig.Set("registry_plugin", "etcd")
-	mgr.RegisterPlugin(mgr.Plugin{PName: mgr.REGISTRY, Name: "etcd", New: etcd2.NewRegistry})
-	mgr.RegisterPlugin(mgr.Plugin{PName: mgr.DISCOVERY, Name: "buildin", New: etcd.NewRepository})
-	mgr.RegisterPlugin(mgr.Plugin{PName: mgr.DISCOVERY, Name: "etcd", New: etcd.NewRepository})
-	mgr.RegisterPlugin(mgr.Plugin{PName: mgr.TRACING, Name: "buildin", New: pzipkin.New})
+	mgr.RegisterPlugin(mgr.Plugin{Kind: mgr.REGISTRY, Name: "etcd", New: etcd2.NewRegistry})
+	mgr.RegisterPlugin(mgr.Plugin{Kind: mgr.DISCOVERY, Name: "buildin", New: etcd.NewRepository})
+	mgr.RegisterPlugin(mgr.Plugin{Kind: mgr.DISCOVERY, Name: "etcd", New: etcd.NewRepository})
+	mgr.RegisterPlugin(mgr.Plugin{Kind: mgr.TRACING, Name: "buildin", New: pzipkin.New})
 	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
 		return NewDataSource(opts), nil
 	})
