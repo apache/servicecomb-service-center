@@ -22,8 +22,8 @@ import (
 )
 
 func init() {
-	mgr.RegisterPlugin(mgr.Plugin{PName: mgr.DISCOVERY, Name: "buildin", New: NewRepository})
-	mgr.RegisterPlugin(mgr.Plugin{PName: mgr.DISCOVERY, Name: "etcd", New: NewRepository})
+	mgr.RegisterPlugin(mgr.Plugin{Kind: mgr.DISCOVERY, Name: "buildin", New: NewRepository})
+	mgr.RegisterPlugin(mgr.Plugin{Kind: mgr.DISCOVERY, Name: "etcd", New: NewRepository})
 }
 
 type Repository struct {

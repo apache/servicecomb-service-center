@@ -19,11 +19,19 @@ package uuid
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/server/plugin"
 )
 
-const ContextKey = "_uuid_key"
+const (
+	UUID       plugin.Kind = "uuid"
+	ContextKey             = "_uuid_key"
+)
 
-type UUID interface {
+type IDGenerator interface {
 	GetServiceID(ctx context.Context) string
 	GetInstanceID(ctx context.Context) string
+}
+
+func Generator() IDGenerator {
+	return plugin.Plugins().Instance(UUID).(IDGenerator)
 }

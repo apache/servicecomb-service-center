@@ -22,7 +22,7 @@ import (
 )
 
 func init() {
-	mgr.RegisterPlugin(mgr.Plugin{PName: mgr.DISCOVERY, Name: Aggregate, New: NewRepository})
+	mgr.RegisterPlugin(mgr.Plugin{Kind: mgr.DISCOVERY, Name: Aggregate, New: NewRepository})
 }
 
 type Repository struct {
