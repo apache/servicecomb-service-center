@@ -20,7 +20,7 @@ package tracing
 import (
 	"github.com/apache/servicecomb-service-center/pkg/chain"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
-	"github.com/apache/servicecomb-service-center/server/plugin"
+	"github.com/apache/servicecomb-service-center/server/plugin/tracing"
 	"net/http"
 	"strconv"
 )
@@ -33,7 +33,7 @@ func (h *Handler) Handle(i *chain.Invocation) {
 		i.Context().Value(rest.CtxRequest).(*http.Request),
 		i.Context().Value(rest.CtxMatchFunc).(string)
 
-	span := plugin.Plugins().Tracing().ServerBegin(op, r)
+	span := tracing.ServerBegin(op, r)
 
 	i.Next(chain.WithAsyncFunc(func(ret chain.Result) {
 		statusCode := w.Header().Get(rest.HeaderResponseStatus)
@@ -41,7 +41,7 @@ func (h *Handler) Handle(i *chain.Invocation) {
 		if code == 0 {
 			code = 200
 		}
-		plugin.Plugins().Tracing().ServerEnd(span, int(code), statusCode)
+		tracing.ServerEnd(span, int(code), statusCode)
 	}))
 }
 

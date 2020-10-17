@@ -18,9 +18,20 @@
 package auth
 
 import (
+	"github.com/apache/servicecomb-service-center/server/plugin"
 	"net/http"
 )
 
-type Auth interface {
+const AUTH plugin.Kind = "auth"
+
+type Authenticate interface {
 	Identify(r *http.Request) error
+}
+
+func Auth() Authenticate {
+	return plugin.Plugins().Instance(AUTH).(Authenticate)
+}
+
+func Identify(r *http.Request) error {
+	return Auth().Identify(r)
 }

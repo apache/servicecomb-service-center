@@ -16,24 +16,12 @@
 package plugin
 
 import (
-	"github.com/apache/servicecomb-service-center/server/plugin/auditlog"
-	"github.com/apache/servicecomb-service-center/server/plugin/auth"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
-	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
-	"github.com/apache/servicecomb-service-center/server/plugin/tls"
-	"github.com/apache/servicecomb-service-center/server/plugin/tracing"
-	"github.com/go-chassis/foundation/security"
 )
 
 const (
-	AuditLog  Kind = "auditlog"
-	AUTH      Kind = "auth"
-	CIPHER    Kind = "cipher"
-	QUOTA     Kind = "quota"
 	REGISTRY  Kind = "registry"
-	TRACING   Kind = "tracing"
-	TLS       Kind = "ssl"
 	DISCOVERY Kind = "discovery"
 )
 
@@ -43,11 +31,3 @@ func (pm *Manager) Discovery() discovery.AdaptorRepository {
 func (pm *Manager) Registry() registry.Registry {
 	return pm.Instance(REGISTRY).(registry.Registry)
 }
-func (pm *Manager) AuditLog() auditlog.AuditLogger {
-	return pm.Instance(AuditLog).(auditlog.AuditLogger)
-}
-func (pm *Manager) Auth() auth.Auth              { return pm.Instance(AUTH).(auth.Auth) }
-func (pm *Manager) Cipher() security.Cipher      { return pm.Instance(CIPHER).(security.Cipher) }
-func (pm *Manager) Quota() quota.Manager         { return pm.Instance(QUOTA).(quota.Manager) }
-func (pm *Manager) Tracing() (v tracing.Tracing) { return pm.Instance(TRACING).(tracing.Tracing) }
-func (pm *Manager) TLS() tls.TLS                 { return pm.Instance(TLS).(tls.TLS) }

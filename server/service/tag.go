@@ -26,7 +26,6 @@ import (
 	apt "github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
-	"github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
@@ -55,7 +54,7 @@ func (s *MicroServiceService) AddTags(ctx context.Context, in *pb.AddServiceTags
 
 	addTags := in.Tags
 	res := quota.NewApplyQuotaResource(quota.TagQuotaType, domainProject, in.ServiceId, int64(len(addTags)))
-	rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
+	rst := quota.Apply(ctx, res)
 	errQuota := rst.Err
 	if errQuota != nil {
 		log.Errorf(errQuota, "add service[%s]'s tags %v failed, operator: %s", in.ServiceId, addTags, remoteIP)

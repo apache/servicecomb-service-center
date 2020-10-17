@@ -26,7 +26,7 @@ import (
 )
 
 func init() {
-	mgr.RegisterPlugin(mgr.Plugin{Kind: mgr.QUOTA, Name: "buildin", New: New})
+	mgr.RegisterPlugin(mgr.Plugin{Kind: quota.QUOTA, Name: "buildin", New: New})
 	counter.RegisterCounterListener("buildin")
 }
 
@@ -43,7 +43,7 @@ type Quota struct {
 
 //申请配额sourceType serviceinstance servicetype
 func (q *Quota) Apply4Quotas(ctx context.Context, res *quota.ApplyQuotaResource) *quota.ApplyQuotaResult {
-	df, ok := mgr.DynamicPluginFunc(mgr.QUOTA, "Apply4Quotas").(func(context.Context, *quota.ApplyQuotaResource) *quota.ApplyQuotaResult)
+	df, ok := mgr.DynamicPluginFunc(quota.QUOTA, "Apply4Quotas").(func(context.Context, *quota.ApplyQuotaResource) *quota.ApplyQuotaResult)
 	if ok {
 		return df(ctx, res)
 	}
@@ -53,7 +53,7 @@ func (q *Quota) Apply4Quotas(ctx context.Context, res *quota.ApplyQuotaResource)
 
 //向配额中心上报配额使用量
 func (q *Quota) RemandQuotas(ctx context.Context, quotaType quota.ResourceType) {
-	df, ok := mgr.DynamicPluginFunc(mgr.QUOTA, "RemandQuotas").(func(context.Context, quota.ResourceType))
+	df, ok := mgr.DynamicPluginFunc(quota.QUOTA, "RemandQuotas").(func(context.Context, quota.ResourceType))
 	if ok {
 		df(ctx, quotaType)
 		return

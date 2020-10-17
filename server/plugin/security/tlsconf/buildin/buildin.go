@@ -15,41 +15,38 @@
  * limitations under the License.
  */
 
-package unlimit
+package buildin
 
 import (
-	"context"
-	"github.com/apache/servicecomb-service-center/pkg/log"
+	"crypto/tls"
 	mgr "github.com/apache/servicecomb-service-center/server/plugin"
-	"github.com/apache/servicecomb-service-center/server/plugin/quota"
-	"github.com/astaxie/beego"
+	"github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf"
 )
 
 func init() {
-	mgr.RegisterPlugin(mgr.Plugin{Kind: quota.QUOTA, Name: "unlimit", New: New})
-
-	quataType := beego.AppConfig.DefaultString("quota_plugin", "")
-	if quataType != "unlimit" {
-		return
-	}
-	quota.DefaultServiceQuota = 0
-	quota.DefaultInstanceQuota = 0
-	quota.DefaultSchemaQuota = 0
-	quota.DefaultTagQuota = 0
-	quota.DefaultRuleQuota = 0
-}
-
-type Unlimit struct {
+	mgr.RegisterPlugin(mgr.Plugin{Kind: tlsconf.TLS, Name: "buildin", New: New})
 }
 
 func New() mgr.Instance {
-	log.Warnf("quota init, all resources are unlimited")
-	return &Unlimit{}
+	return &DefaultTLS{}
 }
 
-func (q *Unlimit) Apply4Quotas(ctx context.Context, res *quota.ApplyQuotaResource) *quota.ApplyQuotaResult {
-	return quota.NewApplyQuotaResult(nil, nil)
+// DefaultTLS support new the *tls.Config object from certs and private key with password
+type DefaultTLS struct {
 }
 
-func (q *Unlimit) RemandQuotas(ctx context.Context, quotaType quota.ResourceType) {
+func (c *DefaultTLS) ClientConfig() (*tls.Config, error) {
+	df, ok := mgr.DynamicPluginFunc(tlsconf.TLS, "ClientConfig").(func() (*tls.Config, error))
+	if ok {
+		return df()
+	}
+	return GetClientTLSConfig()
+}
+
+func (c *DefaultTLS) ServerConfig() (*tls.Config, error) {
+	df, ok := mgr.DynamicPluginFunc(tlsconf.TLS, "ServerConfig").(func() (*tls.Config, error))
+	if ok {
+		return df()
+	}
+	return GetServerTLSConfig()
 }
