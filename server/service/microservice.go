@@ -124,7 +124,7 @@ func (s *MicroServiceService) CreateServicePri(ctx context.Context, in *pb.Creat
 	requestServiceID := service.ServiceId
 	if len(requestServiceID) == 0 {
 		ctx = util.SetContext(ctx, uuid.ContextKey, index)
-		service.ServiceId = plugin.Plugins().UUID().GetServiceID(ctx)
+		service.ServiceId = uuid.Generator().GetServiceID(ctx)
 	}
 	service.Timestamp = strconv.FormatInt(time.Now().Unix(), 10)
 	service.ModTimestamp = service.Timestamp

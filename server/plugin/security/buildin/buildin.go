@@ -22,7 +22,7 @@ import (
 )
 
 func init() {
-	mgr.RegisterPlugin(mgr.Plugin{PName: mgr.CIPHER, Name: "buildin", New: New})
+	mgr.RegisterPlugin(mgr.Plugin{Kind: mgr.CIPHER, Name: "buildin", New: New})
 }
 
 func New() mgr.Instance {

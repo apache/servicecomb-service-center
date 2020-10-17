@@ -34,7 +34,7 @@ import (
 var once sync.Once
 
 func init() {
-	mgr.RegisterPlugin(mgr.Plugin{PName: mgr.TRACING, Name: "buildin", New: New})
+	mgr.RegisterPlugin(mgr.Plugin{Kind: mgr.TRACING, Name: "buildin", New: New})
 }
 
 func New() mgr.Instance {
