@@ -54,6 +54,12 @@ func getContext() context.Context {
 		util.CtxNocache, "1")
 }
 
+func depGetContext() context.Context {
+	return util.SetContext(
+		util.SetDomainProject(context.Background(), "new_default", "new_default"),
+		util.CtxNocache, "1")
+}
+
 func TestGrpc(t *testing.T) {
 	RegisterFailHandler(Fail)
 	junitReporter := reporters.NewJUnitReporter("model.junit.xml")

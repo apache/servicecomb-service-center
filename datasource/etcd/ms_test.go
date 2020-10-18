@@ -2776,11 +2776,825 @@ func TestSchema_Exist(t *testing.T) {
 	})
 }
 
-func TestTag_Add(t *testing.T) {
+func TestSchema_Get(t *testing.T) {
+	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
+		return NewDataSource(opts), nil
+	})
+	err := datasource.Init(datasource.Options{
+		Endpoint:       "",
+		PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
+	})
+	assert.NoError(t, err)
+
+	var (
+		serviceId  string
+		serviceId1 string
+	)
+
+	var (
+		schemaId1     string = "all_schema1_ms"
+		schemaId2     string = "all_schema2_ms"
+		schemaId3     string = "all_schema3_ms"
+		summary       string = "this0is1a2test3ms"
+		schemaContent string = "the content is vary large"
+	)
+
+	t.Run("register service and instance", func(t *testing.T) {
+		respCreateService, err := datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				AppId:       "get_schema_group_ms",
+				ServiceName: "get_schema_service_ms",
+				Version:     "1.0.0",
+				Level:       "FRONT",
+				Schemas: []string{
+					"non-schema-content",
+				},
+				Status:      pb.MS_UP,
+				Environment: pb.ENV_DEV,
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, respCreateService.Response.GetCode())
+		serviceId = respCreateService.ServiceId
+
+		respCreateSchema, err := datasource.Instance().ModifySchema(getContext(), &pb.ModifySchemaRequest{
+			ServiceId: serviceId,
+			SchemaId:  "com.huawei.test.ms",
+			Schema:    "get schema ms",
+			Summary:   "schema0summary1ms",
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, respCreateSchema.Response.GetCode())
+
+		respCreateService, err = datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				AppId:       "get_all_schema_ms",
+				ServiceName: "get_all_schema_ms",
+				Version:     "1.0.0",
+				Level:       "FRONT",
+				Schemas: []string{
+					schemaId1,
+					schemaId2,
+					schemaId3,
+				},
+				Status: pb.MS_UP,
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, respCreateService.Response.GetCode())
+		serviceId1 = respCreateService.ServiceId
+
+		respPutData, err := datasource.Instance().ModifySchema(getContext(), &pb.ModifySchemaRequest{
+			ServiceId: serviceId1,
+			SchemaId:  schemaId2,
+			Schema:    schemaContent,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, respPutData.Response.GetCode())
+
+		respPutData, err = datasource.Instance().ModifySchema(getContext(), &pb.ModifySchemaRequest{
+			ServiceId: serviceId1,
+			SchemaId:  schemaId3,
+			Schema:    schemaContent,
+			Summary:   summary,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, respPutData.Response.GetCode())
+
+		respGetAllSchema, err := datasource.Instance().GetAllSchemas(getContext(), &pb.GetAllSchemaRequest{
+			ServiceId:  serviceId1,
+			WithSchema: false,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, respGetAllSchema.Response.GetCode())
+		schemas := respGetAllSchema.Schemas
+		for _, schema := range schemas {
+			if schema.SchemaId == schemaId1 && schema.SchemaId == schemaId2 {
+				assert.Empty(t, schema.Summary)
+				assert.Empty(t, schema.Schema)
+			}
+			if schema.SchemaId == schemaId3 {
+				assert.Equal(t, summary, schema.Summary)
+				assert.Empty(t, schema.Schema)
+			}
+		}
+
+		respGetAllSchema, err = datasource.Instance().GetAllSchemas(getContext(), &pb.GetAllSchemaRequest{
+			ServiceId:  serviceId1,
+			WithSchema: true,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, respGetAllSchema.Response.GetCode())
+		schemas = respGetAllSchema.Schemas
+		for _, schema := range schemas {
+			switch schema.SchemaId {
+			case schemaId1:
+				assert.Empty(t, schema.Summary)
+				assert.Empty(t, schema.Schema)
+			case schemaId2:
+				assert.Empty(t, schema.Summary)
+				assert.Equal(t, schemaContent, schema.Schema)
+			case schemaId3:
+				assert.Equal(t, summary, schema.Summary)
+				assert.Equal(t, schemaContent, schema.Schema)
+			}
+		}
+	})
+
+	t.Run("test get when request is invalid", func(t *testing.T) {
+		log.Info("service does not exist")
+		respGetSchema, err := datasource.Instance().GetSchema(getContext(), &pb.GetSchemaRequest{
+			ServiceId: "none_exist_service",
+			SchemaId:  "com.huawei.test",
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, scerr.ErrServiceNotExists, respGetSchema.Response.GetCode())
+
+		respGetAllSchemas, err := datasource.Instance().GetAllSchemas(getContext(), &pb.GetAllSchemaRequest{
+			ServiceId: "none_exist_service",
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, scerr.ErrServiceNotExists, respGetAllSchemas.Response.GetCode())
+
+		log.Info("schema id doest not exist")
+		respGetSchema, err = datasource.Instance().GetSchema(getContext(), &pb.GetSchemaRequest{
+			ServiceId: serviceId,
+			SchemaId:  "none_exist_schema",
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, scerr.ErrSchemaNotExists, respGetSchema.Response.GetCode())
+	})
+
+	t.Run("test get when request is valid", func(t *testing.T) {
+		resp, err := datasource.Instance().GetSchema(getContext(), &pb.GetSchemaRequest{
+			ServiceId: serviceId,
+			SchemaId:  "com.huawei.test.ms",
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+		assert.Equal(t, "get schema ms", resp.Schema)
+		assert.Equal(t, "schema0summary1ms", resp.SchemaSummary)
+
+	})
+}
+
+func TestSchema_Delete(t *testing.T) {
+	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
+		return NewDataSource(opts), nil
+	})
+	err := datasource.Init(datasource.Options{
+		Endpoint:       "",
+		PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
+	})
+	assert.NoError(t, err)
+
+	var (
+		serviceId string
+	)
+
+	t.Run("register service and instance", func(t *testing.T) {
+		respCreateService, err := datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				AppId:       "delete_schema_group_ms",
+				ServiceName: "delete_schema_service_ms",
+				Version:     "1.0.0",
+				Level:       "FRONT",
+				Status:      pb.MS_UP,
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, respCreateService.Response.GetCode())
+		serviceId = respCreateService.ServiceId
+
+		resp, err := datasource.Instance().ModifySchema(getContext(), &pb.ModifySchemaRequest{
+			ServiceId: serviceId,
+			SchemaId:  "com.huawei.test.ms",
+			Schema:    "delete schema ms",
+			Summary:   "summary_ms",
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+	})
+
+	t.Run("test delete when request is invalid", func(t *testing.T) {
+		log.Info("schema id does not exist")
+		resp, err := datasource.Instance().DeleteSchema(getContext(), &pb.DeleteSchemaRequest{
+			ServiceId: serviceId,
+			SchemaId:  "none_exist_schema",
+		})
+		assert.NoError(t, err)
+		assert.NotEqual(t, proto.Response_SUCCESS, resp.Response.GetCode())
+
+		log.Info("service id does not exist")
+		resp, err = datasource.Instance().DeleteSchema(getContext(), &pb.DeleteSchemaRequest{
+			ServiceId: "not_exist_service",
+			SchemaId:  "com.huawei.test.ms",
+		})
+		assert.NoError(t, err)
+		assert.NotEqual(t, proto.Response_SUCCESS, resp.Response.GetCode())
+	})
+
+	t.Run("test delete when request is valid", func(t *testing.T) {
+		resp, err := datasource.Instance().DeleteSchema(getContext(), &pb.DeleteSchemaRequest{
+			ServiceId: serviceId,
+			SchemaId:  "com.huawei.test.ms",
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+
+		respGet, err := datasource.Instance().GetSchema(getContext(), &pb.GetSchemaRequest{
+			ServiceId: serviceId,
+			SchemaId:  "com.huawei.test.ms",
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, scerr.ErrSchemaNotExists, respGet.Response.GetCode())
+
+		respExist, err := datasource.Instance().ExistSchema(getContext(), &pb.GetExistenceRequest{
+			Type:      "schema",
+			ServiceId: serviceId,
+			SchemaId:  "com.huawei.test.ms",
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, scerr.ErrSchemaNotExists, respExist.Response.GetCode())
+	})
+}
+
+func TestRule_Add(t *testing.T) {
+	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
+		return NewDataSource(opts), nil
+	})
+	err := datasource.Init(datasource.Options{
+		Endpoint:       "",
+		PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
+	})
+	assert.NoError(t, err)
+
 	var (
 		serviceId1 string
 		serviceId2 string
 	)
+
+	t.Run("register service and instance", func(t *testing.T) {
+		respCreateService, err := datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				AppId:       "create_rule_group_ms",
+				ServiceName: "create_rule_service_ms",
+				Version:     "1.0.0",
+				Level:       "FRONT",
+				Status:      pb.MS_UP,
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, respCreateService.Response.GetCode())
+		serviceId1 = respCreateService.ServiceId
+
+		respCreateService, err = datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				AppId:       "create_rule_group_ms",
+				ServiceName: "create_rule_service_ms",
+				Version:     "1.0.1",
+				Level:       "FRONT",
+				Status:      pb.MS_UP,
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, respCreateService.Response.GetCode())
+		serviceId2 = respCreateService.ServiceId
+	})
+
+	t.Run("invalid request", func(t *testing.T) {
+		log.Info("service does not exist")
+		respAddRule, err := datasource.Instance().AddRule(getContext(), &pb.AddServiceRulesRequest{
+			ServiceId: "not_exist_service_ms",
+			Rules: []*pb.AddOrUpdateServiceRule{
+				{
+					RuleType:    "BLACK",
+					Attribute:   "ServiceName",
+					Pattern:     "Test*",
+					Description: "test white",
+				},
+			},
+		})
+		assert.NoError(t, err)
+		assert.NotEqual(t, proto.Response_SUCCESS, respAddRule)
+	})
+
+	t.Run("request is valid", func(t *testing.T) {
+		log.Info("create a new black list")
+		respAddRule, err := datasource.Instance().AddRule(getContext(), &pb.AddServiceRulesRequest{
+			ServiceId: serviceId1,
+			Rules: []*pb.AddOrUpdateServiceRule{
+				{
+					RuleType:    "BLACK",
+					Attribute:   "ServiceName",
+					Pattern:     "Test*",
+					Description: "test black",
+				},
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, respAddRule.Response.GetCode())
+		ruleId := respAddRule.RuleIds[0]
+		assert.NotEqual(t, "", ruleId)
+
+		log.Info("create the black list again")
+		respAddRule, err = datasource.Instance().AddRule(getContext(), &pb.AddServiceRulesRequest{
+			ServiceId: serviceId1,
+			Rules: []*pb.AddOrUpdateServiceRule{
+				{
+					RuleType:    "BLACK",
+					Attribute:   "ServiceName",
+					Pattern:     "Test*",
+					Description: "test change black",
+				},
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, respAddRule.Response.GetCode())
+		assert.Equal(t, 0, len(respAddRule.RuleIds))
+
+		log.Info("create a new white list when black list already exists")
+		respAddRule, err = datasource.Instance().AddRule(getContext(), &pb.AddServiceRulesRequest{
+			ServiceId: serviceId1,
+			Rules: []*pb.AddOrUpdateServiceRule{
+				{
+					RuleType:    "WHITE",
+					Attribute:   "ServiceName",
+					Pattern:     "Test*",
+					Description: "test white",
+				},
+			},
+		})
+		assert.NoError(t, err)
+		assert.NotEqual(t, proto.Response_SUCCESS, respAddRule.Response.GetCode())
+	})
+
+	t.Run("create rule out of gaugue", func(t *testing.T) {
+		size := quota.DefaultRuleQuota + 1
+		rules := make([]*pb.AddOrUpdateServiceRule, 0, size)
+		for i := 0; i < size; i++ {
+			rules = append(rules, &pb.AddOrUpdateServiceRule{
+				RuleType:    "BLACK",
+				Attribute:   "ServiceName",
+				Pattern:     strconv.Itoa(i),
+				Description: "test white",
+			})
+		}
+
+		resp, err := datasource.Instance().AddRule(getContext(), &pb.AddServiceRulesRequest{
+			ServiceId: serviceId2,
+			Rules:     rules[:size-1],
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+
+		resp, err = datasource.Instance().AddRule(getContext(), &pb.AddServiceRulesRequest{
+			ServiceId: serviceId2,
+			Rules:     rules[size-1:],
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, scerr.ErrNotEnoughQuota, resp.Response.GetCode())
+	})
+}
+
+func TestRule_Get(t *testing.T) {
+	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
+		return NewDataSource(opts), nil
+	})
+	err := datasource.Init(datasource.Options{
+		Endpoint:       "",
+		PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
+	})
+	assert.NoError(t, err)
+
+	var (
+		serviceId string
+		ruleId    string
+	)
+
+	t.Run("register service and rules", func(t *testing.T) {
+		respCreateService, err := datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				AppId:       "get_rule_group_ms",
+				ServiceName: "get_rule_service_ms",
+				Version:     "1.0.0",
+				Level:       "FRONT",
+				Status:      pb.MS_UP,
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, respCreateService.Response.GetCode())
+		serviceId = respCreateService.ServiceId
+
+		respAddRule, err := datasource.Instance().AddRule(getContext(), &pb.AddServiceRulesRequest{
+			ServiceId: serviceId,
+			Rules: []*pb.AddOrUpdateServiceRule{
+				{
+					RuleType:    "BLACK",
+					Attribute:   "ServiceName",
+					Pattern:     "Test*",
+					Description: "test BLACK",
+				},
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, respAddRule.Response.GetCode())
+		ruleId = respAddRule.RuleIds[0]
+		assert.NotEqual(t, "", ruleId)
+	})
+
+	t.Run("get when request is invalid", func(t *testing.T) {
+		log.Info("service not exists")
+		respGetRule, err := datasource.Instance().GetRule(getContext(), &pb.GetServiceRulesRequest{
+			ServiceId: "not_exist_service_ms",
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, scerr.ErrServiceNotExists, respGetRule.Response.GetCode())
+	})
+
+	t.Run("get when request is valid", func(t *testing.T) {
+		respGetRule, err := datasource.Instance().GetRule(getContext(), &pb.GetServiceRulesRequest{
+			ServiceId: serviceId,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, respGetRule.Response.GetCode())
+		assert.Equal(t, ruleId, respGetRule.Rules[0].RuleId)
+	})
+}
+
+func TestRule_Update(t *testing.T) {
+	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
+		return NewDataSource(opts), nil
+	})
+	err := datasource.Init(datasource.Options{
+		Endpoint:       "",
+		PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
+	})
+	assert.NoError(t, err)
+
+	var (
+		serviceId string
+		ruleId    string
+	)
+
+	t.Run("create service and rules", func(t *testing.T) {
+		respCreateService, err := datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				AppId:       "update_rule_group_ms",
+				ServiceName: "update_rule_service_ms",
+				Version:     "1.0.0",
+				Level:       "FRONT",
+				Status:      pb.MS_UP,
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, respCreateService.Response.GetCode())
+		serviceId = respCreateService.ServiceId
+
+		respAddRule, err := datasource.Instance().AddRule(getContext(), &pb.AddServiceRulesRequest{
+			ServiceId: serviceId,
+			Rules: []*pb.AddOrUpdateServiceRule{
+				{
+					RuleType:    "BLACK",
+					Attribute:   "ServiceName",
+					Pattern:     "Test*",
+					Description: "test BLACK",
+				},
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, respAddRule.Response.GetCode())
+		ruleId = respAddRule.RuleIds[0]
+		assert.NotEqual(t, "", ruleId)
+	})
+
+	t.Run("update when request is invalid", func(t *testing.T) {
+		rule := &pb.AddOrUpdateServiceRule{
+			RuleType:    "BLACK",
+			Attribute:   "ServiceName",
+			Pattern:     "Test*",
+			Description: "test BLACK update",
+		}
+		log.Info("service does not exist")
+		resp, err := datasource.Instance().UpdateRule(getContext(), &pb.UpdateServiceRuleRequest{
+			ServiceId: "not_exist_service_ms",
+			RuleId:    ruleId,
+			Rule:      rule,
+		})
+		assert.NoError(t, err)
+		assert.NotEqual(t, proto.Response_SUCCESS, resp.Response.GetCode())
+
+		log.Info("rule not exists")
+		resp, err = datasource.Instance().UpdateRule(getContext(), &pb.UpdateServiceRuleRequest{
+			ServiceId: serviceId,
+			RuleId:    "not_exist_rule_ms",
+			Rule:      rule,
+		})
+		assert.NoError(t, err)
+		assert.NotEqual(t, proto.Response_SUCCESS, resp.Response.GetCode())
+
+		log.Info("change rule type")
+		resp, err = datasource.Instance().UpdateRule(getContext(), &pb.UpdateServiceRuleRequest{
+			ServiceId: serviceId,
+			RuleId:    ruleId,
+			Rule: &pb.AddOrUpdateServiceRule{
+				RuleType:    "WHITE",
+				Attribute:   "ServiceName",
+				Pattern:     "Test*",
+				Description: "test white update",
+			},
+		})
+		assert.NoError(t, err)
+		assert.NotEqual(t, proto.Response_SUCCESS, resp.Response.GetCode())
+	})
+
+	t.Run("update when request is valid", func(t *testing.T) {
+		resp, err := datasource.Instance().UpdateRule(getContext(), &pb.UpdateServiceRuleRequest{
+			ServiceId: serviceId,
+			RuleId:    ruleId,
+			Rule: &pb.AddOrUpdateServiceRule{
+				RuleType:    "BLACK",
+				Attribute:   "AppId",
+				Pattern:     "Test*",
+				Description: "test white update",
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+	})
+}
+
+func TestRule_Delete(t *testing.T) {
+	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
+		return NewDataSource(opts), nil
+	})
+	err := datasource.Init(datasource.Options{
+		Endpoint:       "",
+		PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
+	})
+	assert.NoError(t, err)
+
+	var (
+		serviceId string
+		ruleId    string
+	)
+	t.Run("register service and rules", func(t *testing.T) {
+		respCreateService, err := datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				AppId:       "delete_rule_group_ms",
+				ServiceName: "delete_rule_service_ms",
+				Version:     "1.0.0",
+				Level:       "FRONT",
+				Status:      pb.MS_UP,
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, respCreateService.Response.GetCode())
+		serviceId = respCreateService.ServiceId
+
+		respAddRule, err := datasource.Instance().AddRule(getContext(), &pb.AddServiceRulesRequest{
+			ServiceId: serviceId,
+			Rules: []*pb.AddOrUpdateServiceRule{
+				{
+					RuleType:    "BLACK",
+					Attribute:   "ServiceName",
+					Pattern:     "Test*",
+					Description: "test BLACK",
+				},
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, respAddRule.Response.GetCode())
+		ruleId = respAddRule.RuleIds[0]
+		assert.NotEqual(t, "", ruleId)
+	})
+
+	t.Run("delete when request is invalid", func(t *testing.T) {
+		log.Info("service not exist")
+		resp, err := datasource.Instance().DeleteRule(getContext(), &pb.DeleteServiceRulesRequest{
+			ServiceId: "not_exist_service_ms",
+			RuleIds:   []string{"1000000"},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, scerr.ErrServiceNotExists, resp.Response.GetCode())
+
+		log.Info("rule not exist")
+		resp, err = datasource.Instance().DeleteRule(getContext(), &pb.DeleteServiceRulesRequest{
+			ServiceId: serviceId,
+			RuleIds:   []string{"not_exist_rule"},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, scerr.ErrRuleNotExists, resp.Response.GetCode())
+	})
+
+	t.Run("delete when request is valid", func(t *testing.T) {
+		resp, err := datasource.Instance().DeleteRule(getContext(), &pb.DeleteServiceRulesRequest{
+			ServiceId: serviceId,
+			RuleIds:   []string{ruleId},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+
+		respGetRule, err := datasource.Instance().GetRule(getContext(), &pb.GetServiceRulesRequest{
+			ServiceId: serviceId,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+		assert.Equal(t, 0, len(respGetRule.Rules))
+	})
+}
+
+func TestRule_Permission(t *testing.T) {
+	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
+		return NewDataSource(opts), nil
+	})
+	err := datasource.Init(datasource.Options{
+		Endpoint:       "",
+		PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
+	})
+	assert.NoError(t, err)
+
+	var (
+		consumerVersion string
+		consumerTag     string
+		providerBlack   string
+		providerWhite   string
+	)
+	t.Run("register service and rules", func(t *testing.T) {
+		respCreateService, err := datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				AppId:       "query_instance_tag_ms",
+				ServiceName: "query_instance_version_consumer_ms",
+				Version:     "1.0.0",
+				Level:       "FRONT",
+				Status:      pb.MS_UP,
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, respCreateService.Response.GetCode())
+		consumerVersion = respCreateService.ServiceId
+
+		respCreateService, err = datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				AppId:       "query_instance_tag_ms",
+				ServiceName: "query_instance_tag_service_ms",
+				Version:     "1.0.2",
+				Level:       "FRONT",
+				Status:      pb.MS_UP,
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, respCreateService.Response.GetCode())
+		providerBlack = respCreateService.ServiceId
+
+		respAddRule, err := datasource.Instance().AddRule(getContext(), &pb.AddServiceRulesRequest{
+			ServiceId: providerBlack,
+			Rules: []*pb.AddOrUpdateServiceRule{
+				{
+					RuleType:  "BLACK",
+					Attribute: "Version",
+					Pattern:   "1.0.0",
+				},
+				{
+					RuleType:  "BLACK",
+					Attribute: "tag_a",
+					Pattern:   "b",
+				},
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, respAddRule.Response.GetCode())
+
+		respCreateService, err = datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				AppId:       "query_instance_tag_ms",
+				ServiceName: "query_instance_tag_service_ms",
+				Version:     "1.0.3",
+				Level:       "FRONT",
+				Status:      pb.MS_UP,
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, respCreateService.Response.GetCode())
+		providerWhite = respCreateService.ServiceId
+
+		respAddRule, err = datasource.Instance().AddRule(getContext(), &pb.AddServiceRulesRequest{
+			ServiceId: providerWhite,
+			Rules: []*pb.AddOrUpdateServiceRule{
+				{
+					RuleType:  "WHITE",
+					Attribute: "Version",
+					Pattern:   "1.0.0",
+				},
+				{
+					RuleType:  "WHITE",
+					Attribute: "tag_a",
+					Pattern:   "b",
+				},
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, respAddRule.Response.GetCode())
+
+		respCreateService, err = datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				AppId:       "query_instance_tag_ms",
+				ServiceName: "query_instance_tag_consumer_ms",
+				Version:     "1.0.4",
+				Level:       "FRONT",
+				Status:      pb.MS_UP,
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, respCreateService.Response.GetCode())
+		consumerTag = respCreateService.ServiceId
+
+		respAddTag, err := datasource.Instance().AddTags(getContext(), &pb.AddServiceTagsRequest{
+			ServiceId: consumerTag,
+			Tags:      map[string]string{"a": "b"},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, respAddTag.Response.GetCode())
+	})
+
+	t.Run("when query instances", func(t *testing.T) {
+		log.Info("consumer version in black list")
+		resp, err := datasource.Instance().GetInstances(getContext(), &pb.GetInstancesRequest{
+			ConsumerServiceId: consumerVersion,
+			ProviderServiceId: providerBlack,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, scerr.ErrServiceNotExists, resp.Response.GetCode())
+
+		log.Info("consumer tag in black list")
+		resp, err = datasource.Instance().GetInstances(getContext(), &pb.GetInstancesRequest{
+			ConsumerServiceId: consumerTag,
+			ProviderServiceId: providerBlack,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, scerr.ErrServiceNotExists, resp.Response.GetCode())
+
+		log.Info("find should return 200 even if consumer permission deny")
+		respFind, err := datasource.Instance().FindInstances(getContext(), &pb.FindInstancesRequest{
+			ConsumerServiceId: consumerVersion,
+			AppId:             "query_instance_tag_ms",
+			ServiceName:       "query_instance_tag_service_ms",
+			VersionRule:       "0+",
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, respFind.Response.GetCode())
+		assert.Equal(t, 0, len(respFind.Instances))
+
+		respFind, err = datasource.Instance().FindInstances(getContext(), &pb.FindInstancesRequest{
+			ConsumerServiceId: consumerTag,
+			AppId:             "query_instance_tag_ms",
+			ServiceName:       "query_instance_tag_service_ms",
+			VersionRule:       "0+",
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, respFind.Response.GetCode())
+		assert.Equal(t, 0, len(respFind.Instances))
+
+		log.Info("consumer not in black list")
+		resp, err = datasource.Instance().GetInstances(getContext(), &pb.GetInstancesRequest{
+			ConsumerServiceId: providerWhite,
+			ProviderServiceId: providerBlack,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+
+		log.Info("consumer not in white list")
+		resp, err = datasource.Instance().GetInstances(getContext(), &pb.GetInstancesRequest{
+			ConsumerServiceId: providerBlack,
+			ProviderServiceId: providerWhite,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, scerr.ErrServiceNotExists, resp.Response.GetCode())
+
+		log.Info("consumer version in white list")
+		resp, err = datasource.Instance().GetInstances(getContext(), &pb.GetInstancesRequest{
+			ConsumerServiceId: consumerVersion,
+			ProviderServiceId: providerWhite,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+
+		log.Info("consumer tag in white list")
+		resp, err = datasource.Instance().GetInstances(getContext(), &pb.GetInstancesRequest{
+			ConsumerServiceId: consumerTag,
+			ProviderServiceId: providerWhite,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+	})
+}
+
+func TestTags_Add(t *testing.T) {
+	var (
+		serviceId1 string
+		serviceId2 string
+	)
+
 	// init
 	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
 		return NewDataSource(opts), nil
@@ -2790,11 +3604,12 @@ func TestTag_Add(t *testing.T) {
 		PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
 	})
 	assert.NoError(t, err)
+
 	// create service
 	t.Run("create service", func(t *testing.T) {
 		svc1 := &pb.MicroService{
-			AppId:       "create_tag_group",
-			ServiceName: "create_tag_service",
+			AppId:       "create_tag_group_ms",
+			ServiceName: "create_tag_service_ms",
 			Version:     "1.0.0",
 			Level:       "FRONT",
 			Status:      pb.MS_UP,
@@ -2807,8 +3622,8 @@ func TestTag_Add(t *testing.T) {
 		serviceId1 = resp.ServiceId
 
 		svc2 := &pb.MicroService{
-			AppId:       "create_tag_group",
-			ServiceName: "create_tag_service",
+			AppId:       "create_tag_group_ms",
+			ServiceName: "create_tag_service_ms",
 			Version:     "1.0.1",
 			Level:       "FRONT",
 			Status:      pb.MS_UP,

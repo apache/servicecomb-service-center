@@ -3,12 +3,12 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
+ * (the "License"); you may not use this file except request compliance with
  * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
+ * Unless required by applicable law or agreed to request writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
@@ -30,6 +30,7 @@ import (
 	"github.com/apache/servicecomb-service-center/server/core/backend"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin"
+	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
@@ -216,9 +217,9 @@ func (ds *DataSource) RegisterInstance(ctx context.Context, request *pb.Register
 	if len(instance.InstanceId) > 0 {
 		// keep alive the lease ttl
 		// there are two reasons for sending a heartbeat here:
-		// 1. in the scenario the instance has been removed,
+		// 1. request the scenario the instance has been removed,
 		//    the cast of registration operation can be reduced.
-		// 2. in the self-protection scenario, the instance is unhealthy
+		// 2. request the self-protection scenario, the instance is unhealthy
 		//    and needs to be re-registered.
 		resp, err := ds.Heartbeat(ctx, &pb.HeartbeatRequest{ServiceId: instance.ServiceId,
 			InstanceId: instance.InstanceId})
@@ -352,61 +353,61 @@ func (ds *DataSource) RegisterInstance(ctx context.Context, request *pb.Register
 	}, nil
 }
 
-func (ds *DataSource) GetInstance(ctx context.Context, in *pb.GetOneInstanceRequest) (
+func (ds *DataSource) GetInstance(ctx context.Context, request *pb.GetOneInstanceRequest) (
 	*pb.GetOneInstanceResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
 
 	service := &pb.MicroService{}
 	var err error
-	if len(in.ConsumerServiceId) > 0 {
-		service, err = serviceUtil.GetService(ctx, domainProject, in.ConsumerServiceId)
+	if len(request.ConsumerServiceId) > 0 {
+		service, err = serviceUtil.GetService(ctx, domainProject, request.ConsumerServiceId)
 		if err != nil {
 			log.Errorf(err, "get consumer failed, consumer[%s] find provider instance[%s/%s]",
-				in.ConsumerServiceId, in.ProviderServiceId, in.ProviderInstanceId)
+				request.ConsumerServiceId, request.ProviderServiceId, request.ProviderInstanceId)
 			return &pb.GetOneInstanceResponse{
 				Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
 			}, err
 		}
 		if service == nil {
 			log.Errorf(nil, "consumer does not exist, consumer[%s] find provider instance[%s/%s]",
-				in.ConsumerServiceId, in.ProviderServiceId, in.ProviderInstanceId)
+				request.ConsumerServiceId, request.ProviderServiceId, request.ProviderInstanceId)
 			return &pb.GetOneInstanceResponse{
 				Response: proto.CreateResponse(scerr.ErrServiceNotExists,
-					fmt.Sprintf("Consumer[%s] does not exist.", in.ConsumerServiceId)),
+					fmt.Sprintf("Consumer[%s] does not exist.", request.ConsumerServiceId)),
 			}, nil
 		}
 	}
 
-	provider, err := serviceUtil.GetService(ctx, domainProject, in.ProviderServiceId)
+	provider, err := serviceUtil.GetService(ctx, domainProject, request.ProviderServiceId)
 	if err != nil {
 		log.Errorf(err, "get provider failed, consumer[%s] find provider instance[%s/%s]",
-			in.ConsumerServiceId, in.ProviderServiceId, in.ProviderInstanceId)
+			request.ConsumerServiceId, request.ProviderServiceId, request.ProviderInstanceId)
 		return &pb.GetOneInstanceResponse{
 			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 	if provider == nil {
 		log.Errorf(nil, "provider does not exist, consumer[%s] find provider instance[%s/%s]",
-			in.ConsumerServiceId, in.ProviderServiceId, in.ProviderInstanceId)
+			request.ConsumerServiceId, request.ProviderServiceId, request.ProviderInstanceId)
 		return &pb.GetOneInstanceResponse{
 			Response: proto.CreateResponse(scerr.ErrServiceNotExists,
-				fmt.Sprintf("Provider[%s] does not exist.", in.ProviderServiceId)),
+				fmt.Sprintf("Provider[%s] does not exist.", request.ProviderServiceId)),
 		}, nil
 	}
 
 	findFlag := func() string {
 		return fmt.Sprintf("Consumer[%s][%s/%s/%s/%s] find provider[%s][%s/%s/%s/%s] instance[%s]",
-			in.ConsumerServiceId, service.Environment, service.AppId, service.ServiceName, service.Version,
+			request.ConsumerServiceId, service.Environment, service.AppId, service.ServiceName, service.Version,
 			provider.ServiceId, provider.Environment, provider.AppId, provider.ServiceName, provider.Version,
-			in.ProviderInstanceId)
+			request.ProviderInstanceId)
 	}
 
 	var item *cache.VersionRuleCacheItem
 	rev, _ := ctx.Value(util.CtxRequestRevision).(string)
 	item, err = cache.FindInstances.GetWithProviderID(ctx, service, proto.MicroServiceToKey(domainProject, provider),
 		&pb.HeartbeatSetElement{
-			ServiceId: in.ProviderServiceId, InstanceId: in.ProviderInstanceId,
-		}, in.Tags, rev)
+			ServiceId: request.ProviderServiceId, InstanceId: request.ProviderInstanceId,
+		}, request.Tags, rev)
 	if err != nil {
 		log.Errorf(err, "FindInstances.GetWithProviderID failed, %s failed", findFlag())
 		return &pb.GetOneInstanceResponse{
@@ -433,20 +434,20 @@ func (ds *DataSource) GetInstance(ctx context.Context, in *pb.GetOneInstanceRequ
 	}, nil
 }
 
-func (ds *DataSource) FindInstances(ctx context.Context, in *pb.FindInstancesRequest) (*pb.FindInstancesResponse,
+func (ds *DataSource) FindInstances(ctx context.Context, request *pb.FindInstancesRequest) (*pb.FindInstancesResponse,
 	error) {
 	provider := &pb.MicroServiceKey{
 		Tenant:      util.ParseTargetDomainProject(ctx),
-		Environment: in.Environment,
-		AppId:       in.AppId,
-		ServiceName: in.ServiceName,
-		Alias:       in.ServiceName,
-		Version:     in.VersionRule,
+		Environment: request.Environment,
+		AppId:       request.AppId,
+		ServiceName: request.ServiceName,
+		Alias:       request.ServiceName,
+		Version:     request.VersionRule,
 	}
 
 	rev, ok := ctx.Value(util.CtxRequestRevision).(string)
 	if !ok {
-		err := errors.New("rev in context is not type string")
+		err := errors.New("rev request context is not type string")
 		log.Error("", err)
 		return &pb.FindInstancesResponse{
 			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
@@ -454,48 +455,48 @@ func (ds *DataSource) FindInstances(ctx context.Context, in *pb.FindInstancesReq
 	}
 
 	if apt.IsShared(provider) {
-		return ds.findSharedServiceInstance(ctx, in, provider, rev)
+		return ds.findSharedServiceInstance(ctx, request, provider, rev)
 	}
-	return ds.findInstance(ctx, in, provider, rev)
+	return ds.findInstance(ctx, request, provider, rev)
 }
 
-func (ds *DataSource) findInstance(ctx context.Context, in *pb.FindInstancesRequest,
+func (ds *DataSource) findInstance(ctx context.Context, request *pb.FindInstancesRequest,
 	provider *pb.MicroServiceKey, rev string) (*pb.FindInstancesResponse, error) {
 	var err error
 	domainProject := util.ParseDomainProject(ctx)
-	service := &pb.MicroService{Environment: in.Environment}
-	if len(in.ConsumerServiceId) > 0 {
-		service, err = serviceUtil.GetService(ctx, domainProject, in.ConsumerServiceId)
+	service := &pb.MicroService{Environment: request.Environment}
+	if len(request.ConsumerServiceId) > 0 {
+		service, err = serviceUtil.GetService(ctx, domainProject, request.ConsumerServiceId)
 		if err != nil {
 			log.Errorf(err, "get consumer failed, consumer[%s] find provider[%s/%s/%s/%s]",
-				in.ConsumerServiceId, in.Environment, in.AppId, in.ServiceName, in.VersionRule)
+				request.ConsumerServiceId, request.Environment, request.AppId, request.ServiceName, request.VersionRule)
 			return &pb.FindInstancesResponse{
 				Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
 			}, err
 		}
 		if service == nil {
 			log.Errorf(nil, "consumer does not exist, consumer[%s] find provider[%s/%s/%s/%s]",
-				in.ConsumerServiceId, in.Environment, in.AppId, in.ServiceName, in.VersionRule)
+				request.ConsumerServiceId, request.Environment, request.AppId, request.ServiceName, request.VersionRule)
 			return &pb.FindInstancesResponse{
 				Response: proto.CreateResponse(scerr.ErrServiceNotExists,
-					fmt.Sprintf("Consumer[%s] does not exist.", in.ConsumerServiceId)),
+					fmt.Sprintf("Consumer[%s] does not exist.", request.ConsumerServiceId)),
 			}, nil
 		}
 		provider.Environment = service.Environment
 	}
 
 	// provider is not a shared micro-service,
-	// only allow shared micro-service instances found in different domains.
+	// only allow shared micro-service instances found request different domains.
 	ctx = util.SetTargetDomainProject(ctx, util.ParseDomain(ctx), util.ParseProject(ctx))
 	provider.Tenant = util.ParseTargetDomainProject(ctx)
 
 	findFlag := fmt.Sprintf("Consumer[%s][%s/%s/%s/%s] find provider[%s/%s/%s/%s]",
-		in.ConsumerServiceId, service.Environment, service.AppId, service.ServiceName, service.Version,
+		request.ConsumerServiceId, service.Environment, service.AppId, service.ServiceName, service.Version,
 		provider.Environment, provider.AppId, provider.ServiceName, provider.Version)
 
 	// cache
 	var item *cache.VersionRuleCacheItem
-	item, err = cache.FindInstances.Get(ctx, service, provider, in.Tags, rev)
+	item, err = cache.FindInstances.Get(ctx, service, provider, request.Tags, rev)
 	if err != nil {
 		log.Errorf(err, "FindInstancesCache.Get failed, %s failed", findFlag)
 		return &pb.FindInstancesResponse{
@@ -511,9 +512,9 @@ func (ds *DataSource) findInstance(ctx context.Context, in *pb.FindInstancesRequ
 	}
 
 	// add dependency queue
-	if len(in.ConsumerServiceId) > 0 &&
+	if len(request.ConsumerServiceId) > 0 &&
 		len(item.ServiceIds) > 0 &&
-		!cache.DependencyRule.ExistVersionRule(ctx, in.ConsumerServiceId, provider) {
+		!cache.DependencyRule.ExistVersionRule(ctx, request.ConsumerServiceId, provider) {
 		provider, err = ds.reshapeProviderKey(ctx, provider, item.ServiceIds[0])
 		if err != nil {
 			return nil, err
@@ -538,17 +539,17 @@ func (ds *DataSource) findInstance(ctx context.Context, in *pb.FindInstancesRequ
 	return ds.genFindResult(ctx, rev, item)
 }
 
-func (ds *DataSource) findSharedServiceInstance(ctx context.Context, in *pb.FindInstancesRequest,
+func (ds *DataSource) findSharedServiceInstance(ctx context.Context, request *pb.FindInstancesRequest,
 	provider *pb.MicroServiceKey, rev string) (*pb.FindInstancesResponse, error) {
 	var err error
-	service := &pb.MicroService{Environment: in.Environment}
+	service := &pb.MicroService{Environment: request.Environment}
 	// it means the shared micro-services must be the same env with SC.
 	provider.Environment = apt.Service.Environment
 	findFlag := fmt.Sprintf("find shared provider[%s/%s/%s/%s]", provider.Environment, provider.AppId, provider.ServiceName, provider.Version)
 
 	// cache
 	var item *cache.VersionRuleCacheItem
-	item, err = cache.FindInstances.Get(ctx, service, provider, in.Tags, rev)
+	item, err = cache.FindInstances.Get(ctx, service, provider, request.Tags, rev)
 	if err != nil {
 		log.Errorf(err, "FindInstancesCache.Get failed, %s failed", findFlag)
 		return &pb.FindInstancesResponse{
@@ -594,12 +595,12 @@ func (ds *DataSource) reshapeProviderKey(ctx context.Context, provider *pb.Micro
 	return provider, nil
 }
 
-func (ds *DataSource) UpdateInstanceStatus(ctx context.Context, in *pb.UpdateInstanceStatusRequest) (*pb.
+func (ds *DataSource) UpdateInstanceStatus(ctx context.Context, request *pb.UpdateInstanceStatusRequest) (*pb.
 	UpdateInstanceStatusResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
-	updateStatusFlag := util.StringJoin([]string{in.ServiceId, in.InstanceId, in.Status}, "/")
+	updateStatusFlag := util.StringJoin([]string{request.ServiceId, request.InstanceId, request.Status}, "/")
 
-	instance, err := serviceUtil.GetInstance(ctx, domainProject, in.ServiceId, in.InstanceId)
+	instance, err := serviceUtil.GetInstance(ctx, domainProject, request.ServiceId, request.InstanceId)
 	if err != nil {
 		log.Errorf(err, "update instance[%s] status failed", updateStatusFlag)
 		return &pb.UpdateInstanceStatusResponse{
@@ -614,7 +615,7 @@ func (ds *DataSource) UpdateInstanceStatus(ctx context.Context, in *pb.UpdateIns
 	}
 
 	copyInstanceRef := *instance
-	copyInstanceRef.Status = in.Status
+	copyInstanceRef.Status = request.Status
 
 	if err := serviceUtil.UpdateInstance(ctx, domainProject, &copyInstanceRef); err != nil {
 		log.Errorf(err, "update instance[%s] status failed", updateStatusFlag)
@@ -633,12 +634,12 @@ func (ds *DataSource) UpdateInstanceStatus(ctx context.Context, in *pb.UpdateIns
 	}, nil
 }
 
-func (ds *DataSource) UpdateInstanceProperties(ctx context.Context, in *pb.UpdateInstancePropsRequest) (
+func (ds *DataSource) UpdateInstanceProperties(ctx context.Context, request *pb.UpdateInstancePropsRequest) (
 	*pb.UpdateInstancePropsResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
-	instanceFlag := util.StringJoin([]string{in.ServiceId, in.InstanceId}, "/")
+	instanceFlag := util.StringJoin([]string{request.ServiceId, request.InstanceId}, "/")
 
-	instance, err := serviceUtil.GetInstance(ctx, domainProject, in.ServiceId, in.InstanceId)
+	instance, err := serviceUtil.GetInstance(ctx, domainProject, request.ServiceId, request.InstanceId)
 	if err != nil {
 		log.Errorf(err, "update instance[%s] properties failed", instanceFlag)
 		return &pb.UpdateInstancePropsResponse{
@@ -653,7 +654,7 @@ func (ds *DataSource) UpdateInstanceProperties(ctx context.Context, in *pb.Updat
 	}
 
 	copyInstanceRef := *instance
-	copyInstanceRef.Properties = in.Properties
+	copyInstanceRef.Properties = request.Properties
 
 	if err := serviceUtil.UpdateInstance(ctx, domainProject, &copyInstanceRef); err != nil {
 		log.Errorf(err, "update instance[%s] properties failed", instanceFlag)
@@ -672,16 +673,16 @@ func (ds *DataSource) UpdateInstanceProperties(ctx context.Context, in *pb.Updat
 	}, nil
 }
 
-func (ds *DataSource) HeartbeatSet(ctx context.Context, in *pb.HeartbeatSetRequest) (*pb.HeartbeatSetResponse, error) {
+func (ds *DataSource) HeartbeatSet(ctx context.Context, request *pb.HeartbeatSetRequest) (*pb.HeartbeatSetResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
 
-	heartBeatCount := len(in.Instances)
+	heartBeatCount := len(request.Instances)
 	existFlag := make(map[string]bool, heartBeatCount)
 	instancesHbRst := make(chan *pb.InstanceHbRst, heartBeatCount)
 	noMultiCounter := 0
-	for _, heartbeatElement := range in.Instances {
+	for _, heartbeatElement := range request.Instances {
 		if _, ok := existFlag[heartbeatElement.ServiceId+heartbeatElement.InstanceId]; ok {
-			log.Warnf("instance[%s/%s] is duplicate in heartbeat set",
+			log.Warnf("instance[%s/%s] is duplicate request heartbeat set",
 				heartbeatElement.ServiceId, heartbeatElement.InstanceId)
 			continue
 		} else {
@@ -713,58 +714,58 @@ func (ds *DataSource) HeartbeatSet(ctx context.Context, in *pb.HeartbeatSetReque
 			Instances: instanceHbRstArr,
 		}, nil
 	}
-	log.Errorf(nil, "batch update heartbeats failed, %v", in.Instances)
+	log.Errorf(nil, "batch update heartbeats failed, %v", request.Instances)
 	return &pb.HeartbeatSetResponse{
 		Response:  proto.CreateResponse(scerr.ErrInstanceNotExists, "Heartbeat set failed."),
 		Instances: instanceHbRstArr,
 	}, nil
 }
 
-func (ds *DataSource) GetInstances(ctx context.Context, in *pb.GetInstancesRequest) (*pb.GetInstancesResponse,
+func (ds *DataSource) GetInstances(ctx context.Context, request *pb.GetInstancesRequest) (*pb.GetInstancesResponse,
 	error) {
 	domainProject := util.ParseDomainProject(ctx)
 
 	service := &pb.MicroService{}
 	var err error
-	if len(in.ConsumerServiceId) > 0 {
-		service, err = serviceUtil.GetService(ctx, domainProject, in.ConsumerServiceId)
+	if len(request.ConsumerServiceId) > 0 {
+		service, err = serviceUtil.GetService(ctx, domainProject, request.ConsumerServiceId)
 		if err != nil {
 			log.Errorf(err, "get consumer failed, consumer[%s] find provider instances",
-				in.ConsumerServiceId, in.ProviderServiceId)
+				request.ConsumerServiceId, request.ProviderServiceId)
 			return &pb.GetInstancesResponse{
 				Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
 			}, err
 		}
 		if service == nil {
 			log.Errorf(nil, "consumer does not exist, consumer[%s] find provider instances",
-				in.ConsumerServiceId, in.ProviderServiceId)
+				request.ConsumerServiceId, request.ProviderServiceId)
 			return &pb.GetInstancesResponse{
 				Response: proto.CreateResponse(scerr.ErrServiceNotExists,
-					fmt.Sprintf("Consumer[%s] does not exist.", in.ConsumerServiceId)),
+					fmt.Sprintf("Consumer[%s] does not exist.", request.ConsumerServiceId)),
 			}, nil
 		}
 	}
 
-	provider, err := serviceUtil.GetService(ctx, domainProject, in.ProviderServiceId)
+	provider, err := serviceUtil.GetService(ctx, domainProject, request.ProviderServiceId)
 	if err != nil {
 		log.Errorf(err, "get provider failed, consumer[%s] find provider instances",
-			in.ConsumerServiceId, in.ProviderServiceId)
+			request.ConsumerServiceId, request.ProviderServiceId)
 		return &pb.GetInstancesResponse{
 			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 	if provider == nil {
 		log.Errorf(nil, "provider does not exist, consumer[%s] find provider instances",
-			in.ConsumerServiceId, in.ProviderServiceId)
+			request.ConsumerServiceId, request.ProviderServiceId)
 		return &pb.GetInstancesResponse{
 			Response: proto.CreateResponse(scerr.ErrServiceNotExists,
-				fmt.Sprintf("Provider[%s] does not exist.", in.ProviderServiceId)),
+				fmt.Sprintf("Provider[%s] does not exist.", request.ProviderServiceId)),
 		}, nil
 	}
 
 	findFlag := func() string {
 		return fmt.Sprintf("Consumer[%s][%s/%s/%s/%s] find provider[%s][%s/%s/%s/%s] instances",
-			in.ConsumerServiceId, service.Environment, service.AppId, service.ServiceName, service.Version,
+			request.ConsumerServiceId, service.Environment, service.AppId, service.ServiceName, service.Version,
 			provider.ServiceId, provider.Environment, provider.AppId, provider.ServiceName, provider.Version)
 	}
 
@@ -772,8 +773,8 @@ func (ds *DataSource) GetInstances(ctx context.Context, in *pb.GetInstancesReque
 	rev, _ := ctx.Value(util.CtxRequestRevision).(string)
 	item, err = cache.FindInstances.GetWithProviderID(ctx, service, proto.MicroServiceToKey(domainProject, provider),
 		&pb.HeartbeatSetElement{
-			ServiceId: in.ProviderServiceId,
-		}, in.Tags, rev)
+			ServiceId: request.ProviderServiceId,
+		}, request.Tags, rev)
 	if err != nil {
 		log.Errorf(err, "FindInstances.GetWithProviderID failed, %s failed", findFlag())
 		return &pb.GetInstancesResponse{
@@ -826,19 +827,19 @@ func (ds *DataSource) BatchFind(ctx context.Context, request *pb.BatchFindInstan
 	return response, nil
 }
 
-func (ds *DataSource) batchFindServices(ctx context.Context, in *pb.BatchFindInstancesRequest) (
+func (ds *DataSource) batchFindServices(ctx context.Context, request *pb.BatchFindInstancesRequest) (
 	*pb.BatchFindResult, error) {
-	if len(in.Services) == 0 {
+	if len(request.Services) == 0 {
 		return nil, nil
 	}
 	cloneCtx := util.CloneContext(ctx)
 
 	services := &pb.BatchFindResult{}
 	failedResult := make(map[int32]*pb.FindFailedResult)
-	for index, key := range in.Services {
+	for index, key := range request.Services {
 		findCtx := util.SetContext(cloneCtx, util.CtxRequestRevision, key.Rev)
 		resp, err := ds.FindInstances(findCtx, &pb.FindInstancesRequest{
-			ConsumerServiceId: in.ConsumerServiceId,
+			ConsumerServiceId: request.ConsumerServiceId,
 			AppId:             key.Service.AppId,
 			ServiceName:       key.Service.ServiceName,
 			VersionRule:       key.Service.Version,
@@ -860,8 +861,8 @@ func (ds *DataSource) batchFindServices(ctx context.Context, in *pb.BatchFindIns
 	return services, nil
 }
 
-func (ds *DataSource) batchFindInstances(ctx context.Context, in *pb.BatchFindInstancesRequest) (*pb.BatchFindResult, error) {
-	if len(in.Instances) == 0 {
+func (ds *DataSource) batchFindInstances(ctx context.Context, request *pb.BatchFindInstancesRequest) (*pb.BatchFindResult, error) {
+	if len(request.Instances) == 0 {
 		return nil, nil
 	}
 	cloneCtx := util.CloneContext(ctx)
@@ -870,10 +871,10 @@ func (ds *DataSource) batchFindInstances(ctx context.Context, in *pb.BatchFindIn
 
 	instances := &pb.BatchFindResult{}
 	failedResult := make(map[int32]*pb.FindFailedResult)
-	for index, key := range in.Instances {
+	for index, key := range request.Instances {
 		getCtx := util.SetContext(cloneCtx, util.CtxRequestRevision, key.Rev)
 		resp, err := ds.GetInstance(getCtx, &pb.GetOneInstanceRequest{
-			ConsumerServiceId:  in.ConsumerServiceId,
+			ConsumerServiceId:  request.ConsumerServiceId,
 			ProviderServiceId:  key.Instance.ServiceId,
 			ProviderInstanceId: key.Instance.InstanceId,
 		})
@@ -1020,14 +1021,6 @@ func (ds *DataSource) ModifySchema(ctx context.Context, request *pb.ModifySchema
 	}, nil
 }
 
-func (ds *DataSource) GetSchema() {
-	panic("implement me")
-}
-
-func (ds *DataSource) DeleteSchema() {
-	panic("implement me")
-}
-
 func (ds *DataSource) ExistSchema(ctx context.Context, request *pb.GetExistenceRequest) (
 	*pb.GetExistenceResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
@@ -1068,25 +1061,206 @@ func (ds *DataSource) ExistSchema(ctx context.Context, request *pb.GetExistenceR
 	}, nil
 }
 
-func (ds *DataSource) AddTags(ctx context.Context, in *pb.AddServiceTagsRequest) (*pb.AddServiceTagsResponse, error) {
+func (ds *DataSource) GetSchema(ctx context.Context, request *pb.GetSchemaRequest) (*pb.GetSchemaResponse, error) {
+	domainProject := util.ParseDomainProject(ctx)
+
+	if !serviceUtil.ServiceExist(ctx, domainProject, request.ServiceId) {
+		log.Errorf(nil, "get schema[%s/%s] failed, service does not exist",
+			request.ServiceId, request.SchemaId)
+		return &pb.GetSchemaResponse{
+			Response: proto.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+		}, nil
+	}
+
+	key := apt.GenerateServiceSchemaKey(domainProject, request.ServiceId, request.SchemaId)
+	opts := append(serviceUtil.FromContext(ctx), registry.WithStrKey(key))
+	resp, errDo := backend.Store().Schema().Search(ctx, opts...)
+	if errDo != nil {
+		log.Errorf(errDo, "get schema[%s/%s] failed", request.ServiceId, request.SchemaId)
+		return &pb.GetSchemaResponse{
+			Response: proto.CreateResponse(scerr.ErrUnavailableBackend, errDo.Error()),
+		}, errDo
+	}
+	if resp.Count == 0 {
+		log.Errorf(errDo, "get schema[%s/%s] failed, schema does not exists",
+			request.ServiceId, request.SchemaId)
+		return &pb.GetSchemaResponse{
+			Response: proto.CreateResponse(scerr.ErrSchemaNotExists, "Do not have this schema info."),
+		}, nil
+	}
+
+	schemaSummary, err := getSchemaSummary(ctx, domainProject, request.ServiceId, request.SchemaId)
+	if err != nil {
+		log.Errorf(err, "get schema[%s/%s] failed, get schema summary failed",
+			request.ServiceId, request.SchemaId)
+		return &pb.GetSchemaResponse{
+			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+		}, err
+	}
+
+	return &pb.GetSchemaResponse{
+		Response:      proto.CreateResponse(proto.Response_SUCCESS, "Get schema info successfully."),
+		Schema:        util.BytesToStringWithNoCopy(resp.Kvs[0].Value.([]byte)),
+		SchemaSummary: schemaSummary,
+	}, nil
+}
+
+func (ds *DataSource) GetAllSchemas(ctx context.Context, request *pb.GetAllSchemaRequest) (
+	*pb.GetAllSchemaResponse, error) {
+	domainProject := util.ParseDomainProject(ctx)
+
+	service, err := serviceUtil.GetService(ctx, domainProject, request.ServiceId)
+	if err != nil {
+		log.Errorf(err, "get service[%s] all schemas failed, get service failed", request.ServiceId)
+		return &pb.GetAllSchemaResponse{
+			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+		}, err
+	}
+	if service == nil {
+		log.Errorf(nil, "get service[%s] all schemas failed, service does not exist", request.ServiceId)
+		return &pb.GetAllSchemaResponse{
+			Response: proto.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+		}, nil
+	}
+
+	schemasList := service.Schemas
+	if len(schemasList) == 0 {
+		return &pb.GetAllSchemaResponse{
+			Response: proto.CreateResponse(proto.Response_SUCCESS, "Do not have this schema info."),
+			Schemas:  []*pb.Schema{},
+		}, nil
+	}
+
+	key := apt.GenerateServiceSchemaSummaryKey(domainProject, request.ServiceId, "")
+	opts := append(serviceUtil.FromContext(ctx), registry.WithStrKey(key), registry.WithPrefix())
+	resp, errDo := backend.Store().SchemaSummary().Search(ctx, opts...)
+	if errDo != nil {
+		log.Errorf(errDo, "get service[%s] all schema summaries failed", request.ServiceId)
+		return &pb.GetAllSchemaResponse{
+			Response: proto.CreateResponse(scerr.ErrUnavailableBackend, errDo.Error()),
+		}, errDo
+	}
+
+	respWithSchema := &discovery.Response{}
+	if request.WithSchema {
+		key := apt.GenerateServiceSchemaKey(domainProject, request.ServiceId, "")
+		opts := append(serviceUtil.FromContext(ctx), registry.WithStrKey(key), registry.WithPrefix())
+		respWithSchema, errDo = backend.Store().Schema().Search(ctx, opts...)
+		if errDo != nil {
+			log.Errorf(errDo, "get service[%s] all schemas failed", request.ServiceId)
+			return &pb.GetAllSchemaResponse{
+				Response: proto.CreateResponse(scerr.ErrUnavailableBackend, errDo.Error()),
+			}, errDo
+		}
+	}
+
+	schemas := make([]*pb.Schema, 0, len(schemasList))
+	for _, schemaID := range schemasList {
+		tempSchema := &pb.Schema{}
+		tempSchema.SchemaId = schemaID
+		for _, summarySchema := range resp.Kvs {
+			_, _, schemaIDOfSummary := apt.GetInfoFromSchemaSummaryKV(summarySchema.Key)
+			if schemaID == schemaIDOfSummary {
+				tempSchema.Summary = summarySchema.Value.(string)
+			}
+		}
+
+		for _, contentSchema := range respWithSchema.Kvs {
+			_, _, schemaIDOfSchema := apt.GetInfoFromSchemaKV(contentSchema.Key)
+			if schemaID == schemaIDOfSchema {
+				tempSchema.Schema = util.BytesToStringWithNoCopy(contentSchema.Value.([]byte))
+			}
+		}
+		schemas = append(schemas, tempSchema)
+	}
+
+	return &pb.GetAllSchemaResponse{
+		Response: proto.CreateResponse(proto.Response_SUCCESS, "Get all schema info successfully."),
+		Schemas:  schemas,
+	}, nil
+}
+
+func (ds *DataSource) DeleteSchema(ctx context.Context, request *pb.DeleteSchemaRequest) (
+	*pb.DeleteSchemaResponse, error) {
+	remoteIP := util.GetIPFromContext(ctx)
+	domainProject := util.ParseDomainProject(ctx)
+
+	if !serviceUtil.ServiceExist(ctx, domainProject, request.ServiceId) {
+		log.Errorf(nil, "delete schema[%s/%s] failed, service does not exist, operator: %s",
+			request.ServiceId, request.SchemaId, remoteIP)
+		return &pb.DeleteSchemaResponse{
+			Response: proto.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+		}, nil
+	}
+
+	key := apt.GenerateServiceSchemaKey(domainProject, request.ServiceId, request.SchemaId)
+	exist, err := serviceUtil.CheckSchemaInfoExist(ctx, key)
+	if err != nil {
+		log.Errorf(err, "delete schema[%s/%s] failed, operator: %s",
+			request.ServiceId, request.SchemaId, remoteIP)
+		return &pb.DeleteSchemaResponse{
+			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+		}, err
+	}
+	if !exist {
+		log.Errorf(nil, "delete schema[%s/%s] failed, schema does not exist, operator: %s",
+			request.ServiceId, request.SchemaId, remoteIP)
+		return &pb.DeleteSchemaResponse{
+			Response: proto.CreateResponse(scerr.ErrSchemaNotExists, "Schema info does not exist."),
+		}, nil
+	}
+	epSummaryKey := apt.GenerateServiceSchemaSummaryKey(domainProject, request.ServiceId, request.SchemaId)
+	opts := []registry.PluginOp{
+		registry.OpDel(registry.WithStrKey(epSummaryKey)),
+		registry.OpDel(registry.WithStrKey(key)),
+	}
+
+	resp, errDo := backend.Registry().TxnWithCmp(ctx, opts,
+		[]registry.CompareOp{registry.OpCmp(
+			registry.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, request.ServiceId))),
+			registry.CmpNotEqual, 0)},
+		nil)
+	if errDo != nil {
+		log.Errorf(errDo, "delete schema[%s/%s] failed, operator: %s",
+			request.ServiceId, request.SchemaId, remoteIP)
+		return &pb.DeleteSchemaResponse{
+			Response: proto.CreateResponse(scerr.ErrUnavailableBackend, errDo.Error()),
+		}, errDo
+	}
+	if !resp.Succeeded {
+		log.Errorf(nil, "delete schema[%s/%s] failed, service does not exist, operator: %s",
+			request.ServiceId, request.SchemaId, remoteIP)
+		return &pb.DeleteSchemaResponse{
+			Response: proto.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+		}, nil
+	}
+
+	log.Infof("delete schema[%s/%s] info successfully, operator: %s",
+		request.ServiceId, request.SchemaId, remoteIP)
+	return &pb.DeleteSchemaResponse{
+		Response: proto.CreateResponse(proto.Response_SUCCESS, "Delete schema info successfully."),
+	}, nil
+}
+
+func (ds *DataSource) AddTags(ctx context.Context, request *pb.AddServiceTagsRequest) (*pb.AddServiceTagsResponse, error) {
 	remoteIP := util.GetIPFromContext(ctx)
 	domainProject := util.ParseDomainProject(ctx)
 
 	// service id存在性校验
-	if !serviceUtil.ServiceExist(ctx, domainProject, in.ServiceId) {
+	if !serviceUtil.ServiceExist(ctx, domainProject, request.ServiceId) {
 		log.Errorf(nil, "add service[%s]'s tags %v failed, service does not exist, operator: %s",
-			in.ServiceId, in.Tags, remoteIP)
+			request.ServiceId, request.Tags, remoteIP)
 		return &pb.AddServiceTagsResponse{
 			Response: proto.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 
-	addTags := in.Tags
-	res := quota.NewApplyQuotaResource(quota.TagQuotaType, domainProject, in.ServiceId, int64(len(addTags)))
+	addTags := request.Tags
+	res := quota.NewApplyQuotaResource(quota.TagQuotaType, domainProject, request.ServiceId, int64(len(addTags)))
 	rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
 	errQuota := rst.Err
 	if errQuota != nil {
-		log.Errorf(errQuota, "add service[%s]'s tags %v failed, operator: %s", in.ServiceId, addTags, remoteIP)
+		log.Errorf(errQuota, "add service[%s]'s tags %v failed, operator: %s", request.ServiceId, addTags, remoteIP)
 		response := &pb.AddServiceTagsResponse{
 			Response: proto.CreateResponseWithSCErr(errQuota),
 		}
@@ -1096,10 +1270,10 @@ func (ds *DataSource) AddTags(ctx context.Context, in *pb.AddServiceTagsRequest)
 		return response, nil
 	}
 
-	dataTags, err := serviceUtil.GetTagsUtils(ctx, domainProject, in.ServiceId)
+	dataTags, err := serviceUtil.GetTagsUtils(ctx, domainProject, request.ServiceId)
 	if err != nil {
 		log.Errorf(err, "add service[%s]'s tags %v failed, get existed tag failed, operator: %s",
-			in.ServiceId, addTags, remoteIP)
+			request.ServiceId, addTags, remoteIP)
 		return &pb.AddServiceTagsResponse{
 			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
@@ -1112,9 +1286,9 @@ func (ds *DataSource) AddTags(ctx context.Context, in *pb.AddServiceTagsRequest)
 	}
 	dataTags = addTags
 
-	checkErr := serviceUtil.AddTagIntoETCD(ctx, domainProject, in.ServiceId, dataTags)
+	checkErr := serviceUtil.AddTagIntoETCD(ctx, domainProject, request.ServiceId, dataTags)
 	if checkErr != nil {
-		log.Errorf(checkErr, "add service[%s]'s tags %v failed, operator: %s", in.ServiceId, in.Tags, remoteIP)
+		log.Errorf(checkErr, "add service[%s]'s tags %v failed, operator: %s", request.ServiceId, request.Tags, remoteIP)
 		resp := &pb.AddServiceTagsResponse{
 			Response: proto.CreateResponseWithSCErr(checkErr),
 		}
@@ -1124,7 +1298,7 @@ func (ds *DataSource) AddTags(ctx context.Context, in *pb.AddServiceTagsRequest)
 		return resp, nil
 	}
 
-	log.Infof("add service[%s]'s tags %v successfully, operator: %s", in.ServiceId, in.Tags, remoteIP)
+	log.Infof("add service[%s]'s tags %v successfully, operator: %s", request.ServiceId, request.Tags, remoteIP)
 	return &pb.AddServiceTagsResponse{
 		Response: proto.CreateResponse(proto.Response_SUCCESS, "Add service tags successfully."),
 	}, nil
@@ -1142,20 +1316,331 @@ func (ds *DataSource) DeleteTag() {
 	panic("implement me")
 }
 
-func (ds *DataSource) AddRule() {
-	panic("implement me")
+func (ds *DataSource) AddRule(ctx context.Context, request *pb.AddServiceRulesRequest) (
+	*pb.AddServiceRulesResponse, error) {
+	remoteIP := util.GetIPFromContext(ctx)
+	domainProject := util.ParseDomainProject(ctx)
+
+	// service id存在性校验
+	if !serviceUtil.ServiceExist(ctx, domainProject, request.ServiceId) {
+		log.Errorf(nil, "add service[%s] rule failed, service does not exist, operator: %s",
+			request.ServiceId, remoteIP)
+		return &pb.AddServiceRulesResponse{
+			Response: proto.CreateResponse(scerr.ErrInvalidParams, "Service does not exist."),
+		}, nil
+	}
+	res := quota.NewApplyQuotaResource(quota.RuleQuotaType, domainProject, request.ServiceId, int64(len(request.Rules)))
+	rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
+	errQuota := rst.Err
+	if errQuota != nil {
+		log.Errorf(errQuota, "add service[%s] rule failed, operator: %s", request.ServiceId, remoteIP)
+		response := &pb.AddServiceRulesResponse{
+			Response: proto.CreateResponseWithSCErr(errQuota),
+		}
+		if errQuota.InternalError() {
+			return response, errQuota
+		}
+		return response, nil
+	}
+
+	ruleType, _, err := serviceUtil.GetServiceRuleType(ctx, domainProject, request.ServiceId)
+	if err != nil {
+		return &pb.AddServiceRulesResponse{
+			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+		}, err
+	}
+	ruleIDs := make([]string, 0, len(request.Rules))
+	opts := make([]registry.PluginOp, 0, 2*len(request.Rules))
+	for _, rule := range request.Rules {
+		//黑白名单只能存在一种，黑名单 or 白名单
+		if len(ruleType) == 0 {
+			ruleType = rule.RuleType
+		} else if ruleType != rule.RuleType {
+			log.Errorf(nil,
+				"add service[%s] rule failed, can not add different RuleType at the same time, operator: %s",
+				request.ServiceId, remoteIP)
+			return &pb.AddServiceRulesResponse{
+				Response: proto.CreateResponse(scerr.ErrBlackAndWhiteRule,
+					"Service can only contain one rule type, BLACK or WHITE."),
+			}, nil
+
+		}
+
+		//同一服务，attribute和pattern确定一个rule
+		if serviceUtil.RuleExist(ctx, domainProject, request.ServiceId, rule.Attribute, rule.Pattern) {
+			log.Infof("service[%s] rule[%s/%s] already exists, operator: %s",
+				request.ServiceId, rule.Attribute, rule.Pattern, remoteIP)
+			continue
+		}
+
+		// 产生全局rule id
+		timestamp := strconv.FormatInt(time.Now().Unix(), 10)
+		ruleAdd := &pb.ServiceRule{
+			RuleId:       util.GenerateUUID(),
+			RuleType:     rule.RuleType,
+			Attribute:    rule.Attribute,
+			Pattern:      rule.Pattern,
+			Description:  rule.Description,
+			Timestamp:    timestamp,
+			ModTimestamp: timestamp,
+		}
+
+		key := apt.GenerateServiceRuleKey(domainProject, request.ServiceId, ruleAdd.RuleId)
+		indexKey := apt.GenerateRuleIndexKey(domainProject, request.ServiceId, ruleAdd.Attribute, ruleAdd.Pattern)
+		ruleIDs = append(ruleIDs, ruleAdd.RuleId)
+
+		data, err := json.Marshal(ruleAdd)
+		if err != nil {
+			log.Errorf(err, "add service[%s] rule failed, marshal rule[%s/%s] failed, operator: %s",
+				request.ServiceId, ruleAdd.Attribute, ruleAdd.Pattern, remoteIP)
+			return &pb.AddServiceRulesResponse{
+				Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+			}, err
+		}
+
+		opts = append(opts, registry.OpPut(registry.WithStrKey(key), registry.WithValue(data)))
+		opts = append(opts, registry.OpPut(registry.WithStrKey(indexKey), registry.WithStrValue(ruleAdd.RuleId)))
+	}
+	if len(opts) <= 0 {
+		log.Infof("add service[%s] rule successfully, no rules to add, operator: %s",
+			request.ServiceId, remoteIP)
+		return &pb.AddServiceRulesResponse{
+			Response: proto.CreateResponse(proto.Response_SUCCESS, "Service rules has been added."),
+		}, nil
+	}
+
+	resp, err := backend.BatchCommitWithCmp(ctx, opts,
+		[]registry.CompareOp{registry.OpCmp(
+			registry.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, request.ServiceId))),
+			registry.CmpNotEqual, 0)},
+		nil)
+	if err != nil {
+		log.Errorf(err, "add service[%s] rule failed, operator: %s", request.ServiceId, remoteIP)
+		return &pb.AddServiceRulesResponse{
+			Response: proto.CreateResponse(scerr.ErrUnavailableBackend, err.Error()),
+		}, err
+	}
+	if !resp.Succeeded {
+		log.Errorf(nil, "add service[%s] rule failed, service does not exist, operator: %s",
+			request.ServiceId, remoteIP)
+		return &pb.AddServiceRulesResponse{
+			Response: proto.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+		}, nil
+	}
+
+	log.Infof("add service[%s] rule %v successfully, operator: %s", request.ServiceId, ruleIDs, remoteIP)
+	return &pb.AddServiceRulesResponse{
+		Response: proto.CreateResponse(proto.Response_SUCCESS, "Add service rules successfully."),
+		RuleIds:  ruleIDs,
+	}, nil
 }
 
-func (ds *DataSource) GetRule() {
-	panic("implement me")
+func (ds *DataSource) GetRule(ctx context.Context, request *pb.GetServiceRulesRequest) (
+	*pb.GetServiceRulesResponse, error) {
+	domainProject := util.ParseDomainProject(ctx)
+
+	// service id存在性校验
+	if !serviceUtil.ServiceExist(ctx, domainProject, request.ServiceId) {
+		log.Errorf(nil, "get service[%s] rule failed, service does not exist", request.ServiceId)
+		return &pb.GetServiceRulesResponse{
+			Response: proto.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+		}, nil
+	}
+
+	rules, err := serviceUtil.GetRulesUtil(ctx, domainProject, request.ServiceId)
+	if err != nil {
+		log.Errorf(err, "get service[%s] rule failed", request.ServiceId)
+		return &pb.GetServiceRulesResponse{
+			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+		}, err
+	}
+
+	return &pb.GetServiceRulesResponse{
+		Response: proto.CreateResponse(proto.Response_SUCCESS, "Get service rules successfully."),
+		Rules:    rules,
+	}, nil
 }
 
-func (ds *DataSource) UpdateRule() {
-	panic("implement me")
+func (ds *DataSource) UpdateRule(ctx context.Context, request *pb.UpdateServiceRuleRequest) (
+	*pb.UpdateServiceRuleResponse, error) {
+	remoteIP := util.GetIPFromContext(ctx)
+	domainProject := util.ParseDomainProject(ctx)
+
+	// service id存在性校验
+	if !serviceUtil.ServiceExist(ctx, domainProject, request.ServiceId) {
+		log.Errorf(nil, "update service rule[%s/%s] failed, service does not exist, operator: %s",
+			request.ServiceId, request.RuleId, remoteIP)
+		return &pb.UpdateServiceRuleResponse{
+			Response: proto.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+		}, nil
+	}
+
+	//是否能改变ruleType
+	ruleType, ruleNum, err := serviceUtil.GetServiceRuleType(ctx, domainProject, request.ServiceId)
+	if err != nil {
+		log.Errorf(err, "update service rule[%s/%s] failed, get rule type failed, operator: %s",
+			request.ServiceId, request.RuleId, remoteIP)
+		return &pb.UpdateServiceRuleResponse{
+			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+		}, err
+	}
+	if ruleNum >= 1 && ruleType != request.Rule.RuleType {
+		log.Errorf(err, "update service rule[%s/%s] failed, can only exist one type, current type is %s, operator: %s",
+			request.ServiceId, request.RuleId, ruleType, remoteIP)
+		return &pb.UpdateServiceRuleResponse{
+			Response: proto.CreateResponse(scerr.ErrModifyRuleNotAllow, "Exist multiple rules,can not change rule type. Rule type is "+ruleType),
+		}, nil
+	}
+
+	rule, err := serviceUtil.GetOneRule(ctx, domainProject, request.ServiceId, request.RuleId)
+	if err != nil {
+		log.Errorf(err, "update service rule[%s/%s] failed, query service rule failed, operator: %s",
+			request.ServiceId, request.RuleId, remoteIP)
+		return &pb.UpdateServiceRuleResponse{
+			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+		}, err
+	}
+	if rule == nil {
+		log.Errorf(err, "update service rule[%s/%s] failed, service rule does not exist, operator: %s",
+			request.ServiceId, request.RuleId, remoteIP)
+		return &pb.UpdateServiceRuleResponse{
+			Response: proto.CreateResponse(scerr.ErrRuleNotExists, "This rule does not exist."),
+		}, nil
+	}
+
+	copyRuleRef := *rule
+	oldRulePatten := copyRuleRef.Pattern
+	oldRuleAttr := copyRuleRef.Attribute
+	isChangeIndex := false
+	if copyRuleRef.Attribute != request.Rule.Attribute {
+		isChangeIndex = true
+		copyRuleRef.Attribute = request.Rule.Attribute
+	}
+	if copyRuleRef.Pattern != request.Rule.Pattern {
+		isChangeIndex = true
+		copyRuleRef.Pattern = request.Rule.Pattern
+	}
+	copyRuleRef.RuleType = request.Rule.RuleType
+	copyRuleRef.Description = request.Rule.Description
+	copyRuleRef.ModTimestamp = strconv.FormatInt(time.Now().Unix(), 10)
+
+	key := apt.GenerateServiceRuleKey(domainProject, request.ServiceId, request.RuleId)
+	data, err := json.Marshal(copyRuleRef)
+	if err != nil {
+		log.Errorf(err, "update service rule[%s/%s] failed, marshal service rule failed, operator: %s",
+			request.ServiceId, request.RuleId, remoteIP)
+		return &pb.UpdateServiceRuleResponse{
+			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+		}, err
+	}
+	var opts []registry.PluginOp
+	if isChangeIndex {
+		//加入新的rule index
+		indexKey := apt.GenerateRuleIndexKey(domainProject, request.ServiceId, copyRuleRef.Attribute, copyRuleRef.Pattern)
+		opts = append(opts, registry.OpPut(registry.WithStrKey(indexKey), registry.WithStrValue(copyRuleRef.RuleId)))
+
+		//删除旧的rule index
+		oldIndexKey := apt.GenerateRuleIndexKey(domainProject, request.ServiceId, oldRuleAttr, oldRulePatten)
+		opts = append(opts, registry.OpDel(registry.WithStrKey(oldIndexKey)))
+	}
+	opts = append(opts, registry.OpPut(registry.WithStrKey(key), registry.WithValue(data)))
+
+	resp, err := backend.Registry().TxnWithCmp(ctx, opts,
+		[]registry.CompareOp{registry.OpCmp(
+			registry.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, request.ServiceId))),
+			registry.CmpNotEqual, 0)},
+		nil)
+	if err != nil {
+		log.Errorf(err, "update service rule[%s/%s] failed, operator: %s", request.ServiceId, request.RuleId, remoteIP)
+		return &pb.UpdateServiceRuleResponse{
+			Response: proto.CreateResponse(scerr.ErrUnavailableBackend, err.Error()),
+		}, err
+	}
+	if !resp.Succeeded {
+		log.Errorf(err, "update service rule[%s/%s] failed, service does not exist, operator: %s",
+			request.ServiceId, request.RuleId, remoteIP)
+		return &pb.UpdateServiceRuleResponse{
+			Response: proto.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+		}, nil
+	}
+
+	log.Infof("update service rule[%s/%s] successfully, operator: %s", request.ServiceId, request.RuleId, remoteIP)
+	return &pb.UpdateServiceRuleResponse{
+		Response: proto.CreateResponse(proto.Response_SUCCESS, "Get service rules successfully."),
+	}, nil
 }
 
-func (ds *DataSource) DeleteRule() {
-	panic("implement me")
+func (ds *DataSource) DeleteRule(ctx context.Context, request *pb.DeleteServiceRulesRequest) (
+	*pb.DeleteServiceRulesResponse, error) {
+	remoteIP := util.GetIPFromContext(ctx)
+	domainProject := util.ParseDomainProject(ctx)
+
+	// service id存在性校验
+	if !serviceUtil.ServiceExist(ctx, domainProject, request.ServiceId) {
+		log.Errorf(nil, "delete service[%s] rules %v failed, service does not exist, operator: %s",
+			request.ServiceId, request.RuleIds, remoteIP)
+		return &pb.DeleteServiceRulesResponse{
+			Response: proto.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+		}, nil
+	}
+
+	opts := []registry.PluginOp{}
+	key := ""
+	indexKey := ""
+	for _, ruleID := range request.RuleIds {
+		key = apt.GenerateServiceRuleKey(domainProject, request.ServiceId, ruleID)
+		log.Debugf("start delete service rule file: %s", key)
+		data, err := serviceUtil.GetOneRule(ctx, domainProject, request.ServiceId, ruleID)
+		if err != nil {
+			log.Errorf(err, "delete service[%s] rules %v failed, get rule[%s] failed, operator: %s",
+				request.ServiceId, request.RuleIds, ruleID, remoteIP)
+			return &pb.DeleteServiceRulesResponse{
+				Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+			}, err
+		}
+		if data == nil {
+			log.Errorf(nil, "delete service[%s] rules %v failed, rule[%s] does not exist, operator: %s",
+				request.ServiceId, request.RuleIds, ruleID, remoteIP)
+			return &pb.DeleteServiceRulesResponse{
+				Response: proto.CreateResponse(scerr.ErrRuleNotExists, "This rule does not exist."),
+			}, nil
+		}
+		indexKey = apt.GenerateRuleIndexKey(domainProject, request.ServiceId, data.Attribute, data.Pattern)
+		opts = append(opts,
+			registry.OpDel(registry.WithStrKey(key)),
+			registry.OpDel(registry.WithStrKey(indexKey)))
+	}
+	if len(opts) <= 0 {
+		log.Errorf(nil, "delete service[%s] rules %v failed, no rule has been deleted, operator: %s",
+			request.ServiceId, request.RuleIds, remoteIP)
+		return &pb.DeleteServiceRulesResponse{
+			Response: proto.CreateResponse(scerr.ErrRuleNotExists, "No service rule has been deleted."),
+		}, nil
+	}
+
+	resp, err := backend.BatchCommitWithCmp(ctx, opts,
+		[]registry.CompareOp{registry.OpCmp(
+			registry.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, request.ServiceId))),
+			registry.CmpNotEqual, 0)},
+		nil)
+	if err != nil {
+		log.Errorf(err, "delete service[%s] rules %v failed, operator: %s", request.ServiceId, request.RuleIds, remoteIP)
+		return &pb.DeleteServiceRulesResponse{
+			Response: proto.CreateResponse(scerr.ErrUnavailableBackend, err.Error()),
+		}, err
+	}
+	if !resp.Succeeded {
+		log.Errorf(err, "delete service[%s] rules %v failed, service does not exist, operator: %s",
+			request.ServiceId, request.RuleIds, remoteIP)
+		return &pb.DeleteServiceRulesResponse{
+			Response: proto.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+		}, nil
+	}
+
+	log.Infof("delete service[%s] rules %v successfully, operator: %s", request.ServiceId, request.RuleIds, remoteIP)
+	return &pb.DeleteServiceRulesResponse{
+		Response: proto.CreateResponse(proto.Response_SUCCESS, "Delete service rules successfully."),
+	}, nil
 }
 
 func (ds *DataSource) modifySchemas(ctx context.Context, domainProject string, service *pb.MicroService,
@@ -1302,7 +1787,7 @@ func (ds *DataSource) modifySchema(ctx context.Context, serviceID string, schema
 
 	if !ds.isSchemaEditable(microService) {
 		if len(microService.Schemas) != 0 && !isExist {
-			return scerr.NewError(scerr.ErrUndefinedSchemaID, "Non-existent schemaID can't be added in "+pb.ENV_PROD)
+			return scerr.NewError(scerr.ErrUndefinedSchemaID, "Non-existent schemaID can't be added request "+pb.ENV_PROD)
 		}
 
 		key := apt.GenerateServiceSchemaKey(domainProject, serviceID, schemaID)
@@ -1318,7 +1803,7 @@ func (ds *DataSource) modifySchema(ctx context.Context, serviceID string, schema
 				log.Errorf(err, "%s mode, schema[%s/%s] already exists, can not be changed, operator: %s",
 					pb.ENV_PROD, serviceID, schemaID, remoteIP)
 				return scerr.NewError(scerr.ErrModifySchemaNotAllow,
-					"schema already exist, can not be changed in "+pb.ENV_PROD)
+					"schema already exist, can not be changed request "+pb.ENV_PROD)
 			}
 
 			exist, err := isExistSchemaSummary(ctx, domainProject, serviceID, schemaID)
@@ -1330,7 +1815,7 @@ func (ds *DataSource) modifySchema(ctx context.Context, serviceID string, schema
 			if exist {
 				log.Errorf(err, "%s mode, schema[%s/%s] already exist, can not be changed, operator: %s",
 					pb.ENV_PROD, serviceID, schemaID, remoteIP)
-				return scerr.NewError(scerr.ErrModifySchemaNotAllow, "schema already exist, can not be changed in "+pb.ENV_PROD)
+				return scerr.NewError(scerr.ErrModifySchemaNotAllow, "schema already exist, can not be changed request "+pb.ENV_PROD)
 			}
 		}
 
