@@ -52,9 +52,9 @@ func NewEtcdAdaptor(name string, cfg *cache.Config) *Adaptor {
 	var adaptor Adaptor
 	switch {
 	case core.ServerInfo.Config.EnableCache && cfg.InitSize > 0:
-		cache := cache.NewKvCache(name, cfg)
-		adaptor.Cacher = NewKvCacher(cfg, cache)
-		adaptor.Indexer = NewCacheIndexer(cfg, cache)
+		kvCache := cache.NewKvCache(name, cfg)
+		adaptor.Cacher = NewKvCacher(cfg, kvCache)
+		adaptor.Indexer = NewCacheIndexer(cfg, kvCache)
 	default:
 		log.Infof(
 			"core will not cache '%s' and ignore all events of it, cache enabled: %v, init size: %d",

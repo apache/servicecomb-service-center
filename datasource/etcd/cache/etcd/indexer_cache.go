@@ -62,9 +62,9 @@ func (i *CacheIndexer) Creditable() bool {
 	return i.Indexer.Creditable()
 }
 
-func NewCacheIndexer(cfg *cache.Config, cache cache.Cache) *CacheIndexer {
+func NewCacheIndexer(cfg *cache.Config, c cache.Cache) *CacheIndexer {
 	return &CacheIndexer{
 		Indexer:      NewEtcdIndexer(cfg.Key, cfg.Parser),
-		CacheIndexer: cache.NewCacheIndexer(cache),
+		CacheIndexer: cache.NewCacheIndexer(c),
 	}
 }

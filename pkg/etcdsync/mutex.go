@@ -20,11 +20,10 @@ package etcdsync
 import (
 	"context"
 	"fmt"
+	registry "github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/core/backend"
-	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	"github.com/coreos/etcd/client"
 	"os"
 	"sync"
@@ -105,20 +104,20 @@ func (m *DLock) Lock(wait bool) (err error) {
 	var leaseID int64
 	putOpts := opts
 	if m.ttl > 0 {
-		leaseID, err = backend.Registry().LeaseGrant(m.ctx, m.ttl)
+		leaseID, err = registry.Instance().LeaseGrant(m.ctx, m.ttl)
 		if err != nil {
 			return err
 		}
 		putOpts = append(opts, registry.WithLease(leaseID))
 	}
-	success, err := backend.Registry().PutNoOverride(m.ctx, putOpts...)
+	success, err := registry.Instance().PutNoOverride(m.ctx, putOpts...)
 	if err == nil && success {
 		log.Infof("Create Lock OK, key=%s, id=%s", m.key, m.id)
 		return nil
 	}
 
 	if leaseID > 0 {
-		err = backend.Registry().LeaseRevoke(m.ctx, leaseID)
+		err = registry.Instance().LeaseRevoke(m.ctx, leaseID)
 		if err != nil {
 			return err
 		}
@@ -133,7 +132,7 @@ func (m *DLock) Lock(wait bool) (err error) {
 	ctx, cancel := context.WithTimeout(m.ctx, time.Duration(m.ttl)*time.Second)
 	gopool.Go(func(context.Context) {
 		defer cancel()
-		err := backend.Registry().Watch(ctx,
+		err := registry.Instance().Watch(ctx,
 			registry.WithStrKey(m.key),
 			registry.WithWatchCallback(
 				func(message string, evt *registry.PluginResponse) error {
@@ -170,7 +169,7 @@ func (m *DLock) Unlock() (err error) {
 		registry.WithStrKey(m.key)}
 
 	for i := 1; i <= DefaultRetryTimes; i++ {
-		_, err = backend.Registry().Do(m.ctx, opts...)
+		_, err = registry.Instance().Do(m.ctx, opts...)
 		if err == nil {
 			log.Infof("Delete lock OK, key=%s, id=%s", m.key, m.id)
 			return nil

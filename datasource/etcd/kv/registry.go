@@ -20,13 +20,12 @@ package kv
 import (
 	"context"
 	"errors"
-	"fmt"
+	"github.com/apache/servicecomb-service-center/datasource"
 	registry "github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/pkg/backoff"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin"
 	"sync"
 	"time"
@@ -118,7 +117,7 @@ type RegistryEngine struct {
 }
 
 func (s *RegistryEngine) Start() error {
-	err := s.selfRegister(context.Background())
+	err := datasource.Instance().SelfRegister(context.Background())
 	if err != nil {
 		return err
 	}
@@ -133,112 +132,8 @@ func (s *RegistryEngine) Stop() {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-	if err := s.unregisterInstance(ctx); err != nil {
+	if err := datasource.Instance().SelfUnregister(ctx); err != nil {
 		log.Error("stop registry engine failed", err)
-	}
-}
-
-func (s *RegistryEngine) selfRegister(ctx context.Context) error {
-	err := s.registryService(context.Background())
-	if err != nil {
-		return err
-	}
-	// 实例信息
-	return s.registryInstance(context.Background())
-}
-
-func (s *RegistryEngine) registryService(pCtx context.Context) error {
-	ctx := core.AddDefaultContextValue(pCtx)
-	respE, err := core.ServiceAPI.Exist(ctx, core.GetExistenceRequest())
-	if err != nil {
-		log.Error("query service center existence failed", err)
-		return err
-	}
-	if respE.Response.GetCode() == proto.Response_SUCCESS {
-		log.Warnf("service center service[%s] already registered", respE.ServiceId)
-		respG, err := core.ServiceAPI.GetOne(ctx, core.GetServiceRequest(respE.ServiceId))
-		if respG.Response.GetCode() != proto.Response_SUCCESS {
-			log.Errorf(err, "query service center service[%s] info failed", respE.ServiceId)
-			return fmt.Errorf("service center service file lost")
-		}
-		core.Service = respG.Service
-		return nil
-	}
-
-	respS, err := core.ServiceAPI.Create(ctx, core.CreateServiceRequest())
-	if err != nil {
-		log.Error("register service center failed", err)
-		return err
-	}
-	core.Service.ServiceId = respS.ServiceId
-	log.Infof("register service center service[%s]", respS.ServiceId)
-	return nil
-}
-
-func (s *RegistryEngine) registryInstance(pCtx context.Context) error {
-	core.Instance.InstanceId = ""
-	core.Instance.ServiceId = core.Service.ServiceId
-
-	ctx := core.AddDefaultContextValue(pCtx)
-
-	respI, err := core.InstanceAPI.Register(ctx, core.RegisterInstanceRequest())
-	if err != nil {
-		log.Error("register failed", err)
-		return err
-	}
-	if respI.Response.GetCode() != proto.Response_SUCCESS {
-		err = fmt.Errorf("register service center[%s] instance failed, %s",
-			core.Instance.ServiceId, respI.Response.GetMessage())
-		log.Error(err.Error(), nil)
-		return err
-	}
-	core.Instance.InstanceId = respI.InstanceId
-	log.Infof("register service center instance[%s/%s], endpoints is %s",
-		core.Service.ServiceId, respI.InstanceId, core.Instance.Endpoints)
-	return nil
-}
-
-func (s *RegistryEngine) unregisterInstance(pCtx context.Context) error {
-	if len(core.Instance.InstanceId) == 0 {
-		return nil
-	}
-	ctx := core.AddDefaultContextValue(pCtx)
-	respI, err := core.InstanceAPI.Unregister(ctx, core.UnregisterInstanceRequest())
-	if err != nil {
-		log.Error("unregister failed", err)
-		return err
-	}
-	if respI.Response.GetCode() != proto.Response_SUCCESS {
-		err = fmt.Errorf("unregister service center instance[%s/%s] failed, %s",
-			core.Instance.ServiceId, core.Instance.InstanceId, respI.Response.GetMessage())
-		log.Error(err.Error(), nil)
-		return err
-	}
-	log.Warnf("unregister service center instance[%s/%s]",
-		core.Service.ServiceId, core.Instance.InstanceId)
-	return nil
-}
-
-func (s *RegistryEngine) sendHeartBeat(pCtx context.Context) {
-	ctx := core.AddDefaultContextValue(pCtx)
-	respI, err := core.InstanceAPI.Heartbeat(ctx, core.HeartbeatRequest())
-	if err != nil {
-		log.Error("sen heartbeat failed", err)
-		return
-	}
-	if respI.Response.GetCode() == proto.Response_SUCCESS {
-		log.Debugf("update service center instance[%s/%s] heartbeat",
-			core.Instance.ServiceId, core.Instance.InstanceId)
-		return
-	}
-	log.Errorf(err, "update service center instance[%s/%s] heartbeat failed",
-		core.Instance.ServiceId, core.Instance.InstanceId)
-
-	//服务不存在，创建服务
-	err = s.selfRegister(pCtx)
-	if err != nil {
-		log.Errorf(err, "retry to register[%s/%s/%s/%s] failed",
-			core.Service.Environment, core.Service.AppId, core.Service.ServiceName, core.Service.Version)
 	}
 }
 
@@ -249,7 +144,7 @@ func (s *RegistryEngine) heartBeatService() {
 			case <-ctx.Done():
 				return
 			case <-time.After(time.Duration(core.Instance.HealthCheck.Interval) * time.Second):
-				s.sendHeartBeat(ctx)
+				_ = datasource.Instance().SelfHeartBeat(ctx)
 			}
 		}
 	})

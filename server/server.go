@@ -18,31 +18,26 @@
 package server
 
 import (
+	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/mux"
+	"time"
+
 	//plugin
 	_ "github.com/apache/servicecomb-service-center/server/service/event"
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
 )
 import (
-	"fmt"
-	"os"
-	"time"
-
 	"context"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	nf "github.com/apache/servicecomb-service-center/pkg/notify"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
-	"github.com/apache/servicecomb-service-center/server/mux"
 	"github.com/apache/servicecomb-service-center/server/notify"
 	"github.com/apache/servicecomb-service-center/server/plugin"
-	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
-	"github.com/apache/servicecomb-service-center/server/task"
-	"github.com/apache/servicecomb-service-center/version"
 	"github.com/astaxie/beego"
+	"os"
 )
-
-const buildin = "buildin"
 
 var server ServiceCenterServer
 
@@ -74,84 +69,9 @@ func (s *ServiceCenterServer) waitForQuit() {
 	s.Stop()
 }
 
-func (s *ServiceCenterServer) needUpgrade() bool {
-	err := LoadServerVersion()
-	if err != nil {
-		log.Errorf(err, "check version failed, can not load the system config")
-		return false
-	}
-
-	update := !serviceUtil.VersionMatchRule(core.ServerInfo.Version,
-		fmt.Sprintf("%s+", version.Ver().Version))
-	if !update && version.Ver().Version != core.ServerInfo.Version {
-		log.Warnf(
-			"there is a higher version '%s' in cluster, now running '%s' version may be incompatible",
-			core.ServerInfo.Version, version.Ver().Version)
-	}
-
-	return update
-}
-
-func (s *ServiceCenterServer) loadOrUpgradeServerVersion() {
-	lock, err := mux.Lock(mux.GlobalLock)
-
-	if err != nil {
-		log.Errorf(err, "wait for server ready failed")
-		os.Exit(1)
-	}
-	if s.needUpgrade() {
-		core.ServerInfo.Version = version.Ver().Version
-
-		if err := UpgradeServerVersion(); err != nil {
-			log.Errorf(err, "upgrade server version failed")
-			os.Exit(1)
-		}
-	}
-	err = lock.Unlock()
-	if err != nil {
-		log.Error("", err)
-	}
-}
-
-func (s *ServiceCenterServer) compactBackendService() {
-	delta := core.ServerInfo.Config.CompactIndexDelta
-	if delta <= 0 || len(core.ServerInfo.Config.CompactInterval) == 0 {
-		return
-	}
-	interval, err := time.ParseDuration(core.ServerInfo.Config.CompactInterval)
-	if err != nil {
-		log.Errorf(err, "invalid compact interval %s, reset to default interval 12h", core.ServerInfo.Config.CompactInterval)
-		interval = 12 * time.Hour
-	}
-	s.goroutine.Do(func(ctx context.Context) {
-		log.Infof("enabled the automatic compact mechanism, compact once every %s, reserve %d",
-			core.ServerInfo.Config.CompactInterval, delta)
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-time.After(interval):
-				lock, err := mux.Try(mux.GlobalLock)
-				if err != nil {
-					log.Errorf(err, "can not compact backend by this service center instance now")
-					continue
-				}
-
-				err = backend.Registry().Compact(ctx, delta)
-				if err != nil {
-					log.Error("", err)
-				}
-
-				if err := lock.Unlock(); err != nil {
-					log.Error("", err)
-				}
-			}
-		}
-	})
-}
-
+// TODO move in pkg/job package
 // clear services who have no instance
-func (s *ServiceCenterServer) clearNoInstanceServices() {
+func (s *ServiceCenterServer) autoCleanUp() {
 	if !core.ServerInfo.Config.ServiceClearEnabled {
 		return
 	}
@@ -170,7 +90,7 @@ func (s *ServiceCenterServer) clearNoInstanceServices() {
 					log.Errorf(err, "can not clear no instance services by this service center instance now")
 					continue
 				}
-				err = task.ClearNoInstanceServices(core.ServerInfo.Config.ServiceTTL)
+				err = datasource.Instance().ClearNoInstanceServices(ctx, core.ServerInfo.Config.ServiceTTL)
 				if err := lock.Unlock(); err != nil {
 					log.Error("", err)
 				}
@@ -200,19 +120,17 @@ func (s *ServiceCenterServer) startServices() {
 	rbac.Init()
 	// check version
 	if core.ServerInfo.Config.SelfRegister {
-		s.loadOrUpgradeServerVersion()
+		if err := datasource.Instance().UpgradeVersion(context.Background()); err != nil {
+			os.Exit(1)
+		}
 	}
 
 	// cache mechanism
 	s.cacheService.Run()
 	<-s.cacheService.Ready()
 
-	if buildin != beego.AppConfig.DefaultString("registry_plugin", buildin) {
-		// compact backend automatically
-		s.compactBackendService()
-		// clean no-instance services automatically
-		s.clearNoInstanceServices()
-	}
+	// clean no-instance services automatically
+	s.autoCleanUp()
 
 	// api service
 	s.startAPIService()

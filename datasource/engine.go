@@ -17,11 +17,17 @@
 
 package datasource
 
-// DataSource is the DAO layer
-type DataSource interface {
-	SystemManager
-	AccountManager
-	DependencyManager
-	MetadataManager
-	SCManager
+import (
+	"context"
+	"time"
+)
+
+// SCManager contains the APIs of registration of SC itself
+type SCManager interface {
+	SelfRegister(ctx context.Context) error
+	SelfUnregister(ctx context.Context) error
+	SelfHeartBeat(ctx context.Context) error
+	// OPS
+	ClearNoInstanceServices(ctx context.Context, ttl time.Duration) error
+	UpgradeVersion(ctx context.Context) error
 }

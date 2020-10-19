@@ -47,9 +47,9 @@ func (c Cache) Get(k string) (kv *cache.KeyValue) {
 }
 func (c Cache) GetAll(arr *[]*cache.KeyValue) (s int) {
 	exists := make(map[string]struct{})
-	for _, cache := range c {
+	for _, item := range c {
 		var tmp []*cache.KeyValue
-		if l := cache.GetAll(&tmp); l == 0 {
+		if l := item.GetAll(&tmp); l == 0 {
 			continue
 		}
 		s += c.append(tmp, arr, exists)
@@ -58,9 +58,9 @@ func (c Cache) GetAll(arr *[]*cache.KeyValue) (s int) {
 }
 func (c Cache) GetPrefix(prefix string, arr *[]*cache.KeyValue) (s int) {
 	exists := make(map[string]struct{})
-	for _, cache := range c {
+	for _, item := range c {
 		var tmp []*cache.KeyValue
-		if l := cache.GetPrefix(prefix, &tmp); l == 0 {
+		if l := item.GetPrefix(prefix, &tmp); l == 0 {
 			continue
 		}
 		s += c.append(tmp, arr, exists)
@@ -86,8 +86,8 @@ func (c Cache) append(tmp []*cache.KeyValue, arr *[]*cache.KeyValue,
 
 func (c Cache) ForEach(iter func(k string, v *cache.KeyValue) (next bool)) {
 	exists := make(map[string]struct{})
-	for _, cache := range c {
-		cache.ForEach(func(k string, v *cache.KeyValue) bool {
+	for _, item := range c {
+		item.ForEach(func(k string, v *cache.KeyValue) bool {
 			if _, ok := exists[k]; ok {
 				return true
 			}

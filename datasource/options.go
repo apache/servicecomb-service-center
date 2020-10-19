@@ -17,11 +17,17 @@
 
 package datasource
 
+import "time"
+
 //Options contains configuration for plugins
 type Options struct {
 	Endpoint       string
 	PluginImplName ImplName
 	SchemaEditable bool
-	TTL            int64
+	// TTL: the default ttl of instance lease
+	TTL int64
+	// Compact options
+	CompactIndexDelta int64
+	CompactInterval   time.Duration
 	// TODO: pay attention to more net config like TLSConfig when coding
 }

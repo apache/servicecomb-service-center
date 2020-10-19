@@ -16,9 +16,14 @@
 package etcd
 
 import (
+	"context"
 	"errors"
 	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/mux"
+	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"time"
 )
 
 // TODO: define error with names here
@@ -31,9 +36,13 @@ func init() {
 }
 
 type DataSource struct {
-	// schemaEditable determines whether schema modification is allowed for
+	// SchemaEditable determines whether schema modification is allowed for
 	SchemaEditable bool
-	ttlFromEnv     int64
+	// TTL options
+	ttlFromEnv int64
+	// Compact options
+	CompactIndexDelta int64
+	CompactInterval   time.Duration
 }
 
 func NewDataSource(opts datasource.Options) *DataSource {
@@ -41,8 +50,10 @@ func NewDataSource(opts datasource.Options) *DataSource {
 	log.Warnf("dependency data source enable etcd mode")
 
 	inst := &DataSource{
-		SchemaEditable: opts.SchemaEditable,
-		ttlFromEnv:     opts.TTL,
+		SchemaEditable:    opts.SchemaEditable,
+		ttlFromEnv:        opts.TTL,
+		CompactInterval:   opts.CompactInterval,
+		CompactIndexDelta: opts.CompactIndexDelta,
 	}
 	// TODO: deal with exception
 	if err := inst.initialize(); err != nil {
@@ -53,5 +64,38 @@ func NewDataSource(opts datasource.Options) *DataSource {
 
 func (ds *DataSource) initialize() error {
 	// TODO: init dependency members
+	ds.autoCompact()
 	return nil
+}
+
+func (ds *DataSource) autoCompact() {
+	delta := ds.CompactIndexDelta
+	interval := ds.CompactInterval
+	if delta <= 0 || interval == 0 {
+		return
+	}
+	gopool.Go(func(ctx context.Context) {
+		log.Infof("enabled the automatic compact mechanism, compact once every %s, reserve %d", interval, delta)
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(interval):
+				lock, err := mux.Try(mux.GlobalLock)
+				if err != nil {
+					log.Errorf(err, "can not compact backend by this service center instance now")
+					continue
+				}
+
+				err = client.Instance().Compact(ctx, delta)
+				if err != nil {
+					log.Error("", err)
+				}
+
+				if err := lock.Unlock(); err != nil {
+					log.Error("", err)
+				}
+			}
+		}
+	})
 }
