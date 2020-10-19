@@ -129,7 +129,7 @@ func TestEtcdClient(t *testing.T) {
 	}
 
 	// base test
-	inst := NewRegistry()
+	inst := NewRegistry(registry.Options{})
 	if inst == nil || strings.Index(endpoint, firstEndpoint) < 0 {
 		t.Fatalf("TestEtcdClient failed, %s != %s", firstEndpoint, endpoint)
 	}
@@ -138,7 +138,7 @@ func TestEtcdClient(t *testing.T) {
 	etcd.Configuration().ClusterAddresses = "x"
 	etcd.Configuration().InitClusterInfo()
 	etcd.Configuration().DialTimeout = dialTimeout
-	inst = NewRegistry()
+	inst = NewRegistry(registry.Options{})
 	if inst == nil {
 		t.Fatalf("TestEtcdClient failed, %#v", err)
 	}

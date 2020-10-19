@@ -17,9 +17,9 @@
 package util_test
 
 import (
-	_ "github.com/apache/servicecomb-service-center/server/plugin/discovery/etcd"
+	_ "github.com/apache/servicecomb-service-center/datasource/etcd/cache/etcd"
+	_ "github.com/apache/servicecomb-service-center/datasource/etcd/client/buildin"
 	_ "github.com/apache/servicecomb-service-center/server/plugin/quota/buildin"
-	_ "github.com/apache/servicecomb-service-center/server/plugin/registry/buildin"
 )
 
 import (

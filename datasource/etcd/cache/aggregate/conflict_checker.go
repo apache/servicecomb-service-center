@@ -51,8 +51,8 @@ func (c *ConflictChecker) Check() {
 	}
 
 	var arr []*cache.KeyValue
-	for _, cache := range caches {
-		cache.GetAll(&arr)
+	for _, item := range caches {
+		item.GetAll(&arr)
 	}
 
 	exists := make(map[string]*cache.KeyValue)
