@@ -29,113 +29,45 @@ import (
 	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
-	"github.com/apache/servicecomb-service-center/server/service"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 )
 
-func (ds *DataSource) AddDependency(ctx context.Context, request *pb.AddDependenciesRequest) (*pb.AddDependenciesResponse, error) {
-	if err := service.Validate(request); err != nil {
-		return &pb.AddDependenciesResponse{
-			Response: serviceUtil.BadParamsResponse(err.Error()).Response,
-		}, nil
-	}
-
-	resp, err := ds.AddOrUpdateDependencies(ctx, request.Dependencies, false)
-	return &pb.AddDependenciesResponse{
-		Response: resp,
-	}, err
-
-}
-
-func (ds *DataSource) CreateDependency(ctx context.Context, request *pb.CreateDependenciesRequest) (*pb.CreateDependenciesResponse, error) {
-	if err := service.Validate(request); err != nil {
-		return &pb.CreateDependenciesResponse{
-			Response: serviceUtil.BadParamsResponse(err.Error()).Response,
-		}, nil
-	}
-	resp, err := ds.AddOrUpdateDependencies(ctx, request.Dependencies, false)
-	return &pb.CreateDependenciesResponse{
-		Response: resp,
-	}, err
-}
-
-func (ds *DataSource) SearchProviderDependency(ctx context.Context, request *pb.GetDependenciesRequest) (*pb.GetProDependenciesResponse, error) {
-	err := service.Validate(request)
-	if err != nil {
-		log.Errorf(err, "GetProviderDependencies failed for validating parameters failed")
-		return &pb.GetProDependenciesResponse{
-			Response: proto.CreateResponse(scerr.ErrInvalidParams, err.Error()),
-		}, nil
-	}
+func (ds *DataSource) SearchProviderDependency(ctx context.Context, request *pb.GetDependenciesRequest) ([]*pb.MicroService, error) {
 	domainProject := util.ParseDomainProject(ctx)
 	providerServiceID := request.ServiceId
-
 	provider, err := serviceUtil.GetService(ctx, domainProject, providerServiceID)
+
 	if err != nil {
 		log.Errorf(err, "GetProviderDependencies failed, provider is %s", providerServiceID)
 		return nil, err
 	}
 	if provider == nil {
 		log.Errorf(err, "GetProviderDependencies failed for provider[%s] does not exist", providerServiceID)
-		return &pb.GetProDependenciesResponse{
-			Response: proto.CreateResponse(scerr.ErrServiceNotExists, "Provider does not exist"),
-		}, nil
+		return nil, err
 	}
 
 	dr := serviceUtil.NewProviderDependencyRelation(ctx, domainProject, provider)
 	services, err := dr.GetDependencyConsumers(toDependencyFilterOptions(request)...)
-	if err != nil {
-		log.Errorf(err, "GetProviderDependencies failed, provider is %s/%s/%s/%s",
-			provider.Environment, provider.AppId, provider.ServiceName, provider.Version)
-		return &pb.GetProDependenciesResponse{
-			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
-		}, err
-	}
-	return &pb.GetProDependenciesResponse{
-		Response:  proto.CreateResponse(proto.Response_SUCCESS, "Get all consumers successful."),
-		Consumers: services,
-	}, nil
+	return services, err
 }
 
-func (ds *DataSource) SearchConsumerDependency(ctx context.Context, request *pb.GetDependenciesRequest) (*pb.GetConDependenciesResponse, error) {
-	err := service.Validate(request)
-	if err != nil {
-		log.Errorf(err, "GetConsumerDependencies failed for validating parameters failed")
-		return &pb.GetConDependenciesResponse{
-			Response: proto.CreateResponse(scerr.ErrInvalidParams, err.Error()),
-		}, nil
-	}
+func (ds *DataSource) SearchConsumerDependency(ctx context.Context, request *pb.GetDependenciesRequest) ([]*pb.MicroService, error) {
 	consumerID := request.ServiceId
 	domainProject := util.ParseDomainProject(ctx)
-
 	consumer, err := serviceUtil.GetService(ctx, domainProject, consumerID)
+
 	if err != nil {
 		log.Errorf(err, "GetConsumerDependencies failed, consumer is %s", consumerID)
-		return &pb.GetConDependenciesResponse{
-			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
-		}, err
+		return nil, err
 	}
 	if consumer == nil {
 		log.Errorf(err, "GetConsumerDependencies failed for consumer[%s] does not exist", consumerID)
-		return &pb.GetConDependenciesResponse{
-			Response: proto.CreateResponse(scerr.ErrServiceNotExists, "Consumer does not exist"),
-		}, nil
+		return nil, err
 	}
 
 	dr := serviceUtil.NewConsumerDependencyRelation(ctx, domainProject, consumer)
 	services, err := dr.GetDependencyProviders(toDependencyFilterOptions(request)...)
-	if err != nil {
-		log.Errorf(err, "GetConsumerDependencies failed, consumer is %s/%s/%s/%s",
-			consumer.Environment, consumer.AppId, consumer.ServiceName, consumer.Version)
-		return &pb.GetConDependenciesResponse{
-			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
-		}, err
-	}
-
-	return &pb.GetConDependenciesResponse{
-		Response:  proto.CreateResponse(proto.Response_SUCCESS, "Get all providers successfully."),
-		Providers: services,
-	}, nil
+	return services, err
 }
 
 func (ds *DataSource) DeleteDependency() {

@@ -25,7 +25,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/service/event"
 	"github.com/go-chassis/go-archaius"
 	"github.com/stretchr/testify/assert"
-	"strconv"
 	"testing"
 )
 
@@ -148,218 +147,57 @@ func Test_Creat(t *testing.T) {
 		}
 
 		// consumer does not exist
-		resp, err := datasource.Instance().CreateDependency(depGetContext(), &pb.CreateDependenciesRequest{
-			Dependencies: []*pb.ConsumerDependency{
-				{
-					Consumer: &pb.MicroServiceKey{
-						AppId:       "noexistapp",
-						ServiceName: "noexistservice",
-						Version:     "1.0.0",
-					},
-					Providers: providers,
+		resp, err := datasource.Instance().AddOrUpdateDependencies(depGetContext(), []*pb.ConsumerDependency{
+			{
+				Consumer: &pb.MicroServiceKey{
+					AppId:       "noexistapp",
+					ServiceName: "noexistservice",
+					Version:     "1.0.0",
 				},
+				Providers: providers,
 			},
-		})
+		}, false)
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrServiceNotExists, resp.Response.GetCode())
+		assert.Equal(t, scerr.ErrServiceNotExists, resp.GetCode())
 
-		// provider version is invalid
-		resp, err = datasource.Instance().CreateDependency(depGetContext(), &pb.CreateDependenciesRequest{
-			Dependencies: []*pb.ConsumerDependency{
-				{
-					Consumer: consumer,
-					Providers: []*pb.MicroServiceKey{
-						{
-							AppId:       "dep_create_dep_group",
-							ServiceName: "dep_create_dep_provider",
-							Version:     "1.0.32768",
-						},
-					},
-				},
-			},
-		})
-		assert.NotNil(t, resp)
-		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrInvalidParams, resp.Response.GetCode())
-
-		// consumer version is invalid
-		resp, err = datasource.Instance().CreateDependency(depGetContext(), &pb.CreateDependenciesRequest{
-			Dependencies: []*pb.ConsumerDependency{
-				{
-					Consumer: &pb.MicroServiceKey{
-						AppId:       "dep_create_dep_group",
-						ServiceName: "dep_create_dep_consumer",
-						Version:     "1.0.0+",
-					},
-					Providers: providers,
-				},
-			},
-		})
-		assert.NotNil(t, resp)
-		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrInvalidParams, resp.Response.GetCode())
-
-		resp, err = datasource.Instance().CreateDependency(depGetContext(), &pb.CreateDependenciesRequest{
-			Dependencies: []*pb.ConsumerDependency{
-				{
-					Consumer: &pb.MicroServiceKey{
-						AppId:       "dep_create_dep_group",
-						ServiceName: "dep_create_dep_consumer",
-						Version:     "1.0.0-1.0.1",
-					},
-					Providers: providers,
-				},
-			},
-		})
-		assert.NotNil(t, resp)
-		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrInvalidParams, resp.Response.GetCode())
-
-		resp, err = datasource.Instance().CreateDependency(depGetContext(), &pb.CreateDependenciesRequest{
-			Dependencies: []*pb.ConsumerDependency{
-				{
-					Consumer: &pb.MicroServiceKey{
-						AppId:       "dep_create_dep_group",
-						ServiceName: "dep_create_dep_consumer",
-						Version:     "latest",
-					},
-					Providers: providers,
-				},
-			},
-		})
-		assert.NotNil(t, resp)
-		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrInvalidParams, resp.Response.GetCode())
-
-		resp, err = datasource.Instance().CreateDependency(depGetContext(), &pb.CreateDependenciesRequest{
-			Dependencies: []*pb.ConsumerDependency{
-				{
-					Consumer: &pb.MicroServiceKey{
-						AppId:       "dep_create_dep_group",
-						ServiceName: "dep_create_dep_consumer",
-						Version:     "",
-					},
-					Providers: providers,
-				},
-			},
-		})
-		assert.NotNil(t, resp)
-		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrInvalidParams, resp.Response.GetCode())
-
-		resp, err = datasource.Instance().CreateDependency(depGetContext(), &pb.CreateDependenciesRequest{
-			Dependencies: []*pb.ConsumerDependency{
-				{
-					Consumer: &pb.MicroServiceKey{
-						AppId:       "dep_create_dep_group",
-						ServiceName: "*",
-						Version:     "1.0.0",
-					},
-					Providers: providers,
-				},
-			},
-		})
-		assert.NotNil(t, resp)
-		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrInvalidParams, resp.Response.GetCode())
-
-		// provider app is invalid
-		resp, err = datasource.Instance().CreateDependency(depGetContext(), &pb.CreateDependenciesRequest{
-			Dependencies: []*pb.ConsumerDependency{
-				{
-					Consumer: consumer,
-					Providers: []*pb.MicroServiceKey{
-						{
-							AppId:       "*",
-							ServiceName: "dep_service_name_provider",
-							Version:     "2.0.0",
-						},
-					},
-				},
-			},
-		})
-		assert.NotNil(t, resp)
-		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrInvalidParams, resp.Response.GetCode())
-
-		// provider serviceName is invalid
-		resp, err = datasource.Instance().CreateDependency(depGetContext(), &pb.CreateDependenciesRequest{
-			Dependencies: []*pb.ConsumerDependency{
-				{
-					Consumer: consumer,
-					Providers: []*pb.MicroServiceKey{
-						{
-							AppId:       "dep_service_group_provider",
-							ServiceName: "-",
-							Version:     "2.0.0",
-						},
-					},
-				},
-			},
-		})
-		assert.NotNil(t, resp)
-		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrInvalidParams, resp.Response.GetCode())
-
-		// provider version is invalid
-		resp, err = datasource.Instance().CreateDependency(depGetContext(), &pb.CreateDependenciesRequest{
-			Dependencies: []*pb.ConsumerDependency{
-				{
-					Consumer: consumer,
-					Providers: []*pb.MicroServiceKey{
-						{
-							AppId:       "dep_service_group_provider",
-							ServiceName: "dep_service_name_provider",
-							Version:     "",
-						},
-					},
-				},
-			},
-		})
-		assert.NotNil(t, resp)
-		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrInvalidParams, resp.Response.GetCode())
+		assert.Equal(t, nil, deh.Handle())
 
 		// provider in diff env
-		resp, err = datasource.Instance().CreateDependency(depGetContext(), &pb.CreateDependenciesRequest{
-			Dependencies: []*pb.ConsumerDependency{
-				{
-					Consumer: consumer,
-					Providers: []*pb.MicroServiceKey{
-						{
-							Environment: pb.ENV_PROD,
-							AppId:       "dep_service_group_provider",
-							ServiceName: "dep_service_name_provider",
-							Version:     "latest",
-						},
+		resp, err = datasource.Instance().AddOrUpdateDependencies(depGetContext(), []*pb.ConsumerDependency{
+			{
+				Consumer: consumer,
+				Providers: []*pb.MicroServiceKey{
+					{
+						Environment: pb.ENV_PROD,
+						AppId:       "dep_service_group_provider",
+						ServiceName: "dep_service_name_provider",
+						Version:     "latest",
 					},
 				},
 			},
-		})
+		}, false)
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+		assert.Equal(t, proto.Response_SUCCESS, resp.GetCode())
 
 		// consumer in diff env
 		consumer.Environment = pb.ENV_PROD
-		resp, err = datasource.Instance().CreateDependency(depGetContext(), &pb.CreateDependenciesRequest{
-			Dependencies: []*pb.ConsumerDependency{
-				{
-					Consumer: consumer,
-					Providers: []*pb.MicroServiceKey{
-						{
-							AppId:       "dep_service_group_provider",
-							ServiceName: "dep_service_name_provider",
-							Version:     "latest",
-						},
+		resp, err = datasource.Instance().AddOrUpdateDependencies(depGetContext(), []*pb.ConsumerDependency{
+			{
+				Consumer: consumer,
+				Providers: []*pb.MicroServiceKey{
+					{
+						AppId:       "dep_service_group_provider",
+						ServiceName: "dep_service_name_provider",
+						Version:     "latest",
 					},
 				},
 			},
-		})
+		}, false)
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+		assert.Equal(t, proto.Response_SUCCESS, resp.GetCode())
 
 		assert.Equal(t, nil, deh.Handle())
 
@@ -368,41 +206,14 @@ func Test_Creat(t *testing.T) {
 		})
 		assert.NotNil(t, respCon)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, respCon.Response.GetCode())
-		assert.Equal(t, 0, len(respCon.Providers))
+		assert.Equal(t, 0, len(respCon))
 
 		respCon, err = datasource.Instance().SearchConsumerDependency(depGetContext(), &pb.GetDependenciesRequest{
 			ServiceId: consumerId2,
 		})
 		assert.NotNil(t, respCon)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, respCon.Response.GetCode())
-		assert.Equal(t, 0, len(respCon.Providers))
-
-		// dependencies is invalid
-		var deps []*pb.ConsumerDependency
-		for i := 0; i < 101; i++ {
-			deps = append(deps, &pb.ConsumerDependency{
-				Consumer: &pb.MicroServiceKey{
-					AppId:       "dep_create_dep_group",
-					ServiceName: "dep_create_dep_consumer" + strconv.Itoa(i),
-					Version:     "1.0.0",
-				},
-				Providers: []*pb.MicroServiceKey{
-					{
-						AppId:       "dep_service_group_provider",
-						ServiceName: "dep_service_name_provider",
-						Version:     "latest",
-					},
-				},
-			})
-		}
-		resp, err = datasource.Instance().CreateDependency(depGetContext(), &pb.CreateDependenciesRequest{
-			Dependencies: deps,
-		})
-		assert.NotNil(t, resp)
-		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrInvalidParams, resp.Response.GetCode())
+		assert.Equal(t, 0, len(respCon))
 	})
 
 	t.Run("when request is valid, should be passed", func(t *testing.T) {
@@ -413,23 +224,21 @@ func Test_Creat(t *testing.T) {
 		}
 
 		// add latest
-		resp, err := datasource.Instance().CreateDependency(depGetContext(), &pb.CreateDependenciesRequest{
-			Dependencies: []*pb.ConsumerDependency{
-				{
-					Consumer: consumer,
-					Providers: []*pb.MicroServiceKey{
-						{
-							AppId:       "dep_create_dep_group",
-							ServiceName: "dep_create_dep_provider",
-							Version:     "latest",
-						},
+		resp, err := datasource.Instance().AddOrUpdateDependencies(depGetContext(), []*pb.ConsumerDependency{
+			{
+				Consumer: consumer,
+				Providers: []*pb.MicroServiceKey{
+					{
+						AppId:       "dep_create_dep_group",
+						ServiceName: "dep_create_dep_provider",
+						Version:     "latest",
 					},
 				},
 			},
-		})
+		}, false)
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+		assert.Equal(t, proto.Response_SUCCESS, resp.GetCode())
 
 		assert.Equal(t, nil, deh.Handle())
 
@@ -438,120 +247,111 @@ func Test_Creat(t *testing.T) {
 		})
 		assert.NotNil(t, respPro)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, respPro.Response.GetCode())
+		assert.Equal(t, "1.0.1", respPro[0].Version)
 
 		// add 1.0.0+
-		resp, err = datasource.Instance().CreateDependency(depGetContext(), &pb.CreateDependenciesRequest{
-			Dependencies: []*pb.ConsumerDependency{
-				{
-					Consumer: consumer,
-					Providers: []*pb.MicroServiceKey{
-						{
-							AppId:       "dep_create_dep_group",
-							ServiceName: "dep_create_dep_provider",
-							Version:     "1.0.0+",
-						},
+		resp, err = datasource.Instance().AddOrUpdateDependencies(depGetContext(), []*pb.ConsumerDependency{
+			{
+				Consumer: consumer,
+				Providers: []*pb.MicroServiceKey{
+					{
+						AppId:       "dep_create_dep_group",
+						ServiceName: "dep_create_dep_provider",
+						Version:     "1.0.0+",
 					},
 				},
 			},
-		})
+		}, false)
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+		assert.Equal(t, proto.Response_SUCCESS, resp.GetCode())
+
+		assert.Equal(t, nil, deh.Handle())
 
 		respPro, err = datasource.Instance().SearchConsumerDependency(depGetContext(), &pb.GetDependenciesRequest{
 			ServiceId: consumerId1,
 		})
 		assert.NotNil(t, respPro)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, respPro.Response.GetCode())
+		assert.Equal(t, 2, len(respPro))
 
 		// add *
-		resp, err = datasource.Instance().CreateDependency(depGetContext(), &pb.CreateDependenciesRequest{
-			Dependencies: []*pb.ConsumerDependency{
-				{
-					Consumer: &pb.MicroServiceKey{
-						ServiceName: "dep_create_dep_consumer_all",
-						AppId:       "dep_create_dep_group",
-						Version:     "1.0.0",
-					},
-					Providers: []*pb.MicroServiceKey{
-						{
-							ServiceName: "*",
-						},
+		resp, err = datasource.Instance().AddOrUpdateDependencies(depGetContext(), []*pb.ConsumerDependency{
+			{
+				Consumer: &pb.MicroServiceKey{
+					ServiceName: "dep_create_dep_consumer_all",
+					AppId:       "dep_create_dep_group",
+					Version:     "1.0.0",
+				},
+				Providers: []*pb.MicroServiceKey{
+					{
+						ServiceName: "*",
 					},
 				},
 			},
-		})
+		}, false)
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+		assert.Equal(t, proto.Response_SUCCESS, resp.GetCode())
 
 		respPro, err = datasource.Instance().SearchConsumerDependency(depGetContext(), &pb.GetDependenciesRequest{
 			ServiceId: consumerId3,
 		})
 		assert.NotNil(t, respPro)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, respPro.Response.GetCode())
-		assert.Equal(t, 0, len(respPro.Providers))
+		assert.Equal(t, 0, len(respPro))
 
 		// clean all
-		resp, err = datasource.Instance().CreateDependency(depGetContext(), &pb.CreateDependenciesRequest{
-			Dependencies: []*pb.ConsumerDependency{
-				{
-					Consumer: &pb.MicroServiceKey{
-						ServiceName: "dep_create_dep_consumer_all",
-						AppId:       "dep_create_dep_group",
-						Version:     "1.0.0",
-					},
-					Providers: nil,
+		resp, err = datasource.Instance().AddOrUpdateDependencies(depGetContext(), []*pb.ConsumerDependency{
+			{
+				Consumer: &pb.MicroServiceKey{
+					ServiceName: "dep_create_dep_consumer_all",
+					AppId:       "dep_create_dep_group",
+					Version:     "1.0.0",
 				},
+				Providers: nil,
 			},
-		})
+		}, false)
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+		assert.Equal(t, proto.Response_SUCCESS, resp.GetCode())
 
 		// add multiple providers
-		resp, err = datasource.Instance().CreateDependency(depGetContext(), &pb.CreateDependenciesRequest{
-			Dependencies: []*pb.ConsumerDependency{
-				{
-					Consumer: consumer,
-					Providers: []*pb.MicroServiceKey{
-						{
-							AppId:       "dep_create_dep_group",
-							ServiceName: "dep_create_dep_provider",
-							Version:     "1.0.0",
-						},
-						{
-							ServiceName: "*",
-						},
+		resp, err = datasource.Instance().AddOrUpdateDependencies(depGetContext(), []*pb.ConsumerDependency{
+			{
+				Consumer: consumer,
+				Providers: []*pb.MicroServiceKey{
+					{
+						AppId:       "dep_create_dep_group",
+						ServiceName: "dep_create_dep_provider",
+						Version:     "1.0.0",
+					},
+					{
+						ServiceName: "*",
 					},
 				},
 			},
-		})
+		}, false)
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+		assert.Equal(t, proto.Response_SUCCESS, resp.GetCode())
 
 		// add 1.0.0-2.0.0 to override *
-		resp, err = datasource.Instance().CreateDependency(depGetContext(), &pb.CreateDependenciesRequest{
-			Dependencies: []*pb.ConsumerDependency{
-				{
-					Consumer: consumer,
-					Providers: []*pb.MicroServiceKey{
-						{
-							AppId:       "dep_create_dep_group",
-							ServiceName: "dep_create_dep_provider",
-							Version:     "1.0.0-1.0.1",
-						},
+		resp, err = datasource.Instance().AddOrUpdateDependencies(depGetContext(), []*pb.ConsumerDependency{
+			{
+				Consumer: consumer,
+				Providers: []*pb.MicroServiceKey{
+					{
+						AppId:       "dep_create_dep_group",
+						ServiceName: "dep_create_dep_provider",
+						Version:     "1.0.0-1.0.1",
 					},
 				},
 			},
-		})
+		}, false)
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+		assert.Equal(t, proto.Response_SUCCESS, resp.GetCode())
 
 		assert.Equal(t, nil, deh.Handle())
 
@@ -560,27 +360,24 @@ func Test_Creat(t *testing.T) {
 		})
 		assert.NotNil(t, respPro)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, respPro.Response.GetCode())
-		assert.Equal(t, "1.0.0", respPro.Providers[0].Version)
+		assert.Equal(t, "1.0.0", respPro[0].Version)
 
 		// add not override
-		respAdd, err := datasource.Instance().AddDependency(depGetContext(), &pb.AddDependenciesRequest{
-			Dependencies: []*pb.ConsumerDependency{
-				{
-					Consumer: consumer,
-					Providers: []*pb.MicroServiceKey{
-						{
-							AppId:       "dep_create_dep_group",
-							ServiceName: "dep_create_dep_provider",
-							Version:     "1.0.0-3.0.0",
-						},
+		respAdd, err := datasource.Instance().AddOrUpdateDependencies(depGetContext(), []*pb.ConsumerDependency{
+			{
+				Consumer: consumer,
+				Providers: []*pb.MicroServiceKey{
+					{
+						AppId:       "dep_create_dep_group",
+						ServiceName: "dep_create_dep_provider",
+						Version:     "1.0.0-3.0.0",
 					},
 				},
 			},
-		})
+		}, false)
 		assert.NotNil(t, respAdd)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, respAdd.Response.GetCode())
+		assert.Equal(t, proto.Response_SUCCESS, respAdd.GetCode())
 
 		assert.Equal(t, nil, deh.Handle())
 
@@ -589,31 +386,26 @@ func Test_Creat(t *testing.T) {
 		})
 		assert.NotNil(t, respPro)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, respPro.Response.GetCode())
 
 		// add provider is empty
-		resp, err = datasource.Instance().CreateDependency(depGetContext(), &pb.CreateDependenciesRequest{
-			Dependencies: []*pb.ConsumerDependency{
-				{
-					Consumer:  consumer,
-					Providers: []*pb.MicroServiceKey{},
-				},
+		resp, err = datasource.Instance().AddOrUpdateDependencies(depGetContext(), []*pb.ConsumerDependency{
+			{
+				Consumer:  consumer,
+				Providers: []*pb.MicroServiceKey{},
 			},
-		})
+		}, false)
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+		assert.Equal(t, proto.Response_SUCCESS, resp.GetCode())
 
-		resp, err = datasource.Instance().CreateDependency(depGetContext(), &pb.CreateDependenciesRequest{
-			Dependencies: []*pb.ConsumerDependency{
-				{
-					Consumer: consumer,
-				},
+		resp, err = datasource.Instance().AddOrUpdateDependencies(depGetContext(), []*pb.ConsumerDependency{
+			{
+				Consumer: consumer,
 			},
-		})
+		}, false)
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+		assert.Equal(t, proto.Response_SUCCESS, resp.GetCode())
 
 		assert.Equal(t, nil, deh.Handle())
 
@@ -622,9 +414,6 @@ func Test_Creat(t *testing.T) {
 		})
 		assert.NotNil(t, respPro)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, respPro.Response.GetCode())
-		//assert.Equal(t, 0, len(respPro.Providers))
-
 	})
 }
 
@@ -689,40 +478,6 @@ func Test_Get(t *testing.T) {
 		providerId2 = resp.ServiceId
 	})
 
-	t.Run("when request is invalid, should be failed", func(t *testing.T) {
-		//service id is empty when get provider
-		resp, err := datasource.Instance().SearchProviderDependency(depGetContext(), &pb.GetDependenciesRequest{
-			ServiceId: "",
-		})
-		assert.NotNil(t, resp)
-		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrInvalidParams, resp.Response.GetCode())
-
-		//service does not exist when get provider
-		resp, err = datasource.Instance().SearchProviderDependency(depGetContext(), &pb.GetDependenciesRequest{
-			ServiceId: "noneservice",
-		})
-		assert.NotNil(t, resp)
-		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrServiceNotExists, resp.Response.GetCode())
-
-		//service id is empty when get consumer
-		resp, err = datasource.Instance().SearchProviderDependency(depGetContext(), &pb.GetDependenciesRequest{
-			ServiceId: "",
-		})
-		assert.NotNil(t, resp)
-		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrInvalidParams, resp.Response.GetCode())
-
-		//service does not exist when get consumer
-		resp, err = datasource.Instance().SearchProviderDependency(depGetContext(), &pb.GetDependenciesRequest{
-			ServiceId: "noneservice",
-		})
-		assert.NotNil(t, resp)
-		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrServiceNotExists, resp.Response.GetCode())
-	})
-
 	t.Run("when request is valid, should be passed", func(t *testing.T) {
 		//get provider
 		resp, err := datasource.Instance().SearchProviderDependency(depGetContext(), &pb.GetDependenciesRequest{
@@ -730,7 +485,6 @@ func Test_Get(t *testing.T) {
 		})
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
 
 		//get consumer
 		resp, err = datasource.Instance().SearchProviderDependency(depGetContext(), &pb.GetDependenciesRequest{
@@ -738,7 +492,6 @@ func Test_Get(t *testing.T) {
 		})
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
 	})
 
 	t.Run("when after finding instance, should created dependencies between C and P", func(t *testing.T) {
@@ -761,7 +514,6 @@ func Test_Get(t *testing.T) {
 		})
 		assert.NotNil(t, respGetP)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, respGetP.Response.GetCode())
 
 		// get provider's deps
 		respGetC, err := datasource.Instance().SearchConsumerDependency(depGetContext(), &pb.GetDependenciesRequest{
@@ -769,7 +521,6 @@ func Test_Get(t *testing.T) {
 		})
 		assert.NotNil(t, respGetC)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, respGetC.Response.GetCode())
 
 		// get self deps
 		resp, err = datasource.Instance().FindInstances(depGetContext(), &pb.FindInstancesRequest{
@@ -790,7 +541,6 @@ func Test_Get(t *testing.T) {
 		})
 		assert.NotNil(t, respGetC)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, respGetC.Response.GetCode())
 
 		// find before provider register
 		resp, err = datasource.Instance().FindInstances(depGetContext(), &pb.FindInstancesRequest{
@@ -834,9 +584,8 @@ func Test_Get(t *testing.T) {
 		})
 		assert.NotNil(t, respGetC)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, respGetC.Response.GetCode())
-		assert.Equal(t, 1, len(respGetC.Providers))
-		assert.Equal(t, finder1, respGetC.Providers[0].ServiceId)
+		assert.Equal(t, 1, len(respGetC))
+		assert.Equal(t, finder1, respGetC[0].ServiceId)
 
 		// find after delete micro service
 		respDelP, err := datasource.Instance().UnregisterService(depGetContext(), &pb.DeleteServiceRequest{
@@ -853,8 +602,7 @@ func Test_Get(t *testing.T) {
 		})
 		assert.NotNil(t, respGetC)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, respGetC.Response.GetCode())
-		assert.Equal(t, 0, len(respGetC.Providers))
+		assert.Equal(t, 0, len(respGetC))
 
 		respCreateF, err = datasource.Instance().RegisterService(depGetContext(), &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
@@ -887,8 +635,7 @@ func Test_Get(t *testing.T) {
 		})
 		assert.NotNil(t, respGetC)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, respGetC.Response.GetCode())
-		assert.Equal(t, 1, len(respGetC.Providers))
-		assert.Equal(t, finder1, respGetC.Providers[0].ServiceId)
+		assert.Equal(t, 1, len(respGetC))
+		assert.Equal(t, finder1, respGetC[0].ServiceId)
 	})
 }
