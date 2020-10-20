@@ -113,7 +113,7 @@ func (ds *DataSource) AddOrUpdateDependencies(ctx context.Context, dependencyInf
 		if !override {
 			id = util.GenerateUUID()
 		}
-		key := apt.GenerateConsumerDependencyQueueKey(domainProject, consumerID, id)
+		key := GenerateConsumerDependencyQueueKey(domainProject, consumerID, id)
 		opts = append(opts, registry.OpPut(registry.WithStrKey(key), registry.WithValue(data)))
 	}
 
@@ -126,14 +126,4 @@ func (ds *DataSource) AddOrUpdateDependencies(ctx context.Context, dependencyInf
 	log.Infof("put request into dependency queue successfully, override: %t, %v, from remote %s",
 		override, dependencyInfos, util.GetIPFromContext(ctx))
 	return proto.CreateResponse(proto.Response_SUCCESS, "Create dependency successfully."), nil
-}
-
-func toDependencyFilterOptions(in *pb.GetDependenciesRequest) (opts []serviceUtil.DependencyRelationFilterOption) {
-	if in.SameDomain {
-		opts = append(opts, serviceUtil.WithSameDomainProject())
-	}
-	if in.NoSelf {
-		opts = append(opts, serviceUtil.WithoutSelfDependency())
-	}
-	return opts
 }

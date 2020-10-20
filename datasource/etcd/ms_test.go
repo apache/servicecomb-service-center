@@ -737,6 +737,157 @@ func TestService_Delete(t *testing.T) {
 	})
 }
 
+func TestService_Info(t *testing.T)  {
+	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
+		return NewDataSource(opts), nil
+	})
+
+	err := datasource.Init(datasource.Options{
+		Endpoint:       "",
+		PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
+	})
+	assert.NoError(t, err)
+
+	t.Run("get all services", func(t *testing.T) {
+		log.Info("should be passed")
+		resp, err := datasource.Instance().GetServicesInfo(getContext(), &pb.GetServicesInfoRequest{
+			Options: []string{"all"},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+
+		resp, err = datasource.Instance().GetServicesInfo(getContext(), &pb.GetServicesInfoRequest{
+			Options: []string{""},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+
+		resp, err = datasource.Instance().GetServicesInfo(getContext(), &pb.GetServicesInfoRequest{
+			Options: []string{"tags", "rules", "instances", "schemas", "statistics"},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+
+		resp, err = datasource.Instance().GetServicesInfo(getContext(), &pb.GetServicesInfoRequest{
+			Options: []string{"statistics"},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+
+		resp, err = datasource.Instance().GetServicesInfo(getContext(), &pb.GetServicesInfoRequest{
+			Options:   []string{"instances"},
+			CountOnly: true,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+	})
+}
+
+func TestService_Detail(t *testing.T)  {
+	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
+		return NewDataSource(opts), nil
+	})
+
+	err := datasource.Init(datasource.Options{
+		Endpoint:       "",
+		PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
+	})
+	assert.NoError(t, err)
+
+	var (
+		serviceId string
+	)
+
+	t.Run("execute 'get detail' operation", func(t *testing.T) {
+		log.Info("should be passed")
+		resp, err := datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				AppId:       "govern_service_group",
+				ServiceName: "govern_service_name",
+				Version:     "3.0.0",
+				Level:       "FRONT",
+				Status:      pb.MS_UP,
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+		serviceId = resp.ServiceId
+
+		datasource.Instance().ModifySchema(getContext(), &pb.ModifySchemaRequest{
+			ServiceId: serviceId,
+			SchemaId:  "schemaId",
+			Schema:    "detail",
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+
+		datasource.Instance().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
+			Instance: &pb.MicroServiceInstance{
+				ServiceId: serviceId,
+				Endpoints: []string{
+					"govern:127.0.0.1:8080",
+				},
+				HostName: "UT-HOST",
+				Status:   pb.MSI_UP,
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+
+		log.Info("when get invalid service detail, should be failed")
+		respD, err := datasource.Instance().GetServiceDetail(getContext(), &pb.GetServiceRequest{
+			ServiceId: "",
+		})
+		assert.NoError(t, err)
+		assert.NotEqual(t, proto.Response_SUCCESS, respD.Response.GetCode())
+
+		log.Info("when get a service detail, should be passed")
+		respGetServiceDetail, err := datasource.Instance().GetServiceDetail(getContext(), &pb.GetServiceRequest{
+			ServiceId: serviceId,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, respGetServiceDetail.Response.GetCode())
+
+		respDelete, err := datasource.Instance().UnregisterService(getContext(), &pb.DeleteServiceRequest{
+			ServiceId: serviceId,
+			Force:     true,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, respDelete.Response.GetCode())
+
+		respGetServiceDetail, err = datasource.Instance().GetServiceDetail(getContext(), &pb.GetServiceRequest{
+			ServiceId: serviceId,
+		})
+		assert.NoError(t, err)
+		assert.NotEqual(t, proto.Response_SUCCESS, respGetServiceDetail.Response.GetCode())
+	})
+}
+
+func TestApplication_Get(t *testing.T)  {
+	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
+		return NewDataSource(opts), nil
+	})
+
+	err := datasource.Init(datasource.Options{
+		Endpoint:       "",
+		PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
+	})
+	assert.NoError(t, err)
+
+	t.Run("execute 'get apps' operation", func(t *testing.T) {
+		log.Info("when request is valid, should be passed")
+		resp, err := datasource.Instance().GetApplications(getContext(), &pb.GetAppsRequest{})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+
+		resp, err = datasource.Instance().GetApplications(getContext(), &pb.GetAppsRequest{
+			Environment: pb.ENV_ACCEPT,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+	})
+}
+
 func TestInstance_Create(t *testing.T) {
 	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
 		return NewDataSource(opts), nil
@@ -3686,5 +3837,320 @@ func TestTags_Add(t *testing.T) {
 		})
 		assert.NoError(t, err)
 		assert.Equal(t, scerr.ErrNotEnoughQuota, resp.Response.GetCode())
+	})
+}
+
+func TestTags_Get(t *testing.T) {
+	var serviceId string
+	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
+		return NewDataSource(opts), nil
+	})
+	err := datasource.Init(datasource.Options{
+		Endpoint:       "",
+		PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
+	})
+	assert.NoError(t, err)
+
+	t.Run("create service and add tags", func(t *testing.T) {
+		svc := &pb.MicroService{
+			AppId:       "get_tag_group_ms",
+			ServiceName: "get_tag_service_ms",
+			Version:     "1.0.0",
+			Level:       "FRONT",
+			Status:      pb.MS_UP,
+		}
+		resp, err := datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
+			Service: svc,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+		serviceId = resp.ServiceId
+
+		log.Info("add tags should be passed")
+		respAddTags, err := datasource.Instance().AddTags(getContext(), &pb.AddServiceTagsRequest{
+			ServiceId: serviceId,
+			Tags: map[string]string{
+				"a": "test",
+				"b": "b",
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, respAddTags.Response.GetCode())
+	})
+
+	t.Run("the request is invalid", func(t *testing.T) {
+		log.Info("service does not exists")
+		resp, err := datasource.Instance().GetTags(getContext(), &pb.GetServiceTagsRequest{
+			ServiceId: "noThisService",
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, scerr.ErrServiceNotExists, resp.Response.GetCode())
+
+		log.Info("service's id is empty")
+		resp, err = datasource.Instance().GetTags(getContext(), &pb.GetServiceTagsRequest{
+			ServiceId: "",
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, scerr.ErrServiceNotExists, resp.Response.GetCode())
+
+		log.Info("service's id is invalid")
+		resp, err = datasource.Instance().GetTags(getContext(), &pb.GetServiceTagsRequest{
+			ServiceId: strings.Repeat("x", 65),
+		})
+		assert.Equal(t, scerr.ErrServiceNotExists, resp.Response.GetCode())
+	})
+
+	t.Run("the request is valid", func(t *testing.T) {
+		resp, err := datasource.Instance().GetTags(getContext(), &pb.GetServiceTagsRequest{
+			ServiceId: serviceId,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+		assert.Equal(t, "test", resp.Tags["a"])
+	})
+}
+
+func TestTag_Update(t *testing.T) {
+	var serviceId string
+	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
+		return NewDataSource(opts), nil
+	})
+	err := datasource.Init(datasource.Options{
+		Endpoint:       "",
+		PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
+	})
+	assert.NoError(t, err)
+
+	t.Run("add service and add tags", func(t *testing.T) {
+		svc := &pb.MicroService{
+			AppId:       "update_tag_group_ms",
+			ServiceName: "update_tag_service_ms",
+			Version:     "1.0.0",
+			Level:       "FRONT",
+			Status:      pb.MS_UP,
+		}
+		resp, err := datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
+			Service: svc,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+		serviceId = resp.ServiceId
+
+		log.Info("add tags")
+		respAddTags, err := datasource.Instance().AddTags(getContext(), &pb.AddServiceTagsRequest{
+			ServiceId: serviceId,
+			Tags: map[string]string{
+				"a": "test",
+				"b": "b",
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, respAddTags.Response.GetCode())
+	})
+
+	t.Run("the request is invalid", func(t *testing.T) {
+
+		log.Info("service does not exists")
+		resp, err := datasource.Instance().UpdateTag(getContext(), &pb.UpdateServiceTagRequest{
+			ServiceId: "noneservice",
+			Key:       "a",
+			Value:     "update",
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, scerr.ErrServiceNotExists, resp.Response.GetCode())
+
+		log.Info("tag key does not exist")
+		resp, err = datasource.Instance().UpdateTag(getContext(), &pb.UpdateServiceTagRequest{
+			ServiceId: serviceId,
+			Key:       "notexisttag",
+			Value:     "update",
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, scerr.ErrTagNotExists, resp.Response.GetCode())
+
+		log.Info("tag key is invalid")
+		resp, err = datasource.Instance().UpdateTag(getContext(), &pb.UpdateServiceTagRequest{
+			ServiceId: serviceId,
+			Key:       strings.Repeat("x", 65),
+			Value:     "v",
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, scerr.ErrTagNotExists, resp.Response.GetCode())
+	})
+
+	t.Run("the request is valid", func(t *testing.T) {
+		resp, err := datasource.Instance().UpdateTag(getContext(), &pb.UpdateServiceTagRequest{
+			ServiceId: serviceId,
+			Key:       "a",
+			Value:     "update",
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+	})
+
+	t.Run("find instance, contain tag", func(t *testing.T) {
+		log.Info("create consumer")
+		resp, err := datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				AppId:       "find_inst_tag_group_ms",
+				ServiceName: "find_inst_tag_consumer_ms",
+				Version:     "1.0.0",
+				Level:       "FRONT",
+				Status:      pb.MS_UP,
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+		consumerId := resp.ServiceId
+
+		log.Info("create provider")
+		resp, err = datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				AppId:       "find_inst_tag_group_ms",
+				ServiceName: "find_inst_tag_provider_ms",
+				Version:     "1.0.1",
+				Level:       "FRONT",
+				Status:      pb.MS_UP,
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+		providerId := resp.ServiceId
+
+		log.Info("tag the provider")
+		addTagsResp, err := datasource.Instance().AddTags(getContext(), &pb.AddServiceTagsRequest{
+			ServiceId: providerId,
+			Tags:      map[string]string{"filter_tag": "filter"},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, addTagsResp.Response.GetCode())
+
+		log.Info("add instance to provider")
+		instanceResp, err := datasource.Instance().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
+			Instance: &pb.MicroServiceInstance{
+				ServiceId: providerId,
+				Endpoints: []string{
+					"findInstanceForTagFilter:127.0.0.1:8080",
+				},
+				HostName: "UT-HOST",
+				Status:   pb.MSI_UP,
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, instanceResp.Response.GetCode())
+
+		log.Info("find instance")
+		findResp, err := datasource.Instance().FindInstances(getContext(), &pb.FindInstancesRequest{
+			ConsumerServiceId: consumerId,
+			AppId:             "find_inst_tag_group_ms",
+			ServiceName:       "find_inst_tag_provider_ms",
+			VersionRule:       "1.0.0+",
+			Tags:              []string{"not-exist-tag"},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, findResp.Response.GetCode())
+		assert.Equal(t, 0, len(findResp.Instances))
+
+		findResp, err = datasource.Instance().FindInstances(getContext(), &pb.FindInstancesRequest{
+			ConsumerServiceId: consumerId,
+			AppId:             "find_inst_tag_group_ms",
+			ServiceName:       "find_inst_tag_provider_ms",
+			VersionRule:       "1.0.0+",
+			Tags:              []string{"filter_tag"},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, findResp.Response.GetCode())
+		assert.Equal(t, instanceResp.InstanceId, findResp.Instances[0].InstanceId)
+
+		// no add rules
+
+		log.Info("add tags")
+		addTagsResp, err = datasource.Instance().AddTags(getContext(), &pb.AddServiceTagsRequest{
+			ServiceId: consumerId,
+			Tags:      map[string]string{"consumer_tag": "filter"},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, addTagsResp.Response.GetCode())
+
+		findResp, err = datasource.Instance().FindInstances(getContext(), &pb.FindInstancesRequest{
+			ConsumerServiceId: consumerId,
+			AppId:             "find_inst_tag_group_ms",
+			ServiceName:       "find_inst_tag_provider_ms",
+			VersionRule:       "1.0.0+",
+			Tags:              []string{"filter_tag"},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, findResp.Response.GetCode())
+	})
+}
+
+func TestTags_Delete(t *testing.T) {
+	var serviceId string
+	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
+		return NewDataSource(opts), nil
+	})
+	err := datasource.Init(datasource.Options{
+		Endpoint:       "",
+		PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
+	})
+	assert.NoError(t, err)
+
+	t.Run("create service and add tags", func(t *testing.T) {
+		resp, err := datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				AppId:       "delete_tag_group_ms",
+				ServiceName: "delete_tag_service_ms",
+				Version:     "1.0.0",
+				Level:       "FRONT",
+				Status:      pb.MS_UP,
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+		serviceId = resp.ServiceId
+
+		respAddTages, err := datasource.Instance().AddTags(getContext(), &pb.AddServiceTagsRequest{
+			ServiceId: serviceId,
+			Tags: map[string]string{
+				"a": "test",
+				"b": "b",
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, respAddTages.Response.GetCode())
+	})
+
+	t.Run("the request is invalid", func(t *testing.T) {
+		log.Info("service does not exits")
+		resp, err := datasource.Instance().DeleteTags(getContext(), &pb.DeleteServiceTagsRequest{
+			ServiceId: "noneservice",
+			Keys:      []string{"a", "b"},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, scerr.ErrServiceNotExists, resp.Response.GetCode())
+
+		log.Info("tag key does not exits")
+		resp, err = datasource.Instance().DeleteTags(getContext(), &pb.DeleteServiceTagsRequest{
+			ServiceId: serviceId,
+			Keys:      []string{"c"},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, scerr.ErrTagNotExists, resp.Response.GetCode())
+	})
+
+	t.Run("the request is valid", func(t *testing.T) {
+		resp, err := datasource.Instance().DeleteTags(getContext(), &pb.DeleteServiceTagsRequest{
+			ServiceId: serviceId,
+			Keys:      []string{"a", "b"},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+
+		respGetTags, err := datasource.Instance().GetTags(getContext(), &pb.GetServiceTagsRequest{
+			ServiceId: serviceId,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+		assert.Equal(t, "", respGetTags.Tags["a"])
 	})
 }
