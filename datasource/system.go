@@ -17,10 +17,12 @@
 
 package datasource
 
-// DataSource is the DAO layer
-type DataSource interface {
-	SystemManager
-	AccountManager
-	DependencyManager
-	MetadataManager
+import (
+	"context"
+	"github.com/apache/servicecomb-service-center/pkg/model"
+)
+
+// SystemManager contains the APIs of system management
+type SystemManager interface {
+	DumpCache(ctx context.Context, cache *model.Cache)
 }
