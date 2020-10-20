@@ -19,7 +19,7 @@ package kv
 import (
 	"context"
 	"fmt"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client/buildin"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/registry/buildin"
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
 	simple "github.com/apache/servicecomb-service-center/pkg/time"
 	"testing"

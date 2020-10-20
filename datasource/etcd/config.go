@@ -19,7 +19,7 @@ package etcd
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/registry"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/astaxie/beego"
@@ -29,14 +29,14 @@ import (
 )
 
 var (
-	defaultRegistryConfig client.Config
+	defaultRegistryConfig registry.Config
 	configOnce            sync.Once
 )
 
-func Configuration() *client.Config {
+func Configuration() *registry.Config {
 	configOnce.Do(func() {
 		var err error
-		defaultRegistryConfig.ClusterName = beego.AppConfig.DefaultString("manager_name", client.DefaultClusterName)
+		defaultRegistryConfig.ClusterName = beego.AppConfig.DefaultString("manager_name", registry.DefaultClusterName)
 		defaultRegistryConfig.ManagerAddress = beego.AppConfig.String("manager_addr")
 		defaultRegistryConfig.ClusterAddresses = beego.AppConfig.DefaultString("manager_cluster", "http://127.0.0.1:2379")
 		defaultRegistryConfig.InitClusterInfo()
@@ -47,13 +47,13 @@ func Configuration() *client.Config {
 
 		defaultRegistryConfig.DialTimeout, err = time.ParseDuration(beego.AppConfig.DefaultString("connect_timeout", "10s"))
 		if err != nil {
-			log.Errorf(err, "connect_timeout is invalid, use default time %s", client.DefaultDialTimeout)
-			defaultRegistryConfig.DialTimeout = client.DefaultDialTimeout
+			log.Errorf(err, "connect_timeout is invalid, use default time %s", registry.DefaultDialTimeout)
+			defaultRegistryConfig.DialTimeout = registry.DefaultDialTimeout
 		}
 		defaultRegistryConfig.RequestTimeOut, err = time.ParseDuration(beego.AppConfig.DefaultString("registry_timeout", "30s"))
 		if err != nil {
-			log.Errorf(err, "registry_timeout is invalid, use default time %s", client.DefaultRequestTimeout)
-			defaultRegistryConfig.RequestTimeOut = client.DefaultRequestTimeout
+			log.Errorf(err, "registry_timeout is invalid, use default time %s", registry.DefaultRequestTimeout)
+			defaultRegistryConfig.RequestTimeOut = registry.DefaultRequestTimeout
 		}
 		defaultRegistryConfig.AutoSyncInterval, err = time.ParseDuration(core.ServerInfo.Config.AutoSyncInterval)
 		if err != nil {

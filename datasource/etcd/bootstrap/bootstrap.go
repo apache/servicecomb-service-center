@@ -18,16 +18,16 @@
 package bootstrap
 
 //registry is buildin
-import _ "github.com/apache/servicecomb-service-center/datasource/etcd/client/buildin"
+import _ "github.com/apache/servicecomb-service-center/datasource/etcd/registry/buildin"
 
 //registry etcd
-import _ "github.com/apache/servicecomb-service-center/datasource/etcd/client/etcd"
+import _ "github.com/apache/servicecomb-service-center/datasource/etcd/registry/etcd"
 
 //registry etcd
-import _ "github.com/apache/servicecomb-service-center/datasource/etcd/client/embededetcd"
+import _ "github.com/apache/servicecomb-service-center/datasource/etcd/registry/embededetcd"
 
 //discovery
-import _ "github.com/apache/servicecomb-service-center/datasource/etcd/cache/aggregate"
-import _ "github.com/apache/servicecomb-service-center/datasource/etcd/cache/servicecenter"
-import _ "github.com/apache/servicecomb-service-center/datasource/etcd/cache/etcd"
-import _ "github.com/apache/servicecomb-service-center/datasource/etcd/cache/k8s"
+import _ "github.com/apache/servicecomb-service-center/datasource/etcd/sd/aggregate"
+import _ "github.com/apache/servicecomb-service-center/datasource/etcd/sd/servicecenter"
+import _ "github.com/apache/servicecomb-service-center/datasource/etcd/sd/etcd"
+import _ "github.com/apache/servicecomb-service-center/datasource/etcd/sd/k8s"

@@ -18,10 +18,10 @@ package admin_test
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/cache"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/cache/etcd"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
-	etcd2 "github.com/apache/servicecomb-service-center/datasource/etcd/client/etcd"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/registry"
+	etcd2 "github.com/apache/servicecomb-service-center/datasource/etcd/registry/etcd"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd/etcd"
 	model2 "github.com/apache/servicecomb-service-center/pkg/model"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
@@ -34,9 +34,9 @@ import (
 
 func init() {
 	beego.AppConfig.Set("registry_plugin", "etcd")
-	client.Install("etcd", etcd2.NewRegistry)
-	cache.Install("buildin", etcd.NewRepository)
-	cache.Install("etcd", etcd.NewRepository)
+	registry.Install("etcd", etcd2.NewRegistry)
+	sd.Install("buildin", etcd.NewRepository)
+	sd.Install("etcd", etcd.NewRepository)
 }
 func TestAdminService_Dump(t *testing.T) {
 	t.Log("execute 'dump' operation,when get all,should be passed")

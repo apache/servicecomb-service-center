@@ -19,8 +19,8 @@ package notify
 import (
 	"context"
 	"errors"
-	_ "github.com/apache/servicecomb-service-center/datasource/etcd/cache/etcd"
-	_ "github.com/apache/servicecomb-service-center/datasource/etcd/client/buildin"
+	_ "github.com/apache/servicecomb-service-center/datasource/etcd/registry/buildin"
+	_ "github.com/apache/servicecomb-service-center/datasource/etcd/sd/etcd"
 	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/proto"

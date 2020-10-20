@@ -19,8 +19,8 @@ import (
 	"context"
 	"errors"
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/mux"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/registry"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"time"
@@ -87,7 +87,7 @@ func (ds *DataSource) autoCompact() {
 					continue
 				}
 
-				err = client.Instance().Compact(ctx, delta)
+				err = registry.Instance().Compact(ctx, delta)
 				if err != nil {
 					log.Error("", err)
 				}

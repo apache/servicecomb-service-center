@@ -23,7 +23,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"testing"
 
-	_ "github.com/apache/servicecomb-service-center/datasource/etcd/client/etcd"
+	_ "github.com/apache/servicecomb-service-center/datasource/etcd/registry/etcd"
 	_ "github.com/apache/servicecomb-service-center/server/plugin/tracing/pzipkin"
 )
 

@@ -18,8 +18,8 @@ package etcd
 import (
 	"context"
 	"encoding/json"
-	registry "github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/registry"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	utils "github.com/apache/servicecomb-service-center/server/service/util"
