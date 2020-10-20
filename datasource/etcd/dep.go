@@ -22,6 +22,8 @@ import (
 	"encoding/json"
 	"fmt"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -73,7 +75,7 @@ func (ds *DataSource) DeleteDependency() {
 }
 
 func (ds *DataSource) AddOrUpdateDependencies(ctx context.Context, dependencyInfos []*pb.ConsumerDependency, override bool) (*pb.Response, error) {
-	opts := make([]registry.PluginOp, 0, len(dependencyInfos))
+	opts := make([]client.PluginOp, 0, len(dependencyInfos))
 	domainProject := util.ParseDomainProject(ctx)
 	for _, dependencyInfo := range dependencyInfos {
 		consumerFlag := util.StringJoin([]string{dependencyInfo.Consumer.Environment, dependencyInfo.Consumer.AppId, dependencyInfo.Consumer.ServiceName, dependencyInfo.Consumer.Version}, "/")
@@ -112,7 +114,7 @@ func (ds *DataSource) AddOrUpdateDependencies(ctx context.Context, dependencyInf
 			id = util.GenerateUUID()
 		}
 		key := GenerateConsumerDependencyQueueKey(domainProject, consumerID, id)
-		opts = append(opts, registry.OpPut(registry.WithStrKey(key), registry.WithValue(data)))
+		opts = append(opts, client.OpPut(client.WithStrKey(key), client.WithValue(data)))
 	}
 
 	err := kv.BatchCommit(ctx, opts)

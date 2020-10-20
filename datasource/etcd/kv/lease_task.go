@@ -19,7 +19,7 @@ package kv
 
 import (
 	"context"
-	registry "github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	simple "github.com/apache/servicecomb-service-center/pkg/time"
@@ -28,7 +28,7 @@ import (
 )
 
 type LeaseTask struct {
-	Client registry.Registry
+	Client client.Registry
 
 	key     string
 	LeaseID int64
@@ -82,7 +82,7 @@ func (lat *LeaseTask) ReceiveTime() time.Time {
 	return lat.recvTime.Local()
 }
 
-func NewLeaseAsyncTask(op registry.PluginOp) *LeaseTask {
+func NewLeaseAsyncTask(op client.PluginOp) *LeaseTask {
 	return &LeaseTask{
 		Client:   Registry(),
 		key:      ToLeaseAsyncTaskKey(util.BytesToStringWithNoCopy(op.Key)),

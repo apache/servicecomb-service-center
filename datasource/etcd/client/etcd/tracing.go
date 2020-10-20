@@ -19,12 +19,12 @@ package etcd
 
 import (
 	"context"
-	registry "github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/server/plugin/tracing"
 	"net/http"
 )
 
-func TracingBegin(ctx context.Context, operationName string, op registry.PluginOp) tracing.Span {
+func TracingBegin(ctx context.Context, operationName string, op client.PluginOp) tracing.Span {
 	r := &tracing.RegistryRequest{
 		Ctx:      ctx,
 		Options:  op,

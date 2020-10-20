@@ -20,8 +20,8 @@ package kv
 import (
 	"context"
 	"errors"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/cache"
-	registry "github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/task"
@@ -38,7 +38,7 @@ func init() {
 }
 
 type KvStore struct {
-	AddOns      map[cache.Type]AddOn
+	AddOns      map[sd.Type]AddOn
 	adaptors    util.ConcurrentMap
 	taskService task.Service
 	ready       chan struct{}
@@ -48,27 +48,27 @@ type KvStore struct {
 }
 
 func (s *KvStore) Initialize() {
-	s.AddOns = make(map[cache.Type]AddOn)
+	s.AddOns = make(map[sd.Type]AddOn)
 	s.taskService = task.NewTaskService()
 	s.ready = make(chan struct{})
 	s.goroutine = gopool.New(context.Background())
 }
 
-func (s *KvStore) OnCacheEvent(evt cache.KvEvent) {
+func (s *KvStore) OnCacheEvent(evt sd.KvEvent) {
 	if s.rev < evt.Revision {
 		s.rev = evt.Revision
 	}
 }
 
-func (s *KvStore) InjectConfig(cfg *cache.Config) *cache.Config {
+func (s *KvStore) InjectConfig(cfg *sd.Config) *sd.Config {
 	return cfg.AppendEventFunc(s.OnCacheEvent)
 }
 
-func (s *KvStore) repo() cache.AdaptorRepository {
-	return cache.Instance()
+func (s *KvStore) repo() sd.AdaptorRepository {
+	return sd.Instance()
 }
 
-func (s *KvStore) getOrCreateAdaptor(t cache.Type) cache.Adaptor {
+func (s *KvStore) getOrCreateAdaptor(t sd.Type) sd.Adaptor {
 	v, _ := s.adaptors.Fetch(t, func() (interface{}, error) {
 		addOn, ok := s.AddOns[t]
 		if ok {
@@ -79,7 +79,7 @@ func (s *KvStore) getOrCreateAdaptor(t cache.Type) cache.Adaptor {
 		log.Warnf("type '%s' not found", t)
 		return nil, nil
 	})
-	return v.(cache.Adaptor)
+	return v.(sd.Adaptor)
 }
 
 func (s *KvStore) Run() {
@@ -90,7 +90,7 @@ func (s *KvStore) Run() {
 
 func (s *KvStore) store(ctx context.Context) {
 	// new all types
-	for _, t := range cache.Types {
+	for _, t := range sd.Types {
 		select {
 		case <-ctx.Done():
 			return
@@ -114,8 +114,8 @@ func (s *KvStore) autoClearCache(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-time.After(core.ServerInfo.Config.CacheTTL):
-			for _, t := range cache.Types {
-				cache, ok := s.getOrCreateAdaptor(t).Cache().(cache.Cache)
+			for _, t := range sd.Types {
+				cache, ok := s.getOrCreateAdaptor(t).Cache().(sd.Cache)
 				if !ok {
 					log.Error("the discovery adaptor does not implement the Cache", nil)
 					continue
@@ -134,7 +134,7 @@ func (s *KvStore) Stop() {
 	s.isClose = true
 
 	s.adaptors.ForEach(func(item util.MapItem) bool {
-		item.Value.(cache.Adaptor).Stop()
+		item.Value.(sd.Adaptor).Stop()
 		return true
 	})
 
@@ -152,17 +152,17 @@ func (s *KvStore) Ready() <-chan struct{} {
 	return s.ready
 }
 
-func (s *KvStore) Install(addOn AddOn) (id cache.Type, err error) {
+func (s *KvStore) Install(addOn AddOn) (id sd.Type, err error) {
 	if addOn == nil || len(addOn.Name()) == 0 || addOn.Config() == nil {
-		return cache.TypeError, errors.New("invalid parameter")
+		return sd.TypeError, errors.New("invalid parameter")
 	}
 
-	id, err = cache.RegisterType(addOn.Name())
+	id, err = sd.RegisterType(addOn.Name())
 	if err != nil {
 		return
 	}
 
-	cache.EventProxy(id).InjectConfig(addOn.Config())
+	sd.EventProxy(id).InjectConfig(addOn.Config())
 
 	s.InjectConfig(addOn.Config())
 
@@ -172,7 +172,7 @@ func (s *KvStore) Install(addOn AddOn) (id cache.Type, err error) {
 	return
 }
 
-func (s *KvStore) MustInstall(addOn AddOn) cache.Type {
+func (s *KvStore) MustInstall(addOn AddOn) sd.Type {
 	id, err := s.Install(addOn)
 	if err != nil {
 		panic(err)
@@ -180,29 +180,29 @@ func (s *KvStore) MustInstall(addOn AddOn) cache.Type {
 	return id
 }
 
-func (s *KvStore) Adaptors(id cache.Type) cache.Adaptor { return s.getOrCreateAdaptor(id) }
-func (s *KvStore) Service() cache.Adaptor               { return s.Adaptors(SERVICE) }
-func (s *KvStore) SchemaSummary() cache.Adaptor         { return s.Adaptors(SchemaSummary) }
-func (s *KvStore) Instance() cache.Adaptor              { return s.Adaptors(INSTANCE) }
-func (s *KvStore) Lease() cache.Adaptor                 { return s.Adaptors(LEASE) }
-func (s *KvStore) ServiceIndex() cache.Adaptor          { return s.Adaptors(ServiceIndex) }
-func (s *KvStore) ServiceAlias() cache.Adaptor          { return s.Adaptors(ServiceAlias) }
-func (s *KvStore) ServiceTag() cache.Adaptor            { return s.Adaptors(ServiceTag) }
-func (s *KvStore) Rule() cache.Adaptor                  { return s.Adaptors(RULE) }
-func (s *KvStore) RuleIndex() cache.Adaptor             { return s.Adaptors(RuleIndex) }
-func (s *KvStore) Schema() cache.Adaptor                { return s.Adaptors(SCHEMA) }
-func (s *KvStore) DependencyRule() cache.Adaptor        { return s.Adaptors(DependencyRule) }
-func (s *KvStore) DependencyQueue() cache.Adaptor       { return s.Adaptors(DependencyQueue) }
-func (s *KvStore) Domain() cache.Adaptor                { return s.Adaptors(DOMAIN) }
-func (s *KvStore) Project() cache.Adaptor               { return s.Adaptors(PROJECT) }
+func (s *KvStore) Adaptors(id sd.Type) sd.Adaptor { return s.getOrCreateAdaptor(id) }
+func (s *KvStore) Service() sd.Adaptor            { return s.Adaptors(SERVICE) }
+func (s *KvStore) SchemaSummary() sd.Adaptor      { return s.Adaptors(SchemaSummary) }
+func (s *KvStore) Instance() sd.Adaptor           { return s.Adaptors(INSTANCE) }
+func (s *KvStore) Lease() sd.Adaptor              { return s.Adaptors(LEASE) }
+func (s *KvStore) ServiceIndex() sd.Adaptor       { return s.Adaptors(ServiceIndex) }
+func (s *KvStore) ServiceAlias() sd.Adaptor       { return s.Adaptors(ServiceAlias) }
+func (s *KvStore) ServiceTag() sd.Adaptor         { return s.Adaptors(ServiceTag) }
+func (s *KvStore) Rule() sd.Adaptor               { return s.Adaptors(RULE) }
+func (s *KvStore) RuleIndex() sd.Adaptor          { return s.Adaptors(RuleIndex) }
+func (s *KvStore) Schema() sd.Adaptor             { return s.Adaptors(SCHEMA) }
+func (s *KvStore) DependencyRule() sd.Adaptor     { return s.Adaptors(DependencyRule) }
+func (s *KvStore) DependencyQueue() sd.Adaptor    { return s.Adaptors(DependencyQueue) }
+func (s *KvStore) Domain() sd.Adaptor             { return s.Adaptors(DOMAIN) }
+func (s *KvStore) Project() sd.Adaptor            { return s.Adaptors(PROJECT) }
 
 // KeepAlive will always return ok when cache is unavailable
 // unless the cache response is LeaseNotFound
-func (s *KvStore) KeepAlive(ctx context.Context, opts ...registry.PluginOpOption) (int64, error) {
-	op := registry.OpPut(opts...)
+func (s *KvStore) KeepAlive(ctx context.Context, opts ...client.PluginOpOption) (int64, error) {
+	op := client.OpPut(opts...)
 
 	t := NewLeaseAsyncTask(op)
-	if op.Mode == registry.ModeNoCache {
+	if op.Mode == client.ModeNoCache {
 		log.Debugf("keep alive lease WitchNoCache, request etcd server, op: %s", op)
 		err := t.Do(ctx)
 		ttl := t.TTL

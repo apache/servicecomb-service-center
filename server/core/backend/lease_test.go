@@ -39,21 +39,21 @@ func (c *mockRegistry) LeaseRenew(ctx context.Context, leaseID int64) (TTL int64
 }
 
 func TestLeaseTask_Do(t *testing.T) {
-	c := &mockRegistry{}
+	client := &mockRegistry{}
 	lt := &LeaseTask{
-		Client:   c,
+		Client:   client,
 		key:      ToLeaseAsyncTaskKey("/a"),
 		LeaseID:  1,
 		recvTime: simple.FromTime(time.Now()),
 	}
 
-	c.LeaseErr = errorsEx.InternalError("lease not found")
+	client.LeaseErr = errorsEx.InternalError("lease not found")
 	err := lt.Do(context.Background())
 	if err != nil || lt.Err() != nil {
 		t.Fatalf("TestLeaseTask_Do failed")
 	}
 
-	c.LeaseErr = fmt.Errorf("network error")
+	client.LeaseErr = fmt.Errorf("network error")
 	err = lt.Do(context.Background())
 	if err == nil || lt.Err() == nil {
 		t.Fatalf("TestLeaseTask_Do failed")

@@ -19,17 +19,17 @@ package buildin
 
 import (
 	"context"
-	registry "github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 )
 
 var (
 	closeCh    = make(chan struct{})
-	noResponse = &registry.PluginResponse{}
+	noResponse = &client.PluginResponse{}
 )
 
 func init() {
 	close(closeCh)
-	registry.Install("buildin", NewRegistry)
+	client.Install("buildin", NewRegistry)
 }
 
 type Registry struct {
@@ -42,16 +42,16 @@ func (ec *Registry) Err() (err <-chan error) {
 func (ec *Registry) Ready() <-chan struct{} {
 	return closeCh
 }
-func (ec *Registry) PutNoOverride(ctx context.Context, opts ...registry.PluginOpOption) (bool, error) {
+func (ec *Registry) PutNoOverride(ctx context.Context, opts ...client.PluginOpOption) (bool, error) {
 	return false, nil
 }
-func (ec *Registry) Do(ctx context.Context, opts ...registry.PluginOpOption) (*registry.PluginResponse, error) {
+func (ec *Registry) Do(ctx context.Context, opts ...client.PluginOpOption) (*client.PluginResponse, error) {
 	return noResponse, nil
 }
-func (ec *Registry) Txn(ctx context.Context, ops []registry.PluginOp) (*registry.PluginResponse, error) {
+func (ec *Registry) Txn(ctx context.Context, ops []client.PluginOp) (*client.PluginResponse, error) {
 	return noResponse, nil
 }
-func (ec *Registry) TxnWithCmp(ctx context.Context, success []registry.PluginOp, cmp []registry.CompareOp, fail []registry.PluginOp) (*registry.PluginResponse, error) {
+func (ec *Registry) TxnWithCmp(ctx context.Context, success []client.PluginOp, cmp []client.CompareOp, fail []client.PluginOp) (*client.PluginResponse, error) {
 	return noResponse, nil
 }
 func (ec *Registry) LeaseGrant(ctx context.Context, TTL int64) (leaseID int64, err error) {
@@ -63,7 +63,7 @@ func (ec *Registry) LeaseRenew(ctx context.Context, leaseID int64) (TTL int64, e
 func (ec *Registry) LeaseRevoke(ctx context.Context, leaseID int64) error {
 	return nil
 }
-func (ec *Registry) Watch(ctx context.Context, opts ...registry.PluginOpOption) error {
+func (ec *Registry) Watch(ctx context.Context, opts ...client.PluginOpOption) error {
 	return nil
 }
 func (ec *Registry) Compact(ctx context.Context, reserve int64) error {
@@ -72,7 +72,7 @@ func (ec *Registry) Compact(ctx context.Context, reserve int64) error {
 func (ec *Registry) Close() {
 }
 
-func NewRegistry(opts registry.Options) registry.Registry {
+func NewRegistry(opts client.Options) client.Registry {
 	return &Registry{
 		ready: make(chan int),
 	}

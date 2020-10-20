@@ -18,7 +18,7 @@ package kv
 
 import (
 	"fmt"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/cache"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"testing"
@@ -26,21 +26,21 @@ import (
 )
 
 type mockCache struct {
-	c map[string]*cache.KeyValue
+	c map[string]*sd.KeyValue
 }
 
-func (n *mockCache) Name() string                 { return "mock" }
-func (n *mockCache) Size() int                    { return 0 }
-func (n *mockCache) Get(k string) *cache.KeyValue { return nil }
-func (n *mockCache) GetAll(arr *[]*cache.KeyValue) (i int) {
+func (n *mockCache) Name() string              { return "mock" }
+func (n *mockCache) Size() int                 { return 0 }
+func (n *mockCache) Get(k string) *sd.KeyValue { return nil }
+func (n *mockCache) GetAll(arr *[]*sd.KeyValue) (i int) {
 	for range n.c {
 		i++
 	}
 	return i
 }
-func (n *mockCache) GetPrefix(prefix string, arr *[]*cache.KeyValue) int        { return 0 }
-func (n *mockCache) ForEach(iter func(k string, v *cache.KeyValue) (next bool)) {}
-func (n *mockCache) Put(k string, v *cache.KeyValue)                            { n.c[k] = v }
+func (n *mockCache) GetPrefix(prefix string, arr *[]*sd.KeyValue) int        { return 0 }
+func (n *mockCache) ForEach(iter func(k string, v *sd.KeyValue) (next bool)) {}
+func (n *mockCache) Put(k string, v *sd.KeyValue)                            { n.c[k] = v }
 
 func TestInstanceEventDeferHandler_OnCondition(t *testing.T) {
 	iedh := &InstanceEventDeferHandler{
@@ -64,34 +64,34 @@ func TestInstanceEventDeferHandler_HandleChan(t *testing.T) {
 			Times:    0,
 		},
 	}
-	kv1 := &cache.KeyValue{
+	kv1 := &sd.KeyValue{
 		Key:   util.StringToBytesWithNoCopy("/1"),
 		Value: b,
 	}
-	kv2 := &cache.KeyValue{
+	kv2 := &sd.KeyValue{
 		Key:   util.StringToBytesWithNoCopy("/2"),
 		Value: b,
 	}
-	kv3 := &cache.KeyValue{
+	kv3 := &sd.KeyValue{
 		Key:   util.StringToBytesWithNoCopy("/3"),
 		Value: b,
 	}
-	kv4 := &cache.KeyValue{
+	kv4 := &sd.KeyValue{
 		Key:   util.StringToBytesWithNoCopy("/4"),
 		Value: b,
 	}
-	kv5 := &cache.KeyValue{
+	kv5 := &sd.KeyValue{
 		Key:   util.StringToBytesWithNoCopy("/5"),
 		Value: b,
 	}
-	kv6 := &cache.KeyValue{
+	kv6 := &sd.KeyValue{
 		Key:   util.StringToBytesWithNoCopy("/6"),
 		Value: b,
 	}
 
-	c := &mockCache{c: make(map[string]*cache.KeyValue)}
+	c := &mockCache{c: make(map[string]*sd.KeyValue)}
 	c.Put("/1", kv1)
-	evts0 := []cache.KvEvent{
+	evts0 := []sd.KvEvent{
 		{
 			Type: pb.EVT_DELETE,
 			KV:   kv1,
@@ -118,7 +118,7 @@ func TestInstanceEventDeferHandler_HandleChan(t *testing.T) {
 	c.Put("/5", kv5)
 	c.Put("/6", kv6)
 
-	evts1 := []cache.KvEvent{
+	evts1 := []sd.KvEvent{
 		{
 			Type: pb.EVT_CREATE,
 			KV:   kv1,
@@ -128,7 +128,7 @@ func TestInstanceEventDeferHandler_HandleChan(t *testing.T) {
 			KV:   kv1,
 		},
 	}
-	evts2 := []cache.KvEvent{
+	evts2 := []sd.KvEvent{
 		{
 			Type: pb.EVT_DELETE,
 			KV:   kv2,
@@ -150,7 +150,7 @@ func TestInstanceEventDeferHandler_HandleChan(t *testing.T) {
 			KV:   kv6,
 		},
 	}
-	evts3 := []cache.KvEvent{
+	evts3 := []sd.KvEvent{
 		{
 			Type: pb.EVT_CREATE,
 			KV:   kv2,
@@ -187,7 +187,7 @@ func TestInstanceEventDeferHandler_HandleChan(t *testing.T) {
 func getEvents(t *testing.T, iedh *InstanceEventDeferHandler) {
 	fmt.Println(time.Now())
 	c := time.After(3500 * time.Millisecond)
-	var evt3 *cache.KvEvent
+	var evt3 *sd.KvEvent
 	for {
 		select {
 		case evt := <-iedh.HandleChan():
@@ -209,7 +209,7 @@ func getEvents(t *testing.T, iedh *InstanceEventDeferHandler) {
 }
 
 func TestConvert(t *testing.T) {
-	value := cache.NewKeyValue()
+	value := sd.NewKeyValue()
 	_, ok := value.Value.(*pb.MicroServiceInstance)
 	if ok {
 		t.Fatal("TestConvert failed")

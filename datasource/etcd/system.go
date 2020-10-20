@@ -19,28 +19,28 @@ package etcd
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/model"
-	"github.com/apache/servicecomb-service-center/server/core/backend"
-	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 )
 
 func (ds *DataSource) DumpCache(ctx context.Context, cache *model.Cache) {
 	gopool.New(ctx, gopool.Configure().Workers(2)).
-		Do(func(_ context.Context) { setValue(backend.Store().Service(), &cache.Microservices) }).
-		Do(func(_ context.Context) { setValue(backend.Store().ServiceIndex(), &cache.Indexes) }).
-		Do(func(_ context.Context) { setValue(backend.Store().ServiceAlias(), &cache.Aliases) }).
-		Do(func(_ context.Context) { setValue(backend.Store().ServiceTag(), &cache.Tags) }).
-		Do(func(_ context.Context) { setValue(backend.Store().RuleIndex(), &cache.RuleIndexes) }).
-		Do(func(_ context.Context) { setValue(backend.Store().Rule(), &cache.Rules) }).
-		Do(func(_ context.Context) { setValue(backend.Store().DependencyRule(), &cache.DependencyRules) }).
-		Do(func(_ context.Context) { setValue(backend.Store().SchemaSummary(), &cache.Summaries) }).
-		Do(func(_ context.Context) { setValue(backend.Store().Instance(), &cache.Instances) }).
+		Do(func(_ context.Context) { setValue(kv.Store().Service(), &cache.Microservices) }).
+		Do(func(_ context.Context) { setValue(kv.Store().ServiceIndex(), &cache.Indexes) }).
+		Do(func(_ context.Context) { setValue(kv.Store().ServiceAlias(), &cache.Aliases) }).
+		Do(func(_ context.Context) { setValue(kv.Store().ServiceTag(), &cache.Tags) }).
+		Do(func(_ context.Context) { setValue(kv.Store().RuleIndex(), &cache.RuleIndexes) }).
+		Do(func(_ context.Context) { setValue(kv.Store().Rule(), &cache.Rules) }).
+		Do(func(_ context.Context) { setValue(kv.Store().DependencyRule(), &cache.DependencyRules) }).
+		Do(func(_ context.Context) { setValue(kv.Store().SchemaSummary(), &cache.Summaries) }).
+		Do(func(_ context.Context) { setValue(kv.Store().Instance(), &cache.Instances) }).
 		Done()
 }
 
-func setValue(e discovery.Adaptor, setter model.Setter) {
-	e.Cache().ForEach(func(k string, kv *discovery.KeyValue) (next bool) {
+func setValue(e sd.Adaptor, setter model.Setter) {
+	e.Cache().ForEach(func(k string, kv *sd.KeyValue) (next bool) {
 		setter.SetValue(&model.KV{
 			Key:         k,
 			Rev:         kv.ModRevision,

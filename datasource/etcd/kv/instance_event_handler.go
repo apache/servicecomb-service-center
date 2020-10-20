@@ -19,7 +19,7 @@ package kv
 
 import (
 	"context"
-	cache2 "github.com/apache/servicecomb-service-center/datasource/etcd/cache"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/registry"
@@ -30,22 +30,22 @@ import (
 
 type deferItem struct {
 	ttl   int32 // in seconds
-	event cache2.KvEvent
+	event sd.KvEvent
 }
 
 type InstanceEventDeferHandler struct {
 	Percent float64
 
-	cache     cache2.CacheReader
+	cache     sd.CacheReader
 	once      sync.Once
 	enabled   bool
 	items     map[string]*deferItem
-	pendingCh chan []cache2.KvEvent
-	deferCh   chan cache2.KvEvent
+	pendingCh chan []sd.KvEvent
+	deferCh   chan sd.KvEvent
 	resetCh   chan struct{}
 }
 
-func (iedh *InstanceEventDeferHandler) OnCondition(cache cache2.CacheReader, evts []cache2.KvEvent) bool {
+func (iedh *InstanceEventDeferHandler) OnCondition(cache sd.CacheReader, evts []sd.KvEvent) bool {
 	if iedh.Percent <= 0 {
 		return false
 	}
@@ -53,8 +53,8 @@ func (iedh *InstanceEventDeferHandler) OnCondition(cache cache2.CacheReader, evt
 	iedh.once.Do(func() {
 		iedh.cache = cache
 		iedh.items = make(map[string]*deferItem)
-		iedh.pendingCh = make(chan []cache2.KvEvent, eventBlockSize)
-		iedh.deferCh = make(chan cache2.KvEvent, eventBlockSize)
+		iedh.pendingCh = make(chan []sd.KvEvent, eventBlockSize)
+		iedh.deferCh = make(chan sd.KvEvent, eventBlockSize)
 		iedh.resetCh = make(chan struct{})
 		gopool.Go(iedh.check)
 	})
@@ -63,7 +63,7 @@ func (iedh *InstanceEventDeferHandler) OnCondition(cache cache2.CacheReader, evt
 	return true
 }
 
-func (iedh *InstanceEventDeferHandler) recoverOrDefer(evt cache2.KvEvent) {
+func (iedh *InstanceEventDeferHandler) recoverOrDefer(evt sd.KvEvent) {
 	if evt.KV == nil {
 		log.Errorf(nil, "defer or recover a %s nil KV", evt.Type)
 		return
@@ -99,7 +99,7 @@ func (iedh *InstanceEventDeferHandler) recoverOrDefer(evt cache2.KvEvent) {
 	}
 }
 
-func (iedh *InstanceEventDeferHandler) HandleChan() <-chan cache2.KvEvent {
+func (iedh *InstanceEventDeferHandler) HandleChan() <-chan sd.KvEvent {
 	return iedh.deferCh
 }
 
@@ -170,7 +170,7 @@ func (iedh *InstanceEventDeferHandler) check(ctx context.Context) {
 	}
 }
 
-func (iedh *InstanceEventDeferHandler) recover(evt cache2.KvEvent) {
+func (iedh *InstanceEventDeferHandler) recover(evt sd.KvEvent) {
 	key := util.BytesToStringWithNoCopy(evt.KV.Key)
 	delete(iedh.items, key)
 	iedh.deferCh <- evt

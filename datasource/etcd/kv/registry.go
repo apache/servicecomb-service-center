@@ -21,7 +21,7 @@ import (
 	"context"
 	"errors"
 	"github.com/apache/servicecomb-service-center/datasource"
-	registry "github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/pkg/backoff"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -58,7 +58,7 @@ func NewEngine() (*RegistryEngine, error) {
 	}, nil
 }
 
-func Registry() registry.Registry {
+func Registry() client.Registry {
 	return GetRegistryEngine()
 }
 
@@ -86,16 +86,16 @@ func GetRegistryEngine() *RegistryEngine {
 	return engineInstance
 }
 
-func BatchCommit(ctx context.Context, opts []registry.PluginOp) error {
+func BatchCommit(ctx context.Context, opts []client.PluginOp) error {
 	_, err := BatchCommitWithCmp(ctx, opts, nil, nil)
 	return err
 }
 
-func BatchCommitWithCmp(ctx context.Context, opts []registry.PluginOp,
-	cmp []registry.CompareOp, fail []registry.PluginOp) (resp *registry.PluginResponse, err error) {
+func BatchCommitWithCmp(ctx context.Context, opts []client.PluginOp,
+	cmp []client.CompareOp, fail []client.PluginOp) (resp *client.PluginResponse, err error) {
 	lenOpts := len(opts)
 	tmpLen := lenOpts
-	var tmpOpts []registry.PluginOp
+	var tmpOpts []client.PluginOp
 	for i := 0; tmpLen > 0; i++ {
 		tmpLen = lenOpts - (i+1)*MaxTxnNumberOneTime
 		if tmpLen > 0 {
@@ -112,7 +112,7 @@ func BatchCommitWithCmp(ctx context.Context, opts []registry.PluginOp,
 }
 
 type RegistryEngine struct {
-	registry.Registry
+	client.Registry
 	goroutine *gopool.Pool
 }
 

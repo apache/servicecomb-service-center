@@ -23,15 +23,17 @@ import (
 	"errors"
 	"fmt"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/backend"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
+	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"github.com/apache/servicecomb-service-center/server/service/cache"
 	"sort"
@@ -43,7 +45,7 @@ var clustersIndex = make(map[string]int)
 
 func init() {
 	var clusters []string
-	for name := range registry.Configuration().Clusters {
+	for name := range Configuration().Clusters {
 		clusters = append(clusters, name)
 	}
 	sort.Strings(clusters)
@@ -263,7 +265,7 @@ func (ds *DataSource) GetApplications(ctx context.Context, request *pb.GetAppsRe
 		registry.WithPrefix(),
 		registry.WithKeyOnly())
 
-	resp, err := backend.Store().ServiceIndex().Search(ctx, opts...)
+	resp, err := kv.Store().ServiceIndex().Search(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -369,10 +371,10 @@ func (ds *DataSource) UpdateService(ctx context.Context, request *pb.UpdateServi
 
 	// Set key file
 	resp, err := kv.Registry().TxnWithCmp(ctx,
-		[]registry.PluginOp{registry.OpPut(registry.WithStrKey(key), registry.WithValue(data))},
-		[]registry.CompareOp{registry.OpCmp(
-			registry.CmpVer(util.StringToBytesWithNoCopy(key)),
-			registry.CmpNotEqual, 0)},
+		[]client.PluginOp{client.OpPut(client.WithStrKey(key), client.WithValue(data))},
+		[]client.CompareOp{client.OpCmp(
+			client.CmpVer(util.StringToBytesWithNoCopy(key)),
+			client.CmpNotEqual, 0)},
 		nil)
 	if err != nil {
 		log.Errorf(err, "update service[%s] properties failed, operator: %s", request.ServiceId, remoteIP)
@@ -504,17 +506,17 @@ func (ds *DataSource) RegisterInstance(ctx context.Context, request *pb.Register
 	key := apt.GenerateInstanceKey(domainProject, instance.ServiceId, instanceID)
 	hbKey := apt.GenerateInstanceLeaseKey(domainProject, instance.ServiceId, instanceID)
 
-	opts := []registry.PluginOp{
-		registry.OpPut(registry.WithStrKey(key), registry.WithValue(data),
-			registry.WithLease(leaseID)),
-		registry.OpPut(registry.WithStrKey(hbKey), registry.WithStrValue(fmt.Sprintf("%d", leaseID)),
-			registry.WithLease(leaseID)),
+	opts := []client.PluginOp{
+		client.OpPut(client.WithStrKey(key), client.WithValue(data),
+			client.WithLease(leaseID)),
+		client.OpPut(client.WithStrKey(hbKey), client.WithStrValue(fmt.Sprintf("%d", leaseID)),
+			client.WithLease(leaseID)),
 	}
 
 	resp, err := kv.Registry().TxnWithCmp(ctx, opts,
-		[]registry.CompareOp{registry.OpCmp(
-			registry.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, instance.ServiceId))),
-			registry.CmpNotEqual, 0)},
+		[]client.CompareOp{client.OpCmp(
+			client.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, instance.ServiceId))),
+			client.CmpNotEqual, 0)},
 		nil)
 	if err != nil {
 		log.Errorf(err,
@@ -745,7 +747,7 @@ func (ds *DataSource) BatchGetProviderInstances(ctx context.Context, request *pb
 func (ds *DataSource) findInstances(ctx context.Context, domainProject, serviceID, instanceID string, maxRevs []int64, counts []int64) (instances []*pb.MicroServiceInstance, err error) {
 	key := apt.GenerateInstanceKey(domainProject, serviceID, instanceID)
 	opts := append(serviceUtil.FromContext(ctx), registry.WithStrKey(key), registry.WithPrefix())
-	resp, err := backend.Store().Instance().Search(ctx, opts...)
+	resp, err := kv.Store().Instance().Search(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1323,8 +1325,8 @@ func (ds *DataSource) GetSchema(ctx context.Context, request *pb.GetSchemaReques
 	}
 
 	key := apt.GenerateServiceSchemaKey(domainProject, request.ServiceId, request.SchemaId)
-	opts := append(serviceUtil.FromContext(ctx), registry.WithStrKey(key))
-	resp, errDo := backend.Store().Schema().Search(ctx, opts...)
+	opts := append(serviceUtil.FromContext(ctx), client.WithStrKey(key))
+	resp, errDo := kv.Store().Schema().Search(ctx, opts...)
 	if errDo != nil {
 		log.Errorf(errDo, "get schema[%s/%s] failed", request.ServiceId, request.SchemaId)
 		return &pb.GetSchemaResponse{
@@ -1382,8 +1384,8 @@ func (ds *DataSource) GetAllSchemas(ctx context.Context, request *pb.GetAllSchem
 	}
 
 	key := apt.GenerateServiceSchemaSummaryKey(domainProject, request.ServiceId, "")
-	opts := append(serviceUtil.FromContext(ctx), registry.WithStrKey(key), registry.WithPrefix())
-	resp, errDo := backend.Store().SchemaSummary().Search(ctx, opts...)
+	opts := append(serviceUtil.FromContext(ctx), client.WithStrKey(key), client.WithPrefix())
+	resp, errDo := kv.Store().SchemaSummary().Search(ctx, opts...)
 	if errDo != nil {
 		log.Errorf(errDo, "get service[%s] all schema summaries failed", request.ServiceId)
 		return &pb.GetAllSchemaResponse{
@@ -1394,8 +1396,8 @@ func (ds *DataSource) GetAllSchemas(ctx context.Context, request *pb.GetAllSchem
 	respWithSchema := &discovery.Response{}
 	if request.WithSchema {
 		key := apt.GenerateServiceSchemaKey(domainProject, request.ServiceId, "")
-		opts := append(serviceUtil.FromContext(ctx), registry.WithStrKey(key), registry.WithPrefix())
-		respWithSchema, errDo = backend.Store().Schema().Search(ctx, opts...)
+		opts := append(serviceUtil.FromContext(ctx), client.WithStrKey(key), client.WithPrefix())
+		respWithSchema, errDo = kv.Store().Schema().Search(ctx, opts...)
 		if errDo != nil {
 			log.Errorf(errDo, "get service[%s] all schemas failed", request.ServiceId)
 			return &pb.GetAllSchemaResponse{
@@ -1460,15 +1462,15 @@ func (ds *DataSource) DeleteSchema(ctx context.Context, request *pb.DeleteSchema
 		}, nil
 	}
 	epSummaryKey := apt.GenerateServiceSchemaSummaryKey(domainProject, request.ServiceId, request.SchemaId)
-	opts := []registry.PluginOp{
-		registry.OpDel(registry.WithStrKey(epSummaryKey)),
-		registry.OpDel(registry.WithStrKey(key)),
+	opts := []client.PluginOp{
+		client.OpDel(client.WithStrKey(epSummaryKey)),
+		client.OpDel(client.WithStrKey(key)),
 	}
 
-	resp, errDo := backend.Registry().TxnWithCmp(ctx, opts,
-		[]registry.CompareOp{registry.OpCmp(
-			registry.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, request.ServiceId))),
-			registry.CmpNotEqual, 0)},
+	resp, errDo := client.Instance().TxnWithCmp(ctx, opts,
+		[]client.CompareOp{client.OpCmp(
+			client.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, request.ServiceId))),
+			client.CmpNotEqual, 0)},
 		nil)
 	if errDo != nil {
 		log.Errorf(errDo, "delete schema[%s/%s] failed, operator: %s",
@@ -1681,11 +1683,11 @@ func (ds *DataSource) DeleteTags(ctx context.Context, request *pb.DeleteServiceT
 
 	key := apt.GenerateServiceTagKey(domainProject, request.ServiceId)
 
-	resp, err := backend.Registry().TxnWithCmp(ctx,
-		[]registry.PluginOp{registry.OpPut(registry.WithStrKey(key), registry.WithValue(data))},
-		[]registry.CompareOp{registry.OpCmp(
-			registry.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, request.ServiceId))),
-			registry.CmpNotEqual, 0)},
+	resp, err := client.Instance().TxnWithCmp(ctx,
+		[]client.PluginOp{client.OpPut(client.WithStrKey(key), client.WithValue(data))},
+		[]client.CompareOp{client.OpCmp(
+			client.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, request.ServiceId))),
+			client.CmpNotEqual, 0)},
 		nil)
 	if err != nil {
 		log.Errorf(err, "delete service[%s]'s tags %v failed, operator: %s",
@@ -1742,7 +1744,7 @@ func (ds *DataSource) AddRule(ctx context.Context, request *pb.AddServiceRulesRe
 		}, err
 	}
 	ruleIDs := make([]string, 0, len(request.Rules))
-	opts := make([]registry.PluginOp, 0, 2*len(request.Rules))
+	opts := make([]client.PluginOp, 0, 2*len(request.Rules))
 	for _, rule := range request.Rules {
 		//黑白名单只能存在一种，黑名单 or 白名单
 		if len(ruleType) == 0 {
@@ -1790,8 +1792,8 @@ func (ds *DataSource) AddRule(ctx context.Context, request *pb.AddServiceRulesRe
 			}, err
 		}
 
-		opts = append(opts, registry.OpPut(registry.WithStrKey(key), registry.WithValue(data)))
-		opts = append(opts, registry.OpPut(registry.WithStrKey(indexKey), registry.WithStrValue(ruleAdd.RuleId)))
+		opts = append(opts, client.OpPut(client.WithStrKey(key), client.WithValue(data)))
+		opts = append(opts, client.OpPut(client.WithStrKey(indexKey), client.WithStrValue(ruleAdd.RuleId)))
 	}
 	if len(opts) <= 0 {
 		log.Infof("add service[%s] rule successfully, no rules to add, operator: %s",
@@ -1801,10 +1803,10 @@ func (ds *DataSource) AddRule(ctx context.Context, request *pb.AddServiceRulesRe
 		}, nil
 	}
 
-	resp, err := backend.BatchCommitWithCmp(ctx, opts,
-		[]registry.CompareOp{registry.OpCmp(
-			registry.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, request.ServiceId))),
-			registry.CmpNotEqual, 0)},
+	resp, err := kv.BatchCommitWithCmp(ctx, opts,
+		[]client.CompareOp{client.OpCmp(
+			client.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, request.ServiceId))),
+			client.CmpNotEqual, 0)},
 		nil)
 	if err != nil {
 		log.Errorf(err, "add service[%s] rule failed, operator: %s", request.ServiceId, remoteIP)
@@ -1925,22 +1927,22 @@ func (ds *DataSource) UpdateRule(ctx context.Context, request *pb.UpdateServiceR
 			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
-	var opts []registry.PluginOp
+	var opts []client.PluginOp
 	if isChangeIndex {
 		//加入新的rule index
 		indexKey := apt.GenerateRuleIndexKey(domainProject, request.ServiceId, copyRuleRef.Attribute, copyRuleRef.Pattern)
-		opts = append(opts, registry.OpPut(registry.WithStrKey(indexKey), registry.WithStrValue(copyRuleRef.RuleId)))
+		opts = append(opts, client.OpPut(client.WithStrKey(indexKey), client.WithStrValue(copyRuleRef.RuleId)))
 
 		//删除旧的rule index
 		oldIndexKey := apt.GenerateRuleIndexKey(domainProject, request.ServiceId, oldRuleAttr, oldRulePatten)
-		opts = append(opts, registry.OpDel(registry.WithStrKey(oldIndexKey)))
+		opts = append(opts, client.OpDel(client.WithStrKey(oldIndexKey)))
 	}
-	opts = append(opts, registry.OpPut(registry.WithStrKey(key), registry.WithValue(data)))
+	opts = append(opts, client.OpPut(client.WithStrKey(key), client.WithValue(data)))
 
-	resp, err := backend.Registry().TxnWithCmp(ctx, opts,
-		[]registry.CompareOp{registry.OpCmp(
-			registry.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, request.ServiceId))),
-			registry.CmpNotEqual, 0)},
+	resp, err := client.Instance().TxnWithCmp(ctx, opts,
+		[]client.CompareOp{client.OpCmp(
+			client.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, request.ServiceId))),
+			client.CmpNotEqual, 0)},
 		nil)
 	if err != nil {
 		log.Errorf(err, "update service rule[%s/%s] failed, operator: %s", request.ServiceId, request.RuleId, remoteIP)
@@ -1976,7 +1978,7 @@ func (ds *DataSource) DeleteRule(ctx context.Context, request *pb.DeleteServiceR
 		}, nil
 	}
 
-	opts := []registry.PluginOp{}
+	opts := []client.PluginOp{}
 	key := ""
 	indexKey := ""
 	for _, ruleID := range request.RuleIds {
@@ -1999,8 +2001,8 @@ func (ds *DataSource) DeleteRule(ctx context.Context, request *pb.DeleteServiceR
 		}
 		indexKey = apt.GenerateRuleIndexKey(domainProject, request.ServiceId, data.Attribute, data.Pattern)
 		opts = append(opts,
-			registry.OpDel(registry.WithStrKey(key)),
-			registry.OpDel(registry.WithStrKey(indexKey)))
+			client.OpDel(client.WithStrKey(key)),
+			client.OpDel(client.WithStrKey(indexKey)))
 	}
 	if len(opts) <= 0 {
 		log.Errorf(nil, "delete service[%s] rules %v failed, no rule has been deleted, operator: %s",
@@ -2010,10 +2012,10 @@ func (ds *DataSource) DeleteRule(ctx context.Context, request *pb.DeleteServiceR
 		}, nil
 	}
 
-	resp, err := backend.BatchCommitWithCmp(ctx, opts,
-		[]registry.CompareOp{registry.OpCmp(
-			registry.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, request.ServiceId))),
-			registry.CmpNotEqual, 0)},
+	resp, err := kv.BatchCommitWithCmp(ctx, opts,
+		[]client.CompareOp{client.OpCmp(
+			client.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, request.ServiceId))),
+			client.CmpNotEqual, 0)},
 		nil)
 	if err != nil {
 		log.Errorf(err, "delete service[%s] rules %v failed, operator: %s", request.ServiceId, request.RuleIds, remoteIP)
@@ -2049,7 +2051,7 @@ func (ds *DataSource) modifySchemas(ctx context.Context, domainProject string, s
 	needUpdateSchemas, needAddSchemas, needDeleteSchemas, nonExistSchemaIds :=
 		schemasAnalysis(schemas, schemasFromDatabase, service.Schemas)
 
-	pluginOps := make([]registry.PluginOp, 0)
+	pluginOps := make([]client.PluginOp, 0)
 	if !ds.isSchemaEditable(service) {
 		if len(service.Schemas) == 0 {
 			res := quota.NewApplyQuotaResource(quota.SchemaQuotaType, domainProject, serviceID, int64(len(nonExistSchemaIds)))
@@ -2080,7 +2082,7 @@ func (ds *DataSource) modifySchemas(ctx context.Context, domainProject string, s
 					return scerr.NewError(scerr.ErrInternal, err.Error())
 				}
 				if !exist {
-					opts := schemaWithDatabaseOpera(registry.OpPut, domainProject, serviceID, needUpdateSchema)
+					opts := schemaWithDatabaseOpera(client.OpPut, domainProject, serviceID, needUpdateSchema)
 					pluginOps = append(pluginOps, opts...)
 				} else {
 					log.Warnf("schema[%s/%s] and it's summary already exist, skip to update, operator: %s",
@@ -2091,7 +2093,7 @@ func (ds *DataSource) modifySchemas(ctx context.Context, domainProject string, s
 
 		for _, schema := range needAddSchemas {
 			log.Infof("add new schema[%s/%s], operator: %s", serviceID, schema.SchemaId, remoteIP)
-			opts := schemaWithDatabaseOpera(registry.OpPut, domainProject, service.ServiceId, schema)
+			opts := schemaWithDatabaseOpera(client.OpPut, domainProject, service.ServiceId, schema)
 			pluginOps = append(pluginOps, opts...)
 		}
 	} else {
@@ -2109,21 +2111,21 @@ func (ds *DataSource) modifySchemas(ctx context.Context, domainProject string, s
 		var schemaIDs []string
 		for _, schema := range needAddSchemas {
 			log.Infof("add new schema[%s/%s], operator: %s", serviceID, schema.SchemaId, remoteIP)
-			opts := schemaWithDatabaseOpera(registry.OpPut, domainProject, service.ServiceId, schema)
+			opts := schemaWithDatabaseOpera(client.OpPut, domainProject, service.ServiceId, schema)
 			pluginOps = append(pluginOps, opts...)
 			schemaIDs = append(schemaIDs, schema.SchemaId)
 		}
 
 		for _, schema := range needUpdateSchemas {
 			log.Infof("update schema[%s/%s], operator: %s", serviceID, schema.SchemaId, remoteIP)
-			opts := schemaWithDatabaseOpera(registry.OpPut, domainProject, serviceID, schema)
+			opts := schemaWithDatabaseOpera(client.OpPut, domainProject, serviceID, schema)
 			pluginOps = append(pluginOps, opts...)
 			schemaIDs = append(schemaIDs, schema.SchemaId)
 		}
 
 		for _, schema := range needDeleteSchemas {
 			log.Infof("delete non-existent schema[%s/%s], operator: %s", serviceID, schema.SchemaId, remoteIP)
-			opts := schemaWithDatabaseOpera(registry.OpDel, domainProject, serviceID, schema)
+			opts := schemaWithDatabaseOpera(client.OpDel, domainProject, serviceID, schema)
 			pluginOps = append(pluginOps, opts...)
 		}
 
@@ -2139,9 +2141,9 @@ func (ds *DataSource) modifySchemas(ctx context.Context, domainProject string, s
 
 	if len(pluginOps) != 0 {
 		resp, err := kv.BatchCommitWithCmp(ctx, pluginOps,
-			[]registry.CompareOp{registry.OpCmp(
-				registry.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, serviceID))),
-				registry.CmpNotEqual, 0)},
+			[]client.CompareOp{client.OpCmp(
+				client.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, serviceID))),
+				client.CmpNotEqual, 0)},
 			nil)
 		if err != nil {
 			return scerr.NewError(scerr.ErrUnavailableBackend, err.Error())
@@ -2174,7 +2176,7 @@ func (ds *DataSource) modifySchema(ctx context.Context, serviceID string, schema
 		return scerr.NewError(scerr.ErrServiceNotExists, "Service does not exist")
 	}
 
-	var pluginOps []registry.PluginOp
+	var pluginOps []client.PluginOp
 	isExist := isExistSchemaID(microService, []*pb.Schema{schema})
 
 	if !ds.isSchemaEditable(microService) {
@@ -2183,7 +2185,7 @@ func (ds *DataSource) modifySchema(ctx context.Context, serviceID string, schema
 		}
 
 		key := apt.GenerateServiceSchemaKey(domainProject, serviceID, schemaID)
-		respSchema, err := kv.Store().Schema().Search(ctx, registry.WithStrKey(key), registry.WithCountOnly())
+		respSchema, err := kv.Store().Schema().Search(ctx, client.WithStrKey(key), client.WithCountOnly())
 		if err != nil {
 			log.Errorf(err, "modify schema[%s/%s] failed, get schema summary failed, operator: %s",
 				serviceID, schemaID, remoteIP)
@@ -2238,9 +2240,9 @@ func (ds *DataSource) modifySchema(ctx context.Context, serviceID string, schema
 	pluginOps = append(pluginOps, opts...)
 
 	resp, err := kv.Registry().TxnWithCmp(ctx, pluginOps,
-		[]registry.CompareOp{registry.OpCmp(
-			registry.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, serviceID))),
-			registry.CmpNotEqual, 0)},
+		[]client.CompareOp{client.OpCmp(
+			client.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, serviceID))),
+			client.CmpNotEqual, 0)},
 		nil)
 	if err != nil {
 		return scerr.NewError(scerr.ErrUnavailableBackend, err.Error())
@@ -2296,9 +2298,9 @@ func (ds *DataSource) DeleteServicePri(ctx context.Context, serviceID string, fo
 
 		instancesKey := apt.GenerateInstanceKey(domainProject, serviceID, "")
 		rsp, err := kv.Store().Instance().Search(ctx,
-			registry.WithStrKey(instancesKey),
-			registry.WithPrefix(),
-			registry.WithCountOnly())
+			client.WithStrKey(instancesKey),
+			client.WithPrefix(),
+			client.WithCountOnly())
 		if err != nil {
 			log.Errorf(err, "delete micro-service[%s] failed, get instances failed, operator: %s",
 				serviceID, remoteIP)
@@ -2321,10 +2323,10 @@ func (ds *DataSource) DeleteServicePri(ctx context.Context, serviceID string, fo
 		Version:     microservice.Version,
 		Alias:       microservice.Alias,
 	}
-	opts := []registry.PluginOp{
-		registry.OpDel(registry.WithStrKey(apt.GenerateServiceIndexKey(serviceKey))),
-		registry.OpDel(registry.WithStrKey(apt.GenerateServiceAliasKey(serviceKey))),
-		registry.OpDel(registry.WithStrKey(serviceIDKey)),
+	opts := []client.PluginOp{
+		client.OpDel(client.WithStrKey(apt.GenerateServiceIndexKey(serviceKey))),
+		client.OpDel(client.WithStrKey(apt.GenerateServiceAliasKey(serviceKey))),
+		client.OpDel(client.WithStrKey(serviceIDKey)),
 	}
 
 	//删除依赖规则
@@ -2337,32 +2339,32 @@ func (ds *DataSource) DeleteServicePri(ctx context.Context, serviceID string, fo
 	opts = append(opts, optDeleteDep)
 
 	//删除黑白名单
-	opts = append(opts, registry.OpDel(
-		registry.WithStrKey(apt.GenerateServiceRuleKey(domainProject, serviceID, "")),
-		registry.WithPrefix()))
-	opts = append(opts, registry.OpDel(registry.WithStrKey(
+	opts = append(opts, client.OpDel(
+		client.WithStrKey(apt.GenerateServiceRuleKey(domainProject, serviceID, "")),
+		client.WithPrefix()))
+	opts = append(opts, client.OpDel(client.WithStrKey(
 		util.StringJoin([]string{apt.GetServiceRuleIndexRootKey(domainProject), serviceID, ""}, "/")),
-		registry.WithPrefix()))
+		client.WithPrefix()))
 
 	//删除schemas
-	opts = append(opts, registry.OpDel(
-		registry.WithStrKey(apt.GenerateServiceSchemaKey(domainProject, serviceID, "")),
-		registry.WithPrefix()))
-	opts = append(opts, registry.OpDel(
-		registry.WithStrKey(apt.GenerateServiceSchemaSummaryKey(domainProject, serviceID, "")),
-		registry.WithPrefix()))
+	opts = append(opts, client.OpDel(
+		client.WithStrKey(apt.GenerateServiceSchemaKey(domainProject, serviceID, "")),
+		client.WithPrefix()))
+	opts = append(opts, client.OpDel(
+		client.WithStrKey(apt.GenerateServiceSchemaSummaryKey(domainProject, serviceID, "")),
+		client.WithPrefix()))
 
 	//删除tags
-	opts = append(opts, registry.OpDel(
-		registry.WithStrKey(apt.GenerateServiceTagKey(domainProject, serviceID))))
+	opts = append(opts, client.OpDel(
+		client.WithStrKey(apt.GenerateServiceTagKey(domainProject, serviceID))))
 
 	//删除instances
-	opts = append(opts, registry.OpDel(
-		registry.WithStrKey(apt.GenerateInstanceKey(domainProject, serviceID, "")),
-		registry.WithPrefix()))
-	opts = append(opts, registry.OpDel(
-		registry.WithStrKey(apt.GenerateInstanceLeaseKey(domainProject, serviceID, "")),
-		registry.WithPrefix()))
+	opts = append(opts, client.OpDel(
+		client.WithStrKey(apt.GenerateInstanceKey(domainProject, serviceID, "")),
+		client.WithPrefix()))
+	opts = append(opts, client.OpDel(
+		client.WithStrKey(apt.GenerateInstanceLeaseKey(domainProject, serviceID, "")),
+		client.WithPrefix()))
 
 	//删除实例
 	err = serviceUtil.DeleteServiceAllInstances(ctx, serviceID)
@@ -2373,9 +2375,9 @@ func (ds *DataSource) DeleteServicePri(ctx context.Context, serviceID string, fo
 	}
 
 	resp, err := kv.Registry().TxnWithCmp(ctx, opts,
-		[]registry.CompareOp{registry.OpCmp(
-			registry.CmpVer(util.StringToBytesWithNoCopy(serviceIDKey)),
-			registry.CmpNotEqual, 0)},
+		[]client.CompareOp{client.OpCmp(
+			client.CmpVer(util.StringToBytesWithNoCopy(serviceIDKey)),
+			client.CmpNotEqual, 0)},
 		nil)
 	if err != nil {
 		log.Errorf(err, "%s micro-service[%s] failed, operator: %s", title, serviceID, remoteIP)

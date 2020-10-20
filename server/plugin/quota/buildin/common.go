@@ -21,12 +21,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
-	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
-	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 )
@@ -78,7 +78,7 @@ func resourceQuota(t quota.ResourceType) GetLimitQuota {
 
 func resourceLimitHandler(ctx context.Context, res *quota.ApplyQuotaResource) (int64, error) {
 	var key string
-	var indexer discovery.Indexer
+	var indexer sd.Indexer
 
 	domainProject := res.DomainProject
 	serviceID := res.ServiceID
@@ -105,9 +105,9 @@ func resourceLimitHandler(ctx context.Context, res *quota.ApplyQuotaResource) (i
 	}
 
 	resp, err := indexer.Search(ctx,
-		registry.WithStrKey(key),
-		registry.WithPrefix(),
-		registry.WithCountOnly())
+		client.WithStrKey(key),
+		client.WithPrefix(),
+		client.WithCountOnly())
 	if err != nil {
 		return 0, err
 	}

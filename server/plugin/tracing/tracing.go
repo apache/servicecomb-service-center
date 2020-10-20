@@ -19,9 +19,9 @@ package tracing
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/plugin"
-	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 )
 
 const (
@@ -43,7 +43,7 @@ type Tracing interface {
 type RegistryRequest struct {
 	Ctx      context.Context
 	Endpoint string
-	Options  registry.PluginOp
+	Options  client.PluginOp
 }
 
 func Trace() Tracing {

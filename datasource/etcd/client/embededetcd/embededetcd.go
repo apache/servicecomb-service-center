@@ -22,7 +22,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/datasource/etcd"
-	registry "github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -40,7 +40,7 @@ import (
 )
 
 func init() {
-	registry.Install("embeded_etcd", getEmbedInstance)
+	client.Install("embeded_etcd", getEmbedInstance)
 }
 
 type EtcdEmbed struct {
@@ -78,16 +78,16 @@ func (s *EtcdEmbed) getPrefixEndKey(prefix []byte) []byte {
 	return endBytes[:l]
 }
 
-func (s *EtcdEmbed) toGetRequest(op registry.PluginOp) *etcdserverpb.RangeRequest {
+func (s *EtcdEmbed) toGetRequest(op client.PluginOp) *etcdserverpb.RangeRequest {
 	endBytes := op.EndKey
 	if op.Prefix {
 		endBytes = s.getPrefixEndKey(op.Key)
 	}
 	order := etcdserverpb.RangeRequest_NONE
 	switch op.SortOrder {
-	case registry.SortAscend:
+	case client.SortAscend:
 		order = etcdserverpb.RangeRequest_ASCEND
-	case registry.SortDescend:
+	case client.SortDescend:
 		order = etcdserverpb.RangeRequest_DESCEND
 	}
 	return &etcdserverpb.RangeRequest{
@@ -101,7 +101,7 @@ func (s *EtcdEmbed) toGetRequest(op registry.PluginOp) *etcdserverpb.RangeReques
 	}
 }
 
-func (s *EtcdEmbed) toPutRequest(op registry.PluginOp) *etcdserverpb.PutRequest {
+func (s *EtcdEmbed) toPutRequest(op client.PluginOp) *etcdserverpb.PutRequest {
 	var valueBytes []byte
 	if len(op.Value) > 0 {
 		valueBytes = op.Value
@@ -115,7 +115,7 @@ func (s *EtcdEmbed) toPutRequest(op registry.PluginOp) *etcdserverpb.PutRequest 
 	}
 }
 
-func (s *EtcdEmbed) toDeleteRequest(op registry.PluginOp) *etcdserverpb.DeleteRangeRequest {
+func (s *EtcdEmbed) toDeleteRequest(op client.PluginOp) *etcdserverpb.DeleteRangeRequest {
 	endBytes := op.EndKey
 	if op.Prefix {
 		endBytes = s.getPrefixEndKey(op.Key)
@@ -127,23 +127,23 @@ func (s *EtcdEmbed) toDeleteRequest(op registry.PluginOp) *etcdserverpb.DeleteRa
 	}
 }
 
-func (s *EtcdEmbed) toTxnRequest(opts []registry.PluginOp) []*etcdserverpb.RequestOp {
+func (s *EtcdEmbed) toTxnRequest(opts []client.PluginOp) []*etcdserverpb.RequestOp {
 	etcdOps := []*etcdserverpb.RequestOp{}
 	for _, op := range opts {
 		switch op.Action {
-		case registry.Get:
+		case client.Get:
 			etcdOps = append(etcdOps, &etcdserverpb.RequestOp{
 				Request: &etcdserverpb.RequestOp_RequestRange{
 					RequestRange: s.toGetRequest(op),
 				},
 			})
-		case registry.Put:
+		case client.Put:
 			etcdOps = append(etcdOps, &etcdserverpb.RequestOp{
 				Request: &etcdserverpb.RequestOp_RequestPut{
 					RequestPut: s.toPutRequest(op),
 				},
 			})
-		case registry.Delete:
+		case client.Delete:
 			etcdOps = append(etcdOps, &etcdserverpb.RequestOp{
 				Request: &etcdserverpb.RequestOp_RequestDeleteRange{
 					RequestDeleteRange: s.toDeleteRequest(op),
@@ -154,14 +154,14 @@ func (s *EtcdEmbed) toTxnRequest(opts []registry.PluginOp) []*etcdserverpb.Reque
 	return etcdOps
 }
 
-func (s *EtcdEmbed) toCompares(cmps []registry.CompareOp) []*etcdserverpb.Compare {
+func (s *EtcdEmbed) toCompares(cmps []client.CompareOp) []*etcdserverpb.Compare {
 	etcdCmps := []*etcdserverpb.Compare{}
 	for _, cmp := range cmps {
 		compare := &etcdserverpb.Compare{
 			Key: cmp.Key,
 		}
 		switch cmp.Type {
-		case registry.CmpVersion:
+		case client.CmpVersion:
 			var version int64
 			if cmp.Value != nil {
 				if v, ok := cmp.Value.(int64); ok {
@@ -172,7 +172,7 @@ func (s *EtcdEmbed) toCompares(cmps []registry.CompareOp) []*etcdserverpb.Compar
 			compare.TargetUnion = &etcdserverpb.Compare_Version{
 				Version: version,
 			}
-		case registry.CmpCreate:
+		case client.CmpCreate:
 			var revision int64
 			if cmp.Value != nil {
 				if v, ok := cmp.Value.(int64); ok {
@@ -183,7 +183,7 @@ func (s *EtcdEmbed) toCompares(cmps []registry.CompareOp) []*etcdserverpb.Compar
 			compare.TargetUnion = &etcdserverpb.Compare_CreateRevision{
 				CreateRevision: revision,
 			}
-		case registry.CmpMod:
+		case client.CmpMod:
 			var revision int64
 			if cmp.Value != nil {
 				if v, ok := cmp.Value.(int64); ok {
@@ -194,7 +194,7 @@ func (s *EtcdEmbed) toCompares(cmps []registry.CompareOp) []*etcdserverpb.Compar
 			compare.TargetUnion = &etcdserverpb.Compare_ModRevision{
 				ModRevision: revision,
 			}
-		case registry.CmpValue:
+		case client.CmpValue:
 			var value []byte
 			if cmp.Value != nil {
 				if v, ok := cmp.Value.([]byte); ok {
@@ -207,13 +207,13 @@ func (s *EtcdEmbed) toCompares(cmps []registry.CompareOp) []*etcdserverpb.Compar
 			}
 		}
 		switch cmp.Result {
-		case registry.CmpEqual:
+		case client.CmpEqual:
 			compare.Result = etcdserverpb.Compare_EQUAL
-		case registry.CmpGreater:
+		case client.CmpGreater:
 			compare.Result = etcdserverpb.Compare_GREATER
-		case registry.CmpLess:
+		case client.CmpLess:
 			compare.Result = etcdserverpb.Compare_LESS
-		case registry.CmpNotEqual:
+		case client.CmpNotEqual:
 			compare.Result = etcdserverpb.Compare_NOT_EQUAL
 		}
 		etcdCmps = append(etcdCmps, compare)
@@ -251,10 +251,10 @@ func (s *EtcdEmbed) getLeaderCurrentRevision(ctx context.Context) int64 {
 	return s.Embed.Server.KV().Rev()
 }
 
-func (s *EtcdEmbed) PutNoOverride(ctx context.Context, opts ...registry.PluginOpOption) (bool, error) {
-	op := registry.OpPut(opts...)
-	resp, err := s.TxnWithCmp(ctx, []registry.PluginOp{op}, []registry.CompareOp{
-		registry.OpCmp(registry.CmpCreateRev(op.Key), registry.CmpEqual, 0),
+func (s *EtcdEmbed) PutNoOverride(ctx context.Context, opts ...client.PluginOpOption) (bool, error) {
+	op := client.OpPut(opts...)
+	resp, err := s.TxnWithCmp(ctx, []client.PluginOp{op}, []client.CompareOp{
+		client.OpCmp(client.CmpCreateRev(op.Key), client.CmpEqual, 0),
 	}, nil)
 	log.Debugf("response %s %v %v", op.Key, resp.Succeeded, resp.Revision)
 	if err != nil {
@@ -263,41 +263,41 @@ func (s *EtcdEmbed) PutNoOverride(ctx context.Context, opts ...registry.PluginOp
 	return resp.Succeeded, nil
 }
 
-func (s *EtcdEmbed) Do(ctx context.Context, opts ...registry.PluginOpOption) (*registry.PluginResponse, error) {
-	op := registry.OptionsToOp(opts...)
+func (s *EtcdEmbed) Do(ctx context.Context, opts ...client.PluginOpOption) (*client.PluginResponse, error) {
+	op := client.OptionsToOp(opts...)
 
 	otCtx, cancel := etcd.WithTimeout(ctx)
 	defer cancel()
 	var err error
-	var resp *registry.PluginResponse
+	var resp *client.PluginResponse
 	switch op.Action {
-	case registry.Get:
+	case client.Get:
 		var etcdResp *etcdserverpb.RangeResponse
 		etcdResp, err = s.Embed.Server.Range(otCtx, s.toGetRequest(op))
 		if err != nil {
 			break
 		}
-		resp = &registry.PluginResponse{
+		resp = &client.PluginResponse{
 			Kvs:      etcdResp.Kvs,
 			Count:    etcdResp.Count,
 			Revision: etcdResp.Header.Revision,
 		}
-	case registry.Put:
+	case client.Put:
 		var etcdResp *etcdserverpb.PutResponse
 		etcdResp, err = s.Embed.Server.Put(otCtx, s.toPutRequest(op))
 		if err != nil {
 			break
 		}
-		resp = &registry.PluginResponse{
+		resp = &client.PluginResponse{
 			Revision: etcdResp.Header.Revision,
 		}
-	case registry.Delete:
+	case client.Delete:
 		var etcdResp *etcdserverpb.DeleteRangeResponse
 		etcdResp, err = s.Embed.Server.DeleteRange(otCtx, s.toDeleteRequest(op))
 		if err != nil {
 			break
 		}
-		resp = &registry.PluginResponse{
+		resp = &client.PluginResponse{
 			Revision: etcdResp.Header.Revision,
 		}
 	}
@@ -309,18 +309,18 @@ func (s *EtcdEmbed) Do(ctx context.Context, opts ...registry.PluginOpOption) (*r
 }
 
 // TODO EMBED支持KV().TxnBegin()->TxnID，可惜PROXY模式暂时不支持
-func (s *EtcdEmbed) Txn(ctx context.Context, opts []registry.PluginOp) (*registry.PluginResponse, error) {
+func (s *EtcdEmbed) Txn(ctx context.Context, opts []client.PluginOp) (*client.PluginResponse, error) {
 	resp, err := s.TxnWithCmp(ctx, opts, nil, nil)
 	if err != nil {
 		return nil, err
 	}
-	return &registry.PluginResponse{
+	return &client.PluginResponse{
 		Succeeded: resp.Succeeded,
 		Revision:  resp.Revision,
 	}, nil
 }
 
-func (s *EtcdEmbed) TxnWithCmp(ctx context.Context, success []registry.PluginOp, cmps []registry.CompareOp, fail []registry.PluginOp) (*registry.PluginResponse, error) {
+func (s *EtcdEmbed) TxnWithCmp(ctx context.Context, success []client.PluginOp, cmps []client.CompareOp, fail []client.PluginOp) (*client.PluginResponse, error) {
 	otCtx, cancel := etcd.WithTimeout(ctx)
 	defer cancel()
 
@@ -341,7 +341,7 @@ func (s *EtcdEmbed) TxnWithCmp(ctx context.Context, success []registry.PluginOp,
 		if err.Error() == rpctypes.ErrKeyNotFound.Error() {
 			// etcd return ErrKeyNotFound if key does not exist and
 			// the PUT options contain WithIgnoreLease
-			return &registry.PluginResponse{Succeeded: false}, nil
+			return &client.PluginResponse{Succeeded: false}, nil
 		}
 		return nil, err
 	}
@@ -355,7 +355,7 @@ func (s *EtcdEmbed) TxnWithCmp(ctx context.Context, success []registry.PluginOp,
 		}
 	}
 
-	return &registry.PluginResponse{
+	return &client.PluginResponse{
 		Succeeded: resp.Succeeded,
 		Revision:  resp.Header.Revision,
 		Kvs:       rangeResponse.Kvs,
@@ -403,8 +403,8 @@ func (s *EtcdEmbed) LeaseRevoke(ctx context.Context, leaseID int64) error {
 	return nil
 }
 
-func (s *EtcdEmbed) Watch(ctx context.Context, opts ...registry.PluginOpOption) (err error) {
-	op := registry.OpGet(opts...)
+func (s *EtcdEmbed) Watch(ctx context.Context, opts ...client.PluginOpOption) (err error) {
+	op := client.OpGet(opts...)
 
 	if len(op.Key) > 0 {
 		watchable := s.Embed.Server.Watchable()
@@ -470,11 +470,11 @@ func (s *EtcdEmbed) readyNotify() {
 	}
 }
 
-func dispatch(evts []mvccpb.Event, cb registry.WatchCallback) error {
+func dispatch(evts []mvccpb.Event, cb client.WatchCallback) error {
 	l := len(evts)
 	kvs := make([]*mvccpb.KeyValue, l)
 	sIdx, eIdx, rev := 0, 0, int64(0)
-	action, prevEvtType := registry.Put, mvccpb.PUT
+	action, prevEvtType := client.Put, mvccpb.PUT
 
 	for _, evt := range evts {
 		if prevEvtType != evt.Type {
@@ -502,7 +502,7 @@ func dispatch(evts []mvccpb.Event, cb registry.WatchCallback) error {
 	return nil
 }
 
-func setKvsAndConvertAction(kvs []*mvccpb.KeyValue, pIdx int, evt mvccpb.Event) registry.ActionType {
+func setKvsAndConvertAction(kvs []*mvccpb.KeyValue, pIdx int, evt mvccpb.Event) client.ActionType {
 	switch evt.Type {
 	case mvccpb.DELETE:
 		kv := evt.PrevKv
@@ -510,15 +510,15 @@ func setKvsAndConvertAction(kvs []*mvccpb.KeyValue, pIdx int, evt mvccpb.Event) 
 			kv = evt.Kv
 		}
 		kvs[pIdx] = kv
-		return registry.Delete
+		return client.Delete
 	default:
 		kvs[pIdx] = evt.Kv
-		return registry.Put
+		return client.Put
 	}
 }
 
-func callback(action registry.ActionType, rev int64, kvs []*mvccpb.KeyValue, cb registry.WatchCallback) error {
-	return cb("key information changed", &registry.PluginResponse{
+func callback(action client.ActionType, rev int64, kvs []*mvccpb.KeyValue, cb client.WatchCallback) error {
+	return cb("key information changed", &client.PluginResponse{
 		Action:    action,
 		Kvs:       kvs,
 		Count:     int64(len(kvs)),
@@ -527,7 +527,7 @@ func callback(action registry.ActionType, rev int64, kvs []*mvccpb.KeyValue, cb 
 	})
 }
 
-func getEmbedInstance(opts registry.Options) registry.Registry {
+func getEmbedInstance(opts client.Options) client.Registry {
 	log.Warnf("enable embedded registry mode")
 
 	hostName := "sc-0"

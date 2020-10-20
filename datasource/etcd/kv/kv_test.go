@@ -19,8 +19,8 @@ package kv
 import (
 	"context"
 	"errors"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/cache"
-	registry "github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/task"
 	"testing"
 )
@@ -57,26 +57,26 @@ func TestStore(t *testing.T) {
 	s := &KvStore{}
 	s.Initialize()
 
-	tt := NewLeaseAsyncTask(registry.OpGet())
+	tt := NewLeaseAsyncTask(client.OpGet())
 	tt.TTL = 1
 	s.taskService = &mockAsyncTaskService{Task: tt}
 
 	// KeepAlive case: add task error
-	ttl, err := s.KeepAlive(context.Background(), registry.WithKey([]byte("error")))
+	ttl, err := s.KeepAlive(context.Background(), client.WithKey([]byte("error")))
 	if err == nil || ttl > 0 {
 		t.Fatalf("TestStore failed")
 	}
 
 	// KeepAlive case: get last task error
 	tt.key = "LeaseAsyncTask_a"
-	ttl, err = s.KeepAlive(context.Background(), registry.WithKey([]byte("b")))
+	ttl, err = s.KeepAlive(context.Background(), client.WithKey([]byte("b")))
 	if err == nil || ttl > 0 {
 		t.Fatalf("TestStore failed")
 	}
 
 	// KeepAlive case: get last task error
 	tt.key = "LeaseAsyncTask_a"
-	ttl, err = s.KeepAlive(context.Background(), registry.WithKey([]byte("a")))
+	ttl, err = s.KeepAlive(context.Background(), client.WithKey([]byte("a")))
 	if err != nil || ttl != 1 {
 		t.Fatalf("TestStore failed")
 	}
@@ -85,15 +85,15 @@ func TestStore(t *testing.T) {
 }
 
 type extend struct {
-	evts []cache.KvEvent
-	cfg  *cache.Config
+	evts []sd.KvEvent
+	cfg  *sd.Config
 }
 
 func (e *extend) Name() string {
 	return "test"
 }
 
-func (e *extend) Config() *cache.Config {
+func (e *extend) Config() *sd.Config {
 	return e.cfg
 }
 
@@ -102,15 +102,15 @@ func TestInstallType(t *testing.T) {
 	s.Initialize()
 
 	// case: normal
-	e := &extend{cfg: cache.Configure()}
-	e.cfg.WithPrefix("/test").WithEventFunc(func(evt cache.KvEvent) {
+	e := &extend{cfg: sd.Configure()}
+	e.cfg.WithPrefix("/test").WithEventFunc(func(evt sd.KvEvent) {
 		e.evts = append(e.evts, evt)
 	})
 	id, err := s.Install(e)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if id == cache.TypeError {
+	if id == sd.TypeError {
 		t.Fatal(err)
 	}
 	if id.String() != "test" {
@@ -124,15 +124,15 @@ func TestInstallType(t *testing.T) {
 		t.Fatal("installType fail", err)
 	}
 
-	cfg.OnEvent(cache.KvEvent{Revision: 1})
+	cfg.OnEvent(sd.KvEvent{Revision: 1})
 	if s.rev != 1 || len(e.evts) != 1 {
 		t.Fatalf("TestInstallType failed")
 	}
 
 	// case: install again
-	cfg = cache.Configure().WithPrefix("/test")
+	cfg = sd.Configure().WithPrefix("/test")
 	id, err = s.Install(NewAddOn("test", cfg))
-	if id != cache.TypeError || err == nil {
+	if id != sd.TypeError || err == nil {
 		t.Fatal("installType fail", err)
 	}
 }
@@ -142,22 +142,22 @@ func TestNewAddOn(t *testing.T) {
 	s.Initialize()
 
 	id, err := s.Install(NewAddOn("TestNewAddOn", nil))
-	if id != cache.TypeError || err == nil {
+	if id != sd.TypeError || err == nil {
 		t.Fatalf("TestNewAddOn failed")
 	}
-	id, err = s.Install(NewAddOn("", cache.Configure()))
-	if id != cache.TypeError || err == nil {
+	id, err = s.Install(NewAddOn("", sd.Configure()))
+	if id != sd.TypeError || err == nil {
 		t.Fatalf("TestNewAddOn failed")
 	}
 	id, err = s.Install(nil)
-	if id != cache.TypeError || err == nil {
+	if id != sd.TypeError || err == nil {
 		t.Fatalf("TestNewAddOn failed")
 	}
-	id, err = s.Install(NewAddOn("TestNewAddOn", cache.Configure()))
-	if id == cache.TypeError || err != nil {
+	id, err = s.Install(NewAddOn("TestNewAddOn", sd.Configure()))
+	if id == sd.TypeError || err != nil {
 		t.Fatalf("TestNewAddOn failed")
 	}
-	_, err = s.Install(NewAddOn("TestNewAddOn", cache.Configure()))
+	_, err = s.Install(NewAddOn("TestNewAddOn", sd.Configure()))
 	if err == nil {
 		t.Fatalf("TestNewAddOn failed")
 	}

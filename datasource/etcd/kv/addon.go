@@ -18,28 +18,28 @@
 package kv
 
 import (
-	"github.com/apache/servicecomb-service-center/datasource/etcd/cache"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 )
 
 type AddOn interface {
 	Name() string
-	Config() *cache.Config
+	Config() *sd.Config
 }
 
 type addOn struct {
 	name string
-	cfg  *cache.Config
+	cfg  *sd.Config
 }
 
 func (e *addOn) Name() string {
 	return e.name
 }
 
-func (e *addOn) Config() *cache.Config {
+func (e *addOn) Config() *sd.Config {
 	return e.cfg
 }
 
-func NewAddOn(name string, cfg *cache.Config) AddOn {
+func NewAddOn(name string, cfg *sd.Config) AddOn {
 	return &addOn{
 		name: name,
 		cfg:  cfg,

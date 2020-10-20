@@ -18,7 +18,7 @@
 package kv
 
 import (
-	"github.com/apache/servicecomb-service-center/datasource/etcd/cache"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"time"
@@ -34,64 +34,64 @@ const (
 )
 
 var (
-	DOMAIN          cache.Type
-	PROJECT         cache.Type
-	SERVICE         cache.Type
-	ServiceIndex    cache.Type
-	ServiceAlias    cache.Type
-	ServiceTag      cache.Type
-	RULE            cache.Type
-	RuleIndex       cache.Type
-	DependencyRule  cache.Type
-	DependencyQueue cache.Type
-	SCHEMA          cache.Type
-	SchemaSummary   cache.Type
-	INSTANCE        cache.Type
-	LEASE           cache.Type
+	DOMAIN          sd.Type
+	PROJECT         sd.Type
+	SERVICE         sd.Type
+	ServiceIndex    sd.Type
+	ServiceAlias    sd.Type
+	ServiceTag      sd.Type
+	RULE            sd.Type
+	RuleIndex       sd.Type
+	DependencyRule  sd.Type
+	DependencyQueue sd.Type
+	SCHEMA          sd.Type
+	SchemaSummary   sd.Type
+	INSTANCE        sd.Type
+	LEASE           sd.Type
 )
 
 func registerInnerTypes() {
 	SERVICE = Store().MustInstall(NewAddOn("SERVICE",
-		cache.Configure().WithPrefix(core.GetServiceRootKey("")).
+		sd.Configure().WithPrefix(core.GetServiceRootKey("")).
 			WithInitSize(500).WithParser(proto.ServiceParser)))
 	INSTANCE = Store().MustInstall(NewAddOn("INSTANCE",
-		cache.Configure().WithPrefix(core.GetInstanceRootKey("")).
+		sd.Configure().WithPrefix(core.GetInstanceRootKey("")).
 			WithInitSize(1000).WithParser(proto.InstanceParser).
 			WithDeferHandler(NewInstanceEventDeferHandler())))
 	DOMAIN = Store().MustInstall(NewAddOn("DOMAIN",
-		cache.Configure().WithPrefix(core.GetDomainRootKey()+core.SPLIT).
+		sd.Configure().WithPrefix(core.GetDomainRootKey()+core.SPLIT).
 			WithInitSize(100).WithParser(proto.StringParser)))
 	SCHEMA = Store().MustInstall(NewAddOn("SCHEMA",
-		cache.Configure().WithPrefix(core.GetServiceSchemaRootKey("")).
+		sd.Configure().WithPrefix(core.GetServiceSchemaRootKey("")).
 			WithInitSize(0)))
 	SchemaSummary = Store().MustInstall(NewAddOn("SCHEMA_SUMMARY",
-		cache.Configure().WithPrefix(core.GetServiceSchemaSummaryRootKey("")).
+		sd.Configure().WithPrefix(core.GetServiceSchemaSummaryRootKey("")).
 			WithInitSize(100).WithParser(proto.StringParser)))
 	RULE = Store().MustInstall(NewAddOn("RULE",
-		cache.Configure().WithPrefix(core.GetServiceRuleRootKey("")).
+		sd.Configure().WithPrefix(core.GetServiceRuleRootKey("")).
 			WithInitSize(100).WithParser(proto.RuleParser)))
 	LEASE = Store().MustInstall(NewAddOn("LEASE",
-		cache.Configure().WithPrefix(core.GetInstanceLeaseRootKey("")).
+		sd.Configure().WithPrefix(core.GetInstanceLeaseRootKey("")).
 			WithInitSize(1000).WithParser(proto.StringParser)))
 	ServiceIndex = Store().MustInstall(NewAddOn("SERVICE_INDEX",
-		cache.Configure().WithPrefix(core.GetServiceIndexRootKey("")).
+		sd.Configure().WithPrefix(core.GetServiceIndexRootKey("")).
 			WithInitSize(500).WithParser(proto.StringParser)))
 	ServiceAlias = Store().MustInstall(NewAddOn("SERVICE_ALIAS",
-		cache.Configure().WithPrefix(core.GetServiceAliasRootKey("")).
+		sd.Configure().WithPrefix(core.GetServiceAliasRootKey("")).
 			WithInitSize(100).WithParser(proto.StringParser)))
 	ServiceTag = Store().MustInstall(NewAddOn("SERVICE_TAG",
-		cache.Configure().WithPrefix(core.GetServiceTagRootKey("")).
+		sd.Configure().WithPrefix(core.GetServiceTagRootKey("")).
 			WithInitSize(100).WithParser(proto.MapParser)))
 	RuleIndex = Store().MustInstall(NewAddOn("RULE_INDEX",
-		cache.Configure().WithPrefix(core.GetServiceRuleIndexRootKey("")).
+		sd.Configure().WithPrefix(core.GetServiceRuleIndexRootKey("")).
 			WithInitSize(100).WithParser(proto.StringParser)))
 	DependencyRule = Store().MustInstall(NewAddOn("DEPENDENCY_RULE",
-		cache.Configure().WithPrefix(core.GetServiceDependencyRuleRootKey("")).
+		sd.Configure().WithPrefix(core.GetServiceDependencyRuleRootKey("")).
 			WithInitSize(100).WithParser(proto.DependencyRuleParser)))
 	DependencyQueue = Store().MustInstall(NewAddOn("DEPENDENCY_QUEUE",
-		cache.Configure().WithPrefix(core.GetServiceDependencyQueueRootKey("")).
+		sd.Configure().WithPrefix(core.GetServiceDependencyQueueRootKey("")).
 			WithInitSize(100).WithParser(proto.DependencyQueueParser)))
 	PROJECT = Store().MustInstall(NewAddOn("PROJECT",
-		cache.Configure().WithPrefix(core.GetProjectRootKey("")).
+		sd.Configure().WithPrefix(core.GetProjectRootKey("")).
 			WithInitSize(100).WithParser(proto.StringParser)))
 }
