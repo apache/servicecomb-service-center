@@ -24,9 +24,8 @@ import (
 
 // DependencyManager contains the CRUD of microservice dependencies
 type DependencyManager interface {
-	AddDependency(ctx context.Context, request *pb.AddDependenciesRequest) (*pb.AddDependenciesResponse, error)
-	CreateDependency(ctx context.Context, request *pb.CreateDependenciesRequest) (*pb.CreateDependenciesResponse, error)
-	SearchProviderDependency(ctx context.Context, request *pb.GetDependenciesRequest) (*pb.GetProDependenciesResponse, error)
-	SearchConsumerDependency(ctx context.Context, request *pb.GetDependenciesRequest) (*pb.GetConDependenciesResponse, error)
+	SearchProviderDependency(ctx context.Context, request *pb.GetDependenciesRequest) ([]*pb.MicroService, error)
+	SearchConsumerDependency(ctx context.Context, request *pb.GetDependenciesRequest) ([]*pb.MicroService, error)
+	AddOrUpdateDependencies(ctx context.Context, dependencyInfos []*pb.ConsumerDependency, override bool) (*pb.Response, error)
 	DeleteDependency()
 }
