@@ -25,6 +25,7 @@ import (
 // Attention: request validation must be finished before the following interface being invoked!!!
 // MetadataManager contains the CRUD of registry metadata
 type MetadataManager interface {
+	// Microservice management
 	RegisterService(ctx context.Context, request *pb.CreateServiceRequest) (*pb.CreateServiceResponse, error)
 	GetServices(ctx context.Context, request *pb.GetServicesRequest) (*pb.GetServicesResponse, error)
 	GetService(ctx context.Context, request *pb.GetServiceRequest) (*pb.GetServiceResponse, error)
@@ -34,9 +35,15 @@ type MetadataManager interface {
 	GetDeleteServiceFunc(ctx context.Context, serviceID string, force bool,
 		serviceRespChan chan<- *pb.DelServicesRspInfo) func(context.Context)
 
+	// Instance management
 	RegisterInstance(ctx context.Context, request *pb.RegisterInstanceRequest) (*pb.RegisterInstanceResponse, error)
+	// GetInstances returns instances under the current domain
 	GetInstance(ctx context.Context, request *pb.GetOneInstanceRequest) (*pb.GetOneInstanceResponse, error)
 	GetInstances(ctx context.Context, request *pb.GetInstancesRequest) (*pb.GetInstancesResponse, error)
+	// GetProviderInstances returns instances under the specified domain
+	GetProviderInstances(ctx context.Context, request *pb.HeartbeatSetElement) (instances []*pb.MicroServiceInstance, rev string, err error)
+	BatchGetProviderInstances(ctx context.Context, request *pb.BatchGetInstancesRequest) (instances []*pb.MicroServiceInstance, rev string, err error)
+	// FindInstances returns instances under the specified domain
 	FindInstances(ctx context.Context, request *pb.FindInstancesRequest) (*pb.FindInstancesResponse, error)
 	UpdateInstanceStatus(ctx context.Context, request *pb.UpdateInstanceStatusRequest) (
 		*pb.UpdateInstanceStatusResponse, error)
@@ -48,6 +55,7 @@ type MetadataManager interface {
 	HeartbeatSet(ctx context.Context, request *pb.HeartbeatSetRequest) (*pb.HeartbeatSetResponse, error)
 	BatchFind(ctx context.Context, request *pb.BatchFindInstancesRequest) (*pb.BatchFindInstancesResponse, error)
 
+	// Schema management
 	ModifySchemas(ctx context.Context, request *pb.ModifySchemasRequest) (*pb.ModifySchemasResponse, error)
 	ModifySchema(ctx context.Context, request *pb.ModifySchemaRequest) (*pb.ModifySchemaResponse, error)
 	ExistSchema(ctx context.Context, request *pb.GetExistenceRequest) (*pb.GetExistenceResponse, error)
@@ -55,11 +63,13 @@ type MetadataManager interface {
 	GetAllSchemas(ctx context.Context, request *pb.GetAllSchemaRequest) (*pb.GetAllSchemaResponse, error)
 	DeleteSchema(ctx context.Context, request *pb.DeleteSchemaRequest) (*pb.DeleteSchemaResponse, error)
 
+	// Tag management
 	AddTags(ctx context.Context, request *pb.AddServiceTagsRequest) (*pb.AddServiceTagsResponse, error)
 	GetTags(ctx context.Context, request *pb.GetServiceTagsRequest) (*pb.GetServiceTagsResponse, error)
 	UpdateTag(ctx context.Context, request *pb.UpdateServiceTagRequest) (*pb.UpdateServiceTagResponse, error)
 	DeleteTags(ctx context.Context, request *pb.DeleteServiceTagsRequest) (*pb.DeleteServiceTagsResponse, error)
 
+	// White/black list management
 	AddRule(ctx context.Context, request *pb.AddServiceRulesRequest) (*pb.AddServiceRulesResponse, error)
 	GetRule(ctx context.Context, request *pb.GetServiceRulesRequest) (*pb.GetServiceRulesResponse, error)
 	UpdateRule(ctx context.Context, request *pb.UpdateServiceRuleRequest) (*pb.UpdateServiceRuleResponse, error)
