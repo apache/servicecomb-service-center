@@ -36,9 +36,23 @@ import (
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"github.com/apache/servicecomb-service-center/server/service/cache"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
+	"sort"
 	"strconv"
 	"time"
 )
+
+var clustersIndex = make(map[string]int)
+
+func init() {
+	var clusters []string
+	for name := range registry.Configuration().Clusters {
+		clusters = append(clusters, name)
+	}
+	sort.Strings(clusters)
+	for i, name := range clusters {
+		clustersIndex[name] = i
+	}
+}
 
 // RegisterService() implement:
 // 1. capsule request to etcd kv format
@@ -616,6 +630,143 @@ func (ds *DataSource) GetInstance(ctx context.Context, request *pb.GetOneInstanc
 	}, nil
 }
 
+func (ds *DataSource) GetInstances(ctx context.Context, request *pb.GetInstancesRequest) (*pb.GetInstancesResponse,
+	error) {
+	domainProject := util.ParseDomainProject(ctx)
+
+	service := &pb.MicroService{}
+	var err error
+	if len(request.ConsumerServiceId) > 0 {
+		service, err = serviceUtil.GetService(ctx, domainProject, request.ConsumerServiceId)
+		if err != nil {
+			log.Errorf(err, "get consumer failed, consumer[%s] find provider instances",
+				request.ConsumerServiceId, request.ProviderServiceId)
+			return &pb.GetInstancesResponse{
+				Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+			}, err
+		}
+		if service == nil {
+			log.Errorf(nil, "consumer does not exist, consumer[%s] find provider instances",
+				request.ConsumerServiceId, request.ProviderServiceId)
+			return &pb.GetInstancesResponse{
+				Response: proto.CreateResponse(scerr.ErrServiceNotExists,
+					fmt.Sprintf("Consumer[%s] does not exist.", request.ConsumerServiceId)),
+			}, nil
+		}
+	}
+
+	provider, err := serviceUtil.GetService(ctx, domainProject, request.ProviderServiceId)
+	if err != nil {
+		log.Errorf(err, "get provider failed, consumer[%s] find provider instances",
+			request.ConsumerServiceId, request.ProviderServiceId)
+		return &pb.GetInstancesResponse{
+			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+		}, err
+	}
+	if provider == nil {
+		log.Errorf(nil, "provider does not exist, consumer[%s] find provider instances",
+			request.ConsumerServiceId, request.ProviderServiceId)
+		return &pb.GetInstancesResponse{
+			Response: proto.CreateResponse(scerr.ErrServiceNotExists,
+				fmt.Sprintf("Provider[%s] does not exist.", request.ProviderServiceId)),
+		}, nil
+	}
+
+	findFlag := func() string {
+		return fmt.Sprintf("Consumer[%s][%s/%s/%s/%s] find provider[%s][%s/%s/%s/%s] instances",
+			request.ConsumerServiceId, service.Environment, service.AppId, service.ServiceName, service.Version,
+			provider.ServiceId, provider.Environment, provider.AppId, provider.ServiceName, provider.Version)
+	}
+
+	var item *cache.VersionRuleCacheItem
+	rev, _ := ctx.Value(util.CtxRequestRevision).(string)
+	item, err = cache.FindInstances.GetWithProviderID(ctx, service, proto.MicroServiceToKey(domainProject, provider),
+		&pb.HeartbeatSetElement{
+			ServiceId: request.ProviderServiceId,
+		}, request.Tags, rev)
+	if err != nil {
+		log.Errorf(err, "FindInstances.GetWithProviderID failed, %s failed", findFlag())
+		return &pb.GetInstancesResponse{
+			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+		}, err
+	}
+	if item == nil || len(item.ServiceIds) == 0 {
+		mes := fmt.Errorf("%s failed, provider instance does not exist", findFlag())
+		log.Errorf(mes, "FindInstances.GetWithProviderID failed")
+		return &pb.GetInstancesResponse{
+			Response: proto.CreateResponse(scerr.ErrServiceNotExists, mes.Error()),
+		}, nil
+	}
+
+	instances := item.Instances
+	if rev == item.Rev {
+		instances = nil // for gRPC
+	}
+	_ = util.SetContext(ctx, util.CtxResponseRevision, item.Rev)
+
+	return &pb.GetInstancesResponse{
+		Response:  proto.CreateResponse(proto.Response_SUCCESS, "Query service instances successfully."),
+		Instances: instances,
+	}, nil
+}
+
+func (ds *DataSource) GetProviderInstances(ctx context.Context, request *pb.HeartbeatSetElement) (instances []*pb.MicroServiceInstance, rev string, err error) {
+	var (
+		maxRevs       = make([]int64, len(clustersIndex))
+		counts        = make([]int64, len(clustersIndex))
+		domainProject = util.ParseTargetDomainProject(ctx)
+	)
+	instances, err = ds.findInstances(ctx, domainProject, request.ServiceId, request.InstanceId, maxRevs, counts)
+	if err != nil {
+		return
+	}
+	return instances, serviceUtil.FormatRevision(maxRevs, counts), nil
+}
+
+func (ds *DataSource) BatchGetProviderInstances(ctx context.Context, request *pb.BatchGetInstancesRequest) (instances []*pb.MicroServiceInstance, rev string, err error) {
+	var (
+		maxRevs       = make([]int64, len(clustersIndex))
+		counts        = make([]int64, len(clustersIndex))
+		domainProject = util.ParseTargetDomainProject(ctx)
+	)
+	if request == nil || len(request.ServiceIds) == 0 {
+		return nil, "", fmt.Errorf("invalid param BatchGetInstancesRequest")
+	}
+
+	for _, providerServiceID := range request.ServiceIds {
+		insts, err := ds.findInstances(ctx, domainProject, providerServiceID, "", maxRevs, counts)
+		if err != nil {
+			return nil, "", err
+		}
+		instances = append(instances, insts...)
+	}
+
+	return instances, serviceUtil.FormatRevision(maxRevs, counts), nil
+}
+
+func (ds *DataSource) findInstances(ctx context.Context, domainProject, serviceID, instanceID string, maxRevs []int64, counts []int64) (instances []*pb.MicroServiceInstance, err error) {
+	key := apt.GenerateInstanceKey(domainProject, serviceID, instanceID)
+	opts := append(serviceUtil.FromContext(ctx), registry.WithStrKey(key), registry.WithPrefix())
+	resp, err := backend.Store().Instance().Search(ctx, opts...)
+	if err != nil {
+		return nil, err
+	}
+	if len(resp.Kvs) == 0 {
+		return
+	}
+
+	for _, kv := range resp.Kvs {
+		if i, ok := clustersIndex[kv.ClusterName]; ok {
+			if kv.ModRevision > maxRevs[i] {
+				maxRevs[i] = kv.ModRevision
+			}
+			counts[i]++
+		}
+		instances = append(instances, kv.Value.(*pb.MicroServiceInstance))
+	}
+	return
+}
+
 func (ds *DataSource) FindInstances(ctx context.Context, request *pb.FindInstancesRequest) (*pb.FindInstancesResponse,
 	error) {
 	provider := &pb.MicroServiceKey{
@@ -900,86 +1051,6 @@ func (ds *DataSource) HeartbeatSet(ctx context.Context, request *pb.HeartbeatSet
 	return &pb.HeartbeatSetResponse{
 		Response:  proto.CreateResponse(scerr.ErrInstanceNotExists, "Heartbeat set failed."),
 		Instances: instanceHbRstArr,
-	}, nil
-}
-
-func (ds *DataSource) GetInstances(ctx context.Context, request *pb.GetInstancesRequest) (*pb.GetInstancesResponse,
-	error) {
-	domainProject := util.ParseDomainProject(ctx)
-
-	service := &pb.MicroService{}
-	var err error
-	if len(request.ConsumerServiceId) > 0 {
-		service, err = serviceUtil.GetService(ctx, domainProject, request.ConsumerServiceId)
-		if err != nil {
-			log.Errorf(err, "get consumer failed, consumer[%s] find provider instances",
-				request.ConsumerServiceId, request.ProviderServiceId)
-			return &pb.GetInstancesResponse{
-				Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
-			}, err
-		}
-		if service == nil {
-			log.Errorf(nil, "consumer does not exist, consumer[%s] find provider instances",
-				request.ConsumerServiceId, request.ProviderServiceId)
-			return &pb.GetInstancesResponse{
-				Response: proto.CreateResponse(scerr.ErrServiceNotExists,
-					fmt.Sprintf("Consumer[%s] does not exist.", request.ConsumerServiceId)),
-			}, nil
-		}
-	}
-
-	provider, err := serviceUtil.GetService(ctx, domainProject, request.ProviderServiceId)
-	if err != nil {
-		log.Errorf(err, "get provider failed, consumer[%s] find provider instances",
-			request.ConsumerServiceId, request.ProviderServiceId)
-		return &pb.GetInstancesResponse{
-			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
-		}, err
-	}
-	if provider == nil {
-		log.Errorf(nil, "provider does not exist, consumer[%s] find provider instances",
-			request.ConsumerServiceId, request.ProviderServiceId)
-		return &pb.GetInstancesResponse{
-			Response: proto.CreateResponse(scerr.ErrServiceNotExists,
-				fmt.Sprintf("Provider[%s] does not exist.", request.ProviderServiceId)),
-		}, nil
-	}
-
-	findFlag := func() string {
-		return fmt.Sprintf("Consumer[%s][%s/%s/%s/%s] find provider[%s][%s/%s/%s/%s] instances",
-			request.ConsumerServiceId, service.Environment, service.AppId, service.ServiceName, service.Version,
-			provider.ServiceId, provider.Environment, provider.AppId, provider.ServiceName, provider.Version)
-	}
-
-	var item *cache.VersionRuleCacheItem
-	rev, _ := ctx.Value(util.CtxRequestRevision).(string)
-	item, err = cache.FindInstances.GetWithProviderID(ctx, service, proto.MicroServiceToKey(domainProject, provider),
-		&pb.HeartbeatSetElement{
-			ServiceId: request.ProviderServiceId,
-		}, request.Tags, rev)
-	if err != nil {
-		log.Errorf(err, "FindInstances.GetWithProviderID failed, %s failed", findFlag())
-		return &pb.GetInstancesResponse{
-			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
-		}, err
-	}
-	if item == nil || len(item.ServiceIds) == 0 {
-		mes := fmt.Errorf("%s failed, provider instance does not exist", findFlag())
-		log.Errorf(mes, "FindInstances.GetWithProviderID failed")
-		return &pb.GetInstancesResponse{
-			Response: proto.CreateResponse(scerr.ErrServiceNotExists, mes.Error()),
-		}, nil
-	}
-
-	instances := item.Instances
-	if rev == item.Rev {
-		instances = nil // for gRPC
-	}
-	_ = util.SetContext(ctx, util.CtxResponseRevision, item.Rev)
-
-	return &pb.GetInstancesResponse{
-		Response:  proto.CreateResponse(proto.Response_SUCCESS, "Query service instances successfully."),
-		Instances: instances,
 	}, nil
 }
 

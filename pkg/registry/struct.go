@@ -104,7 +104,9 @@ type GetServicesInfoResponse struct {
 }
 
 type MicroServiceKey struct {
-	Tenant      string `protobuf:"bytes,1,opt,name=tenant" json:"tenant,omitempty"`
+	// Tenant: The format is "{domain}/{project}"
+	Tenant string `protobuf:"bytes,1,opt,name=tenant" json:"tenant,omitempty"`
+	// Deprecated: Use Tenant instead
 	Project     string `protobuf:"bytes,2,opt,name=project" json:"project,omitempty"`
 	AppId       string `protobuf:"bytes,3,opt,name=appId" json:"appId,omitempty"`
 	ServiceName string `protobuf:"bytes,4,opt,name=serviceName" json:"serviceName,omitempty"`
@@ -414,4 +416,8 @@ type GetAppsResponse struct {
 }
 type MicroServiceDependency struct {
 	Dependency []*MicroServiceKey `json:"Dependency,omitempty"`
+}
+
+type BatchGetInstancesRequest struct {
+	ServiceIds []string `json:"serviceIds,omitempty"`
 }
