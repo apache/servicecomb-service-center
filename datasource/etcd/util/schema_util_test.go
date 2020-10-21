@@ -15,17 +15,16 @@
  * limitations under the License.
  */
 
-package uuid
+package util
 
 import (
 	"context"
-
-	"github.com/apache/servicecomb-service-center/pkg/util"
+	"testing"
 )
 
-const ContextKey util.CtxKey = "_uuid_key"
-
-type UUID interface {
-	GetServiceID(ctx context.Context) string
-	GetInstanceID(ctx context.Context) string
+func TestCheckSchemaInfoExist(t *testing.T) {
+	_, err := CheckSchemaInfoExist(context.Background(), "")
+	if err == nil {
+		t.Fatalf("TestCheckSchemaInfoExist failed")
+	}
 }

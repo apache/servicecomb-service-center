@@ -53,7 +53,7 @@ func (i *Invocation) Context() context.Context {
 	return i.context
 }
 
-func (i *Invocation) WithContext(key string, val interface{}) *Invocation {
+func (i *Invocation) WithContext(key util.CtxKey, val interface{}) *Invocation {
 	i.context.SetKV(key, val)
 	return i
 }

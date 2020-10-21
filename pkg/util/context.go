@@ -48,7 +48,7 @@ func (c *StringContext) Err() error {
 }
 
 func (c *StringContext) Value(key interface{}) interface{} {
-	k, ok := key.(string)
+	k, ok := key.(CtxKey)
 	if !ok {
 		return c.parentCtx.Value(key)
 	}
@@ -59,7 +59,7 @@ func (c *StringContext) Value(key interface{}) interface{} {
 	return v
 }
 
-func (c *StringContext) SetKV(key string, val interface{}) {
+func (c *StringContext) SetKV(key CtxKey, val interface{}) {
 	c.kv.Put(key, val)
 }
 
@@ -74,7 +74,7 @@ func NewStringContext(ctx context.Context) *StringContext {
 	return strCtx
 }
 
-func SetContext(ctx context.Context, key string, val interface{}) context.Context {
+func SetContext(ctx context.Context, key CtxKey, val interface{}) context.Context {
 	strCtx := NewStringContext(ctx)
 	strCtx.SetKV(key, val)
 	return strCtx
@@ -101,14 +101,14 @@ func CloneContext(ctx context.Context) context.Context {
 	return strCtx
 }
 
-func FromContext(ctx context.Context, key string) interface{} {
+func FromContext(ctx context.Context, key CtxKey) interface{} {
 	if v := ctx.Value(key); v != nil {
 		return v
 	}
 	return FromMetadata(ctx, key)
 }
 
-func SetRequestContext(r *http.Request, key string, val interface{}) *http.Request {
+func SetRequestContext(r *http.Request, key CtxKey, val interface{}) *http.Request {
 	ctx := r.Context()
 	ctx = SetContext(ctx, key, val)
 	if ctx != r.Context() {

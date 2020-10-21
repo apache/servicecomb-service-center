@@ -26,7 +26,7 @@ import (
 	"github.com/apache/servicecomb-service-center/server/interceptor"
 )
 
-const CtxStartTimestamp = "x-start-timestamp"
+const CtxStartTimestamp util.CtxKey = "x-start-timestamp"
 
 func init() {
 	// api

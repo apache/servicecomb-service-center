@@ -24,6 +24,12 @@ import (
 	"net/http"
 )
 
+const (
+	queryGlobal    = "global"
+	queryNoCache   = "noCache"
+	queryCacheOnly = "cacheOnly"
+)
+
 type Handler struct {
 }
 
@@ -33,18 +39,18 @@ func (l *Handler) Handle(i *chain.Invocation) {
 	r := i.Context().Value(rest.CtxRequest).(*http.Request)
 	query := r.URL.Query()
 
-	global := util.StringTRUE(query.Get(string(util.CtxGlobal)))
+	global := util.StringTRUE(query.Get(queryGlobal))
 	if global && r.Method == http.MethodGet {
 		i.WithContext(util.CtxGlobal, "1")
 	}
 
-	noCache := util.StringTRUE(query.Get(util.CtxNocache))
+	noCache := util.StringTRUE(query.Get(queryNoCache))
 	if noCache {
 		i.WithContext(util.CtxNocache, "1")
 		return
 	}
 
-	cacheOnly := util.StringTRUE(query.Get(string(util.CtxCacheOnly)))
+	cacheOnly := util.StringTRUE(query.Get(queryCacheOnly))
 	if cacheOnly {
 		i.WithContext(util.CtxCacheOnly, "1")
 		return

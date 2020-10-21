@@ -15,17 +15,23 @@
  * limitations under the License.
  */
 
-package uuid
+package util
 
 import (
 	"context"
 
-	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/core/backend"
+	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 )
 
-const ContextKey util.CtxKey = "_uuid_key"
-
-type UUID interface {
-	GetServiceID(ctx context.Context) string
-	GetInstanceID(ctx context.Context) string
+func CheckSchemaInfoExist(ctx context.Context, key string) (bool, error) {
+	opts := append(FromContext(ctx), registry.WithStrKey(key), registry.WithCountOnly())
+	resp, errDo := backend.Store().Schema().Search(ctx, opts...)
+	if errDo != nil {
+		return false, errDo
+	}
+	if resp.Count == 0 {
+		return false, nil
+	}
+	return true, nil
 }

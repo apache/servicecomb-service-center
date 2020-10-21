@@ -17,11 +17,13 @@
 
 package util
 
+type CtxKey string
+
 const (
-	HeaderRev           = "X-Resource-Revision"
-	CtxGlobal           = "global"
-	CtxNocache          = "noCache"
-	CtxCacheOnly        = "cacheOnly"
-	CtxRequestRevision  = "requestRev"
-	CtxResponseRevision = "responseRev"
+	HeaderRev                  = "X-Resource-Revision"
+	CtxGlobal           CtxKey = "global"
+	CtxNocache          CtxKey = "noCache"
+	CtxCacheOnly        CtxKey = "cacheOnly"
+	CtxRequestRevision  CtxKey = "requestRev"
+	CtxResponseRevision CtxKey = "responseRev"
 )

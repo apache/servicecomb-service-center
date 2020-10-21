@@ -15,17 +15,30 @@
  * limitations under the License.
  */
 
-package uuid
+package util
 
 import (
 	"context"
-
-	"github.com/apache/servicecomb-service-center/pkg/util"
+	"testing"
 )
 
-const ContextKey util.CtxKey = "_uuid_key"
+func TestHeartbeatUtil(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.Fatalf("TestHeartbeatUtil failed")
+		}
+	}()
+	HeartbeatUtil(context.Background(), "", "", "")
+}
 
-type UUID interface {
-	GetServiceID(ctx context.Context) string
-	GetInstanceID(ctx context.Context) string
+func TestKeepAliveLease(t *testing.T) {
+	_, err := KeepAliveLease(context.Background(), "", "", "", -1)
+	if err == nil {
+		t.Fatalf("KeepAliveLease -1 failed")
+	}
+
+	_, err = KeepAliveLease(context.Background(), "", "", "", 0)
+	if err != nil {
+		t.Fatalf("KeepAliveLease failed")
+	}
 }

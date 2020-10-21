@@ -18,11 +18,11 @@ package etcd
 import (
 	"context"
 	"encoding/json"
+	utils "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
-	utils "github.com/apache/servicecomb-service-center/server/service/util"
 )
 
 func (ds *DataSource) AccountExist(ctx context.Context, key string) (bool, error) {
