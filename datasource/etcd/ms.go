@@ -100,6 +100,188 @@ func (ds *DataSource) GetService(ctx context.Context, request *pb.GetServiceRequ
 	}, nil
 }
 
+func (ds *DataSource) GetServiceDetail(ctx context.Context, request *pb.GetServiceRequest) (
+	*pb.GetServiceDetailResponse, error) {
+	ctx = util.SetContext(ctx, util.CtxCacheOnly, "1")
+
+	domainProject := util.ParseDomainProject(ctx)
+	options := []string{"tags", "rules", "instances", "schemas", "dependencies"}
+
+	if len(request.ServiceId) == 0 {
+		return &pb.GetServiceDetailResponse{
+			Response: proto.CreateResponse(scerr.ErrInvalidParams, "Invalid request for getting service detail."),
+		}, nil
+	}
+
+	service, err := serviceUtil.GetService(ctx, domainProject, request.ServiceId)
+	if service == nil {
+		return &pb.GetServiceDetailResponse{
+			Response: proto.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+		}, nil
+	}
+	if err != nil {
+		return &pb.GetServiceDetailResponse{
+			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+		}, err
+	}
+
+	key := &pb.MicroServiceKey{
+		Tenant:      domainProject,
+		Environment: service.Environment,
+		AppId:       service.AppId,
+		ServiceName: service.ServiceName,
+		Version:     "",
+	}
+	versions, err := getServiceAllVersions(ctx, key)
+	if err != nil {
+		log.Errorf(err, "get service[%s/%s/%s] all versions failed",
+			service.Environment, service.AppId, service.ServiceName)
+		return &pb.GetServiceDetailResponse{
+			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+		}, err
+	}
+
+	serviceInfo, err := getServiceDetailUtil(ctx, ServiceDetailOpt{
+		domainProject: domainProject,
+		service:       service,
+		options:       options,
+	})
+	if err != nil {
+		return &pb.GetServiceDetailResponse{
+			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+		}, err
+	}
+
+	serviceInfo.MicroService = service
+	serviceInfo.MicroServiceVersions = versions
+	return &pb.GetServiceDetailResponse{
+		Response: proto.CreateResponse(proto.Response_SUCCESS, "Get service successfully."),
+		Service:  serviceInfo,
+	}, nil
+}
+
+func (ds *DataSource) GetServicesInfo(ctx context.Context, request *pb.GetServicesInfoRequest) (
+	*pb.GetServicesInfoResponse, error) {
+	ctx = util.SetContext(ctx, util.CtxCacheOnly, "1")
+
+	optionMap := make(map[string]struct{}, len(request.Options))
+	for _, opt := range request.Options {
+		optionMap[opt] = struct{}{}
+	}
+
+	options := make([]string, 0, len(optionMap))
+	if _, ok := optionMap["all"]; ok {
+		optionMap["statistics"] = struct{}{}
+		options = []string{"tags", "rules", "instances", "schemas", "dependencies"}
+	} else {
+		for opt := range optionMap {
+			options = append(options, opt)
+		}
+	}
+
+	var st *pb.Statistics
+	if _, ok := optionMap["statistics"]; ok {
+		var err error
+		st, err = statistics(ctx, request.WithShared)
+		if err != nil {
+			return &pb.GetServicesInfoResponse{
+				Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+			}, err
+		}
+		if len(optionMap) == 1 {
+			return &pb.GetServicesInfoResponse{
+				Response:   proto.CreateResponse(proto.Response_SUCCESS, "Statistics successfully."),
+				Statistics: st,
+			}, nil
+		}
+	}
+
+	//获取所有服务
+	services, err := serviceUtil.GetAllServiceUtil(ctx)
+	if err != nil {
+		log.Errorf(err, "get all services by domain failed")
+		return &pb.GetServicesInfoResponse{
+			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+		}, err
+	}
+
+	allServiceDetails := make([]*pb.ServiceDetail, 0, len(services))
+	domainProject := util.ParseDomainProject(ctx)
+	for _, service := range services {
+		if !request.WithShared && apt.IsShared(proto.MicroServiceToKey(domainProject, service)) {
+			continue
+		}
+		if len(request.AppId) > 0 {
+			if request.AppId != service.AppId {
+				continue
+			}
+			if len(request.ServiceName) > 0 && request.ServiceName != service.ServiceName {
+				continue
+			}
+		}
+
+		serviceDetail, err := getServiceDetailUtil(ctx, ServiceDetailOpt{
+			domainProject: domainProject,
+			service:       service,
+			countOnly:     request.CountOnly,
+			options:       options,
+		})
+		if err != nil {
+			return &pb.GetServicesInfoResponse{
+				Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+			}, err
+		}
+		serviceDetail.MicroService = service
+		allServiceDetails = append(allServiceDetails, serviceDetail)
+	}
+
+	return &pb.GetServicesInfoResponse{
+		Response:          proto.CreateResponse(proto.Response_SUCCESS, "Get services info successfully."),
+		AllServicesDetail: allServiceDetails,
+		Statistics:        st,
+	}, nil
+}
+
+func (ds *DataSource) GetApplications(ctx context.Context, request *pb.GetAppsRequest) (*pb.GetAppsResponse, error) {
+	domainProject := util.ParseDomainProject(ctx)
+	key := GetServiceAppKey(domainProject, request.Environment, "")
+
+	opts := append(serviceUtil.FromContext(ctx),
+		registry.WithStrKey(key),
+		registry.WithPrefix(),
+		registry.WithKeyOnly())
+
+	resp, err := backend.Store().ServiceIndex().Search(ctx, opts...)
+	if err != nil {
+		return nil, err
+	}
+	l := len(resp.Kvs)
+	if l == 0 {
+		return &pb.GetAppsResponse{
+			Response: proto.CreateResponse(proto.Response_SUCCESS, "Get all applications successfully."),
+		}, nil
+	}
+
+	apps := make([]string, 0, l)
+	appMap := make(map[string]struct{}, l)
+	for _, kv := range resp.Kvs {
+		key := GetInfoFromSvcIndexKV(kv.Key)
+		if !request.WithShared && apt.IsShared(key) {
+			continue
+		}
+		if _, ok := appMap[key.AppId]; ok {
+			continue
+		}
+		appMap[key.AppId] = struct{}{}
+		apps = append(apps, key.AppId)
+	}
+
+	return &pb.GetAppsResponse{
+		Response: proto.CreateResponse(proto.Response_SUCCESS, "Get all applications successfully."),
+		AppIds:   apps,
+	}, nil
+}
+
 func (ds *DataSource) ExistService(ctx context.Context, request *pb.GetExistenceRequest) (*pb.GetExistenceResponse,
 	error) {
 	domainProject := util.ParseDomainProject(ctx)

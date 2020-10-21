@@ -737,6 +737,157 @@ func TestService_Delete(t *testing.T) {
 	})
 }
 
+func TestService_Info(t *testing.T) {
+	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
+		return NewDataSource(opts), nil
+	})
+
+	err := datasource.Init(datasource.Options{
+		Endpoint:       "",
+		PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
+	})
+	assert.NoError(t, err)
+
+	t.Run("get all services", func(t *testing.T) {
+		log.Info("should be passed")
+		resp, err := datasource.Instance().GetServicesInfo(getContext(), &pb.GetServicesInfoRequest{
+			Options: []string{"all"},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+
+		resp, err = datasource.Instance().GetServicesInfo(getContext(), &pb.GetServicesInfoRequest{
+			Options: []string{""},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+
+		resp, err = datasource.Instance().GetServicesInfo(getContext(), &pb.GetServicesInfoRequest{
+			Options: []string{"tags", "rules", "instances", "schemas", "statistics"},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+
+		resp, err = datasource.Instance().GetServicesInfo(getContext(), &pb.GetServicesInfoRequest{
+			Options: []string{"statistics"},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+
+		resp, err = datasource.Instance().GetServicesInfo(getContext(), &pb.GetServicesInfoRequest{
+			Options:   []string{"instances"},
+			CountOnly: true,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+	})
+}
+
+func TestService_Detail(t *testing.T) {
+	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
+		return NewDataSource(opts), nil
+	})
+
+	err := datasource.Init(datasource.Options{
+		Endpoint:       "",
+		PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
+	})
+	assert.NoError(t, err)
+
+	var (
+		serviceId string
+	)
+
+	t.Run("execute 'get detail' operation", func(t *testing.T) {
+		log.Info("should be passed")
+		resp, err := datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				AppId:       "govern_service_group",
+				ServiceName: "govern_service_name",
+				Version:     "3.0.0",
+				Level:       "FRONT",
+				Status:      pb.MS_UP,
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+		serviceId = resp.ServiceId
+
+		datasource.Instance().ModifySchema(getContext(), &pb.ModifySchemaRequest{
+			ServiceId: serviceId,
+			SchemaId:  "schemaId",
+			Schema:    "detail",
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+
+		datasource.Instance().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
+			Instance: &pb.MicroServiceInstance{
+				ServiceId: serviceId,
+				Endpoints: []string{
+					"govern:127.0.0.1:8080",
+				},
+				HostName: "UT-HOST",
+				Status:   pb.MSI_UP,
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+
+		log.Info("when get invalid service detail, should be failed")
+		respD, err := datasource.Instance().GetServiceDetail(getContext(), &pb.GetServiceRequest{
+			ServiceId: "",
+		})
+		assert.NoError(t, err)
+		assert.NotEqual(t, proto.Response_SUCCESS, respD.Response.GetCode())
+
+		log.Info("when get a service detail, should be passed")
+		respGetServiceDetail, err := datasource.Instance().GetServiceDetail(getContext(), &pb.GetServiceRequest{
+			ServiceId: serviceId,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, respGetServiceDetail.Response.GetCode())
+
+		respDelete, err := datasource.Instance().UnregisterService(getContext(), &pb.DeleteServiceRequest{
+			ServiceId: serviceId,
+			Force:     true,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, respDelete.Response.GetCode())
+
+		respGetServiceDetail, err = datasource.Instance().GetServiceDetail(getContext(), &pb.GetServiceRequest{
+			ServiceId: serviceId,
+		})
+		assert.NoError(t, err)
+		assert.NotEqual(t, proto.Response_SUCCESS, respGetServiceDetail.Response.GetCode())
+	})
+}
+
+func TestApplication_Get(t *testing.T) {
+	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
+		return NewDataSource(opts), nil
+	})
+
+	err := datasource.Init(datasource.Options{
+		Endpoint:       "",
+		PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
+	})
+	assert.NoError(t, err)
+
+	t.Run("execute 'get apps' operation", func(t *testing.T) {
+		log.Info("when request is valid, should be passed")
+		resp, err := datasource.Instance().GetApplications(getContext(), &pb.GetAppsRequest{})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+
+		resp, err = datasource.Instance().GetApplications(getContext(), &pb.GetAppsRequest{
+			Environment: pb.ENV_ACCEPT,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+	})
+}
+
 func TestInstance_Create(t *testing.T) {
 	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
 		return NewDataSource(opts), nil
