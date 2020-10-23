@@ -15,11 +15,11 @@
  * limitations under the License.
  */
 
-package kv
+package client
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource"
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	simple "github.com/apache/servicecomb-service-center/pkg/time"
@@ -27,8 +27,10 @@ import (
 	"time"
 )
 
+const leaseProfTimeFmt = "15:04:05.000"
+
 type LeaseTask struct {
-	Client client.Registry
+	Client Registry
 
 	key     string
 	LeaseID int64
@@ -45,7 +47,7 @@ func (lat *LeaseTask) Key() string {
 func (lat *LeaseTask) Do(ctx context.Context) (err error) {
 	recv, start := lat.ReceiveTime(), time.Now()
 	lat.TTL, err = lat.Client.LeaseRenew(ctx, lat.LeaseID)
-	ReportHeartbeatCompleted(err, recv)
+	datasource.ReportHeartbeatCompleted(err, recv)
 	if err != nil {
 		log.Errorf(err, "[%s]task[%s] renew lease[%d] failed(recv: %s, send: %s)",
 			time.Since(recv),
@@ -82,9 +84,9 @@ func (lat *LeaseTask) ReceiveTime() time.Time {
 	return lat.recvTime.Local()
 }
 
-func NewLeaseAsyncTask(op client.PluginOp) *LeaseTask {
+func NewLeaseAsyncTask(op PluginOp) *LeaseTask {
 	return &LeaseTask{
-		Client:   Registry(),
+		Client:   Instance(),
 		key:      ToLeaseAsyncTaskKey(util.BytesToStringWithNoCopy(op.Key)),
 		LeaseID:  op.Lease,
 		recvTime: simple.FromTime(time.Now()),

@@ -23,7 +23,6 @@ import (
 	"fmt"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -117,7 +116,7 @@ func (ds *DataSource) AddOrUpdateDependencies(ctx context.Context, dependencyInf
 		opts = append(opts, client.OpPut(client.WithStrKey(key), client.WithValue(data)))
 	}
 
-	err := kv.BatchCommit(ctx, opts)
+	err := client.BatchCommit(ctx, opts)
 	if err != nil {
 		log.Errorf(err, "put request into dependency queue failed, override: %t, %v", override, dependencyInfos)
 		return proto.CreateResponse(scerr.ErrInternal, err.Error()), err

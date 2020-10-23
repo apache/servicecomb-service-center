@@ -19,9 +19,6 @@ package server
 
 import (
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/mux"
-	"time"
-
 	//plugin
 	_ "github.com/apache/servicecomb-service-center/server/service/event"
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
@@ -32,7 +29,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	nf "github.com/apache/servicecomb-service-center/pkg/notify"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/backend"
 	"github.com/apache/servicecomb-service-center/server/notify"
 	"github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/astaxie/beego"
@@ -48,8 +44,6 @@ func Run() {
 type ServiceCenterServer struct {
 	apiService    *APIServer
 	notifyService *nf.Service
-	cacheService  *backend.KvStore
-	goroutine     *gopool.Pool
 }
 
 func (s *ServiceCenterServer) Run() {
@@ -69,46 +63,9 @@ func (s *ServiceCenterServer) waitForQuit() {
 	s.Stop()
 }
 
-// TODO move in pkg/job package
-// clear services who have no instance
-func (s *ServiceCenterServer) autoCleanUp() {
-	if !core.ServerInfo.Config.ServiceClearEnabled {
-		return
-	}
-	log.Infof("service clear enabled, interval: %s, service TTL: %s",
-		core.ServerInfo.Config.ServiceClearInterval,
-		core.ServerInfo.Config.ServiceTTL)
-
-	s.goroutine.Do(func(ctx context.Context) {
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-time.After(core.ServerInfo.Config.ServiceClearInterval):
-				lock, err := mux.Try(mux.ServiceClearLock)
-				if err != nil {
-					log.Errorf(err, "can not clear no instance services by this service center instance now")
-					continue
-				}
-				err = datasource.Instance().ClearNoInstanceServices(ctx, core.ServerInfo.Config.ServiceTTL)
-				if err := lock.Unlock(); err != nil {
-					log.Error("", err)
-				}
-				if err != nil {
-					log.Errorf(err, "no-instance services cleanup failed")
-					continue
-				}
-				log.Info("no-instance services cleanup succeed")
-			}
-		}
-	})
-}
-
 func (s *ServiceCenterServer) initialize() {
-	s.cacheService = backend.Store()
 	s.apiService = GetAPIServer()
 	s.notifyService = notify.GetNotifyCenter()
-	s.goroutine = gopool.New(context.Background())
 }
 
 func (s *ServiceCenterServer) startServices() {
@@ -124,14 +81,6 @@ func (s *ServiceCenterServer) startServices() {
 			os.Exit(1)
 		}
 	}
-
-	// cache mechanism
-	s.cacheService.Run()
-	<-s.cacheService.Ready()
-
-	// clean no-instance services automatically
-	s.autoCleanUp()
-
 	// api service
 	s.startAPIService()
 }
@@ -162,15 +111,7 @@ func (s *ServiceCenterServer) Stop() {
 		s.notifyService.Stop()
 	}
 
-	if s.cacheService != nil {
-		s.cacheService.Stop()
-	}
-
-	s.goroutine.Close(true)
-
 	gopool.CloseAndWait()
-
-	backend.Registry().Close()
 
 	log.Warnf("service center stopped")
 	log.Sync()

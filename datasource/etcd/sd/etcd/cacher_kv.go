@@ -21,7 +21,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/backoff"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
@@ -515,7 +514,7 @@ func NewKvCacher(cfg *sd.Config, cache sd.Cache) *KvCacher {
 		cache: cache,
 		ready: make(chan struct{}),
 		lw: &innerListWatch{
-			Client: kv.Registry(),
+			Client: client.Instance(),
 			Prefix: cfg.Key,
 		},
 		goroutine: gopool.New(context.Background()),

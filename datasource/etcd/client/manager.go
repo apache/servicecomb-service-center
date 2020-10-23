@@ -61,5 +61,6 @@ func New(opts Options) (Registry, error) {
 
 // Instance is the instance of Etcd client
 func Instance() Registry {
+	<-pluginInst.Ready()
 	return pluginInst
 }

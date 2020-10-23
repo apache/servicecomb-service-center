@@ -395,7 +395,7 @@ func revokeInstance(ctx context.Context, domainProject string, serviceID string,
 		return scerr.NewError(scerr.ErrInstanceNotExists, "Instance's leaseId not exist.")
 	}
 
-	err = kv.Registry().LeaseRevoke(ctx, leaseID)
+	err = client.Instance().LeaseRevoke(ctx, leaseID)
 	if err != nil {
 		if _, ok := err.(errorsEx.InternalError); !ok {
 			return scerr.NewError(scerr.ErrInstanceNotExists, err.Error())

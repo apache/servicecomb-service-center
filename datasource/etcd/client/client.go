@@ -19,6 +19,13 @@ package client
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/task"
+)
+
+const (
+	// the same as v3rpc.MaxOpsPerTxn = 128
+	MaxTxnNumberOneTime = 128
 )
 
 type Registry interface {
@@ -39,4 +46,54 @@ type Registry interface {
 	Watch(ctx context.Context, opts ...PluginOpOption) error
 	Compact(ctx context.Context, reserve int64) error
 	Close()
+}
+
+func BatchCommit(ctx context.Context, opts []PluginOp) error {
+	_, err := BatchCommitWithCmp(ctx, opts, nil, nil)
+	return err
+}
+
+func BatchCommitWithCmp(ctx context.Context, opts []PluginOp,
+	cmp []CompareOp, fail []PluginOp) (resp *PluginResponse, err error) {
+	lenOpts := len(opts)
+	tmpLen := lenOpts
+	var tmpOpts []PluginOp
+	for i := 0; tmpLen > 0; i++ {
+		tmpLen = lenOpts - (i+1)*MaxTxnNumberOneTime
+		if tmpLen > 0 {
+			tmpOpts = opts[i*MaxTxnNumberOneTime : (i+1)*MaxTxnNumberOneTime]
+		} else {
+			tmpOpts = opts[i*MaxTxnNumberOneTime : lenOpts]
+		}
+		resp, err = Instance().TxnWithCmp(ctx, tmpOpts, cmp, fail)
+		if err != nil || !resp.Succeeded {
+			return
+		}
+	}
+	return
+}
+
+// KeepAlive will always return ok when cache is unavailable
+// unless the cache response is LeaseNotFound
+func KeepAlive(ctx context.Context, opts ...PluginOpOption) (int64, error) {
+	op := OpPut(opts...)
+
+	t := NewLeaseAsyncTask(op)
+	if op.Mode == ModeNoCache {
+		log.Debugf("keep alive lease WitchNoCache, request etcd server, op: %s", op)
+		err := t.Do(ctx)
+		ttl := t.TTL
+		return ttl, err
+	}
+
+	err := task.GetService().Add(ctx, t)
+	if err != nil {
+		return 0, err
+	}
+	itf, err := task.GetService().LatestHandled(t.Key())
+	if err != nil {
+		return 0, err
+	}
+	pt := itf.(*LeaseTask)
+	return pt.TTL, pt.Err()
 }

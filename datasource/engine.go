@@ -26,7 +26,6 @@ import (
 type SCManager interface {
 	SelfRegister(ctx context.Context) error
 	SelfUnregister(ctx context.Context) error
-	SelfHeartBeat(ctx context.Context) error
 	// OPS
 	ClearNoInstanceServices(ctx context.Context, ttl time.Duration) error
 	UpgradeVersion(ctx context.Context) error

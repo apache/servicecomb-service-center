@@ -70,7 +70,7 @@ func (ds *DataSource) RegisterService(ctx context.Context, request *pb.CreateSer
 			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
-	resp, err := kv.Registry().TxnWithCmp(ctx, opts, uniqueCmpOpts, failOpts)
+	resp, err := client.Instance().TxnWithCmp(ctx, opts, uniqueCmpOpts, failOpts)
 
 	return newRegisterServiceResp(ctx, serviceBody, resp, err)
 }
@@ -370,7 +370,7 @@ func (ds *DataSource) UpdateService(ctx context.Context, request *pb.UpdateServi
 	}
 
 	// Set key file
-	resp, err := kv.Registry().TxnWithCmp(ctx,
+	resp, err := client.Instance().TxnWithCmp(ctx,
 		[]client.PluginOp{client.OpPut(client.WithStrKey(key), client.WithValue(data))},
 		[]client.CompareOp{client.OpCmp(
 			client.CmpVer(util.StringToBytesWithNoCopy(key)),
@@ -494,7 +494,7 @@ func (ds *DataSource) RegisterInstance(ctx context.Context, request *pb.Register
 		}, err
 	}
 
-	leaseID, err := kv.Registry().LeaseGrant(ctx, ttl)
+	leaseID, err := client.Instance().LeaseGrant(ctx, ttl)
 	if err != nil {
 		log.Errorf(err, "grant lease failed, %s, operator: %s", instanceFlag, remoteIP)
 		return &pb.RegisterInstanceResponse{
@@ -513,7 +513,7 @@ func (ds *DataSource) RegisterInstance(ctx context.Context, request *pb.Register
 			client.WithLease(leaseID)),
 	}
 
-	resp, err := kv.Registry().TxnWithCmp(ctx, opts,
+	resp, err := client.Instance().TxnWithCmp(ctx, opts,
 		[]client.CompareOp{client.OpCmp(
 			client.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, instance.ServiceId))),
 			client.CmpNotEqual, 0)},
@@ -1803,7 +1803,7 @@ func (ds *DataSource) AddRule(ctx context.Context, request *pb.AddServiceRulesRe
 		}, nil
 	}
 
-	resp, err := kv.BatchCommitWithCmp(ctx, opts,
+	resp, err := client.BatchCommitWithCmp(ctx, opts,
 		[]client.CompareOp{client.OpCmp(
 			client.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, request.ServiceId))),
 			client.CmpNotEqual, 0)},
@@ -2012,7 +2012,7 @@ func (ds *DataSource) DeleteRule(ctx context.Context, request *pb.DeleteServiceR
 		}, nil
 	}
 
-	resp, err := kv.BatchCommitWithCmp(ctx, opts,
+	resp, err := client.BatchCommitWithCmp(ctx, opts,
 		[]client.CompareOp{client.OpCmp(
 			client.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, request.ServiceId))),
 			client.CmpNotEqual, 0)},
@@ -2140,7 +2140,7 @@ func (ds *DataSource) modifySchemas(ctx context.Context, domainProject string, s
 	}
 
 	if len(pluginOps) != 0 {
-		resp, err := kv.BatchCommitWithCmp(ctx, pluginOps,
+		resp, err := client.BatchCommitWithCmp(ctx, pluginOps,
 			[]client.CompareOp{client.OpCmp(
 				client.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, serviceID))),
 				client.CmpNotEqual, 0)},
@@ -2239,7 +2239,7 @@ func (ds *DataSource) modifySchema(ctx context.Context, serviceID string, schema
 	opts := commitSchemaInfo(domainProject, serviceID, schema)
 	pluginOps = append(pluginOps, opts...)
 
-	resp, err := kv.Registry().TxnWithCmp(ctx, pluginOps,
+	resp, err := client.Instance().TxnWithCmp(ctx, pluginOps,
 		[]client.CompareOp{client.OpCmp(
 			client.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, serviceID))),
 			client.CmpNotEqual, 0)},
@@ -2374,7 +2374,7 @@ func (ds *DataSource) DeleteServicePri(ctx context.Context, serviceID string, fo
 		return proto.CreateResponse(scerr.ErrUnavailableBackend, err.Error()), err
 	}
 
-	resp, err := kv.Registry().TxnWithCmp(ctx, opts,
+	resp, err := client.Instance().TxnWithCmp(ctx, opts,
 		[]client.CompareOp{client.OpCmp(
 			client.CmpVer(util.StringToBytesWithNoCopy(serviceIDKey)),
 			client.CmpNotEqual, 0)},

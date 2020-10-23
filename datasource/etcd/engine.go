@@ -21,6 +21,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"strconv"
 	"strings"
@@ -39,7 +41,12 @@ func (ds *DataSource) SelfRegister(ctx context.Context) error {
 		return err
 	}
 	// 实例信息
-	return ds.registryInstance(ctx)
+	err = ds.registryInstance(ctx)
+	// start send heart beat job
+	ds.autoSelfHeartBeat()
+	// report the metrics
+	datasource.ReportScInstance()
+	return err
 }
 
 func (ds *DataSource) registryService(pCtx context.Context) error {
@@ -114,7 +121,7 @@ func (ds *DataSource) SelfUnregister(pCtx context.Context) error {
 	return nil
 }
 
-func (ds *DataSource) SelfHeartBeat(pCtx context.Context) error {
+func (ds *DataSource) selfHeartBeat(pCtx context.Context) error {
 	ctx := core.AddDefaultContextValue(pCtx)
 	respI, err := core.InstanceAPI.Heartbeat(ctx, core.HeartbeatRequest())
 	if err != nil {
@@ -136,6 +143,19 @@ func (ds *DataSource) SelfHeartBeat(pCtx context.Context) error {
 			core.Service.Environment, core.Service.AppId, core.Service.ServiceName, core.Service.Version)
 	}
 	return err
+}
+
+func (ds *DataSource) autoSelfHeartBeat() {
+	gopool.Go(func(ctx context.Context) {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(time.Duration(core.Instance.HealthCheck.Interval) * time.Second):
+				_ = ds.selfHeartBeat(ctx)
+			}
+		}
+	})
 }
 
 // ClearNoInstanceService clears services which have no instance

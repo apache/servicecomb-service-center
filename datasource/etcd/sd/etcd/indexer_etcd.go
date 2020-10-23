@@ -18,7 +18,6 @@ package etcd
 
 import (
 	"fmt"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"strings"
@@ -89,5 +88,5 @@ func (i *Indexer) Creditable() bool {
 }
 
 func NewEtcdIndexer(root string, p proto.Parser) (indexer *Indexer) {
-	return &Indexer{Client: kv.Registry(), Parser: p, Root: root}
+	return &Indexer{Client: client.Instance(), Parser: p, Root: root}
 }

@@ -20,11 +20,9 @@ package kv
 import (
 	"context"
 	"errors"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/task"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"time"
@@ -38,18 +36,16 @@ func init() {
 }
 
 type KvStore struct {
-	AddOns      map[sd.Type]AddOn
-	adaptors    util.ConcurrentMap
-	taskService task.Service
-	ready       chan struct{}
-	goroutine   *gopool.Pool
-	isClose     bool
-	rev         int64
+	AddOns    map[sd.Type]AddOn
+	adaptors  util.ConcurrentMap
+	ready     chan struct{}
+	goroutine *gopool.Pool
+	isClose   bool
+	rev       int64
 }
 
 func (s *KvStore) Initialize() {
 	s.AddOns = make(map[sd.Type]AddOn)
-	s.taskService = task.NewTaskService()
 	s.ready = make(chan struct{})
 	s.goroutine = gopool.New(context.Background())
 }
@@ -85,7 +81,6 @@ func (s *KvStore) getOrCreateAdaptor(t sd.Type) sd.Adaptor {
 func (s *KvStore) Run() {
 	s.goroutine.Do(s.store)
 	s.goroutine.Do(s.autoClearCache)
-	s.taskService.Run()
 }
 
 func (s *KvStore) store(ctx context.Context) {
@@ -138,8 +133,6 @@ func (s *KvStore) Stop() {
 		return true
 	})
 
-	s.taskService.Stop()
-
 	s.goroutine.Close(true)
 
 	util.SafeCloseChan(s.ready)
@@ -148,7 +141,6 @@ func (s *KvStore) Stop() {
 }
 
 func (s *KvStore) Ready() <-chan struct{} {
-	<-s.taskService.Ready()
 	return s.ready
 }
 
@@ -195,31 +187,6 @@ func (s *KvStore) DependencyRule() sd.Adaptor     { return s.Adaptors(Dependency
 func (s *KvStore) DependencyQueue() sd.Adaptor    { return s.Adaptors(DependencyQueue) }
 func (s *KvStore) Domain() sd.Adaptor             { return s.Adaptors(DOMAIN) }
 func (s *KvStore) Project() sd.Adaptor            { return s.Adaptors(PROJECT) }
-
-// KeepAlive will always return ok when cache is unavailable
-// unless the cache response is LeaseNotFound
-func (s *KvStore) KeepAlive(ctx context.Context, opts ...client.PluginOpOption) (int64, error) {
-	op := client.OpPut(opts...)
-
-	t := NewLeaseAsyncTask(op)
-	if op.Mode == client.ModeNoCache {
-		log.Debugf("keep alive lease WitchNoCache, request etcd server, op: %s", op)
-		err := t.Do(ctx)
-		ttl := t.TTL
-		return ttl, err
-	}
-
-	err := s.taskService.Add(ctx, t)
-	if err != nil {
-		return 0, err
-	}
-	itf, err := s.taskService.LatestHandled(t.Key())
-	if err != nil {
-		return 0, err
-	}
-	pt := itf.(*LeaseTask)
-	return pt.TTL, pt.Err()
-}
 
 func Store() *KvStore {
 	return store

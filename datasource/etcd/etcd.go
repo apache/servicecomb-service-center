@@ -20,6 +20,7 @@ import (
 	"errors"
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/mux"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -65,7 +66,14 @@ func NewDataSource(opts datasource.Options) *DataSource {
 func (ds *DataSource) initialize() error {
 	// TODO: init dependency members
 	ds.autoCompact()
+	// Wait for kv store ready
+	ds.initKvStore()
 	return nil
+}
+
+func (ds *DataSource) initKvStore() {
+	kv.Store().Run()
+	<-kv.Store().Ready()
 }
 
 func (ds *DataSource) autoCompact() {

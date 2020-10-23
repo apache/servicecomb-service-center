@@ -25,7 +25,6 @@ import (
 )
 
 const (
-	leaseProfTimeFmt           = "15:04:05.000"
 	eventBlockSize             = 1000
 	deferCheckWindow           = 2 * time.Second // instance DELETE event will be delay.
 	selfPreservationPercentage = 0.8

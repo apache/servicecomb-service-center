@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package kv
+package datasource
 
 import (
 	"github.com/apache/servicecomb-service-center/server/metric"

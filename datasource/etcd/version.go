@@ -22,7 +22,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/mux"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/core"
@@ -32,7 +31,7 @@ import (
 )
 
 func (ds *DataSource) LoadServerVersion(ctx context.Context) error {
-	resp, err := kv.Registry().Do(ctx,
+	resp, err := client.Instance().Do(ctx,
 		client.GET, client.WithStrKey(core.GetServerInfoKey()))
 	if err != nil {
 		return err
@@ -54,7 +53,7 @@ func (ds *DataSource) UpgradeServerVersion(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	_, err = kv.Registry().Do(ctx,
+	_, err = client.Instance().Do(ctx,
 		client.PUT, client.WithStrKey(core.GetServerInfoKey()), client.WithValue(bytes))
 	if err != nil {
 		return err

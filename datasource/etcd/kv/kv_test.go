@@ -17,72 +17,9 @@
 package kv
 
 import (
-	"context"
-	"errors"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
-	"github.com/apache/servicecomb-service-center/pkg/task"
 	"testing"
 )
-
-var closedCh = make(chan struct{})
-
-func init() {
-	close(closedCh)
-}
-
-type mockAsyncTaskService struct {
-	Task task.Task
-}
-
-func (a *mockAsyncTaskService) Run()                   {}
-func (a *mockAsyncTaskService) Stop()                  {}
-func (a *mockAsyncTaskService) Ready() <-chan struct{} { return closedCh }
-func (a *mockAsyncTaskService) Add(ctx context.Context, task task.Task) error {
-	switch task.Key() {
-	case "LeaseAsyncTask_error":
-		return errors.New("error")
-	}
-	return nil
-}
-func (a *mockAsyncTaskService) LatestHandled(key string) (task.Task, error) {
-	switch a.Task.Key() {
-	case key:
-		return a.Task, nil
-	}
-	return nil, errors.New("error")
-}
-
-func TestStore(t *testing.T) {
-	s := &KvStore{}
-	s.Initialize()
-
-	tt := NewLeaseAsyncTask(client.OpGet())
-	tt.TTL = 1
-	s.taskService = &mockAsyncTaskService{Task: tt}
-
-	// KeepAlive case: add task error
-	ttl, err := s.KeepAlive(context.Background(), client.WithKey([]byte("error")))
-	if err == nil || ttl > 0 {
-		t.Fatalf("TestStore failed")
-	}
-
-	// KeepAlive case: get last task error
-	tt.key = "LeaseAsyncTask_a"
-	ttl, err = s.KeepAlive(context.Background(), client.WithKey([]byte("b")))
-	if err == nil || ttl > 0 {
-		t.Fatalf("TestStore failed")
-	}
-
-	// KeepAlive case: get last task error
-	tt.key = "LeaseAsyncTask_a"
-	ttl, err = s.KeepAlive(context.Background(), client.WithKey([]byte("a")))
-	if err != nil || ttl != 1 {
-		t.Fatalf("TestStore failed")
-	}
-
-	s.Stop()
-}
 
 type extend struct {
 	evts []sd.KvEvent
