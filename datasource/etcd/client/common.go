@@ -22,9 +22,9 @@ import (
 )
 
 const (
-	Get ActionType = iota
-	Put
-	Delete
+	ActionGet ActionType = iota
+	ActionPut
+	ActionDelete
 )
 
 const (

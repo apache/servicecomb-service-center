@@ -20,6 +20,7 @@ import (
 	"errors"
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/job"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/mux"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
@@ -68,6 +69,8 @@ func (ds *DataSource) initialize() error {
 	ds.autoCompact()
 	// Wait for kv store ready
 	ds.initKvStore()
+	// Jobs
+	job.ClearNoInstanceServices()
 	return nil
 }
 

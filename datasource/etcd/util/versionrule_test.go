@@ -22,17 +22,17 @@ import (
 	"sort"
 	"testing"
 
+	sd "github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"github.com/stretchr/testify/assert"
 )
 
 const VERSIONRULE_BASE = 5000
 
 func BenchmarkVersionRule_Latest_GetServicesIds(b *testing.B) {
-	var kvs = make([]*discovery.KeyValue, VERSIONRULE_BASE)
+	var kvs = make([]*sd.KeyValue, VERSIONRULE_BASE)
 	for i := 1; i <= VERSIONRULE_BASE; i++ {
-		kvs[i-1] = &discovery.KeyValue{
+		kvs[i-1] = &sd.KeyValue{
 			Key:   []byte(fmt.Sprintf("/service/ver/1.%d", i)),
 			Value: []byte(fmt.Sprintf("%d", i)),
 		}
@@ -47,9 +47,9 @@ func BenchmarkVersionRule_Latest_GetServicesIds(b *testing.B) {
 }
 
 func BenchmarkVersionRule_Range_GetServicesIds(b *testing.B) {
-	var kvs = make([]*discovery.KeyValue, VERSIONRULE_BASE)
+	var kvs = make([]*sd.KeyValue, VERSIONRULE_BASE)
 	for i := 1; i <= VERSIONRULE_BASE; i++ {
-		kvs[i-1] = &discovery.KeyValue{
+		kvs[i-1] = &sd.KeyValue{
 			Key:   []byte(fmt.Sprintf("/service/ver/1.%d", i)),
 			Value: []byte(fmt.Sprintf("%d", i)),
 		}
@@ -64,9 +64,9 @@ func BenchmarkVersionRule_Range_GetServicesIds(b *testing.B) {
 }
 
 func BenchmarkVersionRule_AtLess_GetServicesIds(b *testing.B) {
-	var kvs = make([]*discovery.KeyValue, VERSIONRULE_BASE)
+	var kvs = make([]*sd.KeyValue, VERSIONRULE_BASE)
 	for i := 1; i <= VERSIONRULE_BASE; i++ {
-		kvs[i-1] = &discovery.KeyValue{
+		kvs[i-1] = &sd.KeyValue{
 			Key:   []byte(fmt.Sprintf("/service/ver/1.%d", i)),
 			Value: []byte(fmt.Sprintf("%d", i)),
 		}
@@ -82,7 +82,7 @@ func BenchmarkVersionRule_AtLess_GetServicesIds(b *testing.B) {
 
 func BenchmarkParseVersionRule(b *testing.B) {
 	f := ParseVersionRule("latest")
-	kvs := []*discovery.KeyValue{
+	kvs := []*sd.KeyValue{
 		{
 			Key:   []byte("/service/ver/1.0.300"),
 			Value: "1.0.300",
@@ -112,7 +112,7 @@ func TestSorter(t *testing.T) {
 		kvs := []string{"1.0.0", "1.0.1"}
 		sort.Sort(&serviceKeySorter{
 			sortArr: kvs,
-			kvs:     make(map[string]*discovery.KeyValue),
+			kvs:     make(map[string]*sd.KeyValue),
 			cmp:     Larger,
 		})
 		assert.Equal(t, "1.0.1", kvs[0])
@@ -123,7 +123,7 @@ func TestSorter(t *testing.T) {
 		kvs := []string{"1.0.1", "1.0.0"}
 		sort.Sort(&serviceKeySorter{
 			sortArr: kvs,
-			kvs:     make(map[string]*discovery.KeyValue),
+			kvs:     make(map[string]*sd.KeyValue),
 			cmp:     Larger,
 		})
 		assert.Equal(t, "1.0.1", kvs[0])
@@ -134,7 +134,7 @@ func TestSorter(t *testing.T) {
 		kvs := []string{"1.0.0.0", "1.0.1"}
 		sort.Sort(&serviceKeySorter{
 			sortArr: kvs,
-			kvs:     make(map[string]*discovery.KeyValue),
+			kvs:     make(map[string]*sd.KeyValue),
 			cmp:     Larger,
 		})
 		assert.Equal(t, "1.0.1", kvs[0])
@@ -145,7 +145,7 @@ func TestSorter(t *testing.T) {
 		kvs := []string{"1.0.9", "1.0.10"}
 		sort.Sort(&serviceKeySorter{
 			sortArr: kvs,
-			kvs:     make(map[string]*discovery.KeyValue),
+			kvs:     make(map[string]*sd.KeyValue),
 			cmp:     Larger,
 		})
 		assert.Equal(t, "1.0.10", kvs[0])
@@ -156,7 +156,7 @@ func TestSorter(t *testing.T) {
 		kvs := []string{"1.10", "4"}
 		sort.Sort(&serviceKeySorter{
 			sortArr: kvs,
-			kvs:     make(map[string]*discovery.KeyValue),
+			kvs:     make(map[string]*sd.KeyValue),
 			cmp:     Larger,
 		})
 		assert.Equal(t, "4", kvs[0])
@@ -169,7 +169,7 @@ func TestSorter(t *testing.T) {
 		kvs := []string{"1.a", "1.0.1.a", ""}
 		sort.Sort(&serviceKeySorter{
 			sortArr: kvs,
-			kvs:     make(map[string]*discovery.KeyValue),
+			kvs:     make(map[string]*sd.KeyValue),
 			cmp:     Larger,
 		})
 		assert.Equal(t, "1.a", kvs[0])
@@ -181,7 +181,7 @@ func TestSorter(t *testing.T) {
 		kvs := []string{"1.0", "1.0.1.32768"}
 		sort.Sort(&serviceKeySorter{
 			sortArr: kvs,
-			kvs:     make(map[string]*discovery.KeyValue),
+			kvs:     make(map[string]*sd.KeyValue),
 			cmp:     Larger,
 		})
 		assert.Equal(t, "1.0", kvs[0])
@@ -189,7 +189,7 @@ func TestSorter(t *testing.T) {
 		kvs = []string{"1.0", "1.0.1.32767"}
 		sort.Sort(&serviceKeySorter{
 			sortArr: kvs,
-			kvs:     make(map[string]*discovery.KeyValue),
+			kvs:     make(map[string]*sd.KeyValue),
 			cmp:     Larger,
 		})
 		assert.Equal(t, "1.0.1.32767", kvs[0])
@@ -199,9 +199,9 @@ func TestSorter(t *testing.T) {
 
 func TestVersionRule(t *testing.T) {
 	const count = 10
-	var kvs = [count]*discovery.KeyValue{}
+	var kvs = [count]*sd.KeyValue{}
 	for i := 1; i <= count; i++ {
-		kvs[i-1] = &discovery.KeyValue{
+		kvs[i-1] = &sd.KeyValue{
 			Key:   []byte(fmt.Sprintf("/service/ver/1.%d", i)),
 			Value: fmt.Sprintf("%d", i),
 		}

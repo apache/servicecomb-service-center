@@ -23,12 +23,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/pkg/etcdsync"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/service/kv"
 	stringutil "github.com/go-chassis/foundation/string"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -50,7 +50,7 @@ func CreateAccount(ctx context.Context, a *rbacframe.Account) error {
 		}
 	}()
 	key := core.GenerateAccountKey(a.Name)
-	exist, err := kv.Exist(ctx, key)
+	exist, err := client.Exist(ctx, key)
 	if err != nil {
 		log.Errorf(err, "can not save account info")
 		return err
@@ -70,7 +70,7 @@ func CreateAccount(ctx context.Context, a *rbacframe.Account) error {
 		log.Errorf(err, "account info is invalid")
 		return err
 	}
-	err = kv.PutBytes(ctx, key, value)
+	err = client.PutBytes(ctx, key, value)
 	if err != nil {
 		log.Errorf(err, "can not save account info")
 		return err
@@ -81,7 +81,7 @@ func CreateAccount(ctx context.Context, a *rbacframe.Account) error {
 
 func GetAccount(ctx context.Context, name string) (*rbacframe.Account, error) {
 	key := core.GenerateAccountKey(name)
-	r, err := kv.Get(ctx, key)
+	r, err := client.Get(ctx, key)
 	if err != nil {
 		log.Errorf(err, "can not get account info")
 		return nil, err
@@ -96,7 +96,7 @@ func GetAccount(ctx context.Context, name string) (*rbacframe.Account, error) {
 }
 func ListAccount(ctx context.Context) ([]*rbacframe.Account, int64, error) {
 	key := core.GenerateAccountKey("")
-	r, n, err := kv.List(ctx, key)
+	r, n, err := client.List(ctx, key)
 	if err != nil {
 		log.Errorf(err, "can not get account info")
 		return nil, 0, err
@@ -115,7 +115,7 @@ func ListAccount(ctx context.Context) ([]*rbacframe.Account, int64, error) {
 	return as, n, nil
 }
 func AccountExist(ctx context.Context, name string) (bool, error) {
-	exist, err := kv.Exist(ctx, core.GenerateAccountKey(name))
+	exist, err := client.Exist(ctx, core.GenerateAccountKey(name))
 	if err != nil {
 		log.Errorf(err, "can not get account info")
 		return false, err
@@ -123,7 +123,7 @@ func AccountExist(ctx context.Context, name string) (bool, error) {
 	return exist, nil
 }
 func DeleteAccount(ctx context.Context, name string) (bool, error) {
-	exist, err := kv.Delete(ctx, core.GenerateAccountKey(name))
+	exist, err := client.Delete(ctx, core.GenerateAccountKey(name))
 	if err != nil {
 		log.Errorf(err, "can not get account info")
 		return false, err
@@ -136,7 +136,7 @@ func DeleteAccount(ctx context.Context, name string) (bool, error) {
 //1. account info
 func EditAccount(ctx context.Context, a *rbacframe.Account) error {
 	key := core.GenerateAccountKey(a.Name)
-	exist, err := kv.Exist(ctx, key)
+	exist, err := client.Exist(ctx, key)
 	if err != nil {
 		log.Errorf(err, "can not edit account info")
 		return err
@@ -150,7 +150,7 @@ func EditAccount(ctx context.Context, a *rbacframe.Account) error {
 		log.Errorf(err, "account info is invalid")
 		return err
 	}
-	err = kv.PutBytes(ctx, key, value)
+	err = client.PutBytes(ctx, key, value)
 	if err != nil {
 		log.Errorf(err, "can not edit account info")
 		return err

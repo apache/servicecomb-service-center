@@ -26,22 +26,22 @@ import (
 	"strings"
 	"time"
 
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	rmodel "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/backend"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
-	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
-	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 )
 
 func GetLeaseID(ctx context.Context, domainProject string, serviceID string, instanceID string) (int64, error) {
 	opts := append(FromContext(ctx),
-		registry.WithStrKey(apt.GenerateInstanceLeaseKey(domainProject, serviceID, instanceID)))
-	resp, err := backend.Store().Lease().Search(ctx, opts...)
+		client.WithStrKey(apt.GenerateInstanceLeaseKey(domainProject, serviceID, instanceID)))
+	resp, err := kv.Store().Lease().Search(ctx, opts...)
 	if err != nil {
 		return -1, err
 	}
@@ -54,9 +54,9 @@ func GetLeaseID(ctx context.Context, domainProject string, serviceID string, ins
 
 func GetInstance(ctx context.Context, domainProject string, serviceID string, instanceID string) (*pb.MicroServiceInstance, error) {
 	key := apt.GenerateInstanceKey(domainProject, serviceID, instanceID)
-	opts := append(FromContext(ctx), registry.WithStrKey(key))
+	opts := append(FromContext(ctx), client.WithStrKey(key))
 
-	resp, err := backend.Store().Instance().Search(ctx, opts...)
+	resp, err := kv.Store().Instance().Search(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -76,8 +76,8 @@ func FormatRevision(revs, counts []int64) (s string) {
 
 func GetAllInstancesOfOneService(ctx context.Context, domainProject string, serviceID string) ([]*pb.MicroServiceInstance, error) {
 	key := apt.GenerateInstanceKey(domainProject, serviceID, "")
-	opts := append(FromContext(ctx), registry.WithStrKey(key), registry.WithPrefix())
-	resp, err := backend.Store().Instance().Search(ctx, opts...)
+	opts := append(FromContext(ctx), client.WithStrKey(key), client.WithPrefix())
+	resp, err := kv.Store().Instance().Search(ctx, opts...)
 	if err != nil {
 		log.Errorf(err, "get service[%s]'s instances failed", serviceID)
 		return nil, err
@@ -93,10 +93,10 @@ func GetAllInstancesOfOneService(ctx context.Context, domainProject string, serv
 func GetInstanceCountOfOneService(ctx context.Context, domainProject string, serviceID string) (int64, error) {
 	key := apt.GenerateInstanceKey(domainProject, serviceID, "")
 	opts := append(FromContext(ctx),
-		registry.WithStrKey(key),
-		registry.WithPrefix(),
-		registry.WithCountOnly())
-	resp, err := backend.Store().Instance().Search(ctx, opts...)
+		client.WithStrKey(key),
+		client.WithPrefix(),
+		client.WithCountOnly())
+	resp, err := kv.Store().Instance().Search(ctx, opts...)
 	if err != nil {
 		log.Errorf(err, "get number of service[%s]'s instances failed", serviceID)
 		return 0, err
@@ -122,10 +122,10 @@ func DeleteServiceAllInstances(ctx context.Context, serviceID string) error {
 	domainProject := util.ParseDomainProject(ctx)
 
 	instanceLeaseKey := apt.GenerateInstanceLeaseKey(domainProject, serviceID, "")
-	resp, err := backend.Store().Lease().Search(ctx,
-		registry.WithStrKey(instanceLeaseKey),
-		registry.WithPrefix(),
-		registry.WithNoCache())
+	resp, err := kv.Store().Lease().Search(ctx,
+		client.WithStrKey(instanceLeaseKey),
+		client.WithPrefix(),
+		client.WithNoCache())
 	if err != nil {
 		log.Errorf(err, "delete all of service[%s]'s instances failed: get instance lease failed", serviceID)
 		return err
@@ -136,7 +136,7 @@ func DeleteServiceAllInstances(ctx context.Context, serviceID string) error {
 	}
 	for _, v := range resp.Kvs {
 		leaseID, _ := strconv.ParseInt(v.Value.(string), 10, 64)
-		err := backend.Registry().LeaseRevoke(ctx, leaseID)
+		err := client.Instance().LeaseRevoke(ctx, leaseID)
 		if err != nil {
 			log.Error("", err)
 		}
@@ -164,7 +164,7 @@ func QueryAllProvidersInstances(ctx context.Context, selfServiceID string) (resu
 		return
 	}
 
-	rev = backend.Revision()
+	rev = kv.Revision()
 
 	for _, providerID := range providerIDs {
 		service, err := GetServiceWithRev(ctx, domainProject, providerID, rev)
@@ -201,13 +201,13 @@ func QueryAllProvidersInstances(ctx context.Context, selfServiceID string) (resu
 	return
 }
 
-func queryServiceInstancesKvs(ctx context.Context, serviceID string, rev int64) ([]*discovery.KeyValue, error) {
+func queryServiceInstancesKvs(ctx context.Context, serviceID string, rev int64) ([]*sd.KeyValue, error) {
 	domainProject := util.ParseDomainProject(ctx)
 	key := apt.GenerateInstanceKey(domainProject, serviceID, "")
-	resp, err := backend.Store().Instance().Search(ctx,
-		registry.WithStrKey(key),
-		registry.WithPrefix(),
-		registry.WithRev(rev))
+	resp, err := kv.Store().Instance().Search(ctx,
+		client.WithStrKey(key),
+		client.WithPrefix(),
+		client.WithRev(rev))
 	if err != nil {
 		log.Errorf(err, "get service[%s]'s instances with revision %d failed",
 			serviceID, rev)
@@ -233,14 +233,14 @@ func UpdateInstance(ctx context.Context, domainProject string, instance *pb.Micr
 
 	key := apt.GenerateInstanceKey(domainProject, instance.ServiceId, instance.InstanceId)
 
-	resp, err := backend.Registry().TxnWithCmp(ctx,
-		[]registry.PluginOp{registry.OpPut(
-			registry.WithStrKey(key),
-			registry.WithValue(data),
-			registry.WithLease(leaseID))},
-		[]registry.CompareOp{registry.OpCmp(
-			registry.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, instance.ServiceId))),
-			registry.CmpNotEqual, 0)},
+	resp, err := client.Instance().TxnWithCmp(ctx,
+		[]client.PluginOp{client.OpPut(
+			client.WithStrKey(key),
+			client.WithValue(data),
+			client.WithLease(leaseID))},
+		[]client.CompareOp{client.OpCmp(
+			client.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, instance.ServiceId))),
+			client.CmpNotEqual, 0)},
 		nil)
 	if err != nil {
 		return scerr.NewError(scerr.ErrUnavailableBackend, err.Error())

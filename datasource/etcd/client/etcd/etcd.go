@@ -306,15 +306,15 @@ func (c *Client) toTxnRequest(opts []client.PluginOp) []clientv3.Op {
 	var etcdOps []clientv3.Op
 	for _, op := range opts {
 		switch op.Action {
-		case client.Get:
+		case client.ActionGet:
 			etcdOps = append(etcdOps, clientv3.OpGet(util.BytesToStringWithNoCopy(op.Key), c.toGetRequest(op)...))
-		case client.Put:
+		case client.ActionPut:
 			var value string
 			if len(op.Value) > 0 {
 				value = util.BytesToStringWithNoCopy(op.Value)
 			}
 			etcdOps = append(etcdOps, clientv3.OpPut(util.BytesToStringWithNoCopy(op.Key), value, c.toPutRequest(op)...))
-		case client.Delete:
+		case client.ActionDelete:
 			etcdOps = append(etcdOps, clientv3.OpDelete(util.BytesToStringWithNoCopy(op.Key), c.toDeleteRequest(op)...))
 		}
 	}
@@ -481,7 +481,7 @@ func (c *Client) Do(ctx context.Context, opts ...client.PluginOpOption) (*client
 	}()
 
 	switch op.Action {
-	case client.Get:
+	case client.ActionGet:
 		var etcdResp *clientv3.GetResponse
 		key := util.BytesToStringWithNoCopy(op.Key)
 
@@ -504,7 +504,7 @@ func (c *Client) Do(ctx context.Context, opts ...client.PluginOpOption) (*client
 			Count:    etcdResp.Count,
 			Revision: etcdResp.Header.Revision,
 		}
-	case client.Put:
+	case client.ActionPut:
 		var value string
 		if len(op.Value) > 0 {
 			value = util.BytesToStringWithNoCopy(op.Value)
@@ -517,7 +517,7 @@ func (c *Client) Do(ctx context.Context, opts ...client.PluginOpOption) (*client
 		resp = &client.PluginResponse{
 			Revision: etcdResp.Header.Revision,
 		}
-	case client.Delete:
+	case client.ActionDelete:
 		var etcdResp *clientv3.DeleteResponse
 		etcdResp, err = c.Client.Delete(otCtx, util.BytesToStringWithNoCopy(op.Key), c.toDeleteRequest(op)...)
 		if err != nil {
@@ -615,7 +615,7 @@ func (c *Client) LeaseGrant(ctx context.Context, TTL int64) (int64, error) {
 
 	start := time.Now()
 	span := TracingBegin(ctx, "etcd:grant",
-		client.PluginOp{Action: client.Put, Key: util.StringToBytesWithNoCopy(strconv.FormatInt(TTL, 10))})
+		client.PluginOp{Action: client.ActionPut, Key: util.StringToBytesWithNoCopy(strconv.FormatInt(TTL, 10))})
 	otCtx, cancel := etcd.WithTimeout(ctx)
 	defer func() {
 		client.ReportBackendOperationCompleted(OperationLeaseGrant, err, start)
@@ -635,7 +635,7 @@ func (c *Client) LeaseRenew(ctx context.Context, leaseID int64) (int64, error) {
 
 	start := time.Now()
 	span := TracingBegin(ctx, "etcd:keepalive",
-		client.PluginOp{Action: client.Put, Key: util.StringToBytesWithNoCopy(strconv.FormatInt(leaseID, 10))})
+		client.PluginOp{Action: client.ActionPut, Key: util.StringToBytesWithNoCopy(strconv.FormatInt(leaseID, 10))})
 	otCtx, cancel := etcd.WithTimeout(ctx)
 	defer func() {
 		client.ReportBackendOperationCompleted(OperationLeaseRenew, err, start)
@@ -659,7 +659,7 @@ func (c *Client) LeaseRevoke(ctx context.Context, leaseID int64) error {
 
 	start := time.Now()
 	span := TracingBegin(ctx, "etcd:revoke",
-		client.PluginOp{Action: client.Delete, Key: util.StringToBytesWithNoCopy(strconv.FormatInt(leaseID, 10))})
+		client.PluginOp{Action: client.ActionDelete, Key: util.StringToBytesWithNoCopy(strconv.FormatInt(leaseID, 10))})
 	otCtx, cancel := etcd.WithTimeout(ctx)
 	defer func() {
 		client.ReportBackendOperationCompleted(OperationLeaseRevoke, err, start)
@@ -817,7 +817,7 @@ func dispatch(evts []*clientv3.Event, cb client.WatchCallback) error {
 	l := len(evts)
 	kvs := make([]*mvccpb.KeyValue, l)
 	sIdx, eIdx, rev := 0, 0, int64(0)
-	action, prevEvtType := client.Put, mvccpb.PUT
+	action, prevEvtType := client.ActionPut, mvccpb.PUT
 
 	for _, evt := range evts {
 		if prevEvtType != evt.Type {
@@ -853,10 +853,10 @@ func setKvsAndConvertAction(kvs []*mvccpb.KeyValue, pIdx int, evt *clientv3.Even
 			kv = evt.Kv
 		}
 		kvs[pIdx] = kv
-		return client.Delete
+		return client.ActionDelete
 	default:
 		kvs[pIdx] = evt.Kv
-		return client.Put
+		return client.ActionPut
 	}
 }
 

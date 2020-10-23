@@ -18,10 +18,8 @@ package etcd
 
 import (
 	"github.com/apache/servicecomb-service-center/datasource"
+	_ "github.com/apache/servicecomb-service-center/datasource/etcd/bootstrap"
 	"github.com/apache/servicecomb-service-center/pkg/model"
-	mgr "github.com/apache/servicecomb-service-center/server/plugin"
-	"github.com/apache/servicecomb-service-center/server/plugin/discovery/etcd"
-	etcd2 "github.com/apache/servicecomb-service-center/server/plugin/registry/etcd"
 	"github.com/astaxie/beego"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -29,9 +27,6 @@ import (
 
 func init() {
 	beego.AppConfig.Set("registry_plugin", "etcd")
-	mgr.RegisterPlugin(mgr.Plugin{mgr.REGISTRY, "etcd", etcd2.NewRegistry})
-	mgr.RegisterPlugin(mgr.Plugin{mgr.DISCOVERY, "buildin", etcd.NewRepository})
-	mgr.RegisterPlugin(mgr.Plugin{mgr.DISCOVERY, "etcd", etcd.NewRepository})
 	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
 		return NewDataSource(opts), nil
 	})

@@ -18,19 +18,18 @@
 package util_test
 
 import (
-	_ "github.com/apache/servicecomb-service-center/server/plugin/discovery/etcd"
+	_ "github.com/apache/servicecomb-service-center/datasource/etcd/bootstrap"
 	_ "github.com/apache/servicecomb-service-center/server/plugin/quota/buildin"
-	_ "github.com/apache/servicecomb-service-center/server/plugin/registry/buildin"
 )
 
 import (
 	"context"
 	"testing"
 
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	proto "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
@@ -108,8 +107,8 @@ func TestFromContext(t *testing.T) {
 		t.Fatalf("TestFromContext failed")
 	}
 
-	op := registry.OptionsToOp(opts...)
-	if op.Mode != registry.ModeNoCache {
+	op := client.OptionsToOp(opts...)
+	if op.Mode != client.ModeNoCache {
 		t.Fatalf("TestFromContext failed")
 	}
 
@@ -119,8 +118,8 @@ func TestFromContext(t *testing.T) {
 		t.Fatalf("TestFromContext failed")
 	}
 
-	op = registry.OptionsToOp(opts...)
-	if op.Mode != registry.ModeCache {
+	op = client.OptionsToOp(opts...)
+	if op.Mode != client.ModeCache {
 		t.Fatalf("TestFromContext failed")
 	}
 }

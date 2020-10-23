@@ -164,11 +164,11 @@ func (c *KvCacher) handleWatcher(watcher Watcher) error {
 		for _, kv := range resp.Kvs {
 			evt := sd.NewKvEvent(rmodel.EVT_CREATE, nil, kv.ModRevision)
 			switch {
-			case resp.Action == client.Put && kv.Version == 1:
+			case resp.Action == client.ActionPut && kv.Version == 1:
 				evt.Type, evt.KV = rmodel.EVT_CREATE, c.doParse(kv)
-			case resp.Action == client.Put:
+			case resp.Action == client.ActionPut:
 				evt.Type, evt.KV = rmodel.EVT_UPDATE, c.doParse(kv)
-			case resp.Action == client.Delete:
+			case resp.Action == client.ActionDelete:
 				evt.Type = rmodel.EVT_DELETE
 				if kv.Value == nil {
 					// it will happen in embed mode, and then need to get the cache value not unmarshal

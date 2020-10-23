@@ -22,13 +22,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/backend"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
-	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"strings"
 )
@@ -179,10 +179,10 @@ func AddServiceVersionRule(ctx context.Context, domainProject string, consumer *
 
 	id := util.StringJoin([]string{provider.AppId, provider.ServiceName}, "_")
 	key := apt.GenerateConsumerDependencyQueueKey(domainProject, consumer.ServiceId, id)
-	resp, err := backend.Registry().TxnWithCmp(ctx,
+	resp, err := client.Instance().TxnWithCmp(ctx,
 		nil,
-		[]registry.CompareOp{registry.OpCmp(registry.CmpStrVal(key), registry.CmpEqual, util.BytesToStringWithNoCopy(data))},
-		[]registry.PluginOp{registry.OpPut(registry.WithStrKey(key), registry.WithValue(data))})
+		[]client.CompareOp{client.OpCmp(client.CmpStrVal(key), client.CmpEqual, util.BytesToStringWithNoCopy(data))},
+		[]client.PluginOp{client.OpPut(client.WithStrKey(key), client.WithValue(data))})
 	if err != nil {
 		return err
 	}
@@ -199,8 +199,8 @@ func TransferToMicroServiceDependency(ctx context.Context, key string) (*pb.Micr
 		Dependency: []*pb.MicroServiceKey{},
 	}
 
-	opts := append(FromContext(ctx), registry.WithStrKey(key))
-	res, err := backend.Store().DependencyRule().Search(ctx, opts...)
+	opts := append(FromContext(ctx), client.WithStrKey(key))
+	res, err := kv.Store().DependencyRule().Search(ctx, opts...)
 	if err != nil {
 		log.Errorf(nil, "get dependency rule[%s] failed", key)
 		return nil, err
@@ -392,7 +392,7 @@ func ParamsChecker(consumerInfo *pb.MicroServiceKey, providersInfo []*pb.MicroSe
 	return nil
 }
 
-func DeleteDependencyForDeleteService(domainProject string, serviceID string, service *pb.MicroServiceKey) (registry.PluginOp, error) {
+func DeleteDependencyForDeleteService(domainProject string, serviceID string, service *pb.MicroServiceKey) (client.PluginOp, error) {
 	key := apt.GenerateConsumerDependencyQueueKey(domainProject, serviceID, apt.DepsQueueUUID)
 	conDep := new(pb.ConsumerDependency)
 	conDep.Consumer = service
@@ -400,20 +400,20 @@ func DeleteDependencyForDeleteService(domainProject string, serviceID string, se
 	conDep.Override = true
 	data, err := json.Marshal(conDep)
 	if err != nil {
-		return registry.PluginOp{}, err
+		return client.PluginOp{}, err
 	}
-	return registry.OpPut(registry.WithStrKey(key), registry.WithValue(data)), nil
+	return client.OpPut(client.WithStrKey(key), client.WithValue(data)), nil
 }
 
-func removeProviderRuleOfConsumer(ctx context.Context, domainProject string, cache map[string]bool) ([]registry.PluginOp, error) {
+func removeProviderRuleOfConsumer(ctx context.Context, domainProject string, cache map[string]bool) ([]client.PluginOp, error) {
 	key := apt.GenerateConsumerDependencyRuleKey(domainProject, nil) + apt.SPLIT
-	resp, err := backend.Store().DependencyRule().Search(ctx,
-		registry.WithStrKey(key), registry.WithPrefix())
+	resp, err := kv.Store().DependencyRule().Search(ctx,
+		client.WithStrKey(key), client.WithPrefix())
 	if err != nil {
 		return nil, err
 	}
 
-	var ops []registry.PluginOp
+	var ops []client.PluginOp
 loop:
 	for _, kv := range resp.Kvs {
 		var left []*pb.MicroServiceKey
@@ -444,27 +444,27 @@ loop:
 		}
 
 		if len(left) == 0 {
-			ops = append(ops, registry.OpDel(registry.WithKey(kv.Key)))
+			ops = append(ops, client.OpDel(client.WithKey(kv.Key)))
 		} else {
 			val, err := json.Marshal(&pb.MicroServiceDependency{Dependency: left})
 			if err != nil {
 				return nil, fmt.Errorf("%v, marshal %v", err, left)
 			}
-			ops = append(ops, registry.OpPut(registry.WithKey(kv.Key), registry.WithValue(val)))
+			ops = append(ops, client.OpPut(client.WithKey(kv.Key), client.WithValue(val)))
 		}
 	}
 	return ops, nil
 }
 
-func removeProviderRuleKeys(ctx context.Context, domainProject string, cache map[string]bool) ([]registry.PluginOp, error) {
+func removeProviderRuleKeys(ctx context.Context, domainProject string, cache map[string]bool) ([]client.PluginOp, error) {
 	key := apt.GenerateProviderDependencyRuleKey(domainProject, nil) + apt.SPLIT
-	resp, err := backend.Store().DependencyRule().Search(ctx,
-		registry.WithStrKey(key), registry.WithPrefix(), registry.WithKeyOnly())
+	resp, err := kv.Store().DependencyRule().Search(ctx,
+		client.WithStrKey(key), client.WithPrefix(), client.WithKeyOnly())
 	if err != nil {
 		return nil, err
 	}
 
-	var ops []registry.PluginOp
+	var ops []client.PluginOp
 	for _, kv := range resp.Kvs {
 		id := util.BytesToStringWithNoCopy(kv.Key)
 		exist, ok := cache[id]
@@ -483,7 +483,7 @@ func removeProviderRuleKeys(ctx context.Context, domainProject string, cache map
 		}
 
 		if !exist {
-			ops = append(ops, registry.OpDel(registry.WithKey(kv.Key)))
+			ops = append(ops, client.OpDel(client.WithKey(kv.Key)))
 		}
 	}
 	return ops, nil
@@ -505,10 +505,10 @@ func CleanUpDependencyRules(ctx context.Context, domainProject string) error {
 		return err
 	}
 
-	ops := append(append([]registry.PluginOp(nil), pOps...), kOps...)
+	ops := append(append([]client.PluginOp(nil), pOps...), kOps...)
 	if len(ops) == 0 {
 		return nil
 	}
 
-	return backend.BatchCommit(ctx, ops)
+	return client.BatchCommit(ctx, ops)
 }

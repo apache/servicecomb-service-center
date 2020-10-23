@@ -22,13 +22,13 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/backend"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
-	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 )
 
 // DependencyRelationFilterOpt contains SameDomainProject and NonSelf flag
@@ -171,9 +171,9 @@ func (dr *DependencyRelation) parseDependencyRule(dependencyRule *pb.MicroServic
 		splited := strings.Split(apt.GenerateServiceIndexKey(dependencyRule), "/")
 		allServiceKey := util.StringJoin(splited[:len(splited)-3], "/") + "/"
 		sopts := append(opts,
-			registry.WithStrKey(allServiceKey),
-			registry.WithPrefix())
-		resp, err := backend.Store().ServiceIndex().Search(dr.ctx, sopts...)
+			client.WithStrKey(allServiceKey),
+			client.WithPrefix())
+		resp, err := kv.Store().ServiceIndex().Search(dr.ctx, sopts...)
 		if err != nil {
 			return nil, err
 		}
@@ -281,8 +281,8 @@ func (dr *DependencyRelation) getConsumerOfDependAllServices() ([]*pb.MicroServi
 	providerService := proto.MicroServiceToKey(dr.domainProject, dr.provider)
 	providerService.ServiceName = "*"
 	relyAllKey := apt.GenerateProviderDependencyRuleKey(dr.domainProject, providerService)
-	opts := append(FromContext(dr.ctx), registry.WithStrKey(relyAllKey))
-	rsp, err := backend.Store().DependencyRule().Search(dr.ctx, opts...)
+	opts := append(FromContext(dr.ctx), client.WithStrKey(relyAllKey))
+	rsp, err := kv.Store().DependencyRule().Search(dr.ctx, opts...)
 	if err != nil {
 		log.Errorf(err, "get consumers that rely all service failed, %s/%s/%s/%s",
 			dr.provider.Environment, dr.provider.AppId, dr.provider.ServiceName, dr.provider.Version)
@@ -303,9 +303,9 @@ func (dr *DependencyRelation) getConsumerOfSameServiceNameAndAppID(provider *pb.
 	provider.Version = providerVersion
 
 	opts := append(FromContext(dr.ctx),
-		registry.WithStrKey(prefix),
-		registry.WithPrefix())
-	rsp, err := backend.Store().DependencyRule().Search(dr.ctx, opts...)
+		client.WithStrKey(prefix),
+		client.WithPrefix())
+	rsp, err := kv.Store().DependencyRule().Search(dr.ctx, opts...)
 	if err != nil {
 		log.Errorf(err, "get service[%s/%s/%s]'s dependency rules failed",
 			provider.Environment, provider.AppId, provider.ServiceName)

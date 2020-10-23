@@ -29,11 +29,11 @@ type ActionType int
 
 func (at ActionType) String() string {
 	switch at {
-	case Get:
+	case ActionGet:
 		return "GET"
-	case Put:
+	case ActionPut:
 		return "PUT"
-	case Delete:
+	case ActionDelete:
 		return "DELETE"
 	default:
 		return "ACTION" + strconv.Itoa(int(at))

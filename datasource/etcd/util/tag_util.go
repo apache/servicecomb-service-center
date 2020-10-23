@@ -21,11 +21,11 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/backend"
-	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 )
 
@@ -36,11 +36,11 @@ func AddTagIntoETCD(ctx context.Context, domainProject string, serviceID string,
 		return scerr.NewError(scerr.ErrInternal, err.Error())
 	}
 
-	resp, err := backend.Registry().TxnWithCmp(ctx,
-		[]registry.PluginOp{registry.OpPut(registry.WithStrKey(key), registry.WithValue(data))},
-		[]registry.CompareOp{registry.OpCmp(
-			registry.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, serviceID))),
-			registry.CmpNotEqual, 0)},
+	resp, err := client.Instance().TxnWithCmp(ctx,
+		[]client.PluginOp{client.OpPut(client.WithStrKey(key), client.WithValue(data))},
+		[]client.CompareOp{client.OpCmp(
+			client.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, serviceID))),
+			client.CmpNotEqual, 0)},
 		nil)
 	if err != nil {
 		return scerr.NewError(scerr.ErrUnavailableBackend, err.Error())
@@ -53,8 +53,8 @@ func AddTagIntoETCD(ctx context.Context, domainProject string, serviceID string,
 
 func GetTagsUtils(ctx context.Context, domainProject, serviceID string) (tags map[string]string, err error) {
 	key := apt.GenerateServiceTagKey(domainProject, serviceID)
-	opts := append(FromContext(ctx), registry.WithStrKey(key))
-	resp, err := backend.Store().ServiceTag().Search(ctx, opts...)
+	opts := append(FromContext(ctx), client.WithStrKey(key))
+	resp, err := kv.Store().ServiceTag().Search(ctx, opts...)
 	if err != nil {
 		log.Errorf(err, "get service[%s] tags file failed", serviceID)
 		return tags, err

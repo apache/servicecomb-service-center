@@ -22,18 +22,18 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	registry "github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
-	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
-	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"github.com/apache/servicecomb-service-center/server/service/cache"
 	"sort"
@@ -1393,7 +1393,7 @@ func (ds *DataSource) GetAllSchemas(ctx context.Context, request *pb.GetAllSchem
 		}, errDo
 	}
 
-	respWithSchema := &discovery.Response{}
+	respWithSchema := &sd.Response{}
 	if request.WithSchema {
 		key := apt.GenerateServiceSchemaKey(domainProject, request.ServiceId, "")
 		opts := append(serviceUtil.FromContext(ctx), client.WithStrKey(key), client.WithPrefix())

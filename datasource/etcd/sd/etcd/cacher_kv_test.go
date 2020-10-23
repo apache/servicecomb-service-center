@@ -112,7 +112,7 @@ func TestNewKvCacher(t *testing.T) {
 	lw.Watcher = w
 	data := &mvccpb.KeyValue{Key: []byte("ka"), Value: []byte("va"), Version: 1, ModRevision: 2}
 	test := &client.PluginResponse{
-		Action:   client.Put,
+		Action:   client.ActionPut,
 		Revision: 3,
 		Kvs:      []*mvccpb.KeyValue{data}}
 
@@ -223,7 +223,7 @@ func TestNewKvCacher(t *testing.T) {
 	}
 
 	test.Revision = 8
-	test.Action = client.Delete
+	test.Action = client.ActionDelete
 	data.Version = 0
 	data.ModRevision = 6
 	lw.Bus <- test
@@ -261,7 +261,7 @@ func TestNewKvCacher(t *testing.T) {
 
 	// case: caught delete event but value is nil
 	test.Revision = 10
-	test.Action = client.Delete
+	test.Action = client.ActionDelete
 	data.Version = 0
 	data.ModRevision = 1
 	data.Value = nil

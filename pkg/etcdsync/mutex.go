@@ -136,7 +136,7 @@ func (m *DLock) Lock(wait bool) (err error) {
 			etcdclient.WithStrKey(m.key),
 			etcdclient.WithWatchCallback(
 				func(message string, evt *etcdclient.PluginResponse) error {
-					if evt != nil && evt.Action == etcdclient.Delete {
+					if evt != nil && evt.Action == etcdclient.ActionDelete {
 						// break this for-loop, and try to create the node again.
 						return fmt.Errorf("lock released")
 					}

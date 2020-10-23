@@ -19,6 +19,7 @@ package datasource
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/pkg/types"
 	"time"
 )
 
@@ -29,4 +30,5 @@ type SCManager interface {
 	// OPS
 	ClearNoInstanceServices(ctx context.Context, ttl time.Duration) error
 	UpgradeVersion(ctx context.Context) error
+	GetClusters(ctx context.Context) (types.Clusters, error)
 }

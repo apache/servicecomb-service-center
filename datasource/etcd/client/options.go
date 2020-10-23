@@ -116,9 +116,9 @@ type Operation func(...PluginOpOption) (op PluginOp)
 type PluginOpOption func(*PluginOp)
 type WatchCallback func(message string, evt *PluginResponse) error
 
-var GET PluginOpOption = func(op *PluginOp) { op.Action = Get }
-var PUT PluginOpOption = func(op *PluginOp) { op.Action = Put }
-var DEL PluginOpOption = func(op *PluginOp) { op.Action = Delete }
+var GET PluginOpOption = func(op *PluginOp) { op.Action = ActionGet }
+var PUT PluginOpOption = func(op *PluginOp) { op.Action = ActionPut }
+var DEL PluginOpOption = func(op *PluginOp) { op.Action = ActionDelete }
 
 func WithKey(key []byte) PluginOpOption      { return func(op *PluginOp) { op.Key = key } }
 func WithEndKey(key []byte) PluginOpOption   { return func(op *PluginOp) { op.EndKey = key } }
@@ -150,17 +150,17 @@ func WatchPrefixOpOptions(key string) []PluginOpOption {
 
 func OpGet(opts ...PluginOpOption) (op PluginOp) {
 	op = OptionsToOp(opts...)
-	op.Action = Get
+	op.Action = ActionGet
 	return
 }
 func OpPut(opts ...PluginOpOption) (op PluginOp) {
 	op = OptionsToOp(opts...)
-	op.Action = Put
+	op.Action = ActionPut
 	return
 }
 func OpDel(opts ...PluginOpOption) (op PluginOp) {
 	op = OptionsToOp(opts...)
-	op.Action = Delete
+	op.Action = ActionDelete
 	return
 }
 func OptionsToOp(opts ...PluginOpOption) (op PluginOp) {

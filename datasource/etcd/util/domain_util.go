@@ -21,19 +21,19 @@ import (
 	"context"
 	"strings"
 
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/backend"
-	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
-	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 )
 
-func GetAllDomainRawData(ctx context.Context) ([]*discovery.KeyValue, error) {
+func GetAllDomainRawData(ctx context.Context) ([]*sd.KeyValue, error) {
 	opts := append(FromContext(ctx),
-		registry.WithStrKey(apt.GenerateDomainKey("")),
-		registry.WithPrefix())
-	rsp, err := backend.Store().Domain().Search(ctx, opts...)
+		client.WithStrKey(apt.GenerateDomainKey("")),
+		client.WithPrefix())
+	rsp, err := kv.Store().Domain().Search(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -66,9 +66,9 @@ func GetAllDomain(ctx context.Context) ([]string, error) {
 
 func DomainExist(ctx context.Context, domain string) (bool, error) {
 	opts := append(FromContext(ctx),
-		registry.WithStrKey(apt.GenerateDomainKey(domain)),
-		registry.WithCountOnly())
-	rsp, err := backend.Store().Domain().Search(ctx, opts...)
+		client.WithStrKey(apt.GenerateDomainKey(domain)),
+		client.WithCountOnly())
+	rsp, err := kv.Store().Domain().Search(ctx, opts...)
 	if err != nil {
 		return false, err
 	}
@@ -77,9 +77,9 @@ func DomainExist(ctx context.Context, domain string) (bool, error) {
 
 func ProjectExist(ctx context.Context, domain, project string) (bool, error) {
 	opts := append(FromContext(ctx),
-		registry.WithStrKey(apt.GenerateProjectKey(domain, project)),
-		registry.WithCountOnly())
-	rsp, err := backend.Store().Project().Search(ctx, opts...)
+		client.WithStrKey(apt.GenerateProjectKey(domain, project)),
+		client.WithCountOnly())
+	rsp, err := kv.Store().Project().Search(ctx, opts...)
 	if err != nil {
 		return false, err
 	}
@@ -87,8 +87,8 @@ func ProjectExist(ctx context.Context, domain, project string) (bool, error) {
 }
 
 func NewDomain(ctx context.Context, domain string) (bool, error) {
-	ok, err := backend.Registry().PutNoOverride(ctx,
-		registry.WithStrKey(apt.GenerateDomainKey(domain)))
+	ok, err := client.Instance().PutNoOverride(ctx,
+		client.WithStrKey(apt.GenerateDomainKey(domain)))
 	if err != nil {
 		return false, err
 	}
@@ -96,8 +96,8 @@ func NewDomain(ctx context.Context, domain string) (bool, error) {
 }
 
 func NewProject(ctx context.Context, domain, project string) (bool, error) {
-	ok, err := backend.Registry().PutNoOverride(ctx,
-		registry.WithStrKey(apt.GenerateProjectKey(domain, project)))
+	ok, err := client.Instance().PutNoOverride(ctx,
+		client.WithStrKey(apt.GenerateProjectKey(domain, project)))
 	if err != nil {
 		return ok, err
 	}

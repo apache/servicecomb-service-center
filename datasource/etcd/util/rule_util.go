@@ -24,13 +24,13 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/backend"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
-	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 )
 
@@ -95,8 +95,8 @@ func GetRulesUtil(ctx context.Context, domainProject string, serviceID string) (
 		"",
 	}, "/")
 
-	opts := append(FromContext(ctx), registry.WithStrKey(key), registry.WithPrefix())
-	resp, err := backend.Store().Rule().Search(ctx, opts...)
+	opts := append(FromContext(ctx), client.WithStrKey(key), client.WithPrefix())
+	resp, err := kv.Store().Rule().Search(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -110,9 +110,9 @@ func GetRulesUtil(ctx context.Context, domainProject string, serviceID string) (
 
 func RuleExist(ctx context.Context, domainProject string, serviceID string, attr string, pattern string) bool {
 	opts := append(FromContext(ctx),
-		registry.WithStrKey(apt.GenerateRuleIndexKey(domainProject, serviceID, attr, pattern)),
-		registry.WithCountOnly())
-	resp, err := backend.Store().RuleIndex().Search(ctx, opts...)
+		client.WithStrKey(apt.GenerateRuleIndexKey(domainProject, serviceID, attr, pattern)),
+		client.WithCountOnly())
+	resp, err := kv.Store().RuleIndex().Search(ctx, opts...)
 	if err != nil || resp.Count == 0 {
 		return false
 	}
@@ -122,9 +122,9 @@ func RuleExist(ctx context.Context, domainProject string, serviceID string, attr
 func GetServiceRuleType(ctx context.Context, domainProject string, serviceID string) (string, int, error) {
 	key := apt.GenerateServiceRuleKey(domainProject, serviceID, "")
 	opts := append(FromContext(ctx),
-		registry.WithStrKey(key),
-		registry.WithPrefix())
-	resp, err := backend.Store().Rule().Search(ctx, opts...)
+		client.WithStrKey(key),
+		client.WithPrefix())
+	resp, err := kv.Store().Rule().Search(ctx, opts...)
 	if err != nil {
 		log.Errorf(err, "get service[%s] rule failed", serviceID)
 		return "", 0, err
@@ -137,8 +137,8 @@ func GetServiceRuleType(ctx context.Context, domainProject string, serviceID str
 
 func GetOneRule(ctx context.Context, domainProject, serviceID, ruleID string) (*pb.ServiceRule, error) {
 	opts := append(FromContext(ctx),
-		registry.WithStrKey(apt.GenerateServiceRuleKey(domainProject, serviceID, ruleID)))
-	resp, err := backend.Store().Rule().Search(ctx, opts...)
+		client.WithStrKey(apt.GenerateServiceRuleKey(domainProject, serviceID, ruleID)))
+	resp, err := kv.Store().Rule().Search(ctx, opts...)
 	if err != nil {
 		log.Errorf(err, "get service rule[%s/%s]", serviceID, ruleID)
 		return nil, err

@@ -75,11 +75,11 @@ func TestInnerWatcher_EventBus(t *testing.T) {
 	w.Stop()
 
 	test := &client.PluginResponse{
-		Action: client.Put,
+		Action: client.ActionPut,
 	}
 	w = newInnerWatcher(&mockListWatch{ListResponse: test}, ListWatchConfig{Timeout: time.Second, Context: context.Background()})
 	resp = <-w.EventBus()
-	if resp == nil || resp.Action != client.Put {
+	if resp == nil || resp.Action != client.ActionPut {
 		t.Fatalf("TestInnerWatcher_EventBus failed")
 	}
 	w.Stop()

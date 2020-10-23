@@ -19,14 +19,13 @@ package util
 
 import (
 	"context"
-
-	"github.com/apache/servicecomb-service-center/server/core/backend"
-	"github.com/apache/servicecomb-service-center/server/plugin/registry"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 )
 
 func CheckSchemaInfoExist(ctx context.Context, key string) (bool, error) {
-	opts := append(FromContext(ctx), registry.WithStrKey(key), registry.WithCountOnly())
-	resp, errDo := backend.Store().Schema().Search(ctx, opts...)
+	opts := append(FromContext(ctx), client.WithStrKey(key), client.WithCountOnly())
+	resp, errDo := kv.Store().Schema().Search(ctx, opts...)
 	if errDo != nil {
 		return false, errDo
 	}

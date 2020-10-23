@@ -19,8 +19,10 @@ package client
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/datasource/etcd"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/task"
+	"github.com/coreos/etcd/mvcc/mvccpb"
 )
 
 const (
@@ -46,6 +48,59 @@ type Registry interface {
 	Watch(ctx context.Context, opts ...PluginOpOption) error
 	Compact(ctx context.Context, reserve int64) error
 	Close()
+}
+
+//Put put kv
+func Put(ctx context.Context, key string, value string) error {
+	_, err := Instance().Do(ctx, PUT, WithStrKey(key), WithStrValue(value))
+	return err
+}
+
+//Put put kv
+func PutBytes(ctx context.Context, key string, value []byte) error {
+	_, err := Instance().Do(ctx, PUT, WithStrKey(key), WithValue(value))
+	return err
+}
+
+//Get get one kv
+func Get(ctx context.Context, key string) (*mvccpb.KeyValue, error) {
+	resp, err := Instance().Do(ctx, GET, WithStrKey(key))
+	if err != nil {
+		return nil, err
+	}
+	if resp.Count != 1 {
+		return nil, etcd.ErrNotUnique
+	}
+	return resp.Kvs[0], err
+}
+
+//List get kv list
+func List(ctx context.Context, key string) ([]*mvccpb.KeyValue, int64, error) {
+	resp, err := Instance().Do(ctx, GET, WithStrKey(key), WithPrefix())
+	if err != nil {
+		return nil, 0, err
+	}
+	return resp.Kvs, resp.Count, nil
+}
+
+//Exist get one kv, if can not get return false
+func Exist(ctx context.Context, key string) (bool, error) {
+	resp, err := Instance().Do(ctx, GET, WithStrKey(key), WithCountOnly())
+	if err != nil {
+		return false, err
+	}
+	if resp.Count == 0 {
+		return false, nil
+	}
+	return true, nil
+}
+
+func Delete(ctx context.Context, key string) (bool, error) {
+	resp, err := Instance().Do(ctx, DEL, WithStrKey(key))
+	if err != nil {
+		return false, err
+	}
+	return resp.Count != 0, nil
 }
 
 func BatchCommit(ctx context.Context, opts []PluginOp) error {

@@ -21,26 +21,25 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	rmodel "github.com/apache/servicecomb-service-center/pkg/registry"
+	"github.com/apache/servicecomb-service-center/pkg/registry"
 	apt "github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/backend"
-	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 )
 
 // Dependency contains dependency rules
 type Dependency struct {
 	DomainProject string
 	// store the consumer Dependency from dep-queue object
-	Consumer      *rmodel.MicroServiceKey
-	ProvidersRule []*rmodel.MicroServiceKey
+	Consumer      *registry.MicroServiceKey
+	ProvidersRule []*registry.MicroServiceKey
 	// store the parsed rules from Dependency object
-	DeleteDependencyRuleList []*rmodel.MicroServiceKey
-	CreateDependencyRuleList []*rmodel.MicroServiceKey
+	DeleteDependencyRuleList []*registry.MicroServiceKey
+	CreateDependencyRuleList []*registry.MicroServiceKey
 }
 
-func (dep *Dependency) removeConsumerOfProviderRule(ctx context.Context) ([]registry.PluginOp, error) {
-	opts := make([]registry.PluginOp, 0, len(dep.DeleteDependencyRuleList))
+func (dep *Dependency) removeConsumerOfProviderRule(ctx context.Context) ([]client.PluginOp, error) {
+	opts := make([]client.PluginOp, 0, len(dep.DeleteDependencyRuleList))
 	for _, providerRule := range dep.DeleteDependencyRuleList {
 		proProkey := apt.GenerateProviderDependencyRuleKey(providerRule.Tenant, providerRule)
 		log.Debugf("This proProkey is %s", proProkey)
@@ -57,7 +56,7 @@ func (dep *Dependency) removeConsumerOfProviderRule(ctx context.Context) ([]regi
 		}
 		//删除后，如果不存在依赖规则了，就删除该provider的依赖规则，如果有，则更新该依赖规则
 		if len(consumerValue.Dependency) == 0 {
-			opts = append(opts, registry.OpDel(registry.WithStrKey(proProkey)))
+			opts = append(opts, client.OpDel(client.WithStrKey(proProkey)))
 			continue
 		}
 		data, err := json.Marshal(consumerValue)
@@ -65,15 +64,15 @@ func (dep *Dependency) removeConsumerOfProviderRule(ctx context.Context) ([]regi
 			log.Errorf(err, "Marshal MicroServiceDependency failed")
 			return nil, err
 		}
-		opts = append(opts, registry.OpPut(
-			registry.WithStrKey(proProkey),
-			registry.WithValue(data)))
+		opts = append(opts, client.OpPut(
+			client.WithStrKey(proProkey),
+			client.WithValue(data)))
 	}
 	return opts, nil
 }
 
-func (dep *Dependency) addConsumerOfProviderRule(ctx context.Context) ([]registry.PluginOp, error) {
-	opts := make([]registry.PluginOp, 0, len(dep.CreateDependencyRuleList))
+func (dep *Dependency) addConsumerOfProviderRule(ctx context.Context) ([]client.PluginOp, error) {
+	opts := make([]client.PluginOp, 0, len(dep.CreateDependencyRuleList))
 	for _, providerRule := range dep.CreateDependencyRuleList {
 		proProkey := apt.GenerateProviderDependencyRuleKey(providerRule.Tenant, providerRule)
 		tmpValue, err := TransferToMicroServiceDependency(ctx, proProkey)
@@ -87,9 +86,9 @@ func (dep *Dependency) addConsumerOfProviderRule(ctx context.Context) ([]registr
 			log.Errorf(errMarshal, "Marshal MicroServiceDependency failed")
 			return nil, errMarshal
 		}
-		opts = append(opts, registry.OpPut(
-			registry.WithStrKey(proProkey),
-			registry.WithValue(data)))
+		opts = append(opts, client.OpPut(
+			client.WithStrKey(proProkey),
+			client.WithValue(data)))
 		if providerRule.ServiceName == "*" {
 			break
 		}
@@ -97,13 +96,13 @@ func (dep *Dependency) addConsumerOfProviderRule(ctx context.Context) ([]registr
 	return opts, nil
 }
 
-func (dep *Dependency) updateProvidersRuleOfConsumer(_ context.Context) ([]registry.PluginOp, error) {
+func (dep *Dependency) updateProvidersRuleOfConsumer(_ context.Context) ([]client.PluginOp, error) {
 	conKey := apt.GenerateConsumerDependencyRuleKey(dep.DomainProject, dep.Consumer)
 	if len(dep.ProvidersRule) == 0 {
-		return []registry.PluginOp{registry.OpDel(registry.WithStrKey(conKey))}, nil
+		return []client.PluginOp{client.OpDel(client.WithStrKey(conKey))}, nil
 	}
 
-	dependency := &rmodel.MicroServiceDependency{
+	dependency := &registry.MicroServiceDependency{
 		Dependency: dep.ProvidersRule,
 	}
 	data, err := json.Marshal(dependency)
@@ -111,7 +110,7 @@ func (dep *Dependency) updateProvidersRuleOfConsumer(_ context.Context) ([]regis
 		log.Errorf(err, "Marshal MicroServiceDependency failed")
 		return nil, err
 	}
-	return []registry.PluginOp{registry.OpPut(registry.WithStrKey(conKey), registry.WithValue(data))}, nil
+	return []client.PluginOp{client.OpPut(client.WithStrKey(conKey), client.WithValue(data))}, nil
 }
 
 // Commit is dependent rule operations
@@ -128,5 +127,5 @@ func (dep *Dependency) Commit(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	return backend.BatchCommit(ctx, append(append(dopts, copts...), uopts...))
+	return client.BatchCommit(ctx, append(append(dopts, copts...), uopts...))
 }

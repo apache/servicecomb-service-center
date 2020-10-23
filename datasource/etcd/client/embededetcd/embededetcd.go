@@ -131,19 +131,19 @@ func (s *EtcdEmbed) toTxnRequest(opts []client.PluginOp) []*etcdserverpb.Request
 	etcdOps := []*etcdserverpb.RequestOp{}
 	for _, op := range opts {
 		switch op.Action {
-		case client.Get:
+		case client.ActionGet:
 			etcdOps = append(etcdOps, &etcdserverpb.RequestOp{
 				Request: &etcdserverpb.RequestOp_RequestRange{
 					RequestRange: s.toGetRequest(op),
 				},
 			})
-		case client.Put:
+		case client.ActionPut:
 			etcdOps = append(etcdOps, &etcdserverpb.RequestOp{
 				Request: &etcdserverpb.RequestOp_RequestPut{
 					RequestPut: s.toPutRequest(op),
 				},
 			})
-		case client.Delete:
+		case client.ActionDelete:
 			etcdOps = append(etcdOps, &etcdserverpb.RequestOp{
 				Request: &etcdserverpb.RequestOp_RequestDeleteRange{
 					RequestDeleteRange: s.toDeleteRequest(op),
@@ -271,7 +271,7 @@ func (s *EtcdEmbed) Do(ctx context.Context, opts ...client.PluginOpOption) (*cli
 	var err error
 	var resp *client.PluginResponse
 	switch op.Action {
-	case client.Get:
+	case client.ActionGet:
 		var etcdResp *etcdserverpb.RangeResponse
 		etcdResp, err = s.Embed.Server.Range(otCtx, s.toGetRequest(op))
 		if err != nil {
@@ -282,7 +282,7 @@ func (s *EtcdEmbed) Do(ctx context.Context, opts ...client.PluginOpOption) (*cli
 			Count:    etcdResp.Count,
 			Revision: etcdResp.Header.Revision,
 		}
-	case client.Put:
+	case client.ActionPut:
 		var etcdResp *etcdserverpb.PutResponse
 		etcdResp, err = s.Embed.Server.Put(otCtx, s.toPutRequest(op))
 		if err != nil {
@@ -291,7 +291,7 @@ func (s *EtcdEmbed) Do(ctx context.Context, opts ...client.PluginOpOption) (*cli
 		resp = &client.PluginResponse{
 			Revision: etcdResp.Header.Revision,
 		}
-	case client.Delete:
+	case client.ActionDelete:
 		var etcdResp *etcdserverpb.DeleteRangeResponse
 		etcdResp, err = s.Embed.Server.DeleteRange(otCtx, s.toDeleteRequest(op))
 		if err != nil {
@@ -474,7 +474,7 @@ func dispatch(evts []mvccpb.Event, cb client.WatchCallback) error {
 	l := len(evts)
 	kvs := make([]*mvccpb.KeyValue, l)
 	sIdx, eIdx, rev := 0, 0, int64(0)
-	action, prevEvtType := client.Put, mvccpb.PUT
+	action, prevEvtType := client.ActionPut, mvccpb.PUT
 
 	for _, evt := range evts {
 		if prevEvtType != evt.Type {
@@ -510,10 +510,10 @@ func setKvsAndConvertAction(kvs []*mvccpb.KeyValue, pIdx int, evt mvccpb.Event) 
 			kv = evt.Kv
 		}
 		kvs[pIdx] = kv
-		return client.Delete
+		return client.ActionDelete
 	default:
 		kvs[pIdx] = evt.Kv
-		return client.Put
+		return client.ActionPut
 	}
 }
 

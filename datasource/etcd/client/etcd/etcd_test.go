@@ -446,8 +446,8 @@ func TestEtcdClient_Txn(t *testing.T) {
 	}
 
 	resp, err = etcd.Txn(context.Background(), []client.PluginOp{
-		{Action: client.Put, Key: []byte("/test_txn/a"), Value: []byte("a")},
-		{Action: client.Put, Key: []byte("/test_txn/b"), Value: []byte("b")},
+		{Action: client.ActionPut, Key: []byte("/test_txn/a"), Value: []byte("a")},
+		{Action: client.ActionPut, Key: []byte("/test_txn/b"), Value: []byte("b")},
 	})
 	if err != nil || resp == nil || !resp.Succeeded {
 		t.Fatalf("TestEtcdClient failed, %#v", err)
@@ -459,13 +459,13 @@ func TestEtcdClient_Txn(t *testing.T) {
 	}
 
 	resp, err = etcd.TxnWithCmp(context.Background(), []client.PluginOp{
-		{Action: client.Put, Key: []byte("/test_txn/a"), Value: []byte("a")},
-		{Action: client.Put, Key: []byte("/test_txn/b"), Value: []byte("b")},
+		{Action: client.ActionPut, Key: []byte("/test_txn/a"), Value: []byte("a")},
+		{Action: client.ActionPut, Key: []byte("/test_txn/b"), Value: []byte("b")},
 	}, []client.CompareOp{
 		{[]byte("/test_txn/a"), client.CmpValue, client.CmpEqual, "a"},
 	}, []client.PluginOp{
-		{Action: client.Put, Key: []byte("/test_txn/c"), Value: []byte("c")},
-		{Action: client.Put, Key: []byte("/test_txn/d"), Value: []byte("d")},
+		{Action: client.ActionPut, Key: []byte("/test_txn/c"), Value: []byte("c")},
+		{Action: client.ActionPut, Key: []byte("/test_txn/d"), Value: []byte("d")},
 	})
 	if err != nil || resp == nil || !resp.Succeeded {
 		t.Fatalf("TestEtcdClient failed, %#v", err)
@@ -475,8 +475,8 @@ func TestEtcdClient_Txn(t *testing.T) {
 	resp, err = etcd.TxnWithCmp(context.Background(), nil, []client.CompareOp{
 		{[]byte("/test_txn/c"), client.CmpValue, client.CmpEqual, "c"},
 	}, []client.PluginOp{
-		{Action: client.Get, Key: []byte("/test_txn/a")},
-		{Action: client.Get, Key: []byte("/test_txn/"), Prefix: true},
+		{Action: client.ActionGet, Key: []byte("/test_txn/a")},
+		{Action: client.ActionGet, Key: []byte("/test_txn/"), Prefix: true},
 	})
 	if err != nil || resp == nil || resp.Succeeded || resp.Count != 3 { // a + [a,b]
 		t.Fatalf("TestEtcdClient failed, %#v", err)
@@ -484,12 +484,12 @@ func TestEtcdClient_Txn(t *testing.T) {
 
 	// case: test key not exist
 	resp, err = etcd.TxnWithCmp(context.Background(), []client.PluginOp{
-		{Action: client.Put, Key: []byte("/test_txn/a"), Value: []byte("a")},
-		{Action: client.Put, Key: []byte("/test_txn/b"), Value: []byte("b")},
+		{Action: client.ActionPut, Key: []byte("/test_txn/a"), Value: []byte("a")},
+		{Action: client.ActionPut, Key: []byte("/test_txn/b"), Value: []byte("b")},
 	}, []client.CompareOp{
 		{[]byte("/test_txn/c"), client.CmpValue, client.CmpEqual, "c"},
 	}, []client.PluginOp{
-		{Action: client.Delete, Key: []byte("/test_txn/"), Prefix: true},
+		{Action: client.ActionDelete, Key: []byte("/test_txn/"), Prefix: true},
 	})
 	if err != nil || resp == nil || resp.Succeeded {
 		t.Fatalf("TestEtcdClient failed, %#v", err)
@@ -613,7 +613,7 @@ func TestEtcdClient_Watch(t *testing.T) {
 		defer func() { ch <- struct{}{} }()
 		err = etcd.Watch(context.Background(), client.WithStrKey("/test_watch/a"),
 			client.WithWatchCallback(func(message string, evt *client.PluginResponse) error {
-				if evt.Count != 1 || len(evt.Kvs) != 1 || evt.Action != client.Put ||
+				if evt.Count != 1 || len(evt.Kvs) != 1 || evt.Action != client.ActionPut ||
 					string(evt.Kvs[0].Key) != "/test_watch/a" || string(evt.Kvs[0].Value) != "a" {
 					t.Fatalf("TestEtcdClient failed, %#v", evt)
 				}
@@ -637,8 +637,8 @@ func TestEtcdClient_Watch(t *testing.T) {
 		err = etcd.Watch(context.Background(), client.WithStrKey("/test_watch/"),
 			client.WithPrefix(),
 			client.WithWatchCallback(func(message string, evt *client.PluginResponse) error {
-				equalA := evt.Action == client.Put && string(evt.Kvs[0].Key) == "/test_watch/a" && string(evt.Kvs[0].Value) == "a"
-				equalB := evt.Action == client.Put && string(evt.Kvs[1].Key) == "/test_watch/b" && string(evt.Kvs[0].Value) == "b"
+				equalA := evt.Action == client.ActionPut && string(evt.Kvs[0].Key) == "/test_watch/a" && string(evt.Kvs[0].Value) == "a"
+				equalB := evt.Action == client.ActionPut && string(evt.Kvs[1].Key) == "/test_watch/b" && string(evt.Kvs[0].Value) == "b"
 				if evt.Count != 2 || len(evt.Kvs) != 2 || !(equalA || equalB) {
 					t.Fatalf("TestEtcdClient failed, %#v", evt)
 				}
@@ -651,8 +651,8 @@ func TestEtcdClient_Watch(t *testing.T) {
 
 	<-time.After(500 * time.Millisecond)
 	resp, err = etcd.Txn(context.Background(), []client.PluginOp{
-		{Action: client.Put, Key: []byte("/test_watch/a"), Value: []byte("a")},
-		{Action: client.Put, Key: []byte("/test_watch/b"), Value: []byte("b")},
+		{Action: client.ActionPut, Key: []byte("/test_watch/a"), Value: []byte("a")},
+		{Action: client.ActionPut, Key: []byte("/test_watch/b"), Value: []byte("b")},
 	})
 	if err != nil || !resp.Succeeded {
 		t.Fatalf("TestEtcdClient_Do failed, %#v", err)
@@ -666,9 +666,9 @@ func TestEtcdClient_Watch(t *testing.T) {
 		err = etcd.Watch(context.Background(), client.WithStrKey("/test_watch/"),
 			client.WithPrefix(),
 			client.WithWatchCallback(func(message string, evt *client.PluginResponse) error {
-				equalA := evt.Action == client.Delete && string(evt.Kvs[0].Key) == "/test_watch/a" && evt.Kvs[0].Value == nil
-				equalB := evt.Action == client.Put && string(evt.Kvs[0].Key) == "/test_watch/b" && string(evt.Kvs[0].Value) == "b"
-				equalC := evt.Action == client.Put && string(evt.Kvs[0].Key) == "/test_watch/c" && string(evt.Kvs[0].Value) == "c"
+				equalA := evt.Action == client.ActionDelete && string(evt.Kvs[0].Key) == "/test_watch/a" && evt.Kvs[0].Value == nil
+				equalB := evt.Action == client.ActionPut && string(evt.Kvs[0].Key) == "/test_watch/b" && string(evt.Kvs[0].Value) == "b"
+				equalC := evt.Action == client.ActionPut && string(evt.Kvs[0].Key) == "/test_watch/c" && string(evt.Kvs[0].Value) == "c"
 				if evt.Count != 1 || len(evt.Kvs) != 1 || !(equalA || equalB || equalC) {
 					t.Fatalf("TestEtcdClient failed, %#v", evt)
 				}
@@ -685,9 +685,9 @@ func TestEtcdClient_Watch(t *testing.T) {
 
 	<-time.After(500 * time.Millisecond)
 	resp, err = etcd.Txn(context.Background(), []client.PluginOp{
-		{Action: client.Put, Key: []byte("/test_watch/c"), Value: []byte("c")},
-		{Action: client.Delete, Key: []byte("/test_watch/a"), Value: []byte("a")},
-		{Action: client.Put, Key: []byte("/test_watch/b"), Value: []byte("b")},
+		{Action: client.ActionPut, Key: []byte("/test_watch/c"), Value: []byte("c")},
+		{Action: client.ActionDelete, Key: []byte("/test_watch/a"), Value: []byte("a")},
+		{Action: client.ActionPut, Key: []byte("/test_watch/b"), Value: []byte("b")},
 	})
 	if err != nil || !resp.Succeeded {
 		t.Fatalf("TestEtcdClient_Do failed, %#v", err)
@@ -707,7 +707,7 @@ func TestEtcdClient_Watch(t *testing.T) {
 			client.WithPrefix(),
 			client.WithRev(rev),
 			client.WithWatchCallback(func(message string, evt *client.PluginResponse) error {
-				if evt.Count != 1 || len(evt.Kvs) != 1 || evt.Action != client.Delete ||
+				if evt.Count != 1 || len(evt.Kvs) != 1 || evt.Action != client.ActionDelete ||
 					string(evt.Kvs[0].Key) != "/test_watch/c" || evt.Kvs[0].Value != nil {
 					t.Fatalf("TestEtcdClient failed, %#v", evt)
 				}
@@ -725,7 +725,7 @@ func TestEtcdClient_Watch(t *testing.T) {
 		err = etcd.Watch(context.Background(), client.WithStrKey("/test_watch/"),
 			client.WithPrefix(), client.WithPrevKv(),
 			client.WithWatchCallback(func(message string, evt *client.PluginResponse) error {
-				if len(evt.Kvs) != 1 || evt.Action != client.Delete ||
+				if len(evt.Kvs) != 1 || evt.Action != client.ActionDelete ||
 					string(evt.Kvs[0].Key) != "/test_watch/b" || string(evt.Kvs[0].Value) != "b" {
 					t.Fatalf("TestEtcdClient failed, %#v", evt)
 				}
