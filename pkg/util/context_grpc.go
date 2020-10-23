@@ -20,12 +20,12 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-func FromMetadata(ctx context.Context, key string) string {
+func FromMetadata(ctx context.Context, key CtxKey) string {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return ""
 	}
-	if values, ok := md[key]; ok && len(values) > 0 {
+	if values, ok := md[string(key)]; ok && len(values) > 0 {
 		return values[0]
 	}
 	return ""

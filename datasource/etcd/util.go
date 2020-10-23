@@ -20,6 +20,7 @@ package etcd
 import (
 	"context"
 	"encoding/json"
+	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -32,7 +33,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
-	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"strconv"
 	"strings"
 	"time"

@@ -15,17 +15,23 @@
  * limitations under the License.
  */
 
-package uuid
+package util
 
 import (
 	"context"
-
-	"github.com/apache/servicecomb-service-center/pkg/util"
+	"testing"
 )
 
-const ContextKey util.CtxKey = "_uuid_key"
+func TestAddTagIntoETCD(t *testing.T) {
+	err := AddTagIntoETCD(context.Background(), "", "", map[string]string{"a": "1"})
+	if err == nil {
+		t.Fatalf(`AddTagIntoETCD with {"a": "1"} tags failed`)
+	}
+}
 
-type UUID interface {
-	GetServiceID(ctx context.Context) string
-	GetInstanceID(ctx context.Context) string
+func TestGetTagsUtils(t *testing.T) {
+	_, err := GetTagsUtils(context.Background(), "", "")
+	if err != nil {
+		t.Fatalf(`GetTagsUtils failed`)
+	}
 }

@@ -150,7 +150,7 @@ func (zp *Zipkin) ClientBegin(operationName string, itf tracing.Request) tracing
 		}
 		// inject context
 		err := carrier.ForeachKey(func(key, val string) error {
-			ctx = util.SetContext(ctx, key, val)
+			ctx = util.SetContext(ctx, util.CtxKey(key), val)
 			return nil
 		})
 		if err != nil {

@@ -19,6 +19,8 @@ package rest
 
 import (
 	"net/http"
+
+	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
 const (
@@ -27,10 +29,10 @@ const (
 	HTTPMethodPost   = http.MethodPost
 	HTTPMethodDelete = http.MethodDelete
 
-	CtxResponse     = "_server_response"
-	CtxRequest      = "_server_request"
-	CtxMatchPattern = "_server_match_pattern"
-	CtxMatchFunc    = "_server_match_func"
+	CtxResponse     util.CtxKey = "_server_response"
+	CtxRequest      util.CtxKey = "_server_request"
+	CtxMatchPattern util.CtxKey = "_server_match_pattern"
+	CtxMatchFunc    util.CtxKey = "_server_match_func"
 
 	ServerChainName = "_server_chain"
 

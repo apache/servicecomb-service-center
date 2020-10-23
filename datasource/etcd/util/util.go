@@ -15,17 +15,24 @@
  * limitations under the License.
  */
 
-package uuid
+package util
 
 import (
 	"context"
-
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 )
 
-const ContextKey util.CtxKey = "_uuid_key"
-
-type UUID interface {
-	GetServiceID(ctx context.Context) string
-	GetInstanceID(ctx context.Context) string
+func FromContext(ctx context.Context) []registry.PluginOpOption {
+	opts := make([]registry.PluginOpOption, 0, 5)
+	switch {
+	case ctx.Value(util.CtxNocache) == "1":
+		opts = append(opts, registry.WithNoCache())
+	case ctx.Value(util.CtxCacheOnly) == "1":
+		opts = append(opts, registry.WithCacheOnly())
+	}
+	if ctx.Value(util.CtxGlobal) == "1" {
+		opts = append(opts, registry.WithGlobal())
+	}
+	return opts
 }

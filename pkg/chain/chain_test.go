@@ -87,7 +87,7 @@ type mockHandler struct {
 }
 
 func (h *mockHandler) Handle(i *Invocation) {
-	x := i.Context().Value("x").(int)
+	x := i.Context().Value(util.CtxKey("x")).(int)
 	switch x {
 	case 1:
 		i.Success(x)
@@ -100,7 +100,7 @@ func (h *mockHandler) Handle(i *Invocation) {
 	case 4:
 		i.Next(WithAsyncFunc(func(r Result) {
 			i.WithContext("x", x*x)
-			ch, _ := i.Context().Value("ch").(chan struct{})
+			ch, _ := i.Context().Value(util.CtxKey("ch")).(chan struct{})
 			ch <- struct{}{}
 		}))
 	case 5:
@@ -132,7 +132,7 @@ func TestChain_Next(t *testing.T) {
 	i := NewInvocation(context.Background(), ch)
 	i.WithContext("x", x)
 	i.Invoke(func(r Result) {
-		if !r.OK || i.Context().Value("x").(int) != -len(hs) {
+		if !r.OK || i.Context().Value(util.CtxKey("x")).(int) != -len(hs) {
 			t.Fatalf("TestChain_Next")
 		}
 	})
@@ -162,11 +162,11 @@ func TestChain_Next(t *testing.T) {
 	i = NewInvocation(context.Background(), ch)
 	i.WithContext("x", x)
 	i.Invoke(func(r Result) {
-		if !r.OK || i.Context().Value("x").(int) != x {
+		if !r.OK || i.Context().Value(util.CtxKey("x")).(int) != x {
 			t.Fatalf("TestChain_Next")
 		}
 	})
-	if i.Context().Value("x").(int) != x*x {
+	if i.Context().Value(util.CtxKey("x")).(int) != x*x {
 		t.Fatalf("TestChain_Next")
 	}
 
@@ -176,12 +176,12 @@ func TestChain_Next(t *testing.T) {
 	i.WithContext("x", x)
 	i.WithContext("ch", make(chan struct{}))
 	i.Invoke(func(r Result) {
-		if !r.OK || i.Context().Value("x").(int) != x {
+		if !r.OK || i.Context().Value(util.CtxKey("x")).(int) != x {
 			t.Fatalf("TestChain_Next")
 		}
 	})
-	<-i.Context().Value("ch").(chan struct{})
-	if i.Context().Value("x").(int) != x*x {
+	<-i.Context().Value(util.CtxKey("ch")).(chan struct{})
+	if i.Context().Value(util.CtxKey("x")).(int) != x*x {
 		t.Fatalf("TestChain_Next")
 	}
 
