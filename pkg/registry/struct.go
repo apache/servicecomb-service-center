@@ -160,6 +160,10 @@ func (m *Response) GetMessage() string {
 	return ""
 }
 
+type GetExistenceByIDRequest struct {
+	ServiceId string `protobuf:"bytes,1,opt,name=serviceId" json:"serviceId,omitempty"`
+}
+
 type GetExistenceRequest struct {
 	Type        string `protobuf:"bytes,1,opt,name=type" json:"type,omitempty"`
 	AppId       string `protobuf:"bytes,2,opt,name=appId" json:"appId,omitempty"`
@@ -168,6 +172,11 @@ type GetExistenceRequest struct {
 	ServiceId   string `protobuf:"bytes,5,opt,name=serviceId" json:"serviceId,omitempty"`
 	SchemaId    string `protobuf:"bytes,6,opt,name=schemaId" json:"schemaId,omitempty"`
 	Environment string `protobuf:"bytes,7,opt,name=environment" json:"environment,omitempty"`
+}
+
+type GetExistenceByIDResponse struct {
+	Response *Response `protobuf:"bytes,1,opt,name=response" json:"response,omitempty"`
+	Exist    bool      `protobuf:"bytes,2,opt,name=exist" json:"exist,omitempty"`
 }
 
 type GetExistenceResponse struct {

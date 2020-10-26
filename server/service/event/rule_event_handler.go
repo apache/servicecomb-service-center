@@ -19,20 +19,20 @@ package event
 import (
 	"context"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/task"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/backend"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/notify"
-	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
-	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 )
 
 type RulesChangedTask struct {
-	discovery.KvEvent
+	sd.KvEvent
 
 	key string
 	err error
@@ -87,11 +87,11 @@ func (apt *RulesChangedTask) publish(ctx context.Context, domainProject, provide
 type RuleEventHandler struct {
 }
 
-func (h *RuleEventHandler) Type() discovery.Type {
-	return backend.RULE
+func (h *RuleEventHandler) Type() sd.Type {
+	return kv.RULE
 }
 
-func (h *RuleEventHandler) OnEvent(evt discovery.KvEvent) {
+func (h *RuleEventHandler) OnEvent(evt sd.KvEvent) {
 	action := evt.Type
 	if action == pb.EVT_INIT {
 		return
@@ -116,7 +116,7 @@ func NewRuleEventHandler() *RuleEventHandler {
 	return &RuleEventHandler{}
 }
 
-func NewRulesChangedAsyncTask(domainProject, providerID string, evt discovery.KvEvent) *RulesChangedTask {
+func NewRulesChangedAsyncTask(domainProject, providerID string, evt sd.KvEvent) *RulesChangedTask {
 	evt.Type = pb.EVT_EXPIRE
 	return &RulesChangedTask{
 		KvEvent:       evt,

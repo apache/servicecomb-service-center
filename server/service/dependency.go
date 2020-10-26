@@ -21,15 +21,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/backend"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
-	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
-	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 )
 
 func (s *MicroServiceService) AddDependenciesForMicroServices(ctx context.Context, in *pb.AddDependenciesRequest) (*pb.AddDependenciesResponse, error) {
@@ -59,7 +58,7 @@ func (s *MicroServiceService) CreateDependenciesForMicroServices(ctx context.Con
 }
 
 func (s *MicroServiceService) AddOrUpdateDependencies(ctx context.Context, dependencyInfos []*pb.ConsumerDependency, override bool) (*pb.Response, error) {
-	opts := make([]registry.PluginOp, 0, len(dependencyInfos))
+	opts := make([]client.PluginOp, 0, len(dependencyInfos))
 	domainProject := util.ParseDomainProject(ctx)
 	for _, dependencyInfo := range dependencyInfos {
 		consumerFlag := util.StringJoin([]string{dependencyInfo.Consumer.Environment, dependencyInfo.Consumer.AppId, dependencyInfo.Consumer.ServiceName, dependencyInfo.Consumer.Version}, "/")
@@ -98,10 +97,10 @@ func (s *MicroServiceService) AddOrUpdateDependencies(ctx context.Context, depen
 			id = util.GenerateUUID()
 		}
 		key := apt.GenerateConsumerDependencyQueueKey(domainProject, consumerID, id)
-		opts = append(opts, registry.OpPut(registry.WithStrKey(key), registry.WithValue(data)))
+		opts = append(opts, client.OpPut(client.WithStrKey(key), client.WithValue(data)))
 	}
 
-	err := backend.BatchCommit(ctx, opts)
+	err := client.BatchCommit(ctx, opts)
 	if err != nil {
 		log.Errorf(err, "put request into dependency queue failed, override: %t, %v", override, dependencyInfos)
 		return proto.CreateResponse(scerr.ErrInternal, err.Error()), err

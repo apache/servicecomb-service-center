@@ -20,16 +20,15 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/backend"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
-	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
-	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 )
 
 func (s *MicroServiceService) AddTags(ctx context.Context, in *pb.AddServiceTagsRequest) (*pb.AddServiceTagsResponse, error) {
@@ -219,11 +218,11 @@ func (s *MicroServiceService) DeleteTags(ctx context.Context, in *pb.DeleteServi
 
 	key := apt.GenerateServiceTagKey(domainProject, in.ServiceId)
 
-	resp, err := backend.Registry().TxnWithCmp(ctx,
-		[]registry.PluginOp{registry.OpPut(registry.WithStrKey(key), registry.WithValue(data))},
-		[]registry.CompareOp{registry.OpCmp(
-			registry.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, in.ServiceId))),
-			registry.CmpNotEqual, 0)},
+	resp, err := client.Instance().TxnWithCmp(ctx,
+		[]client.PluginOp{client.OpPut(client.WithStrKey(key), client.WithValue(data))},
+		[]client.CompareOp{client.OpCmp(
+			client.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, in.ServiceId))),
+			client.CmpNotEqual, 0)},
 		nil)
 	if err != nil {
 		log.Errorf(err, "delete service[%s]'s tags %v failed, operator: %s",

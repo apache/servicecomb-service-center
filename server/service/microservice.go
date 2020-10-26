@@ -25,18 +25,18 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
+	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
 	apt "github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/backend"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
-	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
-	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 
 	"context"
 )
@@ -142,26 +142,26 @@ func (s *MicroServiceService) CreateServicePri(ctx context.Context, in *pb.Creat
 	indexBytes := util.StringToBytesWithNoCopy(index)
 	aliasBytes := util.StringToBytesWithNoCopy(apt.GenerateServiceAliasKey(serviceKey))
 
-	opts := []registry.PluginOp{
-		registry.OpPut(registry.WithKey(keyBytes), registry.WithValue(data)),
-		registry.OpPut(registry.WithKey(indexBytes), registry.WithStrValue(service.ServiceId)),
+	opts := []client.PluginOp{
+		client.OpPut(client.WithKey(keyBytes), client.WithValue(data)),
+		client.OpPut(client.WithKey(indexBytes), client.WithStrValue(service.ServiceId)),
 	}
-	uniqueCmpOpts := []registry.CompareOp{
-		registry.OpCmp(registry.CmpVer(indexBytes), registry.CmpEqual, 0),
-		registry.OpCmp(registry.CmpVer(keyBytes), registry.CmpEqual, 0),
+	uniqueCmpOpts := []client.CompareOp{
+		client.OpCmp(client.CmpVer(indexBytes), client.CmpEqual, 0),
+		client.OpCmp(client.CmpVer(keyBytes), client.CmpEqual, 0),
 	}
-	failOpts := []registry.PluginOp{
-		registry.OpGet(registry.WithKey(indexBytes)),
+	failOpts := []client.PluginOp{
+		client.OpGet(client.WithKey(indexBytes)),
 	}
 
 	if len(serviceKey.Alias) > 0 {
-		opts = append(opts, registry.OpPut(registry.WithKey(aliasBytes), registry.WithStrValue(service.ServiceId)))
+		opts = append(opts, client.OpPut(client.WithKey(aliasBytes), client.WithStrValue(service.ServiceId)))
 		uniqueCmpOpts = append(uniqueCmpOpts,
-			registry.OpCmp(registry.CmpVer(aliasBytes), registry.CmpEqual, 0))
-		failOpts = append(failOpts, registry.OpGet(registry.WithKey(aliasBytes)))
+			client.OpCmp(client.CmpVer(aliasBytes), client.CmpEqual, 0))
+		failOpts = append(failOpts, client.OpGet(client.WithKey(aliasBytes)))
 	}
 
-	resp, err := backend.Registry().TxnWithCmp(ctx, opts, uniqueCmpOpts, failOpts)
+	resp, err := client.Instance().TxnWithCmp(ctx, opts, uniqueCmpOpts, failOpts)
 	if err != nil {
 		log.Errorf(err, "create micro-service[%s] failed, operator: %s",
 			serviceFlag, remoteIP)
@@ -266,10 +266,10 @@ func (s *MicroServiceService) DeleteServicePri(ctx context.Context, serviceID st
 		}
 
 		instancesKey := apt.GenerateInstanceKey(domainProject, serviceID, "")
-		rsp, err := backend.Store().Instance().Search(ctx,
-			registry.WithStrKey(instancesKey),
-			registry.WithPrefix(),
-			registry.WithCountOnly())
+		rsp, err := kv.Store().Instance().Search(ctx,
+			client.WithStrKey(instancesKey),
+			client.WithPrefix(),
+			client.WithCountOnly())
 		if err != nil {
 			log.Errorf(err, "delete micro-service[%s] failed, get instances failed, operator: %s",
 				serviceID, remoteIP)
@@ -292,10 +292,10 @@ func (s *MicroServiceService) DeleteServicePri(ctx context.Context, serviceID st
 		Version:     service.Version,
 		Alias:       service.Alias,
 	}
-	opts := []registry.PluginOp{
-		registry.OpDel(registry.WithStrKey(apt.GenerateServiceIndexKey(serviceKey))),
-		registry.OpDel(registry.WithStrKey(apt.GenerateServiceAliasKey(serviceKey))),
-		registry.OpDel(registry.WithStrKey(serviceIDKey)),
+	opts := []client.PluginOp{
+		client.OpDel(client.WithStrKey(apt.GenerateServiceIndexKey(serviceKey))),
+		client.OpDel(client.WithStrKey(apt.GenerateServiceAliasKey(serviceKey))),
+		client.OpDel(client.WithStrKey(serviceIDKey)),
 	}
 
 	//删除依赖规则
@@ -308,32 +308,32 @@ func (s *MicroServiceService) DeleteServicePri(ctx context.Context, serviceID st
 	opts = append(opts, optDeleteDep)
 
 	//删除黑白名单
-	opts = append(opts, registry.OpDel(
-		registry.WithStrKey(apt.GenerateServiceRuleKey(domainProject, serviceID, "")),
-		registry.WithPrefix()))
-	opts = append(opts, registry.OpDel(registry.WithStrKey(
+	opts = append(opts, client.OpDel(
+		client.WithStrKey(apt.GenerateServiceRuleKey(domainProject, serviceID, "")),
+		client.WithPrefix()))
+	opts = append(opts, client.OpDel(client.WithStrKey(
 		util.StringJoin([]string{apt.GetServiceRuleIndexRootKey(domainProject), serviceID, ""}, "/")),
-		registry.WithPrefix()))
+		client.WithPrefix()))
 
 	//删除schemas
-	opts = append(opts, registry.OpDel(
-		registry.WithStrKey(apt.GenerateServiceSchemaKey(domainProject, serviceID, "")),
-		registry.WithPrefix()))
-	opts = append(opts, registry.OpDel(
-		registry.WithStrKey(apt.GenerateServiceSchemaSummaryKey(domainProject, serviceID, "")),
-		registry.WithPrefix()))
+	opts = append(opts, client.OpDel(
+		client.WithStrKey(apt.GenerateServiceSchemaKey(domainProject, serviceID, "")),
+		client.WithPrefix()))
+	opts = append(opts, client.OpDel(
+		client.WithStrKey(apt.GenerateServiceSchemaSummaryKey(domainProject, serviceID, "")),
+		client.WithPrefix()))
 
 	//删除tags
-	opts = append(opts, registry.OpDel(
-		registry.WithStrKey(apt.GenerateServiceTagKey(domainProject, serviceID))))
+	opts = append(opts, client.OpDel(
+		client.WithStrKey(apt.GenerateServiceTagKey(domainProject, serviceID))))
 
 	//删除instances
-	opts = append(opts, registry.OpDel(
-		registry.WithStrKey(apt.GenerateInstanceKey(domainProject, serviceID, "")),
-		registry.WithPrefix()))
-	opts = append(opts, registry.OpDel(
-		registry.WithStrKey(apt.GenerateInstanceLeaseKey(domainProject, serviceID, "")),
-		registry.WithPrefix()))
+	opts = append(opts, client.OpDel(
+		client.WithStrKey(apt.GenerateInstanceKey(domainProject, serviceID, "")),
+		client.WithPrefix()))
+	opts = append(opts, client.OpDel(
+		client.WithStrKey(apt.GenerateInstanceLeaseKey(domainProject, serviceID, "")),
+		client.WithPrefix()))
 
 	//删除实例
 	err = serviceUtil.DeleteServiceAllInstances(ctx, serviceID)
@@ -343,10 +343,10 @@ func (s *MicroServiceService) DeleteServicePri(ctx context.Context, serviceID st
 		return proto.CreateResponse(scerr.ErrUnavailableBackend, err.Error()), err
 	}
 
-	resp, err := backend.Registry().TxnWithCmp(ctx, opts,
-		[]registry.CompareOp{registry.OpCmp(
-			registry.CmpVer(util.StringToBytesWithNoCopy(serviceIDKey)),
-			registry.CmpNotEqual, 0)},
+	resp, err := client.Instance().TxnWithCmp(ctx, opts,
+		[]client.CompareOp{client.OpCmp(
+			client.CmpVer(util.StringToBytesWithNoCopy(serviceIDKey)),
+			client.CmpNotEqual, 0)},
 		nil)
 	if err != nil {
 		log.Errorf(err, "%s micro-service[%s] failed, operator: %s", title, serviceID, remoteIP)
@@ -559,11 +559,11 @@ func (s *MicroServiceService) UpdateProperties(ctx context.Context, in *pb.Updat
 	}
 
 	// Set key file
-	resp, err := backend.Registry().TxnWithCmp(ctx,
-		[]registry.PluginOp{registry.OpPut(registry.WithStrKey(key), registry.WithValue(data))},
-		[]registry.CompareOp{registry.OpCmp(
-			registry.CmpVer(util.StringToBytesWithNoCopy(key)),
-			registry.CmpNotEqual, 0)},
+	resp, err := client.Instance().TxnWithCmp(ctx,
+		[]client.PluginOp{client.OpPut(client.WithStrKey(key), client.WithValue(data))},
+		[]client.CompareOp{client.OpCmp(
+			client.CmpVer(util.StringToBytesWithNoCopy(key)),
+			client.CmpNotEqual, 0)},
 		nil)
 	if err != nil {
 		log.Errorf(err, "update service[%s] properties failed, operator: %s", in.ServiceId, remoteIP)

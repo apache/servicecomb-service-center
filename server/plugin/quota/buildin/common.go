@@ -21,14 +21,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/backend"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
-	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 )
 
 type GetCurUsedNum func(context.Context, *quota.ApplyQuotaResource) (int64, error)
@@ -90,16 +91,18 @@ func resourceLimitHandler(ctx context.Context, res *quota.ApplyQuotaResource) (i
 		return globalCounter.ServiceCount, nil
 	case quota.RuleQuotaType:
 		key = core.GenerateServiceRuleKey(domainProject, serviceID, "")
-		indexer = backend.Store().Rule()
+		indexer = kv.Store().Rule()
 	case quota.SchemaQuotaType:
 		key = core.GenerateServiceSchemaKey(domainProject, serviceID, "")
-		indexer = backend.Store().Schema()
+		indexer = kv.Store().Schema()
 	case quota.TagQuotaType:
-		tags, err := serviceUtil.GetTagsUtils(ctx, domainProject, serviceID)
+		resp, err := datasource.Instance().GetTags(ctx, &pb.GetServiceTagsRequest{
+			ServiceId: serviceID,
+		})
 		if err != nil {
 			return 0, err
 		}
-		return int64(len(tags)), nil
+		return int64(len(resp.Tags)), nil
 	default:
 		return 0, fmt.Errorf("not define quota type '%s'", res.QuotaType)
 	}

@@ -16,8 +16,8 @@
 package buildin
 
 import (
-	"github.com/apache/servicecomb-service-center/server/core/backend"
-	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota/counter"
 )
 
@@ -32,23 +32,23 @@ type GlobalCounter struct {
 	InstanceCount int64
 }
 
-func (c *GlobalCounter) OnCreate(t discovery.Type, domainProject string) {
+func (c *GlobalCounter) OnCreate(t sd.Type, domainProject string) {
 	switch t {
-	case backend.ServiceIndex:
+	case kv.ServiceIndex:
 		c.ServiceCount++
-	case backend.INSTANCE:
+	case kv.INSTANCE:
 		c.InstanceCount++
 	}
 }
 
-func (c *GlobalCounter) OnDelete(t discovery.Type, domainProject string) {
+func (c *GlobalCounter) OnDelete(t sd.Type, domainProject string) {
 	switch t {
-	case backend.ServiceIndex:
+	case kv.ServiceIndex:
 		if c.ServiceCount == 0 {
 			return
 		}
 		c.ServiceCount--
-	case backend.INSTANCE:
+	case kv.INSTANCE:
 		if c.InstanceCount == 0 {
 			return
 		}

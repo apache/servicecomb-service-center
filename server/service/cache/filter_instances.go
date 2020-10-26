@@ -20,28 +20,14 @@ package cache
 import (
 	"context"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
+	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/cache"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	apt "github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/backend"
-	"github.com/apache/servicecomb-service-center/server/plugin/registry"
-	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
-	"sort"
 )
-
-var clustersIndex = make(map[string]int)
-
-func init() {
-	var clusters []string
-	for name := range registry.Configuration().Clusters {
-		clusters = append(clusters, name)
-	}
-	sort.Strings(clusters)
-	for i, name := range clusters {
-		clustersIndex[name] = i
-	}
-}
 
 type InstancesFilter struct {
 }
@@ -94,8 +80,8 @@ func (f *InstancesFilter) Find(ctx context.Context, parent *cache.Node) (
 
 func (f *InstancesFilter) findInstances(ctx context.Context, domainProject, serviceID, instanceID string, maxRevs []int64, counts []int64) (instances []*pb.MicroServiceInstance, err error) {
 	key := apt.GenerateInstanceKey(domainProject, serviceID, instanceID)
-	opts := append(serviceUtil.FromContext(ctx), registry.WithStrKey(key), registry.WithPrefix())
-	resp, err := backend.Store().Instance().Search(ctx, opts...)
+	opts := append(serviceUtil.FromContext(ctx), client.WithStrKey(key), client.WithPrefix())
+	resp, err := kv.Store().Instance().Search(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +90,7 @@ func (f *InstancesFilter) findInstances(ctx context.Context, domainProject, serv
 	}
 
 	for _, kv := range resp.Kvs {
-		if i, ok := clustersIndex[kv.ClusterName]; ok {
+		if i, ok := getOrCreateClustersIndex()[kv.ClusterName]; ok {
 			if kv.ModRevision > maxRevs[i] {
 				maxRevs[i] = kv.ModRevision
 			}
@@ -117,8 +103,8 @@ func (f *InstancesFilter) findInstances(ctx context.Context, domainProject, serv
 
 func (f *InstancesFilter) FindInstances(ctx context.Context, domainProject string, instanceKey *pb.HeartbeatSetElement) (instances []*pb.MicroServiceInstance, rev string, err error) {
 	var (
-		maxRevs = make([]int64, len(clustersIndex))
-		counts  = make([]int64, len(clustersIndex))
+		maxRevs = make([]int64, len(getOrCreateClustersIndex()))
+		counts  = make([]int64, len(getOrCreateClustersIndex()))
 	)
 	instances, err = f.findInstances(ctx, domainProject, instanceKey.ServiceId, instanceKey.InstanceId, maxRevs, counts)
 	if err != nil {
@@ -129,8 +115,8 @@ func (f *InstancesFilter) FindInstances(ctx context.Context, domainProject strin
 
 func (f *InstancesFilter) BatchFindInstances(ctx context.Context, domainProject string, serviceIDs []string) (instances []*pb.MicroServiceInstance, rev string, err error) {
 	var (
-		maxRevs = make([]int64, len(clustersIndex))
-		counts  = make([]int64, len(clustersIndex))
+		maxRevs = make([]int64, len(getOrCreateClustersIndex()))
+		counts  = make([]int64, len(getOrCreateClustersIndex()))
 	)
 	for _, providerServiceID := range serviceIDs {
 		insts, err := f.findInstances(ctx, domainProject, providerServiceID, "", maxRevs, counts)

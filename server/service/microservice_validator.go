@@ -18,11 +18,11 @@
 package service
 
 import (
+	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/pkg/validate"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
-	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"regexp"
 )
 

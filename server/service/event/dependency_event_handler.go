@@ -19,7 +19,11 @@ package event
 import (
 	"context"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/mux"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/backoff"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -27,11 +31,7 @@ import (
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/backend"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
-	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
-	"github.com/apache/servicecomb-service-center/server/plugin/registry"
-	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"time"
 )
 
@@ -43,11 +43,11 @@ type DependencyEventHandler struct {
 	signals *queue.UniQueue
 }
 
-func (h *DependencyEventHandler) Type() discovery.Type {
-	return backend.DependencyQueue
+func (h *DependencyEventHandler) Type() sd.Type {
+	return kv.DependencyQueue
 }
 
-func (h *DependencyEventHandler) OnEvent(evt discovery.KvEvent) {
+func (h *DependencyEventHandler) OnEvent(evt sd.KvEvent) {
 	action := evt.Type
 	if action != pb.EVT_CREATE && action != pb.EVT_UPDATE && action != pb.EVT_INIT {
 		return
@@ -125,11 +125,11 @@ func (h *DependencyEventHandler) eventLoop() {
 
 type DependencyEventHandlerResource struct {
 	dep           *pb.ConsumerDependency
-	kv            *discovery.KeyValue
+	kv            *sd.KeyValue
 	domainProject string
 }
 
-func NewDependencyEventHandlerResource(dep *pb.ConsumerDependency, kv *discovery.KeyValue, domainProject string) *DependencyEventHandlerResource {
+func NewDependencyEventHandlerResource(dep *pb.ConsumerDependency, kv *sd.KeyValue, domainProject string) *DependencyEventHandlerResource {
 	return &DependencyEventHandlerResource{
 		dep,
 		kv,
@@ -145,9 +145,9 @@ func isAddToLeft(centerNode *util.Node, addRes interface{}) bool {
 
 func (h *DependencyEventHandler) Handle() error {
 	key := core.GetServiceDependencyQueueRootKey("")
-	resp, err := backend.Store().DependencyQueue().Search(context.Background(),
-		registry.WithStrKey(key),
-		registry.WithPrefix())
+	resp, err := kv.Store().DependencyQueue().Search(context.Background(),
+		client.WithStrKey(key),
+		client.WithPrefix())
 	if err != nil {
 		return err
 	}
@@ -213,9 +213,9 @@ func (h *DependencyEventHandler) dependencyRuleHandle(res interface{}) error {
 	return nil
 }
 
-func (h *DependencyEventHandler) removeKV(ctx context.Context, kv *discovery.KeyValue) error {
-	dResp, err := backend.Registry().TxnWithCmp(ctx, []registry.PluginOp{registry.OpDel(registry.WithKey(kv.Key))},
-		[]registry.CompareOp{registry.OpCmp(registry.CmpVer(kv.Key), registry.CmpEqual, kv.Version)},
+func (h *DependencyEventHandler) removeKV(ctx context.Context, kv *sd.KeyValue) error {
+	dResp, err := client.Instance().TxnWithCmp(ctx, []client.PluginOp{client.OpDel(client.WithKey(kv.Key))},
+		[]client.CompareOp{client.OpCmp(client.CmpVer(kv.Key), client.CmpEqual, kv.Version)},
 		nil)
 	if err != nil {
 		return fmt.Errorf("can not remove the dependency %s request, %s", util.BytesToStringWithNoCopy(kv.Key), err.Error())

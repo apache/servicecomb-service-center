@@ -18,15 +18,15 @@ package event
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/backend"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
-	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"github.com/apache/servicecomb-service-center/server/service/cache"
 	"github.com/apache/servicecomb-service-center/server/service/metrics"
-	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"strings"
 )
 
@@ -37,11 +37,11 @@ import (
 type ServiceEventHandler struct {
 }
 
-func (h *ServiceEventHandler) Type() discovery.Type {
-	return backend.SERVICE
+func (h *ServiceEventHandler) Type() sd.Type {
+	return kv.SERVICE
 }
 
-func (h *ServiceEventHandler) OnEvent(evt discovery.KvEvent) {
+func (h *ServiceEventHandler) OnEvent(evt sd.KvEvent) {
 	ms := evt.KV.Value.(*pb.MicroService)
 	_, domainProject := core.GetInfoFromSvcKV(evt.KV.Key)
 	fn, fv := getFramework(ms)

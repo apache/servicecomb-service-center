@@ -19,17 +19,17 @@ package govern
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
+	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/backend"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
-	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"github.com/apache/servicecomb-service-center/server/service"
-	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 )
 
 var ServiceAPI proto.GovernServiceCtrlServer = &Service{}
@@ -196,11 +196,11 @@ func (governService *Service) GetApplications(ctx context.Context, in *pb.GetApp
 	key := apt.GetServiceAppKey(domainProject, in.Environment, "")
 
 	opts := append(serviceUtil.FromContext(ctx),
-		registry.WithStrKey(key),
-		registry.WithPrefix(),
-		registry.WithKeyOnly())
+		client.WithStrKey(key),
+		client.WithPrefix(),
+		client.WithKeyOnly())
 
-	resp, err := backend.Store().ServiceIndex().Search(ctx, opts...)
+	resp, err := kv.Store().ServiceIndex().Search(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -239,10 +239,10 @@ func getServiceAllVersions(ctx context.Context, serviceKey *pb.MicroServiceKey) 
 	key := apt.GenerateServiceIndexKey(&copyKey)
 
 	opts := append(serviceUtil.FromContext(ctx),
-		registry.WithStrKey(key),
-		registry.WithPrefix())
+		client.WithStrKey(key),
+		client.WithPrefix())
 
-	resp, err := backend.Store().ServiceIndex().Search(ctx, opts...)
+	resp, err := kv.Store().ServiceIndex().Search(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -259,9 +259,9 @@ func getServiceAllVersions(ctx context.Context, serviceKey *pb.MicroServiceKey) 
 func getSchemaInfoUtil(ctx context.Context, domainProject string, serviceID string) ([]*pb.Schema, error) {
 	key := apt.GenerateServiceSchemaKey(domainProject, serviceID, "")
 
-	resp, err := backend.Store().Schema().Search(ctx,
-		registry.WithStrKey(key),
-		registry.WithPrefix())
+	resp, err := kv.Store().Schema().Search(ctx,
+		client.WithStrKey(key),
+		client.WithPrefix())
 	if err != nil {
 		log.Errorf(err, "get service[%s]'s schemas failed", serviceID)
 		return make([]*pb.Schema, 0), err
@@ -372,9 +372,9 @@ func statistics(ctx context.Context, withShared bool) (*pb.Statistics, error) {
 	// services
 	key := apt.GetServiceIndexRootKey(domainProject) + "/"
 	svcOpts := append(opts,
-		registry.WithStrKey(key),
-		registry.WithPrefix())
-	respSvc, err := backend.Store().ServiceIndex().Search(ctx, svcOpts...)
+		client.WithStrKey(key),
+		client.WithPrefix())
+	respSvc, err := kv.Store().ServiceIndex().Search(ctx, svcOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -410,10 +410,10 @@ func statistics(ctx context.Context, withShared bool) (*pb.Statistics, error) {
 	// instance
 	key = apt.GetInstanceRootKey(domainProject) + "/"
 	instOpts := append(opts,
-		registry.WithStrKey(key),
-		registry.WithPrefix(),
-		registry.WithKeyOnly())
-	respIns, err := backend.Store().Instance().Search(ctx, instOpts...)
+		client.WithStrKey(key),
+		client.WithPrefix(),
+		client.WithKeyOnly())
+	respIns, err := kv.Store().Instance().Search(ctx, instOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -449,11 +449,11 @@ type GetInstanceCountByDomainResponse struct {
 func getInstanceCountByDomain(ctx context.Context, svcIDToNonVerKey map[string]string, resp chan GetInstanceCountByDomainResponse) {
 	domainID := util.ParseDomain(ctx)
 	key := apt.GetInstanceRootKey(domainID) + "/"
-	instOpts := append([]registry.PluginOpOption{},
-		registry.WithStrKey(key),
-		registry.WithPrefix(),
-		registry.WithKeyOnly())
-	respIns, err := backend.Store().Instance().Search(ctx, instOpts...)
+	instOpts := append([]client.PluginOpOption{},
+		client.WithStrKey(key),
+		client.WithPrefix(),
+		client.WithKeyOnly())
+	respIns, err := kv.Store().Instance().Search(ctx, instOpts...)
 	ret := GetInstanceCountByDomainResponse{
 		err: err,
 	}

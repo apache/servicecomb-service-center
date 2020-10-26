@@ -17,6 +17,8 @@
 
 package bootstrap
 
+import _ "github.com/apache/servicecomb-service-center/datasource/etcd"
+
 //registry is buildin
 import _ "github.com/apache/servicecomb-service-center/datasource/etcd/client/buildin"
 

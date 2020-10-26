@@ -16,25 +16,25 @@
 package counter
 
 import (
-	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 )
 
 var counters = Counters{}
 
 type Counter interface {
-	OnCreate(t discovery.Type, domainProject string)
-	OnDelete(t discovery.Type, domainProject string)
+	OnCreate(t sd.Type, domainProject string)
+	OnDelete(t sd.Type, domainProject string)
 }
 
 type Counters []Counter
 
-func (cs Counters) OnCreate(t discovery.Type, domainProject string) {
+func (cs Counters) OnCreate(t sd.Type, domainProject string) {
 	for _, c := range cs {
 		c.OnCreate(t, domainProject)
 	}
 }
 
-func (cs Counters) OnDelete(t discovery.Type, domainProject string) {
+func (cs Counters) OnDelete(t sd.Type, domainProject string) {
 	for _, c := range cs {
 		c.OnDelete(t, domainProject)
 	}

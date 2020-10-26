@@ -22,21 +22,20 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/backend"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/health"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
-	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"github.com/apache/servicecomb-service-center/server/service/cache"
-	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"os"
 	"strconv"
 	"time"
@@ -183,7 +182,7 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 		}, err
 	}
 
-	leaseID, err := backend.Registry().LeaseGrant(ctx, ttl)
+	leaseID, err := client.Instance().LeaseGrant(ctx, ttl)
 	if err != nil {
 		log.Errorf(err, "grant lease failed, %s, operator: %s", instanceFlag, remoteIP)
 		return &pb.RegisterInstanceResponse{
@@ -195,17 +194,17 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 	key := apt.GenerateInstanceKey(domainProject, instance.ServiceId, instanceID)
 	hbKey := apt.GenerateInstanceLeaseKey(domainProject, instance.ServiceId, instanceID)
 
-	opts := []registry.PluginOp{
-		registry.OpPut(registry.WithStrKey(key), registry.WithValue(data),
-			registry.WithLease(leaseID)),
-		registry.OpPut(registry.WithStrKey(hbKey), registry.WithStrValue(fmt.Sprintf("%d", leaseID)),
-			registry.WithLease(leaseID)),
+	opts := []client.PluginOp{
+		client.OpPut(client.WithStrKey(key), client.WithValue(data),
+			client.WithLease(leaseID)),
+		client.OpPut(client.WithStrKey(hbKey), client.WithStrValue(fmt.Sprintf("%d", leaseID)),
+			client.WithLease(leaseID)),
 	}
 
-	resp, err := backend.Registry().TxnWithCmp(ctx, opts,
-		[]registry.CompareOp{registry.OpCmp(
-			registry.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, instance.ServiceId))),
-			registry.CmpNotEqual, 0)},
+	resp, err := client.Instance().TxnWithCmp(ctx, opts,
+		[]client.CompareOp{client.OpCmp(
+			client.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, instance.ServiceId))),
+			client.CmpNotEqual, 0)},
 		nil)
 	if err != nil {
 		log.Errorf(err,
@@ -281,7 +280,7 @@ func revokeInstance(ctx context.Context, domainProject string, serviceID string,
 		return scerr.NewError(scerr.ErrInstanceNotExists, "Instance's leaseId not exist.")
 	}
 
-	err = backend.Registry().LeaseRevoke(ctx, leaseID)
+	err = client.Instance().LeaseRevoke(ctx, leaseID)
 	if err != nil {
 		if _, ok := err.(errorsEx.InternalError); !ok {
 			return scerr.NewError(scerr.ErrInstanceNotExists, err.Error())

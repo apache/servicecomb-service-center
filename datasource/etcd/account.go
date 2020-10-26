@@ -44,7 +44,7 @@ func (ds *DataSource) GetAccount(ctx context.Context, key string) (*rbacframe.Ac
 		return nil, err
 	}
 	if resp.Count != 1 {
-		return nil, ErrNotUnique
+		return nil, client.ErrNotUnique
 	}
 	account := &rbacframe.Account{}
 	err = json.Unmarshal(resp.Kvs[0].Value, account)

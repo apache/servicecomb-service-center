@@ -19,7 +19,7 @@ package client
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/datasource/etcd"
+	"errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/task"
 	"github.com/coreos/etcd/mvcc/mvccpb"
@@ -29,6 +29,8 @@ const (
 	// the same as v3rpc.MaxOpsPerTxn = 128
 	MaxTxnNumberOneTime = 128
 )
+
+var ErrNotUnique = errors.New("kv result is not unique")
 
 type Registry interface {
 	Err() <-chan error
@@ -69,7 +71,7 @@ func Get(ctx context.Context, key string) (*mvccpb.KeyValue, error) {
 		return nil, err
 	}
 	if resp.Count != 1 {
-		return nil, etcd.ErrNotUnique
+		return nil, ErrNotUnique
 	}
 	return resp.Kvs[0], err
 }

@@ -296,6 +296,14 @@ func (ds *DataSource) GetApplications(ctx context.Context, request *pb.GetAppsRe
 	}, nil
 }
 
+func (ds *DataSource) ExistServiceByID(ctx context.Context, request *pb.GetExistenceByIDRequest) (*pb.GetExistenceByIDResponse, error) {
+	domainProject := util.ParseDomainProject(ctx)
+	return &pb.GetExistenceByIDResponse{
+		Response: proto.CreateResponse(proto.Response_SUCCESS, "Get all applications successfully."),
+		Exist:    serviceUtil.ServiceExist(ctx, domainProject, request.ServiceId),
+	}, nil
+}
+
 func (ds *DataSource) ExistService(ctx context.Context, request *pb.GetExistenceRequest) (*pb.GetExistenceResponse,
 	error) {
 	domainProject := util.ParseDomainProject(ctx)

@@ -17,7 +17,6 @@ package etcd
 
 import (
 	"context"
-	"errors"
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/job"
@@ -28,13 +27,9 @@ import (
 	"time"
 )
 
-// TODO: define error with names here
-
-var ErrNotUnique = errors.New("kv result is not unique")
-
 func init() {
 	// TODO: set logger
-	// TODO: register storage plugin to plugin manager
+	datasource.Install("etcd", NewDataSource)
 }
 
 type DataSource struct {
@@ -47,7 +42,7 @@ type DataSource struct {
 	CompactInterval   time.Duration
 }
 
-func NewDataSource(opts datasource.Options) *DataSource {
+func NewDataSource(opts datasource.Options) (datasource.DataSource, error) {
 	// TODO: construct a reasonable DataSource instance
 	log.Warnf("dependency data source enable etcd mode")
 
@@ -59,16 +54,17 @@ func NewDataSource(opts datasource.Options) *DataSource {
 	}
 	// TODO: deal with exception
 	if err := inst.initialize(); err != nil {
-		return inst
+		return nil, err
 	}
-	return inst
+	return inst, nil
 }
 
 func (ds *DataSource) initialize() error {
 	// TODO: init dependency members
-	ds.autoCompact()
 	// Wait for kv store ready
 	ds.initKvStore()
+	// Compact
+	ds.autoCompact()
 	// Jobs
 	job.ClearNoInstanceServices()
 	return nil

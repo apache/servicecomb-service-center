@@ -21,10 +21,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/datasource"
+	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"github.com/gorilla/websocket"
 	"time"
 )
@@ -205,6 +206,12 @@ func (wh *WebSocket) HandleWatchWebSocketJob(o interface{}) {
 	case time.Time:
 		domainProject := util.ParseDomainProject(wh.ctx)
 		if !serviceUtil.ServiceExist(wh.ctx, domainProject, wh.watcher.Group()) {
+			message = util.StringToBytesWithNoCopy("Service does not exit.")
+			break
+		}
+		if exist, err := datasource.Instance().ExistServiceByID(wh.ctx, &pb.GetExistenceByIDRequest{
+			ServiceId: wh.watcher.Group(),
+		}); err != nil || !exist.Exist {
 			message = util.StringToBytesWithNoCopy("Service does not exit.")
 			break
 		}

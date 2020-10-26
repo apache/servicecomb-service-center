@@ -17,20 +17,18 @@
 
 package server
 
-import (
-	"github.com/apache/servicecomb-service-center/datasource"
-	//plugin
-	_ "github.com/apache/servicecomb-service-center/server/service/event"
-	"github.com/apache/servicecomb-service-center/server/service/rbac"
-)
+import _ "github.com/apache/servicecomb-service-center/server/service/event"
+
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	nf "github.com/apache/servicecomb-service-center/pkg/notify"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/notify"
 	"github.com/apache/servicecomb-service-center/server/plugin"
+	"github.com/apache/servicecomb-service-center/server/service/rbac"
 	"github.com/astaxie/beego"
 	"os"
 )

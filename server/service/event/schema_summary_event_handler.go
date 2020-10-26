@@ -17,10 +17,10 @@
 package event
 
 import (
+	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/backend"
-	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"github.com/apache/servicecomb-service-center/server/service/metrics"
 	"strings"
 )
@@ -29,11 +29,11 @@ import (
 type SchemaSummaryEventHandler struct {
 }
 
-func (h *SchemaSummaryEventHandler) Type() discovery.Type {
-	return backend.SchemaSummary
+func (h *SchemaSummaryEventHandler) Type() sd.Type {
+	return kv.SchemaSummary
 }
 
-func (h *SchemaSummaryEventHandler) OnEvent(evt discovery.KvEvent) {
+func (h *SchemaSummaryEventHandler) OnEvent(evt sd.KvEvent) {
 	action := evt.Type
 	switch action {
 	case pb.EVT_INIT, pb.EVT_CREATE, pb.EVT_DELETE:
