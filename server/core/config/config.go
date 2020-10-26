@@ -15,12 +15,15 @@
  * limitations under the License.
  */
 
-package core
+package config
 
 import (
 	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/go-chassis/go-archaius"
+	util2 "github.com/go-chassis/go-archaius/source/util"
+	"gopkg.in/yaml.v2"
 	"os"
+	"path/filepath"
 	"runtime"
 	"time"
 
@@ -46,12 +49,32 @@ const (
 
 )
 
+//Configurations is kie config items
+var Configurations = &Config{}
+
 var ServerInfo = proto.NewServerInformation()
 
-func Configure() {
-	err := archaius.Init(archaius.WithMemorySource(), archaius.WithENVSource())
+//GetGov return governance configs
+func GetGov() Gov {
+	return Configurations.Gov
+}
+func Init() {
+	err := archaius.Init(archaius.WithMemorySource(), archaius.WithENVSource(),
+		archaius.WithOptionalFiles([]string{""}))
 	if err != nil {
 		log.Fatal("can not init archaius", err)
+	}
+
+	if Configurations.ConfigFile != "" {
+		if err := archaius.AddFile(Configurations.ConfigFile, archaius.WithFileHandler(util2.UseFileNameAsKeyContentAsValue)); err != nil {
+			log.Fatal("can not read config file: "+Configurations.ConfigFile, err)
+		}
+		_, filename := filepath.Split(Configurations.ConfigFile)
+		content := archaius.GetString(filename, "")
+		if err := yaml.Unmarshal([]byte(content), Configurations); err != nil {
+			log.Fatal("can not read config file: "+Configurations.ConfigFile, err)
+		}
+
 	}
 
 	setCPUs()

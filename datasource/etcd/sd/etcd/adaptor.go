@@ -20,7 +20,7 @@ package etcd
 import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/core/config"
 )
 
 // Adaptor implements sd.Adaptor.
@@ -52,14 +52,14 @@ func (se *Adaptor) Ready() <-chan struct{} {
 func NewEtcdAdaptor(name string, cfg *sd.Config) *Adaptor {
 	var adaptor Adaptor
 	switch {
-	case core.ServerInfo.Config.EnableCache && cfg.InitSize > 0:
+	case config.ServerInfo.Config.EnableCache && cfg.InitSize > 0:
 		kvCache := sd.NewKvCache(name, cfg)
 		adaptor.Cacher = NewKvCacher(cfg, kvCache)
 		adaptor.Indexer = NewCacheIndexer(cfg, kvCache)
 	default:
 		log.Infof(
 			"core will not cache '%s' and ignore all events of it, cache enabled: %v, init size: %d",
-			name, core.ServerInfo.Config.EnableCache, cfg.InitSize)
+			name, config.ServerInfo.Config.EnableCache, cfg.InitSize)
 		adaptor.Cacher = sd.NullCacher
 		adaptor.Indexer = NewEtcdIndexer(cfg.Key, cfg.Parser)
 	}

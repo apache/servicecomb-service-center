@@ -20,11 +20,11 @@ package test
 
 import (
 	_ "github.com/apache/servicecomb-service-center/server/bootstrap"
-	"github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/core/config"
 	"github.com/astaxie/beego"
 )
 
 func init() {
 	beego.AppConfig.Set("registry_plugin", "etcd")
-	core.ServerInfo.Config.MaxBodyBytes = 2097152
+	config.ServerInfo.Config.MaxBodyBytes = 2097152
 }

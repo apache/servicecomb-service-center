@@ -25,7 +25,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/core/config"
 	"github.com/openzipkin/zipkin-go-opentracing/thrift/gen-go/zipkincore"
 	"os"
 	"strings"
@@ -164,8 +164,8 @@ func (f *FileCollector) Run() {
 			case <-t.C:
 				if time.Now().After(nr) {
 					log.RotateFile(f.Fd.Name(),
-						int(core.ServerInfo.Config.LogRotateSize),
-						int(core.ServerInfo.Config.LogBackupCount),
+						int(config.ServerInfo.Config.LogRotateSize),
+						int(config.ServerInfo.Config.LogBackupCount),
 					)
 					nr = time.Now().Add(i)
 				}

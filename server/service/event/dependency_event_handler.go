@@ -32,6 +32,7 @@ import (
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/core/config"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"time"
 )
@@ -101,8 +102,8 @@ func (h *DependencyEventHandler) eventLoop() {
 	gopool.Go(func(ctx context.Context) {
 		// the events will lose, need to handle dependence records periodically
 		period := defaultEventHandleInterval
-		if core.ServerInfo.Config.CacheTTL > 0 {
-			period = core.ServerInfo.Config.CacheTTL
+		if config.ServerInfo.Config.CacheTTL > 0 {
+			period = config.ServerInfo.Config.CacheTTL
 		}
 		timer := time.NewTimer(period)
 		retries := 0

@@ -28,7 +28,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	rmodel "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/core/config"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"sync"
 	"time"
@@ -493,7 +493,7 @@ func (c *KvCacher) IsReady() bool {
 }
 
 func (c *KvCacher) reportMetrics(ctx context.Context) {
-	if !core.ServerInfo.Config.EnablePProf {
+	if !config.ServerInfo.Config.EnablePProf {
 		return
 	}
 	timer := time.NewTimer(DefaultMetricsInterval)

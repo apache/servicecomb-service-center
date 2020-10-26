@@ -20,6 +20,7 @@ package broker
 import (
 	"context"
 	"encoding/json"
+	"github.com/apache/servicecomb-service-center/server/core/config"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"math"
 	"net/url"
@@ -32,7 +33,6 @@ import (
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/broker/brokerpb"
-	"github.com/apache/servicecomb-service-center/server/core"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"path/filepath"
 )
@@ -86,15 +86,15 @@ var brokerAPILinksTitles = map[string]string{
 func init() {
 	//define Broker logger
 	name := ""
-	if len(core.ServerInfo.Config.LogFilePath) != 0 {
-		name = filepath.Join(filepath.Dir(core.ServerInfo.Config.LogFilePath), "broker_srvc.log")
+	if len(config.ServerInfo.Config.LogFilePath) != 0 {
+		name = filepath.Join(filepath.Dir(config.ServerInfo.Config.LogFilePath), "broker_srvc.log")
 	}
 	PactLogger = log.NewLogger(log.Config{
-		LoggerLevel:    core.ServerInfo.Config.LogLevel,
+		LoggerLevel:    config.ServerInfo.Config.LogLevel,
 		LoggerFile:     name,
-		LogFormatText:  core.ServerInfo.Config.LogFormat == "text",
-		LogRotateSize:  int(core.ServerInfo.Config.LogRotateSize),
-		LogBackupCount: int(core.ServerInfo.Config.LogBackupCount),
+		LogFormatText:  config.ServerInfo.Config.LogFormat == "text",
+		LogRotateSize:  int(config.ServerInfo.Config.LogRotateSize),
+		LogBackupCount: int(config.ServerInfo.Config.LogBackupCount),
 	})
 }
 

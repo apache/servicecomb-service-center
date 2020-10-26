@@ -15,23 +15,21 @@
  * limitations under the License.
  */
 
-package v4
+package model
 
-import (
-	roa "github.com/apache/servicecomb-service-center/pkg/rest"
-)
-
-func init() {
-	initRouter()
+//TrafficMarker marks request, it assign a name to request in runtime
+type TrafficMarker struct {
+	*GovernancePolicy
+	Spec *MatchSpec `json:"spec,omitempty"`
+}
+type MatchSpec struct {
+	MatchPolicies     []*MatchPolicy `json:"matches,omitempty"`
+	TrafficMarkPolicy string         `json:"trafficMarkPolicy,omitempty"`
 }
 
-func initRouter() {
-	roa.RegisterServant(&MainService{})
-	roa.RegisterServant(&MicroServiceService{})
-	roa.RegisterServant(&SchemaService{})
-	roa.RegisterServant(&DependencyService{})
-	roa.RegisterServant(&TagService{})
-	roa.RegisterServant(&RuleService{})
-	roa.RegisterServant(&MicroServiceInstanceService{})
-	roa.RegisterServant(&WatchService{})
+//MatchPolicy specify a request mach policy
+type MatchPolicy struct {
+	Headers  map[string]map[string]string `json:"headers,omitempty"`
+	APIPaths map[string]string            `json:"apiPath,omitempty"`
+	Methods  []string                     `json:"methods,omitempty"`
 }

@@ -23,31 +23,31 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/mux"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/core/config"
 	"time"
 )
 
 // clear services who have no instance
 func ClearNoInstanceServices() {
-	if !core.ServerInfo.Config.ServiceClearEnabled {
+	if !config.ServerInfo.Config.ServiceClearEnabled {
 		return
 	}
 	log.Infof("service clear enabled, interval: %s, service TTL: %s",
-		core.ServerInfo.Config.ServiceClearInterval,
-		core.ServerInfo.Config.ServiceTTL)
+		config.ServerInfo.Config.ServiceClearInterval,
+		config.ServerInfo.Config.ServiceTTL)
 
 	gopool.Go(func(ctx context.Context) {
 		for {
 			select {
 			case <-ctx.Done():
 				return
-			case <-time.After(core.ServerInfo.Config.ServiceClearInterval):
+			case <-time.After(config.ServerInfo.Config.ServiceClearInterval):
 				lock, err := mux.Try(mux.ServiceClearLock)
 				if err != nil {
 					log.Errorf(err, "can not clear no instance services by this service center instance now")
 					continue
 				}
-				err = datasource.Instance().ClearNoInstanceServices(ctx, core.ServerInfo.Config.ServiceTTL)
+				err = datasource.Instance().ClearNoInstanceServices(ctx, config.ServerInfo.Config.ServiceTTL)
 				if err := lock.Unlock(); err != nil {
 					log.Error("", err)
 				}

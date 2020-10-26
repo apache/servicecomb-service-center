@@ -22,18 +22,19 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/model"
 	"testing"
 )
+
 func TestNewInstance3(t *testing.T) {
 	b, _ := json.MarshalIndent(&model.LoadBalancer{
-		GovernanceFrame: &model.GovernanceFrame{
+		GovernancePolicy: &model.GovernancePolicy{
 			Name: "Traffic2adminAPI",
 		},
-		Spec: &model.LBSpec{RetryNext:3, MarkerName: "traffic2adminAPI"},
+		Spec: &model.LBSpec{RetryNext: 3, MarkerName: "traffic2adminAPI"},
 	}, "", "  ")
 	t.Log(string(b))
 }
 func TestNewInstance2(t *testing.T) {
 	b, _ := json.MarshalIndent(&model.RateLimiter{
-		GovernanceFrame: &model.GovernanceFrame{
+		GovernancePolicy: &model.GovernancePolicy{
 			Name: "limitTraffic2adminAPI",
 		},
 		Spec: &model.LimiterSpec{Burst: 10, Rate: 100, MarkerName: "traffic2adminAPI"},
@@ -42,9 +43,9 @@ func TestNewInstance2(t *testing.T) {
 }
 func TestNewInstance(t *testing.T) {
 	b, _ := json.MarshalIndent(&model.TrafficMarker{
-		GovernanceFrame: &model.GovernanceFrame{
+		GovernancePolicy: &model.GovernancePolicy{
 			Name: "traffic2adminAPI",
-			Selector: map[string]string{
+			MD: map[string]string{
 				"service":     "payment",
 				"version":     "1.0.0",
 				"app":         "default",

@@ -22,6 +22,7 @@ import (
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/core/config"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/rest/controller"
 	"github.com/apache/servicecomb-service-center/version"
@@ -66,7 +67,7 @@ func (s *MainService) GetVersion(w http.ResponseWriter, r *http.Request) {
 		result := Result{
 			version.Ver(),
 			APIVersion,
-			&core.ServerInfo.Config,
+			&config.ServerInfo.Config,
 		}
 		versionJSONCache, _ = json.Marshal(result)
 		versionResp = proto.CreateResponse(proto.ResponseSuccess, "get version successfully")

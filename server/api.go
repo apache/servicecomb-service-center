@@ -26,6 +26,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/core/config"
 	rs "github.com/apache/servicecomb-service-center/server/rest"
 	"github.com/apache/servicecomb-service-center/server/service"
 	"net"
@@ -108,7 +109,7 @@ func (s *APIServer) populateEndpoint(t APIType, ipPort string) {
 		return
 	}
 	address := fmt.Sprintf("%s://%s/", t, ipPort)
-	if core.ServerInfo.Config.SslEnabled {
+	if config.ServerInfo.Config.SslEnabled {
 		address += "?sslEnabled=true"
 	}
 	core.Instance.Endpoints = append(core.Instance.Endpoints, address)
@@ -156,7 +157,7 @@ func (s *APIServer) Start() {
 
 	defer log.Info("api server is ready")
 
-	if !core.ServerInfo.Config.SelfRegister {
+	if !config.ServerInfo.Config.SelfRegister {
 		log.Warnf("self register disabled")
 		return
 	}
@@ -171,7 +172,7 @@ func (s *APIServer) Stop() {
 	}
 	s.isClose = true
 
-	if !s.forked && core.ServerInfo.Config.SelfRegister {
+	if !s.forked && config.ServerInfo.Config.SelfRegister {
 		s.selfUnregister()
 	}
 

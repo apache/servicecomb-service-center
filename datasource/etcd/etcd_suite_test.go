@@ -17,12 +17,14 @@
 package etcd_test
 
 // initialize
-import _ "github.com/apache/servicecomb-service-center/server/bootstrap"
+import (
+	_ "github.com/apache/servicecomb-service-center/server/bootstrap"
+	"github.com/apache/servicecomb-service-center/server/core/config"
+)
 import (
 	"context"
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/astaxie/beego"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
@@ -40,7 +42,7 @@ func init() {
 
 var _ = BeforeSuite(func() {
 	//init plugin
-	core.ServerInfo.Config.EnableCache = false
+	config.ServerInfo.Config.EnableCache = false
 	//clear service created in last test
 	time.Sleep(timeLimit)
 	_ = datasource.Instance().ClearNoInstanceServices(context.Background(), timeLimit)

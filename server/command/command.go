@@ -15,44 +15,32 @@
  * limitations under the License.
  */
 
-package core
+package command
 
 import (
 	"github.com/apache/servicecomb-service-center/server/core/config"
-
-	// import the grace package and parse grace cmd line
-	_ "github.com/apache/servicecomb-service-center/pkg/grace"
-	"github.com/apache/servicecomb-service-center/pkg/log"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
+	"github.com/apache/servicecomb-service-center/version"
+	"github.com/urfave/cli"
 )
 
-func Initialize() {
-	// initialize configuration
-	config.Init()
-
-	go handleSignals()
-}
-
-func handleSignals() {
-	defer log.Sync()
-
-	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh,
-		syscall.SIGINT,
-		syscall.SIGTERM,
-	)
-	wait := 5 * time.Second
-	for sig := range sigCh {
-		switch sig {
-		case syscall.SIGINT, syscall.SIGKILL, syscall.SIGTERM:
-			<-time.After(wait)
-			log.Warnf("waiting for server response timed out(%s), force shutdown", wait)
-			os.Exit(1)
-		default:
-			log.Warnf("received signal '%v'", sig)
-		}
+// ParseConfig from cli
+func ParseConfig(args []string) (err error) {
+	app := cli.NewApp()
+	app.Version = version.VERSION
+	app.Usage = "servicecomb service center server cmd line."
+	app.Name = "servicecomb service center"
+	app.Flags = []cli.Flag{
+		cli.StringFlag{
+			Name:        "config",
+			Usage:       "config file, example: --config=sc-conf.yaml",
+			Destination: &config.Configurations.ConfigFile,
+			Value:       "",
+		},
 	}
+	app.Action = func(c *cli.Context) error {
+		return nil
+	}
+
+	err = app.Run(args)
+	return
 }

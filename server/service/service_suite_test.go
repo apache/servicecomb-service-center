@@ -17,7 +17,10 @@
 package service_test
 
 // initialize
-import _ "github.com/apache/servicecomb-service-center/server/bootstrap"
+import (
+	_ "github.com/apache/servicecomb-service-center/server/bootstrap"
+	"github.com/apache/servicecomb-service-center/server/core/config"
+)
 import (
 	"context"
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -42,7 +45,7 @@ func init() {
 
 var _ = BeforeSuite(func() {
 	//init plugin
-	core.ServerInfo.Config.EnableCache = false
+	config.ServerInfo.Config.EnableCache = false
 	serviceResource, instanceResource = service.AssembleResources()
 })
 

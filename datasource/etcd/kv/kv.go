@@ -25,7 +25,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/core/config"
 	"time"
 )
 
@@ -100,16 +100,16 @@ func (s *TypeStore) store(ctx context.Context) {
 }
 
 func (s *TypeStore) autoClearCache(ctx context.Context) {
-	if core.ServerInfo.Config.CacheTTL == 0 {
+	if config.ServerInfo.Config.CacheTTL == 0 {
 		return
 	}
 
-	log.Infof("start auto clear cache in %v", core.ServerInfo.Config.CacheTTL)
+	log.Infof("start auto clear cache in %v", config.ServerInfo.Config.CacheTTL)
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case <-time.After(core.ServerInfo.Config.CacheTTL):
+		case <-time.After(config.ServerInfo.Config.CacheTTL):
 			for _, t := range sd.Types {
 				cache, ok := s.getOrCreateAdaptor(t).Cache().(sd.Cache)
 				if !ok {

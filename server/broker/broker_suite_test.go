@@ -16,7 +16,10 @@
  */
 package broker_test
 
-import _ "github.com/apache/servicecomb-service-center/server/bootstrap"
+import (
+	_ "github.com/apache/servicecomb-service-center/server/bootstrap"
+	"github.com/apache/servicecomb-service-center/server/core/config"
+)
 import (
 	"github.com/apache/servicecomb-service-center/server/broker"
 	"github.com/apache/servicecomb-service-center/server/core"
@@ -38,7 +41,7 @@ var brokerResource = broker.ServiceAPI
 
 var _ = BeforeSuite(func() {
 	//init plugin
-	core.ServerInfo.Config.EnableCache = false
+	config.ServerInfo.Config.EnableCache = false
 	core.ServiceAPI, core.InstanceAPI = service.AssembleResources()
 })
 

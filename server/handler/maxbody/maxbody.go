@@ -20,7 +20,7 @@ package maxbody
 import (
 	"github.com/apache/servicecomb-service-center/pkg/chain"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
-	"github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/core/config"
 	"net/http"
 )
 
@@ -54,7 +54,7 @@ func (c *Handler) Handle(i *chain.Invocation) {
 		i.Context().Value(rest.CtxMatchPattern).(string)
 	v, ok := resourcesMap[pattern]
 	if !ok {
-		v = core.ServerInfo.Config.MaxBodyBytes
+		v = config.ServerInfo.Config.MaxBodyBytes
 	}
 
 	r.Body = http.MaxBytesReader(w, r.Body, v)

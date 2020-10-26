@@ -15,28 +15,19 @@
  * limitations under the License.
  */
 
-package v4
+package config
 
-import (
-	"net/http"
-
-	"github.com/apache/servicecomb-service-center/pkg/rest"
-)
-
-type Governance struct {
+//Config is yaml file struct
+type Config struct {
+	Gov Gov `yaml:"gov"`
+	//config from cli
+	ConfigFile string
 }
-
-func (t *Governance) Create(w http.ResponseWriter, req *http.Request) {
-
+type Gov struct {
+	DistOptions []DistributorOptions `yaml:"plugins"`
 }
-func (t *Governance) List(w http.ResponseWriter, req *http.Request) {
-
-}
-func (t *Governance) URLPatterns() []rest.Route {
-	return []rest.Route{
-		//servicecomb.trafficMarker.{name}
-		//servicecomb.rateLimiting.{name}
-		{Method: http.MethodPost, Path: "/v4/:project/governance/:customPolicyKind", Func: t.Create},
-		{Method: http.MethodGet, Path: "/v4/:project/governance/:customPolicyKind/", Func: t.List},
-	}
+type DistributorOptions struct {
+	Name     string `yaml:"name"`
+	Type     string `yaml:"type"`
+	Endpoint string `yaml:"endpoint"`
 }

@@ -19,6 +19,7 @@ package accesslog
 
 import (
 	"fmt"
+	"github.com/apache/servicecomb-service-center/server/core/config"
 	"net/http"
 	"os"
 	"time"
@@ -27,7 +28,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/core"
 	svr "github.com/apache/servicecomb-service-center/server/rest"
 )
 
@@ -97,14 +97,14 @@ func NewAccessLogHandler(l *log.Logger) *Handler {
 
 // RegisterHandlers registers an access log handler to the handler chain
 func RegisterHandlers() {
-	if !core.ServerInfo.Config.EnableAccessLog {
+	if !config.ServerInfo.Config.EnableAccessLog {
 		return
 	}
 	logger := log.NewLogger(log.Config{
-		LoggerFile:     os.ExpandEnv(core.ServerInfo.Config.AccessLogFile),
+		LoggerFile:     os.ExpandEnv(config.ServerInfo.Config.AccessLogFile),
 		LogFormatText:  true,
-		LogRotateSize:  int(core.ServerInfo.Config.LogRotateSize),
-		LogBackupCount: int(core.ServerInfo.Config.LogBackupCount),
+		LogRotateSize:  int(config.ServerInfo.Config.LogRotateSize),
+		LogBackupCount: int(config.ServerInfo.Config.LogBackupCount),
 		NoCaller:       true,
 		NoTime:         true,
 		NoLevel:        true,
