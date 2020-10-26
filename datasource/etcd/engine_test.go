@@ -18,43 +18,25 @@
 package etcd_test
 
 // initialize
-import (
-	"github.com/apache/servicecomb-service-center/datasource"
-	_ "github.com/apache/servicecomb-service-center/server/bootstrap"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
-)
+import _ "github.com/apache/servicecomb-service-center/datasource/etcd/client/buildin"
 import _ "github.com/apache/servicecomb-service-center/server"
 
 import (
 	"context"
 	"fmt"
-	"testing"
 	"time"
 
+	"github.com/apache/servicecomb-service-center/datasource"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
-	"github.com/astaxie/beego"
-
+	"github.com/apache/servicecomb-service-center/server/core/proto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-func init() {
-	testing.Init()
-	apt.Initialize()
-}
-
-var _ = BeforeSuite(func() {
-	beego.AppConfig.Set("registry_plugin", "etcd")
-	//clear service created in last test
-	time.Sleep(timeLimit)
-	_ = datasource.Instance().ClearNoInstanceServices(context.Background(), timeLimit)
-})
-
 // map[domainProject][serviceName]*serviceCleanInfo
 var svcCleanInfos = make(map[string]map[string]*serviceCleanInfo)
-var timeLimit = 2 * time.Second
 
 type serviceCleanInfo struct {
 	ServiceName  string
@@ -63,12 +45,7 @@ type serviceCleanInfo struct {
 	ShouldClear  bool
 }
 
-func TestTask(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Task Suite")
-}
-
-func getContext(domain string, project string) context.Context {
+func getContextWith(domain string, project string) context.Context {
 	return util.SetContext(
 		util.SetDomainProject(context.Background(), domain, project),
 		util.CtxNocache, "1")
@@ -91,7 +68,7 @@ func createService(domain string, project string, name string, withInstance bool
 			},
 		}
 	}
-	ctx := getContext(domain, project)
+	ctx := getContextWith(domain, project)
 	svcResp, err := apt.ServiceAPI.Create(ctx, svc)
 	Expect(err).To(BeNil())
 	Expect(svcResp).NotTo(BeNil())
@@ -119,7 +96,7 @@ func checkServiceCleared(domain string, project string) {
 		getSvcReq := &pb.GetServiceRequest{
 			ServiceId: v.ServiceId,
 		}
-		ctx := getContext(domain, project)
+		ctx := getContextWith(domain, project)
 		getSvcResp, err := apt.ServiceAPI.GetOne(ctx, getSvcReq)
 		Expect(err).To(BeNil())
 		Expect(getSvcResp).NotTo(BeNil())
@@ -154,7 +131,3 @@ var _ = Describe("clear service", func() {
 	Describe("domain project 1", serviceClearCheckFunc("default1", "default"))
 	Describe("domain project 2", serviceClearCheckFunc("default2", "default"))
 })
-var _ = func() bool {
-
-	return true
-}()

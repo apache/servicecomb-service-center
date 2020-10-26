@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package etcd
+package etcd_test
 
 import (
 	"github.com/apache/servicecomb-service-center/datasource"
@@ -23,7 +23,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"github.com/apache/servicecomb-service-center/server/service/event"
-	"github.com/go-chassis/go-archaius"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -31,17 +30,6 @@ import (
 var deh event.DependencyEventHandler
 
 func Test_Creat(t *testing.T) {
-
-	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
-		return NewDataSource(opts), nil
-	})
-
-	err := datasource.Init(datasource.Options{
-		Endpoint:       "",
-		PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.ms.name", "etcd")),
-	})
-	assert.NoError(t, err)
-
 	var (
 		consumerId1 string
 		consumerId2 string
@@ -418,16 +406,6 @@ func Test_Creat(t *testing.T) {
 }
 
 func Test_Get(t *testing.T) {
-	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
-		return NewDataSource(opts), nil
-	})
-
-	err := datasource.Init(datasource.Options{
-		Endpoint:       "",
-		PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.ms.name", "etcd")),
-	})
-	assert.NoError(t, err)
-
 	var (
 		consumerId1 string
 		providerId1 string

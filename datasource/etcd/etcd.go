@@ -22,14 +22,15 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/job"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/mux"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"time"
 )
 
 func init() {
-	// TODO: set logger
 	datasource.Install("etcd", NewDataSource)
+	datasource.Install("embeded_etcd", NewDataSource)
 }
 
 type DataSource struct {
@@ -61,6 +62,8 @@ func NewDataSource(opts datasource.Options) (datasource.DataSource, error) {
 
 func (ds *DataSource) initialize() error {
 	// TODO: init dependency members
+	// init client/sd plugins
+	ds.initPlugins()
 	// Wait for kv store ready
 	ds.initKvStore()
 	// Compact
@@ -68,6 +71,17 @@ func (ds *DataSource) initialize() error {
 	// Jobs
 	job.ClearNoInstanceServices()
 	return nil
+}
+
+func (ds *DataSource) initPlugins() {
+	err := client.Init(client.Options{PluginImplName: "etcd"})
+	if err != nil {
+		log.Fatalf(err, "client init failed")
+	}
+	err = sd.Init(sd.Options{PluginImplName: "etcd"})
+	if err != nil {
+		log.Fatalf(err, "sd init failed")
+	}
 }
 
 func (ds *DataSource) initKvStore() {

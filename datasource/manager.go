@@ -61,7 +61,7 @@ func Init(opts Options) error {
 	if err != nil {
 		return err
 	}
-	log.Info(fmt.Sprintf("storage shim plugin [%s@%s] enabled", opts.PluginImplName, opts.Endpoint))
+	log.Info(fmt.Sprintf("datasource plugin [%s] enabled", opts.PluginImplName))
 	return nil
 }
 

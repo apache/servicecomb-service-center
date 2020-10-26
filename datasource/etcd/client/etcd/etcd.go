@@ -87,15 +87,10 @@ func (c *Client) Initialize() (err error) {
 		c.AutoSyncInterval = etcd.Configuration().AutoSyncInterval
 	}
 
-	for i := 0; ; i++ {
-		c.Client, err = c.newClient()
-		if err == nil {
-			break
-		}
-
-		t := backoff.GetBackoff().Delay(i)
-		log.Errorf(err, "initialize etcd client[%v] failed, retry after %s", c.Endpoints, t)
-		<-time.After(t)
+	c.Client, err = c.newClient()
+	if err != nil {
+		log.Errorf(err, "get etcd client %v failed.", c.Endpoints)
+		return
 	}
 
 	c.HealthCheck()

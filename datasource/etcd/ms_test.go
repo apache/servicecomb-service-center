@@ -15,10 +15,11 @@
  * limitations under the License.
  */
 
-package etcd
+package etcd_test
 
 import (
 	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/datasource/etcd"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -43,16 +44,6 @@ func TestInit(t *testing.T) {
 
 func TestService_Register(t *testing.T) {
 	t.Run("Register service after init & install, should pass", func(t *testing.T) {
-		datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
-			return NewDataSource(opts), nil
-		})
-
-		err := datasource.Init(datasource.Options{
-			Endpoint:       "",
-			PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
-		})
-		assert.NoError(t, err)
-
 		size := quota.DefaultSchemaQuota + 1
 		paths := make([]*pb.ServicePath, 0, size)
 		properties := make(map[string]string, size)
@@ -88,15 +79,6 @@ func TestService_Register(t *testing.T) {
 	})
 
 	t.Run("register service with same key", func(t *testing.T) {
-		datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
-			return NewDataSource(opts), nil
-		})
-		err := datasource.Init(datasource.Options{
-			Endpoint:       "",
-			PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
-		})
-		assert.NoError(t, err)
-
 		// serviceName: some-relay-ms-service-name
 		// alias: sr-ms-service-name
 		resp, err := datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
@@ -242,15 +224,6 @@ func TestService_Register(t *testing.T) {
 
 	t.Run("same serviceId,different service, can not register again,error is same as the service register twice",
 		func(t *testing.T) {
-			datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
-				return NewDataSource(opts), nil
-			})
-			err := datasource.Init(datasource.Options{
-				Endpoint:       "",
-				PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
-			})
-			assert.NoError(t, err)
-
 			resp, err := datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
 				Service: &pb.MicroService{
 					ServiceId:   "same-serviceId-service-ms",
@@ -292,29 +265,12 @@ func TestService_Register(t *testing.T) {
 func TestService_Get(t *testing.T) {
 	// get service test
 	t.Run("query all services, should pass", func(t *testing.T) {
-		datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
-			return NewDataSource(opts), nil
-		})
-		err := datasource.Init(datasource.Options{
-			Endpoint:       "",
-			PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
-		})
-		assert.NoError(t, err)
 		resp, err := datasource.Instance().GetServices(getContext(), &pb.GetServicesRequest{})
 		assert.NoError(t, err)
 		assert.Greater(t, len(resp.Services), 0)
 	})
 
 	t.Run("get a exist service, should pass", func(t *testing.T) {
-		datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
-			return NewDataSource(opts), nil
-		})
-		err := datasource.Init(datasource.Options{
-			Endpoint:       "",
-			PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
-		})
-		assert.NoError(t, err)
-
 		request := &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
 				ServiceId:   "ms-service-query-id",
@@ -339,15 +295,6 @@ func TestService_Get(t *testing.T) {
 	})
 
 	t.Run("query a service by a not existed serviceId, should not pass", func(t *testing.T) {
-		datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
-			return NewDataSource(opts), nil
-		})
-		err := datasource.Init(datasource.Options{
-			Endpoint:       "",
-			PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
-		})
-		assert.NoError(t, err)
-
 		// not exist service
 		resp, err := datasource.Instance().GetService(getContext(), &pb.GetServiceRequest{
 			ServiceId: "no-exist-service",
@@ -362,17 +309,6 @@ func TestService_Exist(t *testing.T) {
 		serviceId1 string
 		serviceId2 string
 	)
-
-	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
-		return NewDataSource(opts), nil
-	})
-
-	err := datasource.Init(datasource.Options{
-		Endpoint:       "",
-		PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
-	})
-	assert.NoError(t, err)
-
 	t.Run("create service", func(t *testing.T) {
 		svc := &pb.MicroService{
 			Alias:       "es_service_ms",
@@ -530,16 +466,6 @@ func TestService_Exist(t *testing.T) {
 }
 
 func TestService_Update(t *testing.T) {
-	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
-		return NewDataSource(opts), nil
-	})
-
-	err := datasource.Init(datasource.Options{
-		Endpoint:       "",
-		PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
-	})
-	assert.NoError(t, err)
-
 	var serviceId string
 
 	t.Run("create service", func(t *testing.T) {
@@ -622,16 +548,6 @@ func TestService_Update(t *testing.T) {
 }
 
 func TestService_Delete(t *testing.T) {
-	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
-		return NewDataSource(opts), nil
-	})
-
-	err := datasource.Init(datasource.Options{
-		Endpoint:       "",
-		PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
-	})
-	assert.NoError(t, err)
-
 	var (
 		serviceContainInstId string
 		serviceNoInstId      string
@@ -738,16 +654,6 @@ func TestService_Delete(t *testing.T) {
 }
 
 func TestService_Info(t *testing.T) {
-	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
-		return NewDataSource(opts), nil
-	})
-
-	err := datasource.Init(datasource.Options{
-		Endpoint:       "",
-		PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
-	})
-	assert.NoError(t, err)
-
 	t.Run("get all services", func(t *testing.T) {
 		log.Info("should be passed")
 		resp, err := datasource.Instance().GetServicesInfo(getContext(), &pb.GetServicesInfoRequest{
@@ -784,16 +690,6 @@ func TestService_Info(t *testing.T) {
 }
 
 func TestService_Detail(t *testing.T) {
-	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
-		return NewDataSource(opts), nil
-	})
-
-	err := datasource.Init(datasource.Options{
-		Endpoint:       "",
-		PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
-	})
-	assert.NoError(t, err)
-
 	var (
 		serviceId string
 	)
@@ -864,16 +760,6 @@ func TestService_Detail(t *testing.T) {
 }
 
 func TestApplication_Get(t *testing.T) {
-	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
-		return NewDataSource(opts), nil
-	})
-
-	err := datasource.Init(datasource.Options{
-		Endpoint:       "",
-		PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
-	})
-	assert.NoError(t, err)
-
 	t.Run("execute 'get apps' operation", func(t *testing.T) {
 		log.Info("when request is valid, should be passed")
 		resp, err := datasource.Instance().GetApplications(getContext(), &pb.GetAppsRequest{})
@@ -889,16 +775,6 @@ func TestApplication_Get(t *testing.T) {
 }
 
 func TestInstance_Create(t *testing.T) {
-	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
-		return NewDataSource(opts), nil
-	})
-
-	err := datasource.Init(datasource.Options{
-		Endpoint:       "",
-		PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
-	})
-	assert.NoError(t, err)
-
 	var serviceId string
 
 	t.Run("create service", func(t *testing.T) {
@@ -973,15 +849,6 @@ func TestInstance_Create(t *testing.T) {
 }
 
 func TestInstance_HeartBeat(t *testing.T) {
-	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
-		return NewDataSource(opts), nil
-	})
-	err := datasource.Init(datasource.Options{
-		Endpoint:       "",
-		PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
-	})
-	assert.NoError(t, err)
-
 	var (
 		serviceId   string
 		instanceId1 string
@@ -1078,15 +945,6 @@ func TestInstance_HeartBeat(t *testing.T) {
 }
 
 func TestInstance_Update(t *testing.T) {
-	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
-		return NewDataSource(opts), nil
-	})
-	err := datasource.Init(datasource.Options{
-		Endpoint:       "",
-		PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
-	})
-	assert.NoError(t, err)
-
 	var (
 		serviceId  string
 		instanceId string
@@ -1245,15 +1103,6 @@ func TestInstance_Update(t *testing.T) {
 }
 
 func TestInstance_Query(t *testing.T) {
-	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
-		return NewDataSource(opts), nil
-	})
-	err := datasource.Init(datasource.Options{
-		Endpoint:       "",
-		PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
-	})
-	assert.NoError(t, err)
-
 	var (
 		serviceId1  string
 		serviceId2  string
@@ -1915,15 +1764,6 @@ func TestInstance_Query(t *testing.T) {
 }
 
 func TestInstance_GetOne(t *testing.T) {
-	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
-		return NewDataSource(opts), nil
-	})
-	err := datasource.Init(datasource.Options{
-		Endpoint:       "",
-		PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
-	})
-	assert.NoError(t, err)
-
 	var (
 		serviceId1  string
 		serviceId2  string
@@ -2043,15 +1883,6 @@ func TestInstance_GetOne(t *testing.T) {
 }
 
 func TestInstance_Unregister(t *testing.T) {
-	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
-		return NewDataSource(opts), nil
-	})
-	err := datasource.Init(datasource.Options{
-		Endpoint:       "",
-		PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
-	})
-	assert.NoError(t, err)
-
 	var (
 		serviceId  string
 		instanceId string
@@ -2118,15 +1949,6 @@ func TestInstance_Unregister(t *testing.T) {
 }
 
 func TestSchema_Create(t *testing.T) {
-	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
-		return NewDataSource(opts), nil
-	})
-	err := datasource.Init(datasource.Options{
-		Endpoint:       "",
-		PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
-	})
-	assert.NoError(t, err)
-
 	var (
 		serviceIdDev string
 	)
@@ -2762,7 +2584,7 @@ func TestSchema_Create(t *testing.T) {
 		}
 		log.Info("schema edit not allowed, add a schema with new schemaId should fail")
 
-		localMicroServiceDs := &DataSource{SchemaEditable: false}
+		localMicroServiceDs := &etcd.DataSource{SchemaEditable: false}
 		respModifySchemas, err = localMicroServiceDs.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
 			ServiceId: serviceIdPro1,
 			Schemas:   schemas,
@@ -2771,7 +2593,7 @@ func TestSchema_Create(t *testing.T) {
 		assert.Equal(t, scerr.ErrUndefinedSchemaID, respModifySchemas.Response.GetCode())
 
 		log.Info("schema edit allowed, add a schema with new schemaId, should pass")
-		localMicroServiceDs = &DataSource{SchemaEditable: true}
+		localMicroServiceDs = &etcd.DataSource{SchemaEditable: true}
 		respModifySchemas, err = localMicroServiceDs.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
 			ServiceId: serviceIdPro1,
 			Schemas:   schemas,
@@ -2821,7 +2643,7 @@ func TestSchema_Create(t *testing.T) {
 		assert.Equal(t, []string{"first_schemaId_ms"}, respService.Service.Schemas)
 
 		log.Info("schema edit not allowed, modify schema should fail")
-		localMicroServiceDs := &DataSource{SchemaEditable: false}
+		localMicroServiceDs := &etcd.DataSource{SchemaEditable: false}
 		respModifySchema, err := localMicroServiceDs.ModifySchema(getContext(), &pb.ModifySchemaRequest{
 			ServiceId: serviceIdPro1,
 			SchemaId:  schemas[0].SchemaId,
@@ -2832,7 +2654,7 @@ func TestSchema_Create(t *testing.T) {
 		assert.Equal(t, scerr.ErrModifySchemaNotAllow, respModifySchema.Response.GetCode())
 
 		log.Info("schema edit allowed, add a schema with new schemaId, should pass")
-		localMicroServiceDs = &DataSource{SchemaEditable: true}
+		localMicroServiceDs = &etcd.DataSource{SchemaEditable: true}
 		respModifySchema, err = localMicroServiceDs.ModifySchema(getContext(), &pb.ModifySchemaRequest{
 			ServiceId: serviceIdPro1,
 			SchemaId:  schemas[0].SchemaId,
@@ -2845,15 +2667,6 @@ func TestSchema_Create(t *testing.T) {
 }
 
 func TestSchema_Exist(t *testing.T) {
-	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
-		return NewDataSource(opts), nil
-	})
-	err := datasource.Init(datasource.Options{
-		Endpoint:       "",
-		PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
-	})
-	assert.NoError(t, err)
-
 	var (
 		serviceId string
 	)
@@ -2928,15 +2741,6 @@ func TestSchema_Exist(t *testing.T) {
 }
 
 func TestSchema_Get(t *testing.T) {
-	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
-		return NewDataSource(opts), nil
-	})
-	err := datasource.Init(datasource.Options{
-		Endpoint:       "",
-		PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
-	})
-	assert.NoError(t, err)
-
 	var (
 		serviceId  string
 		serviceId1 string
@@ -3090,15 +2894,6 @@ func TestSchema_Get(t *testing.T) {
 }
 
 func TestSchema_Delete(t *testing.T) {
-	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
-		return NewDataSource(opts), nil
-	})
-	err := datasource.Init(datasource.Options{
-		Endpoint:       "",
-		PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
-	})
-	assert.NoError(t, err)
-
 	var (
 		serviceId string
 	)
@@ -3171,15 +2966,6 @@ func TestSchema_Delete(t *testing.T) {
 }
 
 func TestRule_Add(t *testing.T) {
-	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
-		return NewDataSource(opts), nil
-	})
-	err := datasource.Init(datasource.Options{
-		Endpoint:       "",
-		PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
-	})
-	assert.NoError(t, err)
-
 	var (
 		serviceId1 string
 		serviceId2 string
@@ -3309,15 +3095,6 @@ func TestRule_Add(t *testing.T) {
 }
 
 func TestRule_Get(t *testing.T) {
-	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
-		return NewDataSource(opts), nil
-	})
-	err := datasource.Init(datasource.Options{
-		Endpoint:       "",
-		PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
-	})
-	assert.NoError(t, err)
-
 	var (
 		serviceId string
 		ruleId    string
@@ -3374,15 +3151,6 @@ func TestRule_Get(t *testing.T) {
 }
 
 func TestRule_Update(t *testing.T) {
-	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
-		return NewDataSource(opts), nil
-	})
-	err := datasource.Init(datasource.Options{
-		Endpoint:       "",
-		PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
-	})
-	assert.NoError(t, err)
-
 	var (
 		serviceId string
 		ruleId    string
@@ -3476,15 +3244,6 @@ func TestRule_Update(t *testing.T) {
 }
 
 func TestRule_Delete(t *testing.T) {
-	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
-		return NewDataSource(opts), nil
-	})
-	err := datasource.Init(datasource.Options{
-		Endpoint:       "",
-		PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
-	})
-	assert.NoError(t, err)
-
 	var (
 		serviceId string
 		ruleId    string
@@ -3556,15 +3315,6 @@ func TestRule_Delete(t *testing.T) {
 }
 
 func TestRule_Permission(t *testing.T) {
-	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
-		return NewDataSource(opts), nil
-	})
-	err := datasource.Init(datasource.Options{
-		Endpoint:       "",
-		PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
-	})
-	assert.NoError(t, err)
-
 	var (
 		consumerVersion string
 		consumerTag     string
@@ -3746,16 +3496,6 @@ func TestTags_Add(t *testing.T) {
 		serviceId2 string
 	)
 
-	// init
-	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
-		return NewDataSource(opts), nil
-	})
-	err := datasource.Init(datasource.Options{
-		Endpoint:       "",
-		PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
-	})
-	assert.NoError(t, err)
-
 	// create service
 	t.Run("create service", func(t *testing.T) {
 		svc1 := &pb.MicroService{
@@ -3842,15 +3582,6 @@ func TestTags_Add(t *testing.T) {
 
 func TestTags_Get(t *testing.T) {
 	var serviceId string
-	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
-		return NewDataSource(opts), nil
-	})
-	err := datasource.Init(datasource.Options{
-		Endpoint:       "",
-		PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
-	})
-	assert.NoError(t, err)
-
 	t.Run("create service and add tags", func(t *testing.T) {
 		svc := &pb.MicroService{
 			AppId:       "get_tag_group_ms",
@@ -3912,15 +3643,6 @@ func TestTags_Get(t *testing.T) {
 
 func TestTag_Update(t *testing.T) {
 	var serviceId string
-	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
-		return NewDataSource(opts), nil
-	})
-	err := datasource.Init(datasource.Options{
-		Endpoint:       "",
-		PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
-	})
-	assert.NoError(t, err)
-
 	t.Run("add service and add tags", func(t *testing.T) {
 		svc := &pb.MicroService{
 			AppId:       "update_tag_group_ms",
@@ -4086,15 +3808,6 @@ func TestTag_Update(t *testing.T) {
 
 func TestTags_Delete(t *testing.T) {
 	var serviceId string
-	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
-		return NewDataSource(opts), nil
-	})
-	err := datasource.Init(datasource.Options{
-		Endpoint:       "",
-		PluginImplName: datasource.ImplName(archaius.GetString("servicecomb.datasource.name", "etcd")),
-	})
-	assert.NoError(t, err)
-
 	t.Run("create service and add tags", func(t *testing.T) {
 		resp, err := datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
 			Service: &pb.MicroService{

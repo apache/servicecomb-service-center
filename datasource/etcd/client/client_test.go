@@ -20,7 +20,6 @@ package client
 import (
 	"context"
 	"errors"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/pkg/task"
 	"testing"
 )
@@ -53,33 +52,28 @@ func (a *mockAsyncTaskService) LatestHandled(key string) (task.Task, error) {
 	return nil, errors.New("error")
 }
 
-func TestStore(t *testing.T) {
-	s := &kv.KvStore{}
-	s.Initialize()
-
+func TestKeepAlive(t *testing.T) {
 	tt := NewLeaseAsyncTask(OpGet())
 	tt.TTL = 1
-	s.taskService = &mockAsyncTaskService{Task: tt}
+	task.RegisterService(&mockAsyncTaskService{Task: tt})
 
 	// KeepAlive case: add task error
-	ttl, err := s.KeepAlive(context.Background(), WithKey([]byte("error")))
+	ttl, err := KeepAlive(context.Background(), WithKey([]byte("error")))
 	if err == nil || ttl > 0 {
 		t.Fatalf("TestStore failed")
 	}
 
 	// KeepAlive case: get last task error
 	tt.key = "LeaseAsyncTask_a"
-	ttl, err = s.KeepAlive(context.Background(), WithKey([]byte("b")))
+	ttl, err = KeepAlive(context.Background(), WithKey([]byte("b")))
 	if err == nil || ttl > 0 {
 		t.Fatalf("TestStore failed")
 	}
 
 	// KeepAlive case: get last task error
 	tt.key = "LeaseAsyncTask_a"
-	ttl, err = s.KeepAlive(context.Background(), WithKey([]byte("a")))
+	ttl, err = KeepAlive(context.Background(), WithKey([]byte("a")))
 	if err != nil || ttl != 1 {
 		t.Fatalf("TestStore failed")
 	}
-
-	s.Stop()
 }

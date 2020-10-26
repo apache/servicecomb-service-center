@@ -14,16 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package client
+package client_test
 
 import (
 	"context"
 	"fmt"
+	. "github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client/buildin"
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
-	simple "github.com/apache/servicecomb-service-center/pkg/time"
 	"testing"
-	"time"
 )
 
 type mockRegistry struct {
@@ -40,12 +39,8 @@ func (c *mockRegistry) LeaseRenew(ctx context.Context, leaseID int64) (TTL int64
 
 func TestLeaseTask_Do(t *testing.T) {
 	c := &mockRegistry{}
-	lt := &LeaseTask{
-		Client:   c,
-		key:      ToLeaseAsyncTaskKey("/a"),
-		LeaseID:  1,
-		recvTime: simple.FromTime(time.Now()),
-	}
+	lt := NewLeaseAsyncTask(OptionsToOp(WithStrKey("/a"), WithLease(1)))
+	lt.Client = c
 
 	c.LeaseErr = errorsEx.InternalError("lease not found")
 	err := lt.Do(context.Background())

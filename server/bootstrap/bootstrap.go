@@ -16,14 +16,14 @@
  */
 package bootstrap
 
+//etcd
+import _ "github.com/apache/servicecomb-service-center/datasource/etcd/bootstrap"
+
 //rest v3 api
 import _ "github.com/apache/servicecomb-service-center/server/rest/controller/v3"
 
 //rest v4 api
 import _ "github.com/apache/servicecomb-service-center/server/rest/controller/v4"
-
-//etcd
-import _ "github.com/apache/servicecomb-service-center/datasource/etcd/bootstrap"
 
 //cipher
 import _ "github.com/apache/servicecomb-service-center/server/plugin/security/cipher/buildin"
@@ -58,6 +58,7 @@ import _ "github.com/apache/servicecomb-service-center/server/rest/admin"
 import _ "github.com/apache/servicecomb-service-center/server/metric"
 
 import (
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/handler/accesslog"
 	"github.com/apache/servicecomb-service-center/server/handler/auth"
@@ -73,6 +74,8 @@ import (
 
 func init() {
 	log.Info("BootStrap ServiceComb.io Edition")
+
+	datasource.Init(datasource.Options{PluginImplName: "etcd"})
 
 	// intercept requests before routing.
 	interceptor.RegisterInterceptFunc(access.Intercept)

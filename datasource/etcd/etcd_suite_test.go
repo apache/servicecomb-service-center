@@ -14,16 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package etcd
+package etcd_test
 
 // initialize
-import (
-	_ "github.com/apache/servicecomb-service-center/server/bootstrap"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
-	"github.com/apache/servicecomb-service-center/server/service"
-)
+import _ "github.com/apache/servicecomb-service-center/server/bootstrap"
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/astaxie/beego"
@@ -31,21 +28,22 @@ import (
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
 	"testing"
+	"time"
 )
 
-var serviceResource proto.ServiceCtrlServer
-var instanceResource proto.ServiceInstanceCtrlServerEx
+var timeLimit = 2 * time.Second
 
 func init() {
 	beego.AppConfig.Set("registry_plugin", "etcd")
 	testing.Init()
-	core.Initialize()
 }
 
 var _ = BeforeSuite(func() {
 	//init plugin
 	core.ServerInfo.Config.EnableCache = false
-	serviceResource, instanceResource = service.AssembleResources()
+	//clear service created in last test
+	time.Sleep(timeLimit)
+	_ = datasource.Instance().ClearNoInstanceServices(context.Background(), timeLimit)
 })
 
 func getContext() context.Context {
@@ -60,8 +58,8 @@ func depGetContext() context.Context {
 		util.CtxNocache, "1")
 }
 
-func TestGrpc(t *testing.T) {
+func TestEtcd(t *testing.T) {
 	RegisterFailHandler(Fail)
-	junitReporter := reporters.NewJUnitReporter("model.junit.xml")
-	RunSpecsWithDefaultAndCustomReporters(t, "model Suite", []Reporter{junitReporter})
+	junitReporter := reporters.NewJUnitReporter("etcd.junit.xml")
+	RunSpecsWithDefaultAndCustomReporters(t, "etcd Suite", []Reporter{junitReporter})
 }

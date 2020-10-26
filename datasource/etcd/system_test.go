@@ -14,30 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package etcd
+package etcd_test
 
 import (
 	"github.com/apache/servicecomb-service-center/datasource"
-	_ "github.com/apache/servicecomb-service-center/datasource/etcd/bootstrap"
 	"github.com/apache/servicecomb-service-center/pkg/model"
-	"github.com/astaxie/beego"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
-
-func init() {
-	beego.AppConfig.Set("registry_plugin", "etcd")
-	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
-		return NewDataSource(opts), nil
-	})
-	err := datasource.Init(datasource.Options{
-		Endpoint:       "",
-		PluginImplName: "etcd",
-	})
-	if err != nil {
-		panic("failed to register etcd auth plugin")
-	}
-}
 
 func TestAdminService_Dump(t *testing.T) {
 	t.Log("execute 'dump' operation,when get all,should be passed")

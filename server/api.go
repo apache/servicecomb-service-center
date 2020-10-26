@@ -187,7 +187,7 @@ func (s *APIServer) Stop() {
 }
 
 func (s *APIServer) selfRegister() {
-	err := datasource.Instance().SelfUnregister(context.Background())
+	err := datasource.Instance().SelfRegister(context.Background())
 	if err != nil {
 		s.err <- err
 		return

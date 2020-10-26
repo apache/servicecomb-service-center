@@ -19,7 +19,9 @@ package client
 
 import (
 	"fmt"
+	"github.com/apache/servicecomb-service-center/pkg/backoff"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"time"
 )
 
 type newClientFunc func(opts Options) Registry
@@ -37,12 +39,18 @@ func Install(pluginImplName string, newFunc newClientFunc) {
 // construct storage plugin instance
 // invoked by sc main process
 func Init(opts Options) error {
-	inst, err := New(opts)
-	if err != nil {
-		return err
+	for i := 0; ; i++ {
+		inst, err := New(opts)
+		if err == nil {
+			pluginInst = inst
+			break
+		}
+
+		t := backoff.GetBackoff().Delay(i)
+		log.Errorf(err, "initialize client[%v] failed, retry after %s", opts.PluginImplName, t)
+		<-time.After(t)
 	}
-	pluginInst = inst
-	log.Info(fmt.Sprintf("cache plugin [%s] enabled", opts.PluginImplName))
+	log.Info(fmt.Sprintf("client plugin [%s] enabled", opts.PluginImplName))
 	return nil
 }
 
@@ -56,11 +64,18 @@ func New(opts Options) (Registry, error) {
 		return nil, fmt.Errorf("plugin implement not supported [%s]", opts.PluginImplName)
 	}
 	inst := f(opts)
-	return inst, nil
+	select {
+	case err := <-inst.Err():
+		return nil, err
+	case <-inst.Ready():
+		return inst, nil
+	}
 }
 
 // Instance is the instance of Etcd client
 func Instance() Registry {
-	<-pluginInst.Ready()
+	if pluginInst != nil {
+		<-pluginInst.Ready()
+	}
 	return pluginInst
 }

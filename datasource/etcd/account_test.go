@@ -1,16 +1,9 @@
-package etcd
+package etcd_test
 
 import (
 	"context"
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
-	etcd2 "github.com/apache/servicecomb-service-center/datasource/etcd/client/etcd"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/sd/etcd"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
-	mgr "github.com/apache/servicecomb-service-center/server/plugin"
-	"github.com/apache/servicecomb-service-center/server/plugin/tracing"
-	"github.com/apache/servicecomb-service-center/server/plugin/tracing/pzipkin"
 	"github.com/astaxie/beego"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -37,20 +30,6 @@ var (
 
 func init() {
 	beego.AppConfig.Set("registry_plugin", "etcd")
-	client.Install("etcd", etcd2.NewRegistry)
-	sd.Install("buildin", etcd.NewRepository)
-	sd.Install("etcd", etcd.NewRepository)
-	mgr.RegisterPlugin(mgr.Plugin{Kind: tracing.TRACING, Name: "buildin", New: pzipkin.New})
-	datasource.Install("etcd", func(opts datasource.Options) (datasource.DataSource, error) {
-		return NewDataSource(opts), nil
-	})
-	err := datasource.Init(datasource.Options{
-		Endpoint:       "",
-		PluginImplName: "etcd",
-	})
-	if err != nil {
-		panic("failed to register etcd auth plugin")
-	}
 }
 
 func TestAccount(t *testing.T) {
