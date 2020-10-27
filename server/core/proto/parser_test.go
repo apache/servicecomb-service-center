@@ -36,7 +36,7 @@ func TestParseInnerValueTypeFunc(t *testing.T) {
 	}
 
 	r, err = StringParser.Unmarshal(nil)
-	if err == nil {
+	if err != nil {
 		t.Fatalf("StringParser.Unmarshal failed")
 	}
 	r, err = StringParser.Unmarshal([]byte("abc"))

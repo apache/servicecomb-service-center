@@ -17,11 +17,8 @@
 
 package util_test
 
-import (
-	_ "github.com/apache/servicecomb-service-center/datasource/etcd/bootstrap"
-	_ "github.com/apache/servicecomb-service-center/server/plugin/quota/buildin"
-)
-
+// initialize
+import _ "github.com/apache/servicecomb-service-center/server/bootstrap"
 import (
 	"context"
 	"testing"
@@ -40,8 +37,8 @@ func init() {
 
 func TestMicroservice(t *testing.T) {
 	RegisterFailHandler(Fail)
-	junitReporter := reporters.NewJUnitReporter("model.junit.xml")
-	RunSpecsWithDefaultAndCustomReporters(t, "model Suite", []Reporter{junitReporter})
+	junitReporter := reporters.NewJUnitReporter("util.junit.xml")
+	RunSpecsWithDefaultAndCustomReporters(t, "util Suite", []Reporter{junitReporter})
 }
 
 func TestFindServiceIds(t *testing.T) {
@@ -85,10 +82,10 @@ func TestGetService(t *testing.T) {
 		t.Fatalf("TestGetService failed")
 	}
 
-	_, err = serviceUtil.GetServiceWithRev(context.Background(), "", "", 1)
-	if err != nil {
-		t.Fatalf("TestGetService failed")
-	}
+	//_, err = serviceUtil.GetServiceWithRev(context.Background(), "", "", 1)
+	//if err != nil {
+	//	t.Fatalf("TestGetService failed")
+	//}
 }
 
 func TestServiceExist(t *testing.T) {

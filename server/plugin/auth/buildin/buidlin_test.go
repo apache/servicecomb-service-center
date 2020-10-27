@@ -17,19 +17,12 @@
 
 package buildin_test
 
+// initialize
+import _ "github.com/apache/servicecomb-service-center/server/bootstrap"
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
-	etcd2 "github.com/apache/servicecomb-service-center/datasource/etcd/client/etcd"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/sd/etcd"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
-	mgr "github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/auth/buildin"
-	"github.com/apache/servicecomb-service-center/server/plugin/security/cipher"
-	plain "github.com/apache/servicecomb-service-center/server/plugin/security/cipher/buildin"
-	"github.com/apache/servicecomb-service-center/server/plugin/tracing"
-	"github.com/apache/servicecomb-service-center/server/plugin/tracing/pzipkin"
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
 	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
 	"github.com/astaxie/beego"
@@ -49,11 +42,6 @@ func init() {
 	beego.AppConfig.Set("rbac_enabled", "true")
 	beego.AppConfig.Set(rbac.PubFilePath, "./rbac.pub")
 	beego.AppConfig.Set("rbac_rsa_private_key_file", "./private.key")
-	client.Install("etcd", etcd2.NewRegistry)
-	sd.Install("buildin", etcd.NewRepository)
-	sd.Install("etcd", etcd.NewRepository)
-	mgr.RegisterPlugin(mgr.Plugin{cipher.CIPHER, "buildin", plain.New})
-	mgr.RegisterPlugin(mgr.Plugin{tracing.TRACING, "buildin", pzipkin.New})
 
 }
 func TestTokenAuthenticator_Identify(t *testing.T) {

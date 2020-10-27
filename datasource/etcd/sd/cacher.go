@@ -24,8 +24,8 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
-// CommonCacher implements pkg.Cacher.
-// CommonCacher is universal to manage cache of any cache.
+// CommonCacher implements sd.Cacher.
+// CommonCacher is universal to manage cache of any registry.
 // Use Cfg to set it's behavior.
 type CommonCacher struct {
 	Cfg *Config

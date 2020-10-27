@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package etcd
+package remote
 
 import (
 	"crypto/tls"

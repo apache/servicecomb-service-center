@@ -16,14 +16,14 @@
  */
 package sd
 
-// Adaptor is used to do service pkg.
+// Adaptor is used to do service discovery.
 // To improve the performance, Adaptor may use cache firstly in
 // service pkg.
 type Adaptor interface {
 	Runnable
 	// Indexer is used to search data from the cache.
 	Indexer
-	// Cacher is used to manage the cache's cache.
+	// Cacher is used to manage the registry's cache.
 	Cacher
 }
 

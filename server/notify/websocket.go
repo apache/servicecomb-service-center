@@ -22,7 +22,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/datasource"
-	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -65,7 +64,7 @@ func (wh *WebSocket) Init() error {
 	}
 
 	// put in publisher queue
-	publisher.Accept(wh)
+	Instance().Accept(wh)
 
 	log.Debugf("start watching instance status, watcher[%s], subject: %s, group: %s",
 		remoteAddr, wh.watcher.Subject(), wh.watcher.Group())
@@ -80,7 +79,7 @@ func (wh *WebSocket) SendTimeout() time.Duration {
 	return SendTimeout
 }
 
-func (wh *WebSocket) heartbeat(messageType int) error {
+func (wh *WebSocket) Heartbeat(messageType int) error {
 	err := wh.conn.WriteControl(messageType, []byte{}, time.Now().Add(wh.SendTimeout()))
 	if err != nil {
 		messageTypeName := "Ping"
@@ -110,7 +109,7 @@ func (wh *WebSocket) HandleWatchWebSocketControlMessage() {
 				message, remoteAddr, wh.watcher.Subject(), wh.watcher.Group())
 		}
 		wh.needPingWatcher = false
-		return wh.heartbeat(websocket.PongMessage)
+		return wh.Heartbeat(websocket.PongMessage)
 	})
 	// PONG
 	wh.conn.SetPongHandler(func(message string) error {
@@ -192,7 +191,6 @@ func (wh *WebSocket) HandleWatchWebSocketJob(o interface{}) {
 	defer wh.SetReady()
 
 	var (
-		job        *InstanceEvent
 		message    []byte
 		remoteAddr = wh.conn.RemoteAddr().String()
 	)
@@ -204,11 +202,6 @@ func (wh *WebSocket) HandleWatchWebSocketJob(o interface{}) {
 
 		message = util.StringToBytesWithNoCopy(fmt.Sprintf("watcher catch an err: %s", o.Error()))
 	case time.Time:
-		domainProject := util.ParseDomainProject(wh.ctx)
-		if !serviceUtil.ServiceExist(wh.ctx, domainProject, wh.watcher.Group()) {
-			message = util.StringToBytesWithNoCopy("Service does not exit.")
-			break
-		}
 		if exist, err := datasource.Instance().ExistServiceByID(wh.ctx, &pb.GetExistenceByIDRequest{
 			ServiceId: wh.watcher.Group(),
 		}); err != nil || !exist.Exist {
@@ -220,7 +213,7 @@ func (wh *WebSocket) HandleWatchWebSocketJob(o interface{}) {
 			return
 		}
 
-		if err := wh.heartbeat(websocket.PingMessage); err != nil {
+		if err := wh.Heartbeat(websocket.PingMessage); err != nil {
 			log.Errorf(err, "send 'Ping' message to watcher[%s] failed, subject: %s, group: %s",
 				remoteAddr, wh.watcher.Subject(), wh.watcher.Group())
 			return
@@ -261,8 +254,8 @@ func (wh *WebSocket) HandleWatchWebSocketJob(o interface{}) {
 	}
 
 	err := wh.WriteMessage(message)
-	if job != nil {
-		ReportPublishCompleted(job, err)
+	if evt, ok := o.(*InstanceEvent); ok {
+		ReportPublishCompleted(evt, err)
 	}
 	if err != nil {
 		log.Errorf(err, "watcher[%s] catch an err, subject: %s, group: %s",
@@ -296,11 +289,7 @@ func (wh *WebSocket) Stop() {
 func DoWebSocketListAndWatch(ctx context.Context, serviceID string, f func() ([]*pb.WatchInstanceResponse, int64), conn *websocket.Conn) {
 	domainProject := util.ParseDomainProject(ctx)
 	domain := util.ParseDomain(ctx)
-	socket := &WebSocket{
-		ctx:     ctx,
-		conn:    conn,
-		watcher: NewInstanceEventListWatcher(serviceID, domainProject, f),
-	}
+	socket := NewWebSocket(ctx, conn, NewInstanceEventListWatcher(serviceID, domainProject, f))
 
 	ReportSubscriber(domain, Websocket, 1)
 	process(socket)
@@ -322,5 +311,13 @@ func EstablishWebSocketError(conn *websocket.Conn, err error) {
 	log.Errorf(err, "establish[%s] websocket watch failed.", remoteAddr)
 	if err := conn.WriteMessage(websocket.TextMessage, util.StringToBytesWithNoCopy(err.Error())); err != nil {
 		log.Errorf(err, "establish[%s] websocket watch failed: write message failed.", remoteAddr)
+	}
+}
+
+func NewWebSocket(ctx context.Context, conn *websocket.Conn, watcher *InstanceEventListWatcher) *WebSocket {
+	return &WebSocket{
+		ctx:     ctx,
+		conn:    conn,
+		watcher: watcher,
 	}
 }

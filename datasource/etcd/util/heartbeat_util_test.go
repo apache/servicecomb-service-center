@@ -15,10 +15,11 @@
  * limitations under the License.
  */
 
-package util
+package util_test
 
 import (
 	"context"
+	. "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"testing"
 )
 
@@ -38,7 +39,7 @@ func TestKeepAliveLease(t *testing.T) {
 	}
 
 	_, err = KeepAliveLease(context.Background(), "", "", "", 0)
-	if err != nil {
+	if err == nil {
 		t.Fatalf("KeepAliveLease failed")
 	}
 }

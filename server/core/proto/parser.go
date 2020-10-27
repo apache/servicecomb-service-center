@@ -55,8 +55,8 @@ var (
 		return nil
 	}
 	TextUnmarshal ParseValueFunc = func(src []byte, dist interface{}) error {
-		if err := check(src, dist); err != nil {
-			return err
+		if dist == nil {
+			return errTargetNilPoint
 		}
 		d := dist.(*interface{})
 		*d = util.BytesToStringWithNoCopy(src)

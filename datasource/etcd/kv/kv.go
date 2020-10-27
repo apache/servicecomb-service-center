@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+// kv package provides a KvStore to manage the implementations of sd package, see types.go
 package kv
 
 import (

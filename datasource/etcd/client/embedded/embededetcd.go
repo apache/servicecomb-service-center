@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package embededetcd
+package embedded
 
 import (
 	"context"

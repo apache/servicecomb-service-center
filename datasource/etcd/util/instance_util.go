@@ -105,16 +105,16 @@ func GetInstanceCountOfOneService(ctx context.Context, domainProject string, ser
 }
 
 type EndpointIndexValue struct {
-	serviceID  string
-	instanceID string
+	ServiceID  string
+	InstanceID string
 }
 
 func ParseEndpointIndexValue(value []byte) EndpointIndexValue {
 	endpointValue := EndpointIndexValue{}
 	tmp := util.BytesToStringWithNoCopy(value)
 	splitedTmp := strings.Split(tmp, "/")
-	endpointValue.serviceID = splitedTmp[0]
-	endpointValue.instanceID = splitedTmp[1]
+	endpointValue.ServiceID = splitedTmp[0]
+	endpointValue.InstanceID = splitedTmp[1]
 	return endpointValue
 }
 
@@ -177,7 +177,7 @@ func QueryAllProvidersInstances(ctx context.Context, selfServiceID string) (resu
 			continue
 		}
 
-		kvs, err := queryServiceInstancesKvs(ctx, providerID, rev)
+		kvs, err := QueryServiceInstancesKvs(ctx, providerID, rev)
 		if err != nil {
 			log.Errorf(err, "get service[%s]'s provider[%s] instances with revision %d failed",
 				selfServiceID, providerID, rev)
@@ -201,7 +201,7 @@ func QueryAllProvidersInstances(ctx context.Context, selfServiceID string) (resu
 	return
 }
 
-func queryServiceInstancesKvs(ctx context.Context, serviceID string, rev int64) ([]*sd.KeyValue, error) {
+func QueryServiceInstancesKvs(ctx context.Context, serviceID string, rev int64) ([]*sd.KeyValue, error) {
 	domainProject := util.ParseDomainProject(ctx)
 	key := apt.GenerateInstanceKey(domainProject, serviceID, "")
 	resp, err := kv.Store().Instance().Search(ctx,

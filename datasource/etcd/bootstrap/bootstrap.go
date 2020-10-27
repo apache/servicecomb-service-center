@@ -23,10 +23,10 @@ import _ "github.com/apache/servicecomb-service-center/datasource/etcd"
 import _ "github.com/apache/servicecomb-service-center/datasource/etcd/client/buildin"
 
 //registry etcd
-import _ "github.com/apache/servicecomb-service-center/datasource/etcd/client/etcd"
+import _ "github.com/apache/servicecomb-service-center/datasource/etcd/client/remote"
 
 //registry etcd
-import _ "github.com/apache/servicecomb-service-center/datasource/etcd/client/embededetcd"
+import _ "github.com/apache/servicecomb-service-center/datasource/etcd/client/embedded"
 
 //discovery
 import _ "github.com/apache/servicecomb-service-center/datasource/etcd/sd/aggregate"

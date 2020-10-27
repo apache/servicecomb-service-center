@@ -1,6 +1,8 @@
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
+ * contributor license agreements.
+// initialize
+import _ "github.com/apache/servicecomb-service-center/server/bootstrap"  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The ASF licenses this file to You under the Apache License, Version 2.0
  * (the "License"); you may not use this file except in compliance with
@@ -13,9 +15,11 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
+*/
 package etcdsync_test
 
+// initialize
+import _ "github.com/apache/servicecomb-service-center/server/bootstrap"
 import (
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/etcdsync"
@@ -23,7 +27,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"testing"
 
-	_ "github.com/apache/servicecomb-service-center/datasource/etcd/client/etcd"
+	_ "github.com/apache/servicecomb-service-center/datasource/etcd/client/remote"
 	_ "github.com/apache/servicecomb-service-center/server/plugin/tracing/pzipkin"
 )
 

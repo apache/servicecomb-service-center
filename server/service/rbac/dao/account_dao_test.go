@@ -17,16 +17,11 @@
 
 package dao_test
 
+// initialize
+import _ "github.com/apache/servicecomb-service-center/server/bootstrap"
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
-	etcd2 "github.com/apache/servicecomb-service-center/datasource/etcd/client/etcd"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/sd/etcd"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
-	mgr "github.com/apache/servicecomb-service-center/server/plugin"
-	"github.com/apache/servicecomb-service-center/server/plugin/tracing"
-	"github.com/apache/servicecomb-service-center/server/plugin/tracing/pzipkin"
 	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
 	"github.com/astaxie/beego"
 	"github.com/stretchr/testify/assert"
@@ -36,11 +31,6 @@ import (
 
 func init() {
 	beego.AppConfig.Set("registry_plugin", "etcd")
-	client.Install("etcd", etcd2.NewRegistry)
-	sd.Install("buildin", etcd.NewRepository)
-	sd.Install("etcd", etcd.NewRepository)
-	mgr.RegisterPlugin(mgr.Plugin{tracing.TRACING, "buildin", pzipkin.New})
-
 }
 func TestAccountDao_CreateAccount(t *testing.T) {
 	dao.DeleteAccount(context.TODO(), "admin")

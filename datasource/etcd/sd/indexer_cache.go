@@ -26,7 +26,7 @@ import (
 	"context"
 )
 
-// CacheIndexer implements pkg.Indexer.
+// CacheIndexer implements sd.Indexer.
 // CacheIndexer searches data from cache.
 type CacheIndexer struct {
 	Cache CacheReader

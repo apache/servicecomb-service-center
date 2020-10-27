@@ -43,8 +43,8 @@ func init() {
 	repos = strings.Split(modes, ",")
 	log.Infof("aggregate_mode is %s", repos)
 
-	// here save the index if found the cache plugin in modes list,
-	// it is used for getting the one writable cache to handle requests
+	// here save the index if found the registry plugin in modes list,
+	// it is used for getting the one writable registry to handle requests
 	// from API layer.
 	registry := beego.AppConfig.String("registry_plugin")
 	for i, repo := range repos {

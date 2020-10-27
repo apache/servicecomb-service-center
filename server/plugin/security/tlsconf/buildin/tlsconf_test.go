@@ -29,7 +29,7 @@ import (
 func init() {
 	testing.Init()
 	core.Initialize()
-	sslRoot := "../../../../examples/service_center/ssl/"
+	sslRoot := "../../../../../examples/service_center/ssl/"
 	os.Setenv("SSL_ROOT", sslRoot)
 }
 

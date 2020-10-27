@@ -48,7 +48,7 @@ func (dep *Dependency) removeConsumerOfProviderRule(ctx context.Context) ([]clie
 			return nil, err
 		}
 		for key, tmp := range consumerValue.Dependency {
-			if ok := equalServiceDependency(tmp, dep.Consumer); ok {
+			if ok := EqualServiceDependency(tmp, dep.Consumer); ok {
 				consumerValue.Dependency = append(consumerValue.Dependency[:key], consumerValue.Dependency[key+1:]...)
 				break
 			}

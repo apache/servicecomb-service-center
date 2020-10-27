@@ -14,16 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package notify
+package notify_test
 
+// initialize
+import _ "github.com/apache/servicecomb-service-center/server/bootstrap"
 import (
 	"context"
 	"errors"
-	_ "github.com/apache/servicecomb-service-center/datasource/etcd/client/buildin"
-	_ "github.com/apache/servicecomb-service-center/datasource/etcd/sd/etcd"
 	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
+	. "github.com/apache/servicecomb-service-center/server/notify"
 	"github.com/gorilla/websocket"
 	"net/http"
 	"net/http/httptest"
@@ -76,11 +77,7 @@ func TestDoWebSocketListAndWatch(t *testing.T) {
 		return
 	})
 
-	ws := &WebSocket{
-		ctx:     context.Background(),
-		conn:    conn,
-		watcher: w,
-	}
+	ws := NewWebSocket(context.Background(), conn, w)
 	err := ws.Init()
 	if err != nil {
 		t.Fatalf("TestPublisher_Run")
@@ -94,11 +91,7 @@ func TestDoWebSocketListAndWatch(t *testing.T) {
 		w2 := NewInstanceEventListWatcher("g", "s", func() (results []*registry.WatchInstanceResponse, rev int64) {
 			return
 		})
-		ws2 := &WebSocket{
-			ctx:     context.Background(),
-			conn:    conn,
-			watcher: w2,
-		}
+		ws2 := NewWebSocket(context.Background(), conn, w2)
 		err := ws2.Init()
 		if err != nil {
 			t.Fatalf("TestPublisher_Run")
@@ -121,8 +114,8 @@ func TestDoWebSocketListAndWatch(t *testing.T) {
 
 	ws.HandleWatchWebSocketJob(nil)
 
-	ws.heartbeat(websocket.PingMessage)
-	ws.heartbeat(websocket.PongMessage)
+	ws.Heartbeat(websocket.PingMessage)
+	ws.Heartbeat(websocket.PongMessage)
 
 	ws.HandleWatchWebSocketJob(time.Now())
 
@@ -130,10 +123,10 @@ func TestDoWebSocketListAndWatch(t *testing.T) {
 
 	<-time.After(time.Second)
 
-	ws.heartbeat(websocket.PingMessage)
-	ws.heartbeat(websocket.PongMessage)
+	ws.Heartbeat(websocket.PingMessage)
+	ws.Heartbeat(websocket.PongMessage)
 
 	w.OnMessage(nil)
 
-	publisher.Stop()
+	Instance().Stop()
 }

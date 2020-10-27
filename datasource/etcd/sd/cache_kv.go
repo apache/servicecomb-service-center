@@ -23,7 +23,7 @@ import (
 )
 
 // KvCache implements Cache.
-// KvCache is dedicated to stores service pkg data,
+// KvCache is dedicated to stores service discovery data,
 // e.g. service, instance, lease.
 type KvCache struct {
 	Cfg   *Config

@@ -29,7 +29,7 @@ type Indexer interface {
 	// Search searches k-v data based on the input options
 	Search(ctx context.Context, opts ...client.PluginOpOption) (*Response, error)
 	// Creditable judges whether Indexer's search results are creditable
-	// It is recommended to use cache only and not to call the cache
+	// It is recommended to use cache only and not to call the backend
 	// directly, If Indexer is not creditable.
 	Creditable() bool
 }
