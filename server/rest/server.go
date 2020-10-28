@@ -20,20 +20,20 @@ package rest
 import (
 	"crypto/tls"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
-	"github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/core/config"
 	"github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf"
 	"time"
 )
 
 func LoadConfig() (srvCfg *rest.ServerConfig, err error) {
 	srvCfg = rest.DefaultServerConfig()
-	readHeaderTimeout, _ := time.ParseDuration(core.ServerInfo.Config.ReadHeaderTimeout)
-	readTimeout, _ := time.ParseDuration(core.ServerInfo.Config.ReadTimeout)
-	idleTimeout, _ := time.ParseDuration(core.ServerInfo.Config.IdleTimeout)
-	writeTimeout, _ := time.ParseDuration(core.ServerInfo.Config.WriteTimeout)
-	maxHeaderBytes := int(core.ServerInfo.Config.MaxHeaderBytes)
+	readHeaderTimeout, _ := time.ParseDuration(config.ServerInfo.Config.ReadHeaderTimeout)
+	readTimeout, _ := time.ParseDuration(config.ServerInfo.Config.ReadTimeout)
+	idleTimeout, _ := time.ParseDuration(config.ServerInfo.Config.IdleTimeout)
+	writeTimeout, _ := time.ParseDuration(config.ServerInfo.Config.WriteTimeout)
+	maxHeaderBytes := int(config.ServerInfo.Config.MaxHeaderBytes)
 	var tlsConfig *tls.Config
-	if core.ServerInfo.Config.SslEnabled {
+	if config.ServerInfo.Config.SslEnabled {
 		tlsConfig, err = tlsconf.ServerConfig()
 		if err != nil {
 			return

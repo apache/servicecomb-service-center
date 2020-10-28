@@ -15,23 +15,19 @@
  * limitations under the License.
  */
 
-package v4
+package config
 
-import (
-	roa "github.com/apache/servicecomb-service-center/pkg/rest"
-)
-
-func init() {
-	initRouter()
+//Config is yaml file struct
+type Config struct {
+	Gov Gov `yaml:"gov"`
+	//config from cli
+	ConfigFile string
 }
-
-func initRouter() {
-	roa.RegisterServant(&MainService{})
-	roa.RegisterServant(&MicroServiceService{})
-	roa.RegisterServant(&SchemaService{})
-	roa.RegisterServant(&DependencyService{})
-	roa.RegisterServant(&TagService{})
-	roa.RegisterServant(&RuleService{})
-	roa.RegisterServant(&MicroServiceInstanceService{})
-	roa.RegisterServant(&WatchService{})
+type Gov struct {
+	DistOptions []DistributorOptions `yaml:"plugins"`
+}
+type DistributorOptions struct {
+	Name     string `yaml:"name"`
+	Type     string `yaml:"type"`
+	Endpoint string `yaml:"endpoint"`
 }

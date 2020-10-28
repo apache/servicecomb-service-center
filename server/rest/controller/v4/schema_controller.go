@@ -24,6 +24,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/core/config"
 	"github.com/apache/servicecomb-service-center/server/rest/controller"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"io/ioutil"
@@ -43,7 +44,7 @@ func (s *SchemaService) URLPatterns() []rest.Route {
 		{Method: rest.HTTPMethodGet, Path: "/v4/:project/registry/microservices/:serviceId/schemas", Func: s.GetAllSchemas},
 	}
 
-	if !core.ServerInfo.Config.SchemaDisable {
+	if !config.ServerInfo.Config.SchemaDisable {
 		r = append(r, rest.Route{Method: rest.HTTPMethodPut, Path: "/v4/:project/registry/microservices/:serviceId/schemas/:schemaId", Func: s.ModifySchema})
 	} else {
 		r = append(r, rest.Route{Method: rest.HTTPMethodPut, Path: "/v4/:project/registry/microservices/:serviceId/schemas/:schemaId", Func: s.DisableSchema})

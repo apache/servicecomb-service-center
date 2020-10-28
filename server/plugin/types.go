@@ -17,7 +17,7 @@ package plugin
 
 import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/core/config"
 )
 
 // Kind is an alias, it represents a plugin interface.
@@ -37,12 +37,12 @@ func (pn Kind) String() string {
 
 // ActiveConfigs returns all the server's plugin config
 func (pn Kind) ActiveConfigs() util.JSONObject {
-	return core.ServerInfo.Config.Plugins.Object(pn.String())
+	return config.ServerInfo.Config.Plugins.Object(pn.String())
 }
 
 // ClearConfigs clears the server's plugin config
 func (pn Kind) ClearConfigs() {
-	core.ServerInfo.Config.Plugins.Set(pn.String(), nil)
+	config.ServerInfo.Config.Plugins.Set(pn.String(), nil)
 }
 
 // Plugin generates a plugin instance

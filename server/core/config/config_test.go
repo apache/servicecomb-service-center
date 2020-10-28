@@ -15,44 +15,32 @@
  * limitations under the License.
  */
 
-package core
+package config_test
 
 import (
 	"github.com/apache/servicecomb-service-center/server/core/config"
-
-	// import the grace package and parse grace cmd line
-	_ "github.com/apache/servicecomb-service-center/pkg/grace"
-	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/stretchr/testify/assert"
+	"io"
 	"os"
-	"os/signal"
-	"syscall"
-	"time"
+	"testing"
 )
 
-func Initialize() {
-	// initialize configuration
+func TestInit(t *testing.T) {
+	b := []byte(`
+gov:
+  plugins:
+    - type: mock
+    - type: kie
+    - type: istio
+
+`)
+	defer os.Remove("test.yaml")
+	f1, err := os.Create("test.yaml")
+	assert.NoError(t, err)
+	_, err = io.WriteString(f1, string(b))
+	assert.NoError(t, err)
+	config.Configurations.ConfigFile = "test.yaml"
 	config.Init()
-
-	go handleSignals()
-}
-
-func handleSignals() {
-	defer log.Sync()
-
-	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh,
-		syscall.SIGINT,
-		syscall.SIGTERM,
-	)
-	wait := 5 * time.Second
-	for sig := range sigCh {
-		switch sig {
-		case syscall.SIGINT, syscall.SIGKILL, syscall.SIGTERM:
-			<-time.After(wait)
-			log.Warnf("waiting for server response timed out(%s), force shutdown", wait)
-			os.Exit(1)
-		default:
-			log.Warnf("received signal '%v'", sig)
-		}
-	}
+	assert.NoError(t, err)
+	assert.Equal(t, "mock", config.GetGov().DistOptions[0].Type)
 }

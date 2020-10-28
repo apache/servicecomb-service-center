@@ -26,6 +26,7 @@ import (
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/core/config"
 	"github.com/apache/servicecomb-service-center/version"
 	"os"
 )
@@ -40,7 +41,7 @@ func (ds *DataSource) LoadServerVersion(ctx context.Context) error {
 		return nil
 	}
 
-	err = json.Unmarshal(resp.Kvs[0].Value, &core.ServerInfo)
+	err = json.Unmarshal(resp.Kvs[0].Value, &config.ServerInfo)
 	if err != nil {
 		log.Errorf(err, "load server version failed, maybe incompatible")
 		return nil
@@ -49,7 +50,7 @@ func (ds *DataSource) LoadServerVersion(ctx context.Context) error {
 }
 
 func (ds *DataSource) UpgradeServerVersion(ctx context.Context) error {
-	bytes, err := json.Marshal(core.ServerInfo)
+	bytes, err := json.Marshal(config.ServerInfo)
 	if err != nil {
 		return err
 	}
@@ -69,7 +70,7 @@ func (ds *DataSource) UpgradeVersion(ctx context.Context) error {
 		return err
 	}
 	if ds.needUpgrade(ctx) {
-		core.ServerInfo.Version = version.Ver().Version
+		config.ServerInfo.Version = version.Ver().Version
 
 		if err := ds.UpgradeServerVersion(ctx); err != nil {
 			log.Errorf(err, "upgrade server version failed")
@@ -90,12 +91,12 @@ func (ds *DataSource) needUpgrade(ctx context.Context) bool {
 		return false
 	}
 
-	update := !serviceUtil.VersionMatchRule(core.ServerInfo.Version,
+	update := !serviceUtil.VersionMatchRule(config.ServerInfo.Version,
 		fmt.Sprintf("%s+", version.Ver().Version))
-	if !update && version.Ver().Version != core.ServerInfo.Version {
+	if !update && version.Ver().Version != config.ServerInfo.Version {
 		log.Warnf(
 			"there is a higher version '%s' in cluster, now running '%s' version may be incompatible",
-			core.ServerInfo.Version, version.Ver().Version)
+			config.ServerInfo.Version, version.Ver().Version)
 	}
 
 	return update

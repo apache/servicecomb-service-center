@@ -15,23 +15,15 @@
  * limitations under the License.
  */
 
-package v4
+package model
 
-import (
-	roa "github.com/apache/servicecomb-service-center/pkg/rest"
-)
-
-func init() {
-	initRouter()
+//RateLimiter limit request rate
+type RateLimiter struct {
+	*GovernancePolicy
+	Spec *LimiterSpec `json:"spec,omitempty"`
 }
-
-func initRouter() {
-	roa.RegisterServant(&MainService{})
-	roa.RegisterServant(&MicroServiceService{})
-	roa.RegisterServant(&SchemaService{})
-	roa.RegisterServant(&DependencyService{})
-	roa.RegisterServant(&TagService{})
-	roa.RegisterServant(&RuleService{})
-	roa.RegisterServant(&MicroServiceInstanceService{})
-	roa.RegisterServant(&WatchService{})
+type LimiterSpec struct {
+	MarkerName string `json:"match"`
+	Rate       int    `json:"rate"`
+	Burst      int    `json:"burst"`
 }

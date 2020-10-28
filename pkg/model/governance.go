@@ -15,23 +15,29 @@
  * limitations under the License.
  */
 
-package v4
+package model
 
-import (
-	roa "github.com/apache/servicecomb-service-center/pkg/rest"
-)
-
-func init() {
-	initRouter()
+//GovernancePolicy is a unified struct
+//all governance policy must extend this struct
+//Name is the policy name, for example: "rate-limit-payment-api"
+//MD is metadata.
+type GovernancePolicy struct {
+	Name string            `json:"name,omitempty"`
+	MD   map[string]string `json:"metadata,omitempty"`
 }
 
-func initRouter() {
-	roa.RegisterServant(&MainService{})
-	roa.RegisterServant(&MicroServiceService{})
-	roa.RegisterServant(&SchemaService{})
-	roa.RegisterServant(&DependencyService{})
-	roa.RegisterServant(&TagService{})
-	roa.RegisterServant(&RuleService{})
-	roa.RegisterServant(&MicroServiceInstanceService{})
-	roa.RegisterServant(&WatchService{})
+//LoadBalancer define policy and fault tolerant policy
+type LoadBalancer struct {
+	*GovernancePolicy
+	Spec *LBSpec `json:"spec,omitempty"`
+}
+type LBSpec struct {
+	MarkerName string         `json:"match"`
+	RetrySame  int            `json:"retrySame,omitempty"`
+	RetryNext  int            `json:"retryNext,omitempty"`
+	Bo         *BackOffPolicy `json:"backoff,omitempty"`
+}
+type BackOffPolicy struct {
+	InitialInterval int `json:"initInterval"`
+	MaxInterval     int `json:"maxInterval"`
 }

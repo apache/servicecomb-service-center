@@ -24,6 +24,7 @@ import _ "github.com/apache/servicecomb-service-center/server/rest/controller/v3
 
 //rest v4 api
 import _ "github.com/apache/servicecomb-service-center/server/rest/controller/v4"
+import _ "github.com/apache/servicecomb-service-center/server/resource"
 
 //cipher
 import _ "github.com/apache/servicecomb-service-center/server/plugin/security/cipher/buildin"

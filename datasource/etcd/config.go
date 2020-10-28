@@ -21,7 +21,7 @@ import (
 	"context"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/core/config"
 	"github.com/astaxie/beego"
 	"strings"
 	"sync"
@@ -42,7 +42,7 @@ func Configuration() *client.Config {
 		defaultRegistryConfig.InitClusterInfo()
 
 		registryAddresses := strings.Join(defaultRegistryConfig.RegistryAddresses(), ",")
-		defaultRegistryConfig.SslEnabled = core.ServerInfo.Config.SslEnabled &&
+		defaultRegistryConfig.SslEnabled = config.ServerInfo.Config.SslEnabled &&
 			strings.Contains(strings.ToLower(registryAddresses), "https://")
 
 		defaultRegistryConfig.DialTimeout, err = time.ParseDuration(beego.AppConfig.DefaultString("connect_timeout", "10s"))
@@ -55,12 +55,12 @@ func Configuration() *client.Config {
 			log.Errorf(err, "registry_timeout is invalid, use default time %s", client.DefaultRequestTimeout)
 			defaultRegistryConfig.RequestTimeOut = client.DefaultRequestTimeout
 		}
-		defaultRegistryConfig.AutoSyncInterval, err = time.ParseDuration(core.ServerInfo.Config.AutoSyncInterval)
+		defaultRegistryConfig.AutoSyncInterval, err = time.ParseDuration(config.ServerInfo.Config.AutoSyncInterval)
 		if err != nil {
 			log.Errorf(err, "auto_sync_interval is invalid")
 		}
 
-		core.ServerInfo.Config.Plugins.Object("discovery").
+		config.ServerInfo.Config.Plugins.Object("discovery").
 			Set("config", defaultRegistryConfig)
 	})
 	return &defaultRegistryConfig

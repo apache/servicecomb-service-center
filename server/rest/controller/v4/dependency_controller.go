@@ -31,7 +31,6 @@ import (
 )
 
 type DependencyService struct {
-	//
 }
 
 func (s *DependencyService) URLPatterns() []rest.Route {
@@ -43,6 +42,7 @@ func (s *DependencyService) URLPatterns() []rest.Route {
 	}
 }
 
+//Deprecated
 func (s *DependencyService) AddDependenciesForMicroServices(w http.ResponseWriter, r *http.Request) {
 	requestBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {

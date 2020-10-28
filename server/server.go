@@ -23,9 +23,12 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	nf "github.com/apache/servicecomb-service-center/pkg/notify"
+	"github.com/apache/servicecomb-service-center/server/command"
 	"github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/core/config"
 	"github.com/apache/servicecomb-service-center/server/notify"
 	"github.com/apache/servicecomb-service-center/server/plugin"
+	"github.com/apache/servicecomb-service-center/server/service/gov"
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
 	"github.com/astaxie/beego"
 	"os"
@@ -34,6 +37,10 @@ import (
 var server ServiceCenterServer
 
 func Run() {
+	if err := command.ParseConfig(os.Args); err != nil {
+		log.Fatal(err.Error(), err)
+	}
+
 	server.Run()
 }
 
@@ -71,8 +78,11 @@ func (s *ServiceCenterServer) startServices() {
 	// load server plugins
 	plugin.LoadPlugins()
 	rbac.Init()
+	if err := gov.Init(); err != nil {
+		log.Fatal("init gov failed", err)
+	}
 	// check version
-	if core.ServerInfo.Config.SelfRegister {
+	if config.ServerInfo.Config.SelfRegister {
 		if err := datasource.Instance().UpgradeVersion(context.Background()); err != nil {
 			os.Exit(1)
 		}

@@ -1,0 +1,8 @@
+{
+  "name": "limitTraffic2adminAPI",
+  "spec": {
+    "match": "traffic2adminAPI",
+    "rate": 100,
+    "burst": 10
+  }
+}

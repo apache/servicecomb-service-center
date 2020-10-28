@@ -18,13 +18,13 @@
 package rest
 
 import (
-	"github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/core/config"
 	"net/http"
 	"net/http/pprof"
 )
 
 func init() {
-	if core.ServerInfo.Config.EnablePProf {
+	if config.ServerInfo.Config.EnablePProf {
 		RegisterServerHandleFunc("/debug/pprof/", http.HandlerFunc(pprof.Index))
 		RegisterServerHandleFunc("/debug/pprof/profile", http.HandlerFunc(pprof.Profile))
 		RegisterServerHandleFunc("/debug/pprof/symbol", http.HandlerFunc(pprof.Symbol))

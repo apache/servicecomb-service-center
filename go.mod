@@ -35,6 +35,7 @@ require (
 	github.com/spf13/cobra v0.0.0-20170624150100-4d647c8944eb
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.4.0
+	github.com/urfave/cli v1.22.4
 	github.com/widuu/gojson v0.0.0-20170212122013-7da9d2cd949b
 	go.uber.org/zap v1.10.0
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a

@@ -19,17 +19,17 @@ package etcd
 
 import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
-	"github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/core/config"
 	"testing"
 )
 
 func TestNewKvEntity(t *testing.T) {
-	core.ServerInfo.Config.EnableCache = false
+	config.ServerInfo.Config.EnableCache = false
 	i := NewEtcdAdaptor("a", sd.Configure().WithInitSize(1))
 	if _, ok := i.Indexer.(*Indexer); !ok {
 		t.Fatalf("TestNewIndexer failed")
 	}
-	core.ServerInfo.Config.EnableCache = true
+	config.ServerInfo.Config.EnableCache = true
 
 	i.Run()
 	<-i.Ready()
