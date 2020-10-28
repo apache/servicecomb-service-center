@@ -18,7 +18,7 @@
 package event
 
 import (
-	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/pkg/sd"
 )
 
 func init() {

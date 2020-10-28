@@ -16,7 +16,7 @@
 package counter
 
 import (
-	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/pkg/sd"
 )
 
 var counters = Counters{}

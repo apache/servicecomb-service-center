@@ -18,7 +18,7 @@
 package admin
 
 import (
-	"github.com/apache/servicecomb-service-center/pkg/model"
+	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"net/http"
 
 	"github.com/apache/servicecomb-service-center/pkg/rest"
@@ -46,7 +46,7 @@ func (ctrl *ControllerV4) Dump(w http.ResponseWriter, r *http.Request) {
 	if s := strings.TrimSpace(query.Get("options")); len(s) > 0 {
 		options = strings.Split(s, ",")
 	}
-	request := &model.DumpRequest{
+	request := &dump.DumpRequest{
 		Options: options,
 	}
 	ctx := r.Context()
@@ -58,7 +58,7 @@ func (ctrl *ControllerV4) Dump(w http.ResponseWriter, r *http.Request) {
 }
 
 func (ctrl *ControllerV4) Clusters(w http.ResponseWriter, r *http.Request) {
-	request := &model.ClustersRequest{}
+	request := &dump.ClustersRequest{}
 	ctx := r.Context()
 	resp, _ := AdminServiceAPI.Clusters(ctx, request)
 
@@ -68,7 +68,7 @@ func (ctrl *ControllerV4) Clusters(w http.ResponseWriter, r *http.Request) {
 }
 
 func (ctrl *ControllerV4) AlarmList(w http.ResponseWriter, r *http.Request) {
-	request := &model.AlarmListRequest{}
+	request := &dump.AlarmListRequest{}
 	ctx := r.Context()
 	resp, _ := AdminServiceAPI.AlarmList(ctx, request)
 
@@ -78,7 +78,7 @@ func (ctrl *ControllerV4) AlarmList(w http.ResponseWriter, r *http.Request) {
 }
 
 func (ctrl *ControllerV4) ClearAlarm(w http.ResponseWriter, r *http.Request) {
-	request := &model.ClearAlarmRequest{}
+	request := &dump.ClearAlarmRequest{}
 	ctx := r.Context()
 	resp, _ := AdminServiceAPI.ClearAlarm(ctx, request)
 	controller.WriteResponse(w, resp.Response, nil)

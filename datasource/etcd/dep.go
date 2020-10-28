@@ -27,7 +27,6 @@ import (
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 )
 
@@ -78,8 +77,8 @@ func (ds *DataSource) AddOrUpdateDependencies(ctx context.Context, dependencyInf
 	domainProject := util.ParseDomainProject(ctx)
 	for _, dependencyInfo := range dependencyInfos {
 		consumerFlag := util.StringJoin([]string{dependencyInfo.Consumer.Environment, dependencyInfo.Consumer.AppId, dependencyInfo.Consumer.ServiceName, dependencyInfo.Consumer.Version}, "/")
-		consumerInfo := proto.DependenciesToKeys([]*pb.MicroServiceKey{dependencyInfo.Consumer}, domainProject)[0]
-		providersInfo := proto.DependenciesToKeys(dependencyInfo.Providers, domainProject)
+		consumerInfo := pb.DependenciesToKeys([]*pb.MicroServiceKey{dependencyInfo.Consumer}, domainProject)[0]
+		providersInfo := pb.DependenciesToKeys(dependencyInfo.Providers, domainProject)
 
 		rsp := serviceUtil.ParamsChecker(consumerInfo, providersInfo)
 		if rsp != nil {
@@ -92,12 +91,12 @@ func (ds *DataSource) AddOrUpdateDependencies(ctx context.Context, dependencyInf
 		if err != nil {
 			log.Errorf(err, "put request into dependency queue failed, override: %t, get consumer[%s] id failed",
 				override, consumerFlag)
-			return proto.CreateResponse(scerr.ErrInternal, err.Error()), err
+			return pb.CreateResponse(scerr.ErrInternal, err.Error()), err
 		}
 		if len(consumerID) == 0 {
 			log.Errorf(nil, "put request into dependency queue failed, override: %t, consumer[%s] does not exist",
 				override, consumerFlag)
-			return proto.CreateResponse(scerr.ErrServiceNotExists, fmt.Sprintf("Consumer %s does not exist.", consumerFlag)), nil
+			return pb.CreateResponse(scerr.ErrServiceNotExists, fmt.Sprintf("Consumer %s does not exist.", consumerFlag)), nil
 		}
 
 		dependencyInfo.Override = override
@@ -105,7 +104,7 @@ func (ds *DataSource) AddOrUpdateDependencies(ctx context.Context, dependencyInf
 		if err != nil {
 			log.Errorf(err, "put request into dependency queue failed, override: %t, marshal consumer[%s] dependency failed",
 				override, consumerFlag)
-			return proto.CreateResponse(scerr.ErrInternal, err.Error()), err
+			return pb.CreateResponse(scerr.ErrInternal, err.Error()), err
 		}
 
 		id := apt.DepsQueueUUID
@@ -119,10 +118,10 @@ func (ds *DataSource) AddOrUpdateDependencies(ctx context.Context, dependencyInf
 	err := client.BatchCommit(ctx, opts)
 	if err != nil {
 		log.Errorf(err, "put request into dependency queue failed, override: %t, %v", override, dependencyInfos)
-		return proto.CreateResponse(scerr.ErrInternal, err.Error()), err
+		return pb.CreateResponse(scerr.ErrInternal, err.Error()), err
 	}
 
 	log.Infof("put request into dependency queue successfully, override: %t, %v, from remote %s",
 		override, dependencyInfos, util.GetIPFromContext(ctx))
-	return proto.CreateResponse(proto.ResponseSuccess, "Create dependency successfully."), nil
+	return pb.CreateResponse(pb.ResponseSuccess, "Create dependency successfully."), nil
 }

@@ -18,14 +18,14 @@ package etcd_test
 
 import (
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/pkg/model"
+	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestAdminService_Dump(t *testing.T) {
 	t.Log("execute 'dump' operation,when get all,should be passed")
-	var cache model.Cache
+	var cache dump.Cache
 	datasource.Instance().DumpCache(getContext(), &cache)
 	assert.Equal(t, len(cache.Indexes), len(cache.Microservices))
 }

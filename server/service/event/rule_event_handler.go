@@ -20,15 +20,14 @@ package event
 import (
 	"context"
 	"fmt"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/pkg/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/pkg/sd"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/task"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/notify"
 )
 
@@ -76,7 +75,7 @@ func (apt *RulesChangedTask) publish(ctx context.Context, domainProject, provide
 			providerID, provider.Environment, provider.AppId, provider.ServiceName, provider.Version)
 		return err
 	}
-	providerKey := proto.MicroServiceToKey(domainProject, provider)
+	providerKey := pb.MicroServiceToKey(domainProject, provider)
 
 	PublishInstanceEvent(apt.KvEvent, domainProject, providerKey, consumerIds)
 	return nil

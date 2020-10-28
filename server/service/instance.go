@@ -30,7 +30,6 @@ import (
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/health"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
@@ -99,7 +98,7 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 	if err := Validate(in); err != nil {
 		log.Errorf(err, "register instance failed, invalid parameters, operator %s", remoteIP)
 		return &pb.RegisterInstanceResponse{
-			Response: proto.CreateResponse(scerr.ErrInvalidParams, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 
@@ -115,7 +114,7 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 		//    and needs to be re-registered.
 		resp, err := s.Heartbeat(ctx, &pb.HeartbeatRequest{ServiceId: instance.ServiceId, InstanceId: instance.InstanceId})
 		switch resp.Response.GetCode() {
-		case proto.ResponseSuccess:
+		case pb.ResponseSuccess:
 			log.Infof("register instance successful, reuse instance[%s/%s], operator %s",
 				instance.ServiceId, instance.InstanceId, remoteIP)
 			return &pb.RegisterInstanceResponse{
@@ -137,7 +136,7 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 		log.Errorf(err, "register service[%s]'s instance failed, endpoints %v, host '%s', operator %s",
 			instance.ServiceId, instance.Endpoints, instance.HostName, remoteIP)
 		return &pb.RegisterInstanceResponse{
-			Response: proto.CreateResponseWithSCErr(err),
+			Response: pb.CreateResponseWithSCErr(err),
 		}, nil
 	}
 
@@ -162,7 +161,7 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 			log.Errorf(reporter.Err, "register instance failed, %s, operator %s",
 				instanceFlag, remoteIP)
 			response := &pb.RegisterInstanceResponse{
-				Response: proto.CreateResponseWithSCErr(reporter.Err),
+				Response: pb.CreateResponseWithSCErr(reporter.Err),
 			}
 			if reporter.Err.InternalError() {
 				return response, reporter.Err
@@ -178,7 +177,7 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 			"register instance failed, %s, instanceID %s, operator %s",
 			instanceFlag, instanceID, remoteIP)
 		return &pb.RegisterInstanceResponse{
-			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 
@@ -186,7 +185,7 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 	if err != nil {
 		log.Errorf(err, "grant lease failed, %s, operator: %s", instanceFlag, remoteIP)
 		return &pb.RegisterInstanceResponse{
-			Response: proto.CreateResponse(scerr.ErrUnavailableBackend, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrUnavailableBackend, err.Error()),
 		}, err
 	}
 
@@ -211,7 +210,7 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 			"register instance failed, %s, instanceID %s, operator %s",
 			instanceFlag, instanceID, remoteIP)
 		return &pb.RegisterInstanceResponse{
-			Response: proto.CreateResponse(scerr.ErrUnavailableBackend, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrUnavailableBackend, err.Error()),
 		}, err
 	}
 	if !resp.Succeeded {
@@ -219,7 +218,7 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 			"register instance failed, %s, instanceID %s, operator %s: service does not exist",
 			instanceFlag, instanceID, remoteIP)
 		return &pb.RegisterInstanceResponse{
-			Response: proto.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 
@@ -232,7 +231,7 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 	log.Infof("register instance %s, instanceID %s, operator %s",
 		instanceFlag, instanceID, remoteIP)
 	return &pb.RegisterInstanceResponse{
-		Response:   proto.CreateResponse(proto.ResponseSuccess, "Register service instance successfully."),
+		Response:   pb.CreateResponse(pb.ResponseSuccess, "Register service instance successfully."),
 		InstanceId: instanceID,
 	}, nil
 }
@@ -243,7 +242,7 @@ func (s *InstanceService) Unregister(ctx context.Context, in *pb.UnregisterInsta
 	if err := Validate(in); err != nil {
 		log.Errorf(err, "unregister instance failed, invalid parameters, operator %s", remoteIP)
 		return &pb.UnregisterInstanceResponse{
-			Response: proto.CreateResponse(scerr.ErrInvalidParams, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 
@@ -257,7 +256,7 @@ func (s *InstanceService) Unregister(ctx context.Context, in *pb.UnregisterInsta
 	if err != nil {
 		log.Errorf(err, "unregister instance failed, instance[%s], operator %s: revoke instance failed", instanceFlag, remoteIP)
 		resp := &pb.UnregisterInstanceResponse{
-			Response: proto.CreateResponseWithSCErr(err),
+			Response: pb.CreateResponseWithSCErr(err),
 		}
 		if err.InternalError() {
 			return resp, err
@@ -267,7 +266,7 @@ func (s *InstanceService) Unregister(ctx context.Context, in *pb.UnregisterInsta
 
 	log.Infof("unregister instance[%s], operator %s", instanceFlag, remoteIP)
 	return &pb.UnregisterInstanceResponse{
-		Response: proto.CreateResponse(proto.ResponseSuccess, "Unregister service instance successfully."),
+		Response: pb.CreateResponse(pb.ResponseSuccess, "Unregister service instance successfully."),
 	}, nil
 }
 
@@ -296,7 +295,7 @@ func (s *InstanceService) Heartbeat(ctx context.Context, in *pb.HeartbeatRequest
 	if err := Validate(in); err != nil {
 		log.Errorf(err, "heartbeat failed, invalid parameters, operator %s", remoteIP)
 		return &pb.HeartbeatResponse{
-			Response: proto.CreateResponse(scerr.ErrInvalidParams, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 
@@ -308,7 +307,7 @@ func (s *InstanceService) Heartbeat(ctx context.Context, in *pb.HeartbeatRequest
 		log.Errorf(err, "heartbeat failed, instance[%s]. operator %s",
 			instanceFlag, remoteIP)
 		resp := &pb.HeartbeatResponse{
-			Response: proto.CreateResponseWithSCErr(err),
+			Response: pb.CreateResponseWithSCErr(err),
 		}
 		if err.InternalError() {
 			return resp, err
@@ -323,7 +322,7 @@ func (s *InstanceService) Heartbeat(ctx context.Context, in *pb.HeartbeatRequest
 		log.Infof("heartbeat successful, renew instance[%s] ttl to %d. operator %s", instanceFlag, ttl, remoteIP)
 	}
 	return &pb.HeartbeatResponse{
-		Response: proto.CreateResponse(proto.ResponseSuccess, "Update service instance heartbeat successfully."),
+		Response: pb.CreateResponse(pb.ResponseSuccess, "Update service instance heartbeat successfully."),
 	}, nil
 }
 
@@ -331,7 +330,7 @@ func (s *InstanceService) HeartbeatSet(ctx context.Context, in *pb.HeartbeatSetR
 	if len(in.Instances) == 0 {
 		log.Errorf(nil, "heartbeats failed, invalid request. Body not contain Instances or is empty")
 		return &pb.HeartbeatSetResponse{
-			Response: proto.CreateResponse(scerr.ErrInvalidParams, "Request format invalid."),
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Request format invalid."),
 		}, nil
 	}
 	domainProject := util.ParseDomainProject(ctx)
@@ -369,13 +368,13 @@ func (s *InstanceService) HeartbeatSet(ctx context.Context, in *pb.HeartbeatSetR
 	if !failFlag && successFlag {
 		log.Infof("batch update heartbeats[%s] successfully", count)
 		return &pb.HeartbeatSetResponse{
-			Response:  proto.CreateResponse(proto.ResponseSuccess, "Heartbeat set successfully."),
+			Response:  pb.CreateResponse(pb.ResponseSuccess, "Heartbeat set successfully."),
 			Instances: instanceHbRstArr,
 		}, nil
 	}
 	log.Errorf(nil, "batch update heartbeats failed, %v", in.Instances)
 	return &pb.HeartbeatSetResponse{
-		Response:  proto.CreateResponse(scerr.ErrInstanceNotExists, "Heartbeat set failed."),
+		Response:  pb.CreateResponse(scerr.ErrInstanceNotExists, "Heartbeat set failed."),
 		Instances: instanceHbRstArr,
 	}, nil
 }
@@ -401,7 +400,7 @@ func (s *InstanceService) GetOneInstance(ctx context.Context, in *pb.GetOneInsta
 	if err != nil {
 		log.Errorf(err, "get instance failed: invalid parameters")
 		return &pb.GetOneInstanceResponse{
-			Response: proto.CreateResponse(scerr.ErrInvalidParams, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 
@@ -414,14 +413,14 @@ func (s *InstanceService) GetOneInstance(ctx context.Context, in *pb.GetOneInsta
 			log.Errorf(err, "get consumer failed, consumer[%s] find provider instance[%s/%s]",
 				in.ConsumerServiceId, in.ProviderServiceId, in.ProviderInstanceId)
 			return &pb.GetOneInstanceResponse{
-				Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+				Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 			}, err
 		}
 		if service == nil {
 			log.Errorf(nil, "consumer does not exist, consumer[%s] find provider instance[%s/%s]",
 				in.ConsumerServiceId, in.ProviderServiceId, in.ProviderInstanceId)
 			return &pb.GetOneInstanceResponse{
-				Response: proto.CreateResponse(scerr.ErrServiceNotExists,
+				Response: pb.CreateResponse(scerr.ErrServiceNotExists,
 					fmt.Sprintf("Consumer[%s] does not exist.", in.ConsumerServiceId)),
 			}, nil
 		}
@@ -432,14 +431,14 @@ func (s *InstanceService) GetOneInstance(ctx context.Context, in *pb.GetOneInsta
 		log.Errorf(err, "get provider failed, consumer[%s] find provider instance[%s/%s]",
 			in.ConsumerServiceId, in.ProviderServiceId, in.ProviderInstanceId)
 		return &pb.GetOneInstanceResponse{
-			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 	if provider == nil {
 		log.Errorf(nil, "provider does not exist, consumer[%s] find provider instance[%s/%s]",
 			in.ConsumerServiceId, in.ProviderServiceId, in.ProviderInstanceId)
 		return &pb.GetOneInstanceResponse{
-			Response: proto.CreateResponse(scerr.ErrServiceNotExists,
+			Response: pb.CreateResponse(scerr.ErrServiceNotExists,
 				fmt.Sprintf("Provider[%s] does not exist.", in.ProviderServiceId)),
 		}, nil
 	}
@@ -453,21 +452,21 @@ func (s *InstanceService) GetOneInstance(ctx context.Context, in *pb.GetOneInsta
 
 	var item *cache.VersionRuleCacheItem
 	rev, _ := ctx.Value(util.CtxRequestRevision).(string)
-	item, err = cache.FindInstances.GetWithProviderID(ctx, service, proto.MicroServiceToKey(domainProject, provider),
+	item, err = cache.FindInstances.GetWithProviderID(ctx, service, pb.MicroServiceToKey(domainProject, provider),
 		&pb.HeartbeatSetElement{
 			ServiceId: in.ProviderServiceId, InstanceId: in.ProviderInstanceId,
 		}, in.Tags, rev)
 	if err != nil {
 		log.Errorf(err, "FindInstances.GetWithProviderID failed, %s failed", findFlag())
 		return &pb.GetOneInstanceResponse{
-			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 	if item == nil || len(item.Instances) == 0 {
 		mes := fmt.Errorf("%s failed, provider instance does not exist", findFlag())
 		log.Errorf(mes, "FindInstances.GetWithProviderID failed")
 		return &pb.GetOneInstanceResponse{
-			Response: proto.CreateResponse(scerr.ErrInstanceNotExists, mes.Error()),
+			Response: pb.CreateResponse(scerr.ErrInstanceNotExists, mes.Error()),
 		}, nil
 	}
 
@@ -478,7 +477,7 @@ func (s *InstanceService) GetOneInstance(ctx context.Context, in *pb.GetOneInsta
 	_ = util.SetContext(ctx, util.CtxResponseRevision, item.Rev)
 
 	return &pb.GetOneInstanceResponse{
-		Response: proto.CreateResponse(proto.ResponseSuccess, "Get instance successfully."),
+		Response: pb.CreateResponse(pb.ResponseSuccess, "Get instance successfully."),
 		Instance: instance,
 	}, nil
 }
@@ -488,7 +487,7 @@ func (s *InstanceService) GetInstances(ctx context.Context, in *pb.GetInstancesR
 	if err != nil {
 		log.Errorf(err, "get instances failed: invalid parameters")
 		return &pb.GetInstancesResponse{
-			Response: proto.CreateResponse(scerr.ErrInvalidParams, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 
@@ -501,14 +500,14 @@ func (s *InstanceService) GetInstances(ctx context.Context, in *pb.GetInstancesR
 			log.Errorf(err, "get consumer failed, consumer[%s] find provider instances",
 				in.ConsumerServiceId, in.ProviderServiceId)
 			return &pb.GetInstancesResponse{
-				Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+				Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 			}, err
 		}
 		if service == nil {
 			log.Errorf(nil, "consumer does not exist, consumer[%s] find provider instances",
 				in.ConsumerServiceId, in.ProviderServiceId)
 			return &pb.GetInstancesResponse{
-				Response: proto.CreateResponse(scerr.ErrServiceNotExists,
+				Response: pb.CreateResponse(scerr.ErrServiceNotExists,
 					fmt.Sprintf("Consumer[%s] does not exist.", in.ConsumerServiceId)),
 			}, nil
 		}
@@ -519,14 +518,14 @@ func (s *InstanceService) GetInstances(ctx context.Context, in *pb.GetInstancesR
 		log.Errorf(err, "get provider failed, consumer[%s] find provider instances",
 			in.ConsumerServiceId, in.ProviderServiceId)
 		return &pb.GetInstancesResponse{
-			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 	if provider == nil {
 		log.Errorf(nil, "provider does not exist, consumer[%s] find provider instances",
 			in.ConsumerServiceId, in.ProviderServiceId)
 		return &pb.GetInstancesResponse{
-			Response: proto.CreateResponse(scerr.ErrServiceNotExists,
+			Response: pb.CreateResponse(scerr.ErrServiceNotExists,
 				fmt.Sprintf("Provider[%s] does not exist.", in.ProviderServiceId)),
 		}, nil
 	}
@@ -539,21 +538,21 @@ func (s *InstanceService) GetInstances(ctx context.Context, in *pb.GetInstancesR
 
 	var item *cache.VersionRuleCacheItem
 	rev, _ := ctx.Value(util.CtxRequestRevision).(string)
-	item, err = cache.FindInstances.GetWithProviderID(ctx, service, proto.MicroServiceToKey(domainProject, provider),
+	item, err = cache.FindInstances.GetWithProviderID(ctx, service, pb.MicroServiceToKey(domainProject, provider),
 		&pb.HeartbeatSetElement{
 			ServiceId: in.ProviderServiceId,
 		}, in.Tags, rev)
 	if err != nil {
 		log.Errorf(err, "FindInstances.GetWithProviderID failed, %s failed", findFlag())
 		return &pb.GetInstancesResponse{
-			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 	if item == nil || len(item.ServiceIds) == 0 {
 		mes := fmt.Errorf("%s failed, provider instance does not exist", findFlag())
 		log.Errorf(mes, "FindInstances.GetWithProviderID failed")
 		return &pb.GetInstancesResponse{
-			Response: proto.CreateResponse(scerr.ErrServiceNotExists, mes.Error()),
+			Response: pb.CreateResponse(scerr.ErrServiceNotExists, mes.Error()),
 		}, nil
 	}
 
@@ -564,7 +563,7 @@ func (s *InstanceService) GetInstances(ctx context.Context, in *pb.GetInstancesR
 	_ = util.SetContext(ctx, util.CtxResponseRevision, item.Rev)
 
 	return &pb.GetInstancesResponse{
-		Response:  proto.CreateResponse(proto.ResponseSuccess, "Query service instances successfully."),
+		Response:  pb.CreateResponse(pb.ResponseSuccess, "Query service instances successfully."),
 		Instances: instances,
 	}, nil
 }
@@ -574,7 +573,7 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 	if err != nil {
 		log.Errorf(err, "find instance failed: invalid parameters")
 		return &pb.FindInstancesResponse{
-			Response: proto.CreateResponse(scerr.ErrInvalidParams, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 
@@ -592,7 +591,7 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 		err = errors.New("rev in context is not type string")
 		log.Error("", err)
 		return &pb.FindInstancesResponse{
-			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 
@@ -613,14 +612,14 @@ func (s *InstanceService) findInstance(ctx context.Context, in *pb.FindInstances
 			log.Errorf(err, "get consumer failed, consumer[%s] find provider[%s/%s/%s/%s]",
 				in.ConsumerServiceId, in.Environment, in.AppId, in.ServiceName, in.VersionRule)
 			return &pb.FindInstancesResponse{
-				Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+				Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 			}, err
 		}
 		if service == nil {
 			log.Errorf(nil, "consumer does not exist, consumer[%s] find provider[%s/%s/%s/%s]",
 				in.ConsumerServiceId, in.Environment, in.AppId, in.ServiceName, in.VersionRule)
 			return &pb.FindInstancesResponse{
-				Response: proto.CreateResponse(scerr.ErrServiceNotExists,
+				Response: pb.CreateResponse(scerr.ErrServiceNotExists,
 					fmt.Sprintf("Consumer[%s] does not exist.", in.ConsumerServiceId)),
 			}, nil
 		}
@@ -642,14 +641,14 @@ func (s *InstanceService) findInstance(ctx context.Context, in *pb.FindInstances
 	if err != nil {
 		log.Errorf(err, "FindInstancesCache.Get failed, %s failed", findFlag)
 		return &pb.FindInstancesResponse{
-			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 	if item == nil {
 		mes := fmt.Errorf("%s failed, provider does not exist", findFlag)
 		log.Errorf(mes, "FindInstancesCache.Get failed")
 		return &pb.FindInstancesResponse{
-			Response: proto.CreateResponse(scerr.ErrServiceNotExists, mes.Error()),
+			Response: pb.CreateResponse(scerr.ErrServiceNotExists, mes.Error()),
 		}, nil
 	}
 
@@ -667,13 +666,13 @@ func (s *InstanceService) findInstance(ctx context.Context, in *pb.FindInstances
 			mes := fmt.Errorf("%s failed, provider does not exist", findFlag)
 			log.Errorf(mes, "AddServiceVersionRule failed")
 			return &pb.FindInstancesResponse{
-				Response: proto.CreateResponse(scerr.ErrServiceNotExists, mes.Error()),
+				Response: pb.CreateResponse(scerr.ErrServiceNotExists, mes.Error()),
 			}, nil
 		}
 		if err != nil {
 			log.Errorf(err, "AddServiceVersionRule failed, %s failed", findFlag)
 			return &pb.FindInstancesResponse{
-				Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+				Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 			}, err
 		}
 	}
@@ -695,14 +694,14 @@ func (s *InstanceService) findSharedServiceInstance(ctx context.Context, in *pb.
 	if err != nil {
 		log.Errorf(err, "FindInstancesCache.Get failed, %s failed", findFlag)
 		return &pb.FindInstancesResponse{
-			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 	if item == nil {
 		mes := fmt.Errorf("%s failed, provider does not exist", findFlag)
 		log.Errorf(mes, "FindInstancesCache.Get failed")
 		return &pb.FindInstancesResponse{
-			Response: proto.CreateResponse(scerr.ErrServiceNotExists, mes.Error()),
+			Response: pb.CreateResponse(scerr.ErrServiceNotExists, mes.Error()),
 		}, nil
 	}
 
@@ -717,7 +716,7 @@ func (s *InstanceService) genFindResult(ctx context.Context, oldRev string, item
 	// TODO support gRPC output context
 	_ = util.SetContext(ctx, util.CtxResponseRevision, item.Rev)
 	return &pb.FindInstancesResponse{
-		Response:  proto.CreateResponse(proto.ResponseSuccess, "Query service instances successfully."),
+		Response:  pb.CreateResponse(pb.ResponseSuccess, "Query service instances successfully."),
 		Instances: instances,
 	}, nil
 }
@@ -727,7 +726,7 @@ func (s *InstanceService) BatchFind(ctx context.Context, in *pb.BatchFindInstanc
 		err := errors.New("Required services or instances")
 		log.Errorf(err, "batch find instance failed: invalid parameters")
 		return &pb.BatchFindInstancesResponse{
-			Response: proto.CreateResponse(scerr.ErrInvalidParams, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 
@@ -735,19 +734,19 @@ func (s *InstanceService) BatchFind(ctx context.Context, in *pb.BatchFindInstanc
 	if err != nil {
 		log.Errorf(err, "batch find instance failed: invalid parameters")
 		return &pb.BatchFindInstancesResponse{
-			Response: proto.CreateResponse(scerr.ErrInvalidParams, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 
 	response := &pb.BatchFindInstancesResponse{
-		Response: proto.CreateResponse(proto.ResponseSuccess, "Batch query service instances successfully."),
+		Response: pb.CreateResponse(pb.ResponseSuccess, "Batch query service instances successfully."),
 	}
 
 	// find services
 	response.Services, err = s.batchFindServices(ctx, in)
 	if err != nil {
 		return &pb.BatchFindInstancesResponse{
-			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 
@@ -755,7 +754,7 @@ func (s *InstanceService) BatchFind(ctx context.Context, in *pb.BatchFindInstanc
 	response.Instances, err = s.batchFindInstances(ctx, in)
 	if err != nil {
 		return &pb.BatchFindInstancesResponse{
-			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 
@@ -836,7 +835,7 @@ func (s *InstanceService) reshapeProviderKey(ctx context.Context, provider *pb.M
 	}
 
 	versionRule := provider.Version
-	provider = proto.MicroServiceToKey(provider.Tenant, providerService)
+	provider = pb.MicroServiceToKey(provider.Tenant, providerService)
 	provider.Version = versionRule
 	return provider, nil
 }
@@ -847,7 +846,7 @@ func (s *InstanceService) UpdateStatus(ctx context.Context, in *pb.UpdateInstanc
 	if err := Validate(in); err != nil {
 		log.Errorf(nil, "update instance[%s] status failed", updateStatusFlag)
 		return &pb.UpdateInstanceStatusResponse{
-			Response: proto.CreateResponse(scerr.ErrInvalidParams, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 
@@ -855,13 +854,13 @@ func (s *InstanceService) UpdateStatus(ctx context.Context, in *pb.UpdateInstanc
 	if err != nil {
 		log.Errorf(err, "update instance[%s] status failed", updateStatusFlag)
 		return &pb.UpdateInstanceStatusResponse{
-			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 	if instance == nil {
 		log.Errorf(nil, "update instance[%s] status failed, instance does not exist", updateStatusFlag)
 		return &pb.UpdateInstanceStatusResponse{
-			Response: proto.CreateResponse(scerr.ErrInstanceNotExists, "Service instance does not exist."),
+			Response: pb.CreateResponse(scerr.ErrInstanceNotExists, "Service instance does not exist."),
 		}, nil
 	}
 
@@ -871,7 +870,7 @@ func (s *InstanceService) UpdateStatus(ctx context.Context, in *pb.UpdateInstanc
 	if err := serviceUtil.UpdateInstance(ctx, domainProject, &copyInstanceRef); err != nil {
 		log.Errorf(err, "update instance[%s] status failed", updateStatusFlag)
 		resp := &pb.UpdateInstanceStatusResponse{
-			Response: proto.CreateResponseWithSCErr(err),
+			Response: pb.CreateResponseWithSCErr(err),
 		}
 		if err.InternalError() {
 			return resp, err
@@ -881,7 +880,7 @@ func (s *InstanceService) UpdateStatus(ctx context.Context, in *pb.UpdateInstanc
 
 	log.Infof("update instance[%s] status successfully", updateStatusFlag)
 	return &pb.UpdateInstanceStatusResponse{
-		Response: proto.CreateResponse(proto.ResponseSuccess, "Update service instance status successfully."),
+		Response: pb.CreateResponse(pb.ResponseSuccess, "Update service instance status successfully."),
 	}, nil
 }
 
@@ -891,7 +890,7 @@ func (s *InstanceService) UpdateInstanceProperties(ctx context.Context, in *pb.U
 	if err := Validate(in); err != nil {
 		log.Errorf(nil, "update instance[%s] properties failed", instanceFlag)
 		return &pb.UpdateInstancePropsResponse{
-			Response: proto.CreateResponse(scerr.ErrInvalidParams, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 
@@ -899,13 +898,13 @@ func (s *InstanceService) UpdateInstanceProperties(ctx context.Context, in *pb.U
 	if err != nil {
 		log.Errorf(err, "update instance[%s] properties failed", instanceFlag)
 		return &pb.UpdateInstancePropsResponse{
-			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 	if instance == nil {
 		log.Errorf(nil, "update instance[%s] properties failed, instance does not exist", instanceFlag)
 		return &pb.UpdateInstancePropsResponse{
-			Response: proto.CreateResponse(scerr.ErrInstanceNotExists, "Service instance does not exist."),
+			Response: pb.CreateResponse(scerr.ErrInstanceNotExists, "Service instance does not exist."),
 		}, nil
 	}
 
@@ -915,7 +914,7 @@ func (s *InstanceService) UpdateInstanceProperties(ctx context.Context, in *pb.U
 	if err := serviceUtil.UpdateInstance(ctx, domainProject, &copyInstanceRef); err != nil {
 		log.Errorf(err, "update instance[%s] properties failed", instanceFlag)
 		resp := &pb.UpdateInstancePropsResponse{
-			Response: proto.CreateResponseWithSCErr(err),
+			Response: pb.CreateResponseWithSCErr(err),
 		}
 		if err.InternalError() {
 			return resp, err
@@ -925,14 +924,14 @@ func (s *InstanceService) UpdateInstanceProperties(ctx context.Context, in *pb.U
 
 	log.Infof("update instance[%s] properties successfully", instanceFlag)
 	return &pb.UpdateInstancePropsResponse{
-		Response: proto.CreateResponse(proto.ResponseSuccess, "Update service instance properties successfully."),
+		Response: pb.CreateResponse(pb.ResponseSuccess, "Update service instance properties successfully."),
 	}, nil
 }
 
 func (s *InstanceService) ClusterHealth(ctx context.Context) (*pb.GetInstancesResponse, error) {
 	if err := health.GlobalHealthChecker().Healthy(); err != nil {
 		return &pb.GetInstancesResponse{
-			Response: proto.CreateResponse(scerr.ErrUnhealthy, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrUnhealthy, err.Error()),
 		}, nil
 	}
 
@@ -949,14 +948,14 @@ func (s *InstanceService) ClusterHealth(ctx context.Context) (*pb.GetInstancesRe
 		log.Errorf(err, "health check failed: get service center[%s/%s/%s/%s]'s serviceID failed",
 			apt.Service.Environment, apt.Service.AppId, apt.Service.ServiceName, apt.Service.Version)
 		return &pb.GetInstancesResponse{
-			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 	if len(serviceID) == 0 {
 		log.Errorf(nil, "health check failed: service center[%s/%s/%s/%s]'s serviceID does not exist",
 			apt.Service.Environment, apt.Service.AppId, apt.Service.ServiceName, apt.Service.Version)
 		return &pb.GetInstancesResponse{
-			Response: proto.CreateResponse(scerr.ErrServiceNotExists, "ServiceCenter's serviceID not exist."),
+			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "ServiceCenter's serviceID not exist."),
 		}, nil
 	}
 
@@ -965,11 +964,11 @@ func (s *InstanceService) ClusterHealth(ctx context.Context) (*pb.GetInstancesRe
 		log.Errorf(err, "health check failed: get service center[%s][%s/%s/%s/%s]'s instances failed",
 			serviceID, apt.Service.Environment, apt.Service.AppId, apt.Service.ServiceName, apt.Service.Version)
 		return &pb.GetInstancesResponse{
-			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 	return &pb.GetInstancesResponse{
-		Response:  proto.CreateResponse(proto.ResponseSuccess, "Health check successfully."),
+		Response:  pb.CreateResponse(pb.ResponseSuccess, "Health check successfully."),
 		Instances: instances,
 	}, nil
 }

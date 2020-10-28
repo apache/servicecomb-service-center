@@ -19,13 +19,13 @@ package etcd
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/pkg/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/pkg/sd"
+	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
-	"github.com/apache/servicecomb-service-center/pkg/model"
 )
 
-func (ds *DataSource) DumpCache(ctx context.Context, cache *model.Cache) {
+func (ds *DataSource) DumpCache(ctx context.Context, cache *dump.Cache) {
 	gopool.New(ctx, gopool.Configure().Workers(2)).
 		Do(func(_ context.Context) { setValue(kv.Store().Service(), &cache.Microservices) }).
 		Do(func(_ context.Context) { setValue(kv.Store().ServiceIndex(), &cache.Indexes) }).
@@ -39,9 +39,9 @@ func (ds *DataSource) DumpCache(ctx context.Context, cache *model.Cache) {
 		Done()
 }
 
-func setValue(e sd.Adaptor, setter model.Setter) {
+func setValue(e sd.Adaptor, setter dump.Setter) {
 	e.Cache().ForEach(func(k string, kv *sd.KeyValue) (next bool) {
-		setter.SetValue(&model.KV{
+		setter.SetValue(&dump.KV{
 			Key:         k,
 			Rev:         kv.ModRevision,
 			Value:       kv.Value,

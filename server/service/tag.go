@@ -26,7 +26,6 @@ import (
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 )
@@ -37,7 +36,7 @@ func (s *MicroServiceService) AddTags(ctx context.Context, in *pb.AddServiceTags
 	if err != nil {
 		log.Errorf(err, "add service[%s]'s tags %v failed, operator: %s", in.ServiceId, in.Tags, remoteIP)
 		return &pb.AddServiceTagsResponse{
-			Response: proto.CreateResponse(scerr.ErrInvalidParams, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 
@@ -47,7 +46,7 @@ func (s *MicroServiceService) AddTags(ctx context.Context, in *pb.AddServiceTags
 		log.Errorf(nil, "add service[%s]'s tags %v failed, service does not exist, operator: %s",
 			in.ServiceId, in.Tags, remoteIP)
 		return &pb.AddServiceTagsResponse{
-			Response: proto.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 
@@ -58,7 +57,7 @@ func (s *MicroServiceService) AddTags(ctx context.Context, in *pb.AddServiceTags
 	if errQuota != nil {
 		log.Errorf(errQuota, "add service[%s]'s tags %v failed, operator: %s", in.ServiceId, addTags, remoteIP)
 		response := &pb.AddServiceTagsResponse{
-			Response: proto.CreateResponseWithSCErr(errQuota),
+			Response: pb.CreateResponseWithSCErr(errQuota),
 		}
 		if errQuota.InternalError() {
 			return response, errQuota
@@ -71,7 +70,7 @@ func (s *MicroServiceService) AddTags(ctx context.Context, in *pb.AddServiceTags
 		log.Errorf(err, "add service[%s]'s tags %v failed, get existed tag failed, operator: %s",
 			in.ServiceId, addTags, remoteIP)
 		return &pb.AddServiceTagsResponse{
-			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 	for key, value := range dataTags {
@@ -86,7 +85,7 @@ func (s *MicroServiceService) AddTags(ctx context.Context, in *pb.AddServiceTags
 	if checkErr != nil {
 		log.Errorf(checkErr, "add service[%s]'s tags %v failed, operator: %s", in.ServiceId, in.Tags, remoteIP)
 		resp := &pb.AddServiceTagsResponse{
-			Response: proto.CreateResponseWithSCErr(checkErr),
+			Response: pb.CreateResponseWithSCErr(checkErr),
 		}
 		if checkErr.InternalError() {
 			return resp, checkErr
@@ -96,7 +95,7 @@ func (s *MicroServiceService) AddTags(ctx context.Context, in *pb.AddServiceTags
 
 	log.Infof("add service[%s]'s tags %v successfully, operator: %s", in.ServiceId, in.Tags, remoteIP)
 	return &pb.AddServiceTagsResponse{
-		Response: proto.CreateResponse(proto.ResponseSuccess, "Add service tags successfully."),
+		Response: pb.CreateResponse(pb.ResponseSuccess, "Add service tags successfully."),
 	}, nil
 }
 
@@ -107,7 +106,7 @@ func (s *MicroServiceService) UpdateTag(ctx context.Context, in *pb.UpdateServic
 	if err != nil {
 		log.Errorf(err, "update service[%s]'s tag[%s] failed, operator: %s", in.ServiceId, tagFlag, remoteIP)
 		return &pb.UpdateServiceTagResponse{
-			Response: proto.CreateResponse(scerr.ErrInvalidParams, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 
@@ -117,7 +116,7 @@ func (s *MicroServiceService) UpdateTag(ctx context.Context, in *pb.UpdateServic
 		log.Errorf(err, "update service[%s]'s tag[%s] failed, service does not exist, operator: %s",
 			in.ServiceId, tagFlag, remoteIP)
 		return &pb.UpdateServiceTagResponse{
-			Response: proto.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 
@@ -126,7 +125,7 @@ func (s *MicroServiceService) UpdateTag(ctx context.Context, in *pb.UpdateServic
 		log.Errorf(err, "update service[%s]'s tag[%s] failed, get tag failed, operator: %s",
 			in.ServiceId, tagFlag, remoteIP)
 		return &pb.UpdateServiceTagResponse{
-			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 	//check tag 是否存在
@@ -134,7 +133,7 @@ func (s *MicroServiceService) UpdateTag(ctx context.Context, in *pb.UpdateServic
 		log.Errorf(nil, "update service[%s]'s tag[%s] failed, tag does not exist, operator: %s",
 			in.ServiceId, tagFlag, remoteIP)
 		return &pb.UpdateServiceTagResponse{
-			Response: proto.CreateResponse(scerr.ErrTagNotExists, "Tag does not exist, please add one first."),
+			Response: pb.CreateResponse(scerr.ErrTagNotExists, "Tag does not exist, please add one first."),
 		}, nil
 	}
 
@@ -148,7 +147,7 @@ func (s *MicroServiceService) UpdateTag(ctx context.Context, in *pb.UpdateServic
 	if checkErr != nil {
 		log.Errorf(checkErr, "update service[%s]'s tag[%s] failed, operator: %s", in.ServiceId, tagFlag, remoteIP)
 		resp := &pb.UpdateServiceTagResponse{
-			Response: proto.CreateResponseWithSCErr(checkErr),
+			Response: pb.CreateResponseWithSCErr(checkErr),
 		}
 		if checkErr.InternalError() {
 			return resp, checkErr
@@ -158,7 +157,7 @@ func (s *MicroServiceService) UpdateTag(ctx context.Context, in *pb.UpdateServic
 
 	log.Infof("update service[%s]'s tag[%s] successfully, operator: %s", in.ServiceId, tagFlag, remoteIP)
 	return &pb.UpdateServiceTagResponse{
-		Response: proto.CreateResponse(proto.ResponseSuccess, "Update service tag success."),
+		Response: pb.CreateResponse(pb.ResponseSuccess, "Update service tag success."),
 	}, nil
 }
 
@@ -168,7 +167,7 @@ func (s *MicroServiceService) DeleteTags(ctx context.Context, in *pb.DeleteServi
 	if err != nil {
 		log.Errorf(err, "delete service[%s]'s tags %v failed, operator: %s", in.ServiceId, in.Keys, remoteIP)
 		return &pb.DeleteServiceTagsResponse{
-			Response: proto.CreateResponse(scerr.ErrInvalidParams, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 
@@ -178,7 +177,7 @@ func (s *MicroServiceService) DeleteTags(ctx context.Context, in *pb.DeleteServi
 		log.Errorf(nil, "delete service[%s]'s tags %v failed, service does not exist, operator: %s",
 			in.ServiceId, in.Keys, remoteIP)
 		return &pb.DeleteServiceTagsResponse{
-			Response: proto.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 
@@ -187,7 +186,7 @@ func (s *MicroServiceService) DeleteTags(ctx context.Context, in *pb.DeleteServi
 		log.Errorf(err, "delete service[%s]'s tags %v failed, get service tags failed, operator: %s",
 			in.ServiceId, in.Keys, remoteIP)
 		return &pb.DeleteServiceTagsResponse{
-			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 
@@ -200,7 +199,7 @@ func (s *MicroServiceService) DeleteTags(ctx context.Context, in *pb.DeleteServi
 			log.Errorf(nil, "delete service[%s]'s tags %v failed, tag[%s] does not exist, operator: %s",
 				in.ServiceId, in.Keys, key, remoteIP)
 			return &pb.DeleteServiceTagsResponse{
-				Response: proto.CreateResponse(scerr.ErrTagNotExists, "Delete tags failed for this key "+key+" does not exist."),
+				Response: pb.CreateResponse(scerr.ErrTagNotExists, "Delete tags failed for this key "+key+" does not exist."),
 			}, nil
 		}
 		delete(copyTags, key)
@@ -212,7 +211,7 @@ func (s *MicroServiceService) DeleteTags(ctx context.Context, in *pb.DeleteServi
 		log.Errorf(err, "delete service[%s]'s tags %v failed, marshall service tags failed, operator: %s",
 			in.ServiceId, in.Keys, remoteIP)
 		return &pb.DeleteServiceTagsResponse{
-			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 
@@ -228,20 +227,20 @@ func (s *MicroServiceService) DeleteTags(ctx context.Context, in *pb.DeleteServi
 		log.Errorf(err, "delete service[%s]'s tags %v failed, operator: %s",
 			in.ServiceId, in.Keys, remoteIP)
 		return &pb.DeleteServiceTagsResponse{
-			Response: proto.CreateResponse(scerr.ErrUnavailableBackend, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrUnavailableBackend, err.Error()),
 		}, err
 	}
 	if !resp.Succeeded {
 		log.Errorf(err, "delete service[%s]'s tags %v failed, service does not exist, operator: %s",
 			in.ServiceId, in.Keys, remoteIP)
 		return &pb.DeleteServiceTagsResponse{
-			Response: proto.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 
 	log.Infof("delete service[%s]'s tags %v successfully, operator: %s", in.ServiceId, in.Keys, remoteIP)
 	return &pb.DeleteServiceTagsResponse{
-		Response: proto.CreateResponse(proto.ResponseSuccess, "Delete service tags successfully."),
+		Response: pb.CreateResponse(pb.ResponseSuccess, "Delete service tags successfully."),
 	}, nil
 }
 
@@ -250,7 +249,7 @@ func (s *MicroServiceService) GetTags(ctx context.Context, in *pb.GetServiceTags
 	if err != nil {
 		log.Errorf(err, "get service[%s]'s tags failed", in.ServiceId)
 		return &pb.GetServiceTagsResponse{
-			Response: proto.CreateResponse(scerr.ErrInvalidParams, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 
@@ -259,7 +258,7 @@ func (s *MicroServiceService) GetTags(ctx context.Context, in *pb.GetServiceTags
 	if !serviceUtil.ServiceExist(ctx, domainProject, in.ServiceId) {
 		log.Errorf(err, "get service[%s]'s tags failed, service does not exist", in.ServiceId)
 		return &pb.GetServiceTagsResponse{
-			Response: proto.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 
@@ -267,12 +266,12 @@ func (s *MicroServiceService) GetTags(ctx context.Context, in *pb.GetServiceTags
 	if err != nil {
 		log.Errorf(err, "get service[%s]'s tags failed, get tags failed", in.ServiceId)
 		return &pb.GetServiceTagsResponse{
-			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
 
 	return &pb.GetServiceTagsResponse{
-		Response: proto.CreateResponse(proto.ResponseSuccess, "Get service tags successfully."),
+		Response: pb.CreateResponse(pb.ResponseSuccess, "Get service tags successfully."),
 		Tags:     tags,
 	}, nil
 }

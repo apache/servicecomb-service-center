@@ -23,13 +23,12 @@ import (
 	"strings"
 
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/pkg/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/pkg/sd"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 )
 
@@ -295,10 +294,10 @@ func GetOneDomainProjectInstanceCount(ctx context.Context, domainProject string)
 
 func SetServiceDefaultValue(service *pb.MicroService) {
 	if len(service.AppId) == 0 {
-		service.AppId = proto.AppID
+		service.AppId = pb.AppID
 	}
 	if len(service.Version) == 0 {
-		service.Version = proto.VERSION
+		service.Version = pb.VERSION
 	}
 	if len(service.Level) == 0 {
 		service.Level = "BACK"

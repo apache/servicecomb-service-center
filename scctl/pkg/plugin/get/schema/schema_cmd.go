@@ -19,7 +19,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/client"
-	model2 "github.com/apache/servicecomb-service-center/pkg/model"
+	model2 "github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/cmd"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/model"

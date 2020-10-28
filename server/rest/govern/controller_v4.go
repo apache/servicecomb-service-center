@@ -18,7 +18,6 @@
 package govern
 
 import (
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"net/http"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -122,7 +121,7 @@ func (governService *ResourceV4) genLinesFromNode(withShared bool, domainProject
 }
 
 func (governService *ResourceV4) isSkipped(withShared bool, domainProject string, service *pb.MicroService) bool {
-	return !withShared && core.IsShared(proto.MicroServiceToKey(domainProject, service))
+	return !withShared && core.IsShared(pb.MicroServiceToKey(domainProject, service))
 }
 
 // GetServiceDetail 查询服务详细信息

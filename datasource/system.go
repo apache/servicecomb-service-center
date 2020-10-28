@@ -19,10 +19,10 @@ package datasource
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/pkg/model"
+	"github.com/apache/servicecomb-service-center/pkg/dump"
 )
 
 // SystemManager contains the APIs of system management
 type SystemManager interface {
-	DumpCache(ctx context.Context, cache *model.Cache)
+	DumpCache(ctx context.Context, cache *dump.Cache)
 }

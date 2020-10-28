@@ -72,7 +72,7 @@ func prepareSelfRegistration() {
 			"servicecenter.grpc.api.ServiceInstanceCtrl",
 		},
 		Properties: map[string]string{
-			proto.PropAllowCrossApp: "true",
+			registry.PropAllowCrossApp: "true",
 		},
 	}
 	if beego.BConfig.RunMode == "dev" {
@@ -131,7 +131,7 @@ func IsSCInstance(ctx context.Context) bool {
 
 func GetExistenceRequest() *registry.GetExistenceRequest {
 	return &registry.GetExistenceRequest{
-		Type:        proto.ExistenceMicroservice,
+		Type:        registry.ExistenceMicroservice,
 		Environment: Service.Environment,
 		AppId:       Service.AppId,
 		ServiceName: Service.ServiceName,

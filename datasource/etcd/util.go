@@ -21,7 +21,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/pkg/kv"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
@@ -29,7 +29,6 @@ import (
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"strconv"
@@ -120,7 +119,7 @@ func newRegisterServiceResp(ctx context.Context, reqService *pb.MicroService, re
 		log.Errorf(err, "create micro-service[%s] failed, operator: %s",
 			serviceFlag, remoteIP)
 		return &pb.CreateServiceResponse{
-			Response: proto.CreateResponse(scerr.ErrUnavailableBackend, err.Error()),
+			Response: pb.CreateResponse(scerr.ErrUnavailableBackend, err.Error()),
 		}, err
 	}
 
@@ -132,7 +131,7 @@ func newRegisterServiceResp(ctx context.Context, reqService *pb.MicroService, re
 				log.Warnf("create micro-service[%s] failed, service already exists, operator: %s",
 					serviceFlag, remoteIP)
 				return &pb.CreateServiceResponse{
-					Response: proto.CreateResponse(scerr.ErrServiceAlreadyExists,
+					Response: pb.CreateResponse(scerr.ErrServiceAlreadyExists,
 						"ServiceID conflict or found the same service with different id."),
 				}, nil
 			}
@@ -143,7 +142,7 @@ func newRegisterServiceResp(ctx context.Context, reqService *pb.MicroService, re
 			log.Errorf(nil, "create micro-service[%s] failed, unexpected txn response, operator: %s",
 				serviceFlag, remoteIP)
 			return &pb.CreateServiceResponse{
-				Response: proto.CreateResponse(scerr.ErrInternal, "Unexpected txn response."),
+				Response: pb.CreateResponse(scerr.ErrInternal, "Unexpected txn response."),
 			}, nil
 		}
 
@@ -151,7 +150,7 @@ func newRegisterServiceResp(ctx context.Context, reqService *pb.MicroService, re
 		log.Warnf("create micro-service[%s][%s] failed, service already exists, operator: %s",
 			serviceIDInner, serviceFlag, remoteIP)
 		return &pb.CreateServiceResponse{
-			Response:  proto.CreateResponse(proto.ResponseSuccess, "register service successfully"),
+			Response:  pb.CreateResponse(pb.ResponseSuccess, "register service successfully"),
 			ServiceId: serviceIDInner,
 		}, nil
 	}
@@ -159,7 +158,7 @@ func newRegisterServiceResp(ctx context.Context, reqService *pb.MicroService, re
 	log.Infof("create micro-service[%s][%s] successfully, operator: %s",
 		reqService.ServiceId, serviceFlag, remoteIP)
 	return &pb.CreateServiceResponse{
-		Response:  proto.CreateResponse(proto.ResponseSuccess, "Register service successfully."),
+		Response:  pb.CreateResponse(pb.ResponseSuccess, "Register service successfully."),
 		ServiceId: reqService.ServiceId,
 	}, nil
 }

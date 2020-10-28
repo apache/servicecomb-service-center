@@ -23,12 +23,11 @@ import (
 	"strings"
 
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/pkg/kv"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 )
 
 // DependencyRelationFilterOpt contains SameDomainProject and NonSelf flag
@@ -124,7 +123,7 @@ func (dr *DependencyRelation) getProviderKeys() ([]*pb.MicroServiceKey, error) {
 	if dr.consumer == nil {
 		return nil, fmt.Errorf("Invalid consumer")
 	}
-	consumerMicroServiceKey := proto.MicroServiceToKey(dr.domainProject, dr.consumer)
+	consumerMicroServiceKey := pb.MicroServiceToKey(dr.domainProject, dr.consumer)
 
 	conKey := apt.GenerateConsumerDependencyRuleKey(dr.domainProject, consumerMicroServiceKey)
 	consumerDependency, err := TransferToMicroServiceDependency(dr.ctx, conKey)
@@ -260,7 +259,7 @@ func (dr *DependencyRelation) GetDependencyConsumersOfProvider() ([]*pb.MicroSer
 	if dr.provider == nil {
 		return nil, fmt.Errorf("Invalid provider")
 	}
-	providerService := proto.MicroServiceToKey(dr.domainProject, dr.provider)
+	providerService := pb.MicroServiceToKey(dr.domainProject, dr.provider)
 	consumerDependAllList, err := dr.getConsumerOfDependAllServices()
 	if err != nil {
 		log.Errorf(err, "get consumers that depend on all services failed, %s", dr.provider.ServiceId)
@@ -278,7 +277,7 @@ func (dr *DependencyRelation) GetDependencyConsumersOfProvider() ([]*pb.MicroSer
 }
 
 func (dr *DependencyRelation) getConsumerOfDependAllServices() ([]*pb.MicroServiceKey, error) {
-	providerService := proto.MicroServiceToKey(dr.domainProject, dr.provider)
+	providerService := pb.MicroServiceToKey(dr.domainProject, dr.provider)
 	providerService.ServiceName = "*"
 	relyAllKey := apt.GenerateProviderDependencyRuleKey(dr.domainProject, providerService)
 	opts := append(FromContext(dr.ctx), client.WithStrKey(relyAllKey))

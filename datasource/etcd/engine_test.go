@@ -30,7 +30,6 @@ import (
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -72,7 +71,7 @@ func createService(domain string, project string, name string, withInstance bool
 	svcResp, err := apt.ServiceAPI.Create(ctx, svc)
 	Expect(err).To(BeNil())
 	Expect(svcResp).NotTo(BeNil())
-	Expect(svcResp.Response.GetCode()).To(Equal(proto.ResponseSuccess))
+	Expect(svcResp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 	info := &serviceCleanInfo{
 		ServiceName:  name,
 		ServiceId:    svcResp.ServiceId,
@@ -100,7 +99,7 @@ func checkServiceCleared(domain string, project string) {
 		getSvcResp, err := apt.ServiceAPI.GetOne(ctx, getSvcReq)
 		Expect(err).To(BeNil())
 		Expect(getSvcResp).NotTo(BeNil())
-		Expect(getSvcResp.Response.GetCode() == proto.ResponseSuccess).To(Equal(!v.ShouldClear))
+		Expect(getSvcResp.Response.GetCode() == pb.ResponseSuccess).To(Equal(!v.ShouldClear))
 	}
 }
 

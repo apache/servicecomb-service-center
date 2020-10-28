@@ -22,7 +22,7 @@ import (
 	"sort"
 	"testing"
 
-	sd "github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	sd "github.com/apache/servicecomb-service-center/datasource/etcd/pkg/sd"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/stretchr/testify/assert"
 )

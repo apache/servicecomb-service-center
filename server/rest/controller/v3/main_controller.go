@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/rest/controller"
 	"github.com/apache/servicecomb-service-center/server/rest/controller/v4"
 	"github.com/apache/servicecomb-service-center/version"
@@ -40,7 +39,7 @@ func init() {
 		APIVersion: APIVersion,
 	}
 	versionJsonCache, _ = json.Marshal(result)
-	versionResp = proto.CreateResponse(proto.ResponseSuccess, "get version successfully")
+	versionResp = pb.CreateResponse(pb.ResponseSuccess, "get version successfully")
 }
 
 type MainService struct {

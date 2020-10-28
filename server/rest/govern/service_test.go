@@ -20,7 +20,6 @@ import (
 	"bytes"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/rest/govern"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -46,28 +45,28 @@ var _ = Describe("'Govern' service", func() {
 					Options: []string{"all"},
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(proto.ResponseSuccess))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
 				By("only service metadata")
 				resp, err = governService.GetServicesInfo(getContext(), &pb.GetServicesInfoRequest{
 					Options: []string{""},
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(proto.ResponseSuccess))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
 				By("custom options")
 				resp, err = governService.GetServicesInfo(getContext(), &pb.GetServicesInfoRequest{
 					Options: []string{"tags", "rules", "instances", "schemas", "statistics"},
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(proto.ResponseSuccess))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
 				By("'statistics' option")
 				resp, err = governService.GetServicesInfo(getContext(), &pb.GetServicesInfoRequest{
 					Options: []string{"statistics"},
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(proto.ResponseSuccess))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
 				By("get instance count")
 				resp, err = governService.GetServicesInfo(getContext(), &pb.GetServicesInfoRequest{
@@ -75,7 +74,7 @@ var _ = Describe("'Govern' service", func() {
 					CountOnly: true,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(proto.ResponseSuccess))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 			})
 		})
 
@@ -91,7 +90,7 @@ var _ = Describe("'Govern' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respC.Response.GetCode()).To(Equal(proto.ResponseSuccess))
+				Expect(respC.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
 				svr := httptest.NewServer(&mockGovernHandler{func(w http.ResponseWriter, r *http.Request) {
 					ctrl := &govern.ResourceV4{}
@@ -128,7 +127,7 @@ var _ = Describe("'Govern' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(resp.Response.GetCode()).To(Equal(proto.ResponseSuccess))
+			Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 			serviceId = resp.ServiceId
 
 			core.ServiceAPI.ModifySchema(getContext(), &pb.ModifySchemaRequest{
@@ -137,7 +136,7 @@ var _ = Describe("'Govern' service", func() {
 				Schema:    "detail",
 			})
 			Expect(err).To(BeNil())
-			Expect(resp.Response.GetCode()).To(Equal(proto.ResponseSuccess))
+			Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
 			core.InstanceAPI.Register(getContext(), &pb.RegisterInstanceRequest{
 				Instance: &pb.MicroServiceInstance{
@@ -150,7 +149,7 @@ var _ = Describe("'Govern' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(resp.Response.GetCode()).To(Equal(proto.ResponseSuccess))
+			Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 		})
 
 		Context("when get invalid service detail", func() {
@@ -159,7 +158,7 @@ var _ = Describe("'Govern' service", func() {
 					ServiceId: "",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).ToNot(Equal(proto.ResponseSuccess))
+				Expect(resp.Response.GetCode()).ToNot(Equal(pb.ResponseSuccess))
 			})
 		})
 
@@ -169,20 +168,20 @@ var _ = Describe("'Govern' service", func() {
 					ServiceId: serviceId,
 				})
 				Expect(err).To(BeNil())
-				Expect(respGetServiceDetail.Response.GetCode()).To(Equal(proto.ResponseSuccess))
+				Expect(respGetServiceDetail.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
 				respDelete, err := core.ServiceAPI.Delete(getContext(), &pb.DeleteServiceRequest{
 					ServiceId: serviceId,
 					Force:     true,
 				})
 				Expect(err).To(BeNil())
-				Expect(respDelete.Response.GetCode()).To(Equal(proto.ResponseSuccess))
+				Expect(respDelete.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
 				respGetServiceDetail, err = governService.GetServiceDetail(getContext(), &pb.GetServiceRequest{
 					ServiceId: serviceId,
 				})
 				Expect(err).To(BeNil())
-				Expect(respGetServiceDetail.Response.GetCode()).ToNot(Equal(proto.ResponseSuccess))
+				Expect(respGetServiceDetail.Response.GetCode()).ToNot(Equal(pb.ResponseSuccess))
 			})
 		})
 	})
@@ -194,7 +193,7 @@ var _ = Describe("'Govern' service", func() {
 					Environment: "non-exist-env",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).ToNot(Equal(proto.ResponseSuccess))
+				Expect(resp.Response.GetCode()).ToNot(Equal(pb.ResponseSuccess))
 			})
 		})
 
@@ -202,13 +201,13 @@ var _ = Describe("'Govern' service", func() {
 			It("should be passed", func() {
 				resp, err := governService.GetApplications(getContext(), &pb.GetAppsRequest{})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(proto.ResponseSuccess))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
 				resp, err = governService.GetApplications(getContext(), &pb.GetAppsRequest{
 					Environment: pb.ENV_ACCEPT,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(proto.ResponseSuccess))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 			})
 		})
 	})

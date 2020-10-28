@@ -70,7 +70,7 @@ func (s *MainService) GetVersion(w http.ResponseWriter, r *http.Request) {
 			&config.ServerInfo.Config,
 		}
 		versionJSONCache, _ = json.Marshal(result)
-		versionResp = proto.CreateResponse(proto.ResponseSuccess, "get version successfully")
+		versionResp = pb.CreateResponse(pb.ResponseSuccess, "get version successfully")
 	})
 	controller.WriteJSONIfSuccess(w, versionResp, versionJSONCache)
 }
