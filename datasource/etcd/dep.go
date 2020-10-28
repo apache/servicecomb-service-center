@@ -124,5 +124,5 @@ func (ds *DataSource) AddOrUpdateDependencies(ctx context.Context, dependencyInf
 
 	log.Infof("put request into dependency queue successfully, override: %t, %v, from remote %s",
 		override, dependencyInfos, util.GetIPFromContext(ctx))
-	return proto.CreateResponse(proto.Response_SUCCESS, "Create dependency successfully."), nil
+	return proto.CreateResponse(proto.ResponseSuccess, "Create dependency successfully."), nil
 }

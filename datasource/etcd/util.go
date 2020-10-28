@@ -151,7 +151,7 @@ func newRegisterServiceResp(ctx context.Context, reqService *pb.MicroService, re
 		log.Warnf("create micro-service[%s][%s] failed, service already exists, operator: %s",
 			serviceIDInner, serviceFlag, remoteIP)
 		return &pb.CreateServiceResponse{
-			Response:  proto.CreateResponse(proto.Response_SUCCESS, "register service successfully"),
+			Response:  proto.CreateResponse(proto.ResponseSuccess, "register service successfully"),
 			ServiceId: serviceIDInner,
 		}, nil
 	}
@@ -159,7 +159,7 @@ func newRegisterServiceResp(ctx context.Context, reqService *pb.MicroService, re
 	log.Infof("create micro-service[%s][%s] successfully, operator: %s",
 		reqService.ServiceId, serviceFlag, remoteIP)
 	return &pb.CreateServiceResponse{
-		Response:  proto.CreateResponse(proto.Response_SUCCESS, "Register service successfully."),
+		Response:  proto.CreateResponse(proto.ResponseSuccess, "Register service successfully."),
 		ServiceId: reqService.ServiceId,
 	}, nil
 }

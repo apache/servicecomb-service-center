@@ -70,7 +70,7 @@ var (
 		m := (*d).(map[string]string)
 		return json.Unmarshal(src, &m)
 	}
-	JsonUnmarshal ParseValueFunc = func(src []byte, dist interface{}) error {
+	JSONUnmarshal ParseValueFunc = func(src []byte, dist interface{}) error {
 		if err := check(src, dist); err != nil {
 			return err
 		}
@@ -102,11 +102,11 @@ var (
 	StringParser = &CommonParser{newString, TextUnmarshal}
 	MapParser    = &CommonParser{newMap, MapUnmarshal}
 
-	ServiceParser         = &CommonParser{newService, JsonUnmarshal}
-	InstanceParser        = &CommonParser{newInstance, JsonUnmarshal}
-	RuleParser            = &CommonParser{newRule, JsonUnmarshal}
-	DependencyRuleParser  = &CommonParser{newDependencyRule, JsonUnmarshal}
-	DependencyQueueParser = &CommonParser{newDependencyQueue, JsonUnmarshal}
+	ServiceParser         = &CommonParser{newService, JSONUnmarshal}
+	InstanceParser        = &CommonParser{newInstance, JSONUnmarshal}
+	RuleParser            = &CommonParser{newRule, JSONUnmarshal}
+	DependencyRuleParser  = &CommonParser{newDependencyRule, JSONUnmarshal}
+	DependencyQueueParser = &CommonParser{newDependencyQueue, JSONUnmarshal}
 )
 
 func check(src []byte, dist interface{}) error {

@@ -73,7 +73,7 @@ func (governService *Service) GetServicesInfo(ctx context.Context, in *pb.GetSer
 		}
 		if len(optionMap) == 1 {
 			return &pb.GetServicesInfoResponse{
-				Response:   proto.CreateResponse(proto.Response_SUCCESS, "Statistics successfully."),
+				Response:   proto.CreateResponse(proto.ResponseSuccess, "Statistics successfully."),
 				Statistics: st,
 			}, nil
 		}
@@ -119,7 +119,7 @@ func (governService *Service) GetServicesInfo(ctx context.Context, in *pb.GetSer
 	}
 
 	return &pb.GetServicesInfoResponse{
-		Response:          proto.CreateResponse(proto.Response_SUCCESS, "Get services info successfully."),
+		Response:          proto.CreateResponse(proto.ResponseSuccess, "Get services info successfully."),
 		AllServicesDetail: allServiceDetails,
 		Statistics:        st,
 	}, nil
@@ -179,7 +179,7 @@ func (governService *Service) GetServiceDetail(ctx context.Context, in *pb.GetSe
 	serviceInfo.MicroService = service
 	serviceInfo.MicroServiceVersions = versions
 	return &pb.GetServiceDetailResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Get service successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Get service successfully."),
 		Service:  serviceInfo,
 	}, nil
 }
@@ -207,7 +207,7 @@ func (governService *Service) GetApplications(ctx context.Context, in *pb.GetApp
 	l := len(resp.Kvs)
 	if l == 0 {
 		return &pb.GetAppsResponse{
-			Response: proto.CreateResponse(proto.Response_SUCCESS, "Get all applications successfully."),
+			Response: proto.CreateResponse(proto.ResponseSuccess, "Get all applications successfully."),
 		}, nil
 	}
 
@@ -226,7 +226,7 @@ func (governService *Service) GetApplications(ctx context.Context, in *pb.GetApp
 	}
 
 	return &pb.GetAppsResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Get all applications successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Get all applications successfully."),
 		AppIds:   apps,
 	}, nil
 }

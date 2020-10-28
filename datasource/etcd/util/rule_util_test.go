@@ -101,7 +101,7 @@ func TestAllowAcrossApp(t *testing.T) {
 	err = AllowAcrossDimension(context.Background(), &registry.MicroService{
 		AppId: "a",
 		Properties: map[string]string{
-			proto.PROP_ALLOW_CROSS_APP: "true",
+			proto.PropAllowCrossApp: "true",
 		},
 	}, &registry.MicroService{
 		AppId: "a",
@@ -113,7 +113,7 @@ func TestAllowAcrossApp(t *testing.T) {
 	err = AllowAcrossDimension(context.Background(), &registry.MicroService{
 		AppId: "a",
 		Properties: map[string]string{
-			proto.PROP_ALLOW_CROSS_APP: "true",
+			proto.PropAllowCrossApp: "true",
 		},
 	}, &registry.MicroService{
 		AppId: "b",
@@ -125,7 +125,7 @@ func TestAllowAcrossApp(t *testing.T) {
 	err = AllowAcrossDimension(context.Background(), &registry.MicroService{
 		AppId: "a",
 		Properties: map[string]string{
-			proto.PROP_ALLOW_CROSS_APP: "false",
+			proto.PropAllowCrossApp: "false",
 		},
 	}, &registry.MicroService{
 		AppId: "b",
@@ -137,7 +137,7 @@ func TestAllowAcrossApp(t *testing.T) {
 	err = AllowAcrossDimension(context.Background(), &registry.MicroService{
 		AppId: "a",
 		Properties: map[string]string{
-			proto.PROP_ALLOW_CROSS_APP: "",
+			proto.PropAllowCrossApp: "",
 		},
 	}, &registry.MicroService{
 		AppId: "b",

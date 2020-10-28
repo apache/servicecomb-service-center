@@ -79,8 +79,7 @@ func NewApplyQuotaResult(reporter Reporter, err *scerr.Error) *ApplyQuotaResult 
 }
 
 type ApplyQuotaResource struct {
-	QuotaType ResourceType
-	// Deprecated: Read from context.Context instead
+	QuotaType     ResourceType
 	DomainProject string
 	ServiceID     string
 	QuotaSize     int64

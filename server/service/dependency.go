@@ -108,7 +108,7 @@ func (s *MicroServiceService) AddOrUpdateDependencies(ctx context.Context, depen
 
 	log.Infof("put request into dependency queue successfully, override: %t, %v, from remote %s",
 		override, dependencyInfos, util.GetIPFromContext(ctx))
-	return proto.CreateResponse(proto.Response_SUCCESS, "Create dependency successfully."), nil
+	return proto.CreateResponse(proto.ResponseSuccess, "Create dependency successfully."), nil
 }
 
 func (s *MicroServiceService) GetProviderDependencies(ctx context.Context, in *pb.GetDependenciesRequest) (*pb.GetProDependenciesResponse, error) {
@@ -144,7 +144,7 @@ func (s *MicroServiceService) GetProviderDependencies(ctx context.Context, in *p
 		}, err
 	}
 	return &pb.GetProDependenciesResponse{
-		Response:  proto.CreateResponse(proto.Response_SUCCESS, "Get all consumers successful."),
+		Response:  proto.CreateResponse(proto.ResponseSuccess, "Get all consumers successful."),
 		Consumers: services,
 	}, nil
 }
@@ -185,7 +185,7 @@ func (s *MicroServiceService) GetConsumerDependencies(ctx context.Context, in *p
 	}
 
 	return &pb.GetConDependenciesResponse{
-		Response:  proto.CreateResponse(proto.Response_SUCCESS, "Get all providers successfully."),
+		Response:  proto.CreateResponse(proto.ResponseSuccess, "Get all providers successfully."),
 		Providers: services,
 	}, nil
 }

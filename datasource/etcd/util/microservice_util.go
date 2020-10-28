@@ -295,7 +295,7 @@ func GetOneDomainProjectInstanceCount(ctx context.Context, domainProject string)
 
 func SetServiceDefaultValue(service *pb.MicroService) {
 	if len(service.AppId) == 0 {
-		service.AppId = proto.APP_ID
+		service.AppId = proto.AppID
 	}
 	if len(service.Version) == 0 {
 		service.Version = proto.VERSION

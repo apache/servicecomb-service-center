@@ -156,7 +156,7 @@ func AllowAcrossDimension(ctx context.Context, providerService *pb.MicroService,
 			return fmt.Errorf("not allow across app access")
 		}
 
-		if allowCrossApp, ok := providerService.Properties[proto.PROP_ALLOW_CROSS_APP]; !ok || strings.ToLower(allowCrossApp) != "true" {
+		if allowCrossApp, ok := providerService.Properties[proto.PropAllowCrossApp]; !ok || strings.ToLower(allowCrossApp) != "true" {
 			return fmt.Errorf("not allow across app access")
 		}
 	}

@@ -145,7 +145,7 @@ func CreateBrokerHomeResponse(host string, scheme string) *brokerpb.BrokerHomeRe
 	})
 
 	return &brokerpb.BrokerHomeResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Broker Home."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Broker Home."),
 		XLinks:   apiEntries,
 		Curies:   curies,
 	}
@@ -569,7 +569,7 @@ func RetrieveProviderConsumerPact(ctx context.Context,
 		if _, ok := pactIDs[pactObj.Id]; ok {
 			//PactLogger.Infof("pact retrieve succeeded, found pact: %s", string(pactObj.Content))
 			return &brokerpb.GetProviderConsumerVersionPactResponse{
-				Response: proto.CreateResponse(proto.Response_SUCCESS, "pact found."),
+				Response: proto.CreateResponse(proto.ResponseSuccess, "pact found."),
 				Pact:     pactObj.Content,
 			}, pactObj.Id, nil
 		}
@@ -590,5 +590,5 @@ func DeletePactData(ctx context.Context,
 	if err != nil {
 		return proto.CreateResponse(scerr.ErrInternal, "error deleting pacts."), err
 	}
-	return proto.CreateResponse(proto.Response_SUCCESS, "deleting pacts Succeed."), nil
+	return proto.CreateResponse(proto.ResponseSuccess, "deleting pacts Succeed."), nil
 }

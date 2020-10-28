@@ -96,7 +96,7 @@ func (s *MicroServiceService) AddTags(ctx context.Context, in *pb.AddServiceTags
 
 	log.Infof("add service[%s]'s tags %v successfully, operator: %s", in.ServiceId, in.Tags, remoteIP)
 	return &pb.AddServiceTagsResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Add service tags successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Add service tags successfully."),
 	}, nil
 }
 
@@ -158,7 +158,7 @@ func (s *MicroServiceService) UpdateTag(ctx context.Context, in *pb.UpdateServic
 
 	log.Infof("update service[%s]'s tag[%s] successfully, operator: %s", in.ServiceId, tagFlag, remoteIP)
 	return &pb.UpdateServiceTagResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Update service tag success."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Update service tag success."),
 	}, nil
 }
 
@@ -241,7 +241,7 @@ func (s *MicroServiceService) DeleteTags(ctx context.Context, in *pb.DeleteServi
 
 	log.Infof("delete service[%s]'s tags %v successfully, operator: %s", in.ServiceId, in.Keys, remoteIP)
 	return &pb.DeleteServiceTagsResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Delete service tags successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Delete service tags successfully."),
 	}, nil
 }
 
@@ -272,7 +272,7 @@ func (s *MicroServiceService) GetTags(ctx context.Context, in *pb.GetServiceTags
 	}
 
 	return &pb.GetServiceTagsResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Get service tags successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Get service tags successfully."),
 		Tags:     tags,
 	}, nil
 }

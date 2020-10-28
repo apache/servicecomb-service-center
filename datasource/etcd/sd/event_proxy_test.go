@@ -14,11 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package sd
 
 import (
 	"testing"
 )
+
+const MOCK = 999
 
 type mockEventHandler struct {
 	MockType Type
@@ -33,16 +36,17 @@ func (h *mockEventHandler) OnEvent(evt KvEvent) {
 }
 
 func TestAddEventHandler(t *testing.T) {
-	h := &mockEventHandler{MockType: 0}
+
+	h := &mockEventHandler{MockType: MOCK}
 	evt := KvEvent{Revision: 1}
 
 	// case: add
-	proxy := EventProxy(0)
+	proxy := EventProxy(MOCK)
 	if nil == proxy {
 		t.Fatalf("TestAddEventHandler failed")
 	}
 	cfg := Configure()
-	if EventProxy(0).InjectConfig(cfg) != cfg {
+	if EventProxy(MOCK).InjectConfig(cfg) != cfg {
 		t.Fatalf("TestAddEventHandler failed")
 	}
 
@@ -53,7 +57,7 @@ func TestAddEventHandler(t *testing.T) {
 		t.Fatalf("TestAddEventHandler failed")
 	}
 
-	AddEventHandleFunc(0, func(e KvEvent) {
+	AddEventHandleFunc(MOCK, func(e KvEvent) {
 		if e != evt {
 			t.Fatalf("TestAddEventHandler failed")
 		}

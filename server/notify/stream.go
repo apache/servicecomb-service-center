@@ -28,7 +28,7 @@ import (
 	"time"
 )
 
-func HandleWatchJob(watcher *InstanceEventListWatcher, stream proto.ServiceInstanceCtrl_WatchServer) (err error) {
+func HandleWatchJob(watcher *InstanceEventListWatcher, stream proto.ServiceInstanceCtrlWatchServer) (err error) {
 	timer := time.NewTimer(HeartbeatInterval)
 	defer timer.Stop()
 	for {
@@ -37,8 +37,6 @@ func HandleWatchJob(watcher *InstanceEventListWatcher, stream proto.ServiceInsta
 			return
 		case <-timer.C:
 			timer.Reset(HeartbeatInterval)
-
-			// TODO grpc 长连接心跳？
 		case job := <-watcher.Job:
 			if job == nil {
 				err = errors.New("channel is closed")
@@ -46,28 +44,27 @@ func HandleWatchJob(watcher *InstanceEventListWatcher, stream proto.ServiceInsta
 					watcher.Subject(), watcher.Group())
 				return
 			}
-			if job.Response != nil {
-				resp := job.Response
-				log.Infof("event is coming in, watcher, subject: %s, group: %s",
-					watcher.Subject(), watcher.Group())
-
-				err = stream.Send(resp)
-				if job != nil {
-					ReportPublishCompleted(job, err)
-				}
-				if err != nil {
-					log.Errorf(err, "send message error, subject: %s, group: %s",
-						watcher.Subject(), watcher.Group())
-					watcher.SetError(err)
-					return
-				}
-				util.ResetTimer(timer, HeartbeatInterval)
+			if job.Response == nil {
+				continue
 			}
+			resp := job.Response
+			log.Infof("event is coming in, watcher, subject: %s, group: %s",
+				watcher.Subject(), watcher.Group())
+
+			err = stream.Send(resp)
+			ReportPublishCompleted(job, err)
+			if err != nil {
+				log.Errorf(err, "send message error, subject: %s, group: %s",
+					watcher.Subject(), watcher.Group())
+				watcher.SetError(err)
+				return
+			}
+			util.ResetTimer(timer, HeartbeatInterval)
 		}
 	}
 }
 
-func DoStreamListAndWatch(ctx context.Context, serviceID string, f func() ([]*pb.WatchInstanceResponse, int64), stream proto.ServiceInstanceCtrl_WatchServer) (err error) {
+func DoStreamListAndWatch(ctx context.Context, serviceID string, f func() ([]*pb.WatchInstanceResponse, int64), stream proto.ServiceInstanceCtrlWatchServer) (err error) {
 	domainProject := util.ParseDomainProject(ctx)
 	domain := util.ParseDomain(ctx)
 	watcher := NewInstanceEventListWatcher(serviceID, apt.GetInstanceRootKey(domainProject)+"/", f)

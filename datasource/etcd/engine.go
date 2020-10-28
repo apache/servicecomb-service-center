@@ -57,10 +57,10 @@ func (ds *DataSource) registryService(pCtx context.Context) error {
 		log.Error("query service center existence failed", err)
 		return err
 	}
-	if respE.Response.GetCode() == proto.Response_SUCCESS {
+	if respE.Response.GetCode() == proto.ResponseSuccess {
 		log.Warnf("service center service[%s] already registered", respE.ServiceId)
 		respG, err := core.ServiceAPI.GetOne(ctx, core.GetServiceRequest(respE.ServiceId))
-		if respG.Response.GetCode() != proto.Response_SUCCESS {
+		if respG.Response.GetCode() != proto.ResponseSuccess {
 			log.Errorf(err, "query service center service[%s] info failed", respE.ServiceId)
 			return fmt.Errorf("service center service file lost")
 		}
@@ -89,7 +89,7 @@ func (ds *DataSource) registryInstance(pCtx context.Context) error {
 		log.Error("register failed", err)
 		return err
 	}
-	if respI.Response.GetCode() != proto.Response_SUCCESS {
+	if respI.Response.GetCode() != proto.ResponseSuccess {
 		err = fmt.Errorf("register service center[%s] instance failed, %s",
 			core.Instance.ServiceId, respI.Response.GetMessage())
 		log.Error(err.Error(), nil)
@@ -111,7 +111,7 @@ func (ds *DataSource) SelfUnregister(pCtx context.Context) error {
 		log.Error("unregister failed", err)
 		return err
 	}
-	if respI.Response.GetCode() != proto.Response_SUCCESS {
+	if respI.Response.GetCode() != proto.ResponseSuccess {
 		err = fmt.Errorf("unregister service center instance[%s/%s] failed, %s",
 			core.Instance.ServiceId, core.Instance.InstanceId, respI.Response.GetMessage())
 		log.Error(err.Error(), nil)
@@ -129,7 +129,7 @@ func (ds *DataSource) selfHeartBeat(pCtx context.Context) error {
 		log.Error("sen heartbeat failed", err)
 		return err
 	}
-	if respI.Response.GetCode() == proto.Response_SUCCESS {
+	if respI.Response.GetCode() == proto.ResponseSuccess {
 		log.Debugf("update service center instance[%s/%s] heartbeat",
 			core.Instance.ServiceId, core.Instance.InstanceId)
 		return nil
@@ -207,7 +207,7 @@ func (ds *DataSource) ClearNoInstanceServices(ctx context.Context, serviceTTL ti
 				log.Errorf(err, "clear service failed, %s", svcCtxStr)
 				continue
 			}
-			if delSvcResp.Response.GetCode() != proto.Response_SUCCESS {
+			if delSvcResp.Response.GetCode() != proto.ResponseSuccess {
 				log.Errorf(nil, "clear service failed, %s, %s", delSvcResp.Response.GetMessage(), svcCtxStr)
 				continue
 			}
@@ -241,7 +241,7 @@ func shouldClear(ctx context.Context, timeLimitStamp string, svc *pb.MicroServic
 	if err != nil {
 		return false, err
 	}
-	if getInstsResp.Response.GetCode() != proto.Response_SUCCESS {
+	if getInstsResp.Response.GetCode() != proto.ResponseSuccess {
 		return false, errors.New("get instance failed: " + getInstsResp.Response.GetMessage())
 	}
 	//ignore a service if it has instances

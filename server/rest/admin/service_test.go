@@ -37,7 +37,7 @@ func TestAdminService_Dump(t *testing.T) {
 	t.Log("execute 'dump' operation,when get all,should be passed")
 	resp, err := admin.AdminServiceAPI.Dump(getContext(), &model2.DumpRequest{})
 	assert.NoError(t, err)
-	assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+	assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
 	t.Log("execute 'dump' operation,when get by domain project,should be passed")
 	resp, err = admin.AdminServiceAPI.Dump(
 		util.SetDomainProject(context.Background(), "x", "x"),

@@ -92,7 +92,7 @@ func (*Service) GetPactsOfProvider(ctx context.Context,
 	finalBytes := append(sliceOfResp, linksBytes...)
 
 	return &brokerpb.GetProviderConsumerVersionPactResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Success."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Success."),
 		Pact:     finalBytes,
 	}, nil
 
@@ -252,7 +252,7 @@ func (*Service) RetrieveProviderPacts(ctx context.Context,
 	}
 	PactLogger.Infof("Json : %s", string(resJSON))
 	response := &brokerpb.GetAllProviderPactsResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "retrieve provider pact info succeeded."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "retrieve provider pact info succeeded."),
 		XLinks:   links,
 	}
 	return response, nil
@@ -405,7 +405,7 @@ func (*Service) GetAllProviderPacts(ctx context.Context,
 	}
 	PactLogger.Infof("Json : %s", string(resJSON))
 	response := &brokerpb.GetAllProviderPactsResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "retrieve provider pact info succeeded."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "retrieve provider pact info succeeded."),
 		XLinks:   links,
 	}
 	return response, nil
@@ -581,7 +581,7 @@ func (*Service) RetrieveVerificationResults(ctx context.Context, in *brokerpb.Re
 	verificationResult := &brokerpb.VerificationResult{Success: overAllSuccess, ProviderSummary: verificationSummary, XEmbedded: verificationDetails}
 	PactLogger.Infof("Verification result retrieved successfully ...")
 	return &brokerpb.RetrieveVerificationResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Verification result retrieved successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Verification result retrieved successfully."),
 		Result:   verificationResult,
 	}, nil
 }
@@ -729,7 +729,7 @@ func (*Service) PublishVerificationResults(ctx context.Context, in *brokerpb.Pub
 	}
 	PactLogger.Infof("Verification result published successfully ...")
 	return &brokerpb.PublishVerificationResponse{
-		Response:     proto.CreateResponse(proto.Response_SUCCESS, "Verification result published successfully."),
+		Response:     proto.CreateResponse(proto.ResponseSuccess, "Verification result published successfully."),
 		Confirmation: verificationResponse,
 	}, nil
 }
@@ -904,7 +904,7 @@ func (*Service) PublishPact(ctx context.Context, in *brokerpb.PublishPactRequest
 	PactLogger.Infof("PactVersion found/create: (%d, %d, %d, %d)", pactVersion.Id, pactVersion.VersionId, pactVersion.PactId, pactVersion.ProviderParticipantId)
 	PactLogger.Infof("Pact published successfully ...")
 	return &brokerpb.PublishPactResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Pact published successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Pact published successfully."),
 	}, nil
 }
 

@@ -40,7 +40,7 @@ func (s *InstanceService) WatchPreOpera(ctx context.Context, in *pb.WatchInstanc
 	return nil
 }
 
-func (s *InstanceService) Watch(in *pb.WatchInstanceRequest, stream proto.ServiceInstanceCtrl_WatchServer) error {
+func (s *InstanceService) Watch(in *pb.WatchInstanceRequest, stream proto.ServiceInstanceCtrlWatchServer) error {
 	log.Infof("new a stream list and watch with service[%s]", in.SelfServiceId)
 	if err := s.WatchPreOpera(stream.Context(), in); err != nil {
 		log.Errorf(err, "service[%s] establish watch failed: invalid params", in.SelfServiceId)

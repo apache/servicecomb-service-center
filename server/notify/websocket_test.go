@@ -69,7 +69,7 @@ func TestDoWebSocketListAndWatch(t *testing.T) {
 
 	w := NewInstanceEventListWatcher("g", "s", func() (results []*registry.WatchInstanceResponse, rev int64) {
 		results = append(results, &registry.WatchInstanceResponse{
-			Response: proto.CreateResponse(proto.Response_SUCCESS, "ok"),
+			Response: proto.CreateResponse(proto.ResponseSuccess, "ok"),
 			Action:   string(registry.EVT_CREATE),
 			Key:      &registry.MicroServiceKey{},
 			Instance: &registry.MicroServiceInstance{},
@@ -104,7 +104,7 @@ func TestDoWebSocketListAndWatch(t *testing.T) {
 	w.OnMessage(&InstanceEvent{})
 
 	GetNotifyCenter().Publish(NewInstanceEvent("g", "s", 1, &registry.WatchInstanceResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "ok"),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "ok"),
 		Action:   string(registry.EVT_CREATE),
 		Key:      &registry.MicroServiceKey{},
 		Instance: &registry.MicroServiceInstance{},

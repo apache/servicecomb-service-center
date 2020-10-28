@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package sd
 
 // Cacher manages cache of some data source, e.g. etcd, kubernetes.

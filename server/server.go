@@ -17,8 +17,6 @@
 
 package server
 
-import _ "github.com/apache/servicecomb-service-center/server/service/event"
-
 import (
 	"context"
 	"github.com/apache/servicecomb-service-center/datasource"

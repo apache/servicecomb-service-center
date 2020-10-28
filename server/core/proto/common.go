@@ -21,14 +21,14 @@ import (
 )
 
 const (
-	EXISTENCE_MS     string = "microservice"
-	EXISTENCE_SCHEMA string = "schema"
+	ExistenceMicroservice string = "microservice"
+	ExistenceSchema       string = "schema"
 
-	PROP_ALLOW_CROSS_APP = "allowCrossApp"
+	PropAllowCrossApp = "allowCrossApp"
 
-	Response_SUCCESS int32 = 0
+	ResponseSuccess int32 = 0
 
-	APP_ID  = "default"
+	AppID   = "default"
 	VERSION = "0.0.1"
 )
 

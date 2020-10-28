@@ -58,10 +58,10 @@ type ServiceInstanceCtrlServer interface {
 	GetOneInstance(context.Context, *registry.GetOneInstanceRequest) (*registry.GetOneInstanceResponse, error)
 	UpdateStatus(context.Context, *registry.UpdateInstanceStatusRequest) (*registry.UpdateInstanceStatusResponse, error)
 	UpdateInstanceProperties(context.Context, *registry.UpdateInstancePropsRequest) (*registry.UpdateInstancePropsResponse, error)
-	Watch(*registry.WatchInstanceRequest, ServiceInstanceCtrl_WatchServer) error
+	Watch(*registry.WatchInstanceRequest, ServiceInstanceCtrlWatchServer) error
 	HeartbeatSet(context.Context, *registry.HeartbeatSetRequest) (*registry.HeartbeatSetResponse, error)
 }
-type ServiceInstanceCtrl_WatchServer interface {
+type ServiceInstanceCtrlWatchServer interface {
 	Send(*registry.WatchInstanceResponse) error
 	grpc.ServerStream
 }

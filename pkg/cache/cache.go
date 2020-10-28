@@ -19,6 +19,7 @@ package cache
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	"sync"
 )
 
@@ -29,13 +30,13 @@ type Cache struct {
 
 func (c *Cache) Set(k string, v interface{}) {
 	c.lock.Lock()
-	c.data = context.WithValue(c.data, k, v)
+	c.data = context.WithValue(c.data, util.CtxKey(k), v)
 	c.lock.Unlock()
 }
 
 func (c *Cache) Get(k string) (v interface{}) {
 	c.lock.RLock()
-	v = c.data.Value(k)
+	v = c.data.Value(util.CtxKey(k))
 	c.lock.RUnlock()
 	return
 }

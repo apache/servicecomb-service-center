@@ -68,7 +68,7 @@ func (service *Service) Dump(ctx context.Context, in *model.DumpRequest) (*model
 	}
 
 	resp := &model.DumpResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Admin dump successfully"),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Admin dump successfully"),
 	}
 
 	if len(in.Options) == 0 {

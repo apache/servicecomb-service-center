@@ -83,7 +83,7 @@ func generateServiceKey(domainProject string, svc *v1.Service) *pb.MicroServiceK
 	return &pb.MicroServiceKey{
 		Tenant:      domainProject,
 		Environment: getLabel(svc.Labels, LabelEnvironment, ""),
-		AppId:       getLabel(svc.Labels, LabelApp, proto.APP_ID),
+		AppId:       getLabel(svc.Labels, LabelApp, proto.AppID),
 		ServiceName: svc.Name,
 		Version:     getLabel(svc.Labels, LabelVersion, proto.VERSION),
 	}
@@ -93,7 +93,7 @@ func FromK8sService(domainProject string, svc *v1.Service) (ms *pb.MicroService)
 	ms = &pb.MicroService{
 		ServiceId:   generateServiceID(domainProject, svc),
 		Environment: getLabel(svc.Labels, LabelEnvironment, ""),
-		AppId:       getLabel(svc.Labels, LabelApp, proto.APP_ID),
+		AppId:       getLabel(svc.Labels, LabelApp, proto.AppID),
 		ServiceName: svc.Name,
 		Version:     getLabel(svc.Labels, LabelVersion, proto.VERSION),
 		Level:       "BACK",

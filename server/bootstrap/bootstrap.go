@@ -57,6 +57,9 @@ import _ "github.com/apache/servicecomb-service-center/server/rest/admin"
 //metrics
 import _ "github.com/apache/servicecomb-service-center/server/metric"
 
+//events
+import _ "github.com/apache/servicecomb-service-center/server/service/event"
+
 import (
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"

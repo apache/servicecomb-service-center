@@ -35,7 +35,7 @@ func (e *extend) Config() *sd.Config {
 }
 
 func TestInstallType(t *testing.T) {
-	s := &KvStore{}
+	s := &TypeStore{}
 	s.Initialize()
 
 	// case: normal
@@ -75,7 +75,7 @@ func TestInstallType(t *testing.T) {
 }
 
 func TestNewAddOn(t *testing.T) {
-	s := &KvStore{}
+	s := &TypeStore{}
 	s.Initialize()
 
 	id, err := s.Install(NewAddOn("TestNewAddOn", nil))

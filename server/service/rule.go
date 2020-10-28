@@ -127,7 +127,7 @@ func (s *MicroServiceService) AddRule(ctx context.Context, in *pb.AddServiceRule
 		log.Infof("add service[%s] rule successfully, no rules to add, operator: %s",
 			in.ServiceId, remoteIP)
 		return &pb.AddServiceRulesResponse{
-			Response: proto.CreateResponse(proto.Response_SUCCESS, "Service rules has been added."),
+			Response: proto.CreateResponse(proto.ResponseSuccess, "Service rules has been added."),
 		}, nil
 	}
 
@@ -152,7 +152,7 @@ func (s *MicroServiceService) AddRule(ctx context.Context, in *pb.AddServiceRule
 
 	log.Infof("add service[%s] rule %v successfully, operator: %s", in.ServiceId, ruleIDs, remoteIP)
 	return &pb.AddServiceRulesResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Add service rules successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Add service rules successfully."),
 		RuleIds:  ruleIDs,
 	}, nil
 }
@@ -269,7 +269,7 @@ func (s *MicroServiceService) UpdateRule(ctx context.Context, in *pb.UpdateServi
 
 	log.Infof("update service rule[%s/%s] successfully, operator: %s", in.ServiceId, in.RuleId, remoteIP)
 	return &pb.UpdateServiceRuleResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Get service rules successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Get service rules successfully."),
 	}, nil
 }
 
@@ -301,7 +301,7 @@ func (s *MicroServiceService) GetRule(ctx context.Context, in *pb.GetServiceRule
 	}
 
 	return &pb.GetServiceRulesResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Get service rules successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Get service rules successfully."),
 		Rules:    rules,
 	}, nil
 }
@@ -382,6 +382,6 @@ func (s *MicroServiceService) DeleteRule(ctx context.Context, in *pb.DeleteServi
 
 	log.Infof("delete service[%s] rules %v successfully, operator: %s", in.ServiceId, in.RuleIds, remoteIP)
 	return &pb.DeleteServiceRulesResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Delete service rules successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Delete service rules successfully."),
 	}, nil
 }

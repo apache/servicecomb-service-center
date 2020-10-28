@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package etcd
 
 import (
@@ -42,7 +43,7 @@ func (w *innerWatcher) process(_ context.Context) {
 	ctx, cancel := context.WithTimeout(w.Cfg.Context, w.Cfg.Timeout)
 	gopool.Go(func(_ context.Context) {
 		defer close(stopCh)
-		w.lw.DoWatch(ctx, w.sendEvent)
+		_ = w.lw.DoWatch(ctx, w.sendEvent)
 	})
 
 	select {

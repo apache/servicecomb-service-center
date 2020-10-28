@@ -70,7 +70,7 @@ var _ = Describe("'Instance' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(respCreate.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
+			Expect(respCreate.Response.GetCode()).To(Equal(proto.ResponseSuccess))
 			serviceId = respCreate.ServiceId
 		})
 

@@ -63,7 +63,7 @@ func (s *MicroServiceService) Create(ctx context.Context, in *pb.CreateServiceRe
 
 	//create service
 	rsp, err := s.CreateServicePri(ctx, in)
-	if err != nil || rsp.Response.GetCode() != proto.Response_SUCCESS {
+	if err != nil || rsp.Response.GetCode() != proto.ResponseSuccess {
 		return rsp, err
 	}
 
@@ -195,7 +195,7 @@ func (s *MicroServiceService) CreateServicePri(ctx context.Context, in *pb.Creat
 		log.Warnf("create micro-service[%s][%s] failed, service already exists, operator: %s",
 			serviceIDInner, serviceFlag, remoteIP)
 		return &pb.CreateServiceResponse{
-			Response:  proto.CreateResponse(proto.Response_SUCCESS, "register service successfully"),
+			Response:  proto.CreateResponse(proto.ResponseSuccess, "register service successfully"),
 			ServiceId: serviceIDInner,
 		}, nil
 	}
@@ -207,7 +207,7 @@ func (s *MicroServiceService) CreateServicePri(ctx context.Context, in *pb.Creat
 	log.Infof("create micro-service[%s][%s] successfully, operator: %s",
 		service.ServiceId, serviceFlag, remoteIP)
 	return &pb.CreateServiceResponse{
-		Response:  proto.CreateResponse(proto.Response_SUCCESS, "Register service successfully."),
+		Response:  proto.CreateResponse(proto.ResponseSuccess, "Register service successfully."),
 		ServiceId: service.ServiceId,
 	}, nil
 }
@@ -361,7 +361,7 @@ func (s *MicroServiceService) DeleteServicePri(ctx context.Context, serviceID st
 	serviceUtil.RemandServiceQuota(ctx)
 
 	log.Infof("%s micro-service[%s] successfully, operator: %s", title, serviceID, remoteIP)
-	return proto.CreateResponse(proto.Response_SUCCESS, "Unregister service successfully."), nil
+	return proto.CreateResponse(proto.ResponseSuccess, "Unregister service successfully."), nil
 }
 
 func (s *MicroServiceService) Delete(ctx context.Context, in *pb.DeleteServiceRequest) (*pb.DeleteServiceResponse, error) {
@@ -427,7 +427,7 @@ func (s *MicroServiceService) DeleteServices(ctx context.Context, request *pb.De
 
 	//获取批量删除服务的结果
 	count := 0
-	responseCode := proto.Response_SUCCESS
+	responseCode := proto.ResponseSuccess
 	delServiceRspInfo := make([]*pb.DelServicesRspInfo, 0, len(serviceRespChan))
 	for serviceRespItem := range serviceRespChan {
 		count++
@@ -447,7 +447,7 @@ func (s *MicroServiceService) DeleteServices(ctx context.Context, request *pb.De
 	resp := &pb.DelServicesResponse{
 		Services: delServiceRspInfo,
 	}
-	if responseCode != proto.Response_SUCCESS {
+	if responseCode != proto.ResponseSuccess {
 		resp.Response = proto.CreateResponse(responseCode, "Delete services failed.")
 	} else {
 		resp.Response = proto.CreateResponse(responseCode, "Delete services successfully.")
@@ -464,7 +464,7 @@ func (s *MicroServiceService) getDeleteServiceFunc(ctx context.Context, serviceI
 		resp, err := s.DeleteServicePri(ctx, serviceID, force)
 		if err != nil {
 			serviceRst.ErrMessage = err.Error()
-		} else if resp.GetCode() != proto.Response_SUCCESS {
+		} else if resp.GetCode() != proto.ResponseSuccess {
 			serviceRst.ErrMessage = resp.GetMessage()
 		}
 
@@ -496,7 +496,7 @@ func (s *MicroServiceService) GetOne(ctx context.Context, in *pb.GetServiceReque
 		}, nil
 	}
 	return &pb.GetServiceResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Get service successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Get service successfully."),
 		Service:  service,
 	}, nil
 }
@@ -511,7 +511,7 @@ func (s *MicroServiceService) GetServices(ctx context.Context, in *pb.GetService
 	}
 
 	return &pb.GetServicesResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Get all services successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Get all services successfully."),
 		Services: services,
 	}, nil
 }
@@ -581,7 +581,7 @@ func (s *MicroServiceService) UpdateProperties(ctx context.Context, in *pb.Updat
 
 	log.Infof("update service[%s] properties successfully, operator: %s", in.ServiceId, remoteIP)
 	return &pb.UpdateServicePropsResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "update service successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "update service successfully."),
 	}, nil
 }
 
@@ -625,7 +625,7 @@ func (s *MicroServiceService) Exist(ctx context.Context, in *pb.GetExistenceRequ
 			}, nil
 		}
 		return &pb.GetExistenceResponse{
-			Response:  proto.CreateResponse(proto.Response_SUCCESS, "get service id successfully."),
+			Response:  proto.CreateResponse(proto.ResponseSuccess, "get service id successfully."),
 			ServiceId: ids[0], // 约定多个时，取较新版本
 		}, nil
 	case ExistTypeSchema:
@@ -666,7 +666,7 @@ func (s *MicroServiceService) Exist(ctx context.Context, in *pb.GetExistenceRequ
 			}, err
 		}
 		return &pb.GetExistenceResponse{
-			Response: proto.CreateResponse(proto.Response_SUCCESS, "Schema exist."),
+			Response: proto.CreateResponse(proto.ResponseSuccess, "Schema exist."),
 			SchemaId: in.SchemaId,
 			Summary:  schemaSummary,
 		}, nil
@@ -699,7 +699,7 @@ func (s *MicroServiceService) CreateServiceEx(ctx context.Context, in *pb.Create
 				chanRsp.Message = err.Error()
 			}
 
-			if rsp.Response.GetCode() != proto.Response_SUCCESS {
+			if rsp.Response.GetCode() != proto.ResponseSuccess {
 				chanRsp.Message = rsp.Response.GetMessage()
 			}
 			createRespChan <- chanRsp
@@ -719,7 +719,7 @@ func (s *MicroServiceService) CreateServiceEx(ctx context.Context, in *pb.Create
 				chanRsp.Message = err.Error()
 			}
 
-			if rsp.Response.GetCode() != proto.Response_SUCCESS {
+			if rsp.Response.GetCode() != proto.ResponseSuccess {
 				chanRsp.Message = rsp.Response.GetMessage()
 			}
 			createRespChan <- chanRsp
@@ -739,7 +739,7 @@ func (s *MicroServiceService) CreateServiceEx(ctx context.Context, in *pb.Create
 				if err != nil {
 					chanRsp.Message += fmt.Sprintf("{instance:%v,result:%s}", ins.Endpoints, err.Error())
 				}
-				if rsp.Response.GetCode() != proto.Response_SUCCESS {
+				if rsp.Response.GetCode() != proto.ResponseSuccess {
 					chanRsp.Message += fmt.Sprintf("{instance:%v,result:%s}", ins.Endpoints, rsp.Response.GetMessage())
 				}
 				createRespChan <- chanRsp
@@ -764,7 +764,7 @@ func (s *MicroServiceService) CreateServiceEx(ctx context.Context, in *pb.Create
 		result.Response.Code = scerr.ErrInvalidParams
 		result.Response.Message = fmt.Sprintf("errMessages: %v", errMessages)
 	} else {
-		result.Response.Code = proto.Response_SUCCESS
+		result.Response.Code = proto.ResponseSuccess
 	}
 
 	log.Infof("createServiceEx, serviceID: %s, result code: %s, operator: %s",

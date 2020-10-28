@@ -186,7 +186,7 @@ func QueryAllProvidersInstances(ctx context.Context, selfServiceID string) (resu
 
 		for _, kv := range kvs {
 			results = append(results, &pb.WatchInstanceResponse{
-				Response: proto.CreateResponse(proto.Response_SUCCESS, "List instance successfully."),
+				Response: proto.CreateResponse(proto.ResponseSuccess, "List instance successfully."),
 				Action:   string(rmodel.EVT_INIT),
 				Key: &pb.MicroServiceKey{
 					Environment: service.Environment,
@@ -253,7 +253,7 @@ func UpdateInstance(ctx context.Context, domainProject string, instance *pb.Micr
 
 func AppendFindResponse(ctx context.Context, index int64, resp *pb.Response, instances []*pb.MicroServiceInstance,
 	updatedResult *[]*pb.FindResult, notModifiedResult *[]int64, failedResult **pb.FindFailedResult) {
-	if code := resp.GetCode(); code != proto.Response_SUCCESS {
+	if code := resp.GetCode(); code != proto.ResponseSuccess {
 		if *failedResult == nil {
 			*failedResult = &pb.FindFailedResult{
 				Error: scerr.NewError(code, resp.GetMessage()),

@@ -35,7 +35,7 @@ const (
 	apiClustersURL = "/v4/default/admin/clusters"
 	apiHealthURL   = "/v4/default/registry/health"
 
-	QueryGlobal = "global"
+	QueryGlobal util.CtxKey = "global"
 )
 
 func (c *Client) toError(body []byte) *scerr.Error {

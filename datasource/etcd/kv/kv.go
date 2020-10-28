@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-// kv package provides a KvStore to manage the implementations of sd package, see types.go
+// kv package provides a TypeStore to manage the implementations of sd package, see types.go
 package kv
 
 import (
@@ -29,14 +29,14 @@ import (
 	"time"
 )
 
-var store = &KvStore{}
+var store = &TypeStore{}
 
 func init() {
 	store.Initialize()
 	registerInnerTypes()
 }
 
-type KvStore struct {
+type TypeStore struct {
 	AddOns    map[sd.Type]AddOn
 	adaptors  util.ConcurrentMap
 	ready     chan struct{}
@@ -45,27 +45,27 @@ type KvStore struct {
 	rev       int64
 }
 
-func (s *KvStore) Initialize() {
+func (s *TypeStore) Initialize() {
 	s.AddOns = make(map[sd.Type]AddOn)
 	s.ready = make(chan struct{})
 	s.goroutine = gopool.New(context.Background())
 }
 
-func (s *KvStore) OnCacheEvent(evt sd.KvEvent) {
+func (s *TypeStore) OnCacheEvent(evt sd.KvEvent) {
 	if s.rev < evt.Revision {
 		s.rev = evt.Revision
 	}
 }
 
-func (s *KvStore) InjectConfig(cfg *sd.Config) *sd.Config {
+func (s *TypeStore) InjectConfig(cfg *sd.Config) *sd.Config {
 	return cfg.AppendEventFunc(s.OnCacheEvent)
 }
 
-func (s *KvStore) repo() sd.AdaptorRepository {
+func (s *TypeStore) repo() sd.AdaptorRepository {
 	return sd.Instance()
 }
 
-func (s *KvStore) getOrCreateAdaptor(t sd.Type) sd.Adaptor {
+func (s *TypeStore) getOrCreateAdaptor(t sd.Type) sd.Adaptor {
 	v, _ := s.adaptors.Fetch(t, func() (interface{}, error) {
 		addOn, ok := s.AddOns[t]
 		if ok {
@@ -79,12 +79,12 @@ func (s *KvStore) getOrCreateAdaptor(t sd.Type) sd.Adaptor {
 	return v.(sd.Adaptor)
 }
 
-func (s *KvStore) Run() {
+func (s *TypeStore) Run() {
 	s.goroutine.Do(s.store)
 	s.goroutine.Do(s.autoClearCache)
 }
 
-func (s *KvStore) store(ctx context.Context) {
+func (s *TypeStore) store(ctx context.Context) {
 	// new all types
 	for _, t := range sd.Types {
 		select {
@@ -99,7 +99,7 @@ func (s *KvStore) store(ctx context.Context) {
 	log.Debugf("all adaptors are ready")
 }
 
-func (s *KvStore) autoClearCache(ctx context.Context) {
+func (s *TypeStore) autoClearCache(ctx context.Context) {
 	if core.ServerInfo.Config.CacheTTL == 0 {
 		return
 	}
@@ -123,7 +123,7 @@ func (s *KvStore) autoClearCache(ctx context.Context) {
 	}
 }
 
-func (s *KvStore) Stop() {
+func (s *TypeStore) Stop() {
 	if s.isClose {
 		return
 	}
@@ -141,11 +141,11 @@ func (s *KvStore) Stop() {
 	log.Debugf("store daemon stopped")
 }
 
-func (s *KvStore) Ready() <-chan struct{} {
+func (s *TypeStore) Ready() <-chan struct{} {
 	return s.ready
 }
 
-func (s *KvStore) Install(addOn AddOn) (id sd.Type, err error) {
+func (s *TypeStore) Install(addOn AddOn) (id sd.Type, err error) {
 	if addOn == nil || len(addOn.Name()) == 0 || addOn.Config() == nil {
 		return sd.TypeError, errors.New("invalid parameter")
 	}
@@ -165,7 +165,7 @@ func (s *KvStore) Install(addOn AddOn) (id sd.Type, err error) {
 	return
 }
 
-func (s *KvStore) MustInstall(addOn AddOn) sd.Type {
+func (s *TypeStore) MustInstall(addOn AddOn) sd.Type {
 	id, err := s.Install(addOn)
 	if err != nil {
 		panic(err)
@@ -173,23 +173,23 @@ func (s *KvStore) MustInstall(addOn AddOn) sd.Type {
 	return id
 }
 
-func (s *KvStore) Adaptors(id sd.Type) sd.Adaptor { return s.getOrCreateAdaptor(id) }
-func (s *KvStore) Service() sd.Adaptor            { return s.Adaptors(SERVICE) }
-func (s *KvStore) SchemaSummary() sd.Adaptor      { return s.Adaptors(SchemaSummary) }
-func (s *KvStore) Instance() sd.Adaptor           { return s.Adaptors(INSTANCE) }
-func (s *KvStore) Lease() sd.Adaptor              { return s.Adaptors(LEASE) }
-func (s *KvStore) ServiceIndex() sd.Adaptor       { return s.Adaptors(ServiceIndex) }
-func (s *KvStore) ServiceAlias() sd.Adaptor       { return s.Adaptors(ServiceAlias) }
-func (s *KvStore) ServiceTag() sd.Adaptor         { return s.Adaptors(ServiceTag) }
-func (s *KvStore) Rule() sd.Adaptor               { return s.Adaptors(RULE) }
-func (s *KvStore) RuleIndex() sd.Adaptor          { return s.Adaptors(RuleIndex) }
-func (s *KvStore) Schema() sd.Adaptor             { return s.Adaptors(SCHEMA) }
-func (s *KvStore) DependencyRule() sd.Adaptor     { return s.Adaptors(DependencyRule) }
-func (s *KvStore) DependencyQueue() sd.Adaptor    { return s.Adaptors(DependencyQueue) }
-func (s *KvStore) Domain() sd.Adaptor             { return s.Adaptors(DOMAIN) }
-func (s *KvStore) Project() sd.Adaptor            { return s.Adaptors(PROJECT) }
+func (s *TypeStore) Adaptors(id sd.Type) sd.Adaptor { return s.getOrCreateAdaptor(id) }
+func (s *TypeStore) Service() sd.Adaptor            { return s.Adaptors(SERVICE) }
+func (s *TypeStore) SchemaSummary() sd.Adaptor      { return s.Adaptors(SchemaSummary) }
+func (s *TypeStore) Instance() sd.Adaptor           { return s.Adaptors(INSTANCE) }
+func (s *TypeStore) Lease() sd.Adaptor              { return s.Adaptors(LEASE) }
+func (s *TypeStore) ServiceIndex() sd.Adaptor       { return s.Adaptors(ServiceIndex) }
+func (s *TypeStore) ServiceAlias() sd.Adaptor       { return s.Adaptors(ServiceAlias) }
+func (s *TypeStore) ServiceTag() sd.Adaptor         { return s.Adaptors(ServiceTag) }
+func (s *TypeStore) Rule() sd.Adaptor               { return s.Adaptors(RULE) }
+func (s *TypeStore) RuleIndex() sd.Adaptor          { return s.Adaptors(RuleIndex) }
+func (s *TypeStore) Schema() sd.Adaptor             { return s.Adaptors(SCHEMA) }
+func (s *TypeStore) DependencyRule() sd.Adaptor     { return s.Adaptors(DependencyRule) }
+func (s *TypeStore) DependencyQueue() sd.Adaptor    { return s.Adaptors(DependencyQueue) }
+func (s *TypeStore) Domain() sd.Adaptor             { return s.Adaptors(DOMAIN) }
+func (s *TypeStore) Project() sd.Adaptor            { return s.Adaptors(PROJECT) }
 
-func Store() *KvStore {
+func Store() *TypeStore {
 	return store
 }
 

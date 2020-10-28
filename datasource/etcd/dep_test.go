@@ -47,7 +47,7 @@ func Test_Creat(t *testing.T) {
 		})
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
 		consumerId1 = resp.ServiceId
 
 		resp, err = datasource.Instance().RegisterService(depGetContext(), &pb.CreateServiceRequest{
@@ -61,7 +61,7 @@ func Test_Creat(t *testing.T) {
 		})
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
 		consumerId3 = resp.ServiceId
 
 		resp, err = datasource.Instance().RegisterService(depGetContext(), &pb.CreateServiceRequest{
@@ -76,7 +76,7 @@ func Test_Creat(t *testing.T) {
 		})
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
 		consumerId2 = resp.ServiceId
 
 		resp, err = datasource.Instance().RegisterService(depGetContext(), &pb.CreateServiceRequest{
@@ -90,7 +90,7 @@ func Test_Creat(t *testing.T) {
 		})
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
 
 		resp, err = datasource.Instance().RegisterService(depGetContext(), &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
@@ -103,7 +103,7 @@ func Test_Creat(t *testing.T) {
 		})
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
 
 		resp, err = datasource.Instance().RegisterService(depGetContext(), &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
@@ -117,7 +117,7 @@ func Test_Creat(t *testing.T) {
 		})
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
 	})
 
 	t.Run("when request is invalid, should be failed", func(t *testing.T) {
@@ -167,7 +167,7 @@ func Test_Creat(t *testing.T) {
 		}, false)
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, resp.GetCode())
+		assert.Equal(t, proto.ResponseSuccess, resp.GetCode())
 
 		// consumer in diff env
 		consumer.Environment = pb.ENV_PROD
@@ -185,7 +185,7 @@ func Test_Creat(t *testing.T) {
 		}, false)
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, resp.GetCode())
+		assert.Equal(t, proto.ResponseSuccess, resp.GetCode())
 
 		assert.Equal(t, nil, deh.Handle())
 
@@ -226,7 +226,7 @@ func Test_Creat(t *testing.T) {
 		}, false)
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, resp.GetCode())
+		assert.Equal(t, proto.ResponseSuccess, resp.GetCode())
 
 		assert.Equal(t, nil, deh.Handle())
 
@@ -252,7 +252,7 @@ func Test_Creat(t *testing.T) {
 		}, false)
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, resp.GetCode())
+		assert.Equal(t, proto.ResponseSuccess, resp.GetCode())
 
 		assert.Equal(t, nil, deh.Handle())
 
@@ -280,7 +280,7 @@ func Test_Creat(t *testing.T) {
 		}, false)
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, resp.GetCode())
+		assert.Equal(t, proto.ResponseSuccess, resp.GetCode())
 
 		respPro, err = datasource.Instance().SearchConsumerDependency(depGetContext(), &pb.GetDependenciesRequest{
 			ServiceId: consumerId3,
@@ -302,7 +302,7 @@ func Test_Creat(t *testing.T) {
 		}, false)
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, resp.GetCode())
+		assert.Equal(t, proto.ResponseSuccess, resp.GetCode())
 
 		// add multiple providers
 		resp, err = datasource.Instance().AddOrUpdateDependencies(depGetContext(), []*pb.ConsumerDependency{
@@ -322,7 +322,7 @@ func Test_Creat(t *testing.T) {
 		}, false)
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, resp.GetCode())
+		assert.Equal(t, proto.ResponseSuccess, resp.GetCode())
 
 		// add 1.0.0-2.0.0 to override *
 		resp, err = datasource.Instance().AddOrUpdateDependencies(depGetContext(), []*pb.ConsumerDependency{
@@ -339,7 +339,7 @@ func Test_Creat(t *testing.T) {
 		}, false)
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, resp.GetCode())
+		assert.Equal(t, proto.ResponseSuccess, resp.GetCode())
 
 		assert.Equal(t, nil, deh.Handle())
 
@@ -365,7 +365,7 @@ func Test_Creat(t *testing.T) {
 		}, false)
 		assert.NotNil(t, respAdd)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, respAdd.GetCode())
+		assert.Equal(t, proto.ResponseSuccess, respAdd.GetCode())
 
 		assert.Equal(t, nil, deh.Handle())
 
@@ -384,7 +384,7 @@ func Test_Creat(t *testing.T) {
 		}, false)
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, resp.GetCode())
+		assert.Equal(t, proto.ResponseSuccess, resp.GetCode())
 
 		resp, err = datasource.Instance().AddOrUpdateDependencies(depGetContext(), []*pb.ConsumerDependency{
 			{
@@ -393,7 +393,7 @@ func Test_Creat(t *testing.T) {
 		}, false)
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, resp.GetCode())
+		assert.Equal(t, proto.ResponseSuccess, resp.GetCode())
 
 		assert.Equal(t, nil, deh.Handle())
 
@@ -424,7 +424,7 @@ func Test_Get(t *testing.T) {
 		})
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
 		consumerId1 = resp.ServiceId
 
 		resp, err = datasource.Instance().RegisterService(depGetContext(), &pb.CreateServiceRequest{
@@ -438,7 +438,7 @@ func Test_Get(t *testing.T) {
 		})
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
 		providerId1 = resp.ServiceId
 
 		resp, err = datasource.Instance().RegisterService(depGetContext(), &pb.CreateServiceRequest{
@@ -452,7 +452,7 @@ func Test_Get(t *testing.T) {
 		})
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
 		providerId2 = resp.ServiceId
 	})
 
@@ -482,7 +482,7 @@ func Test_Get(t *testing.T) {
 		})
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
 
 		assert.Equal(t, nil, deh.Handle())
 
@@ -509,7 +509,7 @@ func Test_Get(t *testing.T) {
 		})
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
 
 		assert.Equal(t, nil, deh.Handle())
 
@@ -542,7 +542,7 @@ func Test_Get(t *testing.T) {
 		})
 		assert.NotNil(t, respCreateF)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, respCreateF.Response.GetCode())
+		assert.Equal(t, proto.ResponseSuccess, respCreateF.Response.GetCode())
 		finder1 := respCreateF.ServiceId
 
 		resp, err = datasource.Instance().FindInstances(depGetContext(), &pb.FindInstancesRequest{
@@ -553,7 +553,7 @@ func Test_Get(t *testing.T) {
 		})
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
 
 		assert.Equal(t, nil, deh.Handle())
 
@@ -571,7 +571,7 @@ func Test_Get(t *testing.T) {
 		})
 		assert.NotNil(t, respDelP)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, respDelP.Response.GetCode())
+		assert.Equal(t, proto.ResponseSuccess, respDelP.Response.GetCode())
 
 		assert.Equal(t, nil, deh.Handle())
 
@@ -594,7 +594,7 @@ func Test_Get(t *testing.T) {
 		})
 		assert.NotNil(t, respCreateF)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, respCreateF.Response.GetCode())
+		assert.Equal(t, proto.ResponseSuccess, respCreateF.Response.GetCode())
 
 		resp, err = datasource.Instance().FindInstances(depGetContext(), &pb.FindInstancesRequest{
 			ConsumerServiceId: providerId2,
@@ -604,7 +604,7 @@ func Test_Get(t *testing.T) {
 		})
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.Response_SUCCESS, resp.Response.GetCode())
+		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
 
 		assert.Equal(t, nil, deh.Handle())
 

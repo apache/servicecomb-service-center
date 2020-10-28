@@ -86,7 +86,7 @@ func (ds *DataSource) GetServices(ctx context.Context, request *pb.GetServicesRe
 	}
 
 	return &pb.GetServicesResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Get all services successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Get all services successfully."),
 		Services: services,
 	}, nil
 }
@@ -109,7 +109,7 @@ func (ds *DataSource) GetService(ctx context.Context, request *pb.GetServiceRequ
 		}, nil
 	}
 	return &pb.GetServiceResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Get service successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Get service successfully."),
 		Service:  singleService,
 	}, nil
 }
@@ -169,7 +169,7 @@ func (ds *DataSource) GetServiceDetail(ctx context.Context, request *pb.GetServi
 	serviceInfo.MicroService = service
 	serviceInfo.MicroServiceVersions = versions
 	return &pb.GetServiceDetailResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Get service successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Get service successfully."),
 		Service:  serviceInfo,
 	}, nil
 }
@@ -204,7 +204,7 @@ func (ds *DataSource) GetServicesInfo(ctx context.Context, request *pb.GetServic
 		}
 		if len(optionMap) == 1 {
 			return &pb.GetServicesInfoResponse{
-				Response:   proto.CreateResponse(proto.Response_SUCCESS, "Statistics successfully."),
+				Response:   proto.CreateResponse(proto.ResponseSuccess, "Statistics successfully."),
 				Statistics: st,
 			}, nil
 		}
@@ -250,7 +250,7 @@ func (ds *DataSource) GetServicesInfo(ctx context.Context, request *pb.GetServic
 	}
 
 	return &pb.GetServicesInfoResponse{
-		Response:          proto.CreateResponse(proto.Response_SUCCESS, "Get services info successfully."),
+		Response:          proto.CreateResponse(proto.ResponseSuccess, "Get services info successfully."),
 		AllServicesDetail: allServiceDetails,
 		Statistics:        st,
 	}, nil
@@ -272,7 +272,7 @@ func (ds *DataSource) GetApplications(ctx context.Context, request *pb.GetAppsRe
 	l := len(resp.Kvs)
 	if l == 0 {
 		return &pb.GetAppsResponse{
-			Response: proto.CreateResponse(proto.Response_SUCCESS, "Get all applications successfully."),
+			Response: proto.CreateResponse(proto.ResponseSuccess, "Get all applications successfully."),
 		}, nil
 	}
 
@@ -291,7 +291,7 @@ func (ds *DataSource) GetApplications(ctx context.Context, request *pb.GetAppsRe
 	}
 
 	return &pb.GetAppsResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Get all applications successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Get all applications successfully."),
 		AppIds:   apps,
 	}, nil
 }
@@ -299,7 +299,7 @@ func (ds *DataSource) GetApplications(ctx context.Context, request *pb.GetAppsRe
 func (ds *DataSource) ExistServiceByID(ctx context.Context, request *pb.GetExistenceByIDRequest) (*pb.GetExistenceByIDResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
 	return &pb.GetExistenceByIDResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Get all applications successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Get all applications successfully."),
 		Exist:    serviceUtil.ServiceExist(ctx, domainProject, request.ServiceId),
 	}, nil
 }
@@ -337,7 +337,7 @@ func (ds *DataSource) ExistService(ctx context.Context, request *pb.GetExistence
 		}, nil
 	}
 	return &pb.GetExistenceResponse{
-		Response:  proto.CreateResponse(proto.Response_SUCCESS, "get service id successfully."),
+		Response:  proto.CreateResponse(proto.ResponseSuccess, "get service id successfully."),
 		ServiceId: ids[0], // 约定多个时，取较新版本
 	}, nil
 }
@@ -400,7 +400,7 @@ func (ds *DataSource) UpdateService(ctx context.Context, request *pb.UpdateServi
 
 	log.Infof("update service[%s] properties successfully, operator: %s", request.ServiceId, remoteIP)
 	return &pb.UpdateServicePropsResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "update service successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "update service successfully."),
 	}, nil
 }
 
@@ -435,7 +435,7 @@ func (ds *DataSource) RegisterInstance(ctx context.Context, request *pb.Register
 			}, nil
 		}
 		switch resp.Response.GetCode() {
-		case proto.Response_SUCCESS:
+		case proto.ResponseSuccess:
 			log.Infof("register instance successful, reuse instance[%s/%s], operator %s",
 				instance.ServiceId, instance.InstanceId, remoteIP)
 			return &pb.RegisterInstanceResponse{
@@ -552,7 +552,7 @@ func (ds *DataSource) RegisterInstance(ctx context.Context, request *pb.Register
 	log.Infof("register instance %s, instanceID %s, operator %s",
 		instanceFlag, instanceID, remoteIP)
 	return &pb.RegisterInstanceResponse{
-		Response:   proto.CreateResponse(proto.Response_SUCCESS, "Register service instance successfully."),
+		Response:   proto.CreateResponse(proto.ResponseSuccess, "Register service instance successfully."),
 		InstanceId: instanceID,
 	}, nil
 }
@@ -633,7 +633,7 @@ func (ds *DataSource) GetInstance(ctx context.Context, request *pb.GetOneInstanc
 	_ = util.SetContext(ctx, util.CtxResponseRevision, item.Rev)
 
 	return &pb.GetOneInstanceResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Get instance successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Get instance successfully."),
 		Instance: instance,
 	}, nil
 }
@@ -713,7 +713,7 @@ func (ds *DataSource) GetInstances(ctx context.Context, request *pb.GetInstances
 	_ = util.SetContext(ctx, util.CtxResponseRevision, item.Rev)
 
 	return &pb.GetInstancesResponse{
-		Response:  proto.CreateResponse(proto.Response_SUCCESS, "Query service instances successfully."),
+		Response:  proto.CreateResponse(proto.ResponseSuccess, "Query service instances successfully."),
 		Instances: instances,
 	}, nil
 }
@@ -917,7 +917,7 @@ func (ds *DataSource) genFindResult(ctx context.Context, oldRev string, item *ca
 	// TODO support gRPC output context
 	_ = util.SetContext(ctx, util.CtxResponseRevision, item.Rev)
 	return &pb.FindInstancesResponse{
-		Response:  proto.CreateResponse(proto.Response_SUCCESS, "Query service instances successfully."),
+		Response:  proto.CreateResponse(proto.ResponseSuccess, "Query service instances successfully."),
 		Instances: instances,
 	}, nil
 }
@@ -970,7 +970,7 @@ func (ds *DataSource) UpdateInstanceStatus(ctx context.Context, request *pb.Upda
 
 	log.Infof("update instance[%s] status successfully", updateStatusFlag)
 	return &pb.UpdateInstanceStatusResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Update service instance status successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Update service instance status successfully."),
 	}, nil
 }
 
@@ -1009,7 +1009,7 @@ func (ds *DataSource) UpdateInstanceProperties(ctx context.Context, request *pb.
 
 	log.Infof("update instance[%s] properties successfully", instanceFlag)
 	return &pb.UpdateInstancePropsResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Update service instance properties successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Update service instance properties successfully."),
 	}, nil
 }
 
@@ -1050,7 +1050,7 @@ func (ds *DataSource) HeartbeatSet(ctx context.Context, request *pb.HeartbeatSet
 	if !failFlag && successFlag {
 		log.Infof("batch update heartbeats[%s] successfully", count)
 		return &pb.HeartbeatSetResponse{
-			Response:  proto.CreateResponse(proto.Response_SUCCESS, "Heartbeat set successfully."),
+			Response:  proto.CreateResponse(proto.ResponseSuccess, "Heartbeat set successfully."),
 			Instances: instanceHbRstArr,
 		}, nil
 	}
@@ -1064,7 +1064,7 @@ func (ds *DataSource) HeartbeatSet(ctx context.Context, request *pb.HeartbeatSet
 func (ds *DataSource) BatchFind(ctx context.Context, request *pb.BatchFindInstancesRequest) (
 	*pb.BatchFindInstancesResponse, error) {
 	response := &pb.BatchFindInstancesResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Batch query service instances successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Batch query service instances successfully."),
 	}
 
 	var err error
@@ -1178,7 +1178,7 @@ func (ds *DataSource) UnregisterInstance(ctx context.Context, request *pb.Unregi
 
 	log.Infof("unregister instance[%s], operator %s", instanceFlag, remoteIP)
 	return &pb.UnregisterInstanceResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Unregister service instance successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Unregister service instance successfully."),
 	}, nil
 }
 
@@ -1208,7 +1208,7 @@ func (ds *DataSource) Heartbeat(ctx context.Context, request *pb.HeartbeatReques
 			instanceFlag, ttl, remoteIP)
 	}
 	return &pb.HeartbeatResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS,
+		Response: proto.CreateResponse(proto.ResponseSuccess,
 			"Update service instance heartbeat successfully."),
 	}, nil
 }
@@ -1248,7 +1248,7 @@ func (ds *DataSource) ModifySchemas(ctx context.Context, request *pb.ModifySchem
 	}
 
 	return &pb.ModifySchemasResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "modify schemas info successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "modify schemas info successfully."),
 	}, nil
 }
 
@@ -1277,7 +1277,7 @@ func (ds *DataSource) ModifySchema(ctx context.Context, request *pb.ModifySchema
 
 	log.Infof("modify schema[%s/%s] successfully, operator: %s", serviceID, schemaID, remoteIP)
 	return &pb.ModifySchemaResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "modify schema info success"),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "modify schema info success"),
 	}, nil
 }
 
@@ -1315,7 +1315,7 @@ func (ds *DataSource) ExistSchema(ctx context.Context, request *pb.GetExistenceR
 		}, err
 	}
 	return &pb.GetExistenceResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Schema exist."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Schema exist."),
 		SchemaId: request.SchemaId,
 		Summary:  schemaSummary,
 	}, nil
@@ -1359,7 +1359,7 @@ func (ds *DataSource) GetSchema(ctx context.Context, request *pb.GetSchemaReques
 	}
 
 	return &pb.GetSchemaResponse{
-		Response:      proto.CreateResponse(proto.Response_SUCCESS, "Get schema info successfully."),
+		Response:      proto.CreateResponse(proto.ResponseSuccess, "Get schema info successfully."),
 		Schema:        util.BytesToStringWithNoCopy(resp.Kvs[0].Value.([]byte)),
 		SchemaSummary: schemaSummary,
 	}, nil
@@ -1386,7 +1386,7 @@ func (ds *DataSource) GetAllSchemas(ctx context.Context, request *pb.GetAllSchem
 	schemasList := service.Schemas
 	if len(schemasList) == 0 {
 		return &pb.GetAllSchemaResponse{
-			Response: proto.CreateResponse(proto.Response_SUCCESS, "Do not have this schema info."),
+			Response: proto.CreateResponse(proto.ResponseSuccess, "Do not have this schema info."),
 			Schemas:  []*pb.Schema{},
 		}, nil
 	}
@@ -1435,7 +1435,7 @@ func (ds *DataSource) GetAllSchemas(ctx context.Context, request *pb.GetAllSchem
 	}
 
 	return &pb.GetAllSchemaResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Get all schema info successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Get all schema info successfully."),
 		Schemas:  schemas,
 	}, nil
 }
@@ -1498,7 +1498,7 @@ func (ds *DataSource) DeleteSchema(ctx context.Context, request *pb.DeleteSchema
 	log.Infof("delete schema[%s/%s] info successfully, operator: %s",
 		request.ServiceId, request.SchemaId, remoteIP)
 	return &pb.DeleteSchemaResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Delete schema info successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Delete schema info successfully."),
 	}, nil
 }
 
@@ -1560,7 +1560,7 @@ func (ds *DataSource) AddTags(ctx context.Context, request *pb.AddServiceTagsReq
 
 	log.Infof("add service[%s]'s tags %v successfully, operator: %s", request.ServiceId, request.Tags, remoteIP)
 	return &pb.AddServiceTagsResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Add service tags successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Add service tags successfully."),
 	}, nil
 }
 
@@ -1582,7 +1582,7 @@ func (ds *DataSource) GetTags(ctx context.Context, request *pb.GetServiceTagsReq
 	}
 
 	return &pb.GetServiceTagsResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Get service tags successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Get service tags successfully."),
 		Tags:     tags,
 	}, nil
 }
@@ -1639,7 +1639,7 @@ func (ds *DataSource) UpdateTag(ctx context.Context, request *pb.UpdateServiceTa
 
 	log.Infof("update service[%s]'s tag[%s] successfully, operator: %s", request.ServiceId, tagFlag, remoteIP)
 	return &pb.UpdateServiceTagResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Update service tag success."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Update service tag success."),
 	}, nil
 }
 
@@ -1714,7 +1714,7 @@ func (ds *DataSource) DeleteTags(ctx context.Context, request *pb.DeleteServiceT
 
 	log.Infof("delete service[%s]'s tags %v successfully, operator: %s", request.ServiceId, request.Keys, remoteIP)
 	return &pb.DeleteServiceTagsResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Delete service tags successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Delete service tags successfully."),
 	}, nil
 }
 
@@ -1807,7 +1807,7 @@ func (ds *DataSource) AddRule(ctx context.Context, request *pb.AddServiceRulesRe
 		log.Infof("add service[%s] rule successfully, no rules to add, operator: %s",
 			request.ServiceId, remoteIP)
 		return &pb.AddServiceRulesResponse{
-			Response: proto.CreateResponse(proto.Response_SUCCESS, "Service rules has been added."),
+			Response: proto.CreateResponse(proto.ResponseSuccess, "Service rules has been added."),
 		}, nil
 	}
 
@@ -1832,7 +1832,7 @@ func (ds *DataSource) AddRule(ctx context.Context, request *pb.AddServiceRulesRe
 
 	log.Infof("add service[%s] rule %v successfully, operator: %s", request.ServiceId, ruleIDs, remoteIP)
 	return &pb.AddServiceRulesResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Add service rules successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Add service rules successfully."),
 		RuleIds:  ruleIDs,
 	}, nil
 }
@@ -1858,7 +1858,7 @@ func (ds *DataSource) GetRule(ctx context.Context, request *pb.GetServiceRulesRe
 	}
 
 	return &pb.GetServiceRulesResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Get service rules successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Get service rules successfully."),
 		Rules:    rules,
 	}, nil
 }
@@ -1968,7 +1968,7 @@ func (ds *DataSource) UpdateRule(ctx context.Context, request *pb.UpdateServiceR
 
 	log.Infof("update service rule[%s/%s] successfully, operator: %s", request.ServiceId, request.RuleId, remoteIP)
 	return &pb.UpdateServiceRuleResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Get service rules successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Get service rules successfully."),
 	}, nil
 }
 
@@ -2041,7 +2041,7 @@ func (ds *DataSource) DeleteRule(ctx context.Context, request *pb.DeleteServiceR
 
 	log.Infof("delete service[%s] rules %v successfully, operator: %s", request.ServiceId, request.RuleIds, remoteIP)
 	return &pb.DeleteServiceRulesResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Delete service rules successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Delete service rules successfully."),
 	}, nil
 }
 
@@ -2400,7 +2400,7 @@ func (ds *DataSource) DeleteServicePri(ctx context.Context, serviceID string, fo
 	serviceUtil.RemandServiceQuota(ctx)
 
 	log.Infof("%s micro-service[%s] successfully, operator: %s", title, serviceID, remoteIP)
-	return proto.CreateResponse(proto.Response_SUCCESS, "Unregister service successfully."), nil
+	return proto.CreateResponse(proto.ResponseSuccess, "Unregister service successfully."), nil
 }
 
 func (ds *DataSource) GetDeleteServiceFunc(ctx context.Context, serviceID string, force bool,
@@ -2413,7 +2413,7 @@ func (ds *DataSource) GetDeleteServiceFunc(ctx context.Context, serviceID string
 		resp, err := ds.DeleteServicePri(ctx, serviceID, force)
 		if err != nil {
 			serviceRst.ErrMessage = err.Error()
-		} else if resp.GetCode() != proto.Response_SUCCESS {
+		} else if resp.GetCode() != proto.ResponseSuccess {
 			serviceRst.ErrMessage = resp.GetMessage()
 		}
 

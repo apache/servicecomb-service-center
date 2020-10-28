@@ -79,7 +79,7 @@ func (s *MicroServiceService) GetSchemaInfo(ctx context.Context, in *pb.GetSchem
 	}
 
 	return &pb.GetSchemaResponse{
-		Response:      proto.CreateResponse(proto.Response_SUCCESS, "Get schema info successfully."),
+		Response:      proto.CreateResponse(proto.ResponseSuccess, "Get schema info successfully."),
 		Schema:        util.BytesToStringWithNoCopy(resp.Kvs[0].Value.([]byte)),
 		SchemaSummary: schemaSummary,
 	}, nil
@@ -113,7 +113,7 @@ func (s *MicroServiceService) GetAllSchemaInfo(ctx context.Context, in *pb.GetAl
 	schemasList := service.Schemas
 	if len(schemasList) == 0 {
 		return &pb.GetAllSchemaResponse{
-			Response: proto.CreateResponse(proto.Response_SUCCESS, "Do not have this schema info."),
+			Response: proto.CreateResponse(proto.ResponseSuccess, "Do not have this schema info."),
 			Schemas:  []*pb.Schema{},
 		}, nil
 	}
@@ -162,7 +162,7 @@ func (s *MicroServiceService) GetAllSchemaInfo(ctx context.Context, in *pb.GetAl
 	}
 
 	return &pb.GetAllSchemaResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Get all schema info successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Get all schema info successfully."),
 		Schemas:  schemas,
 	}, nil
 
@@ -229,7 +229,7 @@ func (s *MicroServiceService) DeleteSchema(ctx context.Context, in *pb.DeleteSch
 
 	log.Infof("delete schema[%s/%s] info successfully, operator: %s", in.ServiceId, in.SchemaId, remoteIP)
 	return &pb.DeleteSchemaResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Delete schema info successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Delete schema info successfully."),
 	}, nil
 }
 
@@ -286,7 +286,7 @@ func (s *MicroServiceService) ModifySchemas(ctx context.Context, in *pb.ModifySc
 	}
 
 	return &pb.ModifySchemasResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "modify schemas info successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "modify schemas info successfully."),
 	}, nil
 }
 
@@ -555,7 +555,7 @@ func (s *MicroServiceService) ModifySchema(ctx context.Context, request *pb.Modi
 
 	log.Infof("modify schema[%s/%s] successfully, operator: %s", serviceID, schemaID, remoteIP)
 	return &pb.ModifySchemaResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "modify schema info success"),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "modify schema info success"),
 	}, nil
 }
 

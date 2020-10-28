@@ -109,7 +109,7 @@ func (s *MicroServiceInstanceService) HeartbeatSet(w http.ResponseWriter, r *htt
 	}
 	resp, _ := core.InstanceAPI.HeartbeatSet(r.Context(), request)
 
-	if resp.Response.GetCode() == proto.Response_SUCCESS {
+	if resp.Response.GetCode() == proto.ResponseSuccess {
 		controller.WriteResponse(w, nil, nil)
 		return
 	}

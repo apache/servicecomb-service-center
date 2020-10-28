@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package event
 
 import (
@@ -129,7 +130,7 @@ func PublishInstanceEvent(evt sd.KvEvent, domainProject string, serviceKey *pb.M
 	}
 
 	response := &pb.WatchInstanceResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Watch instance successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Watch instance successfully."),
 		Action:   string(evt.Type),
 		Key:      serviceKey,
 		Instance: evt.KV.Value.(*pb.MicroServiceInstance),
