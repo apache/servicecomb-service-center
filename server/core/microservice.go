@@ -19,9 +19,9 @@ package core
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/pkg/proto"
 	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/version"
 	"github.com/astaxie/beego"
 	"os"

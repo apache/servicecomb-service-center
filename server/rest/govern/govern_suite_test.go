@@ -21,9 +21,9 @@ import _ "github.com/apache/servicecomb-service-center/server/bootstrap"
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/pkg/proto"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/rest/govern"
 	"github.com/apache/servicecomb-service-center/server/service"
 	"github.com/astaxie/beego"

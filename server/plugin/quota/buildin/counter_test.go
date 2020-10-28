@@ -16,7 +16,7 @@
 package buildin
 
 import (
-	kv "github.com/apache/servicecomb-service-center/datasource/etcd/pkg/kv"
+	kv "github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"testing"
 )
 

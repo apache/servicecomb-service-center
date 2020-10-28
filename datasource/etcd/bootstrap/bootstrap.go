@@ -29,7 +29,7 @@ import _ "github.com/apache/servicecomb-service-center/datasource/etcd/client/re
 import _ "github.com/apache/servicecomb-service-center/datasource/etcd/client/embedded"
 
 //discovery
-import _ "github.com/apache/servicecomb-service-center/datasource/etcd/pkg/sd/aggregate"
-import _ "github.com/apache/servicecomb-service-center/datasource/etcd/pkg/sd/servicecenter"
-import _ "github.com/apache/servicecomb-service-center/datasource/etcd/pkg/sd/etcd"
-import _ "github.com/apache/servicecomb-service-center/datasource/etcd/pkg/sd/k8s"
+import _ "github.com/apache/servicecomb-service-center/datasource/etcd/sd/aggregate"
+import _ "github.com/apache/servicecomb-service-center/datasource/etcd/sd/servicecenter"
+import _ "github.com/apache/servicecomb-service-center/datasource/etcd/sd/etcd"
+import _ "github.com/apache/servicecomb-service-center/datasource/etcd/sd/k8s"

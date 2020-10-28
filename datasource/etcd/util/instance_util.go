@@ -27,8 +27,8 @@ import (
 	"time"
 
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/pkg/kv"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/pkg/sd"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	rmodel "github.com/apache/servicecomb-service-center/pkg/registry"

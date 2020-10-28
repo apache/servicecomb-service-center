@@ -20,7 +20,7 @@ package rest
 import (
 	"crypto/tls"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
-	"github.com/apache/servicecomb-service-center/server/core/config"
+	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf"
 	"time"
 )

@@ -18,7 +18,7 @@
 package core
 
 import (
-	"github.com/apache/servicecomb-service-center/server/core/config"
+	"github.com/apache/servicecomb-service-center/server/config"
 
 	// import the grace package and parse grace cmd line
 	_ "github.com/apache/servicecomb-service-center/pkg/grace"

@@ -16,8 +16,8 @@
 package dump
 
 import (
+	"github.com/apache/servicecomb-service-center/pkg/cluster"
 	"github.com/apache/servicecomb-service-center/pkg/registry"
-	"github.com/apache/servicecomb-service-center/pkg/types"
 	"github.com/apache/servicecomb-service-center/server/alarm/model"
 )
 
@@ -34,7 +34,7 @@ type ClustersRequest struct {
 
 type ClustersResponse struct {
 	Response *registry.Response `json:"response,omitempty"`
-	Clusters types.Clusters     `json:"clusters,omitempty"`
+	Clusters cluster.Clusters   `json:"clusters,omitempty"`
 }
 
 type ClearAlarmRequest struct {

@@ -13,7 +13,7 @@ It provides out of box support for metrics and tracing. It has a web portal to m
 - syncer: alpha feature. multiple cluster synchronization tool, designed for large microservice architectures
 
 ## Features
- - **[`Open API`](/server/core/swagger/v4.yaml)**: API doc(Open API format) management for microservice
+ - **[`Open API`](/docs/openapi/v4.yaml)**: API doc(Open API format) management for microservice
  - **Metadata**: Metadata management for both microservice and microservice instance
  - **Separated**: Separated microservice and microservice instance entity management
  - **Domains**: Logical multiple domains management

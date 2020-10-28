@@ -21,9 +21,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/pkg/kv"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/pkg/mux"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/pkg/sd"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/mux"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/backoff"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
@@ -31,8 +31,8 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/queue"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/config"
 	"time"
 )
 

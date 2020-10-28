@@ -20,7 +20,7 @@ package util
 import (
 	"context"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/pkg/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 )
 
 func CheckSchemaInfoExist(ctx context.Context, key string) (bool, error) {

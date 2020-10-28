@@ -21,7 +21,7 @@ import (
 	"context"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/server/core/config"
+	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/astaxie/beego"
 	"strings"
 	"sync"

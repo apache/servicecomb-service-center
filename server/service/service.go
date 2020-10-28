@@ -18,7 +18,7 @@
 package service
 
 import (
-	"github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/pkg/proto"
 	"os"
 )
 

@@ -19,13 +19,13 @@ package service_test
 // initialize
 import (
 	_ "github.com/apache/servicecomb-service-center/server/bootstrap"
-	"github.com/apache/servicecomb-service-center/server/core/config"
+	"github.com/apache/servicecomb-service-center/server/config"
 )
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/pkg/proto"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/service"
 	"github.com/astaxie/beego"
 	. "github.com/onsi/ginkgo"

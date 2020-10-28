@@ -19,7 +19,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/pkg/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	utils "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"

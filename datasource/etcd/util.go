@@ -21,7 +21,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/pkg/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"

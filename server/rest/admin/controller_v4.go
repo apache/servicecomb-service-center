@@ -46,7 +46,7 @@ func (ctrl *ControllerV4) Dump(w http.ResponseWriter, r *http.Request) {
 	if s := strings.TrimSpace(query.Get("options")); len(s) > 0 {
 		options = strings.Split(s, ",")
 	}
-	request := &dump.DumpRequest{
+	request := &dump.Request{
 		Options: options,
 	}
 	ctx := r.Context()

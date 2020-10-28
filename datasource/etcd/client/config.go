@@ -18,25 +18,25 @@
 package client
 
 import (
-	"github.com/apache/servicecomb-service-center/pkg/types"
+	"github.com/apache/servicecomb-service-center/pkg/cluster"
 	"strings"
 	"time"
 )
 
 type Config struct {
-	SslEnabled       bool           `json:"-"`
-	ManagerAddress   string         `json:"manageAddress,omitempty"`
-	ClusterName      string         `json:"manageName,omitempty"`
-	ClusterAddresses string         `json:"manageClusters,omitempty"` // the raw string of cluster configuration
-	Clusters         types.Clusters `json:"-"`                        // parsed from ClusterAddresses
-	DialTimeout      time.Duration  `json:"connectTimeout"`
-	RequestTimeOut   time.Duration  `json:"registryTimeout"`
-	AutoSyncInterval time.Duration  `json:"autoSyncInterval"`
+	SslEnabled       bool             `json:"-"`
+	ManagerAddress   string           `json:"manageAddress,omitempty"`
+	ClusterName      string           `json:"manageName,omitempty"`
+	ClusterAddresses string           `json:"manageClusters,omitempty"` // the raw string of cluster configuration
+	Clusters         cluster.Clusters `json:"-"`                        // parsed from ClusterAddresses
+	DialTimeout      time.Duration    `json:"connectTimeout"`
+	RequestTimeOut   time.Duration    `json:"registryTimeout"`
+	AutoSyncInterval time.Duration    `json:"autoSyncInterval"`
 }
 
 //InitClusterInfo re-org address info with node name
 func (c *Config) InitClusterInfo() {
-	c.Clusters = make(types.Clusters)
+	c.Clusters = make(cluster.Clusters)
 	// sc-0=http(s)://host1:port1,http(s)://host2:port2,sc-1=http(s)://host3:port3
 	kvs := strings.Split(c.ClusterAddresses, "=")
 	if l := len(kvs); l >= 2 {

@@ -19,8 +19,8 @@ package etcd
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/pkg/kv"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/pkg/sd"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 )

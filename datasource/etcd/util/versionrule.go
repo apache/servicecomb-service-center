@@ -23,7 +23,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/apache/servicecomb-service-center/datasource/etcd/pkg/sd"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 

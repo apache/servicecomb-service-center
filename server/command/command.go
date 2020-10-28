@@ -18,7 +18,7 @@
 package command
 
 import (
-	"github.com/apache/servicecomb-service-center/server/core/config"
+	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/version"
 	"github.com/urfave/cli"
 )

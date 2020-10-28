@@ -22,11 +22,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/pkg/mux"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/mux"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/config"
 	"github.com/apache/servicecomb-service-center/version"
 	"os"
 )

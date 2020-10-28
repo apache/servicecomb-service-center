@@ -58,16 +58,16 @@ func init() {
 type Service struct {
 }
 
-func (service *Service) Dump(ctx context.Context, in *dump.DumpRequest) (*dump.DumpResponse, error) {
+func (service *Service) Dump(ctx context.Context, in *dump.Request) (*dump.Response, error) {
 	domainProject := util.ParseDomainProject(ctx)
 
 	if !core.IsDefaultDomainProject(domainProject) {
-		return &dump.DumpResponse{
+		return &dump.Response{
 			Response: registry.CreateResponse(scerr.ErrForbidden, "Required admin permission"),
 		}, nil
 	}
 
-	resp := &dump.DumpResponse{
+	resp := &dump.Response{
 		Response: registry.CreateResponse(registry.ResponseSuccess, "Admin dump successfully"),
 	}
 
@@ -90,7 +90,7 @@ func (service *Service) Dump(ctx context.Context, in *dump.DumpRequest) (*dump.D
 	return resp, nil
 }
 
-func (service *Service) dump(ctx context.Context, option string, resp *dump.DumpResponse) {
+func (service *Service) dump(ctx context.Context, option string, resp *dump.Response) {
 	switch option {
 	case "info":
 		resp.Info = version.Ver()

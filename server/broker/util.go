@@ -20,7 +20,7 @@ package broker
 import (
 	"context"
 	"encoding/json"
-	"github.com/apache/servicecomb-service-center/server/core/config"
+	"github.com/apache/servicecomb-service-center/server/config"
 	"math"
 	"net/url"
 	"strconv"

@@ -22,8 +22,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/pkg/cluster"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
-	"github.com/apache/servicecomb-service-center/pkg/types"
 	"strconv"
 	"strings"
 	"time"
@@ -250,6 +250,6 @@ func shouldClear(ctx context.Context, timeLimitStamp string, svc *pb.MicroServic
 	return true, nil
 }
 
-func (ds *DataSource) GetClusters(ctx context.Context) (types.Clusters, error) {
+func (ds *DataSource) GetClusters(ctx context.Context) (cluster.Clusters, error) {
 	return Configuration().Clusters, nil
 }

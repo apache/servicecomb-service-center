@@ -17,8 +17,6 @@
 
 package registry
 
-import "github.com/apache/servicecomb-service-center/pkg/types"
-
 const (
 	MS_UP   string = "UP"
 	MS_DOWN string = "DOWN"
@@ -38,16 +36,18 @@ const (
 	REGISTERBY_SIDECAR  string = "SIDECAR"
 	REGISTERBY_PLATFORM string = "PLATFORM"
 
-	EVT_INIT   types.EventType = "INIT"
-	EVT_CREATE types.EventType = "CREATE"
-	EVT_UPDATE types.EventType = "UPDATE"
-	EVT_DELETE types.EventType = "DELETE"
-	EVT_EXPIRE types.EventType = "EXPIRE"
-	EVT_ERROR  types.EventType = "ERROR"
+	EVT_INIT   EventType = "INIT"
+	EVT_CREATE EventType = "CREATE"
+	EVT_UPDATE EventType = "UPDATE"
+	EVT_DELETE EventType = "DELETE"
+	EVT_EXPIRE EventType = "EXPIRE"
+	EVT_ERROR  EventType = "ERROR"
 
 	CHECK_BY_HEARTBEAT string = "push"
 	CHECK_BY_PLATFORM  string = "pull"
 )
+
+type EventType string
 
 type HeartbeatSetRequest struct {
 	Instances []*HeartbeatSetElement `protobuf:"bytes,1,rep,name=instances" json:"instances,omitempty"`

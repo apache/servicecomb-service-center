@@ -22,8 +22,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/apache/servicecomb-service-center/pkg/cluster"
 	"github.com/apache/servicecomb-service-center/pkg/dump"
-	"github.com/apache/servicecomb-service-center/pkg/types"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"github.com/apache/servicecomb-service-center/version"
@@ -101,7 +101,7 @@ func (c *Client) GetScCache(ctx context.Context) (*dump.Cache, *scerr.Error) {
 		return nil, c.toError(body)
 	}
 
-	dump := &dump.DumpResponse{}
+	dump := &dump.Response{}
 	err = json.Unmarshal(body, dump)
 	if err != nil {
 		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
@@ -110,7 +110,7 @@ func (c *Client) GetScCache(ctx context.Context) (*dump.Cache, *scerr.Error) {
 	return dump.Cache, nil
 }
 
-func (c *Client) GetClusters(ctx context.Context) (types.Clusters, *scerr.Error) {
+func (c *Client) GetClusters(ctx context.Context) (cluster.Clusters, *scerr.Error) {
 	headers := c.CommonHeaders(ctx)
 	// only default domain has admin permission
 	headers.Set("X-Domain-Name", "default")
