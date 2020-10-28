@@ -40,7 +40,7 @@ func init() {
 		APIVersion: APIVersion,
 	}
 	versionJsonCache, _ = json.Marshal(result)
-	versionResp = proto.CreateResponse(proto.Response_SUCCESS, "get version successfully")
+	versionResp = proto.CreateResponse(proto.ResponseSuccess, "get version successfully")
 }
 
 type MainService struct {

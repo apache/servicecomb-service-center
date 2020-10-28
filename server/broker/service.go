@@ -27,14 +27,14 @@ import (
 	"time"
 
 	"context"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/broker/brokerpb"
 	apt "github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
-	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 )
 
 var ServiceAPI = &Service{}
@@ -92,7 +92,7 @@ func (*Service) GetPactsOfProvider(ctx context.Context,
 	finalBytes := append(sliceOfResp, linksBytes...)
 
 	return &brokerpb.GetProviderConsumerVersionPactResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Success."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Success."),
 		Pact:     finalBytes,
 	}, nil
 
@@ -142,8 +142,8 @@ func (*Service) RetrieveProviderPacts(ctx context.Context,
 	// Get all versions
 	versionKey := util.StringJoin([]string{GetBrokerVersionKey(tenant), ""}, "/")
 	versions, err := Store().Version().Search(ctx,
-		registry.WithPrefix(),
-		registry.WithStrKey(versionKey))
+		client.WithPrefix(),
+		client.WithStrKey(versionKey))
 
 	if err != nil {
 		return nil, err
@@ -166,8 +166,8 @@ func (*Service) RetrieveProviderPacts(ctx context.Context,
 	// Get all pactversions and filter using the provider participant id
 	pactVersionKey := util.StringJoin([]string{GetBrokerPactVersionKey(tenant), ""}, "/")
 	pactVersions, err := Store().PactVersion().Search(ctx,
-		registry.WithStrKey(pactVersionKey),
-		registry.WithPrefix())
+		client.WithStrKey(pactVersionKey),
+		client.WithPrefix())
 
 	if err != nil {
 		return nil, err
@@ -199,8 +199,8 @@ func (*Service) RetrieveProviderPacts(ctx context.Context,
 	// Get all participants
 	participantKey := util.StringJoin([]string{GetBrokerParticipantKey(tenant), ""}, "/")
 	participants, err := Store().Participant().Search(ctx,
-		registry.WithStrKey(participantKey),
-		registry.WithPrefix())
+		client.WithStrKey(participantKey),
+		client.WithPrefix())
 
 	if err != nil {
 		return nil, err
@@ -252,7 +252,7 @@ func (*Service) RetrieveProviderPacts(ctx context.Context,
 	}
 	PactLogger.Infof("Json : %s", string(resJSON))
 	response := &brokerpb.GetAllProviderPactsResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "retrieve provider pact info succeeded."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "retrieve provider pact info succeeded."),
 		XLinks:   links,
 	}
 	return response, nil
@@ -295,8 +295,8 @@ func (*Service) GetAllProviderPacts(ctx context.Context,
 	// Get all versions
 	versionKey := util.StringJoin([]string{GetBrokerVersionKey(tenant), ""}, "/")
 	versions, err := Store().Version().Search(ctx,
-		registry.WithPrefix(),
-		registry.WithStrKey(versionKey))
+		client.WithPrefix(),
+		client.WithStrKey(versionKey))
 
 	if err != nil {
 		return nil, err
@@ -319,8 +319,8 @@ func (*Service) GetAllProviderPacts(ctx context.Context,
 	// Get all pactversions and filter using the provider participant id
 	pactVersionKey := util.StringJoin([]string{GetBrokerPactVersionKey(tenant), ""}, "/")
 	pactVersions, err := Store().PactVersion().Search(ctx,
-		registry.WithStrKey(pactVersionKey),
-		registry.WithPrefix())
+		client.WithStrKey(pactVersionKey),
+		client.WithPrefix())
 
 	if err != nil {
 		return nil, err
@@ -352,8 +352,8 @@ func (*Service) GetAllProviderPacts(ctx context.Context,
 	// Get all participants
 	participantKey := util.StringJoin([]string{GetBrokerParticipantKey(tenant), ""}, "/")
 	participants, err := Store().Participant().Search(ctx,
-		registry.WithStrKey(participantKey),
-		registry.WithPrefix())
+		client.WithStrKey(participantKey),
+		client.WithPrefix())
 
 	if err != nil {
 		return nil, err
@@ -405,7 +405,7 @@ func (*Service) GetAllProviderPacts(ctx context.Context,
 	}
 	PactLogger.Infof("Json : %s", string(resJSON))
 	response := &brokerpb.GetAllProviderPactsResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "retrieve provider pact info succeeded."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "retrieve provider pact info succeeded."),
 		XLinks:   links,
 	}
 	return response, nil
@@ -453,8 +453,8 @@ func (*Service) RetrieveVerificationResults(ctx context.Context, in *brokerpb.Re
 	PactLogger.Infof("Version found/created: (%d, %s, %d, %d)", version.Id, version.Number, version.ParticipantId, version.Order)
 	key := util.StringJoin([]string{GetBrokerPactVersionKey(tenant), strconv.Itoa(int(version.Id))}, "/")
 	pactVersions, err := Store().PactVersion().Search(ctx,
-		registry.WithPrefix(),
-		registry.WithStrKey(key))
+		client.WithPrefix(),
+		client.WithStrKey(key))
 
 	if err != nil || len(pactVersions.Kvs) == 0 {
 		PactLogger.Errorf(nil, "verification result publish request failed, pact version cannot be searched.")
@@ -480,8 +480,8 @@ func (*Service) RetrieveVerificationResults(ctx context.Context, in *brokerpb.Re
 		}
 		key = util.StringJoin([]string{GetBrokerVerificationKey(tenant), strconv.Itoa(int(pactVersion.Id))}, "/")
 		verifications, err := Store().Verification().Search(ctx,
-			registry.WithPrefix(),
-			registry.WithStrKey(key))
+			client.WithPrefix(),
+			client.WithStrKey(key))
 
 		if err != nil || len(verifications.Kvs) == 0 {
 			PactLogger.Errorf(nil, "verification result retrieve request failed, verification results cannot be searched.")
@@ -518,8 +518,8 @@ func (*Service) RetrieveVerificationResults(ctx context.Context, in *brokerpb.Re
 
 		key = util.StringJoin([]string{GetBrokerParticipantKey(tenant), ""}, "/")
 		participants, err := Store().Participant().Search(ctx,
-			registry.WithStrKey(key),
-			registry.WithPrefix())
+			client.WithStrKey(key),
+			client.WithPrefix())
 
 		if err != nil || len(participants.Kvs) == 0 {
 			PactLogger.Errorf(nil, "verification result retrieve request failed, provider participant cannot be searched.")
@@ -581,7 +581,7 @@ func (*Service) RetrieveVerificationResults(ctx context.Context, in *brokerpb.Re
 	verificationResult := &brokerpb.VerificationResult{Success: overAllSuccess, ProviderSummary: verificationSummary, XEmbedded: verificationDetails}
 	PactLogger.Infof("Verification result retrieved successfully ...")
 	return &brokerpb.RetrieveVerificationResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Verification result retrieved successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Verification result retrieved successfully."),
 		Result:   verificationResult,
 	}, nil
 }
@@ -628,8 +628,8 @@ func (*Service) PublishVerificationResults(ctx context.Context, in *brokerpb.Pub
 	PactLogger.Infof("Version found/created: (%d, %s, %d, %d)", version.Id, version.Number, version.ParticipantId, version.Order)
 	key := util.StringJoin([]string{GetBrokerPactKey(tenant), ""}, "/")
 	pacts, err := Store().Pact().Search(ctx,
-		registry.WithStrKey(key),
-		registry.WithPrefix())
+		client.WithStrKey(key),
+		client.WithPrefix())
 
 	if err != nil || len(pacts.Kvs) == 0 {
 		PactLogger.Errorf(nil, "verification result publish request failed, pact cannot be searched.")
@@ -667,8 +667,8 @@ func (*Service) PublishVerificationResults(ctx context.Context, in *brokerpb.Pub
 	// Check if some verification results already exists
 	key = util.StringJoin([]string{GetBrokerVerificationKey(tenant), strconv.Itoa(int(pactVersion.Id))}, "/")
 	verifications, err := Store().Verification().Search(ctx,
-		registry.WithStrKey(key),
-		registry.WithPrefix())
+		client.WithStrKey(key),
+		client.WithPrefix())
 
 	if err != nil {
 		PactLogger.Errorf(nil, "verification result publish request failed, verification result cannot be searched.")
@@ -729,7 +729,7 @@ func (*Service) PublishVerificationResults(ctx context.Context, in *brokerpb.Pub
 	}
 	PactLogger.Infof("Verification result published successfully ...")
 	return &brokerpb.PublishVerificationResponse{
-		Response:     proto.CreateResponse(proto.Response_SUCCESS, "Verification result published successfully."),
+		Response:     proto.CreateResponse(proto.ResponseSuccess, "Verification result published successfully."),
 		Confirmation: verificationResponse,
 	}, nil
 }
@@ -904,7 +904,7 @@ func (*Service) PublishPact(ctx context.Context, in *brokerpb.PublishPactRequest
 	PactLogger.Infof("PactVersion found/create: (%d, %d, %d, %d)", pactVersion.Id, pactVersion.VersionId, pactVersion.PactId, pactVersion.ProviderParticipantId)
 	PactLogger.Infof("Pact published successfully ...")
 	return &brokerpb.PublishPactResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Pact published successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Pact published successfully."),
 	}, nil
 }
 

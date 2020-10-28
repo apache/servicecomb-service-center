@@ -14,26 +14,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package event
 
 import (
 	"context"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/task"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/backend"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/notify"
-	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"github.com/apache/servicecomb-service-center/server/service/cache"
-	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 )
 
 type TagsChangedTask struct {
-	discovery.KvEvent
+	sd.KvEvent
 
 	key string
 	err error
@@ -100,11 +101,11 @@ func (apt *TagsChangedTask) publish(ctx context.Context, domainProject, consumer
 type TagEventHandler struct {
 }
 
-func (h *TagEventHandler) Type() discovery.Type {
-	return backend.ServiceTag
+func (h *TagEventHandler) Type() sd.Type {
+	return kv.ServiceTag
 }
 
-func (h *TagEventHandler) OnEvent(evt discovery.KvEvent) {
+func (h *TagEventHandler) OnEvent(evt sd.KvEvent) {
 	action := evt.Type
 	if action == pb.EVT_INIT {
 		return
@@ -130,7 +131,7 @@ func NewTagEventHandler() *TagEventHandler {
 	return &TagEventHandler{}
 }
 
-func NewTagsChangedAsyncTask(domainProject, consumerID string, evt discovery.KvEvent) *TagsChangedTask {
+func NewTagsChangedAsyncTask(domainProject, consumerID string, evt sd.KvEvent) *TagsChangedTask {
 	evt.Type = pb.EVT_EXPIRE
 	return &TagsChangedTask{
 		KvEvent:       evt,

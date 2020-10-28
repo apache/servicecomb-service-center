@@ -20,6 +20,8 @@ package etcd
 import (
 	"context"
 	"encoding/json"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
@@ -27,10 +29,7 @@ import (
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/backend"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
-	"github.com/apache/servicecomb-service-center/server/plugin"
-	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"strconv"
@@ -52,7 +51,7 @@ type GetInstanceCountByDomainResponse struct {
 
 // service
 func capRegisterData(ctx context.Context, request *pb.CreateServiceRequest) (
-	[]registry.PluginOp, []registry.CompareOp, []registry.PluginOp, error) {
+	[]client.PluginOp, []client.CompareOp, []client.PluginOp, error) {
 	remoteIP := util.GetIPFromContext(ctx)
 	serviceBody := request.Service
 	serviceFlag := util.StringJoin([]string{
@@ -73,7 +72,7 @@ func capRegisterData(ctx context.Context, request *pb.CreateServiceRequest) (
 	requestServiceID := serviceBody.ServiceId
 	if len(requestServiceID) == 0 {
 		ctx = util.SetContext(ctx, uuid.ContextKey, index)
-		serviceBody.ServiceId = plugin.Plugins().UUID().GetServiceID(ctx)
+		serviceBody.ServiceId = uuid.Generator().GetServiceID(ctx)
 	}
 	serviceBody.Timestamp = strconv.FormatInt(time.Now().Unix(), 10)
 	serviceBody.ModTimestamp = serviceBody.Timestamp
@@ -90,29 +89,29 @@ func capRegisterData(ctx context.Context, request *pb.CreateServiceRequest) (
 	indexBytes := util.StringToBytesWithNoCopy(index)
 	aliasBytes := util.StringToBytesWithNoCopy(apt.GenerateServiceAliasKey(serviceKey))
 
-	opts := []registry.PluginOp{
-		registry.OpPut(registry.WithKey(keyBytes), registry.WithValue(data)),
-		registry.OpPut(registry.WithKey(indexBytes), registry.WithStrValue(serviceBody.ServiceId)),
+	opts := []client.PluginOp{
+		client.OpPut(client.WithKey(keyBytes), client.WithValue(data)),
+		client.OpPut(client.WithKey(indexBytes), client.WithStrValue(serviceBody.ServiceId)),
 	}
-	uniqueCmpOpts := []registry.CompareOp{
-		registry.OpCmp(registry.CmpVer(indexBytes), registry.CmpEqual, 0),
-		registry.OpCmp(registry.CmpVer(keyBytes), registry.CmpEqual, 0),
+	uniqueCmpOpts := []client.CompareOp{
+		client.OpCmp(client.CmpVer(indexBytes), client.CmpEqual, 0),
+		client.OpCmp(client.CmpVer(keyBytes), client.CmpEqual, 0),
 	}
-	failOpts := []registry.PluginOp{
-		registry.OpGet(registry.WithKey(indexBytes)),
+	failOpts := []client.PluginOp{
+		client.OpGet(client.WithKey(indexBytes)),
 	}
 
 	if len(serviceKey.Alias) > 0 {
-		opts = append(opts, registry.OpPut(registry.WithKey(aliasBytes), registry.WithStrValue(serviceBody.ServiceId)))
+		opts = append(opts, client.OpPut(client.WithKey(aliasBytes), client.WithStrValue(serviceBody.ServiceId)))
 		uniqueCmpOpts = append(uniqueCmpOpts,
-			registry.OpCmp(registry.CmpVer(aliasBytes), registry.CmpEqual, 0))
-		failOpts = append(failOpts, registry.OpGet(registry.WithKey(aliasBytes)))
+			client.OpCmp(client.CmpVer(aliasBytes), client.CmpEqual, 0))
+		failOpts = append(failOpts, client.OpGet(client.WithKey(aliasBytes)))
 	}
 
 	return opts, uniqueCmpOpts, failOpts, nil
 }
 
-func newRegisterServiceResp(ctx context.Context, reqService *pb.MicroService, resp *registry.PluginResponse,
+func newRegisterServiceResp(ctx context.Context, reqService *pb.MicroService, resp *client.PluginResponse,
 	err error) (*pb.CreateServiceResponse, error) {
 	remoteIP := util.GetIPFromContext(ctx)
 	serviceFlag := util.StringJoin([]string{
@@ -152,7 +151,7 @@ func newRegisterServiceResp(ctx context.Context, reqService *pb.MicroService, re
 		log.Warnf("create micro-service[%s][%s] failed, service already exists, operator: %s",
 			serviceIDInner, serviceFlag, remoteIP)
 		return &pb.CreateServiceResponse{
-			Response:  proto.CreateResponse(proto.Response_SUCCESS, "register service successfully"),
+			Response:  proto.CreateResponse(proto.ResponseSuccess, "register service successfully"),
 			ServiceId: serviceIDInner,
 		}, nil
 	}
@@ -160,7 +159,7 @@ func newRegisterServiceResp(ctx context.Context, reqService *pb.MicroService, re
 	log.Infof("create micro-service[%s][%s] successfully, operator: %s",
 		reqService.ServiceId, serviceFlag, remoteIP)
 	return &pb.CreateServiceResponse{
-		Response:  proto.CreateResponse(proto.Response_SUCCESS, "Register service successfully."),
+		Response:  proto.CreateResponse(proto.ResponseSuccess, "Register service successfully."),
 		ServiceId: reqService.ServiceId,
 	}, nil
 }
@@ -168,8 +167,8 @@ func newRegisterServiceResp(ctx context.Context, reqService *pb.MicroService, re
 // schema
 func getSchemaSummary(ctx context.Context, domainProject string, serviceID string, schemaID string) (string, error) {
 	key := apt.GenerateServiceSchemaSummaryKey(domainProject, serviceID, schemaID)
-	resp, err := backend.Store().SchemaSummary().Search(ctx,
-		registry.WithStrKey(key),
+	resp, err := kv.Store().SchemaSummary().Search(ctx,
+		client.WithStrKey(key),
 	)
 	if err != nil {
 		log.Errorf(err, "get schema[%s/%s] summary failed", serviceID, schemaID)
@@ -183,9 +182,9 @@ func getSchemaSummary(ctx context.Context, domainProject string, serviceID strin
 
 func getSchemasFromDatabase(ctx context.Context, domainProject string, serviceID string) ([]*pb.Schema, error) {
 	key := apt.GenerateServiceSchemaKey(domainProject, serviceID, "")
-	resp, err := backend.Store().Schema().Search(ctx,
-		registry.WithPrefix(),
-		registry.WithStrKey(key))
+	resp, err := kv.Store().Schema().Search(ctx,
+		client.WithPrefix(),
+		client.WithStrKey(key))
 	if err != nil {
 		log.Errorf(err, "get service[%s]'s schema failed", serviceID)
 		return nil, err
@@ -259,8 +258,8 @@ func schemasAnalysis(schemas []*pb.Schema, schemasFromDb []*pb.Schema, schemaIDs
 }
 
 func checkSchemaInfoExist(ctx context.Context, key string) (bool, error) {
-	opts := append(serviceUtil.FromContext(ctx), registry.WithStrKey(key), registry.WithCountOnly())
-	resp, errDo := backend.Store().Schema().Search(ctx, opts...)
+	opts := append(serviceUtil.FromContext(ctx), client.WithStrKey(key), client.WithCountOnly())
+	resp, errDo := kv.Store().Schema().Search(ctx, opts...)
 	if errDo != nil {
 		return false, errDo
 	}
@@ -272,7 +271,7 @@ func checkSchemaInfoExist(ctx context.Context, key string) (bool, error) {
 
 func isExistSchemaSummary(ctx context.Context, domainProject, serviceID, schemaID string) (bool, error) {
 	key := apt.GenerateServiceSchemaSummaryKey(domainProject, serviceID, schemaID)
-	resp, err := backend.Store().SchemaSummary().Search(ctx, registry.WithStrKey(key), registry.WithCountOnly())
+	resp, err := kv.Store().SchemaSummary().Search(ctx, client.WithStrKey(key), client.WithCountOnly())
 	if err != nil {
 		return true, err
 	}
@@ -282,13 +281,13 @@ func isExistSchemaSummary(ctx context.Context, domainProject, serviceID, schemaI
 	return true, nil
 }
 
-func schemaWithDatabaseOpera(invoke registry.Operation, domainProject string, serviceID string, schema *pb.Schema) []registry.PluginOp {
-	pluginOps := make([]registry.PluginOp, 0)
+func schemaWithDatabaseOpera(invoke client.Operation, domainProject string, serviceID string, schema *pb.Schema) []client.PluginOp {
+	pluginOps := make([]client.PluginOp, 0)
 	key := apt.GenerateServiceSchemaKey(domainProject, serviceID, schema.SchemaId)
-	opt := invoke(registry.WithStrKey(key), registry.WithStrValue(schema.Schema))
+	opt := invoke(client.WithStrKey(key), client.WithStrValue(schema.Schema))
 	pluginOps = append(pluginOps, opt)
 	keySummary := apt.GenerateServiceSchemaSummaryKey(domainProject, serviceID, schema.SchemaId)
-	opt = invoke(registry.WithStrKey(keySummary), registry.WithStrValue(schema.Summary))
+	opt = invoke(client.WithStrKey(keySummary), client.WithStrValue(schema.Summary))
 	pluginOps = append(pluginOps, opt)
 	return pluginOps
 }
@@ -316,13 +315,13 @@ func containsValueInSlice(in []string, value string) bool {
 	return false
 }
 
-func commitSchemaInfo(domainProject string, serviceID string, schema *pb.Schema) []registry.PluginOp {
+func commitSchemaInfo(domainProject string, serviceID string, schema *pb.Schema) []client.PluginOp {
 	if len(schema.Summary) != 0 {
-		return schemaWithDatabaseOpera(registry.OpPut, domainProject, serviceID, schema)
+		return schemaWithDatabaseOpera(client.OpPut, domainProject, serviceID, schema)
 	}
 	key := apt.GenerateServiceSchemaKey(domainProject, serviceID, schema.SchemaId)
-	opt := registry.OpPut(registry.WithStrKey(key), registry.WithStrValue(schema.Schema))
-	return []registry.PluginOp{opt}
+	opt := client.OpPut(client.WithStrKey(key), client.WithStrValue(schema.Schema))
+	return []client.PluginOp{opt}
 }
 
 // instance util
@@ -332,7 +331,7 @@ func preProcessRegisterInstance(ctx context.Context, instance *pb.MicroServiceIn
 	}
 
 	if len(instance.InstanceId) == 0 {
-		instance.InstanceId = plugin.Plugins().UUID().GetInstanceID(ctx)
+		instance.InstanceId = uuid.Generator().GetInstanceID(ctx)
 	}
 
 	instance.Timestamp = strconv.FormatInt(time.Now().Unix(), 10)
@@ -396,7 +395,7 @@ func revokeInstance(ctx context.Context, domainProject string, serviceID string,
 		return scerr.NewError(scerr.ErrInstanceNotExists, "Instance's leaseId not exist.")
 	}
 
-	err = backend.Registry().LeaseRevoke(ctx, leaseID)
+	err = client.Instance().LeaseRevoke(ctx, leaseID)
 	if err != nil {
 		if _, ok := err.(errorsEx.InternalError); !ok {
 			return scerr.NewError(scerr.ErrInstanceNotExists, err.Error())
@@ -415,10 +414,10 @@ func getServiceAllVersions(ctx context.Context, serviceKey *pb.MicroServiceKey) 
 	key := GenerateServiceIndexKey(&copyKey)
 
 	opts := append(serviceUtil.FromContext(ctx),
-		registry.WithStrKey(key),
-		registry.WithPrefix())
+		client.WithStrKey(key),
+		client.WithPrefix())
 
-	resp, err := backend.Store().ServiceIndex().Search(ctx, opts...)
+	resp, err := kv.Store().ServiceIndex().Search(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -519,9 +518,9 @@ func getServiceDetailUtil(ctx context.Context, serviceDetailOpt ServiceDetailOpt
 func getSchemaInfoUtil(ctx context.Context, domainProject string, serviceID string) ([]*pb.Schema, error) {
 	key := apt.GenerateServiceSchemaKey(domainProject, serviceID, "")
 
-	resp, err := backend.Store().Schema().Search(ctx,
-		registry.WithStrKey(key),
-		registry.WithPrefix())
+	resp, err := kv.Store().Schema().Search(ctx,
+		client.WithStrKey(key),
+		client.WithPrefix())
 	if err != nil {
 		log.Errorf(err, "get service[%s]'s schemas failed", serviceID)
 		return make([]*pb.Schema, 0), err
@@ -548,9 +547,9 @@ func statistics(ctx context.Context, withShared bool) (*pb.Statistics, error) {
 	// services
 	key := apt.GetServiceIndexRootKey(domainProject) + "/"
 	svcOpts := append(opts,
-		registry.WithStrKey(key),
-		registry.WithPrefix())
-	respSvc, err := backend.Store().ServiceIndex().Search(ctx, svcOpts...)
+		client.WithStrKey(key),
+		client.WithPrefix())
+	respSvc, err := kv.Store().ServiceIndex().Search(ctx, svcOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -586,10 +585,10 @@ func statistics(ctx context.Context, withShared bool) (*pb.Statistics, error) {
 	// instance
 	key = apt.GetInstanceRootKey(domainProject) + "/"
 	instOpts := append(opts,
-		registry.WithStrKey(key),
-		registry.WithPrefix(),
-		registry.WithKeyOnly())
-	respIns, err := backend.Store().Instance().Search(ctx, instOpts...)
+		client.WithStrKey(key),
+		client.WithPrefix(),
+		client.WithKeyOnly())
+	respIns, err := kv.Store().Instance().Search(ctx, instOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -620,11 +619,11 @@ func statistics(ctx context.Context, withShared bool) (*pb.Statistics, error) {
 func getInstanceCountByDomain(ctx context.Context, svcIDToNonVerKey map[string]string, resp chan GetInstanceCountByDomainResponse) {
 	domainID := util.ParseDomain(ctx)
 	key := apt.GetInstanceRootKey(domainID) + "/"
-	instOpts := append([]registry.PluginOpOption{},
-		registry.WithStrKey(key),
-		registry.WithPrefix(),
-		registry.WithKeyOnly())
-	respIns, err := backend.Store().Instance().Search(ctx, instOpts...)
+	instOpts := append([]client.PluginOpOption{},
+		client.WithStrKey(key),
+		client.WithPrefix(),
+		client.WithKeyOnly())
+	respIns, err := kv.Store().Instance().Search(ctx, instOpts...)
 	ret := GetInstanceCountByDomainResponse{
 		err: err,
 	}

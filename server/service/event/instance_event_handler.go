@@ -14,21 +14,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package event
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/backend"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/notify"
-	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"github.com/apache/servicecomb-service-center/server/service/cache"
 	"github.com/apache/servicecomb-service-center/server/service/metrics"
-	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"strings"
 )
 
@@ -45,11 +46,11 @@ const (
 type InstanceEventHandler struct {
 }
 
-func (h *InstanceEventHandler) Type() discovery.Type {
-	return backend.INSTANCE
+func (h *InstanceEventHandler) Type() sd.Type {
+	return kv.INSTANCE
 }
 
-func (h *InstanceEventHandler) OnEvent(evt discovery.KvEvent) {
+func (h *InstanceEventHandler) OnEvent(evt sd.KvEvent) {
 	action := evt.Type
 	instance := evt.KV.Value.(*pb.MicroServiceInstance)
 	providerID, providerInstanceID, domainProject := apt.GetInfoFromInstKV(evt.KV.Key)
@@ -121,7 +122,7 @@ func NewInstanceEventHandler() *InstanceEventHandler {
 	return &InstanceEventHandler{}
 }
 
-func PublishInstanceEvent(evt discovery.KvEvent, domainProject string, serviceKey *pb.MicroServiceKey, subscribers []string) {
+func PublishInstanceEvent(evt sd.KvEvent, domainProject string, serviceKey *pb.MicroServiceKey, subscribers []string) {
 	defer cache.FindInstances.Remove(serviceKey)
 
 	if len(subscribers) == 0 {
@@ -129,7 +130,7 @@ func PublishInstanceEvent(evt discovery.KvEvent, domainProject string, serviceKe
 	}
 
 	response := &pb.WatchInstanceResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Watch instance successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Watch instance successfully."),
 		Action:   string(evt.Type),
 		Key:      serviceKey,
 		Instance: evt.KV.Value.(*pb.MicroServiceInstance),

@@ -14,12 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package event
 
 import (
+	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/registry"
-	"github.com/apache/servicecomb-service-center/server/core/backend"
-	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"github.com/apache/servicecomb-service-center/server/service/metrics"
 )
 
@@ -27,11 +28,11 @@ import (
 type DomainEventHandler struct {
 }
 
-func (h *DomainEventHandler) Type() discovery.Type {
-	return backend.DOMAIN
+func (h *DomainEventHandler) Type() sd.Type {
+	return kv.DOMAIN
 }
 
-func (h *DomainEventHandler) OnEvent(evt discovery.KvEvent) {
+func (h *DomainEventHandler) OnEvent(evt sd.KvEvent) {
 	action := evt.Type
 	switch action {
 	case registry.EVT_INIT, registry.EVT_CREATE:

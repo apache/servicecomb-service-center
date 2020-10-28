@@ -15,10 +15,11 @@
  * limitations under the License.
  */
 
-package util
+package util_test
 
 import (
 	"context"
+	. "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
@@ -61,9 +62,9 @@ func TestGetInstance(t *testing.T) {
 
 	QueryAllProvidersInstances(context.Background(), "")
 
-	_, err = queryServiceInstancesKvs(context.Background(), "", 0)
+	_, err = QueryServiceInstancesKvs(context.Background(), "", 0)
 	if err != nil {
-		t.Fatalf(`queryServiceInstancesKvs failed`)
+		t.Fatalf(`QueryServiceInstancesKvs failed`)
 	}
 }
 
@@ -76,7 +77,7 @@ func TestDeleteServiceAllInstances(t *testing.T) {
 
 func TestParseEndpointValue(t *testing.T) {
 	epv := ParseEndpointIndexValue([]byte("x/y"))
-	if epv.serviceID != "x" || epv.instanceID != "y" {
+	if epv.ServiceID != "x" || epv.InstanceID != "y" {
 		t.Fatalf(`ParseEndpointIndexValue failed`)
 	}
 }

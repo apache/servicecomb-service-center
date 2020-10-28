@@ -20,11 +20,11 @@ package cache
 import (
 	"context"
 	"fmt"
+	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/cache"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"sort"
 	"strings"
 )

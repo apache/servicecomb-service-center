@@ -28,7 +28,7 @@ import (
 )
 
 func init() {
-	mgr.RegisterPlugin(mgr.Plugin{PName: mgr.UUID, Name: "context", New: New})
+	mgr.RegisterPlugin(mgr.Plugin{Kind: uuid.UUID, Name: "context", New: New})
 }
 
 func New() mgr.Instance {

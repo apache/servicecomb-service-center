@@ -22,18 +22,18 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	registry "github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/backend"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
-	"github.com/apache/servicecomb-service-center/server/plugin"
-	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
-	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"github.com/apache/servicecomb-service-center/server/service/cache"
 	"sort"
@@ -45,7 +45,7 @@ var clustersIndex = make(map[string]int)
 
 func init() {
 	var clusters []string
-	for name := range registry.Configuration().Clusters {
+	for name := range Configuration().Clusters {
 		clusters = append(clusters, name)
 	}
 	sort.Strings(clusters)
@@ -70,7 +70,7 @@ func (ds *DataSource) RegisterService(ctx context.Context, request *pb.CreateSer
 			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
-	resp, err := backend.Registry().TxnWithCmp(ctx, opts, uniqueCmpOpts, failOpts)
+	resp, err := client.Instance().TxnWithCmp(ctx, opts, uniqueCmpOpts, failOpts)
 
 	return newRegisterServiceResp(ctx, serviceBody, resp, err)
 }
@@ -86,7 +86,7 @@ func (ds *DataSource) GetServices(ctx context.Context, request *pb.GetServicesRe
 	}
 
 	return &pb.GetServicesResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Get all services successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Get all services successfully."),
 		Services: services,
 	}, nil
 }
@@ -109,7 +109,7 @@ func (ds *DataSource) GetService(ctx context.Context, request *pb.GetServiceRequ
 		}, nil
 	}
 	return &pb.GetServiceResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Get service successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Get service successfully."),
 		Service:  singleService,
 	}, nil
 }
@@ -169,7 +169,7 @@ func (ds *DataSource) GetServiceDetail(ctx context.Context, request *pb.GetServi
 	serviceInfo.MicroService = service
 	serviceInfo.MicroServiceVersions = versions
 	return &pb.GetServiceDetailResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Get service successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Get service successfully."),
 		Service:  serviceInfo,
 	}, nil
 }
@@ -204,7 +204,7 @@ func (ds *DataSource) GetServicesInfo(ctx context.Context, request *pb.GetServic
 		}
 		if len(optionMap) == 1 {
 			return &pb.GetServicesInfoResponse{
-				Response:   proto.CreateResponse(proto.Response_SUCCESS, "Statistics successfully."),
+				Response:   proto.CreateResponse(proto.ResponseSuccess, "Statistics successfully."),
 				Statistics: st,
 			}, nil
 		}
@@ -250,7 +250,7 @@ func (ds *DataSource) GetServicesInfo(ctx context.Context, request *pb.GetServic
 	}
 
 	return &pb.GetServicesInfoResponse{
-		Response:          proto.CreateResponse(proto.Response_SUCCESS, "Get services info successfully."),
+		Response:          proto.CreateResponse(proto.ResponseSuccess, "Get services info successfully."),
 		AllServicesDetail: allServiceDetails,
 		Statistics:        st,
 	}, nil
@@ -265,14 +265,14 @@ func (ds *DataSource) GetApplications(ctx context.Context, request *pb.GetAppsRe
 		registry.WithPrefix(),
 		registry.WithKeyOnly())
 
-	resp, err := backend.Store().ServiceIndex().Search(ctx, opts...)
+	resp, err := kv.Store().ServiceIndex().Search(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}
 	l := len(resp.Kvs)
 	if l == 0 {
 		return &pb.GetAppsResponse{
-			Response: proto.CreateResponse(proto.Response_SUCCESS, "Get all applications successfully."),
+			Response: proto.CreateResponse(proto.ResponseSuccess, "Get all applications successfully."),
 		}, nil
 	}
 
@@ -291,8 +291,16 @@ func (ds *DataSource) GetApplications(ctx context.Context, request *pb.GetAppsRe
 	}
 
 	return &pb.GetAppsResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Get all applications successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Get all applications successfully."),
 		AppIds:   apps,
+	}, nil
+}
+
+func (ds *DataSource) ExistServiceByID(ctx context.Context, request *pb.GetExistenceByIDRequest) (*pb.GetExistenceByIDResponse, error) {
+	domainProject := util.ParseDomainProject(ctx)
+	return &pb.GetExistenceByIDResponse{
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Get all applications successfully."),
+		Exist:    serviceUtil.ServiceExist(ctx, domainProject, request.ServiceId),
 	}, nil
 }
 
@@ -329,7 +337,7 @@ func (ds *DataSource) ExistService(ctx context.Context, request *pb.GetExistence
 		}, nil
 	}
 	return &pb.GetExistenceResponse{
-		Response:  proto.CreateResponse(proto.Response_SUCCESS, "get service id successfully."),
+		Response:  proto.CreateResponse(proto.ResponseSuccess, "get service id successfully."),
 		ServiceId: ids[0], // 约定多个时，取较新版本
 	}, nil
 }
@@ -370,11 +378,11 @@ func (ds *DataSource) UpdateService(ctx context.Context, request *pb.UpdateServi
 	}
 
 	// Set key file
-	resp, err := backend.Registry().TxnWithCmp(ctx,
-		[]registry.PluginOp{registry.OpPut(registry.WithStrKey(key), registry.WithValue(data))},
-		[]registry.CompareOp{registry.OpCmp(
-			registry.CmpVer(util.StringToBytesWithNoCopy(key)),
-			registry.CmpNotEqual, 0)},
+	resp, err := client.Instance().TxnWithCmp(ctx,
+		[]client.PluginOp{client.OpPut(client.WithStrKey(key), client.WithValue(data))},
+		[]client.CompareOp{client.OpCmp(
+			client.CmpVer(util.StringToBytesWithNoCopy(key)),
+			client.CmpNotEqual, 0)},
 		nil)
 	if err != nil {
 		log.Errorf(err, "update service[%s] properties failed, operator: %s", request.ServiceId, remoteIP)
@@ -392,7 +400,7 @@ func (ds *DataSource) UpdateService(ctx context.Context, request *pb.UpdateServi
 
 	log.Infof("update service[%s] properties successfully, operator: %s", request.ServiceId, remoteIP)
 	return &pb.UpdateServicePropsResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "update service successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "update service successfully."),
 	}, nil
 }
 
@@ -427,7 +435,7 @@ func (ds *DataSource) RegisterInstance(ctx context.Context, request *pb.Register
 			}, nil
 		}
 		switch resp.Response.GetCode() {
-		case proto.Response_SUCCESS:
+		case proto.ResponseSuccess:
 			log.Infof("register instance successful, reuse instance[%s/%s], operator %s",
 				instance.ServiceId, instance.InstanceId, remoteIP)
 			return &pb.RegisterInstanceResponse{
@@ -467,7 +475,7 @@ func (ds *DataSource) RegisterInstance(ctx context.Context, request *pb.Register
 	if !apt.IsSCInstance(ctx) {
 		res := quota.NewApplyQuotaResource(quota.MicroServiceInstanceQuotaType,
 			domainProject, request.Instance.ServiceId, 1)
-		reporter = plugin.Plugins().Quota().Apply4Quotas(ctx, res)
+		reporter = quota.Apply(ctx, res)
 		defer reporter.Close(ctx)
 
 		if reporter.Err != nil {
@@ -494,7 +502,7 @@ func (ds *DataSource) RegisterInstance(ctx context.Context, request *pb.Register
 		}, err
 	}
 
-	leaseID, err := backend.Registry().LeaseGrant(ctx, ttl)
+	leaseID, err := client.Instance().LeaseGrant(ctx, ttl)
 	if err != nil {
 		log.Errorf(err, "grant lease failed, %s, operator: %s", instanceFlag, remoteIP)
 		return &pb.RegisterInstanceResponse{
@@ -506,17 +514,17 @@ func (ds *DataSource) RegisterInstance(ctx context.Context, request *pb.Register
 	key := apt.GenerateInstanceKey(domainProject, instance.ServiceId, instanceID)
 	hbKey := apt.GenerateInstanceLeaseKey(domainProject, instance.ServiceId, instanceID)
 
-	opts := []registry.PluginOp{
-		registry.OpPut(registry.WithStrKey(key), registry.WithValue(data),
-			registry.WithLease(leaseID)),
-		registry.OpPut(registry.WithStrKey(hbKey), registry.WithStrValue(fmt.Sprintf("%d", leaseID)),
-			registry.WithLease(leaseID)),
+	opts := []client.PluginOp{
+		client.OpPut(client.WithStrKey(key), client.WithValue(data),
+			client.WithLease(leaseID)),
+		client.OpPut(client.WithStrKey(hbKey), client.WithStrValue(fmt.Sprintf("%d", leaseID)),
+			client.WithLease(leaseID)),
 	}
 
-	resp, err := backend.Registry().TxnWithCmp(ctx, opts,
-		[]registry.CompareOp{registry.OpCmp(
-			registry.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, instance.ServiceId))),
-			registry.CmpNotEqual, 0)},
+	resp, err := client.Instance().TxnWithCmp(ctx, opts,
+		[]client.CompareOp{client.OpCmp(
+			client.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, instance.ServiceId))),
+			client.CmpNotEqual, 0)},
 		nil)
 	if err != nil {
 		log.Errorf(err,
@@ -544,7 +552,7 @@ func (ds *DataSource) RegisterInstance(ctx context.Context, request *pb.Register
 	log.Infof("register instance %s, instanceID %s, operator %s",
 		instanceFlag, instanceID, remoteIP)
 	return &pb.RegisterInstanceResponse{
-		Response:   proto.CreateResponse(proto.Response_SUCCESS, "Register service instance successfully."),
+		Response:   proto.CreateResponse(proto.ResponseSuccess, "Register service instance successfully."),
 		InstanceId: instanceID,
 	}, nil
 }
@@ -625,7 +633,7 @@ func (ds *DataSource) GetInstance(ctx context.Context, request *pb.GetOneInstanc
 	_ = util.SetContext(ctx, util.CtxResponseRevision, item.Rev)
 
 	return &pb.GetOneInstanceResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Get instance successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Get instance successfully."),
 		Instance: instance,
 	}, nil
 }
@@ -705,7 +713,7 @@ func (ds *DataSource) GetInstances(ctx context.Context, request *pb.GetInstances
 	_ = util.SetContext(ctx, util.CtxResponseRevision, item.Rev)
 
 	return &pb.GetInstancesResponse{
-		Response:  proto.CreateResponse(proto.Response_SUCCESS, "Query service instances successfully."),
+		Response:  proto.CreateResponse(proto.ResponseSuccess, "Query service instances successfully."),
 		Instances: instances,
 	}, nil
 }
@@ -747,7 +755,7 @@ func (ds *DataSource) BatchGetProviderInstances(ctx context.Context, request *pb
 func (ds *DataSource) findInstances(ctx context.Context, domainProject, serviceID, instanceID string, maxRevs []int64, counts []int64) (instances []*pb.MicroServiceInstance, err error) {
 	key := apt.GenerateInstanceKey(domainProject, serviceID, instanceID)
 	opts := append(serviceUtil.FromContext(ctx), registry.WithStrKey(key), registry.WithPrefix())
-	resp, err := backend.Store().Instance().Search(ctx, opts...)
+	resp, err := kv.Store().Instance().Search(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -909,7 +917,7 @@ func (ds *DataSource) genFindResult(ctx context.Context, oldRev string, item *ca
 	// TODO support gRPC output context
 	_ = util.SetContext(ctx, util.CtxResponseRevision, item.Rev)
 	return &pb.FindInstancesResponse{
-		Response:  proto.CreateResponse(proto.Response_SUCCESS, "Query service instances successfully."),
+		Response:  proto.CreateResponse(proto.ResponseSuccess, "Query service instances successfully."),
 		Instances: instances,
 	}, nil
 }
@@ -962,7 +970,7 @@ func (ds *DataSource) UpdateInstanceStatus(ctx context.Context, request *pb.Upda
 
 	log.Infof("update instance[%s] status successfully", updateStatusFlag)
 	return &pb.UpdateInstanceStatusResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Update service instance status successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Update service instance status successfully."),
 	}, nil
 }
 
@@ -1001,7 +1009,7 @@ func (ds *DataSource) UpdateInstanceProperties(ctx context.Context, request *pb.
 
 	log.Infof("update instance[%s] properties successfully", instanceFlag)
 	return &pb.UpdateInstancePropsResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Update service instance properties successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Update service instance properties successfully."),
 	}, nil
 }
 
@@ -1042,7 +1050,7 @@ func (ds *DataSource) HeartbeatSet(ctx context.Context, request *pb.HeartbeatSet
 	if !failFlag && successFlag {
 		log.Infof("batch update heartbeats[%s] successfully", count)
 		return &pb.HeartbeatSetResponse{
-			Response:  proto.CreateResponse(proto.Response_SUCCESS, "Heartbeat set successfully."),
+			Response:  proto.CreateResponse(proto.ResponseSuccess, "Heartbeat set successfully."),
 			Instances: instanceHbRstArr,
 		}, nil
 	}
@@ -1056,7 +1064,7 @@ func (ds *DataSource) HeartbeatSet(ctx context.Context, request *pb.HeartbeatSet
 func (ds *DataSource) BatchFind(ctx context.Context, request *pb.BatchFindInstancesRequest) (
 	*pb.BatchFindInstancesResponse, error) {
 	response := &pb.BatchFindInstancesResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Batch query service instances successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Batch query service instances successfully."),
 	}
 
 	var err error
@@ -1170,7 +1178,7 @@ func (ds *DataSource) UnregisterInstance(ctx context.Context, request *pb.Unregi
 
 	log.Infof("unregister instance[%s], operator %s", instanceFlag, remoteIP)
 	return &pb.UnregisterInstanceResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Unregister service instance successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Unregister service instance successfully."),
 	}, nil
 }
 
@@ -1200,7 +1208,7 @@ func (ds *DataSource) Heartbeat(ctx context.Context, request *pb.HeartbeatReques
 			instanceFlag, ttl, remoteIP)
 	}
 	return &pb.HeartbeatResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS,
+		Response: proto.CreateResponse(proto.ResponseSuccess,
 			"Update service instance heartbeat successfully."),
 	}, nil
 }
@@ -1240,7 +1248,7 @@ func (ds *DataSource) ModifySchemas(ctx context.Context, request *pb.ModifySchem
 	}
 
 	return &pb.ModifySchemasResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "modify schemas info successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "modify schemas info successfully."),
 	}, nil
 }
 
@@ -1269,7 +1277,7 @@ func (ds *DataSource) ModifySchema(ctx context.Context, request *pb.ModifySchema
 
 	log.Infof("modify schema[%s/%s] successfully, operator: %s", serviceID, schemaID, remoteIP)
 	return &pb.ModifySchemaResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "modify schema info success"),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "modify schema info success"),
 	}, nil
 }
 
@@ -1307,7 +1315,7 @@ func (ds *DataSource) ExistSchema(ctx context.Context, request *pb.GetExistenceR
 		}, err
 	}
 	return &pb.GetExistenceResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Schema exist."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Schema exist."),
 		SchemaId: request.SchemaId,
 		Summary:  schemaSummary,
 	}, nil
@@ -1325,8 +1333,8 @@ func (ds *DataSource) GetSchema(ctx context.Context, request *pb.GetSchemaReques
 	}
 
 	key := apt.GenerateServiceSchemaKey(domainProject, request.ServiceId, request.SchemaId)
-	opts := append(serviceUtil.FromContext(ctx), registry.WithStrKey(key))
-	resp, errDo := backend.Store().Schema().Search(ctx, opts...)
+	opts := append(serviceUtil.FromContext(ctx), client.WithStrKey(key))
+	resp, errDo := kv.Store().Schema().Search(ctx, opts...)
 	if errDo != nil {
 		log.Errorf(errDo, "get schema[%s/%s] failed", request.ServiceId, request.SchemaId)
 		return &pb.GetSchemaResponse{
@@ -1351,7 +1359,7 @@ func (ds *DataSource) GetSchema(ctx context.Context, request *pb.GetSchemaReques
 	}
 
 	return &pb.GetSchemaResponse{
-		Response:      proto.CreateResponse(proto.Response_SUCCESS, "Get schema info successfully."),
+		Response:      proto.CreateResponse(proto.ResponseSuccess, "Get schema info successfully."),
 		Schema:        util.BytesToStringWithNoCopy(resp.Kvs[0].Value.([]byte)),
 		SchemaSummary: schemaSummary,
 	}, nil
@@ -1378,14 +1386,14 @@ func (ds *DataSource) GetAllSchemas(ctx context.Context, request *pb.GetAllSchem
 	schemasList := service.Schemas
 	if len(schemasList) == 0 {
 		return &pb.GetAllSchemaResponse{
-			Response: proto.CreateResponse(proto.Response_SUCCESS, "Do not have this schema info."),
+			Response: proto.CreateResponse(proto.ResponseSuccess, "Do not have this schema info."),
 			Schemas:  []*pb.Schema{},
 		}, nil
 	}
 
 	key := apt.GenerateServiceSchemaSummaryKey(domainProject, request.ServiceId, "")
-	opts := append(serviceUtil.FromContext(ctx), registry.WithStrKey(key), registry.WithPrefix())
-	resp, errDo := backend.Store().SchemaSummary().Search(ctx, opts...)
+	opts := append(serviceUtil.FromContext(ctx), client.WithStrKey(key), client.WithPrefix())
+	resp, errDo := kv.Store().SchemaSummary().Search(ctx, opts...)
 	if errDo != nil {
 		log.Errorf(errDo, "get service[%s] all schema summaries failed", request.ServiceId)
 		return &pb.GetAllSchemaResponse{
@@ -1393,11 +1401,11 @@ func (ds *DataSource) GetAllSchemas(ctx context.Context, request *pb.GetAllSchem
 		}, errDo
 	}
 
-	respWithSchema := &discovery.Response{}
+	respWithSchema := &sd.Response{}
 	if request.WithSchema {
 		key := apt.GenerateServiceSchemaKey(domainProject, request.ServiceId, "")
-		opts := append(serviceUtil.FromContext(ctx), registry.WithStrKey(key), registry.WithPrefix())
-		respWithSchema, errDo = backend.Store().Schema().Search(ctx, opts...)
+		opts := append(serviceUtil.FromContext(ctx), client.WithStrKey(key), client.WithPrefix())
+		respWithSchema, errDo = kv.Store().Schema().Search(ctx, opts...)
 		if errDo != nil {
 			log.Errorf(errDo, "get service[%s] all schemas failed", request.ServiceId)
 			return &pb.GetAllSchemaResponse{
@@ -1427,7 +1435,7 @@ func (ds *DataSource) GetAllSchemas(ctx context.Context, request *pb.GetAllSchem
 	}
 
 	return &pb.GetAllSchemaResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Get all schema info successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Get all schema info successfully."),
 		Schemas:  schemas,
 	}, nil
 }
@@ -1462,15 +1470,15 @@ func (ds *DataSource) DeleteSchema(ctx context.Context, request *pb.DeleteSchema
 		}, nil
 	}
 	epSummaryKey := apt.GenerateServiceSchemaSummaryKey(domainProject, request.ServiceId, request.SchemaId)
-	opts := []registry.PluginOp{
-		registry.OpDel(registry.WithStrKey(epSummaryKey)),
-		registry.OpDel(registry.WithStrKey(key)),
+	opts := []client.PluginOp{
+		client.OpDel(client.WithStrKey(epSummaryKey)),
+		client.OpDel(client.WithStrKey(key)),
 	}
 
-	resp, errDo := backend.Registry().TxnWithCmp(ctx, opts,
-		[]registry.CompareOp{registry.OpCmp(
-			registry.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, request.ServiceId))),
-			registry.CmpNotEqual, 0)},
+	resp, errDo := client.Instance().TxnWithCmp(ctx, opts,
+		[]client.CompareOp{client.OpCmp(
+			client.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, request.ServiceId))),
+			client.CmpNotEqual, 0)},
 		nil)
 	if errDo != nil {
 		log.Errorf(errDo, "delete schema[%s/%s] failed, operator: %s",
@@ -1490,7 +1498,7 @@ func (ds *DataSource) DeleteSchema(ctx context.Context, request *pb.DeleteSchema
 	log.Infof("delete schema[%s/%s] info successfully, operator: %s",
 		request.ServiceId, request.SchemaId, remoteIP)
 	return &pb.DeleteSchemaResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Delete schema info successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Delete schema info successfully."),
 	}, nil
 }
 
@@ -1509,7 +1517,7 @@ func (ds *DataSource) AddTags(ctx context.Context, request *pb.AddServiceTagsReq
 
 	addTags := request.Tags
 	res := quota.NewApplyQuotaResource(quota.TagQuotaType, domainProject, request.ServiceId, int64(len(addTags)))
-	rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
+	rst := quota.Apply(ctx, res)
 	errQuota := rst.Err
 	if errQuota != nil {
 		log.Errorf(errQuota, "add service[%s]'s tags %v failed, operator: %s", request.ServiceId, addTags, remoteIP)
@@ -1552,7 +1560,7 @@ func (ds *DataSource) AddTags(ctx context.Context, request *pb.AddServiceTagsReq
 
 	log.Infof("add service[%s]'s tags %v successfully, operator: %s", request.ServiceId, request.Tags, remoteIP)
 	return &pb.AddServiceTagsResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Add service tags successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Add service tags successfully."),
 	}, nil
 }
 
@@ -1574,7 +1582,7 @@ func (ds *DataSource) GetTags(ctx context.Context, request *pb.GetServiceTagsReq
 	}
 
 	return &pb.GetServiceTagsResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Get service tags successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Get service tags successfully."),
 		Tags:     tags,
 	}, nil
 }
@@ -1631,7 +1639,7 @@ func (ds *DataSource) UpdateTag(ctx context.Context, request *pb.UpdateServiceTa
 
 	log.Infof("update service[%s]'s tag[%s] successfully, operator: %s", request.ServiceId, tagFlag, remoteIP)
 	return &pb.UpdateServiceTagResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Update service tag success."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Update service tag success."),
 	}, nil
 }
 
@@ -1683,11 +1691,11 @@ func (ds *DataSource) DeleteTags(ctx context.Context, request *pb.DeleteServiceT
 
 	key := apt.GenerateServiceTagKey(domainProject, request.ServiceId)
 
-	resp, err := backend.Registry().TxnWithCmp(ctx,
-		[]registry.PluginOp{registry.OpPut(registry.WithStrKey(key), registry.WithValue(data))},
-		[]registry.CompareOp{registry.OpCmp(
-			registry.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, request.ServiceId))),
-			registry.CmpNotEqual, 0)},
+	resp, err := client.Instance().TxnWithCmp(ctx,
+		[]client.PluginOp{client.OpPut(client.WithStrKey(key), client.WithValue(data))},
+		[]client.CompareOp{client.OpCmp(
+			client.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, request.ServiceId))),
+			client.CmpNotEqual, 0)},
 		nil)
 	if err != nil {
 		log.Errorf(err, "delete service[%s]'s tags %v failed, operator: %s",
@@ -1706,7 +1714,7 @@ func (ds *DataSource) DeleteTags(ctx context.Context, request *pb.DeleteServiceT
 
 	log.Infof("delete service[%s]'s tags %v successfully, operator: %s", request.ServiceId, request.Keys, remoteIP)
 	return &pb.DeleteServiceTagsResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Delete service tags successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Delete service tags successfully."),
 	}, nil
 }
 
@@ -1724,7 +1732,7 @@ func (ds *DataSource) AddRule(ctx context.Context, request *pb.AddServiceRulesRe
 		}, nil
 	}
 	res := quota.NewApplyQuotaResource(quota.RuleQuotaType, domainProject, request.ServiceId, int64(len(request.Rules)))
-	rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
+	rst := quota.Apply(ctx, res)
 	errQuota := rst.Err
 	if errQuota != nil {
 		log.Errorf(errQuota, "add service[%s] rule failed, operator: %s", request.ServiceId, remoteIP)
@@ -1744,7 +1752,7 @@ func (ds *DataSource) AddRule(ctx context.Context, request *pb.AddServiceRulesRe
 		}, err
 	}
 	ruleIDs := make([]string, 0, len(request.Rules))
-	opts := make([]registry.PluginOp, 0, 2*len(request.Rules))
+	opts := make([]client.PluginOp, 0, 2*len(request.Rules))
 	for _, rule := range request.Rules {
 		//黑白名单只能存在一种，黑名单 or 白名单
 		if len(ruleType) == 0 {
@@ -1792,21 +1800,21 @@ func (ds *DataSource) AddRule(ctx context.Context, request *pb.AddServiceRulesRe
 			}, err
 		}
 
-		opts = append(opts, registry.OpPut(registry.WithStrKey(key), registry.WithValue(data)))
-		opts = append(opts, registry.OpPut(registry.WithStrKey(indexKey), registry.WithStrValue(ruleAdd.RuleId)))
+		opts = append(opts, client.OpPut(client.WithStrKey(key), client.WithValue(data)))
+		opts = append(opts, client.OpPut(client.WithStrKey(indexKey), client.WithStrValue(ruleAdd.RuleId)))
 	}
 	if len(opts) <= 0 {
 		log.Infof("add service[%s] rule successfully, no rules to add, operator: %s",
 			request.ServiceId, remoteIP)
 		return &pb.AddServiceRulesResponse{
-			Response: proto.CreateResponse(proto.Response_SUCCESS, "Service rules has been added."),
+			Response: proto.CreateResponse(proto.ResponseSuccess, "Service rules has been added."),
 		}, nil
 	}
 
-	resp, err := backend.BatchCommitWithCmp(ctx, opts,
-		[]registry.CompareOp{registry.OpCmp(
-			registry.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, request.ServiceId))),
-			registry.CmpNotEqual, 0)},
+	resp, err := client.BatchCommitWithCmp(ctx, opts,
+		[]client.CompareOp{client.OpCmp(
+			client.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, request.ServiceId))),
+			client.CmpNotEqual, 0)},
 		nil)
 	if err != nil {
 		log.Errorf(err, "add service[%s] rule failed, operator: %s", request.ServiceId, remoteIP)
@@ -1824,7 +1832,7 @@ func (ds *DataSource) AddRule(ctx context.Context, request *pb.AddServiceRulesRe
 
 	log.Infof("add service[%s] rule %v successfully, operator: %s", request.ServiceId, ruleIDs, remoteIP)
 	return &pb.AddServiceRulesResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Add service rules successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Add service rules successfully."),
 		RuleIds:  ruleIDs,
 	}, nil
 }
@@ -1850,7 +1858,7 @@ func (ds *DataSource) GetRule(ctx context.Context, request *pb.GetServiceRulesRe
 	}
 
 	return &pb.GetServiceRulesResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Get service rules successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Get service rules successfully."),
 		Rules:    rules,
 	}, nil
 }
@@ -1927,22 +1935,22 @@ func (ds *DataSource) UpdateRule(ctx context.Context, request *pb.UpdateServiceR
 			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
-	var opts []registry.PluginOp
+	var opts []client.PluginOp
 	if isChangeIndex {
 		//加入新的rule index
 		indexKey := apt.GenerateRuleIndexKey(domainProject, request.ServiceId, copyRuleRef.Attribute, copyRuleRef.Pattern)
-		opts = append(opts, registry.OpPut(registry.WithStrKey(indexKey), registry.WithStrValue(copyRuleRef.RuleId)))
+		opts = append(opts, client.OpPut(client.WithStrKey(indexKey), client.WithStrValue(copyRuleRef.RuleId)))
 
 		//删除旧的rule index
 		oldIndexKey := apt.GenerateRuleIndexKey(domainProject, request.ServiceId, oldRuleAttr, oldRulePatten)
-		opts = append(opts, registry.OpDel(registry.WithStrKey(oldIndexKey)))
+		opts = append(opts, client.OpDel(client.WithStrKey(oldIndexKey)))
 	}
-	opts = append(opts, registry.OpPut(registry.WithStrKey(key), registry.WithValue(data)))
+	opts = append(opts, client.OpPut(client.WithStrKey(key), client.WithValue(data)))
 
-	resp, err := backend.Registry().TxnWithCmp(ctx, opts,
-		[]registry.CompareOp{registry.OpCmp(
-			registry.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, request.ServiceId))),
-			registry.CmpNotEqual, 0)},
+	resp, err := client.Instance().TxnWithCmp(ctx, opts,
+		[]client.CompareOp{client.OpCmp(
+			client.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, request.ServiceId))),
+			client.CmpNotEqual, 0)},
 		nil)
 	if err != nil {
 		log.Errorf(err, "update service rule[%s/%s] failed, operator: %s", request.ServiceId, request.RuleId, remoteIP)
@@ -1960,7 +1968,7 @@ func (ds *DataSource) UpdateRule(ctx context.Context, request *pb.UpdateServiceR
 
 	log.Infof("update service rule[%s/%s] successfully, operator: %s", request.ServiceId, request.RuleId, remoteIP)
 	return &pb.UpdateServiceRuleResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Get service rules successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Get service rules successfully."),
 	}, nil
 }
 
@@ -1978,7 +1986,7 @@ func (ds *DataSource) DeleteRule(ctx context.Context, request *pb.DeleteServiceR
 		}, nil
 	}
 
-	opts := []registry.PluginOp{}
+	opts := []client.PluginOp{}
 	key := ""
 	indexKey := ""
 	for _, ruleID := range request.RuleIds {
@@ -2001,8 +2009,8 @@ func (ds *DataSource) DeleteRule(ctx context.Context, request *pb.DeleteServiceR
 		}
 		indexKey = apt.GenerateRuleIndexKey(domainProject, request.ServiceId, data.Attribute, data.Pattern)
 		opts = append(opts,
-			registry.OpDel(registry.WithStrKey(key)),
-			registry.OpDel(registry.WithStrKey(indexKey)))
+			client.OpDel(client.WithStrKey(key)),
+			client.OpDel(client.WithStrKey(indexKey)))
 	}
 	if len(opts) <= 0 {
 		log.Errorf(nil, "delete service[%s] rules %v failed, no rule has been deleted, operator: %s",
@@ -2012,10 +2020,10 @@ func (ds *DataSource) DeleteRule(ctx context.Context, request *pb.DeleteServiceR
 		}, nil
 	}
 
-	resp, err := backend.BatchCommitWithCmp(ctx, opts,
-		[]registry.CompareOp{registry.OpCmp(
-			registry.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, request.ServiceId))),
-			registry.CmpNotEqual, 0)},
+	resp, err := client.BatchCommitWithCmp(ctx, opts,
+		[]client.CompareOp{client.OpCmp(
+			client.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, request.ServiceId))),
+			client.CmpNotEqual, 0)},
 		nil)
 	if err != nil {
 		log.Errorf(err, "delete service[%s] rules %v failed, operator: %s", request.ServiceId, request.RuleIds, remoteIP)
@@ -2033,7 +2041,7 @@ func (ds *DataSource) DeleteRule(ctx context.Context, request *pb.DeleteServiceR
 
 	log.Infof("delete service[%s] rules %v successfully, operator: %s", request.ServiceId, request.RuleIds, remoteIP)
 	return &pb.DeleteServiceRulesResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Delete service rules successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Delete service rules successfully."),
 	}, nil
 }
 
@@ -2051,11 +2059,11 @@ func (ds *DataSource) modifySchemas(ctx context.Context, domainProject string, s
 	needUpdateSchemas, needAddSchemas, needDeleteSchemas, nonExistSchemaIds :=
 		schemasAnalysis(schemas, schemasFromDatabase, service.Schemas)
 
-	pluginOps := make([]registry.PluginOp, 0)
+	pluginOps := make([]client.PluginOp, 0)
 	if !ds.isSchemaEditable(service) {
 		if len(service.Schemas) == 0 {
 			res := quota.NewApplyQuotaResource(quota.SchemaQuotaType, domainProject, serviceID, int64(len(nonExistSchemaIds)))
-			rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
+			rst := quota.Apply(ctx, res)
 			errQuota := rst.Err
 			if errQuota != nil {
 				log.Errorf(errQuota, "modify service[%s] schemas failed, operator: %s", serviceID, remoteIP)
@@ -2082,7 +2090,7 @@ func (ds *DataSource) modifySchemas(ctx context.Context, domainProject string, s
 					return scerr.NewError(scerr.ErrInternal, err.Error())
 				}
 				if !exist {
-					opts := schemaWithDatabaseOpera(registry.OpPut, domainProject, serviceID, needUpdateSchema)
+					opts := schemaWithDatabaseOpera(client.OpPut, domainProject, serviceID, needUpdateSchema)
 					pluginOps = append(pluginOps, opts...)
 				} else {
 					log.Warnf("schema[%s/%s] and it's summary already exist, skip to update, operator: %s",
@@ -2093,14 +2101,14 @@ func (ds *DataSource) modifySchemas(ctx context.Context, domainProject string, s
 
 		for _, schema := range needAddSchemas {
 			log.Infof("add new schema[%s/%s], operator: %s", serviceID, schema.SchemaId, remoteIP)
-			opts := schemaWithDatabaseOpera(registry.OpPut, domainProject, service.ServiceId, schema)
+			opts := schemaWithDatabaseOpera(client.OpPut, domainProject, service.ServiceId, schema)
 			pluginOps = append(pluginOps, opts...)
 		}
 	} else {
 		quotaSize := len(needAddSchemas) - len(needDeleteSchemas)
 		if quotaSize > 0 {
 			res := quota.NewApplyQuotaResource(quota.SchemaQuotaType, domainProject, serviceID, int64(quotaSize))
-			rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
+			rst := quota.Apply(ctx, res)
 			err := rst.Err
 			if err != nil {
 				log.Errorf(err, "modify service[%s] schemas failed, operator: %s", serviceID, remoteIP)
@@ -2111,21 +2119,21 @@ func (ds *DataSource) modifySchemas(ctx context.Context, domainProject string, s
 		var schemaIDs []string
 		for _, schema := range needAddSchemas {
 			log.Infof("add new schema[%s/%s], operator: %s", serviceID, schema.SchemaId, remoteIP)
-			opts := schemaWithDatabaseOpera(registry.OpPut, domainProject, service.ServiceId, schema)
+			opts := schemaWithDatabaseOpera(client.OpPut, domainProject, service.ServiceId, schema)
 			pluginOps = append(pluginOps, opts...)
 			schemaIDs = append(schemaIDs, schema.SchemaId)
 		}
 
 		for _, schema := range needUpdateSchemas {
 			log.Infof("update schema[%s/%s], operator: %s", serviceID, schema.SchemaId, remoteIP)
-			opts := schemaWithDatabaseOpera(registry.OpPut, domainProject, serviceID, schema)
+			opts := schemaWithDatabaseOpera(client.OpPut, domainProject, serviceID, schema)
 			pluginOps = append(pluginOps, opts...)
 			schemaIDs = append(schemaIDs, schema.SchemaId)
 		}
 
 		for _, schema := range needDeleteSchemas {
 			log.Infof("delete non-existent schema[%s/%s], operator: %s", serviceID, schema.SchemaId, remoteIP)
-			opts := schemaWithDatabaseOpera(registry.OpDel, domainProject, serviceID, schema)
+			opts := schemaWithDatabaseOpera(client.OpDel, domainProject, serviceID, schema)
 			pluginOps = append(pluginOps, opts...)
 		}
 
@@ -2140,10 +2148,10 @@ func (ds *DataSource) modifySchemas(ctx context.Context, domainProject string, s
 	}
 
 	if len(pluginOps) != 0 {
-		resp, err := backend.BatchCommitWithCmp(ctx, pluginOps,
-			[]registry.CompareOp{registry.OpCmp(
-				registry.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, serviceID))),
-				registry.CmpNotEqual, 0)},
+		resp, err := client.BatchCommitWithCmp(ctx, pluginOps,
+			[]client.CompareOp{client.OpCmp(
+				client.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, serviceID))),
+				client.CmpNotEqual, 0)},
 			nil)
 		if err != nil {
 			return scerr.NewError(scerr.ErrUnavailableBackend, err.Error())
@@ -2176,7 +2184,7 @@ func (ds *DataSource) modifySchema(ctx context.Context, serviceID string, schema
 		return scerr.NewError(scerr.ErrServiceNotExists, "Service does not exist")
 	}
 
-	var pluginOps []registry.PluginOp
+	var pluginOps []client.PluginOp
 	isExist := isExistSchemaID(microService, []*pb.Schema{schema})
 
 	if !ds.isSchemaEditable(microService) {
@@ -2185,7 +2193,7 @@ func (ds *DataSource) modifySchema(ctx context.Context, serviceID string, schema
 		}
 
 		key := apt.GenerateServiceSchemaKey(domainProject, serviceID, schemaID)
-		respSchema, err := backend.Store().Schema().Search(ctx, registry.WithStrKey(key), registry.WithCountOnly())
+		respSchema, err := kv.Store().Schema().Search(ctx, client.WithStrKey(key), client.WithCountOnly())
 		if err != nil {
 			log.Errorf(err, "modify schema[%s/%s] failed, get schema summary failed, operator: %s",
 				serviceID, schemaID, remoteIP)
@@ -2239,10 +2247,10 @@ func (ds *DataSource) modifySchema(ctx context.Context, serviceID string, schema
 	opts := commitSchemaInfo(domainProject, serviceID, schema)
 	pluginOps = append(pluginOps, opts...)
 
-	resp, err := backend.Registry().TxnWithCmp(ctx, pluginOps,
-		[]registry.CompareOp{registry.OpCmp(
-			registry.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, serviceID))),
-			registry.CmpNotEqual, 0)},
+	resp, err := client.Instance().TxnWithCmp(ctx, pluginOps,
+		[]client.CompareOp{client.OpCmp(
+			client.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, serviceID))),
+			client.CmpNotEqual, 0)},
 		nil)
 	if err != nil {
 		return scerr.NewError(scerr.ErrUnavailableBackend, err.Error())
@@ -2297,10 +2305,10 @@ func (ds *DataSource) DeleteServicePri(ctx context.Context, serviceID string, fo
 		}
 
 		instancesKey := apt.GenerateInstanceKey(domainProject, serviceID, "")
-		rsp, err := backend.Store().Instance().Search(ctx,
-			registry.WithStrKey(instancesKey),
-			registry.WithPrefix(),
-			registry.WithCountOnly())
+		rsp, err := kv.Store().Instance().Search(ctx,
+			client.WithStrKey(instancesKey),
+			client.WithPrefix(),
+			client.WithCountOnly())
 		if err != nil {
 			log.Errorf(err, "delete micro-service[%s] failed, get instances failed, operator: %s",
 				serviceID, remoteIP)
@@ -2323,10 +2331,10 @@ func (ds *DataSource) DeleteServicePri(ctx context.Context, serviceID string, fo
 		Version:     microservice.Version,
 		Alias:       microservice.Alias,
 	}
-	opts := []registry.PluginOp{
-		registry.OpDel(registry.WithStrKey(apt.GenerateServiceIndexKey(serviceKey))),
-		registry.OpDel(registry.WithStrKey(apt.GenerateServiceAliasKey(serviceKey))),
-		registry.OpDel(registry.WithStrKey(serviceIDKey)),
+	opts := []client.PluginOp{
+		client.OpDel(client.WithStrKey(apt.GenerateServiceIndexKey(serviceKey))),
+		client.OpDel(client.WithStrKey(apt.GenerateServiceAliasKey(serviceKey))),
+		client.OpDel(client.WithStrKey(serviceIDKey)),
 	}
 
 	//删除依赖规则
@@ -2339,32 +2347,32 @@ func (ds *DataSource) DeleteServicePri(ctx context.Context, serviceID string, fo
 	opts = append(opts, optDeleteDep)
 
 	//删除黑白名单
-	opts = append(opts, registry.OpDel(
-		registry.WithStrKey(apt.GenerateServiceRuleKey(domainProject, serviceID, "")),
-		registry.WithPrefix()))
-	opts = append(opts, registry.OpDel(registry.WithStrKey(
+	opts = append(opts, client.OpDel(
+		client.WithStrKey(apt.GenerateServiceRuleKey(domainProject, serviceID, "")),
+		client.WithPrefix()))
+	opts = append(opts, client.OpDel(client.WithStrKey(
 		util.StringJoin([]string{apt.GetServiceRuleIndexRootKey(domainProject), serviceID, ""}, "/")),
-		registry.WithPrefix()))
+		client.WithPrefix()))
 
 	//删除schemas
-	opts = append(opts, registry.OpDel(
-		registry.WithStrKey(apt.GenerateServiceSchemaKey(domainProject, serviceID, "")),
-		registry.WithPrefix()))
-	opts = append(opts, registry.OpDel(
-		registry.WithStrKey(apt.GenerateServiceSchemaSummaryKey(domainProject, serviceID, "")),
-		registry.WithPrefix()))
+	opts = append(opts, client.OpDel(
+		client.WithStrKey(apt.GenerateServiceSchemaKey(domainProject, serviceID, "")),
+		client.WithPrefix()))
+	opts = append(opts, client.OpDel(
+		client.WithStrKey(apt.GenerateServiceSchemaSummaryKey(domainProject, serviceID, "")),
+		client.WithPrefix()))
 
 	//删除tags
-	opts = append(opts, registry.OpDel(
-		registry.WithStrKey(apt.GenerateServiceTagKey(domainProject, serviceID))))
+	opts = append(opts, client.OpDel(
+		client.WithStrKey(apt.GenerateServiceTagKey(domainProject, serviceID))))
 
 	//删除instances
-	opts = append(opts, registry.OpDel(
-		registry.WithStrKey(apt.GenerateInstanceKey(domainProject, serviceID, "")),
-		registry.WithPrefix()))
-	opts = append(opts, registry.OpDel(
-		registry.WithStrKey(apt.GenerateInstanceLeaseKey(domainProject, serviceID, "")),
-		registry.WithPrefix()))
+	opts = append(opts, client.OpDel(
+		client.WithStrKey(apt.GenerateInstanceKey(domainProject, serviceID, "")),
+		client.WithPrefix()))
+	opts = append(opts, client.OpDel(
+		client.WithStrKey(apt.GenerateInstanceLeaseKey(domainProject, serviceID, "")),
+		client.WithPrefix()))
 
 	//删除实例
 	err = serviceUtil.DeleteServiceAllInstances(ctx, serviceID)
@@ -2374,10 +2382,10 @@ func (ds *DataSource) DeleteServicePri(ctx context.Context, serviceID string, fo
 		return proto.CreateResponse(scerr.ErrUnavailableBackend, err.Error()), err
 	}
 
-	resp, err := backend.Registry().TxnWithCmp(ctx, opts,
-		[]registry.CompareOp{registry.OpCmp(
-			registry.CmpVer(util.StringToBytesWithNoCopy(serviceIDKey)),
-			registry.CmpNotEqual, 0)},
+	resp, err := client.Instance().TxnWithCmp(ctx, opts,
+		[]client.CompareOp{client.OpCmp(
+			client.CmpVer(util.StringToBytesWithNoCopy(serviceIDKey)),
+			client.CmpNotEqual, 0)},
 		nil)
 	if err != nil {
 		log.Errorf(err, "%s micro-service[%s] failed, operator: %s", title, serviceID, remoteIP)
@@ -2392,7 +2400,7 @@ func (ds *DataSource) DeleteServicePri(ctx context.Context, serviceID string, fo
 	serviceUtil.RemandServiceQuota(ctx)
 
 	log.Infof("%s micro-service[%s] successfully, operator: %s", title, serviceID, remoteIP)
-	return proto.CreateResponse(proto.Response_SUCCESS, "Unregister service successfully."), nil
+	return proto.CreateResponse(proto.ResponseSuccess, "Unregister service successfully."), nil
 }
 
 func (ds *DataSource) GetDeleteServiceFunc(ctx context.Context, serviceID string, force bool,
@@ -2405,7 +2413,7 @@ func (ds *DataSource) GetDeleteServiceFunc(ctx context.Context, serviceID string
 		resp, err := ds.DeleteServicePri(ctx, serviceID, force)
 		if err != nil {
 			serviceRst.ErrMessage = err.Error()
-		} else if resp.GetCode() != proto.Response_SUCCESS {
+		} else if resp.GetCode() != proto.ResponseSuccess {
 			serviceRst.ErrMessage = resp.GetMessage()
 		}
 

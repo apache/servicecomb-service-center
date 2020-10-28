@@ -21,9 +21,8 @@ import (
 	"context"
 	"errors"
 
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	apt "github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/backend"
-	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 )
 
@@ -43,9 +42,9 @@ func KeepAliveLease(ctx context.Context, domainProject, serviceID, instanceID st
 	if leaseID == -1 {
 		return ttl, errors.New("leaseId not exist, instance not exist")
 	}
-	ttl, err = backend.Store().KeepAlive(ctx,
-		registry.WithStrKey(apt.GenerateInstanceLeaseKey(domainProject, serviceID, instanceID)),
-		registry.WithLease(leaseID))
+	ttl, err = client.KeepAlive(ctx,
+		client.WithStrKey(apt.GenerateInstanceLeaseKey(domainProject, serviceID, instanceID)),
+		client.WithLease(leaseID))
 	if err != nil {
 		return ttl, err
 	}

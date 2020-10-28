@@ -14,16 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package notify
+package notify_test
 
+// initialize
+import _ "github.com/apache/servicecomb-service-center/server/bootstrap"
 import (
 	"context"
 	"errors"
 	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
-	_ "github.com/apache/servicecomb-service-center/server/plugin/discovery/etcd"
-	_ "github.com/apache/servicecomb-service-center/server/plugin/registry/buildin"
+	. "github.com/apache/servicecomb-service-center/server/notify"
 	"github.com/gorilla/websocket"
 	"net/http"
 	"net/http/httptest"
@@ -68,7 +69,7 @@ func TestDoWebSocketListAndWatch(t *testing.T) {
 
 	w := NewInstanceEventListWatcher("g", "s", func() (results []*registry.WatchInstanceResponse, rev int64) {
 		results = append(results, &registry.WatchInstanceResponse{
-			Response: proto.CreateResponse(proto.Response_SUCCESS, "ok"),
+			Response: proto.CreateResponse(proto.ResponseSuccess, "ok"),
 			Action:   string(registry.EVT_CREATE),
 			Key:      &registry.MicroServiceKey{},
 			Instance: &registry.MicroServiceInstance{},
@@ -76,11 +77,7 @@ func TestDoWebSocketListAndWatch(t *testing.T) {
 		return
 	})
 
-	ws := &WebSocket{
-		ctx:     context.Background(),
-		conn:    conn,
-		watcher: w,
-	}
+	ws := NewWebSocket(context.Background(), conn, w)
 	err := ws.Init()
 	if err != nil {
 		t.Fatalf("TestPublisher_Run")
@@ -94,11 +91,7 @@ func TestDoWebSocketListAndWatch(t *testing.T) {
 		w2 := NewInstanceEventListWatcher("g", "s", func() (results []*registry.WatchInstanceResponse, rev int64) {
 			return
 		})
-		ws2 := &WebSocket{
-			ctx:     context.Background(),
-			conn:    conn,
-			watcher: w2,
-		}
+		ws2 := NewWebSocket(context.Background(), conn, w2)
 		err := ws2.Init()
 		if err != nil {
 			t.Fatalf("TestPublisher_Run")
@@ -111,7 +104,7 @@ func TestDoWebSocketListAndWatch(t *testing.T) {
 	w.OnMessage(&InstanceEvent{})
 
 	GetNotifyCenter().Publish(NewInstanceEvent("g", "s", 1, &registry.WatchInstanceResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "ok"),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "ok"),
 		Action:   string(registry.EVT_CREATE),
 		Key:      &registry.MicroServiceKey{},
 		Instance: &registry.MicroServiceInstance{},
@@ -121,8 +114,8 @@ func TestDoWebSocketListAndWatch(t *testing.T) {
 
 	ws.HandleWatchWebSocketJob(nil)
 
-	ws.heartbeat(websocket.PingMessage)
-	ws.heartbeat(websocket.PongMessage)
+	ws.Heartbeat(websocket.PingMessage)
+	ws.Heartbeat(websocket.PongMessage)
 
 	ws.HandleWatchWebSocketJob(time.Now())
 
@@ -130,10 +123,10 @@ func TestDoWebSocketListAndWatch(t *testing.T) {
 
 	<-time.After(time.Second)
 
-	ws.heartbeat(websocket.PingMessage)
-	ws.heartbeat(websocket.PongMessage)
+	ws.Heartbeat(websocket.PingMessage)
+	ws.Heartbeat(websocket.PongMessage)
 
 	w.OnMessage(nil)
 
-	publisher.Stop()
+	Instance().Stop()
 }

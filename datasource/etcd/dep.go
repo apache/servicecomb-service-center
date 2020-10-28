@@ -21,14 +21,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/backend"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
-	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 )
 
@@ -75,7 +74,7 @@ func (ds *DataSource) DeleteDependency() {
 }
 
 func (ds *DataSource) AddOrUpdateDependencies(ctx context.Context, dependencyInfos []*pb.ConsumerDependency, override bool) (*pb.Response, error) {
-	opts := make([]registry.PluginOp, 0, len(dependencyInfos))
+	opts := make([]client.PluginOp, 0, len(dependencyInfos))
 	domainProject := util.ParseDomainProject(ctx)
 	for _, dependencyInfo := range dependencyInfos {
 		consumerFlag := util.StringJoin([]string{dependencyInfo.Consumer.Environment, dependencyInfo.Consumer.AppId, dependencyInfo.Consumer.ServiceName, dependencyInfo.Consumer.Version}, "/")
@@ -114,10 +113,10 @@ func (ds *DataSource) AddOrUpdateDependencies(ctx context.Context, dependencyInf
 			id = util.GenerateUUID()
 		}
 		key := GenerateConsumerDependencyQueueKey(domainProject, consumerID, id)
-		opts = append(opts, registry.OpPut(registry.WithStrKey(key), registry.WithValue(data)))
+		opts = append(opts, client.OpPut(client.WithStrKey(key), client.WithValue(data)))
 	}
 
-	err := backend.BatchCommit(ctx, opts)
+	err := client.BatchCommit(ctx, opts)
 	if err != nil {
 		log.Errorf(err, "put request into dependency queue failed, override: %t, %v", override, dependencyInfos)
 		return proto.CreateResponse(scerr.ErrInternal, err.Error()), err
@@ -125,5 +124,5 @@ func (ds *DataSource) AddOrUpdateDependencies(ctx context.Context, dependencyInf
 
 	log.Infof("put request into dependency queue successfully, override: %t, %v, from remote %s",
 		override, dependencyInfos, util.GetIPFromContext(ctx))
-	return proto.CreateResponse(proto.Response_SUCCESS, "Create dependency successfully."), nil
+	return proto.CreateResponse(proto.ResponseSuccess, "Create dependency successfully."), nil
 }

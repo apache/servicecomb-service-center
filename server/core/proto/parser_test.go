@@ -36,7 +36,7 @@ func TestParseInnerValueTypeFunc(t *testing.T) {
 	}
 
 	r, err = StringParser.Unmarshal(nil)
-	if err == nil {
+	if err != nil {
 		t.Fatalf("StringParser.Unmarshal failed")
 	}
 	r, err = StringParser.Unmarshal([]byte("abc"))
@@ -65,11 +65,11 @@ func TestParseInnerValueTypeFunc(t *testing.T) {
 	}
 
 	var m interface{} = new(registry.MicroService)
-	err = JsonUnmarshal(nil, nil)
+	err = JSONUnmarshal(nil, nil)
 	if err == nil {
-		t.Fatalf("JsonUnmarshal failed")
+		t.Fatalf("JSONUnmarshal failed")
 	}
-	err = JsonUnmarshal([]byte(`{"serviceName": "abc"}`), &m)
+	err = JSONUnmarshal([]byte(`{"serviceName": "abc"}`), &m)
 	if err != nil {
 		t.Fatalf("MapParser.Unmarshal failed, %v", err)
 	}

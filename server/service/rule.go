@@ -20,17 +20,15 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/backend"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
-	"github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
-	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
-	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"strconv"
 	"time"
 )
@@ -56,7 +54,7 @@ func (s *MicroServiceService) AddRule(ctx context.Context, in *pb.AddServiceRule
 		}, nil
 	}
 	res := quota.NewApplyQuotaResource(quota.RuleQuotaType, domainProject, in.ServiceId, int64(len(in.Rules)))
-	rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
+	rst := quota.Apply(ctx, res)
 	errQuota := rst.Err
 	if errQuota != nil {
 		log.Errorf(errQuota, "add service[%s] rule failed, operator: %s", in.ServiceId, remoteIP)
@@ -76,7 +74,7 @@ func (s *MicroServiceService) AddRule(ctx context.Context, in *pb.AddServiceRule
 		}, err
 	}
 	ruleIDs := make([]string, 0, len(in.Rules))
-	opts := make([]registry.PluginOp, 0, 2*len(in.Rules))
+	opts := make([]client.PluginOp, 0, 2*len(in.Rules))
 	for _, rule := range in.Rules {
 		//黑白名单只能存在一种，黑名单 or 白名单
 		if len(ruleType) == 0 {
@@ -122,21 +120,21 @@ func (s *MicroServiceService) AddRule(ctx context.Context, in *pb.AddServiceRule
 			}, err
 		}
 
-		opts = append(opts, registry.OpPut(registry.WithStrKey(key), registry.WithValue(data)))
-		opts = append(opts, registry.OpPut(registry.WithStrKey(indexKey), registry.WithStrValue(ruleAdd.RuleId)))
+		opts = append(opts, client.OpPut(client.WithStrKey(key), client.WithValue(data)))
+		opts = append(opts, client.OpPut(client.WithStrKey(indexKey), client.WithStrValue(ruleAdd.RuleId)))
 	}
 	if len(opts) <= 0 {
 		log.Infof("add service[%s] rule successfully, no rules to add, operator: %s",
 			in.ServiceId, remoteIP)
 		return &pb.AddServiceRulesResponse{
-			Response: proto.CreateResponse(proto.Response_SUCCESS, "Service rules has been added."),
+			Response: proto.CreateResponse(proto.ResponseSuccess, "Service rules has been added."),
 		}, nil
 	}
 
-	resp, err := backend.BatchCommitWithCmp(ctx, opts,
-		[]registry.CompareOp{registry.OpCmp(
-			registry.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, in.ServiceId))),
-			registry.CmpNotEqual, 0)},
+	resp, err := client.BatchCommitWithCmp(ctx, opts,
+		[]client.CompareOp{client.OpCmp(
+			client.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, in.ServiceId))),
+			client.CmpNotEqual, 0)},
 		nil)
 	if err != nil {
 		log.Errorf(err, "add service[%s] rule failed, operator: %s", in.ServiceId, remoteIP)
@@ -154,7 +152,7 @@ func (s *MicroServiceService) AddRule(ctx context.Context, in *pb.AddServiceRule
 
 	log.Infof("add service[%s] rule %v successfully, operator: %s", in.ServiceId, ruleIDs, remoteIP)
 	return &pb.AddServiceRulesResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Add service rules successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Add service rules successfully."),
 		RuleIds:  ruleIDs,
 	}, nil
 }
@@ -238,22 +236,22 @@ func (s *MicroServiceService) UpdateRule(ctx context.Context, in *pb.UpdateServi
 			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
-	var opts []registry.PluginOp
+	var opts []client.PluginOp
 	if isChangeIndex {
 		//加入新的rule index
 		indexKey := apt.GenerateRuleIndexKey(domainProject, in.ServiceId, copyRuleRef.Attribute, copyRuleRef.Pattern)
-		opts = append(opts, registry.OpPut(registry.WithStrKey(indexKey), registry.WithStrValue(copyRuleRef.RuleId)))
+		opts = append(opts, client.OpPut(client.WithStrKey(indexKey), client.WithStrValue(copyRuleRef.RuleId)))
 
 		//删除旧的rule index
 		oldIndexKey := apt.GenerateRuleIndexKey(domainProject, in.ServiceId, oldRuleAttr, oldRulePatten)
-		opts = append(opts, registry.OpDel(registry.WithStrKey(oldIndexKey)))
+		opts = append(opts, client.OpDel(client.WithStrKey(oldIndexKey)))
 	}
-	opts = append(opts, registry.OpPut(registry.WithStrKey(key), registry.WithValue(data)))
+	opts = append(opts, client.OpPut(client.WithStrKey(key), client.WithValue(data)))
 
-	resp, err := backend.Registry().TxnWithCmp(ctx, opts,
-		[]registry.CompareOp{registry.OpCmp(
-			registry.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, in.ServiceId))),
-			registry.CmpNotEqual, 0)},
+	resp, err := client.Instance().TxnWithCmp(ctx, opts,
+		[]client.CompareOp{client.OpCmp(
+			client.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, in.ServiceId))),
+			client.CmpNotEqual, 0)},
 		nil)
 	if err != nil {
 		log.Errorf(err, "update service rule[%s/%s] failed, operator: %s", in.ServiceId, in.RuleId, remoteIP)
@@ -271,7 +269,7 @@ func (s *MicroServiceService) UpdateRule(ctx context.Context, in *pb.UpdateServi
 
 	log.Infof("update service rule[%s/%s] successfully, operator: %s", in.ServiceId, in.RuleId, remoteIP)
 	return &pb.UpdateServiceRuleResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Get service rules successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Get service rules successfully."),
 	}, nil
 }
 
@@ -303,7 +301,7 @@ func (s *MicroServiceService) GetRule(ctx context.Context, in *pb.GetServiceRule
 	}
 
 	return &pb.GetServiceRulesResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Get service rules successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Get service rules successfully."),
 		Rules:    rules,
 	}, nil
 }
@@ -329,7 +327,7 @@ func (s *MicroServiceService) DeleteRule(ctx context.Context, in *pb.DeleteServi
 		}, nil
 	}
 
-	opts := []registry.PluginOp{}
+	opts := []client.PluginOp{}
 	key := ""
 	indexKey := ""
 	for _, ruleID := range in.RuleIds {
@@ -352,8 +350,8 @@ func (s *MicroServiceService) DeleteRule(ctx context.Context, in *pb.DeleteServi
 		}
 		indexKey = apt.GenerateRuleIndexKey(domainProject, in.ServiceId, data.Attribute, data.Pattern)
 		opts = append(opts,
-			registry.OpDel(registry.WithStrKey(key)),
-			registry.OpDel(registry.WithStrKey(indexKey)))
+			client.OpDel(client.WithStrKey(key)),
+			client.OpDel(client.WithStrKey(indexKey)))
 	}
 	if len(opts) <= 0 {
 		log.Errorf(nil, "delete service[%s] rules %v failed, no rule has been deleted, operator: %s",
@@ -363,10 +361,10 @@ func (s *MicroServiceService) DeleteRule(ctx context.Context, in *pb.DeleteServi
 		}, nil
 	}
 
-	resp, err := backend.BatchCommitWithCmp(ctx, opts,
-		[]registry.CompareOp{registry.OpCmp(
-			registry.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, in.ServiceId))),
-			registry.CmpNotEqual, 0)},
+	resp, err := client.BatchCommitWithCmp(ctx, opts,
+		[]client.CompareOp{client.OpCmp(
+			client.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, in.ServiceId))),
+			client.CmpNotEqual, 0)},
 		nil)
 	if err != nil {
 		log.Errorf(err, "delete service[%s] rules %v failed, operator: %s", in.ServiceId, in.RuleIds, remoteIP)
@@ -384,6 +382,6 @@ func (s *MicroServiceService) DeleteRule(ctx context.Context, in *pb.DeleteServi
 
 	log.Infof("delete service[%s] rules %v successfully, operator: %s", in.ServiceId, in.RuleIds, remoteIP)
 	return &pb.DeleteServiceRulesResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Delete service rules successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Delete service rules successfully."),
 	}, nil
 }

@@ -23,4 +23,5 @@ type DataSource interface {
 	AccountManager
 	DependencyManager
 	MetadataManager
+	SCManager
 }

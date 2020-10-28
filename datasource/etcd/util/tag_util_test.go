@@ -15,10 +15,11 @@
  * limitations under the License.
  */
 
-package util
+package util_test
 
 import (
 	"context"
+	. "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"testing"
 )
 

@@ -22,13 +22,13 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/backend"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
-	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 )
 
 // DependencyRelationFilterOpt contains SameDomainProject and NonSelf flag
@@ -52,7 +52,7 @@ func WithoutSelfDependency() DependencyRelationFilterOption {
 	}
 }
 
-func toDependencyRelationFilterOpt(opts ...DependencyRelationFilterOption) (op DependencyRelationFilterOpt) {
+func ToDependencyRelationFilterOpt(opts ...DependencyRelationFilterOption) (op DependencyRelationFilterOpt) {
 	for _, opt := range opts {
 		op = opt(op)
 	}
@@ -72,7 +72,7 @@ func (dr *DependencyRelation) GetDependencyProviders(opts ...DependencyRelationF
 		return nil, err
 	}
 	services := make([]*pb.MicroService, 0, len(keys))
-	op := toDependencyRelationFilterOpt(opts...)
+	op := ToDependencyRelationFilterOpt(opts...)
 	for _, key := range keys {
 		if op.SameDomainProject && key.Tenant != dr.domainProject {
 			continue
@@ -117,7 +117,7 @@ func (dr *DependencyRelation) GetDependencyProviderIds() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	return dr.getDependencyProviderIds(keys)
+	return dr.GetProviderIdsByRules(keys)
 }
 
 func (dr *DependencyRelation) getProviderKeys() ([]*pb.MicroServiceKey, error) {
@@ -134,7 +134,7 @@ func (dr *DependencyRelation) getProviderKeys() ([]*pb.MicroServiceKey, error) {
 	return consumerDependency.Dependency, nil
 }
 
-func (dr *DependencyRelation) getDependencyProviderIds(providerRules []*pb.MicroServiceKey) ([]string, error) {
+func (dr *DependencyRelation) GetProviderIdsByRules(providerRules []*pb.MicroServiceKey) ([]string, error) {
 	provideServiceIds := make([]string, 0, len(providerRules))
 	for _, provider := range providerRules {
 		serviceIDs, err := dr.parseDependencyRule(provider)
@@ -171,9 +171,9 @@ func (dr *DependencyRelation) parseDependencyRule(dependencyRule *pb.MicroServic
 		splited := strings.Split(apt.GenerateServiceIndexKey(dependencyRule), "/")
 		allServiceKey := util.StringJoin(splited[:len(splited)-3], "/") + "/"
 		sopts := append(opts,
-			registry.WithStrKey(allServiceKey),
-			registry.WithPrefix())
-		resp, err := backend.Store().ServiceIndex().Search(dr.ctx, sopts...)
+			client.WithStrKey(allServiceKey),
+			client.WithPrefix())
+		resp, err := kv.Store().ServiceIndex().Search(dr.ctx, sopts...)
 		if err != nil {
 			return nil, err
 		}
@@ -188,19 +188,19 @@ func (dr *DependencyRelation) parseDependencyRule(dependencyRule *pb.MicroServic
 }
 
 func (dr *DependencyRelation) GetDependencyConsumers(opts ...DependencyRelationFilterOption) ([]*pb.MicroService, error) {
-	consumerDependAllList, err := dr.getDependencyConsumersOfProvider()
+	consumerDependAllList, err := dr.GetDependencyConsumersOfProvider()
 	if err != nil {
 		log.Errorf(err, "get service[%s]'s consumers failed", dr.provider.ServiceId)
 		return nil, err
 	}
 	consumers := make([]*pb.MicroService, 0)
-	op := toDependencyRelationFilterOpt(opts...)
+	op := ToDependencyRelationFilterOpt(opts...)
 	for _, consumer := range consumerDependAllList {
 		if op.SameDomainProject && consumer.Tenant != dr.domainProject {
 			continue
 		}
 
-		service, err := dr.getServiceByMicroServiceKey(consumer)
+		service, err := dr.GetServiceByMicroServiceKey(consumer)
 		if err != nil {
 			return nil, err
 		}
@@ -219,7 +219,7 @@ func (dr *DependencyRelation) GetDependencyConsumers(opts ...DependencyRelationF
 	return consumers, nil
 }
 
-func (dr *DependencyRelation) getServiceByMicroServiceKey(service *pb.MicroServiceKey) (*pb.MicroService, error) {
+func (dr *DependencyRelation) GetServiceByMicroServiceKey(service *pb.MicroServiceKey) (*pb.MicroService, error) {
 	serviceID, err := GetServiceID(dr.ctx, service)
 	if err != nil {
 		return nil, err
@@ -233,7 +233,7 @@ func (dr *DependencyRelation) getServiceByMicroServiceKey(service *pb.MicroServi
 }
 
 func (dr *DependencyRelation) GetDependencyConsumerIds() ([]string, error) {
-	consumerDependAllList, err := dr.getDependencyConsumersOfProvider()
+	consumerDependAllList, err := dr.GetDependencyConsumersOfProvider()
 	if err != nil {
 		return nil, err
 	}
@@ -256,7 +256,7 @@ func (dr *DependencyRelation) GetDependencyConsumerIds() ([]string, error) {
 
 }
 
-func (dr *DependencyRelation) getDependencyConsumersOfProvider() ([]*pb.MicroServiceKey, error) {
+func (dr *DependencyRelation) GetDependencyConsumersOfProvider() ([]*pb.MicroServiceKey, error) {
 	if dr.provider == nil {
 		return nil, fmt.Errorf("Invalid provider")
 	}
@@ -267,7 +267,7 @@ func (dr *DependencyRelation) getDependencyConsumersOfProvider() ([]*pb.MicroSer
 		return nil, err
 	}
 
-	consumerDependList, err := dr.getConsumerOfSameServiceNameAndAppID(providerService)
+	consumerDependList, err := dr.GetConsumerOfSameServiceNameAndAppID(providerService)
 	if err != nil {
 		log.Errorf(err, "get consumers that depend on rule[%s/%s/%s/%s] failed",
 			dr.provider.Environment, dr.provider.AppId, dr.provider.ServiceName, dr.provider.Version)
@@ -281,8 +281,8 @@ func (dr *DependencyRelation) getConsumerOfDependAllServices() ([]*pb.MicroServi
 	providerService := proto.MicroServiceToKey(dr.domainProject, dr.provider)
 	providerService.ServiceName = "*"
 	relyAllKey := apt.GenerateProviderDependencyRuleKey(dr.domainProject, providerService)
-	opts := append(FromContext(dr.ctx), registry.WithStrKey(relyAllKey))
-	rsp, err := backend.Store().DependencyRule().Search(dr.ctx, opts...)
+	opts := append(FromContext(dr.ctx), client.WithStrKey(relyAllKey))
+	rsp, err := kv.Store().DependencyRule().Search(dr.ctx, opts...)
 	if err != nil {
 		log.Errorf(err, "get consumers that rely all service failed, %s/%s/%s/%s",
 			dr.provider.Environment, dr.provider.AppId, dr.provider.ServiceName, dr.provider.Version)
@@ -296,16 +296,16 @@ func (dr *DependencyRelation) getConsumerOfDependAllServices() ([]*pb.MicroServi
 	return nil, nil
 }
 
-func (dr *DependencyRelation) getConsumerOfSameServiceNameAndAppID(provider *pb.MicroServiceKey) ([]*pb.MicroServiceKey, error) {
+func (dr *DependencyRelation) GetConsumerOfSameServiceNameAndAppID(provider *pb.MicroServiceKey) ([]*pb.MicroServiceKey, error) {
 	providerVersion := provider.Version
 	provider.Version = ""
 	prefix := apt.GenerateProviderDependencyRuleKey(dr.domainProject, provider)
 	provider.Version = providerVersion
 
 	opts := append(FromContext(dr.ctx),
-		registry.WithStrKey(prefix),
-		registry.WithPrefix())
-	rsp, err := backend.Store().DependencyRule().Search(dr.ctx, opts...)
+		client.WithStrKey(prefix),
+		client.WithPrefix())
+	rsp, err := kv.Store().DependencyRule().Search(dr.ctx, opts...)
 	if err != nil {
 		log.Errorf(err, "get service[%s/%s/%s]'s dependency rules failed",
 			provider.Environment, provider.AppId, provider.ServiceName)

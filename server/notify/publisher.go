@@ -102,3 +102,7 @@ func NewPublisher() *Publisher {
 		goroutine: gopool.New(context.Background()),
 	}
 }
+
+func Instance() *Publisher {
+	return publisher
+}

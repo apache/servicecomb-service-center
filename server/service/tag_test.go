@@ -50,7 +50,7 @@ var _ = Describe("'Tag' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(respCreateService.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
+			Expect(respCreateService.Response.GetCode()).To(Equal(proto.ResponseSuccess))
 			serviceId1 = respCreateService.ServiceId
 
 			respCreateService, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
@@ -63,7 +63,7 @@ var _ = Describe("'Tag' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(respCreateService.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
+			Expect(respCreateService.Response.GetCode()).To(Equal(proto.ResponseSuccess))
 			serviceId2 = respCreateService.ServiceId
 		})
 
@@ -76,7 +76,7 @@ var _ = Describe("'Tag' service", func() {
 						"a": "test",
 					},
 				})
-				Expect(respAddTags.Response.GetCode()).ToNot(Equal(proto.Response_SUCCESS))
+				Expect(respAddTags.Response.GetCode()).ToNot(Equal(proto.ResponseSuccess))
 
 				By("service does not exist")
 				respAddTags, _ = serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
@@ -85,14 +85,14 @@ var _ = Describe("'Tag' service", func() {
 						"a": "test",
 					},
 				})
-				Expect(respAddTags.Response.GetCode()).ToNot(Equal(proto.Response_SUCCESS))
+				Expect(respAddTags.Response.GetCode()).ToNot(Equal(proto.ResponseSuccess))
 
 				By("tag is empty")
 				respAddTags, _ = serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
 					ServiceId: serviceId1,
 					Tags:      map[string]string{},
 				})
-				Expect(respAddTags.Response.GetCode()).ToNot(Equal(proto.Response_SUCCESS))
+				Expect(respAddTags.Response.GetCode()).ToNot(Equal(proto.ResponseSuccess))
 
 				By("tag key is empty")
 				respAddTags, _ = serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
@@ -101,7 +101,7 @@ var _ = Describe("'Tag' service", func() {
 						"": "value",
 					},
 				})
-				Expect(respAddTags.Response.GetCode()).ToNot(Equal(proto.Response_SUCCESS))
+				Expect(respAddTags.Response.GetCode()).ToNot(Equal(proto.ResponseSuccess))
 			})
 		})
 
@@ -119,7 +119,7 @@ var _ = Describe("'Tag' service", func() {
 					Tags:      tags,
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddTags.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
+				Expect(respAddTags.Response.GetCode()).To(Equal(proto.ResponseSuccess))
 			})
 		})
 
@@ -149,7 +149,7 @@ var _ = Describe("'Tag' service", func() {
 					Tags:      tags,
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddTags.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
+				Expect(respAddTags.Response.GetCode()).To(Equal(proto.ResponseSuccess))
 
 				tags["out"] = "range"
 				respAddTags, _ = serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
@@ -178,7 +178,7 @@ var _ = Describe("'Tag' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(respCreateService.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
+			Expect(respCreateService.Response.GetCode()).To(Equal(proto.ResponseSuccess))
 			serviceId = respCreateService.ServiceId
 
 			respAddTags, err := serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
@@ -189,7 +189,7 @@ var _ = Describe("'Tag' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(respAddTags.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
+			Expect(respAddTags.Response.GetCode()).To(Equal(proto.ResponseSuccess))
 		})
 
 		Context("when request is invalid", func() {
@@ -198,19 +198,19 @@ var _ = Describe("'Tag' service", func() {
 				resp, _ := serviceResource.GetTags(getContext(), &pb.GetServiceTagsRequest{
 					ServiceId: "noThisService",
 				})
-				Expect(resp.Response.GetCode()).ToNot(Equal(proto.Response_SUCCESS))
+				Expect(resp.Response.GetCode()).ToNot(Equal(proto.ResponseSuccess))
 
 				By("service id is empty")
 				resp, _ = serviceResource.GetTags(getContext(), &pb.GetServiceTagsRequest{
 					ServiceId: "",
 				})
-				Expect(resp.Response.GetCode()).ToNot(Equal(proto.Response_SUCCESS))
+				Expect(resp.Response.GetCode()).ToNot(Equal(proto.ResponseSuccess))
 
 				By("service id is invalid")
 				resp, _ = serviceResource.GetTags(getContext(), &pb.GetServiceTagsRequest{
 					ServiceId: TOO_LONG_SERVICEID,
 				})
-				Expect(resp.Response.GetCode()).ToNot(Equal(proto.Response_SUCCESS))
+				Expect(resp.Response.GetCode()).ToNot(Equal(proto.ResponseSuccess))
 			})
 		})
 
@@ -220,7 +220,7 @@ var _ = Describe("'Tag' service", func() {
 					ServiceId: serviceId,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
+				Expect(resp.Response.GetCode()).To(Equal(proto.ResponseSuccess))
 				Expect(resp.Tags["a"]).To(Equal("test"))
 			})
 		})
@@ -243,7 +243,7 @@ var _ = Describe("'Tag' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(respCreateService.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
+			Expect(respCreateService.Response.GetCode()).To(Equal(proto.ResponseSuccess))
 			serviceId = respCreateService.ServiceId
 
 			respAddTags, err := serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
@@ -254,7 +254,7 @@ var _ = Describe("'Tag' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(respAddTags.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
+			Expect(respAddTags.Response.GetCode()).To(Equal(proto.ResponseSuccess))
 		})
 
 		Context("when request is invalid", func() {
@@ -266,7 +266,7 @@ var _ = Describe("'Tag' service", func() {
 					Value:     "update",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).ToNot(Equal(proto.Response_SUCCESS))
+				Expect(resp.Response.GetCode()).ToNot(Equal(proto.ResponseSuccess))
 
 				By("service does not exits")
 				resp, err = serviceResource.UpdateTag(getContext(), &pb.UpdateServiceTagRequest{
@@ -275,7 +275,7 @@ var _ = Describe("'Tag' service", func() {
 					Value:     "update",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).ToNot(Equal(proto.Response_SUCCESS))
+				Expect(resp.Response.GetCode()).ToNot(Equal(proto.ResponseSuccess))
 
 				By("tag key is empty")
 				resp, err = serviceResource.UpdateTag(getContext(), &pb.UpdateServiceTagRequest{
@@ -284,7 +284,7 @@ var _ = Describe("'Tag' service", func() {
 					Value:     "update",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).ToNot(Equal(proto.Response_SUCCESS))
+				Expect(resp.Response.GetCode()).ToNot(Equal(proto.ResponseSuccess))
 
 				By("tag key does not exist")
 				resp, err = serviceResource.UpdateTag(getContext(), &pb.UpdateServiceTagRequest{
@@ -293,7 +293,7 @@ var _ = Describe("'Tag' service", func() {
 					Value:     "update",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).ToNot(Equal(proto.Response_SUCCESS))
+				Expect(resp.Response.GetCode()).ToNot(Equal(proto.ResponseSuccess))
 
 				By("tag key is invalid")
 				resp, err = serviceResource.UpdateTag(getContext(), &pb.UpdateServiceTagRequest{
@@ -302,7 +302,7 @@ var _ = Describe("'Tag' service", func() {
 					Value:     "v",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).ToNot(Equal(proto.Response_SUCCESS))
+				Expect(resp.Response.GetCode()).ToNot(Equal(proto.ResponseSuccess))
 			})
 		})
 
@@ -314,7 +314,7 @@ var _ = Describe("'Tag' service", func() {
 					Value:     "update",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
+				Expect(resp.Response.GetCode()).To(Equal(proto.ResponseSuccess))
 			})
 
 		})
@@ -332,7 +332,7 @@ var _ = Describe("'Tag' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
+				Expect(resp.Response.GetCode()).To(Equal(proto.ResponseSuccess))
 				consumerId := resp.ServiceId
 
 				By("create provider")
@@ -346,7 +346,7 @@ var _ = Describe("'Tag' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
+				Expect(resp.Response.GetCode()).To(Equal(proto.ResponseSuccess))
 				providerId := resp.ServiceId
 
 				addTagResp, err := serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
@@ -354,7 +354,7 @@ var _ = Describe("'Tag' service", func() {
 					Tags:      map[string]string{"filter_tag": "filter"},
 				})
 				Expect(err).To(BeNil())
-				Expect(addTagResp.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
+				Expect(addTagResp.Response.GetCode()).To(Equal(proto.ResponseSuccess))
 
 				instanceResp, err := instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
@@ -367,7 +367,7 @@ var _ = Describe("'Tag' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(instanceResp.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
+				Expect(instanceResp.Response.GetCode()).To(Equal(proto.ResponseSuccess))
 
 				findResp, err := instanceResource.Find(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: consumerId,
@@ -377,7 +377,7 @@ var _ = Describe("'Tag' service", func() {
 					Tags:              []string{"not-exist-tag"},
 				})
 				Expect(err).To(BeNil())
-				Expect(findResp.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
+				Expect(findResp.Response.GetCode()).To(Equal(proto.ResponseSuccess))
 				Expect(len(findResp.Instances)).To(Equal(0))
 
 				findResp, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
@@ -388,7 +388,7 @@ var _ = Describe("'Tag' service", func() {
 					Tags:              []string{"filter_tag"},
 				})
 				Expect(err).To(BeNil())
-				Expect(findResp.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
+				Expect(findResp.Response.GetCode()).To(Equal(proto.ResponseSuccess))
 				Expect(findResp.Instances[0].InstanceId).To(Equal(instanceResp.InstanceId))
 
 				respAddRule, err := serviceResource.AddRule(getContext(), &pb.AddServiceRulesRequest{
@@ -403,7 +403,7 @@ var _ = Describe("'Tag' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddRule.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
+				Expect(respAddRule.Response.GetCode()).To(Equal(proto.ResponseSuccess))
 
 				findResp, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: consumerId,
@@ -413,7 +413,7 @@ var _ = Describe("'Tag' service", func() {
 					Tags:              []string{"filter_tag"},
 				})
 				Expect(err).To(BeNil())
-				Expect(findResp.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
+				Expect(findResp.Response.GetCode()).To(Equal(proto.ResponseSuccess))
 				Expect(len(findResp.Instances)).To(Equal(0))
 
 				addTagResp, err = serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
@@ -421,7 +421,7 @@ var _ = Describe("'Tag' service", func() {
 					Tags:      map[string]string{"consumer_tag": "filter"},
 				})
 				Expect(err).To(BeNil())
-				Expect(addTagResp.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
+				Expect(addTagResp.Response.GetCode()).To(Equal(proto.ResponseSuccess))
 
 				findResp, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: consumerId,
@@ -430,7 +430,7 @@ var _ = Describe("'Tag' service", func() {
 					VersionRule:       "1.0.0+",
 					Tags:              []string{"filter_tag"},
 				})
-				Expect(findResp.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
+				Expect(findResp.Response.GetCode()).To(Equal(proto.ResponseSuccess))
 				Expect(findResp.Instances[0].InstanceId).To(Equal(instanceResp.InstanceId))
 			})
 		})
@@ -453,7 +453,7 @@ var _ = Describe("'Tag' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(respCreateService.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
+			Expect(respCreateService.Response.GetCode()).To(Equal(proto.ResponseSuccess))
 			serviceId = respCreateService.ServiceId
 
 			respAddTags, err := serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
@@ -464,7 +464,7 @@ var _ = Describe("'Tag' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(respAddTags.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
+			Expect(respAddTags.Response.GetCode()).To(Equal(proto.ResponseSuccess))
 		})
 
 		Context("when request is invalid", func() {
@@ -536,13 +536,13 @@ var _ = Describe("'Tag' service", func() {
 					Keys:      []string{"a", "b"},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddTags.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
+				Expect(respAddTags.Response.GetCode()).To(Equal(proto.ResponseSuccess))
 
 				resp, err := serviceResource.GetTags(getContext(), &pb.GetServiceTagsRequest{
 					ServiceId: serviceId,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
+				Expect(resp.Response.GetCode()).To(Equal(proto.ResponseSuccess))
 				Expect(resp.Tags["a"]).To(Equal(""))
 			})
 		})

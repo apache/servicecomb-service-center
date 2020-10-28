@@ -14,19 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package event
 
 import (
-	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 )
 
 func init() {
-	discovery.AddEventHandler(NewDomainEventHandler())
-	discovery.AddEventHandler(NewServiceEventHandler())
-	discovery.AddEventHandler(NewInstanceEventHandler())
-	discovery.AddEventHandler(NewRuleEventHandler())
-	discovery.AddEventHandler(NewTagEventHandler())
-	discovery.AddEventHandler(NewDependencyEventHandler())
-	discovery.AddEventHandler(NewDependencyRuleEventHandler())
-	discovery.AddEventHandler(NewSchemaSummaryEventHandler())
+	sd.AddEventHandler(NewDomainEventHandler())
+	sd.AddEventHandler(NewServiceEventHandler())
+	sd.AddEventHandler(NewInstanceEventHandler())
+	sd.AddEventHandler(NewRuleEventHandler())
+	sd.AddEventHandler(NewTagEventHandler())
+	sd.AddEventHandler(NewDependencyEventHandler())
+	sd.AddEventHandler(NewDependencyRuleEventHandler())
+	sd.AddEventHandler(NewSchemaSummaryEventHandler())
 }

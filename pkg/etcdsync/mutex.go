@@ -20,11 +20,10 @@ package etcdsync
 import (
 	"context"
 	"fmt"
+	etcdclient "github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/core/backend"
-	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	"github.com/coreos/etcd/client"
 	"os"
 	"sync"
@@ -96,29 +95,29 @@ func (m *DLock) Lock(wait bool) (err error) {
 		m.mutex.Lock()
 	}
 
-	opts := []registry.PluginOpOption{
-		registry.WithStrKey(m.key),
-		registry.WithStrValue(m.id)}
+	opts := []etcdclient.PluginOpOption{
+		etcdclient.WithStrKey(m.key),
+		etcdclient.WithStrValue(m.id)}
 
 	log.Infof("Trying to create a lock: key=%s, id=%s", m.key, m.id)
 
 	var leaseID int64
 	putOpts := opts
 	if m.ttl > 0 {
-		leaseID, err = backend.Registry().LeaseGrant(m.ctx, m.ttl)
+		leaseID, err = etcdclient.Instance().LeaseGrant(m.ctx, m.ttl)
 		if err != nil {
 			return err
 		}
-		putOpts = append(opts, registry.WithLease(leaseID))
+		putOpts = append(opts, etcdclient.WithLease(leaseID))
 	}
-	success, err := backend.Registry().PutNoOverride(m.ctx, putOpts...)
+	success, err := etcdclient.Instance().PutNoOverride(m.ctx, putOpts...)
 	if err == nil && success {
 		log.Infof("Create Lock OK, key=%s, id=%s", m.key, m.id)
 		return nil
 	}
 
 	if leaseID > 0 {
-		err = backend.Registry().LeaseRevoke(m.ctx, leaseID)
+		err = etcdclient.Instance().LeaseRevoke(m.ctx, leaseID)
 		if err != nil {
 			return err
 		}
@@ -133,11 +132,11 @@ func (m *DLock) Lock(wait bool) (err error) {
 	ctx, cancel := context.WithTimeout(m.ctx, time.Duration(m.ttl)*time.Second)
 	gopool.Go(func(context.Context) {
 		defer cancel()
-		err := backend.Registry().Watch(ctx,
-			registry.WithStrKey(m.key),
-			registry.WithWatchCallback(
-				func(message string, evt *registry.PluginResponse) error {
-					if evt != nil && evt.Action == registry.Delete {
+		err := etcdclient.Instance().Watch(ctx,
+			etcdclient.WithStrKey(m.key),
+			etcdclient.WithWatchCallback(
+				func(message string, evt *etcdclient.PluginResponse) error {
+					if evt != nil && evt.Action == etcdclient.ActionDelete {
 						// break this for-loop, and try to create the node again.
 						return fmt.Errorf("lock released")
 					}
@@ -162,15 +161,15 @@ func (m *DLock) Unlock() (err error) {
 			m.mutex.Unlock()
 		}
 
-		registry.ReportBackendOperationCompleted(OperationGlobalLock, nil, m.createAt)
+		etcdclient.ReportBackendOperationCompleted(OperationGlobalLock, nil, m.createAt)
 	}()
 
-	opts := []registry.PluginOpOption{
-		registry.DEL,
-		registry.WithStrKey(m.key)}
+	opts := []etcdclient.PluginOpOption{
+		etcdclient.DEL,
+		etcdclient.WithStrKey(m.key)}
 
 	for i := 1; i <= DefaultRetryTimes; i++ {
-		_, err = backend.Registry().Do(m.ctx, opts...)
+		_, err = etcdclient.Instance().Do(m.ctx, opts...)
 		if err == nil {
 			log.Infof("Delete lock OK, key=%s, id=%s", m.key, m.id)
 			return nil

@@ -21,21 +21,19 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
-	"github.com/apache/servicecomb-service-center/server/service/kv"
 	"math"
 	"net/url"
 	"strconv"
 	"strings"
 
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/broker/brokerpb"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/backend"
-	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
-	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"path/filepath"
 )
 
@@ -147,7 +145,7 @@ func CreateBrokerHomeResponse(host string, scheme string) *brokerpb.BrokerHomeRe
 	})
 
 	return &brokerpb.BrokerHomeResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Broker Home."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Broker Home."),
 		XLinks:   apiEntries,
 		Curies:   curies,
 	}
@@ -165,7 +163,7 @@ func GetBrokerHomeResponse(host string, scheme string) *brokerpb.BrokerHomeRespo
 func GetParticipant(ctx context.Context, domain string, appID string,
 	serviceName string) (*brokerpb.Participant, error) {
 	key := GenerateBrokerParticipantKey(domain, appID, serviceName)
-	participants, err := Store().Participant().Search(ctx, registry.WithStrKey(key))
+	participants, err := Store().Participant().Search(ctx, client.WithStrKey(key))
 	if err != nil {
 		return nil, err
 	}
@@ -185,7 +183,7 @@ func GetParticipant(ctx context.Context, domain string, appID string,
 func GetVersion(ctx context.Context, domain string, number string,
 	participantID int32) (*brokerpb.Version, error) {
 	key := GenerateBrokerVersionKey(domain, number, participantID)
-	versions, err := Store().Version().Search(ctx, registry.WithStrKey(key))
+	versions, err := Store().Version().Search(ctx, client.WithStrKey(key))
 	if err != nil {
 		return nil, err
 	}
@@ -203,7 +201,7 @@ func GetVersion(ctx context.Context, domain string, number string,
 
 func GetPact(ctx context.Context, domain string, consumerParticipantID int32, producerParticipantID int32, sha []byte) (*brokerpb.Pact, error) {
 	key := GenerateBrokerPactKey(domain, consumerParticipantID, producerParticipantID, sha)
-	versions, err := Store().Pact().Search(ctx, registry.WithStrKey(key))
+	versions, err := Store().Pact().Search(ctx, client.WithStrKey(key))
 	if err != nil {
 		return nil, err
 	}
@@ -222,7 +220,7 @@ func GetPact(ctx context.Context, domain string, consumerParticipantID int32, pr
 func GetPactVersion(ctx context.Context, domain string, versionID int32,
 	pactID int32) (*brokerpb.PactVersion, error) {
 	key := GenerateBrokerPactVersionKey(domain, versionID, pactID)
-	versions, err := Store().PactVersion().Search(ctx, registry.WithStrKey(key))
+	versions, err := Store().PactVersion().Search(ctx, client.WithStrKey(key))
 	if err != nil {
 		return nil, err
 	}
@@ -239,7 +237,7 @@ func GetPactVersion(ctx context.Context, domain string, versionID int32,
 }
 
 func GetData(ctx context.Context, key string) (int, error) {
-	values, err := Store().PactLatest().Search(ctx, registry.WithStrKey(key))
+	values, err := Store().PactLatest().Search(ctx, client.WithStrKey(key))
 	if err != nil {
 		return -1, err
 	}
@@ -262,9 +260,9 @@ func CreateParticipant(ctx context.Context, participantKey string, participant b
 		}, err
 	}
 
-	_, err = backend.Registry().Do(ctx, registry.PUT,
-		registry.WithStrKey(participantKey),
-		registry.WithValue(data))
+	_, err = client.Instance().Do(ctx, client.PUT,
+		client.WithStrKey(participantKey),
+		client.WithValue(data))
 
 	if err != nil {
 		PactLogger.Errorf(nil, "pact publish failed, participant cannot be created.")
@@ -276,7 +274,7 @@ func CreateParticipant(ctx context.Context, participantKey string, participant b
 	k := GetBrokerLatestParticipantIDKey()
 	v := strconv.Itoa(int(participant.Id))
 	PactLogger.Infof("Inserting (%s, %s)", k, v)
-	err = kv.Put(ctx, k, v)
+	err = client.Put(ctx, k, v)
 	if err != nil {
 		PactLogger.Errorf(nil, "pact publish failed, participant cannot be created.")
 		return &brokerpb.PublishPactResponse{
@@ -297,9 +295,9 @@ func CreateVersion(ctx context.Context, versionKey string,
 		}, err
 	}
 
-	_, err = backend.Registry().Do(ctx, registry.PUT,
-		registry.WithStrKey(versionKey),
-		registry.WithValue(data))
+	_, err = client.Instance().Do(ctx, client.PUT,
+		client.WithStrKey(versionKey),
+		client.WithValue(data))
 	if err != nil {
 		PactLogger.Errorf(nil, "pact publish failed, version cannot be created.")
 		return &brokerpb.PublishPactResponse{
@@ -309,7 +307,7 @@ func CreateVersion(ctx context.Context, versionKey string,
 	k := GetBrokerLatestVersionIDKey()
 	v := strconv.Itoa(int(version.Id))
 	PactLogger.Infof("Inserting (%s, %s)", k, v)
-	err = kv.Put(ctx, k, v)
+	err = client.Put(ctx, k, v)
 	if err != nil {
 		PactLogger.Errorf(nil, "pact publish failed, version cannot be created.")
 		return &brokerpb.PublishPactResponse{
@@ -330,10 +328,10 @@ func CreatePact(ctx context.Context,
 		}, err
 	}
 
-	_, err = backend.Registry().Do(ctx,
-		registry.PUT,
-		registry.WithStrKey(pactKey),
-		registry.WithValue(data))
+	_, err = client.Instance().Do(ctx,
+		client.PUT,
+		client.WithStrKey(pactKey),
+		client.WithValue(data))
 
 	if err != nil {
 		PactLogger.Errorf(nil, "pact publish failed, pact cannot be created.")
@@ -344,7 +342,7 @@ func CreatePact(ctx context.Context,
 	k := GetBrokerLatestPactIDKey()
 	v := strconv.Itoa(int(pact.Id))
 	PactLogger.Infof("Inserting (%s, %s)", k, v)
-	err = kv.Put(ctx, k, v)
+	err = client.Put(ctx, k, v)
 	if err != nil {
 		PactLogger.Errorf(nil, "pact publish failed, pact cannot be created.")
 		return &brokerpb.PublishPactResponse{
@@ -364,8 +362,8 @@ func CreatePactVersion(ctx context.Context, pactVersionKey string, pactVersion b
 		}, err
 	}
 
-	_, err = backend.Registry().Do(ctx,
-		registry.PUT, registry.WithValue(data), registry.WithStrKey(pactVersionKey))
+	_, err = client.Instance().Do(ctx,
+		client.PUT, client.WithValue(data), client.WithStrKey(pactVersionKey))
 	if err != nil {
 		PactLogger.Errorf(nil, "pact publish failed, pact version cannot be created.")
 		return &brokerpb.PublishPactResponse{
@@ -375,7 +373,7 @@ func CreatePactVersion(ctx context.Context, pactVersionKey string, pactVersion b
 	k := GetBrokerLatestPactVersionIDKey()
 	v := strconv.Itoa(int(pactVersion.Id))
 	PactLogger.Infof("Inserting (%s, %s)", k, v)
-	err = kv.Put(ctx, k, v)
+	err = client.Put(ctx, k, v)
 	if err != nil {
 		PactLogger.Errorf(nil, "pact publish failed, pact version cannot be created.")
 		return &brokerpb.PublishPactResponse{
@@ -396,9 +394,9 @@ func CreateVerification(ctx context.Context,
 		}, err
 	}
 
-	_, err = backend.Registry().Do(ctx, registry.PUT,
-		registry.WithStrKey(verificationKey),
-		registry.WithValue(data))
+	_, err = client.Instance().Do(ctx, client.PUT,
+		client.WithStrKey(verificationKey),
+		client.WithValue(data))
 	if err != nil {
 		PactLogger.Errorf(nil, "verification result publish failed, verification result cannot be created.")
 		return &brokerpb.PublishVerificationResponse{
@@ -408,7 +406,7 @@ func CreateVerification(ctx context.Context,
 	k := GetBrokerLatestVerificationIDKey()
 	v := strconv.Itoa(int(verification.Id))
 	PactLogger.Infof("Inserting (%s, %s)", k, v)
-	err = kv.Put(ctx, k, v)
+	err = client.Put(ctx, k, v)
 	if err != nil {
 		PactLogger.Errorf(nil, "verification result publish failed, verification result cannot be created.")
 		return &brokerpb.PublishVerificationResponse{
@@ -424,8 +422,8 @@ func GetLastestVersionNumberForParticipant(ctx context.Context,
 	key := util.StringJoin([]string{
 		GetBrokerVersionKey(tenant), ""}, "/")
 	versions, err := Store().Version().Search(ctx,
-		registry.WithStrKey(key),
-		registry.WithPrefix())
+		client.WithStrKey(key),
+		client.WithPrefix())
 
 	if err != nil || len(versions.Kvs) == 0 {
 		return -1
@@ -517,8 +515,8 @@ func RetrieveProviderConsumerPact(ctx context.Context,
 		strconv.Itoa(int(version.Id))},
 		"/")
 	pactVersions, err := Store().PactVersion().Search(ctx,
-		registry.WithPrefix(),
-		registry.WithStrKey(pactVersionKey))
+		client.WithPrefix(),
+		client.WithStrKey(pactVersionKey))
 
 	if err != nil {
 		return nil, -1, err
@@ -552,8 +550,8 @@ func RetrieveProviderConsumerPact(ctx context.Context,
 		strconv.Itoa(int(providerParticipant.Id))},
 		"/")
 	pacts, err := Store().Pact().Search(ctx,
-		registry.WithStrKey(pactKey),
-		registry.WithPrefix())
+		client.WithStrKey(pactKey),
+		client.WithPrefix())
 
 	if err != nil {
 		return nil, -1, err
@@ -571,7 +569,7 @@ func RetrieveProviderConsumerPact(ctx context.Context,
 		if _, ok := pactIDs[pactObj.Id]; ok {
 			//PactLogger.Infof("pact retrieve succeeded, found pact: %s", string(pactObj.Content))
 			return &brokerpb.GetProviderConsumerVersionPactResponse{
-				Response: proto.CreateResponse(proto.Response_SUCCESS, "pact found."),
+				Response: proto.CreateResponse(proto.ResponseSuccess, "pact found."),
 				Pact:     pactObj.Content,
 			}, pactObj.Id, nil
 		}
@@ -587,10 +585,10 @@ func DeletePactData(ctx context.Context,
 	//tenant := util.ParseTenantProject(ctx)
 	allPactKey := GetBrokerRootKey() //GetBrokerVerificationKey("default") //util.StringJoin([]string{ apt.GetRootKey(), apt.REGISTRY_PACT_ROOT_KEY }, "/")
 
-	_, err := backend.Registry().Do(ctx,
-		registry.DEL, registry.WithStrKey(allPactKey), registry.WithPrefix())
+	_, err := client.Instance().Do(ctx,
+		client.DEL, client.WithStrKey(allPactKey), client.WithPrefix())
 	if err != nil {
 		return proto.CreateResponse(scerr.ErrInternal, "error deleting pacts."), err
 	}
-	return proto.CreateResponse(proto.Response_SUCCESS, "deleting pacts Succeed."), nil
+	return proto.CreateResponse(proto.ResponseSuccess, "deleting pacts Succeed."), nil
 }

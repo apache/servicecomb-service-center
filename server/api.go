@@ -20,16 +20,17 @@ package server
 import (
 	"context"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/grace"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/backend"
 	rs "github.com/apache/servicecomb-service-center/server/rest"
 	"github.com/apache/servicecomb-service-center/server/service"
 	"net"
 	"strconv"
+	"time"
 )
 
 var apiServer *APIServer
@@ -161,11 +162,7 @@ func (s *APIServer) Start() {
 	}
 
 	// 自注册
-	err = backend.GetRegistryEngine().Start()
-	if err != nil {
-		s.err <- err
-		return
-	}
+	s.selfRegister()
 }
 
 func (s *APIServer) Stop() {
@@ -175,7 +172,7 @@ func (s *APIServer) Stop() {
 	s.isClose = true
 
 	if !s.forked && core.ServerInfo.Config.SelfRegister {
-		backend.GetRegistryEngine().Stop()
+		s.selfUnregister()
 	}
 
 	if s.restSrv != nil {
@@ -187,6 +184,22 @@ func (s *APIServer) Stop() {
 	s.goroutine.Close(true)
 
 	log.Info("api server stopped")
+}
+
+func (s *APIServer) selfRegister() {
+	err := datasource.Instance().SelfRegister(context.Background())
+	if err != nil {
+		s.err <- err
+		return
+	}
+}
+
+func (s *APIServer) selfUnregister() {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	if err := datasource.Instance().SelfUnregister(ctx); err != nil {
+		log.Error("stop registry engine failed", err)
+	}
 }
 
 func GetAPIServer() *APIServer {

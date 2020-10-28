@@ -32,3 +32,7 @@ func GetService() Service {
 	once.Do(service.Run)
 	return service
 }
+
+func RegisterService(svc Service) {
+	service = svc
+}

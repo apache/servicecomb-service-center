@@ -16,29 +16,17 @@
  */
 package bootstrap
 
+//etcd
+import _ "github.com/apache/servicecomb-service-center/datasource/etcd/bootstrap"
+
 //rest v3 api
 import _ "github.com/apache/servicecomb-service-center/server/rest/controller/v3"
 
-// rest v4 api
+//rest v4 api
 import _ "github.com/apache/servicecomb-service-center/server/rest/controller/v4"
 
-//registry is buildin
-import _ "github.com/apache/servicecomb-service-center/server/plugin/registry/buildin"
-
-//registry etcd
-import _ "github.com/apache/servicecomb-service-center/server/plugin/registry/etcd"
-
-//registry etcd
-import _ "github.com/apache/servicecomb-service-center/server/plugin/registry/embededetcd"
-
-//discovery
-import _ "github.com/apache/servicecomb-service-center/server/plugin/discovery/aggregate"
-import _ "github.com/apache/servicecomb-service-center/server/plugin/discovery/servicecenter"
-import _ "github.com/apache/servicecomb-service-center/server/plugin/discovery/etcd"
-import _ "github.com/apache/servicecomb-service-center/server/plugin/discovery/k8s"
-
 //cipher
-import _ "github.com/apache/servicecomb-service-center/server/plugin/security/buildin"
+import _ "github.com/apache/servicecomb-service-center/server/plugin/security/cipher/buildin"
 
 //quota
 import _ "github.com/apache/servicecomb-service-center/server/plugin/quota/buildin"
@@ -54,8 +42,8 @@ import _ "github.com/apache/servicecomb-service-center/server/plugin/uuid/contex
 //tracing
 import _ "github.com/apache/servicecomb-service-center/server/plugin/tracing/pzipkin"
 
-//tls
-import _ "github.com/apache/servicecomb-service-center/server/plugin/tls/buildin"
+//tlsconf
+import _ "github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf/buildin"
 
 //module 'govern'
 import _ "github.com/apache/servicecomb-service-center/server/rest/govern"
@@ -69,7 +57,11 @@ import _ "github.com/apache/servicecomb-service-center/server/rest/admin"
 //metrics
 import _ "github.com/apache/servicecomb-service-center/server/metric"
 
+//events
+import _ "github.com/apache/servicecomb-service-center/server/service/event"
+
 import (
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/handler/accesslog"
 	"github.com/apache/servicecomb-service-center/server/handler/auth"
@@ -85,6 +77,8 @@ import (
 
 func init() {
 	log.Info("BootStrap ServiceComb.io Edition")
+
+	datasource.Init(datasource.Options{PluginImplName: "etcd"})
 
 	// intercept requests before routing.
 	interceptor.RegisterInterceptFunc(access.Intercept)

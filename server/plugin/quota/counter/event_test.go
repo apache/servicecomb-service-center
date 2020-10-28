@@ -16,10 +16,10 @@
 package counter
 
 import (
-	registry2 "github.com/apache/servicecomb-service-center/pkg/registry"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/backend"
-	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"testing"
 )
 
@@ -28,22 +28,22 @@ type mockCounter struct {
 	InstanceCount int64
 }
 
-func (c *mockCounter) OnCreate(t discovery.Type, domainProject string) {
+func (c *mockCounter) OnCreate(t sd.Type, domainProject string) {
 	switch t {
-	case backend.ServiceIndex:
+	case kv.ServiceIndex:
 		c.ServiceCount++
-	case backend.INSTANCE:
+	case kv.INSTANCE:
 		c.InstanceCount++
 	default:
 		panic("error")
 	}
 }
 
-func (c *mockCounter) OnDelete(t discovery.Type, domainProject string) {
+func (c *mockCounter) OnDelete(t sd.Type, domainProject string) {
 	switch t {
-	case backend.ServiceIndex:
+	case kv.ServiceIndex:
 		c.ServiceCount--
-	case backend.INSTANCE:
+	case kv.INSTANCE:
 		c.InstanceCount--
 	default:
 		panic("error")
@@ -56,11 +56,11 @@ func TestNewServiceIndexEventHandler(t *testing.T) {
 	RegisterCounter(&counter)
 	h := NewServiceIndexEventHandler()
 
-	cases := []discovery.KvEvent{
+	cases := []sd.KvEvent{
 		{
-			Type: registry2.EVT_INIT,
-			KV: &discovery.KeyValue{
-				Key: []byte(core.GenerateServiceIndexKey(&registry2.MicroServiceKey{
+			Type: registry.EVT_INIT,
+			KV: &sd.KeyValue{
+				Key: []byte(core.GenerateServiceIndexKey(&registry.MicroServiceKey{
 					Tenant:      core.RegistryDomainProject,
 					Project:     "",
 					AppId:       core.RegistryAppID,
@@ -73,9 +73,9 @@ func TestNewServiceIndexEventHandler(t *testing.T) {
 			},
 		},
 		{
-			Type: registry2.EVT_UPDATE,
-			KV: &discovery.KeyValue{
-				Key: []byte(core.GenerateServiceIndexKey(&registry2.MicroServiceKey{
+			Type: registry.EVT_UPDATE,
+			KV: &sd.KeyValue{
+				Key: []byte(core.GenerateServiceIndexKey(&registry.MicroServiceKey{
 					Tenant:      core.RegistryDomainProject,
 					Project:     "",
 					AppId:       core.RegistryAppID,
@@ -88,9 +88,9 @@ func TestNewServiceIndexEventHandler(t *testing.T) {
 			},
 		},
 		{
-			Type: registry2.EVT_DELETE,
-			KV: &discovery.KeyValue{
-				Key: []byte(core.GenerateServiceIndexKey(&registry2.MicroServiceKey{
+			Type: registry.EVT_DELETE,
+			KV: &sd.KeyValue{
+				Key: []byte(core.GenerateServiceIndexKey(&registry.MicroServiceKey{
 					Tenant:      core.RegistryDomainProject,
 					Project:     "",
 					AppId:       core.RegistryAppID,
@@ -103,9 +103,9 @@ func TestNewServiceIndexEventHandler(t *testing.T) {
 			},
 		},
 		{
-			Type: registry2.EVT_CREATE,
-			KV: &discovery.KeyValue{
-				Key: []byte(core.GenerateServiceIndexKey(&registry2.MicroServiceKey{
+			Type: registry.EVT_CREATE,
+			KV: &sd.KeyValue{
+				Key: []byte(core.GenerateServiceIndexKey(&registry.MicroServiceKey{
 					Tenant:      core.RegistryDomainProject,
 					Project:     "",
 					AppId:       core.RegistryAppID,
@@ -118,9 +118,9 @@ func TestNewServiceIndexEventHandler(t *testing.T) {
 			},
 		},
 		{
-			Type: registry2.EVT_INIT,
-			KV: &discovery.KeyValue{
-				Key: []byte(core.GenerateServiceIndexKey(&registry2.MicroServiceKey{
+			Type: registry.EVT_INIT,
+			KV: &sd.KeyValue{
+				Key: []byte(core.GenerateServiceIndexKey(&registry.MicroServiceKey{
 					Tenant:      "a/b",
 					Project:     "",
 					AppId:       "c",
@@ -133,9 +133,9 @@ func TestNewServiceIndexEventHandler(t *testing.T) {
 			},
 		},
 		{
-			Type: registry2.EVT_DELETE,
-			KV: &discovery.KeyValue{
-				Key: []byte(core.GenerateServiceIndexKey(&registry2.MicroServiceKey{
+			Type: registry.EVT_DELETE,
+			KV: &sd.KeyValue{
+				Key: []byte(core.GenerateServiceIndexKey(&registry.MicroServiceKey{
 					Tenant:      "a/b",
 					Project:     "",
 					AppId:       "c",
@@ -148,9 +148,9 @@ func TestNewServiceIndexEventHandler(t *testing.T) {
 			},
 		},
 		{
-			Type: registry2.EVT_UPDATE,
-			KV: &discovery.KeyValue{
-				Key: []byte(core.GenerateServiceIndexKey(&registry2.MicroServiceKey{
+			Type: registry.EVT_UPDATE,
+			KV: &sd.KeyValue{
+				Key: []byte(core.GenerateServiceIndexKey(&registry.MicroServiceKey{
 					Tenant:      "a/b",
 					Project:     "",
 					AppId:       "c",
@@ -163,9 +163,9 @@ func TestNewServiceIndexEventHandler(t *testing.T) {
 			},
 		},
 		{
-			Type: registry2.EVT_CREATE,
-			KV: &discovery.KeyValue{
-				Key: []byte(core.GenerateServiceIndexKey(&registry2.MicroServiceKey{
+			Type: registry.EVT_CREATE,
+			KV: &sd.KeyValue{
+				Key: []byte(core.GenerateServiceIndexKey(&registry.MicroServiceKey{
 					Tenant:      "a/b",
 					Project:     "",
 					AppId:       "c",
@@ -192,59 +192,59 @@ func TestNewInstanceEventHandler(t *testing.T) {
 	RegisterCounter(&counter)
 	h := NewInstanceEventHandler()
 	SharedServiceIds.Put(core.RegistryDomainProject+core.SPLIT+"2", struct{}{})
-	cases := []discovery.KvEvent{
+	cases := []sd.KvEvent{
 		{
-			Type: registry2.EVT_INIT,
-			KV: &discovery.KeyValue{
+			Type: registry.EVT_INIT,
+			KV: &sd.KeyValue{
 				Key:   []byte(core.GenerateInstanceKey(core.RegistryDomainProject, "2", "1")),
 				Value: nil,
 			},
 		},
 		{
-			Type: registry2.EVT_UPDATE,
-			KV: &discovery.KeyValue{
+			Type: registry.EVT_UPDATE,
+			KV: &sd.KeyValue{
 				Key:   []byte(core.GenerateInstanceKey(core.RegistryDomainProject, "2", "1")),
 				Value: nil,
 			},
 		},
 		{
-			Type: registry2.EVT_CREATE,
-			KV: &discovery.KeyValue{
+			Type: registry.EVT_CREATE,
+			KV: &sd.KeyValue{
 				Key:   []byte(core.GenerateInstanceKey(core.RegistryDomainProject, "2", "1")),
 				Value: nil,
 			},
 		},
 		{
-			Type: registry2.EVT_DELETE,
-			KV: &discovery.KeyValue{
+			Type: registry.EVT_DELETE,
+			KV: &sd.KeyValue{
 				Key:   []byte(core.GenerateInstanceKey(core.RegistryDomainProject, "2", "1")),
 				Value: nil,
 			},
 		},
 		{
-			Type: registry2.EVT_INIT,
-			KV: &discovery.KeyValue{
+			Type: registry.EVT_INIT,
+			KV: &sd.KeyValue{
 				Key:   []byte(core.GenerateInstanceKey("a/b", "1", "1")),
 				Value: nil,
 			},
 		},
 		{
-			Type: registry2.EVT_DELETE,
-			KV: &discovery.KeyValue{
+			Type: registry.EVT_DELETE,
+			KV: &sd.KeyValue{
 				Key:   []byte(core.GenerateInstanceKey("a/b", "1", "1")),
 				Value: nil,
 			},
 		},
 		{
-			Type: registry2.EVT_UPDATE,
-			KV: &discovery.KeyValue{
+			Type: registry.EVT_UPDATE,
+			KV: &sd.KeyValue{
 				Key:   []byte(core.GenerateInstanceKey("a/b", "1", "1")),
 				Value: nil,
 			},
 		},
 		{
-			Type: registry2.EVT_CREATE,
-			KV: &discovery.KeyValue{
+			Type: registry.EVT_CREATE,
+			KV: &sd.KeyValue{
 				Key:   []byte(core.GenerateInstanceKey("a/b", "1", "1")),
 				Value: nil,
 			},

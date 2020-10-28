@@ -22,21 +22,20 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/backend"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/health"
-	"github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
-	"github.com/apache/servicecomb-service-center/server/plugin/registry"
+	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"github.com/apache/servicecomb-service-center/server/service/cache"
-	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"os"
 	"strconv"
 	"time"
@@ -55,7 +54,7 @@ func (s *InstanceService) preProcessRegisterInstance(ctx context.Context, instan
 	}
 
 	if len(instance.InstanceId) == 0 {
-		instance.InstanceId = plugin.Plugins().UUID().GetInstanceID(ctx)
+		instance.InstanceId = uuid.Generator().GetInstanceID(ctx)
 	}
 
 	instance.Timestamp = strconv.FormatInt(time.Now().Unix(), 10)
@@ -116,7 +115,7 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 		//    and needs to be re-registered.
 		resp, err := s.Heartbeat(ctx, &pb.HeartbeatRequest{ServiceId: instance.ServiceId, InstanceId: instance.InstanceId})
 		switch resp.Response.GetCode() {
-		case proto.Response_SUCCESS:
+		case proto.ResponseSuccess:
 			log.Infof("register instance successful, reuse instance[%s/%s], operator %s",
 				instance.ServiceId, instance.InstanceId, remoteIP)
 			return &pb.RegisterInstanceResponse{
@@ -156,7 +155,7 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 	if !apt.IsSCInstance(ctx) {
 		res := quota.NewApplyQuotaResource(quota.MicroServiceInstanceQuotaType,
 			domainProject, in.Instance.ServiceId, 1)
-		reporter = plugin.Plugins().Quota().Apply4Quotas(ctx, res)
+		reporter = quota.Apply(ctx, res)
 		defer reporter.Close(ctx)
 
 		if reporter.Err != nil {
@@ -183,7 +182,7 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 		}, err
 	}
 
-	leaseID, err := backend.Registry().LeaseGrant(ctx, ttl)
+	leaseID, err := client.Instance().LeaseGrant(ctx, ttl)
 	if err != nil {
 		log.Errorf(err, "grant lease failed, %s, operator: %s", instanceFlag, remoteIP)
 		return &pb.RegisterInstanceResponse{
@@ -195,17 +194,17 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 	key := apt.GenerateInstanceKey(domainProject, instance.ServiceId, instanceID)
 	hbKey := apt.GenerateInstanceLeaseKey(domainProject, instance.ServiceId, instanceID)
 
-	opts := []registry.PluginOp{
-		registry.OpPut(registry.WithStrKey(key), registry.WithValue(data),
-			registry.WithLease(leaseID)),
-		registry.OpPut(registry.WithStrKey(hbKey), registry.WithStrValue(fmt.Sprintf("%d", leaseID)),
-			registry.WithLease(leaseID)),
+	opts := []client.PluginOp{
+		client.OpPut(client.WithStrKey(key), client.WithValue(data),
+			client.WithLease(leaseID)),
+		client.OpPut(client.WithStrKey(hbKey), client.WithStrValue(fmt.Sprintf("%d", leaseID)),
+			client.WithLease(leaseID)),
 	}
 
-	resp, err := backend.Registry().TxnWithCmp(ctx, opts,
-		[]registry.CompareOp{registry.OpCmp(
-			registry.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, instance.ServiceId))),
-			registry.CmpNotEqual, 0)},
+	resp, err := client.Instance().TxnWithCmp(ctx, opts,
+		[]client.CompareOp{client.OpCmp(
+			client.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, instance.ServiceId))),
+			client.CmpNotEqual, 0)},
 		nil)
 	if err != nil {
 		log.Errorf(err,
@@ -233,7 +232,7 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 	log.Infof("register instance %s, instanceID %s, operator %s",
 		instanceFlag, instanceID, remoteIP)
 	return &pb.RegisterInstanceResponse{
-		Response:   proto.CreateResponse(proto.Response_SUCCESS, "Register service instance successfully."),
+		Response:   proto.CreateResponse(proto.ResponseSuccess, "Register service instance successfully."),
 		InstanceId: instanceID,
 	}, nil
 }
@@ -268,7 +267,7 @@ func (s *InstanceService) Unregister(ctx context.Context, in *pb.UnregisterInsta
 
 	log.Infof("unregister instance[%s], operator %s", instanceFlag, remoteIP)
 	return &pb.UnregisterInstanceResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Unregister service instance successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Unregister service instance successfully."),
 	}, nil
 }
 
@@ -281,7 +280,7 @@ func revokeInstance(ctx context.Context, domainProject string, serviceID string,
 		return scerr.NewError(scerr.ErrInstanceNotExists, "Instance's leaseId not exist.")
 	}
 
-	err = backend.Registry().LeaseRevoke(ctx, leaseID)
+	err = client.Instance().LeaseRevoke(ctx, leaseID)
 	if err != nil {
 		if _, ok := err.(errorsEx.InternalError); !ok {
 			return scerr.NewError(scerr.ErrInstanceNotExists, err.Error())
@@ -324,7 +323,7 @@ func (s *InstanceService) Heartbeat(ctx context.Context, in *pb.HeartbeatRequest
 		log.Infof("heartbeat successful, renew instance[%s] ttl to %d. operator %s", instanceFlag, ttl, remoteIP)
 	}
 	return &pb.HeartbeatResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Update service instance heartbeat successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Update service instance heartbeat successfully."),
 	}, nil
 }
 
@@ -370,7 +369,7 @@ func (s *InstanceService) HeartbeatSet(ctx context.Context, in *pb.HeartbeatSetR
 	if !failFlag && successFlag {
 		log.Infof("batch update heartbeats[%s] successfully", count)
 		return &pb.HeartbeatSetResponse{
-			Response:  proto.CreateResponse(proto.Response_SUCCESS, "Heartbeat set successfully."),
+			Response:  proto.CreateResponse(proto.ResponseSuccess, "Heartbeat set successfully."),
 			Instances: instanceHbRstArr,
 		}, nil
 	}
@@ -479,7 +478,7 @@ func (s *InstanceService) GetOneInstance(ctx context.Context, in *pb.GetOneInsta
 	_ = util.SetContext(ctx, util.CtxResponseRevision, item.Rev)
 
 	return &pb.GetOneInstanceResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Get instance successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Get instance successfully."),
 		Instance: instance,
 	}, nil
 }
@@ -565,7 +564,7 @@ func (s *InstanceService) GetInstances(ctx context.Context, in *pb.GetInstancesR
 	_ = util.SetContext(ctx, util.CtxResponseRevision, item.Rev)
 
 	return &pb.GetInstancesResponse{
-		Response:  proto.CreateResponse(proto.Response_SUCCESS, "Query service instances successfully."),
+		Response:  proto.CreateResponse(proto.ResponseSuccess, "Query service instances successfully."),
 		Instances: instances,
 	}, nil
 }
@@ -718,7 +717,7 @@ func (s *InstanceService) genFindResult(ctx context.Context, oldRev string, item
 	// TODO support gRPC output context
 	_ = util.SetContext(ctx, util.CtxResponseRevision, item.Rev)
 	return &pb.FindInstancesResponse{
-		Response:  proto.CreateResponse(proto.Response_SUCCESS, "Query service instances successfully."),
+		Response:  proto.CreateResponse(proto.ResponseSuccess, "Query service instances successfully."),
 		Instances: instances,
 	}, nil
 }
@@ -741,7 +740,7 @@ func (s *InstanceService) BatchFind(ctx context.Context, in *pb.BatchFindInstanc
 	}
 
 	response := &pb.BatchFindInstancesResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Batch query service instances successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Batch query service instances successfully."),
 	}
 
 	// find services
@@ -882,7 +881,7 @@ func (s *InstanceService) UpdateStatus(ctx context.Context, in *pb.UpdateInstanc
 
 	log.Infof("update instance[%s] status successfully", updateStatusFlag)
 	return &pb.UpdateInstanceStatusResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Update service instance status successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Update service instance status successfully."),
 	}, nil
 }
 
@@ -926,7 +925,7 @@ func (s *InstanceService) UpdateInstanceProperties(ctx context.Context, in *pb.U
 
 	log.Infof("update instance[%s] properties successfully", instanceFlag)
 	return &pb.UpdateInstancePropsResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Update service instance properties successfully."),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Update service instance properties successfully."),
 	}, nil
 }
 
@@ -970,7 +969,7 @@ func (s *InstanceService) ClusterHealth(ctx context.Context) (*pb.GetInstancesRe
 		}, err
 	}
 	return &pb.GetInstancesResponse{
-		Response:  proto.CreateResponse(proto.Response_SUCCESS, "Health check successfully."),
+		Response:  proto.CreateResponse(proto.ResponseSuccess, "Health check successfully."),
 		Instances: instances,
 	}, nil
 }

@@ -17,7 +17,15 @@
 
 package cache
 
+import (
+	"context"
+	"github.com/apache/servicecomb-service-center/datasource"
+	"sort"
+	"sync"
+)
+
 type ContextKey string
+type ClustersIndex map[string]int
 
 const (
 	CtxFindConsumer         ContextKey = "_consumer"
@@ -29,3 +37,23 @@ const (
 	Find = "_find"
 	Dep  = "_dep"
 )
+
+var (
+	buildClustersIndexOnce sync.Once
+	clustersIndex          = make(ClustersIndex)
+)
+
+func getOrCreateClustersIndex() ClustersIndex {
+	buildClustersIndexOnce.Do(func() {
+		var clusters []string
+		resp, _ := datasource.Instance().GetClusters(context.Background())
+		for name := range resp {
+			clusters = append(clusters, name)
+		}
+		sort.Strings(clusters)
+		for i, name := range clusters {
+			clustersIndex[name] = i
+		}
+	})
+	return clustersIndex
+}

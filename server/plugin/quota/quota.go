@@ -20,9 +20,12 @@ package quota
 import (
 	"context"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/plugin"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"strconv"
 )
+
+const QUOTA plugin.Kind = "quota"
 
 const (
 	defaultServiceLimit  = 50000
@@ -118,4 +121,12 @@ func (r ResourceType) String() string {
 	default:
 		return "RESOURCE" + strconv.Itoa(int(r))
 	}
+}
+
+func Apply(ctx context.Context, res *ApplyQuotaResource) *ApplyQuotaResult {
+	return plugin.Plugins().Instance(QUOTA).(Manager).Apply4Quotas(ctx, res)
+}
+
+func Remand(ctx context.Context, quotaType ResourceType) {
+	plugin.Plugins().Instance(QUOTA).(Manager).RemandQuotas(ctx, quotaType)
 }

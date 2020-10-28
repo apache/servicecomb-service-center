@@ -18,9 +18,9 @@ package event
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"github.com/apache/servicecomb-service-center/server/service/cache"
 	"testing"
 )
@@ -33,29 +33,29 @@ func TestNewDependencyRuleEventHandler(t *testing.T) {
 		t.Fatalf("TestNewDependencyRuleEventHandler failed")
 	}
 	h := NewDependencyRuleEventHandler()
-	h.OnEvent(discovery.KvEvent{Type: pb.EVT_CREATE})
+	h.OnEvent(sd.KvEvent{Type: pb.EVT_CREATE})
 	b = cache.DependencyRule.ExistVersionRule(context.Background(), consumerId, provider)
 	if !b {
 		t.Fatalf("TestNewDependencyRuleEventHandler failed")
 	}
-	h.OnEvent(discovery.KvEvent{Type: pb.EVT_INIT})
+	h.OnEvent(sd.KvEvent{Type: pb.EVT_INIT})
 	b = cache.DependencyRule.ExistVersionRule(context.Background(), consumerId, provider)
 	if !b {
 		t.Fatalf("TestNewDependencyRuleEventHandler failed")
 	}
-	h.OnEvent(discovery.KvEvent{Type: pb.EVT_UPDATE, KV: &discovery.KeyValue{
+	h.OnEvent(sd.KvEvent{Type: pb.EVT_UPDATE, KV: &sd.KeyValue{
 		Key: []byte(core.GenerateProviderDependencyRuleKey("x/y", provider))}})
 	b = cache.DependencyRule.ExistVersionRule(context.Background(), consumerId, provider)
 	if b {
 		t.Fatalf("TestNewDependencyRuleEventHandler failed")
 	}
-	h.OnEvent(discovery.KvEvent{Type: pb.EVT_DELETE, KV: &discovery.KeyValue{
+	h.OnEvent(sd.KvEvent{Type: pb.EVT_DELETE, KV: &sd.KeyValue{
 		Key: []byte(core.GenerateProviderDependencyRuleKey("x/y", provider))}})
 	b = cache.DependencyRule.ExistVersionRule(context.Background(), consumerId, provider)
 	if b {
 		t.Fatalf("TestNewDependencyRuleEventHandler failed")
 	}
-	h.OnEvent(discovery.KvEvent{Type: pb.EVT_DELETE, KV: &discovery.KeyValue{
+	h.OnEvent(sd.KvEvent{Type: pb.EVT_DELETE, KV: &sd.KeyValue{
 		Key: []byte(core.GenerateConsumerDependencyRuleKey("x/y", provider))}})
 	b = cache.DependencyRule.ExistVersionRule(context.Background(), consumerId, provider)
 	if !b {

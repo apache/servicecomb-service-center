@@ -14,13 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package notify
+package notify_test
 
 import (
 	"context"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	simple "github.com/apache/servicecomb-service-center/pkg/time"
+	. "github.com/apache/servicecomb-service-center/server/notify"
 	"google.golang.org/grpc"
 	"testing"
 	"time"

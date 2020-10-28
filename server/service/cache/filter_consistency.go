@@ -19,10 +19,10 @@ package cache
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/pkg/cache"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/core/backend"
 )
 
 // ConsistencyFilter improves consistency.
@@ -51,7 +51,7 @@ func (f *ConsistencyFilter) Init(ctx context.Context, parent *cache.Node) (node 
 	pCache := parent.Cache.Get(Find).(*VersionRuleCacheItem)
 	requestRev := ctx.Value(CtxFindRequestRev).(string)
 	if len(requestRev) == 0 || requestRev == pCache.Rev ||
-		!(backend.Store().Instance().Creditable()) {
+		!(kv.Store().Instance().Creditable()) {
 		node = cache.NewNode()
 		node.Cache.Set(Find, pCache)
 		return

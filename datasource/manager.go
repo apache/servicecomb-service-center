@@ -36,6 +36,17 @@ func Install(pluginImplName string, engineFunc dataSourceEngine) {
 
 // construct storage plugin instance
 // invoked by sc main process
+/* Usage:
+ * interval, err := time.ParseDuration(core.ServerInfo.Config.CompactInterval)
+ * if err != nil {
+ * 	log.Errorf(err, "invalid compact interval %s, reset to default interval 12h", core.ServerInfo.Config.CompactInterval)
+ * 	interval = 12 * time.Hour
+ * }
+ * Init(Options{
+ * 	CompactIndexDelta:    core.ServerInfo.Config.CompactIndexDelta,
+ * 	CompactInterval:      interval,
+ * })
+ */
 func Init(opts Options) error {
 	if opts.PluginImplName == "" {
 		return nil
@@ -50,7 +61,7 @@ func Init(opts Options) error {
 	if err != nil {
 		return err
 	}
-	log.Info(fmt.Sprintf("storage shim plugin [%s@%s] enabled", opts.PluginImplName, opts.Endpoint))
+	log.Info(fmt.Sprintf("datasource plugin [%s] enabled", opts.PluginImplName))
 	return nil
 }
 

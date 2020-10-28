@@ -16,42 +16,107 @@
 package etcd
 
 import (
-	"errors"
+	"context"
 	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/job"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/mux"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"time"
 )
 
-// TODO: define error with names here
-
-var ErrNotUnique = errors.New("kv result is not unique")
-
 func init() {
-	// TODO: set logger
-	// TODO: register storage plugin to plugin manager
+	datasource.Install("etcd", NewDataSource)
+	datasource.Install("embeded_etcd", NewDataSource)
 }
 
 type DataSource struct {
-	// schemaEditable determines whether schema modification is allowed for
+	// SchemaEditable determines whether schema modification is allowed for
 	SchemaEditable bool
-	ttlFromEnv     int64
+	// TTL options
+	ttlFromEnv int64
+	// Compact options
+	CompactIndexDelta int64
+	CompactInterval   time.Duration
 }
 
-func NewDataSource(opts datasource.Options) *DataSource {
+func NewDataSource(opts datasource.Options) (datasource.DataSource, error) {
 	// TODO: construct a reasonable DataSource instance
 	log.Warnf("dependency data source enable etcd mode")
 
 	inst := &DataSource{
-		SchemaEditable: opts.SchemaEditable,
-		ttlFromEnv:     opts.TTL,
+		SchemaEditable:    opts.SchemaEditable,
+		ttlFromEnv:        opts.TTL,
+		CompactInterval:   opts.CompactInterval,
+		CompactIndexDelta: opts.CompactIndexDelta,
 	}
 	// TODO: deal with exception
 	if err := inst.initialize(); err != nil {
-		return inst
+		return nil, err
 	}
-	return inst
+	return inst, nil
 }
 
 func (ds *DataSource) initialize() error {
 	// TODO: init dependency members
+	// init client/sd plugins
+	ds.initPlugins()
+	// Wait for kv store ready
+	ds.initKvStore()
+	// Compact
+	ds.autoCompact()
+	// Jobs
+	job.ClearNoInstanceServices()
 	return nil
+}
+
+func (ds *DataSource) initPlugins() {
+	err := client.Init(client.Options{PluginImplName: "etcd"})
+	if err != nil {
+		log.Fatalf(err, "client init failed")
+	}
+	err = sd.Init(sd.Options{PluginImplName: "etcd"})
+	if err != nil {
+		log.Fatalf(err, "sd init failed")
+	}
+}
+
+func (ds *DataSource) initKvStore() {
+	kv.Store().Run()
+	<-kv.Store().Ready()
+}
+
+func (ds *DataSource) autoCompact() {
+	delta := ds.CompactIndexDelta
+	interval := ds.CompactInterval
+	if delta <= 0 || interval == 0 {
+		return
+	}
+	gopool.Go(func(ctx context.Context) {
+		log.Infof("enabled the automatic compact mechanism, compact once every %s, reserve %d", interval, delta)
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(interval):
+				lock, err := mux.Try(mux.GlobalLock)
+				if err != nil {
+					log.Errorf(err, "can not compact backend by this service center instance now")
+					continue
+				}
+
+				err = client.Instance().Compact(ctx, delta)
+				if err != nil {
+					log.Error("", err)
+				}
+
+				if err := lock.Unlock(); err != nil {
+					log.Error("", err)
+				}
+			}
+		}
+	})
 }

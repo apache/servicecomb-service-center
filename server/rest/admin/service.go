@@ -19,16 +19,13 @@ package admin
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/model"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/alarm"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/backend"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
-	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
-	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"github.com/apache/servicecomb-service-center/version"
 	"github.com/astaxie/beego"
@@ -71,7 +68,7 @@ func (service *Service) Dump(ctx context.Context, in *model.DumpRequest) (*model
 	}
 
 	resp := &model.DumpResponse{
-		Response: proto.CreateResponse(proto.Response_SUCCESS, "Admin dump successfully"),
+		Response: proto.CreateResponse(proto.ResponseSuccess, "Admin dump successfully"),
 	}
 
 	if len(in.Options) == 0 {
@@ -103,7 +100,7 @@ func (service *Service) dump(ctx context.Context, option string, resp *model.Dum
 		resp.Environments = environments
 	case "cache":
 		var cache model.Cache
-		service.dumpAllCache(ctx, &cache)
+		datasource.Instance().DumpCache(ctx, &cache)
 		resp.Cache = &cache
 	case "all":
 		service.dump(ctx, "info", resp)
@@ -113,35 +110,13 @@ func (service *Service) dump(ctx context.Context, option string, resp *model.Dum
 	}
 }
 
-func (service *Service) dumpAllCache(ctx context.Context, cache *model.Cache) {
-	gopool.New(ctx, gopool.Configure().Workers(2)).
-		Do(func(_ context.Context) { setValue(backend.Store().Service(), &cache.Microservices) }).
-		Do(func(_ context.Context) { setValue(backend.Store().ServiceIndex(), &cache.Indexes) }).
-		Do(func(_ context.Context) { setValue(backend.Store().ServiceAlias(), &cache.Aliases) }).
-		Do(func(_ context.Context) { setValue(backend.Store().ServiceTag(), &cache.Tags) }).
-		Do(func(_ context.Context) { setValue(backend.Store().RuleIndex(), &cache.RuleIndexes) }).
-		Do(func(_ context.Context) { setValue(backend.Store().Rule(), &cache.Rules) }).
-		Do(func(_ context.Context) { setValue(backend.Store().DependencyRule(), &cache.DependencyRules) }).
-		Do(func(_ context.Context) { setValue(backend.Store().SchemaSummary(), &cache.Summaries) }).
-		Do(func(_ context.Context) { setValue(backend.Store().Instance(), &cache.Instances) }).
-		Done()
-}
-
-func setValue(e discovery.Adaptor, setter model.Setter) {
-	e.Cache().ForEach(func(k string, kv *discovery.KeyValue) (next bool) {
-		setter.SetValue(&model.KV{
-			Key:         k,
-			Rev:         kv.ModRevision,
-			Value:       kv.Value,
-			ClusterName: kv.ClusterName,
-		})
-		return true
-	})
-}
-
 func (service *Service) Clusters(ctx context.Context, in *model.ClustersRequest) (*model.ClustersResponse, error) {
+	clusters, err := datasource.Instance().GetClusters(ctx)
+	if err != nil {
+		return nil, err
+	}
 	return &model.ClustersResponse{
-		Clusters: registry.Configuration().Clusters,
+		Clusters: clusters,
 	}, nil
 }
 
