@@ -1,5 +1,6 @@
 package v4_test
 
+import _ "github.com/apache/servicecomb-service-center/test"
 import (
 	"bytes"
 	"context"
@@ -19,9 +20,6 @@ import (
 	"net/http/httptest"
 	"testing"
 	"time"
-
-	_ "github.com/apache/servicecomb-service-center/server/handler/auth"
-	_ "github.com/apache/servicecomb-service-center/test"
 )
 
 func init() {

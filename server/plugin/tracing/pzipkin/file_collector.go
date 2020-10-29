@@ -164,8 +164,8 @@ func (f *FileCollector) Run() {
 			case <-t.C:
 				if time.Now().After(nr) {
 					log.RotateFile(f.Fd.Name(),
-						int(config.ServerInfo.Config.LogRotateSize),
-						int(config.ServerInfo.Config.LogBackupCount),
+						int(config.GetLog().LogRotateSize),
+						int(config.GetLog().LogBackupCount),
 					)
 					nr = time.Now().Add(i)
 				}

@@ -25,6 +25,7 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/server/config"
 	"time"
 )
 
@@ -74,11 +75,13 @@ func (ds *DataSource) initialize() error {
 }
 
 func (ds *DataSource) initPlugins() {
-	err := client.Init(client.Options{PluginImplName: "etcd"})
+	kind := config.GetString("registry.kind", "", config.WithStandby("registry_plugin"))
+	err := client.Init(client.Options{PluginImplName: client.ImplName(kind)})
 	if err != nil {
 		log.Fatalf(err, "client init failed")
 	}
-	err = sd.Init(sd.Options{PluginImplName: "etcd"})
+	kind = config.GetString("discovery.kind", "", config.WithStandby("discovery_plugin"))
+	err = sd.Init(sd.Options{PluginImplName: sd.ImplName(kind)})
 	if err != nil {
 		log.Fatalf(err, "sd init failed")
 	}

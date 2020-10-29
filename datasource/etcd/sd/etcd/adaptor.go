@@ -51,15 +51,16 @@ func (se *Adaptor) Ready() <-chan struct{} {
 
 func NewEtcdAdaptor(name string, cfg *sd.Config) *Adaptor {
 	var adaptor Adaptor
+	enableCache := config.GetRegistry().EnableCache
 	switch {
-	case config.ServerInfo.Config.EnableCache && cfg.InitSize > 0:
+	case enableCache && cfg.InitSize > 0:
 		kvCache := sd.NewKvCache(name, cfg)
 		adaptor.Cacher = NewKvCacher(cfg, kvCache)
 		adaptor.Indexer = NewCacheIndexer(cfg, kvCache)
 	default:
 		log.Infof(
 			"core will not cache '%s' and ignore all events of it, cache enabled: %v, init size: %d",
-			name, config.ServerInfo.Config.EnableCache, cfg.InitSize)
+			name, enableCache, cfg.InitSize)
 		adaptor.Cacher = sd.NullCacher
 		adaptor.Indexer = NewEtcdIndexer(cfg.Key, cfg.Parser)
 	}

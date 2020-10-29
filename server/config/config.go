@@ -75,6 +75,16 @@ func GetRegistry() ServerConfig {
 	return Configurations.Server.Config
 }
 
+//GetPlugin return the plugin configs
+func GetPlugin() ServerConfig {
+	return Configurations.Server.Config
+}
+
+//GetRBAC return the rbac configs
+func GetRBAC() ServerConfig {
+	return Configurations.Server.Config
+}
+
 func Init() {
 	setCPUs()
 
@@ -90,7 +100,7 @@ func Init() {
 	Configurations.Server = ServerInfo
 	*ServerInfo = newInfo()
 
-	plugin.SetPluginDir(ServerInfo.Config.PluginsDir)
+	plugin.SetPluginDir(GetPlugin().PluginsDir)
 
 	initLogger()
 
@@ -112,7 +122,7 @@ func newInfo() ServerInformation {
 		serviceClearInterval = defaultServiceClearInterval
 	}
 
-	serviceTTL := GetDuration("registry.service.ttl", defaultServiceTTL, WithENV("SERVICE_TTL"))
+	serviceTTL := GetDuration("registry.service.clearTTL", defaultServiceTTL, WithENV("SERVICE_TTL"))
 	if serviceTTL < minServiceTTL || serviceTTL > maxServiceTTL {
 		serviceTTL = defaultServiceTTL
 	}
@@ -133,7 +143,7 @@ func newInfo() ServerInformation {
 			IdleTimeout:       GetString("server.idle.timeout", "60s", WithStandby("idle_timeout")),
 			WriteTimeout:      GetString("server.response.timeout", "60s", WithStandby("write_timeout")),
 
-			LimitTTLUnit:     GetString("server.limit.ttl", "s", WithStandby("limit_ttl")),
+			LimitTTLUnit:     GetString("server.limit.unit", "s", WithStandby("limit_ttl")),
 			LimitConnections: GetInt64("server.limit.connections", 0, WithStandby("limit_conns")),
 			LimitIPLookup:    GetString("server.limit.ipLookups", "RemoteAddr,X-Forwarded-For,X-Real-IP", WithStandby("limit_iplookups")),
 
@@ -169,6 +179,8 @@ func newInfo() ServerInformation {
 			ServiceTTL:           serviceTTL,
 
 			SchemaDisable: GetBool("registry.schema.readonly", false, WithENV("SCHEMA_DISABLE")),
+
+			EnableRBAC: GetBool("rbac.enable", false, WithStandby("rbac_enabled")),
 		},
 	}
 }
@@ -181,10 +193,10 @@ func setCPUs() {
 
 func initLogger() {
 	log.SetGlobal(log.Config{
-		LoggerLevel:    ServerInfo.Config.LogLevel,
-		LoggerFile:     os.ExpandEnv(ServerInfo.Config.LogFilePath),
-		LogFormatText:  ServerInfo.Config.LogFormat == "text",
-		LogRotateSize:  int(ServerInfo.Config.LogRotateSize),
-		LogBackupCount: int(ServerInfo.Config.LogBackupCount),
+		LoggerLevel:    GetLog().LogLevel,
+		LoggerFile:     os.ExpandEnv(GetLog().LogFilePath),
+		LogFormatText:  GetLog().LogFormat == "text",
+		LogRotateSize:  int(GetLog().LogRotateSize),
+		LogBackupCount: int(GetLog().LogBackupCount),
 	})
 }

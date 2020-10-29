@@ -14,18 +14,79 @@
 # limitations under the License.
 
 server:
+  request:
+    maxHeaderBytes:
+    maxBodyBytes:
+    headerTimeout:
+    timeout:
+  response:
+    timeout:
+  idle:
+    timeout:
+  pprof:
+    mode: 0
 
 log:
   level: DEBUG
+  file:
+  accessEnable: false
+  accessFile:
+  format:
+  system: false
+  rotateSize:
+  backupCount:
 
 ssl:
+  # ssl.mode enable ssl or not, set 1 if enable
   mode: 0
+  minVersion:
+  # ssl.verifyClient enable verify client certification CN
+  verifyClient: 1
+  ciphers:
+
+plugin:
+  # plugin.dir is the directory of the *.so files
+  dir:
 
 registry:
-
+  # buildin, etcd, embeded_etcd, mongodb
+  kind: etcd
+  autoSyncInterval:
+  compact:
+    indexDelta:
+    interval:
+  cache:
+    mode: 1
+    ttl:
+  # enabled if registry.kind equal to etcd or embeded_etcd
   etcd:
     cluster:
-      name: default
-      endpoints: http://127.0.0.1:2379
-      # (Optional) The endpoint of embedded etcd listen
-      managerEndpoint:
+      # if registry_plugin equals to 'embeded_etcd', then
+      # name: sc-0
+      # managerEndpoints: http://127.0.0.1:2380"
+      # endpoints: sc-0=http://127.0.0.1:2380
+      # if registry_plugin equals to 'etcd', then
+      # endpoints: 127.0.0.1:2379
+      endpoints: 127.0.0.1:2379
+    connect:
+      timeout:
+    request:
+      timeout:
+  mongodb:
+    xxx:
+
+  service:
+    # enable the job clear the microservices which deploy no instance
+    clearEnable: false
+    # the interval of job
+    clearInterval: 12h
+    # the duration between current datetime and microservice created datetime
+    clearTTL: 24h
+
+  schema:
+    readonly: false
+  # enable to register sc itself when startup
+  selfRegister: 1
+
+rbac:
+  enable: false

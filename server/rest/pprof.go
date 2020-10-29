@@ -24,7 +24,7 @@ import (
 )
 
 func init() {
-	if config.ServerInfo.Config.EnablePProf {
+	if config.GetServer().EnablePProf {
 		RegisterServerHandleFunc("/debug/pprof/", http.HandlerFunc(pprof.Index))
 		RegisterServerHandleFunc("/debug/pprof/profile", http.HandlerFunc(pprof.Profile))
 		RegisterServerHandleFunc("/debug/pprof/symbol", http.HandlerFunc(pprof.Symbol))

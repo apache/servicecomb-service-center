@@ -16,12 +16,10 @@
  */
 package broker_test
 
-import (
-	_ "github.com/apache/servicecomb-service-center/server/bootstrap"
-	"github.com/apache/servicecomb-service-center/server/config"
-)
+import _ "github.com/apache/servicecomb-service-center/test"
 import (
 	"github.com/apache/servicecomb-service-center/server/broker"
+	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/service"
 	"github.com/astaxie/beego"

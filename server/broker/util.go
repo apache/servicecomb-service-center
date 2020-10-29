@@ -85,15 +85,15 @@ var brokerAPILinksTitles = map[string]string{
 func init() {
 	//define Broker logger
 	name := ""
-	if len(config.ServerInfo.Config.LogFilePath) != 0 {
-		name = filepath.Join(filepath.Dir(config.ServerInfo.Config.LogFilePath), "broker_srvc.log")
+	if len(config.GetLog().LogFilePath) != 0 {
+		name = filepath.Join(filepath.Dir(config.GetLog().LogFilePath), "broker_srvc.log")
 	}
 	PactLogger = log.NewLogger(log.Config{
-		LoggerLevel:    config.ServerInfo.Config.LogLevel,
+		LoggerLevel:    config.GetLog().LogLevel,
 		LoggerFile:     name,
-		LogFormatText:  config.ServerInfo.Config.LogFormat == "text",
-		LogRotateSize:  int(config.ServerInfo.Config.LogRotateSize),
-		LogBackupCount: int(config.ServerInfo.Config.LogBackupCount),
+		LogFormatText:  config.GetLog().LogFormat == "text",
+		LogRotateSize:  int(config.GetLog().LogRotateSize),
+		LogBackupCount: int(config.GetLog().LogBackupCount),
 	})
 }
 

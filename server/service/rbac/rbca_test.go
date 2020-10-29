@@ -17,13 +17,13 @@
 
 package rbac_test
 
+import _ "github.com/apache/servicecomb-service-center/test"
 import (
 	"context"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
 	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
-	_ "github.com/apache/servicecomb-service-center/test"
 	"github.com/astaxie/beego"
 	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-chassis/v2/security/authr"

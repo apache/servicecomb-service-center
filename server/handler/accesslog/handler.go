@@ -97,14 +97,14 @@ func NewAccessLogHandler(l *log.Logger) *Handler {
 
 // RegisterHandlers registers an access log handler to the handler chain
 func RegisterHandlers() {
-	if !config.ServerInfo.Config.EnableAccessLog {
+	if !config.GetLog().EnableAccessLog {
 		return
 	}
 	logger := log.NewLogger(log.Config{
-		LoggerFile:     os.ExpandEnv(config.ServerInfo.Config.AccessLogFile),
+		LoggerFile:     os.ExpandEnv(config.GetLog().AccessLogFile),
 		LogFormatText:  true,
-		LogRotateSize:  int(config.ServerInfo.Config.LogRotateSize),
-		LogBackupCount: int(config.ServerInfo.Config.LogBackupCount),
+		LogRotateSize:  int(config.GetLog().LogRotateSize),
+		LogBackupCount: int(config.GetLog().LogBackupCount),
 		NoCaller:       true,
 		NoTime:         true,
 		NoLevel:        true,

@@ -72,7 +72,6 @@ func Init() {
 	readPrivateKey()
 	readPublicKey()
 	rbacframe.Add2WhiteAPIList("/v4/token")
-	config.ServerInfo.Config.EnableRBAC = true
 	log.Info("rbac is enabled")
 }
 func initResourceMap() {
@@ -141,7 +140,7 @@ func initFirstTime(admin string) {
 }
 
 func Enabled() bool {
-	return beego.AppConfig.DefaultBool("rbac_enabled", false)
+	return config.GetRBAC().EnableRBAC
 }
 
 //PublicKey get public key to verify a token

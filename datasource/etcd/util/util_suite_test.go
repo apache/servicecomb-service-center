@@ -18,7 +18,7 @@
 package util_test
 
 // initialize
-import _ "github.com/apache/servicecomb-service-center/server/bootstrap"
+import _ "github.com/apache/servicecomb-service-center/test"
 import (
 	"context"
 	"testing"

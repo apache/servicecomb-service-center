@@ -18,13 +18,16 @@
 //Package test prepare service center required module before UT
 package test
 
+import _ "github.com/apache/servicecomb-service-center/server/init"
+import _ "github.com/apache/servicecomb-service-center/server/bootstrap"
 import (
-	_ "github.com/apache/servicecomb-service-center/server/bootstrap"
-	"github.com/apache/servicecomb-service-center/server/config"
-	"github.com/astaxie/beego"
+	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/go-chassis/go-archaius"
 )
 
 func init() {
-	beego.AppConfig.Set("registry_plugin", "etcd")
-	config.ServerInfo.Config.MaxBodyBytes = 2097152
+	archaius.Set("registry.cache.mode", 0)
+	archaius.Set("discovery.kind", "etcd")
+	archaius.Set("registry.kind", "etcd")
+	datasource.Init(datasource.Options{PluginImplName: "etcd"})
 }

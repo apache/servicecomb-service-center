@@ -18,7 +18,7 @@
 package datasource_test
 
 // initialize
-import _ "github.com/apache/servicecomb-service-center/server/bootstrap"
+import _ "github.com/apache/servicecomb-service-center/test"
 import (
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd"

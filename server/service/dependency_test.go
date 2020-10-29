@@ -725,6 +725,7 @@ var _ = Describe("'Dependency' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(respGetP.Response.GetCode()).To(Equal(pb.ResponseSuccess))
+				Expect(len(respGetP.Consumers)).NotTo(Equal(0))
 				Expect(respGetP.Consumers[0].ServiceId).To(Equal(consumerId1))
 
 				By("get provider's deps")

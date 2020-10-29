@@ -69,6 +69,11 @@ func (s *ServiceCenterServer) waitForQuit() {
 func (s *ServiceCenterServer) initialize() {
 	s.apiService = GetAPIServer()
 	s.notifyService = notify.GetNotifyCenter()
+	// init datasource
+	kind := datasource.ImplName(config.GetString("registry.kind", "", config.WithStandby("registry_plugin")))
+	if err := datasource.Init(datasource.Options{PluginImplName: kind}); err != nil {
+		log.Fatalf(err, "init datasource failed")
+	}
 }
 
 func (s *ServiceCenterServer) startServices() {
@@ -82,7 +87,7 @@ func (s *ServiceCenterServer) startServices() {
 		log.Fatal("init gov failed", err)
 	}
 	// check version
-	if config.ServerInfo.Config.SelfRegister {
+	if config.GetRegistry().SelfRegister {
 		if err := datasource.Instance().UpgradeVersion(context.Background()); err != nil {
 			os.Exit(1)
 		}

@@ -36,8 +36,6 @@ import (
 	"time"
 )
 
-const defaultEventHandleInterval = 5 * time.Minute
-
 // DependencyEventHandler add or remove the service dependencies
 // when user call find instance api or dependence operation api
 type DependencyEventHandler struct {
@@ -100,10 +98,7 @@ func (h *DependencyEventHandler) tryWithBackoff(success func() error, backoff fu
 func (h *DependencyEventHandler) eventLoop() {
 	gopool.Go(func(ctx context.Context) {
 		// the events will lose, need to handle dependence records periodically
-		period := defaultEventHandleInterval
-		if config.ServerInfo.Config.CacheTTL > 0 {
-			period = config.ServerInfo.Config.CacheTTL
-		}
+		period := config.GetRegistry().CacheTTL
 		timer := time.NewTimer(period)
 		retries := 0
 		for {
