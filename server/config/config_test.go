@@ -18,14 +18,18 @@
 package config_test
 
 import (
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/config"
+	"github.com/go-chassis/go-archaius"
 	"github.com/stretchr/testify/assert"
 	"io"
 	"os"
+	"path/filepath"
 	"testing"
 )
 
 func TestInit(t *testing.T) {
+	defer archaius.Clean()
 	b := []byte(`
 gov:
   plugins:
@@ -34,12 +38,15 @@ gov:
     - type: istio
 
 `)
-	defer os.Remove("test.yaml")
-	f1, err := os.Create("test.yaml")
+	dir := filepath.Join(util.GetAppRoot(), "conf")
+	defer os.Remove(dir)
+	os.Mkdir(dir, 0750)
+	file := filepath.Join(dir, "app.yaml")
+	defer os.Remove(file)
+	f1, err := os.Create(file)
 	assert.NoError(t, err)
 	_, err = io.WriteString(f1, string(b))
 	assert.NoError(t, err)
-	config.Configurations.ConfigFile = "test.yaml"
 	config.Init()
 	assert.NoError(t, err)
 	assert.Equal(t, "mock", config.GetGov().DistOptions[0].Type)

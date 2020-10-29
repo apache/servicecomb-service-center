@@ -15,22 +15,23 @@
  * limitations under the License.
  */
 
-package util
+package config_test
 
-import "os"
-
-type CtxKey string
-
-const (
-	HeaderRev                  = "X-Resource-Revision"
-	CtxGlobal           CtxKey = "global"
-	CtxNocache          CtxKey = "noCache"
-	CtxCacheOnly        CtxKey = "cacheOnly"
-	CtxRequestRevision  CtxKey = "requestRev"
-	CtxResponseRevision CtxKey = "responseRev"
+import (
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/config"
+	"github.com/go-chassis/go-archaius"
+	"github.com/stretchr/testify/assert"
+	"os"
+	"path/filepath"
+	"testing"
 )
 
-func GetAppRoot() string {
-	workDir, _ := os.Getwd()
-	return GetEnvString("APP_ROOT", workDir)
+func TestGetString(t *testing.T) {
+	os.Setenv("TEST_GET_STRING", "test")
+	defer archaius.Clean()
+	archaius.Init(archaius.WithMemorySource(), archaius.WithENVSource(),
+		archaius.WithOptionalFiles([]string{filepath.Join(util.GetAppRoot(), "conf", "app.yaml")}))
+	assert.Equal(t, "test", config.GetString("test.getString", "none"))
+	assert.Equal(t, "test", config.GetString("other.getString", "none", config.WithENV("TEST_GET_STRING")))
 }

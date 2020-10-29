@@ -19,9 +19,8 @@ package config
 
 //Config is yaml file struct
 type Config struct {
-	Gov Gov `yaml:"gov"`
-	//config from cli
-	ConfigFile string
+	Gov    Gov                `yaml:"gov"`
+	Server *ServerInformation `yaml:"server"`
 }
 type Gov struct {
 	DistOptions []DistributorOptions `yaml:"plugins"`

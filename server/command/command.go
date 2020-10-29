@@ -18,7 +18,6 @@
 package command
 
 import (
-	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/version"
 	"github.com/urfave/cli"
 )
@@ -29,14 +28,6 @@ func ParseConfig(args []string) (err error) {
 	app.Version = version.VERSION
 	app.Usage = "servicecomb service center server cmd line."
 	app.Name = "servicecomb service center"
-	app.Flags = []cli.Flag{
-		cli.StringFlag{
-			Name:        "config",
-			Usage:       "config file, example: --config=sc-conf.yaml",
-			Destination: &config.Configurations.ConfigFile,
-			Value:       "",
-		},
-	}
 	app.Action = func(c *cli.Context) error {
 		return nil
 	}
