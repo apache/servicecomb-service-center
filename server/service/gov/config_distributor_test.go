@@ -19,9 +19,9 @@ package gov_test
 
 import (
 	"encoding/json"
-	"github.com/apache/servicecomb-service-center/pkg/model"
-	"github.com/apache/servicecomb-service-center/server/core/config"
-	"github.com/apache/servicecomb-service-center/server/service/gov"
+	"github.com/apache/servicecomb-service-center/pkg/gov"
+	"github.com/apache/servicecomb-service-center/server/config"
+	svc "github.com/apache/servicecomb-service-center/server/service/gov"
 	_ "github.com/apache/servicecomb-service-center/server/service/gov/mock"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -38,14 +38,14 @@ func TestCreate(t *testing.T) {
 			},
 		},
 	}
-	err := gov.Init()
+	err := svc.Init()
 	assert.NoError(t, err)
-	b, _ := json.MarshalIndent(&model.LoadBalancer{
-		GovernancePolicy: &model.GovernancePolicy{
+	b, _ := json.MarshalIndent(&gov.LoadBalancer{
+		GovernancePolicy: &gov.GovernancePolicy{
 			Name: "Traffic2adminAPI",
 		},
-		Spec: &model.LBSpec{RetryNext: 3, MarkerName: "traffic2adminAPI"},
+		Spec: &gov.LBSpec{RetryNext: 3, MarkerName: "traffic2adminAPI"},
 	}, "", "  ")
-	err = gov.Create("lb", b)
+	err = svc.Create("lb", b)
 	assert.NoError(t, err)
 }

@@ -15,21 +15,32 @@
  * limitations under the License.
  */
 
-package model
+package config_test
 
-//TrafficMarker marks request, it assign a name to request in runtime
-type TrafficMarker struct {
-	*GovernancePolicy
-	Spec *MatchSpec `json:"spec,omitempty"`
-}
-type MatchSpec struct {
-	MatchPolicies     []*MatchPolicy `json:"matches,omitempty"`
-	TrafficMarkPolicy string         `json:"trafficMarkPolicy,omitempty"`
-}
+import (
+	"github.com/apache/servicecomb-service-center/server/config"
+	"github.com/stretchr/testify/assert"
+	"io"
+	"os"
+	"testing"
+)
 
-//MatchPolicy specify a request mach policy
-type MatchPolicy struct {
-	Headers  map[string]map[string]string `json:"headers,omitempty"`
-	APIPaths map[string]string            `json:"apiPath,omitempty"`
-	Methods  []string                     `json:"methods,omitempty"`
+func TestInit(t *testing.T) {
+	b := []byte(`
+gov:
+  plugins:
+    - type: mock
+    - type: kie
+    - type: istio
+
+`)
+	defer os.Remove("test.yaml")
+	f1, err := os.Create("test.yaml")
+	assert.NoError(t, err)
+	_, err = io.WriteString(f1, string(b))
+	assert.NoError(t, err)
+	config.Configurations.ConfigFile = "test.yaml"
+	config.Init()
+	assert.NoError(t, err)
+	assert.Equal(t, "mock", config.GetGov().DistOptions[0].Type)
 }

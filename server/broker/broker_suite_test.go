@@ -18,7 +18,7 @@ package broker_test
 
 import (
 	_ "github.com/apache/servicecomb-service-center/server/bootstrap"
-	"github.com/apache/servicecomb-service-center/server/core/config"
+	"github.com/apache/servicecomb-service-center/server/config"
 )
 import (
 	"github.com/apache/servicecomb-service-center/server/broker"

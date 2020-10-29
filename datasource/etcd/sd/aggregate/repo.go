@@ -17,7 +17,7 @@ package aggregate
 
 import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
-	"github.com/apache/servicecomb-service-center/server/core/config"
+	"github.com/apache/servicecomb-service-center/server/config"
 )
 
 func init() {

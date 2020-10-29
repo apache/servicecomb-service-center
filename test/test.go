@@ -20,7 +20,7 @@ package test
 
 import (
 	_ "github.com/apache/servicecomb-service-center/server/bootstrap"
-	"github.com/apache/servicecomb-service-center/server/core/config"
+	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/astaxie/beego"
 )
 

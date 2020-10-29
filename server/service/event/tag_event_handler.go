@@ -28,7 +28,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/task"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/notify"
 	"github.com/apache/servicecomb-service-center/server/service/cache"
 )
@@ -71,7 +70,7 @@ func (apt *TagsChangedTask) publish(ctx context.Context, domainProject, consumer
 		return fmt.Errorf("consumer[%s] does not exist", consumerID)
 	}
 
-	serviceKey := proto.MicroServiceToKey(domainProject, consumer)
+	serviceKey := pb.MicroServiceToKey(domainProject, consumer)
 	cache.FindInstances.Remove(serviceKey)
 
 	providerIDs, err := serviceUtil.GetProviderIds(ctx, domainProject, consumer)
@@ -89,7 +88,7 @@ func (apt *TagsChangedTask) publish(ctx context.Context, domainProject, consumer
 			continue
 		}
 
-		providerKey := proto.MicroServiceToKey(domainProject, provider)
+		providerKey := pb.MicroServiceToKey(domainProject, provider)
 		PublishInstanceEvent(apt.KvEvent, domainProject, providerKey, []string{consumerID})
 	}
 	return nil

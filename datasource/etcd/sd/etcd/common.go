@@ -18,7 +18,7 @@ package etcd
 import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/value"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"time"
 )
@@ -39,7 +39,7 @@ func init() {
 	close(closedCh)
 }
 
-func FromEtcdKeyValue(dist *sd.KeyValue, src *mvccpb.KeyValue, parser proto.Parser) (err error) {
+func FromEtcdKeyValue(dist *sd.KeyValue, src *mvccpb.KeyValue, parser value.Parser) (err error) {
 	dist.ClusterName = etcd.Configuration().ClusterName
 	dist.Key = src.Key
 	dist.Version = src.Version

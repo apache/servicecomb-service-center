@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package model
+package gov
 
 //RateLimiter limit request rate
 type RateLimiter struct {

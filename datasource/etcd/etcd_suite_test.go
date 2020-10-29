@@ -19,7 +19,7 @@ package etcd_test
 // initialize
 import (
 	_ "github.com/apache/servicecomb-service-center/server/bootstrap"
-	"github.com/apache/servicecomb-service-center/server/core/config"
+	"github.com/apache/servicecomb-service-center/server/config"
 )
 import (
 	"context"

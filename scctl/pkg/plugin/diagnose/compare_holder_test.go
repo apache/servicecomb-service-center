@@ -16,7 +16,7 @@
 package diagnose
 
 import (
-	model2 "github.com/apache/servicecomb-service-center/pkg/model"
+	model2 "github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"testing"

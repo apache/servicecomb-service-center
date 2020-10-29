@@ -25,7 +25,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/rest/controller"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"io/ioutil"
@@ -109,7 +108,7 @@ func (s *MicroServiceInstanceService) HeartbeatSet(w http.ResponseWriter, r *htt
 	}
 	resp, _ := core.InstanceAPI.HeartbeatSet(r.Context(), request)
 
-	if resp.Response.GetCode() == proto.ResponseSuccess {
+	if resp.Response.GetCode() == pb.ResponseSuccess {
 		controller.WriteResponse(w, nil, nil)
 		return
 	}

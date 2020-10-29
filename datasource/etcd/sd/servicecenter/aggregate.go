@@ -22,8 +22,8 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd"
 	etcdclient "github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/model"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf"
@@ -49,8 +49,8 @@ func getClientTLS() (*tls.Config, error) {
 	return clientTLS, err
 }
 
-func (c *SCClientAggregate) GetScCache(ctx context.Context) (*model.Cache, map[string]error) {
-	var caches *model.Cache
+func (c *SCClientAggregate) GetScCache(ctx context.Context) (*dump.Cache, map[string]error) {
+	var caches *dump.Cache
 	errs := make(map[string]error)
 	for _, client := range *c {
 		cache, err := client.GetScCache(ctx)
@@ -60,7 +60,7 @@ func (c *SCClientAggregate) GetScCache(ctx context.Context) (*model.Cache, map[s
 		}
 
 		if caches == nil {
-			caches = &model.Cache{}
+			caches = &dump.Cache{}
 		}
 		c.cacheAppend(client.Cfg.Name, &caches.Microservices, &cache.Microservices)
 		c.cacheAppend(client.Cfg.Name, &caches.Indexes, &cache.Indexes)
@@ -75,8 +75,8 @@ func (c *SCClientAggregate) GetScCache(ctx context.Context) (*model.Cache, map[s
 	return caches, errs
 }
 
-func (c *SCClientAggregate) cacheAppend(name string, setter model.Setter, getter model.Getter) {
-	getter.ForEach(func(_ int, v *model.KV) bool {
+func (c *SCClientAggregate) cacheAppend(name string, setter dump.Setter, getter dump.Getter) {
+	getter.ForEach(func(_ int, v *dump.KV) bool {
 		if len(v.ClusterName) == 0 || v.ClusterName == etcdclient.DefaultClusterName {
 			v.ClusterName = name
 		}

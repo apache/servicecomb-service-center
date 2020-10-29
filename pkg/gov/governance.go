@@ -15,32 +15,29 @@
  * limitations under the License.
  */
 
-package config_test
+package gov
 
-import (
-	"github.com/apache/servicecomb-service-center/server/core/config"
-	"github.com/stretchr/testify/assert"
-	"io"
-	"os"
-	"testing"
-)
+//GovernancePolicy is a unified struct
+//all governance policy must extend this struct
+//Name is the policy name, for example: "rate-limit-payment-api"
+//MD is metadata.
+type GovernancePolicy struct {
+	Name string            `json:"name,omitempty"`
+	MD   map[string]string `json:"metadata,omitempty"`
+}
 
-func TestInit(t *testing.T) {
-	b := []byte(`
-gov:
-  plugins:
-    - type: mock
-    - type: kie
-    - type: istio
-
-`)
-	defer os.Remove("test.yaml")
-	f1, err := os.Create("test.yaml")
-	assert.NoError(t, err)
-	_, err = io.WriteString(f1, string(b))
-	assert.NoError(t, err)
-	config.Configurations.ConfigFile = "test.yaml"
-	config.Init()
-	assert.NoError(t, err)
-	assert.Equal(t, "mock", config.GetGov().DistOptions[0].Type)
+//LoadBalancer define policy and fault tolerant policy
+type LoadBalancer struct {
+	*GovernancePolicy
+	Spec *LBSpec `json:"spec,omitempty"`
+}
+type LBSpec struct {
+	MarkerName string         `json:"match"`
+	RetrySame  int            `json:"retrySame,omitempty"`
+	RetryNext  int            `json:"retryNext,omitempty"`
+	Bo         *BackOffPolicy `json:"backoff,omitempty"`
+}
+type BackOffPolicy struct {
+	InitialInterval int `json:"initInterval"`
+	MaxInterval     int `json:"maxInterval"`
 }

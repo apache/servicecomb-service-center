@@ -19,7 +19,6 @@ package service_test
 import (
 	"context"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/service"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -70,7 +69,7 @@ var _ = Describe("'Instance' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(respCreate.Response.GetCode()).To(Equal(proto.ResponseSuccess))
+			Expect(respCreate.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 			serviceId = respCreate.ServiceId
 		})
 

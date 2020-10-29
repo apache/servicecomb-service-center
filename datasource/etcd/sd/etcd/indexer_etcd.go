@@ -20,7 +20,7 @@ package etcd
 import (
 	"fmt"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/value"
 	"strings"
 
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
@@ -34,7 +34,7 @@ import (
 // Indexer searches data from etcd server.
 type Indexer struct {
 	Client client.Registry
-	Parser proto.Parser
+	Parser value.Parser
 	Root   string
 }
 
@@ -88,6 +88,6 @@ func (i *Indexer) Creditable() bool {
 	return true
 }
 
-func NewEtcdIndexer(root string, p proto.Parser) (indexer *Indexer) {
+func NewEtcdIndexer(root string, p value.Parser) (indexer *Indexer) {
 	return &Indexer{Client: client.Instance(), Parser: p, Root: root}
 }

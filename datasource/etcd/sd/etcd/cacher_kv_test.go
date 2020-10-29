@@ -23,10 +23,10 @@ import (
 	"fmt"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/value"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"math/rand"
 	"strconv"
@@ -290,7 +290,7 @@ func TestNewKvCacher(t *testing.T) {
 	lw.Bus <- nil
 	evt.KV = nil
 	old := *cr.Cfg
-	cr.Cfg.WithParser(proto.MapParser)
+	cr.Cfg.WithParser(value.MapParser)
 	cr.refresh(ctx)
 	// check event
 	if evt.KV != nil {
@@ -380,7 +380,7 @@ func BenchmarkFilter(b *testing.B) {
 	}
 	v, _ := json.Marshal(inst)
 
-	cfg := sd.Configure().WithParser(proto.InstanceParser)
+	cfg := sd.Configure().WithParser(value.InstanceParser)
 
 	n := 300 * 1000 // 30w
 	cache := sd.NewKvCache("test", cfg)

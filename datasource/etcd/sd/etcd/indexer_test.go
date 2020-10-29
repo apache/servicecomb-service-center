@@ -21,7 +21,7 @@ import (
 	"context"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/value"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"testing"
 )
@@ -29,7 +29,7 @@ import (
 func TestEtcdIndexer_Search(t *testing.T) {
 	data := &client.PluginResponse{Revision: 1}
 	c := &mockRegistry{}
-	i := &Indexer{Client: c, Root: "/", Parser: proto.BytesParser}
+	i := &Indexer{Client: c, Root: "/", Parser: value.BytesParser}
 
 	// case: key does not contain prefix
 	resp, err := i.Search(context.Background(), client.WithStrKey("a"))
@@ -54,7 +54,7 @@ func TestEtcdIndexer_Search(t *testing.T) {
 	data.Count = 2
 	data.Kvs = []*mvccpb.KeyValue{{Key: []byte("/a/b"), Value: []byte("abc")}, {Key: []byte("/a/c"), Value: []byte("{}")}}
 	old := i.Parser
-	i.Parser = proto.MapParser
+	i.Parser = value.MapParser
 	c.Response = data
 	resp, err = i.Search(context.Background(), client.WithStrKey("/a"))
 	if err != nil || resp == nil || resp.Count != 2 || len(resp.Kvs) != 1 {

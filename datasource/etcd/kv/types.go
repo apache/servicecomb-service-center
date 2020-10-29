@@ -19,8 +19,8 @@ package kv
 
 import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/value"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"time"
 )
 
@@ -52,45 +52,45 @@ var (
 func registerInnerTypes() {
 	SERVICE = Store().MustInstall(NewAddOn("SERVICE",
 		sd.Configure().WithPrefix(core.GetServiceRootKey("")).
-			WithInitSize(500).WithParser(proto.ServiceParser)))
+			WithInitSize(500).WithParser(value.ServiceParser)))
 	INSTANCE = Store().MustInstall(NewAddOn("INSTANCE",
 		sd.Configure().WithPrefix(core.GetInstanceRootKey("")).
-			WithInitSize(1000).WithParser(proto.InstanceParser).
+			WithInitSize(1000).WithParser(value.InstanceParser).
 			WithDeferHandler(NewInstanceEventDeferHandler())))
 	DOMAIN = Store().MustInstall(NewAddOn("DOMAIN",
 		sd.Configure().WithPrefix(core.GetDomainRootKey()+core.SPLIT).
-			WithInitSize(100).WithParser(proto.StringParser)))
+			WithInitSize(100).WithParser(value.StringParser)))
 	SCHEMA = Store().MustInstall(NewAddOn("SCHEMA",
 		sd.Configure().WithPrefix(core.GetServiceSchemaRootKey("")).
 			WithInitSize(0)))
 	SchemaSummary = Store().MustInstall(NewAddOn("SCHEMA_SUMMARY",
 		sd.Configure().WithPrefix(core.GetServiceSchemaSummaryRootKey("")).
-			WithInitSize(100).WithParser(proto.StringParser)))
+			WithInitSize(100).WithParser(value.StringParser)))
 	RULE = Store().MustInstall(NewAddOn("RULE",
 		sd.Configure().WithPrefix(core.GetServiceRuleRootKey("")).
-			WithInitSize(100).WithParser(proto.RuleParser)))
+			WithInitSize(100).WithParser(value.RuleParser)))
 	LEASE = Store().MustInstall(NewAddOn("LEASE",
 		sd.Configure().WithPrefix(core.GetInstanceLeaseRootKey("")).
-			WithInitSize(1000).WithParser(proto.StringParser)))
+			WithInitSize(1000).WithParser(value.StringParser)))
 	ServiceIndex = Store().MustInstall(NewAddOn("SERVICE_INDEX",
 		sd.Configure().WithPrefix(core.GetServiceIndexRootKey("")).
-			WithInitSize(500).WithParser(proto.StringParser)))
+			WithInitSize(500).WithParser(value.StringParser)))
 	ServiceAlias = Store().MustInstall(NewAddOn("SERVICE_ALIAS",
 		sd.Configure().WithPrefix(core.GetServiceAliasRootKey("")).
-			WithInitSize(100).WithParser(proto.StringParser)))
+			WithInitSize(100).WithParser(value.StringParser)))
 	ServiceTag = Store().MustInstall(NewAddOn("SERVICE_TAG",
 		sd.Configure().WithPrefix(core.GetServiceTagRootKey("")).
-			WithInitSize(100).WithParser(proto.MapParser)))
+			WithInitSize(100).WithParser(value.MapParser)))
 	RuleIndex = Store().MustInstall(NewAddOn("RULE_INDEX",
 		sd.Configure().WithPrefix(core.GetServiceRuleIndexRootKey("")).
-			WithInitSize(100).WithParser(proto.StringParser)))
+			WithInitSize(100).WithParser(value.StringParser)))
 	DependencyRule = Store().MustInstall(NewAddOn("DEPENDENCY_RULE",
 		sd.Configure().WithPrefix(core.GetServiceDependencyRuleRootKey("")).
-			WithInitSize(100).WithParser(proto.DependencyRuleParser)))
+			WithInitSize(100).WithParser(value.DependencyRuleParser)))
 	DependencyQueue = Store().MustInstall(NewAddOn("DEPENDENCY_QUEUE",
 		sd.Configure().WithPrefix(core.GetServiceDependencyQueueRootKey("")).
-			WithInitSize(100).WithParser(proto.DependencyQueueParser)))
+			WithInitSize(100).WithParser(value.DependencyQueueParser)))
 	PROJECT = Store().MustInstall(NewAddOn("PROJECT",
 		sd.Configure().WithPrefix(core.GetProjectRootKey("")).
-			WithInitSize(100).WithParser(proto.StringParser)))
+			WithInitSize(100).WithParser(value.StringParser)))
 }

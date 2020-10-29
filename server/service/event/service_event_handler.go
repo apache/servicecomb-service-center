@@ -25,7 +25,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/service/cache"
 	"github.com/apache/servicecomb-service-center/server/service/metrics"
 	"strings"
@@ -71,7 +70,7 @@ func (h *ServiceEventHandler) OnEvent(evt sd.KvEvent) {
 		evt.Type, ms.ServiceId, ms.Environment, ms.AppId, ms.ServiceName, ms.Version)
 
 	// cache
-	providerKey := proto.MicroServiceToKey(domainProject, ms)
+	providerKey := pb.MicroServiceToKey(domainProject, ms)
 	cache.FindInstances.Remove(providerKey)
 }
 

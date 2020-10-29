@@ -22,7 +22,6 @@ import (
 	. "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"testing"
 )
@@ -134,7 +133,7 @@ func TestAppendFindResponse(t *testing.T) {
 	}
 
 	notModifiedResult = nil
-	find.Response = proto.CreateResponse(scerr.ErrInternal, "test")
+	find.Response = pb.CreateResponse(scerr.ErrInternal, "test")
 	AppendFindResponse(ctx, 1, find.Response, find.Instances, &updatedResult, &notModifiedResult, &failedResult)
 	if updatedResult != nil || notModifiedResult != nil || failedResult == nil {
 		t.Fatal("TestAppendFindResponse failed")
@@ -142,7 +141,7 @@ func TestAppendFindResponse(t *testing.T) {
 	if failedResult.Error.Code != scerr.ErrInternal {
 		t.Fatal("TestAppendFindResponse failed")
 	}
-	find.Response = proto.CreateResponse(scerr.ErrInvalidParams, "test")
+	find.Response = pb.CreateResponse(scerr.ErrInvalidParams, "test")
 	AppendFindResponse(ctx, 2, find.Response, find.Instances, &updatedResult, &notModifiedResult, &failedResult)
 	if updatedResult != nil || notModifiedResult != nil || failedResult == nil {
 		t.Fatal("TestAppendFindResponse failed")
@@ -159,7 +158,7 @@ func TestAppendFindResponse(t *testing.T) {
 	cloneCtx = context.WithValue(cloneCtx, util.CtxResponseRevision, "1")
 	AppendFindResponse(cloneCtx, 3, find.Response, find.Instances, &updatedResult, &notModifiedResult, &failedResult)
 	AppendFindResponse(cloneCtx, 4, find.Response, find.Instances, &updatedResult, &notModifiedResult, &failedResult)
-	find.Response = proto.CreateResponse(scerr.ErrInternal, "test")
+	find.Response = pb.CreateResponse(scerr.ErrInternal, "test")
 	AppendFindResponse(ctx, 5, find.Response, find.Instances, &updatedResult, &notModifiedResult, &failedResult)
 	AppendFindResponse(ctx, 6, find.Response, find.Instances, &updatedResult, &notModifiedResult, &failedResult)
 	if updatedResult == nil || notModifiedResult == nil || failedResult == nil {

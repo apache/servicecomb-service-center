@@ -15,8 +15,6 @@
  * limitations under the License.
  */
 
-package types
+package cluster
 
 type Clusters map[string][]string
-
-type EventType string

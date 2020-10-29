@@ -21,9 +21,8 @@ import (
 	"encoding/json"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
+	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/config"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/rest/controller"
 	"github.com/apache/servicecomb-service-center/version"
 	"net/http"
@@ -40,8 +39,8 @@ const APIVersion = "4.0.0"
 
 type Result struct {
 	*version.Set
-	APIVersion string              `json:"apiVersion"`
-	Config     *proto.ServerConfig `json:"config,omitempty"`
+	APIVersion string               `json:"apiVersion"`
+	Config     *config.ServerConfig `json:"config,omitempty"`
 }
 
 type MainService struct {
@@ -70,7 +69,7 @@ func (s *MainService) GetVersion(w http.ResponseWriter, r *http.Request) {
 			&config.ServerInfo.Config,
 		}
 		versionJSONCache, _ = json.Marshal(result)
-		versionResp = proto.CreateResponse(proto.ResponseSuccess, "get version successfully")
+		versionResp = pb.CreateResponse(pb.ResponseSuccess, "get version successfully")
 	})
 	controller.WriteJSONIfSuccess(w, versionResp, versionJSONCache)
 }

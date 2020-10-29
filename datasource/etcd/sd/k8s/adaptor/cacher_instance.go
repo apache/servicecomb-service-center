@@ -20,7 +20,6 @@ import (
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"k8s.io/api/core/v1"
 	"reflect"
 	"strconv"
@@ -110,7 +109,7 @@ func (c *InstanceCacher) onEndpointsEvent(evt K8sEvent) {
 					Status:         pb.MSI_UP,
 					DataCenterInfo: &pb.DataCenterInfo{},
 					Timestamp:      strconv.FormatInt(pod.CreationTimestamp.Unix(), 10),
-					Version:        getLabel(svc.Labels, LabelVersion, proto.VERSION),
+					Version:        getLabel(svc.Labels, LabelVersion, pb.VERSION),
 					Properties: map[string]string{
 						PropNodeIP: pod.Status.HostIP,
 					},

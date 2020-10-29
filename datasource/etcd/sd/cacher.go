@@ -20,7 +20,6 @@ package sd
 import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/registry"
-	"github.com/apache/servicecomb-service-center/pkg/types"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
@@ -39,7 +38,7 @@ func (c *CommonCacher) Cache() CacheReader {
 	return c.cache
 }
 
-func (c *CommonCacher) Notify(action types.EventType, key string, kv *KeyValue) {
+func (c *CommonCacher) Notify(action registry.EventType, key string, kv *KeyValue) {
 	switch action {
 	case registry.EVT_DELETE:
 		c.cache.Remove(key)

@@ -18,10 +18,10 @@ package diagnose
 import (
 	"context"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/value"
+	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
-	"github.com/apache/servicecomb-service-center/pkg/model"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 )
 
@@ -31,13 +31,13 @@ type CompareHolder interface {
 
 type DataStore struct {
 	Data       []*mvccpb.KeyValue
-	DataParser proto.Parser
+	DataParser value.Parser
 }
 
-func (d *DataStore) ForEach(f func(i int, v *model.KV) bool) {
+func (d *DataStore) ForEach(f func(i int, v *dump.KV) bool) {
 	for i, kv := range d.Data {
 		obj, _ := d.DataParser.Unmarshal(kv.Value)
-		if !f(i, &model.KV{Key: string(kv.Key), Rev: kv.ModRevision, Value: obj}) {
+		if !f(i, &dump.KV{Key: string(kv.Key), Rev: kv.ModRevision, Value: obj}) {
 			return
 		}
 	}
@@ -49,14 +49,14 @@ type CompareResult struct {
 }
 
 type abstractCompareHolder struct {
-	Cache        model.Getter
+	Cache        dump.Getter
 	DataStore    *DataStore
-	MismatchFunc func(v *model.KV) string
+	MismatchFunc func(v *dump.KV) string
 }
 
-func (h *abstractCompareHolder) toMap(getter model.Getter) map[string]*model.KV {
-	m := make(map[string]*model.KV)
-	getter.ForEach(func(i int, v *model.KV) bool {
+func (h *abstractCompareHolder) toMap(getter dump.Getter) map[string]*dump.KV {
+	m := make(map[string]*dump.KV)
+	getter.ForEach(func(i int, v *dump.KV) bool {
 		m[v.Key] = v
 		return true
 	})
@@ -67,8 +67,8 @@ func (h *abstractCompareHolder) Compare() *CompareResult {
 	result := &CompareResult{
 		Results: make(map[int][]string),
 	}
-	leftCh := make(chan map[string]*model.KV, 2)
-	rightCh := make(chan map[string]*model.KV, 2)
+	leftCh := make(chan map[string]*dump.KV, 2)
+	rightCh := make(chan map[string]*dump.KV, 2)
 
 	var (
 		add    []string
@@ -128,19 +128,19 @@ func (h *abstractCompareHolder) Compare() *CompareResult {
 
 type ServiceCompareHolder struct {
 	*abstractCompareHolder
-	Cache model.MicroserviceSlice
+	Cache dump.MicroserviceSlice
 	Kvs   []*mvccpb.KeyValue
 }
 
 func (h *ServiceCompareHolder) Compare() *CompareResult {
 	h.abstractCompareHolder = &abstractCompareHolder{
-		Cache: &h.Cache, DataStore: &DataStore{Data: h.Kvs, DataParser: proto.ServiceParser}, MismatchFunc: h.toName,
+		Cache: &h.Cache, DataStore: &DataStore{Data: h.Kvs, DataParser: value.ServiceParser}, MismatchFunc: h.toName,
 	}
 	r := h.abstractCompareHolder.Compare()
 	r.Name = service
 	return r
 }
-func (h *ServiceCompareHolder) toName(kv *model.KV) string {
+func (h *ServiceCompareHolder) toName(kv *dump.KV) string {
 	s, ok := kv.Value.(*pb.MicroService)
 	if !ok {
 		return "unknown"
@@ -150,19 +150,19 @@ func (h *ServiceCompareHolder) toName(kv *model.KV) string {
 
 type InstanceCompareHolder struct {
 	*abstractCompareHolder
-	Cache model.InstanceSlice
+	Cache dump.InstanceSlice
 	Kvs   []*mvccpb.KeyValue
 }
 
 func (h *InstanceCompareHolder) Compare() *CompareResult {
 	h.abstractCompareHolder = &abstractCompareHolder{
-		Cache: &h.Cache, DataStore: &DataStore{Data: h.Kvs, DataParser: proto.InstanceParser}, MismatchFunc: h.toName,
+		Cache: &h.Cache, DataStore: &DataStore{Data: h.Kvs, DataParser: value.InstanceParser}, MismatchFunc: h.toName,
 	}
 	r := h.abstractCompareHolder.Compare()
 	r.Name = instance
 	return r
 }
-func (h *InstanceCompareHolder) toName(kv *model.KV) string {
+func (h *InstanceCompareHolder) toName(kv *dump.KV) string {
 	s, ok := kv.Value.(*pb.MicroServiceInstance)
 	if !ok {
 		return "unknown"

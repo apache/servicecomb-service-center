@@ -18,7 +18,6 @@
 package config
 
 import (
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/go-chassis/go-archaius"
 	util2 "github.com/go-chassis/go-archaius/source/util"
 	"gopkg.in/yaml.v2"
@@ -52,7 +51,7 @@ const (
 //Configurations is kie config items
 var Configurations = &Config{}
 
-var ServerInfo = proto.NewServerInformation()
+var ServerInfo = NewServerInformation()
 
 //GetGov return governance configs
 func GetGov() Gov {
@@ -89,7 +88,7 @@ func Init() {
 
 }
 
-func newInfo() proto.ServerInformation {
+func newInfo() ServerInformation {
 	maxLogFileSize := beego.AppConfig.DefaultInt64("log_rotate_size", 20)
 	if maxLogFileSize <= 0 || maxLogFileSize > 50 {
 		maxLogFileSize = 20
@@ -117,9 +116,9 @@ func newInfo() proto.ServerInformation {
 	accessLogFileFromConfig := beego.AppConfig.DefaultString("access_log_file", "./access.log")
 	accessLogFile := util.GetEnvString("SC_ACCESS_LOG_FILE", accessLogFileFromConfig)
 
-	return proto.ServerInformation{
+	return ServerInformation{
 		Version: InitVersion,
-		Config: proto.ServerConfig{
+		Config: ServerConfig{
 			MaxHeaderBytes: int64(beego.AppConfig.DefaultInt("max_header_bytes", 16384)),
 			MaxBodyBytes:   beego.AppConfig.DefaultInt64("max_body_bytes", 2097152),
 

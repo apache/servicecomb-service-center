@@ -19,7 +19,7 @@ package sd
 
 import (
 	"fmt"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/value"
 	"time"
 )
 
@@ -31,7 +31,7 @@ type Config struct {
 	Period       time.Duration
 	DeferHandler DeferHandler
 	OnEvent      KvEventFunc
-	Parser       proto.Parser
+	Parser       value.Parser
 }
 
 func (cfg *Config) String() string {
@@ -81,7 +81,7 @@ func (cfg *Config) AppendEventFunc(f KvEventFunc) *Config {
 	return cfg
 }
 
-func (cfg *Config) WithParser(parser proto.Parser) *Config {
+func (cfg *Config) WithParser(parser value.Parser) *Config {
 	cfg.Parser = parser
 	return cfg
 }
@@ -92,6 +92,6 @@ func Configure() *Config {
 		Timeout:  DefaultTimeout,
 		Period:   time.Second,
 		InitSize: DefaultCacheInitSize,
-		Parser:   proto.BytesParser,
+		Parser:   value.BytesParser,
 	}
 }

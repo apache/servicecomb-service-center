@@ -24,7 +24,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/astaxie/beego"
 )
 
@@ -86,7 +85,7 @@ func (h *InstanceEventHandler) OnEvent(evt sd.KvEvent) {
 				log.Errorf(err, "GetService[%s] failed", key)
 				return
 			}
-			if core.IsShared(proto.MicroServiceToKey(domainProject, resp.Service)) {
+			if core.IsShared(registry.MicroServiceToKey(domainProject, resp.Service)) {
 				SharedServiceIds.Put(key, struct{}{})
 				return
 			}

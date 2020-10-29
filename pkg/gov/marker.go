@@ -15,29 +15,21 @@
  * limitations under the License.
  */
 
-package model
+package gov
 
-//GovernancePolicy is a unified struct
-//all governance policy must extend this struct
-//Name is the policy name, for example: "rate-limit-payment-api"
-//MD is metadata.
-type GovernancePolicy struct {
-	Name string            `json:"name,omitempty"`
-	MD   map[string]string `json:"metadata,omitempty"`
-}
-
-//LoadBalancer define policy and fault tolerant policy
-type LoadBalancer struct {
+//TrafficMarker marks request, it assign a name to request in runtime
+type TrafficMarker struct {
 	*GovernancePolicy
-	Spec *LBSpec `json:"spec,omitempty"`
+	Spec *MatchSpec `json:"spec,omitempty"`
 }
-type LBSpec struct {
-	MarkerName string         `json:"match"`
-	RetrySame  int            `json:"retrySame,omitempty"`
-	RetryNext  int            `json:"retryNext,omitempty"`
-	Bo         *BackOffPolicy `json:"backoff,omitempty"`
+type MatchSpec struct {
+	MatchPolicies     []*MatchPolicy `json:"matches,omitempty"`
+	TrafficMarkPolicy string         `json:"trafficMarkPolicy,omitempty"`
 }
-type BackOffPolicy struct {
-	InitialInterval int `json:"initInterval"`
-	MaxInterval     int `json:"maxInterval"`
+
+//MatchPolicy specify a request mach policy
+type MatchPolicy struct {
+	Headers  map[string]map[string]string `json:"headers,omitempty"`
+	APIPaths map[string]string            `json:"apiPath,omitempty"`
+	Methods  []string                     `json:"methods,omitempty"`
 }

@@ -20,7 +20,7 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
-	"github.com/apache/servicecomb-service-center/pkg/model"
+	"github.com/apache/servicecomb-service-center/pkg/dump"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"sync"
 	"time"
@@ -109,14 +109,14 @@ func (c *Syncer) Sync(ctx context.Context) {
 	}
 }
 
-func (c *Syncer) check(local *Cacher, remote model.Getter, skipClusters map[string]error) {
+func (c *Syncer) check(local *Cacher, remote dump.Getter, skipClusters map[string]error) {
 	c.checkWithConflictHandleFunc(local, remote, skipClusters, c.skipHandleFunc)
 }
 
-func (c *Syncer) checkWithConflictHandleFunc(local *Cacher, remote model.Getter, skipClusters map[string]error,
-	conflictHandleFunc func(origin *model.KV, conflict model.Getter, index int)) {
-	exists := make(map[string]*model.KV)
-	remote.ForEach(func(i int, v *model.KV) bool {
+func (c *Syncer) checkWithConflictHandleFunc(local *Cacher, remote dump.Getter, skipClusters map[string]error,
+	conflictHandleFunc func(origin *dump.KV, conflict dump.Getter, index int)) {
+	exists := make(map[string]*dump.KV)
+	remote.ForEach(func(i int, v *dump.KV) bool {
 		// because the result of the remote return may contain the same data as
 		// the local cache of the current SC. So we need to ignore it and
 		// prevent the aggregation result from increasing.
@@ -158,7 +158,7 @@ func (c *Syncer) checkWithConflictHandleFunc(local *Cacher, remote model.Getter,
 	var deletes []*sd.KeyValue
 	local.Cache().ForEach(func(key string, v *sd.KeyValue) (next bool) {
 		var exist bool
-		remote.ForEach(func(_ int, v *model.KV) bool {
+		remote.ForEach(func(_ int, v *dump.KV) bool {
 			if v.ClusterName == etcd.Configuration().ClusterName {
 				return true
 			}
@@ -180,13 +180,13 @@ func (c *Syncer) checkWithConflictHandleFunc(local *Cacher, remote model.Getter,
 	}
 }
 
-func (c *Syncer) skipHandleFunc(origin *model.KV, conflict model.Getter, index int) {
+func (c *Syncer) skipHandleFunc(origin *dump.KV, conflict dump.Getter, index int) {
 }
 
-func (c *Syncer) logConflictFunc(origin *model.KV, conflict model.Getter, index int) {
+func (c *Syncer) logConflictFunc(origin *dump.KV, conflict dump.Getter, index int) {
 	switch conflict.(type) {
-	case *model.MicroserviceIndexSlice:
-		slice := conflict.(*model.MicroserviceIndexSlice)
+	case *dump.MicroserviceIndexSlice:
+		slice := conflict.(*dump.MicroserviceIndexSlice)
 		kv := (*slice)[index]
 		if serviceID := origin.Value.(string); kv.Value != serviceID {
 			key := core.GetInfoFromSvcIndexKV(util.StringToBytesWithNoCopy(kv.Key))
@@ -194,8 +194,8 @@ func (c *Syncer) logConflictFunc(origin *model.KV, conflict model.Getter, index 
 				kv.ClusterName, kv.Value, key.Environment, key.AppId, key.ServiceName, key.Version,
 				serviceID, origin.ClusterName)
 		}
-	case *model.MicroserviceAliasSlice:
-		slice := conflict.(*model.MicroserviceAliasSlice)
+	case *dump.MicroserviceAliasSlice:
+		slice := conflict.(*dump.MicroserviceAliasSlice)
 		kv := (*slice)[index]
 		if serviceID := origin.Value.(string); kv.Value != serviceID {
 			key := core.GetInfoFromSvcAliasKV(util.StringToBytesWithNoCopy(kv.Key))

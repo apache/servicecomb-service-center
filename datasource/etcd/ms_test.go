@@ -24,7 +24,6 @@ import (
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"github.com/apache/servicecomb-service-center/server/service"
@@ -75,7 +74,7 @@ func TestService_Register(t *testing.T) {
 		resp, err := datasource.Instance().RegisterService(getContext(), request)
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 	})
 
 	t.Run("register service with same key", func(t *testing.T) {
@@ -96,7 +95,7 @@ func TestService_Register(t *testing.T) {
 		})
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 		sameId := resp.ServiceId
 
 		// serviceName: some-relay-ms-service-name
@@ -156,7 +155,7 @@ func TestService_Register(t *testing.T) {
 		})
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
 		// serviceName: some-relay-ms-service-name
 		// alias: sr1-ms-service-name
@@ -177,7 +176,7 @@ func TestService_Register(t *testing.T) {
 		})
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
 		// serviceName: some-relay-ms-service-name
 		// alias: sr1-ms-service-name
@@ -240,7 +239,7 @@ func TestService_Register(t *testing.T) {
 
 			assert.NotNil(t, resp)
 			assert.NoError(t, err)
-			assert.Equal(t, resp.Response.GetCode(), proto.ResponseSuccess)
+			assert.Equal(t, resp.Response.GetCode(), pb.ResponseSuccess)
 
 			// same serviceId with different service name
 			resp, err = datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
@@ -284,14 +283,14 @@ func TestService_Get(t *testing.T) {
 
 		resp, err := datasource.Instance().RegisterService(getContext(), request)
 		assert.NoError(t, err)
-		assert.Equal(t, resp.Response.GetCode(), proto.ResponseSuccess)
+		assert.Equal(t, resp.Response.GetCode(), pb.ResponseSuccess)
 
 		// search service by serviceID
 		queryResp, err := datasource.Instance().GetService(getContext(), &pb.GetServiceRequest{
 			ServiceId: "ms-service-query-id",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, queryResp.Response.GetCode(), proto.ResponseSuccess)
+		assert.Equal(t, queryResp.Response.GetCode(), pb.ResponseSuccess)
 	})
 
 	t.Run("query a service by a not existed serviceId, should not pass", func(t *testing.T) {
@@ -481,7 +480,7 @@ func TestService_Update(t *testing.T) {
 		})
 		assert.NoError(t, err)
 		assert.NotNil(t, resp)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 		assert.NotEqual(t, "", resp.ServiceId)
 		serviceId = resp.ServiceId
 	})
@@ -500,11 +499,11 @@ func TestService_Update(t *testing.T) {
 		request2.Properties["k"] = "v"
 		resp, err := datasource.Instance().UpdateService(getContext(), request)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
 		resp, err = datasource.Instance().UpdateService(getContext(), request2)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
 		respGetService, err := datasource.Instance().GetService(getContext(), &pb.GetServiceRequest{
 			ServiceId: serviceId,
@@ -523,7 +522,7 @@ func TestService_Update(t *testing.T) {
 		}
 		resp, err := datasource.Instance().UpdateService(getContext(), r)
 		assert.NoError(t, err)
-		assert.NotEqual(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.NotEqual(t, pb.ResponseSuccess, resp.Response.GetCode())
 	})
 
 	t.Run("update service by removing the properties", func(t *testing.T) {
@@ -534,7 +533,7 @@ func TestService_Update(t *testing.T) {
 		}
 		resp, err := datasource.Instance().UpdateService(getContext(), r)
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
 		log.Info("remove properties for service with empty serviceId")
 		r = &pb.UpdateServicePropsRequest{
@@ -543,7 +542,7 @@ func TestService_Update(t *testing.T) {
 		}
 		resp, err = datasource.Instance().UpdateService(getContext(), r)
 		assert.NoError(t, err)
-		assert.NotEqual(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.NotEqual(t, pb.ResponseSuccess, resp.Response.GetCode())
 	})
 }
 
@@ -564,7 +563,7 @@ func TestService_Delete(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreate.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreate.Response.GetCode())
 		serviceContainInstId = respCreate.ServiceId
 
 		log.Info("attach instance")
@@ -580,7 +579,7 @@ func TestService_Delete(t *testing.T) {
 			Instance: instance,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateIns.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateIns.Response.GetCode())
 
 		log.Info("create service without instance")
 		provider := &pb.MicroService{
@@ -594,7 +593,7 @@ func TestService_Delete(t *testing.T) {
 			Service: provider,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreate.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreate.Response.GetCode())
 		serviceNoInstId = respCreate.ServiceId
 
 		respCreate, err = datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
@@ -607,7 +606,7 @@ func TestService_Delete(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreate.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreate.Response.GetCode())
 	})
 
 	t.Run("delete a service which contains instances with no force flag", func(t *testing.T) {
@@ -617,7 +616,7 @@ func TestService_Delete(t *testing.T) {
 			Force:     false,
 		})
 		assert.NoError(t, err)
-		assert.NotEqual(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.NotEqual(t, pb.ResponseSuccess, resp.Response.GetCode())
 	})
 
 	t.Run("delete a service which contains instances with force flag", func(t *testing.T) {
@@ -627,7 +626,7 @@ func TestService_Delete(t *testing.T) {
 			Force:     true,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 	})
 
 	// todo: add delete service depended by consumer after finishing dependency management
@@ -639,7 +638,7 @@ func TestService_Delete(t *testing.T) {
 			Force:     true,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 	})
 
 	t.Run("delete a service with no force flag", func(t *testing.T) {
@@ -649,7 +648,7 @@ func TestService_Delete(t *testing.T) {
 			Force:     false,
 		})
 		assert.NoError(t, err)
-		assert.NotEqual(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.NotEqual(t, pb.ResponseSuccess, resp.Response.GetCode())
 	})
 }
 
@@ -660,32 +659,32 @@ func TestService_Info(t *testing.T) {
 			Options: []string{"all"},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
 		resp, err = datasource.Instance().GetServicesInfo(getContext(), &pb.GetServicesInfoRequest{
 			Options: []string{""},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
 		resp, err = datasource.Instance().GetServicesInfo(getContext(), &pb.GetServicesInfoRequest{
 			Options: []string{"tags", "rules", "instances", "schemas", "statistics"},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
 		resp, err = datasource.Instance().GetServicesInfo(getContext(), &pb.GetServicesInfoRequest{
 			Options: []string{"statistics"},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
 		resp, err = datasource.Instance().GetServicesInfo(getContext(), &pb.GetServicesInfoRequest{
 			Options:   []string{"instances"},
 			CountOnly: true,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 	})
 }
 
@@ -706,7 +705,7 @@ func TestService_Detail(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 		serviceId = resp.ServiceId
 
 		datasource.Instance().ModifySchema(getContext(), &pb.ModifySchemaRequest{
@@ -715,7 +714,7 @@ func TestService_Detail(t *testing.T) {
 			Schema:    "detail",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
 		datasource.Instance().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
 			Instance: &pb.MicroServiceInstance{
@@ -728,34 +727,34 @@ func TestService_Detail(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
 		log.Info("when get invalid service detail, should be failed")
 		respD, err := datasource.Instance().GetServiceDetail(getContext(), &pb.GetServiceRequest{
 			ServiceId: "",
 		})
 		assert.NoError(t, err)
-		assert.NotEqual(t, proto.ResponseSuccess, respD.Response.GetCode())
+		assert.NotEqual(t, pb.ResponseSuccess, respD.Response.GetCode())
 
 		log.Info("when get a service detail, should be passed")
 		respGetServiceDetail, err := datasource.Instance().GetServiceDetail(getContext(), &pb.GetServiceRequest{
 			ServiceId: serviceId,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respGetServiceDetail.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respGetServiceDetail.Response.GetCode())
 
 		respDelete, err := datasource.Instance().UnregisterService(getContext(), &pb.DeleteServiceRequest{
 			ServiceId: serviceId,
 			Force:     true,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respDelete.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respDelete.Response.GetCode())
 
 		respGetServiceDetail, err = datasource.Instance().GetServiceDetail(getContext(), &pb.GetServiceRequest{
 			ServiceId: serviceId,
 		})
 		assert.NoError(t, err)
-		assert.NotEqual(t, proto.ResponseSuccess, respGetServiceDetail.Response.GetCode())
+		assert.NotEqual(t, pb.ResponseSuccess, respGetServiceDetail.Response.GetCode())
 	})
 }
 
@@ -764,13 +763,13 @@ func TestApplication_Get(t *testing.T) {
 		log.Info("when request is valid, should be passed")
 		resp, err := datasource.Instance().GetApplications(getContext(), &pb.GetAppsRequest{})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
 		resp, err = datasource.Instance().GetApplications(getContext(), &pb.GetAppsRequest{
 			Environment: pb.ENV_ACCEPT,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 	})
 }
 
@@ -789,7 +788,7 @@ func TestInstance_Create(t *testing.T) {
 		})
 
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateService.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceId = respCreateService.ServiceId
 	})
 
@@ -805,7 +804,7 @@ func TestInstance_Create(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateInst.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateInst.Response.GetCode())
 		assert.NotEqual(t, "", respCreateInst.InstanceId)
 
 		respCreateInst, err = datasource.Instance().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
@@ -820,7 +819,7 @@ func TestInstance_Create(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateInst.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateInst.Response.GetCode())
 		assert.Equal(t, "customId_ms", respCreateInst.InstanceId)
 	})
 
@@ -837,13 +836,13 @@ func TestInstance_Create(t *testing.T) {
 			Instance: instance,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
 		resp, err = datasource.Instance().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
 			Instance: instance,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 		assert.Equal(t, instance.InstanceId, resp.InstanceId)
 	})
 }
@@ -867,7 +866,7 @@ func TestInstance_HeartBeat(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateService.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceId = respCreateService.ServiceId
 
 		respCreateInstance, err := datasource.Instance().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
@@ -881,7 +880,7 @@ func TestInstance_HeartBeat(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateInstance.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateInstance.Response.GetCode())
 		instanceId1 = respCreateInstance.InstanceId
 
 		respCreateInstance, err = datasource.Instance().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
@@ -895,7 +894,7 @@ func TestInstance_HeartBeat(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateInstance.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateInstance.Response.GetCode())
 		instanceId2 = respCreateInstance.InstanceId
 	})
 
@@ -906,7 +905,7 @@ func TestInstance_HeartBeat(t *testing.T) {
 			InstanceId: instanceId1,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
 		log.Info("serviceId does not exist")
 		resp, err = datasource.Instance().Heartbeat(getContext(), &pb.HeartbeatRequest{
@@ -914,7 +913,7 @@ func TestInstance_HeartBeat(t *testing.T) {
 			InstanceId: instanceId1,
 		})
 		assert.NoError(t, err)
-		assert.NotEqual(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.NotEqual(t, pb.ResponseSuccess, resp.Response.GetCode())
 
 		log.Info("instance does not exist")
 		resp, err = datasource.Instance().Heartbeat(getContext(), &pb.HeartbeatRequest{
@@ -922,7 +921,7 @@ func TestInstance_HeartBeat(t *testing.T) {
 			InstanceId: "not-exist-ins",
 		})
 		assert.NoError(t, err)
-		assert.NotEqual(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.NotEqual(t, pb.ResponseSuccess, resp.Response.GetCode())
 	})
 
 	t.Run("batch update lease", func(t *testing.T) {
@@ -940,7 +939,7 @@ func TestInstance_HeartBeat(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 	})
 }
 
@@ -962,7 +961,7 @@ func TestInstance_Update(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateService.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceId = respCreateService.ServiceId
 
 		log.Info("create instance")
@@ -978,7 +977,7 @@ func TestInstance_Update(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateInstance.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateInstance.Response.GetCode())
 		instanceId = respCreateInstance.InstanceId
 	})
 
@@ -990,7 +989,7 @@ func TestInstance_Update(t *testing.T) {
 			Status:     pb.MSI_DOWN,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respUpdateStatus.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respUpdateStatus.Response.GetCode())
 
 		log.Info("update instance status to OUTOFSERVICE")
 		respUpdateStatus, err = datasource.Instance().UpdateInstanceStatus(getContext(), &pb.UpdateInstanceStatusRequest{
@@ -999,7 +998,7 @@ func TestInstance_Update(t *testing.T) {
 			Status:     pb.MSI_OUTOFSERVICE,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respUpdateStatus.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respUpdateStatus.Response.GetCode())
 
 		log.Info("update instance status to STARTING")
 		respUpdateStatus, err = datasource.Instance().UpdateInstanceStatus(getContext(), &pb.UpdateInstanceStatusRequest{
@@ -1008,7 +1007,7 @@ func TestInstance_Update(t *testing.T) {
 			Status:     pb.MSI_STARTING,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respUpdateStatus.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respUpdateStatus.Response.GetCode())
 
 		log.Info("update instance status to TESTING")
 		respUpdateStatus, err = datasource.Instance().UpdateInstanceStatus(getContext(), &pb.UpdateInstanceStatusRequest{
@@ -1017,7 +1016,7 @@ func TestInstance_Update(t *testing.T) {
 			Status:     pb.MSI_TESTING,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respUpdateStatus.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respUpdateStatus.Response.GetCode())
 
 		log.Info("update instance status to UP")
 		respUpdateStatus, err = datasource.Instance().UpdateInstanceStatus(getContext(), &pb.UpdateInstanceStatusRequest{
@@ -1026,7 +1025,7 @@ func TestInstance_Update(t *testing.T) {
 			Status:     pb.MSI_UP,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respUpdateStatus.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respUpdateStatus.Response.GetCode())
 
 		log.Info("update instance status with a not exist instance")
 		respUpdateStatus, err = datasource.Instance().UpdateInstanceStatus(getContext(), &pb.UpdateInstanceStatusRequest{
@@ -1035,7 +1034,7 @@ func TestInstance_Update(t *testing.T) {
 			Status:     pb.MSI_STARTING,
 		})
 		assert.NoError(t, err)
-		assert.NotEqual(t, proto.ResponseSuccess, respUpdateStatus.Response.GetCode())
+		assert.NotEqual(t, pb.ResponseSuccess, respUpdateStatus.Response.GetCode())
 	})
 
 	t.Run("update instance properties", func(t *testing.T) {
@@ -1049,7 +1048,7 @@ func TestInstance_Update(t *testing.T) {
 				},
 			})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respUpdateProperties.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respUpdateProperties.Response.GetCode())
 
 		log.Info("all max properties updated")
 		size := 1000
@@ -1065,7 +1064,7 @@ func TestInstance_Update(t *testing.T) {
 				Properties: properties,
 			})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respUpdateProperties.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respUpdateProperties.Response.GetCode())
 
 		log.Info("update instance that does not exist")
 		respUpdateProperties, err = datasource.Instance().UpdateInstanceProperties(getContext(),
@@ -1077,7 +1076,7 @@ func TestInstance_Update(t *testing.T) {
 				},
 			})
 		assert.NoError(t, err)
-		assert.NotEqual(t, proto.ResponseSuccess, respUpdateProperties.Response.GetCode())
+		assert.NotEqual(t, pb.ResponseSuccess, respUpdateProperties.Response.GetCode())
 
 		log.Info("remove properties")
 		respUpdateProperties, err = datasource.Instance().UpdateInstanceProperties(getContext(),
@@ -1086,7 +1085,7 @@ func TestInstance_Update(t *testing.T) {
 				InstanceId: instanceId,
 			})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respUpdateProperties.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respUpdateProperties.Response.GetCode())
 
 		log.Info("update service that does not exist")
 		respUpdateProperties, err = datasource.Instance().UpdateInstanceProperties(getContext(),
@@ -1098,7 +1097,7 @@ func TestInstance_Update(t *testing.T) {
 				},
 			})
 		assert.NoError(t, err)
-		assert.NotEqual(t, proto.ResponseSuccess, respUpdateProperties.Response.GetCode())
+		assert.NotEqual(t, pb.ResponseSuccess, respUpdateProperties.Response.GetCode())
 	})
 }
 
@@ -1132,7 +1131,7 @@ func TestInstance_Query(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateService.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceId1 = respCreateService.ServiceId
 
 		respCreateService, err = datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
@@ -1145,7 +1144,7 @@ func TestInstance_Query(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateService.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceId2 = respCreateService.ServiceId
 
 		respCreateService, err = datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
@@ -1158,7 +1157,7 @@ func TestInstance_Query(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateService.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceId3 = respCreateService.ServiceId
 
 		respCreateService, err = datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
@@ -1172,7 +1171,7 @@ func TestInstance_Query(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateService.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceId4 = respCreateService.ServiceId
 
 		respCreateService, err = datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
@@ -1184,12 +1183,12 @@ func TestInstance_Query(t *testing.T) {
 				Level:       "FRONT",
 				Status:      pb.MS_UP,
 				Properties: map[string]string{
-					proto.PropAllowCrossApp: "true",
+					pb.PropAllowCrossApp: "true",
 				},
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateService.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceId5 = respCreateService.ServiceId
 
 		respCreateService, err = datasource.Instance().RegisterService(
@@ -1204,7 +1203,7 @@ func TestInstance_Query(t *testing.T) {
 				},
 			})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateService.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceId6 = respCreateService.ServiceId
 
 		respCreateService, err = datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
@@ -1217,7 +1216,7 @@ func TestInstance_Query(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateService.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceId7 = respCreateService.ServiceId
 
 		respCreateService, err = datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
@@ -1230,7 +1229,7 @@ func TestInstance_Query(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateService.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceId8 = respCreateService.ServiceId
 
 		respCreateService, err = datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
@@ -1243,7 +1242,7 @@ func TestInstance_Query(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateService.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceId9 = respCreateService.ServiceId
 
 		respCreateInstance, err := datasource.Instance().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
@@ -1257,7 +1256,7 @@ func TestInstance_Query(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateInstance.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateInstance.Response.GetCode())
 		instanceId1 = respCreateInstance.InstanceId
 
 		respCreateInstance, err = datasource.Instance().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
@@ -1271,7 +1270,7 @@ func TestInstance_Query(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateInstance.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateInstance.Response.GetCode())
 		instanceId2 = respCreateInstance.InstanceId
 
 		respCreateInstance, err = datasource.Instance().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
@@ -1285,7 +1284,7 @@ func TestInstance_Query(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateInstance.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateInstance.Response.GetCode())
 		instanceId4 = respCreateInstance.InstanceId
 
 		respCreateInstance, err = datasource.Instance().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
@@ -1299,7 +1298,7 @@ func TestInstance_Query(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateInstance.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateInstance.Response.GetCode())
 		instanceId5 = respCreateInstance.InstanceId
 
 		respCreateInstance, err = datasource.Instance().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
@@ -1313,7 +1312,7 @@ func TestInstance_Query(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateInstance.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateInstance.Response.GetCode())
 		instanceId8 = respCreateInstance.InstanceId
 
 		respCreateInstance, err = datasource.Instance().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
@@ -1327,7 +1326,7 @@ func TestInstance_Query(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateInstance.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateInstance.Response.GetCode())
 		instanceId9 = respCreateInstance.InstanceId
 	})
 
@@ -1340,7 +1339,7 @@ func TestInstance_Query(t *testing.T) {
 			VersionRule:       "latest",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respFind.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
 		assert.Equal(t, instanceId2, respFind.Instances[0].InstanceId)
 
 		respFind, err = datasource.Instance().FindInstances(getContext(), &pb.FindInstancesRequest{
@@ -1351,7 +1350,7 @@ func TestInstance_Query(t *testing.T) {
 			Tags:              []string{},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respFind.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
 		assert.Equal(t, instanceId2, respFind.Instances[0].InstanceId)
 
 		respFind, err = datasource.Instance().FindInstances(getContext(), &pb.FindInstancesRequest{
@@ -1361,7 +1360,7 @@ func TestInstance_Query(t *testing.T) {
 			VersionRule:       "1.0.0",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respFind.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
 		assert.Equal(t, instanceId1, respFind.Instances[0].InstanceId)
 
 		respFind, err = datasource.Instance().FindInstances(getContext(), &pb.FindInstancesRequest{
@@ -1381,7 +1380,7 @@ func TestInstance_Query(t *testing.T) {
 			VersionRule:       "1.0.0",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respFind.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
 		assert.Equal(t, 1, len(respFind.Instances))
 		assert.Equal(t, instanceId4, respFind.Instances[0].InstanceId)
 
@@ -1392,7 +1391,7 @@ func TestInstance_Query(t *testing.T) {
 			VersionRule: "1.0.0",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respFind.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
 		assert.Equal(t, 1, len(respFind.Instances))
 		assert.Equal(t, instanceId4, respFind.Instances[0].InstanceId)
 
@@ -1405,7 +1404,7 @@ func TestInstance_Query(t *testing.T) {
 			VersionRule:       "1.0.0",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respFind.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
 		rev, _ := ctx.Value(util.CtxResponseRevision).(string)
 		assert.Equal(t, instanceId8, respFind.Instances[0].InstanceId)
 		assert.NotEqual(t, 0, len(rev))
@@ -1418,7 +1417,7 @@ func TestInstance_Query(t *testing.T) {
 			VersionRule:       "1.0.0",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respFind.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
 		assert.Equal(t, instanceId8, respFind.Instances[0].InstanceId)
 		assert.Equal(t, ctx.Value(util.CtxResponseRevision), rev)
 
@@ -1430,7 +1429,7 @@ func TestInstance_Query(t *testing.T) {
 			VersionRule:       "1.0.5",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respFind.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
 		assert.Equal(t, 0, len(respFind.Instances))
 
 		log.Info("provider tag does not exist")
@@ -1442,7 +1441,7 @@ func TestInstance_Query(t *testing.T) {
 			Tags:              []string{"not_exist_tag"},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respFind.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
 		assert.Equal(t, 0, len(respFind.Instances))
 
 		log.Info("shared service discovery")
@@ -1460,7 +1459,7 @@ func TestInstance_Query(t *testing.T) {
 				VersionRule:       "1.0.0",
 			})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respFind.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
 		assert.Equal(t, 1, len(respFind.Instances))
 		assert.Equal(t, instanceId5, respFind.Instances[0].InstanceId)
 
@@ -1471,7 +1470,7 @@ func TestInstance_Query(t *testing.T) {
 			VersionRule:       "1.0.0",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respFind.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
 		assert.Equal(t, 1, len(respFind.Instances))
 		assert.Equal(t, instanceId5, respFind.Instances[0].InstanceId)
 
@@ -1510,7 +1509,7 @@ func TestInstance_Query(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respFind.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
 		assert.Equal(t, int64(0), respFind.Services.Updated[0].Index)
 		assert.Equal(t, instanceId2, respFind.Services.Updated[0].Instances[0].InstanceId)
 		assert.Equal(t, int64(1), respFind.Services.Updated[1].Index)
@@ -1532,7 +1531,7 @@ func TestInstance_Query(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respFind.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
 		assert.Equal(t, 1, len(respFind.Services.Updated[0].Instances))
 		assert.Equal(t, instanceId4, respFind.Services.Updated[0].Instances[0].InstanceId)
 
@@ -1572,7 +1571,7 @@ func TestInstance_Query(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respFind.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
 		rev := respFind.Services.Updated[0].Rev
 		assert.Equal(t, int64(0), respFind.Services.Updated[0].Index)
 		assert.Equal(t, int64(1), respFind.Services.Updated[1].Index)
@@ -1609,7 +1608,7 @@ func TestInstance_Query(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respFind.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
 		assert.Equal(t, instanceId8, respFind.Services.Updated[0].Instances[0].InstanceId)
 		assert.Equal(t, respFind.Services.Updated[0].Rev, rev)
 		assert.Equal(t, instanceId9, respFind.Instances.Updated[0].Instances[0].InstanceId)
@@ -1638,7 +1637,7 @@ func TestInstance_Query(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respFind.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
 		assert.Equal(t, int64(0), respFind.Services.NotModified[0])
 		assert.Equal(t, int64(0), respFind.Instances.NotModified[0])
 
@@ -1656,7 +1655,7 @@ func TestInstance_Query(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respFind.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
 		assert.Equal(t, 0, len(respFind.Services.Updated[0].Instances))
 
 		log.Info("shared service discovery")
@@ -1680,7 +1679,7 @@ func TestInstance_Query(t *testing.T) {
 				},
 			})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respFind.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
 		assert.Equal(t, 1, len(respFind.Services.Updated[0].Instances))
 		assert.Equal(t, instanceId5, respFind.Services.Updated[0].Instances[0].InstanceId)
 
@@ -1697,7 +1696,7 @@ func TestInstance_Query(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respFind.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
 		assert.Equal(t, 1, len(respFind.Services.Updated[0].Instances))
 		assert.Equal(t, instanceId5, respFind.Services.Updated[0].Instances[0].InstanceId)
 
@@ -1716,7 +1715,7 @@ func TestInstance_Query(t *testing.T) {
 				},
 			})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respFind.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
 		assert.Equal(t, scerr.ErrServiceNotExists, respFind.Instances.Failed[0].Error.Code)
 
 		respFind, err = datasource.Instance().BatchFind(getContext(), &pb.BatchFindInstancesRequest{
@@ -1731,7 +1730,7 @@ func TestInstance_Query(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respFind.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
 		assert.Equal(t, 1, len(respFind.Instances.Updated[0].Instances))
 		assert.Equal(t, instanceId5, respFind.Instances.Updated[0].Instances[0].InstanceId)
 
@@ -1751,7 +1750,7 @@ func TestInstance_Query(t *testing.T) {
 
 		UTFunc(serviceId3, scerr.ErrServiceNotExists)
 
-		UTFunc(serviceId1, proto.ResponseSuccess)
+		UTFunc(serviceId1, pb.ResponseSuccess)
 
 		log.Info("diff env")
 		respFind, err := datasource.Instance().GetInstances(getContext(), &pb.GetInstancesRequest{
@@ -1759,7 +1758,7 @@ func TestInstance_Query(t *testing.T) {
 			ProviderServiceId: serviceId2,
 		})
 		assert.NoError(t, err)
-		assert.NotEqual(t, proto.ResponseSuccess, respFind.Response.GetCode())
+		assert.NotEqual(t, pb.ResponseSuccess, respFind.Response.GetCode())
 	})
 }
 
@@ -1782,7 +1781,7 @@ func TestInstance_GetOne(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateService.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceId1 = respCreateService.ServiceId
 
 		respCreateService, err = datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
@@ -1795,7 +1794,7 @@ func TestInstance_GetOne(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateService.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceId2 = respCreateService.ServiceId
 
 		respCreateInstance, err := datasource.Instance().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
@@ -1809,7 +1808,7 @@ func TestInstance_GetOne(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateService.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		instanceId2 = respCreateInstance.InstanceId
 
 		respCreateService, err = datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
@@ -1822,7 +1821,7 @@ func TestInstance_GetOne(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateService.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceId3 = respCreateService.ServiceId
 	})
 
@@ -1834,7 +1833,7 @@ func TestInstance_GetOne(t *testing.T) {
 			ProviderInstanceId: instanceId2,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
 		log.Info("consumer does not exist")
 		resp, err = datasource.Instance().GetInstance(getContext(), &pb.GetOneInstanceRequest{
@@ -1843,7 +1842,7 @@ func TestInstance_GetOne(t *testing.T) {
 			ProviderInstanceId: instanceId2,
 		})
 		assert.NoError(t, err)
-		assert.NotEqual(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.NotEqual(t, pb.ResponseSuccess, resp.Response.GetCode())
 	})
 
 	t.Run("get between diff apps", func(t *testing.T) {
@@ -1860,7 +1859,7 @@ func TestInstance_GetOne(t *testing.T) {
 			ProviderServiceId: serviceId2,
 		})
 		assert.NoError(t, err)
-		assert.NotEqual(t, proto.ResponseSuccess, respAll.Response.GetCode())
+		assert.NotEqual(t, pb.ResponseSuccess, respAll.Response.GetCode())
 	})
 
 	t.Run("get instances when request is invalid", func(t *testing.T) {
@@ -1870,7 +1869,7 @@ func TestInstance_GetOne(t *testing.T) {
 			ProviderServiceId: serviceId2,
 		})
 		assert.NoError(t, err)
-		assert.NotEqual(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.NotEqual(t, pb.ResponseSuccess, resp.Response.GetCode())
 
 		log.Info("consumer does not exist")
 		resp, err = datasource.Instance().GetInstances(getContext(), &pb.GetInstancesRequest{
@@ -1878,7 +1877,7 @@ func TestInstance_GetOne(t *testing.T) {
 			ProviderServiceId: serviceId2,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 	})
 }
 
@@ -1902,7 +1901,7 @@ func TestInstance_Unregister(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateService.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceId = respCreateService.ServiceId
 
 		respCreateInstance, err := datasource.Instance().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
@@ -1916,7 +1915,7 @@ func TestInstance_Unregister(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateInstance.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateInstance.Response.GetCode())
 		instanceId = respCreateInstance.InstanceId
 	})
 
@@ -1926,7 +1925,7 @@ func TestInstance_Unregister(t *testing.T) {
 			InstanceId: instanceId,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 	})
 
 	t.Run("unregister instance when request is invalid", func(t *testing.T) {
@@ -1936,7 +1935,7 @@ func TestInstance_Unregister(t *testing.T) {
 			InstanceId: instanceId,
 		})
 		assert.NoError(t, err)
-		assert.NotEqual(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.NotEqual(t, pb.ResponseSuccess, resp.Response.GetCode())
 
 		log.Info("instance id does not exist")
 		resp, err = datasource.Instance().UnregisterInstance(getContext(), &pb.UnregisterInstanceRequest{
@@ -1944,7 +1943,7 @@ func TestInstance_Unregister(t *testing.T) {
 			InstanceId: "not-exist-id-ms",
 		})
 		assert.NoError(t, err)
-		assert.NotEqual(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.NotEqual(t, pb.ResponseSuccess, resp.Response.GetCode())
 	})
 }
 
@@ -1967,7 +1966,7 @@ func TestSchema_Create(t *testing.T) {
 		})
 		assert.NoError(t, err)
 		assert.NotEqual(t, "", resp.ServiceId)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 		serviceIdDev = resp.ServiceId
 
 		resp, err = datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
@@ -1982,7 +1981,7 @@ func TestSchema_Create(t *testing.T) {
 		})
 		assert.NoError(t, err)
 		assert.NotEqual(t, "", resp.ServiceId)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 	})
 
 	t.Run("create schemas out of gauge", func(t *testing.T) {
@@ -2015,7 +2014,7 @@ func TestSchema_Create(t *testing.T) {
 			Schemas:   schemas[:quota.DefaultSchemaQuota],
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
 		log.Info("should be failed in production env")
 		resp, err = datasource.Instance().ModifySchemas(getContext(), &pb.ModifySchemasRequest{
@@ -2044,7 +2043,7 @@ func TestSchema_Create(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 		serviceIdDev1 = resp.ServiceId
 
 		resp, err = datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
@@ -2061,7 +2060,7 @@ func TestSchema_Create(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 		serviceIdDev2 = resp.ServiceId
 
 		log.Info("create schemas with service schemaId set is empty")
@@ -2082,7 +2081,7 @@ func TestSchema_Create(t *testing.T) {
 			Schemas:   schemas,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateSchema.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateSchema.Response.GetCode())
 
 		// todo: test GetAllSchemaInfo interface refers to schema_test line 342
 
@@ -2112,14 +2111,14 @@ func TestSchema_Create(t *testing.T) {
 			Schemas:   schemas,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateSchema.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateSchema.Response.GetCode())
 
 		log.Info("query service by serviceID to obtain schema info")
 		respGetService, err := datasource.Instance().GetService(getContext(), &pb.GetServiceRequest{
 			ServiceId: serviceIdDev1,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respGetService.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respGetService.Response.GetCode())
 		assert.Equal(t, []string{"second_schemaId_service_ms"}, respGetService.Service.Schemas)
 
 		log.Info("add new schemaId not exist in service's schemaId list")
@@ -2135,13 +2134,13 @@ func TestSchema_Create(t *testing.T) {
 			Schemas:   schemas,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateSchema.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateSchema.Response.GetCode())
 
 		respGetService, err = datasource.Instance().GetService(getContext(), &pb.GetServiceRequest{
 			ServiceId: serviceIdDev2,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respGetService.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respGetService.Response.GetCode())
 		assert.Equal(t, []string{"second_schemaId_service_ms"}, respGetService.Service.Schemas)
 	})
 
@@ -2163,7 +2162,7 @@ func TestSchema_Create(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateService.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceIdPro1 = respCreateService.ServiceId
 
 		respCreateService, err = datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
@@ -2181,7 +2180,7 @@ func TestSchema_Create(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateService.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceIdPro2 = respCreateService.ServiceId
 
 		log.Info("add schemas to service whose schemaId set is empty")
@@ -2202,12 +2201,12 @@ func TestSchema_Create(t *testing.T) {
 			Schemas:   schemas,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respModifySchemas.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respModifySchemas.Response.GetCode())
 		respGetService, err := datasource.Instance().GetService(getContext(), &pb.GetServiceRequest{
 			ServiceId: serviceIdPro1,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respGetService.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respGetService.Response.GetCode())
 		assert.Equal(t, []string{"first_schemaId_service_ms"}, respGetService.Service.Schemas)
 
 		// todo: finish ut after implementing GetAllSchemaInfo, refer to schema_test.go line. 496
@@ -2218,7 +2217,7 @@ func TestSchema_Create(t *testing.T) {
 			Schemas:   schemas,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respModifySchemas.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respModifySchemas.Response.GetCode())
 
 		log.Info("add schemas, non-exist schemaId")
 		schemas = []*pb.Schema{
@@ -2242,7 +2241,7 @@ func TestSchema_Create(t *testing.T) {
 			Schema:    "first_schema_service_ms",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respModifySchema.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respModifySchema.Response.GetCode())
 
 		log.Info("add schemas when summary in database is empty")
 		schemas = []*pb.Schema{
@@ -2257,7 +2256,7 @@ func TestSchema_Create(t *testing.T) {
 			Schemas:   schemas,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respModifySchemas.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respModifySchemas.Response.GetCode())
 		respExist, err := datasource.Instance().ExistSchema(getContext(), &pb.GetExistenceRequest{
 			Type:      service.ExistTypeSchema,
 			ServiceId: serviceIdPro2,
@@ -2271,7 +2270,7 @@ func TestSchema_Create(t *testing.T) {
 			Schemas:   schemas,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respModifySchemas.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respModifySchemas.Response.GetCode())
 	})
 
 	t.Run("create a schema in dev env", func(t *testing.T) {
@@ -2292,7 +2291,7 @@ func TestSchema_Create(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateService.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceIdDev1 = respCreateService.ServiceId
 
 		respCreateService, err = datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
@@ -2309,7 +2308,7 @@ func TestSchema_Create(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateService.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceIdDev2 = respCreateService.ServiceId
 
 		log.Info("create a schema for service whose schemaID is empty")
@@ -2319,7 +2318,7 @@ func TestSchema_Create(t *testing.T) {
 			Schema:    "first_schema_service_ms",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respModifySchema.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respModifySchema.Response.GetCode())
 
 		log.Info("create schema for the service whose schemaId already exist")
 		respModifySchema, err = datasource.Instance().ModifySchema(getContext(), &pb.ModifySchemaRequest{
@@ -2328,7 +2327,7 @@ func TestSchema_Create(t *testing.T) {
 			Schema:    "first_schema_service_ms",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respModifySchema.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respModifySchema.Response.GetCode())
 
 		log.Info("create schema for the service whose schema summary is empty")
 		respModifySchema, err = datasource.Instance().ModifySchema(getContext(), &pb.ModifySchemaRequest{
@@ -2338,7 +2337,7 @@ func TestSchema_Create(t *testing.T) {
 			Summary:   "first0summary1change_service_ms",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respModifySchema.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respModifySchema.Response.GetCode())
 
 		log.Info("create schema for the service whose schema summary already exist")
 		respModifySchema, err = datasource.Instance().ModifySchema(getContext(), &pb.ModifySchemaRequest{
@@ -2348,7 +2347,7 @@ func TestSchema_Create(t *testing.T) {
 			Summary:   "first0summary_service_ms",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respModifySchema.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respModifySchema.Response.GetCode())
 
 		log.Info("add schema")
 		respModifySchema, err = datasource.Instance().ModifySchema(getContext(), &pb.ModifySchemaRequest{
@@ -2357,7 +2356,7 @@ func TestSchema_Create(t *testing.T) {
 			Schema:    "second_schema_service_ms",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respModifySchema.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respModifySchema.Response.GetCode())
 
 	})
 
@@ -2379,7 +2378,7 @@ func TestSchema_Create(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateService.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceIdPro1 = respCreateService.ServiceId
 
 		respCreateService, err = datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
@@ -2397,7 +2396,7 @@ func TestSchema_Create(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateService.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceIdPro2 = respCreateService.ServiceId
 
 		log.Info("create a schema for service whose schemaID is empty")
@@ -2407,7 +2406,7 @@ func TestSchema_Create(t *testing.T) {
 			Schema:    "first_schema_service_ms",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respModifySchema.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respModifySchema.Response.GetCode())
 
 		log.Info("modify schema for the service whose schema summary is empty")
 		respModifySchema, err = datasource.Instance().ModifySchema(getContext(), &pb.ModifySchemaRequest{
@@ -2417,7 +2416,7 @@ func TestSchema_Create(t *testing.T) {
 			Summary:   "first0summary1change_service_ms",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respModifySchema.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respModifySchema.Response.GetCode())
 
 		log.Info("modify schema for the service whose schema summary already exist")
 		respModifySchema, err = datasource.Instance().ModifySchema(getContext(), &pb.ModifySchemaRequest{
@@ -2427,7 +2426,7 @@ func TestSchema_Create(t *testing.T) {
 			Summary:   "first0summary_service_ms",
 		})
 		assert.NoError(t, err)
-		assert.NotEqual(t, proto.ResponseSuccess, respModifySchema.Response.GetCode())
+		assert.NotEqual(t, pb.ResponseSuccess, respModifySchema.Response.GetCode())
 
 		log.Info("add schema")
 		respModifySchema, err = datasource.Instance().ModifySchema(getContext(), &pb.ModifySchemaRequest{
@@ -2436,7 +2435,7 @@ func TestSchema_Create(t *testing.T) {
 			Schema:    "second_schema_service_ms",
 		})
 		assert.NoError(t, err)
-		assert.NotEqual(t, proto.ResponseSuccess, respModifySchema.Response.GetCode())
+		assert.NotEqual(t, pb.ResponseSuccess, respModifySchema.Response.GetCode())
 
 		log.Info("modify schema for the service whose schemaId already exist")
 		respModifySchema, err = datasource.Instance().ModifySchema(getContext(), &pb.ModifySchemaRequest{
@@ -2445,7 +2444,7 @@ func TestSchema_Create(t *testing.T) {
 			Schema:    "first_schema_service_ms",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respModifySchema.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respModifySchema.Response.GetCode())
 
 	})
 
@@ -2466,7 +2465,7 @@ func TestSchema_Create(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateService.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceIdPro1 = respCreateService.ServiceId
 
 		respCreateService, err = datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
@@ -2483,7 +2482,7 @@ func TestSchema_Create(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateService.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceIdPro2 = respCreateService.ServiceId
 
 		log.Info("create a schema for service whose schemaID is empty")
@@ -2493,7 +2492,7 @@ func TestSchema_Create(t *testing.T) {
 			Schema:    "first_schema_service_ms",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respModifySchema.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respModifySchema.Response.GetCode())
 
 		log.Info("modify schema for the service whose schema summary is empty")
 		respModifySchema, err = datasource.Instance().ModifySchema(getContext(), &pb.ModifySchemaRequest{
@@ -2503,7 +2502,7 @@ func TestSchema_Create(t *testing.T) {
 			Summary:   "first0summary1change_service_ms",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respModifySchema.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respModifySchema.Response.GetCode())
 
 		log.Info("modify schema for the service whose schema summary already exist")
 		respModifySchema, err = datasource.Instance().ModifySchema(getContext(), &pb.ModifySchemaRequest{
@@ -2513,7 +2512,7 @@ func TestSchema_Create(t *testing.T) {
 			Summary:   "first0summary_service_ms",
 		})
 		assert.NoError(t, err)
-		assert.NotEqual(t, proto.ResponseSuccess, respModifySchema.Response.GetCode())
+		assert.NotEqual(t, pb.ResponseSuccess, respModifySchema.Response.GetCode())
 
 		log.Info("add schema")
 		respModifySchema, err = datasource.Instance().ModifySchema(getContext(), &pb.ModifySchemaRequest{
@@ -2522,7 +2521,7 @@ func TestSchema_Create(t *testing.T) {
 			Schema:    "second_schema_service_ms",
 		})
 		assert.NoError(t, err)
-		assert.NotEqual(t, proto.ResponseSuccess, respModifySchema.Response.GetCode())
+		assert.NotEqual(t, pb.ResponseSuccess, respModifySchema.Response.GetCode())
 
 		log.Info("modify schema for the service whose schemaId already exist")
 		respModifySchema, err = datasource.Instance().ModifySchema(getContext(), &pb.ModifySchemaRequest{
@@ -2531,7 +2530,7 @@ func TestSchema_Create(t *testing.T) {
 			Schema:    "first_schema_service_ms",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respModifySchema.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respModifySchema.Response.GetCode())
 	})
 
 	t.Run("add a schemaId in production env while schema editable is set", func(t *testing.T) {
@@ -2550,7 +2549,7 @@ func TestSchema_Create(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateService.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceIdPro1 = respCreateService.ServiceId
 
 		log.Info("add a schema with new schemaId, should pass")
@@ -2566,13 +2565,13 @@ func TestSchema_Create(t *testing.T) {
 			Schemas:   schemas,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respModifySchemas.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respModifySchemas.Response.GetCode())
 
 		respService, err := datasource.Instance().GetService(getContext(), &pb.GetServiceRequest{
 			ServiceId: serviceIdPro1,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respService.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respService.Response.GetCode())
 		assert.Equal(t, []string{"first_schemaId_ms"}, respService.Service.Schemas)
 
 		schemas = []*pb.Schema{
@@ -2599,7 +2598,7 @@ func TestSchema_Create(t *testing.T) {
 			Schemas:   schemas,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respModifySchemas.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respModifySchemas.Response.GetCode())
 	})
 
 	t.Run("modify a schema in production env while schema editable is set", func(t *testing.T) {
@@ -2618,7 +2617,7 @@ func TestSchema_Create(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateService.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceIdPro1 = respCreateService.ServiceId
 
 		log.Info("add schemas, should pass")
@@ -2634,7 +2633,7 @@ func TestSchema_Create(t *testing.T) {
 			Schemas:   schemas,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respModifySchemas.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respModifySchemas.Response.GetCode())
 
 		respService, err := datasource.Instance().GetService(getContext(), &pb.GetServiceRequest{
 			ServiceId: serviceIdPro1,
@@ -2662,7 +2661,7 @@ func TestSchema_Create(t *testing.T) {
 			Schema:    schemas[0].SchemaId,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respModifySchema.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respModifySchema.Response.GetCode())
 	})
 }
 
@@ -2684,7 +2683,7 @@ func TestSchema_Exist(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateService.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceId = respCreateService.ServiceId
 
 		log.Info("add schemas, should pass")
@@ -2695,7 +2694,7 @@ func TestSchema_Exist(t *testing.T) {
 			Summary:   "summary_ms",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
 		resp, err = datasource.Instance().ModifySchema(getContext(), &pb.ModifySchemaRequest{
 			ServiceId: serviceId,
@@ -2703,7 +2702,7 @@ func TestSchema_Exist(t *testing.T) {
 			Schema:    "query schema ms",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 	})
 
 	t.Run("check exists", func(t *testing.T) {
@@ -2714,7 +2713,7 @@ func TestSchema_Exist(t *testing.T) {
 			SchemaId:  "com.huawei.test.ms",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 		assert.Equal(t, "summary_ms", resp.Summary)
 
 		resp, err = datasource.Instance().ExistSchema(getContext(), &pb.GetExistenceRequest{
@@ -2726,7 +2725,7 @@ func TestSchema_Exist(t *testing.T) {
 			Version:     "()",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
 		resp, err = datasource.Instance().ExistSchema(getContext(), &pb.GetExistenceRequest{
 			Type:      service.ExistTypeSchema,
@@ -2734,7 +2733,7 @@ func TestSchema_Exist(t *testing.T) {
 			SchemaId:  "com.huawei.test.no.summary.ms",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 		assert.Equal(t, "com.huawei.test.no.summary.ms", resp.SchemaId)
 		assert.Equal(t, "", resp.Summary)
 	})
@@ -2769,7 +2768,7 @@ func TestSchema_Get(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateService.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceId = respCreateService.ServiceId
 
 		respCreateSchema, err := datasource.Instance().ModifySchema(getContext(), &pb.ModifySchemaRequest{
@@ -2779,7 +2778,7 @@ func TestSchema_Get(t *testing.T) {
 			Summary:   "schema0summary1ms",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateSchema.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateSchema.Response.GetCode())
 
 		respCreateService, err = datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
@@ -2796,7 +2795,7 @@ func TestSchema_Get(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateService.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceId1 = respCreateService.ServiceId
 
 		respPutData, err := datasource.Instance().ModifySchema(getContext(), &pb.ModifySchemaRequest{
@@ -2805,7 +2804,7 @@ func TestSchema_Get(t *testing.T) {
 			Schema:    schemaContent,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respPutData.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respPutData.Response.GetCode())
 
 		respPutData, err = datasource.Instance().ModifySchema(getContext(), &pb.ModifySchemaRequest{
 			ServiceId: serviceId1,
@@ -2814,14 +2813,14 @@ func TestSchema_Get(t *testing.T) {
 			Summary:   summary,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respPutData.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respPutData.Response.GetCode())
 
 		respGetAllSchema, err := datasource.Instance().GetAllSchemas(getContext(), &pb.GetAllSchemaRequest{
 			ServiceId:  serviceId1,
 			WithSchema: false,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respGetAllSchema.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respGetAllSchema.Response.GetCode())
 		schemas := respGetAllSchema.Schemas
 		for _, schema := range schemas {
 			if schema.SchemaId == schemaId1 && schema.SchemaId == schemaId2 {
@@ -2839,7 +2838,7 @@ func TestSchema_Get(t *testing.T) {
 			WithSchema: true,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respGetAllSchema.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respGetAllSchema.Response.GetCode())
 		schemas = respGetAllSchema.Schemas
 		for _, schema := range schemas {
 			switch schema.SchemaId {
@@ -2886,7 +2885,7 @@ func TestSchema_Get(t *testing.T) {
 			SchemaId:  "com.huawei.test.ms",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 		assert.Equal(t, "get schema ms", resp.Schema)
 		assert.Equal(t, "schema0summary1ms", resp.SchemaSummary)
 
@@ -2909,7 +2908,7 @@ func TestSchema_Delete(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateService.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceId = respCreateService.ServiceId
 
 		resp, err := datasource.Instance().ModifySchema(getContext(), &pb.ModifySchemaRequest{
@@ -2919,7 +2918,7 @@ func TestSchema_Delete(t *testing.T) {
 			Summary:   "summary_ms",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 	})
 
 	t.Run("test delete when request is invalid", func(t *testing.T) {
@@ -2929,7 +2928,7 @@ func TestSchema_Delete(t *testing.T) {
 			SchemaId:  "none_exist_schema",
 		})
 		assert.NoError(t, err)
-		assert.NotEqual(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.NotEqual(t, pb.ResponseSuccess, resp.Response.GetCode())
 
 		log.Info("service id does not exist")
 		resp, err = datasource.Instance().DeleteSchema(getContext(), &pb.DeleteSchemaRequest{
@@ -2937,7 +2936,7 @@ func TestSchema_Delete(t *testing.T) {
 			SchemaId:  "com.huawei.test.ms",
 		})
 		assert.NoError(t, err)
-		assert.NotEqual(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.NotEqual(t, pb.ResponseSuccess, resp.Response.GetCode())
 	})
 
 	t.Run("test delete when request is valid", func(t *testing.T) {
@@ -2946,7 +2945,7 @@ func TestSchema_Delete(t *testing.T) {
 			SchemaId:  "com.huawei.test.ms",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
 		respGet, err := datasource.Instance().GetSchema(getContext(), &pb.GetSchemaRequest{
 			ServiceId: serviceId,
@@ -2982,7 +2981,7 @@ func TestRule_Add(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateService.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceId1 = respCreateService.ServiceId
 
 		respCreateService, err = datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
@@ -2995,7 +2994,7 @@ func TestRule_Add(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateService.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceId2 = respCreateService.ServiceId
 	})
 
@@ -3013,7 +3012,7 @@ func TestRule_Add(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.NotEqual(t, proto.ResponseSuccess, respAddRule)
+		assert.NotEqual(t, pb.ResponseSuccess, respAddRule)
 	})
 
 	t.Run("request is valid", func(t *testing.T) {
@@ -3030,7 +3029,7 @@ func TestRule_Add(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respAddRule.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respAddRule.Response.GetCode())
 		ruleId := respAddRule.RuleIds[0]
 		assert.NotEqual(t, "", ruleId)
 
@@ -3047,7 +3046,7 @@ func TestRule_Add(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respAddRule.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respAddRule.Response.GetCode())
 		assert.Equal(t, 0, len(respAddRule.RuleIds))
 
 		log.Info("create a new white list when black list already exists")
@@ -3063,7 +3062,7 @@ func TestRule_Add(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.NotEqual(t, proto.ResponseSuccess, respAddRule.Response.GetCode())
+		assert.NotEqual(t, pb.ResponseSuccess, respAddRule.Response.GetCode())
 	})
 
 	t.Run("create rule out of gaugue", func(t *testing.T) {
@@ -3083,7 +3082,7 @@ func TestRule_Add(t *testing.T) {
 			Rules:     rules[:size-1],
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
 		resp, err = datasource.Instance().AddRule(getContext(), &pb.AddServiceRulesRequest{
 			ServiceId: serviceId2,
@@ -3111,7 +3110,7 @@ func TestRule_Get(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateService.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceId = respCreateService.ServiceId
 
 		respAddRule, err := datasource.Instance().AddRule(getContext(), &pb.AddServiceRulesRequest{
@@ -3126,7 +3125,7 @@ func TestRule_Get(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respAddRule.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respAddRule.Response.GetCode())
 		ruleId = respAddRule.RuleIds[0]
 		assert.NotEqual(t, "", ruleId)
 	})
@@ -3145,7 +3144,7 @@ func TestRule_Get(t *testing.T) {
 			ServiceId: serviceId,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respGetRule.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respGetRule.Response.GetCode())
 		assert.Equal(t, ruleId, respGetRule.Rules[0].RuleId)
 	})
 }
@@ -3167,7 +3166,7 @@ func TestRule_Update(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateService.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceId = respCreateService.ServiceId
 
 		respAddRule, err := datasource.Instance().AddRule(getContext(), &pb.AddServiceRulesRequest{
@@ -3182,7 +3181,7 @@ func TestRule_Update(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respAddRule.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respAddRule.Response.GetCode())
 		ruleId = respAddRule.RuleIds[0]
 		assert.NotEqual(t, "", ruleId)
 	})
@@ -3201,7 +3200,7 @@ func TestRule_Update(t *testing.T) {
 			Rule:      rule,
 		})
 		assert.NoError(t, err)
-		assert.NotEqual(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.NotEqual(t, pb.ResponseSuccess, resp.Response.GetCode())
 
 		log.Info("rule not exists")
 		resp, err = datasource.Instance().UpdateRule(getContext(), &pb.UpdateServiceRuleRequest{
@@ -3210,7 +3209,7 @@ func TestRule_Update(t *testing.T) {
 			Rule:      rule,
 		})
 		assert.NoError(t, err)
-		assert.NotEqual(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.NotEqual(t, pb.ResponseSuccess, resp.Response.GetCode())
 
 		log.Info("change rule type")
 		resp, err = datasource.Instance().UpdateRule(getContext(), &pb.UpdateServiceRuleRequest{
@@ -3224,7 +3223,7 @@ func TestRule_Update(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.NotEqual(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.NotEqual(t, pb.ResponseSuccess, resp.Response.GetCode())
 	})
 
 	t.Run("update when request is valid", func(t *testing.T) {
@@ -3239,7 +3238,7 @@ func TestRule_Update(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 	})
 }
 
@@ -3259,7 +3258,7 @@ func TestRule_Delete(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateService.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceId = respCreateService.ServiceId
 
 		respAddRule, err := datasource.Instance().AddRule(getContext(), &pb.AddServiceRulesRequest{
@@ -3274,7 +3273,7 @@ func TestRule_Delete(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respAddRule.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respAddRule.Response.GetCode())
 		ruleId = respAddRule.RuleIds[0]
 		assert.NotEqual(t, "", ruleId)
 	})
@@ -3303,13 +3302,13 @@ func TestRule_Delete(t *testing.T) {
 			RuleIds:   []string{ruleId},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
 		respGetRule, err := datasource.Instance().GetRule(getContext(), &pb.GetServiceRulesRequest{
 			ServiceId: serviceId,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 		assert.Equal(t, 0, len(respGetRule.Rules))
 	})
 }
@@ -3332,7 +3331,7 @@ func TestRule_Permission(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateService.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		consumerVersion = respCreateService.ServiceId
 
 		respCreateService, err = datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
@@ -3345,7 +3344,7 @@ func TestRule_Permission(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateService.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		providerBlack = respCreateService.ServiceId
 
 		respAddRule, err := datasource.Instance().AddRule(getContext(), &pb.AddServiceRulesRequest{
@@ -3364,7 +3363,7 @@ func TestRule_Permission(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respAddRule.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respAddRule.Response.GetCode())
 
 		respCreateService, err = datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
@@ -3376,7 +3375,7 @@ func TestRule_Permission(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateService.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		providerWhite = respCreateService.ServiceId
 
 		respAddRule, err = datasource.Instance().AddRule(getContext(), &pb.AddServiceRulesRequest{
@@ -3395,7 +3394,7 @@ func TestRule_Permission(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respAddRule.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respAddRule.Response.GetCode())
 
 		respCreateService, err = datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
@@ -3407,7 +3406,7 @@ func TestRule_Permission(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respCreateService.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		consumerTag = respCreateService.ServiceId
 
 		respAddTag, err := datasource.Instance().AddTags(getContext(), &pb.AddServiceTagsRequest{
@@ -3415,7 +3414,7 @@ func TestRule_Permission(t *testing.T) {
 			Tags:      map[string]string{"a": "b"},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respAddTag.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respAddTag.Response.GetCode())
 	})
 
 	t.Run("when query instances", func(t *testing.T) {
@@ -3443,7 +3442,7 @@ func TestRule_Permission(t *testing.T) {
 			VersionRule:       "0+",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respFind.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
 		assert.Equal(t, 0, len(respFind.Instances))
 
 		respFind, err = datasource.Instance().FindInstances(getContext(), &pb.FindInstancesRequest{
@@ -3453,7 +3452,7 @@ func TestRule_Permission(t *testing.T) {
 			VersionRule:       "0+",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respFind.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
 		assert.Equal(t, 0, len(respFind.Instances))
 
 		log.Info("consumer not in black list")
@@ -3462,7 +3461,7 @@ func TestRule_Permission(t *testing.T) {
 			ProviderServiceId: providerBlack,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
 		log.Info("consumer not in white list")
 		resp, err = datasource.Instance().GetInstances(getContext(), &pb.GetInstancesRequest{
@@ -3478,7 +3477,7 @@ func TestRule_Permission(t *testing.T) {
 			ProviderServiceId: providerWhite,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
 		log.Info("consumer tag in white list")
 		resp, err = datasource.Instance().GetInstances(getContext(), &pb.GetInstancesRequest{
@@ -3486,7 +3485,7 @@ func TestRule_Permission(t *testing.T) {
 			ProviderServiceId: providerWhite,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 	})
 }
 
@@ -3552,7 +3551,7 @@ func TestTags_Add(t *testing.T) {
 			Tags:      tags,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 	})
 
 	t.Run("tag's quota exceeded", func(t *testing.T) {
@@ -3568,7 +3567,7 @@ func TestTags_Add(t *testing.T) {
 			Tags:      tags,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
 		tags["out"] = "range"
 		resp, _ = datasource.Instance().AddTags(getContext(), &pb.AddServiceTagsRequest{
@@ -3594,7 +3593,7 @@ func TestTags_Get(t *testing.T) {
 			Service: svc,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 		serviceId = resp.ServiceId
 
 		log.Info("add tags should be passed")
@@ -3606,7 +3605,7 @@ func TestTags_Get(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respAddTags.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respAddTags.Response.GetCode())
 	})
 
 	t.Run("the request is invalid", func(t *testing.T) {
@@ -3636,7 +3635,7 @@ func TestTags_Get(t *testing.T) {
 			ServiceId: serviceId,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 		assert.Equal(t, "test", resp.Tags["a"])
 	})
 }
@@ -3655,7 +3654,7 @@ func TestTag_Update(t *testing.T) {
 			Service: svc,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 		serviceId = resp.ServiceId
 
 		log.Info("add tags")
@@ -3667,7 +3666,7 @@ func TestTag_Update(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respAddTags.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respAddTags.Response.GetCode())
 	})
 
 	t.Run("the request is invalid", func(t *testing.T) {
@@ -3707,7 +3706,7 @@ func TestTag_Update(t *testing.T) {
 			Value:     "update",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 	})
 
 	t.Run("find instance, contain tag", func(t *testing.T) {
@@ -3722,7 +3721,7 @@ func TestTag_Update(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 		consumerId := resp.ServiceId
 
 		log.Info("create provider")
@@ -3736,7 +3735,7 @@ func TestTag_Update(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 		providerId := resp.ServiceId
 
 		log.Info("tag the provider")
@@ -3745,7 +3744,7 @@ func TestTag_Update(t *testing.T) {
 			Tags:      map[string]string{"filter_tag": "filter"},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, addTagsResp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, addTagsResp.Response.GetCode())
 
 		log.Info("add instance to provider")
 		instanceResp, err := datasource.Instance().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
@@ -3759,7 +3758,7 @@ func TestTag_Update(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, instanceResp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, instanceResp.Response.GetCode())
 
 		log.Info("find instance")
 		findResp, err := datasource.Instance().FindInstances(getContext(), &pb.FindInstancesRequest{
@@ -3770,7 +3769,7 @@ func TestTag_Update(t *testing.T) {
 			Tags:              []string{"not-exist-tag"},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, findResp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, findResp.Response.GetCode())
 		assert.Equal(t, 0, len(findResp.Instances))
 
 		findResp, err = datasource.Instance().FindInstances(getContext(), &pb.FindInstancesRequest{
@@ -3781,7 +3780,7 @@ func TestTag_Update(t *testing.T) {
 			Tags:              []string{"filter_tag"},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, findResp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, findResp.Response.GetCode())
 		assert.Equal(t, instanceResp.InstanceId, findResp.Instances[0].InstanceId)
 
 		// no add rules
@@ -3792,7 +3791,7 @@ func TestTag_Update(t *testing.T) {
 			Tags:      map[string]string{"consumer_tag": "filter"},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, addTagsResp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, addTagsResp.Response.GetCode())
 
 		findResp, err = datasource.Instance().FindInstances(getContext(), &pb.FindInstancesRequest{
 			ConsumerServiceId: consumerId,
@@ -3802,7 +3801,7 @@ func TestTag_Update(t *testing.T) {
 			Tags:              []string{"filter_tag"},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, findResp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, findResp.Response.GetCode())
 	})
 }
 
@@ -3819,7 +3818,7 @@ func TestTags_Delete(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 		serviceId = resp.ServiceId
 
 		respAddTages, err := datasource.Instance().AddTags(getContext(), &pb.AddServiceTagsRequest{
@@ -3830,7 +3829,7 @@ func TestTags_Delete(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, respAddTages.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, respAddTages.Response.GetCode())
 	})
 
 	t.Run("the request is invalid", func(t *testing.T) {
@@ -3857,13 +3856,13 @@ func TestTags_Delete(t *testing.T) {
 			Keys:      []string{"a", "b"},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
 		respGetTags, err := datasource.Instance().GetTags(getContext(), &pb.GetServiceTagsRequest{
 			ServiceId: serviceId,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 		assert.Equal(t, "", respGetTags.Tags["a"])
 	})
 }

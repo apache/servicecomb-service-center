@@ -18,7 +18,7 @@
 package sd
 
 import (
-	"github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/value"
 	"testing"
 	"time"
 )
@@ -72,8 +72,8 @@ func TestConfigure(t *testing.T) {
 	if i != 3 {
 		t.Fatalf("TestConfigure failed")
 	}
-	cfg.WithParser(proto.MapParser)
-	if cfg.Parser != proto.MapParser {
+	cfg.WithParser(value.MapParser)
+	if cfg.Parser != value.MapParser {
 		t.Fatalf("TestConfigure failed")
 	}
 	if cfg.String() != "{key: /test, timeout: 2s, period: 3s}" {

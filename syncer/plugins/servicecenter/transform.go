@@ -17,7 +17,7 @@
 package servicecenter
 
 import (
-	"github.com/apache/servicecomb-service-center/pkg/model"
+	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"net/url"
 	"strconv"
 	"strings"
@@ -34,7 +34,7 @@ const (
 )
 
 // toSyncData transform service-center service cache to SyncData
-func toSyncData(cache *model.Cache, schemas []*scpb.Schema) (data *pb.SyncData) {
+func toSyncData(cache *dump.Cache, schemas []*scpb.Schema) (data *pb.SyncData) {
 	data = &pb.SyncData{
 		Services:  make([]*pb.SyncService, 0, len(cache.Microservices)),
 		Instances: make([]*pb.SyncInstance, 0, len(cache.Instances)),
@@ -94,7 +94,7 @@ func toSyncService(service *scpb.MicroService) (syncService *pb.SyncService) {
 }
 
 //  toSyncInstances transform service-center instances to SyncInstances
-func toSyncInstances(serviceID string, instances []*model.Instance) (syncInstances []*pb.SyncInstance) {
+func toSyncInstances(serviceID string, instances []*dump.Instance) (syncInstances []*pb.SyncInstance) {
 	for _, inst := range instances {
 		if inst.Value.Status != scpb.MSI_UP {
 			continue

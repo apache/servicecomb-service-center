@@ -20,12 +20,12 @@ package admin
 import (
 	"context"
 	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/model"
+	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/alarm"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"github.com/apache/servicecomb-service-center/version"
 	"github.com/astaxie/beego"
@@ -58,17 +58,17 @@ func init() {
 type Service struct {
 }
 
-func (service *Service) Dump(ctx context.Context, in *model.DumpRequest) (*model.DumpResponse, error) {
+func (service *Service) Dump(ctx context.Context, in *dump.Request) (*dump.Response, error) {
 	domainProject := util.ParseDomainProject(ctx)
 
 	if !core.IsDefaultDomainProject(domainProject) {
-		return &model.DumpResponse{
-			Response: proto.CreateResponse(scerr.ErrForbidden, "Required admin permission"),
+		return &dump.Response{
+			Response: registry.CreateResponse(scerr.ErrForbidden, "Required admin permission"),
 		}, nil
 	}
 
-	resp := &model.DumpResponse{
-		Response: proto.CreateResponse(proto.ResponseSuccess, "Admin dump successfully"),
+	resp := &dump.Response{
+		Response: registry.CreateResponse(registry.ResponseSuccess, "Admin dump successfully"),
 	}
 
 	if len(in.Options) == 0 {
@@ -90,7 +90,7 @@ func (service *Service) Dump(ctx context.Context, in *model.DumpRequest) (*model
 	return resp, nil
 }
 
-func (service *Service) dump(ctx context.Context, option string, resp *model.DumpResponse) {
+func (service *Service) dump(ctx context.Context, option string, resp *dump.Response) {
 	switch option {
 	case "info":
 		resp.Info = version.Ver()
@@ -99,7 +99,7 @@ func (service *Service) dump(ctx context.Context, option string, resp *model.Dum
 	case "env":
 		resp.Environments = environments
 	case "cache":
-		var cache model.Cache
+		var cache dump.Cache
 		datasource.Instance().DumpCache(ctx, &cache)
 		resp.Cache = &cache
 	case "all":
@@ -110,24 +110,24 @@ func (service *Service) dump(ctx context.Context, option string, resp *model.Dum
 	}
 }
 
-func (service *Service) Clusters(ctx context.Context, in *model.ClustersRequest) (*model.ClustersResponse, error) {
+func (service *Service) Clusters(ctx context.Context, in *dump.ClustersRequest) (*dump.ClustersResponse, error) {
 	clusters, err := datasource.Instance().GetClusters(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return &model.ClustersResponse{
+	return &dump.ClustersResponse{
 		Clusters: clusters,
 	}, nil
 }
 
-func (service *Service) AlarmList(ctx context.Context, in *model.AlarmListRequest) (*model.AlarmListResponse, error) {
-	return &model.AlarmListResponse{
+func (service *Service) AlarmList(ctx context.Context, in *dump.AlarmListRequest) (*dump.AlarmListResponse, error) {
+	return &dump.AlarmListResponse{
 		Alarms: alarm.ListAll(),
 	}, nil
 }
 
-func (service *Service) ClearAlarm(ctx context.Context, in *model.ClearAlarmRequest) (*model.ClearAlarmResponse, error) {
+func (service *Service) ClearAlarm(ctx context.Context, in *dump.ClearAlarmRequest) (*dump.ClearAlarmResponse, error) {
 	alarm.ClearAll()
 	log.Infof("service center alarms are cleared")
-	return &model.ClearAlarmResponse{}, nil
+	return &dump.ClearAlarmResponse{}, nil
 }

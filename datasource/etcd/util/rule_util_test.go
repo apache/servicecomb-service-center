@@ -25,7 +25,6 @@ import (
 	. "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 )
 
 func TestRuleFilter_Filter(t *testing.T) {
@@ -101,7 +100,7 @@ func TestAllowAcrossApp(t *testing.T) {
 	err = AllowAcrossDimension(context.Background(), &registry.MicroService{
 		AppId: "a",
 		Properties: map[string]string{
-			proto.PropAllowCrossApp: "true",
+			registry.PropAllowCrossApp: "true",
 		},
 	}, &registry.MicroService{
 		AppId: "a",
@@ -113,7 +112,7 @@ func TestAllowAcrossApp(t *testing.T) {
 	err = AllowAcrossDimension(context.Background(), &registry.MicroService{
 		AppId: "a",
 		Properties: map[string]string{
-			proto.PropAllowCrossApp: "true",
+			registry.PropAllowCrossApp: "true",
 		},
 	}, &registry.MicroService{
 		AppId: "b",
@@ -125,7 +124,7 @@ func TestAllowAcrossApp(t *testing.T) {
 	err = AllowAcrossDimension(context.Background(), &registry.MicroService{
 		AppId: "a",
 		Properties: map[string]string{
-			proto.PropAllowCrossApp: "false",
+			registry.PropAllowCrossApp: "false",
 		},
 	}, &registry.MicroService{
 		AppId: "b",
@@ -137,7 +136,7 @@ func TestAllowAcrossApp(t *testing.T) {
 	err = AllowAcrossDimension(context.Background(), &registry.MicroService{
 		AppId: "a",
 		Properties: map[string]string{
-			proto.PropAllowCrossApp: "",
+			registry.PropAllowCrossApp: "",
 		},
 	}, &registry.MicroService{
 		AppId: "b",

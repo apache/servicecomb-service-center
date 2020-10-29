@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package model
+package dump
 
 import (
 	"github.com/apache/servicecomb-service-center/pkg/registry"
@@ -212,11 +212,11 @@ type Instance struct {
 	Value *registry.MicroServiceInstance `json:"value,omitempty"`
 }
 
-type DumpRequest struct {
+type Request struct {
 	Options []string
 }
 
-type DumpResponse struct {
+type Response struct {
 	Response     *registry.Response `json:"response,omitempty"`
 	Info         *version.Set       `json:"info,omitempty"`
 	AppConfig    map[string]string  `json:"appConf,omitempty"`

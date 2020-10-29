@@ -20,7 +20,6 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"k8s.io/api/core/v1"
 	"net/url"
 	"strconv"
@@ -83,9 +82,9 @@ func generateServiceKey(domainProject string, svc *v1.Service) *pb.MicroServiceK
 	return &pb.MicroServiceKey{
 		Tenant:      domainProject,
 		Environment: getLabel(svc.Labels, LabelEnvironment, ""),
-		AppId:       getLabel(svc.Labels, LabelApp, proto.AppID),
+		AppId:       getLabel(svc.Labels, LabelApp, pb.AppID),
 		ServiceName: svc.Name,
-		Version:     getLabel(svc.Labels, LabelVersion, proto.VERSION),
+		Version:     getLabel(svc.Labels, LabelVersion, pb.VERSION),
 	}
 }
 
@@ -93,9 +92,9 @@ func FromK8sService(domainProject string, svc *v1.Service) (ms *pb.MicroService)
 	ms = &pb.MicroService{
 		ServiceId:   generateServiceID(domainProject, svc),
 		Environment: getLabel(svc.Labels, LabelEnvironment, ""),
-		AppId:       getLabel(svc.Labels, LabelApp, proto.AppID),
+		AppId:       getLabel(svc.Labels, LabelApp, pb.AppID),
 		ServiceName: svc.Name,
-		Version:     getLabel(svc.Labels, LabelVersion, proto.VERSION),
+		Version:     getLabel(svc.Labels, LabelVersion, pb.VERSION),
 		Level:       "BACK",
 		Status:      pb.MS_UP,
 		Framework: &pb.FrameWorkProperty{

@@ -18,7 +18,7 @@
 package rest
 
 import (
-	"github.com/apache/servicecomb-service-center/server/core/config"
+	"github.com/apache/servicecomb-service-center/server/config"
 	"net/http"
 	"net/http/pprof"
 )

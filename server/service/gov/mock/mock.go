@@ -20,26 +20,26 @@ package mock
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/apache/servicecomb-service-center/pkg/model"
-	"github.com/apache/servicecomb-service-center/server/core/config"
-	"github.com/apache/servicecomb-service-center/server/service/gov"
+	"github.com/apache/servicecomb-service-center/pkg/gov"
+	"github.com/apache/servicecomb-service-center/server/config"
+	svc "github.com/apache/servicecomb-service-center/server/service/gov"
 	"log"
 )
 
 type Distributor struct {
-	lbPolicies map[string]*model.LoadBalancer
+	lbPolicies map[string]*gov.LoadBalancer
 	name       string
 }
 
 func (d *Distributor) Create(kind string, spec []byte) error {
-	p := &model.LoadBalancer{}
+	p := &gov.LoadBalancer{}
 	err := json.Unmarshal(spec, p)
 	log.Println(fmt.Sprintf("create %v", &p))
 	d.lbPolicies[p.GovernancePolicy.Name] = p
 	return err
 }
 func (d *Distributor) Update(kind string, spec []byte) error {
-	p := &model.LoadBalancer{}
+	p := &gov.LoadBalancer{}
 	err := json.Unmarshal(spec, p)
 	log.Println("update ", p)
 	d.lbPolicies[p.GovernancePolicy.Name] = p
@@ -50,7 +50,7 @@ func (d *Distributor) Delete(name, kind string) error {
 	return nil
 }
 func (d *Distributor) List(kind string) ([]byte, error) {
-	r := make([]*model.LoadBalancer, len(d.lbPolicies))
+	r := make([]*gov.LoadBalancer, len(d.lbPolicies))
 	for _, g := range d.lbPolicies {
 		r = append(r, g)
 	}
@@ -58,14 +58,14 @@ func (d *Distributor) List(kind string) ([]byte, error) {
 	return b, nil
 }
 func (d *Distributor) Type() string {
-	return gov.ConfigDistributorMock
+	return svc.ConfigDistributorMock
 }
 func (d *Distributor) Name() string {
 	return d.name
 }
-func new(opts config.DistributorOptions) (gov.ConfigDistributor, error) {
-	return &Distributor{name: opts.Name, lbPolicies: map[string]*model.LoadBalancer{}}, nil
+func new(opts config.DistributorOptions) (svc.ConfigDistributor, error) {
+	return &Distributor{name: opts.Name, lbPolicies: map[string]*gov.LoadBalancer{}}, nil
 }
 func init() {
-	gov.InstallDistributor(gov.ConfigDistributorMock, new)
+	svc.InstallDistributor(svc.ConfigDistributorMock, new)
 }

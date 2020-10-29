@@ -17,12 +17,14 @@
 package admin_test
 
 // initialize
-import _ "github.com/apache/servicecomb-service-center/server/bootstrap"
+import (
+	"github.com/apache/servicecomb-service-center/pkg/registry"
+	_ "github.com/apache/servicecomb-service-center/server/bootstrap"
+)
 import (
 	"context"
-	model2 "github.com/apache/servicecomb-service-center/pkg/model"
+	model2 "github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/rest/admin"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"github.com/astaxie/beego"
@@ -35,13 +37,13 @@ func init() {
 }
 func TestAdminService_Dump(t *testing.T) {
 	t.Log("execute 'dump' operation,when get all,should be passed")
-	resp, err := admin.AdminServiceAPI.Dump(getContext(), &model2.DumpRequest{})
+	resp, err := admin.AdminServiceAPI.Dump(getContext(), &model2.Request{})
 	assert.NoError(t, err)
-	assert.Equal(t, proto.ResponseSuccess, resp.Response.GetCode())
+	assert.Equal(t, registry.ResponseSuccess, resp.Response.GetCode())
 	t.Log("execute 'dump' operation,when get by domain project,should be passed")
 	resp, err = admin.AdminServiceAPI.Dump(
 		util.SetDomainProject(context.Background(), "x", "x"),
-		&model2.DumpRequest{})
+		&model2.Request{})
 	assert.NoError(t, err)
 	assert.Equal(t, scerr.ErrForbidden, resp.Response.GetCode())
 }

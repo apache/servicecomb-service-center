@@ -31,9 +31,8 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/queue"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/config"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"time"
 )
 
@@ -187,8 +186,8 @@ func (h *DependencyEventHandler) dependencyRuleHandle(res interface{}) error {
 	consumerFlag := util.StringJoin([]string{r.Consumer.Environment, r.Consumer.AppId, r.Consumer.ServiceName, r.Consumer.Version}, "/")
 
 	domainProject := dependencyEventHandlerRes.domainProject
-	consumerInfo := proto.DependenciesToKeys([]*pb.MicroServiceKey{r.Consumer}, domainProject)[0]
-	providersInfo := proto.DependenciesToKeys(r.Providers, domainProject)
+	consumerInfo := pb.DependenciesToKeys([]*pb.MicroServiceKey{r.Consumer}, domainProject)[0]
+	providersInfo := pb.DependenciesToKeys(r.Providers, domainProject)
 
 	var dep serviceUtil.Dependency
 	var err error

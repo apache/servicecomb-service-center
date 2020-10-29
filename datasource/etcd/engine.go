@@ -22,9 +22,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/pkg/cluster"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
-	"github.com/apache/servicecomb-service-center/pkg/types"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"strconv"
 	"strings"
 	"time"
@@ -57,10 +56,10 @@ func (ds *DataSource) registryService(pCtx context.Context) error {
 		log.Error("query service center existence failed", err)
 		return err
 	}
-	if respE.Response.GetCode() == proto.ResponseSuccess {
+	if respE.Response.GetCode() == pb.ResponseSuccess {
 		log.Warnf("service center service[%s] already registered", respE.ServiceId)
 		respG, err := core.ServiceAPI.GetOne(ctx, core.GetServiceRequest(respE.ServiceId))
-		if respG.Response.GetCode() != proto.ResponseSuccess {
+		if respG.Response.GetCode() != pb.ResponseSuccess {
 			log.Errorf(err, "query service center service[%s] info failed", respE.ServiceId)
 			return fmt.Errorf("service center service file lost")
 		}
@@ -89,7 +88,7 @@ func (ds *DataSource) registryInstance(pCtx context.Context) error {
 		log.Error("register failed", err)
 		return err
 	}
-	if respI.Response.GetCode() != proto.ResponseSuccess {
+	if respI.Response.GetCode() != pb.ResponseSuccess {
 		err = fmt.Errorf("register service center[%s] instance failed, %s",
 			core.Instance.ServiceId, respI.Response.GetMessage())
 		log.Error(err.Error(), nil)
@@ -111,7 +110,7 @@ func (ds *DataSource) SelfUnregister(pCtx context.Context) error {
 		log.Error("unregister failed", err)
 		return err
 	}
-	if respI.Response.GetCode() != proto.ResponseSuccess {
+	if respI.Response.GetCode() != pb.ResponseSuccess {
 		err = fmt.Errorf("unregister service center instance[%s/%s] failed, %s",
 			core.Instance.ServiceId, core.Instance.InstanceId, respI.Response.GetMessage())
 		log.Error(err.Error(), nil)
@@ -129,7 +128,7 @@ func (ds *DataSource) selfHeartBeat(pCtx context.Context) error {
 		log.Error("sen heartbeat failed", err)
 		return err
 	}
-	if respI.Response.GetCode() == proto.ResponseSuccess {
+	if respI.Response.GetCode() == pb.ResponseSuccess {
 		log.Debugf("update service center instance[%s/%s] heartbeat",
 			core.Instance.ServiceId, core.Instance.InstanceId)
 		return nil
@@ -207,7 +206,7 @@ func (ds *DataSource) ClearNoInstanceServices(ctx context.Context, serviceTTL ti
 				log.Errorf(err, "clear service failed, %s", svcCtxStr)
 				continue
 			}
-			if delSvcResp.Response.GetCode() != proto.ResponseSuccess {
+			if delSvcResp.Response.GetCode() != pb.ResponseSuccess {
 				log.Errorf(nil, "clear service failed, %s, %s", delSvcResp.Response.GetMessage(), svcCtxStr)
 				continue
 			}
@@ -241,7 +240,7 @@ func shouldClear(ctx context.Context, timeLimitStamp string, svc *pb.MicroServic
 	if err != nil {
 		return false, err
 	}
-	if getInstsResp.Response.GetCode() != proto.ResponseSuccess {
+	if getInstsResp.Response.GetCode() != pb.ResponseSuccess {
 		return false, errors.New("get instance failed: " + getInstsResp.Response.GetMessage())
 	}
 	//ignore a service if it has instances
@@ -251,6 +250,6 @@ func shouldClear(ctx context.Context, timeLimitStamp string, svc *pb.MicroServic
 	return true, nil
 }
 
-func (ds *DataSource) GetClusters(ctx context.Context) (types.Clusters, error) {
+func (ds *DataSource) GetClusters(ctx context.Context) (cluster.Clusters, error) {
 	return Configuration().Clusters, nil
 }

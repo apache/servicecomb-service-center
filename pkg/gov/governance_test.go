@@ -15,35 +15,35 @@
  * limitations under the License.
  */
 
-package model_test
+package gov_test
 
 import (
 	"encoding/json"
-	"github.com/apache/servicecomb-service-center/pkg/model"
+	"github.com/apache/servicecomb-service-center/pkg/gov"
 	"testing"
 )
 
 func TestNewInstance3(t *testing.T) {
-	b, _ := json.MarshalIndent(&model.LoadBalancer{
-		GovernancePolicy: &model.GovernancePolicy{
+	b, _ := json.MarshalIndent(&gov.LoadBalancer{
+		GovernancePolicy: &gov.GovernancePolicy{
 			Name: "Traffic2adminAPI",
 		},
-		Spec: &model.LBSpec{RetryNext: 3, MarkerName: "traffic2adminAPI"},
+		Spec: &gov.LBSpec{RetryNext: 3, MarkerName: "traffic2adminAPI"},
 	}, "", "  ")
 	t.Log(string(b))
 }
 func TestNewInstance2(t *testing.T) {
-	b, _ := json.MarshalIndent(&model.RateLimiter{
-		GovernancePolicy: &model.GovernancePolicy{
+	b, _ := json.MarshalIndent(&gov.RateLimiter{
+		GovernancePolicy: &gov.GovernancePolicy{
 			Name: "limitTraffic2adminAPI",
 		},
-		Spec: &model.LimiterSpec{Burst: 10, Rate: 100, MarkerName: "traffic2adminAPI"},
+		Spec: &gov.LimiterSpec{Burst: 10, Rate: 100, MarkerName: "traffic2adminAPI"},
 	}, "", "  ")
 	t.Log(string(b))
 }
 func TestNewInstance(t *testing.T) {
-	b, _ := json.MarshalIndent(&model.TrafficMarker{
-		GovernancePolicy: &model.GovernancePolicy{
+	b, _ := json.MarshalIndent(&gov.TrafficMarker{
+		GovernancePolicy: &gov.GovernancePolicy{
 			Name: "traffic2adminAPI",
 			MD: map[string]string{
 				"service":     "payment",
@@ -52,9 +52,9 @@ func TestNewInstance(t *testing.T) {
 				"environment": "development",
 			},
 		},
-		Spec: &model.MatchSpec{
+		Spec: &gov.MatchSpec{
 			TrafficMarkPolicy: "perService",
-			MatchPolicies: []*model.MatchPolicy{
+			MatchPolicies: []*gov.MatchPolicy{
 				{
 					Headers: map[string]map[string]string{
 						"X-User": {"regex": "ja.*"},
