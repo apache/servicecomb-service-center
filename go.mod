@@ -17,6 +17,7 @@ require (
 	github.com/golang/protobuf v1.3.2
 	github.com/gorilla/websocket v1.4.0
 	github.com/hashicorp/serf v0.8.3
+	github.com/iancoleman/strcase v0.1.2
 	github.com/karlseguin/ccache v2.0.3-0.20170217060820-3ba9789cfd2c+incompatible
 	github.com/labstack/echo v3.2.2-0.20180316170059-a5d81b8d4a62+incompatible
 	github.com/labstack/echo/v4 v4.1.17

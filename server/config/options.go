@@ -15,22 +15,31 @@
  * limitations under the License.
  */
 
-package util
+package config
 
-import "os"
+type Options struct {
+	ENV     string
+	Standby string
+}
 
-type CtxKey string
+type Option func(options *Options)
 
-const (
-	HeaderRev                  = "X-Resource-Revision"
-	CtxGlobal           CtxKey = "global"
-	CtxNocache          CtxKey = "noCache"
-	CtxCacheOnly        CtxKey = "cacheOnly"
-	CtxRequestRevision  CtxKey = "requestRev"
-	CtxResponseRevision CtxKey = "responseRev"
-)
+func WithENV(env string) Option {
+	return func(options *Options) {
+		options.ENV = env
+	}
+}
 
-func GetAppRoot() string {
-	workDir, _ := os.Getwd()
-	return GetEnvString("APP_ROOT", workDir)
+func WithStandby(key string) Option {
+	return func(options *Options) {
+		options.Standby = key
+	}
+}
+
+func NewOptions(opts ...Option) *Options {
+	o := &Options{}
+	for _, opt := range opts {
+		opt(o)
+	}
+	return o
 }
