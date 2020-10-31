@@ -30,7 +30,7 @@ import (
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 )
 
-func (ds *DataSource) SearchProviderDependency(ctx context.Context, request *pb.GetDependenciesRequest) ([]*pb.MicroService, error) {
+func (ds *DataSource) SearchProviderDependency(ctx context.Context, request *pb.GetDependenciesRequest) (*pb.GetProDependenciesResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
 	providerServiceID := request.ServiceId
 	provider, err := serviceUtil.GetService(ctx, domainProject, providerServiceID)
@@ -41,15 +41,29 @@ func (ds *DataSource) SearchProviderDependency(ctx context.Context, request *pb.
 	}
 	if provider == nil {
 		log.Errorf(err, "GetProviderDependencies failed for provider[%s] does not exist", providerServiceID)
-		return nil, err
+		return &pb.GetProDependenciesResponse{
+			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Provider does not exist"),
+		}, nil
 	}
 
 	dr := serviceUtil.NewProviderDependencyRelation(ctx, domainProject, provider)
 	services, err := dr.GetDependencyConsumers(toDependencyFilterOptions(request)...)
-	return services, err
+
+	if err != nil {
+		log.Errorf(err, "GetProviderDependencies failed, provider is %s/%s/%s/%s",
+			provider.Environment, provider.AppId, provider.ServiceName, provider.Version)
+		return &pb.GetProDependenciesResponse{
+			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+		}, err
+	}
+
+	return &pb.GetProDependenciesResponse{
+		Response:  pb.CreateResponse(pb.ResponseSuccess, "Get all consumers successful."),
+		Consumers: services,
+	}, nil
 }
 
-func (ds *DataSource) SearchConsumerDependency(ctx context.Context, request *pb.GetDependenciesRequest) ([]*pb.MicroService, error) {
+func (ds *DataSource) SearchConsumerDependency(ctx context.Context, request *pb.GetDependenciesRequest) (*pb.GetConDependenciesResponse, error) {
 	consumerID := request.ServiceId
 	domainProject := util.ParseDomainProject(ctx)
 	consumer, err := serviceUtil.GetService(ctx, domainProject, consumerID)
@@ -60,12 +74,25 @@ func (ds *DataSource) SearchConsumerDependency(ctx context.Context, request *pb.
 	}
 	if consumer == nil {
 		log.Errorf(err, "GetConsumerDependencies failed for consumer[%s] does not exist", consumerID)
-		return nil, err
+		return &pb.GetConDependenciesResponse{
+			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Consumer does not exist"),
+		}, nil
 	}
 
 	dr := serviceUtil.NewConsumerDependencyRelation(ctx, domainProject, consumer)
 	services, err := dr.GetDependencyProviders(toDependencyFilterOptions(request)...)
-	return services, err
+	if err != nil {
+		log.Errorf(err, "GetConsumerDependencies failed, consumer is %s/%s/%s/%s",
+			consumer.Environment, consumer.AppId, consumer.ServiceName, consumer.Version)
+		return &pb.GetConDependenciesResponse{
+			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+		}, err
+	}
+
+	return &pb.GetConDependenciesResponse{
+		Response:  pb.CreateResponse(pb.ResponseSuccess, "Get all providers successfully."),
+		Providers: services,
+	}, nil
 }
 
 func (ds *DataSource) DeleteDependency() {

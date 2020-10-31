@@ -193,14 +193,14 @@ func Test_Creat(t *testing.T) {
 		})
 		assert.NotNil(t, respCon)
 		assert.NoError(t, err)
-		assert.Equal(t, 0, len(respCon))
+		assert.Equal(t, 0, len(respCon.Providers))
 
 		respCon, err = datasource.Instance().SearchConsumerDependency(depGetContext(), &pb.GetDependenciesRequest{
 			ServiceId: consumerId2,
 		})
 		assert.NotNil(t, respCon)
 		assert.NoError(t, err)
-		assert.Equal(t, 0, len(respCon))
+		assert.Equal(t, 0, len(respCon.Providers))
 	})
 
 	t.Run("when request is valid, should be passed", func(t *testing.T) {
@@ -234,7 +234,7 @@ func Test_Creat(t *testing.T) {
 		})
 		assert.NotNil(t, respPro)
 		assert.NoError(t, err)
-		assert.Equal(t, "1.0.1", respPro[0].Version)
+		assert.Equal(t, "1.0.1", respPro.Providers[0].Version)
 
 		// add 1.0.0+
 		resp, err = datasource.Instance().AddOrUpdateDependencies(depGetContext(), []*pb.ConsumerDependency{
@@ -260,7 +260,7 @@ func Test_Creat(t *testing.T) {
 		})
 		assert.NotNil(t, respPro)
 		assert.NoError(t, err)
-		assert.Equal(t, 2, len(respPro))
+		assert.Equal(t, 2, len(respPro.Providers))
 
 		// add *
 		resp, err = datasource.Instance().AddOrUpdateDependencies(depGetContext(), []*pb.ConsumerDependency{
@@ -286,7 +286,7 @@ func Test_Creat(t *testing.T) {
 		})
 		assert.NotNil(t, respPro)
 		assert.NoError(t, err)
-		assert.Equal(t, 0, len(respPro))
+		assert.Equal(t, 0, len(respPro.Providers))
 
 		// clean all
 		resp, err = datasource.Instance().AddOrUpdateDependencies(depGetContext(), []*pb.ConsumerDependency{
@@ -347,7 +347,7 @@ func Test_Creat(t *testing.T) {
 		})
 		assert.NotNil(t, respPro)
 		assert.NoError(t, err)
-		assert.Equal(t, "1.0.0", respPro[0].Version)
+		assert.Equal(t, "1.0.0", respPro.Providers[0].Version)
 
 		// add not override
 		respAdd, err := datasource.Instance().AddOrUpdateDependencies(depGetContext(), []*pb.ConsumerDependency{
@@ -561,8 +561,8 @@ func Test_Get(t *testing.T) {
 		})
 		assert.NotNil(t, respGetC)
 		assert.NoError(t, err)
-		assert.Equal(t, 1, len(respGetC))
-		assert.Equal(t, finder1, respGetC[0].ServiceId)
+		assert.Equal(t, 1, len(respGetC.Providers))
+		assert.Equal(t, finder1, respGetC.Providers[0].ServiceId)
 
 		// find after delete micro service
 		respDelP, err := datasource.Instance().UnregisterService(depGetContext(), &pb.DeleteServiceRequest{
@@ -579,7 +579,7 @@ func Test_Get(t *testing.T) {
 		})
 		assert.NotNil(t, respGetC)
 		assert.NoError(t, err)
-		assert.Equal(t, 0, len(respGetC))
+		assert.Equal(t, 0, len(respGetC.Providers))
 
 		respCreateF, err = datasource.Instance().RegisterService(depGetContext(), &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
@@ -612,7 +612,7 @@ func Test_Get(t *testing.T) {
 		})
 		assert.NotNil(t, respGetC)
 		assert.NoError(t, err)
-		assert.Equal(t, 1, len(respGetC))
-		assert.Equal(t, finder1, respGetC[0].ServiceId)
+		assert.Equal(t, 1, len(respGetC.Providers))
+		assert.Equal(t, finder1, respGetC.Providers[0].ServiceId)
 	})
 }

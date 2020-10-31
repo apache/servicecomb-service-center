@@ -19,7 +19,6 @@ package etcd
 
 import (
 	"context"
-	"encoding/json"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
@@ -28,7 +27,9 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/core"
 	apt "github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"strconv"
@@ -46,121 +47,6 @@ type ServiceDetailOpt struct {
 type GetInstanceCountByDomainResponse struct {
 	err           error
 	countByDomain int64
-}
-
-// service
-func capRegisterData(ctx context.Context, request *pb.CreateServiceRequest) (
-	[]client.PluginOp, []client.CompareOp, []client.PluginOp, error) {
-	remoteIP := util.GetIPFromContext(ctx)
-	serviceBody := request.Service
-	serviceFlag := util.StringJoin([]string{
-		serviceBody.Environment, serviceBody.AppId, serviceBody.ServiceName, serviceBody.Version}, "/")
-	serviceUtil.SetServiceDefaultValue(serviceBody)
-	domainProject := util.ParseDomainProject(ctx)
-	serviceKey := &pb.MicroServiceKey{
-		Tenant:      domainProject,
-		Environment: serviceBody.Environment,
-		AppId:       serviceBody.AppId,
-		ServiceName: serviceBody.ServiceName,
-		Alias:       serviceBody.Alias,
-		Version:     serviceBody.Version,
-	}
-	index := apt.GenerateServiceIndexKey(serviceKey)
-
-	// generate global service id
-	requestServiceID := serviceBody.ServiceId
-	if len(requestServiceID) == 0 {
-		ctx = util.SetContext(ctx, uuid.ContextKey, index)
-		serviceBody.ServiceId = uuid.Generator().GetServiceID(ctx)
-	}
-	serviceBody.Timestamp = strconv.FormatInt(time.Now().Unix(), 10)
-	serviceBody.ModTimestamp = serviceBody.Timestamp
-
-	data, err := json.Marshal(serviceBody)
-	if err != nil {
-		log.Errorf(err, "create micro-serviceBody[%s] failed, json marshal serviceBody failed, operator: %s",
-			serviceFlag, remoteIP)
-		return nil, nil, nil, err
-	}
-
-	key := apt.GenerateServiceKey(domainProject, serviceBody.ServiceId)
-	keyBytes := util.StringToBytesWithNoCopy(key)
-	indexBytes := util.StringToBytesWithNoCopy(index)
-	aliasBytes := util.StringToBytesWithNoCopy(apt.GenerateServiceAliasKey(serviceKey))
-
-	opts := []client.PluginOp{
-		client.OpPut(client.WithKey(keyBytes), client.WithValue(data)),
-		client.OpPut(client.WithKey(indexBytes), client.WithStrValue(serviceBody.ServiceId)),
-	}
-	uniqueCmpOpts := []client.CompareOp{
-		client.OpCmp(client.CmpVer(indexBytes), client.CmpEqual, 0),
-		client.OpCmp(client.CmpVer(keyBytes), client.CmpEqual, 0),
-	}
-	failOpts := []client.PluginOp{
-		client.OpGet(client.WithKey(indexBytes)),
-	}
-
-	if len(serviceKey.Alias) > 0 {
-		opts = append(opts, client.OpPut(client.WithKey(aliasBytes), client.WithStrValue(serviceBody.ServiceId)))
-		uniqueCmpOpts = append(uniqueCmpOpts,
-			client.OpCmp(client.CmpVer(aliasBytes), client.CmpEqual, 0))
-		failOpts = append(failOpts, client.OpGet(client.WithKey(aliasBytes)))
-	}
-
-	return opts, uniqueCmpOpts, failOpts, nil
-}
-
-func newRegisterServiceResp(ctx context.Context, reqService *pb.MicroService, resp *client.PluginResponse,
-	err error) (*pb.CreateServiceResponse, error) {
-	remoteIP := util.GetIPFromContext(ctx)
-	serviceFlag := util.StringJoin([]string{
-		reqService.Environment, reqService.AppId, reqService.ServiceName, reqService.Version}, "/")
-	if err != nil {
-		log.Errorf(err, "create micro-service[%s] failed, operator: %s",
-			serviceFlag, remoteIP)
-		return &pb.CreateServiceResponse{
-			Response: pb.CreateResponse(scerr.ErrUnavailableBackend, err.Error()),
-		}, err
-	}
-
-	if !resp.Succeeded {
-		requestServiceID := reqService.ServiceId
-		if len(requestServiceID) != 0 {
-			if len(resp.Kvs) == 0 ||
-				requestServiceID != util.BytesToStringWithNoCopy(resp.Kvs[0].Value) {
-				log.Warnf("create micro-service[%s] failed, service already exists, operator: %s",
-					serviceFlag, remoteIP)
-				return &pb.CreateServiceResponse{
-					Response: pb.CreateResponse(scerr.ErrServiceAlreadyExists,
-						"ServiceID conflict or found the same service with different id."),
-				}, nil
-			}
-		}
-
-		if len(resp.Kvs) == 0 {
-			// internal error?
-			log.Errorf(nil, "create micro-service[%s] failed, unexpected txn response, operator: %s",
-				serviceFlag, remoteIP)
-			return &pb.CreateServiceResponse{
-				Response: pb.CreateResponse(scerr.ErrInternal, "Unexpected txn response."),
-			}, nil
-		}
-
-		serviceIDInner := util.BytesToStringWithNoCopy(resp.Kvs[0].Value)
-		log.Warnf("create micro-service[%s][%s] failed, service already exists, operator: %s",
-			serviceIDInner, serviceFlag, remoteIP)
-		return &pb.CreateServiceResponse{
-			Response:  pb.CreateResponse(pb.ResponseSuccess, "register service successfully"),
-			ServiceId: serviceIDInner,
-		}, nil
-	}
-
-	log.Infof("create micro-service[%s][%s] successfully, operator: %s",
-		reqService.ServiceId, serviceFlag, remoteIP)
-	return &pb.CreateServiceResponse{
-		Response:  pb.CreateResponse(pb.ResponseSuccess, "Register service successfully."),
-		ServiceId: reqService.ServiceId,
-	}, nil
 }
 
 // schema
@@ -652,4 +538,14 @@ func toDependencyFilterOptions(in *pb.GetDependenciesRequest) (opts []serviceUti
 		opts = append(opts, serviceUtil.WithoutSelfDependency())
 	}
 	return opts
+}
+
+func checkQuota(ctx context.Context, domainProject string) *quota.ApplyQuotaResult {
+	if core.IsSCInstance(ctx) {
+		log.Debugf("skip quota check")
+		return nil
+	}
+	res := quota.NewApplyQuotaResource(quota.MicroServiceQuotaType, domainProject, "", 1)
+	rst := quota.Apply(ctx, res)
+	return rst
 }

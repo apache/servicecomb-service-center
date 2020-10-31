@@ -19,6 +19,7 @@ package util
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/datasource"
 	"strings"
 
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
@@ -65,43 +66,19 @@ func GetAllDomain(ctx context.Context) ([]string, error) {
 }
 
 func DomainExist(ctx context.Context, domain string) (bool, error) {
-	opts := append(FromContext(ctx),
-		client.WithStrKey(apt.GenerateDomainKey(domain)),
-		client.WithCountOnly())
-	rsp, err := kv.Store().Domain().Search(ctx, opts...)
-	if err != nil {
-		return false, err
-	}
-	return rsp.Count > 0, nil
+	return datasource.Instance().DomainExist(ctx, domain)
 }
 
 func ProjectExist(ctx context.Context, domain, project string) (bool, error) {
-	opts := append(FromContext(ctx),
-		client.WithStrKey(apt.GenerateProjectKey(domain, project)),
-		client.WithCountOnly())
-	rsp, err := kv.Store().Project().Search(ctx, opts...)
-	if err != nil {
-		return false, err
-	}
-	return rsp.Count > 0, nil
+	return datasource.Instance().ProjectExist(ctx, domain, project)
 }
 
 func NewDomain(ctx context.Context, domain string) (bool, error) {
-	ok, err := client.Instance().PutNoOverride(ctx,
-		client.WithStrKey(apt.GenerateDomainKey(domain)))
-	if err != nil {
-		return false, err
-	}
-	return ok, nil
+	return datasource.Instance().AddDomain(ctx, domain)
 }
 
 func NewProject(ctx context.Context, domain, project string) (bool, error) {
-	ok, err := client.Instance().PutNoOverride(ctx,
-		client.WithStrKey(apt.GenerateProjectKey(domain, project)))
-	if err != nil {
-		return ok, err
-	}
-	return ok, nil
+	return datasource.Instance().AddProject(ctx, domain, project)
 }
 
 func NewDomainProject(ctx context.Context, domain, project string) error {

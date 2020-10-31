@@ -170,7 +170,6 @@ func (r *AuthResource) ChangePassword(w http.ResponseWriter, req *http.Request) 
 		return
 	}
 }
-
 func (r *AuthResource) Login(w http.ResponseWriter, req *http.Request) {
 	ip := util.GetRealIP(req)
 	if rbac.IsBanned(ip) {

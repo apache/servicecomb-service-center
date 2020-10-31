@@ -18,24 +18,18 @@
 package service
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/apache/servicecomb-service-center/pkg/proto"
-	"strconv"
-	"time"
-
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/proto"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/core"
 	apt "github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/plugin/quota"
-	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 
 	"context"
@@ -82,7 +76,6 @@ func (s *MicroServiceService) CreateServicePri(ctx context.Context, in *pb.Creat
 		service.Environment, service.AppId, service.ServiceName, service.Version}, "/")
 
 	serviceUtil.SetServiceDefaultValue(service)
-
 	err := Validate(in)
 	if err != nil {
 		log.Errorf(err, "create micro-service[%s] failed, operator: %s",
@@ -91,135 +84,7 @@ func (s *MicroServiceService) CreateServicePri(ctx context.Context, in *pb.Creat
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
 		}, nil
 	}
-
-	domainProject := util.ParseDomainProject(ctx)
-
-	serviceKey := &pb.MicroServiceKey{
-		Tenant:      domainProject,
-		Environment: service.Environment,
-		AppId:       service.AppId,
-		ServiceName: service.ServiceName,
-		Alias:       service.Alias,
-		Version:     service.Version,
-	}
-	reporter := checkQuota(ctx, domainProject)
-	defer reporter.Close(ctx)
-
-	if reporter != nil && reporter.Err != nil {
-		log.Errorf(reporter.Err, "create micro-service[%s] failed, operator: %s",
-			serviceFlag, remoteIP)
-		resp := &pb.CreateServiceResponse{
-			Response: pb.CreateResponseWithSCErr(reporter.Err),
-		}
-		if reporter.Err.InternalError() {
-			return resp, reporter.Err
-		}
-		return resp, nil
-	}
-
-	index := apt.GenerateServiceIndexKey(serviceKey)
-
-	// 产生全局service id
-	requestServiceID := service.ServiceId
-	if len(requestServiceID) == 0 {
-		ctx = util.SetContext(ctx, uuid.ContextKey, index)
-		service.ServiceId = uuid.Generator().GetServiceID(ctx)
-	}
-	service.Timestamp = strconv.FormatInt(time.Now().Unix(), 10)
-	service.ModTimestamp = service.Timestamp
-
-	data, err := json.Marshal(service)
-	if err != nil {
-		log.Errorf(err, "create micro-service[%s] failed, json marshal service failed, operator: %s",
-			serviceFlag, remoteIP)
-		return &pb.CreateServiceResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
-		}, err
-	}
-
-	key := apt.GenerateServiceKey(domainProject, service.ServiceId)
-	keyBytes := util.StringToBytesWithNoCopy(key)
-	indexBytes := util.StringToBytesWithNoCopy(index)
-	aliasBytes := util.StringToBytesWithNoCopy(apt.GenerateServiceAliasKey(serviceKey))
-
-	opts := []client.PluginOp{
-		client.OpPut(client.WithKey(keyBytes), client.WithValue(data)),
-		client.OpPut(client.WithKey(indexBytes), client.WithStrValue(service.ServiceId)),
-	}
-	uniqueCmpOpts := []client.CompareOp{
-		client.OpCmp(client.CmpVer(indexBytes), client.CmpEqual, 0),
-		client.OpCmp(client.CmpVer(keyBytes), client.CmpEqual, 0),
-	}
-	failOpts := []client.PluginOp{
-		client.OpGet(client.WithKey(indexBytes)),
-	}
-
-	if len(serviceKey.Alias) > 0 {
-		opts = append(opts, client.OpPut(client.WithKey(aliasBytes), client.WithStrValue(service.ServiceId)))
-		uniqueCmpOpts = append(uniqueCmpOpts,
-			client.OpCmp(client.CmpVer(aliasBytes), client.CmpEqual, 0))
-		failOpts = append(failOpts, client.OpGet(client.WithKey(aliasBytes)))
-	}
-
-	resp, err := client.Instance().TxnWithCmp(ctx, opts, uniqueCmpOpts, failOpts)
-	if err != nil {
-		log.Errorf(err, "create micro-service[%s] failed, operator: %s",
-			serviceFlag, remoteIP)
-		return &pb.CreateServiceResponse{
-			Response: pb.CreateResponse(scerr.ErrUnavailableBackend, err.Error()),
-		}, err
-	}
-	if !resp.Succeeded {
-		if len(requestServiceID) != 0 {
-			if len(resp.Kvs) == 0 ||
-				requestServiceID != util.BytesToStringWithNoCopy(resp.Kvs[0].Value) {
-				log.Warnf("create micro-service[%s] failed, service already exists, operator: %s",
-					serviceFlag, remoteIP)
-				return &pb.CreateServiceResponse{
-					Response: pb.CreateResponse(scerr.ErrServiceAlreadyExists,
-						"ServiceID conflict or found the same service with different id."),
-				}, nil
-			}
-		}
-
-		if len(resp.Kvs) == 0 {
-			// internal error?
-			log.Errorf(nil, "create micro-service[%s] failed, unexpected txn response, operator: %s",
-				serviceFlag, remoteIP)
-			return &pb.CreateServiceResponse{
-				Response: pb.CreateResponse(scerr.ErrInternal, "Unexpected txn response."),
-			}, nil
-		}
-
-		serviceIDInner := util.BytesToStringWithNoCopy(resp.Kvs[0].Value)
-		log.Warnf("create micro-service[%s][%s] failed, service already exists, operator: %s",
-			serviceIDInner, serviceFlag, remoteIP)
-		return &pb.CreateServiceResponse{
-			Response:  pb.CreateResponse(pb.ResponseSuccess, "register service successfully"),
-			ServiceId: serviceIDInner,
-		}, nil
-	}
-
-	if err := reporter.ReportUsedQuota(ctx); err != nil {
-		log.Errorf(err, "report the used quota failed")
-	}
-
-	log.Infof("create micro-service[%s][%s] successfully, operator: %s",
-		service.ServiceId, serviceFlag, remoteIP)
-	return &pb.CreateServiceResponse{
-		Response:  pb.CreateResponse(pb.ResponseSuccess, "Register service successfully."),
-		ServiceId: service.ServiceId,
-	}, nil
-}
-
-func checkQuota(ctx context.Context, domainProject string) *quota.ApplyQuotaResult {
-	if core.IsSCInstance(ctx) {
-		log.Debugf("register service-center, skip quota check")
-		return nil
-	}
-	res := quota.NewApplyQuotaResource(quota.MicroServiceQuotaType, domainProject, "", 1)
-	rst := quota.Apply(ctx, res)
-	return rst
+	return datasource.Instance().RegisterService(ctx, in)
 }
 
 func (s *MicroServiceService) DeleteServicePri(ctx context.Context, serviceID string, force bool) (*pb.Response, error) {
@@ -374,11 +239,7 @@ func (s *MicroServiceService) Delete(ctx context.Context, in *pb.DeleteServiceRe
 		}, nil
 	}
 
-	resp, err := s.DeleteServicePri(ctx, in.ServiceId, in.Force)
-
-	return &pb.DeleteServiceResponse{
-		Response: resp,
-	}, err
+	return datasource.Instance().UnregisterService(ctx, in)
 }
 
 func (s *MicroServiceService) DeleteServices(ctx context.Context, request *pb.DelServicesRequest) (*pb.DelServicesResponse, error) {
@@ -480,154 +341,40 @@ func (s *MicroServiceService) GetOne(ctx context.Context, in *pb.GetServiceReque
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
 		}, nil
 	}
-	domainProject := util.ParseDomainProject(ctx)
-	service, err := serviceUtil.GetService(ctx, domainProject, in.ServiceId)
 
-	if err != nil {
-		log.Errorf(err, "get micro-service[%s] failed, get service file failed", in.ServiceId)
-		return &pb.GetServiceResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
-		}, err
-	}
-	if service == nil {
-		log.Errorf(nil, "get micro-service[%s] failed, service does not exist", in.ServiceId)
-		return &pb.GetServiceResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
-		}, nil
-	}
-	return &pb.GetServiceResponse{
-		Response: pb.CreateResponse(pb.ResponseSuccess, "Get service successfully."),
-		Service:  service,
-	}, nil
+	return datasource.Instance().GetService(ctx, in)
 }
 
 func (s *MicroServiceService) GetServices(ctx context.Context, in *pb.GetServicesRequest) (*pb.GetServicesResponse, error) {
-	services, err := serviceUtil.GetAllServiceUtil(ctx)
-	if err != nil {
-		log.Errorf(err, "get all services by domain failed")
-		return &pb.GetServicesResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
-		}, err
-	}
-
-	return &pb.GetServicesResponse{
-		Response: pb.CreateResponse(pb.ResponseSuccess, "Get all services successfully."),
-		Services: services,
-	}, nil
+	return datasource.Instance().GetServices(ctx, in)
 }
 
 func (s *MicroServiceService) UpdateProperties(ctx context.Context, in *pb.UpdateServicePropsRequest) (*pb.UpdateServicePropsResponse, error) {
-	remoteIP := util.GetIPFromContext(ctx)
 	err := Validate(in)
 	if err != nil {
+		remoteIP := util.GetIPFromContext(ctx)
 		log.Errorf(err, "update service[%s] properties failed, operator: %s", in.ServiceId, remoteIP)
 		return &pb.UpdateServicePropsResponse{
 			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 
-	domainProject := util.ParseDomainProject(ctx)
-
-	key := apt.GenerateServiceKey(domainProject, in.ServiceId)
-	service, err := serviceUtil.GetService(ctx, domainProject, in.ServiceId)
-	if err != nil {
-		log.Errorf(err, "update service[%s] properties failed, get service file failed, operator: %s",
-			in.ServiceId, remoteIP)
-		return &pb.UpdateServicePropsResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
-		}, err
-	}
-	if service == nil {
-		log.Errorf(nil, "update service[%s] properties failed, service does not exist, operator: %s",
-			in.ServiceId, remoteIP)
-		return &pb.UpdateServicePropsResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
-		}, nil
-	}
-
-	copyServiceRef := *service
-	copyServiceRef.Properties = in.Properties
-	copyServiceRef.ModTimestamp = strconv.FormatInt(time.Now().Unix(), 10)
-
-	data, err := json.Marshal(copyServiceRef)
-	if err != nil {
-		log.Errorf(err, "update service[%s] properties failed, json marshal service failed, operator: %s",
-			in.ServiceId, remoteIP)
-		return &pb.UpdateServicePropsResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
-		}, err
-	}
-
-	// Set key file
-	resp, err := client.Instance().TxnWithCmp(ctx,
-		[]client.PluginOp{client.OpPut(client.WithStrKey(key), client.WithValue(data))},
-		[]client.CompareOp{client.OpCmp(
-			client.CmpVer(util.StringToBytesWithNoCopy(key)),
-			client.CmpNotEqual, 0)},
-		nil)
-	if err != nil {
-		log.Errorf(err, "update service[%s] properties failed, operator: %s", in.ServiceId, remoteIP)
-		return &pb.UpdateServicePropsResponse{
-			Response: pb.CreateResponse(scerr.ErrUnavailableBackend, err.Error()),
-		}, err
-	}
-	if !resp.Succeeded {
-		log.Errorf(err, "update service[%s] properties failed, service does not exist, operator: %s",
-			in.ServiceId, remoteIP)
-		return &pb.UpdateServicePropsResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
-		}, nil
-	}
-
-	log.Infof("update service[%s] properties successfully, operator: %s", in.ServiceId, remoteIP)
-	return &pb.UpdateServicePropsResponse{
-		Response: pb.CreateResponse(pb.ResponseSuccess, "update service successfully."),
-	}, nil
+	return datasource.Instance().UpdateService(ctx, in)
 }
 
 func (s *MicroServiceService) Exist(ctx context.Context, in *pb.GetExistenceRequest) (*pb.GetExistenceResponse, error) {
-	domainProject := util.ParseDomainProject(ctx)
 	switch in.Type {
 	case ExistTypeMicroservice:
 		err := ExistenceReqValidator().Validate(in)
-		serviceFlag := util.StringJoin([]string{in.Environment, in.AppId, in.ServiceName, in.Version}, "/")
 		if err != nil {
+			serviceFlag := util.StringJoin([]string{in.Environment, in.AppId, in.ServiceName, in.Version}, "/")
 			log.Errorf(err, "micro-service[%s] exist failed", serviceFlag)
 			return &pb.GetExistenceResponse{
 				Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
 			}, nil
 		}
 
-		ids, exist, err := serviceUtil.FindServiceIds(ctx, in.Version, &pb.MicroServiceKey{
-			Environment: in.Environment,
-			AppId:       in.AppId,
-			ServiceName: in.ServiceName,
-			Alias:       in.ServiceName,
-			Version:     in.Version,
-			Tenant:      domainProject,
-		})
-		if err != nil {
-			log.Errorf(err, "micro-service[%s] exist failed, find serviceIDs failed", serviceFlag)
-			return &pb.GetExistenceResponse{
-				Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
-			}, err
-		}
-		if !exist {
-			log.Infof("micro-service[%s] exist failed, service does not exist", serviceFlag)
-			return &pb.GetExistenceResponse{
-				Response: pb.CreateResponse(scerr.ErrServiceNotExists, serviceFlag+" does not exist."),
-			}, nil
-		}
-		if len(ids) == 0 {
-			log.Infof("micro-service[%s] exist failed, version mismatch", serviceFlag)
-			return &pb.GetExistenceResponse{
-				Response: pb.CreateResponse(scerr.ErrServiceVersionNotExists, serviceFlag+" version mismatch."),
-			}, nil
-		}
-		return &pb.GetExistenceResponse{
-			Response:  pb.CreateResponse(pb.ResponseSuccess, "get service id successfully."),
-			ServiceId: ids[0], // 约定多个时，取较新版本
-		}, nil
+		return datasource.Instance().ExistService(ctx, in)
 	case ExistTypeSchema:
 		err := GetSchemaReqValidator().Validate(in)
 		if err != nil {
@@ -637,39 +384,7 @@ func (s *MicroServiceService) Exist(ctx context.Context, in *pb.GetExistenceRequ
 			}, nil
 		}
 
-		if !serviceUtil.ServiceExist(ctx, domainProject, in.ServiceId) {
-			log.Warnf("schema[%s/%s] exist failed, service does not exist", in.ServiceId, in.SchemaId)
-			return &pb.GetExistenceResponse{
-				Response: pb.CreateResponse(scerr.ErrServiceNotExists, "service does not exist."),
-			}, nil
-		}
-
-		key := apt.GenerateServiceSchemaKey(domainProject, in.ServiceId, in.SchemaId)
-		exist, err := serviceUtil.CheckSchemaInfoExist(ctx, key)
-		if err != nil {
-			log.Errorf(err, "schema[%s/%s] exist failed, get schema failed", in.ServiceId, in.SchemaId)
-			return &pb.GetExistenceResponse{
-				Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
-			}, err
-		}
-		if !exist {
-			log.Infof("schema[%s/%s] exist failed, schema does not exist", in.ServiceId, in.SchemaId)
-			return &pb.GetExistenceResponse{
-				Response: pb.CreateResponse(scerr.ErrSchemaNotExists, "schema does not exist."),
-			}, nil
-		}
-		schemaSummary, err := getSchemaSummary(ctx, domainProject, in.ServiceId, in.SchemaId)
-		if err != nil {
-			log.Errorf(err, "schema[%s/%s] exist failed, get schema summary failed", in.ServiceId, in.SchemaId)
-			return &pb.GetExistenceResponse{
-				Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
-			}, err
-		}
-		return &pb.GetExistenceResponse{
-			Response: pb.CreateResponse(pb.ResponseSuccess, "Schema exist."),
-			SchemaId: in.SchemaId,
-			Summary:  schemaSummary,
-		}, nil
+		return datasource.Instance().ExistSchema(ctx, in)
 	default:
 		log.Warnf("unexpected type '%s' for existence query.", in.Type)
 		return &pb.GetExistenceResponse{

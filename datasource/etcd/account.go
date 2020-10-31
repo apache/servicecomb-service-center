@@ -36,7 +36,6 @@ func (ds *DataSource) AccountExist(ctx context.Context, key string) (bool, error
 	}
 	return true, nil
 }
-
 func (ds *DataSource) GetAccount(ctx context.Context, key string) (*rbacframe.Account, error) {
 	resp, err := client.Instance().Do(ctx, client.GET,
 		client.WithStrKey(GenerateETCDAccountKey(key)))
@@ -92,7 +91,6 @@ func (ds *DataSource) UpdateAccount(ctx context.Context, key string, account *rb
 		client.WithValue(value))
 	return err
 }
-
 func (ds *DataSource) AddDomain(ctx context.Context, domain string) (bool, error) {
 	ok, err := client.Instance().PutNoOverride(ctx,
 		client.WithStrKey(GenerateETCDDomainKey(domain)))
@@ -101,7 +99,6 @@ func (ds *DataSource) AddDomain(ctx context.Context, domain string) (bool, error
 	}
 	return ok, nil
 }
-
 func (ds *DataSource) DomainExist(ctx context.Context, domain string) (bool, error) {
 	opts := append(utils.FromContext(ctx),
 		client.WithStrKey(GenerateETCDDomainKey(domain)),
@@ -112,7 +109,6 @@ func (ds *DataSource) DomainExist(ctx context.Context, domain string) (bool, err
 	}
 	return rsp.Count > 0, nil
 }
-
 func (ds *DataSource) AddProject(ctx context.Context, domain, project string) (bool, error) {
 	ok, err := client.Instance().PutNoOverride(ctx,
 		client.WithStrKey(GenerateETCDProjectKey(domain, project)))
@@ -121,7 +117,6 @@ func (ds *DataSource) AddProject(ctx context.Context, domain, project string) (b
 	}
 	return ok, nil
 }
-
 func (ds *DataSource) ProjectExist(ctx context.Context, domain, project string) (bool, error) {
 	opts := append(utils.FromContext(ctx),
 		client.WithStrKey(GenerateETCDProjectKey(domain, project)),

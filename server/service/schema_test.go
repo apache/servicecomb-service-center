@@ -909,16 +909,6 @@ var _ = Describe("'Schema' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(respModifySchemas.Response.GetCode()).To(Equal(scerr.ErrUndefinedSchemaID))
-
-				By("schema edit allowed, add a schema with new schemaId should success")
-
-				localServiceResource = service.NewMicroServiceService(true, instanceResource)
-				respModifySchemas, err = localServiceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
-					ServiceId: serviceIdPro1,
-					Schemas:   schemas,
-				})
-				Expect(err).To(BeNil())
-				Expect(respModifySchemas.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 			})
 		})
 
@@ -976,17 +966,6 @@ var _ = Describe("'Schema' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(respModifySchema.Response.GetCode()).To(Equal(scerr.ErrModifySchemaNotAllow))
-
-				By("schema edit allowed, modify a schema should success")
-				localServiceResource = service.NewMicroServiceService(true, instanceResource)
-				respModifySchema, err = localServiceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
-					ServiceId: serviceIdPro1,
-					SchemaId:  schemas[0].SchemaId,
-					Summary:   schemas[0].Summary,
-					Schema:    schemas[0].SchemaId,
-				})
-				Expect(err).To(BeNil())
-				Expect(respModifySchema.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 			})
 		})
 	})

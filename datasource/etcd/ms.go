@@ -33,6 +33,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
+	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"github.com/apache/servicecomb-service-center/server/service/cache"
 	"sort"
@@ -59,19 +60,132 @@ func init() {
 // 3. check etcd-client response && construct createServiceResponse
 func (ds *DataSource) RegisterService(ctx context.Context, request *pb.CreateServiceRequest) (
 	*pb.CreateServiceResponse, error) {
-	// start to store service to etcd
-	serviceBody := request.Service
+	remoteIP := util.GetIPFromContext(ctx)
+	service := request.Service
+	serviceFlag := util.StringJoin([]string{
+		service.Environment, service.AppId, service.ServiceName, service.Version}, "/")
 
-	// construct data to invoke etcd client
-	opts, uniqueCmpOpts, failOpts, err := capRegisterData(ctx, request)
+	serviceUtil.SetServiceDefaultValue(service)
+	domainProject := util.ParseDomainProject(ctx)
+
+	serviceKey := &pb.MicroServiceKey{
+		Tenant:      domainProject,
+		Environment: service.Environment,
+		AppId:       service.AppId,
+		ServiceName: service.ServiceName,
+		Alias:       service.Alias,
+		Version:     service.Version,
+	}
+
+	reporter := checkQuota(ctx, domainProject)
+	defer reporter.Close(ctx)
+
+	if reporter != nil && reporter.Err != nil {
+		log.Errorf(reporter.Err, "create micro-service[%s] failed, operator: %s",
+			serviceFlag, remoteIP)
+		resp := &pb.CreateServiceResponse{
+			Response: pb.CreateResponseWithSCErr(reporter.Err),
+		}
+		if reporter.Err.InternalError() {
+			return resp, reporter.Err
+		}
+		return resp, nil
+	}
+
+	index := apt.GenerateServiceIndexKey(serviceKey)
+
+	// 产生全局service id
+	requestServiceID := service.ServiceId
+	if len(requestServiceID) == 0 {
+		ctx = util.SetContext(ctx, uuid.ContextKey, index)
+		service.ServiceId = uuid.Generator().GetServiceID(ctx)
+	}
+	service.Timestamp = strconv.FormatInt(time.Now().Unix(), 10)
+	service.ModTimestamp = service.Timestamp
+
+	data, err := json.Marshal(service)
 	if err != nil {
+		log.Errorf(err, "create micro-service[%s] failed, json marshal service failed, operator: %s",
+			serviceFlag, remoteIP)
 		return &pb.CreateServiceResponse{
 			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
 		}, err
 	}
-	resp, err := client.Instance().TxnWithCmp(ctx, opts, uniqueCmpOpts, failOpts)
 
-	return newRegisterServiceResp(ctx, serviceBody, resp, err)
+	key := apt.GenerateServiceKey(domainProject, service.ServiceId)
+	keyBytes := util.StringToBytesWithNoCopy(key)
+	indexBytes := util.StringToBytesWithNoCopy(index)
+	aliasBytes := util.StringToBytesWithNoCopy(apt.GenerateServiceAliasKey(serviceKey))
+
+	opts := []client.PluginOp{
+		client.OpPut(client.WithKey(keyBytes), client.WithValue(data)),
+		client.OpPut(client.WithKey(indexBytes), client.WithStrValue(service.ServiceId)),
+	}
+	uniqueCmpOpts := []client.CompareOp{
+		client.OpCmp(client.CmpVer(indexBytes), client.CmpEqual, 0),
+		client.OpCmp(client.CmpVer(keyBytes), client.CmpEqual, 0),
+	}
+	failOpts := []client.PluginOp{
+		client.OpGet(client.WithKey(indexBytes)),
+	}
+
+	if len(serviceKey.Alias) > 0 {
+		opts = append(opts, client.OpPut(client.WithKey(aliasBytes), client.WithStrValue(service.ServiceId)))
+		uniqueCmpOpts = append(uniqueCmpOpts,
+			client.OpCmp(client.CmpVer(aliasBytes), client.CmpEqual, 0))
+		failOpts = append(failOpts, client.OpGet(client.WithKey(aliasBytes)))
+	}
+
+	resp, err := client.Instance().TxnWithCmp(ctx, opts, uniqueCmpOpts, failOpts)
+	if err != nil {
+		log.Errorf(err, "create micro-service[%s] failed, operator: %s",
+			serviceFlag, remoteIP)
+		return &pb.CreateServiceResponse{
+			Response: pb.CreateResponse(scerr.ErrUnavailableBackend, err.Error()),
+		}, err
+	}
+	if !resp.Succeeded {
+		if len(requestServiceID) != 0 {
+			if len(resp.Kvs) == 0 ||
+				requestServiceID != util.BytesToStringWithNoCopy(resp.Kvs[0].Value) {
+				log.Warnf("create micro-service[%s] failed, service already exists, operator: %s",
+					serviceFlag, remoteIP)
+				return &pb.CreateServiceResponse{
+					Response: pb.CreateResponse(scerr.ErrServiceAlreadyExists,
+						"ServiceID conflict or found the same service with different id."),
+				}, nil
+			}
+		}
+
+		if len(resp.Kvs) == 0 {
+			// internal error?
+			log.Errorf(nil, "create micro-service[%s] failed, unexpected txn response, operator: %s",
+				serviceFlag, remoteIP)
+			return &pb.CreateServiceResponse{
+				Response: pb.CreateResponse(scerr.ErrInternal, "Unexpected txn response."),
+			}, nil
+		}
+
+		serviceIDInner := util.BytesToStringWithNoCopy(resp.Kvs[0].Value)
+		log.Warnf("create micro-service[%s][%s] failed, service already exists, operator: %s",
+			serviceIDInner, serviceFlag, remoteIP)
+		return &pb.CreateServiceResponse{
+			Response:  pb.CreateResponse(pb.ResponseSuccess, "register service successfully"),
+			ServiceId: serviceIDInner,
+		}, nil
+	}
+
+	if err := reporter.ReportUsedQuota(ctx); err != nil {
+		log.Errorf(err, "report the used quota failed")
+	}
+
+	log.Infof("create micro-service[%s][%s] successfully, operator: %s",
+		service.ServiceId, serviceFlag, remoteIP)
+	return &pb.CreateServiceResponse{
+		Response:  pb.CreateResponse(pb.ResponseSuccess, "Register service successfully."),
+		ServiceId: service.ServiceId,
+	}, nil
+
 }
 
 func (ds *DataSource) GetServices(ctx context.Context, request *pb.GetServicesRequest) (
@@ -115,16 +229,7 @@ func (ds *DataSource) GetService(ctx context.Context, request *pb.GetServiceRequ
 
 func (ds *DataSource) GetServiceDetail(ctx context.Context, request *pb.GetServiceRequest) (
 	*pb.GetServiceDetailResponse, error) {
-	ctx = util.SetContext(ctx, util.CtxCacheOnly, "1")
-
 	domainProject := util.ParseDomainProject(ctx)
-	options := []string{"tags", "rules", "instances", "schemas", "dependencies"}
-
-	if len(request.ServiceId) == 0 {
-		return &pb.GetServiceDetailResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Invalid request for getting service detail."),
-		}, nil
-	}
 
 	service, err := serviceUtil.GetService(ctx, domainProject, request.ServiceId)
 	if service == nil {
@@ -154,6 +259,7 @@ func (ds *DataSource) GetServiceDetail(ctx context.Context, request *pb.GetServi
 		}, err
 	}
 
+	options := []string{"tags", "rules", "instances", "schemas", "dependencies"}
 	serviceInfo, err := getServiceDetailUtil(ctx, ServiceDetailOpt{
 		domainProject: domainProject,
 		service:       service,

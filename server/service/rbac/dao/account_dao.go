@@ -23,6 +23,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/pkg/etcdsync"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -50,7 +51,7 @@ func CreateAccount(ctx context.Context, a *rbacframe.Account) error {
 		}
 	}()
 	key := core.GenerateAccountKey(a.Name)
-	exist, err := client.Exist(ctx, key)
+	exist, err := datasource.Instance().AccountExist(ctx, a.Name)
 	if err != nil {
 		log.Errorf(err, "can not save account info")
 		return err
@@ -80,63 +81,22 @@ func CreateAccount(ctx context.Context, a *rbacframe.Account) error {
 }
 
 func GetAccount(ctx context.Context, name string) (*rbacframe.Account, error) {
-	key := core.GenerateAccountKey(name)
-	r, err := client.Get(ctx, key)
-	if err != nil {
-		log.Errorf(err, "can not get account info")
-		return nil, err
-	}
-	a := &rbacframe.Account{}
-	err = json.Unmarshal(r.Value, a)
-	if err != nil {
-		log.Errorf(err, "account info format invalid")
-		return nil, err
-	}
-	return a, nil
+	return datasource.Instance().GetAccount(ctx, name)
 }
 func ListAccount(ctx context.Context) ([]*rbacframe.Account, int64, error) {
-	key := core.GenerateAccountKey("")
-	r, n, err := client.List(ctx, key)
-	if err != nil {
-		log.Errorf(err, "can not get account info")
-		return nil, 0, err
-	}
-	as := make([]*rbacframe.Account, 0, n)
-	for _, v := range r {
-		a := &rbacframe.Account{}
-		err = json.Unmarshal(v.Value, a)
-		if err != nil {
-			log.Error("account info format invalid:", err)
-			continue //do not fail if some account is invalid
-		}
-		a.Password = ""
-		as = append(as, a)
-	}
-	return as, n, nil
+	return datasource.Instance().ListAccount(ctx, "")
 }
 func AccountExist(ctx context.Context, name string) (bool, error) {
-	exist, err := client.Exist(ctx, core.GenerateAccountKey(name))
-	if err != nil {
-		log.Errorf(err, "can not get account info")
-		return false, err
-	}
-	return exist, nil
+	return datasource.Instance().AccountExist(ctx, name)
 }
 func DeleteAccount(ctx context.Context, name string) (bool, error) {
-	exist, err := client.Delete(ctx, core.GenerateAccountKey(name))
-	if err != nil {
-		log.Errorf(err, "can not get account info")
-		return false, err
-	}
-	log.Info("account is deleted")
-	return exist, nil
+	return datasource.Instance().DeleteAccount(ctx, name)
 }
 
 //CreateAccount save 2 kv
 //1. account info
 func EditAccount(ctx context.Context, a *rbacframe.Account) error {
-	key := core.GenerateAccountKey(a.Name)
-	exist, err := client.Exist(ctx, key)
+	exist, err := datasource.Instance().AccountExist(ctx, a.Name)
 	if err != nil {
 		log.Errorf(err, "can not edit account info")
 		return err
@@ -145,12 +105,7 @@ func EditAccount(ctx context.Context, a *rbacframe.Account) error {
 		return ErrCanNotEdit
 	}
 
-	value, err := json.Marshal(a)
-	if err != nil {
-		log.Errorf(err, "account info is invalid")
-		return err
-	}
-	err = client.PutBytes(ctx, key, value)
+	err = datasource.Instance().UpdateAccount(ctx, a.Name, a)
 	if err != nil {
 		log.Errorf(err, "can not edit account info")
 		return err

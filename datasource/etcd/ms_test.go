@@ -115,7 +115,7 @@ func TestService_Register(t *testing.T) {
 		})
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrServiceAlreadyExists, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
 		// serviceName: some-relay1-ms-service-name
 		// alias: sr-ms-service-name
@@ -134,7 +134,7 @@ func TestService_Register(t *testing.T) {
 		})
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrServiceAlreadyExists, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
 		// serviceName: some-relay1-ms-service-name
 		// alias: sr-ms-service-name
