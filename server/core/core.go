@@ -33,6 +33,8 @@ func Initialize() {
 	// initialize configuration
 	config.Init()
 
+	SetSharedMode()
+
 	go handleSignals()
 }
 

@@ -27,23 +27,17 @@ import (
 	"time"
 )
 
-// Gatherer is the reader of sc metrics
-var Gatherer *MetricsGatherer
-
-func init() {
-	Gatherer = NewGatherer()
-	Gatherer.Start()
-}
-
-func NewGatherer() *MetricsGatherer {
+func NewGatherer(opts Options) *MetricsGatherer {
 	return &MetricsGatherer{
-		Records: NewMetrics(),
-		closed:  true,
+		Interval: opts.Interval,
+		Records:  NewMetrics(),
+		closed:   true,
 	}
 }
 
 type MetricsGatherer struct {
-	Records *Metrics
+	Records  *Metrics
+	Interval time.Duration
 
 	lock   sync.Mutex
 	closed bool
@@ -63,7 +57,7 @@ func (mm *MetricsGatherer) Start() {
 }
 
 func (mm *MetricsGatherer) loop(ctx context.Context) {
-	ticker := time.NewTicker(Period)
+	ticker := time.NewTicker(mm.Interval)
 	for {
 		select {
 		case <-ctx.Done():

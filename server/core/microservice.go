@@ -22,9 +22,9 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/proto"
 	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/version"
 	"github.com/astaxie/beego"
-	"os"
 	"strings"
 )
 
@@ -54,8 +54,6 @@ const (
 
 func init() {
 	prepareSelfRegistration()
-
-	SetSharedMode()
 }
 
 func prepareSelfRegistration() {
@@ -102,7 +100,7 @@ func IsDefaultDomainProject(domainProject string) bool {
 
 func SetSharedMode() {
 	sharedServiceNames = make(map[string]struct{})
-	for _, s := range strings.Split(os.Getenv("CSE_SHARED_SERVICES"), ",") {
+	for _, s := range strings.Split(config.GetRegistry().GlobalVisible, ",") {
 		if len(s) > 0 {
 			sharedServiceNames[s] = struct{}{}
 		}

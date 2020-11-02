@@ -34,23 +34,6 @@ var (
 
 var brokerKvStore = &BKvStore{}
 
-func init() {
-	PARTICIPANT = kv.Store().MustInstall(kv.NewAddOn("PARTICIPANT",
-		sd.Configure().WithPrefix(GetBrokerParticipantKey(""))))
-	VERSION = kv.Store().MustInstall(kv.NewAddOn("VERSION",
-		sd.Configure().WithPrefix(GetBrokerVersionKey(""))))
-	PACT = kv.Store().MustInstall(kv.NewAddOn("PACT",
-		sd.Configure().WithPrefix(GetBrokerPactKey(""))))
-	PactVersion = kv.Store().MustInstall(kv.NewAddOn("PACT_VERSION",
-		sd.Configure().WithPrefix(GetBrokerPactVersionKey(""))))
-	PactTag = kv.Store().MustInstall(kv.NewAddOn("PACT_TAG",
-		sd.Configure().WithPrefix(GetBrokerTagKey(""))))
-	VERIFICATION = kv.Store().MustInstall(kv.NewAddOn("VERIFICATION",
-		sd.Configure().WithPrefix(GetBrokerVerificationKey(""))))
-	PactLatest = kv.Store().MustInstall(kv.NewAddOn("PACT_LATEST",
-		sd.Configure().WithPrefix(GetBrokerLatestKey(""))))
-}
-
 type BKvStore struct {
 }
 

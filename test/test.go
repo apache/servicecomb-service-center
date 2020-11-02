@@ -22,6 +22,8 @@ import _ "github.com/apache/servicecomb-service-center/server/init"
 import _ "github.com/apache/servicecomb-service-center/server/bootstrap"
 import (
 	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/service"
 	"github.com/go-chassis/go-archaius"
 )
 
@@ -30,4 +32,5 @@ func init() {
 	archaius.Set("discovery.kind", "etcd")
 	archaius.Set("registry.kind", "etcd")
 	datasource.Init(datasource.Options{PluginImplName: "etcd"})
+	core.ServiceAPI, core.InstanceAPI = service.AssembleResources()
 }

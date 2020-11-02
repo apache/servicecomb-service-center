@@ -21,7 +21,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/metric"
-	rest2 "github.com/apache/servicecomb-service-center/server/rest"
+	router "github.com/apache/servicecomb-service-center/server/rest"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net/http"
@@ -68,7 +68,7 @@ var (
 func init() {
 	prometheus.MustRegister(incomingRequests, successfulRequests, reqDurations, queryPerSeconds)
 
-	rest2.RegisterServerHandler("/metrics", promhttp.Handler())
+	router.RegisterServerHandler("/metrics", promhttp.Handler())
 }
 
 func ReportRequestCompleted(w http.ResponseWriter, r *http.Request, start time.Time) {

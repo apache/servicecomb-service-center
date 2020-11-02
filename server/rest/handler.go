@@ -21,16 +21,14 @@ import (
 	"net/http"
 	"time"
 
-	roa "github.com/apache/servicecomb-service-center/pkg/rest"
+	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/interceptor"
 )
 
-const CtxStartTimestamp util.CtxKey = "x-start-timestamp"
-
 func init() {
 	// api
-	RegisterServerHandler("/", NewServerHandler(roa.GetRouter()))
+	RegisterServerHandler("/", NewServerHandler(rest.GetRouter()))
 }
 
 // NewServerHandler news a ServerHandler
@@ -47,7 +45,7 @@ type ServerHandler struct {
 
 // ServeHTTP implements http.Handler
 func (s *ServerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	util.SetRequestContext(r, CtxStartTimestamp, time.Now())
+	util.SetRequestContext(r, rest.CtxStartTimestamp, time.Now())
 
 	err := interceptor.InvokeInterceptors(w, r)
 	if err != nil {

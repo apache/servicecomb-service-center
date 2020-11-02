@@ -17,7 +17,10 @@
 
 package rbac_test
 
-import _ "github.com/apache/servicecomb-service-center/test"
+import (
+	"github.com/apache/servicecomb-service-center/server/config"
+	_ "github.com/apache/servicecomb-service-center/test"
+)
 import (
 	"context"
 	"fmt"
@@ -37,6 +40,7 @@ func init() {
 	beego.AppConfig.Set("rbac_enabled", "true")
 	beego.AppConfig.Set(rbac.PubFilePath, "./rbac.pub")
 	beego.AppConfig.Set("rbac_rsa_private_key_file", "./private.key")
+	config.Init()
 }
 
 func TestInitRBAC(t *testing.T) {

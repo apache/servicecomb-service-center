@@ -92,7 +92,7 @@ func (m Manager) Instance(pn PluginType) PluginInstance {
 
 func (m Manager) New(pn PluginType) {
 	var (
-		//title = STATIC
+		//title = Static
 		f func() PluginInstance
 	)
 
@@ -100,7 +100,7 @@ func (m Manager) New(pn PluginType) {
 	p := m.existDynamicPlugin(pn)
 	if p != nil {
 		wi.dynamic = true
-		//title = DYNAMIC
+		//title = Dynamic
 		f = p.New
 	} else {
 		wi.dynamic = false

@@ -19,6 +19,7 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/registry"
+	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"testing"
 )
@@ -51,6 +52,8 @@ func (c *mockCounter) OnDelete(t sd.Type, domainProject string) {
 }
 
 func TestNewServiceIndexEventHandler(t *testing.T) {
+	config.Init()
+	core.SetSharedMode()
 
 	var counter = mockCounter{}
 	RegisterCounter(&counter)

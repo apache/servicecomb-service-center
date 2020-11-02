@@ -29,10 +29,11 @@ const (
 	HTTPMethodPost   = http.MethodPost
 	HTTPMethodDelete = http.MethodDelete
 
-	CtxResponse     util.CtxKey = "_server_response"
-	CtxRequest      util.CtxKey = "_server_request"
-	CtxMatchPattern util.CtxKey = "_server_match_pattern"
-	CtxMatchFunc    util.CtxKey = "_server_match_func"
+	CtxResponse       util.CtxKey = "_server_response"
+	CtxRequest        util.CtxKey = "_server_request"
+	CtxMatchPattern   util.CtxKey = "_server_match_pattern"
+	CtxMatchFunc      util.CtxKey = "_server_match_func"
+	CtxStartTimestamp util.CtxKey = "x-start-timestamp"
 
 	ServerChainName = "_server_chain"
 

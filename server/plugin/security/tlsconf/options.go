@@ -14,37 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package broker_test
 
-import (
-	"bytes"
-	. "github.com/apache/servicecomb-service-center/server/broker"
-	"net/http"
-	"net/http/httptest"
-	"testing"
-)
+package tlsconf
 
-var (
-	ctrl = &Controller{}
-	num  int
-)
-
-type mockBrokerHandler struct {
-}
-
-func (b *mockBrokerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	route := ctrl.URLPatterns()[num]
-	r.Method = route.Method
-	r.URL.RawQuery = ":sha=1"
-	route.Func(w, r)
-	num++
-}
-
-func TestBrokerController_GetHome(t *testing.T) {
-	svr := httptest.NewServer(&mockBrokerHandler{})
-	defer svr.Close()
-
-	for range ctrl.URLPatterns() {
-		http.Post(svr.URL, "application/json", bytes.NewBuffer([]byte("{}")))
-	}
+// Options contains configs of SSL
+type Options struct {
+	Dir              string
+	MinVersion       string
+	ClientMinVersion string
+	VerifyPeer       bool
+	Ciphers          string
+	ClientCiphers    string
 }

@@ -19,17 +19,16 @@ package rest
 
 import (
 	"github.com/apache/servicecomb-service-center/server/config"
-	"net/http"
 	"net/http/pprof"
 )
 
 func init() {
 	if config.GetServer().EnablePProf {
-		RegisterServerHandleFunc("/debug/pprof/", http.HandlerFunc(pprof.Index))
-		RegisterServerHandleFunc("/debug/pprof/profile", http.HandlerFunc(pprof.Profile))
-		RegisterServerHandleFunc("/debug/pprof/symbol", http.HandlerFunc(pprof.Symbol))
-		RegisterServerHandleFunc("/debug/pprof/cmdline", http.HandlerFunc(pprof.Cmdline))
-		RegisterServerHandleFunc("/debug/pprof/trace", http.HandlerFunc(pprof.Trace))
+		RegisterServerHandleFunc("/debug/pprof/", pprof.Index)
+		RegisterServerHandleFunc("/debug/pprof/profile", pprof.Profile)
+		RegisterServerHandleFunc("/debug/pprof/symbol", pprof.Symbol)
+		RegisterServerHandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+		RegisterServerHandleFunc("/debug/pprof/trace", pprof.Trace)
 		RegisterServerHandler("/debug/pprof/heap", pprof.Handler("heap"))
 		RegisterServerHandler("/debug/pprof/goroutine", pprof.Handler("goroutine"))
 		RegisterServerHandler("/debug/pprof/threadcreate", pprof.Handler("threadcreate"))

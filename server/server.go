@@ -71,7 +71,13 @@ func (s *ServiceCenterServer) initialize() {
 	s.notifyService = notify.GetNotifyCenter()
 	// init datasource
 	kind := datasource.ImplName(config.GetString("registry.kind", "", config.WithStandby("registry_plugin")))
-	if err := datasource.Init(datasource.Options{PluginImplName: kind}); err != nil {
+	if err := datasource.Init(datasource.Options{
+		PluginImplName:    kind,
+		InstanceTTL:       config.GetRegistry().InstanceTTL,
+		SchemaEditable:    config.GetRegistry().SchemaEditable,
+		CompactInterval:   config.GetRegistry().CompactInterval,
+		CompactIndexDelta: config.GetRegistry().CompactIndexDelta,
+	}); err != nil {
 		log.Fatalf(err, "init datasource failed")
 	}
 }

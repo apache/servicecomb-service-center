@@ -20,7 +20,6 @@ package etcd
 import (
 	"context"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
-	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
 	"strings"
 	"sync"
@@ -34,7 +33,6 @@ var (
 
 func Configuration() *client.Config {
 	configOnce.Do(func() {
-		var err error
 		defaultRegistryConfig.ClusterName = config.GetString("registry.etcd.cluster.name", client.DefaultClusterName, config.WithStandby("manager_name"))
 		defaultRegistryConfig.ManagerAddress = config.GetString("registry.etcd.cluster.managerEndpoints", "", config.WithStandby("manager_addr"))
 		defaultRegistryConfig.ClusterAddresses = config.GetString("registry.etcd.cluster.endpoints", "http://127.0.0.1:2379", config.WithStandby("manager_cluster"))
@@ -45,11 +43,8 @@ func Configuration() *client.Config {
 			strings.Contains(strings.ToLower(registryAddresses), "https://")
 
 		defaultRegistryConfig.DialTimeout = config.GetDuration("registry.etcd.connect.timeout", client.DefaultDialTimeout, config.WithStandby("connect_timeout"))
-		defaultRegistryConfig.RequestTimeOut = config.GetDuration("registry.etcd.requset.timeout", client.DefaultRequestTimeout, config.WithStandby("registry_timeout"))
-		defaultRegistryConfig.AutoSyncInterval, err = time.ParseDuration(config.GetRegistry().AutoSyncInterval)
-		if err != nil {
-			log.Errorf(err, "auto_sync_interval is invalid")
-		}
+		defaultRegistryConfig.RequestTimeOut = config.GetDuration("registry.etcd.request.timeout", client.DefaultRequestTimeout, config.WithStandby("registry_timeout"))
+		defaultRegistryConfig.AutoSyncInterval = config.GetDuration("registry.etcd.autoSyncInterval", 30*time.Second, config.WithStandby("auto_sync_interval"))
 
 		config.ServerInfo.Config.Plugins.Object("discovery").
 			Set("config", defaultRegistryConfig)

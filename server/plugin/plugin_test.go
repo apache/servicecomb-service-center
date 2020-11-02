@@ -43,21 +43,16 @@ func TestPluginManager_New(t *testing.T) {
 	times := 0
 	fn := func() Instance {
 		times++
-		auth.AUTH.ActiveConfigs().Set("a", "a")
 		return &mockAuthPlugin{times}
 	}
 	pm.Register(Plugin{auth.AUTH, "buildin", fn})
 
 	i := pm.Instance(auth.AUTH)
-	if i != pm.Instance(auth.AUTH) || auth.AUTH.ActiveConfigs().String("a", "") != "a" {
+	if i != pm.Instance(auth.AUTH) {
 		t.Fatalf("TestPluginManager_New failed")
 	}
 
 	pm.ReloadAll()
-	if auth.AUTH.ActiveConfigs().String("a", "") != "" {
-		t.Fatalf("TestPluginManager_New failed")
-	}
-
 	n := pm.Instance(auth.AUTH)
 	if i == n {
 		t.Fatalf("TestPluginManager_New failed")

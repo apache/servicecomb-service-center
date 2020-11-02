@@ -19,62 +19,36 @@ package metric
 
 import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/astaxie/beego"
-	"net"
-	"os"
-	"sync"
-	"time"
 )
 
 const (
-	defaultCollectPeriod = 30 * time.Second
-	FamilyName           = "service_center"
-	familyNamePrefix     = FamilyName + "_"
-	bufferSize           = 1024
+	FamilyName       = "service_center"
+	familyNamePrefix = FamilyName + "_"
+	bufferSize       = 1024
 )
 
 var (
-	// Period is metrics collect period
-	Period = 30 * time.Second
+	options Options
 	// SysMetrics map
 	SysMetrics util.ConcurrentMap
-
-	getEndpointOnce sync.Once
-	instance        string
+	// Gatherer is the reader of sc metrics
+	Gatherer *MetricsGatherer
 )
 
-func init() {
-	Period = getPeriod()
-	SysMetrics.Put("process_resident_memory_bytes", struct{}{})
-	SysMetrics.Put("process_cpu_seconds_total", struct{}{})
-	SysMetrics.Put("go_threads", struct{}{})
-	SysMetrics.Put("go_goroutines", struct{}{})
+func Init(opts Options) error {
+	options = opts
+	for _, key := range options.SysMetrics {
+		SysMetrics.Put(key, struct{}{})
+	}
+	Gatherer = NewGatherer(opts)
+	Gatherer.Start()
+	return nil
 }
 
-func getPeriod() time.Duration {
-	inv := os.Getenv("METRICS_INTERVAL")
-	d, err := time.ParseDuration(inv)
-	if err == nil && d >= time.Second {
-		return d
-	}
-	return defaultCollectPeriod
+func GetOptions() Options {
+	return options
 }
 
 func InstanceName() string {
-	getEndpointOnce.Do(func() {
-		restIP := beego.AppConfig.String("httpaddr")
-		restPort := beego.AppConfig.String("httpport")
-		if len(restIP) > 0 {
-			instance = net.JoinHostPort(restIP, restPort)
-			return
-		}
-
-		rpcIP := beego.AppConfig.String("rpcaddr")
-		rpcPort := beego.AppConfig.String("rpcport")
-		if len(rpcIP) > 0 {
-			instance = net.JoinHostPort(rpcIP, rpcPort)
-			return
-		}
-	})
-	return instance
+	return GetOptions().InstanceName
 }

@@ -22,7 +22,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/metric/prometheus"
-	svr "github.com/apache/servicecomb-service-center/server/rest"
 	"net/http"
 	"time"
 )
@@ -32,7 +31,7 @@ type MetricsHandler struct {
 
 func (h *MetricsHandler) Handle(i *chain.Invocation) {
 	i.Next(chain.WithAsyncFunc(func(ret chain.Result) {
-		start, ok := i.Context().Value(svr.CtxStartTimestamp).(time.Time)
+		start, ok := i.Context().Value(rest.CtxStartTimestamp).(time.Time)
 		if !ok {
 			return
 		}

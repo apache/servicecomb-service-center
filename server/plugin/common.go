@@ -22,10 +22,9 @@ import (
 )
 
 const (
-	BUILDIN       = "buildin"
-	STATIC        = "static"
-	DYNAMIC       = "dynamic"
-	keyPluginName = "name"
+	Buildin = "buildin"
+	Static  = "static"
+	Dynamic = "dynamic"
 )
 
 // DynamicPluginFunc should be called in buildin implement

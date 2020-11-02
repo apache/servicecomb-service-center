@@ -18,7 +18,7 @@ package buildin_test
 
 import (
 	"crypto/tls"
-	"github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/config"
 	_ "github.com/apache/servicecomb-service-center/server/plugin/security/cipher/buildin"
 	"github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf/buildin"
 	"github.com/stretchr/testify/assert"
@@ -27,10 +27,9 @@ import (
 )
 
 func init() {
-	testing.Init()
-	core.Initialize()
 	sslRoot := "../../../../../examples/service_center/ssl/"
 	os.Setenv("SSL_ROOT", sslRoot)
+	config.Init()
 }
 
 func TestGetServerTLSConfig(t *testing.T) {

@@ -18,10 +18,14 @@ package core
 import (
 	"context"
 	"github.com/apache/servicecomb-service-center/pkg/registry"
+	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/astaxie/beego"
-	"os"
 	"testing"
 )
+
+func init() {
+	config.Init()
+}
 
 func TestPrepareSelfRegistration(t *testing.T) {
 	beego.BConfig.RunMode = "dev"
@@ -67,7 +71,7 @@ func TestSetSharedMode(t *testing.T) {
 		t.Fatalf("TestSetSharedMode failed")
 	}
 
-	os.Setenv("CSE_SHARED_SERVICES", "shared")
+	config.ServerInfo.Config.GlobalVisible = "shared"
 	SetSharedMode()
 	if IsShared(&registry.MicroServiceKey{Tenant: "default/default", AppId: "default", ServiceName: "no-shared"}) {
 		t.Fatalf("TestSetSharedMode failed")

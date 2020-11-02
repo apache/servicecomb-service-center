@@ -26,8 +26,11 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
+	"sort"
 	"time"
 )
+
+var clustersIndex = make(map[string]int)
 
 func init() {
 	datasource.Install("etcd", NewDataSource)
@@ -37,8 +40,8 @@ func init() {
 type DataSource struct {
 	// SchemaEditable determines whether schema modification is allowed for
 	SchemaEditable bool
-	// TTL options
-	ttlFromEnv int64
+	// InstanceTTL options
+	InstanceTTL int64
 	// Compact options
 	CompactIndexDelta int64
 	CompactInterval   time.Duration
@@ -50,7 +53,7 @@ func NewDataSource(opts datasource.Options) (datasource.DataSource, error) {
 
 	inst := &DataSource{
 		SchemaEditable:    opts.SchemaEditable,
-		ttlFromEnv:        opts.TTL,
+		InstanceTTL:       opts.InstanceTTL,
 		CompactInterval:   opts.CompactInterval,
 		CompactIndexDelta: opts.CompactIndexDelta,
 	}
@@ -63,6 +66,7 @@ func NewDataSource(opts datasource.Options) (datasource.DataSource, error) {
 
 func (ds *DataSource) initialize() error {
 	// TODO: init dependency members
+	ds.initClustersIndex()
 	// init client/sd plugins
 	ds.initPlugins()
 	// Wait for kv store ready
@@ -72,6 +76,17 @@ func (ds *DataSource) initialize() error {
 	// Jobs
 	job.ClearNoInstanceServices()
 	return nil
+}
+
+func (ds *DataSource) initClustersIndex() {
+	var clusters []string
+	for name := range Configuration().Clusters {
+		clusters = append(clusters, name)
+	}
+	sort.Strings(clusters)
+	for i, name := range clusters {
+		clustersIndex[name] = i
+	}
 }
 
 func (ds *DataSource) initPlugins() {

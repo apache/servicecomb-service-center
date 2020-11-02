@@ -18,7 +18,10 @@
 package config
 
 import (
+	"github.com/apache/servicecomb-service-center/server/metric"
+	"github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf"
 	"github.com/go-chassis/go-archaius"
+	"net"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -43,6 +46,7 @@ const (
 	maxServiceClearInterval = 24 * time.Hour       //1 day
 	maxServiceTTL           = 24 * 365 * time.Hour //1 year
 
+	defaultCollectPeriod = 30 * time.Second
 )
 
 //Configurations is kie config items
@@ -85,6 +89,11 @@ func GetRBAC() ServerConfig {
 	return Configurations.Server.Config
 }
 
+//GetMetrics return the metrics configs
+func GetMetrics() ServerConfig {
+	return Configurations.Server.Config
+}
+
 func Init() {
 	setCPUs()
 
@@ -102,12 +111,30 @@ func Init() {
 
 	plugin.SetPluginDir(GetPlugin().PluginsDir)
 
+	// Logging
 	initLogger()
+	// Metrics
+	initMetrics()
+	// SSL
+	initSSL()
 
 	version.Ver().Log()
 }
 
 func newInfo() ServerInformation {
+	serviceClearInterval := GetDuration("registry.service.clearInterval", defaultServiceClearInterval, WithENV("SERVICE_CLEAR_INTERVAL"))
+	if serviceClearInterval < minServiceClearInterval || serviceClearInterval > maxServiceClearInterval {
+		serviceClearInterval = defaultServiceClearInterval
+	}
+	serviceTTL := GetDuration("registry.service.clearTTL", defaultServiceTTL, WithENV("SERVICE_TTL"))
+	if serviceTTL < minServiceTTL || serviceTTL > maxServiceTTL {
+		serviceTTL = defaultServiceTTL
+	}
+	cacheTTL := GetDuration("registry.cache.ttl", minCacheTTL, WithENV("CACHE_TTL"), WithStandby("cache_ttl"))
+	if cacheTTL < minCacheTTL {
+		cacheTTL = minCacheTTL
+	}
+
 	maxLogFileSize := GetInt64("log.rotateSize", 20, WithStandby("log_rotate_size"))
 	if maxLogFileSize <= 0 || maxLogFileSize > 50 {
 		maxLogFileSize = 20
@@ -115,21 +142,6 @@ func newInfo() ServerInformation {
 	maxLogBackupCount := GetInt64("log.backupCount", 50, WithStandby("log_backup_count"))
 	if maxLogBackupCount < 0 || maxLogBackupCount > 100 {
 		maxLogBackupCount = 50
-	}
-
-	serviceClearInterval := GetDuration("registry.service.clearInterval", defaultServiceClearInterval, WithENV("SERVICE_CLEAR_INTERVAL"))
-	if serviceClearInterval < minServiceClearInterval || serviceClearInterval > maxServiceClearInterval {
-		serviceClearInterval = defaultServiceClearInterval
-	}
-
-	serviceTTL := GetDuration("registry.service.clearTTL", defaultServiceTTL, WithENV("SERVICE_TTL"))
-	if serviceTTL < minServiceTTL || serviceTTL > maxServiceTTL {
-		serviceTTL = defaultServiceTTL
-	}
-
-	cacheTTL := GetDuration("registry.cache.ttl", minCacheTTL, WithENV("CACHE_TTL"), WithStandby("cache_ttl"))
-	if cacheTTL < minCacheTTL {
-		cacheTTL = minCacheTTL
 	}
 	accessLogFile := GetString("log.accessFile", "./access.log", WithENV("SC_ACCESS_LOG_FILE"), WithStandby("access_log_file"))
 
@@ -154,9 +166,8 @@ func newInfo() ServerInformation {
 			SslVerifyPeer: GetInt("ssl.verifyClient", 1, WithStandby("ssl_verify_client")) != 0,
 			SslCiphers:    GetString("ssl.ciphers", "", WithStandby("ssl_ciphers")),
 
-			AutoSyncInterval:  GetString("registry.autoSyncInterval", "30s", WithStandby("auto_sync_interval")),
 			CompactIndexDelta: GetInt64("registry.compact.indexDelta", 100, WithStandby("compact_index_delta")),
-			CompactInterval:   GetString("registry.compact.interval", "", WithStandby("compact_interval")),
+			CompactInterval:   GetDuration("registry.compact.interval", 12*time.Hour, WithStandby("compact_interval")),
 
 			LogRotateSize:   maxLogFileSize,
 			LogBackupCount:  maxLogBackupCount,
@@ -177,10 +188,15 @@ func newInfo() ServerInformation {
 			ServiceClearEnabled:  GetBool("registry.service.clearEnable", false, WithENV("SERVICE_CLEAR_ENABLED")),
 			ServiceClearInterval: serviceClearInterval,
 			ServiceTTL:           serviceTTL,
+			GlobalVisible:        GetString("registry.service.globalVisible", "", WithENV("CSE_SHARED_SERVICES")),
+			InstanceTTL:          GetInt64("registry.instance.ttl", 0, WithENV("INSTANCE_TTL")),
 
-			SchemaDisable: GetBool("registry.schema.readonly", false, WithENV("SCHEMA_DISABLE")),
+			SchemaDisable:  GetBool("registry.schema.disable", false, WithENV("SCHEMA_DISABLE")),
+			SchemaEditable: GetBool("registry.schema.editable", true, WithENV("SCHEMA_EDITABLE")),
 
 			EnableRBAC: GetBool("rbac.enable", false, WithStandby("rbac_enabled")),
+
+			MetricsInterval: GetDuration("metrics.interval", 30*time.Second, WithENV("METRICS_INTERVAL")),
 		},
 	}
 }
@@ -199,4 +215,61 @@ func initLogger() {
 		LogRotateSize:  int(GetLog().LogRotateSize),
 		LogBackupCount: int(GetLog().LogBackupCount),
 	})
+}
+
+func initMetrics() {
+	interval := GetDuration("metrics.interval", defaultCollectPeriod, WithENV("METRICS_INTERVAL"))
+	if interval <= time.Second {
+		interval = defaultCollectPeriod
+	}
+	var instance string
+	restIP := GetString("server.host", "127.0.0.1", WithStandby("httpaddr"))
+	restPort := GetString("server.port", "30100", WithStandby("httpport"))
+	if len(restIP) > 0 {
+		instance = net.JoinHostPort(restIP, restPort)
+	} else {
+		rpcIP := GetString("server.rpc.host", "127.0.0.1", WithStandby("rpcaddr"))
+		rpcPort := GetString("server.rpc.port", "30100", WithStandby("rpcport"))
+		if len(rpcIP) > 0 {
+			instance = net.JoinHostPort(rpcIP, rpcPort)
+		} else {
+			log.Fatal("init metrics InstanceName failed", nil)
+		}
+	}
+
+	if err := metric.Init(metric.Options{
+		Interval:     interval,
+		InstanceName: instance,
+		SysMetrics: []string{
+			"process_resident_memory_bytes",
+			"process_cpu_seconds_total",
+			"go_threads",
+			"go_goroutines",
+		},
+	}); err != nil {
+		log.Fatal("init metrics failed", err)
+	}
+}
+
+func initSSL() {
+	if !GetSSL().SslEnabled {
+		return
+	}
+	options := tlsconf.Options{
+		Dir:              GetString("ssl.dir", "", WithENV("SSL_ROOT")),
+		MinVersion:       GetString("ssl.minVersion", "TLSv1.2", WithStandby("ssl_min_version")),
+		ClientMinVersion: GetString("ssl.client.minVersion", "", WithStandby("ssl_client_min_version")),
+		VerifyPeer:       GetInt("ssl.verifyClient", 1, WithStandby("ssl_verify_client")) != 0,
+		Ciphers:          GetString("ssl.ciphers", "", WithStandby("ssl_ciphers")),
+		ClientCiphers:    GetString("ssl.client.ciphers", "", WithStandby("ssl_client_ciphers")),
+	}
+	if options.ClientMinVersion == "" {
+		options.ClientMinVersion = options.MinVersion
+	}
+	if options.ClientCiphers == "" {
+		options.ClientCiphers = options.Ciphers
+	}
+	if err := tlsconf.Init(options); err != nil {
+		log.Fatal("init ssl failed", err)
+	}
 }

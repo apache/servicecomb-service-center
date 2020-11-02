@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
-	"github.com/astaxie/beego"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -27,10 +26,6 @@ var (
 		CurrentPassword:     "tnuocca-tset1",
 	}
 )
-
-func init() {
-	beego.AppConfig.Set("registry_plugin", "etcd")
-}
 
 func TestAccount(t *testing.T) {
 	t.Run("add and get account", func(t *testing.T) {

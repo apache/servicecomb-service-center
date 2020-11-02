@@ -23,13 +23,13 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"github.com/apache/servicecomb-service-center/server/service"
 	"github.com/go-chassis/go-archaius"
 	"github.com/stretchr/testify/assert"
-	"os"
 	"strconv"
 	"strings"
 	"testing"
@@ -1445,7 +1445,7 @@ func TestInstance_Query(t *testing.T) {
 		assert.Equal(t, 0, len(respFind.Instances))
 
 		log.Info("shared service discovery")
-		_ = os.Setenv("CSE_SHARED_SERVICES", "query_instance_shared_provider_ms")
+		config.ServerInfo.Config.GlobalVisible = "query_instance_shared_provider_ms"
 		core.SetSharedMode()
 		core.Service.Environment = pb.ENV_PROD
 		respFind, err = datasource.Instance().FindInstances(
@@ -1659,7 +1659,7 @@ func TestInstance_Query(t *testing.T) {
 		assert.Equal(t, 0, len(respFind.Services.Updated[0].Instances))
 
 		log.Info("shared service discovery")
-		_ = os.Setenv("CSE_SHARED_SERVICES", "query_instance_shared_provider_ms")
+		config.ServerInfo.Config.GlobalVisible = "query_instance_shared_provider_ms"
 		core.SetSharedMode()
 		core.Service.Environment = pb.ENV_PROD
 		respFind, err = datasource.Instance().BatchFind(

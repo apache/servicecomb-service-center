@@ -36,23 +36,9 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"github.com/apache/servicecomb-service-center/server/service/cache"
-	"sort"
 	"strconv"
 	"time"
 )
-
-var clustersIndex = make(map[string]int)
-
-func init() {
-	var clusters []string
-	for name := range Configuration().Clusters {
-		clusters = append(clusters, name)
-	}
-	sort.Strings(clusters)
-	for i, name := range clusters {
-		clustersIndex[name] = i
-	}
-}
 
 // RegisterService() implement:
 // 1. capsule request to etcd kv format
@@ -567,8 +553,8 @@ func (ds *DataSource) RegisterInstance(ctx context.Context, request *pb.Register
 	}
 
 	ttl := int64(instance.HealthCheck.Interval * (instance.HealthCheck.Times + 1))
-	if ds.ttlFromEnv > 0 {
-		ttl = ds.ttlFromEnv
+	if ds.InstanceTTL > 0 {
+		ttl = ds.InstanceTTL
 	}
 	instanceFlag := fmt.Sprintf("ttl %ds, endpoints %v, host '%s', serviceID %s",
 		ttl, instance.Endpoints, instance.HostName, instance.ServiceId)

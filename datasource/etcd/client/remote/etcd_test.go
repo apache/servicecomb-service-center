@@ -14,18 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package remote
+package remote_test
 
+import _ "github.com/apache/servicecomb-service-center/test"
 import (
-	"github.com/apache/servicecomb-service-center/datasource/etcd"
-	_ "github.com/apache/servicecomb-service-center/server/plugin/tracing/pzipkin"
-	"github.com/stretchr/testify/assert"
-)
-import _ "github.com/apache/servicecomb-service-center/server/plugin/security/cipher/buildin"
-import _ "github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf/buildin"
-import (
-	context2 "context"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/datasource/etcd"
+	. "github.com/apache/servicecomb-service-center/datasource/etcd/client/remote"
+	"github.com/stretchr/testify/assert"
 	"strconv"
 	"strings"
 	"sync"
@@ -130,8 +126,8 @@ func TestEtcdClient(t *testing.T) {
 
 	// base test
 	inst := NewRegistry(client.Options{})
-	if inst == nil || strings.Index(endpoint, firstEndpoint) < 0 {
-		t.Fatalf("TestEtcdClient failed, %s != %s", firstEndpoint, endpoint)
+	if inst == nil || strings.Index(endpoint, FirstEndpoint) < 0 {
+		t.Fatalf("TestEtcdClient failed, %s != %s", FirstEndpoint, endpoint)
 	}
 	old1 := etcd.Configuration().ClusterAddresses
 	old2 := etcd.Configuration().DialTimeout
@@ -567,7 +563,7 @@ func TestEtcdClient_HealthCheck(t *testing.T) {
 	etcdc.Endpoints = []string{endpoint}
 
 	ctx, _ = context.WithTimeout(context.Background(), 1*time.Second)
-	go etcdc.healthCheckLoop(ctx)
+	go etcdc.HealthCheckLoop(ctx)
 	for {
 		_, err = etcdc.Do(context.Background(), client.GET,
 			client.WithStrKey("/test_health/"))
@@ -750,11 +746,11 @@ type mockKVForPagine struct {
 	rangeResp2 *clientv3.GetResponse
 }
 
-func (m *mockKVForPagine) Put(ctx context2.Context, key, val string, opts ...clientv3.OpOption) (*clientv3.PutResponse, error) {
+func (m *mockKVForPagine) Put(ctx context.Context, key, val string, opts ...clientv3.OpOption) (*clientv3.PutResponse, error) {
 	return nil, nil
 }
 
-func (m *mockKVForPagine) Get(ctx context2.Context, key string, opts ...clientv3.OpOption) (*clientv3.GetResponse, error) {
+func (m *mockKVForPagine) Get(ctx context.Context, key string, opts ...clientv3.OpOption) (*clientv3.GetResponse, error) {
 	op := &clientv3.Op{}
 	for _, o := range opts {
 		o(op)
@@ -769,19 +765,19 @@ func (m *mockKVForPagine) Get(ctx context2.Context, key string, opts ...clientv3
 	return m.rangeResp2, nil
 }
 
-func (m *mockKVForPagine) Delete(ctx context2.Context, key string, opts ...clientv3.OpOption) (*clientv3.DeleteResponse, error) {
+func (m *mockKVForPagine) Delete(ctx context.Context, key string, opts ...clientv3.OpOption) (*clientv3.DeleteResponse, error) {
 	return nil, nil
 }
 
-func (m *mockKVForPagine) Compact(ctx context2.Context, rev int64, opts ...clientv3.CompactOption) (*clientv3.CompactResponse, error) {
+func (m *mockKVForPagine) Compact(ctx context.Context, rev int64, opts ...clientv3.CompactOption) (*clientv3.CompactResponse, error) {
 	return nil, nil
 }
 
-func (m *mockKVForPagine) Do(ctx context2.Context, op clientv3.Op) (clientv3.OpResponse, error) {
+func (m *mockKVForPagine) Do(ctx context.Context, op clientv3.Op) (clientv3.OpResponse, error) {
 	return clientv3.OpResponse{}, nil
 }
 
-func (m *mockKVForPagine) Txn(ctx context2.Context) clientv3.Txn {
+func (m *mockKVForPagine) Txn(ctx context.Context) clientv3.Txn {
 	return nil
 }
 
@@ -829,7 +825,7 @@ func TestEtcdClient_paging(t *testing.T) {
 		Offset: -1,
 		Limit:  client.DefaultPageCount,
 	}
-	r, err := c.paging(context2.Background(), op)
+	r, err := c.Paging(context.Background(), op)
 	if err != nil {
 		t.Fatalf("TestEtcdClient_paging failed, %#v", err)
 	}

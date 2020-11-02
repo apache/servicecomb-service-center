@@ -116,12 +116,3 @@ func resourceLimitHandler(ctx context.Context, res *quota.ApplyQuotaResource) (i
 	}
 	return resp.Count, nil
 }
-
-func InitConfigs() {
-	quota.QUOTA.ActiveConfigs().
-		Set("service", quota.DefaultServiceQuota).
-		Set("instance", quota.DefaultInstanceQuota).
-		Set("schema", quota.DefaultSchemaQuota).
-		Set("tag", quota.DefaultTagQuota).
-		Set("rule", quota.DefaultRuleQuota)
-}

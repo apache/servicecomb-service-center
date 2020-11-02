@@ -45,9 +45,8 @@ func TestInit(t *testing.T) {
 		}
 
 		err = datasource.Init(datasource.Options{
-			Endpoint:       "",
 			PluginImplName: pluginName,
-			TTL:            TTL,
+			InstanceTTL:    TTL,
 			SchemaEditable: schemaEditable,
 		})
 		assert.Error(t, err)
@@ -66,9 +65,8 @@ func TestInit(t *testing.T) {
 		}
 
 		err = datasource.Init(datasource.Options{
-			Endpoint:       "",
 			PluginImplName: pluginName,
-			TTL:            TTL,
+			InstanceTTL:    TTL,
 			SchemaEditable: schemaEditable,
 		})
 		assert.NoError(t, err)

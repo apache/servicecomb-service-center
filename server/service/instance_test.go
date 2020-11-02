@@ -19,12 +19,12 @@ package service_test
 import (
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/core"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"math"
-	"os"
 	"strconv"
 	"strings"
 )
@@ -1624,7 +1624,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(len(respFind.Instances)).To(Equal(0))
 
 				By("shared service discovery")
-				os.Setenv("CSE_SHARED_SERVICES", "query_instance_shared_provider")
+				config.ServerInfo.Config.GlobalVisible = "query_instance_shared_provider"
 				core.SetSharedMode()
 				core.Service.Environment = pb.ENV_PROD
 
@@ -1866,7 +1866,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(len(respFind.Services.Updated[0].Instances)).To(Equal(0))
 
 				By("shared service discovery")
-				os.Setenv("CSE_SHARED_SERVICES", "query_instance_shared_provider")
+				config.ServerInfo.Config.GlobalVisible = "query_instance_shared_provider"
 				core.SetSharedMode()
 				core.Service.Environment = pb.ENV_PROD
 
