@@ -10,8 +10,8 @@ require (
 	github.com/coreos/pkg v0.0.0-20180108230652-97fdf19511ea // v4
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-chassis/foundation v0.1.1-0.20200825060850-b16bf420f7b3
-	github.com/go-chassis/go-archaius v1.3.2
-	github.com/go-chassis/go-chassis v0.0.0-20200826064053-d90be848aa10
+	github.com/go-chassis/go-archaius v1.3.6-0.20200917065837-57a2bca2b7ff
+	github.com/go-chassis/go-chassis/v2 v2.0.4-0.20201103065217-79c9f326e88d
 	github.com/go-chassis/paas-lager v1.1.1
 	github.com/gogo/protobuf v1.2.2-0.20190723190241-65acae22fc9d
 	github.com/golang/protobuf v1.3.2
@@ -38,6 +38,7 @@ require (
 	github.com/stretchr/testify v1.4.0
 	github.com/urfave/cli v1.22.4
 	github.com/widuu/gojson v0.0.0-20170212122013-7da9d2cd949b
+	go.mongodb.org/mongo-driver v1.4.2
 	go.uber.org/zap v1.10.0
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4

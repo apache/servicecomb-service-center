@@ -18,7 +18,9 @@
 set -x
 set +e
 export c_name="etcd"
+export mongo_docker="mongo"
 docker rm -f $c_name
+docker rm -f $mongo_docker
 set -e
 
 ut_for_dir() {
@@ -36,6 +38,13 @@ while ! nc -z 127.0.0.1 2379; do
   sleep 1
 done
 echo "${green}Etcd is running......${reset}"
+
+docker run -d -p 27017:27017 --name mongo mongo
+while ! nc -z 127.0.0.1 27017; do
+  echo "Waiting mongo to launch on 27017..."
+  sleep 1
+done
+echo "${green}mongodb is running......${reset}"
 
 echo "${green}Preparing the env for UT....${reset}"
 ./scripts/prepare_env_ut.sh
@@ -59,3 +68,4 @@ echo "${green}Service-Center finished${reset}"
 
 echo "${green}Cleaning up the etcd docker container${reset}"
 docker rm -f $c_name
+docker rm -f $mongo_docker
