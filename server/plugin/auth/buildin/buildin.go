@@ -27,8 +27,8 @@ import (
 	mgr "github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/auth"
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
-	"github.com/go-chassis/go-chassis/security/authr"
-	"github.com/go-chassis/go-chassis/server/restful"
+	"github.com/go-chassis/go-chassis/v2/security/authr"
+	"github.com/go-chassis/go-chassis/v2/server/restful"
 	"net/http"
 	"strings"
 )

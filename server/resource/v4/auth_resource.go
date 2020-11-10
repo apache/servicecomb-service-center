@@ -30,7 +30,7 @@ import (
 	"github.com/apache/servicecomb-service-center/server/service"
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
 	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
-	"github.com/go-chassis/go-chassis/security/authr"
+	"github.com/go-chassis/go-chassis/v2/security/authr"
 	"io/ioutil"
 	"net/http"
 )
