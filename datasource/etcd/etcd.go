@@ -27,6 +27,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -57,7 +58,10 @@ func NewDataSource(opts datasource.Options) (datasource.DataSource, error) {
 		CompactInterval:   opts.CompactInterval,
 		CompactIndexDelta: opts.CompactIndexDelta,
 	}
-	// TODO: deal with exception
+
+	registryAddresses := strings.Join(Configuration().RegistryAddresses(), ",")
+	Configuration().SslEnabled = opts.SslEnabled && strings.Contains(strings.ToLower(registryAddresses), "https://")
+
 	if err := inst.initialize(); err != nil {
 		return nil, err
 	}
@@ -65,7 +69,6 @@ func NewDataSource(opts datasource.Options) (datasource.DataSource, error) {
 }
 
 func (ds *DataSource) initialize() error {
-	// TODO: init dependency members
 	ds.initClustersIndex()
 	// init client/sd plugins
 	ds.initPlugins()

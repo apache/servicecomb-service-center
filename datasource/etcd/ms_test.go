@@ -1446,7 +1446,7 @@ func TestInstance_Query(t *testing.T) {
 
 		log.Info("shared service discovery")
 		config.ServerInfo.Config.GlobalVisible = "query_instance_shared_provider_ms"
-		core.SetSharedMode()
+		core.RegisterGlobalServices()
 		core.Service.Environment = pb.ENV_PROD
 		respFind, err = datasource.Instance().FindInstances(
 			util.SetTargetDomainProject(
@@ -1660,7 +1660,7 @@ func TestInstance_Query(t *testing.T) {
 
 		log.Info("shared service discovery")
 		config.ServerInfo.Config.GlobalVisible = "query_instance_shared_provider_ms"
-		core.SetSharedMode()
+		core.RegisterGlobalServices()
 		core.Service.Environment = pb.ENV_PROD
 		respFind, err = datasource.Instance().BatchFind(
 			util.SetTargetDomainProject(
@@ -3132,7 +3132,7 @@ func TestRule_Get(t *testing.T) {
 
 	t.Run("get when request is invalid", func(t *testing.T) {
 		log.Info("service not exists")
-		respGetRule, err := datasource.Instance().GetRule(getContext(), &pb.GetServiceRulesRequest{
+		respGetRule, err := datasource.Instance().GetRules(getContext(), &pb.GetServiceRulesRequest{
 			ServiceId: "not_exist_service_ms",
 		})
 		assert.NoError(t, err)
@@ -3140,7 +3140,7 @@ func TestRule_Get(t *testing.T) {
 	})
 
 	t.Run("get when request is valid", func(t *testing.T) {
-		respGetRule, err := datasource.Instance().GetRule(getContext(), &pb.GetServiceRulesRequest{
+		respGetRule, err := datasource.Instance().GetRules(getContext(), &pb.GetServiceRulesRequest{
 			ServiceId: serviceId,
 		})
 		assert.NoError(t, err)
@@ -3304,7 +3304,7 @@ func TestRule_Delete(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
-		respGetRule, err := datasource.Instance().GetRule(getContext(), &pb.GetServiceRulesRequest{
+		respGetRule, err := datasource.Instance().GetRules(getContext(), &pb.GetServiceRulesRequest{
 			ServiceId: serviceId,
 		})
 		assert.NoError(t, err)

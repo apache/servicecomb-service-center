@@ -1625,7 +1625,7 @@ var _ = Describe("'Instance' service", func() {
 
 				By("shared service discovery")
 				config.ServerInfo.Config.GlobalVisible = "query_instance_shared_provider"
-				core.SetSharedMode()
+				core.RegisterGlobalServices()
 				core.Service.Environment = pb.ENV_PROD
 
 				respFind, err = instanceResource.Find(
@@ -1867,7 +1867,7 @@ var _ = Describe("'Instance' service", func() {
 
 				By("shared service discovery")
 				config.ServerInfo.Config.GlobalVisible = "query_instance_shared_provider"
-				core.SetSharedMode()
+				core.RegisterGlobalServices()
 				core.Service.Environment = pb.ENV_PROD
 
 				respFind, err = instanceResource.BatchFind(

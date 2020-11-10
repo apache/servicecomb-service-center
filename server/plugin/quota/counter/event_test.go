@@ -53,7 +53,7 @@ func (c *mockCounter) OnDelete(t sd.Type, domainProject string) {
 
 func TestNewServiceIndexEventHandler(t *testing.T) {
 	config.Init()
-	core.SetSharedMode()
+	core.RegisterGlobalServices()
 
 	var counter = mockCounter{}
 	RegisterCounter(&counter)

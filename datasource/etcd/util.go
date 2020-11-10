@@ -296,7 +296,7 @@ func getServiceAllVersions(ctx context.Context, serviceKey *pb.MicroServiceKey) 
 
 	copyKey := *serviceKey
 	copyKey.Version = ""
-	key := GenerateServiceIndexKey(&copyKey)
+	key := kv.GenerateServiceIndexKey(&copyKey)
 
 	opts := append(serviceUtil.FromContext(ctx),
 		client.WithStrKey(key),
@@ -309,8 +309,8 @@ func getServiceAllVersions(ctx context.Context, serviceKey *pb.MicroServiceKey) 
 	if resp == nil || len(resp.Kvs) == 0 {
 		return versions, nil
 	}
-	for _, kv := range resp.Kvs {
-		key := GetInfoFromSvcIndexKV(kv.Key)
+	for _, keyValue := range resp.Kvs {
+		key := kv.GetInfoFromSvcIndexKV(keyValue.Key)
 		versions = append(versions, key.Version)
 	}
 	return versions, nil
@@ -444,7 +444,7 @@ func statistics(ctx context.Context, withShared bool) (*pb.Statistics, error) {
 	svcIDToNonVerKey := make(map[string]string, respSvc.Count)
 	for _, kv := range respSvc.Kvs {
 		key := apt.GetInfoFromSvcIndexKV(kv.Key)
-		if !withShared && apt.IsShared(key) {
+		if !withShared && apt.IsGlobal(key) {
 			continue
 		}
 		if _, ok := app[key.AppId]; !ok {

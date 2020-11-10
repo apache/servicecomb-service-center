@@ -57,29 +57,29 @@ func TestPrepareSelfRegistration(t *testing.T) {
 }
 
 func TestSetSharedMode(t *testing.T) {
-	SetSharedMode()
-	if IsShared(&registry.MicroServiceKey{}) {
+	RegisterGlobalServices()
+	if IsGlobal(&registry.MicroServiceKey{}) {
 		t.Fatalf("TestSetSharedMode failed")
 	}
-	if IsShared(&registry.MicroServiceKey{Tenant: "default"}) {
+	if IsGlobal(&registry.MicroServiceKey{Tenant: "default"}) {
 		t.Fatalf("TestSetSharedMode failed")
 	}
-	if IsShared(&registry.MicroServiceKey{Tenant: "default/default"}) {
+	if IsGlobal(&registry.MicroServiceKey{Tenant: "default/default"}) {
 		t.Fatalf("TestSetSharedMode failed")
 	}
-	if IsShared(&registry.MicroServiceKey{Tenant: "default/default", AppId: "default"}) {
+	if IsGlobal(&registry.MicroServiceKey{Tenant: "default/default", AppId: "default"}) {
 		t.Fatalf("TestSetSharedMode failed")
 	}
 
 	config.ServerInfo.Config.GlobalVisible = "shared"
-	SetSharedMode()
-	if IsShared(&registry.MicroServiceKey{Tenant: "default/default", AppId: "default", ServiceName: "no-shared"}) {
+	RegisterGlobalServices()
+	if IsGlobal(&registry.MicroServiceKey{Tenant: "default/default", AppId: "default", ServiceName: "no-shared"}) {
 		t.Fatalf("TestSetSharedMode failed")
 	}
-	if !IsShared(&registry.MicroServiceKey{Tenant: "default/default", AppId: "default", ServiceName: "shared"}) {
+	if !IsGlobal(&registry.MicroServiceKey{Tenant: "default/default", AppId: "default", ServiceName: "shared"}) {
 		t.Fatalf("TestSetSharedMode failed")
 	}
-	if !IsShared(&registry.MicroServiceKey{Tenant: "default/default", AppId: "default", Alias: "shared"}) {
+	if !IsGlobal(&registry.MicroServiceKey{Tenant: "default/default", AppId: "default", Alias: "shared"}) {
 		t.Fatalf("TestSetSharedMode failed")
 	}
 }

@@ -15,18 +15,22 @@
  * limitations under the License.
  */
 
-package datasource
+package kv_test
 
 import (
-	"context"
-	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
+	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
-// AccountManager contains the RBAC CRUD
-type AccountManager interface {
-	AccountExist(ctx context.Context, key string) (bool, error)
-	GetAccount(ctx context.Context, key string) (*rbacframe.Account, error)
-	ListAccount(ctx context.Context, key string) ([]*rbacframe.Account, int64, error)
-	DeleteAccount(ctx context.Context, key string) (bool, error)
-	UpdateAccount(ctx context.Context, key string, account *rbacframe.Account) error
+func TestGenerateETCDAccountKey(t *testing.T) {
+	assert.Equal(t, "/cse-sr/accounts/admin", kv.GenerateETCDAccountKey("admin"))
+}
+
+func TestGenerateETCDProjectKey(t *testing.T) {
+	assert.Equal(t, "/cse-sr/projects/domain/project", kv.GenerateETCDProjectKey("domain", "project"))
+}
+
+func TestGenerateETCDDomainKey(t *testing.T) {
+	assert.Equal(t, "/cse-sr/domains/domain", kv.GenerateETCDDomainKey("domain"))
 }

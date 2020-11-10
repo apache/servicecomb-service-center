@@ -18,11 +18,7 @@
 package config
 
 import (
-	"github.com/apache/servicecomb-service-center/server/metric"
-	"github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf"
 	"github.com/go-chassis/go-archaius"
-	"net"
-	"os"
 	"path/filepath"
 	"runtime"
 	"time"
@@ -45,8 +41,6 @@ const (
 
 	maxServiceClearInterval = 24 * time.Hour       //1 day
 	maxServiceTTL           = 24 * 365 * time.Hour //1 year
-
-	defaultCollectPeriod = 30 * time.Second
 )
 
 //Configurations is kie config items
@@ -110,13 +104,6 @@ func Init() {
 	*ServerInfo = newInfo()
 
 	plugin.SetPluginDir(GetPlugin().PluginsDir)
-
-	// Logging
-	initLogger()
-	// Metrics
-	initMetrics()
-	// SSL
-	initSSL()
 
 	version.Ver().Log()
 }
@@ -205,71 +192,4 @@ func setCPUs() {
 	cores := runtime.NumCPU()
 	runtime.GOMAXPROCS(cores)
 	log.Infof("service center is running simultaneously with %d CPU cores", cores)
-}
-
-func initLogger() {
-	log.SetGlobal(log.Config{
-		LoggerLevel:    GetLog().LogLevel,
-		LoggerFile:     os.ExpandEnv(GetLog().LogFilePath),
-		LogFormatText:  GetLog().LogFormat == "text",
-		LogRotateSize:  int(GetLog().LogRotateSize),
-		LogBackupCount: int(GetLog().LogBackupCount),
-	})
-}
-
-func initMetrics() {
-	interval := GetDuration("metrics.interval", defaultCollectPeriod, WithENV("METRICS_INTERVAL"))
-	if interval <= time.Second {
-		interval = defaultCollectPeriod
-	}
-	var instance string
-	restIP := GetString("server.host", "127.0.0.1", WithStandby("httpaddr"))
-	restPort := GetString("server.port", "30100", WithStandby("httpport"))
-	if len(restIP) > 0 {
-		instance = net.JoinHostPort(restIP, restPort)
-	} else {
-		rpcIP := GetString("server.rpc.host", "127.0.0.1", WithStandby("rpcaddr"))
-		rpcPort := GetString("server.rpc.port", "30100", WithStandby("rpcport"))
-		if len(rpcIP) > 0 {
-			instance = net.JoinHostPort(rpcIP, rpcPort)
-		} else {
-			log.Fatal("init metrics InstanceName failed", nil)
-		}
-	}
-
-	if err := metric.Init(metric.Options{
-		Interval:     interval,
-		InstanceName: instance,
-		SysMetrics: []string{
-			"process_resident_memory_bytes",
-			"process_cpu_seconds_total",
-			"go_threads",
-			"go_goroutines",
-		},
-	}); err != nil {
-		log.Fatal("init metrics failed", err)
-	}
-}
-
-func initSSL() {
-	if !GetSSL().SslEnabled {
-		return
-	}
-	options := tlsconf.Options{
-		Dir:              GetString("ssl.dir", "", WithENV("SSL_ROOT")),
-		MinVersion:       GetString("ssl.minVersion", "TLSv1.2", WithStandby("ssl_min_version")),
-		ClientMinVersion: GetString("ssl.client.minVersion", "", WithStandby("ssl_client_min_version")),
-		VerifyPeer:       GetInt("ssl.verifyClient", 1, WithStandby("ssl_verify_client")) != 0,
-		Ciphers:          GetString("ssl.ciphers", "", WithStandby("ssl_ciphers")),
-		ClientCiphers:    GetString("ssl.client.ciphers", "", WithStandby("ssl_client_ciphers")),
-	}
-	if options.ClientMinVersion == "" {
-		options.ClientMinVersion = options.MinVersion
-	}
-	if options.ClientCiphers == "" {
-		options.ClientCiphers = options.Ciphers
-	}
-	if err := tlsconf.Init(options); err != nil {
-		log.Fatal("init ssl failed", err)
-	}
 }

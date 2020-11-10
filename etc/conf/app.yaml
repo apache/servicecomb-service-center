@@ -96,11 +96,19 @@ registry:
   # enable to register sc itself when startup
   selfRegister: 1
 
+discovery:
+  kind:
+
 rbac:
   enable: false
+  privateKeyFile:
+  publicKeyFile:
 
 metrics:
   interval: 30s
 
 tracing:
   kind:
+
+quota:
+  kind: unlimit

@@ -217,9 +217,8 @@ type Request struct {
 }
 
 type Response struct {
-	Response     *registry.Response `json:"response,omitempty"`
-	Info         *version.Set       `json:"info,omitempty"`
-	AppConfig    map[string]string  `json:"appConf,omitempty"`
-	Environments map[string]string  `json:"environments,omitempty"`
-	Cache        *Cache             `json:"cache,omitempty"`
+	Response  *registry.Response     `json:"response,omitempty"`
+	Info      *version.Set           `json:"info,omitempty"`
+	AppConfig map[string]interface{} `json:"appConf,omitempty"`
+	Cache     *Cache                 `json:"cache,omitempty"`
 }

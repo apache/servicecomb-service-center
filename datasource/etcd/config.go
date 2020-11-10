@@ -21,7 +21,6 @@ import (
 	"context"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/server/config"
-	"strings"
 	"sync"
 	"time"
 )
@@ -37,10 +36,6 @@ func Configuration() *client.Config {
 		defaultRegistryConfig.ManagerAddress = config.GetString("registry.etcd.cluster.managerEndpoints", "", config.WithStandby("manager_addr"))
 		defaultRegistryConfig.ClusterAddresses = config.GetString("registry.etcd.cluster.endpoints", "http://127.0.0.1:2379", config.WithStandby("manager_cluster"))
 		defaultRegistryConfig.InitClusterInfo()
-
-		registryAddresses := strings.Join(defaultRegistryConfig.RegistryAddresses(), ",")
-		defaultRegistryConfig.SslEnabled = config.GetSSL().SslEnabled &&
-			strings.Contains(strings.ToLower(registryAddresses), "https://")
 
 		defaultRegistryConfig.DialTimeout = config.GetDuration("registry.etcd.connect.timeout", client.DefaultDialTimeout, config.WithStandby("connect_timeout"))
 		defaultRegistryConfig.RequestTimeOut = config.GetDuration("registry.etcd.request.timeout", client.DefaultRequestTimeout, config.WithStandby("registry_timeout"))

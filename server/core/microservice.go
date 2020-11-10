@@ -33,7 +33,7 @@ var (
 	InstanceAPI        proto.ServiceInstanceCtrlServerEx
 	Service            *registry.MicroService
 	Instance           *registry.MicroServiceInstance
-	sharedServiceNames map[string]struct{}
+	globalServiceNames map[string]struct{}
 )
 
 const (
@@ -98,26 +98,26 @@ func IsDefaultDomainProject(domainProject string) bool {
 	return domainProject == RegistryDomainProject
 }
 
-func SetSharedMode() {
-	sharedServiceNames = make(map[string]struct{})
+func RegisterGlobalServices() {
+	globalServiceNames = make(map[string]struct{})
 	for _, s := range strings.Split(config.GetRegistry().GlobalVisible, ",") {
 		if len(s) > 0 {
-			sharedServiceNames[s] = struct{}{}
+			globalServiceNames[s] = struct{}{}
 		}
 	}
-	sharedServiceNames[Service.ServiceName] = struct{}{}
+	globalServiceNames[Service.ServiceName] = struct{}{}
 }
 
-func IsShared(key *registry.MicroServiceKey) bool {
+func IsGlobal(key *registry.MicroServiceKey) bool {
 	if !IsDefaultDomainProject(key.Tenant) {
 		return false
 	}
 	if key.AppId != RegistryAppID {
 		return false
 	}
-	_, ok := sharedServiceNames[key.ServiceName]
+	_, ok := globalServiceNames[key.ServiceName]
 	if !ok {
-		_, ok = sharedServiceNames[key.Alias]
+		_, ok = globalServiceNames[key.Alias]
 	}
 	return ok
 }

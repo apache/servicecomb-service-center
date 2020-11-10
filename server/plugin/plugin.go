@@ -18,13 +18,12 @@
 package plugin
 
 import (
+	"github.com/apache/servicecomb-service-center/server/config"
 	"sync"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/plugin"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-
-	"github.com/astaxie/beego"
 )
 
 const (
@@ -145,7 +144,7 @@ func (pm *Manager) New(pn Kind) {
 			return
 		}
 
-		name := beego.AppConfig.DefaultString(pn.String()+"_plugin", Buildin)
+		name := config.GetString(pn.String()+".kind", Buildin, config.WithStandby(pn.String()+"_plugin"))
 		p, ok = m[ImplName(name)]
 		if !ok {
 			return

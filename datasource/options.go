@@ -22,6 +22,7 @@ import "time"
 //Options contains configuration for plugins
 type Options struct {
 	PluginImplName ImplName
+	SslEnabled     bool
 	SchemaEditable bool
 	// InstanceTTL: the default ttl of instance lease
 	InstanceTTL int64

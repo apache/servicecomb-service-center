@@ -24,7 +24,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/proto"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	apt "github.com/apache/servicecomb-service-center/server/core"
 	"time"
 )
 
@@ -67,7 +66,7 @@ func HandleWatchJob(watcher *InstanceEventListWatcher, stream proto.ServiceInsta
 func DoStreamListAndWatch(ctx context.Context, serviceID string, f func() ([]*pb.WatchInstanceResponse, int64), stream proto.ServiceInstanceCtrlWatchServer) (err error) {
 	domainProject := util.ParseDomainProject(ctx)
 	domain := util.ParseDomain(ctx)
-	watcher := NewInstanceEventListWatcher(serviceID, apt.GetInstanceRootKey(domainProject)+"/", f)
+	watcher := NewInstanceEventListWatcher(serviceID, domainProject, f)
 	err = GetNotifyCenter().AddSubscriber(watcher)
 	if err != nil {
 		return

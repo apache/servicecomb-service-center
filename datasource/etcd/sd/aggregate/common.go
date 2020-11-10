@@ -17,7 +17,7 @@ package aggregate
 
 import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/astaxie/beego"
+	"github.com/apache/servicecomb-service-center/server/config"
 	"strings"
 )
 
@@ -35,18 +35,18 @@ var (
 func init() {
 	close(closedCh)
 
-	if Aggregate != beego.AppConfig.String("discovery_plugin") {
+	if Aggregate != config.GetString("discovery.kind", "", config.WithStandby("discovery_plugin")) {
 		return
 	}
 
-	modes := beego.AppConfig.DefaultString("aggregate_mode", AggregateModes)
+	modes := config.GetString("discovery.aggregate.mode", AggregateModes, config.WithStandby("aggregate_mode"))
 	repos = strings.Split(modes, ",")
 	log.Infof("aggregate_mode is %s", repos)
 
 	// here save the index if found the registry plugin in modes list,
 	// it is used for getting the one writable registry to handle requests
 	// from API layer.
-	registry := beego.AppConfig.String("registry_plugin")
+	registry := config.GetString("registry.kind", "", config.WithStandby("registry_plugin"))
 	for i, repo := range repos {
 		if repo == registry {
 			registryIndex = i

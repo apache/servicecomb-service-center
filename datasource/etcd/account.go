@@ -20,14 +20,13 @@ import (
 	"encoding/json"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
-	utils "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 )
 
 func (ds *DataSource) AccountExist(ctx context.Context, key string) (bool, error) {
 	resp, err := client.Instance().Do(ctx, client.GET,
-		client.WithStrKey(GenerateETCDAccountKey(key)))
+		client.WithStrKey(kv.GenerateETCDAccountKey(key)))
 	if err != nil {
 		return false, err
 	}
@@ -38,7 +37,7 @@ func (ds *DataSource) AccountExist(ctx context.Context, key string) (bool, error
 }
 func (ds *DataSource) GetAccount(ctx context.Context, key string) (*rbacframe.Account, error) {
 	resp, err := client.Instance().Do(ctx, client.GET,
-		client.WithStrKey(GenerateETCDAccountKey(key)))
+		client.WithStrKey(kv.GenerateETCDAccountKey(key)))
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +54,7 @@ func (ds *DataSource) GetAccount(ctx context.Context, key string) (*rbacframe.Ac
 }
 func (ds *DataSource) ListAccount(ctx context.Context, key string) ([]*rbacframe.Account, int64, error) {
 	resp, err := client.Instance().Do(ctx, client.GET,
-		client.WithStrKey(GenerateETCDAccountKey(key)), client.WithPrefix())
+		client.WithStrKey(kv.GenerateETCDAccountKey(key)), client.WithPrefix())
 	if err != nil {
 		return nil, 0, err
 	}
@@ -74,7 +73,7 @@ func (ds *DataSource) ListAccount(ctx context.Context, key string) ([]*rbacframe
 }
 func (ds *DataSource) DeleteAccount(ctx context.Context, key string) (bool, error) {
 	resp, err := client.Instance().Do(ctx, client.DEL,
-		client.WithStrKey(GenerateETCDAccountKey(key)))
+		client.WithStrKey(kv.GenerateETCDAccountKey(key)))
 	if err != nil {
 		return false, err
 	}
@@ -87,43 +86,7 @@ func (ds *DataSource) UpdateAccount(ctx context.Context, key string, account *rb
 		return err
 	}
 	_, err = client.Instance().Do(ctx, client.PUT,
-		client.WithStrKey(GenerateETCDAccountKey(key)),
+		client.WithStrKey(kv.GenerateETCDAccountKey(key)),
 		client.WithValue(value))
 	return err
-}
-func (ds *DataSource) AddDomain(ctx context.Context, domain string) (bool, error) {
-	ok, err := client.Instance().PutNoOverride(ctx,
-		client.WithStrKey(GenerateETCDDomainKey(domain)))
-	if err != nil {
-		return false, err
-	}
-	return ok, nil
-}
-func (ds *DataSource) DomainExist(ctx context.Context, domain string) (bool, error) {
-	opts := append(utils.FromContext(ctx),
-		client.WithStrKey(GenerateETCDDomainKey(domain)),
-		client.WithCountOnly())
-	rsp, err := kv.Store().Domain().Search(ctx, opts...)
-	if err != nil {
-		return false, err
-	}
-	return rsp.Count > 0, nil
-}
-func (ds *DataSource) AddProject(ctx context.Context, domain, project string) (bool, error) {
-	ok, err := client.Instance().PutNoOverride(ctx,
-		client.WithStrKey(GenerateETCDProjectKey(domain, project)))
-	if err != nil {
-		return ok, err
-	}
-	return ok, nil
-}
-func (ds *DataSource) ProjectExist(ctx context.Context, domain, project string) (bool, error) {
-	opts := append(utils.FromContext(ctx),
-		client.WithStrKey(GenerateETCDProjectKey(domain, project)),
-		client.WithCountOnly())
-	rsp, err := kv.Store().Project().Search(ctx, opts...)
-	if err != nil {
-		return false, err
-	}
-	return rsp.Count > 0, nil
 }

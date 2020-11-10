@@ -39,7 +39,7 @@ func NewDataSource(opts datasource.Options) (datasource.DataSource, error) {
 
 	inst := &DataSource{
 		SchemaEditable: opts.SchemaEditable,
-		ttlFromEnv:     opts.TTL,
+		ttlFromEnv:     opts.InstanceTTL,
 	}
 	// TODO: deal with exception
 	if err := inst.initialize(); err != nil {

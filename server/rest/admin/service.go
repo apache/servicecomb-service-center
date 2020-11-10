@@ -28,32 +28,12 @@ import (
 	"github.com/apache/servicecomb-service-center/server/core"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"github.com/apache/servicecomb-service-center/version"
-	"github.com/astaxie/beego"
-	"os"
-	"strings"
+	"github.com/go-chassis/go-archaius"
 )
 
 var (
 	AdminServiceAPI = &Service{}
-	configs         map[string]string
-	environments    = make(map[string]string)
 )
-
-func init() {
-	// cache envs
-	for _, kv := range os.Environ() {
-		arr := strings.Split(kv, "=")
-		environments[arr[0]] = arr[1]
-	}
-
-	// cache configs
-	configs, _ = beego.AppConfig.GetSection("default")
-	if section, err := beego.AppConfig.GetSection(beego.BConfig.RunMode); err == nil {
-		for k, v := range section {
-			configs[k] = v
-		}
-	}
-}
 
 type Service struct {
 }
@@ -95,9 +75,7 @@ func (service *Service) dump(ctx context.Context, option string, resp *dump.Resp
 	case "info":
 		resp.Info = version.Ver()
 	case "config":
-		resp.AppConfig = configs
-	case "env":
-		resp.Environments = environments
+		resp.AppConfig = archaius.GetConfigs()
 	case "cache":
 		var cache dump.Cache
 		datasource.Instance().DumpCache(ctx, &cache)
@@ -105,7 +83,6 @@ func (service *Service) dump(ctx context.Context, option string, resp *dump.Resp
 	case "all":
 		service.dump(ctx, "info", resp)
 		service.dump(ctx, "config", resp)
-		service.dump(ctx, "env", resp)
 		service.dump(ctx, "cache", resp)
 	}
 }

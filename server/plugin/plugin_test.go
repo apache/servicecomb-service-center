@@ -17,11 +17,16 @@
 package plugin_test
 
 import (
+	"github.com/apache/servicecomb-service-center/server/config"
 	. "github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/auth"
 	"net/http"
 	"testing"
 )
+
+func init() {
+	config.Init()
+}
 
 type mockAuthPlugin struct {
 	Times int

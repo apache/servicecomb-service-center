@@ -15,18 +15,37 @@
  * limitations under the License.
  */
 
-package datasource
+package signal
 
 import (
-	"context"
-	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 )
 
-// AccountManager contains the RBAC CRUD
-type AccountManager interface {
-	AccountExist(ctx context.Context, key string) (bool, error)
-	GetAccount(ctx context.Context, key string) (*rbacframe.Account, error)
-	ListAccount(ctx context.Context, key string) ([]*rbacframe.Account, int64, error)
-	DeleteAccount(ctx context.Context, key string) (bool, error)
-	UpdateAccount(ctx context.Context, key string, account *rbacframe.Account) error
+func RegisterListener() {
+	go HandleSignals()
+}
+
+func HandleSignals() {
+	defer log.Sync()
+
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh,
+		syscall.SIGINT,
+		syscall.SIGTERM,
+	)
+	wait := 5 * time.Second
+	for sig := range sigCh {
+		switch sig {
+		case syscall.SIGINT, syscall.SIGKILL, syscall.SIGTERM:
+			<-time.After(wait)
+			log.Warnf("waiting for server response timed out(%s), force shutdown", wait)
+			os.Exit(1)
+		default:
+			log.Warnf("received signal '%v'", sig)
+		}
+	}
 }

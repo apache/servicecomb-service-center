@@ -41,19 +41,3 @@ func (ds *DataSource) DeleteAccount(ctx context.Context, key string) (bool, erro
 func (ds *DataSource) UpdateAccount(ctx context.Context, key string, account *rbacframe.Account) error {
 	return nil
 }
-
-func (ds *DataSource) AddDomain(ctx context.Context, domain string) (bool, error) {
-	return false, nil
-}
-
-func (ds *DataSource) DomainExist(ctx context.Context, domain string) (bool, error) {
-	return false, nil
-}
-
-func (ds *DataSource) AddProject(ctx context.Context, domain, project string) (bool, error) {
-	return false, nil
-}
-
-func (ds *DataSource) ProjectExist(ctx context.Context, domain, project string) (bool, error) {
-	return false, nil
-}

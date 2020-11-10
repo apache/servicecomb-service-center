@@ -38,7 +38,7 @@ import (
 
 func init() {
 	beego.AppConfig.Set("rbac_enabled", "true")
-	beego.AppConfig.Set(rbac.PubFilePath, "./rbac.pub")
+	beego.AppConfig.Set("rbac_rsa_public_key_file", "./rbac.pub")
 	beego.AppConfig.Set("rbac_rsa_private_key_file", "./private.key")
 	config.Init()
 }

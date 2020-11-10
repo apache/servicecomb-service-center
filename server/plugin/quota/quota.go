@@ -19,7 +19,7 @@ package quota
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/plugin"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"strconv"
@@ -44,12 +44,20 @@ const (
 )
 
 var (
-	DefaultServiceQuota  = util.GetEnvInt("QUOTA_SERVICE", defaultServiceLimit)
-	DefaultInstanceQuota = util.GetEnvInt("QUOTA_INSTANCE", defaultInstanceLimit)
-	DefaultSchemaQuota   = util.GetEnvInt("QUOTA_SCHEMA", defaultSchemaLimit)
-	DefaultTagQuota      = util.GetEnvInt("QUOTA_TAG", defaultTagLimit)
-	DefaultRuleQuota     = util.GetEnvInt("QUOTA_RULE", defaultRuleLimit)
+	DefaultServiceQuota  = defaultServiceLimit
+	DefaultInstanceQuota = defaultInstanceLimit
+	DefaultSchemaQuota   = defaultSchemaLimit
+	DefaultTagQuota      = defaultTagLimit
+	DefaultRuleQuota     = defaultRuleLimit
 )
+
+func Init() {
+	DefaultServiceQuota = config.GetInt("quota.cap.service", defaultServiceLimit, config.WithStandby("QUOTA_SERVICE"))
+	DefaultInstanceQuota = config.GetInt("quota.cap.instance", defaultInstanceLimit, config.WithStandby("QUOTA_INSTANCE"))
+	DefaultSchemaQuota = config.GetInt("quota.cap.schema", defaultSchemaLimit, config.WithStandby("QUOTA_SCHEMA"))
+	DefaultTagQuota = config.GetInt("quota.cap.tag", defaultTagLimit, config.WithStandby("QUOTA_TAG"))
+	DefaultRuleQuota = config.GetInt("quota.cap.rule", defaultRuleLimit, config.WithStandby("QUOTA_RULE"))
+}
 
 type ApplyQuotaResult struct {
 	Err *scerr.Error
