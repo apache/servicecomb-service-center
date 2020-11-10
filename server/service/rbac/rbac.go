@@ -29,8 +29,8 @@ import (
 	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
 	"github.com/astaxie/beego"
 	"github.com/go-chassis/go-archaius"
-	"github.com/go-chassis/go-chassis/security/authr"
-	"github.com/go-chassis/go-chassis/security/secret"
+	"github.com/go-chassis/go-chassis/v2/security/authr"
+	"github.com/go-chassis/go-chassis/v2/security/secret"
 	"io/ioutil"
 )
 

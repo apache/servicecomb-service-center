@@ -20,8 +20,8 @@ package rbacframe_test
 import (
 	"context"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
-	"github.com/go-chassis/go-chassis/security/secret"
-	"github.com/go-chassis/go-chassis/security/token"
+	"github.com/go-chassis/go-chassis/v2/security/secret"
+	"github.com/go-chassis/go-chassis/v2/security/token"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

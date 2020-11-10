@@ -24,8 +24,8 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
 	"github.com/dgrijalva/jwt-go"
-	"github.com/go-chassis/go-chassis/security/authr"
-	"github.com/go-chassis/go-chassis/security/token"
+	"github.com/go-chassis/go-chassis/v2/security/authr"
+	"github.com/go-chassis/go-chassis/v2/security/token"
 )
 
 var ErrUnauthorized = errors.New("wrong user name or password")
