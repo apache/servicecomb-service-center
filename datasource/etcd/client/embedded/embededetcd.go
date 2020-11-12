@@ -83,6 +83,13 @@ func (s *EtcdEmbed) toGetRequest(op client.PluginOp) *etcdserverpb.RangeRequest 
 	if op.Prefix {
 		endBytes = s.getPrefixEndKey(op.Key)
 	}
+	sortTarget := etcdserverpb.RangeRequest_KEY
+	switch op.OrderBy {
+	case client.OrderByKey:
+		sortTarget = etcdserverpb.RangeRequest_KEY
+	case client.OrderByCreate:
+		sortTarget = etcdserverpb.RangeRequest_CREATE
+	}
 	order := etcdserverpb.RangeRequest_NONE
 	switch op.SortOrder {
 	case client.SortAscend:
@@ -96,7 +103,7 @@ func (s *EtcdEmbed) toGetRequest(op client.PluginOp) *etcdserverpb.RangeRequest 
 		KeysOnly:   op.KeyOnly,
 		CountOnly:  op.CountOnly,
 		SortOrder:  order,
-		SortTarget: etcdserverpb.RangeRequest_KEY,
+		SortTarget: sortTarget,
 		Revision:   op.Revision,
 	}
 }

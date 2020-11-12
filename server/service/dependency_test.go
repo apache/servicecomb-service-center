@@ -18,15 +18,14 @@ package service_test
 
 import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/event"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/server/core"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
-	"github.com/apache/servicecomb-service-center/server/service/event"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"strconv"
-	"sync"
 )
 
 var deh event.DependencyEventHandler
@@ -883,11 +882,7 @@ var _ = Describe("'Dependency' service", func() {
 	})
 })
 
-var lock sync.Mutex
-
 func DependencyHandle() {
-	lock.Lock()
-	defer lock.Unlock()
 	for {
 		Expect(deh.Handle()).To(BeNil())
 

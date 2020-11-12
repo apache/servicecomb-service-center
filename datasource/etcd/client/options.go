@@ -37,6 +37,7 @@ type PluginOp struct {
 	Lease         int64
 	KeyOnly       bool
 	CountOnly     bool
+	OrderBy       SortTarget
 	SortOrder     SortOrder
 	Revision      int64
 	IgnoreLease   bool
@@ -82,6 +83,8 @@ func (op PluginOp) FormatURLParams() string {
 	if op.SortOrder != SortNone {
 		buf.WriteString("&sort=")
 		buf.WriteString(op.SortOrder.String())
+		buf.WriteString("&orderBy=")
+		buf.WriteString(op.OrderBy.String())
 	}
 	if op.Revision > 0 {
 		buf.WriteString(fmt.Sprintf("&rev=%d", op.Revision))
@@ -129,6 +132,7 @@ func WithLease(leaseID int64) PluginOpOption { return func(op *PluginOp) { op.Le
 func WithKeyOnly() PluginOpOption            { return func(op *PluginOp) { op.KeyOnly = true } }
 func WithCountOnly() PluginOpOption          { return func(op *PluginOp) { op.CountOnly = true } }
 func WithGlobal() PluginOpOption             { return func(op *PluginOp) { op.Global = true } }
+func WithOrderByCreate() PluginOpOption      { return func(op *PluginOp) { op.OrderBy = OrderByCreate } }
 func WithNoneOrder() PluginOpOption          { return func(op *PluginOp) { op.SortOrder = SortNone } }
 func WithAscendOrder() PluginOpOption        { return func(op *PluginOp) { op.SortOrder = SortAscend } }
 func WithDescendOrder() PluginOpOption       { return func(op *PluginOp) { op.SortOrder = SortDescend } }

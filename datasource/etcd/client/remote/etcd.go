@@ -261,11 +261,19 @@ func (c *Client) toGetRequest(op client.PluginOp) []clientv3.OpOption {
 	if op.Revision > 0 {
 		opts = append(opts, clientv3.WithRev(op.Revision))
 	}
+	// sort key by default and not need to set this flag
+	sortTarget := clientv3.SortByKey
+	switch op.OrderBy {
+	case client.OrderByKey:
+		sortTarget = clientv3.SortByKey
+	case client.OrderByCreate:
+		sortTarget = clientv3.SortByCreateRevision
+	}
 	switch op.SortOrder {
 	case client.SortAscend:
-		opts = append(opts, clientv3.WithSort(clientv3.SortByKey, clientv3.SortAscend))
+		opts = append(opts, clientv3.WithSort(sortTarget, clientv3.SortAscend))
 	case client.SortDescend:
-		opts = append(opts, clientv3.WithSort(clientv3.SortByKey, clientv3.SortDescend))
+		opts = append(opts, clientv3.WithSort(sortTarget, clientv3.SortDescend))
 	}
 	return opts
 }

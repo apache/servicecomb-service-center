@@ -33,8 +33,12 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/core"
+	"sync"
 	"time"
 )
+
+// just for unit test
+var testMux sync.Mutex
 
 // DependencyEventHandler add or remove the service dependencies
 // when user call find instance api or dependence operation api
@@ -133,17 +137,13 @@ func NewDependencyEventHandlerResource(dep *pb.ConsumerDependency, kv *sd.KeyVal
 	}
 }
 
-func isAddToLeft(centerNode *util.Node, addRes interface{}) bool {
-	res := addRes.(*DependencyEventHandlerResource)
-	compareRes := centerNode.Res.(*DependencyEventHandlerResource)
-	return res.kv.ModRevision <= compareRes.kv.ModRevision
-}
-
 func (h *DependencyEventHandler) Handle() error {
+	testMux.Lock()
+	defer testMux.Unlock()
+
 	key := core.GetServiceDependencyQueueRootKey("")
-	resp, err := kv.Store().DependencyQueue().Search(context.Background(),
-		client.WithStrKey(key),
-		client.WithPrefix())
+	resp, err := kv.Store().DependencyQueue().Search(context.Background(), client.WithNoCache(),
+		client.WithStrKey(key), client.WithPrefix(), client.WithAscendOrder(), client.WithOrderByCreate())
 	if err != nil {
 		return err
 	}
@@ -153,8 +153,6 @@ func (h *DependencyEventHandler) Handle() error {
 	if l == 0 {
 		return nil
 	}
-
-	dependencyTree := util.NewTree(isAddToLeft)
 
 	cleanUpDomainProjects := make(map[string]struct{})
 	defer h.CleanUp(cleanUpDomainProjects)
@@ -168,10 +166,11 @@ func (h *DependencyEventHandler) Handle() error {
 		}
 		res := NewDependencyEventHandlerResource(r, kv, domainProject)
 
-		dependencyTree.AddNode(res)
+		if err := h.dependencyRuleHandle(res); err != nil {
+			return err
+		}
 	}
-
-	return dependencyTree.InOrderTraversal(dependencyTree.GetRoot(), h.dependencyRuleHandle)
+	return nil
 }
 
 func (h *DependencyEventHandler) dependencyRuleHandle(res interface{}) error {
