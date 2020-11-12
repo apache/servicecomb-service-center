@@ -10,11 +10,11 @@ require (
 	github.com/coreos/pkg v0.0.0-20180108230652-97fdf19511ea // v4
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-chassis/foundation v0.1.1-0.20200825060850-b16bf420f7b3
-	github.com/go-chassis/go-archaius v1.3.6-0.20200917065837-57a2bca2b7ff
-	github.com/go-chassis/go-chassis/v2 v2.0.4-0.20201103065217-79c9f326e88d
+	github.com/go-chassis/go-archaius v1.3.6-0.20201103103813-43dd1680ebfb
+	github.com/go-chassis/go-chassis/v2 v2.0.5-0.20201112082226-c3cc3c1ae17c
 	github.com/go-chassis/paas-lager v1.1.1
 	github.com/gogo/protobuf v1.2.2-0.20190723190241-65acae22fc9d
-	github.com/golang/protobuf v1.3.2
+	github.com/golang/protobuf v1.4.2
 	github.com/gorilla/websocket v1.4.0
 	github.com/hashicorp/serf v0.8.3
 	github.com/iancoleman/strcase v0.1.2
@@ -23,19 +23,19 @@ require (
 	github.com/labstack/echo/v4 v4.1.17
 	github.com/natefinch/lumberjack v0.0.0-20170531160350-a96e63847dc3
 	github.com/olekukonko/tablewriter v0.0.0-20180506121414-d4647c9c7a84
-	github.com/onsi/ginkgo v1.10.1
-	github.com/onsi/gomega v1.7.0
+	github.com/onsi/ginkgo v1.14.0
+	github.com/onsi/gomega v1.10.1
 	github.com/opentracing/opentracing-go v1.1.0
 	github.com/openzipkin/zipkin-go-opentracing v0.3.3-0.20180123190626-6bb822a7f15f
-	github.com/pkg/errors v0.8.1
+	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v0.9.1
 	github.com/prometheus/client_model v0.0.0-20190115171406-56726106282f
 	github.com/prometheus/procfs v0.0.0-20190117184657-bf6a532e95b1
 	github.com/rs/cors v0.0.0-20170608165155-8dd4211afb5d // v1.1
 	github.com/satori/go.uuid v1.1.0
-	github.com/spf13/cobra v0.0.0-20170624150100-4d647c8944eb
+	github.com/spf13/cobra v0.0.3
 	github.com/spf13/pflag v1.0.5
-	github.com/stretchr/testify v1.4.0
+	github.com/stretchr/testify v1.6.1
 	github.com/urfave/cli v1.22.4
 	github.com/widuu/gojson v0.0.0-20170212122013-7da9d2cd949b
 	go.mongodb.org/mongo-driver v1.4.2
@@ -43,7 +43,7 @@ require (
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4
 	google.golang.org/grpc v1.19.0
-	gopkg.in/yaml.v2 v2.2.4
+	gopkg.in/yaml.v2 v2.3.0
 	k8s.io/api v0.17.0
 	k8s.io/apimachinery v0.17.0
 	k8s.io/client-go v0.17.0
