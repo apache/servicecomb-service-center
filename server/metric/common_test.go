@@ -18,7 +18,6 @@ package metric
 
 import (
 	"github.com/astaxie/beego"
-	"os"
 	"testing"
 	"time"
 )
@@ -26,33 +25,20 @@ import (
 func TestInstanceName(t *testing.T) {
 	beego.AppConfig.Set("rpcaddr", "a")
 	beego.AppConfig.Set("rpcport", "b")
+	Init(Options{InstanceName: "a:b"})
 	i := InstanceName()
-	if i != "a:b" {
-		t.Fatalf("TestInstanceName failed")
-	}
-	// case: initialize only one time
-	beego.AppConfig.Set("httpaddr", "c")
-	beego.AppConfig.Set("httpaddr", "d")
-	i = InstanceName()
 	if i != "a:b" {
 		t.Fatalf("TestInstanceName failed")
 	}
 }
 
 func TestPeriod(t *testing.T) {
-	if getPeriod() != 30*time.Second {
-		t.Fatalf("TestPeriod failed")
+	if err := Init(Options{
+		Interval: 30 * time.Second,
+	}); err != nil {
+		t.Fatalf("init failed %s", err)
 	}
-	os.Setenv("METRICS_INTERVAL", time.Millisecond.String())
-	if getPeriod() != 30*time.Second {
-		t.Fatalf("TestPeriod failed")
-	}
-	os.Setenv("METRICS_INTERVAL", "err")
-	if getPeriod() != 30*time.Second {
-		t.Fatalf("TestPeriod failed")
-	}
-	os.Setenv("METRICS_INTERVAL", time.Second.String())
-	if getPeriod() != time.Second {
+	if GetOptions().Interval != 30*time.Second {
 		t.Fatalf("TestPeriod failed")
 	}
 }

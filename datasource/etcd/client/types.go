@@ -55,6 +55,19 @@ func (cm CacheMode) String() string {
 	}
 }
 
+type SortTarget int
+
+func (st SortTarget) String() string {
+	switch st {
+	case OrderByKey:
+		return "ORDER_BY_KEY"
+	case OrderByCreate:
+		return "ORDER_BY_CREATE"
+	default:
+		return "ORDER_BY" + strconv.Itoa(int(st))
+	}
+}
+
 type SortOrder int
 
 func (so SortOrder) String() string {

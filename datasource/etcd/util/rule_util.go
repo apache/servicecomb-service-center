@@ -160,7 +160,7 @@ func AllowAcrossDimension(ctx context.Context, providerService *pb.MicroService,
 		}
 	}
 
-	if !apt.IsShared(pb.MicroServiceToKey(util.ParseTargetDomainProject(ctx), providerService)) &&
+	if !apt.IsGlobal(pb.MicroServiceToKey(util.ParseTargetDomainProject(ctx), providerService)) &&
 		providerService.Environment != consumerService.Environment {
 		return fmt.Errorf("not allow across environment access")
 	}

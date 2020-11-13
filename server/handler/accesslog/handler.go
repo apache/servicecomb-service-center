@@ -28,7 +28,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	svr "github.com/apache/servicecomb-service-center/server/rest"
 )
 
 // Handler implements chain.Handler
@@ -62,7 +61,7 @@ func (h *Handler) Handle(i *chain.Invocation) {
 		return
 	}
 	startTimeStr := "unknown"
-	start, ok := i.Context().Value(svr.CtxStartTimestamp).(time.Time)
+	start, ok := i.Context().Value(rest.CtxStartTimestamp).(time.Time)
 	if ok {
 		startTimeStr = start.Format("2006-01-02T15:04:05.000Z07:00")
 	}
@@ -97,14 +96,14 @@ func NewAccessLogHandler(l *log.Logger) *Handler {
 
 // RegisterHandlers registers an access log handler to the handler chain
 func RegisterHandlers() {
-	if !config.ServerInfo.Config.EnableAccessLog {
+	if !config.GetLog().EnableAccessLog {
 		return
 	}
 	logger := log.NewLogger(log.Config{
-		LoggerFile:     os.ExpandEnv(config.ServerInfo.Config.AccessLogFile),
+		LoggerFile:     os.ExpandEnv(config.GetLog().AccessLogFile),
 		LogFormatText:  true,
-		LogRotateSize:  int(config.ServerInfo.Config.LogRotateSize),
-		LogBackupCount: int(config.ServerInfo.Config.LogBackupCount),
+		LogRotateSize:  int(config.GetLog().LogRotateSize),
+		LogBackupCount: int(config.GetLog().LogBackupCount),
 		NoCaller:       true,
 		NoTime:         true,
 		NoLevel:        true,

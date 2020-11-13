@@ -19,15 +19,17 @@ package etcd
 
 import (
 	"github.com/apache/servicecomb-service-center/server/metric"
-	"github.com/astaxie/beego"
 	"testing"
+	"time"
 )
 
-func init() {
-	beego.AppConfig.Set("httpaddr", "127.0.0.1")
-}
-
 func TestReportCacheSize(t *testing.T) {
+	if err := metric.Init(metric.Options{
+		Interval:     time.Second,
+		InstanceName: "test",
+	}); err != nil {
+		t.Fatalf("init metric failed %v", err)
+	}
 	ReportCacheSize("a", "b", 100)
 	err := metric.Gatherer.Collect()
 	if err != nil {

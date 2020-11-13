@@ -18,12 +18,15 @@
 package rbac_test
 
 import (
+	"github.com/apache/servicecomb-service-center/server/config"
+	_ "github.com/apache/servicecomb-service-center/test"
+)
+import (
 	"context"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
 	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
-	_ "github.com/apache/servicecomb-service-center/test"
 	"github.com/astaxie/beego"
 	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-chassis/v2/security/authr"
@@ -35,8 +38,9 @@ import (
 
 func init() {
 	beego.AppConfig.Set("rbac_enabled", "true")
-	beego.AppConfig.Set(rbac.PubFilePath, "./rbac.pub")
+	beego.AppConfig.Set("rbac_rsa_public_key_file", "./rbac.pub")
 	beego.AppConfig.Set("rbac_rsa_private_key_file", "./private.key")
+	config.Init()
 }
 
 func TestInitRBAC(t *testing.T) {

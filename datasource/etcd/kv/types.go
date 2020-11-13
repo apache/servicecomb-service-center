@@ -54,7 +54,7 @@ func registerInnerTypes() {
 		sd.Configure().WithPrefix(core.GetServiceRootKey("")).
 			WithInitSize(500).WithParser(value.ServiceParser)))
 	INSTANCE = Store().MustInstall(NewAddOn("INSTANCE",
-		sd.Configure().WithPrefix(core.GetInstanceRootKey("")).
+		sd.Configure().WithPrefix(GetInstanceRootKey("")).
 			WithInitSize(1000).WithParser(value.InstanceParser).
 			WithDeferHandler(NewInstanceEventDeferHandler())))
 	DOMAIN = Store().MustInstall(NewAddOn("DOMAIN",

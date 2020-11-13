@@ -100,16 +100,17 @@ func (s *TypeStore) store(ctx context.Context) {
 }
 
 func (s *TypeStore) autoClearCache(ctx context.Context) {
-	if config.ServerInfo.Config.CacheTTL == 0 {
+	ttl := config.GetRegistry().CacheTTL
+	if ttl == 0 {
 		return
 	}
 
-	log.Infof("start auto clear cache in %v", config.ServerInfo.Config.CacheTTL)
+	log.Infof("start auto clear cache in %v", ttl)
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case <-time.After(config.ServerInfo.Config.CacheTTL):
+		case <-time.After(ttl):
 			for _, t := range sd.Types {
 				cache, ok := s.getOrCreateAdaptor(t).Cache().(sd.Cache)
 				if !ok {

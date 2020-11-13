@@ -49,21 +49,15 @@ import _ "github.com/apache/servicecomb-service-center/server/plugin/security/tl
 //module 'govern'
 import _ "github.com/apache/servicecomb-service-center/server/rest/govern"
 
-//module 'broker'
-import _ "github.com/apache/servicecomb-service-center/server/broker"
-
 //module 'admin'
 import _ "github.com/apache/servicecomb-service-center/server/rest/admin"
 
 //metrics
 import _ "github.com/apache/servicecomb-service-center/server/metric"
 
-//events
-import _ "github.com/apache/servicecomb-service-center/server/service/event"
-
 import (
-	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/server/broker"
 	"github.com/apache/servicecomb-service-center/server/handler/accesslog"
 	"github.com/apache/servicecomb-service-center/server/handler/auth"
 	"github.com/apache/servicecomb-service-center/server/handler/cache"
@@ -79,8 +73,6 @@ import (
 func init() {
 	log.Info("BootStrap ServiceComb.io Edition")
 
-	datasource.Init(datasource.Options{PluginImplName: "etcd"})
-
 	// intercept requests before routing.
 	interceptor.RegisterInterceptFunc(access.Intercept)
 	interceptor.RegisterInterceptFunc(cors.Intercept)
@@ -93,4 +85,7 @@ func init() {
 	auth.RegisterHandlers()
 	context.RegisterHandlers()
 	cache.RegisterHandlers()
+
+	// init broker
+	broker.Init()
 }

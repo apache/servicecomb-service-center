@@ -168,7 +168,7 @@ func (ds *DataSource) AddRule(ctx context.Context, request *pb.AddServiceRulesRe
 	return &pb.AddServiceRulesResponse{}, nil
 }
 
-func (ds *DataSource) GetRule(ctx context.Context, request *pb.GetServiceRulesRequest) (*pb.GetServiceRulesResponse, error) {
+func (ds *DataSource) GetRules(ctx context.Context, request *pb.GetServiceRulesRequest) (*pb.GetServiceRulesResponse, error) {
 	return &pb.GetServiceRulesResponse{}, nil
 }
 

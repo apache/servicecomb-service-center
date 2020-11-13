@@ -17,15 +17,11 @@
 package etcd_test
 
 // initialize
-import (
-	_ "github.com/apache/servicecomb-service-center/server/bootstrap"
-	"github.com/apache/servicecomb-service-center/server/config"
-)
+import _ "github.com/apache/servicecomb-service-center/test"
 import (
 	"context"
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/astaxie/beego"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
@@ -35,14 +31,7 @@ import (
 
 var timeLimit = 2 * time.Second
 
-func init() {
-	beego.AppConfig.Set("registry_plugin", "etcd")
-	testing.Init()
-}
-
 var _ = BeforeSuite(func() {
-	//init plugin
-	config.ServerInfo.Config.EnableCache = false
 	//clear service created in last test
 	time.Sleep(timeLimit)
 	_ = datasource.Instance().ClearNoInstanceServices(context.Background(), timeLimit)

@@ -48,7 +48,7 @@ func (r *APIReporter) Report() {
 	}
 	details.ForEach(func(labels []*dto.LabelPair, v float64) (next bool) {
 		old := r.cache.Get(labels)
-		queryPerSeconds.WithLabelValues(r.toLabels(labels)...).Set((v - old) / metric.Period.Seconds())
+		queryPerSeconds.WithLabelValues(r.toLabels(labels)...).Set((v - old) / metric.GetOptions().Interval.Seconds())
 		return true
 	})
 }

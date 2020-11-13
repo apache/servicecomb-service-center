@@ -13,18 +13,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package buildin
+package buildin_test
 
 import (
 	"context"
 	"errors"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
+	"github.com/apache/servicecomb-service-center/server/plugin/quota/buildin"
 	"testing"
 )
 
 func TestCommonQuotaCheck(t *testing.T) {
 	// case: invalid input
-	rst := CommonQuotaCheck(context.Background(), nil, func() int64 {
+	rst := buildin.CommonQuotaCheck(context.Background(), nil, func() int64 {
 		return 1
 	}, func(ctx context.Context, resource *quota.ApplyQuotaResource) (int64, error) {
 		return 0, nil
@@ -32,13 +33,13 @@ func TestCommonQuotaCheck(t *testing.T) {
 	if rst.Err == nil || !rst.Err.InternalError() {
 		t.Fatalf("TestCommonQuotaCheck failed")
 	}
-	rst = CommonQuotaCheck(context.Background(), &quota.ApplyQuotaResource{}, nil, func(ctx context.Context, resource *quota.ApplyQuotaResource) (int64, error) {
+	rst = buildin.CommonQuotaCheck(context.Background(), &quota.ApplyQuotaResource{}, nil, func(ctx context.Context, resource *quota.ApplyQuotaResource) (int64, error) {
 		return 0, nil
 	})
 	if rst.Err == nil || !rst.Err.InternalError() {
 		t.Fatalf("TestCommonQuotaCheck failed")
 	}
-	rst = CommonQuotaCheck(context.Background(), &quota.ApplyQuotaResource{}, func() int64 {
+	rst = buildin.CommonQuotaCheck(context.Background(), &quota.ApplyQuotaResource{}, func() int64 {
 		return 1
 	}, nil)
 	if rst.Err == nil || !rst.Err.InternalError() {
@@ -46,7 +47,7 @@ func TestCommonQuotaCheck(t *testing.T) {
 	}
 
 	// case: error
-	rst = CommonQuotaCheck(context.Background(), &quota.ApplyQuotaResource{
+	rst = buildin.CommonQuotaCheck(context.Background(), &quota.ApplyQuotaResource{
 		QuotaType: quota.MicroServiceQuotaType,
 		QuotaSize: 1,
 	}, func() int64 {
@@ -59,7 +60,7 @@ func TestCommonQuotaCheck(t *testing.T) {
 	}
 
 	// case: normal
-	rst = CommonQuotaCheck(context.Background(), &quota.ApplyQuotaResource{
+	rst = buildin.CommonQuotaCheck(context.Background(), &quota.ApplyQuotaResource{
 		QuotaType: quota.MicroServiceQuotaType,
 		QuotaSize: 1,
 	}, func() int64 {
@@ -71,7 +72,7 @@ func TestCommonQuotaCheck(t *testing.T) {
 		t.Fatalf("TestCommonQuotaCheck failed %v", rst.Err)
 	}
 
-	rst = CommonQuotaCheck(context.Background(), &quota.ApplyQuotaResource{
+	rst = buildin.CommonQuotaCheck(context.Background(), &quota.ApplyQuotaResource{
 		QuotaType: quota.MicroServiceQuotaType,
 		QuotaSize: 1,
 	}, func() int64 {

@@ -22,12 +22,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
-	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 )
@@ -78,10 +74,6 @@ func resourceQuota(t quota.ResourceType) GetLimitQuota {
 }
 
 func resourceLimitHandler(ctx context.Context, res *quota.ApplyQuotaResource) (int64, error) {
-	var key string
-	var indexer sd.Indexer
-
-	domainProject := res.DomainProject
 	serviceID := res.ServiceID
 
 	switch res.QuotaType {
@@ -90,38 +82,37 @@ func resourceLimitHandler(ctx context.Context, res *quota.ApplyQuotaResource) (i
 	case quota.MicroServiceQuotaType:
 		return globalCounter.ServiceCount, nil
 	case quota.RuleQuotaType:
-		key = core.GenerateServiceRuleKey(domainProject, serviceID, "")
-		indexer = kv.Store().Rule()
-	case quota.SchemaQuotaType:
-		key = core.GenerateServiceSchemaKey(domainProject, serviceID, "")
-		indexer = kv.Store().Schema()
-	case quota.TagQuotaType:
-		resp, err := datasource.Instance().GetTags(ctx, &pb.GetServiceTagsRequest{
-			ServiceId: serviceID,
-		})
-		if err != nil {
-			return 0, err
+		{
+			resp, err := datasource.Instance().GetRules(ctx, &pb.GetServiceRulesRequest{
+				ServiceId: serviceID,
+			})
+			if err != nil {
+				return 0, err
+			}
+			return int64(len(resp.Rules)), nil
 		}
-		return int64(len(resp.Tags)), nil
+	case quota.SchemaQuotaType:
+		{
+			resp, err := datasource.Instance().GetAllSchemas(ctx, &pb.GetAllSchemaRequest{
+				ServiceId:  serviceID,
+				WithSchema: false,
+			})
+			if err != nil {
+				return 0, err
+			}
+			return int64(len(resp.Schemas)), nil
+		}
+	case quota.TagQuotaType:
+		{
+			resp, err := datasource.Instance().GetTags(ctx, &pb.GetServiceTagsRequest{
+				ServiceId: serviceID,
+			})
+			if err != nil {
+				return 0, err
+			}
+			return int64(len(resp.Tags)), nil
+		}
 	default:
 		return 0, fmt.Errorf("not define quota type '%s'", res.QuotaType)
 	}
-
-	resp, err := indexer.Search(ctx,
-		client.WithStrKey(key),
-		client.WithPrefix(),
-		client.WithCountOnly())
-	if err != nil {
-		return 0, err
-	}
-	return resp.Count, nil
-}
-
-func InitConfigs() {
-	quota.QUOTA.ActiveConfigs().
-		Set("service", quota.DefaultServiceQuota).
-		Set("instance", quota.DefaultInstanceQuota).
-		Set("schema", quota.DefaultSchemaQuota).
-		Set("tag", quota.DefaultTagQuota).
-		Set("rule", quota.DefaultRuleQuota)
 }

@@ -15,10 +15,12 @@
  * limitations under the License.
  */
 
-package etcd
+package etcd_test
 
+import _ "github.com/apache/servicecomb-service-center/test"
 import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	. "github.com/apache/servicecomb-service-center/datasource/etcd/sd/etcd"
 	"github.com/apache/servicecomb-service-center/server/config"
 	"testing"
 )

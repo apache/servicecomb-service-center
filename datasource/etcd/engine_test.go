@@ -17,10 +17,6 @@
 
 package etcd_test
 
-// initialize
-import _ "github.com/apache/servicecomb-service-center/datasource/etcd/client/buildin"
-import _ "github.com/apache/servicecomb-service-center/server"
-
 import (
 	"context"
 	"fmt"

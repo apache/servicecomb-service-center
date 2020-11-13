@@ -17,6 +17,8 @@
 
 package registry
 
+import "fmt"
+
 const (
 	MS_UP   string = "UP"
 	MS_DOWN string = "DOWN"
@@ -108,11 +110,15 @@ type MicroServiceKey struct {
 	Tenant string `protobuf:"bytes,1,opt,name=tenant" json:"tenant,omitempty"`
 	// Deprecated: Use Tenant instead
 	Project     string `protobuf:"bytes,2,opt,name=project" json:"project,omitempty"`
+	Environment string `protobuf:"bytes,6,opt,name=environment" json:"environment,omitempty"`
 	AppId       string `protobuf:"bytes,3,opt,name=appId" json:"appId,omitempty"`
 	ServiceName string `protobuf:"bytes,4,opt,name=serviceName" json:"serviceName,omitempty"`
-	Version     string `protobuf:"bytes,5,opt,name=version" json:"version,omitempty"`
-	Environment string `protobuf:"bytes,6,opt,name=environment" json:"environment,omitempty"`
 	Alias       string `protobuf:"bytes,7,opt,name=alias" json:"alias,omitempty"`
+	Version     string `protobuf:"bytes,5,opt,name=version" json:"version,omitempty"`
+}
+
+func (mk *MicroServiceKey) String() string {
+	return fmt.Sprintf("&{%v %v %v %v %v %v %v}", mk.Tenant, mk.Project, mk.Project, mk.AppId, mk.ServiceName, mk.Alias, mk.Version)
 }
 
 type FrameWorkProperty struct {
@@ -361,6 +367,10 @@ type ConsumerDependency struct {
 	Consumer  *MicroServiceKey   `protobuf:"bytes,1,opt,name=consumer" json:"consumer,omitempty"`
 	Providers []*MicroServiceKey `protobuf:"bytes,2,rep,name=providers" json:"providers,omitempty"`
 	Override  bool               `protobuf:"varint,3,opt,name=override" json:"override,omitempty"`
+}
+
+func (cd *ConsumerDependency) String() string {
+	return fmt.Sprintf("&{%v %v %v}", cd.Consumer, cd.Providers, cd.Override)
 }
 
 type CreateDependenciesResponse struct {

@@ -44,7 +44,7 @@ func (s *SchemaService) URLPatterns() []rest.Route {
 		{Method: rest.HTTPMethodGet, Path: "/v4/:project/registry/microservices/:serviceId/schemas", Func: s.GetAllSchemas},
 	}
 
-	if !config.ServerInfo.Config.SchemaDisable {
+	if !config.GetRegistry().SchemaDisable {
 		r = append(r, rest.Route{Method: rest.HTTPMethodPut, Path: "/v4/:project/registry/microservices/:serviceId/schemas/:schemaId", Func: s.ModifySchema})
 	} else {
 		r = append(r, rest.Route{Method: rest.HTTPMethodPut, Path: "/v4/:project/registry/microservices/:serviceId/schemas/:schemaId", Func: s.DisableSchema})

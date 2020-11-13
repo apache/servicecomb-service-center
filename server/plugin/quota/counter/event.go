@@ -23,8 +23,8 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/astaxie/beego"
 )
 
 var (
@@ -42,7 +42,7 @@ func (h *ServiceIndexEventHandler) Type() sd.Type {
 
 func (h *ServiceIndexEventHandler) OnEvent(evt sd.KvEvent) {
 	key := core.GetInfoFromSvcIndexKV(evt.KV.Key)
-	if core.IsShared(key) {
+	if core.IsGlobal(key) {
 		SharedServiceIds.Put(key.Tenant+core.SPLIT+evt.KV.Value.(string), struct{}{})
 		return
 	}
@@ -85,7 +85,7 @@ func (h *InstanceEventHandler) OnEvent(evt sd.KvEvent) {
 				log.Errorf(err, "GetService[%s] failed", key)
 				return
 			}
-			if core.IsShared(registry.MicroServiceToKey(domainProject, resp.Service)) {
+			if core.IsGlobal(registry.MicroServiceToKey(domainProject, resp.Service)) {
 				SharedServiceIds.Put(key, struct{}{})
 				return
 			}
@@ -101,7 +101,7 @@ func NewInstanceEventHandler() *InstanceEventHandler {
 }
 
 func RegisterCounterListener(pluginName string) {
-	if pluginName != beego.AppConfig.DefaultString("quota_plugin", "buildin") {
+	if pluginName != config.GetString("quota.kind", "buildin", config.WithStandby("quota_plugin")) {
 		return
 	}
 	sd.AddEventHandler(NewServiceIndexEventHandler())

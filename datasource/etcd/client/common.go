@@ -28,6 +28,11 @@ const (
 )
 
 const (
+	OrderByKey SortTarget = iota
+	OrderByCreate
+)
+
+const (
 	SortNone SortOrder = iota
 	SortAscend
 	SortDescend

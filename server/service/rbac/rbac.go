@@ -27,7 +27,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/security/cipher"
 	"github.com/apache/servicecomb-service-center/server/service"
 	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
-	"github.com/astaxie/beego"
 	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-chassis/v2/security/authr"
 	"github.com/go-chassis/go-chassis/v2/security/secret"
@@ -37,7 +36,6 @@ import (
 const (
 	RootName     = "root"
 	InitPassword = "SC_INIT_ROOT_PASSWORD"
-	PubFilePath  = "rbac_rsa_public_key_file"
 )
 const (
 	ResourceAccount = "account"
@@ -72,7 +70,6 @@ func Init() {
 	readPrivateKey()
 	readPublicKey()
 	rbacframe.Add2WhiteAPIList("/v4/token")
-	config.ServerInfo.Config.EnableRBAC = true
 	log.Info("rbac is enabled")
 }
 func initResourceMap() {
@@ -85,7 +82,7 @@ func initResourceMap() {
 
 //readPublicKey read key to memory
 func readPrivateKey() {
-	pf := beego.AppConfig.String("rbac_rsa_private_key_file")
+	pf := config.GetString("rbac.privateKeyFile", "", config.WithStandby("rbac_rsa_private_key_file"))
 	// 打开文件
 	data, err := ioutil.ReadFile(pf)
 	if err != nil {
@@ -101,7 +98,7 @@ func readPrivateKey() {
 
 //readPublicKey read key to memory
 func readPublicKey() {
-	pf := beego.AppConfig.String(PubFilePath)
+	pf := config.GetString("rbac.publicKeyFile", "", config.WithStandby("rbac_rsa_public_key_file"))
 	// 打开文件
 	content, err := ioutil.ReadFile(pf)
 	if err != nil {
@@ -141,7 +138,7 @@ func initFirstTime(admin string) {
 }
 
 func Enabled() bool {
-	return beego.AppConfig.DefaultBool("rbac_enabled", false)
+	return config.GetRBAC().EnableRBAC
 }
 
 //PublicKey get public key to verify a token

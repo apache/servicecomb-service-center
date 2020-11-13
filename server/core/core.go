@@ -18,41 +18,28 @@
 package core
 
 import (
-	"github.com/apache/servicecomb-service-center/server/config"
-
 	// import the grace package and parse grace cmd line
 	_ "github.com/apache/servicecomb-service-center/pkg/grace"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/server/config"
 	"os"
-	"os/signal"
-	"syscall"
-	"time"
 )
 
 func Initialize() {
 	// initialize configuration
 	config.Init()
-
-	go handleSignals()
+	// Register global services
+	RegisterGlobalServices()
+	// Logging
+	initLogger()
 }
 
-func handleSignals() {
-	defer log.Sync()
-
-	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh,
-		syscall.SIGINT,
-		syscall.SIGTERM,
-	)
-	wait := 5 * time.Second
-	for sig := range sigCh {
-		switch sig {
-		case syscall.SIGINT, syscall.SIGKILL, syscall.SIGTERM:
-			<-time.After(wait)
-			log.Warnf("waiting for server response timed out(%s), force shutdown", wait)
-			os.Exit(1)
-		default:
-			log.Warnf("received signal '%v'", sig)
-		}
-	}
+func initLogger() {
+	log.SetGlobal(log.Config{
+		LoggerLevel:    config.GetLog().LogLevel,
+		LoggerFile:     os.ExpandEnv(config.GetLog().LogFilePath),
+		LogFormatText:  config.GetLog().LogFormat == "text",
+		LogRotateSize:  int(config.GetLog().LogRotateSize),
+		LogBackupCount: int(config.GetLog().LogBackupCount),
+	})
 }

@@ -13,15 +13,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package buildin
+package buildin_test
 
 import (
-	kv "github.com/apache/servicecomb-service-center/datasource/etcd/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
+	"github.com/apache/servicecomb-service-center/server/plugin/quota/buildin"
 	"testing"
 )
 
 func TestGlobalCounter_OnCreate(t *testing.T) {
-	var counter GlobalCounter
+	var counter buildin.GlobalCounter
 	counter.OnCreate(kv.SERVICE, "a/b")
 	counter.OnCreate(kv.ServiceIndex, "a/b")
 	counter.OnCreate(kv.INSTANCE, "a/b")
@@ -33,7 +34,7 @@ func TestGlobalCounter_OnCreate(t *testing.T) {
 }
 
 func TestGlobalCounter_OnDelete(t *testing.T) {
-	var counter GlobalCounter
+	var counter buildin.GlobalCounter
 	counter.OnDelete(kv.SERVICE, "a/b")
 	counter.OnDelete(kv.ServiceIndex, "a/b")
 	counter.OnDelete(kv.INSTANCE, "a/b")

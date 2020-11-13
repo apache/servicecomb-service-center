@@ -15,18 +15,16 @@
  * limitations under the License.
  */
 
-package datasource
+package metric
 
 import (
-	"context"
-	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
+	"time"
 )
 
-// AccountManager contains the RBAC CRUD
-type AccountManager interface {
-	AccountExist(ctx context.Context, key string) (bool, error)
-	GetAccount(ctx context.Context, key string) (*rbacframe.Account, error)
-	ListAccount(ctx context.Context, key string) ([]*rbacframe.Account, int64, error)
-	DeleteAccount(ctx context.Context, key string) (bool, error)
-	UpdateAccount(ctx context.Context, key string, account *rbacframe.Account) error
+//Options contains metrics configs
+type Options struct {
+	Interval     time.Duration
+	InstanceName string
+	// SysMetrics set
+	SysMetrics []string
 }

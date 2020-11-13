@@ -19,7 +19,7 @@ package metric
 import "testing"
 
 func TestMetricsGatherer_Collect(t *testing.T) {
-	g := NewGatherer()
+	g := NewGatherer(Options{})
 	err := g.Collect()
 	if err != nil {
 		t.Fatalf("TestMetricsGatherer_Collect")

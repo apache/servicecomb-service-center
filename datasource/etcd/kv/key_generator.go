@@ -1,4 +1,21 @@
-package etcd
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package kv
 
 import (
 	"fmt"
@@ -15,18 +32,12 @@ const (
 	RegistryServiceKey   = "ms"
 	RegistryIndex        = "indexes"
 	RegistryDepsQueueKey = "dep-queue"
+	RegistryInstanceKey  = "inst"
+	RegistryFile         = "files"
 )
 
 func GetRootKey() string {
 	return SPLIT + RegistryRootKey
-}
-
-func (ds *DataSource) GenerateAccountKey(name string) string {
-	return util.StringJoin([]string{
-		GetRootKey(),
-		"accounts",
-		name,
-	}, SPLIT)
 }
 
 func GenerateETCDAccountKey(name string) string {
@@ -34,13 +45,6 @@ func GenerateETCDAccountKey(name string) string {
 		GetRootKey(),
 		"accounts",
 		name,
-	}, SPLIT)
-}
-
-func GenerateETCDProjectKey(domain, project string) string {
-	return util.StringJoin([]string{
-		GetProjectRootKey(domain),
-		project,
 	}, SPLIT)
 }
 
@@ -52,10 +56,10 @@ func GetProjectRootKey(domain string) string {
 	}, SPLIT)
 }
 
-func GenerateETCDDomainKey(domain string) string {
+func GenerateETCDProjectKey(domain, project string) string {
 	return util.StringJoin([]string{
-		GetDomainRootKey(),
-		domain,
+		GetProjectRootKey(domain),
+		project,
 	}, SPLIT)
 }
 
@@ -63,6 +67,22 @@ func GetDomainRootKey() string {
 	return util.StringJoin([]string{
 		GetRootKey(),
 		RegistryDomainKey,
+	}, SPLIT)
+}
+
+func GenerateETCDDomainKey(domain string) string {
+	return util.StringJoin([]string{
+		GetDomainRootKey(),
+		domain,
+	}, SPLIT)
+}
+
+func GetServiceIndexRootKey(domainProject string) string {
+	return util.StringJoin([]string{
+		GetRootKey(),
+		RegistryServiceKey,
+		RegistryIndex,
+		domainProject,
 	}, SPLIT)
 }
 
@@ -76,21 +96,12 @@ func GenerateServiceIndexKey(key *registry.MicroServiceKey) string {
 	}, SPLIT)
 }
 
-func GetServiceIndexRootKey(domainProject string) string {
-	return util.StringJoin([]string{
-		GetRootKey(),
-		RegistryServiceKey,
-		RegistryIndex,
-		domainProject,
-	}, SPLIT)
-}
-
-func KvToResponse(key []byte) (keys []string) {
+func ToResponse(key []byte) (keys []string) {
 	return strings.Split(util.BytesToStringWithNoCopy(key), SPLIT)
 }
 
 func GetInfoFromSvcIndexKV(key []byte) *registry.MicroServiceKey {
-	keys := KvToResponse(key)
+	keys := ToResponse(key)
 	l := len(keys)
 	if l < 6 {
 		return nil
@@ -126,6 +137,15 @@ func GetServiceDependencyQueueRootKey(domainProject string) string {
 		GetRootKey(),
 		RegistryServiceKey,
 		RegistryDepsQueueKey,
+		domainProject,
+	}, SPLIT)
+}
+
+func GetInstanceRootKey(domainProject string) string {
+	return util.StringJoin([]string{
+		GetRootKey(),
+		RegistryInstanceKey,
+		RegistryFile,
 		domainProject,
 	}, SPLIT)
 }

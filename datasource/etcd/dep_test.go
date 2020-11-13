@@ -19,9 +19,12 @@ package etcd_test
 
 import (
 	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/event"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
+	"github.com/apache/servicecomb-service-center/server/core"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
-	"github.com/apache/servicecomb-service-center/server/service/event"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -148,7 +151,7 @@ func Test_Creat(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, scerr.ErrServiceNotExists, resp.GetCode())
 
-		assert.Equal(t, nil, deh.Handle())
+		DependencyHandle(t)
 
 		// provider in diff env
 		resp, err = datasource.Instance().AddOrUpdateDependencies(depGetContext(), []*pb.ConsumerDependency{
@@ -186,7 +189,7 @@ func Test_Creat(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, resp.GetCode())
 
-		assert.Equal(t, nil, deh.Handle())
+		DependencyHandle(t)
 
 		respCon, err := datasource.Instance().SearchConsumerDependency(depGetContext(), &pb.GetDependenciesRequest{
 			ServiceId: consumerId1,
@@ -227,13 +230,14 @@ func Test_Creat(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, resp.GetCode())
 
-		assert.Equal(t, nil, deh.Handle())
+		DependencyHandle(t)
 
 		respPro, err := datasource.Instance().SearchConsumerDependency(depGetContext(), &pb.GetDependenciesRequest{
 			ServiceId: consumerId1,
 		})
 		assert.NotNil(t, respPro)
 		assert.NoError(t, err)
+		assert.NotEqual(t, 0, len(respPro.Providers))
 		assert.Equal(t, "1.0.1", respPro.Providers[0].Version)
 
 		// add 1.0.0+
@@ -253,7 +257,7 @@ func Test_Creat(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, resp.GetCode())
 
-		assert.Equal(t, nil, deh.Handle())
+		DependencyHandle(t)
 
 		respPro, err = datasource.Instance().SearchConsumerDependency(depGetContext(), &pb.GetDependenciesRequest{
 			ServiceId: consumerId1,
@@ -340,7 +344,7 @@ func Test_Creat(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, resp.GetCode())
 
-		assert.Equal(t, nil, deh.Handle())
+		DependencyHandle(t)
 
 		respPro, err = datasource.Instance().SearchConsumerDependency(depGetContext(), &pb.GetDependenciesRequest{
 			ServiceId: consumerId1,
@@ -366,7 +370,7 @@ func Test_Creat(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, respAdd.GetCode())
 
-		assert.Equal(t, nil, deh.Handle())
+		DependencyHandle(t)
 
 		respPro, err = datasource.Instance().SearchConsumerDependency(depGetContext(), &pb.GetDependenciesRequest{
 			ServiceId: consumerId1,
@@ -394,7 +398,7 @@ func Test_Creat(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, resp.GetCode())
 
-		assert.Equal(t, nil, deh.Handle())
+		DependencyHandle(t)
 
 		respPro, err = datasource.Instance().SearchConsumerDependency(depGetContext(), &pb.GetDependenciesRequest{
 			ServiceId: consumerId1,
@@ -483,7 +487,7 @@ func Test_Get(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
-		assert.Equal(t, nil, deh.Handle())
+		DependencyHandle(t)
 
 		// get consumer's deps
 		respGetP, err := datasource.Instance().SearchProviderDependency(depGetContext(), &pb.GetDependenciesRequest{
@@ -510,7 +514,7 @@ func Test_Get(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
-		assert.Equal(t, nil, deh.Handle())
+		DependencyHandle(t)
 
 		respGetC, err = datasource.Instance().SearchConsumerDependency(depGetContext(), &pb.GetDependenciesRequest{
 			ServiceId: consumerId1,
@@ -554,7 +558,7 @@ func Test_Get(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
-		assert.Equal(t, nil, deh.Handle())
+		DependencyHandle(t)
 
 		respGetC, err = datasource.Instance().SearchConsumerDependency(depGetContext(), &pb.GetDependenciesRequest{
 			ServiceId: providerId2,
@@ -572,7 +576,7 @@ func Test_Get(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, respDelP.Response.GetCode())
 
-		assert.Equal(t, nil, deh.Handle())
+		DependencyHandle(t)
 
 		respGetC, err = datasource.Instance().SearchConsumerDependency(depGetContext(), &pb.GetDependenciesRequest{
 			ServiceId: providerId2,
@@ -605,7 +609,7 @@ func Test_Get(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
-		assert.Equal(t, nil, deh.Handle())
+		DependencyHandle(t)
 
 		respGetC, err = datasource.Instance().SearchConsumerDependency(depGetContext(), &pb.GetDependenciesRequest{
 			ServiceId: providerId2,
@@ -615,4 +619,21 @@ func Test_Get(t *testing.T) {
 		assert.Equal(t, 1, len(respGetC.Providers))
 		assert.Equal(t, finder1, respGetC.Providers[0].ServiceId)
 	})
+}
+
+func DependencyHandle(t *testing.T) {
+	for {
+		assert.NoError(t, deh.Handle())
+
+		key := core.GetServiceDependencyQueueRootKey("")
+		resp, err := kv.Store().DependencyQueue().Search(getContext(),
+			client.WithStrKey(key), client.WithPrefix(), client.WithCountOnly())
+
+		assert.NoError(t, err)
+
+		// maintain dependency rules.
+		if resp.Count == 0 {
+			break
+		}
+	}
 }

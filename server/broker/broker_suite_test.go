@@ -16,34 +16,16 @@
  */
 package broker_test
 
-import (
-	_ "github.com/apache/servicecomb-service-center/server/bootstrap"
-	"github.com/apache/servicecomb-service-center/server/config"
-)
+import _ "github.com/apache/servicecomb-service-center/test"
 import (
 	"github.com/apache/servicecomb-service-center/server/broker"
-	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/service"
-	"github.com/astaxie/beego"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
 	"testing"
 )
 
-func init() {
-	beego.AppConfig.Set("registry_plugin", "etcd")
-	testing.Init()
-	core.Initialize()
-}
-
 var brokerResource = broker.ServiceAPI
-
-var _ = BeforeSuite(func() {
-	//init plugin
-	config.ServerInfo.Config.EnableCache = false
-	core.ServiceAPI, core.InstanceAPI = service.AssembleResources()
-})
 
 func TestBroker(t *testing.T) {
 	RegisterFailHandler(Fail)

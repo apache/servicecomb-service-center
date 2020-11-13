@@ -27,11 +27,11 @@ import (
 
 func init() {
 	mgr.RegisterPlugin(mgr.Plugin{Kind: quota.QUOTA, Name: "buildin", New: New})
-	counter.RegisterCounterListener("buildin")
 }
 
 func New() mgr.Instance {
-	InitConfigs()
+	quota.Init()
+	counter.RegisterCounterListener("buildin")
 	log.Infof("quota init, service: %d, instance: %d, schema: %d/service, tag: %d/service, rule: %d/service",
 		quota.DefaultServiceQuota, quota.DefaultInstanceQuota,
 		quota.DefaultSchemaQuota, quota.DefaultTagQuota, quota.DefaultRuleQuota)

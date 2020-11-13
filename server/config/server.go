@@ -41,9 +41,9 @@ type ServerConfig struct {
 	SslVerifyPeer bool   `json:"sslVerifyPeer,string"`
 	SslCiphers    string `json:"sslCiphers"`
 
-	AutoSyncInterval  string `json:"-"`
-	CompactIndexDelta int64  `json:"-"`
-	CompactInterval   string `json:"-"`
+	AutoSyncInterval  time.Duration `json:"-"`
+	CompactIndexDelta int64         `json:"-"`
+	CompactInterval   time.Duration `json:"-"`
 
 	EnablePProf bool `json:"enablePProf"`
 	EnableCache bool `json:"enableCache"`
@@ -70,10 +70,18 @@ type ServerConfig struct {
 	//if a service's existence time reaches this value, it can be cleared
 	ServiceTTL time.Duration `json:"serviceTTL"`
 	//CacheTTL is the ttl of cache
-	CacheTTL time.Duration `json:"cacheTTL"`
+	CacheTTL      time.Duration `json:"cacheTTL"`
+	GlobalVisible string        `json:"-"`
 
 	// if want disable Test Schema, SchemaDisable set true
 	SchemaDisable bool `json:"schemaDisable"`
+	// if want disable modification of Schema, SchemaEditable set false
+	SchemaEditable bool `json:"-"`
+
+	// instance ttl in seconds
+	InstanceTTL int64 `json:"-"`
+
+	MetricsInterval time.Duration `json:"-"`
 }
 
 type ServerInformation struct {

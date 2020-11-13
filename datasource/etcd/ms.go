@@ -36,23 +36,9 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"github.com/apache/servicecomb-service-center/server/service/cache"
-	"sort"
 	"strconv"
 	"time"
 )
-
-var clustersIndex = make(map[string]int)
-
-func init() {
-	var clusters []string
-	for name := range Configuration().Clusters {
-		clusters = append(clusters, name)
-	}
-	sort.Strings(clusters)
-	for i, name := range clusters {
-		clustersIndex[name] = i
-	}
-}
 
 // RegisterService() implement:
 // 1. capsule request to etcd kv format
@@ -327,7 +313,7 @@ func (ds *DataSource) GetServicesInfo(ctx context.Context, request *pb.GetServic
 	allServiceDetails := make([]*pb.ServiceDetail, 0, len(services))
 	domainProject := util.ParseDomainProject(ctx)
 	for _, service := range services {
-		if !request.WithShared && apt.IsShared(pb.MicroServiceToKey(domainProject, service)) {
+		if !request.WithShared && apt.IsGlobal(pb.MicroServiceToKey(domainProject, service)) {
 			continue
 		}
 		if len(request.AppId) > 0 {
@@ -363,7 +349,7 @@ func (ds *DataSource) GetServicesInfo(ctx context.Context, request *pb.GetServic
 
 func (ds *DataSource) GetApplications(ctx context.Context, request *pb.GetAppsRequest) (*pb.GetAppsResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
-	key := GetServiceAppKey(domainProject, request.Environment, "")
+	key := kv.GetServiceAppKey(domainProject, request.Environment, "")
 
 	opts := append(serviceUtil.FromContext(ctx),
 		registry.WithStrKey(key),
@@ -383,9 +369,9 @@ func (ds *DataSource) GetApplications(ctx context.Context, request *pb.GetAppsRe
 
 	apps := make([]string, 0, l)
 	appMap := make(map[string]struct{}, l)
-	for _, kv := range resp.Kvs {
-		key := GetInfoFromSvcIndexKV(kv.Key)
-		if !request.WithShared && apt.IsShared(key) {
+	for _, keyValue := range resp.Kvs {
+		key := kv.GetInfoFromSvcIndexKV(keyValue.Key)
+		if !request.WithShared && apt.IsGlobal(key) {
 			continue
 		}
 		if _, ok := appMap[key.AppId]; ok {
@@ -567,8 +553,8 @@ func (ds *DataSource) RegisterInstance(ctx context.Context, request *pb.Register
 	}
 
 	ttl := int64(instance.HealthCheck.Interval * (instance.HealthCheck.Times + 1))
-	if ds.ttlFromEnv > 0 {
-		ttl = ds.ttlFromEnv
+	if ds.InstanceTTL > 0 {
+		ttl = ds.InstanceTTL
 	}
 	instanceFlag := fmt.Sprintf("ttl %ds, endpoints %v, host '%s', serviceID %s",
 		ttl, instance.Endpoints, instance.HostName, instance.ServiceId)
@@ -900,7 +886,7 @@ func (ds *DataSource) FindInstances(ctx context.Context, request *pb.FindInstanc
 		}, err
 	}
 
-	if apt.IsShared(provider) {
+	if apt.IsGlobal(provider) {
 		return ds.findSharedServiceInstance(ctx, request, provider, rev)
 	}
 	return ds.findInstance(ctx, request, provider, rev)
@@ -1153,7 +1139,7 @@ func (ds *DataSource) HeartbeatSet(ctx context.Context, request *pb.HeartbeatSet
 		}
 	}
 	if !failFlag && successFlag {
-		log.Infof("batch update heartbeats[%s] successfully", count)
+		log.Infof("batch update heartbeats[%d] successfully", count)
 		return &pb.HeartbeatSetResponse{
 			Response:  pb.CreateResponse(pb.ResponseSuccess, "Heartbeat set successfully."),
 			Instances: instanceHbRstArr,
@@ -1942,7 +1928,7 @@ func (ds *DataSource) AddRule(ctx context.Context, request *pb.AddServiceRulesRe
 	}, nil
 }
 
-func (ds *DataSource) GetRule(ctx context.Context, request *pb.GetServiceRulesRequest) (
+func (ds *DataSource) GetRules(ctx context.Context, request *pb.GetServiceRulesRequest) (
 	*pb.GetServiceRulesResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
 

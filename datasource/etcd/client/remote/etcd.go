@@ -42,7 +42,7 @@ import (
 	"github.com/coreos/etcd/mvcc/mvccpb"
 )
 
-var firstEndpoint string
+var FirstEndpoint string
 
 func init() {
 	clientv3.SetLogger(&clientLogger{})
@@ -261,11 +261,19 @@ func (c *Client) toGetRequest(op client.PluginOp) []clientv3.OpOption {
 	if op.Revision > 0 {
 		opts = append(opts, clientv3.WithRev(op.Revision))
 	}
+	// sort key by default and not need to set this flag
+	sortTarget := clientv3.SortByKey
+	switch op.OrderBy {
+	case client.OrderByKey:
+		sortTarget = clientv3.SortByKey
+	case client.OrderByCreate:
+		sortTarget = clientv3.SortByCreateRevision
+	}
 	switch op.SortOrder {
 	case client.SortAscend:
-		opts = append(opts, clientv3.WithSort(clientv3.SortByKey, clientv3.SortAscend))
+		opts = append(opts, clientv3.WithSort(sortTarget, clientv3.SortAscend))
 	case client.SortDescend:
-		opts = append(opts, clientv3.WithSort(clientv3.SortByKey, clientv3.SortDescend))
+		opts = append(opts, clientv3.WithSort(sortTarget, clientv3.SortDescend))
 	}
 	return opts
 }
@@ -359,7 +367,7 @@ func (c *Client) PutNoOverride(ctx context.Context, opts ...client.PluginOpOptio
 	return resp.Succeeded, nil
 }
 
-func (c *Client) paging(ctx context.Context, op client.PluginOp) (*clientv3.GetResponse, error) {
+func (c *Client) Paging(ctx context.Context, op client.PluginOp) (*clientv3.GetResponse, error) {
 	var etcdResp *clientv3.GetResponse
 	key := util.BytesToStringWithNoCopy(op.Key)
 
@@ -481,7 +489,7 @@ func (c *Client) Do(ctx context.Context, opts ...client.PluginOpOption) (*client
 		key := util.BytesToStringWithNoCopy(op.Key)
 
 		if (op.Prefix || len(op.EndKey) > 0) && !op.CountOnly {
-			etcdResp, err = c.paging(ctx, op)
+			etcdResp, err = c.Paging(ctx, op)
 			if err != nil {
 				break
 			}
@@ -718,11 +726,11 @@ func (c *Client) Watch(ctx context.Context, opts ...client.PluginOpOption) (err 
 
 func (c *Client) HealthCheck() {
 	if c.AutoSyncInterval >= time.Second {
-		c.goroutine.Do(c.healthCheckLoop)
+		c.goroutine.Do(c.HealthCheckLoop)
 	}
 }
 
-func (c *Client) healthCheckLoop(pctx context.Context) {
+func (c *Client) HealthCheckLoop(pctx context.Context) {
 	d := c.AutoSyncInterval
 	for {
 		var healthCheckErr error
@@ -878,7 +886,7 @@ func NewRegistry(opts client.Options) client.Registry {
 	if inst.TLSConfig != nil {
 		scheme = "https://"
 	}
-	firstEndpoint = scheme + inst.Endpoints[0]
+	FirstEndpoint = scheme + inst.Endpoints[0]
 
 	return inst
 }
