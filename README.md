@@ -23,7 +23,7 @@ It provides out of box support for metrics and tracing. It has a web portal to m
  - **[`Portal`](/frontend)**: Awesome web portal
  - **Fault tolerance**: Multiple fault tolerance mechanism and design in the architecture
  - **Performance**: Performance/Caching design
- - **[`Metrics`](https://service-center.readthedocs.io/en/latest/user-guides/integration-grafana.html)**: Able to expose Prometheus metric API automatically
+ - **[`Metrics`](https://service-center.readthedocs.io/en/latest/user-guides/integration-grafana.html)**: Able to expose Prometheus metric API automatically, [see](/docs/user-guides/metrics.md)
  - **[`Tracing`](https://service-center.readthedocs.io/en/latest/plugins-tracing/tracing.html)**: Able to report tracing data to Zipkin server
  - **[`Pluginable`](https://service-center.readthedocs.io/en/latest/design-guides/plugin.html)**: Able to load custom authentication, tls and other dynamic libraries
  - **[`CLI`](https://service-center.readthedocs.io/en/latest/intro/scctl.html)**: Easy to control service center
