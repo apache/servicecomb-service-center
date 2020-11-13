@@ -23,7 +23,7 @@ import (
 
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	apt "github.com/apache/servicecomb-service-center/server/core"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
+	scerr "github.com/apache/servicecomb-service-center/pkg/registry"
 )
 
 func HeartbeatUtil(ctx context.Context, domainProject string, serviceID string, instanceID string) (leaseID int64, ttl int64, _ *scerr.Error) {

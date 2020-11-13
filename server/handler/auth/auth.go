@@ -23,7 +23,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/plugin/auth"
 	"github.com/apache/servicecomb-service-center/server/rest/controller"
-	"github.com/apache/servicecomb-service-center/server/scerror"
+	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"net/http"
 )
 

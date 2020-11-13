@@ -25,7 +25,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/cluster"
 	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
+	scerr "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/version"
 )
 

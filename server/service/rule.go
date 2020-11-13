@@ -23,7 +23,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
+	scerr "github.com/apache/servicecomb-service-center/pkg/registry"
 )
 
 func (s *MicroServiceService) AddRule(ctx context.Context, in *pb.AddServiceRulesRequest) (*pb.AddServiceRulesResponse, error) {

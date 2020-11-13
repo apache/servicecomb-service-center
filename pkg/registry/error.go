@@ -15,12 +15,11 @@
  * limitations under the License.
  */
 
-package scerror
+package registry
 
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
 var errors = map[int32]string{
@@ -124,7 +123,10 @@ func NewErrorf(code int32, format string, args ...interface{}) *Error {
 func RegisterErrors(errs map[int32]string) {
 	for err, msg := range errs {
 		if err < 400000 || err >= 600000 {
-			log.Warnf("error code[%v] should be between 4xx and 5xx", err)
+			//it is not happening after server is ready fo serving
+			//no need to use log tool to record,
+			//it is common third party lib will be imported to many project, shouldn't use log tool
+			fmt.Println(fmt.Sprintf("error code[%v] should be between 4xx and 5xx", err))
 			continue
 		}
 		errors[err] = msg

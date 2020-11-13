@@ -27,7 +27,7 @@ import (
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
+	scerr "github.com/apache/servicecomb-service-center/pkg/registry"
 )
 
 func (ds *DataSource) SearchProviderDependency(ctx context.Context, request *pb.GetDependenciesRequest) (*pb.GetProDependenciesResponse, error) {

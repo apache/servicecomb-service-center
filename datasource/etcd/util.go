@@ -31,7 +31,7 @@ import (
 	apt "github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
+	scerr "github.com/apache/servicecomb-service-center/pkg/registry"
 	"strconv"
 	"strings"
 	"time"

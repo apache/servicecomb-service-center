@@ -17,10 +17,6 @@
 
 package registry
 
-import (
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
-)
-
 const (
 	ExistenceMicroservice string = "microservice"
 	ExistenceSchema       string = "schema"
@@ -41,7 +37,7 @@ func CreateResponse(code int32, message string) *Response {
 	return resp
 }
 
-func CreateResponseWithSCErr(err *scerr.Error) *Response {
+func CreateResponseWithSCErr(err *Error) *Response {
 	return &Response{
 		Code:    err.Code,
 		Message: err.Detail,

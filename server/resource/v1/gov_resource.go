@@ -20,7 +20,7 @@ package v1
 import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/rest/controller"
-	"github.com/apache/servicecomb-service-center/server/scerror"
+	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/server/service/gov"
 	"io/ioutil"
 	"net/http"

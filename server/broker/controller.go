@@ -27,7 +27,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/broker/brokerpb"
 	"github.com/apache/servicecomb-service-center/server/rest/controller"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
+	scerr "github.com/apache/servicecomb-service-center/pkg/registry"
 )
 
 const DefaultScheme = "http"

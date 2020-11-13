@@ -15,9 +15,7 @@
 
 package registry
 
-import (
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
-)
+import ()
 
 type FindService struct {
 	Service *MicroServiceKey `protobuf:"bytes,1,opt,name=service" json:"service"`
@@ -36,8 +34,8 @@ type FindResult struct {
 }
 
 type FindFailedResult struct {
-	Indexes []int64      `protobuf:"varint,1,rep,packed,name=indexes" json:"indexes"`
-	Error   *scerr.Error `protobuf:"bytes,2,opt,name=error" json:"error"`
+	Indexes []int64 `protobuf:"varint,1,rep,packed,name=indexes" json:"indexes"`
+	Error   *Error  `protobuf:"bytes,2,opt,name=error" json:"error"`
 }
 
 type BatchFindResult struct {

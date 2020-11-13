@@ -33,7 +33,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/broker/brokerpb"
 	apt "github.com/apache/servicecomb-service-center/server/core"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
+	scerr "github.com/apache/servicecomb-service-center/pkg/registry"
 )
 
 var ServiceAPI = &Service{}

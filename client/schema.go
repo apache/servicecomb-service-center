@@ -26,7 +26,7 @@ import (
 	"net/http"
 
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
+	scerr "github.com/apache/servicecomb-service-center/pkg/registry"
 )
 
 const (

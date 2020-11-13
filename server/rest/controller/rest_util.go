@@ -25,7 +25,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/alarm"
-	"github.com/apache/servicecomb-service-center/server/scerror"
+	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"net/http"
 	"strconv"
 )

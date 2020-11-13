@@ -22,7 +22,7 @@ import (
 	. "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
+	scerr "github.com/apache/servicecomb-service-center/pkg/registry"
 	"testing"
 )
 

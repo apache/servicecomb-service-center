@@ -34,7 +34,7 @@ import (
 	rmodel "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
+	scerr "github.com/apache/servicecomb-service-center/pkg/registry"
 )
 
 func GetLeaseID(ctx context.Context, domainProject string, serviceID string, instanceID string) (int64, error) {

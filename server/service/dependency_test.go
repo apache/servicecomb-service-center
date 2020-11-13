@@ -18,7 +18,7 @@ package service_test
 
 import (
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
+	scerr "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/server/service/event"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
