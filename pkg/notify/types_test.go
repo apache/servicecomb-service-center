@@ -15,7 +15,9 @@
 
 package notify
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestRegisterType(t *testing.T) {
 	id := RegisterType("a", 0)
@@ -28,9 +30,6 @@ func TestRegisterType(t *testing.T) {
 	}
 	id = Type(999)
 	if id.String() != "Type999" || id.QueueSize() != DefaultQueueSize {
-		t.Fatal("TestRegisterType failed", id.String(), id.QueueSize())
-	}
-	if NOTIFTY.String() != "NOTIFTY" || NOTIFTY.QueueSize() != DefaultQueueSize {
 		t.Fatal("TestRegisterType failed", id.String(), id.QueueSize())
 	}
 }

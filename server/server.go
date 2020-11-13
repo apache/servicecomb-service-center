@@ -92,7 +92,7 @@ func (s *ServiceCenterServer) initialize() {
 	// Datasource
 	s.initDatasource()
 	s.apiService = GetAPIServer()
-	s.notifyService = notify.GetNotifyCenter()
+	s.notifyService = notify.Center()
 }
 
 func (s *ServiceCenterServer) initEndpoints() {

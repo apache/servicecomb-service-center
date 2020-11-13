@@ -21,13 +21,14 @@ import (
 )
 
 func TestNewEventWithTime(t *testing.T) {
-	evt := NewEvent(NOTIFTY, "a", "b")
+	regT := RegisterType("N", 1)
+	evt := NewEvent(regT, "a", "b")
 	if evt.CreateAt().UnixNano() == 0 {
 		t.Fatal("TestNewEventWithTime")
 	}
 	fmt.Println(evt.CreateAt())
 
-	if evt.Type() != NOTIFTY || evt.Subject() != "a" || evt.Group() != "b" {
+	if evt.Type() != regT || evt.Subject() != "a" || evt.Group() != "b" {
 		t.Fatal("TestNewEventWithTime")
 	}
 }

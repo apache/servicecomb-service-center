@@ -62,7 +62,7 @@ func (s *Service) Start() {
 	s.mux.Unlock()
 
 	// 错误subscriber清理
-	err := s.AddSubscriber(NewNotifyServiceHealthChecker())
+	err := s.AddSubscriber(NewSubscriberChecker())
 	if err != nil {
 		log.Error("", err)
 	}
@@ -114,19 +114,19 @@ func (s *Service) stopProcessors() {
 }
 
 //通知内容塞到队列里
-func (s *Service) Publish(job Event) error {
+func (s *Service) Publish(evt Event) error {
 	if s.Closed() {
-		return errors.New("add notify job failed for server shutdown")
+		return errors.New("add notify event failed for server shutdown")
 	}
 
 	s.mux.RLock()
-	p, ok := s.processors[job.Type()]
+	p, ok := s.processors[evt.Type()]
 	if !ok {
 		s.mux.RUnlock()
-		return errors.New("Unknown job type")
+		return errors.New("unknown event type")
 	}
 	s.mux.RUnlock()
-	p.Accept(job)
+	p.Accept(evt)
 	return nil
 }
 

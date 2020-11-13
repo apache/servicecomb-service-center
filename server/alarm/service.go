@@ -44,7 +44,7 @@ func (ac *Service) Raise(id model.ID, fields ...model.Field) error {
 	for _, f := range fields {
 		ae.Fields[f.Key] = f.Value
 	}
-	return notify.GetNotifyCenter().Publish(ae)
+	return notify.Center().Publish(ae)
 }
 
 func (ac *Service) Clear(id model.ID) error {
@@ -53,7 +53,7 @@ func (ac *Service) Clear(id model.ID) error {
 		Status: Cleared,
 		ID:     id,
 	}
-	return notify.GetNotifyCenter().Publish(ae)
+	return notify.Center().Publish(ae)
 }
 
 func (ac *Service) ListAll() (ls []*model.AlarmEvent) {
@@ -88,7 +88,7 @@ func NewAlarmService() *Service {
 	c := &Service{
 		Subscriber: nf.NewSubscriber(ALARM, Subject, Group),
 	}
-	err := notify.GetNotifyCenter().AddSubscriber(c)
+	err := notify.Center().AddSubscriber(c)
 	if err != nil {
 		log.Error("", err)
 	}

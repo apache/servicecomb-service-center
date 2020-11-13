@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package notify
+package ws
 
 import (
 	"context"
@@ -25,23 +25,27 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/connection"
+	"github.com/apache/servicecomb-service-center/server/notify"
 	"github.com/gorilla/websocket"
 	"time"
 )
+
+const Websocket = "Websocket"
 
 type WebSocket struct {
 	ctx    context.Context
 	ticker *time.Ticker
 	conn   *websocket.Conn
 	// watcher subscribe the notification service event
-	watcher         *InstanceEventListWatcher
+	watcher         *notify.InstanceEventListWatcher
 	needPingWatcher bool
 	free            chan struct{}
 	closed          chan struct{}
 }
 
 func (wh *WebSocket) Init() error {
-	wh.ticker = time.NewTicker(HeartbeatInterval)
+	wh.ticker = time.NewTicker(connection.HeartbeatInterval)
 	wh.needPingWatcher = true
 	wh.free = make(chan struct{}, 1)
 	wh.closed = make(chan struct{})
@@ -51,7 +55,7 @@ func (wh *WebSocket) Init() error {
 	remoteAddr := wh.conn.RemoteAddr().String()
 
 	// put in notification service queue
-	if err := GetNotifyCenter().AddSubscriber(wh.watcher); err != nil {
+	if err := notify.Center().AddSubscriber(wh.watcher); err != nil {
 		err = fmt.Errorf("establish[%s] websocket watch failed: notify service error, %s",
 			remoteAddr, err.Error())
 		log.Errorf(nil, err.Error())
@@ -72,11 +76,11 @@ func (wh *WebSocket) Init() error {
 }
 
 func (wh *WebSocket) ReadTimeout() time.Duration {
-	return ReadTimeout
+	return connection.ReadTimeout
 }
 
 func (wh *WebSocket) SendTimeout() time.Duration {
-	return SendTimeout
+	return connection.SendTimeout
 }
 
 func (wh *WebSocket) Heartbeat(messageType int) error {
@@ -94,7 +98,7 @@ func (wh *WebSocket) Heartbeat(messageType int) error {
 	return nil
 }
 
-func (wh *WebSocket) HandleWatchWebSocketControlMessage() {
+func (wh *WebSocket) HandleControlMessage() {
 	remoteAddr := wh.conn.RemoteAddr().String()
 	// PING
 	wh.conn.SetPingHandler(func(message string) error {
@@ -130,7 +134,7 @@ func (wh *WebSocket) HandleWatchWebSocketControlMessage() {
 		return wh.sendClose(code, text)
 	})
 
-	wh.conn.SetReadLimit(ReadMaxBody)
+	wh.conn.SetReadLimit(connection.ReadMaxBody)
 	err := wh.conn.SetReadDeadline(time.Now().Add(wh.ReadTimeout()))
 	if err != nil {
 		log.Error("", err)
@@ -186,8 +190,8 @@ func (wh *WebSocket) Pick() interface{} {
 	return nil
 }
 
-// HandleWatchWebSocketJob will be called if Pick() returns not nil
-func (wh *WebSocket) HandleWatchWebSocketJob(o interface{}) {
+// HandleEvent will be called if Pick() returns not nil
+func (wh *WebSocket) HandleEvent(o interface{}) {
 	defer wh.SetReady()
 
 	var (
@@ -222,7 +226,7 @@ func (wh *WebSocket) HandleWatchWebSocketJob(o interface{}) {
 		log.Debugf("send 'Ping' message to watcher[%s], subject: %s, group: %s",
 			remoteAddr, wh.watcher.Subject(), wh.watcher.Group())
 		return
-	case *InstanceEvent:
+	case *notify.InstanceEvent:
 		resp := o.Response
 
 		providerFlag := fmt.Sprintf("%s/%s/%s", resp.Key.AppId, resp.Key.ServiceName, resp.Key.Version)
@@ -254,8 +258,8 @@ func (wh *WebSocket) HandleWatchWebSocketJob(o interface{}) {
 	}
 
 	err := wh.WriteMessage(message)
-	if evt, ok := o.(*InstanceEvent); ok {
-		ReportPublishCompleted(evt, err)
+	if evt, ok := o.(*notify.InstanceEvent); ok {
+		connection.ReportPublishCompleted(evt, err)
 	}
 	if err != nil {
 		log.Errorf(err, "watcher[%s] catch an err, subject: %s, group: %s",
@@ -286,14 +290,14 @@ func (wh *WebSocket) Stop() {
 	close(wh.closed)
 }
 
-func DoWebSocketListAndWatch(ctx context.Context, serviceID string, f func() ([]*pb.WatchInstanceResponse, int64), conn *websocket.Conn) {
+func ListAndWatch(ctx context.Context, serviceID string, f func() ([]*pb.WatchInstanceResponse, int64), conn *websocket.Conn) {
 	domainProject := util.ParseDomainProject(ctx)
 	domain := util.ParseDomain(ctx)
-	socket := NewWebSocket(ctx, conn, NewInstanceEventListWatcher(serviceID, domainProject, f))
+	socket := New(ctx, conn, notify.NewInstanceEventListWatcher(serviceID, domainProject, f))
 
-	ReportSubscriber(domain, Websocket, 1)
+	connection.ReportSubscriber(domain, Websocket, 1)
 	process(socket)
-	ReportSubscriber(domain, Websocket, -1)
+	connection.ReportSubscriber(domain, Websocket, -1)
 }
 
 func process(socket *WebSocket) {
@@ -301,12 +305,12 @@ func process(socket *WebSocket) {
 		return
 	}
 
-	socket.HandleWatchWebSocketControlMessage()
+	socket.HandleControlMessage()
 
 	socket.Stop()
 }
 
-func EstablishWebSocketError(conn *websocket.Conn, err error) {
+func SendEstablishError(conn *websocket.Conn, err error) {
 	remoteAddr := conn.RemoteAddr().String()
 	log.Errorf(err, "establish[%s] websocket watch failed.", remoteAddr)
 	if err := conn.WriteMessage(websocket.TextMessage, util.StringToBytesWithNoCopy(err.Error())); err != nil {
@@ -314,7 +318,7 @@ func EstablishWebSocketError(conn *websocket.Conn, err error) {
 	}
 }
 
-func NewWebSocket(ctx context.Context, conn *websocket.Conn, watcher *InstanceEventListWatcher) *WebSocket {
+func New(ctx context.Context, conn *websocket.Conn, watcher *notify.InstanceEventListWatcher) *WebSocket {
 	return &WebSocket{
 		ctx:     ctx,
 		conn:    conn,

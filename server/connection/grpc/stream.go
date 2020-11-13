@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package notify
+package grpc
 
 import (
 	"context"
@@ -24,18 +24,22 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/proto"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/connection"
+	"github.com/apache/servicecomb-service-center/server/notify"
 	"time"
 )
 
-func HandleWatchJob(watcher *InstanceEventListWatcher, stream proto.ServiceInstanceCtrlWatchServer) (err error) {
-	timer := time.NewTimer(HeartbeatInterval)
+const GRPC = "gRPC"
+
+func Handle(watcher *notify.InstanceEventListWatcher, stream proto.ServiceInstanceCtrlWatchServer) (err error) {
+	timer := time.NewTimer(connection.HeartbeatInterval)
 	defer timer.Stop()
 	for {
 		select {
 		case <-stream.Context().Done():
 			return
 		case <-timer.C:
-			timer.Reset(HeartbeatInterval)
+			timer.Reset(connection.HeartbeatInterval)
 		case job := <-watcher.Job:
 			if job == nil {
 				err = errors.New("channel is closed")
@@ -51,28 +55,28 @@ func HandleWatchJob(watcher *InstanceEventListWatcher, stream proto.ServiceInsta
 				watcher.Subject(), watcher.Group())
 
 			err = stream.Send(resp)
-			ReportPublishCompleted(job, err)
+			connection.ReportPublishCompleted(job, err)
 			if err != nil {
 				log.Errorf(err, "send message error, subject: %s, group: %s",
 					watcher.Subject(), watcher.Group())
 				watcher.SetError(err)
 				return
 			}
-			util.ResetTimer(timer, HeartbeatInterval)
+			util.ResetTimer(timer, connection.HeartbeatInterval)
 		}
 	}
 }
 
-func DoStreamListAndWatch(ctx context.Context, serviceID string, f func() ([]*pb.WatchInstanceResponse, int64), stream proto.ServiceInstanceCtrlWatchServer) (err error) {
+func ListAndWatch(ctx context.Context, serviceID string, f func() ([]*pb.WatchInstanceResponse, int64), stream proto.ServiceInstanceCtrlWatchServer) (err error) {
 	domainProject := util.ParseDomainProject(ctx)
 	domain := util.ParseDomain(ctx)
-	watcher := NewInstanceEventListWatcher(serviceID, domainProject, f)
-	err = GetNotifyCenter().AddSubscriber(watcher)
+	watcher := notify.NewInstanceEventListWatcher(serviceID, domainProject, f)
+	err = notify.Center().AddSubscriber(watcher)
 	if err != nil {
 		return
 	}
-	ReportSubscriber(domain, GRPC, 1)
-	err = HandleWatchJob(watcher, stream)
-	ReportSubscriber(domain, GRPC, -1)
+	connection.ReportSubscriber(domain, GRPC, 1)
+	err = Handle(watcher, stream)
+	connection.ReportSubscriber(domain, GRPC, -1)
 	return
 }

@@ -40,7 +40,7 @@ const (
 	Group   = "__ALARM_GROUP__"
 )
 
-var ALARM = notify.RegisterType("ALARM", 0)
+var ALARM = notify.RegisterType("ALARM", notify.DefaultQueueSize)
 
 func FieldBool(key string, v bool) model.Field {
 	return model.Field{Key: key, Value: v}

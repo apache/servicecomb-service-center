@@ -15,7 +15,9 @@
 
 package notify
 
-import "strconv"
+import (
+	"strconv"
+)
 
 type Type int
 
@@ -40,13 +42,9 @@ func (nt Type) IsValid() bool {
 	return nt >= 0 && int(nt) < len(typeQueues)
 }
 
-var typeNames = []string{
-	NOTIFTY: "NOTIFTY",
-}
+var typeNames []string
 
-var typeQueues = []int{
-	NOTIFTY: 0,
-}
+var typeQueues []int
 
 func Types() (ts []Type) {
 	for i := range typeNames {

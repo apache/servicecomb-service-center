@@ -15,8 +15,13 @@
  * limitations under the License.
  */
 
-package notify
+package connection
+
+import "time"
 
 const (
-	DefaultQueueSize = 1000
+	HeartbeatInterval = 30 * time.Second
+	ReadTimeout       = HeartbeatInterval * 4
+	SendTimeout       = 5 * time.Second
+	ReadMaxBody       = 64
 )

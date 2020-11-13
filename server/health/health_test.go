@@ -23,7 +23,7 @@ import (
 )
 
 func TestDefaultHealthChecker_Healthy(t *testing.T) {
-	notify.GetNotifyCenter().Start()
+	notify.Center().Start()
 
 	// normal case
 	var hc DefaultHealthChecker
