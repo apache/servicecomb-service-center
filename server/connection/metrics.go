@@ -18,8 +18,9 @@
 package connection
 
 import (
+	"github.com/apache/servicecomb-service-center/pkg/metrics"
 	"github.com/apache/servicecomb-service-center/pkg/notify"
-	"github.com/apache/servicecomb-service-center/server/metric"
+	helper "github.com/apache/servicecomb-service-center/pkg/prometheus"
 	"github.com/prometheus/client_golang/prometheus"
 	"time"
 )
@@ -30,38 +31,34 @@ const (
 )
 
 var (
-	notifyCounter = prometheus.NewCounterVec(
+	notifyCounter = helper.NewCounterVec(
 		prometheus.CounterOpts{
-			Namespace: metric.FamilyName,
+			Namespace: metrics.FamilyName,
 			Subsystem: "notify",
 			Name:      "publish_total",
 			Help:      "Counter of publishing instance events",
 		}, []string{"instance", "source", "status"})
 
-	notifyLatency = prometheus.NewSummaryVec(
+	notifyLatency = helper.NewSummaryVec(
 		prometheus.SummaryOpts{
-			Namespace:  metric.FamilyName,
+			Namespace:  metrics.FamilyName,
 			Subsystem:  "notify",
 			Name:       "publish_durations_microseconds",
 			Help:       "Latency of publishing instance events",
-			Objectives: metric.Pxx,
+			Objectives: metrics.Pxx,
 		}, []string{"instance", "source", "status"})
 
-	subscriberGauge = prometheus.NewGaugeVec(
+	subscriberGauge = helper.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Namespace: metric.FamilyName,
+			Namespace: metrics.FamilyName,
 			Subsystem: "notify",
 			Name:      "subscriber_total",
 			Help:      "Gauge of subscribers",
 		}, []string{"instance", "domain", "scheme"})
 )
 
-func init() {
-	prometheus.MustRegister(notifyCounter, notifyLatency, subscriberGauge)
-}
-
 func ReportPublishCompleted(evt notify.Event, err error) {
-	instance := metric.InstanceName()
+	instance := metrics.InstanceName()
 	elapsed := float64(time.Since(evt.CreateAt()).Nanoseconds()) / float64(time.Microsecond)
 	status := success
 	if err != nil {
@@ -72,7 +69,7 @@ func ReportPublishCompleted(evt notify.Event, err error) {
 }
 
 func ReportSubscriber(domain, scheme string, n float64) {
-	instance := metric.InstanceName()
+	instance := metrics.InstanceName()
 
 	subscriberGauge.WithLabelValues(instance, domain, scheme).Add(n)
 }

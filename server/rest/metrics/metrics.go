@@ -15,15 +15,16 @@
  * limitations under the License.
  */
 
-package prometheus
+// metrics pkg declare http metrics and impl a reporter to set the
+// 'query_per_seconds' value periodically
+package metrics
 
 import (
+	"github.com/apache/servicecomb-service-center/pkg/metrics"
+	helper "github.com/apache/servicecomb-service-center/pkg/prometheus"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/metric"
-	router "github.com/apache/servicecomb-service-center/server/rest"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net/http"
 	"strconv"
 	"strings"
@@ -31,48 +32,42 @@ import (
 )
 
 var (
-	incomingRequests = prometheus.NewCounterVec(
+	incomingRequests = helper.NewCounterVec(
 		prometheus.CounterOpts{
-			Namespace: metric.FamilyName,
+			Namespace: metrics.FamilyName,
 			Subsystem: "http",
 			Name:      "request_total",
 			Help:      "Counter of requests received into ROA handler",
 		}, []string{"method", "code", "instance", "api", "domain"})
 
-	successfulRequests = prometheus.NewCounterVec(
+	successfulRequests = helper.NewCounterVec(
 		prometheus.CounterOpts{
-			Namespace: metric.FamilyName,
+			Namespace: metrics.FamilyName,
 			Subsystem: "http",
 			Name:      "success_total",
 			Help:      "Counter of successful requests processed by ROA handler",
 		}, []string{"method", "code", "instance", "api", "domain"})
 
-	reqDurations = prometheus.NewSummaryVec(
+	reqDurations = helper.NewSummaryVec(
 		prometheus.SummaryOpts{
-			Namespace:  metric.FamilyName,
+			Namespace:  metrics.FamilyName,
 			Subsystem:  "http",
 			Name:       "request_durations_microseconds",
 			Help:       "HTTP request latency summary of ROA handler",
-			Objectives: metric.Pxx,
+			Objectives: metrics.Pxx,
 		}, []string{"method", "instance", "api", "domain"})
 
-	queryPerSeconds = prometheus.NewGaugeVec(
+	queryPerSeconds = helper.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Namespace: metric.FamilyName,
+			Namespace: metrics.FamilyName,
 			Subsystem: "http",
 			Name:      "query_per_seconds",
 			Help:      "HTTP requests per seconds of ROA handler",
 		}, []string{"method", "instance", "api", "domain"})
 )
 
-func init() {
-	prometheus.MustRegister(incomingRequests, successfulRequests, reqDurations, queryPerSeconds)
-
-	router.RegisterServerHandler("/metrics", promhttp.Handler())
-}
-
 func ReportRequestCompleted(w http.ResponseWriter, r *http.Request, start time.Time) {
-	instance := metric.InstanceName()
+	instance := metrics.InstanceName()
 	elapsed := float64(time.Since(start).Nanoseconds()) / float64(time.Microsecond)
 	route, _ := r.Context().Value(rest.CtxMatchFunc).(string)
 	domain := util.ParseDomain(r.Context())

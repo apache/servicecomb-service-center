@@ -22,13 +22,13 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/metrics"
 	nf "github.com/apache/servicecomb-service-center/pkg/notify"
 	"github.com/apache/servicecomb-service-center/pkg/signal"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/command"
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/metric"
 	"github.com/apache/servicecomb-service-center/server/notify"
 	"github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf"
@@ -132,7 +132,7 @@ func (s *ServiceCenterServer) initMetrics() {
 		}
 	}
 
-	if err := metric.Init(metric.Options{
+	if err := metrics.Init(metrics.Options{
 		Interval:     interval,
 		InstanceName: instance,
 		SysMetrics: []string{

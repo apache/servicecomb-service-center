@@ -18,8 +18,9 @@
 package metrics
 
 import (
+	"github.com/apache/servicecomb-service-center/pkg/metrics"
+	helper "github.com/apache/servicecomb-service-center/pkg/prometheus"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/metric"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -40,45 +41,45 @@ func Key(name string) string {
 }
 
 var (
-	domainCounter = prometheus.NewGaugeVec(
+	domainCounter = helper.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Namespace: metric.FamilyName,
+			Namespace: metrics.FamilyName,
 			Subsystem: SubSystem,
 			Name:      KeyDomainTotal,
 			Help:      "Gauge of domain created in Service Center",
 		}, []string{"instance"})
 
-	serviceCounter = prometheus.NewGaugeVec(
+	serviceCounter = helper.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Namespace: metric.FamilyName,
+			Namespace: metrics.FamilyName,
 			Subsystem: "db",
 			Name:      KeyServiceTotal,
 			Help:      "Gauge of microservice created in Service Center",
 		}, []string{"instance", "framework", "frameworkVersion", "domain"})
 
-	instanceCounter = prometheus.NewGaugeVec(
+	instanceCounter = helper.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Namespace: metric.FamilyName,
+			Namespace: metrics.FamilyName,
 			Subsystem: SubSystem,
 			Name:      KeyInstanceTotal,
 			Help:      "Gauge of microservice created in Service Center",
 		}, []string{"instance", "domain"})
 
-	schemaCounter = prometheus.NewGaugeVec(
+	schemaCounter = helper.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Namespace: metric.FamilyName,
+			Namespace: metrics.FamilyName,
 			Subsystem: SubSystem,
 			Name:      KeySchemaTotal,
 			Help:      "Gauge of schema created in Service Center",
 		}, []string{"instance", "domain"})
 
-	frameworkCounter = prometheus.NewGaugeVec(
+	frameworkCounter = helper.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Namespace: metric.FamilyName,
+			Namespace: metrics.FamilyName,
 			Subsystem: SubSystem,
 			Name:      KeyFrameworkTotal,
 			Help:      "Gauge of client framework info in Service Center",
-		}, metric.ToLabelNames(Framework{}))
+		}, metrics.ToLabelNames(Framework{}))
 )
 
 // Framework return framework info.
@@ -89,27 +90,23 @@ type Framework struct {
 	FrameworkVersion string `json:"frameworkVersion"`
 }
 
-func init() {
-	prometheus.MustRegister(domainCounter, serviceCounter, instanceCounter, schemaCounter, frameworkCounter)
-}
-
 func ReportDomains(c float64) {
-	instance := metric.InstanceName()
+	instance := metrics.InstanceName()
 	domainCounter.WithLabelValues(instance).Add(c)
 }
 
 func ReportServices(domain, framework, frameworkVersion string, c float64) {
-	instance := metric.InstanceName()
+	instance := metrics.InstanceName()
 	serviceCounter.WithLabelValues(instance, framework, frameworkVersion, domain).Add(c)
 }
 
 func ReportInstances(domain string, c float64) {
-	instance := metric.InstanceName()
+	instance := metrics.InstanceName()
 	instanceCounter.WithLabelValues(instance, domain).Add(c)
 }
 
 func ReportSchemas(domain string, c float64) {
-	instance := metric.InstanceName()
+	instance := metrics.InstanceName()
 	schemaCounter.WithLabelValues(instance, domain).Add(c)
 }
 

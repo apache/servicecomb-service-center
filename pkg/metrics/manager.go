@@ -15,31 +15,41 @@
  * limitations under the License.
  */
 
-package etcd
+package metrics
 
 import (
-	"github.com/apache/servicecomb-service-center/pkg/metrics"
-	helper "github.com/apache/servicecomb-service-center/pkg/prometheus"
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+)
+
+const (
+	FamilyName       = "service_center"
+	familyNamePrefix = FamilyName + "_"
+	bufferSize       = 1024
 )
 
 var (
-	cacheSizeGauge = helper.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Namespace: metrics.FamilyName,
-			Subsystem: "local",
-			Name:      "cache_size_bytes",
-			Help:      "Local cache size summary of backend store",
-		}, []string{"instance", "resource", "type"})
+	options Options
+	// SysMetrics map
+	SysMetrics util.ConcurrentMap
+	// Gatherer is the reader of sc metrics, but can not get not real time metrics
+	// Call the RealTime() if get the real time metrics
+	Gatherer *Gather
 )
 
-func ReportCacheSize(resource, t string, s int) {
-	instance := metrics.InstanceName()
-	if len(instance) == 0 || len(resource) == 0 {
-		// endpoints list will be empty when initializing
-		// resource may be empty when report SCHEMA
-		return
+func Init(opts Options) error {
+	options = opts
+	for _, key := range options.SysMetrics {
+		SysMetrics.Put(key, struct{}{})
 	}
+	Gatherer = NewGatherer(opts)
+	Gatherer.Start()
+	return nil
+}
 
-	cacheSizeGauge.WithLabelValues(instance, resource, t).Set(float64(s))
+func GetOptions() Options {
+	return options
+}
+
+func InstanceName() string {
+	return GetOptions().InstanceName
 }

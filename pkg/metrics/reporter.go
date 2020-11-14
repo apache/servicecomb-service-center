@@ -15,16 +15,24 @@
  * limitations under the License.
  */
 
-package metric
+package metrics
 
-import (
-	"time"
-)
+import "github.com/apache/servicecomb-service-center/pkg/log"
 
-//Options contains metrics configs
-type Options struct {
-	Interval     time.Duration
-	InstanceName string
-	// SysMetrics set
-	SysMetrics []string
+var reporters = make(map[string]Reporter)
+
+// Reporter is the interface to implement handler to process metrics after calculate
+type Reporter interface {
+	Report()
+}
+
+func RegisterReporter(name string, r Reporter) {
+	reporters[name] = r
+	log.Infof("register metrics reporter '%s'", name)
+}
+
+func Report() {
+	for _, r := range reporters {
+		r.Report()
+	}
 }

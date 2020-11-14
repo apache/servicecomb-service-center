@@ -20,8 +20,8 @@ package pzipkin
 import (
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/metrics"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/metric"
 	"github.com/opentracing/opentracing-go"
 	zipkin "github.com/openzipkin/zipkin-go-opentracing"
 	"os"
@@ -44,7 +44,7 @@ func initTracer() {
 		log.Errorf(err, "new tracing collector failed, use the noop tracer")
 		return
 	}
-	ipPort := metric.InstanceName()
+	ipPort := metrics.InstanceName()
 	recorder := zipkin.NewRecorder(collector, false, ipPort, strings.ToLower(core.Service.ServiceName))
 	tracer, err := zipkin.NewTracer(recorder,
 		zipkin.TraceID128Bit(true),

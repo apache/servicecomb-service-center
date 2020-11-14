@@ -53,7 +53,7 @@ import _ "github.com/apache/servicecomb-service-center/server/rest/govern"
 import _ "github.com/apache/servicecomb-service-center/server/rest/admin"
 
 //metrics
-import _ "github.com/apache/servicecomb-service-center/server/metric"
+import _ "github.com/apache/servicecomb-service-center/server/rest/prometheus"
 
 import (
 	"github.com/apache/servicecomb-service-center/pkg/log"

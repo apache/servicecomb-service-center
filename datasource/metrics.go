@@ -18,7 +18,8 @@
 package datasource
 
 import (
-	"github.com/apache/servicecomb-service-center/server/metric"
+	"github.com/apache/servicecomb-service-center/pkg/metrics"
+	helper "github.com/apache/servicecomb-service-center/pkg/prometheus"
 	"github.com/prometheus/client_golang/prometheus"
 	"time"
 )
@@ -29,43 +30,39 @@ const (
 )
 
 var (
-	scCounter = prometheus.NewCounterVec(
+	scCounter = helper.NewCounterVec(
 		prometheus.CounterOpts{
-			Namespace: metric.FamilyName,
+			Namespace: metrics.FamilyName,
 			Subsystem: "db",
 			Name:      "sc_total",
 			Help:      "Counter of the Service Center instance",
 		}, []string{"instance"})
 
-	heartbeatCounter = prometheus.NewCounterVec(
+	heartbeatCounter = helper.NewCounterVec(
 		prometheus.CounterOpts{
-			Namespace: metric.FamilyName,
+			Namespace: metrics.FamilyName,
 			Subsystem: "db",
 			Name:      "heartbeat_total",
 			Help:      "Counter of heartbeat renew",
 		}, []string{"instance", "status"})
 
-	heartbeatLatency = prometheus.NewSummaryVec(
+	heartbeatLatency = helper.NewSummaryVec(
 		prometheus.SummaryOpts{
-			Namespace:  metric.FamilyName,
+			Namespace:  metrics.FamilyName,
 			Subsystem:  "db",
 			Name:       "heartbeat_durations_microseconds",
 			Help:       "Latency of heartbeat renew",
-			Objectives: metric.Pxx,
+			Objectives: metrics.Pxx,
 		}, []string{"instance", "status"})
 )
 
-func init() {
-	prometheus.MustRegister(scCounter, heartbeatCounter, heartbeatLatency)
-}
-
 func ReportScInstance() {
-	instance := metric.InstanceName()
+	instance := metrics.InstanceName()
 	scCounter.WithLabelValues(instance).Add(1)
 }
 
 func ReportHeartbeatCompleted(err error, start time.Time) {
-	instance := metric.InstanceName()
+	instance := metrics.InstanceName()
 	elapsed := float64(time.Since(start).Nanoseconds()) / float64(time.Microsecond)
 	status := success
 	if err != nil {

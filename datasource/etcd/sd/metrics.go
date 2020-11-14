@@ -18,40 +18,37 @@
 package sd
 
 import (
-	"github.com/apache/servicecomb-service-center/server/metric"
+	"github.com/apache/servicecomb-service-center/pkg/metrics"
+	helper "github.com/apache/servicecomb-service-center/pkg/prometheus"
 	"github.com/prometheus/client_golang/prometheus"
 	"time"
 )
 
 var (
-	eventsCounter = prometheus.NewGaugeVec(
+	eventsCounter = helper.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Namespace: metric.FamilyName,
+			Namespace: metrics.FamilyName,
 			Subsystem: "db",
 			Name:      "backend_event_total",
 			Help:      "Counter of backend events",
 		}, []string{"instance", "prefix"})
 
-	eventsLatency = prometheus.NewSummaryVec(
+	eventsLatency = helper.NewSummaryVec(
 		prometheus.SummaryOpts{
-			Namespace:  metric.FamilyName,
+			Namespace:  metrics.FamilyName,
 			Subsystem:  "db",
 			Name:       "backend_event_durations_microseconds",
 			Help:       "Latency of backend events processing",
-			Objectives: metric.Pxx,
+			Objectives: metrics.Pxx,
 		}, []string{"instance", "prefix"})
 )
-
-func init() {
-	prometheus.MustRegister(eventsCounter, eventsLatency)
-}
 
 func ReportProcessEventCompleted(prefix string, evts []KvEvent) {
 	l := float64(len(evts))
 	if l == 0 {
 		return
 	}
-	instance := metric.InstanceName()
+	instance := metrics.InstanceName()
 	now := time.Now()
 	for _, evt := range evts {
 		elapsed := float64(now.Sub(evt.CreateAt.Local()).Nanoseconds()) / float64(time.Microsecond)

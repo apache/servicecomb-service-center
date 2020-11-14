@@ -21,7 +21,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/chain"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
-	"github.com/apache/servicecomb-service-center/server/metric/prometheus"
+	"github.com/apache/servicecomb-service-center/server/rest/metrics"
 	"net/http"
 	"time"
 )
@@ -37,7 +37,7 @@ func (h *MetricsHandler) Handle(i *chain.Invocation) {
 		}
 		w, r := i.Context().Value(rest.CtxResponse).(http.ResponseWriter),
 			i.Context().Value(rest.CtxRequest).(*http.Request)
-		prometheus.ReportRequestCompleted(w, r, start)
+		metrics.ReportRequestCompleted(w, r, start)
 		log.NilOrWarnf(start, "%s %s", r.Method, r.RequestURI)
 	}))
 }

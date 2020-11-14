@@ -15,40 +15,16 @@
  * limitations under the License.
  */
 
-package metric
+package metrics
 
 import (
-	"github.com/apache/servicecomb-service-center/pkg/util"
+	"time"
 )
 
-const (
-	FamilyName       = "service_center"
-	familyNamePrefix = FamilyName + "_"
-	bufferSize       = 1024
-)
-
-var (
-	options Options
-	// SysMetrics map
-	SysMetrics util.ConcurrentMap
-	// Gatherer is the reader of sc metrics
-	Gatherer *MetricsGatherer
-)
-
-func Init(opts Options) error {
-	options = opts
-	for _, key := range options.SysMetrics {
-		SysMetrics.Put(key, struct{}{})
-	}
-	Gatherer = NewGatherer(opts)
-	Gatherer.Start()
-	return nil
-}
-
-func GetOptions() Options {
-	return options
-}
-
-func InstanceName() string {
-	return GetOptions().InstanceName
+//Options contains metrics configs
+type Options struct {
+	Interval     time.Duration
+	InstanceName string
+	// SysMetrics set
+	SysMetrics []string
 }
