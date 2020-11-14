@@ -19,6 +19,7 @@ package pzipkin
 import (
 	"context"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client/remote"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/plugin/tracing"
 	"net/http"
@@ -61,9 +62,9 @@ func TestZipkin_XBegin(t *testing.T) {
 
 	zk.ClientEnd(span, 0, "")
 
-	span = zk.ClientBegin("x", &tracing.RegistryRequest{
+	span = zk.ClientBegin("x", &tracing.Operation{
 		Ctx:      req.Context(),
-		Options:  client.OpGet(),
+		Options:  &remote.EtcdOptions{PluginOp: client.OpGet()},
 		Endpoint: "x",
 	})
 	if span == nil {
