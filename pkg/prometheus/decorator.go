@@ -58,33 +58,6 @@ func NewSummaryVec(opts prometheus.SummaryOpts, labelNames []string) *prometheus
 	return vec
 }
 
-func CounterVec(name string) *prometheus.CounterVec {
-	if vec, ok := Vectors[name]; ok {
-		if counterVec, ok := vec.(*prometheus.CounterVec); ok {
-			return counterVec
-		}
-	}
-	return nil
-}
-
-func GaugeVec(name string) *prometheus.GaugeVec {
-	if vec, ok := Vectors[name]; ok {
-		if gaugeVec, ok := vec.(*prometheus.GaugeVec); ok {
-			return gaugeVec
-		}
-	}
-	return nil
-}
-
-func SummaryVec(name string) *prometheus.SummaryVec {
-	if vec, ok := Vectors[name]; ok {
-		if summaryVec, ok := vec.(*prometheus.SummaryVec); ok {
-			return summaryVec
-		}
-	}
-	return nil
-}
-
 func Gather() ([]*dto.MetricFamily, error) {
 	return prometheus.DefaultGatherer.Gather()
 }

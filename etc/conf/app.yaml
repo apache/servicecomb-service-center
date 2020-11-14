@@ -111,4 +111,4 @@ tracing:
   kind:
 
 quota:
-  kind: unlimit
+  kind:
