@@ -20,64 +20,15 @@ package dao
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
-	"fmt"
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
-	"github.com/apache/servicecomb-service-center/pkg/etcdsync"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
-	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/core"
-	stringutil "github.com/go-chassis/foundation/string"
-	"golang.org/x/crypto/bcrypt"
 )
-
-var ErrDuplicated = errors.New("account is duplicated")
-var ErrCanNotEdit = errors.New("account can not be edited")
 
 //CreateAccount save 2 kv
 //1. account info
 func CreateAccount(ctx context.Context, a *rbacframe.Account) error {
-	lock, err := etcdsync.Lock("/account-creating/"+a.Name, -1, false)
-	if err != nil {
-		return fmt.Errorf("account %s is creating", a.Name)
-	}
-	defer func() {
-		err := lock.Unlock()
-		if err != nil {
-			log.Errorf(err, "can not release account lock")
-		}
-	}()
-	key := core.GenerateAccountKey(a.Name)
-	exist, err := datasource.Instance().AccountExist(ctx, a.Name)
-	if err != nil {
-		log.Errorf(err, "can not save account info")
-		return err
-	}
-	if exist {
-		return ErrDuplicated
-	}
-	hash, err := bcrypt.GenerateFromPassword([]byte(a.Password), 14)
-	if err != nil {
-		log.Errorf(err, "pwd hash failed")
-		return err
-	}
-	a.Password = stringutil.Bytes2str(hash)
-	a.ID = util.GenerateUUID()
-	value, err := json.Marshal(a)
-	if err != nil {
-		log.Errorf(err, "account info is invalid")
-		return err
-	}
-	err = client.PutBytes(ctx, key, value)
-	if err != nil {
-		log.Errorf(err, "can not save account info")
-		return err
-	}
-	log.Info("create new account: " + a.ID)
-	return nil
+	return datasource.Instance().CreateAccount(ctx, a)
 }
 
 func GetAccount(ctx context.Context, name string) (*rbacframe.Account, error) {
@@ -102,7 +53,7 @@ func EditAccount(ctx context.Context, a *rbacframe.Account) error {
 		return err
 	}
 	if !exist {
-		return ErrCanNotEdit
+		return datasource.ErrCanNotEdit
 	}
 
 	err = datasource.Instance().UpdateAccount(ctx, a.Name, a)

@@ -21,6 +21,7 @@ import (
 	"context"
 	"crypto/rsa"
 	"errors"
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	"github.com/apache/servicecomb-service-center/server/config"
@@ -128,7 +129,7 @@ func initFirstTime(admin string) {
 		return
 	}
 	if err := dao.CreateAccount(context.Background(), a); err != nil {
-		if err == dao.ErrDuplicated {
+		if err == datasource.ErrDuplicated {
 			log.Info("rbac is enabled")
 			return
 		}

@@ -20,6 +20,7 @@ package v4
 import (
 	"context"
 	"encoding/json"
+	"github.com/apache/servicecomb-service-center/datasource"
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
@@ -69,7 +70,7 @@ func (r *AuthResource) CreateAccount(w http.ResponseWriter, req *http.Request) {
 	}
 	err = dao.CreateAccount(context.TODO(), a)
 	if err != nil {
-		if err == dao.ErrDuplicated {
+		if err == datasource.ErrDuplicated {
 			controller.WriteError(w, scerror.ErrConflictAccount, "")
 			return
 		}
