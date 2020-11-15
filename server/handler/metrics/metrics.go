@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package metric
+package metrics
 
 import (
 	"github.com/apache/servicecomb-service-center/pkg/chain"
@@ -26,10 +26,10 @@ import (
 	"time"
 )
 
-type MetricsHandler struct {
+type Handler struct {
 }
 
-func (h *MetricsHandler) Handle(i *chain.Invocation) {
+func (h *Handler) Handle(i *chain.Invocation) {
 	i.Next(chain.WithAsyncFunc(func(ret chain.Result) {
 		start, ok := i.Context().Value(rest.CtxStartTimestamp).(time.Time)
 		if !ok {
@@ -43,5 +43,5 @@ func (h *MetricsHandler) Handle(i *chain.Invocation) {
 }
 
 func RegisterHandlers() {
-	chain.RegisterHandler(rest.ServerChainName, &MetricsHandler{})
+	chain.RegisterHandler(rest.ServerChainName, &Handler{})
 }

@@ -63,7 +63,7 @@ import (
 	"github.com/apache/servicecomb-service-center/server/handler/cache"
 	"github.com/apache/servicecomb-service-center/server/handler/context"
 	"github.com/apache/servicecomb-service-center/server/handler/maxbody"
-	"github.com/apache/servicecomb-service-center/server/handler/metric"
+	"github.com/apache/servicecomb-service-center/server/handler/metrics"
 	"github.com/apache/servicecomb-service-center/server/handler/tracing"
 	"github.com/apache/servicecomb-service-center/server/interceptor"
 	"github.com/apache/servicecomb-service-center/server/interceptor/access"
@@ -80,7 +80,7 @@ func init() {
 	// handle requests after routing.
 	accesslog.RegisterHandlers()
 	maxbody.RegisterHandlers()
-	metric.RegisterHandlers()
+	metrics.RegisterHandlers()
 	tracing.RegisterHandlers()
 	auth.RegisterHandlers()
 	context.RegisterHandlers()
