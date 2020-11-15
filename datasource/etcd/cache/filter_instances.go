@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
-	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/cache"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
@@ -80,7 +80,7 @@ func (f *InstancesFilter) Find(ctx context.Context, parent *cache.Node) (
 
 func (f *InstancesFilter) findInstances(ctx context.Context, domainProject, serviceID, instanceID string, maxRevs []int64, counts []int64) (instances []*pb.MicroServiceInstance, err error) {
 	key := apt.GenerateInstanceKey(domainProject, serviceID, instanceID)
-	opts := append(serviceUtil.FromContext(ctx), client.WithStrKey(key), client.WithPrefix())
+	opts := append(util.FromContext(ctx), client.WithStrKey(key), client.WithPrefix())
 	resp, err := kv.Store().Instance().Search(ctx, opts...)
 	if err != nil {
 		return nil, err
@@ -110,7 +110,7 @@ func (f *InstancesFilter) FindInstances(ctx context.Context, domainProject strin
 	if err != nil {
 		return
 	}
-	return instances, serviceUtil.FormatRevision(maxRevs, counts), nil
+	return instances, util.FormatRevision(maxRevs, counts), nil
 }
 
 func (f *InstancesFilter) BatchFindInstances(ctx context.Context, domainProject string, serviceIDs []string) (instances []*pb.MicroServiceInstance, rev string, err error) {
@@ -126,5 +126,5 @@ func (f *InstancesFilter) BatchFindInstances(ctx context.Context, domainProject 
 		instances = append(instances, insts...)
 	}
 
-	return instances, serviceUtil.FormatRevision(maxRevs, counts), nil
+	return instances, util.FormatRevision(maxRevs, counts), nil
 }

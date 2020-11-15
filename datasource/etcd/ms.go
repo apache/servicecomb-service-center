@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/cache"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	registry "github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
@@ -35,7 +36,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
-	"github.com/apache/servicecomb-service-center/server/service/cache"
 	"strconv"
 	"time"
 )
