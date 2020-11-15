@@ -20,15 +20,20 @@ import (
 	"context"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client/remote"
+	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/plugin/tracing"
+	"github.com/go-chassis/go-archaius"
 	"net/http"
-	"os"
 	"testing"
 )
 
+func init() {
+	config.Init()
+}
+
 func TestZipkin_XBegin(t *testing.T) {
-	os.Setenv("TRACING_COLLECTOR", "server")
+	archaius.Set("TRACING_COLLECTOR", "server")
 	core.Instance.HostName, core.Instance.Endpoints = "x", []string{"x"}
 	initTracer()
 

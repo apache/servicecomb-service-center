@@ -33,6 +33,7 @@ var qpsLabelMap = map[string]int{
 	"domain":   3,
 }
 
+// APIReporter is used to calc the http TPS
 type APIReporter struct {
 	cache *metrics.Details
 }

@@ -21,7 +21,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/chain"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
-	"github.com/apache/servicecomb-service-center/server/rest/metrics"
+	"github.com/apache/servicecomb-service-center/server/metrics"
 	"net/http"
 	"time"
 )

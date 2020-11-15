@@ -19,11 +19,11 @@ package client
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/datasource"
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	simple "github.com/apache/servicecomb-service-center/pkg/time"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/metrics"
 	"time"
 )
 
@@ -47,7 +47,7 @@ func (lat *LeaseTask) Key() string {
 func (lat *LeaseTask) Do(ctx context.Context) (err error) {
 	recv, start := lat.ReceiveTime(), time.Now()
 	lat.TTL, err = lat.Client.LeaseRenew(ctx, lat.LeaseID)
-	datasource.ReportHeartbeatCompleted(err, recv)
+	metrics.ReportHeartbeatCompleted(err, recv)
 	if err != nil {
 		log.Errorf(err, "[%s]task[%s] renew lease[%d] failed(recv: %s, send: %s)",
 			time.Since(recv),

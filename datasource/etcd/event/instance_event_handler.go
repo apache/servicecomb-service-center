@@ -27,8 +27,8 @@ import (
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/metrics"
 	"github.com/apache/servicecomb-service-center/server/notify"
-	"github.com/apache/servicecomb-service-center/server/service/metrics"
 	"strings"
 )
 

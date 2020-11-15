@@ -22,6 +22,7 @@ import (
 	helper "github.com/apache/servicecomb-service-center/pkg/prometheus"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/prometheus/client_golang/prometheus"
+	"time"
 )
 
 // keys of gauge
@@ -80,6 +81,31 @@ var (
 			Name:      KeyFrameworkTotal,
 			Help:      "Gauge of client framework info in Service Center",
 		}, metrics.ToLabelNames(Framework{}))
+
+	scCounter = helper.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: metrics.FamilyName,
+			Subsystem: "db",
+			Name:      "sc_total",
+			Help:      "Counter of the Service Center instance",
+		}, []string{"instance"})
+
+	heartbeatCounter = helper.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: metrics.FamilyName,
+			Subsystem: "db",
+			Name:      "heartbeat_total",
+			Help:      "Counter of heartbeat renew",
+		}, []string{"instance", "status"})
+
+	heartbeatLatency = helper.NewSummaryVec(
+		prometheus.SummaryOpts{
+			Namespace:  metrics.FamilyName,
+			Subsystem:  "db",
+			Name:       "heartbeat_durations_microseconds",
+			Help:       "Latency of heartbeat renew",
+			Objectives: metrics.Pxx,
+		}, []string{"instance", "status"})
 )
 
 // Framework return framework info.
@@ -112,4 +138,20 @@ func ReportSchemas(domain string, c float64) {
 
 func ReportFramework(domainName, projectName string, framework, frameworkVersion string, c float64) {
 	frameworkCounter.WithLabelValues(domainName, projectName, framework, frameworkVersion).Add(c)
+}
+
+func ReportScInstance() {
+	instance := metrics.InstanceName()
+	scCounter.WithLabelValues(instance).Add(1)
+}
+
+func ReportHeartbeatCompleted(err error, start time.Time) {
+	instance := metrics.InstanceName()
+	elapsed := float64(time.Since(start).Nanoseconds()) / float64(time.Microsecond)
+	status := success
+	if err != nil {
+		status = failure
+	}
+	heartbeatLatency.WithLabelValues(instance, status).Observe(elapsed)
+	heartbeatCounter.WithLabelValues(instance, status).Inc()
 }
