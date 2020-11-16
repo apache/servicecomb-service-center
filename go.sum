@@ -102,7 +102,6 @@ github.com/go-chassis/go-restful-swagger20 v1.0.3-0.20200310030431-17d80f34264f/
 github.com/go-chassis/openlog v1.1.1/go.mod h1:ZZOS68OvrFIKEJbuBa4YnYzmxyVx3lmcMfMKb+Hx/yQ=
 github.com/go-chassis/openlog v1.1.2 h1:LgGfwwOhpU8c6URV6ADpaRBPVY7Ph1C28jCQ6zzQawQ=
 github.com/go-chassis/openlog v1.1.2/go.mod h1:+eYCADVxWyJkwsFMUBrMxyQlNqW+UUsCxvR2LrYZUaA=
-github.com/go-chassis/paas-lager v1.1.1 h1:/6wqawUGjPCpd57A/tzJzgC4MnEhNuigbayQS+2VWPQ=
 github.com/go-chassis/paas-lager v1.1.1/go.mod h1:tILYbn3+0jjCxhY6/ue9L8eRq+VJ60U6VYIdugqchB4=
 github.com/go-chassis/seclog v1.3.0/go.mod h1:a/zGvX5BRiwtq/O0fRqS6VWjrBaXYtqFJBx3EX9xzSE=
 github.com/go-kit/kit v0.8.0/go.mod h1:xBxKIO96dXMWWy0MnWVtmwkA9/13aqxPnvrjFYMA2as=
@@ -111,7 +110,6 @@ github.com/go-logfmt/logfmt v0.3.0/go.mod h1:Qt1PoO58o5twSAckw1HlFXLmHsOX5/0LbT9
 github.com/go-logfmt/logfmt v0.4.0 h1:MP4Eh7ZCb31lleYCFuwm0oe4/YGak+5l1vA2NOE80nA=
 github.com/go-logfmt/logfmt v0.4.0/go.mod h1:3RMwSq7FuexP4Kalkev3ejPJsZTpXXBr9+V4qmtdjCk=
 github.com/go-logr/logr v0.1.0/go.mod h1:ixOQHD9gLJUVQQ2ZOR7zLEifBX6tGkNJF4QyIY7sIas=
-github.com/go-mesh/openlogging v1.0.1 h1:6raaXo8SK+wuQX1VoNi6QJCSf1fTOFWh7f5f6b2ZEmY=
 github.com/go-mesh/openlogging v1.0.1/go.mod h1:qaKi+amO+hsGin2q1GmW+/NcbZpMPnTufwrWzDmIuuU=
 github.com/go-openapi/jsonpointer v0.0.0-20160704185906-46af16f9f7b1/go.mod h1:+35s3my2LFTysnkMfxsJBAMHj/DoqoB9knIWoYG/Vk0=
 github.com/go-openapi/jsonreference v0.0.0-20160704190145-13c6e3589ad9/go.mod h1:W3Z9FmVs9qj+KR4zFKmDPGiLdk1D9Rlm7cyMvf57TTg=
