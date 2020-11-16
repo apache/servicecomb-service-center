@@ -93,7 +93,7 @@ httpport = 30100
 
 Requirements
 
-+ [Go](https://golang.org) version 1.8+ is required to build the latest version of Service-Center.
++ [Go](https://golang.org) version 1.9+ is required to build the latest version of Service-Center.
 
 Download the Code
 ```sh
