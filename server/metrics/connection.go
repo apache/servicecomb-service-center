@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package connection
+package metrics
 
 import (
 	"github.com/apache/servicecomb-service-center/pkg/metrics"
@@ -23,11 +23,6 @@ import (
 	helper "github.com/apache/servicecomb-service-center/pkg/prometheus"
 	"github.com/prometheus/client_golang/prometheus"
 	"time"
-)
-
-const (
-	success = "SUCCESS"
-	failure = "FAILURE"
 )
 
 var (

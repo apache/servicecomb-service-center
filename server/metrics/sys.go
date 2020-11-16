@@ -20,6 +20,7 @@ package metrics
 import (
 	"context"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
+	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/metrics"
 	helper "github.com/apache/servicecomb-service-center/pkg/prometheus"
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -56,8 +57,13 @@ func AutoReportCPUUsage(ctx context.Context) {
 			return
 		case <-time.After(durationReportCPUUsage):
 			pt, ct := util.GetProcCPUUsage()
+			diff := ct - cpuTotal
+			if diff <= 0 {
+				log.Warnf("the current cpu usage is the same as the previous period")
+				continue
+			}
 			cpuGauge.WithLabelValues(metrics.InstanceName()).Set(
-				(pt - cpuProc) * float64(cpus) / (ct - cpuTotal))
+				(pt - cpuProc) * float64(cpus) / diff)
 			cpuTotal, cpuProc = ct, pt
 		}
 	}

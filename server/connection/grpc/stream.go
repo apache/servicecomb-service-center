@@ -25,6 +25,7 @@ import (
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/connection"
+	"github.com/apache/servicecomb-service-center/server/metrics"
 	"github.com/apache/servicecomb-service-center/server/notify"
 	"time"
 )
@@ -55,7 +56,7 @@ func Handle(watcher *notify.InstanceEventListWatcher, stream proto.ServiceInstan
 				watcher.Subject(), watcher.Group())
 
 			err = stream.Send(resp)
-			connection.ReportPublishCompleted(job, err)
+			metrics.ReportPublishCompleted(job, err)
 			if err != nil {
 				log.Errorf(err, "send message error, subject: %s, group: %s",
 					watcher.Subject(), watcher.Group())
@@ -75,8 +76,8 @@ func ListAndWatch(ctx context.Context, serviceID string, f func() ([]*pb.WatchIn
 	if err != nil {
 		return
 	}
-	connection.ReportSubscriber(domain, GRPC, 1)
+	metrics.ReportSubscriber(domain, GRPC, 1)
 	err = Handle(watcher, stream)
-	connection.ReportSubscriber(domain, GRPC, -1)
+	metrics.ReportSubscriber(domain, GRPC, -1)
 	return
 }
