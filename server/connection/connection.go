@@ -15,8 +15,14 @@
  * limitations under the License.
  */
 
-package notify
+// connection pkg impl the pub/sub mechanism of the long connection of diff protocols
+package connection
+
+import "time"
 
 const (
-	DefaultQueueSize = 1000
+	HeartbeatInterval = 30 * time.Second
+	ReadTimeout       = HeartbeatInterval * 4
+	SendTimeout       = 5 * time.Second
+	ReadMaxBody       = 64
 )

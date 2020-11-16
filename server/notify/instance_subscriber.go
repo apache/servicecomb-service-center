@@ -27,6 +27,13 @@ import (
 	"time"
 )
 
+const (
+	AddJobTimeout  = 1 * time.Second
+	EventQueueSize = 5000
+)
+
+var INSTANCE = notify.RegisterType("INSTANCE", EventQueueSize)
+
 // 状态变化推送
 type InstanceEvent struct {
 	notify.Event
@@ -45,7 +52,7 @@ type InstanceEventListWatcher struct {
 func (w *InstanceEventListWatcher) SetError(err error) {
 	w.Subscriber.SetError(err)
 	// 触发清理job
-	e := w.Service().Publish(notify.NewNotifyServiceHealthCheckJob(w))
+	e := w.Service().Publish(notify.NewErrEvent(w))
 	if e != nil {
 		log.Error("", e)
 	}

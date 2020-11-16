@@ -15,30 +15,31 @@
  * limitations under the License.
  */
 
-package notify
+package grpc
 
 import (
 	"context"
 	"errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/proto"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	apt "github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/server/connection"
+	"github.com/apache/servicecomb-service-center/server/notify"
 	"time"
 )
 
-func HandleWatchJob(watcher *InstanceEventListWatcher, stream proto.ServiceInstanceCtrl_WatchServer) (err error) {
-	timer := time.NewTimer(HeartbeatInterval)
+const GRPC = "gRPC"
+
+func Handle(watcher *notify.InstanceEventListWatcher, stream proto.ServiceInstanceCtrlWatchServer) (err error) {
+	timer := time.NewTimer(connection.HeartbeatInterval)
 	defer timer.Stop()
 	for {
 		select {
 		case <-stream.Context().Done():
 			return
 		case <-timer.C:
-			timer.Reset(HeartbeatInterval)
-
-			// TODO grpc 长连接心跳？
+			timer.Reset(connection.HeartbeatInterval)
 		case job := <-watcher.Job:
 			if job == nil {
 				err = errors.New("channel is closed")
@@ -46,37 +47,36 @@ func HandleWatchJob(watcher *InstanceEventListWatcher, stream proto.ServiceInsta
 					watcher.Subject(), watcher.Group())
 				return
 			}
-			if job.Response != nil {
-				resp := job.Response
-				log.Infof("event is coming in, watcher, subject: %s, group: %s",
-					watcher.Subject(), watcher.Group())
-
-				err = stream.Send(resp)
-				if job != nil {
-					ReportPublishCompleted(job, err)
-				}
-				if err != nil {
-					log.Errorf(err, "send message error, subject: %s, group: %s",
-						watcher.Subject(), watcher.Group())
-					watcher.SetError(err)
-					return
-				}
-				util.ResetTimer(timer, HeartbeatInterval)
+			if job.Response == nil {
+				continue
 			}
+			resp := job.Response
+			log.Infof("event is coming in, watcher, subject: %s, group: %s",
+				watcher.Subject(), watcher.Group())
+
+			err = stream.Send(resp)
+			connection.ReportPublishCompleted(job, err)
+			if err != nil {
+				log.Errorf(err, "send message error, subject: %s, group: %s",
+					watcher.Subject(), watcher.Group())
+				watcher.SetError(err)
+				return
+			}
+			util.ResetTimer(timer, connection.HeartbeatInterval)
 		}
 	}
 }
 
-func DoStreamListAndWatch(ctx context.Context, serviceID string, f func() ([]*pb.WatchInstanceResponse, int64), stream proto.ServiceInstanceCtrl_WatchServer) (err error) {
+func ListAndWatch(ctx context.Context, serviceID string, f func() ([]*pb.WatchInstanceResponse, int64), stream proto.ServiceInstanceCtrlWatchServer) (err error) {
 	domainProject := util.ParseDomainProject(ctx)
 	domain := util.ParseDomain(ctx)
-	watcher := NewInstanceEventListWatcher(serviceID, apt.GetInstanceRootKey(domainProject)+"/", f)
-	err = GetNotifyCenter().AddSubscriber(watcher)
+	watcher := notify.NewInstanceEventListWatcher(serviceID, domainProject, f)
+	err = notify.Center().AddSubscriber(watcher)
 	if err != nil {
 		return
 	}
-	ReportSubscriber(domain, GRPC, 1)
-	err = HandleWatchJob(watcher, stream)
-	ReportSubscriber(domain, GRPC, -1)
+	connection.ReportSubscriber(domain, GRPC, 1)
+	err = Handle(watcher, stream)
+	connection.ReportSubscriber(domain, GRPC, -1)
 	return
 }
