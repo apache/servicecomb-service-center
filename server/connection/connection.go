@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+// connection pkg impl the pub/sub mechanism of the long connection of diff protocols
 package connection
 
 import "time"

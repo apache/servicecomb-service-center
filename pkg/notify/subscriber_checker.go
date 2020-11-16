@@ -38,8 +38,8 @@ type ErrEvent struct {
 	Subscriber Subscriber
 }
 
-func (s *SubscriberChecker) OnMessage(job Event) {
-	j := job.(*ErrEvent)
+func (s *SubscriberChecker) OnMessage(evt Event) {
+	j := evt.(*ErrEvent)
 	err := j.Subscriber.Err()
 
 	if j.Subscriber.Type() == TypeCheck {
