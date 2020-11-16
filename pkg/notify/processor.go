@@ -34,17 +34,17 @@ func (p *Processor) Name() string {
 	return p.name
 }
 
-func (p *Processor) Accept(job Event) {
-	p.Add(queue.Task{Object: job})
+func (p *Processor) Accept(evt Event) {
+	p.Add(queue.Task{Object: evt})
 }
 
 func (p *Processor) Handle(ctx context.Context, obj interface{}) {
 	p.Notify(obj.(Event))
 }
 
-func (p *Processor) Notify(job Event) {
-	if itf, ok := p.subjects.Get(job.Subject()); ok {
-		itf.(*Subject).Notify(job)
+func (p *Processor) Notify(evt Event) {
+	if itf, ok := p.subjects.Get(evt.Subject()); ok {
+		itf.(*Subject).Notify(evt)
 	}
 }
 

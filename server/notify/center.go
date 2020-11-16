@@ -19,13 +19,12 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/notify"
 )
 
-var INSTANCE = notify.RegisterType("INSTANCE", InstanceEventQueueSize)
 var notifyService *notify.Service
 
 func init() {
 	notifyService = notify.NewNotifyService()
 }
 
-func GetNotifyCenter() *notify.Service {
+func Center() *notify.Service {
 	return notifyService
 }

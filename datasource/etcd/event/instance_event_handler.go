@@ -82,7 +82,7 @@ func (h *InstanceEventHandler) OnEvent(evt sd.KvEvent) {
 		}
 	}
 
-	if notify.GetNotifyCenter().Closed() {
+	if notify.Center().Closed() {
 		log.Warnf("caught [%s] instance[%s/%s] event, endpoints %v, but notify service is closed",
 			action, providerID, providerInstanceID, instance.Endpoints)
 		return
@@ -136,10 +136,10 @@ func PublishInstanceEvent(evt sd.KvEvent, domainProject string, serviceKey *pb.M
 	}
 	for _, consumerID := range subscribers {
 		// TODO add超时怎么处理？
-		job := notify.NewInstanceEventWithTime(consumerID, domainProject, evt.Revision, evt.CreateAt, response)
-		err := notify.GetNotifyCenter().Publish(job)
+		evt := notify.NewInstanceEventWithTime(consumerID, domainProject, evt.Revision, evt.CreateAt, response)
+		err := notify.Center().Publish(evt)
 		if err != nil {
-			log.Errorf(err, "publish job failed")
+			log.Errorf(err, "publish event[%v] into channel failed", evt)
 		}
 	}
 }

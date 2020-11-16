@@ -98,7 +98,7 @@ func (h *RuleEventHandler) OnEvent(evt sd.KvEvent) {
 	}
 
 	providerID, ruleID, domainProject := core.GetInfoFromRuleKV(evt.KV.Key)
-	if notify.GetNotifyCenter().Closed() {
+	if notify.Center().Closed() {
 		log.Warnf("caught [%s] service rule[%s/%s] event, but notify service is closed",
 			action, providerID, ruleID)
 		return

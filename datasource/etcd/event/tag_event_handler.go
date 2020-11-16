@@ -112,7 +112,7 @@ func (h *TagEventHandler) OnEvent(evt sd.KvEvent) {
 
 	consumerID, domainProject := core.GetInfoFromTagKV(evt.KV.Key)
 
-	if notify.GetNotifyCenter().Closed() {
+	if notify.Center().Closed() {
 		log.Warnf("caught [%s] service tags[%s/%s] event, but notify service is closed",
 			action, consumerID, evt.KV.Value)
 		return
