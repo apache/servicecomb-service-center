@@ -19,6 +19,7 @@ package mongo
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/heartbeat"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 )
 
@@ -110,7 +111,7 @@ func (ds *DataSource) UnregisterInstance(ctx context.Context, request *pb.Unregi
 }
 
 func (ds *DataSource) Heartbeat(ctx context.Context, request *pb.HeartbeatRequest) (*pb.HeartbeatResponse, error) {
-	return &pb.HeartbeatResponse{}, nil
+	return heartbeat.Instance().Heartbeat(ctx, request)
 }
 
 func (ds *DataSource) HeartbeatSet(ctx context.Context, request *pb.HeartbeatSetRequest) (*pb.HeartbeatSetResponse, error) {
