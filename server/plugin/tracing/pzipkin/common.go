@@ -20,8 +20,9 @@ package pzipkin
 import (
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/metrics"
+	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/metric"
 	"github.com/opentracing/opentracing-go"
 	zipkin "github.com/openzipkin/zipkin-go-opentracing"
 	"os"
@@ -44,7 +45,7 @@ func initTracer() {
 		log.Errorf(err, "new tracing collector failed, use the noop tracer")
 		return
 	}
-	ipPort := metric.InstanceName()
+	ipPort := metrics.InstanceName()
 	recorder := zipkin.NewRecorder(collector, false, ipPort, strings.ToLower(core.Service.ServiceName))
 	tracer, err := zipkin.NewTracer(recorder,
 		zipkin.TraceID128Bit(true),
@@ -57,7 +58,7 @@ func initTracer() {
 }
 
 func newCollector() (collector zipkin.Collector, err error) {
-	ct := strings.TrimSpace(os.Getenv(collectorType))
+	ct := config.GetString("tracing.zipkin.collector.type", "", config.WithENV(collectorType))
 	switch ct {
 	case "server":
 		sa := GetServerEndpoint()
@@ -83,7 +84,7 @@ func ZipkinTracer() opentracing.Tracer {
 }
 
 func GetFilePath(defName string) string {
-	path := os.Getenv(fileCollectorPath)
+	path := config.GetString("tracing.zipkin.collector.path", "", config.WithENV(fileCollectorPath))
 	if len(path) == 0 {
 		wd, _ := os.Getwd()
 		return filepath.Join(wd, defName)
@@ -92,7 +93,7 @@ func GetFilePath(defName string) string {
 }
 
 func GetServerEndpoint() string {
-	sa := os.Getenv(serverCollectorAddr)
+	sa := config.GetString("tracing.zipkin.collector.endpoint", "", config.WithENV(serverCollectorAddr))
 	if len(sa) == 0 {
 		sa = "http://127.0.0.1:9411"
 	}
@@ -100,7 +101,7 @@ func GetServerEndpoint() string {
 }
 
 func GetSamplerRate() float64 {
-	strRate := os.Getenv(samplerRate)
+	strRate := config.GetString("tracing.zipkin.sampler.rate", "", config.WithENV(samplerRate))
 	rate, err := strconv.ParseFloat(strRate, 64)
 	if rate <= 0 || err != nil {
 		return defaultSamplerRate

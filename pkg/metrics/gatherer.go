@@ -15,27 +15,27 @@
  * limitations under the License.
  */
 
-package metric
+package metrics
 
 import (
 	"context"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/apache/servicecomb-service-center/pkg/prometheus"
 	"strings"
 	"sync"
 	"time"
 )
 
-func NewGatherer(opts Options) *MetricsGatherer {
-	return &MetricsGatherer{
+func NewGatherer(opts Options) *Gather {
+	return &Gather{
 		Interval: opts.Interval,
 		Records:  NewMetrics(),
 		closed:   true,
 	}
 }
 
-type MetricsGatherer struct {
+type Gather struct {
 	Records  *Metrics
 	Interval time.Duration
 
@@ -43,7 +43,7 @@ type MetricsGatherer struct {
 	closed bool
 }
 
-func (mm *MetricsGatherer) Start() {
+func (mm *Gather) Start() {
 	mm.lock.Lock()
 	if !mm.closed {
 		mm.lock.Unlock()
@@ -56,7 +56,7 @@ func (mm *MetricsGatherer) Start() {
 	mm.lock.Unlock()
 }
 
-func (mm *MetricsGatherer) loop(ctx context.Context) {
+func (mm *Gather) loop(ctx context.Context) {
 	ticker := time.NewTicker(mm.Interval)
 	for {
 		select {
@@ -73,8 +73,8 @@ func (mm *MetricsGatherer) loop(ctx context.Context) {
 	}
 }
 
-func (mm *MetricsGatherer) Collect() error {
-	mfs, err := prometheus.DefaultGatherer.Gather()
+func (mm *Gather) Collect() error {
+	mfs, err := prometheus.Gather()
 	if err != nil {
 		return err
 	}

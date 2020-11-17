@@ -14,31 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package metric
+
+package prometheus
 
 import (
-	"github.com/astaxie/beego"
-	"testing"
-	"time"
+	"github.com/apache/servicecomb-service-center/server/rest"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-func TestInstanceName(t *testing.T) {
-	beego.AppConfig.Set("rpcaddr", "a")
-	beego.AppConfig.Set("rpcport", "b")
-	Init(Options{InstanceName: "a:b"})
-	i := InstanceName()
-	if i != "a:b" {
-		t.Fatalf("TestInstanceName failed")
-	}
-}
-
-func TestPeriod(t *testing.T) {
-	if err := Init(Options{
-		Interval: 30 * time.Second,
-	}); err != nil {
-		t.Fatalf("init failed %s", err)
-	}
-	if GetOptions().Interval != 30*time.Second {
-		t.Fatalf("TestPeriod failed")
-	}
+func init() {
+	rest.RegisterServerHandler("/metrics", promhttp.Handler())
 }

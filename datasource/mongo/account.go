@@ -22,6 +22,10 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 )
 
+func (ds *DataSource) CreateAccount(ctx context.Context, a *rbacframe.Account) error {
+	return nil
+}
+
 func (ds *DataSource) AccountExist(ctx context.Context, key string) (bool, error) {
 	return false, nil
 }

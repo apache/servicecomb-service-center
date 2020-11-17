@@ -26,6 +26,7 @@ import (
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/connection"
+	"github.com/apache/servicecomb-service-center/server/metrics"
 	"github.com/apache/servicecomb-service-center/server/notify"
 	"github.com/gorilla/websocket"
 	"time"
@@ -259,7 +260,7 @@ func (wh *WebSocket) HandleEvent(o interface{}) {
 
 	err := wh.WriteMessage(message)
 	if evt, ok := o.(*notify.InstanceEvent); ok {
-		connection.ReportPublishCompleted(evt, err)
+		metrics.ReportPublishCompleted(evt, err)
 	}
 	if err != nil {
 		log.Errorf(err, "watcher[%s] catch an err, subject: %s, group: %s",
@@ -295,9 +296,9 @@ func ListAndWatch(ctx context.Context, serviceID string, f func() ([]*pb.WatchIn
 	domain := util.ParseDomain(ctx)
 	socket := New(ctx, conn, notify.NewInstanceEventListWatcher(serviceID, domainProject, f))
 
-	connection.ReportSubscriber(domain, Websocket, 1)
+	metrics.ReportSubscriber(domain, Websocket, 1)
 	process(socket)
-	connection.ReportSubscriber(domain, Websocket, -1)
+	metrics.ReportSubscriber(domain, Websocket, -1)
 }
 
 func process(socket *WebSocket) {

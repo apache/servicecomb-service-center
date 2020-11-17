@@ -20,7 +20,7 @@ package cache
 import (
 	"context"
 	"fmt"
-	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/cache"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
@@ -39,7 +39,7 @@ func (f *AccessibleFilter) Init(ctx context.Context, parent *cache.Node) (node *
 	consumerID := ctx.Value(CtxFindConsumer).(*pb.MicroService).ServiceId
 	pCopy := *parent.Cache.Get(Find).(*VersionRuleCacheItem)
 	for _, providerServiceID := range pCopy.ServiceIds {
-		if err := serviceUtil.Accessible(ctx, consumerID, providerServiceID); err != nil {
+		if err := util.Accessible(ctx, consumerID, providerServiceID); err != nil {
 			provider := ctx.Value(CtxFindProvider).(*pb.MicroServiceKey)
 			findFlag := fmt.Sprintf("consumer '%s' find provider %s/%s/%s", consumerID,
 				provider.AppId, provider.ServiceName, provider.Version)

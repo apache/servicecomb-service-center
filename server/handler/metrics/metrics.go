@@ -15,21 +15,21 @@
  * limitations under the License.
  */
 
-package metric
+package metrics
 
 import (
 	"github.com/apache/servicecomb-service-center/pkg/chain"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
-	"github.com/apache/servicecomb-service-center/server/metric/prometheus"
+	"github.com/apache/servicecomb-service-center/server/metrics"
 	"net/http"
 	"time"
 )
 
-type MetricsHandler struct {
+type Handler struct {
 }
 
-func (h *MetricsHandler) Handle(i *chain.Invocation) {
+func (h *Handler) Handle(i *chain.Invocation) {
 	i.Next(chain.WithAsyncFunc(func(ret chain.Result) {
 		start, ok := i.Context().Value(rest.CtxStartTimestamp).(time.Time)
 		if !ok {
@@ -37,11 +37,11 @@ func (h *MetricsHandler) Handle(i *chain.Invocation) {
 		}
 		w, r := i.Context().Value(rest.CtxResponse).(http.ResponseWriter),
 			i.Context().Value(rest.CtxRequest).(*http.Request)
-		prometheus.ReportRequestCompleted(w, r, start)
+		metrics.ReportRequestCompleted(w, r, start)
 		log.NilOrWarnf(start, "%s %s", r.Method, r.RequestURI)
 	}))
 }
 
 func RegisterHandlers() {
-	chain.RegisterHandler(rest.ServerChainName, &MetricsHandler{})
+	chain.RegisterHandler(rest.ServerChainName, &Handler{})
 }

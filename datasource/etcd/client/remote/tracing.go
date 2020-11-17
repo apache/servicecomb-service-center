@@ -24,10 +24,22 @@ import (
 	"net/http"
 )
 
+type EtcdOptions struct {
+	client.PluginOp
+}
+
+func (eo *EtcdOptions) Method() string {
+	return eo.PluginOp.Action.String()
+}
+
+func (eo *EtcdOptions) URL() string {
+	return "/?" + eo.PluginOp.FormatURLParams()
+}
+
 func TracingBegin(ctx context.Context, operationName string, op client.PluginOp) tracing.Span {
-	r := &tracing.RegistryRequest{
+	r := &tracing.Operation{
 		Ctx:      ctx,
-		Options:  op,
+		Options:  &EtcdOptions{PluginOp: op},
 		Endpoint: FirstEndpoint,
 	}
 	return tracing.ClientBegin(operationName, r)

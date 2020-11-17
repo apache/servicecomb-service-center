@@ -22,7 +22,7 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/service/metrics"
+	"github.com/apache/servicecomb-service-center/server/metrics"
 	"strings"
 )
 

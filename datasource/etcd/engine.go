@@ -21,9 +21,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/cluster"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
+	"github.com/apache/servicecomb-service-center/server/metrics"
 	"strconv"
 	"strings"
 	"time"
@@ -45,7 +45,7 @@ func (ds *DataSource) SelfRegister(ctx context.Context) error {
 	// start send heart beat job
 	ds.autoSelfHeartBeat()
 	// report the metrics
-	datasource.ReportScInstance()
+	metrics.ReportScInstance()
 	return err
 }
 

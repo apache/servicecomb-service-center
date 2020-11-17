@@ -15,33 +15,41 @@
  * limitations under the License.
  */
 
-package event
+package metrics
 
 import (
-	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
-	"github.com/apache/servicecomb-service-center/pkg/registry"
-	"github.com/apache/servicecomb-service-center/server/metrics"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
-// DomainEventHandler report domain & project total number
-type DomainEventHandler struct {
-}
+const (
+	FamilyName       = "service_center"
+	familyNamePrefix = FamilyName + "_"
+	bufferSize       = 1024
+)
 
-func (h *DomainEventHandler) Type() sd.Type {
-	return kv.DOMAIN
-}
+var (
+	options Options
+	// SysMetrics map
+	SysMetrics util.ConcurrentMap
+	// Gatherer is the reader of sc metrics, but can not get not real time metrics
+	// Call the prometheus.Gather() if get the real time metrics
+	Gatherer *Gather
+)
 
-func (h *DomainEventHandler) OnEvent(evt sd.KvEvent) {
-	action := evt.Type
-	switch action {
-	case registry.EVT_INIT, registry.EVT_CREATE:
-		metrics.ReportDomains(1)
-	case registry.EVT_DELETE:
-		metrics.ReportDomains(-1)
+func Init(opts Options) error {
+	options = opts
+	for _, key := range options.SysMetrics {
+		SysMetrics.Put(key, struct{}{})
 	}
+	Gatherer = NewGatherer(opts)
+	Gatherer.Start()
+	return nil
 }
 
-func NewDomainEventHandler() *DomainEventHandler {
-	return &DomainEventHandler{}
+func GetOptions() Options {
+	return options
+}
+
+func InstanceName() string {
+	return GetOptions().InstanceName
 }

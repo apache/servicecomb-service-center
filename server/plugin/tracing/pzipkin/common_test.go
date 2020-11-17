@@ -16,6 +16,7 @@
 package pzipkin
 
 import (
+	"github.com/go-chassis/go-archaius"
 	"github.com/openzipkin/zipkin-go-opentracing"
 	"os"
 	"path/filepath"
@@ -28,7 +29,7 @@ func TestGetFilePath(t *testing.T) {
 	if f != filepath.Join(wd, "a") {
 		t.Fatalf("TestGetFilePath failed, %v", f)
 	}
-	os.Setenv(fileCollectorPath, "trace.log")
+	archaius.Set(fileCollectorPath, "trace.log")
 	f = GetFilePath("a")
 	if f != "trace.log" {
 		t.Fatalf("TestGetFilePath failed, %v", f)
@@ -40,12 +41,12 @@ func TestGetSamplerRate(t *testing.T) {
 	if r != defaultSamplerRate {
 		t.Fatalf("TestGetSamplerRate failed, %v", r)
 	}
-	os.Setenv(samplerRate, "a")
+	archaius.Set(samplerRate, "a")
 	r = GetSamplerRate()
 	if r != defaultSamplerRate {
 		t.Fatalf("TestGetSamplerRate failed, %v", r)
 	}
-	os.Setenv(samplerRate, "0.1")
+	archaius.Set(samplerRate, "0.1")
 	r = GetSamplerRate()
 	if r != 0.1 {
 		t.Fatalf("TestGetSamplerRate failed, %v", r)
@@ -53,12 +54,12 @@ func TestGetSamplerRate(t *testing.T) {
 }
 
 func TestNewCollector(t *testing.T) {
-	os.Setenv(collectorType, "")
+	archaius.Set(collectorType, "")
 	tracer, err := newCollector()
 	if err == nil {
 		t.Fatalf("TestNewCollector failed")
 	}
-	os.Setenv(collectorType, "server")
+	archaius.Set(collectorType, "server")
 	tracer, err = newCollector()
 	if err != nil {
 		t.Fatalf("TestNewCollector failed")
@@ -67,7 +68,7 @@ func TestNewCollector(t *testing.T) {
 	if !ok {
 		t.Fatalf("TestNewCollector failed")
 	}
-	os.Setenv(collectorType, "file")
+	archaius.Set(collectorType, "file")
 	tracer, err = newCollector()
 	if err != nil {
 		t.Fatalf("TestNewCollector failed")

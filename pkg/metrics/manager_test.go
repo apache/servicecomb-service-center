@@ -14,14 +14,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package metric
+package metrics
 
-import "testing"
+import (
+	"github.com/astaxie/beego"
+	"testing"
+	"time"
+)
 
-func TestMetricsGatherer_Collect(t *testing.T) {
-	g := NewGatherer(Options{})
-	err := g.Collect()
-	if err != nil {
-		t.Fatalf("TestMetricsGatherer_Collect")
+func TestInstanceName(t *testing.T) {
+	beego.AppConfig.Set("rpcaddr", "a")
+	beego.AppConfig.Set("rpcport", "b")
+	Init(Options{InstanceName: "a:b"})
+	i := InstanceName()
+	if i != "a:b" {
+		t.Fatalf("TestInstanceName failed")
+	}
+}
+
+func TestPeriod(t *testing.T) {
+	if err := Init(Options{
+		Interval: 30 * time.Second,
+	}); err != nil {
+		t.Fatalf("init failed %s", err)
+	}
+	if GetOptions().Interval != 30*time.Second {
+		t.Fatalf("TestPeriod failed")
 	}
 }

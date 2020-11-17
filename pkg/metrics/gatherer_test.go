@@ -14,25 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package metrics
 
-package metric
+import "testing"
 
-import "github.com/apache/servicecomb-service-center/pkg/log"
-
-var reporters = make(map[string]Reporter)
-
-// Reporter is the interface to implement handler to process metrics after calculate
-type Reporter interface {
-	Report()
-}
-
-func RegisterReporter(name string, r Reporter) {
-	reporters[name] = r
-	log.Infof("register metrics reporter '%s'", name)
-}
-
-func Report() {
-	for _, r := range reporters {
-		r.Report()
+func TestMetricsGatherer_Collect(t *testing.T) {
+	g := NewGatherer(Options{})
+	err := g.Collect()
+	if err != nil {
+		t.Fatalf("TestMetricsGatherer_Collect")
 	}
 }

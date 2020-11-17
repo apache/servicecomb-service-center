@@ -23,9 +23,15 @@ import (
 	"fmt"
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/metrics"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
+)
+
+const (
+	TotalService  = "db_service_total"
+	TotalInstance = "db_instance_total"
 )
 
 type GetCurUsedNum func(context.Context, *quota.ApplyQuotaResource) (int64, error)
@@ -77,10 +83,10 @@ func resourceLimitHandler(ctx context.Context, res *quota.ApplyQuotaResource) (i
 	serviceID := res.ServiceID
 
 	switch res.QuotaType {
-	case quota.MicroServiceInstanceQuotaType:
-		return globalCounter.InstanceCount, nil
 	case quota.MicroServiceQuotaType:
-		return globalCounter.ServiceCount, nil
+		return metrics.GaugeValue(TotalService, nil), nil
+	case quota.MicroServiceInstanceQuotaType:
+		return metrics.GaugeValue(TotalInstance, nil), nil
 	case quota.RuleQuotaType:
 		{
 			resp, err := datasource.Instance().GetRules(ctx, &pb.GetServiceRulesRequest{

@@ -109,6 +109,14 @@ metrics:
 
 tracing:
   kind:
+  zipkin:
+    collector:
+      # type should be file or server
+      type:
+      path:
+      endpoint:
+    sampler:
+      rate:
 
 quota:
-  kind: unlimit
+  kind:

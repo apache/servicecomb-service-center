@@ -15,33 +15,9 @@
  * limitations under the License.
  */
 
-package event
+package metrics
 
-import (
-	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
-	"github.com/apache/servicecomb-service-center/pkg/registry"
-	"github.com/apache/servicecomb-service-center/server/metrics"
+const (
+	success = "SUCCESS"
+	failure = "FAILURE"
 )
-
-// DomainEventHandler report domain & project total number
-type DomainEventHandler struct {
-}
-
-func (h *DomainEventHandler) Type() sd.Type {
-	return kv.DOMAIN
-}
-
-func (h *DomainEventHandler) OnEvent(evt sd.KvEvent) {
-	action := evt.Type
-	switch action {
-	case registry.EVT_INIT, registry.EVT_CREATE:
-		metrics.ReportDomains(1)
-	case registry.EVT_DELETE:
-		metrics.ReportDomains(-1)
-	}
-}
-
-func NewDomainEventHandler() *DomainEventHandler {
-	return &DomainEventHandler{}
-}

@@ -15,44 +15,56 @@
  * limitations under the License.
  */
 
-package sd
+package metrics
 
 import (
+	"context"
+	"github.com/apache/servicecomb-service-center/pkg/gopool"
+	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/metrics"
 	helper "github.com/apache/servicecomb-service-center/pkg/prometheus"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/prometheus/client_golang/prometheus"
+	"runtime"
 	"time"
 )
 
+const durationReportCPUUsage = 3 * time.Second
+
 var (
-	eventsCounter = helper.NewGaugeVec(
+	cpuGauge = helper.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace: metrics.FamilyName,
-			Subsystem: "db",
-			Name:      "backend_event_total",
-			Help:      "Counter of backend events",
-		}, []string{"instance", "prefix"})
-
-	eventsLatency = helper.NewSummaryVec(
-		prometheus.SummaryOpts{
-			Namespace:  metrics.FamilyName,
-			Subsystem:  "db",
-			Name:       "backend_event_durations_microseconds",
-			Help:       "Latency of backend events processing",
-			Objectives: metrics.Pxx,
-		}, []string{"instance", "prefix"})
+			Subsystem: "process",
+			Name:      "cpu_usage",
+			Help:      "Process cpu usage",
+		}, []string{"instance"})
 )
 
-func ReportProcessEventCompleted(prefix string, evts []KvEvent) {
-	l := float64(len(evts))
-	if l == 0 {
-		return
+func init() {
+	gopool.Go(AutoReportCPUUsage)
+}
+
+func AutoReportCPUUsage(ctx context.Context) {
+	var (
+		cpuTotal float64
+		cpuProc  float64
+		cpus     = runtime.NumCPU()
+	)
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(durationReportCPUUsage):
+			pt, ct := util.GetProcCPUUsage()
+			diff := ct - cpuTotal
+			if diff <= 0 {
+				log.Warnf("the current cpu usage is the same as the previous period")
+				continue
+			}
+			cpuGauge.WithLabelValues(metrics.InstanceName()).Set(
+				(pt - cpuProc) * float64(cpus) / diff)
+			cpuTotal, cpuProc = ct, pt
+		}
 	}
-	instance := metrics.InstanceName()
-	now := time.Now()
-	for _, evt := range evts {
-		elapsed := float64(now.Sub(evt.CreateAt.Local()).Nanoseconds()) / float64(time.Microsecond)
-		eventsLatency.WithLabelValues(instance, prefix).Observe(elapsed)
-	}
-	eventsCounter.WithLabelValues(instance, prefix).Add(l)
 }
