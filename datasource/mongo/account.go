@@ -19,29 +19,139 @@ package mongo
 
 import (
 	"context"
+	"errors"
+	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
+	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	stringutil "github.com/go-chassis/foundation/string"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func (ds *DataSource) CreateAccount(ctx context.Context, a *rbacframe.Account) error {
+	exist, err := ds.AccountExist(ctx, a.Name)
+	if err != nil {
+		log.Errorf(err, "can not save account info")
+		return err
+	}
+	if exist {
+		return datasource.ErrDuplicated
+	}
+	hash, err := bcrypt.GenerateFromPassword([]byte(a.Password), 14)
+	if err != nil {
+		log.Errorf(err, "pwd hash failed")
+		return err
+	}
+	a.Password = stringutil.Bytes2str(hash)
+	a.ID = util.GenerateUUID()
+	_, err = client.GetMongoClient().Insert(ctx, Account, a)
+	if err != nil {
+		switch tt := err.(type) {
+		case mongo.WriteException:
+			if tt.WriteErrors != nil {
+				for _, writeError := range tt.WriteErrors {
+					// The index is setup.The key is repeated.
+					if writeError.Code == DuplicateKey {
+						return datasource.ErrDuplicated
+					}
+				}
+			}
+		default:
+			return err
+		}
+	}
+	log.Info("create new account: " + a.ID)
 	return nil
 }
 
 func (ds *DataSource) AccountExist(ctx context.Context, key string) (bool, error) {
-	return false, nil
+	filter := bson.M{
+		AccountName: key,
+	}
+	count, err := client.GetMongoClient().Count(ctx, Account, filter)
+	if err != nil {
+		return false, err
+	}
+	if count == 0 {
+		return false, nil
+	}
+	return true, nil
 }
 
 func (ds *DataSource) GetAccount(ctx context.Context, key string) (*rbacframe.Account, error) {
-	return &rbacframe.Account{}, nil
+	filter := bson.M{
+		AccountName: key,
+	}
+	result, err := client.GetMongoClient().FindOne(ctx, Account, filter)
+	if err != nil {
+		return nil, err
+	}
+	if result.Err() != nil {
+		return nil, result.Err()
+	}
+	var account rbacframe.Account
+	err = result.Decode(&account)
+	if err != nil {
+		log.Errorf(err, "Decode account failed: ")
+		return nil, err
+	}
+	return &account, nil
 }
 
 func (ds *DataSource) ListAccount(ctx context.Context, key string) ([]*rbacframe.Account, int64, error) {
-	return nil, 0, nil
+	filter := bson.M{
+		AccountName: bson.M{"$regex": key},
+	}
+	cursor, err := client.GetMongoClient().Find(ctx, Account, filter)
+	if err != nil {
+		return nil, 0, err
+	}
+	var accounts []*rbacframe.Account
+	defer cursor.Close(ctx)
+	for cursor.Next(ctx) {
+		var account rbacframe.Account
+		err = cursor.Decode(&account)
+		if err != nil {
+			log.Errorf(err, "Decode account failed: ")
+			break
+		}
+		accounts = append(accounts, &account)
+	}
+	return accounts, int64(len(accounts)), nil
 }
 
 func (ds *DataSource) DeleteAccount(ctx context.Context, key string) (bool, error) {
-	return false, nil
+	filter := bson.M{
+		AccountName: key,
+	}
+	result, err := client.GetMongoClient().Delete(ctx, Account, filter)
+	if err != nil {
+		return false, err
+	}
+	if result.DeletedCount == 0 {
+		return false, nil
+	}
+	return true, nil
 }
 
 func (ds *DataSource) UpdateAccount(ctx context.Context, key string, account *rbacframe.Account) error {
+	filter := bson.M{
+		AccountName: key,
+	}
+	update := bson.M{
+		"$set": bson.M{AccountID: account.ID, AccountPassword: account.Name, AccountRole: account.Role, AccountTokenExpirationTime: account.TokenExpirationTime,
+			AccountCurrentPassword: account.CurrentPassword, AccountStatus: account.Status,
+		},
+	}
+	result, err := client.GetMongoClient().Update(ctx, Account, filter, update)
+	if err != nil {
+		return err
+	}
+	if result.ModifiedCount == 0 {
+		return errors.New("UpdateAccount: no data to update")
+	}
 	return nil
 }
