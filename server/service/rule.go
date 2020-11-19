@@ -61,7 +61,7 @@ func (s *MicroServiceService) GetRule(ctx context.Context, in *pb.GetServiceRule
 		}, nil
 	}
 
-	return datasource.Instance().GetRule(ctx, in)
+	return datasource.Instance().GetRules(ctx, in)
 }
 
 func (s *MicroServiceService) DeleteRule(ctx context.Context, in *pb.DeleteServiceRulesRequest) (*pb.DeleteServiceRulesResponse, error) {

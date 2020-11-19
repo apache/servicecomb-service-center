@@ -1,11 +1,13 @@
 package v4_test
 
+import _ "github.com/apache/servicecomb-service-center/test"
 import (
 	"bytes"
 	"context"
 	"encoding/json"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
+	"github.com/apache/servicecomb-service-center/server/config"
 	v4 "github.com/apache/servicecomb-service-center/server/resource/v4"
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
 	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
@@ -19,15 +21,13 @@ import (
 	"net/http/httptest"
 	"testing"
 	"time"
-
-	_ "github.com/apache/servicecomb-service-center/server/handler/auth"
-	_ "github.com/apache/servicecomb-service-center/test"
 )
 
 func init() {
 	beego.AppConfig.Set("rbac_enabled", "true")
-	beego.AppConfig.Set(rbac.PubFilePath, "./rbac.pub")
+	beego.AppConfig.Set("rbac_rsa_public_key_file", "./rbac.pub")
 	beego.AppConfig.Set("rbac_rsa_private_key_file", "./private.key")
+	config.Init()
 }
 func TestAuthResource_Login(t *testing.T) {
 	err := archaius.Init(archaius.WithMemorySource(), archaius.WithENVSource())

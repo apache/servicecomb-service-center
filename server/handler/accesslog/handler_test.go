@@ -1,5 +1,6 @@
 package accesslog_test
 
+import _ "github.com/apache/servicecomb-service-center/test"
 import (
 	"context"
 	"net/http"

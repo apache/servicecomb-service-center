@@ -20,10 +20,7 @@ package etcd
 import (
 	"context"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
-	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
-	"github.com/astaxie/beego"
-	"strings"
 	"sync"
 	"time"
 )
@@ -35,30 +32,14 @@ var (
 
 func Configuration() *client.Config {
 	configOnce.Do(func() {
-		var err error
-		defaultRegistryConfig.ClusterName = beego.AppConfig.DefaultString("manager_name", client.DefaultClusterName)
-		defaultRegistryConfig.ManagerAddress = beego.AppConfig.String("manager_addr")
-		defaultRegistryConfig.ClusterAddresses = beego.AppConfig.DefaultString("manager_cluster", "http://127.0.0.1:2379")
+		defaultRegistryConfig.ClusterName = config.GetString("registry.etcd.cluster.name", client.DefaultClusterName, config.WithStandby("manager_name"))
+		defaultRegistryConfig.ManagerAddress = config.GetString("registry.etcd.cluster.managerEndpoints", "", config.WithStandby("manager_addr"))
+		defaultRegistryConfig.ClusterAddresses = config.GetString("registry.etcd.cluster.endpoints", "http://127.0.0.1:2379", config.WithStandby("manager_cluster"))
 		defaultRegistryConfig.InitClusterInfo()
 
-		registryAddresses := strings.Join(defaultRegistryConfig.RegistryAddresses(), ",")
-		defaultRegistryConfig.SslEnabled = config.ServerInfo.Config.SslEnabled &&
-			strings.Contains(strings.ToLower(registryAddresses), "https://")
-
-		defaultRegistryConfig.DialTimeout, err = time.ParseDuration(beego.AppConfig.DefaultString("connect_timeout", "10s"))
-		if err != nil {
-			log.Errorf(err, "connect_timeout is invalid, use default time %s", client.DefaultDialTimeout)
-			defaultRegistryConfig.DialTimeout = client.DefaultDialTimeout
-		}
-		defaultRegistryConfig.RequestTimeOut, err = time.ParseDuration(beego.AppConfig.DefaultString("registry_timeout", "30s"))
-		if err != nil {
-			log.Errorf(err, "registry_timeout is invalid, use default time %s", client.DefaultRequestTimeout)
-			defaultRegistryConfig.RequestTimeOut = client.DefaultRequestTimeout
-		}
-		defaultRegistryConfig.AutoSyncInterval, err = time.ParseDuration(config.ServerInfo.Config.AutoSyncInterval)
-		if err != nil {
-			log.Errorf(err, "auto_sync_interval is invalid")
-		}
+		defaultRegistryConfig.DialTimeout = config.GetDuration("registry.etcd.connect.timeout", client.DefaultDialTimeout, config.WithStandby("connect_timeout"))
+		defaultRegistryConfig.RequestTimeOut = config.GetDuration("registry.etcd.request.timeout", client.DefaultRequestTimeout, config.WithStandby("registry_timeout"))
+		defaultRegistryConfig.AutoSyncInterval = config.GetDuration("registry.etcd.autoSyncInterval", 30*time.Second, config.WithStandby("auto_sync_interval"))
 
 		config.ServerInfo.Config.Plugins.Object("discovery").
 			Set("config", defaultRegistryConfig)

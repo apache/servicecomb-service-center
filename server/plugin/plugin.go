@@ -18,13 +18,12 @@
 package plugin
 
 import (
+	"github.com/apache/servicecomb-service-center/server/config"
 	"sync"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/plugin"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-
-	"github.com/astaxie/beego"
 )
 
 const (
@@ -127,7 +126,7 @@ func (pm *Manager) Instance(pn Kind) Instance {
 // We suggest you to use 'Instance' instead of 'New'.
 func (pm *Manager) New(pn Kind) {
 	var (
-		title = STATIC
+		title = Static
 		f     func() Instance
 	)
 
@@ -136,7 +135,7 @@ func (pm *Manager) New(pn Kind) {
 	if p != nil {
 		// Dynamic plugin has high priority.
 		wi.dynamic = true
-		title = DYNAMIC
+		title = Dynamic
 		f = p.New
 	} else {
 		wi.dynamic = false
@@ -145,14 +144,13 @@ func (pm *Manager) New(pn Kind) {
 			return
 		}
 
-		name := beego.AppConfig.DefaultString(pn.String()+"_plugin", BUILDIN)
+		name := config.GetString(pn.String()+".kind", Buildin, config.WithStandby(pn.String()+"_plugin"))
 		p, ok = m[ImplName(name)]
 		if !ok {
 			return
 		}
 
 		f = p.New
-		pn.ActiveConfigs().Set(keyPluginName, name)
 	}
 	log.Infof("call %s '%s' plugin %s(), new a '%s' instance",
 		title, p.Kind, util.FuncName(f), p.Name)
@@ -165,7 +163,6 @@ func (pm *Manager) Reload(pn Kind) {
 	wi := pm.instances[pn]
 	wi.lock.Lock()
 	wi.instance = nil
-	pn.ClearConfigs()
 	wi.lock.Unlock()
 }
 
@@ -176,7 +173,7 @@ func (pm *Manager) existDynamicPlugin(pn Kind) *Plugin {
 	}
 	// 'buildin' implement of all plugins should call DynamicPluginFunc()
 	if plugin.GetLoader().Exist(pn.String()) {
-		return m[BUILDIN]
+		return m[Buildin]
 	}
 	return nil
 }

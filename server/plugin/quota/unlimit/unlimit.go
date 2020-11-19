@@ -22,21 +22,10 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	mgr "github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
-	"github.com/astaxie/beego"
 )
 
 func init() {
 	mgr.RegisterPlugin(mgr.Plugin{Kind: quota.QUOTA, Name: "unlimit", New: New})
-
-	quataType := beego.AppConfig.DefaultString("quota_plugin", "")
-	if quataType != "unlimit" {
-		return
-	}
-	quota.DefaultServiceQuota = 0
-	quota.DefaultInstanceQuota = 0
-	quota.DefaultSchemaQuota = 0
-	quota.DefaultTagQuota = 0
-	quota.DefaultRuleQuota = 0
 }
 
 type Unlimit struct {

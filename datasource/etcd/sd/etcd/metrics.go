@@ -18,26 +18,23 @@
 package etcd
 
 import (
-	"github.com/apache/servicecomb-service-center/server/metric"
+	"github.com/apache/servicecomb-service-center/pkg/metrics"
+	helper "github.com/apache/servicecomb-service-center/pkg/prometheus"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
 var (
-	cacheSizeGauge = prometheus.NewGaugeVec(
+	cacheSizeGauge = helper.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Namespace: metric.FamilyName,
+			Namespace: metrics.FamilyName,
 			Subsystem: "local",
 			Name:      "cache_size_bytes",
 			Help:      "Local cache size summary of backend store",
 		}, []string{"instance", "resource", "type"})
 )
 
-func init() {
-	prometheus.MustRegister(cacheSizeGauge)
-}
-
 func ReportCacheSize(resource, t string, s int) {
-	instance := metric.InstanceName()
+	instance := metrics.InstanceName()
 	if len(instance) == 0 || len(resource) == 0 {
 		// endpoints list will be empty when initializing
 		// resource may be empty when report SCHEMA

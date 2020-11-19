@@ -17,13 +17,11 @@
 package admin_test
 
 // initialize
-import (
-	"github.com/apache/servicecomb-service-center/pkg/registry"
-	_ "github.com/apache/servicecomb-service-center/server/bootstrap"
-)
+import _ "github.com/apache/servicecomb-service-center/test"
 import (
 	"context"
 	model2 "github.com/apache/servicecomb-service-center/pkg/dump"
+	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/rest/admin"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"

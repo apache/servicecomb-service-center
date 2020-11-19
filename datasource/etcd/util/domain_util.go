@@ -19,7 +19,6 @@ package util
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/datasource"
 	"strings"
 
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
@@ -27,12 +26,11 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	apt "github.com/apache/servicecomb-service-center/server/core"
 )
 
 func GetAllDomainRawData(ctx context.Context) ([]*sd.KeyValue, error) {
 	opts := append(FromContext(ctx),
-		client.WithStrKey(apt.GenerateDomainKey("")),
+		client.WithStrKey(kv.GenerateETCDDomainKey("")),
 		client.WithPrefix())
 	rsp, err := kv.Store().Domain().Search(ctx, opts...)
 	if err != nil {
@@ -56,36 +54,60 @@ func GetAllDomain(ctx context.Context) ([]string, error) {
 	domain := ""
 	instByDomain := ""
 	var arrTmp []string
-	for _, kv := range kvs {
-		arrTmp = strings.Split(util.BytesToStringWithNoCopy(kv.Key), "/")
+	for _, keyValue := range kvs {
+		arrTmp = strings.Split(util.BytesToStringWithNoCopy(keyValue.Key), "/")
 		domain = arrTmp[len(arrTmp)-1]
-		instByDomain = apt.GetInstanceRootKey(domain)
+		instByDomain = kv.GetInstanceRootKey(domain)
 		insWatherByDomainKeys = append(insWatherByDomainKeys, instByDomain)
 	}
 	return insWatherByDomainKeys, err
 }
 
+func AddDomain(ctx context.Context, domain string) (bool, error) {
+	ok, err := client.Instance().PutNoOverride(ctx,
+		client.WithStrKey(kv.GenerateETCDDomainKey(domain)))
+	if err != nil {
+		return false, err
+	}
+	return ok, nil
+}
+
 func DomainExist(ctx context.Context, domain string) (bool, error) {
-	return datasource.Instance().DomainExist(ctx, domain)
+	opts := append(FromContext(ctx),
+		client.WithStrKey(kv.GenerateETCDDomainKey(domain)),
+		client.WithCountOnly())
+	rsp, err := kv.Store().Domain().Search(ctx, opts...)
+	if err != nil {
+		return false, err
+	}
+	return rsp.Count > 0, nil
+}
+
+func AddProject(ctx context.Context, domain, project string) (bool, error) {
+	ok, err := client.Instance().PutNoOverride(ctx,
+		client.WithStrKey(kv.GenerateETCDProjectKey(domain, project)))
+	if err != nil {
+		return ok, err
+	}
+	return ok, nil
 }
 
 func ProjectExist(ctx context.Context, domain, project string) (bool, error) {
-	return datasource.Instance().ProjectExist(ctx, domain, project)
-}
-
-func NewDomain(ctx context.Context, domain string) (bool, error) {
-	return datasource.Instance().AddDomain(ctx, domain)
-}
-
-func NewProject(ctx context.Context, domain, project string) (bool, error) {
-	return datasource.Instance().AddProject(ctx, domain, project)
+	opts := append(FromContext(ctx),
+		client.WithStrKey(kv.GenerateETCDProjectKey(domain, project)),
+		client.WithCountOnly())
+	rsp, err := kv.Store().Project().Search(ctx, opts...)
+	if err != nil {
+		return false, err
+	}
+	return rsp.Count > 0, nil
 }
 
 func NewDomainProject(ctx context.Context, domain, project string) error {
 	copyCtx := util.SetContext(util.CloneContext(ctx), util.CtxCacheOnly, "1")
 	ok, err := DomainExist(copyCtx, domain)
 	if !ok && err == nil {
-		ok, err = NewDomain(ctx, domain)
+		ok, err = AddDomain(ctx, domain)
 		if ok {
 			log.Infof("new domain(%s)", domain)
 		}
@@ -95,7 +117,7 @@ func NewDomainProject(ctx context.Context, domain, project string) error {
 	}
 	ok, err = ProjectExist(copyCtx, domain, project)
 	if !ok && err == nil {
-		ok, err = NewProject(ctx, domain, project)
+		ok, err = AddProject(ctx, domain, project)
 		if ok {
 			log.Infof("new project(%s/%s)", domain, project)
 		}

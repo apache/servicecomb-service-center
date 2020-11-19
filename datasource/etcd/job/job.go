@@ -29,25 +29,25 @@ import (
 
 // clear services who have no instance
 func ClearNoInstanceServices() {
-	if !config.ServerInfo.Config.ServiceClearEnabled {
+	if !config.GetRegistry().ServiceClearEnabled {
 		return
 	}
-	log.Infof("service clear enabled, interval: %s, service TTL: %s",
-		config.ServerInfo.Config.ServiceClearInterval,
-		config.ServerInfo.Config.ServiceTTL)
+	ttl := config.GetRegistry().ServiceTTL
+	interval := config.GetRegistry().ServiceClearInterval
+	log.Infof("service clear enabled, interval: %s, service TTL: %s", interval, ttl)
 
 	gopool.Go(func(ctx context.Context) {
 		for {
 			select {
 			case <-ctx.Done():
 				return
-			case <-time.After(config.ServerInfo.Config.ServiceClearInterval):
+			case <-time.After(interval):
 				lock, err := mux.Try(mux.ServiceClearLock)
 				if err != nil {
 					log.Errorf(err, "can not clear no instance services by this service center instance now")
 					continue
 				}
-				err = datasource.Instance().ClearNoInstanceServices(ctx, config.ServerInfo.Config.ServiceTTL)
+				err = datasource.Instance().ClearNoInstanceServices(ctx, ttl)
 				if err := lock.Unlock(); err != nil {
 					log.Error("", err)
 				}

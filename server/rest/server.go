@@ -27,13 +27,13 @@ import (
 
 func LoadConfig() (srvCfg *rest.ServerConfig, err error) {
 	srvCfg = rest.DefaultServerConfig()
-	readHeaderTimeout, _ := time.ParseDuration(config.ServerInfo.Config.ReadHeaderTimeout)
-	readTimeout, _ := time.ParseDuration(config.ServerInfo.Config.ReadTimeout)
-	idleTimeout, _ := time.ParseDuration(config.ServerInfo.Config.IdleTimeout)
-	writeTimeout, _ := time.ParseDuration(config.ServerInfo.Config.WriteTimeout)
-	maxHeaderBytes := int(config.ServerInfo.Config.MaxHeaderBytes)
+	readHeaderTimeout, _ := time.ParseDuration(config.GetServer().ReadHeaderTimeout)
+	readTimeout, _ := time.ParseDuration(config.GetServer().ReadTimeout)
+	idleTimeout, _ := time.ParseDuration(config.GetServer().IdleTimeout)
+	writeTimeout, _ := time.ParseDuration(config.GetServer().WriteTimeout)
+	maxHeaderBytes := int(config.GetServer().MaxHeaderBytes)
 	var tlsConfig *tls.Config
-	if config.ServerInfo.Config.SslEnabled {
+	if config.GetSSL().SslEnabled {
 		tlsConfig, err = tlsconf.ServerConfig()
 		if err != nil {
 			return

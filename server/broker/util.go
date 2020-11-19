@@ -20,7 +20,6 @@ package broker
 import (
 	"context"
 	"encoding/json"
-	"github.com/apache/servicecomb-service-center/server/config"
 	"math"
 	"net/url"
 	"strconv"
@@ -33,7 +32,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/broker/brokerpb"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
-	"path/filepath"
 )
 
 var PactLogger *log.Logger
@@ -80,21 +78,6 @@ var brokerAPILinksTitles = map[string]string{
 	"pb:latest-provider-pacts":          "Latest pacts by provider",
 	"pb:latest-provider-pacts-with-tag": "Latest pacts by provider with a specified tag",
 	"pb:webhooks":                       "Webhooks",
-}
-
-func init() {
-	//define Broker logger
-	name := ""
-	if len(config.ServerInfo.Config.LogFilePath) != 0 {
-		name = filepath.Join(filepath.Dir(config.ServerInfo.Config.LogFilePath), "broker_srvc.log")
-	}
-	PactLogger = log.NewLogger(log.Config{
-		LoggerLevel:    config.ServerInfo.Config.LogLevel,
-		LoggerFile:     name,
-		LogFormatText:  config.ServerInfo.Config.LogFormat == "text",
-		LogRotateSize:  int(config.ServerInfo.Config.LogRotateSize),
-		LogBackupCount: int(config.ServerInfo.Config.LogBackupCount),
-	})
 }
 
 func GetDefaultTenantProject() string {

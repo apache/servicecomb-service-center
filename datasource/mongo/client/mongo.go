@@ -205,6 +205,14 @@ func (mc *MongoClient) Find(ctx context.Context, Table string, filter interface{
 	return col.Find(ctx, filter, opts...)
 }
 
+func (mc *MongoClient) FindOne(ctx context.Context, Table string, filter interface{}, opts ...*options.FindOneOptions) (*mongo.SingleResult, error) {
+	col := mc.collections[Table]
+	if col == nil {
+		return nil, ErrCollectionsNil
+	}
+	return col.FindOne(ctx, filter, opts...), nil
+}
+
 func (mc *MongoClient) Count(ctx context.Context, Table string, filter interface{}, opts ...*options.CountOptions) (int64, error) {
 	col := mc.collections[Table]
 	if col == nil {

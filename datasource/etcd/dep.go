@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
@@ -138,7 +139,7 @@ func (ds *DataSource) AddOrUpdateDependencies(ctx context.Context, dependencyInf
 		if !override {
 			id = util.GenerateUUID()
 		}
-		key := GenerateConsumerDependencyQueueKey(domainProject, consumerID, id)
+		key := kv.GenerateConsumerDependencyQueueKey(domainProject, consumerID, id)
 		opts = append(opts, client.OpPut(client.WithStrKey(key), client.WithValue(data)))
 	}
 

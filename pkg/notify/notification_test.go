@@ -66,11 +66,11 @@ func TestGetNotifyService(t *testing.T) {
 	if err != nil {
 		t.Fatalf("TestGetNotifyService failed")
 	}
-	err = notifyService.Publish(NewNotifyServiceHealthCheckJob(NewNotifyServiceHealthChecker()))
+	err = notifyService.Publish(NewErrEvent(NewSubscriberChecker()))
 	if err != nil {
 		t.Fatalf("TestGetNotifyService failed")
 	}
-	err = notifyService.Publish(NewNotifyServiceHealthCheckJob(s))
+	err = notifyService.Publish(NewErrEvent(s))
 	if err != nil {
 		t.Fatalf("TestGetNotifyService failed")
 	}

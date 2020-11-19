@@ -23,13 +23,13 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"github.com/apache/servicecomb-service-center/server/service"
 	"github.com/go-chassis/go-archaius"
 	"github.com/stretchr/testify/assert"
-	"os"
 	"strconv"
 	"strings"
 	"testing"
@@ -1445,8 +1445,8 @@ func TestInstance_Query(t *testing.T) {
 		assert.Equal(t, 0, len(respFind.Instances))
 
 		log.Info("shared service discovery")
-		_ = os.Setenv("CSE_SHARED_SERVICES", "query_instance_shared_provider_ms")
-		core.SetSharedMode()
+		config.ServerInfo.Config.GlobalVisible = "query_instance_shared_provider_ms"
+		core.RegisterGlobalServices()
 		core.Service.Environment = pb.ENV_PROD
 		respFind, err = datasource.Instance().FindInstances(
 			util.SetTargetDomainProject(
@@ -1659,8 +1659,8 @@ func TestInstance_Query(t *testing.T) {
 		assert.Equal(t, 0, len(respFind.Services.Updated[0].Instances))
 
 		log.Info("shared service discovery")
-		_ = os.Setenv("CSE_SHARED_SERVICES", "query_instance_shared_provider_ms")
-		core.SetSharedMode()
+		config.ServerInfo.Config.GlobalVisible = "query_instance_shared_provider_ms"
+		core.RegisterGlobalServices()
 		core.Service.Environment = pb.ENV_PROD
 		respFind, err = datasource.Instance().BatchFind(
 			util.SetTargetDomainProject(
@@ -3132,7 +3132,7 @@ func TestRule_Get(t *testing.T) {
 
 	t.Run("get when request is invalid", func(t *testing.T) {
 		log.Info("service not exists")
-		respGetRule, err := datasource.Instance().GetRule(getContext(), &pb.GetServiceRulesRequest{
+		respGetRule, err := datasource.Instance().GetRules(getContext(), &pb.GetServiceRulesRequest{
 			ServiceId: "not_exist_service_ms",
 		})
 		assert.NoError(t, err)
@@ -3140,7 +3140,7 @@ func TestRule_Get(t *testing.T) {
 	})
 
 	t.Run("get when request is valid", func(t *testing.T) {
-		respGetRule, err := datasource.Instance().GetRule(getContext(), &pb.GetServiceRulesRequest{
+		respGetRule, err := datasource.Instance().GetRules(getContext(), &pb.GetServiceRulesRequest{
 			ServiceId: serviceId,
 		})
 		assert.NoError(t, err)
@@ -3304,7 +3304,7 @@ func TestRule_Delete(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
-		respGetRule, err := datasource.Instance().GetRule(getContext(), &pb.GetServiceRulesRequest{
+		respGetRule, err := datasource.Instance().GetRules(getContext(), &pb.GetServiceRulesRequest{
 			ServiceId: serviceId,
 		})
 		assert.NoError(t, err)

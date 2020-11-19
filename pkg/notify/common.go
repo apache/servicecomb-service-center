@@ -20,7 +20,3 @@ package notify
 const (
 	DefaultQueueSize = 1000
 )
-
-const (
-	NOTIFTY Type = iota
-)

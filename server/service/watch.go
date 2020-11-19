@@ -25,7 +25,8 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/proto"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/notify"
+	"github.com/apache/servicecomb-service-center/server/connection/grpc"
+	"github.com/apache/servicecomb-service-center/server/connection/ws"
 	"github.com/gorilla/websocket"
 )
 
@@ -47,25 +48,25 @@ func (s *InstanceService) Watch(in *pb.WatchInstanceRequest, stream proto.Servic
 		return err
 	}
 
-	return notify.DoStreamListAndWatch(stream.Context(), in.SelfServiceId, nil, stream)
+	return grpc.ListAndWatch(stream.Context(), in.SelfServiceId, nil, stream)
 }
 
 func (s *InstanceService) WebSocketWatch(ctx context.Context, in *pb.WatchInstanceRequest, conn *websocket.Conn) {
 	log.Infof("new a web socket watch with service[%s]", in.SelfServiceId)
 	if err := s.WatchPreOpera(ctx, in); err != nil {
-		notify.EstablishWebSocketError(conn, err)
+		ws.SendEstablishError(conn, err)
 		return
 	}
-	notify.DoWebSocketListAndWatch(ctx, in.SelfServiceId, nil, conn)
+	ws.ListAndWatch(ctx, in.SelfServiceId, nil, conn)
 }
 
 func (s *InstanceService) WebSocketListAndWatch(ctx context.Context, in *pb.WatchInstanceRequest, conn *websocket.Conn) {
 	log.Infof("new a web socket list and watch with service[%s]", in.SelfServiceId)
 	if err := s.WatchPreOpera(ctx, in); err != nil {
-		notify.EstablishWebSocketError(conn, err)
+		ws.SendEstablishError(conn, err)
 		return
 	}
-	notify.DoWebSocketListAndWatch(ctx, in.SelfServiceId, func() ([]*pb.WatchInstanceResponse, int64) {
+	ws.ListAndWatch(ctx, in.SelfServiceId, func() ([]*pb.WatchInstanceResponse, int64) {
 		return serviceUtil.QueryAllProvidersInstances(ctx, in.SelfServiceId)
 	}, conn)
 }

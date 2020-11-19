@@ -120,8 +120,8 @@ func (zp *Zipkin) ClientBegin(operationName string, itf tracing.Request) tracing
 		); err != nil {
 			log.Errorf(err, "tracer inject request failed")
 		}
-	case *tracing.RegistryRequest:
-		r := itf.(*tracing.RegistryRequest)
+	case *tracing.Operation:
+		r := itf.(*tracing.Operation)
 		ctx := r.Ctx
 
 		parentSpan, ok := ctx.Value(tracing.CtxTraceSpan).(opentracing.Span)
@@ -129,11 +129,11 @@ func (zp *Zipkin) ClientBegin(operationName string, itf tracing.Request) tracing
 			return nil
 		}
 
-		u, _ := url.Parse(r.Endpoint + "/?" + r.Options.FormatURLParams())
+		u, _ := url.Parse(r.Endpoint + r.Options.URL())
 
 		span = ZipkinTracer().StartSpan(operationName, opentracing.ChildOf(parentSpan.Context()))
 		ext.SpanKindRPCClient.Set(span)
-		ext.HTTPMethod.Set(span, r.Options.Action.String())
+		ext.HTTPMethod.Set(span, r.Options.Method())
 		ext.HTTPUrl.Set(span, u.String())
 
 		span.SetTag("protocol", "gRPC")

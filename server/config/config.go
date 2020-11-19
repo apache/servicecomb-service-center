@@ -19,7 +19,6 @@ package config
 
 import (
 	"github.com/go-chassis/go-archaius"
-	"os"
 	"path/filepath"
 	"runtime"
 	"time"
@@ -42,7 +41,6 @@ const (
 
 	maxServiceClearInterval = 24 * time.Hour       //1 day
 	maxServiceTTL           = 24 * 365 * time.Hour //1 year
-
 )
 
 //Configurations is kie config items
@@ -75,6 +73,21 @@ func GetRegistry() ServerConfig {
 	return Configurations.Server.Config
 }
 
+//GetPlugin return the plugin configs
+func GetPlugin() ServerConfig {
+	return Configurations.Server.Config
+}
+
+//GetRBAC return the rbac configs
+func GetRBAC() ServerConfig {
+	return Configurations.Server.Config
+}
+
+//GetMetrics return the metrics configs
+func GetMetrics() ServerConfig {
+	return Configurations.Server.Config
+}
+
 func Init() {
 	setCPUs()
 
@@ -90,14 +103,25 @@ func Init() {
 	Configurations.Server = ServerInfo
 	*ServerInfo = newInfo()
 
-	plugin.SetPluginDir(ServerInfo.Config.PluginsDir)
-
-	initLogger()
+	plugin.SetPluginDir(GetPlugin().PluginsDir)
 
 	version.Ver().Log()
 }
 
 func newInfo() ServerInformation {
+	serviceClearInterval := GetDuration("registry.service.clearInterval", defaultServiceClearInterval, WithENV("SERVICE_CLEAR_INTERVAL"))
+	if serviceClearInterval < minServiceClearInterval || serviceClearInterval > maxServiceClearInterval {
+		serviceClearInterval = defaultServiceClearInterval
+	}
+	serviceTTL := GetDuration("registry.service.clearTTL", defaultServiceTTL, WithENV("SERVICE_TTL"))
+	if serviceTTL < minServiceTTL || serviceTTL > maxServiceTTL {
+		serviceTTL = defaultServiceTTL
+	}
+	cacheTTL := GetDuration("registry.cache.ttl", minCacheTTL, WithENV("CACHE_TTL"), WithStandby("cache_ttl"))
+	if cacheTTL < minCacheTTL {
+		cacheTTL = minCacheTTL
+	}
+
 	maxLogFileSize := GetInt64("log.rotateSize", 20, WithStandby("log_rotate_size"))
 	if maxLogFileSize <= 0 || maxLogFileSize > 50 {
 		maxLogFileSize = 20
@@ -105,21 +129,6 @@ func newInfo() ServerInformation {
 	maxLogBackupCount := GetInt64("log.backupCount", 50, WithStandby("log_backup_count"))
 	if maxLogBackupCount < 0 || maxLogBackupCount > 100 {
 		maxLogBackupCount = 50
-	}
-
-	serviceClearInterval := GetDuration("registry.service.clearInterval", defaultServiceClearInterval, WithENV("SERVICE_CLEAR_INTERVAL"))
-	if serviceClearInterval < minServiceClearInterval || serviceClearInterval > maxServiceClearInterval {
-		serviceClearInterval = defaultServiceClearInterval
-	}
-
-	serviceTTL := GetDuration("registry.service.ttl", defaultServiceTTL, WithENV("SERVICE_TTL"))
-	if serviceTTL < minServiceTTL || serviceTTL > maxServiceTTL {
-		serviceTTL = defaultServiceTTL
-	}
-
-	cacheTTL := GetDuration("registry.cache.ttl", minCacheTTL, WithENV("CACHE_TTL"), WithStandby("cache_ttl"))
-	if cacheTTL < minCacheTTL {
-		cacheTTL = minCacheTTL
 	}
 	accessLogFile := GetString("log.accessFile", "./access.log", WithENV("SC_ACCESS_LOG_FILE"), WithStandby("access_log_file"))
 
@@ -133,7 +142,7 @@ func newInfo() ServerInformation {
 			IdleTimeout:       GetString("server.idle.timeout", "60s", WithStandby("idle_timeout")),
 			WriteTimeout:      GetString("server.response.timeout", "60s", WithStandby("write_timeout")),
 
-			LimitTTLUnit:     GetString("server.limit.ttl", "s", WithStandby("limit_ttl")),
+			LimitTTLUnit:     GetString("server.limit.unit", "s", WithStandby("limit_ttl")),
 			LimitConnections: GetInt64("server.limit.connections", 0, WithStandby("limit_conns")),
 			LimitIPLookup:    GetString("server.limit.ipLookups", "RemoteAddr,X-Forwarded-For,X-Real-IP", WithStandby("limit_iplookups")),
 
@@ -144,9 +153,8 @@ func newInfo() ServerInformation {
 			SslVerifyPeer: GetInt("ssl.verifyClient", 1, WithStandby("ssl_verify_client")) != 0,
 			SslCiphers:    GetString("ssl.ciphers", "", WithStandby("ssl_ciphers")),
 
-			AutoSyncInterval:  GetString("registry.autoSyncInterval", "30s", WithStandby("auto_sync_interval")),
 			CompactIndexDelta: GetInt64("registry.compact.indexDelta", 100, WithStandby("compact_index_delta")),
-			CompactInterval:   GetString("registry.compact.interval", "", WithStandby("compact_interval")),
+			CompactInterval:   GetDuration("registry.compact.interval", 12*time.Hour, WithStandby("compact_interval")),
 
 			LogRotateSize:   maxLogFileSize,
 			LogBackupCount:  maxLogBackupCount,
@@ -167,8 +175,15 @@ func newInfo() ServerInformation {
 			ServiceClearEnabled:  GetBool("registry.service.clearEnable", false, WithENV("SERVICE_CLEAR_ENABLED")),
 			ServiceClearInterval: serviceClearInterval,
 			ServiceTTL:           serviceTTL,
+			GlobalVisible:        GetString("registry.service.globalVisible", "", WithENV("CSE_SHARED_SERVICES")),
+			InstanceTTL:          GetInt64("registry.instance.ttl", 0, WithENV("INSTANCE_TTL")),
 
-			SchemaDisable: GetBool("registry.schema.readonly", false, WithENV("SCHEMA_DISABLE")),
+			SchemaDisable:  GetBool("registry.schema.disable", false, WithENV("SCHEMA_DISABLE")),
+			SchemaEditable: GetBool("registry.schema.editable", true, WithENV("SCHEMA_EDITABLE")),
+
+			EnableRBAC: GetBool("rbac.enable", false, WithStandby("rbac_enabled")),
+
+			MetricsInterval: GetDuration("metrics.interval", 30*time.Second, WithENV("METRICS_INTERVAL")),
 		},
 	}
 }
@@ -177,14 +192,4 @@ func setCPUs() {
 	cores := runtime.NumCPU()
 	runtime.GOMAXPROCS(cores)
 	log.Infof("service center is running simultaneously with %d CPU cores", cores)
-}
-
-func initLogger() {
-	log.SetGlobal(log.Config{
-		LoggerLevel:    ServerInfo.Config.LogLevel,
-		LoggerFile:     os.ExpandEnv(ServerInfo.Config.LogFilePath),
-		LogFormatText:  ServerInfo.Config.LogFormat == "text",
-		LogRotateSize:  int(ServerInfo.Config.LogRotateSize),
-		LogBackupCount: int(ServerInfo.Config.LogBackupCount),
-	})
 }

@@ -22,17 +22,24 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/metrics"
 	nf "github.com/apache/servicecomb-service-center/pkg/notify"
+	"github.com/apache/servicecomb-service-center/pkg/signal"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/command"
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/notify"
 	"github.com/apache/servicecomb-service-center/server/plugin"
+	"github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf"
 	"github.com/apache/servicecomb-service-center/server/service/gov"
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
-	"github.com/astaxie/beego"
+	"net"
 	"os"
+	"time"
 )
+
+const defaultCollectPeriod = 30 * time.Second
 
 var server ServiceCenterServer
 
@@ -44,7 +51,15 @@ func Run() {
 	server.Run()
 }
 
+type endpoint struct {
+	Host string
+	Port string
+}
+
 type ServiceCenterServer struct {
+	REST endpoint
+	GRPC endpoint
+
 	apiService    *APIServer
 	notifyService *nf.Service
 }
@@ -53,6 +68,8 @@ func (s *ServiceCenterServer) Run() {
 	s.initialize()
 
 	s.startServices()
+
+	signal.RegisterListener()
 
 	s.waitForQuit()
 }
@@ -67,8 +84,89 @@ func (s *ServiceCenterServer) waitForQuit() {
 }
 
 func (s *ServiceCenterServer) initialize() {
+	s.initEndpoints()
+	// Metrics
+	s.initMetrics()
+	// SSL
+	s.initSSL()
+	// Datasource
+	s.initDatasource()
 	s.apiService = GetAPIServer()
-	s.notifyService = notify.GetNotifyCenter()
+	s.notifyService = notify.Center()
+}
+
+func (s *ServiceCenterServer) initEndpoints() {
+	s.REST.Host = config.GetString("server.host", "", config.WithStandby("httpaddr"))
+	s.REST.Port = config.GetString("server.port", "", config.WithStandby("httpport"))
+	s.GRPC.Host = config.GetString("server.rpc.host", "", config.WithStandby("rpcaddr"))
+	s.GRPC.Port = config.GetString("server.rpc.port", "", config.WithStandby("rpcport"))
+}
+
+func (s *ServiceCenterServer) initDatasource() {
+	// init datasource
+	kind := datasource.ImplName(config.GetString("registry.kind", "", config.WithStandby("registry_plugin")))
+	if err := datasource.Init(datasource.Options{
+		PluginImplName:    kind,
+		InstanceTTL:       config.GetRegistry().InstanceTTL,
+		SchemaEditable:    config.GetRegistry().SchemaEditable,
+		CompactInterval:   config.GetRegistry().CompactInterval,
+		CompactIndexDelta: config.GetRegistry().CompactIndexDelta,
+	}); err != nil {
+		log.Fatalf(err, "init datasource failed")
+	}
+}
+
+func (s *ServiceCenterServer) initMetrics() {
+	interval := config.GetDuration("metrics.interval", defaultCollectPeriod, config.WithENV("METRICS_INTERVAL"))
+	if interval <= time.Second {
+		interval = defaultCollectPeriod
+	}
+	var instance string
+	if len(s.REST.Host) > 0 {
+		instance = net.JoinHostPort(s.REST.Host, s.REST.Port)
+	} else {
+		if len(s.GRPC.Host) > 0 {
+			instance = net.JoinHostPort(s.GRPC.Host, s.GRPC.Port)
+		} else {
+			log.Fatal("init metrics InstanceName failed", nil)
+		}
+	}
+
+	if err := metrics.Init(metrics.Options{
+		Interval:     interval,
+		InstanceName: instance,
+		SysMetrics: []string{
+			"process_resident_memory_bytes",
+			"process_cpu_seconds_total",
+			"go_threads",
+			"go_goroutines",
+		},
+	}); err != nil {
+		log.Fatal("init metrics failed", err)
+	}
+}
+
+func (s *ServiceCenterServer) initSSL() {
+	if !config.GetSSL().SslEnabled {
+		return
+	}
+	options := tlsconf.Options{
+		Dir:              config.GetString("ssl.dir", "", config.WithENV("SSL_ROOT")),
+		MinVersion:       config.GetString("ssl.minVersion", "TLSv1.2", config.WithStandby("ssl_min_version")),
+		ClientMinVersion: config.GetString("ssl.client.minVersion", "", config.WithStandby("ssl_client_min_version")),
+		VerifyPeer:       config.GetInt("ssl.verifyClient", 1, config.WithStandby("ssl_verify_client")) != 0,
+		Ciphers:          config.GetString("ssl.ciphers", "", config.WithStandby("ssl_ciphers")),
+		ClientCiphers:    config.GetString("ssl.client.ciphers", "", config.WithStandby("ssl_client_ciphers")),
+	}
+	if options.ClientMinVersion == "" {
+		options.ClientMinVersion = options.MinVersion
+	}
+	if options.ClientCiphers == "" {
+		options.ClientCiphers = options.Ciphers
+	}
+	if err := tlsconf.Init(options); err != nil {
+		log.Fatal("init ssl failed", err)
+	}
 }
 
 func (s *ServiceCenterServer) startServices() {
@@ -82,7 +180,7 @@ func (s *ServiceCenterServer) startServices() {
 		log.Fatal("init gov failed", err)
 	}
 	// check version
-	if config.ServerInfo.Config.SelfRegister {
+	if config.GetRegistry().SelfRegister {
 		if err := datasource.Instance().UpgradeVersion(context.Background()); err != nil {
 			os.Exit(1)
 		}
@@ -92,19 +190,9 @@ func (s *ServiceCenterServer) startServices() {
 }
 
 func (s *ServiceCenterServer) startAPIService() {
-	restIP := beego.AppConfig.String("httpaddr")
-	restPort := beego.AppConfig.String("httpport")
-	rpcIP := beego.AppConfig.DefaultString("rpcaddr", "")
-	rpcPort := beego.AppConfig.DefaultString("rpcport", "")
-
-	host, err := os.Hostname()
-	if err != nil {
-		host = restIP
-		log.Errorf(err, "parse hostname failed")
-	}
-	core.Instance.HostName = host
-	s.apiService.AddListener(REST, restIP, restPort)
-	s.apiService.AddListener(RPC, rpcIP, rpcPort)
+	core.Instance.HostName = util.HostName()
+	s.apiService.AddListener(REST, s.REST.Host, s.REST.Port)
+	s.apiService.AddListener(RPC, s.REST.Host, s.GRPC.Port)
 	s.apiService.Start()
 }
 

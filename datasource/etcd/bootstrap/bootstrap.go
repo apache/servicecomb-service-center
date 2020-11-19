@@ -33,3 +33,6 @@ import _ "github.com/apache/servicecomb-service-center/datasource/etcd/sd/aggreg
 import _ "github.com/apache/servicecomb-service-center/datasource/etcd/sd/servicecenter"
 import _ "github.com/apache/servicecomb-service-center/datasource/etcd/sd/etcd"
 import _ "github.com/apache/servicecomb-service-center/datasource/etcd/sd/k8s"
+
+//events
+import _ "github.com/apache/servicecomb-service-center/datasource/etcd/event"

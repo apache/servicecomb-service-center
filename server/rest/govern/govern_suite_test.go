@@ -17,27 +17,18 @@
 package govern_test
 
 // initialize
-import _ "github.com/apache/servicecomb-service-center/server/bootstrap"
+import _ "github.com/apache/servicecomb-service-center/test"
 
 import (
 	"context"
 	"github.com/apache/servicecomb-service-center/pkg/proto"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/rest/govern"
-	"github.com/apache/servicecomb-service-center/server/service"
-	"github.com/astaxie/beego"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
 	"testing"
 )
-
-func init() {
-	beego.AppConfig.Set("registry_plugin", "etcd")
-	testing.Init()
-	core.Initialize()
-}
 
 func TestGovern(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -48,8 +39,6 @@ func TestGovern(t *testing.T) {
 var governService proto.GovernServiceCtrlServer
 
 var _ = BeforeSuite(func() {
-	//init plugin
-	core.ServiceAPI, core.InstanceAPI = service.AssembleResources()
 	governService = govern.ServiceAPI
 })
 

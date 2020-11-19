@@ -21,11 +21,11 @@ import "time"
 
 //Options contains configuration for plugins
 type Options struct {
-	Endpoint       string
 	PluginImplName ImplName
+	SslEnabled     bool
 	SchemaEditable bool
-	// TTL: the default ttl of instance lease
-	TTL int64
+	// InstanceTTL: the default ttl of instance lease
+	InstanceTTL int64
 	// Compact options
 	CompactIndexDelta int64
 	CompactInterval   time.Duration

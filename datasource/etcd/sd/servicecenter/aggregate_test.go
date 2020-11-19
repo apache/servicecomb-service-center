@@ -13,10 +13,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package servicecenter
+package servicecenter_test
 
+import _ "github.com/apache/servicecomb-service-center/test"
 import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd"
+	. "github.com/apache/servicecomb-service-center/datasource/etcd/sd/servicecenter"
 	"testing"
 )
 

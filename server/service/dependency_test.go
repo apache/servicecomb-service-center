@@ -17,9 +17,12 @@
 package service_test
 
 import (
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/event"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
+	"github.com/apache/servicecomb-service-center/server/core"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
-	"github.com/apache/servicecomb-service-center/server/service/event"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"strconv"
@@ -348,7 +351,7 @@ var _ = Describe("'Dependency' service", func() {
 				Expect(err).To(BeNil())
 				Expect(respCreateDependency.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
-				Expect(deh.Handle()).To(BeNil())
+				DependencyHandle()
 
 				respCon, err := serviceResource.GetConsumerDependencies(getContext(), &pb.GetDependenciesRequest{
 					ServiceId: consumerId1,
@@ -416,7 +419,7 @@ var _ = Describe("'Dependency' service", func() {
 				Expect(err).To(BeNil())
 				Expect(respCreateDependency.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
-				Expect(deh.Handle()).To(BeNil())
+				DependencyHandle()
 
 				respPro, err := serviceResource.GetConsumerDependencies(getContext(), &pb.GetDependenciesRequest{
 					ServiceId: consumerId1,
@@ -444,7 +447,7 @@ var _ = Describe("'Dependency' service", func() {
 				Expect(err).To(BeNil())
 				Expect(respCreateDependency.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
-				Expect(deh.Handle()).To(BeNil())
+				DependencyHandle()
 
 				respPro, err = serviceResource.GetConsumerDependencies(getContext(), &pb.GetDependenciesRequest{
 					ServiceId: consumerId1,
@@ -473,7 +476,7 @@ var _ = Describe("'Dependency' service", func() {
 				Expect(err).To(BeNil())
 				Expect(respCreateDependency.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
-				Expect(deh.Handle()).To(BeNil())
+				DependencyHandle()
 
 				respPro, err = serviceResource.GetConsumerDependencies(getContext(), &pb.GetDependenciesRequest{
 					ServiceId: consumerId3,
@@ -537,7 +540,7 @@ var _ = Describe("'Dependency' service", func() {
 				Expect(err).To(BeNil())
 				Expect(respCreateDependency.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
-				Expect(deh.Handle()).To(BeNil())
+				DependencyHandle()
 
 				respPro, err = serviceResource.GetConsumerDependencies(getContext(), &pb.GetDependenciesRequest{
 					ServiceId: consumerId1,
@@ -565,7 +568,7 @@ var _ = Describe("'Dependency' service", func() {
 				Expect(err).To(BeNil())
 				Expect(respAddDependency.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
-				Expect(deh.Handle()).To(BeNil())
+				DependencyHandle()
 
 				respPro, err = serviceResource.GetConsumerDependencies(getContext(), &pb.GetDependenciesRequest{
 					ServiceId: consumerId1,
@@ -595,7 +598,7 @@ var _ = Describe("'Dependency' service", func() {
 				Expect(err).To(BeNil())
 				Expect(respCreateDependency.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
-				Expect(deh.Handle()).To(BeNil())
+				DependencyHandle()
 
 				respPro, err = serviceResource.GetConsumerDependencies(getContext(), &pb.GetDependenciesRequest{
 					ServiceId: consumerId1,
@@ -717,7 +720,7 @@ var _ = Describe("'Dependency' service", func() {
 				Expect(err).To(BeNil())
 				Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
-				Expect(deh.Handle()).To(BeNil())
+				DependencyHandle()
 
 				By("get consumer's deps")
 				respGetP, err := serviceResource.GetProviderDependencies(getContext(), &pb.GetDependenciesRequest{
@@ -725,6 +728,7 @@ var _ = Describe("'Dependency' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(respGetP.Response.GetCode()).To(Equal(pb.ResponseSuccess))
+				Expect(len(respGetP.Consumers)).NotTo(Equal(0))
 				Expect(respGetP.Consumers[0].ServiceId).To(Equal(consumerId1))
 
 				By("get provider's deps")
@@ -745,7 +749,7 @@ var _ = Describe("'Dependency' service", func() {
 				Expect(err).To(BeNil())
 				Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
-				Expect(deh.Handle()).To(BeNil())
+				DependencyHandle()
 
 				By("get consumer again")
 				respGetP, err = serviceResource.GetProviderDependencies(getContext(), &pb.GetDependenciesRequest{
@@ -774,7 +778,7 @@ var _ = Describe("'Dependency' service", func() {
 				Expect(err).To(BeNil())
 				Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
-				Expect(deh.Handle()).To(BeNil())
+				DependencyHandle()
 
 				respGetC, err = serviceResource.GetConsumerDependencies(getContext(), &pb.GetDependenciesRequest{
 					ServiceId: consumerId1,
@@ -816,7 +820,7 @@ var _ = Describe("'Dependency' service", func() {
 				Expect(err).To(BeNil())
 				Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
-				Expect(deh.Handle()).To(BeNil())
+				DependencyHandle()
 
 				respGetC, err = serviceResource.GetConsumerDependencies(getContext(), &pb.GetDependenciesRequest{
 					ServiceId: providerId2,
@@ -833,7 +837,7 @@ var _ = Describe("'Dependency' service", func() {
 				Expect(err).To(BeNil())
 				Expect(respDelP.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
-				Expect(deh.Handle()).To(BeNil())
+				DependencyHandle()
 
 				respGetC, err = serviceResource.GetConsumerDependencies(getContext(), &pb.GetDependenciesRequest{
 					ServiceId: providerId2,
@@ -864,7 +868,7 @@ var _ = Describe("'Dependency' service", func() {
 				Expect(err).To(BeNil())
 				Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
-				Expect(deh.Handle()).To(BeNil())
+				DependencyHandle()
 
 				respGetC, err = serviceResource.GetConsumerDependencies(getContext(), &pb.GetDependenciesRequest{
 					ServiceId: providerId2,
@@ -877,3 +881,20 @@ var _ = Describe("'Dependency' service", func() {
 		})
 	})
 })
+
+func DependencyHandle() {
+	for {
+		Expect(deh.Handle()).To(BeNil())
+
+		key := core.GetServiceDependencyQueueRootKey("")
+		resp, err := kv.Store().DependencyQueue().Search(getContext(),
+			client.WithStrKey(key), client.WithPrefix(), client.WithCountOnly())
+
+		Expect(err).To(BeNil())
+
+		// maintain dependency rules.
+		if resp.Count == 0 {
+			break
+		}
+	}
+}

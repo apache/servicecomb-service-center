@@ -18,10 +18,11 @@
 package buildin_test
 
 // initialize
-import _ "github.com/apache/servicecomb-service-center/server/bootstrap"
+import _ "github.com/apache/servicecomb-service-center/test"
 import (
 	"context"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
+	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/plugin/auth/buildin"
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
 	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
@@ -40,10 +41,11 @@ import (
 func init() {
 	beego.AppConfig.Set("registry_plugin", "etcd")
 	beego.AppConfig.Set("rbac_enabled", "true")
-	beego.AppConfig.Set(rbac.PubFilePath, "./rbac.pub")
+	beego.AppConfig.Set("rbac_rsa_public_key_file", "./rbac.pub")
 	beego.AppConfig.Set("rbac_rsa_private_key_file", "./private.key")
-
+	config.Init()
 }
+
 func TestTokenAuthenticator_Identify(t *testing.T) {
 	dao.DeleteAccount(context.TODO(), "root")
 	dao.DeleteAccount(context.TODO(), "non-admin")

@@ -18,7 +18,7 @@
 package datasource_test
 
 // initialize
-import _ "github.com/apache/servicecomb-service-center/server/bootstrap"
+import _ "github.com/apache/servicecomb-service-center/test"
 import (
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd"
@@ -45,9 +45,8 @@ func TestInit(t *testing.T) {
 		}
 
 		err = datasource.Init(datasource.Options{
-			Endpoint:       "",
 			PluginImplName: pluginName,
-			TTL:            TTL,
+			InstanceTTL:    TTL,
 			SchemaEditable: schemaEditable,
 		})
 		assert.Error(t, err)
@@ -66,9 +65,8 @@ func TestInit(t *testing.T) {
 		}
 
 		err = datasource.Init(datasource.Options{
-			Endpoint:       "",
 			PluginImplName: pluginName,
-			TTL:            TTL,
+			InstanceTTL:    TTL,
 			SchemaEditable: schemaEditable,
 		})
 		assert.NoError(t, err)

@@ -19,7 +19,6 @@ package tracing
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/plugin"
 )
@@ -40,10 +39,15 @@ type Tracing interface {
 	ClientEnd(span Span, code int, message string)
 }
 
-type RegistryRequest struct {
+type Options interface {
+	Method() string
+	URL() string
+}
+
+type Operation struct {
 	Ctx      context.Context
 	Endpoint string
-	Options  client.PluginOp
+	Options  Options
 }
 
 func Trace() Tracing {

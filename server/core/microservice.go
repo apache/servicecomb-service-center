@@ -22,9 +22,9 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/proto"
 	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/version"
 	"github.com/astaxie/beego"
-	"os"
 	"strings"
 )
 
@@ -33,7 +33,7 @@ var (
 	InstanceAPI        proto.ServiceInstanceCtrlServerEx
 	Service            *registry.MicroService
 	Instance           *registry.MicroServiceInstance
-	sharedServiceNames map[string]struct{}
+	globalServiceNames map[string]struct{}
 )
 
 const (
@@ -54,8 +54,6 @@ const (
 
 func init() {
 	prepareSelfRegistration()
-
-	SetSharedMode()
 }
 
 func prepareSelfRegistration() {
@@ -100,26 +98,26 @@ func IsDefaultDomainProject(domainProject string) bool {
 	return domainProject == RegistryDomainProject
 }
 
-func SetSharedMode() {
-	sharedServiceNames = make(map[string]struct{})
-	for _, s := range strings.Split(os.Getenv("CSE_SHARED_SERVICES"), ",") {
+func RegisterGlobalServices() {
+	globalServiceNames = make(map[string]struct{})
+	for _, s := range strings.Split(config.GetRegistry().GlobalVisible, ",") {
 		if len(s) > 0 {
-			sharedServiceNames[s] = struct{}{}
+			globalServiceNames[s] = struct{}{}
 		}
 	}
-	sharedServiceNames[Service.ServiceName] = struct{}{}
+	globalServiceNames[Service.ServiceName] = struct{}{}
 }
 
-func IsShared(key *registry.MicroServiceKey) bool {
+func IsGlobal(key *registry.MicroServiceKey) bool {
 	if !IsDefaultDomainProject(key.Tenant) {
 		return false
 	}
 	if key.AppId != RegistryAppID {
 		return false
 	}
-	_, ok := sharedServiceNames[key.ServiceName]
+	_, ok := globalServiceNames[key.ServiceName]
 	if !ok {
-		_, ok = sharedServiceNames[key.Alias]
+		_, ok = globalServiceNames[key.Alias]
 	}
 	return ok
 }

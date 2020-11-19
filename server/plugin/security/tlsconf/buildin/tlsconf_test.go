@@ -18,25 +18,26 @@ package buildin_test
 
 import (
 	"crypto/tls"
-	"github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/config"
 	_ "github.com/apache/servicecomb-service-center/server/plugin/security/cipher/buildin"
+	"github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf"
 	"github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf/buildin"
 	"github.com/stretchr/testify/assert"
-	"os"
 	"testing"
 )
 
 func init() {
-	testing.Init()
-	core.Initialize()
-	sslRoot := "../../../../../examples/service_center/ssl/"
-	os.Setenv("SSL_ROOT", sslRoot)
+	config.Init()
+	_ = tlsconf.Init(tlsconf.Options{
+		Dir:        "../../../../../examples/service_center/ssl/",
+		VerifyPeer: true,
+	})
 }
 
 func TestGetServerTLSConfig(t *testing.T) {
 	serverTLSConfig, err := buildin.GetServerTLSConfig()
 	if err != nil {
-		t.Fatalf("GetServerTLSConfig failed")
+		t.Fatalf("GetServerTLSConfig failed %v", err)
 	}
 	if len(serverTLSConfig.Certificates) == 0 {
 		t.Fatalf("GetServerTLSConfig failed")

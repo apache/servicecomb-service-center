@@ -54,7 +54,7 @@ func (c *Handler) Handle(i *chain.Invocation) {
 		i.Context().Value(rest.CtxMatchPattern).(string)
 	v, ok := resourcesMap[pattern]
 	if !ok {
-		v = config.ServerInfo.Config.MaxBodyBytes
+		v = config.GetServer().MaxBodyBytes
 	}
 
 	r.Body = http.MaxBytesReader(w, r.Body, v)

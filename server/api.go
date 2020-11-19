@@ -109,7 +109,7 @@ func (s *APIServer) populateEndpoint(t APIType, ipPort string) {
 		return
 	}
 	address := fmt.Sprintf("%s://%s/", t, ipPort)
-	if config.ServerInfo.Config.SslEnabled {
+	if config.GetSSL().SslEnabled {
 		address += "?sslEnabled=true"
 	}
 	core.Instance.Endpoints = append(core.Instance.Endpoints, address)
@@ -157,7 +157,7 @@ func (s *APIServer) Start() {
 
 	defer log.Info("api server is ready")
 
-	if !config.ServerInfo.Config.SelfRegister {
+	if !config.GetRegistry().SelfRegister {
 		log.Warnf("self register disabled")
 		return
 	}
@@ -172,7 +172,7 @@ func (s *APIServer) Stop() {
 	}
 	s.isClose = true
 
-	if !s.forked && config.ServerInfo.Config.SelfRegister {
+	if !s.forked && config.GetRegistry().SelfRegister {
 		s.selfUnregister()
 	}
 

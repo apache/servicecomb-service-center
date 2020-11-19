@@ -22,9 +22,8 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/tlsutil"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/plugin/security/cipher"
-	"github.com/astaxie/beego"
+	"github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -38,12 +37,12 @@ var (
 )
 
 func GetSSLPath(path string) string {
-	env := os.Getenv("SSL_ROOT")
-	if len(env) == 0 {
+	dir := tlsconf.GetOptions().Dir
+	if len(dir) == 0 {
 		wd, _ := os.Getwd()
 		return filepath.Join(wd, "etc", "ssl", path)
 	}
-	return os.ExpandEnv(filepath.Join("$SSL_ROOT", path))
+	return os.ExpandEnv(filepath.Join(dir, path))
 }
 
 func GetPassphase() (decrypt string) {
@@ -74,13 +73,10 @@ func GetClientTLSConfig() (_ *tls.Config, err error) {
 	passphase := GetPassphase()
 
 	opts := append(tlsutil.DefaultClientTLSOptions(),
-		tlsutil.WithVerifyPeer(config.ServerInfo.Config.SslVerifyPeer),
+		tlsutil.WithVerifyPeer(tlsconf.GetOptions().VerifyPeer),
 		tlsutil.WithVerifyHostName(false),
-		tlsutil.WithVersion(
-			tlsutil.ParseSSLProtocol(
-				beego.AppConfig.DefaultString("ssl_client_min_version", config.ServerInfo.Config.SslMinVersion)),
-			tlsutil.MaxSupportedTLSVersion),
-		tlsutil.WithCipherSuits(tlsutil.ParseDefaultSSLCipherSuites(beego.AppConfig.String("ssl_client_ciphers"))),
+		tlsutil.WithVersion(tlsutil.ParseSSLProtocol(tlsconf.GetOptions().ClientMinVersion), tlsutil.MaxSupportedTLSVersion),
+		tlsutil.WithCipherSuits(tlsutil.ParseDefaultSSLCipherSuites(tlsconf.GetOptions().ClientCiphers)),
 		tlsutil.WithKeyPass(passphase),
 		tlsutil.WithCA(GetSSLPath("trust.cer")),
 		tlsutil.WithCert(GetSSLPath("server.cer")),
@@ -90,7 +86,7 @@ func GetClientTLSConfig() (_ *tls.Config, err error) {
 
 	if clientTLSConfig != nil {
 		log.Infof("client ssl configs enabled, verifyclient %t, minv %#x, cipers %d, pphase %d.",
-			config.ServerInfo.Config.SslVerifyPeer,
+			tlsconf.GetOptions().VerifyPeer,
 			clientTLSConfig.MinVersion,
 			len(clientTLSConfig.CipherSuites),
 			len(passphase))
@@ -108,9 +104,9 @@ func GetServerTLSConfig() (_ *tls.Config, err error) {
 	passphase := GetPassphase()
 
 	opts := append(tlsutil.DefaultServerTLSOptions(),
-		tlsutil.WithVerifyPeer(config.ServerInfo.Config.SslVerifyPeer),
-		tlsutil.WithVersion(tlsutil.ParseSSLProtocol(config.ServerInfo.Config.SslMinVersion), tlsutil.MaxSupportedTLSVersion),
-		tlsutil.WithCipherSuits(tlsutil.ParseDefaultSSLCipherSuites(config.ServerInfo.Config.SslCiphers)),
+		tlsutil.WithVerifyPeer(tlsconf.GetOptions().VerifyPeer),
+		tlsutil.WithVersion(tlsutil.ParseSSLProtocol(tlsconf.GetOptions().MinVersion), tlsutil.MaxSupportedTLSVersion),
+		tlsutil.WithCipherSuits(tlsutil.ParseDefaultSSLCipherSuites(tlsconf.GetOptions().Ciphers)),
 		tlsutil.WithKeyPass(passphase),
 		tlsutil.WithCA(GetSSLPath("trust.cer")),
 		tlsutil.WithCert(GetSSLPath("server.cer")),
@@ -121,7 +117,7 @@ func GetServerTLSConfig() (_ *tls.Config, err error) {
 
 	if serverTLSConfig != nil {
 		log.Infof("server ssl configs enabled, verifyClient %t, minv %#x, ciphers %d, phase %d.",
-			config.ServerInfo.Config.SslVerifyPeer,
+			tlsconf.GetOptions().VerifyPeer,
 			serverTLSConfig.MinVersion,
 			len(serverTLSConfig.CipherSuites),
 			len(passphase))

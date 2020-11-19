@@ -24,6 +24,8 @@ import (
 
 const TLS plugin.Kind = "ssl"
 
+var options Options
+
 type TLSConfig interface {
 	ClientConfig() (*tls.Config, error)
 	ServerConfig() (*tls.Config, error)
@@ -35,4 +37,13 @@ func ClientConfig() (*tls.Config, error) {
 
 func ServerConfig() (*tls.Config, error) {
 	return plugin.Plugins().Instance(TLS).(TLSConfig).ServerConfig()
+}
+
+func Init(opts Options) error {
+	options = opts
+	return nil
+}
+
+func GetOptions() Options {
+	return options
 }

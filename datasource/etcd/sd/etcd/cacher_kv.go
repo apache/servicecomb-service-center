@@ -493,7 +493,7 @@ func (c *KvCacher) IsReady() bool {
 }
 
 func (c *KvCacher) reportMetrics(ctx context.Context) {
-	if !config.ServerInfo.Config.EnablePProf {
+	if !config.GetServer().EnablePProf {
 		return
 	}
 	timer := time.NewTimer(DefaultMetricsInterval)

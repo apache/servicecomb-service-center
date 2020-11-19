@@ -1201,7 +1201,7 @@ var _ = Describe("'Micro-service' service", func() {
 			Expect(err).To(BeNil())
 			Expect(respFind.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
-			Expect(deh.Handle()).To(BeNil())
+			DependencyHandle()
 		})
 
 		Context("when request is invalid", func() {

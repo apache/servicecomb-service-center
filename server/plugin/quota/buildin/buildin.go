@@ -22,16 +22,14 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	mgr "github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
-	"github.com/apache/servicecomb-service-center/server/plugin/quota/counter"
 )
 
 func init() {
 	mgr.RegisterPlugin(mgr.Plugin{Kind: quota.QUOTA, Name: "buildin", New: New})
-	counter.RegisterCounterListener("buildin")
 }
 
 func New() mgr.Instance {
-	InitConfigs()
+	quota.Init()
 	log.Infof("quota init, service: %d, instance: %d, schema: %d/service, tag: %d/service, rule: %d/service",
 		quota.DefaultServiceQuota, quota.DefaultInstanceQuota,
 		quota.DefaultSchemaQuota, quota.DefaultTagQuota, quota.DefaultRuleQuota)

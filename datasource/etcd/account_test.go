@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
-	"github.com/astaxie/beego"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -27,10 +26,6 @@ var (
 		CurrentPassword:     "tnuocca-tset1",
 	}
 )
-
-func init() {
-	beego.AppConfig.Set("registry_plugin", "etcd")
-}
 
 func TestAccount(t *testing.T) {
 	t.Run("add and get account", func(t *testing.T) {
@@ -60,25 +55,5 @@ func TestAccount(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, int64(2), n)
 		t.Log(accs)
-	})
-}
-
-func TestDomain(t *testing.T) {
-	t.Run("test domain", func(t *testing.T) {
-		_, err := datasource.Instance().AddDomain(context.Background(), "test-domain")
-		assert.NoError(t, err)
-		r, err := datasource.Instance().DomainExist(context.Background(), "test-domain")
-		assert.NoError(t, err)
-		assert.Equal(t, true, r)
-	})
-}
-
-func TestProject(t *testing.T) {
-	t.Run("test project", func(t *testing.T) {
-		_, err := datasource.Instance().AddProject(context.Background(), "test-domain", "test-project")
-		assert.NoError(t, err)
-		r, err := datasource.Instance().ProjectExist(context.Background(), "test-domain", "test-project")
-		assert.NoError(t, err)
-		assert.Equal(t, true, r)
 	})
 }
