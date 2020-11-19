@@ -18,6 +18,7 @@
 package etcd_test
 
 import (
+	"context"
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -1878,6 +1879,85 @@ func TestInstance_GetOne(t *testing.T) {
 		})
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
+	})
+}
+
+func TestInstance_GetAll(t *testing.T) {
+
+	t.Run("register 2 instances, get all instances count should return 2", func(t *testing.T) {
+		var (
+			serviceId1 string
+			serviceId2 string
+		)
+		ctx := util.SetContext(
+			util.SetDomainProject(context.Background(), "TestInstance_GetAll", "1"),
+			util.CtxNocache, "1")
+		respCreateService, err := datasource.Instance().RegisterService(ctx, &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				AppId:       "get_instance_ms",
+				ServiceName: "get_instance_service_ms",
+				Version:     "1.0.0",
+				Level:       "FRONT",
+				Status:      pb.MS_UP,
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
+		serviceId1 = respCreateService.ServiceId
+
+		respCreateService, err = datasource.Instance().RegisterService(ctx, &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				AppId:       "get_instance_ms",
+				ServiceName: "get_instance_service_ms",
+				Version:     "1.0.5",
+				Level:       "FRONT",
+				Status:      pb.MS_UP,
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
+		serviceId2 = respCreateService.ServiceId
+
+		respCreateInstance, err := datasource.Instance().RegisterInstance(ctx, &pb.RegisterInstanceRequest{
+			Instance: &pb.MicroServiceInstance{
+				ServiceId: serviceId1,
+				HostName:  "UT-HOST-MS",
+				Endpoints: []string{
+					"get:127.0.0.2:8080",
+				},
+				Status: pb.MSI_UP,
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, respCreateInstance.Response.GetCode())
+
+		respCreateInstance, err = datasource.Instance().RegisterInstance(ctx, &pb.RegisterInstanceRequest{
+			Instance: &pb.MicroServiceInstance{
+				ServiceId: serviceId2,
+				HostName:  "UT-HOST-MS",
+				Endpoints: []string{
+					"get:127.0.0.3:8080",
+				},
+				Status: pb.MSI_UP,
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, respCreateInstance.Response.GetCode())
+
+		respAll, err := datasource.Instance().GetAllInstances(ctx, &pb.GetAllInstancesRequest{})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, respAll.Response.GetCode())
+		assert.Equal(t, 2, len(respAll.Instances))
+	})
+
+	t.Run("domain contain no instances, get all instances should be pass, return 0 instance", func(t *testing.T) {
+		ctx := util.SetContext(
+			util.SetDomainProject(context.Background(), "TestInstance_GetAll", "2"),
+			util.CtxNocache, "1")
+		respAll, err := datasource.Instance().GetAllInstances(ctx, &pb.GetAllInstancesRequest{})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, respAll.Response.GetCode())
+		assert.Equal(t, 0, len(respAll.Instances))
 	})
 }
 

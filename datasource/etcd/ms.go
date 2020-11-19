@@ -809,13 +809,13 @@ func (ds *DataSource) GetInstances(ctx context.Context, request *pb.GetInstances
 	}, nil
 }
 
-func (ds *DataSource) GetProviderInstances(ctx context.Context, request *pb.HeartbeatSetElement) (instances []*pb.MicroServiceInstance, rev string, err error) {
+func (ds *DataSource) GetProviderInstances(ctx context.Context, request *pb.GetProviderInstancesRequest) (instances []*pb.MicroServiceInstance, rev string, err error) {
 	var (
 		maxRevs       = make([]int64, len(clustersIndex))
 		counts        = make([]int64, len(clustersIndex))
 		domainProject = util.ParseTargetDomainProject(ctx)
 	)
-	instances, err = ds.findInstances(ctx, domainProject, request.ServiceId, request.InstanceId, maxRevs, counts)
+	instances, err = ds.findInstances(ctx, domainProject, request.ProviderServiceId, maxRevs, counts)
 	if err != nil {
 		return
 	}
@@ -833,7 +833,7 @@ func (ds *DataSource) BatchGetProviderInstances(ctx context.Context, request *pb
 	}
 
 	for _, providerServiceID := range request.ServiceIds {
-		insts, err := ds.findInstances(ctx, domainProject, providerServiceID, "", maxRevs, counts)
+		insts, err := ds.findInstances(ctx, domainProject, providerServiceID, maxRevs, counts)
 		if err != nil {
 			return nil, "", err
 		}
@@ -843,8 +843,8 @@ func (ds *DataSource) BatchGetProviderInstances(ctx context.Context, request *pb
 	return instances, serviceUtil.FormatRevision(maxRevs, counts), nil
 }
 
-func (ds *DataSource) findInstances(ctx context.Context, domainProject, serviceID, instanceID string, maxRevs []int64, counts []int64) (instances []*pb.MicroServiceInstance, err error) {
-	key := apt.GenerateInstanceKey(domainProject, serviceID, instanceID)
+func (ds *DataSource) findInstances(ctx context.Context, domainProject, serviceID string, maxRevs []int64, counts []int64) (instances []*pb.MicroServiceInstance, err error) {
+	key := apt.GenerateInstanceKey(domainProject, serviceID, "")
 	opts := append(serviceUtil.FromContext(ctx), registry.WithStrKey(key), registry.WithPrefix())
 	resp, err := kv.Store().Instance().Search(ctx, opts...)
 	if err != nil {
@@ -1302,6 +1302,28 @@ func (ds *DataSource) Heartbeat(ctx context.Context, request *pb.HeartbeatReques
 		Response: pb.CreateResponse(pb.ResponseSuccess,
 			"Update service instance heartbeat successfully."),
 	}, nil
+}
+
+func (ds *DataSource) GetAllInstances(ctx context.Context, request *pb.GetAllInstancesRequest) (*pb.GetAllInstancesResponse, error) {
+	domainProject := util.ParseDomainProject(ctx)
+	key := kv.GetInstanceRootKey(domainProject) + "/"
+	opts := append(serviceUtil.FromContext(ctx), client.WithStrKey(key), client.WithPrefix())
+	kvs, err := kv.Store().Instance().Search(ctx, opts...)
+	if err != nil {
+		return nil, err
+	}
+	resp := &pb.GetAllInstancesResponse{
+		Response: pb.CreateResponse(pb.ResponseSuccess, "Get all instances successfully"),
+	}
+	for _, keyValue := range kvs.Kvs {
+		instance, ok := keyValue.Value.(*pb.MicroServiceInstance)
+		if !ok {
+			log.Warnf("Unexpected value format! %s", util.BytesToStringWithNoCopy(keyValue.Key))
+			continue
+		}
+		resp.Instances = append(resp.Instances, instance)
+	}
+	return resp, nil
 }
 
 func (ds *DataSource) ModifySchemas(ctx context.Context, request *pb.ModifySchemasRequest) (
