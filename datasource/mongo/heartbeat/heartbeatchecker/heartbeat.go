@@ -15,32 +15,32 @@
  * limitations under the License.
  */
 
-package mongo
+package heartbeatchecker
 
 import (
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
+	"context"
+	"github.com/apache/servicecomb-service-center/datasource/mongo"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"go.mongodb.org/mongo-driver/bson"
 	"time"
 )
 
-const (
-	DuplicateKey               = 11000
-	CollectionAccount          = "account"
-	AccountName                = "name"
-	AccountID                  = "id"
-	AccountPassword            = "password"
-	AccountRole                = "role"
-	AccountTokenExpirationTime = "tokenexpirationtime"
-	AccountCurrentPassword     = "currentpassword"
-	AccountStatus              = "status"
-	CollectionInstance         = "instance"
-	InstanceID                 = "instanceinfo.instanceid"
-	ServiceID                  = "instanceinfo.serviceid"
-	RefreshTime                = "refreshtime"
-)
-
-type Instance struct {
-	Domain       string
-	Project      string
-	RefreshTime  time.Time
-	InstanceInfo *pb.MicroServiceInstance
+func updateInstanceRefreshTime(ctx context.Context, serviceID string, instanceID string) error {
+	filter := bson.M{
+		mongo.InstanceID: instanceID,
+		mongo.ServiceID:  serviceID,
+	}
+	update := bson.M{
+		"$set": bson.M{mongo.RefreshTime: time.Now()},
+	}
+	result, err := client.GetMongoClient().FindOneAndUpdate(ctx, mongo.CollectionInstance, filter, update)
+	if err != nil {
+		log.Errorf(err, "failed to update refresh time of instance: ")
+		return err
+	}
+	if result.Err() != nil {
+		return result.Err()
+	}
+	return nil
 }

@@ -20,7 +20,10 @@ package heartbeatchecker
 import (
 	"context"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/heartbeat"
+	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 )
 
 func init() {
@@ -35,5 +38,18 @@ func NewHeartBeatChecker(opts heartbeat.Options) (heartbeat.HealthCheck, error) 
 }
 
 func (h *HeartBeatChecker) Heartbeat(ctx context.Context, request *pb.HeartbeatRequest) (*pb.HeartbeatResponse, error) {
-	return nil, nil
+	remoteIP := util.GetIPFromContext(ctx)
+	err := updateInstanceRefreshTime(ctx, request.ServiceId, request.InstanceId)
+	if err != nil {
+		log.Errorf(err, "heartbeat failed, instance[%s]. operator %s",
+			request.InstanceId, remoteIP)
+		resp := &pb.HeartbeatResponse{
+			Response: pb.CreateResponseWithSCErr(scerr.NewError(scerr.ErrInstanceNotExists, err.Error())),
+		}
+		return resp, err
+	}
+	return &pb.HeartbeatResponse{
+		Response: pb.CreateResponse(pb.ResponseSuccess,
+			"Update service instance heartbeat successfully."),
+	}, nil
 }
