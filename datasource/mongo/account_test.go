@@ -34,7 +34,7 @@ func init() {
 	config := storage.DB{
 		URI: "mongodb://localhost:27017",
 	}
-	client.NewMongoClient(config, []string{mongo.Account})
+	client.NewMongoClient(config, []string{mongo.CollectionAccount})
 	instance, _ = mongo.NewDataSource(datasource.Options{})
 }
 

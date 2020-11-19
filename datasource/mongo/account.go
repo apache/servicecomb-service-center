@@ -47,7 +47,7 @@ func (ds *DataSource) CreateAccount(ctx context.Context, a *rbacframe.Account) e
 	}
 	a.Password = stringutil.Bytes2str(hash)
 	a.ID = util.GenerateUUID()
-	_, err = client.GetMongoClient().Insert(ctx, Account, a)
+	_, err = client.GetMongoClient().Insert(ctx, CollectionAccount, a)
 	if err != nil {
 		switch tt := err.(type) {
 		case mongo.WriteException:
@@ -71,7 +71,7 @@ func (ds *DataSource) AccountExist(ctx context.Context, key string) (bool, error
 	filter := bson.M{
 		AccountName: key,
 	}
-	count, err := client.GetMongoClient().Count(ctx, Account, filter)
+	count, err := client.GetMongoClient().Count(ctx, CollectionAccount, filter)
 	if err != nil {
 		return false, err
 	}
@@ -85,7 +85,7 @@ func (ds *DataSource) GetAccount(ctx context.Context, key string) (*rbacframe.Ac
 	filter := bson.M{
 		AccountName: key,
 	}
-	result, err := client.GetMongoClient().FindOne(ctx, Account, filter)
+	result, err := client.GetMongoClient().FindOne(ctx, CollectionAccount, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +105,7 @@ func (ds *DataSource) ListAccount(ctx context.Context, key string) ([]*rbacframe
 	filter := bson.M{
 		AccountName: bson.M{"$regex": key},
 	}
-	cursor, err := client.GetMongoClient().Find(ctx, Account, filter)
+	cursor, err := client.GetMongoClient().Find(ctx, CollectionAccount, filter)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -127,7 +127,7 @@ func (ds *DataSource) DeleteAccount(ctx context.Context, key string) (bool, erro
 	filter := bson.M{
 		AccountName: key,
 	}
-	result, err := client.GetMongoClient().Delete(ctx, Account, filter)
+	result, err := client.GetMongoClient().Delete(ctx, CollectionAccount, filter)
 	if err != nil {
 		return false, err
 	}
@@ -146,7 +146,7 @@ func (ds *DataSource) UpdateAccount(ctx context.Context, key string, account *rb
 			AccountCurrentPassword: account.CurrentPassword, AccountStatus: account.Status,
 		},
 	}
-	result, err := client.GetMongoClient().Update(ctx, Account, filter, update)
+	result, err := client.GetMongoClient().Update(ctx, CollectionAccount, filter, update)
 	if err != nil {
 		return err
 	}
