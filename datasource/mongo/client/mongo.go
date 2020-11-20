@@ -236,3 +236,7 @@ func (mc *MongoClient) Watch(ctx context.Context, Table string, pipeline interfa
 	}
 	return col.Watch(ctx, pipeline, opts...)
 }
+
+func (mc *MongoClient) StartSession(ctx context.Context) (mongo.Session, error) {
+	return mc.client.StartSession()
+}
