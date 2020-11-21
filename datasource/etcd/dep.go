@@ -22,12 +22,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	apt "github.com/apache/servicecomb-service-center/server/core"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 )
 
@@ -135,11 +134,11 @@ func (ds *DataSource) AddOrUpdateDependencies(ctx context.Context, dependencyInf
 			return pb.CreateResponse(scerr.ErrInternal, err.Error()), err
 		}
 
-		id := apt.DepsQueueUUID
+		id := path.DepsQueueUUID
 		if !override {
 			id = util.GenerateUUID()
 		}
-		key := kv.GenerateConsumerDependencyQueueKey(domainProject, consumerID, id)
+		key := path.GenerateConsumerDependencyQueueKey(domainProject, consumerID, id)
 		opts = append(opts, client.OpPut(client.WithStrKey(key), client.WithValue(data)))
 	}
 

@@ -23,13 +23,14 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/proto"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	apt "github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/core"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 
 	"context"
@@ -96,7 +97,7 @@ func (s *MicroServiceService) DeleteServicePri(ctx context.Context, serviceID st
 		title = "force delete"
 	}
 
-	if serviceID == apt.Service.ServiceId {
+	if serviceID == core.Service.ServiceId {
 		err := errors.New("not allow to delete service center")
 		log.Errorf(err, "%s micro-service[%s] failed, operator: %s", title, serviceID, remoteIP)
 		return pb.CreateResponse(scerr.ErrInvalidParams, err.Error()), nil
@@ -130,7 +131,7 @@ func (s *MicroServiceService) DeleteServicePri(ctx context.Context, serviceID st
 			return pb.CreateResponse(scerr.ErrDependedOnConsumer, "Can not delete this service, other service rely it."), err
 		}
 
-		instancesKey := apt.GenerateInstanceKey(domainProject, serviceID, "")
+		instancesKey := path.GenerateInstanceKey(domainProject, serviceID, "")
 		rsp, err := kv.Store().Instance().Search(ctx,
 			client.WithStrKey(instancesKey),
 			client.WithPrefix(),
@@ -148,7 +149,7 @@ func (s *MicroServiceService) DeleteServicePri(ctx context.Context, serviceID st
 		}
 	}
 
-	serviceIDKey := apt.GenerateServiceKey(domainProject, serviceID)
+	serviceIDKey := path.GenerateServiceKey(domainProject, serviceID)
 	serviceKey := &pb.MicroServiceKey{
 		Tenant:      domainProject,
 		Environment: service.Environment,
@@ -158,8 +159,8 @@ func (s *MicroServiceService) DeleteServicePri(ctx context.Context, serviceID st
 		Alias:       service.Alias,
 	}
 	opts := []client.PluginOp{
-		client.OpDel(client.WithStrKey(apt.GenerateServiceIndexKey(serviceKey))),
-		client.OpDel(client.WithStrKey(apt.GenerateServiceAliasKey(serviceKey))),
+		client.OpDel(client.WithStrKey(path.GenerateServiceIndexKey(serviceKey))),
+		client.OpDel(client.WithStrKey(path.GenerateServiceAliasKey(serviceKey))),
 		client.OpDel(client.WithStrKey(serviceIDKey)),
 	}
 
@@ -174,30 +175,30 @@ func (s *MicroServiceService) DeleteServicePri(ctx context.Context, serviceID st
 
 	//删除黑白名单
 	opts = append(opts, client.OpDel(
-		client.WithStrKey(apt.GenerateServiceRuleKey(domainProject, serviceID, "")),
+		client.WithStrKey(path.GenerateServiceRuleKey(domainProject, serviceID, "")),
 		client.WithPrefix()))
 	opts = append(opts, client.OpDel(client.WithStrKey(
-		util.StringJoin([]string{apt.GetServiceRuleIndexRootKey(domainProject), serviceID, ""}, "/")),
+		util.StringJoin([]string{path.GetServiceRuleIndexRootKey(domainProject), serviceID, ""}, "/")),
 		client.WithPrefix()))
 
 	//删除schemas
 	opts = append(opts, client.OpDel(
-		client.WithStrKey(apt.GenerateServiceSchemaKey(domainProject, serviceID, "")),
+		client.WithStrKey(path.GenerateServiceSchemaKey(domainProject, serviceID, "")),
 		client.WithPrefix()))
 	opts = append(opts, client.OpDel(
-		client.WithStrKey(apt.GenerateServiceSchemaSummaryKey(domainProject, serviceID, "")),
+		client.WithStrKey(path.GenerateServiceSchemaSummaryKey(domainProject, serviceID, "")),
 		client.WithPrefix()))
 
 	//删除tags
 	opts = append(opts, client.OpDel(
-		client.WithStrKey(apt.GenerateServiceTagKey(domainProject, serviceID))))
+		client.WithStrKey(path.GenerateServiceTagKey(domainProject, serviceID))))
 
 	//删除instances
 	opts = append(opts, client.OpDel(
-		client.WithStrKey(apt.GenerateInstanceKey(domainProject, serviceID, "")),
+		client.WithStrKey(path.GenerateInstanceKey(domainProject, serviceID, "")),
 		client.WithPrefix()))
 	opts = append(opts, client.OpDel(
-		client.WithStrKey(apt.GenerateInstanceLeaseKey(domainProject, serviceID, "")),
+		client.WithStrKey(path.GenerateInstanceLeaseKey(domainProject, serviceID, "")),
 		client.WithPrefix()))
 
 	//删除实例

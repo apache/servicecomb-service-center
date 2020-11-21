@@ -19,13 +19,13 @@ package etcd
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 )
 
 func (ds *DataSource) GetServiceCountByDomainProject(ctx context.Context, request *pb.GetServiceCountRequest) (*pb.GetServiceCountResponse, error) {
-	domainProject := request.Domain + kv.SPLIT + request.Project
+	domainProject := request.Domain + path.SPLIT + request.Project
 	count, err := util.GetOneDomainProjectServiceCount(ctx, domainProject)
 	if err != nil {
 		return nil, err

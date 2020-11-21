@@ -20,6 +20,7 @@ package util
 import (
 	"context"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"strings"
 
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
@@ -27,7 +28,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	apt "github.com/apache/servicecomb-service-center/server/core"
 )
 
 // DependencyRelationFilterOpt contains SameDomainProject and NonSelf flag
@@ -125,7 +125,7 @@ func (dr *DependencyRelation) getProviderKeys() ([]*pb.MicroServiceKey, error) {
 	}
 	consumerMicroServiceKey := pb.MicroServiceToKey(dr.domainProject, dr.consumer)
 
-	conKey := apt.GenerateConsumerDependencyRuleKey(dr.domainProject, consumerMicroServiceKey)
+	conKey := path.GenerateConsumerDependencyRuleKey(dr.domainProject, consumerMicroServiceKey)
 	consumerDependency, err := TransferToMicroServiceDependency(dr.ctx, conKey)
 	if err != nil {
 		return nil, err
@@ -167,7 +167,7 @@ func (dr *DependencyRelation) parseDependencyRule(dependencyRule *pb.MicroServic
 	case dependencyRule.ServiceName == "*":
 		log.Infof("service[%s/%s/%s/%s] rely all service",
 			dr.consumer.Environment, dr.consumer.AppId, dr.consumer.ServiceName, dr.consumer.Version)
-		splited := strings.Split(apt.GenerateServiceIndexKey(dependencyRule), "/")
+		splited := strings.Split(path.GenerateServiceIndexKey(dependencyRule), "/")
 		allServiceKey := util.StringJoin(splited[:len(splited)-3], "/") + "/"
 		sopts := append(opts,
 			client.WithStrKey(allServiceKey),
@@ -279,7 +279,7 @@ func (dr *DependencyRelation) GetDependencyConsumersOfProvider() ([]*pb.MicroSer
 func (dr *DependencyRelation) getConsumerOfDependAllServices() ([]*pb.MicroServiceKey, error) {
 	providerService := pb.MicroServiceToKey(dr.domainProject, dr.provider)
 	providerService.ServiceName = "*"
-	relyAllKey := apt.GenerateProviderDependencyRuleKey(dr.domainProject, providerService)
+	relyAllKey := path.GenerateProviderDependencyRuleKey(dr.domainProject, providerService)
 	opts := append(FromContext(dr.ctx), client.WithStrKey(relyAllKey))
 	rsp, err := kv.Store().DependencyRule().Search(dr.ctx, opts...)
 	if err != nil {
@@ -298,7 +298,7 @@ func (dr *DependencyRelation) getConsumerOfDependAllServices() ([]*pb.MicroServi
 func (dr *DependencyRelation) GetConsumerOfSameServiceNameAndAppID(provider *pb.MicroServiceKey) ([]*pb.MicroServiceKey, error) {
 	providerVersion := provider.Version
 	provider.Version = ""
-	prefix := apt.GenerateProviderDependencyRuleKey(dr.domainProject, provider)
+	prefix := path.GenerateProviderDependencyRuleKey(dr.domainProject, provider)
 	provider.Version = providerVersion
 
 	opts := append(FromContext(dr.ctx),

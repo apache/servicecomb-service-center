@@ -20,6 +20,7 @@ package util
 import (
 	"context"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"reflect"
 	"regexp"
 	"strings"
@@ -89,7 +90,7 @@ func (rf *RuleFilter) FilterAll(ctx context.Context, consumerIDs []string) (allo
 
 func GetRulesUtil(ctx context.Context, domainProject string, serviceID string) ([]*pb.ServiceRule, error) {
 	key := util.StringJoin([]string{
-		apt.GetServiceRuleRootKey(domainProject),
+		path.GetServiceRuleRootKey(domainProject),
 		serviceID,
 		"",
 	}, "/")
@@ -109,7 +110,7 @@ func GetRulesUtil(ctx context.Context, domainProject string, serviceID string) (
 
 func RuleExist(ctx context.Context, domainProject string, serviceID string, attr string, pattern string) bool {
 	opts := append(FromContext(ctx),
-		client.WithStrKey(apt.GenerateRuleIndexKey(domainProject, serviceID, attr, pattern)),
+		client.WithStrKey(path.GenerateRuleIndexKey(domainProject, serviceID, attr, pattern)),
 		client.WithCountOnly())
 	resp, err := kv.Store().RuleIndex().Search(ctx, opts...)
 	if err != nil || resp.Count == 0 {
@@ -119,7 +120,7 @@ func RuleExist(ctx context.Context, domainProject string, serviceID string, attr
 }
 
 func GetServiceRuleType(ctx context.Context, domainProject string, serviceID string) (string, int, error) {
-	key := apt.GenerateServiceRuleKey(domainProject, serviceID, "")
+	key := path.GenerateServiceRuleKey(domainProject, serviceID, "")
 	opts := append(FromContext(ctx),
 		client.WithStrKey(key),
 		client.WithPrefix())
@@ -136,7 +137,7 @@ func GetServiceRuleType(ctx context.Context, domainProject string, serviceID str
 
 func GetOneRule(ctx context.Context, domainProject, serviceID, ruleID string) (*pb.ServiceRule, error) {
 	opts := append(FromContext(ctx),
-		client.WithStrKey(apt.GenerateServiceRuleKey(domainProject, serviceID, ruleID)))
+		client.WithStrKey(path.GenerateServiceRuleKey(domainProject, serviceID, ruleID)))
 	resp, err := kv.Store().Rule().Search(ctx, opts...)
 	if err != nil {
 		log.Errorf(err, "get service rule[%s/%s]", serviceID, ruleID)

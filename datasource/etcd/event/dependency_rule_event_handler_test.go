@@ -19,9 +19,9 @@ package event
 import (
 	"context"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/cache"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
-	"github.com/apache/servicecomb-service-center/server/core"
 	"testing"
 )
 
@@ -44,19 +44,19 @@ func TestNewDependencyRuleEventHandler(t *testing.T) {
 		t.Fatalf("TestNewDependencyRuleEventHandler failed")
 	}
 	h.OnEvent(sd.KvEvent{Type: pb.EVT_UPDATE, KV: &sd.KeyValue{
-		Key: []byte(core.GenerateProviderDependencyRuleKey("x/y", provider))}})
+		Key: []byte(path.GenerateProviderDependencyRuleKey("x/y", provider))}})
 	b = cache.DependencyRule.ExistVersionRule(context.Background(), consumerId, provider)
 	if b {
 		t.Fatalf("TestNewDependencyRuleEventHandler failed")
 	}
 	h.OnEvent(sd.KvEvent{Type: pb.EVT_DELETE, KV: &sd.KeyValue{
-		Key: []byte(core.GenerateProviderDependencyRuleKey("x/y", provider))}})
+		Key: []byte(path.GenerateProviderDependencyRuleKey("x/y", provider))}})
 	b = cache.DependencyRule.ExistVersionRule(context.Background(), consumerId, provider)
 	if b {
 		t.Fatalf("TestNewDependencyRuleEventHandler failed")
 	}
 	h.OnEvent(sd.KvEvent{Type: pb.EVT_DELETE, KV: &sd.KeyValue{
-		Key: []byte(core.GenerateConsumerDependencyRuleKey("x/y", provider))}})
+		Key: []byte(path.GenerateConsumerDependencyRuleKey("x/y", provider))}})
 	b = cache.DependencyRule.ExistVersionRule(context.Background(), consumerId, provider)
 	if !b {
 		t.Fatalf("TestNewDependencyRuleEventHandler failed")

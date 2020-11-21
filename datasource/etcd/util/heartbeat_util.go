@@ -20,9 +20,9 @@ package util
 import (
 	"context"
 	"errors"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
-	apt "github.com/apache/servicecomb-service-center/server/core"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 )
 
@@ -43,7 +43,7 @@ func KeepAliveLease(ctx context.Context, domainProject, serviceID, instanceID st
 		return ttl, errors.New("leaseId not exist, instance not exist")
 	}
 	ttl, err = client.KeepAlive(ctx,
-		client.WithStrKey(apt.GenerateInstanceLeaseKey(domainProject, serviceID, instanceID)),
+		client.WithStrKey(path.GenerateInstanceLeaseKey(domainProject, serviceID, instanceID)),
 		client.WithLease(leaseID))
 	if err != nil {
 		return ttl, err

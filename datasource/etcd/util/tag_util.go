@@ -20,17 +20,17 @@ package util
 import (
 	"context"
 	"encoding/json"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	apt "github.com/apache/servicecomb-service-center/server/core"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 )
 
 func AddTagIntoETCD(ctx context.Context, domainProject string, serviceID string, dataTags map[string]string) *scerr.Error {
-	key := apt.GenerateServiceTagKey(domainProject, serviceID)
+	key := path.GenerateServiceTagKey(domainProject, serviceID)
 	data, err := json.Marshal(dataTags)
 	if err != nil {
 		return scerr.NewError(scerr.ErrInternal, err.Error())
@@ -39,7 +39,7 @@ func AddTagIntoETCD(ctx context.Context, domainProject string, serviceID string,
 	resp, err := client.Instance().TxnWithCmp(ctx,
 		[]client.PluginOp{client.OpPut(client.WithStrKey(key), client.WithValue(data))},
 		[]client.CompareOp{client.OpCmp(
-			client.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, serviceID))),
+			client.CmpVer(util.StringToBytesWithNoCopy(path.GenerateServiceKey(domainProject, serviceID))),
 			client.CmpNotEqual, 0)},
 		nil)
 	if err != nil {
@@ -52,7 +52,7 @@ func AddTagIntoETCD(ctx context.Context, domainProject string, serviceID string,
 }
 
 func GetTagsUtils(ctx context.Context, domainProject, serviceID string) (tags map[string]string, err error) {
-	key := apt.GenerateServiceTagKey(domainProject, serviceID)
+	key := path.GenerateServiceTagKey(domainProject, serviceID)
 	opts := append(FromContext(ctx), client.WithStrKey(key))
 	resp, err := kv.Store().ServiceTag().Search(ctx, opts...)
 	if err != nil {
