@@ -15,14 +15,23 @@
  * limitations under the License.
  */
 
-package datasource
+package etcd
 
-// DataSource is the DAO layer
-type DataSource interface {
-	SystemManager
-	AccountManager
-	DependencyManager
-	MetadataManager
-	OperationManager
-	SCManager
+import (
+	"context"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/util"
+	pb "github.com/apache/servicecomb-service-center/pkg/registry"
+)
+
+func (ds *DataSource) GetServiceCountByDomainProject(ctx context.Context, request *pb.GetServiceCountRequest) (*pb.GetServiceCountResponse, error) {
+	domainProject := request.Domain + kv.SPLIT + request.Project
+	count, err := util.GetOneDomainProjectServiceCount(ctx, domainProject)
+	if err != nil {
+		return nil, err
+	}
+	return &pb.GetServiceCountResponse{
+		Response: pb.CreateResponse(pb.ResponseSuccess, "Get service count by domain project successfully"),
+		Count:    count,
+	}, nil
 }

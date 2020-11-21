@@ -17,12 +17,12 @@
 
 package datasource
 
-// DataSource is the DAO layer
-type DataSource interface {
-	SystemManager
-	AccountManager
-	DependencyManager
-	MetadataManager
-	OperationManager
-	SCManager
+import (
+	"context"
+	"github.com/apache/servicecomb-service-center/pkg/registry"
+)
+
+// OperationManager contains all operation APIs
+type OperationManager interface {
+	GetServiceCountByDomainProject(ctx context.Context, request *registry.GetServiceCountRequest) (*registry.GetServiceCountResponse, error)
 }

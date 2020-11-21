@@ -15,14 +15,13 @@
  * limitations under the License.
  */
 
-package datasource
+package mongo
 
-// DataSource is the DAO layer
-type DataSource interface {
-	SystemManager
-	AccountManager
-	DependencyManager
-	MetadataManager
-	OperationManager
-	SCManager
+import (
+	"context"
+	pb "github.com/apache/servicecomb-service-center/pkg/registry"
+)
+
+func (ds *DataSource) GetServiceCountByDomainProject(ctx context.Context, request *pb.GetServiceCountRequest) (*pb.GetServiceCountResponse, error) {
+	panic("implement me")
 }

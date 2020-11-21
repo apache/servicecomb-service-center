@@ -80,7 +80,6 @@ func TestGetInfoFromKV(t *testing.T) {
 
 	key := GetInfoFromSvcIndexKV([]byte(GenerateServiceIndexKey(&registry.MicroServiceKey{
 		Tenant:      "a/b",
-		Project:     "",
 		AppId:       "c",
 		ServiceName: "d",
 		Version:     "e",
@@ -92,7 +91,6 @@ func TestGetInfoFromKV(t *testing.T) {
 		key.ServiceName != "d" ||
 		key.Version != "e" ||
 		key.Environment != "f" ||
-		key.Project != "" ||
 		key.Alias != "" {
 		t.Fatalf("TestGetInfoFromKV failed")
 	}

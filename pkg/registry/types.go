@@ -107,18 +107,16 @@ type GetServicesInfoResponse struct {
 
 type MicroServiceKey struct {
 	// Tenant: The format is "{domain}/{project}"
-	Tenant string `protobuf:"bytes,1,opt,name=tenant" json:"tenant,omitempty"`
-	// Deprecated: Use Tenant instead
-	Project     string `protobuf:"bytes,2,opt,name=project" json:"project,omitempty"`
-	Environment string `protobuf:"bytes,6,opt,name=environment" json:"environment,omitempty"`
+	Tenant      string `protobuf:"bytes,1,opt,name=tenant" json:"tenant,omitempty"`
+	Environment string `protobuf:"bytes,2,opt,name=environment" json:"environment,omitempty"`
 	AppId       string `protobuf:"bytes,3,opt,name=appId" json:"appId,omitempty"`
 	ServiceName string `protobuf:"bytes,4,opt,name=serviceName" json:"serviceName,omitempty"`
-	Alias       string `protobuf:"bytes,7,opt,name=alias" json:"alias,omitempty"`
-	Version     string `protobuf:"bytes,5,opt,name=version" json:"version,omitempty"`
+	Alias       string `protobuf:"bytes,5,opt,name=alias" json:"alias,omitempty"`
+	Version     string `protobuf:"bytes,6,opt,name=version" json:"version,omitempty"`
 }
 
 func (mk *MicroServiceKey) String() string {
-	return fmt.Sprintf("&{%v %v %v %v %v %v %v}", mk.Tenant, mk.Project, mk.Project, mk.AppId, mk.ServiceName, mk.Alias, mk.Version)
+	return fmt.Sprintf("&{%v %v %v %v %v %v}", mk.Tenant, mk.Environment, mk.AppId, mk.ServiceName, mk.Alias, mk.Version)
 }
 
 type FrameWorkProperty struct {
@@ -439,4 +437,13 @@ type MicroServiceDependency struct {
 
 type BatchGetInstancesRequest struct {
 	ServiceIds []string `json:"serviceIds,omitempty"`
+}
+
+type GetServiceCountRequest struct {
+	Domain  string `protobuf:"bytes,1,opt,name=domain" json:"domain,omitempty"`
+	Project string `protobuf:"bytes,2,opt,name=project" json:"project,omitempty"`
+}
+type GetServiceCountResponse struct {
+	Response *Response `protobuf:"bytes,1,opt,name=response" json:"response,omitempty"`
+	Count    int64     `protobuf:"varint,2,opt,name=count" json:"count,omitempty"`
 }
