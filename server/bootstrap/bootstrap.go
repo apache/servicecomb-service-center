@@ -19,6 +19,9 @@ package bootstrap
 //etcd
 import _ "github.com/apache/servicecomb-service-center/datasource/etcd/bootstrap"
 
+//mongo
+import _ "github.com/apache/servicecomb-service-center/datasource/mongo/bootstrap"
+
 //rest v3 api
 import _ "github.com/apache/servicecomb-service-center/server/rest/controller/v3"
 

@@ -19,7 +19,9 @@ package mongo
 
 import (
 	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/heartbeat"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/server/config"
 )
 
 func init() {
@@ -49,5 +51,15 @@ func NewDataSource(opts datasource.Options) (datasource.DataSource, error) {
 }
 
 func (ds *DataSource) initialize() error {
+	// init heartbeat plugins
+	ds.initPlugins()
 	return nil
+}
+
+func (ds *DataSource) initPlugins() {
+	kind := config.GetString("registry.heartbeat.kind", "")
+	err := heartbeat.Init(heartbeat.Options{PluginImplName: heartbeat.ImplName(kind)})
+	if err != nil {
+		log.Fatalf(err, "heartbeat init failed")
+	}
 }

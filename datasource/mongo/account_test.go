@@ -28,14 +28,11 @@ import (
 	"testing"
 )
 
-var instance datasource.DataSource
-
 func init() {
 	config := storage.DB{
 		URI: "mongodb://localhost:27017",
 	}
 	client.NewMongoClient(config, []string{mongo.CollectionAccount})
-	instance, _ = mongo.NewDataSource(datasource.Options{})
 }
 
 func TestCreateAccount(t *testing.T) {
@@ -48,19 +45,19 @@ func TestCreateAccount(t *testing.T) {
 		CurrentPassword:     "tnuocca-tset1",
 	}
 	t.Run("create account: should be able to create account", func(t *testing.T) {
-		_, _ = instance.DeleteAccount(context.Background(), account.Name)
-		err := instance.CreateAccount(context.Background(), &account)
+		_, _ = datasource.Instance().DeleteAccount(context.Background(), account.Name)
+		err := datasource.Instance().CreateAccount(context.Background(), &account)
 		assert.Nil(t, err)
-		_, _ = instance.DeleteAccount(context.Background(), account.Name)
+		_, _ = datasource.Instance().DeleteAccount(context.Background(), account.Name)
 	})
 
 	t.Run("create account: should not be able to create two same account", func(t *testing.T) {
-		_, _ = instance.DeleteAccount(context.Background(), account.Name)
-		err := instance.CreateAccount(context.Background(), &account)
+		_, _ = datasource.Instance().DeleteAccount(context.Background(), account.Name)
+		err := datasource.Instance().CreateAccount(context.Background(), &account)
 		assert.Nil(t, err)
-		err = instance.CreateAccount(context.Background(), &account)
+		err = datasource.Instance().CreateAccount(context.Background(), &account)
 		assert.NotNil(t, err)
-		_, _ = instance.DeleteAccount(context.Background(), account.Name)
+		_, _ = datasource.Instance().DeleteAccount(context.Background(), account.Name)
 	})
 }
 
@@ -74,17 +71,17 @@ func TestGetAccount(t *testing.T) {
 		CurrentPassword:     "tnuocca-tset1",
 	}
 	t.Run("get account: if the account exists, it should be able to get the account", func(t *testing.T) {
-		_, _ = instance.DeleteAccount(context.Background(), account.Name)
-		err := instance.CreateAccount(context.Background(), &account)
+		_, _ = datasource.Instance().DeleteAccount(context.Background(), account.Name)
+		err := datasource.Instance().CreateAccount(context.Background(), &account)
 		assert.Nil(t, err)
-		result, err := instance.GetAccount(context.Background(), account.Name)
+		result, err := datasource.Instance().GetAccount(context.Background(), account.Name)
 		assert.Nil(t, err)
 		assert.Equal(t, &account, result)
-		_, _ = instance.DeleteAccount(context.Background(), account.Name)
+		_, _ = datasource.Instance().DeleteAccount(context.Background(), account.Name)
 	})
 
 	t.Run("get account: if the account not exists, it should not be able to get the account", func(t *testing.T) {
-		_, err := instance.GetAccount(context.Background(), account.Name)
+		_, err := datasource.Instance().GetAccount(context.Background(), account.Name)
 		assert.NotNil(t, err)
 	})
 }
@@ -107,19 +104,19 @@ func TestListAccount(t *testing.T) {
 		CurrentPassword:     "tnuocca-tset2",
 	}
 	t.Run("list account: if there are multiple accounts exist, it should be able to query multiple accounts", func(t *testing.T) {
-		_ = instance.CreateAccount(context.Background(), &account1)
-		_ = instance.CreateAccount(context.Background(), &account2)
-		_, count, err := instance.ListAccount(context.Background(), "test-account")
+		_ = datasource.Instance().CreateAccount(context.Background(), &account1)
+		_ = datasource.Instance().CreateAccount(context.Background(), &account2)
+		_, count, err := datasource.Instance().ListAccount(context.Background(), "test-account")
 		assert.Equal(t, int64(2), count)
 		assert.Nil(t, err)
-		_, _ = instance.DeleteAccount(context.Background(), account1.Name)
-		_, _ = instance.DeleteAccount(context.Background(), account2.Name)
+		_, _ = datasource.Instance().DeleteAccount(context.Background(), account1.Name)
+		_, _ = datasource.Instance().DeleteAccount(context.Background(), account2.Name)
 	})
 }
 
 func TestDeleteAccount(t *testing.T) {
 	t.Run("delete account, if the account does not exist,it should not be deleted", func(t *testing.T) {
-		flag, _ := instance.DeleteAccount(context.Background(), "not_exist")
+		flag, _ := datasource.Instance().DeleteAccount(context.Background(), "not_exist")
 		assert.Equal(t, false, flag)
 	})
 
@@ -132,10 +129,10 @@ func TestDeleteAccount(t *testing.T) {
 			TokenExpirationTime: "2020-12-30",
 			CurrentPassword:     "tnuocca-tset1",
 		}
-		_, _ = instance.DeleteAccount(context.Background(), account.Name)
-		err := instance.CreateAccount(context.Background(), &account)
+		_, _ = datasource.Instance().DeleteAccount(context.Background(), account.Name)
+		err := datasource.Instance().CreateAccount(context.Background(), &account)
 		assert.Nil(t, err)
-		flag, err := instance.DeleteAccount(context.Background(), account.Name)
+		flag, err := datasource.Instance().DeleteAccount(context.Background(), account.Name)
 		assert.Equal(t, true, flag)
 		assert.Nil(t, err)
 	})
@@ -151,8 +148,8 @@ func TestUpdateAccount(t *testing.T) {
 			TokenExpirationTime: "2020-12-30",
 			CurrentPassword:     "tnuocca-tset1",
 		}
-		_, _ = instance.DeleteAccount(context.Background(), account.Name)
-		err := instance.UpdateAccount(context.Background(), account.Name, &account)
+		_, _ = datasource.Instance().DeleteAccount(context.Background(), account.Name)
+		err := datasource.Instance().UpdateAccount(context.Background(), account.Name, &account)
 		assert.NotNil(t, err)
 	})
 
@@ -165,13 +162,13 @@ func TestUpdateAccount(t *testing.T) {
 			TokenExpirationTime: "2020-12-30",
 			CurrentPassword:     "tnuocca-tset1",
 		}
-		_ = instance.CreateAccount(context.Background(), &account)
+		_ = datasource.Instance().CreateAccount(context.Background(), &account)
 		account.ID = "11111-22222-33333-44444"
-		err := instance.UpdateAccount(context.Background(), account.Name, &account)
+		err := datasource.Instance().UpdateAccount(context.Background(), account.Name, &account)
 		assert.Nil(t, err)
-		result, err := instance.GetAccount(context.Background(), account.Name)
+		result, err := datasource.Instance().GetAccount(context.Background(), account.Name)
 		assert.Nil(t, err)
 		assert.Equal(t, account.ID, result.ID)
-		_, _ = instance.DeleteAccount(context.Background(), account.Name)
+		_, _ = datasource.Instance().DeleteAccount(context.Background(), account.Name)
 	})
 }
