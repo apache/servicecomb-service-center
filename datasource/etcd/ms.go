@@ -504,6 +504,18 @@ func (ds *DataSource) UnregisterService(ctx context.Context, request *pb.DeleteS
 	}, err
 }
 
+func (ds *DataSource) GetServiceCountByDomainProject(ctx context.Context, request *pb.GetServiceCountRequest) (*pb.GetServiceCountResponse, error) {
+	domainProject := request.Domain + path.SPLIT + request.Project
+	count, err := serviceUtil.GetOneDomainProjectServiceCount(ctx, domainProject)
+	if err != nil {
+		return nil, err
+	}
+	return &pb.GetServiceCountResponse{
+		Response: pb.CreateResponse(pb.ResponseSuccess, "Get service count by domain project successfully"),
+		Count:    count,
+	}, nil
+}
+
 func (ds *DataSource) RegisterInstance(ctx context.Context, request *pb.RegisterInstanceRequest) (
 	*pb.RegisterInstanceResponse, error) {
 	remoteIP := util.GetIPFromContext(ctx)

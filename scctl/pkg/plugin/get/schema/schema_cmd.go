@@ -19,8 +19,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/client"
-	model3 "github.com/apache/servicecomb-service-center/datasource/etcd/path"
-	model2 "github.com/apache/servicecomb-service-center/pkg/dump"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
+	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/cmd"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/model"
@@ -64,7 +64,7 @@ func NewSchemaCommand(parent *cobra.Command) *cobra.Command {
 }
 
 // schemas/[${domain}/][${project}/][${env}/]${app}/${microservice}.${version}/${schemaId}.yaml
-func saveDirectory(root string, ms *model2.Microservice) string {
+func saveDirectory(root string, ms *dump.Microservice) string {
 	if len(root) == 0 {
 		return ""
 	}
@@ -99,7 +99,7 @@ func SchemaCommandFunc(_ *cobra.Command, args []string) {
 		progressBar.Increment()
 
 		domainProject := model.GetDomainProject(ms)
-		if !get.AllDomains && strings.Index(domainProject+model3.SPLIT, get.Domain+model3.SPLIT) != 0 {
+		if !get.AllDomains && strings.Index(domainProject+path.SPLIT, get.Domain+path.SPLIT) != 0 {
 			continue
 		}
 		if len(AppId) > 0 && ms.Value.AppId != AppId {

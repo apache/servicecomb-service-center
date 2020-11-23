@@ -18,8 +18,8 @@ package instance
 import (
 	"context"
 	"github.com/apache/servicecomb-service-center/client"
-	model3 "github.com/apache/servicecomb-service-center/datasource/etcd/path"
-	model2 "github.com/apache/servicecomb-service-center/pkg/dump"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
+	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/cmd"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/model"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/plugin/get"
@@ -53,7 +53,7 @@ func InstanceCommandFunc(_ *cobra.Command, args []string) {
 		cmd.StopAndExit(cmd.ExitError, scErr)
 	}
 
-	svcMap := make(map[string]*model2.Microservice)
+	svcMap := make(map[string]*dump.Microservice)
 	for _, ms := range cache.Microservices {
 		svcMap[ms.Value.ServiceId] = ms
 	}
@@ -61,7 +61,7 @@ func InstanceCommandFunc(_ *cobra.Command, args []string) {
 	records := make(map[string]*InstanceRecord)
 	for _, inst := range cache.Instances {
 		domainProject := model.GetDomainProject(inst)
-		if !get.AllDomains && strings.Index(domainProject+model3.SPLIT, get.Domain+model3.SPLIT) != 0 {
+		if !get.AllDomains && strings.Index(domainProject+path.SPLIT, get.Domain+path.SPLIT) != 0 {
 			continue
 		}
 

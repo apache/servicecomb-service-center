@@ -54,40 +54,32 @@ func TestGenerateDependencyRuleKey(t *testing.T) {
 		ServiceName: "3",
 		Version:     "4",
 	})
-	if k != "/cse-sr/ms/dep-rules/a/c/1/2/3/4" {
-		t.Fatalf("TestGenerateDependencyRuleKey failed")
-	}
+	assert.Equal(t, "/cse-sr/ms/dep-rules/a/c/1/2/3/4", k)
 	k = path.GenerateConsumerDependencyRuleKey("a", &registry.MicroServiceKey{
 		Environment: "1",
 		AppId:       "2",
 		ServiceName: "*",
 		Version:     "4",
 	})
-	if k != "/cse-sr/ms/dep-rules/a/c/1/*" {
-		t.Fatalf("TestGenerateDependencyRuleKey failed")
-	}
+	assert.Equal(t, "/cse-sr/ms/dep-rules/a/c/1/*", k)
 
 	// provider
 	k = path.GenerateProviderDependencyRuleKey("a", nil)
-	if k != "/cse-sr/ms/dep-rules/a/p" {
-		t.Fatalf("TestGenerateDependencyRuleKey failed")
-	}
+	assert.Equal(t, "/cse-sr/ms/dep-rules/a/p", k)
+
 	k = path.GenerateProviderDependencyRuleKey("a", &registry.MicroServiceKey{
 		Environment: "1",
 		AppId:       "2",
 		ServiceName: "3",
 		Version:     "4",
 	})
-	if k != "/cse-sr/ms/dep-rules/a/p/1/2/3/4" {
-		t.Fatalf("TestGenerateDependencyRuleKey failed")
-	}
+	assert.Equal(t, "/cse-sr/ms/dep-rules/a/p/1/2/3/4", k)
+
 	k = path.GenerateProviderDependencyRuleKey("a", &registry.MicroServiceKey{
 		Environment: "1",
 		AppId:       "2",
 		ServiceName: "*",
 		Version:     "4",
 	})
-	if k != "/cse-sr/ms/dep-rules/a/p/1/*" {
-		t.Fatalf("TestGenerateDependencyRuleKey failed")
-	}
+	assert.Equal(t, "/cse-sr/ms/dep-rules/a/p/1/*", k)
 }

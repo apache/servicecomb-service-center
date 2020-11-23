@@ -18,7 +18,7 @@ package service
 import (
 	"context"
 	"github.com/apache/servicecomb-service-center/client"
-	model2 "github.com/apache/servicecomb-service-center/datasource/etcd/path"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/cmd"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/model"
@@ -63,7 +63,7 @@ func ServiceCommandFunc(_ *cobra.Command, args []string) {
 	records := make(map[string]*ServiceRecord)
 	for _, ms := range cache.Microservices {
 		domainProject := model.GetDomainProject(ms)
-		if !get.AllDomains && strings.Index(domainProject+model2.SPLIT, get.Domain+model2.SPLIT) != 0 {
+		if !get.AllDomains && strings.Index(domainProject+path.SPLIT, get.Domain+path.SPLIT) != 0 {
 			continue
 		}
 

@@ -40,6 +40,7 @@ type MetadataManager interface {
 	UnregisterService(ctx context.Context, request *pb.DeleteServiceRequest) (*pb.DeleteServiceResponse, error)
 	GetDeleteServiceFunc(ctx context.Context, serviceID string, force bool,
 		serviceRespChan chan<- *pb.DelServicesRspInfo) func(context.Context)
+	GetServiceCountByDomainProject(ctx context.Context, request *pb.GetServiceCountRequest) (*pb.GetServiceCountResponse, error)
 
 	// Instance management
 	RegisterInstance(ctx context.Context, request *pb.RegisterInstanceRequest) (*pb.RegisterInstanceResponse, error)

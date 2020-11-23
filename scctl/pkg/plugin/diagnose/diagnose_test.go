@@ -17,32 +17,32 @@ package diagnose
 
 import (
 	"fmt"
-	model2 "github.com/apache/servicecomb-service-center/pkg/dump"
+	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"testing"
 )
 
 func TestNewDiagnoseCommand(t *testing.T) {
-	services := model2.MicroserviceSlice{
-		model2.NewMicroservice(&model2.KV{Key: "1", Rev: 1,
+	services := dump.MicroserviceSlice{
+		dump.NewMicroservice(&dump.KV{Key: "1", Rev: 1,
 			Value: &registry.MicroService{
 				ServiceId: "667570b6842411e89c66286ed488de36", AppId: "app", ServiceName: "name1", Version: "0.0.1",
 			}}), // greater
-		model2.NewMicroservice(&model2.KV{Key: "6", Rev: 1,
+		dump.NewMicroservice(&dump.KV{Key: "6", Rev: 1,
 			Value: &registry.MicroService{
 				ServiceId: "667570b6842411e89c66286ed488de36", AppId: "app", ServiceName: "name2", Version: "0.0.1",
 			}}), // greater
-		model2.NewMicroservice(&model2.KV{Key: "2", Rev: 1, Value: &registry.MicroService{ServiceId: "2"}}), // mismatch
-		model2.NewMicroservice(&model2.KV{Key: "4", Rev: 2, Value: &registry.MicroService{ServiceId: "4"}}), // pass
+		dump.NewMicroservice(&dump.KV{Key: "2", Rev: 1, Value: &registry.MicroService{ServiceId: "2"}}), // mismatch
+		dump.NewMicroservice(&dump.KV{Key: "4", Rev: 2, Value: &registry.MicroService{ServiceId: "4"}}), // pass
 	}
-	instances := model2.InstanceSlice{
-		model2.NewInstance(&model2.KV{Key: "1", Rev: 1,
+	instances := dump.InstanceSlice{
+		dump.NewInstance(&dump.KV{Key: "1", Rev: 1,
 			Value: &registry.MicroServiceInstance{
 				ServiceId: "667570b6842411e89c66286ed488de36", InstanceId: "667570b6842411e89c66286ed488de36", Version: "0.0.1",
 				Endpoints: []string{"rest://127.0.0.1:8080"},
 			}}), // greater
-		model2.NewInstance(&model2.KV{Key: "2", Rev: 1,
+		dump.NewInstance(&dump.KV{Key: "2", Rev: 1,
 			Value: &registry.MicroServiceInstance{
 				ServiceId: "667570b6842411e89c66286ed488de36", InstanceId: "667570b6842411e89c66286ed488de36", Version: "0.0.1",
 				Endpoints: []string{"rest://127.0.0.2:8080"},
@@ -56,7 +56,7 @@ func TestNewDiagnoseCommand(t *testing.T) {
 	}
 
 	//for {
-	err, details := diagnose(&model2.Cache{Microservices: services, Instances: instances}, etcdResponse{service: kvs})
+	err, details := diagnose(&dump.Cache{Microservices: services, Instances: instances}, etcdResponse{service: kvs})
 	if err == nil || len(details) == 0 {
 		t.Fatalf("TestNewDiagnoseCommand failed")
 	}
