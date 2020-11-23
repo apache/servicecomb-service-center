@@ -24,7 +24,6 @@ import (
 
 const (
 	DuplicateKey               = 11000
-	CollectionAccount          = "account"
 	AccountName                = "name"
 	AccountID                  = "id"
 	AccountPassword            = "password"
@@ -37,6 +36,66 @@ const (
 	ServiceID                  = "instanceinfo.serviceid"
 	RefreshTime                = "refreshtime"
 )
+
+const (
+	CollectionAccount = "account"
+	CollectionService = "service"
+	CollectionSchema  = "schema"
+	CollectionRule    = "rule"
+)
+
+const (
+	ErrorDuplicateKey = 11000
+)
+
+const (
+	Domain             = "domain"
+	Project            = "project"
+	ServiceTag         = "tags"
+	SchemaID           = "schemaid"
+	RuleServiceID      = "serviceid"
+	RuleRuleID         = "rule.ruleid"
+	SchemaServiceID    = "serviceid"
+	ServiceServiceID   = "service.serviceid"
+	ServiceProperty    = "service.properties"
+	ServiceModTime     = "service.modtimestamp"
+	ServiceEnv         = "service.environment"
+	ServiceAppID       = "service.appid"
+	ServiceServiceName = "service.servicename"
+	ServiceAlias       = "service.alias"
+	ServiceVersion     = "service.version"
+	ServiceSchemas     = "service.schemas"
+	RuleAttribute      = "rule.attribute"
+	RulePattern        = "rule.pattern"
+	RuleModTime        = "rule.modtimestamp"
+	RuleDescription    = "rule.description"
+	RuleRuletype       = "rule.ruletype"
+	Schema             = "schema"
+	SchemaSummary      = "schemasummary"
+)
+
+type MgService struct {
+	Domain  string
+	Project string
+	Tags    map[string]string
+	Service *pb.MicroService
+}
+
+type MgSchema struct {
+	Domain        string
+	Project       string
+	ServiceID     string
+	SchemaID      string
+	Schema        string
+	SchemaSummary string
+}
+
+type MgRule struct {
+	Domain    string
+	Project   string
+	ServiceID string
+	Rule      *pb.ServiceRule
+}
 
 type Instance struct {
 	Domain       string

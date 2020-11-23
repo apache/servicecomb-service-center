@@ -21,6 +21,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/go-chassis/go-chassis/v2/storage"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"time"
@@ -30,6 +31,7 @@ const (
 	MongoDB             = "servicecenter"
 	MongoCheckDelay     = 2 * time.Second
 	HeathChekRetryTimes = 3
+	DuplicateKey        = 11000
 )
 
 var (
@@ -146,7 +148,20 @@ func (mc *MongoClient) Insert(ctx context.Context, Table string, document interf
 	if col == nil {
 		return nil, ErrCollectionsNil
 	}
-	return col.InsertOne(ctx, document, opts...)
+	res, err := col.InsertOne(ctx, document, opts...)
+	if err != nil {
+		switch tt := err.(type) {
+		case mongo.WriteException:
+			if tt.WriteConcernError != nil {
+				for _, writeError := range tt.WriteErrors {
+					if writeError.Code == DuplicateKey {
+						return nil, nil
+					}
+				}
+			}
+		}
+	}
+	return res, err
 }
 
 func (mc *MongoClient) BatchInsert(ctx context.Context, Table string, document []interface{}, opts ...*options.InsertManyOptions) (*mongo.InsertManyResult, error) {
@@ -163,6 +178,14 @@ func (mc *MongoClient) Delete(ctx context.Context, Table string, filter interfac
 		return nil, ErrCollectionsNil
 	}
 	return col.DeleteMany(ctx, filter, opts...)
+}
+
+func (mc *MongoClient) DeleteOne(ctx context.Context, Table string, filter interface{}, opts ...*options.DeleteOptions) (*mongo.DeleteResult, error) {
+	col := mc.collections[Table]
+	if col == nil {
+		return nil, ErrCollectionsNil
+	}
+	return col.DeleteOne(ctx, filter, opts...)
 }
 
 func (mc *MongoClient) BatchDelete(ctx context.Context, Table string, models []mongo.WriteModel, opts ...*options.BulkWriteOptions) (*mongo.BulkWriteResult, error) {
@@ -235,4 +258,44 @@ func (mc *MongoClient) Watch(ctx context.Context, Table string, pipeline interfa
 		return nil, ErrCollectionsNil
 	}
 	return col.Watch(ctx, pipeline, opts...)
+}
+
+func (mc *MongoClient) StartSession(ctx context.Context) (mongo.Session, error) {
+	return mc.client.StartSession()
+}
+
+func (mc *MongoClient) DocExist(ctx context.Context, table string, filter bson.M) (bool, error) {
+	num, err := mc.Count(ctx, table, filter)
+	if err != nil {
+		return false, err
+	}
+	return num != 0, nil
+}
+
+func (mc *MongoClient) DocUpdate(ctx context.Context, table string, filter interface{}, m bson.M, opts ...*options.FindOneAndUpdateOptions) error {
+	res, err := mc.FindOneAndUpdate(ctx, table, filter, m, opts...)
+	if err != nil {
+		return err
+	}
+	if res.Err() != nil {
+		// means no doc find, if the operation is update,should return err
+		return res.Err()
+	}
+	return nil
+}
+
+func (mc *MongoClient) DocDelete(ctx context.Context, table string, filter interface{}) (bool, error) {
+	res, err := mc.DeleteOne(ctx, table, filter)
+	if err != nil {
+		return false, err
+	}
+	return res.DeletedCount != 0, nil
+}
+
+func (mc *MongoClient) DocDeleteMany(ctx context.Context, table string, filter interface{}) error {
+	_, err := mc.Delete(ctx, table, filter)
+	if err != nil {
+		return err
+	}
+	return nil
 }
