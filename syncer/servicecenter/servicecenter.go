@@ -33,6 +33,7 @@ type Servicecenter interface {
 	FlushData()
 	Registry(clusterName string, data *pb.SyncData)
 	Discovery() *pb.SyncData
+	GetSyncMapping() pb.SyncMapping
 }
 
 type servicecenter struct {
@@ -117,4 +118,8 @@ func (s *servicecenter) Registry(clusterName string, data *pb.SyncData) {
 // Discovery discovery data from storage
 func (s *servicecenter) Discovery() *pb.SyncData {
 	return s.storage.GetData()
+}
+
+func (s *servicecenter) GetSyncMapping() pb.SyncMapping {
+	return s.storage.GetMaps()
 }

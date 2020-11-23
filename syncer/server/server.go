@@ -20,7 +20,10 @@ package server
 import (
 	"context"
 	"errors"
+	"github.com/apache/servicecomb-service-center/pkg/dump"
+	"github.com/apache/servicecomb-service-center/syncer/client"
 	"strconv"
+	"sync"
 	"syscall"
 
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
@@ -82,6 +85,9 @@ type Server struct {
 	// Wraps the grpc server
 	grpc *grpc.Server
 
+	eventQueue []*dump.WatchInstanceChangedEvent
+
+	queueLock sync.RWMutex
 	// The channel will be closed when receiving a system interrupt signal
 	stopCh chan struct{}
 }
@@ -90,10 +96,11 @@ type Server struct {
 func NewServer(conf *config.Config) *Server {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &Server{
-		ctx:    ctx,
-		cancel: cancel,
-		conf:   conf,
-		stopCh: make(chan struct{}),
+		ctx:        ctx,
+		cancel:     cancel,
+		conf:       conf,
+		stopCh:     make(chan struct{}),
+		eventQueue: make([]*dump.WatchInstanceChangedEvent, 0),
 	}
 }
 
@@ -128,6 +135,12 @@ func (s *Server) Run(ctx context.Context) {
 	s.task.Handle(s.tickHandler)
 
 	s.task.Run(ctx)
+
+	err = s.watchInstance()
+	if err != nil {
+		log.Error("watch instance error:%s", err)
+		return
+	}
 
 	log.Info("start service done")
 
@@ -252,4 +265,35 @@ func (s *Server) configureCluster() error {
 	}
 
 	return s.etcd.AddOptions(ops...)
+}
+func (s *Server) watchInstance() error {
+	cli := client.NewWatchClient(s.conf.Registry.Address)
+
+	err := cli.WatchInstances(s.addToQueue)
+
+	if err != nil {
+		return err
+	}
+
+	cli.WatchInstanceHeartbeat(s.addToQueue)
+
+	return nil
+}
+
+func (s *Server) addToQueue(event *dump.WatchInstanceChangedEvent) {
+	mapping := s.servicecenter.GetSyncMapping()
+	for _, m := range mapping {
+		if event.Instance.Value.InstanceId == m.CurInstanceID {
+			if m.OrgInstanceID != "" {
+				log.Debugf("instance[curId:%s, originId:%s] is from another sc, no need to put to queue",
+					m.CurInstanceID, m.OrgInstanceID)
+				return
+			}
+		}
+	}
+
+	s.queueLock.Lock()
+	s.eventQueue = append(s.eventQueue, event)
+	log.Debugf("success add instance event to queue:%s   len:%s", event, len(s.eventQueue))
+	s.queueLock.Unlock()
 }
