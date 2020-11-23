@@ -49,11 +49,29 @@ echo "${green}mongodb is running......${reset}"
 echo "${green}Preparing the env for UT....${reset}"
 ./scripts/prepare_env_ut.sh
 
-[ $? == 0 ] && ut_for_dir datasource
+export TEST_MODE=etcd
+[ $? == 0 ] && ut_for_dir datasource/etcd
 [ $? == 0 ] && ut_for_dir pkg
 [ $? == 0 ] && ut_for_dir server
 [ $? == 0 ] && ut_for_dir scctl
 [ $? == 0 ] && ut_for_dir syncer
+ret=$?
+
+if [ ${ret} == 0 ]; then
+	echo "${green}All the unit test passed..${reset}"
+	echo "${green}Coverage is created in the file ./coverage.txt${reset}"
+else
+	echo "${red}Some or all the unit test failed..please check the logs for more details.${reset}"
+	exit 1
+fi
+
+export TEST_MODE=mongo
+[ $? == 0 ] && ut_for_dir datasource/mongo
+# 由於mongo接口未全部實現先注釋
+#[ $? == 0 ] && ut_for_dir pkg
+#[ $? == 0 ] && ut_for_dir server
+#[ $? == 0 ] && ut_for_dir scctl
+#[ $? == 0 ] && ut_for_dir syncer
 ret=$?
 
 if [ ${ret} == 0 ]; then

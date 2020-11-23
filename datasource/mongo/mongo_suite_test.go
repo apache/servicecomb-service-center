@@ -15,32 +15,38 @@
  * limitations under the License.
  */
 
-//Package test prepare service center required module before UT
-package test
+package mongo_test
+
+// initialize
+import _ "github.com/apache/servicecomb-service-center/test"
 
 import (
+	"context"
 	"github.com/apache/servicecomb-service-center/datasource"
-	_ "github.com/apache/servicecomb-service-center/server/init"
-)
-import _ "github.com/apache/servicecomb-service-center/server/bootstrap"
-import (
-	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/service"
-	"github.com/go-chassis/go-archaius"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	. "github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/reporters"
+	. "github.com/onsi/gomega"
+	"testing"
+	"time"
 )
 
-func init() {
-	t := archaius.Get("TEST_MODE")
-	if t == nil {
-		t = "etcd"
-	}
-	if t == "etcd" {
-		archaius.Set("registry.cache.mode", 0)
-		archaius.Set("discovery.kind", "etcd")
-		archaius.Set("registry.kind", "etcd")
-	} else {
-		archaius.Set("registry.heartbeat.kind", "heartbeatchecker")
-	}
-	datasource.Init(datasource.Options{PluginImplName: datasource.ImplName(t.(string))})
-	core.ServiceAPI, core.InstanceAPI = service.AssembleResources()
+var timeLimit = 2 * time.Second
+
+var _ = BeforeSuite(func() {
+	//clear service created in last test
+	time.Sleep(timeLimit)
+	_ = datasource.Instance().ClearNoInstanceServices(context.Background(), timeLimit)
+})
+
+func getContext() context.Context {
+	return util.SetContext(
+		util.SetDomainProject(context.Background(), "default", "default"),
+		util.CtxNocache, "1")
+}
+
+func TestMongo(t *testing.T) {
+	RegisterFailHandler(Fail)
+	junitReporter := reporters.NewJUnitReporter("mongo.junit.xml")
+	RunSpecsWithDefaultAndCustomReporters(t, "mongo Suite", []Reporter{junitReporter})
 }
