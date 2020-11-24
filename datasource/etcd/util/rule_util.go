@@ -20,6 +20,7 @@ package util
 import (
 	"context"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"reflect"
 	"regexp"
 	"strings"
@@ -27,15 +28,14 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
+	"github.com/go-chassis/cari/discovery"
 )
 
 type RuleFilter struct {
 	DomainProject string
-	ProviderRules []*pb.ServiceRule
+	ProviderRules []*discovery.ServiceRule
 }
 
 func (rf *RuleFilter) Filter(ctx context.Context, consumerID string) (bool, error) {
@@ -55,7 +55,7 @@ func (rf *RuleFilter) Filter(ctx context.Context, consumerID string) (bool, erro
 	}
 	matchErr := MatchRules(rf.ProviderRules, consumer, tags)
 	if matchErr != nil {
-		if matchErr.Code == scerr.ErrPermissionDeny {
+		if matchErr.Code == discovery.ErrPermissionDeny {
 			return false, nil
 		}
 		return false, matchErr
@@ -87,9 +87,9 @@ func (rf *RuleFilter) FilterAll(ctx context.Context, consumerIDs []string) (allo
 	return consumers[:allowIdx], consumers[denyIdx:], nil
 }
 
-func GetRulesUtil(ctx context.Context, domainProject string, serviceID string) ([]*pb.ServiceRule, error) {
+func GetRulesUtil(ctx context.Context, domainProject string, serviceID string) ([]*discovery.ServiceRule, error) {
 	key := util.StringJoin([]string{
-		apt.GetServiceRuleRootKey(domainProject),
+		path.GetServiceRuleRootKey(domainProject),
 		serviceID,
 		"",
 	}, "/")
@@ -100,16 +100,16 @@ func GetRulesUtil(ctx context.Context, domainProject string, serviceID string) (
 		return nil, err
 	}
 
-	rules := []*pb.ServiceRule{}
+	rules := []*discovery.ServiceRule{}
 	for _, kv := range resp.Kvs {
-		rules = append(rules, kv.Value.(*pb.ServiceRule))
+		rules = append(rules, kv.Value.(*discovery.ServiceRule))
 	}
 	return rules, nil
 }
 
 func RuleExist(ctx context.Context, domainProject string, serviceID string, attr string, pattern string) bool {
 	opts := append(FromContext(ctx),
-		client.WithStrKey(apt.GenerateRuleIndexKey(domainProject, serviceID, attr, pattern)),
+		client.WithStrKey(path.GenerateRuleIndexKey(domainProject, serviceID, attr, pattern)),
 		client.WithCountOnly())
 	resp, err := kv.Store().RuleIndex().Search(ctx, opts...)
 	if err != nil || resp.Count == 0 {
@@ -119,7 +119,7 @@ func RuleExist(ctx context.Context, domainProject string, serviceID string, attr
 }
 
 func GetServiceRuleType(ctx context.Context, domainProject string, serviceID string) (string, int, error) {
-	key := apt.GenerateServiceRuleKey(domainProject, serviceID, "")
+	key := path.GenerateServiceRuleKey(domainProject, serviceID, "")
 	opts := append(FromContext(ctx),
 		client.WithStrKey(key),
 		client.WithPrefix())
@@ -131,12 +131,12 @@ func GetServiceRuleType(ctx context.Context, domainProject string, serviceID str
 	if len(resp.Kvs) == 0 {
 		return "", 0, nil
 	}
-	return resp.Kvs[0].Value.(*pb.ServiceRule).RuleType, len(resp.Kvs), nil
+	return resp.Kvs[0].Value.(*discovery.ServiceRule).RuleType, len(resp.Kvs), nil
 }
 
-func GetOneRule(ctx context.Context, domainProject, serviceID, ruleID string) (*pb.ServiceRule, error) {
+func GetOneRule(ctx context.Context, domainProject, serviceID, ruleID string) (*discovery.ServiceRule, error) {
 	opts := append(FromContext(ctx),
-		client.WithStrKey(apt.GenerateServiceRuleKey(domainProject, serviceID, ruleID)))
+		client.WithStrKey(path.GenerateServiceRuleKey(domainProject, serviceID, ruleID)))
 	resp, err := kv.Store().Rule().Search(ctx, opts...)
 	if err != nil {
 		log.Errorf(err, "get service rule[%s/%s]", serviceID, ruleID)
@@ -146,21 +146,21 @@ func GetOneRule(ctx context.Context, domainProject, serviceID, ruleID string) (*
 		log.Errorf(nil, "get service rule[%s/%s] failed", serviceID, ruleID)
 		return nil, nil
 	}
-	return resp.Kvs[0].Value.(*pb.ServiceRule), nil
+	return resp.Kvs[0].Value.(*discovery.ServiceRule), nil
 }
 
-func AllowAcrossDimension(ctx context.Context, providerService *pb.MicroService, consumerService *pb.MicroService) error {
+func AllowAcrossDimension(ctx context.Context, providerService *discovery.MicroService, consumerService *discovery.MicroService) error {
 	if providerService.AppId != consumerService.AppId {
 		if len(providerService.Properties) == 0 {
 			return fmt.Errorf("not allow across app access")
 		}
 
-		if allowCrossApp, ok := providerService.Properties[pb.PropAllowCrossApp]; !ok || strings.ToLower(allowCrossApp) != "true" {
+		if allowCrossApp, ok := providerService.Properties[discovery.PropAllowCrossApp]; !ok || strings.ToLower(allowCrossApp) != "true" {
 			return fmt.Errorf("not allow across app access")
 		}
 	}
 
-	if !apt.IsGlobal(pb.MicroServiceToKey(util.ParseTargetDomainProject(ctx), providerService)) &&
+	if !apt.IsGlobal(discovery.MicroServiceToKey(util.ParseTargetDomainProject(ctx), providerService)) &&
 		providerService.Environment != consumerService.Environment {
 		return fmt.Errorf("not allow across environment access")
 	}
@@ -168,9 +168,9 @@ func AllowAcrossDimension(ctx context.Context, providerService *pb.MicroService,
 	return nil
 }
 
-func MatchRules(rulesOfProvider []*pb.ServiceRule, consumer *pb.MicroService, tagsOfConsumer map[string]string) *scerr.Error {
+func MatchRules(rulesOfProvider []*discovery.ServiceRule, consumer *discovery.MicroService, tagsOfConsumer map[string]string) *discovery.Error {
 	if consumer == nil {
-		return scerr.NewError(scerr.ErrInvalidParams, "consumer is nil")
+		return discovery.NewError(discovery.ErrInvalidParams, "consumer is nil")
 	}
 
 	if len(rulesOfProvider) <= 0 {
@@ -182,7 +182,7 @@ func MatchRules(rulesOfProvider []*pb.ServiceRule, consumer *pb.MicroService, ta
 	return patternBlackList(rulesOfProvider, tagsOfConsumer, consumer)
 }
 
-func patternWhiteList(rulesOfProvider []*pb.ServiceRule, tagsOfConsumer map[string]string, consumer *pb.MicroService) *scerr.Error {
+func patternWhiteList(rulesOfProvider []*discovery.ServiceRule, tagsOfConsumer map[string]string, consumer *discovery.MicroService) *discovery.Error {
 	v := reflect.Indirect(reflect.ValueOf(consumer))
 	consumerID := consumer.ServiceId
 	for _, rule := range rulesOfProvider {
@@ -202,10 +202,10 @@ func patternWhiteList(rulesOfProvider []*pb.ServiceRule, tagsOfConsumer map[stri
 			return nil
 		}
 	}
-	return scerr.NewError(scerr.ErrPermissionDeny, "Not found in white list")
+	return discovery.NewError(discovery.ErrPermissionDeny, "Not found in white list")
 }
 
-func parsePattern(v reflect.Value, rule *pb.ServiceRule, tagsOfConsumer map[string]string, consumerID string) (string, *scerr.Error) {
+func parsePattern(v reflect.Value, rule *discovery.ServiceRule, tagsOfConsumer map[string]string, consumerID string) (string, *discovery.Error) {
 	if strings.HasPrefix(rule.Attribute, "tag_") {
 		key := rule.Attribute[4:]
 		value := tagsOfConsumer[key]
@@ -218,13 +218,13 @@ func parsePattern(v reflect.Value, rule *pb.ServiceRule, tagsOfConsumer map[stri
 	if !key.IsValid() {
 		log.Errorf(nil, "can not find service[%] field[%s], ruleID is %s",
 			consumerID, rule.Attribute, rule.RuleId)
-		return "", scerr.NewErrorf(scerr.ErrInternal, "Can not find field '%s'", rule.Attribute)
+		return "", discovery.NewErrorf(discovery.ErrInternal, "Can not find field '%s'", rule.Attribute)
 	}
 	return key.String(), nil
 
 }
 
-func patternBlackList(rulesOfProvider []*pb.ServiceRule, tagsOfConsumer map[string]string, consumer *pb.MicroService) *scerr.Error {
+func patternBlackList(rulesOfProvider []*discovery.ServiceRule, tagsOfConsumer map[string]string, consumer *discovery.MicroService) *discovery.Error {
 	v := reflect.Indirect(reflect.ValueOf(consumer))
 	consumerID := consumer.ServiceId
 	for _, rule := range rulesOfProvider {
@@ -242,13 +242,13 @@ func patternBlackList(rulesOfProvider []*pb.ServiceRule, tagsOfConsumer map[stri
 			log.Warnf("no permission to access, consumer[%s][%s/%s/%s/%s] match black list, rule.Pattern is %s, value is %s",
 				consumerID, consumer.Environment, consumer.AppId, consumer.ServiceName, consumer.Version,
 				rule.Pattern, value)
-			return scerr.NewError(scerr.ErrPermissionDeny, "Found in black list")
+			return discovery.NewError(discovery.ErrPermissionDeny, "Found in black list")
 		}
 	}
 	return nil
 }
 
-func Accessible(ctx context.Context, consumerID string, providerID string) *scerr.Error {
+func Accessible(ctx context.Context, consumerID string, providerID string) *discovery.Error {
 	if len(consumerID) == 0 {
 		return nil
 	}
@@ -258,24 +258,24 @@ func Accessible(ctx context.Context, consumerID string, providerID string) *scer
 
 	consumerService, err := GetService(ctx, domainProject, consumerID)
 	if err != nil {
-		return scerr.NewErrorf(scerr.ErrInternal, "An error occurred in query consumer(%s)", err.Error())
+		return discovery.NewErrorf(discovery.ErrInternal, "An error occurred in query consumer(%s)", err.Error())
 	}
 	if consumerService == nil {
-		return scerr.NewError(scerr.ErrServiceNotExists, "consumer serviceID is invalid")
+		return discovery.NewError(discovery.ErrServiceNotExists, "consumer serviceID is invalid")
 	}
 
 	// 跨应用权限
 	providerService, err := GetService(ctx, targetDomainProject, providerID)
 	if err != nil {
-		return scerr.NewErrorf(scerr.ErrInternal, "An error occurred in query provider(%s)", err.Error())
+		return discovery.NewErrorf(discovery.ErrInternal, "An error occurred in query provider(%s)", err.Error())
 	}
 	if providerService == nil {
-		return scerr.NewError(scerr.ErrServiceNotExists, "provider serviceID is invalid")
+		return discovery.NewError(discovery.ErrServiceNotExists, "provider serviceID is invalid")
 	}
 
 	err = AllowAcrossDimension(ctx, providerService, consumerService)
 	if err != nil {
-		return scerr.NewError(scerr.ErrPermissionDeny, err.Error())
+		return discovery.NewError(discovery.ErrPermissionDeny, err.Error())
 	}
 
 	ctx = util.SetContext(util.CloneContext(ctx), util.CtxCacheOnly, "1")
@@ -283,7 +283,7 @@ func Accessible(ctx context.Context, consumerID string, providerID string) *scer
 	// 黑白名单
 	rules, err := GetRulesUtil(ctx, targetDomainProject, providerID)
 	if err != nil {
-		return scerr.NewErrorf(scerr.ErrInternal, "An error occurred in query provider rules(%s)", err.Error())
+		return discovery.NewErrorf(discovery.ErrInternal, "An error occurred in query provider rules(%s)", err.Error())
 	}
 
 	if len(rules) == 0 {
@@ -292,7 +292,7 @@ func Accessible(ctx context.Context, consumerID string, providerID string) *scer
 
 	validateTags, err := GetTagsUtils(ctx, domainProject, consumerService.ServiceId)
 	if err != nil {
-		return scerr.NewErrorf(scerr.ErrInternal, "An error occurred in query consumer tags(%s)", err.Error())
+		return discovery.NewErrorf(discovery.ErrInternal, "An error occurred in query consumer tags(%s)", err.Error())
 	}
 
 	return MatchRules(rules, consumerService, validateTags)

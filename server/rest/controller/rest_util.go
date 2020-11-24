@@ -21,17 +21,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/alarm"
-	"github.com/apache/servicecomb-service-center/server/scerror"
+	"github.com/go-chassis/cari/discovery"
 	"net/http"
 	"strconv"
 )
 
 func WriteError(w http.ResponseWriter, code int32, detail string) {
-	err := scerror.NewError(code, detail)
+	err := discovery.NewError(code, detail)
 	w.Header().Set(rest.HeaderResponseStatus, strconv.Itoa(err.StatusCode()))
 	w.Header().Set(rest.HeaderContentType, rest.ContentTypeJSON)
 	w.WriteHeader(err.StatusCode())
@@ -45,8 +44,8 @@ func WriteError(w http.ResponseWriter, code int32, detail string) {
 	}
 }
 
-func WriteResponse(w http.ResponseWriter, resp *pb.Response, obj interface{}) {
-	if resp != nil && resp.GetCode() != pb.ResponseSuccess {
+func WriteResponse(w http.ResponseWriter, resp *discovery.Response, obj interface{}) {
+	if resp != nil && resp.GetCode() != discovery.ResponseSuccess {
 		WriteError(w, resp.GetCode(), resp.GetMessage())
 		return
 	}
@@ -60,7 +59,7 @@ func WriteResponse(w http.ResponseWriter, resp *pb.Response, obj interface{}) {
 
 	b, err := json.Marshal(obj)
 	if err != nil {
-		WriteError(w, scerror.ErrInternal, err.Error())
+		WriteError(w, discovery.ErrInternal, err.Error())
 		return
 	}
 	w.Header().Set(rest.HeaderResponseStatus, strconv.Itoa(http.StatusOK))
@@ -69,8 +68,8 @@ func WriteResponse(w http.ResponseWriter, resp *pb.Response, obj interface{}) {
 	fmt.Fprintln(w, util.BytesToStringWithNoCopy(b))
 }
 
-func WriteJSONIfSuccess(w http.ResponseWriter, resp *pb.Response, json []byte) {
-	if resp.GetCode() == pb.ResponseSuccess {
+func WriteJSONIfSuccess(w http.ResponseWriter, resp *discovery.Response, json []byte) {
+	if resp.GetCode() == discovery.ResponseSuccess {
 		WriteJSON(w, json)
 		return
 	}

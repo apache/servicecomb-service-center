@@ -19,19 +19,18 @@ import (
 	"fmt"
 	"github.com/apache/servicecomb-service-center/datasource/etcd"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/dump"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
+	pb "github.com/go-chassis/cari/discovery"
 	"sync"
 	"time"
 
+	"context"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/alarm"
-	"github.com/apache/servicecomb-service-center/server/core"
-
-	"context"
 )
 
 var (
@@ -187,20 +186,20 @@ func (c *Syncer) logConflictFunc(origin *dump.KV, conflict dump.Getter, index in
 	switch conflict.(type) {
 	case *dump.MicroserviceIndexSlice:
 		slice := conflict.(*dump.MicroserviceIndexSlice)
-		kv := (*slice)[index]
-		if serviceID := origin.Value.(string); kv.Value != serviceID {
-			key := core.GetInfoFromSvcIndexKV(util.StringToBytesWithNoCopy(kv.Key))
+		keyValue := (*slice)[index]
+		if serviceID := origin.Value.(string); keyValue.Value != serviceID {
+			key := path.GetInfoFromSvcIndexKV(util.StringToBytesWithNoCopy(keyValue.Key))
 			log.Warnf("conflict! can not merge microservice index[%s][%s][%s/%s/%s/%s], found one[%s] in cluster[%s]",
-				kv.ClusterName, kv.Value, key.Environment, key.AppId, key.ServiceName, key.Version,
+				keyValue.ClusterName, keyValue.Value, key.Environment, key.AppId, key.ServiceName, key.Version,
 				serviceID, origin.ClusterName)
 		}
 	case *dump.MicroserviceAliasSlice:
 		slice := conflict.(*dump.MicroserviceAliasSlice)
-		kv := (*slice)[index]
-		if serviceID := origin.Value.(string); kv.Value != serviceID {
-			key := core.GetInfoFromSvcAliasKV(util.StringToBytesWithNoCopy(kv.Key))
+		keyValue := (*slice)[index]
+		if serviceID := origin.Value.(string); keyValue.Value != serviceID {
+			key := path.GetInfoFromSvcAliasKV(util.StringToBytesWithNoCopy(keyValue.Key))
 			log.Warnf("conflict! can not merge microservice alias[%s][%s][%s/%s/%s/%s], found one[%s] in cluster[%s]",
-				kv.ClusterName, kv.Value, key.Environment, key.AppId, key.ServiceName, key.Version,
+				keyValue.ClusterName, keyValue.Value, key.Environment, key.AppId, key.ServiceName, key.Version,
 				serviceID, origin.ClusterName)
 		}
 	}

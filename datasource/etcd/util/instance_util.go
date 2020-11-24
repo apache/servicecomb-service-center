@@ -22,6 +22,7 @@ import (
 	"crypto/sha1"
 	"encoding/json"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"strconv"
 	"strings"
 	"time"
@@ -30,16 +31,13 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
-	rmodel "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	apt "github.com/apache/servicecomb-service-center/server/core"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
+	pb "github.com/go-chassis/cari/discovery"
 )
 
 func GetLeaseID(ctx context.Context, domainProject string, serviceID string, instanceID string) (int64, error) {
 	opts := append(FromContext(ctx),
-		client.WithStrKey(apt.GenerateInstanceLeaseKey(domainProject, serviceID, instanceID)))
+		client.WithStrKey(path.GenerateInstanceLeaseKey(domainProject, serviceID, instanceID)))
 	resp, err := kv.Store().Lease().Search(ctx, opts...)
 	if err != nil {
 		return -1, err
@@ -52,7 +50,7 @@ func GetLeaseID(ctx context.Context, domainProject string, serviceID string, ins
 }
 
 func GetInstance(ctx context.Context, domainProject string, serviceID string, instanceID string) (*pb.MicroServiceInstance, error) {
-	key := apt.GenerateInstanceKey(domainProject, serviceID, instanceID)
+	key := path.GenerateInstanceKey(domainProject, serviceID, instanceID)
 	opts := append(FromContext(ctx), client.WithStrKey(key))
 
 	resp, err := kv.Store().Instance().Search(ctx, opts...)
@@ -74,7 +72,7 @@ func FormatRevision(revs, counts []int64) (s string) {
 }
 
 func GetAllInstancesOfOneService(ctx context.Context, domainProject string, serviceID string) ([]*pb.MicroServiceInstance, error) {
-	key := apt.GenerateInstanceKey(domainProject, serviceID, "")
+	key := path.GenerateInstanceKey(domainProject, serviceID, "")
 	opts := append(FromContext(ctx), client.WithStrKey(key), client.WithPrefix())
 	resp, err := kv.Store().Instance().Search(ctx, opts...)
 	if err != nil {
@@ -90,7 +88,7 @@ func GetAllInstancesOfOneService(ctx context.Context, domainProject string, serv
 }
 
 func GetInstanceCountOfOneService(ctx context.Context, domainProject string, serviceID string) (int64, error) {
-	key := apt.GenerateInstanceKey(domainProject, serviceID, "")
+	key := path.GenerateInstanceKey(domainProject, serviceID, "")
 	opts := append(FromContext(ctx),
 		client.WithStrKey(key),
 		client.WithPrefix(),
@@ -120,7 +118,7 @@ func ParseEndpointIndexValue(value []byte) EndpointIndexValue {
 func DeleteServiceAllInstances(ctx context.Context, serviceID string) error {
 	domainProject := util.ParseDomainProject(ctx)
 
-	instanceLeaseKey := apt.GenerateInstanceLeaseKey(domainProject, serviceID, "")
+	instanceLeaseKey := path.GenerateInstanceLeaseKey(domainProject, serviceID, "")
 	resp, err := kv.Store().Lease().Search(ctx,
 		client.WithStrKey(instanceLeaseKey),
 		client.WithPrefix(),
@@ -185,8 +183,8 @@ func QueryAllProvidersInstances(ctx context.Context, selfServiceID string) (resu
 
 		for _, kv := range kvs {
 			results = append(results, &pb.WatchInstanceResponse{
-				Response: rmodel.CreateResponse(rmodel.ResponseSuccess, "List instance successfully."),
-				Action:   string(rmodel.EVT_INIT),
+				Response: pb.CreateResponse(pb.ResponseSuccess, "List instance successfully."),
+				Action:   string(pb.EVT_INIT),
 				Key: &pb.MicroServiceKey{
 					Environment: service.Environment,
 					AppId:       service.AppId,
@@ -202,7 +200,7 @@ func QueryAllProvidersInstances(ctx context.Context, selfServiceID string) (resu
 
 func QueryServiceInstancesKvs(ctx context.Context, serviceID string, rev int64) ([]*sd.KeyValue, error) {
 	domainProject := util.ParseDomainProject(ctx)
-	key := apt.GenerateInstanceKey(domainProject, serviceID, "")
+	key := path.GenerateInstanceKey(domainProject, serviceID, "")
 	resp, err := kv.Store().Instance().Search(ctx,
 		client.WithStrKey(key),
 		client.WithPrefix(),
@@ -215,22 +213,22 @@ func QueryServiceInstancesKvs(ctx context.Context, serviceID string, rev int64) 
 	return resp.Kvs, nil
 }
 
-func UpdateInstance(ctx context.Context, domainProject string, instance *pb.MicroServiceInstance) *scerr.Error {
+func UpdateInstance(ctx context.Context, domainProject string, instance *pb.MicroServiceInstance) *pb.Error {
 	leaseID, err := GetLeaseID(ctx, domainProject, instance.ServiceId, instance.InstanceId)
 	if err != nil {
-		return scerr.NewError(scerr.ErrInternal, err.Error())
+		return pb.NewError(pb.ErrInternal, err.Error())
 	}
 	if leaseID == -1 {
-		return scerr.NewError(scerr.ErrInstanceNotExists, "Instance's leaseId not exist.")
+		return pb.NewError(pb.ErrInstanceNotExists, "Instance's leaseId not exist.")
 	}
 
 	instance.ModTimestamp = strconv.FormatInt(time.Now().Unix(), 10)
 	data, err := json.Marshal(instance)
 	if err != nil {
-		return scerr.NewError(scerr.ErrInternal, err.Error())
+		return pb.NewError(pb.ErrInternal, err.Error())
 	}
 
-	key := apt.GenerateInstanceKey(domainProject, instance.ServiceId, instance.InstanceId)
+	key := path.GenerateInstanceKey(domainProject, instance.ServiceId, instance.InstanceId)
 
 	resp, err := client.Instance().TxnWithCmp(ctx,
 		[]client.PluginOp{client.OpPut(
@@ -238,24 +236,24 @@ func UpdateInstance(ctx context.Context, domainProject string, instance *pb.Micr
 			client.WithValue(data),
 			client.WithLease(leaseID))},
 		[]client.CompareOp{client.OpCmp(
-			client.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, instance.ServiceId))),
+			client.CmpVer(util.StringToBytesWithNoCopy(path.GenerateServiceKey(domainProject, instance.ServiceId))),
 			client.CmpNotEqual, 0)},
 		nil)
 	if err != nil {
-		return scerr.NewError(scerr.ErrUnavailableBackend, err.Error())
+		return pb.NewError(pb.ErrUnavailableBackend, err.Error())
 	}
 	if !resp.Succeeded {
-		return scerr.NewError(scerr.ErrInstanceNotExists, "Instance does not exist.")
+		return pb.NewError(pb.ErrInstanceNotExists, "Instance does not exist.")
 	}
 	return nil
 }
 
 func AppendFindResponse(ctx context.Context, index int64, resp *pb.Response, instances []*pb.MicroServiceInstance,
 	updatedResult *[]*pb.FindResult, notModifiedResult *[]int64, failedResult **pb.FindFailedResult) {
-	if code := resp.GetCode(); code != rmodel.ResponseSuccess {
+	if code := resp.GetCode(); code != pb.ResponseSuccess {
 		if *failedResult == nil {
 			*failedResult = &pb.FindFailedResult{
-				Error: scerr.NewError(code, resp.GetMessage()),
+				Error: pb.NewError(code, resp.GetMessage()),
 			}
 		}
 		(*failedResult).Indexes = append((*failedResult).Indexes, index)

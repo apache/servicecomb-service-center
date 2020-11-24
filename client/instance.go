@@ -19,12 +19,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/apache/servicecomb-service-center/pkg/registry"
+	"github.com/go-chassis/cari/discovery"
 	"io/ioutil"
 	"net/http"
 	"net/url"
-
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 )
 
 const (
@@ -35,41 +33,41 @@ const (
 	apiInstanceHeartbeatURL  = "/v4/%s/registry/microservices/%s/instances/%s/heartbeat"
 )
 
-func (c *Client) RegisterInstance(ctx context.Context, domain, project, serviceID string, instance *registry.MicroServiceInstance) (string, *scerr.Error) {
+func (c *Client) RegisterInstance(ctx context.Context, domain, project, serviceID string, instance *discovery.MicroServiceInstance) (string, *discovery.Error) {
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 
-	reqBody, err := json.Marshal(&registry.RegisterInstanceRequest{Instance: instance})
+	reqBody, err := json.Marshal(&discovery.RegisterInstanceRequest{Instance: instance})
 	if err != nil {
-		return "", scerr.NewError(scerr.ErrInternal, err.Error())
+		return "", discovery.NewError(discovery.ErrInternal, err.Error())
 	}
 
 	resp, err := c.RestDoWithContext(ctx, http.MethodPost,
 		fmt.Sprintf(apiInstancesURL, project, serviceID),
 		headers, reqBody)
 	if err != nil {
-		return "", scerr.NewError(scerr.ErrInternal, err.Error())
+		return "", discovery.NewError(discovery.ErrInternal, err.Error())
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return "", scerr.NewError(scerr.ErrInternal, err.Error())
+		return "", discovery.NewError(discovery.ErrInternal, err.Error())
 	}
 
 	if resp.StatusCode != http.StatusOK {
 		return "", c.toError(body)
 	}
 
-	instancesResp := &registry.RegisterInstanceResponse{}
+	instancesResp := &discovery.RegisterInstanceResponse{}
 	err = json.Unmarshal(body, instancesResp)
 	if err != nil {
-		return "", scerr.NewError(scerr.ErrInternal, err.Error())
+		return "", discovery.NewError(discovery.ErrInternal, err.Error())
 	}
 	return instancesResp.InstanceId, nil
 }
 
-func (c *Client) UnregisterInstance(ctx context.Context, domain, project, serviceID, instanceID string) *scerr.Error {
+func (c *Client) UnregisterInstance(ctx context.Context, domain, project, serviceID, instanceID string) *discovery.Error {
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 
@@ -77,13 +75,13 @@ func (c *Client) UnregisterInstance(ctx context.Context, domain, project, servic
 		fmt.Sprintf(apiInstanceURL, project, serviceID, instanceID),
 		headers, nil)
 	if err != nil {
-		return scerr.NewError(scerr.ErrInternal, err.Error())
+		return discovery.NewError(discovery.ErrInternal, err.Error())
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return scerr.NewError(scerr.ErrInternal, err.Error())
+		return discovery.NewError(discovery.ErrInternal, err.Error())
 	}
 
 	if resp.StatusCode != http.StatusOK {
@@ -93,7 +91,7 @@ func (c *Client) UnregisterInstance(ctx context.Context, domain, project, servic
 	return nil
 }
 
-func (c *Client) DiscoveryInstances(ctx context.Context, domain, project, consumerID, providerAppID, providerServiceName, providerVersionRule string) ([]*registry.MicroServiceInstance, *scerr.Error) {
+func (c *Client) DiscoveryInstances(ctx context.Context, domain, project, consumerID, providerAppID, providerServiceName, providerVersionRule string) ([]*discovery.MicroServiceInstance, *discovery.Error) {
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 	headers.Set("X-ConsumerId", consumerID)
@@ -107,29 +105,29 @@ func (c *Client) DiscoveryInstances(ctx context.Context, domain, project, consum
 		fmt.Sprintf(apiDiscoveryInstancesURL, project)+"?"+c.parseQuery(ctx)+"&"+query.Encode(),
 		headers, nil)
 	if err != nil {
-		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
+		return nil, discovery.NewError(discovery.ErrInternal, err.Error())
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
+		return nil, discovery.NewError(discovery.ErrInternal, err.Error())
 	}
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, c.toError(body)
 	}
 
-	instancesResp := &registry.GetInstancesResponse{}
+	instancesResp := &discovery.GetInstancesResponse{}
 	err = json.Unmarshal(body, instancesResp)
 	if err != nil {
-		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
+		return nil, discovery.NewError(discovery.ErrInternal, err.Error())
 	}
 
 	return instancesResp.Instances, nil
 }
 
-func (c *Client) Heartbeat(ctx context.Context, domain, project, serviceID, instanceID string) *scerr.Error {
+func (c *Client) Heartbeat(ctx context.Context, domain, project, serviceID, instanceID string) *discovery.Error {
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 
@@ -137,13 +135,13 @@ func (c *Client) Heartbeat(ctx context.Context, domain, project, serviceID, inst
 		fmt.Sprintf(apiInstanceHeartbeatURL, project, serviceID, instanceID),
 		headers, nil)
 	if err != nil {
-		return scerr.NewError(scerr.ErrInternal, err.Error())
+		return discovery.NewError(discovery.ErrInternal, err.Error())
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return scerr.NewError(scerr.ErrInternal, err.Error())
+		return discovery.NewError(discovery.ErrInternal, err.Error())
 	}
 
 	if resp.StatusCode != http.StatusOK {
@@ -153,42 +151,42 @@ func (c *Client) Heartbeat(ctx context.Context, domain, project, serviceID, inst
 	return nil
 }
 
-func (c *Client) HeartbeatSet(ctx context.Context, domain, project string, instances ...*registry.HeartbeatSetElement) ([]*registry.InstanceHbRst, *scerr.Error) {
+func (c *Client) HeartbeatSet(ctx context.Context, domain, project string, instances ...*discovery.HeartbeatSetElement) ([]*discovery.InstanceHbRst, *discovery.Error) {
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 
-	reqBody, err := json.Marshal(&registry.HeartbeatSetRequest{Instances: instances})
+	reqBody, err := json.Marshal(&discovery.HeartbeatSetRequest{Instances: instances})
 	if err != nil {
-		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
+		return nil, discovery.NewError(discovery.ErrInternal, err.Error())
 	}
 
 	resp, err := c.RestDoWithContext(ctx, http.MethodPut,
 		fmt.Sprintf(apiHeartbeatSetURL, project),
 		headers, reqBody)
 	if err != nil {
-		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
+		return nil, discovery.NewError(discovery.ErrInternal, err.Error())
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
+		return nil, discovery.NewError(discovery.ErrInternal, err.Error())
 	}
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, c.toError(body)
 	}
 
-	instancesResp := &registry.HeartbeatSetResponse{}
+	instancesResp := &discovery.HeartbeatSetResponse{}
 	err = json.Unmarshal(body, instancesResp)
 	if err != nil {
-		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
+		return nil, discovery.NewError(discovery.ErrInternal, err.Error())
 	}
 
 	return instancesResp.Instances, nil
 }
 
-func (c *Client) GetInstancesByServiceID(ctx context.Context, domain, project, providerID, consumerID string) ([]*registry.MicroServiceInstance, *scerr.Error) {
+func (c *Client) GetInstancesByServiceID(ctx context.Context, domain, project, providerID, consumerID string) ([]*discovery.MicroServiceInstance, *discovery.Error) {
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 	headers.Set("X-ConsumerId", consumerID)
@@ -196,29 +194,29 @@ func (c *Client) GetInstancesByServiceID(ctx context.Context, domain, project, p
 		fmt.Sprintf(apiInstancesURL, project, providerID)+"?"+c.parseQuery(ctx),
 		headers, nil)
 	if err != nil {
-		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
+		return nil, discovery.NewError(discovery.ErrInternal, err.Error())
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
+		return nil, discovery.NewError(discovery.ErrInternal, err.Error())
 	}
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, c.toError(body)
 	}
 
-	instancesResp := &registry.GetInstancesResponse{}
+	instancesResp := &discovery.GetInstancesResponse{}
 	err = json.Unmarshal(body, instancesResp)
 	if err != nil {
-		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
+		return nil, discovery.NewError(discovery.ErrInternal, err.Error())
 	}
 
 	return instancesResp.Instances, nil
 }
 
-func (c *Client) GetInstanceByInstanceID(ctx context.Context, domain, project, providerID, instanceID, consumerID string) (*registry.MicroServiceInstance, *scerr.Error) {
+func (c *Client) GetInstanceByInstanceID(ctx context.Context, domain, project, providerID, instanceID, consumerID string) (*discovery.MicroServiceInstance, *discovery.Error) {
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 	headers.Set("X-ConsumerId", consumerID)
@@ -226,23 +224,23 @@ func (c *Client) GetInstanceByInstanceID(ctx context.Context, domain, project, p
 		fmt.Sprintf(apiInstanceURL, project, providerID, instanceID)+"?"+c.parseQuery(ctx),
 		headers, nil)
 	if err != nil {
-		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
+		return nil, discovery.NewError(discovery.ErrInternal, err.Error())
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
+		return nil, discovery.NewError(discovery.ErrInternal, err.Error())
 	}
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, c.toError(body)
 	}
 
-	instanceResp := &registry.GetOneInstanceResponse{}
+	instanceResp := &discovery.GetOneInstanceResponse{}
 	err = json.Unmarshal(body, instanceResp)
 	if err != nil {
-		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
+		return nil, discovery.NewError(discovery.ErrInternal, err.Error())
 	}
 
 	return instanceResp.Instance, nil

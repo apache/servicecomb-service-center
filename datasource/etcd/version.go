@@ -23,17 +23,17 @@ import (
 	"fmt"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/mux"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
-	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/version"
 	"os"
 )
 
 func (ds *DataSource) LoadServerVersion(ctx context.Context) error {
 	resp, err := client.Instance().Do(ctx,
-		client.GET, client.WithStrKey(core.GetServerInfoKey()))
+		client.GET, client.WithStrKey(path.GetServerInfoKey()))
 	if err != nil {
 		return err
 	}
@@ -55,7 +55,7 @@ func (ds *DataSource) UpgradeServerVersion(ctx context.Context) error {
 		return err
 	}
 	_, err = client.Instance().Do(ctx,
-		client.PUT, client.WithStrKey(core.GetServerInfoKey()), client.WithValue(bytes))
+		client.PUT, client.WithStrKey(path.GetServerInfoKey()), client.WithValue(bytes))
 	if err != nil {
 		return err
 	}

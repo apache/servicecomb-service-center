@@ -21,13 +21,13 @@ import (
 	"github.com/apache/servicecomb-service-center/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd"
 	etcdclient "github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
+	"github.com/go-chassis/cari/discovery"
 	"strings"
 	"sync"
 )
@@ -85,7 +85,7 @@ func (c *SCClientAggregate) cacheAppend(name string, setter dump.Setter, getter 
 	})
 }
 
-func (c *SCClientAggregate) GetSchemasByServiceID(ctx context.Context, domainProject, serviceID string) (*sd.Response, *scerr.Error) {
+func (c *SCClientAggregate) GetSchemasByServiceID(ctx context.Context, domainProject, serviceID string) (*sd.Response, *discovery.Error) {
 	dp := strings.Split(domainProject, "/")
 	var response sd.Response
 	for _, client := range *c {
@@ -100,7 +100,7 @@ func (c *SCClientAggregate) GetSchemasByServiceID(ctx context.Context, domainPro
 		response.Count = int64(len(schemas))
 		for _, schema := range schemas {
 			response.Kvs = append(response.Kvs, &sd.KeyValue{
-				Key:         []byte(core.GenerateServiceSchemaKey(domainProject, serviceID, schema.SchemaId)),
+				Key:         []byte(path.GenerateServiceSchemaKey(domainProject, serviceID, schema.SchemaId)),
 				Value:       util.StringToBytesWithNoCopy(schema.Schema),
 				ModRevision: 0,
 				ClusterName: client.Cfg.Name,
@@ -111,7 +111,7 @@ func (c *SCClientAggregate) GetSchemasByServiceID(ctx context.Context, domainPro
 	return &response, nil
 }
 
-func (c *SCClientAggregate) GetSchemaBySchemaID(ctx context.Context, domainProject, serviceID, schemaID string) (*sd.Response, *scerr.Error) {
+func (c *SCClientAggregate) GetSchemaBySchemaID(ctx context.Context, domainProject, serviceID, schemaID string) (*sd.Response, *discovery.Error) {
 	dp := strings.Split(domainProject, "/")
 	var response sd.Response
 	for _, client := range *c {
@@ -125,7 +125,7 @@ func (c *SCClientAggregate) GetSchemaBySchemaID(ctx context.Context, domainProje
 		}
 		response.Count = 1
 		response.Kvs = append(response.Kvs, &sd.KeyValue{
-			Key:         []byte(core.GenerateServiceSchemaKey(domainProject, serviceID, schema.SchemaId)),
+			Key:         []byte(path.GenerateServiceSchemaKey(domainProject, serviceID, schema.SchemaId)),
 			Value:       util.StringToBytesWithNoCopy(schema.Schema),
 			ModRevision: 0,
 			ClusterName: client.Cfg.Name,
@@ -135,7 +135,7 @@ func (c *SCClientAggregate) GetSchemaBySchemaID(ctx context.Context, domainProje
 	return &response, nil
 }
 
-func (c *SCClientAggregate) GetInstancesByServiceID(ctx context.Context, domain, project, providerID, consumerID string) (*sd.Response, *scerr.Error) {
+func (c *SCClientAggregate) GetInstancesByServiceID(ctx context.Context, domain, project, providerID, consumerID string) (*sd.Response, *discovery.Error) {
 	var response sd.Response
 	for _, client := range *c {
 		insts, err := client.GetInstancesByServiceID(ctx, domain, project, providerID, consumerID)
@@ -149,7 +149,7 @@ func (c *SCClientAggregate) GetInstancesByServiceID(ctx context.Context, domain,
 		response.Count = int64(len(insts))
 		for _, instance := range insts {
 			response.Kvs = append(response.Kvs, &sd.KeyValue{
-				Key:         []byte(core.GenerateInstanceKey(domain+"/"+project, providerID, instance.InstanceId)),
+				Key:         []byte(path.GenerateInstanceKey(domain+"/"+project, providerID, instance.InstanceId)),
 				Value:       instance,
 				ModRevision: 0,
 				ClusterName: client.Cfg.Name,
@@ -159,7 +159,7 @@ func (c *SCClientAggregate) GetInstancesByServiceID(ctx context.Context, domain,
 	return &response, nil
 }
 
-func (c *SCClientAggregate) GetInstanceByInstanceID(ctx context.Context, domain, project, providerID, instanceID, consumerID string) (*sd.Response, *scerr.Error) {
+func (c *SCClientAggregate) GetInstanceByInstanceID(ctx context.Context, domain, project, providerID, instanceID, consumerID string) (*sd.Response, *discovery.Error) {
 	var response sd.Response
 	for _, client := range *c {
 		instance, err := client.GetInstanceByInstanceID(ctx, domain, project, providerID, instanceID, consumerID)
@@ -172,7 +172,7 @@ func (c *SCClientAggregate) GetInstanceByInstanceID(ctx context.Context, domain,
 		}
 		response.Count = 1
 		response.Kvs = append(response.Kvs, &sd.KeyValue{
-			Key:         []byte(core.GenerateInstanceKey(domain+"/"+project, providerID, instance.InstanceId)),
+			Key:         []byte(path.GenerateInstanceKey(domain+"/"+project, providerID, instance.InstanceId)),
 			Value:       instance,
 			ModRevision: 0,
 			ClusterName: client.Cfg.Name,

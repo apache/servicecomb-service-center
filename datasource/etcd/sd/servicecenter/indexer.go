@@ -19,11 +19,11 @@ import (
 	"github.com/apache/servicecomb-service-center/client"
 	etcdclient "github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/core"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
+	"github.com/go-chassis/cari/discovery"
 	"strings"
 
 	"context"
@@ -77,9 +77,9 @@ func (i *ClusterIndexer) search(ctx context.Context, opts ...etcdclient.PluginOp
 func (i *ClusterIndexer) searchSchemas(ctx context.Context, op etcdclient.PluginOp) (*sd.Response, error) {
 	var (
 		resp  *sd.Response
-		scErr *scerr.Error
+		scErr *discovery.Error
 	)
-	domainProject, serviceID, schemaID := core.GetInfoFromSchemaKV(op.Key)
+	domainProject, serviceID, schemaID := path.GetInfoFromSchemaKV(op.Key)
 	if op.Prefix && len(schemaID) == 0 {
 		resp, scErr = i.Client.GetSchemasByServiceID(ctx, domainProject, serviceID)
 	} else {
@@ -94,9 +94,9 @@ func (i *ClusterIndexer) searchSchemas(ctx context.Context, op etcdclient.Plugin
 func (i *ClusterIndexer) searchInstances(ctx context.Context, op etcdclient.PluginOp) (r *sd.Response, err error) {
 	var (
 		resp  *sd.Response
-		scErr *scerr.Error
+		scErr *discovery.Error
 	)
-	serviceID, instanceID, domainProject := core.GetInfoFromInstKV(op.Key)
+	serviceID, instanceID, domainProject := path.GetInfoFromInstKV(op.Key)
 	dp := strings.Split(domainProject, "/")
 	if op.Prefix && len(instanceID) == 0 {
 		resp, scErr = i.Client.GetInstancesByServiceID(ctx, dp[0], dp[1], serviceID, "")

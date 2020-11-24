@@ -26,10 +26,10 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/backoff"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	rmodel "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/coreos/etcd/mvcc/mvccpb"
+	rmodel "github.com/go-chassis/cari/discovery"
 	"sync"
 	"time"
 )

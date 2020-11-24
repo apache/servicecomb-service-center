@@ -21,16 +21,17 @@ import (
 	"context"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/cache"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	apt "github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/metrics"
 	"github.com/apache/servicecomb-service-center/server/notify"
 	"github.com/apache/servicecomb-service-center/server/syncernotify"
+	pb "github.com/go-chassis/cari/discovery"
 	"strings"
 )
 
@@ -54,7 +55,7 @@ func (h *InstanceEventHandler) Type() sd.Type {
 func (h *InstanceEventHandler) OnEvent(evt sd.KvEvent) {
 	action := evt.Type
 	instance := evt.KV.Value.(*pb.MicroServiceInstance)
-	providerID, providerInstanceID, domainProject := apt.GetInfoFromInstKV(evt.KV.Key)
+	providerID, providerInstanceID, domainProject := path.GetInfoFromInstKV(evt.KV.Key)
 	idx := strings.Index(domainProject, "/")
 	domainName := domainProject[:idx]
 	projectName := domainProject[idx+1:]
@@ -77,7 +78,7 @@ func (h *InstanceEventHandler) OnEvent(evt sd.KvEvent) {
 	case pb.EVT_DELETE:
 		count = decreaseOne
 		metrics.ReportInstances(domainName, count)
-		if !apt.IsDefaultDomainProject(domainProject) {
+		if !core.IsDefaultDomainProject(domainProject) {
 			projectName := domainProject[idx+1:]
 			serviceUtil.RemandInstanceQuota(
 				util.SetDomainProject(context.Background(), domainName, projectName))

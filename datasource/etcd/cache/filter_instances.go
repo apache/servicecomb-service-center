@@ -22,11 +22,11 @@ import (
 	"fmt"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/cache"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
-	apt "github.com/apache/servicecomb-service-center/server/core"
+	pb "github.com/go-chassis/cari/discovery"
 )
 
 type InstancesFilter struct {
@@ -35,7 +35,7 @@ type InstancesFilter struct {
 func (f *InstancesFilter) Name(ctx context.Context, _ *cache.Node) string {
 	instanceKey, ok := ctx.Value(CtxFindProviderInstance).(*pb.HeartbeatSetElement)
 	if ok {
-		return instanceKey.ServiceId + apt.SPLIT + instanceKey.InstanceId
+		return instanceKey.ServiceId + path.SPLIT + instanceKey.InstanceId
 	}
 	return ""
 }
@@ -79,7 +79,7 @@ func (f *InstancesFilter) Find(ctx context.Context, parent *cache.Node) (
 }
 
 func (f *InstancesFilter) findInstances(ctx context.Context, domainProject, serviceID, instanceID string, maxRevs []int64, counts []int64) (instances []*pb.MicroServiceInstance, err error) {
-	key := apt.GenerateInstanceKey(domainProject, serviceID, instanceID)
+	key := path.GenerateInstanceKey(domainProject, serviceID, instanceID)
 	opts := append(util.FromContext(ctx), client.WithStrKey(key), client.WithPrefix())
 	resp, err := kv.Store().Instance().Search(ctx, opts...)
 	if err != nil {

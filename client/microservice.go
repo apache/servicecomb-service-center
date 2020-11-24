@@ -23,8 +23,7 @@ import (
 	"net/http"
 	"net/url"
 
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
+	pb "github.com/go-chassis/cari/discovery"
 )
 
 const (
@@ -33,26 +32,26 @@ const (
 	apiMicroServiceURL  = "/v4/%s/registry/microservices/%s"
 )
 
-func (c *Client) CreateService(ctx context.Context, domain, project string, service *pb.MicroService) (string, *scerr.Error) {
+func (c *Client) CreateService(ctx context.Context, domain, project string, service *pb.MicroService) (string, *pb.Error) {
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 
 	reqBody, err := json.Marshal(&pb.CreateServiceRequest{Service: service})
 	if err != nil {
-		return "", scerr.NewError(scerr.ErrInternal, err.Error())
+		return "", pb.NewError(pb.ErrInternal, err.Error())
 	}
 
 	resp, err := c.RestDoWithContext(ctx, http.MethodPost,
 		fmt.Sprintf(apiMicroServicesURL, project),
 		headers, reqBody)
 	if err != nil {
-		return "", scerr.NewError(scerr.ErrInternal, err.Error())
+		return "", pb.NewError(pb.ErrInternal, err.Error())
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return "", scerr.NewError(scerr.ErrInternal, err.Error())
+		return "", pb.NewError(pb.ErrInternal, err.Error())
 	}
 
 	if resp.StatusCode != http.StatusOK {
@@ -62,12 +61,12 @@ func (c *Client) CreateService(ctx context.Context, domain, project string, serv
 	serviceResp := &pb.CreateServiceResponse{}
 	err = json.Unmarshal(body, serviceResp)
 	if err != nil {
-		return "", scerr.NewError(scerr.ErrInternal, err.Error())
+		return "", pb.NewError(pb.ErrInternal, err.Error())
 	}
 	return serviceResp.ServiceId, nil
 }
 
-func (c *Client) DeleteService(ctx context.Context, domain, project, serviceID string) *scerr.Error {
+func (c *Client) DeleteService(ctx context.Context, domain, project, serviceID string) *pb.Error {
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 
@@ -75,13 +74,13 @@ func (c *Client) DeleteService(ctx context.Context, domain, project, serviceID s
 		fmt.Sprintf(apiMicroServiceURL, project, serviceID),
 		headers, nil)
 	if err != nil {
-		return scerr.NewError(scerr.ErrInternal, err.Error())
+		return pb.NewError(pb.ErrInternal, err.Error())
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return scerr.NewError(scerr.ErrInternal, err.Error())
+		return pb.NewError(pb.ErrInternal, err.Error())
 	}
 
 	if resp.StatusCode != http.StatusOK {
@@ -91,7 +90,7 @@ func (c *Client) DeleteService(ctx context.Context, domain, project, serviceID s
 	return nil
 }
 
-func (c *Client) ServiceExistence(ctx context.Context, domain, project string, appID, serviceName, versionRule, env string) (string, *scerr.Error) {
+func (c *Client) ServiceExistence(ctx context.Context, domain, project string, appID, serviceName, versionRule, env string) (string, *pb.Error) {
 	query := url.Values{}
 	query.Set("type", "microservice")
 	query.Set("env", env)
@@ -107,7 +106,7 @@ func (c *Client) ServiceExistence(ctx context.Context, domain, project string, a
 	return resp.ServiceId, nil
 }
 
-func (c *Client) existence(ctx context.Context, domain, project string, query url.Values) (*pb.GetExistenceResponse, *scerr.Error) {
+func (c *Client) existence(ctx context.Context, domain, project string, query url.Values) (*pb.GetExistenceResponse, *pb.Error) {
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 
@@ -115,13 +114,13 @@ func (c *Client) existence(ctx context.Context, domain, project string, query ur
 		fmt.Sprintf(apiExistenceURL, project)+"?"+c.parseQuery(ctx)+"&"+query.Encode(),
 		headers, nil)
 	if err != nil {
-		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
+		return nil, pb.NewError(pb.ErrInternal, err.Error())
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
+		return nil, pb.NewError(pb.ErrInternal, err.Error())
 	}
 
 	if resp.StatusCode != http.StatusOK {
@@ -131,7 +130,7 @@ func (c *Client) existence(ctx context.Context, domain, project string, query ur
 	existenceResp := &pb.GetExistenceResponse{}
 	err = json.Unmarshal(body, existenceResp)
 	if err != nil {
-		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
+		return nil, pb.NewError(pb.ErrInternal, err.Error())
 	}
 
 	return existenceResp, nil

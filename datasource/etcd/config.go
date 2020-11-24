@@ -40,9 +40,6 @@ func Configuration() *client.Config {
 		defaultRegistryConfig.DialTimeout = config.GetDuration("registry.etcd.connect.timeout", client.DefaultDialTimeout, config.WithStandby("connect_timeout"))
 		defaultRegistryConfig.RequestTimeOut = config.GetDuration("registry.etcd.request.timeout", client.DefaultRequestTimeout, config.WithStandby("registry_timeout"))
 		defaultRegistryConfig.AutoSyncInterval = config.GetDuration("registry.etcd.autoSyncInterval", 30*time.Second, config.WithStandby("auto_sync_interval"))
-
-		config.ServerInfo.Config.Plugins.Object("discovery").
-			Set("config", defaultRegistryConfig)
 	})
 	return &defaultRegistryConfig
 }

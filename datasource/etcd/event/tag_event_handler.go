@@ -22,14 +22,14 @@ import (
 	"fmt"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/cache"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/task"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/notify"
+	pb "github.com/go-chassis/cari/discovery"
 )
 
 type TagsChangedTask struct {
@@ -110,7 +110,7 @@ func (h *TagEventHandler) OnEvent(evt sd.KvEvent) {
 		return
 	}
 
-	consumerID, domainProject := core.GetInfoFromTagKV(evt.KV.Key)
+	consumerID, domainProject := path.GetInfoFromTagKV(evt.KV.Key)
 
 	if notify.Center().Closed() {
 		log.Warnf("caught [%s] service tags[%s/%s] event, but notify service is closed",

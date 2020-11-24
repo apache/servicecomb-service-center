@@ -24,9 +24,8 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/metrics"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
+	pb "github.com/go-chassis/cari/discovery"
 )
 
 const (
@@ -42,20 +41,20 @@ func CommonQuotaCheck(ctx context.Context, res *quota.ApplyQuotaResource,
 	if res == nil || getLimitQuota == nil || getCurUsedNum == nil {
 		err := errors.New("invalid parameters")
 		log.Errorf(err, "quota check failed")
-		return quota.NewApplyQuotaResult(nil, scerr.NewError(scerr.ErrInternal, err.Error()))
+		return quota.NewApplyQuotaResult(nil, pb.NewError(pb.ErrInternal, err.Error()))
 	}
 
 	limitQuota := getLimitQuota()
 	curNum, err := getCurUsedNum(ctx, res)
 	if err != nil {
 		log.Errorf(err, "%s quota check failed", res.QuotaType)
-		return quota.NewApplyQuotaResult(nil, scerr.NewError(scerr.ErrInternal, err.Error()))
+		return quota.NewApplyQuotaResult(nil, pb.NewError(pb.ErrInternal, err.Error()))
 	}
 	if curNum+res.QuotaSize > limitQuota {
 		mes := fmt.Sprintf("no quota to create %s, max num is %d, curNum is %d, apply num is %d",
 			res.QuotaType, limitQuota, curNum, res.QuotaSize)
 		log.Errorf(nil, mes)
-		return quota.NewApplyQuotaResult(nil, scerr.NewError(scerr.ErrNotEnoughQuota, mes))
+		return quota.NewApplyQuotaResult(nil, pb.NewError(pb.ErrNotEnoughQuota, mes))
 	}
 	return quota.NewApplyQuotaResult(nil, nil)
 }

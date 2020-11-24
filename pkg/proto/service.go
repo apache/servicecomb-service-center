@@ -19,54 +19,54 @@ package proto
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/pkg/registry"
+	"github.com/go-chassis/cari/discovery"
 	"google.golang.org/grpc"
 )
 
 type ServiceCtrlServer interface {
-	Exist(context.Context, *registry.GetExistenceRequest) (*registry.GetExistenceResponse, error)
-	Create(context.Context, *registry.CreateServiceRequest) (*registry.CreateServiceResponse, error)
-	Delete(context.Context, *registry.DeleteServiceRequest) (*registry.DeleteServiceResponse, error)
-	GetOne(context.Context, *registry.GetServiceRequest) (*registry.GetServiceResponse, error)
-	GetServices(context.Context, *registry.GetServicesRequest) (*registry.GetServicesResponse, error)
-	UpdateProperties(context.Context, *registry.UpdateServicePropsRequest) (*registry.UpdateServicePropsResponse, error)
-	AddRule(context.Context, *registry.AddServiceRulesRequest) (*registry.AddServiceRulesResponse, error)
-	GetRule(context.Context, *registry.GetServiceRulesRequest) (*registry.GetServiceRulesResponse, error)
-	UpdateRule(context.Context, *registry.UpdateServiceRuleRequest) (*registry.UpdateServiceRuleResponse, error)
-	DeleteRule(context.Context, *registry.DeleteServiceRulesRequest) (*registry.DeleteServiceRulesResponse, error)
-	AddTags(context.Context, *registry.AddServiceTagsRequest) (*registry.AddServiceTagsResponse, error)
-	GetTags(context.Context, *registry.GetServiceTagsRequest) (*registry.GetServiceTagsResponse, error)
-	UpdateTag(context.Context, *registry.UpdateServiceTagRequest) (*registry.UpdateServiceTagResponse, error)
-	DeleteTags(context.Context, *registry.DeleteServiceTagsRequest) (*registry.DeleteServiceTagsResponse, error)
-	GetSchemaInfo(context.Context, *registry.GetSchemaRequest) (*registry.GetSchemaResponse, error)
-	GetAllSchemaInfo(context.Context, *registry.GetAllSchemaRequest) (*registry.GetAllSchemaResponse, error)
-	DeleteSchema(context.Context, *registry.DeleteSchemaRequest) (*registry.DeleteSchemaResponse, error)
-	ModifySchema(context.Context, *registry.ModifySchemaRequest) (*registry.ModifySchemaResponse, error)
-	ModifySchemas(context.Context, *registry.ModifySchemasRequest) (*registry.ModifySchemasResponse, error)
-	AddDependenciesForMicroServices(context.Context, *registry.AddDependenciesRequest) (*registry.AddDependenciesResponse, error)
-	CreateDependenciesForMicroServices(context.Context, *registry.CreateDependenciesRequest) (*registry.CreateDependenciesResponse, error)
-	GetProviderDependencies(context.Context, *registry.GetDependenciesRequest) (*registry.GetProDependenciesResponse, error)
-	GetConsumerDependencies(context.Context, *registry.GetDependenciesRequest) (*registry.GetConDependenciesResponse, error)
-	DeleteServices(context.Context, *registry.DelServicesRequest) (*registry.DelServicesResponse, error)
+	Exist(context.Context, *discovery.GetExistenceRequest) (*discovery.GetExistenceResponse, error)
+	Create(context.Context, *discovery.CreateServiceRequest) (*discovery.CreateServiceResponse, error)
+	Delete(context.Context, *discovery.DeleteServiceRequest) (*discovery.DeleteServiceResponse, error)
+	GetOne(context.Context, *discovery.GetServiceRequest) (*discovery.GetServiceResponse, error)
+	GetServices(context.Context, *discovery.GetServicesRequest) (*discovery.GetServicesResponse, error)
+	UpdateProperties(context.Context, *discovery.UpdateServicePropsRequest) (*discovery.UpdateServicePropsResponse, error)
+	AddRule(context.Context, *discovery.AddServiceRulesRequest) (*discovery.AddServiceRulesResponse, error)
+	GetRule(context.Context, *discovery.GetServiceRulesRequest) (*discovery.GetServiceRulesResponse, error)
+	UpdateRule(context.Context, *discovery.UpdateServiceRuleRequest) (*discovery.UpdateServiceRuleResponse, error)
+	DeleteRule(context.Context, *discovery.DeleteServiceRulesRequest) (*discovery.DeleteServiceRulesResponse, error)
+	AddTags(context.Context, *discovery.AddServiceTagsRequest) (*discovery.AddServiceTagsResponse, error)
+	GetTags(context.Context, *discovery.GetServiceTagsRequest) (*discovery.GetServiceTagsResponse, error)
+	UpdateTag(context.Context, *discovery.UpdateServiceTagRequest) (*discovery.UpdateServiceTagResponse, error)
+	DeleteTags(context.Context, *discovery.DeleteServiceTagsRequest) (*discovery.DeleteServiceTagsResponse, error)
+	GetSchemaInfo(context.Context, *discovery.GetSchemaRequest) (*discovery.GetSchemaResponse, error)
+	GetAllSchemaInfo(context.Context, *discovery.GetAllSchemaRequest) (*discovery.GetAllSchemaResponse, error)
+	DeleteSchema(context.Context, *discovery.DeleteSchemaRequest) (*discovery.DeleteSchemaResponse, error)
+	ModifySchema(context.Context, *discovery.ModifySchemaRequest) (*discovery.ModifySchemaResponse, error)
+	ModifySchemas(context.Context, *discovery.ModifySchemasRequest) (*discovery.ModifySchemasResponse, error)
+	AddDependenciesForMicroServices(context.Context, *discovery.AddDependenciesRequest) (*discovery.AddDependenciesResponse, error)
+	CreateDependenciesForMicroServices(context.Context, *discovery.CreateDependenciesRequest) (*discovery.CreateDependenciesResponse, error)
+	GetProviderDependencies(context.Context, *discovery.GetDependenciesRequest) (*discovery.GetProDependenciesResponse, error)
+	GetConsumerDependencies(context.Context, *discovery.GetDependenciesRequest) (*discovery.GetConDependenciesResponse, error)
+	DeleteServices(context.Context, *discovery.DelServicesRequest) (*discovery.DelServicesResponse, error)
 }
 type ServiceInstanceCtrlServer interface {
-	Register(context.Context, *registry.RegisterInstanceRequest) (*registry.RegisterInstanceResponse, error)
-	Unregister(context.Context, *registry.UnregisterInstanceRequest) (*registry.UnregisterInstanceResponse, error)
-	Heartbeat(context.Context, *registry.HeartbeatRequest) (*registry.HeartbeatResponse, error)
-	Find(context.Context, *registry.FindInstancesRequest) (*registry.FindInstancesResponse, error)
-	GetInstances(context.Context, *registry.GetInstancesRequest) (*registry.GetInstancesResponse, error)
-	GetOneInstance(context.Context, *registry.GetOneInstanceRequest) (*registry.GetOneInstanceResponse, error)
-	UpdateStatus(context.Context, *registry.UpdateInstanceStatusRequest) (*registry.UpdateInstanceStatusResponse, error)
-	UpdateInstanceProperties(context.Context, *registry.UpdateInstancePropsRequest) (*registry.UpdateInstancePropsResponse, error)
-	Watch(*registry.WatchInstanceRequest, ServiceInstanceCtrlWatchServer) error
-	HeartbeatSet(context.Context, *registry.HeartbeatSetRequest) (*registry.HeartbeatSetResponse, error)
+	Register(context.Context, *discovery.RegisterInstanceRequest) (*discovery.RegisterInstanceResponse, error)
+	Unregister(context.Context, *discovery.UnregisterInstanceRequest) (*discovery.UnregisterInstanceResponse, error)
+	Heartbeat(context.Context, *discovery.HeartbeatRequest) (*discovery.HeartbeatResponse, error)
+	Find(context.Context, *discovery.FindInstancesRequest) (*discovery.FindInstancesResponse, error)
+	GetInstances(context.Context, *discovery.GetInstancesRequest) (*discovery.GetInstancesResponse, error)
+	GetOneInstance(context.Context, *discovery.GetOneInstanceRequest) (*discovery.GetOneInstanceResponse, error)
+	UpdateStatus(context.Context, *discovery.UpdateInstanceStatusRequest) (*discovery.UpdateInstanceStatusResponse, error)
+	UpdateInstanceProperties(context.Context, *discovery.UpdateInstancePropsRequest) (*discovery.UpdateInstancePropsResponse, error)
+	Watch(*discovery.WatchInstanceRequest, ServiceInstanceCtrlWatchServer) error
+	HeartbeatSet(context.Context, *discovery.HeartbeatSetRequest) (*discovery.HeartbeatSetResponse, error)
 }
 type ServiceInstanceCtrlWatchServer interface {
-	Send(*registry.WatchInstanceResponse) error
+	Send(*discovery.WatchInstanceResponse) error
 	grpc.ServerStream
 }
 type GovernServiceCtrlServer interface {
-	GetServiceDetail(context.Context, *registry.GetServiceRequest) (*registry.GetServiceDetailResponse, error)
-	GetServicesInfo(context.Context, *registry.GetServicesInfoRequest) (*registry.GetServicesInfoResponse, error)
-	GetApplications(context.Context, *registry.GetAppsRequest) (*registry.GetAppsResponse, error)
+	GetServiceDetail(context.Context, *discovery.GetServiceRequest) (*discovery.GetServiceDetailResponse, error)
+	GetServicesInfo(context.Context, *discovery.GetServicesInfoRequest) (*discovery.GetServicesInfoResponse, error)
+	GetApplications(context.Context, *discovery.GetAppsRequest) (*discovery.GetAppsResponse, error)
 }

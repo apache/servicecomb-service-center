@@ -21,9 +21,8 @@ import (
 	"context"
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
+	pb "github.com/go-chassis/cari/discovery"
 )
 
 func (s *MicroServiceService) AddTags(ctx context.Context, in *pb.AddServiceTagsRequest) (*pb.AddServiceTagsResponse, error) {
@@ -32,7 +31,7 @@ func (s *MicroServiceService) AddTags(ctx context.Context, in *pb.AddServiceTags
 		remoteIP := util.GetIPFromContext(ctx)
 		log.Errorf(err, "add service[%s]'s tags %v failed, operator: %s", in.ServiceId, in.Tags, remoteIP)
 		return &pb.AddServiceTagsResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 
@@ -46,7 +45,7 @@ func (s *MicroServiceService) UpdateTag(ctx context.Context, in *pb.UpdateServic
 		tagFlag := util.StringJoin([]string{in.Key, in.Value}, "/")
 		log.Errorf(err, "update service[%s]'s tag[%s] failed, operator: %s", in.ServiceId, tagFlag, remoteIP)
 		return &pb.UpdateServiceTagResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 
@@ -59,7 +58,7 @@ func (s *MicroServiceService) DeleteTags(ctx context.Context, in *pb.DeleteServi
 		remoteIP := util.GetIPFromContext(ctx)
 		log.Errorf(err, "delete service[%s]'s tags %v failed, operator: %s", in.ServiceId, in.Keys, remoteIP)
 		return &pb.DeleteServiceTagsResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 
@@ -71,7 +70,7 @@ func (s *MicroServiceService) GetTags(ctx context.Context, in *pb.GetServiceTags
 	if err != nil {
 		log.Errorf(err, "get service[%s]'s tags failed", in.ServiceId)
 		return &pb.GetServiceTagsResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 

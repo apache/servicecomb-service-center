@@ -18,9 +18,9 @@
 package kv
 
 import (
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/value"
-	"github.com/apache/servicecomb-service-center/server/core"
 	"time"
 )
 
@@ -51,46 +51,46 @@ var (
 
 func registerInnerTypes() {
 	SERVICE = Store().MustInstall(NewAddOn("SERVICE",
-		sd.Configure().WithPrefix(core.GetServiceRootKey("")).
+		sd.Configure().WithPrefix(path.GetServiceRootKey("")).
 			WithInitSize(500).WithParser(value.ServiceParser)))
 	INSTANCE = Store().MustInstall(NewAddOn("INSTANCE",
-		sd.Configure().WithPrefix(GetInstanceRootKey("")).
+		sd.Configure().WithPrefix(path.GetInstanceRootKey("")).
 			WithInitSize(1000).WithParser(value.InstanceParser).
 			WithDeferHandler(NewInstanceEventDeferHandler())))
 	DOMAIN = Store().MustInstall(NewAddOn("DOMAIN",
-		sd.Configure().WithPrefix(core.GetDomainRootKey()+core.SPLIT).
+		sd.Configure().WithPrefix(path.GetDomainRootKey()+path.SPLIT).
 			WithInitSize(100).WithParser(value.StringParser)))
 	SCHEMA = Store().MustInstall(NewAddOn("SCHEMA",
-		sd.Configure().WithPrefix(core.GetServiceSchemaRootKey("")).
+		sd.Configure().WithPrefix(path.GetServiceSchemaRootKey("")).
 			WithInitSize(0)))
 	SchemaSummary = Store().MustInstall(NewAddOn("SCHEMA_SUMMARY",
-		sd.Configure().WithPrefix(core.GetServiceSchemaSummaryRootKey("")).
+		sd.Configure().WithPrefix(path.GetServiceSchemaSummaryRootKey("")).
 			WithInitSize(100).WithParser(value.StringParser)))
 	RULE = Store().MustInstall(NewAddOn("RULE",
-		sd.Configure().WithPrefix(core.GetServiceRuleRootKey("")).
+		sd.Configure().WithPrefix(path.GetServiceRuleRootKey("")).
 			WithInitSize(100).WithParser(value.RuleParser)))
 	LEASE = Store().MustInstall(NewAddOn("LEASE",
-		sd.Configure().WithPrefix(core.GetInstanceLeaseRootKey("")).
+		sd.Configure().WithPrefix(path.GetInstanceLeaseRootKey("")).
 			WithInitSize(1000).WithParser(value.StringParser)))
 	ServiceIndex = Store().MustInstall(NewAddOn("SERVICE_INDEX",
-		sd.Configure().WithPrefix(core.GetServiceIndexRootKey("")).
+		sd.Configure().WithPrefix(path.GetServiceIndexRootKey("")).
 			WithInitSize(500).WithParser(value.StringParser)))
 	ServiceAlias = Store().MustInstall(NewAddOn("SERVICE_ALIAS",
-		sd.Configure().WithPrefix(core.GetServiceAliasRootKey("")).
+		sd.Configure().WithPrefix(path.GetServiceAliasRootKey("")).
 			WithInitSize(100).WithParser(value.StringParser)))
 	ServiceTag = Store().MustInstall(NewAddOn("SERVICE_TAG",
-		sd.Configure().WithPrefix(core.GetServiceTagRootKey("")).
+		sd.Configure().WithPrefix(path.GetServiceTagRootKey("")).
 			WithInitSize(100).WithParser(value.MapParser)))
 	RuleIndex = Store().MustInstall(NewAddOn("RULE_INDEX",
-		sd.Configure().WithPrefix(core.GetServiceRuleIndexRootKey("")).
+		sd.Configure().WithPrefix(path.GetServiceRuleIndexRootKey("")).
 			WithInitSize(100).WithParser(value.StringParser)))
 	DependencyRule = Store().MustInstall(NewAddOn("DEPENDENCY_RULE",
-		sd.Configure().WithPrefix(core.GetServiceDependencyRuleRootKey("")).
+		sd.Configure().WithPrefix(path.GetServiceDependencyRuleRootKey("")).
 			WithInitSize(100).WithParser(value.DependencyRuleParser)))
 	DependencyQueue = Store().MustInstall(NewAddOn("DEPENDENCY_QUEUE",
-		sd.Configure().WithPrefix(core.GetServiceDependencyQueueRootKey("")).
+		sd.Configure().WithPrefix(path.GetServiceDependencyQueueRootKey("")).
 			WithInitSize(100).WithParser(value.DependencyQueueParser)))
 	PROJECT = Store().MustInstall(NewAddOn("PROJECT",
-		sd.Configure().WithPrefix(core.GetProjectRootKey("")).
+		sd.Configure().WithPrefix(path.GetProjectRootKey("")).
 			WithInitSize(100).WithParser(value.StringParser)))
 }

@@ -15,11 +15,11 @@
  * limitations under the License.
  */
 
-package core
+package path
 
 import (
-	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/go-chassis/cari/discovery"
 )
 
 const (
@@ -52,12 +52,49 @@ func GetRootKey() string {
 	return SPLIT + RegistryRootKey
 }
 
+func GenerateETCDAccountKey(name string) string {
+	return util.StringJoin([]string{
+		GetRootKey(),
+		"accounts",
+		name,
+	}, SPLIT)
+}
+
+func GetProjectRootKey(domain string) string {
+	return util.StringJoin([]string{
+		GetRootKey(),
+		RegistryProjectKey,
+		domain,
+	}, SPLIT)
+}
+
+func GenerateETCDProjectKey(domain, project string) string {
+	return util.StringJoin([]string{
+		GetProjectRootKey(domain),
+		project,
+	}, SPLIT)
+}
+
+func GenerateETCDDomainKey(domain string) string {
+	return util.StringJoin([]string{
+		GetDomainRootKey(),
+		domain,
+	}, SPLIT)
+}
+
 func GetServiceRootKey(domainProject string) string {
 	return util.StringJoin([]string{
 		GetRootKey(),
 		RegistryServiceKey,
 		RegistryFile,
 		domainProject,
+	}, SPLIT)
+}
+
+func GenerateServiceKey(domainProject string, serviceID string) string {
+	return util.StringJoin([]string{
+		GetServiceRootKey(domainProject),
+		serviceID,
 	}, SPLIT)
 }
 
@@ -141,13 +178,6 @@ func GetInstanceLeaseRootKey(domainProject string) string {
 	}, SPLIT)
 }
 
-func GenerateServiceKey(domainProject string, serviceID string) string {
-	return util.StringJoin([]string{
-		GetServiceRootKey(domainProject),
-		serviceID,
-	}, SPLIT)
-}
-
 func GenerateRuleIndexKey(domainProject string, serviceID string, attr string, pattern string) string {
 	return util.StringJoin([]string{
 		GetServiceRuleIndexRootKey(domainProject),
@@ -157,7 +187,7 @@ func GenerateRuleIndexKey(domainProject string, serviceID string, attr string, p
 	}, SPLIT)
 }
 
-func GenerateServiceIndexKey(key *registry.MicroServiceKey) string {
+func GenerateServiceIndexKey(key *discovery.MicroServiceKey) string {
 	return util.StringJoin([]string{
 		GetServiceIndexRootKey(key.Tenant),
 		key.Environment,
@@ -167,7 +197,7 @@ func GenerateServiceIndexKey(key *registry.MicroServiceKey) string {
 	}, SPLIT)
 }
 
-func GenerateServiceAliasKey(key *registry.MicroServiceKey) string {
+func GenerateServiceAliasKey(key *discovery.MicroServiceKey) string {
 	return util.StringJoin([]string{
 		GetServiceAliasRootKey(key.Tenant),
 		key.Environment,
@@ -233,7 +263,7 @@ func GenerateInstanceLeaseKey(domainProject string, serviceID string, instanceID
 	}, SPLIT)
 }
 
-func GenerateServiceDependencyRuleKey(serviceType string, domainProject string, in *registry.MicroServiceKey) string {
+func GenerateServiceDependencyRuleKey(serviceType string, domainProject string, in *discovery.MicroServiceKey) string {
 	if in == nil {
 		return util.StringJoin([]string{
 			GetServiceDependencyRuleRootKey(domainProject),
@@ -258,11 +288,11 @@ func GenerateServiceDependencyRuleKey(serviceType string, domainProject string, 
 	}, SPLIT)
 }
 
-func GenerateConsumerDependencyRuleKey(domainProject string, in *registry.MicroServiceKey) string {
+func GenerateConsumerDependencyRuleKey(domainProject string, in *discovery.MicroServiceKey) string {
 	return GenerateServiceDependencyRuleKey(DepsConsumer, domainProject, in)
 }
 
-func GenerateProviderDependencyRuleKey(domainProject string, in *registry.MicroServiceKey) string {
+func GenerateProviderDependencyRuleKey(domainProject string, in *discovery.MicroServiceKey) string {
 	return GenerateServiceDependencyRuleKey(DepsProvider, domainProject, in)
 }
 
@@ -346,14 +376,6 @@ func GenerateMetricsKey(name, utc, domain string) string {
 		GetMetricsRootKey(),
 		name,
 		utc,
-		domain,
-	}, SPLIT)
-}
-
-func GetProjectRootKey(domain string) string {
-	return util.StringJoin([]string{
-		GetRootKey(),
-		RegistryProjectKey,
 		domain,
 	}, SPLIT)
 }

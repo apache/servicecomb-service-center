@@ -19,12 +19,11 @@ package v4
 
 import (
 	"encoding/json"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
-	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/rest/controller"
 	"github.com/apache/servicecomb-service-center/version"
+	pb "github.com/go-chassis/cari/discovery"
 	"net/http"
 	"sync"
 )
@@ -39,8 +38,7 @@ const APIVersion = "4.0.0"
 
 type Result struct {
 	*version.Set
-	APIVersion string               `json:"apiVersion"`
-	Config     *config.ServerConfig `json:"config,omitempty"`
+	APIVersion string `json:"apiVersion"`
 }
 
 type MainService struct {
@@ -66,7 +64,6 @@ func (s *MainService) GetVersion(w http.ResponseWriter, r *http.Request) {
 		result := Result{
 			version.Ver(),
 			APIVersion,
-			&config.ServerInfo.Config,
 		}
 		versionJSONCache, _ = json.Marshal(result)
 		versionResp = pb.CreateResponse(pb.ResponseSuccess, "get version successfully")

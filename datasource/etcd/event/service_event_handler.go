@@ -21,12 +21,12 @@ import (
 	"context"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/cache"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
-	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/metrics"
+	pb "github.com/go-chassis/cari/discovery"
 	"strings"
 )
 
@@ -43,7 +43,7 @@ func (h *ServiceEventHandler) Type() sd.Type {
 
 func (h *ServiceEventHandler) OnEvent(evt sd.KvEvent) {
 	ms := evt.KV.Value.(*pb.MicroService)
-	_, domainProject := core.GetInfoFromSvcKV(evt.KV.Key)
+	_, domainProject := path.GetInfoFromSvcKV(evt.KV.Key)
 	fn, fv := getFramework(ms)
 
 	switch evt.Type {

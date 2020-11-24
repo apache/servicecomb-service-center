@@ -16,10 +16,10 @@
 package adaptor
 
 import (
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/core"
+	pb "github.com/go-chassis/cari/discovery"
 	"k8s.io/api/core/v1"
 	"reflect"
 	"strconv"
@@ -50,7 +50,7 @@ func (c *InstanceCacher) onServiceEvent(evt K8sEvent) {
 
 func (c *InstanceCacher) getInstances(domainProject, serviceID string) (m map[string]*sd.KeyValue) {
 	var arr []*sd.KeyValue
-	key := core.GenerateInstanceKey(domainProject, serviceID, "")
+	key := path.GenerateInstanceKey(domainProject, serviceID, "")
 	if l := c.Cache().GetPrefix(key, &arr); l > 0 {
 		m = make(map[string]*sd.KeyValue, l)
 		for _, kv := range arr {
@@ -62,7 +62,7 @@ func (c *InstanceCacher) getInstances(domainProject, serviceID string) (m map[st
 
 func (c *InstanceCacher) deleteInstances(domainProject, serviceID string) {
 	var kvs []*sd.KeyValue
-	c.Cache().GetPrefix(core.GenerateInstanceKey(domainProject, serviceID, ""), &kvs)
+	c.Cache().GetPrefix(path.GenerateInstanceKey(domainProject, serviceID, ""), &kvs)
 	for _, kv := range kvs {
 		key := util.BytesToStringWithNoCopy(kv.Key)
 		c.Notify(pb.EVT_DELETE, key, kv)
@@ -90,7 +90,7 @@ func (c *InstanceCacher) onEndpointsEvent(evt K8sEvent) {
 			}
 
 			instanceID := UUID(pod.UID)
-			key := core.GenerateInstanceKey(Kubernetes().GetDomainProject(), serviceID, instanceID)
+			key := path.GenerateInstanceKey(Kubernetes().GetDomainProject(), serviceID, instanceID)
 			switch evt.EventType {
 			case pb.EVT_CREATE, pb.EVT_UPDATE:
 				if pod.Status.Phase != v1.PodRunning {

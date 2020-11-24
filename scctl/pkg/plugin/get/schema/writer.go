@@ -16,7 +16,7 @@
 package schema
 
 import (
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
+	pb "github.com/go-chassis/cari/discovery"
 	"os"
 	"path/filepath"
 )

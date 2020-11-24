@@ -16,9 +16,9 @@
 package adaptor
 
 import (
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
-	"github.com/apache/servicecomb-service-center/server/core"
+	pb "github.com/go-chassis/cari/discovery"
 	"k8s.io/api/core/v1"
 )
 
@@ -31,7 +31,7 @@ func (c *ServiceCacher) onServiceEvent(evt K8sEvent) {
 	svc := evt.Object.(*v1.Service)
 	domainProject := Kubernetes().GetDomainProject()
 	serviceID := generateServiceID(domainProject, svc)
-	key := core.GenerateServiceKey(domainProject, serviceID)
+	key := path.GenerateServiceKey(domainProject, serviceID)
 
 	if !ShouldRegisterService(svc) {
 		kv := c.Cache().Get(key)

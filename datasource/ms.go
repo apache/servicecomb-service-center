@@ -19,7 +19,7 @@ package datasource
 
 import (
 	"context"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
+	pb "github.com/go-chassis/cari/discovery"
 )
 
 // Attention: request validation must be finished before the following interface being invoked!!!
@@ -40,14 +40,16 @@ type MetadataManager interface {
 	UnregisterService(ctx context.Context, request *pb.DeleteServiceRequest) (*pb.DeleteServiceResponse, error)
 	GetDeleteServiceFunc(ctx context.Context, serviceID string, force bool,
 		serviceRespChan chan<- *pb.DelServicesRspInfo) func(context.Context)
+	GetServiceCountByDomainProject(ctx context.Context, request *pb.GetServiceCountRequest) (*pb.GetServiceCountResponse, error)
 
 	// Instance management
 	RegisterInstance(ctx context.Context, request *pb.RegisterInstanceRequest) (*pb.RegisterInstanceResponse, error)
-	// GetInstances returns instances under the current domain
+	// GetInstances returns instances under the specified service
 	GetInstance(ctx context.Context, request *pb.GetOneInstanceRequest) (*pb.GetOneInstanceResponse, error)
 	GetInstances(ctx context.Context, request *pb.GetInstancesRequest) (*pb.GetInstancesResponse, error)
-	// GetProviderInstances returns instances under the specified domain
-	GetProviderInstances(ctx context.Context, request *pb.HeartbeatSetElement) (instances []*pb.MicroServiceInstance, rev string, err error)
+	// GetProviderInstances returns instances under the specified service
+	GetProviderInstances(ctx context.Context, request *pb.GetProviderInstancesRequest) (instances []*pb.MicroServiceInstance, rev string, err error)
+	// BatchGetProviderInstances returns instances under the specified services
 	BatchGetProviderInstances(ctx context.Context, request *pb.BatchGetInstancesRequest) (instances []*pb.MicroServiceInstance, rev string, err error)
 	// FindInstances returns instances under the specified domain
 	FindInstances(ctx context.Context, request *pb.FindInstancesRequest) (*pb.FindInstancesResponse, error)
@@ -60,6 +62,8 @@ type MetadataManager interface {
 	Heartbeat(ctx context.Context, request *pb.HeartbeatRequest) (*pb.HeartbeatResponse, error)
 	HeartbeatSet(ctx context.Context, request *pb.HeartbeatSetRequest) (*pb.HeartbeatSetResponse, error)
 	BatchFind(ctx context.Context, request *pb.BatchFindInstancesRequest) (*pb.BatchFindInstancesResponse, error)
+	// GetAllInstances returns instances under the specified domain
+	GetAllInstances(ctx context.Context, request *pb.GetAllInstancesRequest) (*pb.GetAllInstancesResponse, error)
 
 	// Schema management
 	ModifySchemas(ctx context.Context, request *pb.ModifySchemasRequest) (*pb.ModifySchemasResponse, error)
