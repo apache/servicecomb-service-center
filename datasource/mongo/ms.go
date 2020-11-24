@@ -85,7 +85,7 @@ func (ds *DataSource) GetInstances(ctx context.Context, request *pb.GetInstances
 }
 
 // GetProviderInstances returns instances under the specified domain
-func (ds *DataSource) GetProviderInstances(ctx context.Context, request *pb.HeartbeatSetElement) (instances []*pb.MicroServiceInstance, rev string, err error) {
+func (ds *DataSource) GetProviderInstances(ctx context.Context, request *pb.GetProviderInstancesRequest) (instances []*pb.MicroServiceInstance, rev string, err error) {
 	return nil, "", nil
 }
 
@@ -120,6 +120,10 @@ func (ds *DataSource) HeartbeatSet(ctx context.Context, request *pb.HeartbeatSet
 
 func (ds *DataSource) BatchFind(ctx context.Context, request *pb.BatchFindInstancesRequest) (*pb.BatchFindInstancesResponse, error) {
 	return &pb.BatchFindInstancesResponse{}, nil
+}
+
+func (ds *DataSource) GetAllInstances(ctx context.Context, request *pb.GetAllInstancesRequest) (*pb.GetAllInstancesResponse, error) {
+	return &pb.GetAllInstancesResponse{}, nil
 }
 
 // Schema management

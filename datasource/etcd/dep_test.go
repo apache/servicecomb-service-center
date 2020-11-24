@@ -22,8 +22,8 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/event"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
-	"github.com/apache/servicecomb-service-center/server/core"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -625,7 +625,7 @@ func DependencyHandle(t *testing.T) {
 	for {
 		assert.NoError(t, deh.Handle())
 
-		key := core.GetServiceDependencyQueueRootKey("")
+		key := path.GetServiceDependencyQueueRootKey("")
 		resp, err := kv.Store().DependencyQueue().Search(getContext(),
 			client.WithStrKey(key), client.WithPrefix(), client.WithCountOnly())
 

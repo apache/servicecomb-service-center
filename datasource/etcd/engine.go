@@ -21,6 +21,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/pkg/cluster"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/server/metrics"
@@ -196,7 +197,7 @@ func (ds *DataSource) ClearNoInstanceServices(ctx context.Context, serviceTTL ti
 			//delete this service
 			svcCtxStr := "domainProject: " + domainProject + ", " +
 				"env: " + svc.Environment + ", " +
-				"service: " + util.StringJoin([]string{svc.AppId, svc.ServiceName, svc.Version}, core.SPLIT)
+				"service: " + util.StringJoin([]string{svc.AppId, svc.ServiceName, svc.Version}, path.SPLIT)
 			delSvcReq := &pb.DeleteServiceRequest{
 				ServiceId: svc.ServiceId,
 				Force:     true, //force delete
@@ -217,7 +218,7 @@ func (ds *DataSource) ClearNoInstanceServices(ctx context.Context, serviceTTL ti
 }
 
 func ctxFromDomainProject(pCtx context.Context, domainProject string) (ctx context.Context, err error) {
-	splitIndex := strings.Index(domainProject, core.SPLIT)
+	splitIndex := strings.Index(domainProject, path.SPLIT)
 	if splitIndex == -1 {
 		return nil, errors.New("invalid domainProject: " + domainProject)
 	}

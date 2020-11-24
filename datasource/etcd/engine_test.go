@@ -20,6 +20,7 @@ package etcd_test
 import (
 	"context"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"time"
 
 	"github.com/apache/servicecomb-service-center/datasource"
@@ -74,7 +75,7 @@ func createService(domain string, project string, name string, withInstance bool
 		WithInstance: withInstance,
 		ShouldClear:  shouldClear,
 	}
-	domainProject := domain + apt.SPLIT + project
+	domainProject := domain + path.SPLIT + project
 	m, ok := svcCleanInfos[domainProject]
 	if !ok {
 		m = make(map[string]*serviceCleanInfo)
@@ -84,7 +85,7 @@ func createService(domain string, project string, name string, withInstance bool
 }
 
 func checkServiceCleared(domain string, project string) {
-	domainProject := domain + apt.SPLIT + project
+	domainProject := domain + path.SPLIT + project
 	m := svcCleanInfos[domainProject]
 	for _, v := range m {
 		By(fmt.Sprintf("check cleared, service: %s, should be cleared: %t", v.ServiceName, v.ShouldClear))

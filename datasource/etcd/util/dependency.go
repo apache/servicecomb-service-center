@@ -20,11 +20,11 @@ package util
 import (
 	"context"
 	"encoding/json"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/registry"
-	apt "github.com/apache/servicecomb-service-center/server/core"
 )
 
 // Dependency contains dependency rules
@@ -41,7 +41,7 @@ type Dependency struct {
 func (dep *Dependency) removeConsumerOfProviderRule(ctx context.Context) ([]client.PluginOp, error) {
 	opts := make([]client.PluginOp, 0, len(dep.DeleteDependencyRuleList))
 	for _, providerRule := range dep.DeleteDependencyRuleList {
-		proProkey := apt.GenerateProviderDependencyRuleKey(providerRule.Tenant, providerRule)
+		proProkey := path.GenerateProviderDependencyRuleKey(providerRule.Tenant, providerRule)
 		log.Debugf("This proProkey is %s", proProkey)
 		consumerValue, err := TransferToMicroServiceDependency(ctx, proProkey)
 		if err != nil {
@@ -74,7 +74,7 @@ func (dep *Dependency) removeConsumerOfProviderRule(ctx context.Context) ([]clie
 func (dep *Dependency) addConsumerOfProviderRule(ctx context.Context) ([]client.PluginOp, error) {
 	opts := make([]client.PluginOp, 0, len(dep.CreateDependencyRuleList))
 	for _, providerRule := range dep.CreateDependencyRuleList {
-		proProkey := apt.GenerateProviderDependencyRuleKey(providerRule.Tenant, providerRule)
+		proProkey := path.GenerateProviderDependencyRuleKey(providerRule.Tenant, providerRule)
 		tmpValue, err := TransferToMicroServiceDependency(ctx, proProkey)
 		if err != nil {
 			return nil, err
@@ -97,7 +97,7 @@ func (dep *Dependency) addConsumerOfProviderRule(ctx context.Context) ([]client.
 }
 
 func (dep *Dependency) updateProvidersRuleOfConsumer(_ context.Context) ([]client.PluginOp, error) {
-	conKey := apt.GenerateConsumerDependencyRuleKey(dep.DomainProject, dep.Consumer)
+	conKey := path.GenerateConsumerDependencyRuleKey(dep.DomainProject, dep.Consumer)
 	if len(dep.ProvidersRule) == 0 {
 		return []client.PluginOp{client.OpDel(client.WithStrKey(conKey))}, nil
 	}

@@ -16,10 +16,10 @@
 package model
 
 import (
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/core"
 	"strconv"
 	"time"
 )
@@ -27,10 +27,10 @@ import (
 func GetDomainProject(resource interface{}) (domainProject string) {
 	switch resource.(type) {
 	case *dump.Microservice:
-		_, domainProject = core.GetInfoFromSvcKV(
+		_, domainProject = path.GetInfoFromSvcKV(
 			util.StringToBytesWithNoCopy(resource.(*dump.Microservice).Key))
 	case *dump.Instance:
-		_, _, domainProject = core.GetInfoFromInstKV(
+		_, _, domainProject = path.GetInfoFromInstKV(
 			util.StringToBytesWithNoCopy(resource.(*dump.Instance).Key))
 	}
 	return

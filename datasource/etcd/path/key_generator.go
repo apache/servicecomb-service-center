@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package core
+package path
 
 import (
 	"github.com/apache/servicecomb-service-center/pkg/registry"
@@ -52,12 +52,49 @@ func GetRootKey() string {
 	return SPLIT + RegistryRootKey
 }
 
+func GenerateETCDAccountKey(name string) string {
+	return util.StringJoin([]string{
+		GetRootKey(),
+		"accounts",
+		name,
+	}, SPLIT)
+}
+
+func GetProjectRootKey(domain string) string {
+	return util.StringJoin([]string{
+		GetRootKey(),
+		RegistryProjectKey,
+		domain,
+	}, SPLIT)
+}
+
+func GenerateETCDProjectKey(domain, project string) string {
+	return util.StringJoin([]string{
+		GetProjectRootKey(domain),
+		project,
+	}, SPLIT)
+}
+
+func GenerateETCDDomainKey(domain string) string {
+	return util.StringJoin([]string{
+		GetDomainRootKey(),
+		domain,
+	}, SPLIT)
+}
+
 func GetServiceRootKey(domainProject string) string {
 	return util.StringJoin([]string{
 		GetRootKey(),
 		RegistryServiceKey,
 		RegistryFile,
 		domainProject,
+	}, SPLIT)
+}
+
+func GenerateServiceKey(domainProject string, serviceID string) string {
+	return util.StringJoin([]string{
+		GetServiceRootKey(domainProject),
+		serviceID,
 	}, SPLIT)
 }
 
@@ -138,13 +175,6 @@ func GetInstanceLeaseRootKey(domainProject string) string {
 		RegistryInstanceKey,
 		RegistryLeaseKey,
 		domainProject,
-	}, SPLIT)
-}
-
-func GenerateServiceKey(domainProject string, serviceID string) string {
-	return util.StringJoin([]string{
-		GetServiceRootKey(domainProject),
-		serviceID,
 	}, SPLIT)
 }
 
@@ -346,14 +376,6 @@ func GenerateMetricsKey(name, utc, domain string) string {
 		GetMetricsRootKey(),
 		name,
 		utc,
-		domain,
-	}, SPLIT)
-}
-
-func GetProjectRootKey(domain string) string {
-	return util.StringJoin([]string{
-		GetRootKey(),
-		RegistryProjectKey,
 		domain,
 	}, SPLIT)
 }

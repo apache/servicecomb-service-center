@@ -20,10 +20,10 @@ package event
 import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/cache"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
-	"github.com/apache/servicecomb-service-center/server/core"
 )
 
 // DependencyRuleEventHandler reset the find instances cache
@@ -40,8 +40,8 @@ func (h *DependencyRuleEventHandler) OnEvent(evt sd.KvEvent) {
 	if action != pb.EVT_UPDATE && action != pb.EVT_DELETE {
 		return
 	}
-	t, providerKey := core.GetInfoFromDependencyRuleKV(evt.KV.Key)
-	if t != core.DepsProvider {
+	t, providerKey := path.GetInfoFromDependencyRuleKV(evt.KV.Key)
+	if t != path.DepsProvider {
 		return
 	}
 	log.Debugf("caught [%s] provider rule[%s/%s/%s/%s] event",

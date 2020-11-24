@@ -21,6 +21,7 @@ import (
 	"context"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
@@ -28,7 +29,6 @@ import (
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
-	apt "github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
@@ -51,7 +51,7 @@ type GetInstanceCountByDomainResponse struct {
 
 // schema
 func getSchemaSummary(ctx context.Context, domainProject string, serviceID string, schemaID string) (string, error) {
-	key := apt.GenerateServiceSchemaSummaryKey(domainProject, serviceID, schemaID)
+	key := path.GenerateServiceSchemaSummaryKey(domainProject, serviceID, schemaID)
 	resp, err := kv.Store().SchemaSummary().Search(ctx,
 		client.WithStrKey(key),
 	)
@@ -66,7 +66,7 @@ func getSchemaSummary(ctx context.Context, domainProject string, serviceID strin
 }
 
 func getSchemasFromDatabase(ctx context.Context, domainProject string, serviceID string) ([]*pb.Schema, error) {
-	key := apt.GenerateServiceSchemaKey(domainProject, serviceID, "")
+	key := path.GenerateServiceSchemaKey(domainProject, serviceID, "")
 	resp, err := kv.Store().Schema().Search(ctx,
 		client.WithPrefix(),
 		client.WithStrKey(key))
@@ -155,7 +155,7 @@ func checkSchemaInfoExist(ctx context.Context, key string) (bool, error) {
 }
 
 func isExistSchemaSummary(ctx context.Context, domainProject, serviceID, schemaID string) (bool, error) {
-	key := apt.GenerateServiceSchemaSummaryKey(domainProject, serviceID, schemaID)
+	key := path.GenerateServiceSchemaSummaryKey(domainProject, serviceID, schemaID)
 	resp, err := kv.Store().SchemaSummary().Search(ctx, client.WithStrKey(key), client.WithCountOnly())
 	if err != nil {
 		return true, err
@@ -168,10 +168,10 @@ func isExistSchemaSummary(ctx context.Context, domainProject, serviceID, schemaI
 
 func schemaWithDatabaseOpera(invoke client.Operation, domainProject string, serviceID string, schema *pb.Schema) []client.PluginOp {
 	pluginOps := make([]client.PluginOp, 0)
-	key := apt.GenerateServiceSchemaKey(domainProject, serviceID, schema.SchemaId)
+	key := path.GenerateServiceSchemaKey(domainProject, serviceID, schema.SchemaId)
 	opt := invoke(client.WithStrKey(key), client.WithStrValue(schema.Schema))
 	pluginOps = append(pluginOps, opt)
-	keySummary := apt.GenerateServiceSchemaSummaryKey(domainProject, serviceID, schema.SchemaId)
+	keySummary := path.GenerateServiceSchemaSummaryKey(domainProject, serviceID, schema.SchemaId)
 	opt = invoke(client.WithStrKey(keySummary), client.WithStrValue(schema.Summary))
 	pluginOps = append(pluginOps, opt)
 	return pluginOps
@@ -204,7 +204,7 @@ func commitSchemaInfo(domainProject string, serviceID string, schema *pb.Schema)
 	if len(schema.Summary) != 0 {
 		return schemaWithDatabaseOpera(client.OpPut, domainProject, serviceID, schema)
 	}
-	key := apt.GenerateServiceSchemaKey(domainProject, serviceID, schema.SchemaId)
+	key := path.GenerateServiceSchemaKey(domainProject, serviceID, schema.SchemaId)
 	opt := client.OpPut(client.WithStrKey(key), client.WithStrValue(schema.Schema))
 	return []client.PluginOp{opt}
 }
@@ -223,8 +223,8 @@ func preProcessRegisterInstance(ctx context.Context, instance *pb.MicroServiceIn
 	instance.ModTimestamp = instance.Timestamp
 
 	// 这里应该根据租约计时
-	renewalInterval := apt.RegistryDefaultLeaseRenewalinterval
-	retryTimes := apt.RegistryDefaultLeaseRetrytimes
+	renewalInterval := core.RegistryDefaultLeaseRenewalinterval
+	retryTimes := core.RegistryDefaultLeaseRetrytimes
 	if instance.HealthCheck == nil {
 		instance.HealthCheck = &pb.HealthCheck{
 			Mode:     pb.CHECK_BY_HEARTBEAT,
@@ -296,7 +296,7 @@ func getServiceAllVersions(ctx context.Context, serviceKey *pb.MicroServiceKey) 
 
 	copyKey := *serviceKey
 	copyKey.Version = ""
-	key := kv.GenerateServiceIndexKey(&copyKey)
+	key := path.GenerateServiceIndexKey(&copyKey)
 
 	opts := append(serviceUtil.FromContext(ctx),
 		client.WithStrKey(key),
@@ -310,7 +310,7 @@ func getServiceAllVersions(ctx context.Context, serviceKey *pb.MicroServiceKey) 
 		return versions, nil
 	}
 	for _, keyValue := range resp.Kvs {
-		key := kv.GetInfoFromSvcIndexKV(keyValue.Key)
+		key := path.GetInfoFromSvcIndexKV(keyValue.Key)
 		versions = append(versions, key.Version)
 	}
 	return versions, nil
@@ -401,7 +401,7 @@ func getServiceDetailUtil(ctx context.Context, serviceDetailOpt ServiceDetailOpt
 }
 
 func getSchemaInfoUtil(ctx context.Context, domainProject string, serviceID string) ([]*pb.Schema, error) {
-	key := apt.GenerateServiceSchemaKey(domainProject, serviceID, "")
+	key := path.GenerateServiceSchemaKey(domainProject, serviceID, "")
 
 	resp, err := kv.Store().Schema().Search(ctx,
 		client.WithStrKey(key),
@@ -430,7 +430,7 @@ func statistics(ctx context.Context, withShared bool) (*pb.Statistics, error) {
 	opts := serviceUtil.FromContext(ctx)
 
 	// services
-	key := apt.GetServiceIndexRootKey(domainProject) + "/"
+	key := path.GetServiceIndexRootKey(domainProject) + "/"
 	svcOpts := append(opts,
 		client.WithStrKey(key),
 		client.WithPrefix())
@@ -442,9 +442,9 @@ func statistics(ctx context.Context, withShared bool) (*pb.Statistics, error) {
 	app := make(map[string]struct{}, respSvc.Count)
 	svcWithNonVersion := make(map[string]struct{}, respSvc.Count)
 	svcIDToNonVerKey := make(map[string]string, respSvc.Count)
-	for _, kv := range respSvc.Kvs {
-		key := apt.GetInfoFromSvcIndexKV(kv.Key)
-		if !withShared && apt.IsGlobal(key) {
+	for _, keyValue := range respSvc.Kvs {
+		key := path.GetInfoFromSvcIndexKV(keyValue.Key)
+		if !withShared && core.IsGlobal(key) {
 			continue
 		}
 		if _, ok := app[key.AppId]; !ok {
@@ -452,11 +452,11 @@ func statistics(ctx context.Context, withShared bool) (*pb.Statistics, error) {
 		}
 
 		key.Version = ""
-		svcWithNonVersionKey := apt.GenerateServiceIndexKey(key)
+		svcWithNonVersionKey := path.GenerateServiceIndexKey(key)
 		if _, ok := svcWithNonVersion[svcWithNonVersionKey]; !ok {
 			svcWithNonVersion[svcWithNonVersionKey] = struct{}{}
 		}
-		svcIDToNonVerKey[kv.Value.(string)] = svcWithNonVersionKey
+		svcIDToNonVerKey[keyValue.Value.(string)] = svcWithNonVersionKey
 	}
 
 	result.Services.Count = int64(len(svcWithNonVersion))
@@ -468,7 +468,7 @@ func statistics(ctx context.Context, withShared bool) (*pb.Statistics, error) {
 	})
 
 	// instance
-	key = apt.GetInstanceRootKey(domainProject) + "/"
+	key = path.GetInstanceRootKey(domainProject) + "/"
 	instOpts := append(opts,
 		client.WithStrKey(key),
 		client.WithPrefix(),
@@ -479,8 +479,8 @@ func statistics(ctx context.Context, withShared bool) (*pb.Statistics, error) {
 	}
 
 	onlineServices := make(map[string]struct{}, respSvc.Count)
-	for _, kv := range respIns.Kvs {
-		serviceID, _, _ := apt.GetInfoFromInstKV(kv.Key)
+	for _, keyValue := range respIns.Kvs {
+		serviceID, _, _ := path.GetInfoFromInstKV(keyValue.Key)
 		key, ok := svcIDToNonVerKey[serviceID]
 		if !ok {
 			continue
@@ -503,7 +503,7 @@ func statistics(ctx context.Context, withShared bool) (*pb.Statistics, error) {
 
 func getInstanceCountByDomain(ctx context.Context, svcIDToNonVerKey map[string]string, resp chan GetInstanceCountByDomainResponse) {
 	domainID := util.ParseDomain(ctx)
-	key := apt.GetInstanceRootKey(domainID) + "/"
+	key := path.GetInstanceRootKey(domainID) + "/"
 	instOpts := append([]client.PluginOpOption{},
 		client.WithStrKey(key),
 		client.WithPrefix(),
@@ -516,8 +516,8 @@ func getInstanceCountByDomain(ctx context.Context, svcIDToNonVerKey map[string]s
 	if err != nil {
 		log.Errorf(err, "get number of instances by domain[%s]", domainID)
 	} else {
-		for _, kv := range respIns.Kvs {
-			serviceID, _, _ := apt.GetInfoFromInstKV(kv.Key)
+		for _, keyValue := range respIns.Kvs {
+			serviceID, _, _ := path.GetInfoFromInstKV(keyValue.Key)
 			_, ok := svcIDToNonVerKey[serviceID]
 			if !ok {
 				continue

@@ -17,9 +17,9 @@ package aggregate
 
 import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/server/core"
 )
 
 // Aggregator implements sd.Adaptor.
@@ -65,7 +65,7 @@ func getLogConflictFunc(t sd.Type) func(origin, conflict *sd.KeyValue) {
 	case kv.ServiceIndex:
 		return func(origin, conflict *sd.KeyValue) {
 			if serviceID, conflictID := origin.Value.(string), conflict.Value.(string); conflictID != serviceID {
-				key := core.GetInfoFromSvcIndexKV(conflict.Key)
+				key := path.GetInfoFromSvcIndexKV(conflict.Key)
 				log.Warnf("conflict! can not merge microservice index[%s][%s][%s/%s/%s/%s], found one[%s] in cluster[%s]",
 					conflict.ClusterName, conflictID, key.Environment, key.AppId, key.ServiceName, key.Version,
 					serviceID, origin.ClusterName)
@@ -74,7 +74,7 @@ func getLogConflictFunc(t sd.Type) func(origin, conflict *sd.KeyValue) {
 	case kv.ServiceAlias:
 		return func(origin, conflict *sd.KeyValue) {
 			if serviceID, conflictID := origin.Value.(string), conflict.Value.(string); conflictID != serviceID {
-				key := core.GetInfoFromSvcAliasKV(conflict.Key)
+				key := path.GetInfoFromSvcAliasKV(conflict.Key)
 				log.Warnf("conflict! can not merge microservice alias[%s][%s][%s/%s/%s/%s], found one[%s] in cluster[%s]",
 					conflict.ClusterName, conflictID, key.Environment, key.AppId, key.ServiceName, key.Version,
 					serviceID, origin.ClusterName)
