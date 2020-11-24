@@ -17,7 +17,6 @@ package aggregate
 
 import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
-	"github.com/apache/servicecomb-service-center/server/config"
 )
 
 func init() {
@@ -32,11 +31,5 @@ func (r *Repository) New(t sd.Type, cfg *sd.Config) sd.Adaptor {
 }
 
 func NewRepository(opts sd.Options) sd.AdaptorRepository {
-	InitConfigs()
 	return &Repository{}
-}
-
-func InitConfigs() {
-	config.ServerInfo.Config.Plugins.Object("discovery").
-		Set("aggregateMode", repos)
 }

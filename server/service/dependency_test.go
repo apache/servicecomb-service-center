@@ -20,8 +20,8 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/event"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
-	"github.com/apache/servicecomb-service-center/server/core"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -886,7 +886,7 @@ func DependencyHandle() {
 	for {
 		Expect(deh.Handle()).To(BeNil())
 
-		key := core.GetServiceDependencyQueueRootKey("")
+		key := path.GetServiceDependencyQueueRootKey("")
 		resp, err := kv.Store().DependencyQueue().Search(getContext(),
 			client.WithStrKey(key), client.WithPrefix(), client.WithCountOnly())
 

@@ -20,6 +20,7 @@ package util
 import (
 	"context"
 	"encoding/json"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"strings"
 
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
@@ -28,7 +29,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	apt "github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 )
 
@@ -38,7 +38,7 @@ const defaultCacheValue = "1"
 	get Service by service id
 */
 func GetServiceWithRev(ctx context.Context, domain string, id string, rev int64) (*pb.MicroService, error) {
-	key := apt.GenerateServiceKey(domain, id)
+	key := path.GenerateServiceKey(domain, id)
 	serviceResp, err := kv.Store().Service().Search(ctx,
 		client.WithStrKey(key),
 		client.WithRev(rev))
@@ -52,7 +52,7 @@ func GetServiceWithRev(ctx context.Context, domain string, id string, rev int64)
 }
 
 func GetService(ctx context.Context, domainProject string, serviceID string) (*pb.MicroService, error) {
-	key := apt.GenerateServiceKey(domainProject, serviceID)
+	key := path.GenerateServiceKey(domainProject, serviceID)
 	opts := append(FromContext(ctx), client.WithStrKey(key))
 	serviceResp, err := kv.Store().Service().Search(ctx, opts...)
 	if err != nil {
@@ -74,7 +74,7 @@ func GetServiceFromCache(domainProject string, serviceID string) *pb.MicroServic
 }
 
 func getServicesRawData(ctx context.Context, domainProject string) ([]*sd.KeyValue, error) {
-	key := apt.GenerateServiceKey(domainProject, "")
+	key := path.GenerateServiceKey(domainProject, "")
 	opts := append(FromContext(ctx),
 		client.WithStrKey(key),
 		client.WithPrefix())
@@ -88,7 +88,7 @@ func getServicesRawData(ctx context.Context, domainProject string) ([]*sd.KeyVal
 //GetAllServicesAcrossDomainProject get services of all domains, projects
 //the map's key is domainProject
 func GetAllServicesAcrossDomainProject(ctx context.Context) (map[string][]*pb.MicroService, error) {
-	key := apt.GetServiceRootKey("")
+	key := path.GetServiceRootKey("")
 	opts := append(FromContext(ctx),
 		client.WithStrKey(key),
 		client.WithPrefix())
@@ -104,11 +104,11 @@ func GetAllServicesAcrossDomainProject(ctx context.Context) (map[string][]*pb.Mi
 
 	for _, value := range serviceResp.Kvs {
 		prefix := util.BytesToStringWithNoCopy(value.Key)
-		parts := strings.Split(prefix, apt.SPLIT)
+		parts := strings.Split(prefix, path.SPLIT)
 		if len(parts) != 7 {
 			continue
 		}
-		domainProject := parts[4] + apt.SPLIT + parts[5]
+		domainProject := parts[4] + path.SPLIT + parts[5]
 		microService, ok := value.Value.(*pb.MicroService)
 		if !ok {
 			log.Errorf(nil, "backend key[%s]'s value is not type *pb.MicroService", prefix)
@@ -146,7 +146,7 @@ func GetServiceID(ctx context.Context, key *pb.MicroServiceKey) (serviceID strin
 }
 
 func searchServiceID(ctx context.Context, key *pb.MicroServiceKey) (string, error) {
-	opts := append(FromContext(ctx), client.WithStrKey(apt.GenerateServiceIndexKey(key)))
+	opts := append(FromContext(ctx), client.WithStrKey(path.GenerateServiceIndexKey(key)))
 	resp, err := kv.Store().ServiceIndex().Search(ctx, opts...)
 	if err != nil {
 		return "", err
@@ -158,7 +158,7 @@ func searchServiceID(ctx context.Context, key *pb.MicroServiceKey) (string, erro
 }
 
 func searchServiceIDFromAlias(ctx context.Context, key *pb.MicroServiceKey) (string, error) {
-	opts := append(FromContext(ctx), client.WithStrKey(apt.GenerateServiceAliasKey(key)))
+	opts := append(FromContext(ctx), client.WithStrKey(path.GenerateServiceAliasKey(key)))
 	resp, err := kv.Store().ServiceAlias().Search(ctx, opts...)
 	if err != nil {
 		return "", err
@@ -177,10 +177,10 @@ func GetServiceAllVersions(ctx context.Context, key *pb.MicroServiceKey, alias b
 		indexer sd.Indexer
 	)
 	if alias {
-		prefix = apt.GenerateServiceAliasKey(&copy)
+		prefix = path.GenerateServiceAliasKey(&copy)
 		indexer = kv.Store().ServiceAlias()
 	} else {
-		prefix = apt.GenerateServiceIndexKey(&copy)
+		prefix = path.GenerateServiceIndexKey(&copy)
 		indexer = kv.Store().ServiceIndex()
 	}
 	opts := append(FromContext(ctx),
@@ -228,7 +228,7 @@ FIND_RULE:
 
 func ServiceExist(ctx context.Context, domainProject string, serviceID string) bool {
 	opts := append(FromContext(ctx),
-		client.WithStrKey(apt.GenerateServiceKey(domainProject, serviceID)),
+		client.WithStrKey(path.GenerateServiceKey(domainProject, serviceID)),
 		client.WithCountOnly())
 	resp, err := kv.Store().Service().Search(ctx, opts...)
 	if err != nil || resp.Count == 0 {
@@ -256,7 +256,7 @@ func RemandInstanceQuota(ctx context.Context) {
 
 func UpdateService(domainProject string, serviceID string, service *pb.MicroService) (opt client.PluginOp, err error) {
 	opt = client.PluginOp{}
-	key := apt.GenerateServiceKey(domainProject, serviceID)
+	key := path.GenerateServiceKey(domainProject, serviceID)
 	data, err := json.Marshal(service)
 	if err != nil {
 		log.Errorf(err, "marshal service file failed")
@@ -267,7 +267,7 @@ func UpdateService(domainProject string, serviceID string, service *pb.MicroServ
 }
 
 func GetOneDomainProjectServiceCount(ctx context.Context, domainProject string) (int64, error) {
-	key := apt.GenerateServiceKey(domainProject, "")
+	key := path.GenerateServiceKey(domainProject, "")
 	opts := append(FromContext(ctx),
 		client.WithStrKey(key),
 		client.WithCountOnly(),
@@ -280,7 +280,7 @@ func GetOneDomainProjectServiceCount(ctx context.Context, domainProject string) 
 }
 
 func GetOneDomainProjectInstanceCount(ctx context.Context, domainProject string) (int64, error) {
-	key := kv.GetInstanceRootKey(domainProject) + "/"
+	key := path.GetInstanceRootKey(domainProject) + "/"
 	opts := append(FromContext(ctx),
 		client.WithStrKey(key),
 		client.WithCountOnly(),

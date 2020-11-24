@@ -19,9 +19,9 @@ package event
 
 import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
-	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/metrics"
 	"strings"
 )
@@ -38,7 +38,7 @@ func (h *SchemaSummaryEventHandler) OnEvent(evt sd.KvEvent) {
 	action := evt.Type
 	switch action {
 	case pb.EVT_INIT, pb.EVT_CREATE, pb.EVT_DELETE:
-		domainProject, _, _ := core.GetInfoFromSchemaSummaryKV(evt.KV.Key)
+		domainProject, _, _ := path.GetInfoFromSchemaSummaryKV(evt.KV.Key)
 		idx := strings.Index(domainProject, "/")
 		newDomain := domainProject[:idx]
 		if pb.EVT_DELETE == action {

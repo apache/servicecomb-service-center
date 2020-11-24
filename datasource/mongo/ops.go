@@ -15,22 +15,13 @@
  * limitations under the License.
  */
 
-package kv_test
+package mongo
 
 import (
-	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
-	"github.com/stretchr/testify/assert"
-	"testing"
+	"context"
+	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 )
 
-func TestGenerateETCDAccountKey(t *testing.T) {
-	assert.Equal(t, "/cse-sr/accounts/admin", kv.GenerateETCDAccountKey("admin"))
-}
-
-func TestGenerateETCDProjectKey(t *testing.T) {
-	assert.Equal(t, "/cse-sr/projects/domain/project", kv.GenerateETCDProjectKey("domain", "project"))
-}
-
-func TestGenerateETCDDomainKey(t *testing.T) {
-	assert.Equal(t, "/cse-sr/domains/domain", kv.GenerateETCDDomainKey("domain"))
+func (ds *DataSource) GetServiceCountByDomainProject(ctx context.Context, request *pb.GetServiceCountRequest) (*pb.GetServiceCountResponse, error) {
+	panic("implement me")
 }

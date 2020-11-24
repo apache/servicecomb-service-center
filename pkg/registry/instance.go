@@ -67,6 +67,10 @@ type GetInstancesResponse struct {
 	Instances []*MicroServiceInstance `protobuf:"bytes,2,rep,name=instances" json:"instances,omitempty"`
 }
 
+type GetProviderInstancesRequest struct {
+	ProviderServiceId string `protobuf:"bytes,1,opt,name=providerServiceId" json:"providerServiceId,omitempty"`
+}
+
 type UpdateInstanceStatusRequest struct {
 	ServiceId  string `protobuf:"bytes,1,opt,name=serviceId" json:"serviceId,omitempty"`
 	InstanceId string `protobuf:"bytes,2,opt,name=instanceId" json:"instanceId,omitempty"`
@@ -108,4 +112,12 @@ type UpdateInstancePropsRequest struct {
 
 type UpdateInstancePropsResponse struct {
 	Response *Response `protobuf:"bytes,1,opt,name=response" json:"response,omitempty"`
+}
+
+type GetAllInstancesRequest struct {
+}
+
+type GetAllInstancesResponse struct {
+	Response  *Response               `protobuf:"bytes,1,opt,name=response" json:"response,omitempty"`
+	Instances []*MicroServiceInstance `protobuf:"bytes,2,rep,name=instances" json:"instances,omitempty"`
 }

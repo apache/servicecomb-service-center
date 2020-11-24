@@ -21,11 +21,11 @@ import (
 	"github.com/apache/servicecomb-service-center/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd"
 	etcdclient "github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"strings"
@@ -100,7 +100,7 @@ func (c *SCClientAggregate) GetSchemasByServiceID(ctx context.Context, domainPro
 		response.Count = int64(len(schemas))
 		for _, schema := range schemas {
 			response.Kvs = append(response.Kvs, &sd.KeyValue{
-				Key:         []byte(core.GenerateServiceSchemaKey(domainProject, serviceID, schema.SchemaId)),
+				Key:         []byte(path.GenerateServiceSchemaKey(domainProject, serviceID, schema.SchemaId)),
 				Value:       util.StringToBytesWithNoCopy(schema.Schema),
 				ModRevision: 0,
 				ClusterName: client.Cfg.Name,
@@ -125,7 +125,7 @@ func (c *SCClientAggregate) GetSchemaBySchemaID(ctx context.Context, domainProje
 		}
 		response.Count = 1
 		response.Kvs = append(response.Kvs, &sd.KeyValue{
-			Key:         []byte(core.GenerateServiceSchemaKey(domainProject, serviceID, schema.SchemaId)),
+			Key:         []byte(path.GenerateServiceSchemaKey(domainProject, serviceID, schema.SchemaId)),
 			Value:       util.StringToBytesWithNoCopy(schema.Schema),
 			ModRevision: 0,
 			ClusterName: client.Cfg.Name,
@@ -149,7 +149,7 @@ func (c *SCClientAggregate) GetInstancesByServiceID(ctx context.Context, domain,
 		response.Count = int64(len(insts))
 		for _, instance := range insts {
 			response.Kvs = append(response.Kvs, &sd.KeyValue{
-				Key:         []byte(core.GenerateInstanceKey(domain+"/"+project, providerID, instance.InstanceId)),
+				Key:         []byte(path.GenerateInstanceKey(domain+"/"+project, providerID, instance.InstanceId)),
 				Value:       instance,
 				ModRevision: 0,
 				ClusterName: client.Cfg.Name,
@@ -172,7 +172,7 @@ func (c *SCClientAggregate) GetInstanceByInstanceID(ctx context.Context, domain,
 		}
 		response.Count = 1
 		response.Kvs = append(response.Kvs, &sd.KeyValue{
-			Key:         []byte(core.GenerateInstanceKey(domain+"/"+project, providerID, instance.InstanceId)),
+			Key:         []byte(path.GenerateInstanceKey(domain+"/"+project, providerID, instance.InstanceId)),
 			Value:       instance,
 			ModRevision: 0,
 			ClusterName: client.Cfg.Name,

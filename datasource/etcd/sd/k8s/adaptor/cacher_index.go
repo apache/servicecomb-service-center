@@ -16,9 +16,9 @@
 package adaptor
 
 import (
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/registry"
-	"github.com/apache/servicecomb-service-center/server/core"
 	"k8s.io/api/core/v1"
 )
 
@@ -30,7 +30,7 @@ type ServiceIndexCacher struct {
 func (c *ServiceIndexCacher) onServiceEvent(evt K8sEvent) {
 	svc := evt.Object.(*v1.Service)
 	domainProject := Kubernetes().GetDomainProject()
-	indexKey := core.GenerateServiceIndexKey(generateServiceKey(domainProject, svc))
+	indexKey := path.GenerateServiceIndexKey(generateServiceKey(domainProject, svc))
 	serviceID := generateServiceID(domainProject, svc)
 
 	if !ShouldRegisterService(svc) {

@@ -23,6 +23,7 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/mux"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/backoff"
@@ -32,7 +33,6 @@ import (
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/config"
-	"github.com/apache/servicecomb-service-center/server/core"
 	"sync"
 	"time"
 )
@@ -141,7 +141,7 @@ func (h *DependencyEventHandler) Handle() error {
 	testMux.Lock()
 	defer testMux.Unlock()
 
-	key := core.GetServiceDependencyQueueRootKey("")
+	key := path.GetServiceDependencyQueueRootKey("")
 	resp, err := kv.Store().DependencyQueue().Search(context.Background(), client.WithNoCache(),
 		client.WithStrKey(key), client.WithPrefix(), client.WithAscendOrder(), client.WithOrderByCreate())
 	if err != nil {
@@ -157,14 +157,14 @@ func (h *DependencyEventHandler) Handle() error {
 	cleanUpDomainProjects := make(map[string]struct{})
 	defer h.CleanUp(cleanUpDomainProjects)
 
-	for _, kv := range resp.Kvs {
-		r := kv.Value.(*pb.ConsumerDependency)
+	for _, keyValue := range resp.Kvs {
+		r := keyValue.Value.(*pb.ConsumerDependency)
 
-		_, domainProject, uuid := core.GetInfoFromDependencyQueueKV(kv.Key)
-		if uuid == core.DepsQueueUUID {
+		_, domainProject, uuid := path.GetInfoFromDependencyQueueKV(keyValue.Key)
+		if uuid == path.DepsQueueUUID {
 			cleanUpDomainProjects[domainProject] = struct{}{}
 		}
-		res := NewDependencyEventHandlerResource(r, kv, domainProject)
+		res := NewDependencyEventHandlerResource(r, keyValue, domainProject)
 
 		if err := h.dependencyRuleHandle(res); err != nil {
 			return err

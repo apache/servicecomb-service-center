@@ -22,6 +22,7 @@ import (
 	"crypto/sha1"
 	"encoding/json"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"strconv"
 	"strings"
 	"time"
@@ -33,13 +34,12 @@ import (
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	rmodel "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	apt "github.com/apache/servicecomb-service-center/server/core"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 )
 
 func GetLeaseID(ctx context.Context, domainProject string, serviceID string, instanceID string) (int64, error) {
 	opts := append(FromContext(ctx),
-		client.WithStrKey(apt.GenerateInstanceLeaseKey(domainProject, serviceID, instanceID)))
+		client.WithStrKey(path.GenerateInstanceLeaseKey(domainProject, serviceID, instanceID)))
 	resp, err := kv.Store().Lease().Search(ctx, opts...)
 	if err != nil {
 		return -1, err
@@ -52,7 +52,7 @@ func GetLeaseID(ctx context.Context, domainProject string, serviceID string, ins
 }
 
 func GetInstance(ctx context.Context, domainProject string, serviceID string, instanceID string) (*pb.MicroServiceInstance, error) {
-	key := apt.GenerateInstanceKey(domainProject, serviceID, instanceID)
+	key := path.GenerateInstanceKey(domainProject, serviceID, instanceID)
 	opts := append(FromContext(ctx), client.WithStrKey(key))
 
 	resp, err := kv.Store().Instance().Search(ctx, opts...)
@@ -74,7 +74,7 @@ func FormatRevision(revs, counts []int64) (s string) {
 }
 
 func GetAllInstancesOfOneService(ctx context.Context, domainProject string, serviceID string) ([]*pb.MicroServiceInstance, error) {
-	key := apt.GenerateInstanceKey(domainProject, serviceID, "")
+	key := path.GenerateInstanceKey(domainProject, serviceID, "")
 	opts := append(FromContext(ctx), client.WithStrKey(key), client.WithPrefix())
 	resp, err := kv.Store().Instance().Search(ctx, opts...)
 	if err != nil {
@@ -90,7 +90,7 @@ func GetAllInstancesOfOneService(ctx context.Context, domainProject string, serv
 }
 
 func GetInstanceCountOfOneService(ctx context.Context, domainProject string, serviceID string) (int64, error) {
-	key := apt.GenerateInstanceKey(domainProject, serviceID, "")
+	key := path.GenerateInstanceKey(domainProject, serviceID, "")
 	opts := append(FromContext(ctx),
 		client.WithStrKey(key),
 		client.WithPrefix(),
@@ -120,7 +120,7 @@ func ParseEndpointIndexValue(value []byte) EndpointIndexValue {
 func DeleteServiceAllInstances(ctx context.Context, serviceID string) error {
 	domainProject := util.ParseDomainProject(ctx)
 
-	instanceLeaseKey := apt.GenerateInstanceLeaseKey(domainProject, serviceID, "")
+	instanceLeaseKey := path.GenerateInstanceLeaseKey(domainProject, serviceID, "")
 	resp, err := kv.Store().Lease().Search(ctx,
 		client.WithStrKey(instanceLeaseKey),
 		client.WithPrefix(),
@@ -202,7 +202,7 @@ func QueryAllProvidersInstances(ctx context.Context, selfServiceID string) (resu
 
 func QueryServiceInstancesKvs(ctx context.Context, serviceID string, rev int64) ([]*sd.KeyValue, error) {
 	domainProject := util.ParseDomainProject(ctx)
-	key := apt.GenerateInstanceKey(domainProject, serviceID, "")
+	key := path.GenerateInstanceKey(domainProject, serviceID, "")
 	resp, err := kv.Store().Instance().Search(ctx,
 		client.WithStrKey(key),
 		client.WithPrefix(),
@@ -230,7 +230,7 @@ func UpdateInstance(ctx context.Context, domainProject string, instance *pb.Micr
 		return scerr.NewError(scerr.ErrInternal, err.Error())
 	}
 
-	key := apt.GenerateInstanceKey(domainProject, instance.ServiceId, instance.InstanceId)
+	key := path.GenerateInstanceKey(domainProject, instance.ServiceId, instance.InstanceId)
 
 	resp, err := client.Instance().TxnWithCmp(ctx,
 		[]client.PluginOp{client.OpPut(
@@ -238,7 +238,7 @@ func UpdateInstance(ctx context.Context, domainProject string, instance *pb.Micr
 			client.WithValue(data),
 			client.WithLease(leaseID))},
 		[]client.CompareOp{client.OpCmp(
-			client.CmpVer(util.StringToBytesWithNoCopy(apt.GenerateServiceKey(domainProject, instance.ServiceId))),
+			client.CmpVer(util.StringToBytesWithNoCopy(path.GenerateServiceKey(domainProject, instance.ServiceId))),
 			client.CmpNotEqual, 0)},
 		nil)
 	if err != nil {
