@@ -87,7 +87,12 @@ github.com/ghodss/yaml v0.0.0-20150909031657-73d445a93680/go.mod h1:4dBDuWmgqj2H
 github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
 github.com/gin-contrib/sse v0.0.0-20190301062529-5545eab6dad3/go.mod h1:VJ0WA2NBN22VlZ2dKZQPAPnyWw5XTlK1KymzLKsr59s=
 github.com/gin-gonic/gin v1.4.0/go.mod h1:OW2EZn3DO8Ln9oIKOvM++LBO+5UPHJJDH72/q/3rZdM=
+github.com/go-chassis/cari v0.0.0-20201113135522-88c21500ca3f h1:0ZnGRRUfJWL3zZej/yi4d38WeyXpSPw+01QHADe4l0Q=
 github.com/go-chassis/cari v0.0.0-20201113135522-88c21500ca3f/go.mod h1:8YrlRCUm70ou6KctjVRdKaqF7zWtllgbOtaMWI8tYEw=
+github.com/go-chassis/cari v0.0.0-20201124042558-14041cbb3e6b h1:+2cVxg45mBCD6x7lAQdwROsR9ydKb0G6U7PqHVheZrA=
+github.com/go-chassis/cari v0.0.0-20201124042558-14041cbb3e6b/go.mod h1:jsYzEzPrsmFemVwLj/nhv/+4toFIvqVZRiSWFmkJ4Ms=
+github.com/go-chassis/cari v0.0.0-20201124050026-32fbf4d53439 h1:lcibK+pZYz3sBv7rNOZmjyv3Oeh/ut0yovUR1bXmvNA=
+github.com/go-chassis/cari v0.0.0-20201124050026-32fbf4d53439/go.mod h1:jsYzEzPrsmFemVwLj/nhv/+4toFIvqVZRiSWFmkJ4Ms=
 github.com/go-chassis/foundation v0.1.1-0.20200825060850-b16bf420f7b3 h1:c+bwT0qLY69jSU8TmzuNcb9UL/QFAiU96kjuX5TMiQc=
 github.com/go-chassis/foundation v0.1.1-0.20200825060850-b16bf420f7b3/go.mod h1:21/ajGtgJlWTCeM0TxGJdRhO8bJkKirWyV8Stlh6g6c=
 github.com/go-chassis/go-archaius v1.3.6-0.20201103103813-43dd1680ebfb h1:+6mPi1HDASveJ72gWkH0rmq5hNz/rTZhrIgRXjFnSRE=
@@ -142,6 +147,8 @@ github.com/gogo/protobuf v1.1.1/go.mod h1:r8qH/GZQm5c6nD/R0oafs1akxWv10x8SbQlK7a
 github.com/gogo/protobuf v1.2.1/go.mod h1:hp+jE20tsWTFYpLwKvXlhS1hjn+gTNwPg2I6zVXpSg4=
 github.com/gogo/protobuf v1.2.2-0.20190723190241-65acae22fc9d h1:3PaI8p3seN09VjbTYC/QWlUZdZ1qS1zGjy7LH2Wt07I=
 github.com/gogo/protobuf v1.2.2-0.20190723190241-65acae22fc9d/go.mod h1:SlYgWuQ5SjCEi6WLHjHCa1yvBfUnHcTbrrZtXPKa29o=
+github.com/gogo/protobuf v1.3.1 h1:DqDEcV5aeaTmdFBePNpYsp3FlcVH/2ISVVM9Qf8PSls=
+github.com/gogo/protobuf v1.3.1/go.mod h1:SlYgWuQ5SjCEi6WLHjHCa1yvBfUnHcTbrrZtXPKa29o=
 github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b/go.mod h1:SBH7ygxi8pfUlaOkMMuAQtPIUF8ecWP5IEl/CR7VP2Q=
 github.com/golang/groupcache v0.0.0-20160516000752-02826c3e7903/go.mod h1:cIg4eruTrX1D+g88fzRXU5OdNfaM+9IcxsU14FzY7Hc=
 github.com/golang/mock v1.1.1/go.mod h1:oTYuIxOrZwtPieC+H1uAHpcLFnEyAGVDL/k47Jfbm0A=

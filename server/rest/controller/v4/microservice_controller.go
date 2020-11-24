@@ -20,12 +20,11 @@ package v4
 import (
 	"encoding/json"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/rest/controller"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
+	pb "github.com/go-chassis/cari/discovery"
 	"io/ioutil"
 	"net/http"
 )
@@ -52,20 +51,20 @@ func (s *MicroServiceService) Register(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
-		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
+		controller.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
 	var request pb.CreateServiceRequest
 	err = json.Unmarshal(message, &request)
 	if err != nil {
 		log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(message))
-		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
+		controller.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
 	resp, err := core.ServiceAPI.Create(r.Context(), &request)
 	if err != nil {
 		log.Errorf(err, "create service failed")
-		controller.WriteError(w, scerr.ErrInternal, err.Error())
+		controller.WriteError(w, pb.ErrInternal, err.Error())
 		return
 	}
 	respInternal := resp.Response
@@ -77,7 +76,7 @@ func (s *MicroServiceService) Update(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
-		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
+		controller.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
 	request := &pb.UpdateServicePropsRequest{
@@ -86,13 +85,13 @@ func (s *MicroServiceService) Update(w http.ResponseWriter, r *http.Request) {
 	err = json.Unmarshal(message, request)
 	if err != nil {
 		log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(message))
-		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
+		controller.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
 	resp, err := core.ServiceAPI.UpdateProperties(r.Context(), request)
 	if err != nil {
 		log.Errorf(err, "can not update service")
-		controller.WriteError(w, scerr.ErrInternal, "can not update service")
+		controller.WriteError(w, pb.ErrInternal, "can not update service")
 		return
 	}
 	controller.WriteResponse(w, resp.Response, nil)
@@ -105,7 +104,7 @@ func (s *MicroServiceService) Unregister(w http.ResponseWriter, r *http.Request)
 
 	b, ok := trueOrFalse[force]
 	if force != "" && !ok {
-		controller.WriteError(w, scerr.ErrInvalidParams, "parameter force must be false or true")
+		controller.WriteError(w, pb.ErrInvalidParams, "parameter force must be false or true")
 		return
 	}
 
@@ -116,7 +115,7 @@ func (s *MicroServiceService) Unregister(w http.ResponseWriter, r *http.Request)
 	resp, err := core.ServiceAPI.Delete(r.Context(), request)
 	if err != nil {
 		log.Errorf(err, "delete service[%s] failed", serviceID)
-		controller.WriteError(w, scerr.ErrInternal, "delete service failed")
+		controller.WriteError(w, pb.ErrInternal, "delete service failed")
 		return
 	}
 	controller.WriteResponse(w, resp.Response, nil)
@@ -127,7 +126,7 @@ func (s *MicroServiceService) GetServices(w http.ResponseWriter, r *http.Request
 	resp, err := core.ServiceAPI.GetServices(r.Context(), request)
 	if err != nil {
 		log.Errorf(err, "get services failed")
-		controller.WriteError(w, scerr.ErrInternal, err.Error())
+		controller.WriteError(w, pb.ErrInternal, err.Error())
 		return
 	}
 	respInternal := resp.Response
@@ -149,7 +148,7 @@ func (s *MicroServiceService) GetExistence(w http.ResponseWriter, r *http.Reques
 	resp, err := core.ServiceAPI.Exist(r.Context(), request)
 	if err != nil {
 		log.Errorf(err, "check service existence failed")
-		controller.WriteError(w, scerr.ErrInternal, "check service existence failed")
+		controller.WriteError(w, pb.ErrInternal, "check service existence failed")
 		return
 	}
 	w.Header().Add("X-Schema-Summary", resp.Summary)
@@ -166,7 +165,7 @@ func (s *MicroServiceService) GetServiceOne(w http.ResponseWriter, r *http.Reque
 	resp, err := core.ServiceAPI.GetOne(r.Context(), request)
 	if err != nil {
 		log.Errorf(err, "get service[%s] failed", request.ServiceId)
-		controller.WriteError(w, scerr.ErrInternal, "get service failed")
+		controller.WriteError(w, pb.ErrInternal, "get service failed")
 		return
 	}
 	respInternal := resp.Response
@@ -178,7 +177,7 @@ func (s *MicroServiceService) UnregisterServices(w http.ResponseWriter, r *http.
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
-		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
+		controller.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
 
@@ -187,14 +186,14 @@ func (s *MicroServiceService) UnregisterServices(w http.ResponseWriter, r *http.
 	err = json.Unmarshal(message, request)
 	if err != nil {
 		log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(message))
-		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
+		controller.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
 
 	resp, err := core.ServiceAPI.DeleteServices(r.Context(), request)
 	if err != nil {
 		log.Errorf(err, "delete services failed")
-		controller.WriteError(w, scerr.ErrInternal, "delete services failed")
+		controller.WriteError(w, pb.ErrInternal, "delete services failed")
 		return
 	}
 	respInternal := resp.Response

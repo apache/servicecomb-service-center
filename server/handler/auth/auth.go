@@ -23,7 +23,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/plugin/auth"
 	"github.com/apache/servicecomb-service-center/server/rest/controller"
-	"github.com/apache/servicecomb-service-center/server/scerror"
+	"github.com/go-chassis/cari/discovery"
 	"net/http"
 )
 
@@ -41,7 +41,7 @@ func (h *Handler) Handle(i *chain.Invocation) {
 	log.Errorf(err, "authenticate request failed, %s %s", r.Method, r.RequestURI)
 
 	w := i.Context().Value(rest.CtxResponse).(http.ResponseWriter)
-	controller.WriteError(w, scerror.ErrUnauthorized, err.Error())
+	controller.WriteError(w, discovery.ErrUnauthorized, err.Error())
 
 	i.Fail(nil)
 }

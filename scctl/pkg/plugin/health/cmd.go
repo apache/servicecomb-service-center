@@ -19,7 +19,7 @@ import (
 	"context"
 	"github.com/apache/servicecomb-service-center/client"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/cmd"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
+	"github.com/go-chassis/cari/discovery"
 	"github.com/spf13/cobra"
 )
 
@@ -52,7 +52,7 @@ func HealthCommandFunc(_ *cobra.Command, args []string) {
 	scErr := scClient.HealthCheck(context.Background())
 	if scErr != nil {
 		switch scErr.Code {
-		case scerr.ErrInternal:
+		case discovery.ErrInternal:
 			cmd.StopAndExit(ExistUnavailable, scErr)
 		default:
 			cmd.StopAndExit(ExistAbnormal, scErr)

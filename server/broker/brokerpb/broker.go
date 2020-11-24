@@ -18,7 +18,7 @@
 package brokerpb
 
 import (
-	"github.com/apache/servicecomb-service-center/pkg/registry"
+	"github.com/go-chassis/cari/discovery"
 )
 
 type Participant struct {
@@ -221,7 +221,7 @@ func (m *PublishPactRequest) GetPact() []byte {
 }
 
 type PublishPactResponse struct {
-	Response *registry.Response `protobuf:"bytes,1,opt,name=response" json:"response,omitempty"`
+	Response *discovery.Response `protobuf:"bytes,1,opt,name=response" json:"response,omitempty"`
 }
 
 func (m *PublishPactResponse) Reset() { *m = PublishPactResponse{} }
@@ -280,8 +280,8 @@ func (m *Links) GetPacts() []*ConsumerInfo {
 }
 
 type GetAllProviderPactsResponse struct {
-	Response *registry.Response `protobuf:"bytes,1,opt,name=response" json:"response,omitempty"`
-	XLinks   *Links             `protobuf:"bytes,2,opt,name=_links,json=Links" json:"_links,omitempty"`
+	Response *discovery.Response `protobuf:"bytes,1,opt,name=response" json:"response,omitempty"`
+	XLinks   *Links              `protobuf:"bytes,2,opt,name=_links,json=Links" json:"_links,omitempty"`
 }
 
 func (m *GetAllProviderPactsResponse) Reset() { *m = GetAllProviderPactsResponse{} }
@@ -324,8 +324,8 @@ func (m *GetProviderConsumerVersionPactRequest) GetBaseUrl() *BaseBrokerRequest 
 }
 
 type GetProviderConsumerVersionPactResponse struct {
-	Response *registry.Response `protobuf:"bytes,1,opt,name=response" json:"response,omitempty"`
-	Pact     []byte             `protobuf:"bytes,2,opt,name=pact,proto3" json:"pact,omitempty"`
+	Response *discovery.Response `protobuf:"bytes,1,opt,name=response" json:"response,omitempty"`
+	Pact     []byte              `protobuf:"bytes,2,opt,name=pact,proto3" json:"pact,omitempty"`
 }
 
 func (m *GetProviderConsumerVersionPactResponse) Reset() {
@@ -552,7 +552,7 @@ func (m *PublishVerificationRequest) GetProviderApplicationVersion() string {
 }
 
 type PublishVerificationResponse struct {
-	Response     *registry.Response  `protobuf:"bytes,1,opt,name=response" json:"response,omitempty"`
+	Response     *discovery.Response `protobuf:"bytes,1,opt,name=response" json:"response,omitempty"`
 	Confirmation *VerificationDetail `protobuf:"bytes,2,opt,name=confirmation" json:"confirmation,omitempty"`
 }
 
@@ -585,7 +585,7 @@ func (m *RetrieveVerificationRequest) GetConsumerVersion() string {
 }
 
 type RetrieveVerificationResponse struct {
-	Response *registry.Response  `protobuf:"bytes,1,opt,name=response" json:"response,omitempty"`
+	Response *discovery.Response `protobuf:"bytes,1,opt,name=response" json:"response,omitempty"`
 	Result   *VerificationResult `protobuf:"bytes,2,opt,name=result" json:"result,omitempty"`
 }
 
@@ -655,7 +655,7 @@ func (m *BrokerAPIInfoEntry) GetTemplated() bool {
 }
 
 type BrokerHomeResponse struct {
-	Response *registry.Response             `protobuf:"bytes,1,opt,name=response" json:"response,omitempty"`
+	Response *discovery.Response            `protobuf:"bytes,1,opt,name=response" json:"response,omitempty"`
 	XLinks   map[string]*BrokerAPIInfoEntry `protobuf:"bytes,2,rep,name=_links,json=Links" json:"_links,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	Curies   []*BrokerAPIInfoEntry          `protobuf:"bytes,3,rep,name=curies" json:"curies,omitempty"`
 }

@@ -18,7 +18,7 @@ package adaptor
 import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
+	pb "github.com/go-chassis/cari/discovery"
 	"k8s.io/api/core/v1"
 )
 

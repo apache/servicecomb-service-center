@@ -19,7 +19,7 @@ package datasource
 
 import (
 	"context"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
+	pb "github.com/go-chassis/cari/discovery"
 )
 
 // Attention: request validation must be finished before the following interface being invoked!!!

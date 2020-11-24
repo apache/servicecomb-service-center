@@ -22,12 +22,11 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/alarm"
 	"github.com/apache/servicecomb-service-center/server/core"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"github.com/apache/servicecomb-service-center/version"
+	"github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/go-archaius"
 )
 
@@ -43,12 +42,12 @@ func (service *Service) Dump(ctx context.Context, in *dump.Request) (*dump.Respo
 
 	if !core.IsDefaultDomainProject(domainProject) {
 		return &dump.Response{
-			Response: registry.CreateResponse(scerr.ErrForbidden, "Required admin permission"),
+			Response: discovery.CreateResponse(discovery.ErrForbidden, "Required admin permission"),
 		}, nil
 	}
 
 	resp := &dump.Response{
-		Response: registry.CreateResponse(registry.ResponseSuccess, "Admin dump successfully"),
+		Response: discovery.CreateResponse(discovery.ResponseSuccess, "Admin dump successfully"),
 	}
 
 	if len(in.Options) == 0 {

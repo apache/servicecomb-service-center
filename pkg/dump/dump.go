@@ -18,8 +18,8 @@
 package dump
 
 import (
-	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/version"
+	"github.com/go-chassis/cari/discovery"
 )
 
 type Getter interface {
@@ -126,7 +126,7 @@ func (s *SummarySlice) SetValue(v *KV)  { *s = append(*s, NewSummary(v)) }
 func (s *InstanceSlice) SetValue(v *KV) { *s = append(*s, NewInstance(v)) }
 
 func NewMicroservice(kv *KV) *Microservice {
-	return &Microservice{kv, kv.Value.(*registry.MicroService)}
+	return &Microservice{kv, kv.Value.(*discovery.MicroService)}
 }
 func NewMicroserviceIndex(kv *KV) *MicroserviceIndex {
 	return &MicroserviceIndex{kv, kv.Value.(string)}
@@ -139,14 +139,14 @@ func NewMicroServiceRuleIndex(kv *KV) *MicroServiceRuleIndex {
 	return &MicroServiceRuleIndex{kv, kv.Value.(string)}
 }
 func NewMicroServiceRule(kv *KV) *MicroServiceRule {
-	return &MicroServiceRule{kv, kv.Value.(*registry.ServiceRule)}
+	return &MicroServiceRule{kv, kv.Value.(*discovery.ServiceRule)}
 }
 func NewMicroServiceDependencyRule(kv *KV) *MicroServiceDependencyRule {
-	return &MicroServiceDependencyRule{kv, kv.Value.(*registry.MicroServiceDependency)}
+	return &MicroServiceDependencyRule{kv, kv.Value.(*discovery.MicroServiceDependency)}
 }
 func NewSummary(kv *KV) *Summary { return &Summary{kv, kv.Value.(string)} }
 func NewInstance(kv *KV) *Instance {
-	return &Instance{kv, kv.Value.(*registry.MicroServiceInstance)}
+	return &Instance{kv, kv.Value.(*discovery.MicroServiceInstance)}
 }
 
 type Cache struct {
@@ -170,7 +170,7 @@ type KV struct {
 
 type Microservice struct {
 	*KV
-	Value *registry.MicroService `json:"value,omitempty"`
+	Value *discovery.MicroService `json:"value,omitempty"`
 }
 
 type MicroserviceIndex struct {
@@ -185,7 +185,7 @@ type MicroserviceAlias struct {
 
 type MicroServiceDependencyRule struct {
 	*KV
-	Value *registry.MicroServiceDependency `json:"value,omitempty"`
+	Value *discovery.MicroServiceDependency `json:"value,omitempty"`
 }
 
 type MicroServiceRuleIndex struct {
@@ -195,7 +195,7 @@ type MicroServiceRuleIndex struct {
 
 type MicroServiceRule struct {
 	*KV
-	Value *registry.ServiceRule `json:"value,omitempty"`
+	Value *discovery.ServiceRule `json:"value,omitempty"`
 }
 type Summary struct {
 	*KV
@@ -209,7 +209,7 @@ type Tag struct {
 
 type Instance struct {
 	*KV
-	Value *registry.MicroServiceInstance `json:"value,omitempty"`
+	Value *discovery.MicroServiceInstance `json:"value,omitempty"`
 }
 
 type Request struct {
@@ -217,7 +217,7 @@ type Request struct {
 }
 
 type Response struct {
-	Response  *registry.Response     `json:"response,omitempty"`
+	Response  *discovery.Response    `json:"response,omitempty"`
 	Info      *version.Set           `json:"info,omitempty"`
 	AppConfig map[string]interface{} `json:"appConf,omitempty"`
 	Cache     *Cache                 `json:"cache,omitempty"`

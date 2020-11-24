@@ -24,18 +24,18 @@ import (
 
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/registry"
+	"github.com/go-chassis/cari/discovery"
 )
 
 // Dependency contains dependency rules
 type Dependency struct {
 	DomainProject string
 	// store the consumer Dependency from dep-queue object
-	Consumer      *registry.MicroServiceKey
-	ProvidersRule []*registry.MicroServiceKey
+	Consumer      *discovery.MicroServiceKey
+	ProvidersRule []*discovery.MicroServiceKey
 	// store the parsed rules from Dependency object
-	DeleteDependencyRuleList []*registry.MicroServiceKey
-	CreateDependencyRuleList []*registry.MicroServiceKey
+	DeleteDependencyRuleList []*discovery.MicroServiceKey
+	CreateDependencyRuleList []*discovery.MicroServiceKey
 }
 
 func (dep *Dependency) removeConsumerOfProviderRule(ctx context.Context) ([]client.PluginOp, error) {
@@ -102,7 +102,7 @@ func (dep *Dependency) updateProvidersRuleOfConsumer(_ context.Context) ([]clien
 		return []client.PluginOp{client.OpDel(client.WithStrKey(conKey))}, nil
 	}
 
-	dependency := &registry.MicroServiceDependency{
+	dependency := &discovery.MicroServiceDependency{
 		Dependency: dep.ProvidersRule,
 	}
 	data, err := json.Marshal(dependency)

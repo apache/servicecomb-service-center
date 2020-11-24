@@ -22,11 +22,11 @@ import (
 	"errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/proto"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/connection"
 	"github.com/apache/servicecomb-service-center/server/metrics"
 	"github.com/apache/servicecomb-service-center/server/notify"
+	pb "github.com/go-chassis/cari/discovery"
 	"time"
 )
 

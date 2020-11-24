@@ -22,8 +22,8 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/notify"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	simple "github.com/apache/servicecomb-service-center/pkg/time"
+	pb "github.com/go-chassis/cari/discovery"
 	"time"
 )
 

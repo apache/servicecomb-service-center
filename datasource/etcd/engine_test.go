@@ -24,9 +24,9 @@ import (
 	"time"
 
 	"github.com/apache/servicecomb-service-center/datasource"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
+	pb "github.com/go-chassis/cari/discovery"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

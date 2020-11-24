@@ -20,12 +20,11 @@ package v4
 import (
 	"encoding/json"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/rest/controller"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
+	pb "github.com/go-chassis/cari/discovery"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -48,14 +47,14 @@ func (s *TagService) AddTags(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
-		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
+		controller.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
 	var tags map[string]map[string]string
 	err = json.Unmarshal(message, &tags)
 	if err != nil {
 		log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(message))
-		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
+		controller.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
 
@@ -65,7 +64,7 @@ func (s *TagService) AddTags(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		log.Errorf(err, "can not add tag")
-		controller.WriteError(w, scerr.ErrInternal, "can not add tag")
+		controller.WriteError(w, pb.ErrInternal, "can not add tag")
 		return
 	}
 	controller.WriteResponse(w, resp.Response, nil)

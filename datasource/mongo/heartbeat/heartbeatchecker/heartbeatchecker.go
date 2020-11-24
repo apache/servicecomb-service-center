@@ -21,9 +21,8 @@ import (
 	"context"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/heartbeat"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
+	pb "github.com/go-chassis/cari/discovery"
 )
 
 func init() {
@@ -44,7 +43,7 @@ func (h *HeartBeatChecker) Heartbeat(ctx context.Context, request *pb.HeartbeatR
 		log.Errorf(err, "heartbeat failed, instance[%s]. operator %s",
 			request.InstanceId, remoteIP)
 		resp := &pb.HeartbeatResponse{
-			Response: pb.CreateResponseWithSCErr(scerr.NewError(scerr.ErrInstanceNotExists, err.Error())),
+			Response: pb.CreateResponseWithSCErr(pb.NewError(pb.ErrInstanceNotExists, err.Error())),
 		}
 		return resp, err
 	}

@@ -20,19 +20,19 @@ package core
 import (
 	"context"
 	"github.com/apache/servicecomb-service-center/pkg/proto"
-	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/version"
 	"github.com/astaxie/beego"
+	"github.com/go-chassis/cari/discovery"
 	"strings"
 )
 
 var (
 	ServiceAPI         proto.ServiceCtrlServer
 	InstanceAPI        proto.ServiceInstanceCtrlServerEx
-	Service            *registry.MicroService
-	Instance           *registry.MicroServiceInstance
+	Service            *discovery.MicroService
+	Instance           *discovery.MicroServiceInstance
 	globalServiceNames map[string]struct{}
 )
 
@@ -57,30 +57,30 @@ func init() {
 }
 
 func prepareSelfRegistration() {
-	Service = &registry.MicroService{
-		Environment: registry.ENV_PROD,
+	Service = &discovery.MicroService{
+		Environment: discovery.ENV_PROD,
 		AppId:       RegistryAppID,
 		ServiceName: RegistryServiceName,
 		Alias:       RegistryServiceAlias,
 		Version:     version.Ver().Version,
-		Status:      registry.MS_UP,
+		Status:      discovery.MS_UP,
 		Level:       "BACK",
 		Schemas: []string{
 			"servicecenter.grpc.api.ServiceCtrl",
 			"servicecenter.grpc.api.ServiceInstanceCtrl",
 		},
 		Properties: map[string]string{
-			registry.PropAllowCrossApp: "true",
+			discovery.PropAllowCrossApp: "true",
 		},
 	}
 	if beego.BConfig.RunMode == "dev" {
-		Service.Environment = registry.ENV_DEV
+		Service.Environment = discovery.ENV_DEV
 	}
 
-	Instance = &registry.MicroServiceInstance{
-		Status: registry.MSI_UP,
-		HealthCheck: &registry.HealthCheck{
-			Mode:     registry.CHECK_BY_HEARTBEAT,
+	Instance = &discovery.MicroServiceInstance{
+		Status: discovery.MSI_UP,
+		HealthCheck: &discovery.HealthCheck{
+			Mode:     discovery.CHECK_BY_HEARTBEAT,
 			Interval: RegistryDefaultLeaseRenewalinterval,
 			Times:    RegistryDefaultLeaseRetrytimes,
 		},
@@ -108,7 +108,7 @@ func RegisterGlobalServices() {
 	globalServiceNames[Service.ServiceName] = struct{}{}
 }
 
-func IsGlobal(key *registry.MicroServiceKey) bool {
+func IsGlobal(key *discovery.MicroServiceKey) bool {
 	if !IsDefaultDomainProject(key.Tenant) {
 		return false
 	}
@@ -127,9 +127,9 @@ func IsSCInstance(ctx context.Context) bool {
 	return b
 }
 
-func GetExistenceRequest() *registry.GetExistenceRequest {
-	return &registry.GetExistenceRequest{
-		Type:        registry.ExistenceMicroservice,
+func GetExistenceRequest() *discovery.GetExistenceRequest {
+	return &discovery.GetExistenceRequest{
+		Type:        discovery.ExistenceMicroservice,
 		Environment: Service.Environment,
 		AppId:       Service.AppId,
 		ServiceName: Service.ServiceName,
@@ -137,33 +137,33 @@ func GetExistenceRequest() *registry.GetExistenceRequest {
 	}
 }
 
-func GetServiceRequest(serviceID string) *registry.GetServiceRequest {
-	return &registry.GetServiceRequest{
+func GetServiceRequest(serviceID string) *discovery.GetServiceRequest {
+	return &discovery.GetServiceRequest{
 		ServiceId: serviceID,
 	}
 }
 
-func CreateServiceRequest() *registry.CreateServiceRequest {
-	return &registry.CreateServiceRequest{
+func CreateServiceRequest() *discovery.CreateServiceRequest {
+	return &discovery.CreateServiceRequest{
 		Service: Service,
 	}
 }
 
-func RegisterInstanceRequest() *registry.RegisterInstanceRequest {
-	return &registry.RegisterInstanceRequest{
+func RegisterInstanceRequest() *discovery.RegisterInstanceRequest {
+	return &discovery.RegisterInstanceRequest{
 		Instance: Instance,
 	}
 }
 
-func UnregisterInstanceRequest() *registry.UnregisterInstanceRequest {
-	return &registry.UnregisterInstanceRequest{
+func UnregisterInstanceRequest() *discovery.UnregisterInstanceRequest {
+	return &discovery.UnregisterInstanceRequest{
 		ServiceId:  Instance.ServiceId,
 		InstanceId: Instance.InstanceId,
 	}
 }
 
-func HeartbeatRequest() *registry.HeartbeatRequest {
-	return &registry.HeartbeatRequest{
+func HeartbeatRequest() *discovery.HeartbeatRequest {
+	return &discovery.HeartbeatRequest{
 		ServiceId:  Instance.ServiceId,
 		InstanceId: Instance.InstanceId,
 	}

@@ -19,7 +19,7 @@ package mongo
 
 import (
 	"context"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
+	pb "github.com/go-chassis/cari/discovery"
 )
 
 func (ds *DataSource) GetServiceCountByDomainProject(ctx context.Context, request *pb.GetServiceCountRequest) (*pb.GetServiceCountResponse, error) {

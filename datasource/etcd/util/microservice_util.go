@@ -27,9 +27,9 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
+	pb "github.com/go-chassis/cari/discovery"
 )
 
 const defaultCacheValue = "1"

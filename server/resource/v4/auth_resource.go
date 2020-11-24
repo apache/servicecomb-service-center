@@ -27,10 +27,10 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/rest/controller"
-	"github.com/apache/servicecomb-service-center/server/scerror"
 	"github.com/apache/servicecomb-service-center/server/service"
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
 	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
+	"github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/go-chassis/v2/security/authr"
 	"io/ioutil"
 	"net/http"
@@ -54,28 +54,28 @@ func (r *AuthResource) CreateAccount(w http.ResponseWriter, req *http.Request) {
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		log.Error("read body err", err)
-		controller.WriteError(w, scerror.ErrInternal, err.Error())
+		controller.WriteError(w, discovery.ErrInternal, err.Error())
 		return
 	}
 	a := &rbacframe.Account{}
 	if err = json.Unmarshal(body, a); err != nil {
 		log.Error("json err", err)
-		controller.WriteError(w, scerror.ErrInvalidParams, errorsEx.MsgJSON)
+		controller.WriteError(w, discovery.ErrInvalidParams, errorsEx.MsgJSON)
 		return
 	}
 	err = service.ValidateCreateAccount(a)
 	if err != nil {
-		controller.WriteError(w, scerror.ErrInvalidParams, err.Error())
+		controller.WriteError(w, discovery.ErrInvalidParams, err.Error())
 		return
 	}
 	err = dao.CreateAccount(context.TODO(), a)
 	if err != nil {
 		if err == datasource.ErrDuplicated {
-			controller.WriteError(w, scerror.ErrConflictAccount, "")
+			controller.WriteError(w, discovery.ErrConflictAccount, "")
 			return
 		}
 		log.Error(errorsEx.MsgOperateAccountFailed, err)
-		controller.WriteError(w, scerror.ErrInternal, errorsEx.MsgOperateAccountFailed)
+		controller.WriteError(w, discovery.ErrInternal, errorsEx.MsgOperateAccountFailed)
 		return
 	}
 }
@@ -83,7 +83,7 @@ func (r *AuthResource) DeleteAccount(w http.ResponseWriter, req *http.Request) {
 	_, err := dao.DeleteAccount(context.TODO(), req.URL.Query().Get(":name"))
 	if err != nil {
 		log.Error(errorsEx.MsgOperateAccountFailed, err)
-		controller.WriteError(w, scerror.ErrInternal, errorsEx.MsgOperateAccountFailed)
+		controller.WriteError(w, discovery.ErrInternal, errorsEx.MsgOperateAccountFailed)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -92,7 +92,7 @@ func (r *AuthResource) ListAccount(w http.ResponseWriter, req *http.Request) {
 	as, n, err := dao.ListAccount(context.TODO())
 	if err != nil {
 		log.Error(errorsEx.MsgGetAccountFailed, err)
-		controller.WriteError(w, scerror.ErrInternal, errorsEx.MsgGetAccountFailed)
+		controller.WriteError(w, discovery.ErrInternal, errorsEx.MsgGetAccountFailed)
 		return
 	}
 	resp := &rbacframe.AccountResponse{
@@ -102,7 +102,7 @@ func (r *AuthResource) ListAccount(w http.ResponseWriter, req *http.Request) {
 	b, err := json.Marshal(resp)
 	if err != nil {
 		log.Error(errorsEx.MsgJSON, err)
-		controller.WriteError(w, scerror.ErrInternal, errorsEx.MsgJSON)
+		controller.WriteError(w, discovery.ErrInternal, errorsEx.MsgJSON)
 		return
 	}
 	controller.WriteJSON(w, b)
@@ -111,14 +111,14 @@ func (r *AuthResource) GetAccount(w http.ResponseWriter, req *http.Request) {
 	a, err := dao.GetAccount(context.TODO(), req.URL.Query().Get(":name"))
 	if err != nil {
 		log.Error(errorsEx.MsgGetAccountFailed, err)
-		controller.WriteError(w, scerror.ErrInternal, errorsEx.MsgGetAccountFailed)
+		controller.WriteError(w, discovery.ErrInternal, errorsEx.MsgGetAccountFailed)
 		return
 	}
 	a.Password = ""
 	b, err := json.Marshal(a)
 	if err != nil {
 		log.Error(errorsEx.MsgJSON, err)
-		controller.WriteError(w, scerror.ErrInternal, errorsEx.MsgJSON)
+		controller.WriteError(w, discovery.ErrInternal, errorsEx.MsgJSON)
 		return
 	}
 	controller.WriteJSON(w, b)
@@ -127,30 +127,30 @@ func (r *AuthResource) ChangePassword(w http.ResponseWriter, req *http.Request) 
 	ip := util.GetRealIP(req)
 	if rbac.IsBanned(ip) {
 		log.Warn("ip is banned:" + ip)
-		controller.WriteError(w, scerror.ErrForbidden, "")
+		controller.WriteError(w, discovery.ErrForbidden, "")
 		return
 	}
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		log.Error("read body err", err)
-		controller.WriteError(w, scerror.ErrInternal, err.Error())
+		controller.WriteError(w, discovery.ErrInternal, err.Error())
 		return
 	}
 	a := &rbacframe.Account{}
 	if err = json.Unmarshal(body, a); err != nil {
 		log.Error("json err", err)
-		controller.WriteError(w, scerror.ErrInvalidParams, errorsEx.MsgJSON)
+		controller.WriteError(w, discovery.ErrInvalidParams, errorsEx.MsgJSON)
 		return
 	}
 	a.Name = req.URL.Query().Get(":name")
 	err = service.ValidateChangePWD(a)
 	if err != nil {
-		controller.WriteError(w, scerror.ErrInvalidParams, err.Error())
+		controller.WriteError(w, discovery.ErrInvalidParams, err.Error())
 		return
 	}
 	changer, err := rbacframe.AccountFromContext(req.Context())
 	if err != nil {
-		controller.WriteError(w, scerror.ErrInternal, "can not parse account info")
+		controller.WriteError(w, discovery.ErrInternal, "can not parse account info")
 		return
 	}
 	err = rbac.ChangePassword(context.TODO(), changer.Role, changer.Name, a)
@@ -158,16 +158,16 @@ func (r *AuthResource) ChangePassword(w http.ResponseWriter, req *http.Request) 
 		if err == rbac.ErrSamePassword ||
 			err == rbac.ErrEmptyCurrentPassword ||
 			err == rbac.ErrNoPermChangeAccount {
-			controller.WriteError(w, scerror.ErrInvalidParams, err.Error())
+			controller.WriteError(w, discovery.ErrInvalidParams, err.Error())
 			return
 		}
 		if err == rbac.ErrWrongPassword {
 			rbac.CountFailure(ip)
-			controller.WriteError(w, scerror.ErrInvalidParams, err.Error())
+			controller.WriteError(w, discovery.ErrInvalidParams, err.Error())
 			return
 		}
 		log.Error("change password failed", err)
-		controller.WriteError(w, scerror.ErrInternal, err.Error())
+		controller.WriteError(w, discovery.ErrInternal, err.Error())
 		return
 	}
 }
@@ -175,24 +175,24 @@ func (r *AuthResource) Login(w http.ResponseWriter, req *http.Request) {
 	ip := util.GetRealIP(req)
 	if rbac.IsBanned(ip) {
 		log.Warn("ip is banned:" + ip)
-		controller.WriteError(w, scerror.ErrForbidden, "")
+		controller.WriteError(w, discovery.ErrForbidden, "")
 		return
 	}
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		log.Error("read body err", err)
-		controller.WriteError(w, scerror.ErrInternal, err.Error())
+		controller.WriteError(w, discovery.ErrInternal, err.Error())
 		return
 	}
 	a := &rbacframe.Account{}
 	if err = json.Unmarshal(body, a); err != nil {
 		log.Error("json err", err)
-		controller.WriteError(w, scerror.ErrInvalidParams, err.Error())
+		controller.WriteError(w, discovery.ErrInvalidParams, err.Error())
 		return
 	}
 	err = service.ValidateAccountLogin(a)
 	if err != nil {
-		controller.WriteError(w, scerror.ErrInvalidParams, err.Error())
+		controller.WriteError(w, discovery.ErrInvalidParams, err.Error())
 		return
 	}
 	if a.TokenExpirationTime == "" {
@@ -204,18 +204,18 @@ func (r *AuthResource) Login(w http.ResponseWriter, req *http.Request) {
 		if err == rbac.ErrUnauthorized {
 			log.Error("not authorized", err)
 			rbac.CountFailure(ip)
-			controller.WriteError(w, scerror.ErrUnauthorized, err.Error())
+			controller.WriteError(w, discovery.ErrUnauthorized, err.Error())
 			return
 		}
 		log.Error("can not sign token", err)
-		controller.WriteError(w, scerror.ErrInternal, err.Error())
+		controller.WriteError(w, discovery.ErrInternal, err.Error())
 		return
 	}
 	to := &rbacframe.Token{TokenStr: t}
 	b, err := json.Marshal(to)
 	if err != nil {
 		log.Error("json err", err)
-		controller.WriteError(w, scerror.ErrInvalidParams, err.Error())
+		controller.WriteError(w, discovery.ErrInvalidParams, err.Error())
 		return
 	}
 	controller.WriteJSON(w, b)
