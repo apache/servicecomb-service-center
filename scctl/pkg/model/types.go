@@ -18,8 +18,8 @@ package model
 import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/pkg/dump"
-	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/go-chassis/cari/discovery"
 	"strconv"
 	"time"
 )
@@ -42,7 +42,7 @@ type Service struct {
 	AppId         string
 	ServiceName   string
 	Versions      []string
-	Frameworks    []*registry.FrameWorkProperty
+	Frameworks    []*discovery.FrameWorkProperty
 	Endpoints     []string
 	Timestamp     int64 // the seconds from 0 to now
 }
@@ -51,7 +51,7 @@ func (s *Service) AppendVersion(v string) {
 	s.Versions = append(s.Versions, v)
 }
 
-func (s *Service) AppendFramework(property *registry.FrameWorkProperty) {
+func (s *Service) AppendFramework(property *discovery.FrameWorkProperty) {
 	if property == nil || property.Name == "" {
 		return
 	}
@@ -89,17 +89,17 @@ type Instance struct {
 	AppId         string
 	ServiceName   string
 	Version       string
-	Framework     *registry.FrameWorkProperty
+	Framework     *discovery.FrameWorkProperty
 	Lease         int64 // seconds
 	Timestamp     int64 // the seconds from 0 to now
 }
 
-func (s *Instance) SetLease(hc *registry.HealthCheck) {
+func (s *Instance) SetLease(hc *discovery.HealthCheck) {
 	if hc == nil {
 		s.Lease = -1
 		return
 	}
-	if hc.Mode == registry.CHECK_BY_PLATFORM {
+	if hc.Mode == discovery.CHECK_BY_PLATFORM {
 		s.Lease = 0
 		return
 	}

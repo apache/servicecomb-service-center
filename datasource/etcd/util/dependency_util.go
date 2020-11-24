@@ -26,9 +26,8 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
+	pb "github.com/go-chassis/cari/discovery"
 	"strings"
 )
 
@@ -361,7 +360,7 @@ func BadParamsResponse(detailErr string) *pb.CreateDependenciesResponse {
 		detailErr = "Request params is invalid."
 	}
 	return &pb.CreateDependenciesResponse{
-		Response: pb.CreateResponse(scerr.ErrInvalidParams, detailErr),
+		Response: pb.CreateResponse(pb.ErrInvalidParams, detailErr),
 	}
 }
 

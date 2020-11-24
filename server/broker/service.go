@@ -29,11 +29,10 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/broker/brokerpb"
 	apt "github.com/apache/servicecomb-service-center/server/core"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
+	pb "github.com/go-chassis/cari/discovery"
 )
 
 var ServiceAPI = &Service{}
@@ -47,7 +46,7 @@ func (*Service) GetBrokerHome(ctx context.Context,
 	if in == nil || len(in.HostAddress) == 0 {
 		PactLogger.Errorf(nil, "Get Participant versions request failed: invalid params.")
 		return &brokerpb.BrokerHomeResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Request format invalid."),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, "Request format invalid."),
 		}, nil
 	}
 
@@ -110,7 +109,7 @@ func (*Service) RetrieveProviderPacts(ctx context.Context,
 	if in == nil || len(in.ProviderId) == 0 {
 		PactLogger.Errorf(nil, "all provider pact retrieve request failed: invalid params.")
 		return &brokerpb.GetAllProviderPactsResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Request format invalid."),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, "Request format invalid."),
 		}, nil
 	}
 	tenant := GetDefaultTenantProject()
@@ -119,13 +118,13 @@ func (*Service) RetrieveProviderPacts(ctx context.Context,
 	if err != nil {
 		PactLogger.Errorf(err, "all provider pact retrieve failed, providerId is %s: query provider failed.", in.ProviderId)
 		return &brokerpb.GetAllProviderPactsResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Query provider failed."),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, "Query provider failed."),
 		}, err
 	}
 	if provider == nil {
 		PactLogger.Errorf(nil, "all provider pact retrieve failed, providerId is %s: provider not exist.", in.ProviderId)
 		return &brokerpb.GetAllProviderPactsResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Provider does not exist."),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, "Provider does not exist."),
 		}, nil
 	}
 	// Get the provider participant
@@ -134,7 +133,7 @@ func (*Service) RetrieveProviderPacts(ctx context.Context,
 	if err != nil || providerParticipant == nil {
 		PactLogger.Errorf(nil, "all provider pact retrieve failed, provider participant cannot be searched.", in.ProviderId)
 		return &brokerpb.GetAllProviderPactsResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Provider participant cannot be searched."),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, "Provider participant cannot be searched."),
 		}, err
 	}
 	PactLogger.Infof("[RetrieveProviderPacts] Provider participant id : %d", providerParticipant.Id)
@@ -263,7 +262,7 @@ func (*Service) GetAllProviderPacts(ctx context.Context,
 	if in == nil || len(in.ProviderId) == 0 {
 		PactLogger.Errorf(nil, "all provider pact retrieve request failed: invalid params.")
 		return &brokerpb.GetAllProviderPactsResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Request format invalid."),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, "Request format invalid."),
 		}, nil
 	}
 	tenant := GetDefaultTenantProject()
@@ -272,13 +271,13 @@ func (*Service) GetAllProviderPacts(ctx context.Context,
 	if err != nil {
 		PactLogger.Errorf(err, "all provider pact retrieve failed, providerId is %s: query provider failed.", in.ProviderId)
 		return &brokerpb.GetAllProviderPactsResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Query provider failed."),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, "Query provider failed."),
 		}, err
 	}
 	if provider == nil {
 		PactLogger.Errorf(nil, "all provider pact retrieve failed, providerId is %s: provider not exist.", in.ProviderId)
 		return &brokerpb.GetAllProviderPactsResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Provider does not exist."),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, "Provider does not exist."),
 		}, nil
 	}
 	// Get the provider participant
@@ -287,7 +286,7 @@ func (*Service) GetAllProviderPacts(ctx context.Context,
 	if err != nil || providerParticipant == nil {
 		PactLogger.Errorf(nil, "all provider pact retrieve failed, provider participant cannot be searched.", in.ProviderId)
 		return &brokerpb.GetAllProviderPactsResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Provider participant cannot be searched."),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, "Provider participant cannot be searched."),
 		}, err
 	}
 	PactLogger.Infof("[RetrieveProviderPacts] Provider participant id : %d", providerParticipant.Id)
@@ -414,7 +413,7 @@ func (*Service) RetrieveVerificationResults(ctx context.Context, in *brokerpb.Re
 	if in == nil || len(in.ConsumerId) == 0 || len(in.ConsumerVersion) == 0 {
 		PactLogger.Errorf(nil, "verification result retrieve request failed: invalid params.")
 		return &brokerpb.RetrieveVerificationResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Request format invalid."),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, "Request format invalid."),
 		}, nil
 	}
 	tenant := GetDefaultTenantProject()
@@ -422,13 +421,13 @@ func (*Service) RetrieveVerificationResults(ctx context.Context, in *brokerpb.Re
 	if err != nil {
 		PactLogger.Errorf(err, "verification result retrieve request failed, consumerID is %s: query consumer failed.", in.ConsumerId)
 		return &brokerpb.RetrieveVerificationResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Query consumer failed."),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, "Query consumer failed."),
 		}, err
 	}
 	if consumer == nil {
 		PactLogger.Errorf(nil, "verification result retrieve request failed, consumerID is %s: consumer not exist.", in.ConsumerId)
 		return &brokerpb.RetrieveVerificationResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Consumer does not exist."),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, "Consumer does not exist."),
 		}, nil
 	}
 	PactLogger.Infof("Consumer service found: (%s, %s, %s, %s)", consumer.ServiceId, consumer.AppId, consumer.ServiceName, consumer.Version)
@@ -437,7 +436,7 @@ func (*Service) RetrieveVerificationResults(ctx context.Context, in *brokerpb.Re
 	if err != nil || consumerParticipant == nil {
 		PactLogger.Errorf(nil, "verification result retrieve request failed, consumer participant cannot be searched.", in.ConsumerId)
 		return &brokerpb.RetrieveVerificationResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "consumer participant cannot be searched."),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, "consumer participant cannot be searched."),
 		}, err
 	}
 	PactLogger.Infof("Consumer participant found: (%d, %s, %s)", consumerParticipant.Id, consumerParticipant.AppId, consumerParticipant.ServiceName)
@@ -446,7 +445,7 @@ func (*Service) RetrieveVerificationResults(ctx context.Context, in *brokerpb.Re
 	if err != nil || version == nil {
 		PactLogger.Errorf(nil, "verification result retrieve request failed, version cannot be searched.")
 		return &brokerpb.RetrieveVerificationResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "version cannot be searched."),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, "version cannot be searched."),
 		}, err
 	}
 	PactLogger.Infof("Version found/created: (%d, %s, %d, %d)", version.Id, version.Number, version.ParticipantId, version.Order)
@@ -458,7 +457,7 @@ func (*Service) RetrieveVerificationResults(ctx context.Context, in *brokerpb.Re
 	if err != nil || len(pactVersions.Kvs) == 0 {
 		PactLogger.Errorf(nil, "verification result publish request failed, pact version cannot be searched.")
 		return &brokerpb.RetrieveVerificationResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "pact version cannot be searched."),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, "pact version cannot be searched."),
 		}, err
 	}
 	overAllSuccess := false
@@ -474,7 +473,7 @@ func (*Service) RetrieveVerificationResults(ctx context.Context, in *brokerpb.Re
 		if err != nil {
 			PactLogger.Errorf(nil, "verification result retrieve request failed, pact version cannot be searched.")
 			return &brokerpb.RetrieveVerificationResponse{
-				Response: pb.CreateResponse(scerr.ErrInvalidParams, "pact version cannot be searched."),
+				Response: pb.CreateResponse(pb.ErrInvalidParams, "pact version cannot be searched."),
 			}, err
 		}
 		key = util.StringJoin([]string{GetBrokerVerificationKey(tenant), strconv.Itoa(int(pactVersion.Id))}, "/")
@@ -485,7 +484,7 @@ func (*Service) RetrieveVerificationResults(ctx context.Context, in *brokerpb.Re
 		if err != nil || len(verifications.Kvs) == 0 {
 			PactLogger.Errorf(nil, "verification result retrieve request failed, verification results cannot be searched.")
 			return &brokerpb.RetrieveVerificationResponse{
-				Response: pb.CreateResponse(scerr.ErrInvalidParams, "verification results cannot be searched."),
+				Response: pb.CreateResponse(pb.ErrInvalidParams, "verification results cannot be searched."),
 			}, err
 		}
 		lastNumber := int32(math.MinInt32)
@@ -496,7 +495,7 @@ func (*Service) RetrieveVerificationResults(ctx context.Context, in *brokerpb.Re
 			if err != nil {
 				PactLogger.Errorf(nil, "verification result retrieve request failed, verification result unmarshall error.")
 				return &brokerpb.RetrieveVerificationResponse{
-					Response: pb.CreateResponse(scerr.ErrInvalidParams, "verification result unmarshall error."),
+					Response: pb.CreateResponse(pb.ErrInvalidParams, "verification result unmarshall error."),
 				}, err
 			}
 			if verification.Number > lastNumber {
@@ -507,7 +506,7 @@ func (*Service) RetrieveVerificationResults(ctx context.Context, in *brokerpb.Re
 		if lastVerificationResult == nil {
 			PactLogger.Errorf(nil, "verification result retrieve request failed, verification result cannot be found.")
 			return &brokerpb.RetrieveVerificationResponse{
-				Response: pb.CreateResponse(scerr.ErrInvalidParams, "verification result cannot be found."),
+				Response: pb.CreateResponse(pb.ErrInvalidParams, "verification result cannot be found."),
 			}, err
 		}
 		PactLogger.Infof("Verification result found: (%d, %d, %d, %t, %s, %s, %s)",
@@ -523,7 +522,7 @@ func (*Service) RetrieveVerificationResults(ctx context.Context, in *brokerpb.Re
 		if err != nil || len(participants.Kvs) == 0 {
 			PactLogger.Errorf(nil, "verification result retrieve request failed, provider participant cannot be searched.")
 			return &brokerpb.RetrieveVerificationResponse{
-				Response: pb.CreateResponse(scerr.ErrInvalidParams, "provider participant cannot be searched."),
+				Response: pb.CreateResponse(pb.ErrInvalidParams, "provider participant cannot be searched."),
 			}, err
 		}
 		var providerParticipant *brokerpb.Participant
@@ -533,7 +532,7 @@ func (*Service) RetrieveVerificationResults(ctx context.Context, in *brokerpb.Re
 			if err != nil {
 				PactLogger.Errorf(nil, "verification result retrieve request failed, verification result unmarshall error.")
 				return &brokerpb.RetrieveVerificationResponse{
-					Response: pb.CreateResponse(scerr.ErrInvalidParams, "verification result unmarshall error."),
+					Response: pb.CreateResponse(pb.ErrInvalidParams, "verification result unmarshall error."),
 				}, err
 			}
 			if participant.Id == pactVersion.ProviderParticipantId {
@@ -544,7 +543,7 @@ func (*Service) RetrieveVerificationResults(ctx context.Context, in *brokerpb.Re
 		if providerParticipant == nil {
 			PactLogger.Errorf(nil, "verification result retrieve request failed, verification result unmarshall error.")
 			return &brokerpb.RetrieveVerificationResponse{
-				Response: pb.CreateResponse(scerr.ErrInvalidParams, "verification result unmarshall error."),
+				Response: pb.CreateResponse(pb.ErrInvalidParams, "verification result unmarshall error."),
 			}, err
 		}
 		serviceFindReq := &pb.GetExistenceRequest{
@@ -557,7 +556,7 @@ func (*Service) RetrieveVerificationResults(ctx context.Context, in *brokerpb.Re
 		if err != nil {
 			PactLogger.Errorf(nil, "verification result retrieve request failed, provider service cannot be found.")
 			return &brokerpb.RetrieveVerificationResponse{
-				Response: pb.CreateResponse(scerr.ErrInvalidParams, "provider service cannot be found."),
+				Response: pb.CreateResponse(pb.ErrInvalidParams, "provider service cannot be found."),
 			}, err
 		}
 		providerName := resp.ServiceId
@@ -589,7 +588,7 @@ func (*Service) PublishVerificationResults(ctx context.Context, in *brokerpb.Pub
 	if in == nil || len(in.ProviderId) == 0 || len(in.ConsumerId) == 0 {
 		PactLogger.Errorf(nil, "verification result publish request failed: invalid params.")
 		return &brokerpb.PublishVerificationResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Request format invalid."),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, "Request format invalid."),
 		}, nil
 	}
 	tenant := GetDefaultTenantProject()
@@ -597,13 +596,13 @@ func (*Service) PublishVerificationResults(ctx context.Context, in *brokerpb.Pub
 	if err != nil {
 		PactLogger.Errorf(err, "verification result publish request failed, consumerID is %s: query consumer failed.", in.ConsumerId)
 		return &brokerpb.PublishVerificationResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Query consumer failed."),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, "Query consumer failed."),
 		}, err
 	}
 	if consumer == nil {
 		PactLogger.Errorf(nil, "verification result publish request failed, consumerID is %s: consumer not exist.", in.ConsumerId)
 		return &brokerpb.PublishVerificationResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Consumer does not exist."),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, "Consumer does not exist."),
 		}, nil
 	}
 	PactLogger.Infof("Consumer service found: (%s, %s, %s, %s)", consumer.ServiceId, consumer.AppId, consumer.ServiceName, consumer.Version)
@@ -612,7 +611,7 @@ func (*Service) PublishVerificationResults(ctx context.Context, in *brokerpb.Pub
 	if err != nil || consumerParticipant == nil {
 		PactLogger.Errorf(nil, "verification result publish request failed, consumer participant cannot be searched.", in.ConsumerId)
 		return &brokerpb.PublishVerificationResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "consumer participant cannot be searched."),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, "consumer participant cannot be searched."),
 		}, err
 	}
 	PactLogger.Infof("Consumer participant found: (%d, %s, %s)", consumerParticipant.Id, consumerParticipant.AppId, consumerParticipant.ServiceName)
@@ -621,7 +620,7 @@ func (*Service) PublishVerificationResults(ctx context.Context, in *brokerpb.Pub
 	if err != nil || version == nil {
 		PactLogger.Errorf(nil, "verification result publish request failed, version cannot be searched.")
 		return &brokerpb.PublishVerificationResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "version cannot be searched."),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, "version cannot be searched."),
 		}, err
 	}
 	PactLogger.Infof("Version found/created: (%d, %s, %d, %d)", version.Id, version.Number, version.ParticipantId, version.Order)
@@ -633,7 +632,7 @@ func (*Service) PublishVerificationResults(ctx context.Context, in *brokerpb.Pub
 	if err != nil || len(pacts.Kvs) == 0 {
 		PactLogger.Errorf(nil, "verification result publish request failed, pact cannot be searched.")
 		return &brokerpb.PublishVerificationResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "pact cannot be searched."),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, "pact cannot be searched."),
 		}, err
 	}
 	pactExists := false
@@ -643,7 +642,7 @@ func (*Service) PublishVerificationResults(ctx context.Context, in *brokerpb.Pub
 		if err != nil {
 			PactLogger.Errorf(nil, "verification result publish request failed, pact cannot be searched.")
 			return &brokerpb.PublishVerificationResponse{
-				Response: pb.CreateResponse(scerr.ErrInvalidParams, "pact cannot be searched."),
+				Response: pb.CreateResponse(pb.ErrInvalidParams, "pact cannot be searched."),
 			}, err
 		}
 		if pact.Id == in.PactId {
@@ -653,14 +652,14 @@ func (*Service) PublishVerificationResults(ctx context.Context, in *brokerpb.Pub
 	if !pactExists {
 		PactLogger.Errorf(nil, "verification result publish request failed, pact does not exists.")
 		return &brokerpb.PublishVerificationResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "pact does not exists."),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, "pact does not exists."),
 		}, err
 	}
 	pactVersion, err := GetPactVersion(ctx, tenant, version.Id, in.PactId)
 	if err != nil || pactVersion == nil {
 		PactLogger.Errorf(nil, "verification result publish request failed, pact version cannot be searched.")
 		return &brokerpb.PublishVerificationResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "pact version cannot be searched."),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, "pact version cannot be searched."),
 		}, err
 	}
 	// Check if some verification results already exists
@@ -672,7 +671,7 @@ func (*Service) PublishVerificationResults(ctx context.Context, in *brokerpb.Pub
 	if err != nil {
 		PactLogger.Errorf(nil, "verification result publish request failed, verification result cannot be searched.")
 		return &brokerpb.PublishVerificationResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "verification result cannot be searched."),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, "verification result cannot be searched."),
 		}, err
 	}
 	lastNumber := int32(math.MinInt32)
@@ -683,7 +682,7 @@ func (*Service) PublishVerificationResults(ctx context.Context, in *brokerpb.Pub
 			if err != nil {
 				PactLogger.Errorf(nil, "verification result publish request failed, verification result unmarshall error.")
 				return &brokerpb.PublishVerificationResponse{
-					Response: pb.CreateResponse(scerr.ErrInvalidParams, "verification result unmarshall error."),
+					Response: pb.CreateResponse(pb.ErrInvalidParams, "verification result unmarshall error."),
 				}, err
 			}
 			if verification.Number > lastNumber {
@@ -701,7 +700,7 @@ func (*Service) PublishVerificationResults(ctx context.Context, in *brokerpb.Pub
 	id, err := GetData(ctx, GetBrokerLatestVerificationIDKey())
 	if err != nil {
 		return &brokerpb.PublishVerificationResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, "get data error."),
+			Response: pb.CreateResponse(pb.ErrInternal, "get data error."),
 		}, err
 	}
 	verification := &brokerpb.Verification{
@@ -737,7 +736,7 @@ func (*Service) PublishPact(ctx context.Context, in *brokerpb.PublishPactRequest
 	if InvalidInput(in) {
 		PactLogger.Errorf(nil, "pact publish request failed: invalid params.")
 		return &brokerpb.PublishPactResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Request format invalid."),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, "Request format invalid."),
 		}, nil
 	}
 	tenant := GetDefaultTenantProject()
@@ -746,13 +745,13 @@ func (*Service) PublishPact(ctx context.Context, in *brokerpb.PublishPactRequest
 	if err != nil {
 		PactLogger.Errorf(err, "pact publish failed, providerId is %s: query provider failed.", in.ProviderId)
 		return &brokerpb.PublishPactResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Query provider failed."),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, "Query provider failed."),
 		}, err
 	}
 	if provider == nil {
 		PactLogger.Errorf(nil, "pact publish failed, providerId is %s: provider not exist.", in.ProviderId)
 		return &brokerpb.PublishPactResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Provider does not exist."),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, "Provider does not exist."),
 		}, nil
 	}
 	PactLogger.Infof("Provider service found: (%s, %s, %s, %s)", provider.ServiceId, provider.AppId, provider.ServiceName, provider.Version)
@@ -760,13 +759,13 @@ func (*Service) PublishPact(ctx context.Context, in *brokerpb.PublishPactRequest
 	if err != nil {
 		PactLogger.Errorf(err, "pact publish failed, consumerID is %s: query consumer failed.", in.ConsumerId)
 		return &brokerpb.PublishPactResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Query consumer failed."),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, "Query consumer failed."),
 		}, err
 	}
 	if consumer == nil {
 		PactLogger.Errorf(nil, "pact publish failed, consumerID is %s: consumer not exist.", in.ConsumerId)
 		return &brokerpb.PublishPactResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Consumer does not exist."),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, "Consumer does not exist."),
 		}, nil
 	}
 
@@ -775,7 +774,7 @@ func (*Service) PublishPact(ctx context.Context, in *brokerpb.PublishPactRequest
 		log.Errorf(nil,
 			"pact publish failed, version (%s) does not exist for consmer", in.Version)
 		return &brokerpb.PublishPactResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Consumer Version does not exist."),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, "Consumer Version does not exist."),
 		}, nil
 	}
 
@@ -786,14 +785,14 @@ func (*Service) PublishPact(ctx context.Context, in *brokerpb.PublishPactRequest
 	if err != nil {
 		PactLogger.Errorf(nil, "pact publish failed, provider participant cannot be searched.", in.ProviderId)
 		return &brokerpb.PublishPactResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Provider participant cannot be searched."),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, "Provider participant cannot be searched."),
 		}, err
 	}
 	if providerParticipant == nil {
 		id, err := GetData(ctx, GetBrokerLatestParticipantIDKey())
 		if err != nil {
 			return &brokerpb.PublishPactResponse{
-				Response: pb.CreateResponse(scerr.ErrInternal, "get data error."),
+				Response: pb.CreateResponse(pb.ErrInternal, "get data error."),
 			}, err
 		}
 		providerParticipant = &brokerpb.Participant{Id: int32(id) + 1, AppId: provider.AppId, ServiceName: provider.ServiceName}
@@ -809,14 +808,14 @@ func (*Service) PublishPact(ctx context.Context, in *brokerpb.PublishPactRequest
 	if err != nil {
 		PactLogger.Errorf(nil, "pact publish failed, consumer participant cannot be searched.", in.ConsumerId)
 		return &brokerpb.PublishPactResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "consumer participant cannot be searched."),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, "consumer participant cannot be searched."),
 		}, err
 	}
 	if consumerParticipant == nil {
 		id, err := GetData(ctx, GetBrokerLatestParticipantIDKey())
 		if err != nil {
 			return &brokerpb.PublishPactResponse{
-				Response: pb.CreateResponse(scerr.ErrInternal, "get data error."),
+				Response: pb.CreateResponse(pb.ErrInternal, "get data error."),
 			}, err
 		}
 		consumerParticipant = &brokerpb.Participant{Id: int32(id) + 1, AppId: consumer.AppId, ServiceName: consumer.ServiceName}
@@ -832,7 +831,7 @@ func (*Service) PublishPact(ctx context.Context, in *brokerpb.PublishPactRequest
 	if err != nil {
 		PactLogger.Errorf(nil, "pact publish failed, version cannot be searched.")
 		return &brokerpb.PublishPactResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "version cannot be searched."),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, "version cannot be searched."),
 		}, err
 	}
 	if version == nil {
@@ -842,7 +841,7 @@ func (*Service) PublishPact(ctx context.Context, in *brokerpb.PublishPactRequest
 		id, err := GetData(ctx, GetBrokerLatestVersionIDKey())
 		if err != nil {
 			return &brokerpb.PublishPactResponse{
-				Response: pb.CreateResponse(scerr.ErrInternal, "get data error."),
+				Response: pb.CreateResponse(pb.ErrInternal, "get data error."),
 			}, err
 		}
 		version = &brokerpb.Version{Id: int32(id) + 1, Number: in.Version, ParticipantId: consumerParticipant.Id, Order: order}
@@ -860,14 +859,14 @@ func (*Service) PublishPact(ctx context.Context, in *brokerpb.PublishPactRequest
 	if err != nil {
 		PactLogger.Errorf(nil, "pact publish failed, pact cannot be searched.")
 		return &brokerpb.PublishPactResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "pact cannot be searched."),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, "pact cannot be searched."),
 		}, err
 	}
 	if pact == nil {
 		id, err := GetData(ctx, GetBrokerLatestPactIDKey())
 		if err != nil {
 			return &brokerpb.PublishPactResponse{
-				Response: pb.CreateResponse(scerr.ErrInternal, "get data error."),
+				Response: pb.CreateResponse(pb.ErrInternal, "get data error."),
 			}, err
 		}
 		pact = &brokerpb.Pact{Id: int32(id) + 1, ConsumerParticipantId: consumerParticipant.Id,
@@ -884,14 +883,14 @@ func (*Service) PublishPact(ctx context.Context, in *brokerpb.PublishPactRequest
 	if err != nil {
 		PactLogger.Errorf(nil, "pact publish failed, pact version cannot be searched.")
 		return &brokerpb.PublishPactResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "pact version cannot be searched."),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, "pact version cannot be searched."),
 		}, err
 	}
 	if pactVersion == nil {
 		id, err := GetData(ctx, GetBrokerLatestPactVersionIDKey())
 		if err != nil {
 			return &brokerpb.PublishPactResponse{
-				Response: pb.CreateResponse(scerr.ErrInternal, "get data error."),
+				Response: pb.CreateResponse(pb.ErrInternal, "get data error."),
 			}, err
 		}
 		pactVersion = &brokerpb.PactVersion{Id: int32(id) + 1, VersionId: version.Id, PactId: pact.Id, ProviderParticipantId: providerParticipant.Id}

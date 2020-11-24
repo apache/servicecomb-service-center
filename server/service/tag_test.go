@@ -18,9 +18,8 @@ package service_test
 
 import (
 	"fmt"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
+	pb "github.com/go-chassis/cari/discovery"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"strconv"
@@ -135,7 +134,7 @@ var _ = Describe("'Tag' service", func() {
 					Tags:      tags,
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddTags.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respAddTags.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				size = quota.DefaultRuleQuota / 2
 				tags = make(map[string]string, size)
@@ -156,7 +155,7 @@ var _ = Describe("'Tag' service", func() {
 					Tags:      tags,
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddTags.Response.GetCode()).To(Equal(scerr.ErrNotEnoughQuota))
+				Expect(respAddTags.Response.GetCode()).To(Equal(pb.ErrNotEnoughQuota))
 			})
 		})
 	})
@@ -476,7 +475,7 @@ var _ = Describe("'Tag' service", func() {
 				fmt.Println(err)
 				fmt.Println(respAddTags.Response)
 				Expect(err).To(BeNil())
-				Expect(respAddTags.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respAddTags.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("service does not exits")
 				respAddTags, err = serviceResource.DeleteTags(getContext(), &pb.DeleteServiceTagsRequest{
@@ -484,7 +483,7 @@ var _ = Describe("'Tag' service", func() {
 					Keys:      []string{"a", "b"},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddTags.Response.GetCode()).To(Equal(scerr.ErrServiceNotExists))
+				Expect(respAddTags.Response.GetCode()).To(Equal(pb.ErrServiceNotExists))
 
 				By("tag key does not exits")
 				respAddTags, err = serviceResource.DeleteTags(getContext(), &pb.DeleteServiceTagsRequest{
@@ -492,7 +491,7 @@ var _ = Describe("'Tag' service", func() {
 					Keys:      []string{"c"},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddTags.Response.GetCode()).To(Equal(scerr.ErrTagNotExists))
+				Expect(respAddTags.Response.GetCode()).To(Equal(pb.ErrTagNotExists))
 
 				By("tag key is empty")
 				respAddTags, err = serviceResource.DeleteTags(getContext(), &pb.DeleteServiceTagsRequest{
@@ -500,12 +499,12 @@ var _ = Describe("'Tag' service", func() {
 					Keys:      []string{""},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddTags.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respAddTags.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 				respAddTags, err = serviceResource.DeleteTags(getContext(), &pb.DeleteServiceTagsRequest{
 					ServiceId: serviceId,
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddTags.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respAddTags.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("tag key is invalid")
 				respAddTags, err = serviceResource.DeleteTags(getContext(), &pb.DeleteServiceTagsRequest{
@@ -513,7 +512,7 @@ var _ = Describe("'Tag' service", func() {
 					Keys:      []string{TooLongTag},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddTags.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respAddTags.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				var arr []string
 				for i := 0; i < quota.DefaultRuleQuota+1; i++ {
@@ -524,7 +523,7 @@ var _ = Describe("'Tag' service", func() {
 					Keys:      arr,
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddTags.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respAddTags.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 			})
 		})
 

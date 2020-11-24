@@ -17,15 +17,15 @@ package dump
 
 import (
 	"github.com/apache/servicecomb-service-center/pkg/cluster"
-	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/server/alarm/model"
+	"github.com/go-chassis/cari/discovery"
 )
 
 type AlarmListRequest struct {
 }
 
 type AlarmListResponse struct {
-	Response *registry.Response  `json:"response,omitempty"`
+	Response *discovery.Response `json:"response,omitempty"`
 	Alarms   []*model.AlarmEvent `json:"alarms,omitempty"`
 }
 
@@ -33,13 +33,13 @@ type ClustersRequest struct {
 }
 
 type ClustersResponse struct {
-	Response *registry.Response `json:"response,omitempty"`
-	Clusters cluster.Clusters   `json:"clusters,omitempty"`
+	Response *discovery.Response `json:"response,omitempty"`
+	Clusters cluster.Clusters    `json:"clusters,omitempty"`
 }
 
 type ClearAlarmRequest struct {
 }
 
 type ClearAlarmResponse struct {
-	Response *registry.Response `json:"response,omitempty"`
+	Response *discovery.Response `json:"response,omitempty"`
 }

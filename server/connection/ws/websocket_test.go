@@ -21,10 +21,10 @@ import _ "github.com/apache/servicecomb-service-center/test"
 import (
 	"context"
 	"errors"
-	"github.com/apache/servicecomb-service-center/pkg/registry"
 	wss "github.com/apache/servicecomb-service-center/server/connection/ws"
 	"github.com/apache/servicecomb-service-center/server/core"
 	. "github.com/apache/servicecomb-service-center/server/notify"
+	"github.com/go-chassis/cari/discovery"
 	"github.com/gorilla/websocket"
 	"net/http"
 	"net/http/httptest"
@@ -67,12 +67,12 @@ func TestDoWebSocketListAndWatch(t *testing.T) {
 
 	wss.SendEstablishError(conn, errors.New("error"))
 
-	w := NewInstanceEventListWatcher("g", "s", func() (results []*registry.WatchInstanceResponse, rev int64) {
-		results = append(results, &registry.WatchInstanceResponse{
-			Response: registry.CreateResponse(registry.ResponseSuccess, "ok"),
-			Action:   string(registry.EVT_CREATE),
-			Key:      &registry.MicroServiceKey{},
-			Instance: &registry.MicroServiceInstance{},
+	w := NewInstanceEventListWatcher("g", "s", func() (results []*discovery.WatchInstanceResponse, rev int64) {
+		results = append(results, &discovery.WatchInstanceResponse{
+			Response: discovery.CreateResponse(discovery.ResponseSuccess, "ok"),
+			Action:   string(discovery.EVT_CREATE),
+			Key:      &discovery.MicroServiceKey{},
+			Instance: &discovery.MicroServiceInstance{},
 		})
 		return
 	})
@@ -88,7 +88,7 @@ func TestDoWebSocketListAndWatch(t *testing.T) {
 	go func() {
 		wss.ListAndWatch(context.Background(), "", nil, conn)
 
-		w2 := NewInstanceEventListWatcher("g", "s", func() (results []*registry.WatchInstanceResponse, rev int64) {
+		w2 := NewInstanceEventListWatcher("g", "s", func() (results []*discovery.WatchInstanceResponse, rev int64) {
 			return
 		})
 		ws2 := wss.New(context.Background(), conn, w2)
@@ -103,11 +103,11 @@ func TestDoWebSocketListAndWatch(t *testing.T) {
 	w.OnMessage(nil)
 	w.OnMessage(&InstanceEvent{})
 
-	Center().Publish(NewInstanceEvent("g", "s", 1, &registry.WatchInstanceResponse{
-		Response: registry.CreateResponse(registry.ResponseSuccess, "ok"),
-		Action:   string(registry.EVT_CREATE),
-		Key:      &registry.MicroServiceKey{},
-		Instance: &registry.MicroServiceInstance{},
+	Center().Publish(NewInstanceEvent("g", "s", 1, &discovery.WatchInstanceResponse{
+		Response: discovery.CreateResponse(discovery.ResponseSuccess, "ok"),
+		Action:   string(discovery.EVT_CREATE),
+		Key:      &discovery.MicroServiceKey{},
+		Instance: &discovery.MicroServiceInstance{},
 	}))
 
 	<-time.After(time.Second)

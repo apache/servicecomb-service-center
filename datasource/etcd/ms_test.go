@@ -22,13 +22,12 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"github.com/apache/servicecomb-service-center/server/service"
+	pb "github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/go-archaius"
 	"github.com/stretchr/testify/assert"
 	"strconv"
@@ -198,7 +197,7 @@ func TestService_Register(t *testing.T) {
 		})
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrServiceAlreadyExists, resp.Response.GetCode())
+		assert.Equal(t, pb.ErrServiceAlreadyExists, resp.Response.GetCode())
 
 		// serviceName: some-relay1-ms-service-name
 		// alias: sr-ms-service-name
@@ -219,7 +218,7 @@ func TestService_Register(t *testing.T) {
 		})
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrServiceAlreadyExists, resp.Response.GetCode())
+		assert.Equal(t, pb.ErrServiceAlreadyExists, resp.Response.GetCode())
 	})
 
 	t.Run("same serviceId,different service, can not register again,error is same as the service register twice",
@@ -258,7 +257,7 @@ func TestService_Register(t *testing.T) {
 			})
 			assert.NotNil(t, resp)
 			assert.NoError(t, err)
-			assert.Equal(t, scerr.ErrServiceAlreadyExists, resp.Response.GetCode())
+			assert.Equal(t, pb.ErrServiceAlreadyExists, resp.Response.GetCode())
 		})
 }
 
@@ -300,7 +299,7 @@ func TestService_Get(t *testing.T) {
 			ServiceId: "no-exist-service",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, resp.Response.GetCode(), scerr.ErrServiceNotExists)
+		assert.Equal(t, resp.Response.GetCode(), pb.ErrServiceNotExists)
 	})
 }
 
@@ -347,7 +346,7 @@ func TestService_Exist(t *testing.T) {
 			Version:     "1.0.0",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrServiceNotExists, resp.Response.GetCode())
+		assert.Equal(t, pb.ErrServiceNotExists, resp.Response.GetCode())
 
 		log.Info("check by querying a not exist env")
 		resp, err = datasource.Instance().ExistService(getContext(), &pb.GetExistenceRequest{
@@ -358,7 +357,7 @@ func TestService_Exist(t *testing.T) {
 			Version:     "1.0.0",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrServiceNotExists, resp.Response.GetCode())
+		assert.Equal(t, pb.ErrServiceNotExists, resp.Response.GetCode())
 
 		log.Info("check by querying a not exist env with alias")
 		resp, err = datasource.Instance().ExistService(getContext(), &pb.GetExistenceRequest{
@@ -369,7 +368,7 @@ func TestService_Exist(t *testing.T) {
 			Version:     "1.0.0",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrServiceNotExists, resp.Response.GetCode())
+		assert.Equal(t, pb.ErrServiceNotExists, resp.Response.GetCode())
 
 		log.Info("check by querying with a mismatching version")
 		resp, err = datasource.Instance().ExistService(getContext(), &pb.GetExistenceRequest{
@@ -379,7 +378,7 @@ func TestService_Exist(t *testing.T) {
 			Version:     "2.0.0",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrServiceNotExists, resp.Response.GetCode())
+		assert.Equal(t, pb.ErrServiceNotExists, resp.Response.GetCode())
 		resp, err = datasource.Instance().ExistService(getContext(), &pb.GetExistenceRequest{
 			Type:        service.ExistTypeMicroservice,
 			AppId:       "exist_appId_service_ms",
@@ -387,7 +386,7 @@ func TestService_Exist(t *testing.T) {
 			Version:     "0.0.0-1.0.0",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrServiceVersionNotExists, resp.Response.GetCode())
+		assert.Equal(t, pb.ErrServiceVersionNotExists, resp.Response.GetCode())
 	})
 
 	t.Run("check exist when service exists", func(t *testing.T) {
@@ -1371,7 +1370,7 @@ func TestInstance_Query(t *testing.T) {
 			VersionRule:       "0.0.0",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrServiceNotExists, respFind.Response.GetCode())
+		assert.Equal(t, pb.ErrServiceNotExists, respFind.Response.GetCode())
 
 		log.Info("find with env")
 		respFind, err = datasource.Instance().FindInstances(getContext(), &pb.FindInstancesRequest{
@@ -1516,7 +1515,7 @@ func TestInstance_Query(t *testing.T) {
 		assert.Equal(t, int64(1), respFind.Services.Updated[1].Index)
 		assert.Equal(t, instanceId2, respFind.Services.Updated[1].Instances[0].InstanceId)
 		assert.Equal(t, int64(2), respFind.Services.Failed[0].Indexes[0])
-		assert.Equal(t, scerr.ErrServiceNotExists, respFind.Services.Failed[0].Error.Code)
+		assert.Equal(t, pb.ErrServiceNotExists, respFind.Services.Failed[0].Error.Code)
 
 		log.Info("find with env")
 		respFind, err = datasource.Instance().BatchFind(getContext(), &pb.BatchFindInstancesRequest{
@@ -1717,7 +1716,7 @@ func TestInstance_Query(t *testing.T) {
 			})
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
-		assert.Equal(t, scerr.ErrServiceNotExists, respFind.Instances.Failed[0].Error.Code)
+		assert.Equal(t, pb.ErrServiceNotExists, respFind.Instances.Failed[0].Error.Code)
 
 		respFind, err = datasource.Instance().BatchFind(getContext(), &pb.BatchFindInstancesRequest{
 			ConsumerServiceId: serviceId7,
@@ -1749,7 +1748,7 @@ func TestInstance_Query(t *testing.T) {
 			assert.Equal(t, code, respFind.Response.GetCode())
 		}
 
-		UTFunc(serviceId3, scerr.ErrServiceNotExists)
+		UTFunc(serviceId3, pb.ErrServiceNotExists)
 
 		UTFunc(serviceId1, pb.ResponseSuccess)
 
@@ -1853,7 +1852,7 @@ func TestInstance_GetOne(t *testing.T) {
 			ProviderInstanceId: instanceId2,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrInstanceNotExists, resp.Response.GetCode())
+		assert.Equal(t, pb.ErrInstanceNotExists, resp.Response.GetCode())
 
 		respAll, err := datasource.Instance().GetInstances(getContext(), &pb.GetInstancesRequest{
 			ConsumerServiceId: serviceId3,
@@ -2086,7 +2085,7 @@ func TestSchema_Create(t *testing.T) {
 			Schemas:   schemas,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrNotEnoughQuota, resp.Response.GetCode())
+		assert.Equal(t, pb.ErrNotEnoughQuota, resp.Response.GetCode())
 
 		log.Info("batch modify schemas 2")
 		resp, err = datasource.Instance().ModifySchemas(getContext(), &pb.ModifySchemasRequest{
@@ -2102,7 +2101,7 @@ func TestSchema_Create(t *testing.T) {
 			Schemas:   schemas,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrNotEnoughQuota, resp.Response.GetCode())
+		assert.Equal(t, pb.ErrNotEnoughQuota, resp.Response.GetCode())
 	})
 
 	t.Run("batch create schemas in dev env", func(t *testing.T) {
@@ -2312,7 +2311,7 @@ func TestSchema_Create(t *testing.T) {
 			Schemas:   schemas,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrUndefinedSchemaID, respModifySchemas.Response.GetCode())
+		assert.Equal(t, pb.ErrUndefinedSchemaID, respModifySchemas.Response.GetCode())
 
 		log.Info("add schema when summary is empty")
 		respModifySchema, err := datasource.Instance().ModifySchema(getContext(), &pb.ModifySchemaRequest{
@@ -2669,7 +2668,7 @@ func TestSchema_Create(t *testing.T) {
 			Schemas:   schemas,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrUndefinedSchemaID, respModifySchemas.Response.GetCode())
+		assert.Equal(t, pb.ErrUndefinedSchemaID, respModifySchemas.Response.GetCode())
 
 		log.Info("schema edit allowed, add a schema with new schemaId, should pass")
 		localMicroServiceDs = &etcd.DataSource{SchemaEditable: true}
@@ -2730,7 +2729,7 @@ func TestSchema_Create(t *testing.T) {
 			Schema:    schemas[0].SchemaId,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrModifySchemaNotAllow, respModifySchema.Response.GetCode())
+		assert.Equal(t, pb.ErrModifySchemaNotAllow, respModifySchema.Response.GetCode())
 
 		log.Info("schema edit allowed, add a schema with new schemaId, should pass")
 		localMicroServiceDs = &etcd.DataSource{SchemaEditable: true}
@@ -2942,13 +2941,13 @@ func TestSchema_Get(t *testing.T) {
 			SchemaId:  "com.huawei.test",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrServiceNotExists, respGetSchema.Response.GetCode())
+		assert.Equal(t, pb.ErrServiceNotExists, respGetSchema.Response.GetCode())
 
 		respGetAllSchemas, err := datasource.Instance().GetAllSchemas(getContext(), &pb.GetAllSchemaRequest{
 			ServiceId: "none_exist_service",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrServiceNotExists, respGetAllSchemas.Response.GetCode())
+		assert.Equal(t, pb.ErrServiceNotExists, respGetAllSchemas.Response.GetCode())
 
 		log.Info("schema id doest not exist")
 		respGetSchema, err = datasource.Instance().GetSchema(getContext(), &pb.GetSchemaRequest{
@@ -2956,7 +2955,7 @@ func TestSchema_Get(t *testing.T) {
 			SchemaId:  "none_exist_schema",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrSchemaNotExists, respGetSchema.Response.GetCode())
+		assert.Equal(t, pb.ErrSchemaNotExists, respGetSchema.Response.GetCode())
 	})
 
 	t.Run("test get when request is valid", func(t *testing.T) {
@@ -3032,7 +3031,7 @@ func TestSchema_Delete(t *testing.T) {
 			SchemaId:  "com.huawei.test.ms",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrSchemaNotExists, respGet.Response.GetCode())
+		assert.Equal(t, pb.ErrSchemaNotExists, respGet.Response.GetCode())
 
 		respExist, err := datasource.Instance().ExistSchema(getContext(), &pb.GetExistenceRequest{
 			Type:      "schema",
@@ -3040,7 +3039,7 @@ func TestSchema_Delete(t *testing.T) {
 			SchemaId:  "com.huawei.test.ms",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrSchemaNotExists, respExist.Response.GetCode())
+		assert.Equal(t, pb.ErrSchemaNotExists, respExist.Response.GetCode())
 	})
 }
 
@@ -3169,7 +3168,7 @@ func TestRule_Add(t *testing.T) {
 			Rules:     rules[size-1:],
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrNotEnoughQuota, resp.Response.GetCode())
+		assert.Equal(t, pb.ErrNotEnoughQuota, resp.Response.GetCode())
 	})
 }
 
@@ -3216,7 +3215,7 @@ func TestRule_Get(t *testing.T) {
 			ServiceId: "not_exist_service_ms",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrServiceNotExists, respGetRule.Response.GetCode())
+		assert.Equal(t, pb.ErrServiceNotExists, respGetRule.Response.GetCode())
 	})
 
 	t.Run("get when request is valid", func(t *testing.T) {
@@ -3365,7 +3364,7 @@ func TestRule_Delete(t *testing.T) {
 			RuleIds:   []string{"1000000"},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrServiceNotExists, resp.Response.GetCode())
+		assert.Equal(t, pb.ErrServiceNotExists, resp.Response.GetCode())
 
 		log.Info("rule not exist")
 		resp, err = datasource.Instance().DeleteRule(getContext(), &pb.DeleteServiceRulesRequest{
@@ -3373,7 +3372,7 @@ func TestRule_Delete(t *testing.T) {
 			RuleIds:   []string{"not_exist_rule"},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrRuleNotExists, resp.Response.GetCode())
+		assert.Equal(t, pb.ErrRuleNotExists, resp.Response.GetCode())
 	})
 
 	t.Run("delete when request is valid", func(t *testing.T) {
@@ -3504,7 +3503,7 @@ func TestRule_Permission(t *testing.T) {
 			ProviderServiceId: providerBlack,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrServiceNotExists, resp.Response.GetCode())
+		assert.Equal(t, pb.ErrServiceNotExists, resp.Response.GetCode())
 
 		log.Info("consumer tag in black list")
 		resp, err = datasource.Instance().GetInstances(getContext(), &pb.GetInstancesRequest{
@@ -3512,7 +3511,7 @@ func TestRule_Permission(t *testing.T) {
 			ProviderServiceId: providerBlack,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrServiceNotExists, resp.Response.GetCode())
+		assert.Equal(t, pb.ErrServiceNotExists, resp.Response.GetCode())
 
 		log.Info("find should return 200 even if consumer permission deny")
 		respFind, err := datasource.Instance().FindInstances(getContext(), &pb.FindInstancesRequest{
@@ -3549,7 +3548,7 @@ func TestRule_Permission(t *testing.T) {
 			ProviderServiceId: providerWhite,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrServiceNotExists, resp.Response.GetCode())
+		assert.Equal(t, pb.ErrServiceNotExists, resp.Response.GetCode())
 
 		log.Info("consumer version in white list")
 		resp, err = datasource.Instance().GetInstances(getContext(), &pb.GetInstancesRequest{
@@ -3615,7 +3614,7 @@ func TestTags_Add(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrServiceNotExists, resp.Response.GetCode())
+		assert.Equal(t, pb.ErrServiceNotExists, resp.Response.GetCode())
 	})
 
 	t.Run("the request is valid", func(t *testing.T) {
@@ -3655,7 +3654,7 @@ func TestTags_Add(t *testing.T) {
 			Tags:      tags,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrNotEnoughQuota, resp.Response.GetCode())
+		assert.Equal(t, pb.ErrNotEnoughQuota, resp.Response.GetCode())
 	})
 }
 
@@ -3694,20 +3693,20 @@ func TestTags_Get(t *testing.T) {
 			ServiceId: "noThisService",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrServiceNotExists, resp.Response.GetCode())
+		assert.Equal(t, pb.ErrServiceNotExists, resp.Response.GetCode())
 
 		log.Info("service's id is empty")
 		resp, err = datasource.Instance().GetTags(getContext(), &pb.GetServiceTagsRequest{
 			ServiceId: "",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrServiceNotExists, resp.Response.GetCode())
+		assert.Equal(t, pb.ErrServiceNotExists, resp.Response.GetCode())
 
 		log.Info("service's id is invalid")
 		resp, err = datasource.Instance().GetTags(getContext(), &pb.GetServiceTagsRequest{
 			ServiceId: strings.Repeat("x", 65),
 		})
-		assert.Equal(t, scerr.ErrServiceNotExists, resp.Response.GetCode())
+		assert.Equal(t, pb.ErrServiceNotExists, resp.Response.GetCode())
 	})
 
 	t.Run("the request is valid", func(t *testing.T) {
@@ -3758,7 +3757,7 @@ func TestTag_Update(t *testing.T) {
 			Value:     "update",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrServiceNotExists, resp.Response.GetCode())
+		assert.Equal(t, pb.ErrServiceNotExists, resp.Response.GetCode())
 
 		log.Info("tag key does not exist")
 		resp, err = datasource.Instance().UpdateTag(getContext(), &pb.UpdateServiceTagRequest{
@@ -3767,7 +3766,7 @@ func TestTag_Update(t *testing.T) {
 			Value:     "update",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrTagNotExists, resp.Response.GetCode())
+		assert.Equal(t, pb.ErrTagNotExists, resp.Response.GetCode())
 
 		log.Info("tag key is invalid")
 		resp, err = datasource.Instance().UpdateTag(getContext(), &pb.UpdateServiceTagRequest{
@@ -3776,7 +3775,7 @@ func TestTag_Update(t *testing.T) {
 			Value:     "v",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrTagNotExists, resp.Response.GetCode())
+		assert.Equal(t, pb.ErrTagNotExists, resp.Response.GetCode())
 	})
 
 	t.Run("the request is valid", func(t *testing.T) {
@@ -3919,7 +3918,7 @@ func TestTags_Delete(t *testing.T) {
 			Keys:      []string{"a", "b"},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrServiceNotExists, resp.Response.GetCode())
+		assert.Equal(t, pb.ErrServiceNotExists, resp.Response.GetCode())
 
 		log.Info("tag key does not exits")
 		resp, err = datasource.Instance().DeleteTags(getContext(), &pb.DeleteServiceTagsRequest{
@@ -3927,7 +3926,7 @@ func TestTags_Delete(t *testing.T) {
 			Keys:      []string{"c"},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrTagNotExists, resp.Response.GetCode())
+		assert.Equal(t, pb.ErrTagNotExists, resp.Response.GetCode())
 	})
 
 	t.Run("the request is valid", func(t *testing.T) {

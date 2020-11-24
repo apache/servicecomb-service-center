@@ -18,32 +18,32 @@ package diagnose
 import (
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/dump"
-	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/coreos/etcd/mvcc/mvccpb"
+	"github.com/go-chassis/cari/discovery"
 	"testing"
 )
 
 func TestNewDiagnoseCommand(t *testing.T) {
 	services := dump.MicroserviceSlice{
 		dump.NewMicroservice(&dump.KV{Key: "1", Rev: 1,
-			Value: &registry.MicroService{
+			Value: &discovery.MicroService{
 				ServiceId: "667570b6842411e89c66286ed488de36", AppId: "app", ServiceName: "name1", Version: "0.0.1",
 			}}), // greater
 		dump.NewMicroservice(&dump.KV{Key: "6", Rev: 1,
-			Value: &registry.MicroService{
+			Value: &discovery.MicroService{
 				ServiceId: "667570b6842411e89c66286ed488de36", AppId: "app", ServiceName: "name2", Version: "0.0.1",
 			}}), // greater
-		dump.NewMicroservice(&dump.KV{Key: "2", Rev: 1, Value: &registry.MicroService{ServiceId: "2"}}), // mismatch
-		dump.NewMicroservice(&dump.KV{Key: "4", Rev: 2, Value: &registry.MicroService{ServiceId: "4"}}), // pass
+		dump.NewMicroservice(&dump.KV{Key: "2", Rev: 1, Value: &discovery.MicroService{ServiceId: "2"}}), // mismatch
+		dump.NewMicroservice(&dump.KV{Key: "4", Rev: 2, Value: &discovery.MicroService{ServiceId: "4"}}), // pass
 	}
 	instances := dump.InstanceSlice{
 		dump.NewInstance(&dump.KV{Key: "1", Rev: 1,
-			Value: &registry.MicroServiceInstance{
+			Value: &discovery.MicroServiceInstance{
 				ServiceId: "667570b6842411e89c66286ed488de36", InstanceId: "667570b6842411e89c66286ed488de36", Version: "0.0.1",
 				Endpoints: []string{"rest://127.0.0.1:8080"},
 			}}), // greater
 		dump.NewInstance(&dump.KV{Key: "2", Rev: 1,
-			Value: &registry.MicroServiceInstance{
+			Value: &discovery.MicroServiceInstance{
 				ServiceId: "667570b6842411e89c66286ed488de36", InstanceId: "667570b6842411e89c66286ed488de36", Version: "0.0.1",
 				Endpoints: []string{"rest://127.0.0.2:8080"},
 			}}), // greater

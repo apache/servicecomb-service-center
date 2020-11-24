@@ -21,19 +21,19 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
+	"github.com/go-chassis/cari/discovery"
 
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 )
 
-func AddTagIntoETCD(ctx context.Context, domainProject string, serviceID string, dataTags map[string]string) *scerr.Error {
+func AddTagIntoETCD(ctx context.Context, domainProject string, serviceID string, dataTags map[string]string) *discovery.Error {
 	key := path.GenerateServiceTagKey(domainProject, serviceID)
 	data, err := json.Marshal(dataTags)
 	if err != nil {
-		return scerr.NewError(scerr.ErrInternal, err.Error())
+		return discovery.NewError(discovery.ErrInternal, err.Error())
 	}
 
 	resp, err := client.Instance().TxnWithCmp(ctx,
@@ -43,10 +43,10 @@ func AddTagIntoETCD(ctx context.Context, domainProject string, serviceID string,
 			client.CmpNotEqual, 0)},
 		nil)
 	if err != nil {
-		return scerr.NewError(scerr.ErrUnavailableBackend, err.Error())
+		return discovery.NewError(discovery.ErrUnavailableBackend, err.Error())
 	}
 	if !resp.Succeeded {
-		return scerr.NewError(scerr.ErrServiceNotExists, "Service does not exist.")
+		return discovery.NewError(discovery.ErrServiceNotExists, "Service does not exist.")
 	}
 	return nil
 }

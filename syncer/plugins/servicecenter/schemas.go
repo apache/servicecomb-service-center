@@ -20,7 +20,7 @@ package servicecenter
 import (
 	"context"
 
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
+	pb "github.com/go-chassis/cari/discovery"
 )
 
 // CreateSchemas Create schemas to servicecenter

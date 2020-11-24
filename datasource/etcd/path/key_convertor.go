@@ -19,8 +19,8 @@ package path
 
 import (
 	"fmt"
-	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/go-chassis/cari/discovery"
 	"strings"
 )
 
@@ -93,14 +93,14 @@ func GetInfoFromTagKV(key []byte) (serviceID, domainProject string) {
 	return
 }
 
-func GetInfoFromSvcIndexKV(key []byte) *registry.MicroServiceKey {
+func GetInfoFromSvcIndexKV(key []byte) *discovery.MicroServiceKey {
 	keys := ToResponse(key)
 	l := len(keys)
 	if l < 6 {
 		return nil
 	}
 	domainProject := fmt.Sprintf("%s/%s", keys[l-6], keys[l-5])
-	return &registry.MicroServiceKey{
+	return &discovery.MicroServiceKey{
 		Tenant:      domainProject,
 		Environment: keys[l-4],
 		AppId:       keys[l-3],
@@ -109,7 +109,7 @@ func GetInfoFromSvcIndexKV(key []byte) *registry.MicroServiceKey {
 	}
 }
 
-func GetInfoFromSvcAliasKV(key []byte) *registry.MicroServiceKey {
+func GetInfoFromSvcAliasKV(key []byte) *discovery.MicroServiceKey {
 	return GetInfoFromSvcIndexKV(key)
 }
 
@@ -145,21 +145,21 @@ func GetInfoFromDependencyQueueKV(key []byte) (consumerID, domainProject, uuid s
 	return
 }
 
-func GetInfoFromDependencyRuleKV(key []byte) (t string, _ *registry.MicroServiceKey) {
+func GetInfoFromDependencyRuleKV(key []byte) (t string, _ *discovery.MicroServiceKey) {
 	keys := ToResponse(key)
 	l := len(keys)
 	if l < 5 {
 		return "", nil
 	}
 	if keys[l-1] == "*" {
-		return keys[l-3], &registry.MicroServiceKey{
+		return keys[l-3], &discovery.MicroServiceKey{
 			Tenant:      fmt.Sprintf("%s/%s", keys[l-5], keys[l-4]),
 			Environment: keys[l-2],
 			ServiceName: keys[l-1],
 		}
 	}
 
-	return keys[l-5], &registry.MicroServiceKey{
+	return keys[l-5], &discovery.MicroServiceKey{
 		Tenant:      fmt.Sprintf("%s/%s", keys[l-7], keys[l-6]),
 		Environment: keys[l-4],
 		AppId:       keys[l-3],

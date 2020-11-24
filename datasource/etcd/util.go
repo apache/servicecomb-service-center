@@ -26,12 +26,11 @@ import (
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
+	pb "github.com/go-chassis/cari/discovery"
 	"strconv"
 	"strings"
 	"time"
@@ -210,7 +209,7 @@ func commitSchemaInfo(domainProject string, serviceID string, schema *pb.Schema)
 }
 
 // instance util
-func preProcessRegisterInstance(ctx context.Context, instance *pb.MicroServiceInstance) *scerr.Error {
+func preProcessRegisterInstance(ctx context.Context, instance *pb.MicroServiceInstance) *pb.Error {
 	if len(instance.Status) == 0 {
 		instance.Status = pb.MSI_UP
 	}
@@ -237,7 +236,7 @@ func preProcessRegisterInstance(ctx context.Context, instance *pb.MicroServiceIn
 		case pb.CHECK_BY_HEARTBEAT:
 			d := instance.HealthCheck.Interval * (instance.HealthCheck.Times + 1)
 			if d <= 0 {
-				return scerr.NewError(scerr.ErrInvalidParams, "Invalid 'healthCheck' settings in request body.")
+				return pb.NewError(pb.ErrInvalidParams, "Invalid 'healthCheck' settings in request body.")
 			}
 		case pb.CHECK_BY_PLATFORM:
 			// 默认120s
@@ -249,7 +248,7 @@ func preProcessRegisterInstance(ctx context.Context, instance *pb.MicroServiceIn
 	domainProject := util.ParseDomainProject(ctx)
 	microservice, err := serviceUtil.GetService(ctx, domainProject, instance.ServiceId)
 	if microservice == nil || err != nil {
-		return scerr.NewError(scerr.ErrServiceNotExists, "Invalid 'serviceID' in request body.")
+		return pb.NewError(pb.ErrServiceNotExists, "Invalid 'serviceID' in request body.")
 	}
 	instance.Version = microservice.Version
 	return nil
@@ -271,21 +270,21 @@ func getHeartbeatFunc(ctx context.Context, domainProject string, instancesHbRst 
 	}
 }
 
-func revokeInstance(ctx context.Context, domainProject string, serviceID string, instanceID string) *scerr.Error {
+func revokeInstance(ctx context.Context, domainProject string, serviceID string, instanceID string) *pb.Error {
 	leaseID, err := serviceUtil.GetLeaseID(ctx, domainProject, serviceID, instanceID)
 	if err != nil {
-		return scerr.NewError(scerr.ErrUnavailableBackend, err.Error())
+		return pb.NewError(pb.ErrUnavailableBackend, err.Error())
 	}
 	if leaseID == -1 {
-		return scerr.NewError(scerr.ErrInstanceNotExists, "Instance's leaseId not exist.")
+		return pb.NewError(pb.ErrInstanceNotExists, "Instance's leaseId not exist.")
 	}
 
 	err = client.Instance().LeaseRevoke(ctx, leaseID)
 	if err != nil {
 		if _, ok := err.(errorsEx.InternalError); !ok {
-			return scerr.NewError(scerr.ErrInstanceNotExists, err.Error())
+			return pb.NewError(pb.ErrInstanceNotExists, err.Error())
 		}
-		return scerr.NewError(scerr.ErrUnavailableBackend, err.Error())
+		return pb.NewError(pb.ErrUnavailableBackend, err.Error())
 	}
 	return nil
 }

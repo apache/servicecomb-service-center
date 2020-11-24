@@ -19,10 +19,10 @@ package grpc_test
 import (
 	"context"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	simple "github.com/apache/servicecomb-service-center/pkg/time"
 	stream "github.com/apache/servicecomb-service-center/server/connection/grpc"
 	"github.com/apache/servicecomb-service-center/server/notify"
+	pb "github.com/go-chassis/cari/discovery"
 	"google.golang.org/grpc"
 	"testing"
 	"time"

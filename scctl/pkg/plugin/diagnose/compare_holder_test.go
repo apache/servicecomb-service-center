@@ -17,16 +17,16 @@ package diagnose
 
 import (
 	"github.com/apache/servicecomb-service-center/pkg/dump"
-	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/coreos/etcd/mvcc/mvccpb"
+	"github.com/go-chassis/cari/discovery"
 	"testing"
 )
 
 func TestAbstractCompareHolder_Compare(t *testing.T) {
 	services := dump.MicroserviceSlice{
-		dump.NewMicroservice(&dump.KV{Key: "1", Rev: 1, Value: &registry.MicroService{ServiceId: "1"}}), // greater
-		dump.NewMicroservice(&dump.KV{Key: "2", Rev: 1, Value: &registry.MicroService{ServiceId: "2"}}), // mismatch
-		dump.NewMicroservice(&dump.KV{Key: "4", Rev: 2, Value: &registry.MicroService{ServiceId: "4"}}), // pass
+		dump.NewMicroservice(&dump.KV{Key: "1", Rev: 1, Value: &discovery.MicroService{ServiceId: "1"}}), // greater
+		dump.NewMicroservice(&dump.KV{Key: "2", Rev: 1, Value: &discovery.MicroService{ServiceId: "2"}}), // mismatch
+		dump.NewMicroservice(&dump.KV{Key: "4", Rev: 2, Value: &discovery.MicroService{ServiceId: "4"}}), // pass
 	}
 	kvs := []*mvccpb.KeyValue{
 		{Key: []byte("2"), ModRevision: 2, Value: []byte(`{"ServiceID":"22"}`)},

@@ -23,11 +23,10 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/health"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
+	pb "github.com/go-chassis/cari/discovery"
 )
 
 type InstanceService struct {
@@ -38,7 +37,7 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 		remoteIP := util.GetIPFromContext(ctx)
 		log.Errorf(err, "register instance failed, invalid parameters, operator %s", remoteIP)
 		return &pb.RegisterInstanceResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 
@@ -50,7 +49,7 @@ func (s *InstanceService) Unregister(ctx context.Context, in *pb.UnregisterInsta
 		remoteIP := util.GetIPFromContext(ctx)
 		log.Errorf(err, "unregister instance failed, invalid parameters, operator %s", remoteIP)
 		return &pb.UnregisterInstanceResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 
@@ -62,7 +61,7 @@ func (s *InstanceService) Heartbeat(ctx context.Context, in *pb.HeartbeatRequest
 		remoteIP := util.GetIPFromContext(ctx)
 		log.Errorf(err, "heartbeat failed, invalid parameters, operator %s", remoteIP)
 		return &pb.HeartbeatResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 
@@ -73,7 +72,7 @@ func (s *InstanceService) HeartbeatSet(ctx context.Context, in *pb.HeartbeatSetR
 	if len(in.Instances) == 0 {
 		log.Errorf(nil, "heartbeats failed, invalid request. Body not contain Instances or is empty")
 		return &pb.HeartbeatSetResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Request format invalid."),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, "Request format invalid."),
 		}, nil
 	}
 	return datasource.Instance().HeartbeatSet(ctx, in)
@@ -84,7 +83,7 @@ func (s *InstanceService) GetOneInstance(ctx context.Context, in *pb.GetOneInsta
 	if err != nil {
 		log.Errorf(err, "get instance failed: invalid parameters")
 		return &pb.GetOneInstanceResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 
@@ -96,7 +95,7 @@ func (s *InstanceService) GetInstances(ctx context.Context, in *pb.GetInstancesR
 	if err != nil {
 		log.Errorf(err, "get instances failed: invalid parameters")
 		return &pb.GetInstancesResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 
@@ -108,7 +107,7 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 	if err != nil {
 		log.Errorf(err, "find instance failed: invalid parameters")
 		return &pb.FindInstancesResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 
@@ -120,7 +119,7 @@ func (s *InstanceService) BatchFind(ctx context.Context, in *pb.BatchFindInstanc
 		err := errors.New("Required services or instances")
 		log.Errorf(err, "batch find instance failed: invalid parameters")
 		return &pb.BatchFindInstancesResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 
@@ -128,7 +127,7 @@ func (s *InstanceService) BatchFind(ctx context.Context, in *pb.BatchFindInstanc
 	if err != nil {
 		log.Errorf(err, "batch find instance failed: invalid parameters")
 		return &pb.BatchFindInstancesResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 
@@ -140,7 +139,7 @@ func (s *InstanceService) UpdateStatus(ctx context.Context, in *pb.UpdateInstanc
 		updateStatusFlag := util.StringJoin([]string{in.ServiceId, in.InstanceId, in.Status}, "/")
 		log.Errorf(nil, "update instance[%s] status failed", updateStatusFlag)
 		return &pb.UpdateInstanceStatusResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 
@@ -152,7 +151,7 @@ func (s *InstanceService) UpdateInstanceProperties(ctx context.Context, in *pb.U
 		instanceFlag := util.StringJoin([]string{in.ServiceId, in.InstanceId}, "/")
 		log.Errorf(nil, "update instance[%s] properties failed", instanceFlag)
 		return &pb.UpdateInstancePropsResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 
@@ -162,7 +161,7 @@ func (s *InstanceService) UpdateInstanceProperties(ctx context.Context, in *pb.U
 func (s *InstanceService) ClusterHealth(ctx context.Context) (*pb.GetInstancesResponse, error) {
 	if err := health.GlobalHealthChecker().Healthy(); err != nil {
 		return &pb.GetInstancesResponse{
-			Response: pb.CreateResponse(scerr.ErrUnhealthy, err.Error()),
+			Response: pb.CreateResponse(pb.ErrUnhealthy, err.Error()),
 		}, nil
 	}
 
@@ -179,14 +178,14 @@ func (s *InstanceService) ClusterHealth(ctx context.Context) (*pb.GetInstancesRe
 		log.Errorf(err, "health check failed: get service center[%s/%s/%s/%s]'s serviceID failed",
 			apt.Service.Environment, apt.Service.AppId, apt.Service.ServiceName, apt.Service.Version)
 		return &pb.GetInstancesResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
 	}
 	if len(serviceID) == 0 {
 		log.Errorf(nil, "health check failed: service center[%s/%s/%s/%s]'s serviceID does not exist",
 			apt.Service.Environment, apt.Service.AppId, apt.Service.ServiceName, apt.Service.Version)
 		return &pb.GetInstancesResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "ServiceCenter's serviceID not exist."),
+			Response: pb.CreateResponse(pb.ErrServiceNotExists, "ServiceCenter's serviceID not exist."),
 		}, nil
 	}
 
@@ -195,7 +194,7 @@ func (s *InstanceService) ClusterHealth(ctx context.Context) (*pb.GetInstancesRe
 		log.Errorf(err, "health check failed: get service center[%s][%s/%s/%s/%s]'s instances failed",
 			serviceID, apt.Service.Environment, apt.Service.AppId, apt.Service.ServiceName, apt.Service.Version)
 		return &pb.GetInstancesResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
 	}
 	return &pb.GetInstancesResponse{

@@ -22,8 +22,7 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
+	pb "github.com/go-chassis/cari/discovery"
 )
 
 func (s *MicroServiceService) AddDependenciesForMicroServices(ctx context.Context, in *pb.AddDependenciesRequest) (*pb.AddDependenciesResponse, error) {
@@ -57,7 +56,7 @@ func (s *MicroServiceService) GetProviderDependencies(ctx context.Context, in *p
 	if err != nil {
 		log.Errorf(err, "GetProviderDependencies failed for validating parameters failed")
 		return &pb.GetProDependenciesResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 
@@ -69,7 +68,7 @@ func (s *MicroServiceService) GetConsumerDependencies(ctx context.Context, in *p
 	if err != nil {
 		log.Errorf(err, "GetConsumerDependencies failed for validating parameters failed")
 		return &pb.GetConDependenciesResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 

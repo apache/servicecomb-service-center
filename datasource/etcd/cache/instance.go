@@ -20,8 +20,8 @@ package cache
 import (
 	"context"
 	"github.com/apache/servicecomb-service-center/pkg/cache"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	pb "github.com/go-chassis/cari/discovery"
 	"math"
 	"time"
 )
