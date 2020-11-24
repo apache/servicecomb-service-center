@@ -52,6 +52,10 @@ func Verify(c *Config) (err error) {
 		return
 	}
 
+	if err = verifyHttpConfig(&c.HttpConfig); err != nil {
+		return
+	}
+
 	if c.Listener.TLSMount.Enabled {
 		listenerTls := c.GetTLSConfig(c.Listener.TLSMount.Name)
 		if listenerTls == nil {
@@ -166,6 +170,16 @@ func verifyRegistry(r *Registry) (err error) {
 		}
 	}
 	return nil
+}
+
+func verifyHttpConfig(httpConfig *HttpConfig) (err error) {
+	host, port, hErr := utils.SplitHostPort(httpConfig.HttpAddr, defaultHttpPort)
+	if hErr != nil {
+		err = errors.Wrapf(hErr, "verify http address failed, url is %s", httpConfig.HttpAddr)
+		return
+	}
+	httpConfig.HttpAddr = host + ":" + strconv.Itoa(port)
+	return
 }
 
 func verifyTLSConfig(conf *TLSConfig) (err error) {

@@ -59,6 +59,11 @@ func DefaultConfig() *Config {
 			Address: "http://127.0.0.1:30100",
 			Plugin:  defaultDCPluginName,
 		},
+		HttpConfig: HttpConfig{
+			HttpAddr:         "0.0.0.0:" + strconv.Itoa(defaultHttpPort),
+			Compressed:       defaultCompressed,
+			CompressMinBytes: defaultCompressMinBytes,
+		},
 	}
 }
 

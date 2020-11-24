@@ -31,6 +31,14 @@ import (
 
 type testServer struct{}
 
+func (t *testServer) DeclareDataLength(ctx context.Context, request *pb.DeclareRequest) (*pb.DeclareResponse, error) {
+	return &pb.DeclareResponse{}, nil
+}
+
+func (t *testServer) IncrementPull(ctx context.Context, request *pb.IncrementPullRequest) (*pb.SyncData, error) {
+	return &pb.SyncData{}, nil
+}
+
 func (t *testServer) Pull(context.Context, *pb.PullRequest) (*pb.SyncData, error) {
 	return &pb.SyncData{}, nil
 }

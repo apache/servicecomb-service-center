@@ -21,6 +21,7 @@ import (
 	"errors"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/syncer/plugins"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
 	"github.com/apache/servicecomb-service-center/syncer/servicecenter/storage"
@@ -33,6 +34,7 @@ type Servicecenter interface {
 	FlushData()
 	Registry(clusterName string, data *pb.SyncData)
 	Discovery() *pb.SyncData
+	IncrementRegistry(clusterName string, data *pb.SyncData)
 }
 
 type servicecenter struct {
@@ -117,4 +119,90 @@ func (s *servicecenter) Registry(clusterName string, data *pb.SyncData) {
 // Discovery discovery data from storage
 func (s *servicecenter) Discovery() *pb.SyncData {
 	return s.storage.GetData()
+}
+
+func (s *servicecenter) IncrementRegistry(clusterName string, data *pb.SyncData) {
+	mapping := s.storage.GetMapByCluster(clusterName)
+	for _, inst := range data.Instances {
+		svc := searchService(inst, data.Services)
+		if svc == nil {
+			err := errors.New("service does not exist")
+			log.Errorf(err, "servicecenter.Registry, serviceID = %s, instanceId = %s", inst.ServiceId, inst.InstanceId)
+			continue
+		}
+
+		// If the svc is in the mapping, just do nothing, if not, created it in servicecenter and get the new serviceID
+		svcID := s.createService(svc)
+		log.Debugf("create service success orgServiceID= %s, curServiceID = %s", inst.ServiceId, svcID)
+
+		matches := pb.Expansions(inst.Expansions).Find("action", map[string]string{})
+		if len(matches) != 1 {
+			err := errors.New("action invalid")
+			log.Errorf(err, "can not handle invalid action")
+			continue
+		}
+		action := string(matches[0].Bytes[:])
+
+		if action == string(registry.EVT_CREATE) {
+			log.Debugf("trying to do registration of instance, instanceID = %s", inst.InstanceId)
+
+			// If inst is in the mapping, just heart beat it in servicecenter
+			if s.heartbeatInstances(mapping, inst) {
+				continue
+			}
+
+			item := &pb.MappingEntry{
+				ClusterName:   clusterName,
+				DomainProject: svc.DomainProject,
+				OrgServiceID:  svc.ServiceId,
+				OrgInstanceID: inst.InstanceId,
+				CurServiceID:  svcID,
+				CurInstanceID: s.registryInstances(svc.DomainProject, svcID, inst),
+			}
+
+			// Use new serviceID and instanceID to update mapping data in this servicecenter
+			if item.CurInstanceID != "" {
+				mapping = append(mapping, item)
+			}
+		}
+
+		if action == string(registry.EVT_DELETE) {
+			log.Debugf("trying to do unRegistration of instance, instanceID = %s", inst.InstanceId)
+			if len(mapping) == 0 {
+				err := errors.New("mapping does not exist")
+				log.Errorf(err, "fail to handle unregister")
+				return
+			}
+
+			index := 0
+			ctx := context.Background()
+
+			for _, val := range mapping {
+				if val.OrgInstanceID == inst.InstanceId {
+					err := s.servicecenter.UnregisterInstance(ctx, val.DomainProject, val.CurServiceID, val.CurInstanceID)
+					if err != nil {
+						log.Errorf(err, "Servicecenter delete instance failed")
+					}
+					log.Debugf("Unregistered instance, InstanceID = %s", val.CurInstanceID)
+					break
+				}
+				index++
+			}
+
+			switch {
+			case len(mapping) == 1:
+				mapping = nil
+			case index == 0:
+				mapping = mapping[index+1:]
+			case index == len(mapping)-1:
+				mapping = mapping[:index]
+			case index == len(mapping):
+				err := errors.New("the instance is not in the mapping")
+				log.Errorf(err, "can not find instance to delete, OrgInstanceID: %s", inst.InstanceId)
+			default:
+				mapping = append(mapping[:index], mapping[index+1:]...)
+			}
+		}
+		s.storage.UpdateMapByCluster(clusterName, mapping)
+	}
 }

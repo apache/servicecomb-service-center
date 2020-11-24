@@ -35,6 +35,10 @@ const (
 	defaultCertName   = "server.cer"
 	defaultKeyName    = "server_key.pem"
 
+	defaultHttpPort         = 30300
+	defaultCompressed       = true
+	defaultCompressMinBytes = 1400
+
 	// ModeSingle run as a single server
 	ModeSingle = "single"
 	// ModeCluster run as a cluster peer
@@ -53,6 +57,13 @@ type Config struct {
 	Task       Task         `yaml:"task"`
 	Registry   Registry     `yaml:"registry"`
 	TLSConfigs []*TLSConfig `yaml:"tlsConfigs"`
+	HttpConfig HttpConfig   `yaml:"HttpConfig"`
+}
+
+type HttpConfig struct {
+	HttpAddr         string `yaml:"httpAddr"`
+	Compressed       bool   `yaml:"compressed"`
+	CompressMinBytes int    `yaml:"compressMinBytes"`
 }
 
 // Listener Configuration for Syncer listener

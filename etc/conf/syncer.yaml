@@ -36,6 +36,11 @@ registry:
   tlsMount:
     enabled: false
     name: servicecenter
+httpConfig:
+  # Address to trigger full synchronization task
+  httpAddr: 0.0.0.0:30300
+  compressed: true
+  compressMinBytes: 1400
 tlsConfigs:
   - name: syncer
     verifyPeer: true
