@@ -19,13 +19,12 @@ package v1
 
 import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/rest/controller"
-	"github.com/apache/servicecomb-service-center/server/scerror"
 	"github.com/apache/servicecomb-service-center/server/service/gov"
+	"github.com/go-chassis/cari/discovery"
 	"io/ioutil"
 	"net/http"
-
-	"github.com/apache/servicecomb-service-center/pkg/rest"
 )
 
 type Governance struct {
@@ -37,13 +36,13 @@ func (t *Governance) Create(w http.ResponseWriter, req *http.Request) {
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		log.Error("read body err", err)
-		controller.WriteError(w, scerror.ErrInternal, err.Error())
+		controller.WriteError(w, discovery.ErrInternal, err.Error())
 		return
 	}
 	err = gov.Create(kind, body)
 	if err != nil {
 		log.Error("create gov err", err)
-		controller.WriteError(w, scerror.ErrInternal, err.Error())
+		controller.WriteError(w, discovery.ErrInternal, err.Error())
 		return
 	}
 	w.WriteHeader(http.StatusOK)

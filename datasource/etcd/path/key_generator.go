@@ -18,8 +18,8 @@
 package path
 
 import (
-	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/go-chassis/cari/discovery"
 )
 
 const (
@@ -187,7 +187,7 @@ func GenerateRuleIndexKey(domainProject string, serviceID string, attr string, p
 	}, SPLIT)
 }
 
-func GenerateServiceIndexKey(key *registry.MicroServiceKey) string {
+func GenerateServiceIndexKey(key *discovery.MicroServiceKey) string {
 	return util.StringJoin([]string{
 		GetServiceIndexRootKey(key.Tenant),
 		key.Environment,
@@ -197,7 +197,7 @@ func GenerateServiceIndexKey(key *registry.MicroServiceKey) string {
 	}, SPLIT)
 }
 
-func GenerateServiceAliasKey(key *registry.MicroServiceKey) string {
+func GenerateServiceAliasKey(key *discovery.MicroServiceKey) string {
 	return util.StringJoin([]string{
 		GetServiceAliasRootKey(key.Tenant),
 		key.Environment,
@@ -263,7 +263,7 @@ func GenerateInstanceLeaseKey(domainProject string, serviceID string, instanceID
 	}, SPLIT)
 }
 
-func GenerateServiceDependencyRuleKey(serviceType string, domainProject string, in *registry.MicroServiceKey) string {
+func GenerateServiceDependencyRuleKey(serviceType string, domainProject string, in *discovery.MicroServiceKey) string {
 	if in == nil {
 		return util.StringJoin([]string{
 			GetServiceDependencyRuleRootKey(domainProject),
@@ -288,11 +288,11 @@ func GenerateServiceDependencyRuleKey(serviceType string, domainProject string, 
 	}, SPLIT)
 }
 
-func GenerateConsumerDependencyRuleKey(domainProject string, in *registry.MicroServiceKey) string {
+func GenerateConsumerDependencyRuleKey(domainProject string, in *discovery.MicroServiceKey) string {
 	return GenerateServiceDependencyRuleKey(DepsConsumer, domainProject, in)
 }
 
-func GenerateProviderDependencyRuleKey(domainProject string, in *registry.MicroServiceKey) string {
+func GenerateProviderDependencyRuleKey(domainProject string, in *discovery.MicroServiceKey) string {
 	return GenerateServiceDependencyRuleKey(DepsProvider, domainProject, in)
 }
 

@@ -23,7 +23,7 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
+	"github.com/go-chassis/cari/discovery"
 	"strings"
 
 	"context"
@@ -77,7 +77,7 @@ func (i *ClusterIndexer) search(ctx context.Context, opts ...etcdclient.PluginOp
 func (i *ClusterIndexer) searchSchemas(ctx context.Context, op etcdclient.PluginOp) (*sd.Response, error) {
 	var (
 		resp  *sd.Response
-		scErr *scerr.Error
+		scErr *discovery.Error
 	)
 	domainProject, serviceID, schemaID := path.GetInfoFromSchemaKV(op.Key)
 	if op.Prefix && len(schemaID) == 0 {
@@ -94,7 +94,7 @@ func (i *ClusterIndexer) searchSchemas(ctx context.Context, op etcdclient.Plugin
 func (i *ClusterIndexer) searchInstances(ctx context.Context, op etcdclient.PluginOp) (r *sd.Response, err error) {
 	var (
 		resp  *sd.Response
-		scErr *scerr.Error
+		scErr *discovery.Error
 	)
 	serviceID, instanceID, domainProject := path.GetInfoFromInstKV(op.Key)
 	dp := strings.Split(domainProject, "/")

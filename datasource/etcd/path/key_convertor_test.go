@@ -18,7 +18,7 @@ package path_test
 
 import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
-	"github.com/apache/servicecomb-service-center/pkg/registry"
+	"github.com/go-chassis/cari/discovery"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -63,7 +63,7 @@ func TestGetInfoFromKV(t *testing.T) {
 	s, d = path.GetInfoFromTagKV([]byte("sdf"))
 	assert.False(t, d != "" || s != "")
 
-	key := path.GetInfoFromSvcIndexKV([]byte(path.GenerateServiceIndexKey(&registry.MicroServiceKey{
+	key := path.GetInfoFromSvcIndexKV([]byte(path.GenerateServiceIndexKey(&discovery.MicroServiceKey{
 		Tenant:      "a/b",
 		AppId:       "c",
 		ServiceName: "d",
@@ -100,14 +100,14 @@ func TestGetInfoFromKV(t *testing.T) {
 	s, d, u = path.GetInfoFromDependencyQueueKV([]byte("sdf"))
 	assert.False(t, s != "" || d != "" || u != "")
 
-	dt, k := path.GetInfoFromDependencyRuleKV([]byte(path.GenerateProviderDependencyRuleKey("a/b", &registry.MicroServiceKey{
+	dt, k := path.GetInfoFromDependencyRuleKV([]byte(path.GenerateProviderDependencyRuleKey("a/b", &discovery.MicroServiceKey{
 		Tenant:      "a/b",
 		AppId:       "c",
 		ServiceName: "*",
 	})))
 	assert.False(t, dt != path.DepsProvider || k == nil || k.AppId != "" || k.ServiceName != "*")
 
-	dt, k = path.GetInfoFromDependencyRuleKV([]byte(path.GenerateProviderDependencyRuleKey("a/b", &registry.MicroServiceKey{
+	dt, k = path.GetInfoFromDependencyRuleKV([]byte(path.GenerateProviderDependencyRuleKey("a/b", &discovery.MicroServiceKey{
 		Tenant:      "a/b",
 		AppId:       "c",
 		ServiceName: "d",

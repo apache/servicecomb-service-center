@@ -23,10 +23,10 @@ import (
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/proto"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/connection/grpc"
 	"github.com/apache/servicecomb-service-center/server/connection/ws"
+	pb "github.com/go-chassis/cari/discovery"
 	"github.com/gorilla/websocket"
 )
 

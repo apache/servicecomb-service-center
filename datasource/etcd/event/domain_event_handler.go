@@ -20,8 +20,8 @@ package event
 import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
-	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/server/metrics"
+	"github.com/go-chassis/cari/discovery"
 )
 
 // DomainEventHandler report domain & project total number
@@ -35,9 +35,9 @@ func (h *DomainEventHandler) Type() sd.Type {
 func (h *DomainEventHandler) OnEvent(evt sd.KvEvent) {
 	action := evt.Type
 	switch action {
-	case registry.EVT_INIT, registry.EVT_CREATE:
+	case discovery.EVT_INIT, discovery.EVT_CREATE:
 		metrics.ReportDomains(1)
-	case registry.EVT_DELETE:
+	case discovery.EVT_DELETE:
 		metrics.ReportDomains(-1)
 	}
 }

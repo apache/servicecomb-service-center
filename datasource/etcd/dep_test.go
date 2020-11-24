@@ -23,8 +23,7 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/event"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
+	pb "github.com/go-chassis/cari/discovery"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -149,7 +148,7 @@ func Test_Creat(t *testing.T) {
 		}, false)
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrServiceNotExists, resp.GetCode())
+		assert.Equal(t, pb.ErrServiceNotExists, resp.GetCode())
 
 		DependencyHandle(t)
 
@@ -532,7 +531,7 @@ func Test_Get(t *testing.T) {
 		})
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, scerr.ErrServiceNotExists, resp.Response.GetCode())
+		assert.Equal(t, pb.ErrServiceNotExists, resp.Response.GetCode())
 
 		respCreateF, err := datasource.Instance().RegisterService(depGetContext(), &pb.CreateServiceRequest{
 			Service: &pb.MicroService{

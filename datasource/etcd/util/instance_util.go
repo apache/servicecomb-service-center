@@ -31,10 +31,8 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
-	rmodel "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
+	pb "github.com/go-chassis/cari/discovery"
 )
 
 func GetLeaseID(ctx context.Context, domainProject string, serviceID string, instanceID string) (int64, error) {
@@ -185,8 +183,8 @@ func QueryAllProvidersInstances(ctx context.Context, selfServiceID string) (resu
 
 		for _, kv := range kvs {
 			results = append(results, &pb.WatchInstanceResponse{
-				Response: rmodel.CreateResponse(rmodel.ResponseSuccess, "List instance successfully."),
-				Action:   string(rmodel.EVT_INIT),
+				Response: pb.CreateResponse(pb.ResponseSuccess, "List instance successfully."),
+				Action:   string(pb.EVT_INIT),
 				Key: &pb.MicroServiceKey{
 					Environment: service.Environment,
 					AppId:       service.AppId,
@@ -215,19 +213,19 @@ func QueryServiceInstancesKvs(ctx context.Context, serviceID string, rev int64) 
 	return resp.Kvs, nil
 }
 
-func UpdateInstance(ctx context.Context, domainProject string, instance *pb.MicroServiceInstance) *scerr.Error {
+func UpdateInstance(ctx context.Context, domainProject string, instance *pb.MicroServiceInstance) *pb.Error {
 	leaseID, err := GetLeaseID(ctx, domainProject, instance.ServiceId, instance.InstanceId)
 	if err != nil {
-		return scerr.NewError(scerr.ErrInternal, err.Error())
+		return pb.NewError(pb.ErrInternal, err.Error())
 	}
 	if leaseID == -1 {
-		return scerr.NewError(scerr.ErrInstanceNotExists, "Instance's leaseId not exist.")
+		return pb.NewError(pb.ErrInstanceNotExists, "Instance's leaseId not exist.")
 	}
 
 	instance.ModTimestamp = strconv.FormatInt(time.Now().Unix(), 10)
 	data, err := json.Marshal(instance)
 	if err != nil {
-		return scerr.NewError(scerr.ErrInternal, err.Error())
+		return pb.NewError(pb.ErrInternal, err.Error())
 	}
 
 	key := path.GenerateInstanceKey(domainProject, instance.ServiceId, instance.InstanceId)
@@ -242,20 +240,20 @@ func UpdateInstance(ctx context.Context, domainProject string, instance *pb.Micr
 			client.CmpNotEqual, 0)},
 		nil)
 	if err != nil {
-		return scerr.NewError(scerr.ErrUnavailableBackend, err.Error())
+		return pb.NewError(pb.ErrUnavailableBackend, err.Error())
 	}
 	if !resp.Succeeded {
-		return scerr.NewError(scerr.ErrInstanceNotExists, "Instance does not exist.")
+		return pb.NewError(pb.ErrInstanceNotExists, "Instance does not exist.")
 	}
 	return nil
 }
 
 func AppendFindResponse(ctx context.Context, index int64, resp *pb.Response, instances []*pb.MicroServiceInstance,
 	updatedResult *[]*pb.FindResult, notModifiedResult *[]int64, failedResult **pb.FindFailedResult) {
-	if code := resp.GetCode(); code != rmodel.ResponseSuccess {
+	if code := resp.GetCode(); code != pb.ResponseSuccess {
 		if *failedResult == nil {
 			*failedResult = &pb.FindFailedResult{
-				Error: scerr.NewError(code, resp.GetMessage()),
+				Error: pb.NewError(code, resp.GetMessage()),
 			}
 		}
 		(*failedResult).Indexes = append((*failedResult).Indexes, index)

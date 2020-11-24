@@ -21,8 +21,7 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/event"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
+	pb "github.com/go-chassis/cari/discovery"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"strconv"
@@ -169,7 +168,7 @@ var _ = Describe("'Dependency' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respCreateDependency.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respCreateDependency.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("consumer version is invalid")
 				respCreateDependency, err = serviceResource.CreateDependenciesForMicroServices(getContext(), &pb.CreateDependenciesRequest{
@@ -185,7 +184,7 @@ var _ = Describe("'Dependency' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respCreateDependency.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respCreateDependency.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 				respCreateDependency, err = serviceResource.CreateDependenciesForMicroServices(getContext(), &pb.CreateDependenciesRequest{
 					Dependencies: []*pb.ConsumerDependency{
 						{
@@ -199,7 +198,7 @@ var _ = Describe("'Dependency' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respCreateDependency.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respCreateDependency.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 				respCreateDependency, err = serviceResource.CreateDependenciesForMicroServices(getContext(), &pb.CreateDependenciesRequest{
 					Dependencies: []*pb.ConsumerDependency{
 						{
@@ -213,7 +212,7 @@ var _ = Describe("'Dependency' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respCreateDependency.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respCreateDependency.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 				respCreateDependency, err = serviceResource.CreateDependenciesForMicroServices(getContext(), &pb.CreateDependenciesRequest{
 					Dependencies: []*pb.ConsumerDependency{
 						{
@@ -227,7 +226,7 @@ var _ = Describe("'Dependency' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respCreateDependency.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respCreateDependency.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 				respCreateDependency, err = serviceResource.CreateDependenciesForMicroServices(getContext(), &pb.CreateDependenciesRequest{
 					Dependencies: []*pb.ConsumerDependency{
 						{
@@ -241,7 +240,7 @@ var _ = Describe("'Dependency' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respCreateDependency.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respCreateDependency.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("consumer serviceName is invalid")
 				respCreateDependency, err = serviceResource.CreateDependenciesForMicroServices(getContext(), &pb.CreateDependenciesRequest{
@@ -389,7 +388,7 @@ var _ = Describe("'Dependency' service", func() {
 					Dependencies: deps,
 				})
 				Expect(err).To(BeNil())
-				Expect(respCreateDependency.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respCreateDependency.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 			})
 		})
 
@@ -796,7 +795,7 @@ var _ = Describe("'Dependency' service", func() {
 					VersionRule:       "1.0.0+",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrServiceNotExists))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrServiceNotExists))
 
 				respCreateF, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
 					Service: &pb.MicroService{

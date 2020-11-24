@@ -31,12 +31,11 @@ import (
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
+	pb "github.com/go-chassis/cari/discovery"
 	"strconv"
 	"time"
 )
@@ -95,7 +94,7 @@ func (ds *DataSource) RegisterService(ctx context.Context, request *pb.CreateSer
 		log.Errorf(err, "create micro-service[%s] failed, json marshal service failed, operator: %s",
 			serviceFlag, remoteIP)
 		return &pb.CreateServiceResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
 	}
 
@@ -128,7 +127,7 @@ func (ds *DataSource) RegisterService(ctx context.Context, request *pb.CreateSer
 		log.Errorf(err, "create micro-service[%s] failed, operator: %s",
 			serviceFlag, remoteIP)
 		return &pb.CreateServiceResponse{
-			Response: pb.CreateResponse(scerr.ErrUnavailableBackend, err.Error()),
+			Response: pb.CreateResponse(pb.ErrUnavailableBackend, err.Error()),
 		}, err
 	}
 	if !resp.Succeeded {
@@ -138,7 +137,7 @@ func (ds *DataSource) RegisterService(ctx context.Context, request *pb.CreateSer
 				log.Warnf("create micro-service[%s] failed, service already exists, operator: %s",
 					serviceFlag, remoteIP)
 				return &pb.CreateServiceResponse{
-					Response: pb.CreateResponse(scerr.ErrServiceAlreadyExists,
+					Response: pb.CreateResponse(pb.ErrServiceAlreadyExists,
 						"ServiceID conflict or found the same service with different id."),
 				}, nil
 			}
@@ -149,7 +148,7 @@ func (ds *DataSource) RegisterService(ctx context.Context, request *pb.CreateSer
 			log.Errorf(nil, "create micro-service[%s] failed, unexpected txn response, operator: %s",
 				serviceFlag, remoteIP)
 			return &pb.CreateServiceResponse{
-				Response: pb.CreateResponse(scerr.ErrInternal, "Unexpected txn response."),
+				Response: pb.CreateResponse(pb.ErrInternal, "Unexpected txn response."),
 			}, nil
 		}
 
@@ -181,7 +180,7 @@ func (ds *DataSource) GetServices(ctx context.Context, request *pb.GetServicesRe
 	if err != nil {
 		log.Errorf(err, "get all services by domain failed")
 		return &pb.GetServicesResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
 	}
 
@@ -199,13 +198,13 @@ func (ds *DataSource) GetService(ctx context.Context, request *pb.GetServiceRequ
 	if err != nil {
 		log.Errorf(err, "get micro-service[%s] failed, get service file failed", request.ServiceId)
 		return &pb.GetServiceResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
 	}
 	if singleService == nil {
 		log.Errorf(nil, "get micro-service[%s] failed, service does not exist", request.ServiceId)
 		return &pb.GetServiceResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+			Response: pb.CreateResponse(pb.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 	return &pb.GetServiceResponse{
@@ -221,12 +220,12 @@ func (ds *DataSource) GetServiceDetail(ctx context.Context, request *pb.GetServi
 	service, err := serviceUtil.GetService(ctx, domainProject, request.ServiceId)
 	if service == nil {
 		return &pb.GetServiceDetailResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+			Response: pb.CreateResponse(pb.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 	if err != nil {
 		return &pb.GetServiceDetailResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
 	}
 
@@ -242,7 +241,7 @@ func (ds *DataSource) GetServiceDetail(ctx context.Context, request *pb.GetServi
 		log.Errorf(err, "get service[%s/%s/%s] all versions failed",
 			service.Environment, service.AppId, service.ServiceName)
 		return &pb.GetServiceDetailResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
 	}
 
@@ -254,7 +253,7 @@ func (ds *DataSource) GetServiceDetail(ctx context.Context, request *pb.GetServi
 	})
 	if err != nil {
 		return &pb.GetServiceDetailResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
 	}
 
@@ -291,7 +290,7 @@ func (ds *DataSource) GetServicesInfo(ctx context.Context, request *pb.GetServic
 		st, err = statistics(ctx, request.WithShared)
 		if err != nil {
 			return &pb.GetServicesInfoResponse{
-				Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+				Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 			}, err
 		}
 		if len(optionMap) == 1 {
@@ -307,7 +306,7 @@ func (ds *DataSource) GetServicesInfo(ctx context.Context, request *pb.GetServic
 	if err != nil {
 		log.Errorf(err, "get all services by domain failed")
 		return &pb.GetServicesInfoResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
 	}
 
@@ -334,7 +333,7 @@ func (ds *DataSource) GetServicesInfo(ctx context.Context, request *pb.GetServic
 		})
 		if err != nil {
 			return &pb.GetServicesInfoResponse{
-				Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+				Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 			}, err
 		}
 		serviceDetail.MicroService = service
@@ -413,19 +412,19 @@ func (ds *DataSource) ExistService(ctx context.Context, request *pb.GetExistence
 	if err != nil {
 		log.Errorf(err, "micro-service[%s] exist failed, find serviceIDs failed", serviceFlag)
 		return &pb.GetExistenceResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
 	}
 	if !exist {
 		log.Infof("micro-service[%s] exist failed, service does not exist", serviceFlag)
 		return &pb.GetExistenceResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceNotExists, serviceFlag+" does not exist."),
+			Response: pb.CreateResponse(pb.ErrServiceNotExists, serviceFlag+" does not exist."),
 		}, nil
 	}
 	if len(ids) == 0 {
 		log.Infof("micro-service[%s] exist failed, version mismatch", serviceFlag)
 		return &pb.GetExistenceResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceVersionNotExists, serviceFlag+" version mismatch."),
+			Response: pb.CreateResponse(pb.ErrServiceVersionNotExists, serviceFlag+" version mismatch."),
 		}, nil
 	}
 	return &pb.GetExistenceResponse{
@@ -445,14 +444,14 @@ func (ds *DataSource) UpdateService(ctx context.Context, request *pb.UpdateServi
 		log.Errorf(err, "update service[%s] properties failed, get service file failed, operator: %s",
 			request.ServiceId, remoteIP)
 		return &pb.UpdateServicePropsResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
 	}
 	if microservice == nil {
 		log.Errorf(nil, "update service[%s] properties failed, service does not exist, operator: %s",
 			request.ServiceId, remoteIP)
 		return &pb.UpdateServicePropsResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+			Response: pb.CreateResponse(pb.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 
@@ -465,7 +464,7 @@ func (ds *DataSource) UpdateService(ctx context.Context, request *pb.UpdateServi
 		log.Errorf(err, "update service[%s] properties failed, json marshal service failed, operator: %s",
 			request.ServiceId, remoteIP)
 		return &pb.UpdateServicePropsResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
 	}
 
@@ -479,14 +478,14 @@ func (ds *DataSource) UpdateService(ctx context.Context, request *pb.UpdateServi
 	if err != nil {
 		log.Errorf(err, "update service[%s] properties failed, operator: %s", request.ServiceId, remoteIP)
 		return &pb.UpdateServicePropsResponse{
-			Response: pb.CreateResponse(scerr.ErrUnavailableBackend, err.Error()),
+			Response: pb.CreateResponse(pb.ErrUnavailableBackend, err.Error()),
 		}, err
 	}
 	if !resp.Succeeded {
 		log.Errorf(err, "update service[%s] properties failed, service does not exist, operator: %s",
 			request.ServiceId, remoteIP)
 		return &pb.UpdateServicePropsResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+			Response: pb.CreateResponse(pb.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 
@@ -535,7 +534,7 @@ func (ds *DataSource) RegisterInstance(ctx context.Context, request *pb.Register
 			log.Errorf(err, "register service[%s]'s instance failed, endpoints %v, host '%s', operator %s",
 				instance.ServiceId, instance.Endpoints, instance.HostName, remoteIP)
 			return &pb.RegisterInstanceResponse{
-				Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+				Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 			}, nil
 		}
 		switch resp.Response.GetCode() {
@@ -546,7 +545,7 @@ func (ds *DataSource) RegisterInstance(ctx context.Context, request *pb.Register
 				Response:   resp.Response,
 				InstanceId: instance.InstanceId,
 			}, nil
-		case scerr.ErrInstanceNotExists:
+		case pb.ErrInstanceNotExists:
 			// register a new one
 		default:
 			log.Errorf(err, "register instance failed, reuse instance[%s/%s], operator %s",
@@ -602,7 +601,7 @@ func (ds *DataSource) RegisterInstance(ctx context.Context, request *pb.Register
 			"register instance failed, %s, instanceID %s, operator %s",
 			instanceFlag, instanceID, remoteIP)
 		return &pb.RegisterInstanceResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
 	}
 
@@ -610,7 +609,7 @@ func (ds *DataSource) RegisterInstance(ctx context.Context, request *pb.Register
 	if err != nil {
 		log.Errorf(err, "grant lease failed, %s, operator: %s", instanceFlag, remoteIP)
 		return &pb.RegisterInstanceResponse{
-			Response: pb.CreateResponse(scerr.ErrUnavailableBackend, err.Error()),
+			Response: pb.CreateResponse(pb.ErrUnavailableBackend, err.Error()),
 		}, err
 	}
 
@@ -635,7 +634,7 @@ func (ds *DataSource) RegisterInstance(ctx context.Context, request *pb.Register
 			"register instance failed, %s, instanceID %s, operator %s",
 			instanceFlag, instanceID, remoteIP)
 		return &pb.RegisterInstanceResponse{
-			Response: pb.CreateResponse(scerr.ErrUnavailableBackend, err.Error()),
+			Response: pb.CreateResponse(pb.ErrUnavailableBackend, err.Error()),
 		}, err
 	}
 	if !resp.Succeeded {
@@ -643,7 +642,7 @@ func (ds *DataSource) RegisterInstance(ctx context.Context, request *pb.Register
 			"register instance failed, %s, instanceID %s, operator %s: service does not exist",
 			instanceFlag, instanceID, remoteIP)
 		return &pb.RegisterInstanceResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+			Response: pb.CreateResponse(pb.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 
@@ -673,14 +672,14 @@ func (ds *DataSource) GetInstance(ctx context.Context, request *pb.GetOneInstanc
 			log.Errorf(err, "get consumer failed, consumer[%s] find provider instance[%s/%s]",
 				request.ConsumerServiceId, request.ProviderServiceId, request.ProviderInstanceId)
 			return &pb.GetOneInstanceResponse{
-				Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+				Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 			}, err
 		}
 		if service == nil {
 			log.Errorf(nil, "consumer does not exist, consumer[%s] find provider instance[%s/%s]",
 				request.ConsumerServiceId, request.ProviderServiceId, request.ProviderInstanceId)
 			return &pb.GetOneInstanceResponse{
-				Response: pb.CreateResponse(scerr.ErrServiceNotExists,
+				Response: pb.CreateResponse(pb.ErrServiceNotExists,
 					fmt.Sprintf("Consumer[%s] does not exist.", request.ConsumerServiceId)),
 			}, nil
 		}
@@ -691,14 +690,14 @@ func (ds *DataSource) GetInstance(ctx context.Context, request *pb.GetOneInstanc
 		log.Errorf(err, "get provider failed, consumer[%s] find provider instance[%s/%s]",
 			request.ConsumerServiceId, request.ProviderServiceId, request.ProviderInstanceId)
 		return &pb.GetOneInstanceResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
 	}
 	if provider == nil {
 		log.Errorf(nil, "provider does not exist, consumer[%s] find provider instance[%s/%s]",
 			request.ConsumerServiceId, request.ProviderServiceId, request.ProviderInstanceId)
 		return &pb.GetOneInstanceResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceNotExists,
+			Response: pb.CreateResponse(pb.ErrServiceNotExists,
 				fmt.Sprintf("Provider[%s] does not exist.", request.ProviderServiceId)),
 		}, nil
 	}
@@ -719,14 +718,14 @@ func (ds *DataSource) GetInstance(ctx context.Context, request *pb.GetOneInstanc
 	if err != nil {
 		log.Errorf(err, "FindInstances.GetWithProviderID failed, %s failed", findFlag())
 		return &pb.GetOneInstanceResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
 	}
 	if item == nil || len(item.Instances) == 0 {
 		mes := fmt.Errorf("%s failed, provider instance does not exist", findFlag())
 		log.Errorf(mes, "FindInstances.GetWithProviderID failed")
 		return &pb.GetOneInstanceResponse{
-			Response: pb.CreateResponse(scerr.ErrInstanceNotExists, mes.Error()),
+			Response: pb.CreateResponse(pb.ErrInstanceNotExists, mes.Error()),
 		}, nil
 	}
 
@@ -754,14 +753,14 @@ func (ds *DataSource) GetInstances(ctx context.Context, request *pb.GetInstances
 			log.Errorf(err, "get consumer failed, consumer[%s] find provider instances",
 				request.ConsumerServiceId, request.ProviderServiceId)
 			return &pb.GetInstancesResponse{
-				Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+				Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 			}, err
 		}
 		if service == nil {
 			log.Errorf(nil, "consumer does not exist, consumer[%s] find provider instances",
 				request.ConsumerServiceId, request.ProviderServiceId)
 			return &pb.GetInstancesResponse{
-				Response: pb.CreateResponse(scerr.ErrServiceNotExists,
+				Response: pb.CreateResponse(pb.ErrServiceNotExists,
 					fmt.Sprintf("Consumer[%s] does not exist.", request.ConsumerServiceId)),
 			}, nil
 		}
@@ -772,14 +771,14 @@ func (ds *DataSource) GetInstances(ctx context.Context, request *pb.GetInstances
 		log.Errorf(err, "get provider failed, consumer[%s] find provider instances",
 			request.ConsumerServiceId, request.ProviderServiceId)
 		return &pb.GetInstancesResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
 	}
 	if provider == nil {
 		log.Errorf(nil, "provider does not exist, consumer[%s] find provider instances",
 			request.ConsumerServiceId, request.ProviderServiceId)
 		return &pb.GetInstancesResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceNotExists,
+			Response: pb.CreateResponse(pb.ErrServiceNotExists,
 				fmt.Sprintf("Provider[%s] does not exist.", request.ProviderServiceId)),
 		}, nil
 	}
@@ -799,14 +798,14 @@ func (ds *DataSource) GetInstances(ctx context.Context, request *pb.GetInstances
 	if err != nil {
 		log.Errorf(err, "FindInstances.GetWithProviderID failed, %s failed", findFlag())
 		return &pb.GetInstancesResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
 	}
 	if item == nil || len(item.ServiceIds) == 0 {
 		mes := fmt.Errorf("%s failed, provider instance does not exist", findFlag())
 		log.Errorf(mes, "FindInstances.GetWithProviderID failed")
 		return &pb.GetInstancesResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceNotExists, mes.Error()),
+			Response: pb.CreateResponse(pb.ErrServiceNotExists, mes.Error()),
 		}, nil
 	}
 
@@ -858,7 +857,7 @@ func (ds *DataSource) BatchGetProviderInstances(ctx context.Context, request *pb
 
 func (ds *DataSource) findInstances(ctx context.Context, domainProject, serviceID string, maxRevs []int64, counts []int64) (instances []*pb.MicroServiceInstance, err error) {
 	key := path.GenerateInstanceKey(domainProject, serviceID, "")
-	opts := append(serviceUtil.FromContext(ctx), registry.WithStrKey(key), registry.WithPrefix())
+	opts := append(serviceUtil.FromContext(ctx), client.WithStrKey(key), client.WithPrefix())
 	resp, err := kv.Store().Instance().Search(ctx, opts...)
 	if err != nil {
 		return nil, err
@@ -895,7 +894,7 @@ func (ds *DataSource) FindInstances(ctx context.Context, request *pb.FindInstanc
 		err := errors.New("rev request context is not type string")
 		log.Error("", err)
 		return &pb.FindInstancesResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
 	}
 
@@ -916,14 +915,14 @@ func (ds *DataSource) findInstance(ctx context.Context, request *pb.FindInstance
 			log.Errorf(err, "get consumer failed, consumer[%s] find provider[%s/%s/%s/%s]",
 				request.ConsumerServiceId, request.Environment, request.AppId, request.ServiceName, request.VersionRule)
 			return &pb.FindInstancesResponse{
-				Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+				Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 			}, err
 		}
 		if service == nil {
 			log.Errorf(nil, "consumer does not exist, consumer[%s] find provider[%s/%s/%s/%s]",
 				request.ConsumerServiceId, request.Environment, request.AppId, request.ServiceName, request.VersionRule)
 			return &pb.FindInstancesResponse{
-				Response: pb.CreateResponse(scerr.ErrServiceNotExists,
+				Response: pb.CreateResponse(pb.ErrServiceNotExists,
 					fmt.Sprintf("Consumer[%s] does not exist.", request.ConsumerServiceId)),
 			}, nil
 		}
@@ -945,14 +944,14 @@ func (ds *DataSource) findInstance(ctx context.Context, request *pb.FindInstance
 	if err != nil {
 		log.Errorf(err, "FindInstancesCache.Get failed, %s failed", findFlag)
 		return &pb.FindInstancesResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
 	}
 	if item == nil {
 		mes := fmt.Errorf("%s failed, provider does not exist", findFlag)
 		log.Errorf(mes, "FindInstancesCache.Get failed")
 		return &pb.FindInstancesResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceNotExists, mes.Error()),
+			Response: pb.CreateResponse(pb.ErrServiceNotExists, mes.Error()),
 		}, nil
 	}
 
@@ -970,13 +969,13 @@ func (ds *DataSource) findInstance(ctx context.Context, request *pb.FindInstance
 			mes := fmt.Errorf("%s failed, provider does not exist", findFlag)
 			log.Errorf(mes, "AddServiceVersionRule failed")
 			return &pb.FindInstancesResponse{
-				Response: pb.CreateResponse(scerr.ErrServiceNotExists, mes.Error()),
+				Response: pb.CreateResponse(pb.ErrServiceNotExists, mes.Error()),
 			}, nil
 		}
 		if err != nil {
 			log.Errorf(err, "AddServiceVersionRule failed, %s failed", findFlag)
 			return &pb.FindInstancesResponse{
-				Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+				Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 			}, err
 		}
 	}
@@ -998,14 +997,14 @@ func (ds *DataSource) findSharedServiceInstance(ctx context.Context, request *pb
 	if err != nil {
 		log.Errorf(err, "FindInstancesCache.Get failed, %s failed", findFlag)
 		return &pb.FindInstancesResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
 	}
 	if item == nil {
 		mes := fmt.Errorf("%s failed, provider does not exist", findFlag)
 		log.Errorf(mes, "FindInstancesCache.Get failed")
 		return &pb.FindInstancesResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceNotExists, mes.Error()),
+			Response: pb.CreateResponse(pb.ErrServiceNotExists, mes.Error()),
 		}, nil
 	}
 
@@ -1048,13 +1047,13 @@ func (ds *DataSource) UpdateInstanceStatus(ctx context.Context, request *pb.Upda
 	if err != nil {
 		log.Errorf(err, "update instance[%s] status failed", updateStatusFlag)
 		return &pb.UpdateInstanceStatusResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
 	}
 	if instance == nil {
 		log.Errorf(nil, "update instance[%s] status failed, instance does not exist", updateStatusFlag)
 		return &pb.UpdateInstanceStatusResponse{
-			Response: pb.CreateResponse(scerr.ErrInstanceNotExists, "Service instance does not exist."),
+			Response: pb.CreateResponse(pb.ErrInstanceNotExists, "Service instance does not exist."),
 		}, nil
 	}
 
@@ -1087,13 +1086,13 @@ func (ds *DataSource) UpdateInstanceProperties(ctx context.Context, request *pb.
 	if err != nil {
 		log.Errorf(err, "update instance[%s] properties failed", instanceFlag)
 		return &pb.UpdateInstancePropsResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
 	}
 	if instance == nil {
 		log.Errorf(nil, "update instance[%s] properties failed, instance does not exist", instanceFlag)
 		return &pb.UpdateInstancePropsResponse{
-			Response: pb.CreateResponse(scerr.ErrInstanceNotExists, "Service instance does not exist."),
+			Response: pb.CreateResponse(pb.ErrInstanceNotExists, "Service instance does not exist."),
 		}, nil
 	}
 
@@ -1160,7 +1159,7 @@ func (ds *DataSource) HeartbeatSet(ctx context.Context, request *pb.HeartbeatSet
 	}
 	log.Errorf(nil, "batch update heartbeats failed, %v", request.Instances)
 	return &pb.HeartbeatSetResponse{
-		Response:  pb.CreateResponse(scerr.ErrInstanceNotExists, "Heartbeat set failed."),
+		Response:  pb.CreateResponse(pb.ErrInstanceNotExists, "Heartbeat set failed."),
 		Instances: instanceHbRstArr,
 	}, nil
 }
@@ -1176,7 +1175,7 @@ func (ds *DataSource) BatchFind(ctx context.Context, request *pb.BatchFindInstan
 	response.Services, err = ds.batchFindServices(ctx, request)
 	if err != nil {
 		return &pb.BatchFindInstancesResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
 	}
 
@@ -1184,7 +1183,7 @@ func (ds *DataSource) BatchFind(ctx context.Context, request *pb.BatchFindInstan
 	response.Instances, err = ds.batchFindInstances(ctx, request)
 	if err != nil {
 		return &pb.BatchFindInstancesResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
 	}
 
@@ -1350,14 +1349,14 @@ func (ds *DataSource) ModifySchemas(ctx context.Context, request *pb.ModifySchem
 		log.Errorf(err, "modify service[%s] schemas failed, get service failed, operator: %s",
 			serviceID, remoteIP)
 		return &pb.ModifySchemasResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
 	}
 	if serviceInfo == nil {
 		log.Errorf(nil, "modify service[%s] schemas failed, service does not exist, operator: %s",
 			serviceID, remoteIP)
 		return &pb.ModifySchemasResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+			Response: pb.CreateResponse(pb.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 
@@ -1414,7 +1413,7 @@ func (ds *DataSource) ExistSchema(ctx context.Context, request *pb.GetExistenceR
 	if !serviceUtil.ServiceExist(ctx, domainProject, request.ServiceId) {
 		log.Warnf("schema[%s/%s] exist failed, service does not exist", request.ServiceId, request.SchemaId)
 		return &pb.GetExistenceResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "service does not exist."),
+			Response: pb.CreateResponse(pb.ErrServiceNotExists, "service does not exist."),
 		}, nil
 	}
 
@@ -1423,13 +1422,13 @@ func (ds *DataSource) ExistSchema(ctx context.Context, request *pb.GetExistenceR
 	if err != nil {
 		log.Errorf(err, "schema[%s/%s] exist failed, get schema failed", request.ServiceId, request.SchemaId)
 		return &pb.GetExistenceResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
 	}
 	if !exist {
 		log.Infof("schema[%s/%s] exist failed, schema does not exist", request.ServiceId, request.SchemaId)
 		return &pb.GetExistenceResponse{
-			Response: pb.CreateResponse(scerr.ErrSchemaNotExists, "schema does not exist."),
+			Response: pb.CreateResponse(pb.ErrSchemaNotExists, "schema does not exist."),
 		}, nil
 	}
 	schemaSummary, err := getSchemaSummary(ctx, domainProject, request.ServiceId, request.SchemaId)
@@ -1437,7 +1436,7 @@ func (ds *DataSource) ExistSchema(ctx context.Context, request *pb.GetExistenceR
 		log.Errorf(err, "schema[%s/%s] exist failed, get schema summary failed",
 			request.ServiceId, request.SchemaId)
 		return &pb.GetExistenceResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
 	}
 	return &pb.GetExistenceResponse{
@@ -1454,7 +1453,7 @@ func (ds *DataSource) GetSchema(ctx context.Context, request *pb.GetSchemaReques
 		log.Errorf(nil, "get schema[%s/%s] failed, service does not exist",
 			request.ServiceId, request.SchemaId)
 		return &pb.GetSchemaResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+			Response: pb.CreateResponse(pb.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 
@@ -1464,14 +1463,14 @@ func (ds *DataSource) GetSchema(ctx context.Context, request *pb.GetSchemaReques
 	if errDo != nil {
 		log.Errorf(errDo, "get schema[%s/%s] failed", request.ServiceId, request.SchemaId)
 		return &pb.GetSchemaResponse{
-			Response: pb.CreateResponse(scerr.ErrUnavailableBackend, errDo.Error()),
+			Response: pb.CreateResponse(pb.ErrUnavailableBackend, errDo.Error()),
 		}, errDo
 	}
 	if resp.Count == 0 {
 		log.Errorf(errDo, "get schema[%s/%s] failed, schema does not exists",
 			request.ServiceId, request.SchemaId)
 		return &pb.GetSchemaResponse{
-			Response: pb.CreateResponse(scerr.ErrSchemaNotExists, "Do not have this schema info."),
+			Response: pb.CreateResponse(pb.ErrSchemaNotExists, "Do not have this schema info."),
 		}, nil
 	}
 
@@ -1480,7 +1479,7 @@ func (ds *DataSource) GetSchema(ctx context.Context, request *pb.GetSchemaReques
 		log.Errorf(err, "get schema[%s/%s] failed, get schema summary failed",
 			request.ServiceId, request.SchemaId)
 		return &pb.GetSchemaResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
 	}
 
@@ -1499,13 +1498,13 @@ func (ds *DataSource) GetAllSchemas(ctx context.Context, request *pb.GetAllSchem
 	if err != nil {
 		log.Errorf(err, "get service[%s] all schemas failed, get service failed", request.ServiceId)
 		return &pb.GetAllSchemaResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
 	}
 	if service == nil {
 		log.Errorf(nil, "get service[%s] all schemas failed, service does not exist", request.ServiceId)
 		return &pb.GetAllSchemaResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+			Response: pb.CreateResponse(pb.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 
@@ -1523,7 +1522,7 @@ func (ds *DataSource) GetAllSchemas(ctx context.Context, request *pb.GetAllSchem
 	if errDo != nil {
 		log.Errorf(errDo, "get service[%s] all schema summaries failed", request.ServiceId)
 		return &pb.GetAllSchemaResponse{
-			Response: pb.CreateResponse(scerr.ErrUnavailableBackend, errDo.Error()),
+			Response: pb.CreateResponse(pb.ErrUnavailableBackend, errDo.Error()),
 		}, errDo
 	}
 
@@ -1535,7 +1534,7 @@ func (ds *DataSource) GetAllSchemas(ctx context.Context, request *pb.GetAllSchem
 		if errDo != nil {
 			log.Errorf(errDo, "get service[%s] all schemas failed", request.ServiceId)
 			return &pb.GetAllSchemaResponse{
-				Response: pb.CreateResponse(scerr.ErrUnavailableBackend, errDo.Error()),
+				Response: pb.CreateResponse(pb.ErrUnavailableBackend, errDo.Error()),
 			}, errDo
 		}
 	}
@@ -1575,7 +1574,7 @@ func (ds *DataSource) DeleteSchema(ctx context.Context, request *pb.DeleteSchema
 		log.Errorf(nil, "delete schema[%s/%s] failed, service does not exist, operator: %s",
 			request.ServiceId, request.SchemaId, remoteIP)
 		return &pb.DeleteSchemaResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+			Response: pb.CreateResponse(pb.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 
@@ -1585,14 +1584,14 @@ func (ds *DataSource) DeleteSchema(ctx context.Context, request *pb.DeleteSchema
 		log.Errorf(err, "delete schema[%s/%s] failed, operator: %s",
 			request.ServiceId, request.SchemaId, remoteIP)
 		return &pb.DeleteSchemaResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
 	}
 	if !exist {
 		log.Errorf(nil, "delete schema[%s/%s] failed, schema does not exist, operator: %s",
 			request.ServiceId, request.SchemaId, remoteIP)
 		return &pb.DeleteSchemaResponse{
-			Response: pb.CreateResponse(scerr.ErrSchemaNotExists, "Schema info does not exist."),
+			Response: pb.CreateResponse(pb.ErrSchemaNotExists, "Schema info does not exist."),
 		}, nil
 	}
 	epSummaryKey := path.GenerateServiceSchemaSummaryKey(domainProject, request.ServiceId, request.SchemaId)
@@ -1610,14 +1609,14 @@ func (ds *DataSource) DeleteSchema(ctx context.Context, request *pb.DeleteSchema
 		log.Errorf(errDo, "delete schema[%s/%s] failed, operator: %s",
 			request.ServiceId, request.SchemaId, remoteIP)
 		return &pb.DeleteSchemaResponse{
-			Response: pb.CreateResponse(scerr.ErrUnavailableBackend, errDo.Error()),
+			Response: pb.CreateResponse(pb.ErrUnavailableBackend, errDo.Error()),
 		}, errDo
 	}
 	if !resp.Succeeded {
 		log.Errorf(nil, "delete schema[%s/%s] failed, service does not exist, operator: %s",
 			request.ServiceId, request.SchemaId, remoteIP)
 		return &pb.DeleteSchemaResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+			Response: pb.CreateResponse(pb.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 
@@ -1637,7 +1636,7 @@ func (ds *DataSource) AddTags(ctx context.Context, request *pb.AddServiceTagsReq
 		log.Errorf(nil, "add service[%s]'s tags %v failed, service does not exist, operator: %s",
 			request.ServiceId, request.Tags, remoteIP)
 		return &pb.AddServiceTagsResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+			Response: pb.CreateResponse(pb.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 
@@ -1661,7 +1660,7 @@ func (ds *DataSource) AddTags(ctx context.Context, request *pb.AddServiceTagsReq
 		log.Errorf(err, "add service[%s]'s tags %v failed, get existed tag failed, operator: %s",
 			request.ServiceId, addTags, remoteIP)
 		return &pb.AddServiceTagsResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
 	}
 	for key, value := range dataTags {
@@ -1696,14 +1695,14 @@ func (ds *DataSource) GetTags(ctx context.Context, request *pb.GetServiceTagsReq
 	if !serviceUtil.ServiceExist(ctx, domainProject, request.ServiceId) {
 		log.Errorf(err, "get service[%s]'s tags failed, service does not exist", request.ServiceId)
 		return &pb.GetServiceTagsResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+			Response: pb.CreateResponse(pb.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 	tags, err := serviceUtil.GetTagsUtils(ctx, domainProject, request.ServiceId)
 	if err != nil {
 		log.Errorf(err, "get service[%s]'s tags failed, get tags failed", request.ServiceId)
 		return &pb.GetServiceTagsResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
 	}
 
@@ -1723,7 +1722,7 @@ func (ds *DataSource) UpdateTag(ctx context.Context, request *pb.UpdateServiceTa
 		log.Errorf(err, "update service[%s]'s tag[%s] failed, service does not exist, operator: %s",
 			request.ServiceId, tagFlag, remoteIP)
 		return &pb.UpdateServiceTagResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+			Response: pb.CreateResponse(pb.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 
@@ -1732,7 +1731,7 @@ func (ds *DataSource) UpdateTag(ctx context.Context, request *pb.UpdateServiceTa
 		log.Errorf(err, "update service[%s]'s tag[%s] failed, get tag failed, operator: %s",
 			request.ServiceId, tagFlag, remoteIP)
 		return &pb.UpdateServiceTagResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
 	}
 
@@ -1741,7 +1740,7 @@ func (ds *DataSource) UpdateTag(ctx context.Context, request *pb.UpdateServiceTa
 		log.Errorf(nil, "update service[%s]'s tag[%s] failed, tag does not exist, operator: %s",
 			request.ServiceId, tagFlag, remoteIP)
 		return &pb.UpdateServiceTagResponse{
-			Response: pb.CreateResponse(scerr.ErrTagNotExists, "Tag does not exist, please add one first."),
+			Response: pb.CreateResponse(pb.ErrTagNotExists, "Tag does not exist, please add one first."),
 		}, nil
 	}
 
@@ -1777,7 +1776,7 @@ func (ds *DataSource) DeleteTags(ctx context.Context, request *pb.DeleteServiceT
 		log.Errorf(nil, "delete service[%s]'s tags %v failed, service does not exist, operator: %s",
 			request.ServiceId, request.Keys, remoteIP)
 		return &pb.DeleteServiceTagsResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+			Response: pb.CreateResponse(pb.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 
@@ -1786,7 +1785,7 @@ func (ds *DataSource) DeleteTags(ctx context.Context, request *pb.DeleteServiceT
 		log.Errorf(err, "delete service[%s]'s tags %v failed, get service tags failed, operator: %s",
 			request.ServiceId, request.Keys, remoteIP)
 		return &pb.DeleteServiceTagsResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
 	}
 
@@ -1799,7 +1798,7 @@ func (ds *DataSource) DeleteTags(ctx context.Context, request *pb.DeleteServiceT
 			log.Errorf(nil, "delete service[%s]'s tags %v failed, tag[%s] does not exist, operator: %s",
 				request.ServiceId, request.Keys, key, remoteIP)
 			return &pb.DeleteServiceTagsResponse{
-				Response: pb.CreateResponse(scerr.ErrTagNotExists, "Delete tags failed for this key "+key+" does not exist."),
+				Response: pb.CreateResponse(pb.ErrTagNotExists, "Delete tags failed for this key "+key+" does not exist."),
 			}, nil
 		}
 		delete(copyTags, key)
@@ -1811,7 +1810,7 @@ func (ds *DataSource) DeleteTags(ctx context.Context, request *pb.DeleteServiceT
 		log.Errorf(err, "delete service[%s]'s tags %v failed, marshall service tags failed, operator: %s",
 			request.ServiceId, request.Keys, remoteIP)
 		return &pb.DeleteServiceTagsResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
 	}
 
@@ -1827,14 +1826,14 @@ func (ds *DataSource) DeleteTags(ctx context.Context, request *pb.DeleteServiceT
 		log.Errorf(err, "delete service[%s]'s tags %v failed, operator: %s",
 			request.ServiceId, request.Keys, remoteIP)
 		return &pb.DeleteServiceTagsResponse{
-			Response: pb.CreateResponse(scerr.ErrUnavailableBackend, err.Error()),
+			Response: pb.CreateResponse(pb.ErrUnavailableBackend, err.Error()),
 		}, err
 	}
 	if !resp.Succeeded {
 		log.Errorf(err, "delete service[%s]'s tags %v failed, service does not exist, operator: %s",
 			request.ServiceId, request.Keys, remoteIP)
 		return &pb.DeleteServiceTagsResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+			Response: pb.CreateResponse(pb.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 
@@ -1854,7 +1853,7 @@ func (ds *DataSource) AddRule(ctx context.Context, request *pb.AddServiceRulesRe
 		log.Errorf(nil, "add service[%s] rule failed, service does not exist, operator: %s",
 			request.ServiceId, remoteIP)
 		return &pb.AddServiceRulesResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Service does not exist."),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, "Service does not exist."),
 		}, nil
 	}
 	res := quota.NewApplyQuotaResource(quota.RuleQuotaType, domainProject, request.ServiceId, int64(len(request.Rules)))
@@ -1874,7 +1873,7 @@ func (ds *DataSource) AddRule(ctx context.Context, request *pb.AddServiceRulesRe
 	ruleType, _, err := serviceUtil.GetServiceRuleType(ctx, domainProject, request.ServiceId)
 	if err != nil {
 		return &pb.AddServiceRulesResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
 	}
 	ruleIDs := make([]string, 0, len(request.Rules))
@@ -1888,7 +1887,7 @@ func (ds *DataSource) AddRule(ctx context.Context, request *pb.AddServiceRulesRe
 				"add service[%s] rule failed, can not add different RuleType at the same time, operator: %s",
 				request.ServiceId, remoteIP)
 			return &pb.AddServiceRulesResponse{
-				Response: pb.CreateResponse(scerr.ErrBlackAndWhiteRule,
+				Response: pb.CreateResponse(pb.ErrBlackAndWhiteRule,
 					"Service can only contain one rule type, BLACK or WHITE."),
 			}, nil
 
@@ -1922,7 +1921,7 @@ func (ds *DataSource) AddRule(ctx context.Context, request *pb.AddServiceRulesRe
 			log.Errorf(err, "add service[%s] rule failed, marshal rule[%s/%s] failed, operator: %s",
 				request.ServiceId, ruleAdd.Attribute, ruleAdd.Pattern, remoteIP)
 			return &pb.AddServiceRulesResponse{
-				Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+				Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 			}, err
 		}
 
@@ -1945,14 +1944,14 @@ func (ds *DataSource) AddRule(ctx context.Context, request *pb.AddServiceRulesRe
 	if err != nil {
 		log.Errorf(err, "add service[%s] rule failed, operator: %s", request.ServiceId, remoteIP)
 		return &pb.AddServiceRulesResponse{
-			Response: pb.CreateResponse(scerr.ErrUnavailableBackend, err.Error()),
+			Response: pb.CreateResponse(pb.ErrUnavailableBackend, err.Error()),
 		}, err
 	}
 	if !resp.Succeeded {
 		log.Errorf(nil, "add service[%s] rule failed, service does not exist, operator: %s",
 			request.ServiceId, remoteIP)
 		return &pb.AddServiceRulesResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+			Response: pb.CreateResponse(pb.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 
@@ -1971,7 +1970,7 @@ func (ds *DataSource) GetRules(ctx context.Context, request *pb.GetServiceRulesR
 	if !serviceUtil.ServiceExist(ctx, domainProject, request.ServiceId) {
 		log.Errorf(nil, "get service[%s] rule failed, service does not exist", request.ServiceId)
 		return &pb.GetServiceRulesResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+			Response: pb.CreateResponse(pb.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 
@@ -1979,7 +1978,7 @@ func (ds *DataSource) GetRules(ctx context.Context, request *pb.GetServiceRulesR
 	if err != nil {
 		log.Errorf(err, "get service[%s] rule failed", request.ServiceId)
 		return &pb.GetServiceRulesResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
 	}
 
@@ -1999,7 +1998,7 @@ func (ds *DataSource) UpdateRule(ctx context.Context, request *pb.UpdateServiceR
 		log.Errorf(nil, "update service rule[%s/%s] failed, service does not exist, operator: %s",
 			request.ServiceId, request.RuleId, remoteIP)
 		return &pb.UpdateServiceRuleResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+			Response: pb.CreateResponse(pb.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 
@@ -2009,14 +2008,14 @@ func (ds *DataSource) UpdateRule(ctx context.Context, request *pb.UpdateServiceR
 		log.Errorf(err, "update service rule[%s/%s] failed, get rule type failed, operator: %s",
 			request.ServiceId, request.RuleId, remoteIP)
 		return &pb.UpdateServiceRuleResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
 	}
 	if ruleNum >= 1 && ruleType != request.Rule.RuleType {
 		log.Errorf(err, "update service rule[%s/%s] failed, can only exist one type, current type is %s, operator: %s",
 			request.ServiceId, request.RuleId, ruleType, remoteIP)
 		return &pb.UpdateServiceRuleResponse{
-			Response: pb.CreateResponse(scerr.ErrModifyRuleNotAllow, "Exist multiple rules,can not change rule type. Rule type is "+ruleType),
+			Response: pb.CreateResponse(pb.ErrModifyRuleNotAllow, "Exist multiple rules,can not change rule type. Rule type is "+ruleType),
 		}, nil
 	}
 
@@ -2025,14 +2024,14 @@ func (ds *DataSource) UpdateRule(ctx context.Context, request *pb.UpdateServiceR
 		log.Errorf(err, "update service rule[%s/%s] failed, query service rule failed, operator: %s",
 			request.ServiceId, request.RuleId, remoteIP)
 		return &pb.UpdateServiceRuleResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
 	}
 	if rule == nil {
 		log.Errorf(err, "update service rule[%s/%s] failed, service rule does not exist, operator: %s",
 			request.ServiceId, request.RuleId, remoteIP)
 		return &pb.UpdateServiceRuleResponse{
-			Response: pb.CreateResponse(scerr.ErrRuleNotExists, "This rule does not exist."),
+			Response: pb.CreateResponse(pb.ErrRuleNotExists, "This rule does not exist."),
 		}, nil
 	}
 
@@ -2058,7 +2057,7 @@ func (ds *DataSource) UpdateRule(ctx context.Context, request *pb.UpdateServiceR
 		log.Errorf(err, "update service rule[%s/%s] failed, marshal service rule failed, operator: %s",
 			request.ServiceId, request.RuleId, remoteIP)
 		return &pb.UpdateServiceRuleResponse{
-			Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
 	}
 	var opts []client.PluginOp
@@ -2081,14 +2080,14 @@ func (ds *DataSource) UpdateRule(ctx context.Context, request *pb.UpdateServiceR
 	if err != nil {
 		log.Errorf(err, "update service rule[%s/%s] failed, operator: %s", request.ServiceId, request.RuleId, remoteIP)
 		return &pb.UpdateServiceRuleResponse{
-			Response: pb.CreateResponse(scerr.ErrUnavailableBackend, err.Error()),
+			Response: pb.CreateResponse(pb.ErrUnavailableBackend, err.Error()),
 		}, err
 	}
 	if !resp.Succeeded {
 		log.Errorf(err, "update service rule[%s/%s] failed, service does not exist, operator: %s",
 			request.ServiceId, request.RuleId, remoteIP)
 		return &pb.UpdateServiceRuleResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+			Response: pb.CreateResponse(pb.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 
@@ -2108,7 +2107,7 @@ func (ds *DataSource) DeleteRule(ctx context.Context, request *pb.DeleteServiceR
 		log.Errorf(nil, "delete service[%s] rules %v failed, service does not exist, operator: %s",
 			request.ServiceId, request.RuleIds, remoteIP)
 		return &pb.DeleteServiceRulesResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+			Response: pb.CreateResponse(pb.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 
@@ -2123,14 +2122,14 @@ func (ds *DataSource) DeleteRule(ctx context.Context, request *pb.DeleteServiceR
 			log.Errorf(err, "delete service[%s] rules %v failed, get rule[%s] failed, operator: %s",
 				request.ServiceId, request.RuleIds, ruleID, remoteIP)
 			return &pb.DeleteServiceRulesResponse{
-				Response: pb.CreateResponse(scerr.ErrInternal, err.Error()),
+				Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 			}, err
 		}
 		if data == nil {
 			log.Errorf(nil, "delete service[%s] rules %v failed, rule[%s] does not exist, operator: %s",
 				request.ServiceId, request.RuleIds, ruleID, remoteIP)
 			return &pb.DeleteServiceRulesResponse{
-				Response: pb.CreateResponse(scerr.ErrRuleNotExists, "This rule does not exist."),
+				Response: pb.CreateResponse(pb.ErrRuleNotExists, "This rule does not exist."),
 			}, nil
 		}
 		indexKey = path.GenerateRuleIndexKey(domainProject, request.ServiceId, data.Attribute, data.Pattern)
@@ -2142,7 +2141,7 @@ func (ds *DataSource) DeleteRule(ctx context.Context, request *pb.DeleteServiceR
 		log.Errorf(nil, "delete service[%s] rules %v failed, no rule has been deleted, operator: %s",
 			request.ServiceId, request.RuleIds, remoteIP)
 		return &pb.DeleteServiceRulesResponse{
-			Response: pb.CreateResponse(scerr.ErrRuleNotExists, "No service rule has been deleted."),
+			Response: pb.CreateResponse(pb.ErrRuleNotExists, "No service rule has been deleted."),
 		}, nil
 	}
 
@@ -2154,14 +2153,14 @@ func (ds *DataSource) DeleteRule(ctx context.Context, request *pb.DeleteServiceR
 	if err != nil {
 		log.Errorf(err, "delete service[%s] rules %v failed, operator: %s", request.ServiceId, request.RuleIds, remoteIP)
 		return &pb.DeleteServiceRulesResponse{
-			Response: pb.CreateResponse(scerr.ErrUnavailableBackend, err.Error()),
+			Response: pb.CreateResponse(pb.ErrUnavailableBackend, err.Error()),
 		}, err
 	}
 	if !resp.Succeeded {
 		log.Errorf(err, "delete service[%s] rules %v failed, service does not exist, operator: %s",
 			request.ServiceId, request.RuleIds, remoteIP)
 		return &pb.DeleteServiceRulesResponse{
-			Response: pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."),
+			Response: pb.CreateResponse(pb.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 
@@ -2172,14 +2171,14 @@ func (ds *DataSource) DeleteRule(ctx context.Context, request *pb.DeleteServiceR
 }
 
 func (ds *DataSource) modifySchemas(ctx context.Context, domainProject string, service *pb.MicroService,
-	schemas []*pb.Schema) *scerr.Error {
+	schemas []*pb.Schema) *pb.Error {
 	remoteIP := util.GetIPFromContext(ctx)
 	serviceID := service.ServiceId
 	schemasFromDatabase, err := getSchemasFromDatabase(ctx, domainProject, serviceID)
 	if err != nil {
 		log.Errorf(nil, "modify service[%s] schemas failed, get schemas failed, operator: %s",
 			serviceID, remoteIP)
-		return scerr.NewError(scerr.ErrUnavailableBackend, err.Error())
+		return pb.NewError(pb.ErrUnavailableBackend, err.Error())
 	}
 
 	needUpdateSchemas, needAddSchemas, needDeleteSchemas, nonExistSchemaIds :=
@@ -2201,19 +2200,19 @@ func (ds *DataSource) modifySchemas(ctx context.Context, domainProject string, s
 			if err != nil {
 				log.Errorf(err, "modify service[%s] schemas failed, update service.Schemas failed, operator: %s",
 					serviceID, remoteIP)
-				return scerr.NewError(scerr.ErrInternal, err.Error())
+				return pb.NewError(pb.ErrInternal, err.Error())
 			}
 			pluginOps = append(pluginOps, opt)
 		} else {
 			if len(nonExistSchemaIds) != 0 {
 				errInfo := fmt.Errorf("non-existent schemaIDs %v", nonExistSchemaIds)
 				log.Errorf(errInfo, "modify service[%s] schemas failed, operator: %s", serviceID, remoteIP)
-				return scerr.NewError(scerr.ErrUndefinedSchemaID, errInfo.Error())
+				return pb.NewError(pb.ErrUndefinedSchemaID, errInfo.Error())
 			}
 			for _, needUpdateSchema := range needUpdateSchemas {
 				exist, err := isExistSchemaSummary(ctx, domainProject, serviceID, needUpdateSchema.SchemaId)
 				if err != nil {
-					return scerr.NewError(scerr.ErrInternal, err.Error())
+					return pb.NewError(pb.ErrInternal, err.Error())
 				}
 				if !exist {
 					opts := schemaWithDatabaseOpera(client.OpPut, domainProject, serviceID, needUpdateSchema)
@@ -2268,7 +2267,7 @@ func (ds *DataSource) modifySchemas(ctx context.Context, domainProject string, s
 		if err != nil {
 			log.Errorf(err, "modify service[%s] schemas failed, update service.Schemas failed, operator: %s",
 				serviceID, remoteIP)
-			return scerr.NewError(scerr.ErrInternal, err.Error())
+			return pb.NewError(pb.ErrInternal, err.Error())
 		}
 		pluginOps = append(pluginOps, opt)
 	}
@@ -2280,10 +2279,10 @@ func (ds *DataSource) modifySchemas(ctx context.Context, domainProject string, s
 				client.CmpNotEqual, 0)},
 			nil)
 		if err != nil {
-			return scerr.NewError(scerr.ErrUnavailableBackend, err.Error())
+			return pb.NewError(pb.ErrUnavailableBackend, err.Error())
 		}
 		if !resp.Succeeded {
-			return scerr.NewError(scerr.ErrServiceNotExists, "Service does not exist.")
+			return pb.NewError(pb.ErrServiceNotExists, "Service does not exist.")
 		}
 	}
 	return nil
@@ -2293,7 +2292,7 @@ func (ds *DataSource) isSchemaEditable(service *pb.MicroService) bool {
 	return (len(service.Environment) != 0 && service.Environment != pb.ENV_PROD) || ds.SchemaEditable
 }
 
-func (ds *DataSource) modifySchema(ctx context.Context, serviceID string, schema *pb.Schema) *scerr.Error {
+func (ds *DataSource) modifySchema(ctx context.Context, serviceID string, schema *pb.Schema) *pb.Error {
 	remoteIP := util.GetIPFromContext(ctx)
 	domainProject := util.ParseDomainProject(ctx)
 	schemaID := schema.SchemaId
@@ -2302,12 +2301,12 @@ func (ds *DataSource) modifySchema(ctx context.Context, serviceID string, schema
 	if err != nil {
 		log.Errorf(err, "modify schema[%s/%s] failed, get `microService failed, operator: %s",
 			serviceID, schemaID, remoteIP)
-		return scerr.NewError(scerr.ErrInternal, err.Error())
+		return pb.NewError(pb.ErrInternal, err.Error())
 	}
 	if microService == nil {
 		log.Errorf(nil, "modify schema[%s/%s] failed, microService does not exist, operator: %s",
 			serviceID, schemaID, remoteIP)
-		return scerr.NewError(scerr.ErrServiceNotExists, "Service does not exist")
+		return pb.NewError(pb.ErrServiceNotExists, "Service does not exist")
 	}
 
 	var pluginOps []client.PluginOp
@@ -2315,7 +2314,7 @@ func (ds *DataSource) modifySchema(ctx context.Context, serviceID string, schema
 
 	if !ds.isSchemaEditable(microService) {
 		if len(microService.Schemas) != 0 && !isExist {
-			return scerr.NewError(scerr.ErrUndefinedSchemaID, "Non-existent schemaID can't be added request "+pb.ENV_PROD)
+			return pb.NewError(pb.ErrUndefinedSchemaID, "Non-existent schemaID can't be added request "+pb.ENV_PROD)
 		}
 
 		key := path.GenerateServiceSchemaKey(domainProject, serviceID, schemaID)
@@ -2323,14 +2322,14 @@ func (ds *DataSource) modifySchema(ctx context.Context, serviceID string, schema
 		if err != nil {
 			log.Errorf(err, "modify schema[%s/%s] failed, get schema summary failed, operator: %s",
 				serviceID, schemaID, remoteIP)
-			return scerr.NewError(scerr.ErrUnavailableBackend, err.Error())
+			return pb.NewError(pb.ErrUnavailableBackend, err.Error())
 		}
 
 		if respSchema.Count != 0 {
 			if len(schema.Summary) == 0 {
 				log.Errorf(err, "%s mode, schema[%s/%s] already exists, can not be changed, operator: %s",
 					pb.ENV_PROD, serviceID, schemaID, remoteIP)
-				return scerr.NewError(scerr.ErrModifySchemaNotAllow,
+				return pb.NewError(pb.ErrModifySchemaNotAllow,
 					"schema already exist, can not be changed request "+pb.ENV_PROD)
 			}
 
@@ -2338,12 +2337,12 @@ func (ds *DataSource) modifySchema(ctx context.Context, serviceID string, schema
 			if err != nil {
 				log.Errorf(err, "check schema[%s/%s] summary existence failed, operator: %s",
 					serviceID, schemaID, remoteIP)
-				return scerr.NewError(scerr.ErrInternal, err.Error())
+				return pb.NewError(pb.ErrInternal, err.Error())
 			}
 			if exist {
 				log.Errorf(err, "%s mode, schema[%s/%s] already exist, can not be changed, operator: %s",
 					pb.ENV_PROD, serviceID, schemaID, remoteIP)
-				return scerr.NewError(scerr.ErrModifySchemaNotAllow, "schema already exist, can not be changed request "+pb.ENV_PROD)
+				return pb.NewError(pb.ErrModifySchemaNotAllow, "schema already exist, can not be changed request "+pb.ENV_PROD)
 			}
 		}
 
@@ -2353,7 +2352,7 @@ func (ds *DataSource) modifySchema(ctx context.Context, serviceID string, schema
 			if err != nil {
 				log.Errorf(err, "modify schema[%s/%s] failed, update microService.Schemas failed, operator: %s",
 					serviceID, schemaID, remoteIP)
-				return scerr.NewError(scerr.ErrInternal, err.Error())
+				return pb.NewError(pb.ErrInternal, err.Error())
 			}
 			pluginOps = append(pluginOps, opt)
 		}
@@ -2364,7 +2363,7 @@ func (ds *DataSource) modifySchema(ctx context.Context, serviceID string, schema
 			if err != nil {
 				log.Errorf(err, "modify schema[%s/%s] failed, update microService.Schemas failed, operator: %s",
 					serviceID, schemaID, remoteIP)
-				return scerr.NewError(scerr.ErrInternal, err.Error())
+				return pb.NewError(pb.ErrInternal, err.Error())
 			}
 			pluginOps = append(pluginOps, opt)
 		}
@@ -2379,10 +2378,10 @@ func (ds *DataSource) modifySchema(ctx context.Context, serviceID string, schema
 			client.CmpNotEqual, 0)},
 		nil)
 	if err != nil {
-		return scerr.NewError(scerr.ErrUnavailableBackend, err.Error())
+		return pb.NewError(pb.ErrUnavailableBackend, err.Error())
 	}
 	if !resp.Succeeded {
-		return scerr.NewError(scerr.ErrServiceNotExists, "Service does not exist.")
+		return pb.NewError(pb.ErrServiceNotExists, "Service does not exist.")
 	}
 	return nil
 }
@@ -2399,20 +2398,20 @@ func (ds *DataSource) DeleteServicePri(ctx context.Context, serviceID string, fo
 	if serviceID == core.Service.ServiceId {
 		err := errors.New("not allow to delete service center")
 		log.Errorf(err, "%s micro-service[%s] failed, operator: %s", title, serviceID, remoteIP)
-		return pb.CreateResponse(scerr.ErrInvalidParams, err.Error()), nil
+		return pb.CreateResponse(pb.ErrInvalidParams, err.Error()), nil
 	}
 
 	microservice, err := serviceUtil.GetService(ctx, domainProject, serviceID)
 	if err != nil {
 		log.Errorf(err, "%s micro-service[%s] failed, get service file failed, operator: %s",
 			title, serviceID, remoteIP)
-		return pb.CreateResponse(scerr.ErrInternal, err.Error()), err
+		return pb.CreateResponse(pb.ErrInternal, err.Error()), err
 	}
 
 	if microservice == nil {
 		log.Errorf(err, "%s micro-service[%s] failed, service does not exist, operator: %s",
 			title, serviceID, remoteIP)
-		return pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."), nil
+		return pb.CreateResponse(pb.ErrServiceNotExists, "Service does not exist."), nil
 	}
 
 	// 强制删除，则与该服务相关的信息删除，非强制删除： 如果作为该被依赖（作为provider，提供服务,且不是只存在自依赖）或者存在实例，则不能删除
@@ -2422,12 +2421,12 @@ func (ds *DataSource) DeleteServicePri(ctx context.Context, serviceID string, fo
 		if err != nil {
 			log.Errorf(err, "delete micro-service[%s] failed, get service dependency failed, operator: %s",
 				serviceID, remoteIP)
-			return pb.CreateResponse(scerr.ErrInternal, err.Error()), err
+			return pb.CreateResponse(pb.ErrInternal, err.Error()), err
 		}
 		if l := len(services); l > 1 || (l == 1 && services[0] != serviceID) {
 			log.Errorf(nil, "delete micro-service[%s] failed, other services[%d] depend on it, operator: %s",
 				serviceID, l, remoteIP)
-			return pb.CreateResponse(scerr.ErrDependedOnConsumer, "Can not delete this service, other service rely it."), err
+			return pb.CreateResponse(pb.ErrDependedOnConsumer, "Can not delete this service, other service rely it."), err
 		}
 
 		instancesKey := path.GenerateInstanceKey(domainProject, serviceID, "")
@@ -2438,13 +2437,13 @@ func (ds *DataSource) DeleteServicePri(ctx context.Context, serviceID string, fo
 		if err != nil {
 			log.Errorf(err, "delete micro-service[%s] failed, get instances failed, operator: %s",
 				serviceID, remoteIP)
-			return pb.CreateResponse(scerr.ErrUnavailableBackend, err.Error()), err
+			return pb.CreateResponse(pb.ErrUnavailableBackend, err.Error()), err
 		}
 
 		if rsp.Count > 0 {
 			log.Errorf(nil, "delete micro-service[%s] failed, service deployed instances[%s], operator: %s",
 				serviceID, rsp.Count, remoteIP)
-			return pb.CreateResponse(scerr.ErrDeployedInstance, "Can not delete the service deployed instance(s)."), err
+			return pb.CreateResponse(pb.ErrDeployedInstance, "Can not delete the service deployed instance(s)."), err
 		}
 	}
 
@@ -2468,7 +2467,7 @@ func (ds *DataSource) DeleteServicePri(ctx context.Context, serviceID string, fo
 	if err != nil {
 		log.Errorf(err, "%s micro-service[%s] failed, delete dependency failed, operator: %s",
 			title, serviceID, remoteIP)
-		return pb.CreateResponse(scerr.ErrInternal, err.Error()), err
+		return pb.CreateResponse(pb.ErrInternal, err.Error()), err
 	}
 	opts = append(opts, optDeleteDep)
 
@@ -2505,7 +2504,7 @@ func (ds *DataSource) DeleteServicePri(ctx context.Context, serviceID string, fo
 	if err != nil {
 		log.Errorf(err, "%s micro-service[%s] failed, revoke all instances failed, operator: %s",
 			title, serviceID, remoteIP)
-		return pb.CreateResponse(scerr.ErrUnavailableBackend, err.Error()), err
+		return pb.CreateResponse(pb.ErrUnavailableBackend, err.Error()), err
 	}
 
 	resp, err := client.Instance().TxnWithCmp(ctx, opts,
@@ -2515,12 +2514,12 @@ func (ds *DataSource) DeleteServicePri(ctx context.Context, serviceID string, fo
 		nil)
 	if err != nil {
 		log.Errorf(err, "%s micro-service[%s] failed, operator: %s", title, serviceID, remoteIP)
-		return pb.CreateResponse(scerr.ErrUnavailableBackend, err.Error()), err
+		return pb.CreateResponse(pb.ErrUnavailableBackend, err.Error()), err
 	}
 	if !resp.Succeeded {
 		log.Errorf(err, "%s micro-service[%s] failed, service does not exist, operator: %s",
 			title, serviceID, remoteIP)
-		return pb.CreateResponse(scerr.ErrServiceNotExists, "Service does not exist."), nil
+		return pb.CreateResponse(pb.ErrServiceNotExists, "Service does not exist."), nil
 	}
 
 	serviceUtil.RemandServiceQuota(ctx)

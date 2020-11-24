@@ -17,11 +17,10 @@
 package service_test
 
 import (
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/core"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
+	pb "github.com/go-chassis/cari/discovery"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"math"
@@ -172,7 +171,7 @@ var _ = Describe("'Instance' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("serviceId is empty")
 				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
@@ -319,7 +318,7 @@ var _ = Describe("'Instance' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("check invalid pull healthChceck")
 				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
@@ -339,7 +338,7 @@ var _ = Describe("'Instance' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
 						ServiceId: serviceId1,
@@ -356,7 +355,7 @@ var _ = Describe("'Instance' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
 						ServiceId: serviceId1,
@@ -374,7 +373,7 @@ var _ = Describe("'Instance' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("invalid status")
 				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
@@ -459,31 +458,31 @@ var _ = Describe("'Instance' service", func() {
 					InstanceId: instanceId1,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 				resp, err = instanceResource.Heartbeat(getContext(), &pb.HeartbeatRequest{
 					ServiceId:  TOO_LONG_SERVICEID,
 					InstanceId: instanceId1,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 				resp, err = instanceResource.Heartbeat(getContext(), &pb.HeartbeatRequest{
 					ServiceId:  serviceId,
 					InstanceId: "",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 				resp, err = instanceResource.Heartbeat(getContext(), &pb.HeartbeatRequest{
 					ServiceId:  serviceId,
 					InstanceId: "@",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 				resp, err = instanceResource.Heartbeat(getContext(), &pb.HeartbeatRequest{
 					ServiceId:  serviceId,
 					InstanceId: TOO_LONG_SERVICEID,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("serviceId does not exist")
 				resp, err = instanceResource.Heartbeat(getContext(), &pb.HeartbeatRequest{
@@ -750,7 +749,7 @@ var _ = Describe("'Instance' service", func() {
 				})
 
 				Expect(err).To(BeNil())
-				Expect(respUpdateProperties.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respUpdateProperties.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 				respUpdateProperties, err = instanceResource.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{
 					ServiceId:  TOO_LONG_SERVICEID,
 					InstanceId: instanceId,
@@ -760,7 +759,7 @@ var _ = Describe("'Instance' service", func() {
 				})
 
 				Expect(err).To(BeNil())
-				Expect(respUpdateProperties.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respUpdateProperties.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 				respUpdateProperties, err = instanceResource.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{
 					ServiceId:  serviceId,
 					InstanceId: "",
@@ -770,7 +769,7 @@ var _ = Describe("'Instance' service", func() {
 				})
 
 				Expect(err).To(BeNil())
-				Expect(respUpdateProperties.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respUpdateProperties.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 				respUpdateProperties, err = instanceResource.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{
 					ServiceId:  serviceId,
 					InstanceId: "@",
@@ -780,7 +779,7 @@ var _ = Describe("'Instance' service", func() {
 				})
 
 				Expect(err).To(BeNil())
-				Expect(respUpdateProperties.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respUpdateProperties.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 				respUpdateProperties, err = instanceResource.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{
 					ServiceId:  serviceId,
 					InstanceId: TOO_LONG_SERVICEID,
@@ -790,7 +789,7 @@ var _ = Describe("'Instance' service", func() {
 				})
 
 				Expect(err).To(BeNil())
-				Expect(respUpdateProperties.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respUpdateProperties.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("remove the properties")
 				respUpdateProperties, err = instanceResource.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{
@@ -1054,7 +1053,7 @@ var _ = Describe("'Instance' service", func() {
 					VersionRule:       "1.0.0",
 				})
 				Expect(err).To(BeNil())
-				Expect(respFind.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					AppId:             "",
@@ -1062,7 +1061,7 @@ var _ = Describe("'Instance' service", func() {
 					VersionRule:       "1.0.0",
 				})
 				Expect(err).To(BeNil())
-				Expect(respFind.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					AppId:             " ",
@@ -1070,7 +1069,7 @@ var _ = Describe("'Instance' service", func() {
 					VersionRule:       "1.0.0",
 				})
 				Expect(err).To(BeNil())
-				Expect(respFind.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("invalid serviceName")
 				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
@@ -1080,7 +1079,7 @@ var _ = Describe("'Instance' service", func() {
 					VersionRule:       "1.0.0",
 				})
 				Expect(err).To(BeNil())
-				Expect(respFind.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					AppId:             "query_instance",
@@ -1088,7 +1087,7 @@ var _ = Describe("'Instance' service", func() {
 					VersionRule:       "1.0.0",
 				})
 				Expect(err).To(BeNil())
-				Expect(respFind.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					AppId:             "query_instance",
@@ -1096,7 +1095,7 @@ var _ = Describe("'Instance' service", func() {
 					VersionRule:       "1.0.0",
 				})
 				Expect(err).To(BeNil())
-				Expect(respFind.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("invalid version")
 				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
@@ -1106,7 +1105,7 @@ var _ = Describe("'Instance' service", func() {
 					VersionRule:       "1.32768.0",
 				})
 				Expect(err).To(BeNil())
-				Expect(respFind.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					AppId:             "query_instance",
@@ -1114,7 +1113,7 @@ var _ = Describe("'Instance' service", func() {
 					VersionRule:       "1.0.0-1.32768.0",
 				})
 				Expect(err).To(BeNil())
-				Expect(respFind.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					AppId:             "query_instance",
@@ -1122,7 +1121,7 @@ var _ = Describe("'Instance' service", func() {
 					VersionRule:       " ",
 				})
 				Expect(err).To(BeNil())
-				Expect(respFind.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					AppId:             "query_instance",
@@ -1130,7 +1129,7 @@ var _ = Describe("'Instance' service", func() {
 					VersionRule:       "",
 				})
 				Expect(err).To(BeNil())
-				Expect(respFind.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("consumerId is empty")
 				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
@@ -1192,7 +1191,7 @@ var _ = Describe("'Instance' service", func() {
 					VersionRule:       "2.0.0",
 				})
 				Expect(err).To(BeNil())
-				Expect(respFind.Response.GetCode()).To(Equal(scerr.ErrServiceNotExists))
+				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrServiceNotExists))
 			})
 		})
 
@@ -1205,26 +1204,26 @@ var _ = Describe("'Instance' service", func() {
 					Instances:         nil,
 				})
 				Expect(err).To(BeNil())
-				Expect(respFind.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 				respFind, err = instanceResource.BatchFind(getContext(), &pb.BatchFindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					Services:          []*pb.FindService{},
 					Instances:         []*pb.FindInstance{},
 				})
 				Expect(err).To(BeNil())
-				Expect(respFind.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 				respFind, err = instanceResource.BatchFind(getContext(), &pb.BatchFindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					Services:          []*pb.FindService{{}},
 				})
 				Expect(err).To(BeNil())
-				Expect(respFind.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 				respFind, err = instanceResource.BatchFind(getContext(), &pb.BatchFindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					Instances:         []*pb.FindInstance{{}},
 				})
 				Expect(err).To(BeNil())
-				Expect(respFind.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("invalid appId")
 				respFind, err = instanceResource.BatchFind(getContext(), &pb.BatchFindInstancesRequest{
@@ -1240,7 +1239,7 @@ var _ = Describe("'Instance' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respFind.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 				respFind, err = instanceResource.BatchFind(getContext(), &pb.BatchFindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					Services: []*pb.FindService{
@@ -1254,7 +1253,7 @@ var _ = Describe("'Instance' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respFind.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 				respFind, err = instanceResource.BatchFind(getContext(), &pb.BatchFindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					Services: []*pb.FindService{
@@ -1268,7 +1267,7 @@ var _ = Describe("'Instance' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respFind.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("invalid serviceName")
 				respFind, err = instanceResource.BatchFind(getContext(), &pb.BatchFindInstancesRequest{
@@ -1284,7 +1283,7 @@ var _ = Describe("'Instance' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respFind.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 				respFind, err = instanceResource.BatchFind(getContext(), &pb.BatchFindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					Services: []*pb.FindService{
@@ -1298,7 +1297,7 @@ var _ = Describe("'Instance' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respFind.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 				respFind, err = instanceResource.BatchFind(getContext(), &pb.BatchFindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					Services: []*pb.FindService{
@@ -1312,7 +1311,7 @@ var _ = Describe("'Instance' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respFind.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("invalid version")
 				respFind, err = instanceResource.BatchFind(getContext(), &pb.BatchFindInstancesRequest{
@@ -1328,7 +1327,7 @@ var _ = Describe("'Instance' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respFind.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 				respFind, err = instanceResource.BatchFind(getContext(), &pb.BatchFindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					Services: []*pb.FindService{
@@ -1342,7 +1341,7 @@ var _ = Describe("'Instance' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respFind.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 				respFind, err = instanceResource.BatchFind(getContext(), &pb.BatchFindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					Services: []*pb.FindService{
@@ -1356,7 +1355,7 @@ var _ = Describe("'Instance' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respFind.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 				respFind, err = instanceResource.BatchFind(getContext(), &pb.BatchFindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					Services: []*pb.FindService{
@@ -1370,7 +1369,7 @@ var _ = Describe("'Instance' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respFind.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("invalid instance")
 				respFind, err = instanceResource.BatchFind(getContext(), &pb.BatchFindInstancesRequest{
@@ -1384,7 +1383,7 @@ var _ = Describe("'Instance' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respFind.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 				respFind, err = instanceResource.BatchFind(getContext(), &pb.BatchFindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					Instances: []*pb.FindInstance{
@@ -1396,7 +1395,7 @@ var _ = Describe("'Instance' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(respFind.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("consumerId is empty")
 				respFind, err = instanceResource.BatchFind(getContext(), &pb.BatchFindInstancesRequest{
@@ -1429,7 +1428,7 @@ var _ = Describe("'Instance' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ResponseSuccess))
-				Expect(respFind.Services.Failed[0].Error.Code).To(Equal(scerr.ErrServiceNotExists))
+				Expect(respFind.Services.Failed[0].Error.Code).To(Equal(pb.ErrServiceNotExists))
 				Expect(respFind.Services.Failed[0].Indexes[0]).To(Equal(int64(0)))
 				respFind, err = instanceResource.BatchFind(getContext(), &pb.BatchFindInstancesRequest{
 					ConsumerServiceId: serviceId1,
@@ -1444,7 +1443,7 @@ var _ = Describe("'Instance' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ResponseSuccess))
-				Expect(respFind.Instances.Failed[0].Error.Code).To(Equal(scerr.ErrInstanceNotExists))
+				Expect(respFind.Instances.Failed[0].Error.Code).To(Equal(pb.ErrInstanceNotExists))
 				Expect(respFind.Instances.Failed[0].Indexes[0]).To(Equal(int64(0)))
 
 				By("provider does not contain 3.0.0+ versions")
@@ -1482,7 +1481,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 				Expect(respFind.Services.Failed[0].Indexes[0]).To(Equal(int64(0)))
-				Expect(respFind.Services.Failed[0].Error.Code).To(Equal(scerr.ErrServiceNotExists))
+				Expect(respFind.Services.Failed[0].Error.Code).To(Equal(pb.ErrServiceNotExists))
 			})
 		})
 
@@ -1537,7 +1536,7 @@ var _ = Describe("'Instance' service", func() {
 					VersionRule:       "0.0.0",
 				})
 				Expect(err).To(BeNil())
-				Expect(respFind.Response.GetCode()).To(Equal(scerr.ErrServiceNotExists))
+				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrServiceNotExists))
 
 				By("find with env")
 				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
@@ -1705,7 +1704,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respFind.Services.Updated[1].Index).To(Equal(int64(1)))
 				Expect(respFind.Services.Updated[1].Instances[0].InstanceId).To(Equal(instanceId2))
 				Expect(respFind.Services.Failed[0].Indexes[0]).To(Equal(int64(2)))
-				Expect(respFind.Services.Failed[0].Error.Code).To(Equal(scerr.ErrServiceNotExists))
+				Expect(respFind.Services.Failed[0].Error.Code).To(Equal(pb.ErrServiceNotExists))
 
 				By("find with env")
 				respFind, err = instanceResource.BatchFind(getContext(), &pb.BatchFindInstancesRequest{
@@ -1925,7 +1924,7 @@ var _ = Describe("'Instance' service", func() {
 					})
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ResponseSuccess))
-				Expect(respFind.Instances.Failed[0].Error.Code).To(Equal(scerr.ErrServiceNotExists))
+				Expect(respFind.Instances.Failed[0].Error.Code).To(Equal(pb.ErrServiceNotExists))
 
 				respFind, err = instanceResource.BatchFind(getContext(), &pb.BatchFindInstancesRequest{
 					ConsumerServiceId: serviceId7,
@@ -1959,7 +1958,7 @@ var _ = Describe("'Instance' service", func() {
 					Expect(respFind.Response.GetCode()).To(Equal(code))
 				}
 
-				UTFunc(serviceId3, scerr.ErrServiceNotExists)
+				UTFunc(serviceId3, pb.ErrServiceNotExists)
 
 				UTFunc(serviceId1, pb.ResponseSuccess)
 
@@ -2094,7 +2093,7 @@ var _ = Describe("'Instance' service", func() {
 					Tags:               []string{"not-exist-tag"},
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrInstanceNotExists))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInstanceNotExists))
 
 				By("provider tag exist")
 				resp, err = instanceResource.GetOneInstance(getContext(),
@@ -2117,7 +2116,7 @@ var _ = Describe("'Instance' service", func() {
 					ProviderInstanceId: instanceId2,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrInstanceNotExists))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInstanceNotExists))
 
 				respAll, err := instanceResource.GetInstances(getContext(), &pb.GetInstancesRequest{
 					ConsumerServiceId: serviceId3,
@@ -2214,13 +2213,13 @@ var _ = Describe("'Instance' service", func() {
 					InstanceId: instanceId,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 				resp, err = instanceResource.Unregister(getContext(), &pb.UnregisterInstanceRequest{
 					ServiceId:  TOO_LONG_SERVICEID,
 					InstanceId: instanceId,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("service does not exist")
 				resp, err = instanceResource.Unregister(getContext(), &pb.UnregisterInstanceRequest{
@@ -2236,19 +2235,19 @@ var _ = Describe("'Instance' service", func() {
 					InstanceId: "",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 				resp, err = instanceResource.Unregister(getContext(), &pb.UnregisterInstanceRequest{
 					ServiceId:  serviceId,
 					InstanceId: "@",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 				resp, err = instanceResource.Unregister(getContext(), &pb.UnregisterInstanceRequest{
 					ServiceId:  serviceId,
 					InstanceId: TOO_LONG_SERVICEID,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("instance does not exist")
 				resp, err = instanceResource.Unregister(getContext(), &pb.UnregisterInstanceRequest{

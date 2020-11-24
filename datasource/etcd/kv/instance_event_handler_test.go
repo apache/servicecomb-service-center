@@ -19,8 +19,8 @@ package kv
 import (
 	"fmt"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	pb "github.com/go-chassis/cari/discovery"
 	"testing"
 	"time"
 )

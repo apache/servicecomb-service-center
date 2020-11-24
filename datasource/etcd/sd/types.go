@@ -21,9 +21,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
-	"github.com/apache/servicecomb-service-center/pkg/registry"
 	simple "github.com/apache/servicecomb-service-center/pkg/time"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/go-chassis/cari/discovery"
 	"strconv"
 	"time"
 )
@@ -89,7 +89,7 @@ type Response struct {
 
 type KvEvent struct {
 	Revision int64
-	Type     registry.EventType
+	Type     discovery.EventType
 	KV       *KeyValue
 	CreateAt simple.Time
 }
@@ -101,6 +101,6 @@ type KvEventHandler interface {
 	OnEvent(evt KvEvent)
 }
 
-func NewKvEvent(action registry.EventType, kv *KeyValue, rev int64) KvEvent {
+func NewKvEvent(action discovery.EventType, kv *KeyValue, rev int64) KvEvent {
 	return KvEvent{Type: action, KV: kv, Revision: rev, CreateAt: simple.FromTime(time.Now())}
 }

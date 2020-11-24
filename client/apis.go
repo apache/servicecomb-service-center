@@ -18,6 +18,7 @@ package client
 import (
 	"context"
 	"encoding/json"
+	"github.com/go-chassis/cari/discovery"
 
 	"io/ioutil"
 	"net/http"
@@ -25,7 +26,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/cluster"
 	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"github.com/apache/servicecomb-service-center/version"
 )
 
@@ -38,11 +38,11 @@ const (
 	QueryGlobal util.CtxKey = "global"
 )
 
-func (c *Client) toError(body []byte) *scerr.Error {
-	message := new(scerr.Error)
+func (c *Client) toError(body []byte) *discovery.Error {
+	message := new(discovery.Error)
 	err := json.Unmarshal(body, message)
 	if err != nil {
-		return scerr.NewError(scerr.ErrInternal, util.BytesToStringWithNoCopy(body))
+		return discovery.NewError(discovery.ErrInternal, util.BytesToStringWithNoCopy(body))
 	}
 	return message
 }
@@ -57,16 +57,16 @@ func (c *Client) parseQuery(ctx context.Context) (q string) {
 	return
 }
 
-func (c *Client) GetScVersion(ctx context.Context) (*version.Set, *scerr.Error) {
+func (c *Client) GetScVersion(ctx context.Context) (*version.Set, *discovery.Error) {
 	resp, err := c.RestDoWithContext(ctx, http.MethodGet, apiVersionURL, c.CommonHeaders(ctx), nil)
 	if err != nil {
-		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
+		return nil, discovery.NewError(discovery.ErrInternal, err.Error())
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
+		return nil, discovery.NewError(discovery.ErrInternal, err.Error())
 	}
 
 	if resp.StatusCode != http.StatusOK {
@@ -76,25 +76,25 @@ func (c *Client) GetScVersion(ctx context.Context) (*version.Set, *scerr.Error) 
 	v := &version.Set{}
 	err = json.Unmarshal(body, v)
 	if err != nil {
-		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
+		return nil, discovery.NewError(discovery.ErrInternal, err.Error())
 	}
 
 	return v, nil
 }
 
-func (c *Client) GetScCache(ctx context.Context) (*dump.Cache, *scerr.Error) {
+func (c *Client) GetScCache(ctx context.Context) (*dump.Cache, *discovery.Error) {
 	headers := c.CommonHeaders(ctx)
 	// only default domain has admin permission
 	headers.Set("X-Domain-Name", "default")
 	resp, err := c.RestDoWithContext(ctx, http.MethodGet, apiDumpURL, headers, nil)
 	if err != nil {
-		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
+		return nil, discovery.NewError(discovery.ErrInternal, err.Error())
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
+		return nil, discovery.NewError(discovery.ErrInternal, err.Error())
 	}
 
 	if resp.StatusCode != http.StatusOK {
@@ -104,25 +104,25 @@ func (c *Client) GetScCache(ctx context.Context) (*dump.Cache, *scerr.Error) {
 	dump := &dump.Response{}
 	err = json.Unmarshal(body, dump)
 	if err != nil {
-		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
+		return nil, discovery.NewError(discovery.ErrInternal, err.Error())
 	}
 
 	return dump.Cache, nil
 }
 
-func (c *Client) GetClusters(ctx context.Context) (cluster.Clusters, *scerr.Error) {
+func (c *Client) GetClusters(ctx context.Context) (cluster.Clusters, *discovery.Error) {
 	headers := c.CommonHeaders(ctx)
 	// only default domain has admin permission
 	headers.Set("X-Domain-Name", "default")
 	resp, err := c.RestDoWithContext(ctx, http.MethodGet, apiClustersURL, headers, nil)
 	if err != nil {
-		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
+		return nil, discovery.NewError(discovery.ErrInternal, err.Error())
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
+		return nil, discovery.NewError(discovery.ErrInternal, err.Error())
 	}
 
 	if resp.StatusCode != http.StatusOK {
@@ -132,25 +132,25 @@ func (c *Client) GetClusters(ctx context.Context) (cluster.Clusters, *scerr.Erro
 	clusters := &dump.ClustersResponse{}
 	err = json.Unmarshal(body, clusters)
 	if err != nil {
-		return nil, scerr.NewError(scerr.ErrInternal, err.Error())
+		return nil, discovery.NewError(discovery.ErrInternal, err.Error())
 	}
 
 	return clusters.Clusters, nil
 }
 
-func (c *Client) HealthCheck(ctx context.Context) *scerr.Error {
+func (c *Client) HealthCheck(ctx context.Context) *discovery.Error {
 	headers := c.CommonHeaders(ctx)
 	// only default domain has admin permission
 	headers.Set("X-Domain-Name", "default")
 	resp, err := c.RestDoWithContext(ctx, http.MethodGet, apiHealthURL, headers, nil)
 	if err != nil {
-		return scerr.NewError(scerr.ErrInternal, err.Error())
+		return discovery.NewError(discovery.ErrInternal, err.Error())
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return scerr.NewError(scerr.ErrInternal, err.Error())
+		return discovery.NewError(discovery.ErrInternal, err.Error())
 	}
 
 	if resp.StatusCode != http.StatusOK {

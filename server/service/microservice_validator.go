@@ -19,10 +19,10 @@ package service
 
 import (
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
-	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/pkg/validate"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
+	"github.com/go-chassis/cari/discovery"
 	"regexp"
 )
 
@@ -45,12 +45,12 @@ var (
 	versionFuzzyRegex  = serviceUtil.NewVersionRegexp(true)
 	pathRegex, _       = regexp.Compile(`^[A-Za-z0-9.,?'\\/+&amp;%$#=~_\-@{}]*$`)
 	levelRegex, _      = regexp.Compile(`^(FRONT|MIDDLE|BACK)$`)
-	statusRegex, _     = regexp.Compile("^(" + registry.MS_UP + "|" + registry.MS_DOWN + ")?$")
+	statusRegex, _     = regexp.Compile("^(" + discovery.MS_UP + "|" + discovery.MS_DOWN + ")?$")
 	serviceIDRegex, _  = regexp.Compile(`^\S*$`)
 	aliasRegex, _      = regexp.Compile(`^[a-zA-Z0-9_\-.:]*$`)
-	registerByRegex, _ = regexp.Compile("^(" + util.StringJoin([]string{registry.REGISTERBY_SDK, registry.REGISTERBY_SIDECAR, registry.REGISTERBY_PLATFORM}, "|") + ")*$")
+	registerByRegex, _ = regexp.Compile("^(" + util.StringJoin([]string{discovery.REGISTERBY_SDK, discovery.REGISTERBY_SIDECAR, discovery.REGISTERBY_PLATFORM}, "|") + ")*$")
 	envRegex, _        = regexp.Compile("^(" + util.StringJoin([]string{
-		registry.ENV_DEV, registry.ENV_TEST, registry.ENV_ACCEPT, registry.ENV_PROD}, "|") + ")*$")
+		discovery.ENV_DEV, discovery.ENV_TEST, discovery.ENV_ACCEPT, discovery.ENV_PROD}, "|") + ")*$")
 	schemaIDRegex, _ = regexp.Compile(`^[a-zA-Z0-9]{1,160}$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]{0,158}[a-zA-Z0-9]$`)
 )
 

@@ -21,12 +21,11 @@ import (
 	"net/http"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/rest/controller"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
+	pb "github.com/go-chassis/cari/discovery"
 	"strings"
 )
 
@@ -57,7 +56,7 @@ func (governService *ResourceV4) GetGraph(w http.ResponseWriter, r *http.Request
 
 	resp, err := core.ServiceAPI.GetServices(ctx, request)
 	if err != nil {
-		controller.WriteError(w, scerr.ErrInternal, err.Error())
+		controller.WriteError(w, pb.ErrInternal, err.Error())
 		return
 	}
 	services := resp.Services
@@ -149,7 +148,7 @@ func (governService *ResourceV4) GetAllServicesInfo(w http.ResponseWriter, r *ht
 	request.WithShared = util.StringTRUE(query.Get("withShared"))
 	countOnly := query.Get("countOnly")
 	if countOnly != "0" && countOnly != "1" && strings.TrimSpace(countOnly) != "" {
-		controller.WriteError(w, scerr.ErrInvalidParams, "parameter countOnly must be 1 or 0")
+		controller.WriteError(w, pb.ErrInvalidParams, "parameter countOnly must be 1 or 0")
 		return
 	}
 	if countOnly == "1" {

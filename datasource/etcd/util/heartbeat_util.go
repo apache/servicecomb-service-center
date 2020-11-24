@@ -20,20 +20,19 @@ package util
 import (
 	"context"
 	"errors"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
-
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
+	"github.com/go-chassis/cari/discovery"
 )
 
-func HeartbeatUtil(ctx context.Context, domainProject string, serviceID string, instanceID string) (leaseID int64, ttl int64, _ *scerr.Error) {
+func HeartbeatUtil(ctx context.Context, domainProject string, serviceID string, instanceID string) (leaseID int64, ttl int64, _ *discovery.Error) {
 	leaseID, err := GetLeaseID(ctx, domainProject, serviceID, instanceID)
 	if err != nil {
-		return leaseID, ttl, scerr.NewError(scerr.ErrUnavailableBackend, err.Error())
+		return leaseID, ttl, discovery.NewError(discovery.ErrUnavailableBackend, err.Error())
 	}
 	ttl, err = KeepAliveLease(ctx, domainProject, serviceID, instanceID, leaseID)
 	if err != nil {
-		return leaseID, ttl, scerr.NewError(scerr.ErrInstanceNotExists, err.Error())
+		return leaseID, ttl, discovery.NewError(discovery.ErrInstanceNotExists, err.Error())
 	}
 	return leaseID, ttl, nil
 }

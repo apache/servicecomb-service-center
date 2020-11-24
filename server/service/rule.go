@@ -21,9 +21,8 @@ import (
 	"context"
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
+	pb "github.com/go-chassis/cari/discovery"
 )
 
 func (s *MicroServiceService) AddRule(ctx context.Context, in *pb.AddServiceRulesRequest) (*pb.AddServiceRulesResponse, error) {
@@ -32,7 +31,7 @@ func (s *MicroServiceService) AddRule(ctx context.Context, in *pb.AddServiceRule
 		remoteIP := util.GetIPFromContext(ctx)
 		log.Errorf(err, "add service[%s] rule failed, operator: %s", in.ServiceId, remoteIP)
 		return &pb.AddServiceRulesResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 
@@ -45,7 +44,7 @@ func (s *MicroServiceService) UpdateRule(ctx context.Context, in *pb.UpdateServi
 		remoteIP := util.GetIPFromContext(ctx)
 		log.Errorf(err, "update service rule[%s/%s] failed, operator: %s", in.ServiceId, in.RuleId, remoteIP)
 		return &pb.UpdateServiceRuleResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 
@@ -57,7 +56,7 @@ func (s *MicroServiceService) GetRule(ctx context.Context, in *pb.GetServiceRule
 	if err != nil {
 		log.Errorf(err, "get service[%s] rule failed", in.ServiceId)
 		return &pb.GetServiceRulesResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 
@@ -70,7 +69,7 @@ func (s *MicroServiceService) DeleteRule(ctx context.Context, in *pb.DeleteServi
 		remoteIP := util.GetIPFromContext(ctx)
 		log.Errorf(err, "delete service[%s] rules %v failed, operator: %s", in.ServiceId, in.RuleIds, remoteIP)
 		return &pb.DeleteServiceRulesResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 
