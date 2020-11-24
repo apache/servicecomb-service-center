@@ -21,11 +21,11 @@ import (
 	"errors"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/syncer/plugins"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
 	"github.com/apache/servicecomb-service-center/syncer/servicecenter/storage"
 	"github.com/coreos/etcd/clientv3"
+	"github.com/go-chassis/cari/discovery"
 )
 
 // Store interface of servicecenter
@@ -143,7 +143,7 @@ func (s *servicecenter) IncrementRegistry(clusterName string, data *pb.SyncData)
 		}
 		action := string(matches[0].Bytes[:])
 
-		if action == string(registry.EVT_CREATE) {
+		if action == string(discovery.EVT_CREATE) {
 			log.Debugf("trying to do registration of instance, instanceID = %s", inst.InstanceId)
 
 			// If inst is in the mapping, just heart beat it in servicecenter
@@ -166,7 +166,7 @@ func (s *servicecenter) IncrementRegistry(clusterName string, data *pb.SyncData)
 			}
 		}
 
-		if action == string(registry.EVT_DELETE) {
+		if action == string(discovery.EVT_DELETE) {
 			log.Debugf("trying to do unRegistration of instance, instanceID = %s", inst.InstanceId)
 			if len(mapping) == 0 {
 				err := errors.New("mapping does not exist")

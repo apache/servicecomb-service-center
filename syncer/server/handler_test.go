@@ -11,10 +11,10 @@ import (
 	"time"
 
 	"github.com/apache/servicecomb-service-center/pkg/dump"
-	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/syncer/config"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
 	"github.com/apache/servicecomb-service-center/syncer/serf"
+	"github.com/go-chassis/cari/discovery"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -221,7 +221,7 @@ func instanceAndServiceCreate(i int) *dump.WatchInstanceChangedEvent {
 	var event = new(dump.WatchInstanceChangedEvent)
 	status := []string{"UNKNOWN", "UP", "DOWN"}
 	var ss = new(dump.Microservice)
-	var sv = new(registry.MicroService)
+	var sv = new(discovery.MicroService)
 	sv.AppId = "serviceApp" + strconv.FormatInt(int64(i), 10)
 	sv.Environment = "env"
 	sv.ServiceId = "a59f99611a6945677a21f28c0aeb05abb" + strconv.FormatInt(int64(i/2), 10)
@@ -237,12 +237,12 @@ func instanceAndServiceCreate(i int) *dump.WatchInstanceChangedEvent {
 	is := new(dump.Instance)
 	insStatus := []string{"UNKNOWN", "UP", "STARTING", "DOWN", "OUTOFSERVICE"}
 	healthCheckModes := []string{"UNKNOWN", "PUSH", "PULL"}
-	healthCheck := registry.HealthCheck{
+	healthCheck := discovery.HealthCheck{
 		Mode:     healthCheckModes[i%3],
 		Interval: 30,
 		Times:    30,
 	}
-	var iv = new(registry.MicroServiceInstance)
+	var iv = new(discovery.MicroServiceInstance)
 	iv.HostName = "provider_demo" + strconv.FormatInt(int64(i), 10)
 	iv.Endpoints = []string{"rest://127.0.0.1:8080"}
 	iv.InstanceId = "5e1140fc232111eb9bb600acc8c56b5b" + strconv.FormatInt(int64(i/2), 10)
