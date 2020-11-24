@@ -21,9 +21,9 @@ import (
 	"context"
 	"errors"
 	"github.com/apache/servicecomb-service-center/pkg/dump"
-	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/server/core"
 	. "github.com/apache/servicecomb-service-center/server/syncernotify"
+	"github.com/go-chassis/cari/discovery"
 	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/assert"
 	"net/http"
@@ -89,7 +89,7 @@ func TestDoWebSocketWatch(t *testing.T) {
 					Rev:         12,
 					ClusterName: "clustername",
 				},
-				Value: &registry.MicroService{
+				Value: &discovery.MicroService{
 					ServiceId:   "4042a6a3e5a2893698ae363ea99a69eb63fc51cd",
 					AppId:       "default",
 					ServiceName: "TEST01",
@@ -107,7 +107,7 @@ func TestDoWebSocketWatch(t *testing.T) {
 					Rev:         21,
 					ClusterName: "clustername",
 				},
-				Value: &registry.MicroServiceInstance{
+				Value: &discovery.MicroServiceInstance{
 					InstanceId: "8e0fe4b961a811e981a6fa163e86b81a",
 					ServiceId:  "4042a6a3e5a2893698ae363ea99a69eb63fc51cd",
 					Endpoints: []string{
