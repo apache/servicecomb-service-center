@@ -26,8 +26,8 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	pb "github.com/go-chassis/cari/discovery"
 )
 
 // DependencyRelationFilterOpt contains SameDomainProject and NonSelf flag

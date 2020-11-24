@@ -21,7 +21,7 @@ import (
 	"context"
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/plugin"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
+	"github.com/go-chassis/cari/discovery"
 	"strconv"
 )
 
@@ -60,7 +60,7 @@ func Init() {
 }
 
 type ApplyQuotaResult struct {
-	Err *scerr.Error
+	Err *discovery.Error
 
 	reporter Reporter
 }
@@ -79,7 +79,7 @@ func (r *ApplyQuotaResult) Close(ctx context.Context) {
 	r.reporter.Close(ctx)
 }
 
-func NewApplyQuotaResult(reporter Reporter, err *scerr.Error) *ApplyQuotaResult {
+func NewApplyQuotaResult(reporter Reporter, err *discovery.Error) *ApplyQuotaResult {
 	return &ApplyQuotaResult{
 		reporter: reporter,
 		Err:      err,

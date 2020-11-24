@@ -21,8 +21,7 @@ import (
 	"fmt"
 	"log"
 
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
+	pb "github.com/go-chassis/cari/discovery"
 	"github.com/gorilla/websocket"
 )
 
@@ -30,13 +29,13 @@ const (
 	apiWatcherURL = "/v4/%s/registry/microservices/%s/watcher"
 )
 
-func (c *Client) Watch(ctx context.Context, domain, project, selfServiceID string, callback func(*pb.WatchInstanceResponse)) *scerr.Error {
+func (c *Client) Watch(ctx context.Context, domain, project, selfServiceID string, callback func(*pb.WatchInstanceResponse)) *pb.Error {
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 
 	conn, err := c.WebsocketDial(ctx, fmt.Sprintf(apiWatcherURL, project, selfServiceID), headers)
 	if err != nil {
-		return scerr.NewError(scerr.ErrInternal, err.Error())
+		return pb.NewError(pb.ErrInternal, err.Error())
 	}
 
 	for {
@@ -55,5 +54,5 @@ func (c *Client) Watch(ctx context.Context, domain, project, selfServiceID strin
 			callback(data)
 		}
 	}
-	return scerr.NewError(scerr.ErrInternal, err.Error())
+	return pb.NewError(pb.ErrInternal, err.Error())
 }

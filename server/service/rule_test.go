@@ -17,9 +17,8 @@
 package service_test
 
 import (
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
+	pb "github.com/go-chassis/cari/discovery"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"strconv"
@@ -142,7 +141,7 @@ var _ = Describe("'Rule' service", func() {
 					ServiceId: serviceId1,
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddRule.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respAddRule.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 			})
 		})
 
@@ -215,7 +214,7 @@ var _ = Describe("'Rule' service", func() {
 					Rules:     rules,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				resp, err = serviceResource.AddRule(getContext(), &pb.AddServiceRulesRequest{
 					ServiceId: serviceId2,
@@ -229,7 +228,7 @@ var _ = Describe("'Rule' service", func() {
 					Rules:     rules[size-1:],
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrNotEnoughQuota))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrNotEnoughQuota))
 			})
 		})
 	})
@@ -278,20 +277,20 @@ var _ = Describe("'Rule' service", func() {
 					ServiceId: "",
 				})
 				Expect(err).To(BeNil())
-				Expect(respGetRule.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respGetRule.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				respGetRule, err = serviceResource.GetRule(getContext(), &pb.GetServiceRulesRequest{
 					ServiceId: TOO_LONG_SERVICEID,
 				})
 				Expect(err).To(BeNil())
-				Expect(respGetRule.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respGetRule.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("service does not exist")
 				respGetRule, err = serviceResource.GetRule(getContext(), &pb.GetServiceRulesRequest{
 					ServiceId: "notexist",
 				})
 				Expect(err).To(BeNil())
-				Expect(respGetRule.Response.GetCode()).To(Equal(scerr.ErrServiceNotExists))
+				Expect(respGetRule.Response.GetCode()).To(Equal(pb.ErrServiceNotExists))
 			})
 		})
 
@@ -509,7 +508,7 @@ var _ = Describe("'Rule' service", func() {
 					RuleIds:   []string{"1000000"},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddRule.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respAddRule.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("service does not exist")
 				respAddRule, err = serviceResource.DeleteRule(getContext(), &pb.DeleteServiceRulesRequest{
@@ -517,7 +516,7 @@ var _ = Describe("'Rule' service", func() {
 					RuleIds:   []string{"1000000"},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddRule.Response.GetCode()).To(Equal(scerr.ErrServiceNotExists))
+				Expect(respAddRule.Response.GetCode()).To(Equal(pb.ErrServiceNotExists))
 
 				By("rule does not exist")
 				respAddRule, err = serviceResource.DeleteRule(getContext(), &pb.DeleteServiceRulesRequest{
@@ -525,14 +524,14 @@ var _ = Describe("'Rule' service", func() {
 					RuleIds:   []string{"notexistrule"},
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddRule.Response.GetCode()).To(Equal(scerr.ErrRuleNotExists))
+				Expect(respAddRule.Response.GetCode()).To(Equal(pb.ErrRuleNotExists))
 
 				By("rules is empty")
 				respAddRule, err = serviceResource.DeleteRule(getContext(), &pb.DeleteServiceRulesRequest{
 					ServiceId: serviceId,
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddRule.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respAddRule.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("rules is invalid")
 				var arr []string
@@ -544,7 +543,7 @@ var _ = Describe("'Rule' service", func() {
 					RuleIds:   arr,
 				})
 				Expect(err).To(BeNil())
-				Expect(respAddRule.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(respAddRule.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 			})
 		})
@@ -681,7 +680,7 @@ var _ = Describe("'Rule' service", func() {
 					ProviderServiceId: providerBlack,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrServiceNotExists))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrServiceNotExists))
 
 				By("consumer tag in black list")
 				resp, err = instanceResource.GetInstances(getContext(), &pb.GetInstancesRequest{
@@ -689,7 +688,7 @@ var _ = Describe("'Rule' service", func() {
 					ProviderServiceId: providerBlack,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrServiceNotExists))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrServiceNotExists))
 
 				By("find should return 200 even if consumer permission deny")
 				respFind, err := instanceResource.Find(getContext(), &pb.FindInstancesRequest{
@@ -725,7 +724,7 @@ var _ = Describe("'Rule' service", func() {
 					ProviderServiceId: providerWhite,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrServiceNotExists))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrServiceNotExists))
 
 				By("consumer version in white list")
 				resp, err = instanceResource.GetInstances(getContext(), &pb.GetInstancesRequest{

@@ -20,8 +20,8 @@ package value
 import (
 	"encoding/json"
 	"errors"
-	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/go-chassis/cari/discovery"
 )
 
 var (
@@ -37,11 +37,11 @@ var (
 	newString CreateValueFunc = func() interface{} { return "" }
 	newMap    CreateValueFunc = func() interface{} { return make(map[string]string) }
 
-	newService         CreateValueFunc = func() interface{} { return new(registry.MicroService) }
-	newInstance        CreateValueFunc = func() interface{} { return new(registry.MicroServiceInstance) }
-	newRule            CreateValueFunc = func() interface{} { return new(registry.ServiceRule) }
-	newDependencyRule  CreateValueFunc = func() interface{} { return new(registry.MicroServiceDependency) }
-	newDependencyQueue CreateValueFunc = func() interface{} { return new(registry.ConsumerDependency) }
+	newService         CreateValueFunc = func() interface{} { return new(discovery.MicroService) }
+	newInstance        CreateValueFunc = func() interface{} { return new(discovery.MicroServiceInstance) }
+	newRule            CreateValueFunc = func() interface{} { return new(discovery.ServiceRule) }
+	newDependencyRule  CreateValueFunc = func() interface{} { return new(discovery.MicroServiceDependency) }
+	newDependencyQueue CreateValueFunc = func() interface{} { return new(discovery.ConsumerDependency) }
 )
 
 // parse

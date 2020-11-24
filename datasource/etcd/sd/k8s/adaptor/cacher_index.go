@@ -18,7 +18,7 @@ package adaptor
 import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
-	"github.com/apache/servicecomb-service-center/pkg/registry"
+	"github.com/go-chassis/cari/discovery"
 	"k8s.io/api/core/v1"
 )
 
@@ -36,17 +36,17 @@ func (c *ServiceIndexCacher) onServiceEvent(evt K8sEvent) {
 	if !ShouldRegisterService(svc) {
 		kv := c.Cache().Get(indexKey)
 		if kv != nil {
-			c.Notify(registry.EVT_DELETE, indexKey, kv)
+			c.Notify(discovery.EVT_DELETE, indexKey, kv)
 		}
 		return
 	}
 
 	switch evt.EventType {
-	case registry.EVT_CREATE:
+	case discovery.EVT_CREATE:
 		kv := AsKeyValue(indexKey, serviceID, svc.ResourceVersion)
 		c.Notify(evt.EventType, indexKey, kv)
-	case registry.EVT_UPDATE:
-	case registry.EVT_DELETE:
+	case discovery.EVT_UPDATE:
+	case discovery.EVT_DELETE:
 		kv := c.Cache().Get(indexKey)
 		if kv != nil {
 			c.Notify(evt.EventType, indexKey, kv)

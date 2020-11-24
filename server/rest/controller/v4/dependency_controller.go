@@ -20,12 +20,11 @@ package v4
 import (
 	"encoding/json"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/rest/controller"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
+	pb "github.com/go-chassis/cari/discovery"
 	"io/ioutil"
 	"net/http"
 )
@@ -47,20 +46,20 @@ func (s *DependencyService) AddDependenciesForMicroServices(w http.ResponseWrite
 	requestBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
-		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
+		controller.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
 	request := &pb.AddDependenciesRequest{}
 	err = json.Unmarshal(requestBody, request)
 	if err != nil {
 		log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(requestBody))
-		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
+		controller.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
 
 	resp, err := core.ServiceAPI.AddDependenciesForMicroServices(r.Context(), request)
 	if err != nil {
-		controller.WriteError(w, scerr.ErrInternal, err.Error())
+		controller.WriteError(w, pb.ErrInternal, err.Error())
 	}
 	w.Header().Add("Deprecation", "version=\"v4\"")
 	controller.WriteResponse(w, resp.Response, nil)
@@ -70,20 +69,20 @@ func (s *DependencyService) CreateDependenciesForMicroServices(w http.ResponseWr
 	requestBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
-		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
+		controller.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
 	request := &pb.CreateDependenciesRequest{}
 	err = json.Unmarshal(requestBody, request)
 	if err != nil {
 		log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(requestBody))
-		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
+		controller.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
 
 	resp, err := core.ServiceAPI.CreateDependenciesForMicroServices(r.Context(), request)
 	if err != nil {
-		controller.WriteError(w, scerr.ErrInternal, err.Error())
+		controller.WriteError(w, pb.ErrInternal, err.Error())
 	}
 	w.Header().Add("Deprecation", "version=\"v4\"")
 	controller.WriteResponse(w, resp.Response, nil)

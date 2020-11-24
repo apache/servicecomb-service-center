@@ -22,8 +22,8 @@ import (
 	"fmt"
 	client2 "github.com/apache/servicecomb-service-center/client"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/syncer/pkg/ticker"
+	"github.com/go-chassis/cari/discovery"
 	"net/http"
 	"net/url"
 	"sync"
@@ -36,8 +36,8 @@ var (
 	once                  sync.Once
 	heartbeatInterval     = 30
 	providerCaches        = &sync.Map{}
-	service               *registry.MicroService
-	instance              *registry.MicroServiceInstance
+	service               *discovery.MicroService
+	instance              *discovery.MicroServiceInstance
 	retryDiscover         = 3
 	retryDiscoverInterval = 30
 )
@@ -123,7 +123,7 @@ func Do(ctx context.Context, method, addr string, headers http.Header, body []by
 	return client.RestDoWithContext(ctx, method, raw.Path, headers, body)
 }
 
-func createService(ctx context.Context, svc *MicroService) (*registry.MicroService, error) {
+func createService(ctx context.Context, svc *MicroService) (*discovery.MicroService, error) {
 	service := transformMicroService(svc)
 
 	// 检测微服务是否存在
@@ -139,7 +139,7 @@ func createService(ctx context.Context, svc *MicroService) (*registry.MicroServi
 	return service, nil
 }
 
-func registerInstance(ctx context.Context, serviceID string, ins *Instance) (*registry.MicroServiceInstance, error) {
+func registerInstance(ctx context.Context, serviceID string, ins *Instance) (*discovery.MicroServiceInstance, error) {
 	instance := transformInstance(ins)
 	instanceID, err := cli.RegisterInstance(ctx, domain, project, serviceID, instance)
 	if err != nil {
@@ -150,7 +150,7 @@ func registerInstance(ctx context.Context, serviceID string, ins *Instance) (*re
 	return instance, nil
 }
 
-func heartbeat(ctx context.Context, ins *registry.MicroServiceInstance) {
+func heartbeat(ctx context.Context, ins *discovery.MicroServiceInstance) {
 	// 启动定时器：间隔30s
 	t := ticker.NewTaskTicker(heartbeatInterval, func(ctx context.Context) {
 		// 定时发送心跳
@@ -179,14 +179,14 @@ func discoveryToCaches(ctx context.Context, consumerID string, provider *MicroSe
 }
 
 func watchAndRenewCaches(ctx context.Context, provider *MicroService) {
-	err := cli.Watch(ctx, domain, project, provider.ID, func(result *registry.WatchInstanceResponse) {
+	err := cli.Watch(ctx, domain, project, provider.ID, func(result *discovery.WatchInstanceResponse) {
 		log.Debug("reply from watch service")
 		list, ok := providerCaches.Load(result.Instance.ServiceId)
 		if !ok {
 			log.Infof("provider \"%s\" not found", result.Instance.ServiceId)
 			return
 		}
-		providerList := list.([]*registry.MicroServiceInstance)
+		providerList := list.([]*discovery.MicroServiceInstance)
 
 		renew := false
 		for i, item := range providerList {
@@ -217,7 +217,7 @@ func serverNameToEndpoints(name string) ([]string, error) {
 	if !ok {
 		return nil, fmt.Errorf("provider \"%s\" not found", name)
 	}
-	providerList := list.([]*registry.MicroServiceInstance)
+	providerList := list.([]*discovery.MicroServiceInstance)
 	endpointList := make([]string, 0, len(providerList))
 	for i := 0; i < len(providerList); i++ {
 		endpoints := providerList[i].Endpoints
@@ -236,8 +236,8 @@ func serverNameToEndpoints(name string) ([]string, error) {
 	return endpointList, nil
 }
 
-func transformMicroService(service *MicroService) *registry.MicroService {
-	return &registry.MicroService{
+func transformMicroService(service *MicroService) *discovery.MicroService {
+	return &discovery.MicroService{
 		AppId:       service.AppID,
 		ServiceId:   service.ID,
 		ServiceName: service.Name,
@@ -245,8 +245,8 @@ func transformMicroService(service *MicroService) *registry.MicroService {
 	}
 }
 
-func transformInstance(instance *Instance) *registry.MicroServiceInstance {
-	return &registry.MicroServiceInstance{
+func transformInstance(instance *Instance) *discovery.MicroServiceInstance {
+	return &discovery.MicroServiceInstance{
 		InstanceId: instance.ID,
 		HostName:   instance.Hostname,
 		Endpoints:  []string{instance.Protocol + "://" + instance.ListenAddress},

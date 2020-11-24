@@ -19,7 +19,7 @@ package path_test
 
 import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
-	"github.com/apache/servicecomb-service-center/pkg/registry"
+	"github.com/go-chassis/cari/discovery"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -48,14 +48,14 @@ func TestGenerateDependencyRuleKey(t *testing.T) {
 	if k != "/cse-sr/ms/dep-rules/a/c" {
 		t.Fatalf("TestGenerateDependencyRuleKey failed")
 	}
-	k = path.GenerateConsumerDependencyRuleKey("a", &registry.MicroServiceKey{
+	k = path.GenerateConsumerDependencyRuleKey("a", &discovery.MicroServiceKey{
 		Environment: "1",
 		AppId:       "2",
 		ServiceName: "3",
 		Version:     "4",
 	})
 	assert.Equal(t, "/cse-sr/ms/dep-rules/a/c/1/2/3/4", k)
-	k = path.GenerateConsumerDependencyRuleKey("a", &registry.MicroServiceKey{
+	k = path.GenerateConsumerDependencyRuleKey("a", &discovery.MicroServiceKey{
 		Environment: "1",
 		AppId:       "2",
 		ServiceName: "*",
@@ -67,7 +67,7 @@ func TestGenerateDependencyRuleKey(t *testing.T) {
 	k = path.GenerateProviderDependencyRuleKey("a", nil)
 	assert.Equal(t, "/cse-sr/ms/dep-rules/a/p", k)
 
-	k = path.GenerateProviderDependencyRuleKey("a", &registry.MicroServiceKey{
+	k = path.GenerateProviderDependencyRuleKey("a", &discovery.MicroServiceKey{
 		Environment: "1",
 		AppId:       "2",
 		ServiceName: "3",
@@ -75,7 +75,7 @@ func TestGenerateDependencyRuleKey(t *testing.T) {
 	})
 	assert.Equal(t, "/cse-sr/ms/dep-rules/a/p/1/2/3/4", k)
 
-	k = path.GenerateProviderDependencyRuleKey("a", &registry.MicroServiceKey{
+	k = path.GenerateProviderDependencyRuleKey("a", &discovery.MicroServiceKey{
 		Environment: "1",
 		AppId:       "2",
 		ServiceName: "*",

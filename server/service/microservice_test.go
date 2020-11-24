@@ -17,10 +17,9 @@
 package service_test
 
 import (
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
+	pb "github.com/go-chassis/cari/discovery"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"strconv"
@@ -46,7 +45,7 @@ var _ = Describe("'Micro-service' service", func() {
 					Service: nil,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 			})
 		})
 
@@ -288,7 +287,7 @@ var _ = Describe("'Micro-service' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrServiceAlreadyExists))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrServiceAlreadyExists))
 				resp, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
 					Service: &pb.MicroService{
 						ServiceId:   "customId",
@@ -304,7 +303,7 @@ var _ = Describe("'Micro-service' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrServiceAlreadyExists))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrServiceAlreadyExists))
 
 				By("the same service id but with diff key")
 				resp, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
@@ -322,7 +321,7 @@ var _ = Describe("'Micro-service' service", func() {
 					},
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrServiceAlreadyExists))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrServiceAlreadyExists))
 			})
 			It("same serviceId,different service, can not register again,error is same as the service register twice", func() {
 				resp, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
@@ -424,7 +423,7 @@ var _ = Describe("'Micro-service' service", func() {
 				}
 				resp, err := serviceResource.Create(getContext(), r)
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("invalid appId")
 				r = &pb.CreateServiceRequest{
@@ -438,7 +437,7 @@ var _ = Describe("'Micro-service' service", func() {
 				}
 				resp, err = serviceResource.Create(getContext(), r)
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("serviceName is nil")
 				r = &pb.CreateServiceRequest{
@@ -451,7 +450,7 @@ var _ = Describe("'Micro-service' service", func() {
 				}
 				resp, err = serviceResource.Create(getContext(), r)
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("invalid version 1")
 				r = &pb.CreateServiceRequest{
@@ -465,7 +464,7 @@ var _ = Describe("'Micro-service' service", func() {
 				}
 				resp, err = serviceResource.Create(getContext(), r)
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("invalid version 2")
 				r = &pb.CreateServiceRequest{
@@ -479,7 +478,7 @@ var _ = Describe("'Micro-service' service", func() {
 				}
 				resp, err = serviceResource.Create(getContext(), r)
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("invalid version 3")
 				r = &pb.CreateServiceRequest{
@@ -493,7 +492,7 @@ var _ = Describe("'Micro-service' service", func() {
 				}
 				resp, err = serviceResource.Create(getContext(), r)
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("invalid version 4")
 				r = &pb.CreateServiceRequest{
@@ -507,7 +506,7 @@ var _ = Describe("'Micro-service' service", func() {
 				}
 				resp, err = serviceResource.Create(getContext(), r)
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("invalid level")
 				r = &pb.CreateServiceRequest{
@@ -521,7 +520,7 @@ var _ = Describe("'Micro-service' service", func() {
 				}
 				resp, err = serviceResource.Create(getContext(), r)
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("invalid env")
 				r = &pb.CreateServiceRequest{
@@ -536,7 +535,7 @@ var _ = Describe("'Micro-service' service", func() {
 				}
 				resp, err = serviceResource.Create(getContext(), r)
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("alias contains illegal char")
 				r = &pb.CreateServiceRequest{
@@ -551,7 +550,7 @@ var _ = Describe("'Micro-service' service", func() {
 				}
 				resp, err = serviceResource.Create(getContext(), r)
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("invalid alias")
 				r = &pb.CreateServiceRequest{
@@ -566,7 +565,7 @@ var _ = Describe("'Micro-service' service", func() {
 				}
 				resp, err = serviceResource.Create(getContext(), r)
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("valid alias")
 				r = &pb.CreateServiceRequest{
@@ -599,7 +598,7 @@ var _ = Describe("'Micro-service' service", func() {
 				}
 				resp, err = serviceResource.Create(getContext(), r)
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("invalid framework name 1")
 				r = &pb.CreateServiceRequest{
@@ -617,7 +616,7 @@ var _ = Describe("'Micro-service' service", func() {
 				}
 				resp, err = serviceResource.Create(getContext(), r)
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("invalid framework name 2")
 				r = &pb.CreateServiceRequest{
@@ -635,7 +634,7 @@ var _ = Describe("'Micro-service' service", func() {
 				}
 				resp, err = serviceResource.Create(getContext(), r)
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("invalid registerBy")
 				r = &pb.CreateServiceRequest{
@@ -650,7 +649,7 @@ var _ = Describe("'Micro-service' service", func() {
 				}
 				resp, err = serviceResource.Create(getContext(), r)
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("valid registerBy")
 				r = &pb.CreateServiceRequest{
@@ -695,7 +694,7 @@ var _ = Describe("'Micro-service' service", func() {
 				}
 				resp, err = serviceResource.Create(getContext(), r)
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("schemaId out of range")
 				r = &pb.CreateServiceRequest{
@@ -709,7 +708,7 @@ var _ = Describe("'Micro-service' service", func() {
 				}
 				resp, err = serviceResource.Create(getContext(), r)
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 			})
 		})
 
@@ -809,7 +808,7 @@ var _ = Describe("'Micro-service' service", func() {
 					Type: "nonetype",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 			})
 		})
 
@@ -823,7 +822,7 @@ var _ = Describe("'Micro-service' service", func() {
 					AppId:       "exist_appId",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("serviceName is empty")
 				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
@@ -833,7 +832,7 @@ var _ = Describe("'Micro-service' service", func() {
 					Version:     "3.0.0",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("invalid appId")
 				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
@@ -843,7 +842,7 @@ var _ = Describe("'Micro-service' service", func() {
 					Version:     "3.0.0",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("invalid version")
 				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
@@ -853,7 +852,7 @@ var _ = Describe("'Micro-service' service", func() {
 					Version:     "3.32768.0",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
 					Type:        "microservice",
 					AppId:       "default",
@@ -861,7 +860,7 @@ var _ = Describe("'Micro-service' service", func() {
 					Version:     "3.0.0.0.0",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("version is empty")
 				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
@@ -871,7 +870,7 @@ var _ = Describe("'Micro-service' service", func() {
 					Version:     "",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 			})
 		})
 
@@ -885,7 +884,7 @@ var _ = Describe("'Micro-service' service", func() {
 					Version:     "1.0.0",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrServiceNotExists))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrServiceNotExists))
 
 				By("query a not exist env")
 				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
@@ -896,7 +895,7 @@ var _ = Describe("'Micro-service' service", func() {
 					Version:     "1.0.0",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrServiceNotExists))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrServiceNotExists))
 
 				By("query a not exist env with alias")
 				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
@@ -907,7 +906,7 @@ var _ = Describe("'Micro-service' service", func() {
 					Version:     "1.0.0",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrServiceNotExists))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrServiceNotExists))
 
 				By("version mismatch")
 				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
@@ -917,7 +916,7 @@ var _ = Describe("'Micro-service' service", func() {
 					Version:     "2.0.0",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrServiceNotExists))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrServiceNotExists))
 				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
 					Type:        "microservice",
 					AppId:       "exist_appId",
@@ -925,7 +924,7 @@ var _ = Describe("'Micro-service' service", func() {
 					Version:     "0.0.0-1.0.0",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrServiceVersionNotExists))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrServiceVersionNotExists))
 			})
 		})
 
@@ -1021,19 +1020,19 @@ var _ = Describe("'Micro-service' service", func() {
 					ServiceId: "",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				resp, err = serviceResource.GetOne(getContext(), &pb.GetServiceRequest{
 					ServiceId: "notexistservice",
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrServiceNotExists))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrServiceNotExists))
 
 				resp, err = serviceResource.GetOne(getContext(), &pb.GetServiceRequest{
 					ServiceId: TOO_LONG_SERVICEID,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 			})
 		})
 	})

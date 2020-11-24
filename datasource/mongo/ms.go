@@ -20,7 +20,7 @@ package mongo
 import (
 	"context"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/heartbeat"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
+	pb "github.com/go-chassis/cari/discovery"
 )
 
 func (ds *DataSource) RegisterService(ctx context.Context, request *pb.CreateServiceRequest) (

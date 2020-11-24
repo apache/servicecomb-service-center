@@ -20,12 +20,11 @@ package v4
 import (
 	"encoding/json"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/rest/controller"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
+	pb "github.com/go-chassis/cari/discovery"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -47,14 +46,14 @@ func (s *RuleService) AddRule(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
-		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
+		controller.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
 	rule := map[string][]*pb.AddOrUpdateServiceRule{}
 	err = json.Unmarshal(message, &rule)
 	if err != nil {
 		log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(message))
-		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
+		controller.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
 
@@ -64,7 +63,7 @@ func (s *RuleService) AddRule(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		log.Errorf(err, "add rule failed")
-		controller.WriteError(w, scerr.ErrInternal, "add rule failed")
+		controller.WriteError(w, pb.ErrInternal, "add rule failed")
 		return
 	}
 	respInternal := resp.Response
@@ -88,7 +87,7 @@ func (s *RuleService) UpdateRule(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
-		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
+		controller.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
 
@@ -96,7 +95,7 @@ func (s *RuleService) UpdateRule(w http.ResponseWriter, r *http.Request) {
 	err = json.Unmarshal(message, &rule)
 	if err != nil {
 		log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(message))
-		controller.WriteError(w, scerr.ErrInvalidParams, err.Error())
+		controller.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
 	query := r.URL.Query()
@@ -107,7 +106,7 @@ func (s *RuleService) UpdateRule(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		log.Errorf(err, "update rule failed")
-		controller.WriteError(w, scerr.ErrInternal, "update rule failed")
+		controller.WriteError(w, pb.ErrInternal, "update rule failed")
 		return
 	}
 	controller.WriteResponse(w, resp.Response, nil)

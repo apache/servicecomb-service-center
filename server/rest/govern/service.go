@@ -21,10 +21,9 @@ import (
 	"context"
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/proto"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"github.com/apache/servicecomb-service-center/server/service"
+	pb "github.com/go-chassis/cari/discovery"
 )
 
 var ServiceAPI proto.GovernServiceCtrlServer = &Service{}
@@ -43,7 +42,7 @@ func (governService *Service) GetServiceDetail(ctx context.Context, in *pb.GetSe
 
 	if len(in.ServiceId) == 0 {
 		return &pb.GetServiceDetailResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, "Invalid request for getting service detail."),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, "Invalid request for getting service detail."),
 		}, nil
 	}
 
@@ -54,7 +53,7 @@ func (governService *Service) GetApplications(ctx context.Context, in *pb.GetApp
 	err := service.Validate(in)
 	if err != nil {
 		return &pb.GetAppsResponse{
-			Response: pb.CreateResponse(scerr.ErrInvalidParams, err.Error()),
+			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
 		}, nil
 	}
 

@@ -18,7 +18,7 @@
 package sd
 
 import (
-	"github.com/apache/servicecomb-service-center/pkg/registry"
+	"github.com/go-chassis/cari/discovery"
 	"testing"
 )
 
@@ -43,19 +43,19 @@ func TestNewCommonCacher(t *testing.T) {
 		t.Fatalf("TestNewCommonCacher failed")
 	}
 
-	cacher.Notify(registry.EVT_CREATE, "/a", &KeyValue{Version: 1})
-	if e.Type == registry.EVT_CREATE || cache.Get("/a").Version != 1 {
+	cacher.Notify(discovery.EVT_CREATE, "/a", &KeyValue{Version: 1})
+	if e.Type == discovery.EVT_CREATE || cache.Get("/a").Version != 1 {
 		t.Fatalf("TestNewCommonCacher failed")
 	}
 	cfg.WithEventFunc(func(evt KvEvent) {
 		e = evt
 	})
-	cacher.Notify(registry.EVT_CREATE, "/a", &KeyValue{Version: 1})
-	if e.Type != registry.EVT_CREATE || cache.Get("/a").Version != 1 {
+	cacher.Notify(discovery.EVT_CREATE, "/a", &KeyValue{Version: 1})
+	if e.Type != discovery.EVT_CREATE || cache.Get("/a").Version != 1 {
 		t.Fatalf("TestNewCommonCacher failed")
 	}
-	cacher.Notify(registry.EVT_DELETE, "/a", &KeyValue{Version: 1})
-	if e.Type != registry.EVT_DELETE || cache.Get("/a") != nil {
+	cacher.Notify(discovery.EVT_DELETE, "/a", &KeyValue{Version: 1})
+	if e.Type != discovery.EVT_DELETE || cache.Get("/a") != nil {
 		t.Fatalf("TestNewCommonCacher failed")
 	}
 	cacher.Stop()

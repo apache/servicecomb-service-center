@@ -23,8 +23,8 @@ import (
 	"strings"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	scpb "github.com/apache/servicecomb-service-center/pkg/registry"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
+	scpb "github.com/go-chassis/cari/discovery"
 	"github.com/gogo/protobuf/proto"
 )
 

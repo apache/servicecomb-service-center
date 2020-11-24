@@ -18,9 +18,9 @@
 package service
 
 import (
-	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/pkg/validate"
+	"github.com/go-chassis/cari/discovery"
 	"math"
 	"regexp"
 )
@@ -37,9 +37,9 @@ var (
 
 var (
 	instStatusRegex, _ = regexp.Compile("^(" + util.StringJoin([]string{
-		registry.MSI_UP, registry.MSI_DOWN, registry.MSI_STARTING, registry.MSI_TESTING, registry.MSI_OUTOFSERVICE}, "|") + ")?$")
+		discovery.MSI_UP, discovery.MSI_DOWN, discovery.MSI_STARTING, discovery.MSI_TESTING, discovery.MSI_OUTOFSERVICE}, "|") + ")?$")
 	updateInstStatusRegex, _ = regexp.Compile("^(" + util.StringJoin([]string{
-		registry.MSI_UP, registry.MSI_DOWN, registry.MSI_STARTING, registry.MSI_TESTING, registry.MSI_OUTOFSERVICE}, "|") + ")$")
+		discovery.MSI_UP, discovery.MSI_DOWN, discovery.MSI_STARTING, discovery.MSI_TESTING, discovery.MSI_OUTOFSERVICE}, "|") + ")$")
 	hbModeRegex, _               = regexp.Compile(`^(push|pull)$`)
 	urlRegex, _                  = regexp.Compile(`^\S*$`)
 	epRegex, _                   = regexp.Compile(`\S+`)

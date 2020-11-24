@@ -19,9 +19,9 @@ package servicecenter
 import (
 	"context"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	scpb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
+	scpb "github.com/go-chassis/cari/discovery"
 	"github.com/gogo/protobuf/proto"
 )
 

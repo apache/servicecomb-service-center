@@ -22,8 +22,8 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/go-chassis/cari/discovery"
 	"sync"
 	"time"
 )
@@ -72,18 +72,18 @@ func (iedh *InstanceEventDeferHandler) recoverOrDefer(evt sd.KvEvent) {
 	key := util.BytesToStringWithNoCopy(kv.Key)
 	_, ok := iedh.items[key]
 	switch evt.Type {
-	case registry.EVT_CREATE, registry.EVT_UPDATE:
+	case discovery.EVT_CREATE, discovery.EVT_UPDATE:
 		if ok {
 			log.Infof("recovered key %s events", key)
 			// return nil // no need to publish event to subscribers?
 		}
 		iedh.recover(evt)
-	case registry.EVT_DELETE:
+	case discovery.EVT_DELETE:
 		if ok {
 			return
 		}
 
-		instance := kv.Value.(*registry.MicroServiceInstance)
+		instance := kv.Value.(*discovery.MicroServiceInstance)
 		if instance == nil {
 			log.Errorf(nil, "defer or recover a %s nil Value, KV is %v", evt.Type, kv)
 			return
