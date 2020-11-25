@@ -504,7 +504,10 @@ func (ds *DataSource) UnregisterService(ctx context.Context, request *pb.DeleteS
 }
 
 func (ds *DataSource) GetServiceCountByDomainProject(ctx context.Context, request *pb.GetServiceCountRequest) (*pb.GetServiceCountResponse, error) {
-	domainProject := request.Domain + path.SPLIT + request.Project
+	domainProject := request.Domain
+	if request.Project != "" {
+		domainProject += path.SPLIT + request.Project
+	}
 	count, err := serviceUtil.GetOneDomainProjectServiceCount(ctx, domainProject)
 	if err != nil {
 		return nil, err
