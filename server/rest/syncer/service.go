@@ -21,34 +21,13 @@ import (
 	"context"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/syncernotify"
-	"github.com/astaxie/beego"
 	"github.com/gorilla/websocket"
 	"net/http"
-	"os"
-	"strings"
 )
 
 var (
-	ServiceAPI   = &Service{}
-	configs      map[string]string
-	environments = make(map[string]string)
+	ServiceAPI = &Service{}
 )
-
-func init() {
-	// cache envs
-	for _, kv := range os.Environ() {
-		arr := strings.Split(kv, "=")
-		environments[arr[0]] = arr[1]
-	}
-
-	// cache configs
-	configs, _ = beego.AppConfig.GetSection("default")
-	if section, err := beego.AppConfig.GetSection(beego.BConfig.RunMode); err == nil {
-		for k, v := range section {
-			configs[k] = v
-		}
-	}
-}
 
 type Service struct {
 }
@@ -67,5 +46,4 @@ func (service *Service) WatchInstance(w http.ResponseWriter, r *http.Request) {
 	defer conn.Close()
 
 	syncernotify.DoWebSocketWatch(context.Background(), conn)
-
 }

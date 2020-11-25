@@ -40,6 +40,7 @@ type Service struct {
 func NewSyncerNotifyService() *Service {
 	return &Service{
 		instEventCh: make(chan *pb.WatchInstanceChangedEvent, InstanceEventQueueSize),
+		isClose:     true,
 	}
 }
 

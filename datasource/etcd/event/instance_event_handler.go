@@ -91,18 +91,18 @@ func (h *InstanceEventHandler) OnEvent(evt sd.KvEvent) {
 		util.CtxGlobal, "1")
 	ms, err := serviceUtil.GetService(ctx, domainProject, providerID)
 
+	if ms == nil {
+		log.Errorf(err, "caught [%s] instance[%s/%s] event, endpoints %v, get cached provider's file failed",
+			action, providerID, providerInstanceID, instance.Endpoints)
+		return
+	}
+
 	if !syncernotify.GetSyncerNotifyCenter().Closed() {
 		NotifySyncerInstanceEvent(evt, domainProject, ms)
 	}
 
 	if notify.Center().Closed() {
 		log.Warnf("caught [%s] instance[%s/%s] event, endpoints %v, but notify service is closed",
-			action, providerID, providerInstanceID, instance.Endpoints)
-		return
-	}
-
-	if ms == nil {
-		log.Errorf(err, "caught [%s] instance[%s/%s] event, endpoints %v, get cached provider's file failed",
 			action, providerID, providerInstanceID, instance.Endpoints)
 		return
 	}

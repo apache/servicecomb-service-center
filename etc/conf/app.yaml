@@ -120,3 +120,6 @@ tracing:
 
 quota:
   kind:
+
+syncer:
+  enable: true

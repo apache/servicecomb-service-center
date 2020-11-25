@@ -177,7 +177,10 @@ func (s *ServiceCenterServer) startServices() {
 	s.notifyService.Start()
 
 	// notify syncer
-	s.syncerNotifyService.Start()
+	syncerEnable := config.GetBool("syncer.enable", true)
+	if syncerEnable {
+		s.syncerNotifyService.Start()
+	}
 
 	// load server plugins
 	plugin.LoadPlugins()
