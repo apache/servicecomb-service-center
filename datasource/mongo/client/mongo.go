@@ -41,7 +41,7 @@ type MongoClient struct {
 	client      *mongo.Client
 	collections map[string]*mongo.Collection
 	db          *mongo.Database
-	dbconfig    storage.DB
+	dbconfig    storage.Options
 
 	err       chan error
 	ready     chan struct{}
@@ -52,7 +52,7 @@ func GetMongoClient() *MongoClient {
 	return mc
 }
 
-func NewMongoClient(config storage.DB, cols []string) {
+func NewMongoClient(config storage.Options, cols []string) {
 	inst := &MongoClient{}
 	if err := inst.Initialize(config, cols); err != nil {
 		log.Errorf(err, "failed to init mongodb")
@@ -61,7 +61,7 @@ func NewMongoClient(config storage.DB, cols []string) {
 	mc = inst
 }
 
-func (mc *MongoClient) Initialize(config storage.DB, cols []string) (err error) {
+func (mc *MongoClient) Initialize(config storage.Options, cols []string) (err error) {
 	mc.err = make(chan error, 1)
 	mc.ready = make(chan struct{})
 	mc.goroutine = gopool.New(context.Background())

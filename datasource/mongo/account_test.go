@@ -20,20 +20,10 @@ package mongo_test
 import (
 	"context"
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/datasource/mongo"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
-	"github.com/go-chassis/go-chassis/v2/storage"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
-
-func init() {
-	config := storage.DB{
-		URI: "mongodb://localhost:27017",
-	}
-	client.NewMongoClient(config, []string{mongo.CollectionService, mongo.CollectionRule, mongo.CollectionSchema, mongo.CollectionAccount})
-}
 
 func TestCreateAccount(t *testing.T) {
 	account := rbacframe.Account{

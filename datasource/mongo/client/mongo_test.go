@@ -13,7 +13,7 @@ const (
 )
 
 func init() {
-	config := storage.DB{
+	config := storage.Options{
 		URI: "mongodb://localhost:27017",
 	}
 	NewMongoClient(config, []string{TESTCOL})
