@@ -48,7 +48,7 @@ func (ds *DataSource) CreateAccount(ctx context.Context, a *rbacframe.Account) e
 		return err
 	}
 	if exist {
-		return datasource.ErrDuplicated
+		return datasource.ErrAccountDuplicated
 	}
 	hash, err := bcrypt.GenerateFromPassword([]byte(a.Password), 14)
 	if err != nil {

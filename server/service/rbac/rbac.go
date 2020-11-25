@@ -129,7 +129,7 @@ func initFirstTime(admin string) {
 		return
 	}
 	if err := dao.CreateAccount(context.Background(), a); err != nil {
-		if err == datasource.ErrDuplicated {
+		if err == datasource.ErrAccountDuplicated {
 			log.Info("rbac is enabled")
 			return
 		}
