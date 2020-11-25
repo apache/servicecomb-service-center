@@ -38,9 +38,47 @@ const (
 	RefreshTime                = "refreshtime"
 )
 
-type Instance struct {
+const (
+	TBL_INSTANCE          = "instance"
+	TBL_SERVICE           = "service"
+	TBL_TAG               = "TAGS"
+	TBL_DEP               = "DEPS"
+	RegistryDomainProject = "default/default"
+	RegistryAppID         = "default"
+)
+
+type MongoService struct {
+	Domain  string
+	Project string
+	Tags    map[string]string
+	Service *pb.MicroService
+}
+
+type MongoInstance struct {
 	Domain       string
 	Project      string
 	RefreshTime  time.Time
 	InstanceInfo *pb.MicroServiceInstance
+}
+
+const (
+	FLD_SERVICE_DOMAIN   = "domain"
+	FLD_SERVICE_PROJECT  = "project"
+	FLD_SERVICE_ID       = "service.serviceid"
+	FLD_SERVICE_PROPERTY = "service.properties"
+	FLD_SERVICE_MODTIME  = "service.modtimestamp"
+)
+
+type MongoSchema struct {
+	SchemaId string
+	Summary  string
+	Schema   string
+}
+
+type MongoDep struct {
+	Domain             string
+	Project            string
+	ConsumerId         string
+	Uuid               string
+	ConsumerDependency *pb.ConsumerDependency
 }

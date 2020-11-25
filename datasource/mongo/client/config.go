@@ -15,13 +15,14 @@
  * limitations under the License.
  */
 
-package mongo
+package client
 
-import (
-	"context"
-	"github.com/apache/servicecomb-service-center/pkg/dump"
-)
+import "github.com/apache/servicecomb-service-center/pkg/cluster"
 
-func (ds *DataSource) DumpCache(ctx context.Context, cache *dump.Cache) {
-	panic("implement me")
+type Config struct {
+	Clusters cluster.Clusters
+}
+
+func (c *Config) InitClusterInfo() {
+
 }

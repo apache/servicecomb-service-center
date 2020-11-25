@@ -45,7 +45,7 @@ func TestUpdateInstanceRefreshTime(t *testing.T) {
 	})
 
 	t.Run("update instance refresh time: if the instance does exist,the update should succeed", func(t *testing.T) {
-		instance1 := mongo.Instance{
+		instance1 := mongo.MongoInstance{
 			RefreshTime: time.Now(),
 			InstanceInfo: &pb.MicroServiceInstance{
 				InstanceId: "instanceId1",
@@ -62,7 +62,7 @@ func TestUpdateInstanceRefreshTime(t *testing.T) {
 		}
 		result, err := client.GetMongoClient().FindOne(context.Background(), mongo.CollectionInstance, filter)
 		assert.Nil(t, err)
-		var ins mongo.Instance
+		var ins mongo.MongoInstance
 		err = result.Decode(&ins)
 		assert.Nil(t, err)
 		assert.NotEqual(t, instance1.RefreshTime, ins.RefreshTime)

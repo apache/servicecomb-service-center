@@ -40,7 +40,7 @@ func TestHeartbeat(t *testing.T) {
 	})
 
 	t.Run("heartbeat: if the instance does exist,the heartbeat should succeed", func(t *testing.T) {
-		instance1 := mongo.Instance{
+		instance1 := mongo.MongoInstance{
 			RefreshTime: time.Now(),
 			InstanceInfo: &pb.MicroServiceInstance{
 				InstanceId: "instanceId1",

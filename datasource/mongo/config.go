@@ -18,10 +18,20 @@
 package mongo
 
 import (
-	"context"
-	"github.com/apache/servicecomb-service-center/pkg/dump"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
+	"github.com/apache/servicecomb-service-center/server/config"
+	"sync"
 )
 
-func (ds *DataSource) DumpCache(ctx context.Context, cache *dump.Cache) {
-	panic("implement me")
+var (
+	defaultRegistryConfig client.Config
+	configOnce            sync.Once
+)
+
+func Configuration() *client.Config {
+	configOnce.Do(func() {
+		config.ServerInfo.Config.Plugins.Object("discovery").
+			Set("config", defaultRegistryConfig)
+	})
+	return &defaultRegistryConfig
 }

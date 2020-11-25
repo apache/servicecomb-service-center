@@ -29,6 +29,7 @@ require (
 	github.com/iancoleman/strcase v0.1.2
 	github.com/jonboulle/clockwork v0.2.2 // indirect
 	github.com/karlseguin/ccache v2.0.3-0.20170217060820-3ba9789cfd2c+incompatible
+	github.com/karlseguin/expect v1.0.7 // indirect
 	github.com/labstack/echo v3.2.2-0.20180316170059-a5d81b8d4a62+incompatible
 	github.com/labstack/echo/v4 v4.1.17
 	github.com/mattn/go-runewidth v0.0.9 // indirect
@@ -53,6 +54,7 @@ require (
 	github.com/urfave/cli v1.22.4
 	github.com/widuu/gojson v0.0.0-20170212122013-7da9d2cd949b
 	github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2 // indirect
+	go.etcd.io/bbolt v1.3.5 // indirect
 	go.mongodb.org/mongo-driver v1.4.2
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.10.0
