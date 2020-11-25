@@ -27,7 +27,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	stringutil "github.com/go-chassis/foundation/string"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -49,19 +48,10 @@ func (ds *DataSource) CreateAccount(ctx context.Context, a *rbacframe.Account) e
 	a.ID = util.GenerateUUID()
 	_, err = client.GetMongoClient().Insert(ctx, CollectionAccount, a)
 	if err != nil {
-		switch tt := err.(type) {
-		case mongo.WriteException:
-			if tt.WriteErrors != nil {
-				for _, writeError := range tt.WriteErrors {
-					// The index is setup.The key is repeated.
-					if writeError.Code == DuplicateKey {
-						return datasource.ErrDuplicated
-					}
-				}
-			}
-		default:
-			return err
+		if client.IsDuplicateKey(err) {
+			return datasource.ErrDuplicated
 		}
+		return err
 	}
 	log.Info("create new account: " + a.ID)
 	return nil

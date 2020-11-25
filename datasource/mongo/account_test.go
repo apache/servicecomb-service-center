@@ -32,7 +32,7 @@ func init() {
 	config := storage.DB{
 		URI: "mongodb://localhost:27017",
 	}
-	client.NewMongoClient(config, []string{mongo.CollectionAccount})
+	client.NewMongoClient(config, []string{mongo.CollectionService, mongo.CollectionRule, mongo.CollectionSchema, mongo.CollectionAccount})
 }
 
 func TestCreateAccount(t *testing.T) {
