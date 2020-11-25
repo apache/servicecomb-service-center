@@ -21,6 +21,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/go-chassis/go-chassis/v2/storage"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"time"
@@ -54,6 +55,7 @@ func GetMongoClient() *MongoClient {
 func NewMongoClient(config storage.DB, cols []string) {
 	inst := &MongoClient{}
 	if err := inst.Initialize(config, cols); err != nil {
+		log.Errorf(err, "failed to init mongodb")
 		inst.err <- err
 	}
 	mc = inst
@@ -235,4 +237,52 @@ func (mc *MongoClient) Watch(ctx context.Context, Table string, pipeline interfa
 		return nil, ErrCollectionsNil
 	}
 	return col.Watch(ctx, pipeline, opts...)
+}
+
+func (mc *MongoClient) StartSession(ctx context.Context) (mongo.Session, error) {
+	return mc.client.StartSession()
+}
+
+func (mc *MongoClient) DocExist(ctx context.Context, table string, filter bson.M) (bool, error) {
+	num, err := mc.Count(ctx, table, filter)
+	if err != nil {
+		return false, err
+	}
+	return num != 0, nil
+}
+
+func (mc *MongoClient) DocUpdate(ctx context.Context, table string, filter interface{}, m bson.M, opts ...*options.FindOneAndUpdateOptions) error {
+	res, err := mc.FindOneAndUpdate(ctx, table, filter, m, opts...)
+	if err != nil {
+		return err
+	}
+	if res.Err() != nil {
+		// means no doc find, if the operation is update,should return err
+		return res.Err()
+	}
+	return nil
+}
+
+func (mc *MongoClient) DocDelete(ctx context.Context, table string, filter interface{}) (bool, error) {
+	res, err := mc.DeleteOne(ctx, table, filter)
+	if err != nil {
+		return false, err
+	}
+	return res.DeletedCount != 0, nil
+}
+
+func (mc *MongoClient) DocDeleteMany(ctx context.Context, table string, filter interface{}) error {
+	_, err := mc.Delete(ctx, table, filter)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (mc *MongoClient) DeleteOne(ctx context.Context, Table string, filter interface{}, opts ...*options.DeleteOptions) (*mongo.DeleteResult, error) {
+	col := mc.collections[Table]
+	if col == nil {
+		return nil, ErrCollectionsNil
+	}
+	return col.DeleteOne(ctx, filter, opts...)
 }

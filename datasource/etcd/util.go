@@ -88,59 +88,6 @@ func getSchemasFromDatabase(ctx context.Context, domainProject string, serviceID
 	return schemas, nil
 }
 
-func schemasAnalysis(schemas []*pb.Schema, schemasFromDb []*pb.Schema, schemaIDsInService []string) (
-	[]*pb.Schema, []*pb.Schema, []*pb.Schema, []string) {
-	needUpdateSchemas := make([]*pb.Schema, 0, len(schemas))
-	needAddSchemas := make([]*pb.Schema, 0, len(schemas))
-	needDeleteSchemas := make([]*pb.Schema, 0, len(schemasFromDb))
-	nonExistSchemaIds := make([]string, 0, len(schemas))
-
-	duplicate := make(map[string]struct{})
-	for _, schema := range schemas {
-		if _, ok := duplicate[schema.SchemaId]; ok {
-			continue
-		}
-		duplicate[schema.SchemaId] = struct{}{}
-
-		exist := false
-		for _, schemaFromDb := range schemasFromDb {
-			if schema.SchemaId == schemaFromDb.SchemaId {
-				needUpdateSchemas = append(needUpdateSchemas, schema)
-				exist = true
-				break
-			}
-		}
-		if !exist {
-			needAddSchemas = append(needAddSchemas, schema)
-		}
-
-		exist = false
-		for _, schemaID := range schemaIDsInService {
-			if schema.SchemaId == schemaID {
-				exist = true
-			}
-		}
-		if !exist {
-			nonExistSchemaIds = append(nonExistSchemaIds, schema.SchemaId)
-		}
-	}
-
-	for _, schemaFromDb := range schemasFromDb {
-		exist := false
-		for _, schema := range schemas {
-			if schema.SchemaId == schemaFromDb.SchemaId {
-				exist = true
-				break
-			}
-		}
-		if !exist {
-			needDeleteSchemas = append(needDeleteSchemas, schemaFromDb)
-		}
-	}
-
-	return needUpdateSchemas, needAddSchemas, needDeleteSchemas, nonExistSchemaIds
-}
-
 func checkSchemaInfoExist(ctx context.Context, key string) (bool, error) {
 	opts := append(serviceUtil.FromContext(ctx), client.WithStrKey(key), client.WithCountOnly())
 	resp, errDo := kv.Store().Schema().Search(ctx, opts...)

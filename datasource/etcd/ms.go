@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/cache"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	registry "github.com/apache/servicecomb-service-center/datasource/etcd/client"
@@ -2185,7 +2186,7 @@ func (ds *DataSource) modifySchemas(ctx context.Context, domainProject string, s
 	}
 
 	needUpdateSchemas, needAddSchemas, needDeleteSchemas, nonExistSchemaIds :=
-		schemasAnalysis(schemas, schemasFromDatabase, service.Schemas)
+		datasource.SchemasAnalysis(schemas, schemasFromDatabase, service.Schemas)
 
 	pluginOps := make([]client.PluginOp, 0)
 	if !ds.isSchemaEditable(service) {
