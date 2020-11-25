@@ -267,7 +267,7 @@ func UpdateService(domainProject string, serviceID string, service *pb.MicroServ
 }
 
 func GetOneDomainProjectServiceCount(ctx context.Context, domainProject string) (int64, error) {
-	key := path.GenerateServiceKey(domainProject, "")
+	key := path.GetServiceRootKey(domainProject) + path.SPLIT
 	opts := append(FromContext(ctx),
 		client.WithStrKey(key),
 		client.WithCountOnly(),
@@ -280,7 +280,7 @@ func GetOneDomainProjectServiceCount(ctx context.Context, domainProject string) 
 }
 
 func GetOneDomainProjectInstanceCount(ctx context.Context, domainProject string) (int64, error) {
-	key := path.GetInstanceRootKey(domainProject) + "/"
+	key := path.GetInstanceRootKey(domainProject) + path.SPLIT
 	opts := append(FromContext(ctx),
 		client.WithStrKey(key),
 		client.WithCountOnly(),
