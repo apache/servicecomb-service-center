@@ -75,7 +75,7 @@ type ServerConfig struct {
 
 	// if want disable Test Schema, SchemaDisable set true
 	SchemaDisable bool `json:"schemaDisable"`
-	// if want disable modification of Schema, SchemaEditable set false
+	// if want disable modification of Schema in production environment, SchemaEditable set false
 	SchemaEditable bool `json:"-"`
 
 	// instance ttl in seconds
