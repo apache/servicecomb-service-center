@@ -92,7 +92,7 @@ registry:
 
   schema:
     disable: false
-    editable: true
+    editable: false
   # enable to register sc itself when startup
   selfRegister: 1
 
