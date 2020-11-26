@@ -130,7 +130,7 @@ func initFirstTime(admin string) {
 	}
 	if err := dao.CreateAccount(context.Background(), a); err != nil {
 		if err == datasource.ErrAccountDuplicated {
-			log.Info("rbac is enabled")
+			log.Info("root account already exists")
 			return
 		}
 		log.Fatal("can not enable rbac, init root account failed", err)
