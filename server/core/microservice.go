@@ -88,10 +88,11 @@ func prepareSelfRegistration() {
 }
 
 func AddDefaultContextValue(ctx context.Context) context.Context {
-	return util.SetContext(util.SetContext(util.SetDomainProject(ctx,
+	return util.SetContext(util.SetContext(util.SetContext(util.SetDomainProject(ctx,
 		RegistryDomain, RegistryProject),
 		CtxScSelf, true),
-		CtxScRegistry, "1")
+		CtxScRegistry, "1"),
+		util.CtxNocache, "1")
 }
 
 func IsDefaultDomainProject(domainProject string) bool {
