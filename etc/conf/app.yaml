@@ -122,4 +122,4 @@ quota:
   kind:
 
 syncer:
-  enable: true
+  enable: false
