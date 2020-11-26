@@ -70,7 +70,7 @@ func (r *AuthResource) CreateAccount(w http.ResponseWriter, req *http.Request) {
 	}
 	err = dao.CreateAccount(context.TODO(), a)
 	if err != nil {
-		if err == datasource.ErrDuplicated {
+		if err == datasource.ErrAccountDuplicated {
 			controller.WriteError(w, discovery.ErrConflictAccount, "")
 			return
 		}

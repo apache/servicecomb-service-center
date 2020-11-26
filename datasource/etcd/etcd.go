@@ -23,11 +23,13 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/mux"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	"github.com/apache/servicecomb-service-center/pkg/etcdsync"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -46,6 +48,9 @@ type DataSource struct {
 	// Compact options
 	CompactIndexDelta int64
 	CompactInterval   time.Duration
+
+	lockMux sync.Mutex
+	locks   map[string]*etcdsync.DLock
 }
 
 func NewDataSource(opts datasource.Options) (datasource.DataSource, error) {
@@ -57,6 +62,8 @@ func NewDataSource(opts datasource.Options) (datasource.DataSource, error) {
 		InstanceTTL:       opts.InstanceTTL,
 		CompactInterval:   opts.CompactInterval,
 		CompactIndexDelta: opts.CompactIndexDelta,
+
+		locks: make(map[string]*etcdsync.DLock),
 	}
 
 	registryAddresses := strings.Join(Configuration().RegistryAddresses(), ",")

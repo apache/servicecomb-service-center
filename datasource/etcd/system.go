@@ -19,9 +19,12 @@ package etcd
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/mux"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/dump"
+	"github.com/apache/servicecomb-service-center/pkg/etcdsync"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 )
 
@@ -49,4 +52,43 @@ func setValue(e sd.Adaptor, setter dump.Setter) {
 		})
 		return true
 	})
+}
+
+func (ds *DataSource) DLock(ctx context.Context, request *datasource.DLockRequest) error {
+	var (
+		lock *etcdsync.DLock
+		err  error
+	)
+	ds.lockMux.Lock()
+
+	id := mux.Type(request.ID)
+	if request.Wait {
+		lock, err = mux.Lock(id)
+	} else {
+		lock, err = mux.Try(id)
+	}
+	if err != nil {
+		ds.lockMux.Unlock()
+		return err
+	}
+	ds.locks[request.ID] = lock
+
+	ds.lockMux.Unlock()
+	return nil
+}
+
+func (ds *DataSource) DUnlock(ctx context.Context, request *datasource.DUnlockRequest) error {
+	ds.lockMux.Lock()
+
+	lock, ok := ds.locks[request.ID]
+	if !ok {
+		ds.lockMux.Unlock()
+		return datasource.ErrDLockNotFound
+	}
+
+	err := lock.Unlock()
+	delete(ds.locks, request.ID)
+
+	ds.lockMux.Unlock()
+	return err
 }
