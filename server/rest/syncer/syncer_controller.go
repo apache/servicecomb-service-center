@@ -18,6 +18,8 @@
 package syncer
 
 import (
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/server/config"
 	"net/http"
 
 	"github.com/apache/servicecomb-service-center/pkg/rest"
@@ -35,5 +37,11 @@ func (ctrl *SyncerController) URLPatterns() []rest.Route {
 }
 
 func (ctrl *SyncerController) WatchInstance(w http.ResponseWriter, r *http.Request) {
-	ServiceAPI.WatchInstance(w, r)
+	syncerEnabled := config.GetBool("syncer.enabled", false)
+	if syncerEnabled {
+		ServiceAPI.WatchInstance(w, r)
+	} else {
+		log.Warnf("syncer cannot watch instance because the config syncer.enabled is false, ")
+	}
+
 }

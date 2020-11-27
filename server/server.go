@@ -177,8 +177,8 @@ func (s *ServiceCenterServer) startServices() {
 	s.notifyService.Start()
 
 	// notify syncer
-	syncerEnable := config.GetBool("syncer.enable", false)
-	if syncerEnable {
+	syncerEnabled := config.GetBool("syncer.enabled", false)
+	if syncerEnabled {
 		s.syncerNotifyService.Start()
 	}
 

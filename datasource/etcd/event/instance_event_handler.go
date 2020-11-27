@@ -38,6 +38,8 @@ import (
 const (
 	increaseOne = 1
 	decreaseOne = -1
+	msKeyPrefix = "/cse-sr/ms/files/"
+	sep         = "/"
 )
 
 // InstanceEventHandler is the handler to handle:
@@ -155,7 +157,7 @@ func PublishInstanceEvent(evt sd.KvEvent, domainProject string, serviceKey *pb.M
 func NotifySyncerInstanceEvent(evt sd.KvEvent, domainProject string, ms *pb.MicroService) {
 	msInstance := evt.KV.Value.(*pb.MicroServiceInstance)
 
-	serviceKey := "/cse-sr/ms/files/" + domainProject + "/" + ms.ServiceId
+	serviceKey := msKeyPrefix + domainProject + sep + ms.ServiceId
 	msKV := &dump.KV{Key: serviceKey, ClusterName: evt.KV.ClusterName}
 	service := &dump.Microservice{KV: msKV, Value: ms}
 
