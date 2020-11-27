@@ -19,6 +19,7 @@ package syncer
 
 import (
 	roa "github.com/apache/servicecomb-service-center/pkg/rest"
+	"github.com/apache/servicecomb-service-center/server/config"
 )
 
 func init() {
@@ -26,5 +27,8 @@ func init() {
 }
 
 func registerREST() {
-	roa.RegisterServant(&SyncerController{})
+	syncerEnabled := config.GetBool("syncer.enabled", false)
+	if syncerEnabled {
+		roa.RegisterServant(&SyncerController{})
+	}
 }

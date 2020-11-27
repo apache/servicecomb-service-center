@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-const watchInstanceUrl = "v4/default/syncer/watch"
+const watchInstanceUrl = "v4/syncer/watch"
 const wsScheme = "ws"
 
 var (

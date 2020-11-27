@@ -282,13 +282,12 @@ func (s *Server) watchInstance() error {
 
 func (s *Server) addToQueue(event *dump.WatchInstanceChangedEvent) {
 	mapping := s.servicecenter.GetSyncMapping()
+
 	for _, m := range mapping {
-		if event.Instance.Value.InstanceId == m.CurInstanceID {
-			if m.OrgInstanceID != "" {
-				log.Debugf("instance[curId:%s, originId:%s] is from another sc, no need to put to queue",
-					m.CurInstanceID, m.OrgInstanceID)
-				return
-			}
+		if event.Instance.Value.InstanceId == m.CurInstanceID && m.OrgInstanceID != "" {
+			log.Debugf("instance[curId:%s, originId:%s] is from another sc, no need to put to queue",
+				m.CurInstanceID, m.OrgInstanceID)
+			return
 		}
 	}
 

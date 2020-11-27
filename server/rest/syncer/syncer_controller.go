@@ -18,8 +18,6 @@
 package syncer
 
 import (
-	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/server/config"
 	"net/http"
 
 	"github.com/apache/servicecomb-service-center/pkg/rest"
@@ -32,16 +30,10 @@ type SyncerController struct {
 // URLPatterns 路由
 func (ctrl *SyncerController) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{Method: http.MethodGet, Path: "/v4/:project/syncer/watch", Func: ctrl.WatchInstance},
+		{Method: http.MethodGet, Path: "/v4/syncer/watch", Func: ctrl.WatchInstance},
 	}
 }
 
 func (ctrl *SyncerController) WatchInstance(w http.ResponseWriter, r *http.Request) {
-	syncerEnabled := config.GetBool("syncer.enabled", false)
-	if syncerEnabled {
-		ServiceAPI.WatchInstance(w, r)
-	} else {
-		log.Warnf("syncer cannot watch instance because the config syncer.enabled is false, ")
-	}
-
+	ServiceAPI.WatchInstance(w, r)
 }
