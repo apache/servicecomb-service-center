@@ -55,7 +55,6 @@ func (s *Server) tickHandler() {
 	if s.httpserver.Triggered {
 		err := s.serf.UserEvent(EventNotifyFullPulled, util.StringToBytesWithNoCopy(""))
 		s.httpserver.Triggered = false
-		s.httpserver.Mux.Unlock()
 		if err != nil {
 			log.Errorf(err, "Syncer send notifyFullPulled user event failed")
 		}
