@@ -284,7 +284,7 @@ func (s *Server) addToQueue(event *dump.WatchInstanceChangedEvent) {
 	mapping := s.servicecenter.GetSyncMapping()
 
 	for _, m := range mapping {
-		if event.Instance.Value.InstanceId == m.CurInstanceID && m.OrgInstanceID != "" {
+		if instFromOtherSC(event.Instance, m) {
 			log.Debugf("instance[curId:%s, originId:%s] is from another sc, no need to put to queue",
 				m.CurInstanceID, m.OrgInstanceID)
 			return
@@ -295,4 +295,11 @@ func (s *Server) addToQueue(event *dump.WatchInstanceChangedEvent) {
 	s.eventQueue = append(s.eventQueue, event)
 	log.Debugf("success add instance event to queue:%s   len:%s", event, len(s.eventQueue))
 	s.queueLock.Unlock()
+}
+
+func instFromOtherSC(instance *dump.Instance, m *pb.MappingEntry) bool {
+	if instance.Value.InstanceId == m.CurInstanceID && m.OrgInstanceID != "" {
+		return true
+	}
+	return false
 }
