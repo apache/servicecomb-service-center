@@ -1,8 +1,18 @@
 {
-  "name": "traffic2adminAPI",
+  "name": "demo-mark",
+  "id": "xxx",
+  "status": "enabled",
+  "createTime": "123",
+  "updateTime": "123",
+  "selector": {
+    "app": "xx",
+    "environment": "xx"
+  },
   "spec": {
+    "services": "ser1:1.0,ser2:2.0,ser3",
     "matches": [
       {
+        "name": "match1",
         "headers": {
           "X-User": {
             "regex": "ja.*"
@@ -17,6 +27,7 @@
         ]
       },
       {
+        "name": "match2",
         "apiPath": {
           "exact": "/health"
         },

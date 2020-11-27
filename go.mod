@@ -15,10 +15,12 @@ require (
 	github.com/coreos/pkg v0.0.0-20180108230652-97fdf19511ea // v4
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/dustin/go-humanize v1.0.0 // indirect
+	github.com/ghodss/yaml v1.0.0
 	github.com/go-chassis/cari v0.0.0-20201124050026-32fbf4d53439
-	github.com/go-chassis/foundation v0.1.1-0.20200825060850-b16bf420f7b3
+	github.com/go-chassis/foundation v0.2.0
 	github.com/go-chassis/go-archaius v1.3.6-0.20201103103813-43dd1680ebfb
 	github.com/go-chassis/go-chassis/v2 v2.0.5-0.20201125123124-2d38733810fd
+	github.com/go-chassis/kie-client v0.0.0-20201127085925-8ad6f8fdd9fc
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/protobuf v1.4.2
 	github.com/gorilla/websocket v1.4.0

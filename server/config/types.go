@@ -19,7 +19,7 @@ package config
 
 //Config is yaml file struct
 type Config struct {
-	Gov    Gov                `yaml:"gov"`
+	Gov    *Gov               `yaml:"gov"`
 	Server *ServerInformation `yaml:"server"`
 }
 type Gov struct {

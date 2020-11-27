@@ -28,6 +28,12 @@ server:
   pprof:
     mode: 0
 
+gov:
+  plugins:
+    - name: kie
+      type: kie
+      endpoint: http://127.0.0.1:30110
+
 log:
   level: DEBUG
   file:

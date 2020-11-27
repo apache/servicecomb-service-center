@@ -84,6 +84,7 @@ github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMo
 github.com/fsnotify/fsnotify v1.4.9 h1:hsms1Qyu0jgnwNXIxa+/V/PDsU6CfLf6CNO8H7IWoS4=
 github.com/fsnotify/fsnotify v1.4.9/go.mod h1:znqG4EE+3YCdAaPaxE2ZRY/06pZUdp0tY4IgpuI1SZQ=
 github.com/ghodss/yaml v0.0.0-20150909031657-73d445a93680/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
+github.com/ghodss/yaml v1.0.0 h1:wQHKEahhL6wmXdzwWG11gIVCkOv05bNOh+Rxn0yngAk=
 github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
 github.com/gin-contrib/sse v0.0.0-20190301062529-5545eab6dad3/go.mod h1:VJ0WA2NBN22VlZ2dKZQPAPnyWw5XTlK1KymzLKsr59s=
 github.com/gin-gonic/gin v1.4.0/go.mod h1:OW2EZn3DO8Ln9oIKOvM++LBO+5UPHJJDH72/q/3rZdM=
@@ -95,12 +96,18 @@ github.com/go-chassis/cari v0.0.0-20201124050026-32fbf4d53439 h1:lcibK+pZYz3sBv7
 github.com/go-chassis/cari v0.0.0-20201124050026-32fbf4d53439/go.mod h1:jsYzEzPrsmFemVwLj/nhv/+4toFIvqVZRiSWFmkJ4Ms=
 github.com/go-chassis/foundation v0.1.1-0.20200825060850-b16bf420f7b3 h1:c+bwT0qLY69jSU8TmzuNcb9UL/QFAiU96kjuX5TMiQc=
 github.com/go-chassis/foundation v0.1.1-0.20200825060850-b16bf420f7b3/go.mod h1:21/ajGtgJlWTCeM0TxGJdRhO8bJkKirWyV8Stlh6g6c=
+github.com/go-chassis/foundation v0.2.0 h1:QzvITxnd1PUys3XR/x31C0YbwwvWsTXQWDEGfsdpgAc=
+github.com/go-chassis/foundation v0.2.0/go.mod h1:2PjwqpVwYEVaAldl5A58a08viH8p27pNeYaiE3ZxOBA=
 github.com/go-chassis/go-archaius v1.3.6-0.20201103103813-43dd1680ebfb h1:+6mPi1HDASveJ72gWkH0rmq5hNz/rTZhrIgRXjFnSRE=
 github.com/go-chassis/go-archaius v1.3.6-0.20201103103813-43dd1680ebfb/go.mod h1:K9gt8DIj582EQfKQdZV+jWBKNeevwaM+2cdLQgpOlZM=
 github.com/go-chassis/go-chassis/v2 v2.0.5-0.20201114043352-d6ab1f0a882d h1:mWjcGCOGlVPHNsrsAJa2aivI0bYVDlM1vA4g9AyY9i0=
 github.com/go-chassis/go-chassis/v2 v2.0.5-0.20201114043352-d6ab1f0a882d/go.mod h1:DHA83QKVmuOtdkaWCP5yCDOh+GIRH+YpX3uZ2BlGMWw=
+github.com/go-chassis/go-chassis/v2 v2.0.5-0.20201125123124-2d38733810fd h1:TkCeUatUsrCNU0yUKpnZyQfswbdQ4quIAgCrmEhD2vQ=
+github.com/go-chassis/go-chassis/v2 v2.0.5-0.20201125123124-2d38733810fd/go.mod h1:DHA83QKVmuOtdkaWCP5yCDOh+GIRH+YpX3uZ2BlGMWw=
 github.com/go-chassis/go-restful-swagger20 v1.0.3-0.20200310030431-17d80f34264f h1:5QmmNpVcGqIc6tuKNe5EAI4PA8Yn2EL9Oee7YdcJ4PE=
 github.com/go-chassis/go-restful-swagger20 v1.0.3-0.20200310030431-17d80f34264f/go.mod h1:eW62fYuzlNFDvIacB6AV8bhUDCTy4myfTCv0bT9Gbb0=
+github.com/go-chassis/kie-client v0.0.0-20201127085925-8ad6f8fdd9fc h1:pQPCyzNaA4RnS1U1G0+AEjeVlKplsmgXdvl5Xdi+mbk=
+github.com/go-chassis/kie-client v0.0.0-20201127085925-8ad6f8fdd9fc/go.mod h1:RvwNShUU5AvpTLPX3J/klcf/5MYtsmGOSKO9k820s1I=
 github.com/go-chassis/openlog v1.1.1/go.mod h1:ZZOS68OvrFIKEJbuBa4YnYzmxyVx3lmcMfMKb+Hx/yQ=
 github.com/go-chassis/openlog v1.1.2 h1:LgGfwwOhpU8c6URV6ADpaRBPVY7Ph1C28jCQ6zzQawQ=
 github.com/go-chassis/openlog v1.1.2/go.mod h1:+eYCADVxWyJkwsFMUBrMxyQlNqW+UUsCxvR2LrYZUaA=

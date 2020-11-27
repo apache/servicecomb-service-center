@@ -58,6 +58,9 @@ import _ "github.com/apache/servicecomb-service-center/server/rest/admin"
 //metrics
 import _ "github.com/apache/servicecomb-service-center/server/rest/prometheus"
 
+//governance
+import _ "github.com/apache/servicecomb-service-center/server/service/gov/kie"
+
 import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/broker"

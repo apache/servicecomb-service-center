@@ -33,13 +33,14 @@ type Governance struct {
 //Create gov config
 func (t *Governance) Create(w http.ResponseWriter, req *http.Request) {
 	kind := req.URL.Query().Get(":kind")
+	project := req.URL.Query().Get(":project")
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		log.Error("read body err", err)
 		controller.WriteError(w, discovery.ErrInternal, err.Error())
 		return
 	}
-	err = gov.Create(kind, body)
+	err = gov.Create(kind, project, body)
 	if err != nil {
 		log.Error("create gov err", err)
 		controller.WriteError(w, discovery.ErrInternal, err.Error())
@@ -50,18 +51,68 @@ func (t *Governance) Create(w http.ResponseWriter, req *http.Request) {
 
 //Put gov config
 func (t *Governance) Put(w http.ResponseWriter, req *http.Request) {
-
+	id := req.URL.Query().Get(":id")
+	project := req.URL.Query().Get(":project")
+	body, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		log.Error("read body err", err)
+		controller.WriteError(w, discovery.ErrInternal, err.Error())
+		return
+	}
+	err = gov.Update(id, project, body)
+	if err != nil {
+		log.Error("create gov err", err)
+		controller.WriteError(w, discovery.ErrInternal, err.Error())
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }
 
 //List return all gov config
 func (t *Governance) List(w http.ResponseWriter, req *http.Request) {
+	kind := req.URL.Query().Get(":kind")
+	project := req.URL.Query().Get(":project")
+	app := req.URL.Query().Get("app")
+	environment := req.URL.Query().Get("environment")
+	body, err := gov.List(kind, project, app, environment)
+	if err != nil {
+		log.Error("create gov err", err)
+		controller.WriteError(w, discovery.ErrInternal, err.Error())
+		return
+	}
+	_, _ = w.Write(body)
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set(rest.HeaderContentType, rest.ContentTypeJSON)
+}
 
+//Get gov config
+func (t *Governance) Get(w http.ResponseWriter, req *http.Request) {
+	id := req.URL.Query().Get(":id")
+	project := req.URL.Query().Get(":project")
+	body, err := gov.Get(id, project)
+	if err != nil {
+		log.Error("create gov err", err)
+		controller.WriteError(w, discovery.ErrInternal, err.Error())
+		return
+	}
+	_, _ = w.Write(body)
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set(rest.HeaderContentType, rest.ContentTypeJSON)
 }
 
 //Delete delete gov config
 func (t *Governance) Delete(w http.ResponseWriter, req *http.Request) {
-
+	id := req.URL.Query().Get(":id")
+	project := req.URL.Query().Get(":project")
+	err := gov.Delete(id, project)
+	if err != nil {
+		log.Error("create gov err", err)
+		controller.WriteError(w, discovery.ErrInternal, err.Error())
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }
+
 func (t *Governance) URLPatterns() []rest.Route {
 	return []rest.Route{
 		//servicecomb.marker.{name}
@@ -69,7 +120,8 @@ func (t *Governance) URLPatterns() []rest.Route {
 		//....
 		{Method: http.MethodPost, Path: "/v1/:project/gov/:kind", Func: t.Create},
 		{Method: http.MethodGet, Path: "/v1/:project/gov/:kind", Func: t.List},
-		{Method: http.MethodPut, Path: "/v1/:project/gov/:kind/:name", Func: t.Put},
-		{Method: http.MethodDelete, Path: "/v1/:project/gov/:kind/:name", Func: t.Delete},
+		{Method: http.MethodGet, Path: "/v1/:project/gov/:kind/:id", Func: t.Get},
+		{Method: http.MethodPut, Path: "/v1/:project/gov/:kind/:id", Func: t.Put},
+		{Method: http.MethodDelete, Path: "/v1/:project/gov/:kind/:id", Func: t.Delete},
 	}
 }

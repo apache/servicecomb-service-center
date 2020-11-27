@@ -1,7 +1,17 @@
 {
   "name": "adminAPIRetry",
+  "id": "xxx",
+  "status": "enabled",
+  "createTime": "123",
+  "updateTime": "123",
+  "selector" : {
+    "app": "xx",
+    "environment": "xx"
+  },
   "spec": {
-    "match": "traffic2adminAPI",
+    "rules": {
+      "match": "traffic2adminAPI"
+    },
     "retryNext": 3
   }
 }
