@@ -105,7 +105,7 @@ func ProjectExist(ctx context.Context, domain, project string) (bool, error) {
 }
 
 func NewDomainProject(ctx context.Context, domain, project string) error {
-	copyCtx := util.SetContext(util.CloneContext(ctx), util.CtxCacheOnly, "1")
+	copyCtx := util.WithCacheOnly(util.CloneContext(ctx))
 	ok, err := DomainExist(copyCtx, domain)
 	if !ok && err == nil {
 		ok, err = AddDomain(ctx, domain)

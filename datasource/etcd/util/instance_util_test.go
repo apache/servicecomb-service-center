@@ -88,7 +88,7 @@ func TestGetInstanceCountOfOneService(t *testing.T) {
 }
 
 func TestUpdateInstance(t *testing.T) {
-	err := UpdateInstance(util.SetContext(context.Background(), util.CtxNocache, "1"), "", &pb.MicroServiceInstance{})
+	err := UpdateInstance(util.WithNoCache(context.Background()), "", &pb.MicroServiceInstance{})
 	if err == nil {
 		t.Fatalf(`UpdateInstance CTX_NOCACHE failed`)
 	}
@@ -111,7 +111,7 @@ func TestAppendFindResponse(t *testing.T) {
 	}
 
 	updatedResult = nil
-	cloneCtx := context.WithValue(ctx, util.CtxResponseRevision, "1")
+	cloneCtx := util.WithResponseRev(ctx, "1")
 	AppendFindResponse(cloneCtx, 1, find.Response, find.Instances, &updatedResult, &notModifiedResult, &failedResult)
 	if updatedResult == nil || notModifiedResult != nil || failedResult != nil {
 		t.Fatal("TestAppendFindResponse failed")
@@ -121,8 +121,8 @@ func TestAppendFindResponse(t *testing.T) {
 	}
 
 	updatedResult = nil
-	cloneCtx = context.WithValue(ctx, util.CtxRequestRevision, "1")
-	cloneCtx = context.WithValue(cloneCtx, util.CtxResponseRevision, "1")
+	cloneCtx = util.WithRequestRev(ctx, "1")
+	cloneCtx = util.WithResponseRev(cloneCtx, "1")
 	AppendFindResponse(cloneCtx, 1, find.Response, find.Instances, &updatedResult, &notModifiedResult, &failedResult)
 	if updatedResult != nil || notModifiedResult == nil || failedResult != nil {
 		t.Fatal("TestAppendFindResponse failed")
@@ -153,8 +153,8 @@ func TestAppendFindResponse(t *testing.T) {
 	find.Response = nil
 	AppendFindResponse(ctx, 1, find.Response, find.Instances, &updatedResult, &notModifiedResult, &failedResult)
 	AppendFindResponse(ctx, 2, find.Response, find.Instances, &updatedResult, &notModifiedResult, &failedResult)
-	cloneCtx = context.WithValue(ctx, util.CtxRequestRevision, "1")
-	cloneCtx = context.WithValue(cloneCtx, util.CtxResponseRevision, "1")
+	cloneCtx = util.WithRequestRev(ctx, "1")
+	cloneCtx = util.WithResponseRev(cloneCtx, "1")
 	AppendFindResponse(cloneCtx, 3, find.Response, find.Instances, &updatedResult, &notModifiedResult, &failedResult)
 	AppendFindResponse(cloneCtx, 4, find.Response, find.Instances, &updatedResult, &notModifiedResult, &failedResult)
 	find.Response = pb.CreateResponse(pb.ErrInternal, "test")

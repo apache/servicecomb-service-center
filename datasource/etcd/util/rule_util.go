@@ -39,7 +39,7 @@ type RuleFilter struct {
 }
 
 func (rf *RuleFilter) Filter(ctx context.Context, consumerID string) (bool, error) {
-	copyCtx := util.SetContext(util.CloneContext(ctx), util.CtxCacheOnly, "1")
+	copyCtx := util.WithCacheOnly(util.CloneContext(ctx))
 	consumer, err := GetService(copyCtx, rf.DomainProject, consumerID)
 	if consumer == nil {
 		return false, err
@@ -278,7 +278,7 @@ func Accessible(ctx context.Context, consumerID string, providerID string) *disc
 		return discovery.NewError(discovery.ErrPermissionDeny, err.Error())
 	}
 
-	ctx = util.SetContext(util.CloneContext(ctx), util.CtxCacheOnly, "1")
+	ctx = util.WithCacheOnly(util.CloneContext(ctx))
 
 	// 黑白名单
 	rules, err := GetRulesUtil(ctx, targetDomainProject, providerID)

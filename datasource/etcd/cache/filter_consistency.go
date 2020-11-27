@@ -63,8 +63,7 @@ func (f *ConsistencyFilter) Init(ctx context.Context, parent *cache.Node) (node 
 		return
 	}
 
-	cloneCtx := util.CloneContext(ctx)
-	cloneCtx = util.SetContext(cloneCtx, util.CtxNocache, "1")
+	cloneCtx := util.WithNoCache(util.CloneContext(ctx))
 	insts, _, err := f.Find(cloneCtx, parent)
 	if err != nil {
 		pCache.InitBrokenQueue()
