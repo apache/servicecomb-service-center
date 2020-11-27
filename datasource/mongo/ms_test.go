@@ -19,7 +19,6 @@ package mongo_test
 
 import (
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/datasource/mongo"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	pb "github.com/go-chassis/cari/discovery"
@@ -35,7 +34,7 @@ func init() {
 	config := storage.Options{
 		URI: "mongodb://localhost:27017",
 	}
-	client.NewMongoClient(config, []string{mongo.CollectionService, mongo.CollectionRule, mongo.CollectionSchema, mongo.CollectionAccount})
+	client.NewMongoClient(config)
 }
 
 func TestServiceRegister(t *testing.T) {
