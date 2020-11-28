@@ -21,12 +21,13 @@ package rbacframe
 import (
 	"context"
 	"crypto/rsa"
+	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/go-chassis/go-chassis/v2/security/token"
 )
 
 const (
-	ClaimsUser = "account"
-	ClaimsRole = "role"
+	ClaimsUser  = "account"
+	ClaimsRoles = "roles"
 )
 
 func AccountFromContext(ctx context.Context) (*Account, error) {
@@ -40,12 +41,13 @@ func AccountFromContext(ctx context.Context) (*Account, error) {
 	if !ok {
 		return nil, ErrConvertErr
 	}
-	roleI := m[ClaimsRole]
-	role, ok := roleI.(string)
-	if !ok {
+	roles := m[ClaimsRoles]
+	roleList, err := GetRolesList(roles)
+	if err != nil {
+		log.Error("role convert failed ", err)
 		return nil, ErrConvertErr
 	}
-	account := &Account{Name: a, Role: role}
+	account := &Account{Name: a, Roles: roleList}
 	return account, nil
 }
 
@@ -56,7 +58,7 @@ func RoleFromContext(ctx context.Context) (string, error) {
 	if !ok {
 		return "", ErrInvalidCtx
 	}
-	roleI := m[ClaimsRole]
+	roleI := m[ClaimsRoles]
 	role, ok := roleI.(string)
 	if !ok {
 		return "", ErrConvertErr
@@ -73,4 +75,21 @@ func Authenticate(tokenStr string, pub *rsa.PublicKey) (interface{}, error) {
 		return nil, err
 	}
 	return claims, nil
+}
+
+// GetRolesList return role list string
+func GetRolesList(v interface{}) ([]string, error) {
+	s, ok := v.([]interface{})
+	if !ok {
+		return nil, ErrConvertErr
+	}
+	rolesList := make([]string, 0)
+	for _, v := range s {
+		role, ok := v.(string)
+		if !ok {
+			return nil, ErrConvertErr
+		}
+		rolesList = append(rolesList, role)
+	}
+	return rolesList, nil
 }

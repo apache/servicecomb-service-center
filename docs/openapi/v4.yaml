@@ -1915,6 +1915,141 @@ paths:
           description: 内部错误
           schema:
             $ref: '#/definitions/Error'
+  /v4/role:
+    get:
+      description: list all role
+      operationId: listRole
+      parameters:
+        - name: authorization
+          in: header
+          type: string
+          required: true
+          description: Bearer {token}
+      tags:
+        - rbac
+      responses:
+        200:
+          description:  get role list success
+          schema:
+            $ref: '#/definitions/RoleResponse'
+        400:
+          description: 错误的请求
+          schema:
+            $ref: '#/definitions/Error'
+        500:
+          description: 内部错误
+          schema:
+            $ref: '#/definitions/Error'
+    post:
+      description: create new role
+      parameters:
+        - name: role
+          in: body
+          description: 用户账户请求结构体。
+          required: true
+          schema:
+            $ref: '#/definitions/Role'
+      tags:
+        - rbac
+      responses:
+        200:
+          description:  generate a token success
+          schema:
+            $ref: '#/definitions/Token'
+        400:
+          description: 错误的请求
+          schema:
+            $ref: '#/definitions/Error'
+        500:
+          description: 内部错误
+          schema:
+            $ref: '#/definitions/Error'
+  /v4/role/{roleName}:
+      get:
+        description: list role permission
+        operationId: listRole
+        parameters:
+          - name: authorization
+            in: header
+            type: string
+            required: true
+            description: Bearer {token}
+          - name: roleName
+            in: path
+            type: string
+            required: true
+        tags:
+          - rbac
+        responses:
+          200:
+            description:  get role list information success
+            schema:
+              $ref: '#/definitions/Role'
+          400:
+            description: 错误的请求
+            schema:
+              $ref: '#/definitions/Error'
+          500:
+            description: 内部错误
+            schema:
+              $ref: '#/definitions/Error'
+      put:
+        description: update role
+        operationId: updateRole
+        parameters:
+          - name: roleName
+            in: path
+            type: string
+            required: true
+          - name: authorization
+            in: header
+            type: string
+            required: true
+            description: Bearer {token}
+          - name: type
+            in: body
+            required: true
+            schema:
+              $ref: '#/definitions/Role'
+        tags:
+          - rbac
+        responses:
+          200:
+            description:  create new role success
+          400:
+            description: 错误的请求
+            schema:
+              $ref: '#/definitions/Error'
+          500:
+            description: 内部错误
+            schema:
+              $ref: '#/definitions/Error'
+      delete:
+        description: delete role by roleName
+        operationId: deleteRole
+        parameters:
+          - name: authorization
+            in: header
+            type: string
+            required: true
+            description:  Bearer {token}
+          - name: roleName
+            in: path
+            required: true
+            type: string
+        tags:
+          - rbac
+        responses:
+          200:
+            description:  delete role success
+          400:
+            description: 错误的请求
+            schema:
+              $ref: '#/definitions/Error'
+          500:
+            description: 内部错误
+            schema:
+              $ref: '#/definitions/Error'
 definitions:
   Version:
     type: object
@@ -2805,9 +2940,11 @@ definitions:
       password:
         type: string
         description: password must conform to the following set of rules, have more than 8 characters, have at least one upper alpha, have at least one lower alpha, have at least one digit and have at lease one special character.
-      role:
-        type: string
-        description: admin|developer
+      roles:
+        type: array
+        description: admin|developer|other...
+        items:
+          type: string
       tokenExprirationTime:
         type: string
         description: token will expired after 30m
@@ -2817,6 +2954,49 @@ definitions:
       status:
         type: string
         description: status
+  RoleResponse:
+    type: object
+    description: role infomation
+    properties:
+      total:
+        type: integer
+        description: total roles
+    additionalProperties:
+      type: array
+      items:
+        $ref: '#/definitions/Role'
+  Role:
+    type: object
+    description: role permission
+    required:
+      - name
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+        description: provided default role is "admin" and "developer"
+      perms:
+        type: object
+        description: role permissions
+        additionalProperties:
+          type: array
+          items:
+            $ref: '#/definitions/Perms'
+  Perms:
+    type: object
+    description: role resources
+    properties:
+      resources:
+        type: array
+        description: role own's resources
+        items:
+          type: string
+      verbs:
+        type: array
+        description: resource verbs
+        items:
+          type: string
   Token:
     type: object
     properties:
