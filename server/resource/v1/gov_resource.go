@@ -51,6 +51,7 @@ func (t *Governance) Create(w http.ResponseWriter, req *http.Request) {
 
 //Put gov config
 func (t *Governance) Put(w http.ResponseWriter, req *http.Request) {
+	kind := req.URL.Query().Get(":kind")
 	id := req.URL.Query().Get(":id")
 	project := req.URL.Query().Get(":project")
 	body, err := ioutil.ReadAll(req.Body)
@@ -59,7 +60,7 @@ func (t *Governance) Put(w http.ResponseWriter, req *http.Request) {
 		controller.WriteError(w, discovery.ErrInternal, err.Error())
 		return
 	}
-	err = gov.Update(id, project, body)
+	err = gov.Update(id, kind, project, body)
 	if err != nil {
 		log.Error("create gov err", err)
 		controller.WriteError(w, discovery.ErrInternal, err.Error())

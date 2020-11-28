@@ -4,7 +4,7 @@
   "status": "enabled",
   "createTime": "123",
   "updateTime": "123",
-  "selector" : {
+  "selector": {
     "app": "xx",
     "environment": "xx"
   },
@@ -12,6 +12,7 @@
     "rules": {
       "match": "traffic2adminAPI"
     },
-    "retryNext": 3
+    "maxAttempts": 3,
+    "onSame": false
   }
 }

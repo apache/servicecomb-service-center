@@ -29,6 +29,8 @@ const AppKey = "app"
 
 const EnvironmentKey = "environment"
 
+var rule = Validator{}
+
 func (d *Distributor) Create(kind, project string, spec []byte) error {
 	p := &gov.LoadBalancer{}
 	err := json.Unmarshal(spec, p)
@@ -37,6 +39,10 @@ func (d *Distributor) Create(kind, project string, spec []byte) error {
 	}
 	log.Println(fmt.Sprintf("create %v", &p))
 	key := toSnake(kind) + "." + p.Name
+	err = rule.Validate(kind, p.Spec)
+	if err != nil {
+		return err
+	}
 	yamlByte, err := yaml.Marshal(p.Spec)
 	if err != nil {
 		return err
@@ -56,13 +62,17 @@ func (d *Distributor) Create(kind, project string, spec []byte) error {
 	return nil
 }
 
-func (d *Distributor) Update(id, project string, spec []byte) error {
+func (d *Distributor) Update(id, kind, project string, spec []byte) error {
 	p := &gov.LoadBalancer{}
 	err := json.Unmarshal(spec, p)
 	if err != nil {
 		return err
 	}
 	log.Println(fmt.Sprintf("update %v", &p))
+	err = rule.Validate(kind, p.Spec)
+	if err != nil {
+		return err
+	}
 	yamlByte, err := yaml.Marshal(p.Spec)
 	if err != nil {
 		return err
