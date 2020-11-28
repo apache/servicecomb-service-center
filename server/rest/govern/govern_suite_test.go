@@ -43,7 +43,5 @@ var _ = BeforeSuite(func() {
 })
 
 func getContext() context.Context {
-	return util.SetContext(
-		util.SetDomainProject(context.Background(), "default", "default"),
-		util.CtxNocache, "1")
+	return util.WithNoCache(util.SetDomainProject(context.Background(), "default", "default"))
 }

@@ -67,7 +67,7 @@ func TestRuleExist(t *testing.T) {
 			t.Fatalf("TestRuleExist panic")
 		}
 	}()
-	RuleExist(util.SetContext(context.Background(), util.CtxCacheOnly, "1"), "", "", "", "")
+	RuleExist(util.WithCacheOnly(context.Background()), "", "", "", "")
 	RuleExist(context.Background(), "", "", "", "")
 }
 

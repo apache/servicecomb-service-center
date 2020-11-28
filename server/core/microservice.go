@@ -48,8 +48,7 @@ const (
 	RegistryDefaultLeaseRenewalinterval int32 = 30
 	RegistryDefaultLeaseRetrytimes      int32 = 3
 
-	CtxScSelf     = "_sc_self"
-	CtxScRegistry = "_registryOnly"
+	CtxScSelf = "_sc_self"
 )
 
 func init() {
@@ -88,10 +87,9 @@ func prepareSelfRegistration() {
 }
 
 func AddDefaultContextValue(ctx context.Context) context.Context {
-	return util.SetContext(util.SetContext(util.SetDomainProject(ctx,
+	return util.WithNoCache(util.SetContext(util.SetDomainProject(ctx,
 		RegistryDomain, RegistryProject),
-		CtxScSelf, true),
-		CtxScRegistry, "1")
+		CtxScSelf, true))
 }
 
 func IsDefaultDomainProject(domainProject string) bool {

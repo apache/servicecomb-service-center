@@ -1409,7 +1409,7 @@ func TestInstance_Query(t *testing.T) {
 		assert.Equal(t, instanceId8, respFind.Instances[0].InstanceId)
 		assert.NotEqual(t, 0, len(rev))
 
-		util.SetContext(ctx, util.CtxRequestRevision, "x")
+		util.WithRequestRev(ctx, "x")
 		respFind, err = datasource.Instance().FindInstances(ctx, &pb.FindInstancesRequest{
 			ConsumerServiceId: serviceId8,
 			AppId:             "query_instance_ms",
@@ -1888,9 +1888,7 @@ func TestInstance_GetAll(t *testing.T) {
 			serviceId1 string
 			serviceId2 string
 		)
-		ctx := util.SetContext(
-			util.SetDomainProject(context.Background(), "TestInstance_GetAll", "1"),
-			util.CtxNocache, "1")
+		ctx := util.WithNoCache(util.SetDomainProject(context.Background(), "TestInstance_GetAll", "1"))
 		respCreateService, err := datasource.Instance().RegisterService(ctx, &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
 				AppId:       "get_instance_ms",
@@ -1950,9 +1948,7 @@ func TestInstance_GetAll(t *testing.T) {
 	})
 
 	t.Run("domain contain no instances, get all instances should be pass, return 0 instance", func(t *testing.T) {
-		ctx := util.SetContext(
-			util.SetDomainProject(context.Background(), "TestInstance_GetAll", "2"),
-			util.CtxNocache, "1")
+		ctx := util.WithNoCache(util.SetDomainProject(context.Background(), "TestInstance_GetAll", "2"))
 		respAll, err := datasource.Instance().GetAllInstances(ctx, &pb.GetAllInstancesRequest{})
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, respAll.Response.GetCode())
