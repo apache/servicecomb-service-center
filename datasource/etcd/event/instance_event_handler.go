@@ -24,11 +24,13 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
+	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/metrics"
 	"github.com/apache/servicecomb-service-center/server/notify"
+	"github.com/apache/servicecomb-service-center/server/syncernotify"
 	pb "github.com/go-chassis/cari/discovery"
 	"strings"
 )
@@ -36,6 +38,8 @@ import (
 const (
 	increaseOne = 1
 	decreaseOne = -1
+	msKeyPrefix = "/cse-sr/ms/files/"
+	sep         = "/"
 )
 
 // InstanceEventHandler is the handler to handle:
@@ -83,17 +87,22 @@ func (h *InstanceEventHandler) OnEvent(evt sd.KvEvent) {
 		}
 	}
 
-	if notify.Center().Closed() {
-		log.Warnf("caught [%s] instance[%s/%s] event, endpoints %v, but notify service is closed",
+	// 查询服务版本信息
+	ctx := util.WithGlobal(util.WithCacheOnly(context.Background()))
+	ms, err := serviceUtil.GetService(ctx, domainProject, providerID)
+
+	if ms == nil {
+		log.Errorf(err, "caught [%s] instance[%s/%s] event, endpoints %v, get cached provider's file failed",
 			action, providerID, providerInstanceID, instance.Endpoints)
 		return
 	}
 
-	// 查询服务版本信息
-	ctx := util.WithGlobal(util.WithCacheOnly(context.Background()))
-	ms, err := serviceUtil.GetService(ctx, domainProject, providerID)
-	if ms == nil {
-		log.Errorf(err, "caught [%s] instance[%s/%s] event, endpoints %v, get cached provider's file failed",
+	if !syncernotify.GetSyncerNotifyCenter().Closed() {
+		NotifySyncerInstanceEvent(evt, domainProject, ms)
+	}
+
+	if notify.Center().Closed() {
+		log.Warnf("caught [%s] instance[%s/%s] event, endpoints %v, but notify service is closed",
 			action, providerID, providerInstanceID, instance.Endpoints)
 		return
 	}
@@ -141,4 +150,27 @@ func PublishInstanceEvent(evt sd.KvEvent, domainProject string, serviceKey *pb.M
 			log.Errorf(err, "publish event[%v] into channel failed", evt)
 		}
 	}
+}
+
+func NotifySyncerInstanceEvent(evt sd.KvEvent, domainProject string, ms *pb.MicroService) {
+	msInstance := evt.KV.Value.(*pb.MicroServiceInstance)
+
+	serviceKey := msKeyPrefix + domainProject + sep + ms.ServiceId
+	msKV := &dump.KV{Key: serviceKey, ClusterName: evt.KV.ClusterName}
+	service := &dump.Microservice{KV: msKV, Value: ms}
+
+	instKey := string(evt.KV.Key)
+	instKV := &dump.KV{Key: instKey, ClusterName: evt.KV.ClusterName}
+	instance := &dump.Instance{KV: instKV, Value: msInstance}
+
+	instEvent := &dump.WatchInstanceChangedEvent{
+		Action:   string(evt.Type),
+		Service:  service,
+		Instance: instance,
+		Revision: evt.Revision,
+	}
+
+	syncernotify.GetSyncerNotifyCenter().AddEvent(instEvent)
+
+	log.Debugf("success to add instance change event:%s to event queue", instEvent)
 }
