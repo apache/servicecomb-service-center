@@ -27,24 +27,15 @@ type AccountResponse struct {
 }
 
 type Account struct {
-	ID                  string `json:"id,omitempty"`
-	Name                string `json:"name,omitempty"`
-	Password            string `json:"password,omitempty"`
-	Role                string `json:"role,omitempty"`
-	TokenExpirationTime string `json:"tokenExpirationTime,omitempty"`
-	CurrentPassword     string `json:"currentPassword,omitempty"`
-	Status              string `json:"status,omitempty"`
+	ID                  string   `json:"id,omitempty"`
+	Name                string   `json:"name,omitempty"`
+	Password            string   `json:"password,omitempty"`
+	Roles               []string `json:"roles,omitempty"`
+	TokenExpirationTime string   `json:"tokenExpirationTime,omitempty"`
+	CurrentPassword     string   `json:"currentPassword,omitempty"`
+	Status              string   `json:"status,omitempty"`
 }
 
 type Token struct {
 	TokenStr string `json:"token,omitempty"`
-}
-
-type Role struct {
-	Project     []string
-	Permissions map[string]*Permission
-}
-type Permission struct {
-	IDs   []string // TODO make IDs checked by rbac
-	Verbs []string
 }

@@ -179,7 +179,7 @@ func newInfo() ServerInformation {
 			InstanceTTL:          GetInt64("registry.instance.ttl", 0, WithENV("INSTANCE_TTL")),
 
 			SchemaDisable:  GetBool("registry.schema.disable", false, WithENV("SCHEMA_DISABLE")),
-			SchemaEditable: GetBool("registry.schema.editable", true, WithENV("SCHEMA_EDITABLE")),
+			SchemaEditable: GetBool("registry.schema.editable", false, WithENV("SCHEMA_EDITABLE")),
 
 			EnableRBAC: GetBool("rbac.enable", false, WithStandby("rbac_enabled")),
 

@@ -35,3 +35,12 @@ func GetResource(api string) string {
 func MapResource(api, resource string) {
 	resourceMap[api] = resource
 }
+
+//BuildResourceList join the resource to an array
+func BuildResourceList(resourceType ...string) []string {
+	rt := make([]string, len(resourceType))
+	for i := 0; i < len(resourceType); i++ {
+		rt[i] = resourceType[i]
+	}
+	return rt
+}

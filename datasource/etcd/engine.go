@@ -24,7 +24,6 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/pkg/cluster"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
-	"github.com/apache/servicecomb-service-center/server/metrics"
 	"strconv"
 	"strings"
 	"time"
@@ -37,20 +36,25 @@ import (
 )
 
 func (ds *DataSource) SelfRegister(ctx context.Context) error {
-	err := ds.registryService(ctx)
+	err := ds.selfRegister(ctx)
+	if err != nil {
+		return err
+	}
+	// start send heart beat job
+	ds.autoSelfHeartBeat()
+	return nil
+}
+
+func (ds *DataSource) selfRegister(ctx context.Context) error {
+	err := ds.registerService(ctx)
 	if err != nil {
 		return err
 	}
 	// 实例信息
-	err = ds.registryInstance(ctx)
-	// start send heart beat job
-	ds.autoSelfHeartBeat()
-	// report the metrics
-	metrics.ReportScInstance()
-	return err
+	return ds.registerInstance(ctx)
 }
 
-func (ds *DataSource) registryService(pCtx context.Context) error {
+func (ds *DataSource) registerService(pCtx context.Context) error {
 	ctx := core.AddDefaultContextValue(pCtx)
 	respE, err := core.ServiceAPI.Exist(ctx, core.GetExistenceRequest())
 	if err != nil {
@@ -78,7 +82,7 @@ func (ds *DataSource) registryService(pCtx context.Context) error {
 	return nil
 }
 
-func (ds *DataSource) registryInstance(pCtx context.Context) error {
+func (ds *DataSource) registerInstance(pCtx context.Context) error {
 	core.Instance.InstanceId = ""
 	core.Instance.ServiceId = core.Service.ServiceId
 
@@ -101,6 +105,46 @@ func (ds *DataSource) registryInstance(pCtx context.Context) error {
 	return nil
 }
 
+func (ds *DataSource) selfHeartBeat(pCtx context.Context) error {
+	ctx := core.AddDefaultContextValue(pCtx)
+	respI, err := core.InstanceAPI.Heartbeat(ctx, core.HeartbeatRequest())
+	if err != nil {
+		log.Error("send heartbeat failed", err)
+		return err
+	}
+	if respI.Response.GetCode() == pb.ResponseSuccess {
+		log.Debugf("update service center instance[%s/%s] heartbeat",
+			core.Instance.ServiceId, core.Instance.InstanceId)
+		return nil
+	}
+	err = fmt.Errorf(respI.Response.GetMessage())
+	log.Errorf(err, "update service center instance[%s/%s] heartbeat failed",
+		core.Instance.ServiceId, core.Instance.InstanceId)
+	return err
+}
+
+func (ds *DataSource) autoSelfHeartBeat() {
+	gopool.Go(func(ctx context.Context) {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(time.Duration(core.Instance.HealthCheck.Interval) * time.Second):
+				err := ds.selfHeartBeat(ctx)
+				if err == nil {
+					continue
+				}
+				//服务不存在，创建服务
+				err = ds.selfRegister(ctx)
+				if err != nil {
+					log.Errorf(err, "retry to register[%s/%s/%s/%s] failed",
+						core.Service.Environment, core.Service.AppId, core.Service.ServiceName, core.Service.Version)
+				}
+			}
+		}
+	})
+}
+
 func (ds *DataSource) SelfUnregister(pCtx context.Context) error {
 	if len(core.Instance.InstanceId) == 0 {
 		return nil
@@ -120,43 +164,6 @@ func (ds *DataSource) SelfUnregister(pCtx context.Context) error {
 	log.Warnf("unregister service center instance[%s/%s]",
 		core.Service.ServiceId, core.Instance.InstanceId)
 	return nil
-}
-
-func (ds *DataSource) selfHeartBeat(pCtx context.Context) error {
-	ctx := core.AddDefaultContextValue(pCtx)
-	respI, err := core.InstanceAPI.Heartbeat(ctx, core.HeartbeatRequest())
-	if err != nil {
-		log.Error("sen heartbeat failed", err)
-		return err
-	}
-	if respI.Response.GetCode() == pb.ResponseSuccess {
-		log.Debugf("update service center instance[%s/%s] heartbeat",
-			core.Instance.ServiceId, core.Instance.InstanceId)
-		return nil
-	}
-	log.Errorf(err, "update service center instance[%s/%s] heartbeat failed",
-		core.Instance.ServiceId, core.Instance.InstanceId)
-
-	//服务不存在，创建服务
-	err = ds.SelfRegister(pCtx)
-	if err != nil {
-		log.Errorf(err, "retry to register[%s/%s/%s/%s] failed",
-			core.Service.Environment, core.Service.AppId, core.Service.ServiceName, core.Service.Version)
-	}
-	return err
-}
-
-func (ds *DataSource) autoSelfHeartBeat() {
-	gopool.Go(func(ctx context.Context) {
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-time.After(time.Duration(core.Instance.HealthCheck.Interval) * time.Second):
-				_ = ds.selfHeartBeat(ctx)
-			}
-		}
-	})
 }
 
 // ClearNoInstanceService clears services which have no instance

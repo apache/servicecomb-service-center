@@ -53,7 +53,7 @@ func EditAccount(ctx context.Context, a *rbacframe.Account) error {
 		return err
 	}
 	if !exist {
-		return datasource.ErrCanNotEdit
+		return datasource.ErrAccountCanNotEdit
 	}
 
 	err = datasource.Instance().UpdateAccount(ctx, a.Name, a)

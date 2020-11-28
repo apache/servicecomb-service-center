@@ -70,7 +70,7 @@ func (r *AuthResource) CreateAccount(w http.ResponseWriter, req *http.Request) {
 	}
 	err = dao.CreateAccount(context.TODO(), a)
 	if err != nil {
-		if err == datasource.ErrDuplicated {
+		if err == datasource.ErrAccountDuplicated {
 			controller.WriteError(w, discovery.ErrConflictAccount, "")
 			return
 		}
@@ -153,7 +153,7 @@ func (r *AuthResource) ChangePassword(w http.ResponseWriter, req *http.Request) 
 		controller.WriteError(w, discovery.ErrInternal, "can not parse account info")
 		return
 	}
-	err = rbac.ChangePassword(context.TODO(), changer.Role, changer.Name, a)
+	err = rbac.ChangePassword(context.TODO(), changer.Roles, changer.Name, a)
 	if err != nil {
 		if err == rbac.ErrSamePassword ||
 			err == rbac.ErrEmptyCurrentPassword ||

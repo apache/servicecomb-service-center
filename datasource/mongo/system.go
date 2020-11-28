@@ -19,9 +19,18 @@ package mongo
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/dump"
 )
 
 func (ds *DataSource) DumpCache(ctx context.Context, cache *dump.Cache) {
 
+}
+
+func (ds *DataSource) DLock(ctx context.Context, request *datasource.DLockRequest) error {
+	return nil
+}
+
+func (ds *DataSource) DUnlock(ctx context.Context, request *datasource.DUnlockRequest) error {
+	return nil
 }

@@ -29,6 +29,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rpc"
+	"github.com/apache/servicecomb-service-center/syncer/client"
 	"github.com/apache/servicecomb-service-center/syncer/config"
 	"github.com/apache/servicecomb-service-center/syncer/etcd"
 	"github.com/apache/servicecomb-service-center/syncer/grpc"
@@ -156,6 +157,12 @@ func (s *Server) Run(ctx context.Context) {
 
 	go s.NewHttpServer()
 
+	err = s.watchInstance()
+	if err != nil {
+		log.Error("watch instance error:%s", err)
+		return
+	}
+
 	log.Info("start service done")
 
 	<-s.stopCh
@@ -238,6 +245,7 @@ func (s *Server) initialization() (err error) {
 		log.Error("create grpc failed", err)
 		return
 	}
+
 	return nil
 }
 
@@ -280,6 +288,43 @@ func (s *Server) configureCluster() error {
 	}
 
 	return s.etcd.AddOptions(ops...)
+}
+func (s *Server) watchInstance() error {
+	cli := client.NewWatchClient(s.conf.Registry.Address)
+
+	err := cli.WatchInstances(s.addToQueue)
+
+	if err != nil {
+		return err
+	}
+
+	cli.WatchInstanceHeartbeat(s.addToQueue)
+
+	return nil
+}
+
+func (s *Server) addToQueue(event *dump.WatchInstanceChangedEvent) {
+	mapping := s.servicecenter.GetSyncMapping()
+
+	for _, m := range mapping {
+		if instFromOtherSC(event.Instance, m) {
+			log.Debugf("instance[curId:%s, originId:%s] is from another sc, no need to put to queue",
+				m.CurInstanceID, m.OrgInstanceID)
+			return
+		}
+	}
+
+	s.queueLock.Lock()
+	s.eventQueue = append(s.eventQueue, event)
+	log.Debugf("success add instance event to queue:%s   len:%s", event, len(s.eventQueue))
+	s.queueLock.Unlock()
+}
+
+func instFromOtherSC(instance *dump.Instance, m *pb.MappingEntry) bool {
+	if instance.Value.InstanceId == m.CurInstanceID && m.OrgInstanceID != "" {
+		return true
+	}
+	return false
 }
 
 func (s *Server) getRevision(addr string) int64 {

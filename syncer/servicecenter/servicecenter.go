@@ -37,6 +37,7 @@ type Servicecenter interface {
 	Registry(clusterName string, data *pb.SyncData)
 	Discovery() *pb.SyncData
 	IncrementRegistry(clusterName string, data *pb.SyncData)
+	GetSyncMapping() pb.SyncMapping
 }
 
 type servicecenter struct {
@@ -208,4 +209,8 @@ func (s *servicecenter) IncrementRegistry(clusterName string, data *pb.SyncData)
 		}
 		s.storage.UpdateMapByCluster(clusterName, mapping)
 	}
+}
+
+func (s *servicecenter) GetSyncMapping() pb.SyncMapping {
+	return s.storage.GetMaps()
 }

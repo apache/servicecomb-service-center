@@ -24,7 +24,6 @@ import (
 
 const (
 	DuplicateKey               = 11000
-	CollectionAccount          = "account"
 	AccountName                = "name"
 	AccountID                  = "id"
 	AccountPassword            = "password"
@@ -32,11 +31,71 @@ const (
 	AccountTokenExpirationTime = "tokenexpirationtime"
 	AccountCurrentPassword     = "currentpassword"
 	AccountStatus              = "status"
-	CollectionInstance         = "instance"
 	InstanceID                 = "instanceinfo.instanceid"
 	ServiceID                  = "instanceinfo.serviceid"
 	RefreshTime                = "refreshtime"
 )
+
+const (
+	CollectionAccount  = "account"
+	CollectionService  = "service"
+	CollectionSchema   = "schema"
+	CollectionRule     = "rule"
+	CollectionInstance = "instance"
+)
+
+const (
+	ErrorDuplicateKey = 11000
+)
+
+const (
+	Domain             = "domain"
+	Project            = "project"
+	ServiceTag         = "tags"
+	SchemaID           = "schemaid"
+	RuleServiceID      = "serviceid"
+	RuleRuleID         = "ruleinfo.ruleid"
+	SchemaServiceID    = "serviceid"
+	ServiceServiceID   = "serviceinfo.serviceid"
+	ServiceProperty    = "serviceinfo.properties"
+	ServiceModTime     = "serviceinfo.modtimestamp"
+	ServiceEnv         = "serviceinfo.environment"
+	ServiceAppID       = "serviceinfo.appid"
+	ServiceServiceName = "serviceinfo.servicename"
+	ServiceAlias       = "serviceinfo.alias"
+	ServiceVersion     = "serviceinfo.version"
+	ServiceSchemas     = "serviceinfo.schemas"
+	RuleAttribute      = "ruleinfo.attribute"
+	RulePattern        = "ruleinfo.pattern"
+	RuleModTime        = "ruleinfo.modtimestamp"
+	RuleDescription    = "ruleinfo.description"
+	RuleRuletype       = "ruleinfo.ruletype"
+	SchemaInfo         = "schemainfo"
+	SchemaSummary      = "schemasummary"
+)
+
+type Service struct {
+	Domain      string
+	Project     string
+	Tags        map[string]string
+	ServiceInfo *pb.MicroService
+}
+
+type Schema struct {
+	Domain        string
+	Project       string
+	ServiceID     string
+	SchemaID      string
+	SchemaInfo    string
+	SchemaSummary string
+}
+
+type Rule struct {
+	Domain    string
+	Project   string
+	ServiceID string
+	RuleInfo  *pb.ServiceRule
+}
 
 type Instance struct {
 	Domain       string

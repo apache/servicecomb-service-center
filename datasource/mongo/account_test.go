@@ -20,27 +20,17 @@ package mongo_test
 import (
 	"context"
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/datasource/mongo"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
-	"github.com/go-chassis/go-chassis/v2/storage"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
-
-func init() {
-	config := storage.DB{
-		URI: "mongodb://localhost:27017",
-	}
-	client.NewMongoClient(config, []string{mongo.CollectionAccount})
-}
 
 func TestCreateAccount(t *testing.T) {
 	account := rbacframe.Account{
 		ID:                  "11111-22222-33333",
 		Name:                "test-account1",
 		Password:            "tnuocca-tset",
-		Role:                "admin",
+		Roles:               []string{"admin"},
 		TokenExpirationTime: "2020-12-30",
 		CurrentPassword:     "tnuocca-tset1",
 	}
@@ -66,7 +56,7 @@ func TestGetAccount(t *testing.T) {
 		ID:                  "11111-22222-33333",
 		Name:                "test-account1",
 		Password:            "tnuocca-tset",
-		Role:                "admin",
+		Roles:               []string{"admin"},
 		TokenExpirationTime: "2020-12-30",
 		CurrentPassword:     "tnuocca-tset1",
 	}
@@ -91,7 +81,7 @@ func TestListAccount(t *testing.T) {
 		ID:                  "11111-22222-33333",
 		Name:                "test-account1",
 		Password:            "tnuocca-tset",
-		Role:                "admin",
+		Roles:               []string{"admin"},
 		TokenExpirationTime: "2020-12-30",
 		CurrentPassword:     "tnuocca-tset1",
 	}
@@ -99,7 +89,7 @@ func TestListAccount(t *testing.T) {
 		ID:                  "11111-22222-33333",
 		Name:                "test-account2",
 		Password:            "tnuocca-tset",
-		Role:                "admin",
+		Roles:               []string{"admin"},
 		TokenExpirationTime: "2020-12-30",
 		CurrentPassword:     "tnuocca-tset2",
 	}
@@ -125,7 +115,7 @@ func TestDeleteAccount(t *testing.T) {
 			ID:                  "11111-22222-33333",
 			Name:                "test-account1",
 			Password:            "tnuocca-tset",
-			Role:                "admin",
+			Roles:               []string{"admin"},
 			TokenExpirationTime: "2020-12-30",
 			CurrentPassword:     "tnuocca-tset1",
 		}
@@ -144,7 +134,7 @@ func TestUpdateAccount(t *testing.T) {
 			ID:                  "11111-22222-33333",
 			Name:                "test-account1",
 			Password:            "tnuocca-tset",
-			Role:                "admin",
+			Roles:               []string{"admin"},
 			TokenExpirationTime: "2020-12-30",
 			CurrentPassword:     "tnuocca-tset1",
 		}
@@ -158,7 +148,7 @@ func TestUpdateAccount(t *testing.T) {
 			ID:                  "11111-22222-33333",
 			Name:                "test-account1",
 			Password:            "tnuocca-tset",
-			Role:                "admin",
+			Roles:               []string{"admin"},
 			TokenExpirationTime: "2020-12-30",
 			CurrentPassword:     "tnuocca-tset1",
 		}

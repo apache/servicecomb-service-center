@@ -19,26 +19,57 @@ package rbac
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
+	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 )
 
-func Allow(ctx context.Context, role, project, resource, verbs string) (bool, error) {
-	r := dao.GetRole(ctx, role)
-	if r == nil {
-		log.Warn("empty role info")
+func Allow(ctx context.Context, roleList []string, project, resource, verbs string) (bool, error) {
+	//TODO check project
+	if ableToAccessResource(roleList, "admin") {
+		return true, nil
+	}
+	// allPerms combines the roleList permission
+	var allPerms = make([]*rbacframe.Permission, 0)
+	for i := 0; i < len(roleList); i++ {
+		r, err := datasource.Instance().GetRole(ctx, roleList[i])
+		if err != nil {
+			log.Error("get role list errors", err)
+			return false, err
+		}
+		if r == nil {
+			log.Warnf("role [%s] has no any permissions", roleList[i])
+			continue
+		}
+		allPerms = append(allPerms, r.Perms...)
+	}
+
+	if len(allPerms) == 0 {
+		log.Warn("role list has no any permissions")
 		return false, nil
 	}
-	ps := r.Permissions
-	if len(ps) == 0 {
-		log.Warn("role has no any permissions")
-		return false, nil
+	for i := 0; i < len(allPerms); i++ {
+		if ableToAccessResource(allPerms[i].Resources, resource) && ableToOperateResource(allPerms[i].Verbs, verbs) {
+			return true, nil
+		}
 	}
-	p, ok := ps[resource]
-	if !ok || p == nil {
-		log.Warn("role is not allowed to access resource")
-		return false, nil
+
+	log.Warn("role is not allowed to operate resource")
+	return false, nil
+}
+
+func ableToOperateResource(haystack []string, needle string) bool {
+	if ableToAccessResource(haystack, "*") || ableToAccessResource(haystack, needle) {
+		return true
 	}
-	//TODO check verbs and project
-	return true, nil
+	return false
+}
+
+func ableToAccessResource(haystack []string, needle string) bool {
+	for _, e := range haystack {
+		if e == needle {
+			return true
+		}
+	}
+	return false
 }

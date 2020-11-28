@@ -61,7 +61,7 @@ curl -X GET \
 ### Change password
 You must supply current password and token to update to new password
 ```shell script
-curl -X PUT \
+curl -X POST \
   http://127.0.0.1:30100/v4/account/root/password \
   -H 'Authorization: Bearer {your_token}' \
   -d '{
@@ -70,7 +70,64 @@ curl -X PUT \
 }'
 ```
 
-### create a new account by account which has admin role 
+### create a new account 
+You can create new account named "peter", now peter has no any roles, also has no permission to operate resources. How to add roles and allocate resources please refer to next.
+```shell script
+curl -X POST \
+  http://127.0.0.1:30100/v4/account \
+  -H 'Accept: */*' \
+  -H 'Authorization: Bearer {your_token}' \
+  -H 'Content-Type: application/json' \
+  -d '{
+	"name":"peter",
+	"password":"{strong_password}"    
+}'
+```
+### Roles 
+Currently, two default roles are provided. You can also add new roles and assign resources.
+
+### API and resources
+All APIs of the system are divided according to their attributes. For example, resource account has the permission to create or update or delete user account when assign the corresponding permissions, resource service has all permission to create, get, add or delete microservices when permissions equal to "*". For more details to see [https://github.com/apache/servicecomb-service-center/blob/master/server/service/rbac/resource.go]()
+A new role named "tester" owns resources "service", "instance" and "rule".
+ ```json
+{
+ "name": "tester",
+ "perms": [
+         { 
+            "resources": ["service","instance"],
+            "verbs":     ["get", "create", "update"]
+         },
+         { 
+             "resources": ["rule"],
+             "verbs":     ["get"]
+         }
+    ]
+}
+```
+
+### create new role and how to use
+1. You can add new role and allocate resources to new role. For example, a new role named "tester" and allocate resources to "tester". 
+```shell script
+curl -X POST \
+  http://127.0.0.1:30100/v4/role \
+  -H 'Accept: */*' \
+  -H 'Authorization: Bearer {your_token}' \
+  -H 'Content-Type: application/json' \
+  -d '{
+	  "name": "tester",
+      "perms": [
+              { 
+                  "resources": ["service","instance"],
+                  "verbs":     ["get", "create", "update"]
+              },
+              { 
+                  "resources": ["rule"],
+                  "verbs":     ["get"]
+              }
+        ]
+}'
+```
+2.then, assigning roles "tester" and "tester2" to user account "peter", "tester2" is a empty role has not any resources.
 ```shell script
 curl -X POST \
   http://127.0.0.1:30100/v4/account \
@@ -80,11 +137,43 @@ curl -X POST \
   -d '{
 	"name":"peter",
 	"password":"{strong_password}",
-	"role":"developer"
-	
+	"roles": ["tester", "tester2"]
 }'
 ```
-### Roles 
-currently, you can not custom and manage any role and role policy. there is only 2 build in roles. rbac feature is in early development stage.
-- admin: able to do anything, including manage account, even change other account password
-- developer: able to call most of API except account management. except account management
+
+3.Next, generate a token for the user.
+```shell script
+curl -X POST \
+  http://127.0.0.1:30100/v4/token \
+  -d '{
+  	"name":"peter",
+  	"password":"{strong_password}"
+  }'
+```
+
+4.finally, user "peter" carry token to access the above allocated API resources would be permit, but access others API is not allowed.
+
+for example 
+```shell script
+curl -X POST \
+  http://127.0.0.1:30100/v4/default/registry/microservices \
+  -H 'Accept: */*' \
+  -H 'Authorization: Bearer {peter_token}' \
+  -d '{
+        "service": {
+          "serviceId": "11111-22222-33333",
+          "appId": "test",
+          "serviceName": "test",
+          "version": "1.0.0"
+        }
+}'
+```
+would be ok.
+
+```shell script
+curl -X DElETE \
+  http://127.0.0.1:30100/v4/default/registry/microservices \
+  -H 'Accept: */*' \
+  -H 'Authorization: Bearer {peter_token}' 
+```
+has no permission to operate.

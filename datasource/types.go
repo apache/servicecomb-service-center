@@ -18,3 +18,14 @@
 package datasource
 
 type ImplName string
+
+type DLockRequest struct {
+	// ID is the lock global unique id
+	ID string
+	// Wait means try to wait for holding the lock
+	Wait bool
+}
+
+type DUnlockRequest struct {
+	ID string
+}

@@ -19,9 +19,11 @@ package mongo
 
 import (
 	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/heartbeat"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
+	"github.com/go-chassis/go-chassis/v2/storage"
 )
 
 func init() {
@@ -51,15 +53,38 @@ func NewDataSource(opts datasource.Options) (datasource.DataSource, error) {
 }
 
 func (ds *DataSource) initialize() error {
+	var err error
 	// init heartbeat plugins
-	ds.initPlugins()
+	err = ds.initPlugins()
+	if err != nil {
+		return err
+	}
+	// init mongo client
+	err = ds.initClient()
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
-func (ds *DataSource) initPlugins() {
-	kind := config.GetString("registry.heartbeat.kind", "")
+func (ds *DataSource) initPlugins() error {
+	kind := config.GetString("registry.heartbeat.kind", "heartbeatchecker", config.WithStandby("heartbeat_plugin"))
 	err := heartbeat.Init(heartbeat.Options{PluginImplName: heartbeat.ImplName(kind)})
 	if err != nil {
 		log.Fatalf(err, "heartbeat init failed")
+		return err
+	}
+	return nil
+}
+
+func (ds *DataSource) initClient() error {
+	uri := config.GetString("registry.mongo.cluster.uri", "mongodb://localhost:27017", config.WithStandby("manager_cluster"))
+	cfg := storage.NewConfig(uri)
+	client.NewMongoClient(cfg)
+	select {
+	case err := <-client.GetMongoClient().Err():
+		return err
+	case <-client.GetMongoClient().Ready():
+		return nil
 	}
 }

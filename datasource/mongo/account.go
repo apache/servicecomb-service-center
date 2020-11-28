@@ -27,7 +27,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	stringutil "github.com/go-chassis/foundation/string"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -38,7 +37,7 @@ func (ds *DataSource) CreateAccount(ctx context.Context, a *rbacframe.Account) e
 		return err
 	}
 	if exist {
-		return datasource.ErrDuplicated
+		return datasource.ErrAccountDuplicated
 	}
 	hash, err := bcrypt.GenerateFromPassword([]byte(a.Password), 14)
 	if err != nil {
@@ -49,19 +48,10 @@ func (ds *DataSource) CreateAccount(ctx context.Context, a *rbacframe.Account) e
 	a.ID = util.GenerateUUID()
 	_, err = client.GetMongoClient().Insert(ctx, CollectionAccount, a)
 	if err != nil {
-		switch tt := err.(type) {
-		case mongo.WriteException:
-			if tt.WriteErrors != nil {
-				for _, writeError := range tt.WriteErrors {
-					// The index is setup.The key is repeated.
-					if writeError.Code == DuplicateKey {
-						return datasource.ErrDuplicated
-					}
-				}
-			}
-		default:
-			return err
+		if client.IsDuplicateKey(err) {
+			return datasource.ErrAccountDuplicated
 		}
+		return err
 	}
 	log.Info("create new account: " + a.ID)
 	return nil
@@ -142,7 +132,7 @@ func (ds *DataSource) UpdateAccount(ctx context.Context, key string, account *rb
 		AccountName: key,
 	}
 	update := bson.M{
-		"$set": bson.M{AccountID: account.ID, AccountPassword: account.Name, AccountRole: account.Role, AccountTokenExpirationTime: account.TokenExpirationTime,
+		"$set": bson.M{AccountID: account.ID, AccountPassword: account.Name, AccountRole: account.Roles, AccountTokenExpirationTime: account.TokenExpirationTime,
 			AccountCurrentPassword: account.CurrentPassword, AccountStatus: account.Status,
 		},
 	}
