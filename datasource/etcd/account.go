@@ -41,7 +41,7 @@ func (ds *DataSource) CreateAccount(ctx context.Context, a *rbacframe.Account) e
 			log.Errorf(err, "can not release account lock")
 		}
 	}()
-	key := path.GenerateETCDAccountKey(a.Name)
+	key := path.GenerateRBACAccountKey(a.Name)
 	exist, err := datasource.Instance().AccountExist(ctx, a.Name)
 	if err != nil {
 		log.Errorf(err, "can not save account info")
@@ -73,7 +73,7 @@ func (ds *DataSource) CreateAccount(ctx context.Context, a *rbacframe.Account) e
 
 func (ds *DataSource) AccountExist(ctx context.Context, key string) (bool, error) {
 	resp, err := client.Instance().Do(ctx, client.GET,
-		client.WithStrKey(path.GenerateETCDAccountKey(key)))
+		client.WithStrKey(path.GenerateRBACAccountKey(key)))
 	if err != nil {
 		return false, err
 	}
@@ -84,7 +84,7 @@ func (ds *DataSource) AccountExist(ctx context.Context, key string) (bool, error
 }
 func (ds *DataSource) GetAccount(ctx context.Context, key string) (*rbacframe.Account, error) {
 	resp, err := client.Instance().Do(ctx, client.GET,
-		client.WithStrKey(path.GenerateETCDAccountKey(key)))
+		client.WithStrKey(path.GenerateRBACAccountKey(key)))
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +101,7 @@ func (ds *DataSource) GetAccount(ctx context.Context, key string) (*rbacframe.Ac
 }
 func (ds *DataSource) ListAccount(ctx context.Context, key string) ([]*rbacframe.Account, int64, error) {
 	resp, err := client.Instance().Do(ctx, client.GET,
-		client.WithStrKey(path.GenerateETCDAccountKey(key)), client.WithPrefix())
+		client.WithStrKey(path.GenerateRBACAccountKey(key)), client.WithPrefix())
 	if err != nil {
 		return nil, 0, err
 	}
@@ -120,7 +120,7 @@ func (ds *DataSource) ListAccount(ctx context.Context, key string) ([]*rbacframe
 }
 func (ds *DataSource) DeleteAccount(ctx context.Context, key string) (bool, error) {
 	resp, err := client.Instance().Do(ctx, client.DEL,
-		client.WithStrKey(path.GenerateETCDAccountKey(key)))
+		client.WithStrKey(path.GenerateRBACAccountKey(key)))
 	if err != nil {
 		return false, err
 	}
@@ -133,7 +133,7 @@ func (ds *DataSource) UpdateAccount(ctx context.Context, key string, account *rb
 		return err
 	}
 	_, err = client.Instance().Do(ctx, client.PUT,
-		client.WithStrKey(path.GenerateETCDAccountKey(key)),
+		client.WithStrKey(path.GenerateRBACAccountKey(key)),
 		client.WithValue(value))
 	return err
 }

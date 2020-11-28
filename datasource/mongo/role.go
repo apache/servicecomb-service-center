@@ -15,14 +15,33 @@
  * limitations under the License.
  */
 
-package datasource
+package mongo
 
-// DataSource is the DAO layer
-type DataSource interface {
-	SystemManager
-	AccountManager
-	RoleManager
-	DependencyManager
-	MetadataManager
-	SCManager
+import (
+	"context"
+	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
+)
+
+func (ds *DataSource) CreateRole(ctx context.Context, r *rbacframe.Role) error {
+	return nil
+}
+
+func (ds *DataSource) RoleExist(ctx context.Context, name string) (bool, error) {
+	return false, nil
+}
+
+func (ds *DataSource) GetRole(ctx context.Context, name string) (*rbacframe.Role, error) {
+	return &rbacframe.Role{}, nil
+}
+
+func (ds *DataSource) ListRole(ctx context.Context) ([]*rbacframe.Role, int64, error) {
+	return nil, 0, nil
+}
+
+func (ds *DataSource) DeleteRole(ctx context.Context, name string) (bool, error) {
+	return false, nil
+}
+
+func (ds *DataSource) UpdateRole(ctx context.Context, name string, role *rbacframe.Role) error {
+	return nil
 }

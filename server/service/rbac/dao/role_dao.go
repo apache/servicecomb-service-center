@@ -19,20 +19,50 @@ package dao
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 )
 
-//TODO delete dead code and use etcd
-var roleMap = map[string]*rbacframe.Role{
-	"admin": {Permissions: map[string]*rbacframe.Permission{
-		"account": {Verbs: []string{"*"}},
-		"service": {Verbs: []string{"*"}},
-	}},
-	"developer": {Permissions: map[string]*rbacframe.Permission{
-		"service": {Verbs: []string{"*"}},
-	}},
+func CreateRole(ctx context.Context, r *rbacframe.Role) error {
+	return datasource.Instance().CreateRole(ctx, r)
 }
 
-func GetRole(ctx context.Context, role string) *rbacframe.Role {
-	return roleMap[role]
+func GetRole(ctx context.Context, name string) (*rbacframe.Role, error) {
+	return datasource.Instance().GetRole(ctx, name)
+}
+
+func ListRole(ctx context.Context) ([]*rbacframe.Role, int64, error) {
+	return datasource.Instance().ListRole(ctx)
+}
+
+func RoleExist(ctx context.Context, name string) (bool, error) {
+	return datasource.Instance().RoleExist(ctx, name)
+}
+
+func DeleteRole(ctx context.Context, name string) (bool, error) {
+	if name == "admin" || name == "developer" {
+		log.Warnf("role %s can not be delete", name)
+		return false, nil
+	}
+	return datasource.Instance().DeleteRole(ctx, name)
+}
+
+func EditRole(ctx context.Context, a *rbacframe.Role) error {
+	exist, err := datasource.Instance().RoleExist(ctx, a.Name)
+	if err != nil {
+		log.Errorf(err, "can not edit account info")
+		return err
+	}
+	if !exist {
+		return datasource.ErrRoleCanNotEdit
+	}
+
+	err = datasource.Instance().UpdateRole(ctx, a.Name, a)
+	if err != nil {
+		log.Errorf(err, "can not edit role info")
+		return err
+	}
+	log.Info("role is edit")
+	return nil
 }

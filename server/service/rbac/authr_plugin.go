@@ -64,8 +64,8 @@ func (a *EmbeddedAuthenticator) Login(ctx context.Context, user string, password
 			return "", err
 		}
 		tokenStr, err := token.Sign(map[string]interface{}{
-			rbacframe.ClaimsUser: user,
-			rbacframe.ClaimsRole: account.Role,
+			rbacframe.ClaimsUser:  user,
+			rbacframe.ClaimsRoles: account.Roles,
 		},
 			secret,
 			token.WithExpTime(opt.ExpireAfter),

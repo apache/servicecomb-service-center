@@ -31,6 +31,7 @@ func init() {
 func initRouter() {
 	if rbac.Enabled() {
 		roa.RegisterServant(&v4.AuthResource{})
+		roa.RegisterServant(&v4.RoleResource{})
 	}
 	roa.RegisterServant(&v1.Governance{})
 }

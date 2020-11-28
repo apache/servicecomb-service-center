@@ -17,12 +17,23 @@
 
 package datasource
 
-// DataSource is the DAO layer
-type DataSource interface {
-	SystemManager
-	AccountManager
-	RoleManager
-	DependencyManager
-	MetadataManager
-	SCManager
+import (
+	"context"
+	"errors"
+	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
+)
+
+var (
+	ErrRoleDuplicated = errors.New("role is duplicated")
+	ErrRoleCanNotEdit = errors.New("role can not be edited")
+)
+
+// RoleManager contains the RBAC CRUD
+type RoleManager interface {
+	CreateRole(ctx context.Context, r *rbacframe.Role) error
+	RoleExist(ctx context.Context, name string) (bool, error)
+	GetRole(ctx context.Context, name string) (*rbacframe.Role, error)
+	ListRole(ctx context.Context) ([]*rbacframe.Role, int64, error)
+	DeleteRole(ctx context.Context, name string) (bool, error)
+	UpdateRole(ctx context.Context, name string, role *rbacframe.Role) error
 }

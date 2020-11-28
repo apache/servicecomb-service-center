@@ -13,7 +13,7 @@ var (
 		ID:                  "11111-22222-33333",
 		Name:                "test-account1",
 		Password:            "tnuocca-tset",
-		Role:                "admin",
+		Roles:               []string{"admin"},
 		TokenExpirationTime: "2020-12-30",
 		CurrentPassword:     "tnuocca-tset1",
 	}
@@ -21,7 +21,7 @@ var (
 		ID:                  "11111-22222-33333-44444",
 		Name:                "test-account2",
 		Password:            "tnuocca-tset",
-		Role:                "admin",
+		Roles:               []string{"admin"},
 		TokenExpirationTime: "2020-12-30",
 		CurrentPassword:     "tnuocca-tset1",
 	}
