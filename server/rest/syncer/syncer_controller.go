@@ -18,6 +18,7 @@
 package syncer
 
 import (
+	"github.com/apache/servicecomb-service-center/server/rest/syncer/service"
 	"net/http"
 
 	"github.com/apache/servicecomb-service-center/pkg/rest"
@@ -35,5 +36,5 @@ func (ctrl *SyncerController) URLPatterns() []rest.Route {
 }
 
 func (ctrl *SyncerController) WatchInstance(w http.ResponseWriter, r *http.Request) {
-	ServiceAPI.WatchInstance(w, r)
+	service.ServiceAPI.WatchInstance(w, r)
 }

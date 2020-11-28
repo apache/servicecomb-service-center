@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package syncer
+package service
 
 import (
 	"context"
