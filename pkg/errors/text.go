@@ -21,7 +21,9 @@ const (
 	MsgJSON = "json is invalid"
 
 	MsgOperateAccountFailed = "operate account failed"
+	MsgOperateRoleFailed    = "operate role failed"
 	MsgGetAccountFailed     = "get account failed"
+	MsgGetRoleFailed        = "get role failed"
 	MsgRolePerm             = "check role permissions failed"
 	MsgNoPerm               = "no permission to operate"
 )

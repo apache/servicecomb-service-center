@@ -27,6 +27,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/metrics"
 	rs "github.com/apache/servicecomb-service-center/server/rest"
 	"github.com/apache/servicecomb-service-center/server/service"
 	"net"
@@ -193,6 +194,8 @@ func (s *APIServer) selfRegister() {
 		s.err <- err
 		return
 	}
+	// report the metrics
+	metrics.ReportScInstance()
 }
 
 func (s *APIServer) selfUnregister() {

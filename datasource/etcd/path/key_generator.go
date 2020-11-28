@@ -52,7 +52,7 @@ func GetRootKey() string {
 	return SPLIT + RegistryRootKey
 }
 
-func GenerateETCDAccountKey(name string) string {
+func GenerateRBACAccountKey(name string) string {
 	return util.StringJoin([]string{
 		GetRootKey(),
 		"accounts",
@@ -65,6 +65,14 @@ func GetProjectRootKey(domain string) string {
 		GetRootKey(),
 		RegistryProjectKey,
 		domain,
+	}, SPLIT)
+}
+
+func GenerateRBACRoleKey(name string) string {
+	return util.StringJoin([]string{
+		GetRootKey(),
+		"roles",
+		name,
 	}, SPLIT)
 }
 

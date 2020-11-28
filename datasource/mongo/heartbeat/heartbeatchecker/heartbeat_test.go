@@ -34,7 +34,7 @@ func init() {
 	config := storage.Options{
 		URI: "mongodb://localhost:27017",
 	}
-	client.NewMongoClient(config, []string{mongo.CollectionInstance})
+	client.NewMongoClient(config)
 }
 
 func TestUpdateInstanceRefreshTime(t *testing.T) {

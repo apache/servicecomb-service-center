@@ -174,7 +174,7 @@ func (h *DependencyEventHandler) Handle() error {
 }
 
 func (h *DependencyEventHandler) dependencyRuleHandle(res interface{}) error {
-	ctx := context.WithValue(context.Background(), util.CtxGlobal, "1")
+	ctx := util.WithGlobal(context.Background())
 	dependencyEventHandlerRes := res.(*DependencyEventHandlerResource)
 	r := dependencyEventHandlerRes.dep
 	consumerFlag := util.StringJoin([]string{r.Consumer.Environment, r.Consumer.AppId, r.Consumer.ServiceName, r.Consumer.Version}, "/")
@@ -223,7 +223,7 @@ func (h *DependencyEventHandler) removeKV(ctx context.Context, kv *sd.KeyValue) 
 
 func (h *DependencyEventHandler) CleanUp(domainProjects map[string]struct{}) {
 	for domainProject := range domainProjects {
-		ctx := context.WithValue(context.Background(), util.CtxGlobal, "1")
+		ctx := util.WithGlobal(context.Background())
 		if err := serviceUtil.CleanUpDependencyRules(ctx, domainProject); err != nil {
 			log.Errorf(err, "clean up '%s' dependency rules failed", domainProject)
 		}

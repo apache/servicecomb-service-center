@@ -6,5 +6,6 @@ Follow this checklist to help us incorporate your contribution quickly and easil
  - [ ] Write a pull request description that is detailed enough to understand what the pull request does, how, and why.
  - [ ] Run `go build` `go test` `go fmt` `go vet` to make sure basic checks pass. A more thorough check will be performed on your pull request automatically.
  - [ ] If this contribution is large, please file an Apache [Individual Contributor License Agreement](https://www.apache.org/licenses/icla.pdf).
-
+ - [ ] Never comment source code, delete it.
+ - [ ] UT should has "context, subject, expected result" result as test case name, when you call t.Run().
 ---

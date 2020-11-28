@@ -304,7 +304,7 @@ func DelServicePri(ctx context.Context, serviceID string, force bool) (*pb.Respo
 	//todo del instances
 	tables := []string{CollectionService, CollectionSchema, CollectionRule}
 	for _, col := range tables {
-		err := client.GetMongoClient().DocDeleteMany(ctx, col, filter)
+		_, err := client.GetMongoClient().Delete(ctx, col, filter)
 		if err != nil {
 			return pb.CreateResponse(pb.ErrInternal, err.Error()), err
 		}

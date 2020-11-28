@@ -132,7 +132,7 @@ func (ds *DataSource) UpdateAccount(ctx context.Context, key string, account *rb
 		AccountName: key,
 	}
 	update := bson.M{
-		"$set": bson.M{AccountID: account.ID, AccountPassword: account.Name, AccountRole: account.Role, AccountTokenExpirationTime: account.TokenExpirationTime,
+		"$set": bson.M{AccountID: account.ID, AccountPassword: account.Name, AccountRole: account.Roles, AccountTokenExpirationTime: account.TokenExpirationTime,
 			AccountCurrentPassword: account.CurrentPassword, AccountStatus: account.Status,
 		},
 	}

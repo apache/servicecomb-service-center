@@ -23,7 +23,6 @@ import (
 )
 import (
 	"context"
-	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
 	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
@@ -71,8 +70,6 @@ func TestInitRBAC(t *testing.T) {
 	t.Run("login and authenticate", func(t *testing.T) {
 		token, err := authr.Login(context.Background(), "root", "Complicated_password1")
 		assert.NoError(t, err)
-		fmt.Println("err:", err)
-		fmt.Println("token:", token)
 		claims, err := authr.Authenticate(context.Background(), token)
 		assert.NoError(t, err)
 		assert.Equal(t, "root", claims.(map[string]interface{})[rbacframe.ClaimsUser])
@@ -86,7 +83,7 @@ func TestInitRBAC(t *testing.T) {
 		persisted := &rbacframe.Account{Name: "a", Password: "Complicated_password1"}
 		err := dao.CreateAccount(context.Background(), persisted)
 		assert.NoError(t, err)
-		err = rbac.ChangePassword(context.Background(), rbacframe.RoleAdmin, "admin", &rbacframe.Account{Name: "a", Password: "Complicated_password2"})
+		err = rbac.ChangePassword(context.Background(), []string{rbacframe.RoleAdmin}, "admin", &rbacframe.Account{Name: "a", Password: "Complicated_password2"})
 		assert.NoError(t, err)
 		a, err := dao.GetAccount(context.Background(), "a")
 		assert.NoError(t, err)
@@ -95,7 +92,7 @@ func TestInitRBAC(t *testing.T) {
 	t.Run("change self password", func(t *testing.T) {
 		err := dao.CreateAccount(context.Background(), &rbacframe.Account{Name: "b", Password: "Complicated_password1"})
 		assert.NoError(t, err)
-		err = rbac.ChangePassword(context.Background(), "", "b", &rbacframe.Account{Name: "b", CurrentPassword: "Complicated_password1", Password: "Complicated_password2"})
+		err = rbac.ChangePassword(context.Background(), nil, "b", &rbacframe.Account{Name: "b", CurrentPassword: "Complicated_password1", Password: "Complicated_password2"})
 		assert.NoError(t, err)
 		a, err := dao.GetAccount(context.Background(), "b")
 		assert.NoError(t, err)
@@ -107,5 +104,81 @@ func TestInitRBAC(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Greater(t, n, int64(2))
 	})
+	dao.DeleteRole(context.Background(), "tester")
+	t.Run("check is there exist role", func(t *testing.T) {
+		exist, err := dao.RoleExist(context.Background(), "admin")
+		assert.NoError(t, err)
+		assert.Equal(t, true, exist)
 
+		exist, err = dao.RoleExist(context.Background(), "developer")
+		assert.NoError(t, err)
+		assert.Equal(t, true, exist)
+
+		exist, err = dao.RoleExist(context.Background(), "tester")
+		assert.NoError(t, err)
+		assert.Equal(t, false, exist)
+	})
+
+	t.Run("delete the default role", func(t *testing.T) {
+		r, err := dao.DeleteRole(context.Background(), "admin")
+		assert.NoError(t, err)
+		assert.Equal(t, false, r)
+
+		r, err = dao.DeleteRole(context.Background(), "developer")
+		assert.NoError(t, err)
+		assert.Equal(t, false, r)
+	})
+
+	t.Run("delete the not exist role", func(t *testing.T) {
+		r, err := dao.DeleteRole(context.Background(), "tester")
+		assert.NoError(t, err)
+		assert.Equal(t, false, r)
+	})
+
+	t.Run("list exist role", func(t *testing.T) {
+		_, _, err := dao.ListRole(context.TODO())
+		assert.NoError(t, err)
+	})
+
+	tester := &rbacframe.Role{
+		Name: "tester",
+		Perms: []*rbacframe.Permission{
+			{
+				Resources: []string{"service", "instance"},
+				Verbs:     []string{"get", "create", "update"},
+			},
+			{
+				Resources: []string{"rule"},
+				Verbs:     []string{"*"},
+			},
+		},
+	}
+
+	t.Run("create new role success", func(t *testing.T) {
+		err := dao.CreateRole(context.Background(), tester)
+		assert.NoError(t, err)
+
+		exist, err := dao.RoleExist(context.Background(), "tester")
+		assert.NoError(t, err)
+		assert.Equal(t, true, exist)
+
+		r, err := dao.GetRole(context.Background(), "tester")
+		assert.NoError(t, err)
+		assert.NotNil(t, r)
+	})
+
+	t.Run("edit new role success", func(t *testing.T) {
+		err := dao.EditRole(context.Background(), tester)
+		assert.NoError(t, err)
+
+		r, err := dao.GetRole(context.Background(), "tester")
+		assert.NoError(t, err)
+		assert.NotNil(t, r)
+	})
+
+	t.Run("delete the new role", func(t *testing.T) {
+		r, err := dao.DeleteRole(context.Background(), "tester")
+		assert.NoError(t, err)
+		assert.Equal(t, false, r)
+	})
 }

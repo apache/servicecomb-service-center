@@ -128,3 +128,7 @@ tracing:
 
 quota:
   kind:
+
+
+syncer:
+  enabled: false

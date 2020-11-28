@@ -56,9 +56,7 @@ func (apt *TagsChangedTask) Err() error {
 }
 
 func (apt *TagsChangedTask) publish(ctx context.Context, domainProject, consumerID string) error {
-	ctx = context.WithValue(context.WithValue(ctx,
-		util.CtxCacheOnly, "1"),
-		util.CtxGlobal, "1")
+	ctx = util.WithGlobal(util.WithCacheOnly(ctx))
 
 	consumer, err := serviceUtil.GetService(ctx, domainProject, consumerID)
 	if err != nil {

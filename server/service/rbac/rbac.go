@@ -38,9 +38,6 @@ const (
 	RootName     = "root"
 	InitPassword = "SC_INIT_ROOT_PASSWORD"
 )
-const (
-	ResourceAccount = "account"
-)
 
 var (
 	ErrEmptyCurrentPassword = errors.New("current password should not be empty")
@@ -70,15 +67,11 @@ func Init() {
 	}
 	readPrivateKey()
 	readPublicKey()
-	rbacframe.Add2WhiteAPIList("/v4/token")
+	initAdminRole()
+	initDevRole()
+	rbacframe.Add2WhiteAPIList(APITokenGranter)
+	config.ServerInfo.Config.EnableRBAC = true
 	log.Info("rbac is enabled")
-}
-func initResourceMap() {
-	rbacframe.MapResource("/v4/account", ResourceAccount)
-	rbacframe.MapResource("/v4/account/:name", ResourceAccount)
-	rbacframe.MapResource("/v4/role", "role")
-	//TODO now simply write dead code "*" to map all other API except account and role to service, should define resource for every API in future
-	rbacframe.MapResource("*", "service")
 }
 
 //readPublicKey read key to memory
@@ -121,7 +114,7 @@ func initFirstTime(admin string) {
 	a := &rbacframe.Account{
 		Name:     admin,
 		Password: pwd,
-		Role:     rbacframe.RoleAdmin,
+		Roles:    []string{rbacframe.RoleAdmin},
 	}
 	err := service.ValidateCreateAccount(a)
 	if err != nil {

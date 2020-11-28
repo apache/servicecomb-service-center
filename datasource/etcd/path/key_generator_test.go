@@ -24,8 +24,8 @@ import (
 	"testing"
 )
 
-func TestGenerateETCDAccountKey(t *testing.T) {
-	assert.Equal(t, "/cse-sr/accounts/admin", path.GenerateETCDAccountKey("admin"))
+func TestGenerateRBACAccountKey(t *testing.T) {
+	assert.Equal(t, "/cse-sr/accounts/admin", path.GenerateRBACAccountKey("admin"))
 }
 
 func TestGenerateETCDProjectKey(t *testing.T) {

@@ -236,8 +236,8 @@ var _ = Describe("Controller", func() {
 
 func getContext() context.Context {
 	ctx := context.TODO()
-	ctx = util.SetContext(ctx, "domain", "default")
-	ctx = util.SetContext(ctx, "project", "default")
-	ctx = util.SetContext(ctx, util.CtxNocache, "1")
+	ctx = util.SetDomain(ctx, "default")
+	ctx = util.SetProject(ctx, "default")
+	ctx = util.WithNoCache(ctx)
 	return ctx
 }

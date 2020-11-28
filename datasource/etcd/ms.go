@@ -268,7 +268,7 @@ func (ds *DataSource) GetServiceDetail(ctx context.Context, request *pb.GetServi
 
 func (ds *DataSource) GetServicesInfo(ctx context.Context, request *pb.GetServicesInfoRequest) (
 	*pb.GetServicesInfoResponse, error) {
-	ctx = util.SetContext(ctx, util.CtxCacheOnly, "1")
+	ctx = util.WithCacheOnly(ctx)
 
 	optionMap := make(map[string]struct{}, len(request.Options))
 	for _, opt := range request.Options {
@@ -737,7 +737,7 @@ func (ds *DataSource) GetInstance(ctx context.Context, request *pb.GetOneInstanc
 	if rev == item.Rev {
 		instance = nil // for gRPC
 	}
-	_ = util.SetContext(ctx, util.CtxResponseRevision, item.Rev)
+	_ = util.WithResponseRev(ctx, item.Rev)
 
 	return &pb.GetOneInstanceResponse{
 		Response: pb.CreateResponse(pb.ResponseSuccess, "Get instance successfully."),
@@ -817,7 +817,7 @@ func (ds *DataSource) GetInstances(ctx context.Context, request *pb.GetInstances
 	if rev == item.Rev {
 		instances = nil // for gRPC
 	}
-	_ = util.SetContext(ctx, util.CtxResponseRevision, item.Rev)
+	_ = util.WithResponseRev(ctx, item.Rev)
 
 	return &pb.GetInstancesResponse{
 		Response:  pb.CreateResponse(pb.ResponseSuccess, "Query service instances successfully."),
@@ -1022,7 +1022,7 @@ func (ds *DataSource) genFindResult(ctx context.Context, oldRev string, item *ca
 		instances = nil // for gRPC
 	}
 	// TODO support gRPC output context
-	_ = util.SetContext(ctx, util.CtxResponseRevision, item.Rev)
+	_ = util.WithResponseRev(ctx, item.Rev)
 	return &pb.FindInstancesResponse{
 		Response:  pb.CreateResponse(pb.ResponseSuccess, "Query service instances successfully."),
 		Instances: instances,
@@ -1204,7 +1204,7 @@ func (ds *DataSource) batchFindServices(ctx context.Context, request *pb.BatchFi
 	services := &pb.BatchFindResult{}
 	failedResult := make(map[int32]*pb.FindFailedResult)
 	for index, key := range request.Services {
-		findCtx := util.SetContext(cloneCtx, util.CtxRequestRevision, key.Rev)
+		findCtx := util.WithRequestRev(cloneCtx, key.Rev)
 		resp, err := ds.FindInstances(findCtx, &pb.FindInstancesRequest{
 			ConsumerServiceId: request.ConsumerServiceId,
 			AppId:             key.Service.AppId,
@@ -1239,7 +1239,7 @@ func (ds *DataSource) batchFindInstances(ctx context.Context, request *pb.BatchF
 	instances := &pb.BatchFindResult{}
 	failedResult := make(map[int32]*pb.FindFailedResult)
 	for index, key := range request.Instances {
-		getCtx := util.SetContext(cloneCtx, util.CtxRequestRevision, key.Rev)
+		getCtx := util.WithRequestRev(cloneCtx, key.Rev)
 		resp, err := ds.GetInstance(getCtx, &pb.GetOneInstanceRequest{
 			ConsumerServiceId:  request.ConsumerServiceId,
 			ProviderServiceId:  key.Instance.ServiceId,
