@@ -17,9 +17,10 @@
 package metrics
 
 import (
-	"github.com/astaxie/beego"
 	"testing"
 	"time"
+
+	"github.com/astaxie/beego"
 )
 
 func TestInstanceName(t *testing.T) {

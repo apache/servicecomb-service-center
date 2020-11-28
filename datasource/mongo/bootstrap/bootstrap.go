@@ -17,7 +17,9 @@
 
 package bootstrap
 
-import _ "github.com/apache/servicecomb-service-center/datasource/mongo"
+import (
+	_ "github.com/apache/servicecomb-service-center/datasource/mongo"
 
-// heartbeat
-import _ "github.com/apache/servicecomb-service-center/datasource/mongo/heartbeat/heartbeatchecker"
+	// heartbeat
+	_ "github.com/apache/servicecomb-service-center/datasource/mongo/heartbeat/heartbeatchecker"
+)

@@ -21,6 +21,8 @@ import (
 	"context"
 	"crypto/rsa"
 	"errors"
+	"io/ioutil"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
@@ -31,7 +33,6 @@ import (
 	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-chassis/v2/security/authr"
 	"github.com/go-chassis/go-chassis/v2/security/secret"
-	"io/ioutil"
 )
 
 const (

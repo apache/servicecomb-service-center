@@ -18,12 +18,13 @@ package service_test
 
 import (
 	"context"
+	"testing"
+
 	"github.com/apache/servicecomb-service-center/server/service"
 	pb "github.com/go-chassis/cari/discovery"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"google.golang.org/grpc"
-	"testing"
 )
 
 type grpcWatchServer struct {

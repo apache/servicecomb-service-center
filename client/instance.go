@@ -19,10 +19,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/go-chassis/cari/discovery"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+
+	"github.com/go-chassis/cari/discovery"
 )
 
 const (

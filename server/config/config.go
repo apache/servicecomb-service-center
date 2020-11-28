@@ -18,10 +18,11 @@
 package config
 
 import (
-	"github.com/go-chassis/go-archaius"
 	"path/filepath"
 	"runtime"
 	"time"
+
+	"github.com/go-chassis/go-archaius"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/plugin"

@@ -19,8 +19,9 @@ package mongo
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/pkg/cluster"
 	"time"
+
+	"github.com/apache/servicecomb-service-center/pkg/cluster"
 )
 
 func (ds *DataSource) SelfRegister(ctx context.Context) error {

@@ -19,6 +19,7 @@ package heartbeatchecker
 
 import (
 	"context"
+
 	"github.com/apache/servicecomb-service-center/datasource/mongo/heartbeat"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"

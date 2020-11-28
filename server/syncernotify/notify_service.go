@@ -16,9 +16,10 @@
 package syncernotify
 
 import (
+	"sync"
+
 	pb "github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"sync"
 )
 
 var syncerNotifyService *Service

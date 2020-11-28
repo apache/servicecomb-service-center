@@ -20,8 +20,9 @@ package cache
 import (
 	"context"
 	"errors"
-	"github.com/karlseguin/ccache"
 	"sync"
+
+	"github.com/karlseguin/ccache"
 )
 
 var errNilNode = errors.New("nil node")

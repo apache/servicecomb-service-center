@@ -19,12 +19,13 @@ package client
 
 import (
 	"context"
+	"time"
+
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	simple "github.com/apache/servicecomb-service-center/pkg/time"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/metrics"
-	"time"
 )
 
 const leaseProfTimeFmt = "15:04:05.000"

@@ -18,12 +18,13 @@
 package service
 
 import (
+	"regexp"
+
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/pkg/validate"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	"github.com/go-chassis/cari/discovery"
-	"regexp"
 )
 
 var (

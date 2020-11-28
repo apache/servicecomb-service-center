@@ -21,11 +21,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
+
 	pb "github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/gorilla/websocket"
-	"time"
 )
 
 type WebSocket struct {

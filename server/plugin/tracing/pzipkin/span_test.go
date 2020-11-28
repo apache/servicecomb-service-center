@@ -19,8 +19,9 @@ package pzipkin
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/openzipkin/zipkin-go-opentracing/thrift/gen-go/zipkincore"
 	"testing"
+
+	"github.com/openzipkin/zipkin-go-opentracing/thrift/gen-go/zipkincore"
 )
 
 var sample = []byte(`{

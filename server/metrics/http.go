@@ -20,15 +20,16 @@
 package metrics
 
 import (
+	"net/http"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/apache/servicecomb-service-center/pkg/metrics"
 	helper "github.com/apache/servicecomb-service-center/pkg/prometheus"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/prometheus/client_golang/prometheus"
-	"net/http"
-	"strconv"
-	"strings"
-	"time"
 )
 
 var (

@@ -1,6 +1,5 @@
 package accesslog_test
 
-import _ "github.com/apache/servicecomb-service-center/test"
 import (
 	"context"
 	"net/http"
@@ -11,6 +10,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/handler/accesslog"
+	_ "github.com/apache/servicecomb-service-center/test"
 )
 
 func TestHandler(t *testing.T) {

@@ -18,10 +18,11 @@ package broker_test
 
 import (
 	"bytes"
-	. "github.com/apache/servicecomb-service-center/server/broker"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	. "github.com/apache/servicecomb-service-center/server/broker"
 )
 
 var (

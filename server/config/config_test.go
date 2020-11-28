@@ -18,14 +18,15 @@
 package config_test
 
 import (
-	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/config"
-	"github.com/go-chassis/go-archaius"
-	"github.com/stretchr/testify/assert"
 	"io"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/config"
+	"github.com/go-chassis/go-archaius"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestInit(t *testing.T) {

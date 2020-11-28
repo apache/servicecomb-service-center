@@ -19,13 +19,14 @@ package core
 
 import (
 	"context"
+	"strings"
+
 	"github.com/apache/servicecomb-service-center/pkg/proto"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/version"
 	"github.com/astaxie/beego"
 	"github.com/go-chassis/cari/discovery"
-	"strings"
 )
 
 var (

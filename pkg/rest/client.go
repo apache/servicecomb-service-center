@@ -20,7 +20,6 @@ import (
 	"compress/gzip"
 	"crypto/tls"
 	"fmt"
-	"github.com/apache/servicecomb-service-center/pkg/log"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -29,6 +28,8 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"github.com/apache/servicecomb-service-center/pkg/log"
 
 	"github.com/apache/servicecomb-service-center/pkg/buffer"
 	"github.com/apache/servicecomb-service-center/pkg/tlsutil"

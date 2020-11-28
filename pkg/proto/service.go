@@ -19,6 +19,7 @@ package proto
 
 import (
 	"context"
+
 	"github.com/go-chassis/cari/discovery"
 	"google.golang.org/grpc"
 )

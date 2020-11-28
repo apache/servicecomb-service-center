@@ -18,11 +18,12 @@
 package signal
 
 import (
-	"github.com/apache/servicecomb-service-center/pkg/log"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
 func RegisterListener() {

@@ -19,10 +19,11 @@ package etcd
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
-	"github.com/apache/servicecomb-service-center/server/config"
 	"sync"
 	"time"
+
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/server/config"
 )
 
 var (

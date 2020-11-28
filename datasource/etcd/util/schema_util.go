@@ -19,6 +19,7 @@ package util
 
 import (
 	"context"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 )

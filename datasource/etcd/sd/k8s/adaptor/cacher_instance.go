@@ -16,13 +16,14 @@
 package adaptor
 
 import (
+	"reflect"
+	"strconv"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	pb "github.com/go-chassis/cari/discovery"
-	"k8s.io/api/core/v1"
-	"reflect"
-	"strconv"
+	v1 "k8s.io/api/core/v1"
 )
 
 type InstanceCacher struct {

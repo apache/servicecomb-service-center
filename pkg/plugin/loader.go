@@ -19,13 +19,14 @@ package plugin
 
 import (
 	"fmt"
-	"github.com/apache/servicecomb-service-center/pkg/log"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"plugin"
 	"regexp"
 	"sync"
+
+	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
 var (

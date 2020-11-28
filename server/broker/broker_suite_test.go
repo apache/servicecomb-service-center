@@ -16,13 +16,16 @@
  */
 package broker_test
 
-import _ "github.com/apache/servicecomb-service-center/test"
 import (
 	"github.com/apache/servicecomb-service-center/server/broker"
+	_ "github.com/apache/servicecomb-service-center/test"
+
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
-	. "github.com/onsi/gomega"
+
 	"testing"
+
+	. "github.com/onsi/gomega"
 )
 
 var brokerResource = broker.ServiceAPI

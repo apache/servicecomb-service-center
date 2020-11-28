@@ -19,6 +19,7 @@ package broker_test
 import (
 	"context"
 	"fmt"
+
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/broker"
 	"github.com/apache/servicecomb-service-center/server/broker/brokerpb"

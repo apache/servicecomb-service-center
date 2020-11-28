@@ -21,6 +21,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -29,7 +31,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/notify"
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/gorilla/websocket"
-	"time"
 )
 
 const Websocket = "Websocket"

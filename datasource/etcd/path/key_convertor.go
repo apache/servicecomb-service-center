@@ -19,9 +19,10 @@ package path
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/go-chassis/cari/discovery"
-	"strings"
 )
 
 func ToResponse(key []byte) (keys []string) {

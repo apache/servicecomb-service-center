@@ -19,6 +19,11 @@ package etcd_test
 
 import (
 	"context"
+	"strconv"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -30,10 +35,6 @@ import (
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/go-archaius"
 	"github.com/stretchr/testify/assert"
-	"strconv"
-	"strings"
-	"testing"
-	"time"
 )
 
 func TestInit(t *testing.T) {

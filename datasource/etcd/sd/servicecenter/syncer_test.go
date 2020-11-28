@@ -17,12 +17,13 @@ package servicecenter
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/go-chassis/cari/discovery"
-	"testing"
 )
 
 func TestClusterIndexer_Sync(t *testing.T) {

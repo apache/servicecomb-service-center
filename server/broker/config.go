@@ -18,11 +18,12 @@
 package broker
 
 import (
+	"path/filepath"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
-	"path/filepath"
 )
 
 func Init() {

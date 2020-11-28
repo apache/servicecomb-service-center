@@ -19,9 +19,10 @@ package cors
 
 import (
 	"errors"
+	"net/http"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/rs/cors"
-	"net/http"
 )
 
 var CORS *cors.Cors

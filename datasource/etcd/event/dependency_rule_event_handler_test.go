@@ -18,11 +18,12 @@ package event
 
 import (
 	"context"
+	"testing"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd/cache"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	pb "github.com/go-chassis/cari/discovery"
-	"testing"
 )
 
 func TestNewDependencyRuleEventHandler(t *testing.T) {

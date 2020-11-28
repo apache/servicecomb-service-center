@@ -18,9 +18,10 @@
 package notify
 
 import (
-	simple "github.com/apache/servicecomb-service-center/pkg/time"
 	"testing"
 	"time"
+
+	simple "github.com/apache/servicecomb-service-center/pkg/time"
 )
 
 func TestGetNotifyService(t *testing.T) {

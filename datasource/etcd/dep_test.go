@@ -18,6 +18,8 @@
 package etcd_test
 
 import (
+	"testing"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/event"
@@ -25,7 +27,6 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 var deh event.DependencyEventHandler

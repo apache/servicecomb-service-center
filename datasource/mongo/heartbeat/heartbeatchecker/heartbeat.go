@@ -19,11 +19,12 @@ package heartbeatchecker
 
 import (
 	"context"
+	"time"
+
 	"github.com/apache/servicecomb-service-center/datasource/mongo"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"go.mongodb.org/mongo-driver/bson"
-	"time"
 )
 
 func updateInstanceRefreshTime(ctx context.Context, serviceID string, instanceID string) error {

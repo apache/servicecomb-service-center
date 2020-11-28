@@ -20,6 +20,7 @@ package util
 import (
 	"context"
 	"errors"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/go-chassis/cari/discovery"

@@ -1,13 +1,14 @@
 package client
 
 import (
-	"bou.ke/monkey"
 	"context"
 	"crypto/tls"
-	pb "github.com/apache/servicecomb-service-center/syncer/proto"
-	"github.com/stretchr/testify/assert"
 	"reflect"
 	"testing"
+
+	"bou.ke/monkey"
+	pb "github.com/apache/servicecomb-service-center/syncer/proto"
+	"github.com/stretchr/testify/assert"
 )
 
 var c = NewSyncClient("", new(tls.Config))

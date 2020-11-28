@@ -17,22 +17,27 @@
 
 package bootstrap
 
-import _ "github.com/apache/servicecomb-service-center/datasource/etcd"
+import (
+	_ "github.com/apache/servicecomb-service-center/datasource/etcd"
 
-//registry is buildin
-import _ "github.com/apache/servicecomb-service-center/datasource/etcd/client/buildin"
+	//registry is buildin
+	_ "github.com/apache/servicecomb-service-center/datasource/etcd/client/buildin"
 
-//registry etcd
-import _ "github.com/apache/servicecomb-service-center/datasource/etcd/client/remote"
+	//registry etcd
+	_ "github.com/apache/servicecomb-service-center/datasource/etcd/client/remote"
 
-//registry etcd
-import _ "github.com/apache/servicecomb-service-center/datasource/etcd/client/embedded"
+	//registry etcd
+	_ "github.com/apache/servicecomb-service-center/datasource/etcd/client/embedded"
 
-//discovery
-import _ "github.com/apache/servicecomb-service-center/datasource/etcd/sd/aggregate"
-import _ "github.com/apache/servicecomb-service-center/datasource/etcd/sd/servicecenter"
-import _ "github.com/apache/servicecomb-service-center/datasource/etcd/sd/etcd"
-import _ "github.com/apache/servicecomb-service-center/datasource/etcd/sd/k8s"
+	//discovery
+	_ "github.com/apache/servicecomb-service-center/datasource/etcd/sd/aggregate"
 
-//events
-import _ "github.com/apache/servicecomb-service-center/datasource/etcd/event"
+	_ "github.com/apache/servicecomb-service-center/datasource/etcd/sd/servicecenter"
+
+	_ "github.com/apache/servicecomb-service-center/datasource/etcd/sd/etcd"
+
+	_ "github.com/apache/servicecomb-service-center/datasource/etcd/sd/k8s"
+
+	//events
+	_ "github.com/apache/servicecomb-service-center/datasource/etcd/event"
+)

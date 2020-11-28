@@ -17,6 +17,8 @@ package instance
 
 import (
 	"context"
+	"strings"
+
 	"github.com/apache/servicecomb-service-center/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/pkg/dump"
@@ -25,7 +27,6 @@ import (
 	"github.com/apache/servicecomb-service-center/scctl/pkg/plugin/get"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/writer"
 	"github.com/spf13/cobra"
-	"strings"
 )
 
 func init() {

@@ -16,12 +16,13 @@
 package model
 
 import (
+	"strconv"
+	"time"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/go-chassis/cari/discovery"
-	"strconv"
-	"time"
 )
 
 func GetDomainProject(resource interface{}) (domainProject string) {

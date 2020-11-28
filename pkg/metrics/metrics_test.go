@@ -17,9 +17,10 @@
 package metrics
 
 import (
-	dto "github.com/prometheus/client_model/go"
 	"reflect"
 	"testing"
+
+	dto "github.com/prometheus/client_model/go"
 )
 
 func TestDetails_ForEach(t *testing.T) {

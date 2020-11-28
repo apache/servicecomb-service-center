@@ -18,6 +18,7 @@ package client
 import (
 	"context"
 	"encoding/json"
+
 	"github.com/go-chassis/cari/discovery"
 
 	"io/ioutil"

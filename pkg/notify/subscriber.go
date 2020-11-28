@@ -19,6 +19,7 @@ package notify
 
 import (
 	"errors"
+
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 

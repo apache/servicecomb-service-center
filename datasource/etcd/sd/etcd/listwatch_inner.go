@@ -20,6 +20,7 @@ package etcd
 import (
 	"context"
 	"fmt"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 )

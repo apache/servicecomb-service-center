@@ -18,6 +18,9 @@ package servicecenter
 import (
 	"context"
 	"crypto/tls"
+	"strings"
+	"sync"
+
 	"github.com/apache/servicecomb-service-center/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd"
 	etcdclient "github.com/apache/servicecomb-service-center/datasource/etcd/client"
@@ -28,8 +31,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf"
 	"github.com/go-chassis/cari/discovery"
-	"strings"
-	"sync"
 )
 
 var (

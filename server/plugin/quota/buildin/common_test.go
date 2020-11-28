@@ -18,9 +18,10 @@ package buildin_test
 import (
 	"context"
 	"errors"
+	"testing"
+
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota/buildin"
-	"testing"
 )
 
 func TestCommonQuotaCheck(t *testing.T) {

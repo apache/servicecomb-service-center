@@ -20,8 +20,9 @@ package client
 import (
 	"context"
 	"errors"
-	"github.com/apache/servicecomb-service-center/pkg/task"
 	"testing"
+
+	"github.com/apache/servicecomb-service-center/pkg/task"
 )
 
 var closedCh = make(chan struct{})

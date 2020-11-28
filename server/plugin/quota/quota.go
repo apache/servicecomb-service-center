@@ -19,10 +19,11 @@ package quota
 
 import (
 	"context"
+	"strconv"
+
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/go-chassis/cari/discovery"
-	"strconv"
 )
 
 const QUOTA plugin.Kind = "quota"

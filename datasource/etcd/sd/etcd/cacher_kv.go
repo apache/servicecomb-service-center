@@ -21,6 +21,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
+	"time"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/backoff"
@@ -30,8 +33,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	rmodel "github.com/go-chassis/cari/discovery"
-	"sync"
-	"time"
 )
 
 // KvCacher implements sd.Cacher.

@@ -21,9 +21,8 @@ package test
 import (
 	"github.com/apache/servicecomb-service-center/datasource"
 	_ "github.com/apache/servicecomb-service-center/server/init"
-)
-import _ "github.com/apache/servicecomb-service-center/server/bootstrap"
-import (
+
+	_ "github.com/apache/servicecomb-service-center/server/bootstrap"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/service"
 	"github.com/go-chassis/go-archaius"
