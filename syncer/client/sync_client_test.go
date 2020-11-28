@@ -9,9 +9,10 @@ import (
 	"reflect"
 	"testing"
 )
+
 var c = NewSyncClient("", new(tls.Config))
 
-func TestClient_IncrementPull(t *testing.T)  {
+func TestClient_IncrementPull(t *testing.T) {
 	t.Run("Test IncrementPull", func(t *testing.T) {
 		_, err := c.IncrementPull(context.Background(), "http://127.0.0.1")
 		assert.Error(t, err, "IncrementPull fail without grpc")
@@ -59,7 +60,7 @@ func syncDataCreate() *pb.SyncData {
 	}
 	instances := []*pb.SyncInstance{&syncInstance}
 	syncData := pb.SyncData{
-		Services: services,
+		Services:  services,
 		Instances: instances,
 	}
 	return &syncData
