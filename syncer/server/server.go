@@ -20,6 +20,7 @@ package server
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 	"sync"
 	"syscall"
@@ -31,7 +32,6 @@ import (
 	"github.com/apache/servicecomb-service-center/syncer/config"
 	"github.com/apache/servicecomb-service-center/syncer/etcd"
 	"github.com/apache/servicecomb-service-center/syncer/grpc"
-	"github.com/apache/servicecomb-service-center/syncer/http"
 	"github.com/apache/servicecomb-service-center/syncer/pkg/syssig"
 	"github.com/apache/servicecomb-service-center/syncer/pkg/utils"
 	"github.com/apache/servicecomb-service-center/syncer/plugins"
@@ -85,8 +85,6 @@ type Server struct {
 	// Wraps the grpc server
 	grpc *grpc.Server
 
-	httpserver *http.Server
-
 	revisionMap map[string]record
 
 	eventQueue []*dump.WatchInstanceChangedEvent
@@ -94,6 +92,10 @@ type Server struct {
 	mapLock sync.RWMutex
 
 	queueLock sync.RWMutex
+
+	mux sync.RWMutex
+
+	triggered bool
 
 	// The channel will be closed when receiving a system interrupt signal
 	stopCh chan struct{}
@@ -114,6 +116,7 @@ func NewServer(conf *config.Config) *Server {
 		stopCh:      make(chan struct{}),
 		revisionMap: make(map[string]record),
 		eventQueue:  make([]*dump.WatchInstanceChangedEvent, 0),
+		triggered:   true,
 	}
 }
 
@@ -143,11 +146,6 @@ func (s *Server) Run(ctx context.Context) {
 		return
 	}
 
-	err = s.startModuleServer(s.httpserver)
-	if err != nil {
-		return
-	}
-
 	s.servicecenter.SetStorageEngine(s.etcd.Storage())
 
 	s.task.Handle(s.tickHandler)
@@ -155,6 +153,8 @@ func (s *Server) Run(ctx context.Context) {
 	s.DataRemoveTickHandler()
 
 	s.task.Run(ctx)
+
+	go s.NewHttpServer()
 
 	log.Info("start service done")
 
@@ -238,13 +238,6 @@ func (s *Server) initialization() (err error) {
 		log.Error("create grpc failed", err)
 		return
 	}
-
-	s.httpserver, err = http.NewServer(convertHttpOptions(s.conf)...)
-	if err != nil {
-		log.Error("create httpserver failed", err)
-		return
-	}
-
 	return nil
 }
 
@@ -322,7 +315,7 @@ func (s *Server) updateRevisionMap(addr string, incrementQueue []*dump.WatchInst
 		return
 	}
 
-	log.Debugf("update RevisionMap, addr = %s", addr)
+	log.Debug(fmt.Sprintf("update RevisionMap, addr = %s", addr))
 	s.mapLock.Lock()
 	s.revisionMap[addr] = record{
 		incrementQueue[len(incrementQueue)-1].Revision,
@@ -362,8 +355,7 @@ func (s *Server) GetIncrementQueue(addr string) []*dump.WatchInstanceChangedEven
 	}
 
 	if index == length {
-		err := errors.New("fail to find the event in the queue by RevisionMap")
-		log.Errorf(err, "Revision = %s, Action = %s", revision, action)
+		log.Info(fmt.Sprintf("fail to find the event in the queue by RevisionMap, Revision = %d, Action = %s", revision, action))
 		return s.eventQueue
 	}
 	return s.eventQueue[index+1:]

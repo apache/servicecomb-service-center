@@ -19,8 +19,10 @@ package servicecenter
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/syncer/pkg/utils"
 	"github.com/apache/servicecomb-service-center/syncer/plugins"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
 	"github.com/apache/servicecomb-service-center/syncer/servicecenter/storage"
@@ -126,25 +128,26 @@ func (s *servicecenter) IncrementRegistry(clusterName string, data *pb.SyncData)
 	for _, inst := range data.Instances {
 		svc := searchService(inst, data.Services)
 		if svc == nil {
-			err := errors.New("service does not exist")
-			log.Errorf(err, "servicecenter.Registry, serviceID = %s, instanceId = %s", inst.ServiceId, inst.InstanceId)
+			err := utils.ErrServiceSearch
+			log.Error(fmt.Sprintf("servicecenter.Registry, serviceID = %s, instanceId = %s",
+				inst.ServiceId, inst.InstanceId), err)
 			continue
 		}
 
 		// If the svc is in the mapping, just do nothing, if not, created it in servicecenter and get the new serviceID
 		svcID := s.createService(svc)
-		log.Debugf("create service success orgServiceID= %s, curServiceID = %s", inst.ServiceId, svcID)
+		log.Debug(fmt.Sprintf("create service success orgServiceID= %s, curServiceID = %s", inst.ServiceId, svcID))
 
 		matches := pb.Expansions(inst.Expansions).Find("action", map[string]string{})
 		if len(matches) != 1 {
-			err := errors.New("action invalid")
-			log.Errorf(err, "can not handle invalid action")
+			err := utils.ErrActionInvalid
+			log.Error("can not handle invalid action", err)
 			continue
 		}
 		action := string(matches[0].Bytes[:])
 
 		if action == string(discovery.EVT_CREATE) {
-			log.Debugf("trying to do registration of instance, instanceID = %s", inst.InstanceId)
+			log.Debug(fmt.Sprintf("trying to do registration of instance, instanceID = %s", inst.InstanceId))
 
 			// If inst is in the mapping, just heart beat it in servicecenter
 			if s.heartbeatInstances(mapping, inst) {
@@ -167,10 +170,10 @@ func (s *servicecenter) IncrementRegistry(clusterName string, data *pb.SyncData)
 		}
 
 		if action == string(discovery.EVT_DELETE) {
-			log.Debugf("trying to do unRegistration of instance, instanceID = %s", inst.InstanceId)
+			log.Debug(fmt.Sprintf("trying to do unRegistration of instance, instanceID = %s", inst.InstanceId))
 			if len(mapping) == 0 {
-				err := errors.New("mapping does not exist")
-				log.Errorf(err, "fail to handle unregister")
+				err := utils.ErrMappingSearch
+				log.Error("fail to handle unregister", err)
 				return
 			}
 
@@ -181,9 +184,9 @@ func (s *servicecenter) IncrementRegistry(clusterName string, data *pb.SyncData)
 				if val.OrgInstanceID == inst.InstanceId {
 					err := s.servicecenter.UnregisterInstance(ctx, val.DomainProject, val.CurServiceID, val.CurInstanceID)
 					if err != nil {
-						log.Errorf(err, "Servicecenter delete instance failed")
+						log.Error("Servicecenter delete instance failed", err)
 					}
-					log.Debugf("Unregistered instance, InstanceID = %s", val.CurInstanceID)
+					log.Debug(fmt.Sprintf("Unregistered instance, InstanceID = %s", val.CurInstanceID))
 					break
 				}
 				index++
@@ -197,8 +200,8 @@ func (s *servicecenter) IncrementRegistry(clusterName string, data *pb.SyncData)
 			case index == len(mapping)-1:
 				mapping = mapping[:index]
 			case index == len(mapping):
-				err := errors.New("the instance is not in the mapping")
-				log.Errorf(err, "can not find instance to delete, OrgInstanceID: %s", inst.InstanceId)
+				err := utils.ErrInstanceDelete
+				log.Error(fmt.Sprintf("can not find instance to delete, OrgInstanceID: %s", inst.InstanceId), err)
 			default:
 				mapping = append(mapping[:index], mapping[index+1:]...)
 			}

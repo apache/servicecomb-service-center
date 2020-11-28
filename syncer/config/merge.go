@@ -53,11 +53,6 @@ func merge(src, dst Config) Config {
 	src.Registry.Plugin = mergeString(src.Registry.Plugin, dst.Registry.Plugin)
 	src.Registry.TLSMount.Enabled = mergeBool(src.Registry.TLSMount.Enabled, dst.Registry.TLSMount.Enabled)
 	src.Registry.TLSMount.Name = mergeString(src.Registry.TLSMount.Name, dst.Registry.TLSMount.Name)
-
-	src.HttpConfig.HttpAddr = mergeString(src.HttpConfig.HttpAddr, dst.HttpConfig.HttpAddr)
-	src.HttpConfig.Compressed = mergeBool(src.HttpConfig.Compressed, dst.HttpConfig.Compressed)
-	src.HttpConfig.CompressMinBytes = mergeInt(src.HttpConfig.CompressMinBytes, dst.HttpConfig.CompressMinBytes)
-
 	src.TLSConfigs = mergeTLSConfigs(src.TLSConfigs, dst.TLSConfigs)
 	return src
 }

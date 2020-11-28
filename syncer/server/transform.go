@@ -18,6 +18,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"strconv"
 	"strings"
@@ -94,7 +95,7 @@ func toSyncService(service *scpb.MicroService) (syncService *pb.SyncService) {
 
 	content, err := proto.Marshal(service)
 	if err != nil {
-		log.Errorf(err, "transform sc service to syncer service failed: %s", err)
+		log.Error("transform sc service to syncer service failed: %s", err)
 		return
 	}
 
@@ -133,7 +134,7 @@ func toSyncInstance(serviceID string, instance *scpb.MicroServiceInstance) (sync
 		endpoint := ep
 		addr, err := url.Parse(ep)
 		if err != nil {
-			log.Errorf(err, "parse sc instance endpoint failed: %s", err)
+			log.Error("parse sc instance endpoint failed: %s", err)
 			continue
 		}
 		if addr.Scheme == "rest" {
@@ -158,7 +159,7 @@ func toSyncInstance(serviceID string, instance *scpb.MicroServiceInstance) (sync
 
 	content, err := proto.Marshal(instance)
 	if err != nil {
-		log.Errorf(err, "transform sc instance to syncer instance failed: %s", err)
+		log.Error("transform sc instance to syncer instance failed: %s", err)
 		return
 	}
 
@@ -178,8 +179,8 @@ func schemaExpansions(service *scpb.MicroService, schemas []*scpb.Schema) (expan
 
 		content, err := proto.Marshal(val)
 		if err != nil {
-			log.Errorf(err, "proto marshal schemas failed, app = %s, service = %s, version = %s datasource = %s",
-				service.AppId, service.ServiceName, service.Version, expansionSchema)
+			log.Error(fmt.Sprintf("proto marshal schemas failed, app = %s, service = %s, version = %s datasource = %s",
+				service.AppId, service.ServiceName, service.Version, expansionSchema), err)
 			continue
 		}
 		expansions = append(expansions, &pb.Expansion{

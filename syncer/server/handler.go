@@ -50,13 +50,13 @@ func (s *Server) tickHandler() {
 	s.servicecenter.FlushData()
 
 	// sends a UserEvent on Serf, the event will be broadcast between members
-	s.httpserver.Mux.Lock()
-	defer s.httpserver.Mux.Unlock()
-	if s.httpserver.Triggered {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+	if s.triggered {
 		err := s.serf.UserEvent(EventNotifyFullPulled, util.StringToBytesWithNoCopy(""))
-		s.httpserver.Triggered = false
+		s.triggered = false
 		if err != nil {
-			log.Errorf(err, "Syncer send notifyFullPulled user event failed")
+			log.Error("Syncer send notifyFullPulled user event failed", err)
 		}
 		err = alarm.Clear(alarm.IDIncrementPullError)
 		if err != nil {
@@ -65,7 +65,7 @@ func (s *Server) tickHandler() {
 	} else {
 		err := s.serf.UserEvent(EventIncrementPulled, util.StringToBytesWithNoCopy(s.conf.Cluster))
 		if err != nil {
-			log.Errorf(err, "Syncer send incrementPulled user event failed")
+			log.Error("Syncer send incrementPulled user event failed", err)
 		}
 	}
 }
@@ -79,10 +79,10 @@ func (s *Server) DataRemoveTickHandler() chan bool {
 			select {
 			case <-ticker.C:
 				s.eventQueueDataRemoveTickHandler()
-				log.Infof("size of records map = %d, size of events slice = %d", len(s.revisionMap), len(s.eventQueue))
+				log.Info(fmt.Sprintf("size of records map = %d, size of events slice = %d", len(s.revisionMap), len(s.eventQueue)))
 			case stop := <-stopChan:
 				if stop {
-					fmt.Print("ready stop")
+					log.Info("data remove ticker stop")
 					return
 				}
 			case <-context.Background().Done():
@@ -99,7 +99,7 @@ func (s *Server) eventQueueDataRemoveTickHandler() {
 		return
 	}
 
-	log.Infof("length of map : %d", len(s.revisionMap))
+	log.Info(fmt.Sprintf("length of map : %d", len(s.revisionMap)))
 	var minRevision int64 = math.MaxInt64
 	for _, value := range s.revisionMap {
 		var tempRevision = value.revision
@@ -108,7 +108,7 @@ func (s *Server) eventQueueDataRemoveTickHandler() {
 		}
 	}
 
-	log.Infof("revision of item will remove : %d", minRevision)
+	log.Info(fmt.Sprintf("revision of item will remove : %d", minRevision))
 
 	j := 0
 	for _, value := range s.eventQueue {
@@ -119,9 +119,9 @@ func (s *Server) eventQueueDataRemoveTickHandler() {
 		j++
 	}
 	s.eventQueue = s.eventQueue[j:]
-	log.Infof("size of event queue : %d", len(s.eventQueue))
+	log.Info(fmt.Sprintf("size of event queue : %d", len(s.eventQueue)))
 	if len(s.eventQueue) > 0 {
-		log.Infof("revision of first element in event queue : %d", s.eventQueue[0].Revision)
+		log.Info(fmt.Sprintf("revision of first element in event queue : %d", s.eventQueue[0].Revision))
 	}
 }
 
@@ -208,7 +208,7 @@ func (s *Server) incrementUserEvent(data ...[]byte) (success bool) {
 
 	// Get dta from remote member
 	endpoint := fmt.Sprintf("%s:%s", members[0].Addr, members[0].Tags[tagKeyRPCPort])
-	log.Debugf("Going to pull data from %s %s", members[0].Name, endpoint)
+	log.Debug(fmt.Sprintf("Going to pull data from %s %s", members[0].Name, endpoint))
 
 	enabled, err := strconv.ParseBool(members[0].Tags[tagKeyTLSEnabled])
 	if err != nil {
@@ -228,7 +228,7 @@ func (s *Server) incrementUserEvent(data ...[]byte) (success bool) {
 	cli := client.NewSyncClient(endpoint, tlsConfig)
 	declareResponse, err := cli.DeclareDataLength(context.Background(), s.conf.Listener.RPCAddr)
 	if err != nil {
-		log.Errorf(err, "Get syncData length from other node failed, node name is '%s'", members[0].Name)
+		log.Error(fmt.Sprintf("Get syncData length from other node failed, node name is '%s'", members[0].Name), err)
 		return
 	}
 	syncDataLength := declareResponse.SyncDataLength
@@ -236,7 +236,7 @@ func (s *Server) incrementUserEvent(data ...[]byte) (success bool) {
 	if syncDataLength != 0 {
 		syncData, err := cli.IncrementPull(context.Background(), s.conf.Listener.RPCAddr)
 		if err != nil {
-			log.Errorf(err, "IncrementPull other serf instances failed, node name is '%s'", members[0].Name)
+			log.Error(fmt.Sprintf("IncrementPull other serf instances failed, node name is '%s'", members[0].Name), err)
 			return
 		}
 
@@ -254,7 +254,7 @@ func (s *Server) incrementUserEvent(data ...[]byte) (success bool) {
 func (s *Server) notifyUserEvent(data ...[]byte) (success bool) {
 	err := s.serf.UserEvent(EventDiscovered, util.StringToBytesWithNoCopy(s.conf.Cluster))
 	if err != nil {
-		log.Errorf(err, "Syncer send discovered user event failed")
+		log.Error("Syncer send discovered user event failed", err)
 	}
 	return true
 }

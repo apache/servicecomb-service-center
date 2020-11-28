@@ -19,6 +19,7 @@ require (
 	github.com/go-chassis/foundation v0.1.1-0.20200825060850-b16bf420f7b3
 	github.com/go-chassis/go-archaius v1.3.6-0.20201103103813-43dd1680ebfb
 	github.com/go-chassis/go-chassis/v2 v2.0.5-0.20201114043352-d6ab1f0a882d
+	github.com/go-chassis/openlog v1.1.2
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/protobuf v1.4.2
 	github.com/gorilla/websocket v1.4.0

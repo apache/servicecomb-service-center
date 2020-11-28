@@ -26,7 +26,6 @@ import (
 	"github.com/apache/servicecomb-service-center/syncer/config"
 	"github.com/apache/servicecomb-service-center/syncer/etcd"
 	"github.com/apache/servicecomb-service-center/syncer/grpc"
-	"github.com/apache/servicecomb-service-center/syncer/http"
 	"github.com/apache/servicecomb-service-center/syncer/pkg/utils"
 	"github.com/apache/servicecomb-service-center/syncer/plugins"
 	"github.com/apache/servicecomb-service-center/syncer/serf"
@@ -83,25 +82,6 @@ func convertGRPCOptions(c *config.Config) []grpc.Option {
 
 		}
 		opts = append(opts, grpc.WithTLSConfig(tlsConf))
-	}
-	return opts
-}
-
-func convertHttpOptions(c *config.Config) []http.Option {
-	opts := []http.Option{
-		http.WithAddr(c.HttpConfig.HttpAddr),
-		http.WithCompressed(c.HttpConfig.Compressed),
-		http.WithCompressMinBytes(c.HttpConfig.CompressMinBytes),
-	}
-
-	if c.Listener.TLSMount.Enabled {
-		conf := c.GetTLSConfig(c.Listener.TLSMount.Name)
-		sslOps := append(tlsutil.DefaultServerTLSOptions(), tlsConfigToOptions(conf)...)
-		tlsConf, err := tlsutil.GetServerTLSConfig(sslOps...)
-		if err != nil {
-
-		}
-		opts = append(opts, http.WithTLSConfig(tlsConf))
 	}
 	return opts
 }

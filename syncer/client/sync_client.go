@@ -70,7 +70,7 @@ func (c *Client) Pull(ctx context.Context) (*pb.SyncData, error) {
 func (c *Client) IncrementPull(ctx context.Context, addr string) (*pb.SyncData, error) {
 	data, err := c.cli.IncrementPull(ctx, &pb.IncrementPullRequest{Addr: addr})
 	if err != nil {
-		log.Errorf(err, "Pull from grpc client failed, going to close the client")
+		log.Error("Pull from grpc client failed, going to close the client", err)
 		closeClient(c.addr)
 	}
 	return data, err
@@ -79,7 +79,7 @@ func (c *Client) IncrementPull(ctx context.Context, addr string) (*pb.SyncData, 
 func (c *Client) DeclareDataLength(ctx context.Context, addr string) (*pb.DeclareResponse, error) {
 	res, err := c.cli.DeclareDataLength(ctx, &pb.DeclareRequest{Addr: addr})
 	if err != nil {
-		log.Errorf(err, "Get SyncDataLength from grpc client failed, going to close the client")
+		log.Error("Get SyncDataLength from grpc client failed, going to close the client", err)
 		closeClient(c.addr)
 	}
 	return res, err

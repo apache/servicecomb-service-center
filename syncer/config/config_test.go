@@ -152,12 +152,6 @@ func TestVerify(t *testing.T) {
 	err = Verify(conf)
 	conf.Task.Params = params
 	assert.NotNil(t, err)
-
-	httpAddr := conf.HttpConfig.HttpAddr
-	conf.HttpConfig.HttpAddr = ""
-	err = Verify(conf)
-	conf.HttpConfig.HttpAddr = httpAddr
-	assert.NotNil(t, err)
 }
 
 func createFile(path string, data []byte) error {
@@ -214,10 +208,6 @@ registry:
   tlsMount:
     enabled: false
     name: servicecenter
-HttpConfig:
-  httpAddr: 0.0.0.0:30300
-  compressed: true
-  compressMinBytes: 1400
 tlsConfigs:
   - name: syncer
     verifyPeer: true
