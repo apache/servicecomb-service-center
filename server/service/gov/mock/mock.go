@@ -38,7 +38,7 @@ func (d *Distributor) Create(kind, project string, spec []byte) error {
 	d.lbPolicies[p.GovernancePolicy.Name] = p
 	return err
 }
-func (d *Distributor) Update(id, project string, spec []byte) error {
+func (d *Distributor) Update(id, kind, project string, spec []byte) error {
 	p := &gov.LoadBalancer{}
 	err := json.Unmarshal(spec, p)
 	log.Println("update ", p)

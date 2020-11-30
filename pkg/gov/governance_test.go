@@ -45,11 +45,10 @@ func TestNewInstance(t *testing.T) {
 	b, _ := json.MarshalIndent(&gov.TrafficMarker{
 		GovernancePolicy: &gov.GovernancePolicy{
 			Name: "traffic2adminAPI",
-			MD: map[string]string{
-				"service":     "payment",
-				"version":     "1.0.0",
-				"app":         "default",
-				"environment": "development",
+			ID:   "",
+			Selector: gov.Selector{
+				App:         "default",
+				Environment: "development",
 			},
 		},
 		Spec: &gov.MatchSpec{
