@@ -1,5 +1,6 @@
 syntax = "proto3";
 package proto;
+option go_package = ".;proto";
 
 message PullRequest {
     string serviceName = 1;
@@ -7,8 +8,22 @@ message PullRequest {
     string time = 3;
 }
 
+message IncrementPullRequest {
+    string addr = 1;
+}
+
+message DeclareRequest {
+    string addr = 1;
+}
+
 service Sync {
     rpc Pull(PullRequest) returns (SyncData) {}
+    rpc DeclareDataLength(DeclareRequest) returns (DeclareResponse) {}
+    rpc IncrementPull(IncrementPullRequest) returns (SyncData) {}
+}
+
+message DeclareResponse {
+    int64 syncDataLength = 1;
 }
 
 message SyncData {

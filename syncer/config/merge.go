@@ -53,7 +53,6 @@ func merge(src, dst Config) Config {
 	src.Registry.Plugin = mergeString(src.Registry.Plugin, dst.Registry.Plugin)
 	src.Registry.TLSMount.Enabled = mergeBool(src.Registry.TLSMount.Enabled, dst.Registry.TLSMount.Enabled)
 	src.Registry.TLSMount.Name = mergeString(src.Registry.TLSMount.Name, dst.Registry.TLSMount.Name)
-
 	src.TLSConfigs = mergeTLSConfigs(src.TLSConfigs, dst.TLSConfigs)
 	return src
 }

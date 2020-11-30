@@ -20,15 +20,16 @@ package server
 import (
 	"context"
 	"errors"
-	"github.com/apache/servicecomb-service-center/pkg/dump"
-	"github.com/apache/servicecomb-service-center/syncer/client"
+	"fmt"
 	"strconv"
 	"sync"
 	"syscall"
 
+	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rpc"
+	"github.com/apache/servicecomb-service-center/syncer/client"
 	"github.com/apache/servicecomb-service-center/syncer/config"
 	"github.com/apache/servicecomb-service-center/syncer/etcd"
 	"github.com/apache/servicecomb-service-center/syncer/grpc"
@@ -85,22 +86,38 @@ type Server struct {
 	// Wraps the grpc server
 	grpc *grpc.Server
 
+	revisionMap map[string]record
+
 	eventQueue []*dump.WatchInstanceChangedEvent
 
+	mapLock sync.RWMutex
+
 	queueLock sync.RWMutex
+
+	mux sync.RWMutex
+
+	triggered bool
+
 	// The channel will be closed when receiving a system interrupt signal
 	stopCh chan struct{}
+}
+
+type record struct {
+	revision int64
+	action   string
 }
 
 // NewServer new server with Config
 func NewServer(conf *config.Config) *Server {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &Server{
-		ctx:        ctx,
-		cancel:     cancel,
-		conf:       conf,
-		stopCh:     make(chan struct{}),
-		eventQueue: make([]*dump.WatchInstanceChangedEvent, 0),
+		ctx:         ctx,
+		cancel:      cancel,
+		conf:        conf,
+		stopCh:      make(chan struct{}),
+		revisionMap: make(map[string]record),
+		eventQueue:  make([]*dump.WatchInstanceChangedEvent, 0),
+		triggered:   true,
 	}
 }
 
@@ -134,7 +151,11 @@ func (s *Server) Run(ctx context.Context) {
 
 	s.task.Handle(s.tickHandler)
 
+	s.DataRemoveTickHandler()
+
 	s.task.Run(ctx)
+
+	go s.NewHttpServer()
 
 	err = s.watchInstance()
 	if err != nil {
@@ -248,6 +269,8 @@ func (s *Server) waitClusterMembers(data ...[]byte) bool {
 		}
 	}
 	s.serf.AddEventHandler(serf.NewEventHandler(serf.UserEventFilter(EventDiscovered), s.userEvent))
+	s.serf.AddEventHandler(serf.NewEventHandler(serf.UserEventFilter(EventIncrementPulled), s.incrementUserEvent))
+	s.serf.AddEventHandler(serf.NewEventHandler(serf.UserEventFilter(EventNotifyFullPulled), s.notifyUserEvent))
 	return true
 }
 
@@ -302,4 +325,87 @@ func instFromOtherSC(instance *dump.Instance, m *pb.MappingEntry) bool {
 		return true
 	}
 	return false
+}
+
+func (s *Server) getRevision(addr string) int64 {
+	s.mapLock.RLock()
+	value, ok := s.revisionMap[addr]
+	s.mapLock.RUnlock()
+	if ok {
+		return value.revision
+	}
+	return -1
+}
+
+func (s *Server) getAction(addr string) string {
+	s.mapLock.RLock()
+	value, ok := s.revisionMap[addr]
+	s.mapLock.RUnlock()
+	if ok {
+		return value.action
+	}
+	return ""
+}
+
+func (s *Server) getSyncDataLength(addr string) (response *pb.DeclareResponse) {
+	response = &pb.DeclareResponse{
+		SyncDataLength: int64(len(s.GetIncrementQueue(addr))),
+	}
+	return response
+}
+
+func (s *Server) updateRevisionMap(addr string, incrementQueue []*dump.WatchInstanceChangedEvent) {
+	if len(incrementQueue) == 0 {
+		log.Info("incrementQueue is empty, no need to update RevisionMap")
+		return
+	}
+
+	log.Debug(fmt.Sprintf("update RevisionMap, addr = %s", addr))
+	s.mapLock.Lock()
+	s.revisionMap[addr] = record{
+		incrementQueue[len(incrementQueue)-1].Revision,
+		incrementQueue[len(incrementQueue)-1].Action,
+	}
+	s.mapLock.Unlock()
+}
+
+func (s *Server) GetIncrementQueue(addr string) []*dump.WatchInstanceChangedEvent {
+	revision := s.getRevision(addr)
+	action := s.getAction(addr)
+
+	s.queueLock.RLock()
+	defer s.queueLock.RUnlock()
+
+	length := len(s.eventQueue)
+	if length == 0 {
+		log.Info("eventQueue is empty")
+		return nil
+	}
+
+	if revision == -1 {
+		return s.eventQueue
+	}
+
+	index := 0
+	for _, event := range s.eventQueue {
+		if event.Revision == revision && event.Action == action {
+			break
+		}
+		index++
+	}
+
+	if index == length-1 {
+		log.Info("no incremental event in the queue")
+		return nil
+	}
+
+	if index == length {
+		log.Info(fmt.Sprintf("fail to find the event in the queue by RevisionMap, Revision = %d, Action = %s", revision, action))
+		return s.eventQueue
+	}
+	return s.eventQueue[index+1:]
+}
+
+func (s *Server) GetIncrementData(ctx context.Context, incrementQueue []*dump.WatchInstanceChangedEvent) (data *pb.SyncData) {
+	return s.EventQueueToSyncData(ctx, incrementQueue)
 }
