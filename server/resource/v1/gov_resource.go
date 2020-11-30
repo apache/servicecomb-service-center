@@ -31,10 +31,18 @@ import (
 type Governance struct {
 }
 
+const (
+	AppKey         = "app"
+	EnvironmentKey = "environment"
+	KindKey        = ":kind"
+	ProjectKey     = ":project"
+	IDKey          = ":id"
+)
+
 //Create gov config
 func (t *Governance) Create(w http.ResponseWriter, req *http.Request) {
-	kind := req.URL.Query().Get(":kind")
-	project := req.URL.Query().Get(":project")
+	kind := req.URL.Query().Get(KindKey)
+	project := req.URL.Query().Get(ProjectKey)
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		log.Error("read body err", err)
@@ -52,9 +60,9 @@ func (t *Governance) Create(w http.ResponseWriter, req *http.Request) {
 
 //Put gov config
 func (t *Governance) Put(w http.ResponseWriter, req *http.Request) {
-	kind := req.URL.Query().Get(":kind")
-	id := req.URL.Query().Get(":id")
-	project := req.URL.Query().Get(":project")
+	kind := req.URL.Query().Get(KindKey)
+	id := req.URL.Query().Get(IDKey)
+	project := req.URL.Query().Get(ProjectKey)
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		log.Error("read body err", err)
@@ -72,10 +80,10 @@ func (t *Governance) Put(w http.ResponseWriter, req *http.Request) {
 
 //List return all gov config
 func (t *Governance) List(w http.ResponseWriter, req *http.Request) {
-	kind := req.URL.Query().Get(":kind")
-	project := req.URL.Query().Get(":project")
-	app := req.URL.Query().Get("app")
-	environment := req.URL.Query().Get("environment")
+	kind := req.URL.Query().Get(KindKey)
+	project := req.URL.Query().Get(ProjectKey)
+	app := req.URL.Query().Get(AppKey)
+	environment := req.URL.Query().Get(EnvironmentKey)
 	body, err := gov.List(kind, project, app, environment)
 	if err != nil {
 		log.Error("create gov err", err)
@@ -92,8 +100,8 @@ func (t *Governance) List(w http.ResponseWriter, req *http.Request) {
 
 //Get gov config
 func (t *Governance) Get(w http.ResponseWriter, req *http.Request) {
-	id := req.URL.Query().Get(":id")
-	project := req.URL.Query().Get(":project")
+	id := req.URL.Query().Get(IDKey)
+	project := req.URL.Query().Get(ProjectKey)
 	body, err := gov.Get(id, project)
 	if err != nil {
 		log.Error("create gov err", err)
@@ -110,8 +118,8 @@ func (t *Governance) Get(w http.ResponseWriter, req *http.Request) {
 
 //Delete delete gov config
 func (t *Governance) Delete(w http.ResponseWriter, req *http.Request) {
-	id := req.URL.Query().Get(":id")
-	project := req.URL.Query().Get(":project")
+	id := req.URL.Query().Get(IDKey)
+	project := req.URL.Query().Get(ProjectKey)
 	err := gov.Delete(id, project)
 	if err != nil {
 		log.Error("create gov err", err)
@@ -126,10 +134,10 @@ func (t *Governance) URLPatterns() []rest.Route {
 		//servicecomb.marker.{name}
 		//servicecomb.rateLimiter.{name}
 		//....
-		{Method: http.MethodPost, Path: "/v1/:project/gov/:kind", Func: t.Create},
-		{Method: http.MethodGet, Path: "/v1/:project/gov/:kind", Func: t.List},
-		{Method: http.MethodGet, Path: "/v1/:project/gov/:kind/:id", Func: t.Get},
-		{Method: http.MethodPut, Path: "/v1/:project/gov/:kind/:id", Func: t.Put},
-		{Method: http.MethodDelete, Path: "/v1/:project/gov/:kind/:id", Func: t.Delete},
+		{Method: http.MethodPost, Path: "/v1/:project/gov/" + KindKey, Func: t.Create},
+		{Method: http.MethodGet, Path: "/v1/:project/gov/" + KindKey, Func: t.List},
+		{Method: http.MethodGet, Path: "/v1/:project/gov/" + KindKey + "/" + IDKey, Func: t.Get},
+		{Method: http.MethodPut, Path: "/v1/:project/gov/" + KindKey + "/" + IDKey, Func: t.Put},
+		{Method: http.MethodDelete, Path: "/v1/:project/gov/" + KindKey + "/" + IDKey, Func: t.Delete},
 	}
 }

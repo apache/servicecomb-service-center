@@ -41,7 +41,7 @@ func TestCreate(t *testing.T) {
 	}
 	err := svc.Init()
 	assert.NoError(t, err)
-	b, _ := json.MarshalIndent(&gov.LoadBalancer{
+	b, _ := json.MarshalIndent(&gov.Policy{
 		GovernancePolicy: &gov.GovernancePolicy{
 			Name: "Traffic2adminAPI",
 		},

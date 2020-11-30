@@ -30,8 +30,8 @@ type GovernancePolicy struct {
 	Selector   Selector `json:"selector,omitempty"`
 }
 
-//LoadBalancer define policy and fault tolerant policy
-type LoadBalancer struct {
+//Policy define policy and fault tolerant policy
+type Policy struct {
 	*GovernancePolicy
 	Spec interface{} `json:"spec,omitempty"`
 }

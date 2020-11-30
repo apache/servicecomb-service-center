@@ -41,7 +41,7 @@ func TestAuthResource_Login(t *testing.T) {
 	rest.RegisterServant(&v1.Governance{})
 
 	t.Run("create policy", func(t *testing.T) {
-		b, _ := json.Marshal(&gov.LoadBalancer{
+		b, _ := json.Marshal(&gov.Policy{
 			GovernancePolicy: &gov.GovernancePolicy{Name: "test"},
 			Spec: &gov.LBSpec{
 				Bo: &gov.BackOffPolicy{InitialInterval: 1}}})

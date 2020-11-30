@@ -5,17 +5,18 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
+	"strings"
+
 	"github.com/apache/servicecomb-service-center/pkg/gov"
 	"github.com/apache/servicecomb-service-center/server/config"
 	svc "github.com/apache/servicecomb-service-center/server/service/gov"
 	"github.com/ghodss/yaml"
 	"github.com/go-chassis/kie-client"
-	"log"
-	"strings"
 )
 
 type Distributor struct {
-	lbPolicies map[string]*gov.LoadBalancer
+	lbPolicies map[string]*gov.Policy
 	name       string
 	client     *kie.Client
 }
@@ -31,7 +32,7 @@ const (
 var rule = Validator{}
 
 func (d *Distributor) Create(kind, project string, spec []byte) error {
-	p := &gov.LoadBalancer{}
+	p := &gov.Policy{}
 	err := json.Unmarshal(spec, p)
 	if err != nil {
 		return err
@@ -63,7 +64,7 @@ func (d *Distributor) Create(kind, project string, spec []byte) error {
 }
 
 func (d *Distributor) Update(id, kind, project string, spec []byte) error {
-	p := &gov.LoadBalancer{}
+	p := &gov.Policy{}
 	err := json.Unmarshal(spec, p)
 	if err != nil {
 		return err
@@ -109,9 +110,9 @@ func (d *Distributor) List(kind, project, app, env string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	r := make([]*gov.LoadBalancer, 0, list.Total)
+	r := make([]*gov.Policy, 0, list.Total)
 	for _, item := range list.Data {
-		goc := &gov.LoadBalancer{
+		goc := &gov.Policy{
 			GovernancePolicy: &gov.GovernancePolicy{},
 		}
 		spec := make(map[string]interface{})
@@ -141,7 +142,7 @@ func (d *Distributor) Get(id, project string) ([]byte, error) {
 		log.Fatal("kie get failed", err)
 		return nil, err
 	}
-	goc := &gov.LoadBalancer{
+	goc := &gov.Policy{
 		GovernancePolicy: &gov.GovernancePolicy{},
 	}
 	goc.ID = kv.ID
@@ -175,7 +176,7 @@ func initClient(endpoint string) *kie.Client {
 }
 
 func new(opts config.DistributorOptions) (svc.ConfigDistributor, error) {
-	return &Distributor{name: opts.Name, lbPolicies: map[string]*gov.LoadBalancer{}, client: initClient(opts.Endpoint)}, nil
+	return &Distributor{name: opts.Name, lbPolicies: map[string]*gov.Policy{}, client: initClient(opts.Endpoint)}, nil
 }
 
 func toSnake(name string) string {

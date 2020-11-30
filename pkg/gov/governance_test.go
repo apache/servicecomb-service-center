@@ -25,7 +25,7 @@ import (
 )
 
 func TestNewInstance3(t *testing.T) {
-	b, _ := json.MarshalIndent(&gov.LoadBalancer{
+	b, _ := json.MarshalIndent(&gov.Policy{
 		GovernancePolicy: &gov.GovernancePolicy{
 			Name: "Traffic2adminAPI",
 		},

@@ -28,19 +28,19 @@ import (
 )
 
 type Distributor struct {
-	lbPolicies map[string]*gov.LoadBalancer
+	lbPolicies map[string]*gov.Policy
 	name       string
 }
 
 func (d *Distributor) Create(kind, project string, spec []byte) error {
-	p := &gov.LoadBalancer{}
+	p := &gov.Policy{}
 	err := json.Unmarshal(spec, p)
 	log.Println(fmt.Sprintf("create %v", &p))
 	d.lbPolicies[p.GovernancePolicy.Name] = p
 	return err
 }
 func (d *Distributor) Update(id, kind, project string, spec []byte) error {
-	p := &gov.LoadBalancer{}
+	p := &gov.Policy{}
 	err := json.Unmarshal(spec, p)
 	log.Println("update ", p)
 	d.lbPolicies[p.GovernancePolicy.Name] = p
@@ -51,7 +51,7 @@ func (d *Distributor) Delete(id, project string) error {
 	return nil
 }
 func (d *Distributor) List(kind, project, app, env string) ([]byte, error) {
-	r := make([]*gov.LoadBalancer, 0, len(d.lbPolicies))
+	r := make([]*gov.Policy, 0, len(d.lbPolicies))
 	for _, g := range d.lbPolicies {
 		r = append(r, g)
 	}
@@ -69,7 +69,7 @@ func (d *Distributor) Name() string {
 	return d.name
 }
 func new(opts config.DistributorOptions) (svc.ConfigDistributor, error) {
-	return &Distributor{name: opts.Name, lbPolicies: map[string]*gov.LoadBalancer{}}, nil
+	return &Distributor{name: opts.Name, lbPolicies: map[string]*gov.Policy{}}, nil
 }
 func init() {
 	svc.InstallDistributor(svc.ConfigDistributorMock, new)
