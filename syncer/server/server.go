@@ -168,7 +168,6 @@ func (s *Server) Run(ctx context.Context) {
 	<-s.stopCh
 
 	s.Stop()
-	return
 }
 
 // Stop Syncer Server

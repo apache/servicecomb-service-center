@@ -51,7 +51,12 @@ func main() {
 	}
 	go syssig.Run(ctx)
 	go start(ctx, conf)
-	defer servicecenter.Stop(ctx)
+	defer func() {
+		err := servicecenter.Stop(ctx)
+		if err != nil {
+			log.Error("", err)
+		}
+	}()
 
 	<-stopCh
 }
@@ -91,7 +96,10 @@ func start(ctx context.Context, conf *servicecenter.Config) {
 			log.Info("call provider success")
 
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(msg))
+			_, err = w.Write([]byte(msg))
+			if err != nil {
+				log.Error("", err)
+			}
 		})
 		go func() {
 			err = http.ListenAndServe(conf.Service.Instance.ListenAddress, nil)

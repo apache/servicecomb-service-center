@@ -22,10 +22,9 @@ const (
 	PluginServicecenter PluginType = iota
 	pluginTotal
 
-	BUILDIN       = "buildin"
-	STATIC        = "static"
-	DYNAMIC       = "dynamic"
-	keyPluginName = "name"
+	BUILDIN = "buildin"
+	STATIC  = "static"
+	DYNAMIC = "dynamic"
 )
 
 func (p PluginType) String() string {

@@ -96,9 +96,7 @@ func convertTaskOptions(c *config.Config) []task.Option {
 
 func convertSCConfigOption(c *config.Config) []plugins.SCConfigOption {
 	endpoints := make([]string, 0, 10)
-	for _, endpoint := range strings.Split(c.Registry.Address, ",") {
-		endpoints = append(endpoints, endpoint)
-	}
+	endpoints = append(endpoints, strings.Split(c.Registry.Address, ",")...)
 	opts := []plugins.SCConfigOption{plugins.WithEndpoints(endpoints)}
 
 	if c.Registry.TLSMount.Enabled {

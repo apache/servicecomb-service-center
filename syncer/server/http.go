@@ -20,7 +20,6 @@ func (s *Server) FullSync(b *rf.Context) {
 	if err != nil {
 		log.Error("", err)
 	}
-	return
 }
 
 func (s *Server) URLPatterns() []rf.Route {

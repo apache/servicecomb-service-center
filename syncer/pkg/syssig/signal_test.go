@@ -21,11 +21,19 @@ import (
 	"syscall"
 	"testing"
 	"time"
+
+	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
 func TestSignalsHandler(t *testing.T) {
-	AddSignalsHandler(func() {}, syscall.SIGHUP, syscall.SIGINT, syscall.SIGKILL, syscall.SIGTERM)
-	AddSignalsHandler(func() {}, syscall.Signal(999))
+	err := AddSignalsHandler(func() {}, syscall.SIGHUP, syscall.SIGINT, syscall.SIGKILL, syscall.SIGTERM)
+	if err != nil {
+		log.Error("", err)
+	}
+	err = AddSignalsHandler(func() {}, syscall.Signal(999))
+	if err != nil {
+		log.Error("", err)
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	go func() { Run(ctx) }()
 	time.Sleep(time.Second)
