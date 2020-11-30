@@ -29,7 +29,7 @@ import (
 
 func TestCreate(t *testing.T) {
 	config.Configurations = &config.Config{
-		Gov: config.Gov{
+		Gov: &config.Gov{
 			DistOptions: []config.DistributorOptions{
 				{
 					Name: "mockServer",
@@ -46,6 +46,6 @@ func TestCreate(t *testing.T) {
 		},
 		Spec: &gov.LBSpec{RetryNext: 3, MarkerName: "traffic2adminAPI"},
 	}, "", "  ")
-	err = svc.Create("lb", b)
+	err = svc.Create("lb", "default", b)
 	assert.NoError(t, err)
 }

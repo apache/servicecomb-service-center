@@ -113,8 +113,8 @@ func (d *Distributor) List(kind, project, app, env string) ([]byte, error) {
 			GovernancePolicy: &gov.GovernancePolicy{},
 		}
 		spec := make(map[string]interface{})
-		specJson, _ := yaml.YAMLToJSON([]byte(item.Value))
-		err = json.Unmarshal(specJson, &spec)
+		specJSON, _ := yaml.YAMLToJSON([]byte(item.Value))
+		err = json.Unmarshal(specJSON, &spec)
 		if err != nil {
 			return nil, err
 		}
@@ -165,7 +165,7 @@ func initClient(endpoint string) *kie.Client {
 			DefaultLabels: map[string]string{},
 		})
 	if err != nil {
-		log.Fatalf("init kie client failed", err)
+		log.Fatalf("init kie client failed, err: %s", err)
 	}
 	return client
 }
