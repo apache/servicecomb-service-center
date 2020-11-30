@@ -80,8 +80,7 @@ func (ds *DataSource) initPlugins() error {
 func (ds *DataSource) initClient() error {
 	uri := config.GetString("registry.mongo.cluster.uri", "mongodb://localhost:27017", config.WithStandby("manager_cluster"))
 	cfg := storage.NewConfig(uri)
-	cols := []string{CollectionAccount, CollectionService, CollectionSchema, CollectionRule, CollectionInstance}
-	client.NewMongoClient(cfg, cols)
+	client.NewMongoClient(cfg)
 	select {
 	case err := <-client.GetMongoClient().Err():
 		return err

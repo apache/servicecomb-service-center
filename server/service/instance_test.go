@@ -1575,7 +1575,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId8))
 				Expect(len(rev)).NotTo(Equal(0))
 
-				util.SetContext(ctx, util.CtxRequestRevision, "x")
+				util.WithRequestRev(ctx, "x")
 				respFind, err = instanceResource.Find(ctx, &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId8,
 					AppId:             "query_instance",
@@ -1587,7 +1587,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId8))
 				Expect(ctx.Value(util.CtxResponseRevision)).To(Equal(rev))
 
-				util.SetContext(ctx, util.CtxRequestRevision, rev)
+				util.WithRequestRev(ctx, rev)
 				respFind, err = instanceResource.Find(ctx, &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId8,
 					AppId:             "query_instance",

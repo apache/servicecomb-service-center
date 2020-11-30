@@ -32,8 +32,6 @@ import (
 	pb "github.com/go-chassis/cari/discovery"
 )
 
-const defaultCacheValue = "1"
-
 /*
 	get Service by service id
 */
@@ -66,9 +64,7 @@ func GetService(ctx context.Context, domainProject string, serviceID string) (*p
 
 // GetServiceFromCache gets service from cache
 func GetServiceFromCache(domainProject string, serviceID string) *pb.MicroService {
-	ctx := context.WithValue(context.WithValue(context.Background(),
-		util.CtxCacheOnly, defaultCacheValue),
-		util.CtxGlobal, defaultCacheValue)
+	ctx := util.WithGlobal(util.WithCacheOnly(context.Background()))
 	svc, _ := GetService(ctx, domainProject, serviceID)
 	return svc
 }

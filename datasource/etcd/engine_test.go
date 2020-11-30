@@ -42,9 +42,7 @@ type serviceCleanInfo struct {
 }
 
 func getContextWith(domain string, project string) context.Context {
-	return util.SetContext(
-		util.SetDomainProject(context.Background(), domain, project),
-		util.CtxNocache, "1")
+	return util.WithNoCache(util.SetDomainProject(context.Background(), domain, project))
 }
 
 func createService(domain string, project string, name string, withInstance bool, shouldClear bool) {

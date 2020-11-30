@@ -27,7 +27,7 @@ import (
 	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
 )
 
-func ChangePassword(ctx context.Context, changerRole, changerName string, a *rbacframe.Account) error {
+func ChangePassword(ctx context.Context, changerRole []string, changerName string, a *rbacframe.Account) error {
 	if changerName == a.Name {
 		if a.CurrentPassword == "" {
 			log.Error("current pwd is empty", nil)
@@ -35,12 +35,15 @@ func ChangePassword(ctx context.Context, changerRole, changerName string, a *rba
 		}
 		return changePassword(ctx, changerName, a.CurrentPassword, a.Password)
 	}
-	if changerRole != rbacframe.RoleAdmin { //need to check password mismatch. but admin role can change any user password without supply current password
-		log.Error("can not change other account pwd", nil)
-		return ErrNoPermChangeAccount
+	for i := 0; i < len(changerRole); i++ {
+		//need to check password mismatch. but admin role can change any user password without supply current password
+		if changerRole[i] == rbacframe.RoleAdmin {
+			return changePasswordForcibly(ctx, a.Name, a.Password)
+		}
 	}
-	return changePasswordForcibly(ctx, a.Name, a.Password)
 
+	log.Error("can not change other account pwd", nil)
+	return ErrNoPermChangeAccount
 }
 func changePasswordForcibly(ctx context.Context, name, pwd string) error {
 	old, err := dao.GetAccount(ctx, name)

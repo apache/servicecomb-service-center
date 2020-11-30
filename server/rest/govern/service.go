@@ -32,13 +32,12 @@ type Service struct {
 }
 
 func (governService *Service) GetServicesInfo(ctx context.Context, in *pb.GetServicesInfoRequest) (*pb.GetServicesInfoResponse, error) {
-	ctx = util.SetContext(ctx, util.CtxCacheOnly, "1")
-
+	ctx = util.WithCacheOnly(ctx)
 	return datasource.Instance().GetServicesInfo(ctx, in)
 }
 
 func (governService *Service) GetServiceDetail(ctx context.Context, in *pb.GetServiceRequest) (*pb.GetServiceDetailResponse, error) {
-	ctx = util.SetContext(ctx, util.CtxCacheOnly, "1")
+	ctx = util.WithCacheOnly(ctx)
 
 	if len(in.ServiceId) == 0 {
 		return &pb.GetServiceDetailResponse{

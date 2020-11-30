@@ -29,6 +29,7 @@ const (
 const (
 	IDBackendConnectionRefuse model.ID = "BackendConnectionRefuse"
 	IDInternalError           model.ID = "InternalError"
+	IDWebsocketOfScSyncerLost model.ID = "WebsocketOfScSyncerLost"
 )
 
 const (

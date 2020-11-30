@@ -55,6 +55,9 @@ import _ "github.com/apache/servicecomb-service-center/server/rest/govern"
 //module 'admin'
 import _ "github.com/apache/servicecomb-service-center/server/rest/admin"
 
+//module 'syncer'
+import _ "github.com/apache/servicecomb-service-center/server/rest/syncer"
+
 //metrics
 import _ "github.com/apache/servicecomb-service-center/server/rest/prometheus"
 

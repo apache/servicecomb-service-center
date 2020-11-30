@@ -72,12 +72,13 @@ func (ba *TokenAuthenticator) Identify(req *http.Request) error {
 		log.Error("claims convert failed", rbacframe.ErrConvertErr)
 		return rbacframe.ErrConvertErr
 	}
-	role := m[rbacframe.ClaimsRole]
-	roleName, ok := role.(string)
-	if !ok {
-		log.Error("role convert failed", rbacframe.ErrConvertErr)
+	roles := m[rbacframe.ClaimsRoles]
+	roleList, err := rbacframe.GetRolesList(roles)
+	if err != nil {
+		log.Error("role convert failed ", err)
 		return rbacframe.ErrConvertErr
 	}
+
 	var apiPattern string
 	a := req.Context().Value(rest.CtxMatchPattern)
 	if a == nil { //handle exception
@@ -86,7 +87,10 @@ func (ba *TokenAuthenticator) Identify(req *http.Request) error {
 	} else {
 		apiPattern = a.(string)
 	}
-	err = checkPerm(roleName, apiPattern)
+
+	project := req.URL.Query().Get(":project")
+	verbs := rbac.MethodToVerbs[req.Method]
+	err = checkPerm(roleList, project, apiPattern, verbs)
 	if err != nil {
 		return err
 	}
@@ -96,14 +100,14 @@ func (ba *TokenAuthenticator) Identify(req *http.Request) error {
 }
 
 //this method decouple business code and perm checks
-func checkPerm(roleName, apiPattern string) error {
+func checkPerm(roleList []string, project, apiPattern, verbs string) error {
 	resource := rbacframe.GetResource(apiPattern)
 	if resource == "" {
 		//fast fail, no need to access role storage
 		return errors.New(errorsEx.MsgNoPerm)
 	}
 	//TODO add verbs,project
-	allow, err := rbac.Allow(context.TODO(), roleName, "", resource, "")
+	allow, err := rbac.Allow(context.TODO(), roleList, project, resource, verbs)
 	if err != nil {
 		log.Error("", err)
 		return errors.New(errorsEx.MsgRolePerm)

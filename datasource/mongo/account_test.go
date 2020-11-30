@@ -30,7 +30,7 @@ func TestCreateAccount(t *testing.T) {
 		ID:                  "11111-22222-33333",
 		Name:                "test-account1",
 		Password:            "tnuocca-tset",
-		Role:                "admin",
+		Roles:               []string{"admin"},
 		TokenExpirationTime: "2020-12-30",
 		CurrentPassword:     "tnuocca-tset1",
 	}
@@ -56,7 +56,7 @@ func TestGetAccount(t *testing.T) {
 		ID:                  "11111-22222-33333",
 		Name:                "test-account1",
 		Password:            "tnuocca-tset",
-		Role:                "admin",
+		Roles:               []string{"admin"},
 		TokenExpirationTime: "2020-12-30",
 		CurrentPassword:     "tnuocca-tset1",
 	}
@@ -81,7 +81,7 @@ func TestListAccount(t *testing.T) {
 		ID:                  "11111-22222-33333",
 		Name:                "test-account1",
 		Password:            "tnuocca-tset",
-		Role:                "admin",
+		Roles:               []string{"admin"},
 		TokenExpirationTime: "2020-12-30",
 		CurrentPassword:     "tnuocca-tset1",
 	}
@@ -89,7 +89,7 @@ func TestListAccount(t *testing.T) {
 		ID:                  "11111-22222-33333",
 		Name:                "test-account2",
 		Password:            "tnuocca-tset",
-		Role:                "admin",
+		Roles:               []string{"admin"},
 		TokenExpirationTime: "2020-12-30",
 		CurrentPassword:     "tnuocca-tset2",
 	}
@@ -115,7 +115,7 @@ func TestDeleteAccount(t *testing.T) {
 			ID:                  "11111-22222-33333",
 			Name:                "test-account1",
 			Password:            "tnuocca-tset",
-			Role:                "admin",
+			Roles:               []string{"admin"},
 			TokenExpirationTime: "2020-12-30",
 			CurrentPassword:     "tnuocca-tset1",
 		}
@@ -134,7 +134,7 @@ func TestUpdateAccount(t *testing.T) {
 			ID:                  "11111-22222-33333",
 			Name:                "test-account1",
 			Password:            "tnuocca-tset",
-			Role:                "admin",
+			Roles:               []string{"admin"},
 			TokenExpirationTime: "2020-12-30",
 			CurrentPassword:     "tnuocca-tset1",
 		}
@@ -148,7 +148,7 @@ func TestUpdateAccount(t *testing.T) {
 			ID:                  "11111-22222-33333",
 			Name:                "test-account1",
 			Password:            "tnuocca-tset",
-			Role:                "admin",
+			Roles:               []string{"admin"},
 			TokenExpirationTime: "2020-12-30",
 			CurrentPassword:     "tnuocca-tset1",
 		}

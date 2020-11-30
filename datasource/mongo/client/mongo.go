@@ -38,10 +38,9 @@ var (
 )
 
 type MongoClient struct {
-	client      *mongo.Client
-	collections map[string]*mongo.Collection
-	db          *mongo.Database
-	dbconfig    storage.Options
+	client   *mongo.Client
+	db       *mongo.Database
+	dbconfig storage.Options
 
 	err       chan error
 	ready     chan struct{}
@@ -52,21 +51,21 @@ func GetMongoClient() *MongoClient {
 	return mc
 }
 
-func NewMongoClient(config storage.Options, cols []string) {
+func NewMongoClient(config storage.Options) {
 	inst := &MongoClient{}
-	if err := inst.Initialize(config, cols); err != nil {
+	if err := inst.Initialize(config); err != nil {
 		log.Errorf(err, "failed to init mongodb")
 		inst.err <- err
 	}
 	mc = inst
 }
 
-func (mc *MongoClient) Initialize(config storage.Options, cols []string) (err error) {
+func (mc *MongoClient) Initialize(config storage.Options) (err error) {
 	mc.err = make(chan error, 1)
 	mc.ready = make(chan struct{})
 	mc.goroutine = gopool.New(context.Background())
 	mc.dbconfig = config
-	err = mc.newClient(context.Background(), cols)
+	err = mc.newClient(context.Background())
 	if err != nil {
 		return
 	}
@@ -119,7 +118,7 @@ func (mc *MongoClient) HealthCheck(ctx context.Context) {
 	}
 }
 
-func (mc *MongoClient) newClient(ctx context.Context, cols []string) (err error) {
+func (mc *MongoClient) newClient(ctx context.Context) (err error) {
 	clientOptions := options.Client().ApplyURI(mc.dbconfig.URI)
 	mc.client, err = mongo.Connect(ctx, clientOptions)
 	if err != nil {
@@ -132,111 +131,55 @@ func (mc *MongoClient) newClient(ctx context.Context, cols []string) (err error)
 	if mc.db == nil {
 		return errors.New("open db failed")
 	}
-	mc.collections = make(map[string]*mongo.Collection)
-	for _, name := range cols {
-		mc.collections[name] = mc.db.Collection(name)
-		if mc.collections[name] == nil {
-			err = errors.New("failed to open table")
-			return
-		}
-	}
 	return nil
 }
 
 func (mc *MongoClient) Insert(ctx context.Context, Table string, document interface{}, opts ...*options.InsertOneOptions) (*mongo.InsertOneResult, error) {
-	col := mc.collections[Table]
-	if col == nil {
-		return nil, ErrCollectionsNil
-	}
-	return col.InsertOne(ctx, document, opts...)
+	return mc.db.Collection(Table).InsertOne(ctx, document, opts...)
 }
 
 func (mc *MongoClient) BatchInsert(ctx context.Context, Table string, document []interface{}, opts ...*options.InsertManyOptions) (*mongo.InsertManyResult, error) {
-	col := mc.collections[Table]
-	if col == nil {
-		return nil, ErrCollectionsNil
-	}
-	return col.InsertMany(ctx, document, opts...)
+	return mc.db.Collection(Table).InsertMany(ctx, document, opts...)
 }
 
 func (mc *MongoClient) Delete(ctx context.Context, Table string, filter interface{}, opts ...*options.DeleteOptions) (*mongo.DeleteResult, error) {
-	col := mc.collections[Table]
-	if col == nil {
-		return nil, ErrCollectionsNil
-	}
-	return col.DeleteMany(ctx, filter, opts...)
+	return mc.db.Collection(Table).DeleteMany(ctx, filter, opts...)
 }
 
 func (mc *MongoClient) BatchDelete(ctx context.Context, Table string, models []mongo.WriteModel, opts ...*options.BulkWriteOptions) (*mongo.BulkWriteResult, error) {
-	col := mc.collections[Table]
-	if col == nil {
-		return nil, ErrCollectionsNil
-	}
-	return col.BulkWrite(ctx, models, opts...)
+	return mc.db.Collection(Table).BulkWrite(ctx, models, opts...)
 }
 
 func (mc *MongoClient) Update(ctx context.Context, Table string, filter interface{}, update interface{}, opts ...*options.UpdateOptions) (*mongo.UpdateResult, error) {
-	col := mc.collections[Table]
-	if col == nil {
-		return nil, ErrCollectionsNil
-	}
-	return col.UpdateMany(ctx, filter, update, opts...)
+	return mc.db.Collection(Table).UpdateMany(ctx, filter, update, opts...)
 }
 
 func (mc *MongoClient) FindOneAndUpdate(ctx context.Context, Table string, filter interface{}, update interface{}, opts ...*options.FindOneAndUpdateOptions) (*mongo.SingleResult, error) {
-	col := mc.collections[Table]
-	if col == nil {
-		return nil, ErrCollectionsNil
-	}
-	return col.FindOneAndUpdate(ctx, filter, update, opts...), nil
+	return mc.db.Collection(Table).FindOneAndUpdate(ctx, filter, update, opts...), nil
 }
 
 func (mc *MongoClient) BatchUpdate(ctx context.Context, Table string, models []mongo.WriteModel, opts ...*options.BulkWriteOptions) (*mongo.BulkWriteResult, error) {
-	col := mc.collections[Table]
-	if col == nil {
-		return nil, ErrCollectionsNil
-	}
-	return col.BulkWrite(ctx, models, opts...)
+	return mc.db.Collection(Table).BulkWrite(ctx, models, opts...)
 }
 
 func (mc *MongoClient) Find(ctx context.Context, Table string, filter interface{}, opts ...*options.FindOptions) (*mongo.Cursor, error) {
-	col := mc.collections[Table]
-	if col == nil {
-		return nil, ErrCollectionsNil
-	}
-	return col.Find(ctx, filter, opts...)
+	return mc.db.Collection(Table).Find(ctx, filter, opts...)
 }
 
 func (mc *MongoClient) FindOne(ctx context.Context, Table string, filter interface{}, opts ...*options.FindOneOptions) (*mongo.SingleResult, error) {
-	col := mc.collections[Table]
-	if col == nil {
-		return nil, ErrCollectionsNil
-	}
-	return col.FindOne(ctx, filter, opts...), nil
+	return mc.db.Collection(Table).FindOne(ctx, filter, opts...), nil
 }
 
 func (mc *MongoClient) Count(ctx context.Context, Table string, filter interface{}, opts ...*options.CountOptions) (int64, error) {
-	col := mc.collections[Table]
-	if col == nil {
-		return 0, ErrCollectionsNil
-	}
-	return col.CountDocuments(ctx, filter, opts...)
+	return mc.db.Collection(Table).CountDocuments(ctx, filter, opts...)
 }
 
 func (mc *MongoClient) Aggregate(ctx context.Context, Table string, pipeline interface{}, opts ...*options.AggregateOptions) (*mongo.Cursor, error) {
-	col := mc.collections[Table]
-	if col == nil {
-		return nil, ErrCollectionsNil
-	}
-	return col.Aggregate(ctx, pipeline, opts...)
+	return mc.db.Collection(Table).Aggregate(ctx, pipeline, opts...)
 }
 
 func (mc *MongoClient) Watch(ctx context.Context, Table string, pipeline interface{}, opts ...*options.ChangeStreamOptions) (*mongo.ChangeStream, error) {
-	col := mc.collections[Table]
-	if col == nil {
-		return nil, ErrCollectionsNil
-	}
-	return col.Watch(ctx, pipeline, opts...)
+	return mc.db.Collection(Table).Watch(ctx, pipeline, opts...)
 }
 
 func (mc *MongoClient) StartSession(ctx context.Context) (mongo.Session, error) {
@@ -244,11 +187,14 @@ func (mc *MongoClient) StartSession(ctx context.Context) (mongo.Session, error) 
 }
 
 func (mc *MongoClient) DocExist(ctx context.Context, table string, filter bson.M) (bool, error) {
-	num, err := mc.Count(ctx, table, filter)
+	res, err := mc.FindOne(ctx, table, filter)
 	if err != nil {
 		return false, err
 	}
-	return num != 0, nil
+	if res.Err() != nil {
+		return false, nil
+	}
+	return true, nil
 }
 
 func (mc *MongoClient) DocUpdate(ctx context.Context, table string, filter interface{}, m bson.M, opts ...*options.FindOneAndUpdateOptions) error {
@@ -271,18 +217,6 @@ func (mc *MongoClient) DocDelete(ctx context.Context, table string, filter inter
 	return res.DeletedCount != 0, nil
 }
 
-func (mc *MongoClient) DocDeleteMany(ctx context.Context, table string, filter interface{}) error {
-	_, err := mc.Delete(ctx, table, filter)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func (mc *MongoClient) DeleteOne(ctx context.Context, Table string, filter interface{}, opts ...*options.DeleteOptions) (*mongo.DeleteResult, error) {
-	col := mc.collections[Table]
-	if col == nil {
-		return nil, ErrCollectionsNil
-	}
-	return col.DeleteOne(ctx, filter, opts...)
+	return mc.db.Collection(Table).DeleteOne(ctx, filter, opts...)
 }

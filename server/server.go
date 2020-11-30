@@ -34,6 +34,7 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf"
 	"github.com/apache/servicecomb-service-center/server/service/gov"
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
+	snf "github.com/apache/servicecomb-service-center/server/syncernotify"
 	"net"
 	"os"
 	"time"
@@ -60,8 +61,9 @@ type ServiceCenterServer struct {
 	REST endpoint
 	GRPC endpoint
 
-	apiService    *APIServer
-	notifyService *nf.Service
+	apiService          *APIServer
+	notifyService       *nf.Service
+	syncerNotifyService *snf.Service
 }
 
 func (s *ServiceCenterServer) Run() {
@@ -93,6 +95,7 @@ func (s *ServiceCenterServer) initialize() {
 	s.initDatasource()
 	s.apiService = GetAPIServer()
 	s.notifyService = notify.Center()
+	s.syncerNotifyService = snf.GetSyncerNotifyCenter()
 }
 
 func (s *ServiceCenterServer) initEndpoints() {
@@ -173,6 +176,12 @@ func (s *ServiceCenterServer) startServices() {
 	// notifications
 	s.notifyService.Start()
 
+	// notify syncer
+	syncerEnabled := config.GetBool("syncer.enabled", false)
+	if syncerEnabled {
+		s.syncerNotifyService.Start()
+	}
+
 	// load server plugins
 	plugin.LoadPlugins()
 	rbac.Init()
@@ -203,6 +212,10 @@ func (s *ServiceCenterServer) Stop() {
 
 	if s.notifyService != nil {
 		s.notifyService.Stop()
+	}
+
+	if s.syncerNotifyService != nil {
+		s.syncerNotifyService.Stop()
 	}
 
 	gopool.CloseAndWait()

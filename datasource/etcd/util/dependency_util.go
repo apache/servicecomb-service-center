@@ -96,7 +96,7 @@ func GetAllProviderIds(ctx context.Context, domainProject string, service *pb.Mi
 	}
 	allowIdx, denyIdx := 0, l
 	providerIDs := make([]string, l)
-	copyCtx := util.SetContext(util.CloneContext(ctx), util.CtxCacheOnly, "1")
+	copyCtx := util.WithCacheOnly(util.CloneContext(ctx))
 	for _, providerID := range providerIDsInCache {
 		providerRules, err := GetRulesUtil(copyCtx, domainProject, providerID)
 		if err != nil {

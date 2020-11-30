@@ -181,3 +181,23 @@ func SetDomainProject(ctx context.Context, domain string, project string) contex
 func SetTargetDomainProject(ctx context.Context, domain string, project string) context.Context {
 	return SetTargetProject(SetTargetDomain(ctx, domain), project)
 }
+
+func WithNoCache(ctx context.Context) context.Context {
+	return SetContext(ctx, CtxNocache, "1")
+}
+
+func WithCacheOnly(ctx context.Context) context.Context {
+	return SetContext(ctx, CtxCacheOnly, "1")
+}
+
+func WithGlobal(ctx context.Context) context.Context {
+	return SetContext(ctx, CtxGlobal, "1")
+}
+
+func WithRequestRev(ctx context.Context, rev string) context.Context {
+	return SetContext(ctx, CtxRequestRevision, rev)
+}
+
+func WithResponseRev(ctx context.Context, rev string) context.Context {
+	return SetContext(ctx, CtxResponseRevision, rev)
+}

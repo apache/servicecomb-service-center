@@ -26,17 +26,17 @@ import (
 
 func TestAllow(t *testing.T) {
 	t.Run("admin can operate any resource", func(t *testing.T) {
-		ok, _ := rbac.Allow(context.TODO(), "admin", "default", "account", "create")
+		ok, _ := rbac.Allow(context.TODO(), []string{"admin"}, "default", "account", "create")
 		assert.True(t, ok)
-		ok, _ = rbac.Allow(context.TODO(), "admin", "default", "service", "create")
+		ok, _ = rbac.Allow(context.TODO(), []string{"admin"}, "default", "service", "create")
 		assert.True(t, ok)
 	})
 	t.Run("developer can not operate account", func(t *testing.T) {
-		ok, _ := rbac.Allow(context.TODO(), "developer", "default", "account", "create")
+		ok, _ := rbac.Allow(context.TODO(), []string{"developer"}, "default", "account", "create")
 		assert.False(t, ok)
 	})
-	t.Run("developer can not operate service", func(t *testing.T) {
-		ok, _ := rbac.Allow(context.TODO(), "developer", "default", "service", "create")
+	t.Run("developer can operate service", func(t *testing.T) {
+		ok, _ := rbac.Allow(context.TODO(), []string{"developer"}, "default", "service", "create")
 		assert.True(t, ok)
 	})
 }
