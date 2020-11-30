@@ -34,7 +34,6 @@ const (
 	defaultCAName     = "trust.cer"
 	defaultCertName   = "server.cer"
 	defaultKeyName    = "server_key.pem"
-
 	// ModeSingle run as a single server
 	ModeSingle = "single"
 	// ModeCluster run as a cluster peer

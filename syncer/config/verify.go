@@ -51,7 +51,6 @@ func Verify(c *Config) (err error) {
 	if err = verifyRegistry(&c.Registry); err != nil {
 		return
 	}
-
 	if c.Listener.TLSMount.Enabled {
 		listenerTls := c.GetTLSConfig(c.Listener.TLSMount.Name)
 		if listenerTls == nil {

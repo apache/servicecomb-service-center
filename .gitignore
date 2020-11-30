@@ -21,6 +21,8 @@ vendor/**
 data
 syncer-data
 !etc/conf/
+!cmd/syncer/conf/chassis.yaml
+!cmd/syncer/conf/microservice.yaml
 frontend/app/bower_components
 etc/data/
 etc/ssl/
