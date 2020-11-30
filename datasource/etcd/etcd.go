@@ -17,6 +17,11 @@ package etcd
 
 import (
 	"context"
+	"sort"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/job"
@@ -27,10 +32,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
-	"sort"
-	"strings"
-	"sync"
-	"time"
 )
 
 var clustersIndex = make(map[string]int)

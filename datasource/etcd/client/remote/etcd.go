@@ -21,14 +21,16 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"github.com/apache/servicecomb-service-center/datasource/etcd"
-	"github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf"
 	"net/url"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/apache/servicecomb-service-center/datasource/etcd"
+	"github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf"
+
 	"context"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/pkg/backoff"
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"

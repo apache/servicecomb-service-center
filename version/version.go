@@ -19,8 +19,9 @@ package version
 
 import (
 	"fmt"
-	"github.com/apache/servicecomb-service-center/pkg/log"
 	"runtime"
+
+	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
 var (

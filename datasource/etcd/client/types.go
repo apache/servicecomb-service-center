@@ -19,8 +19,9 @@ package client
 
 import (
 	"fmt"
-	"github.com/coreos/etcd/mvcc/mvccpb"
 	"strconv"
+
+	"github.com/coreos/etcd/mvcc/mvccpb"
 )
 
 type ImplName string

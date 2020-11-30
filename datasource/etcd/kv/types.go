@@ -18,10 +18,11 @@
 package kv
 
 import (
+	"time"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/value"
-	"time"
 )
 
 const (

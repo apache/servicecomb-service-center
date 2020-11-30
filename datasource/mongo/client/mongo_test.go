@@ -2,10 +2,11 @@ package client
 
 import (
 	"context"
+	"testing"
+
 	"github.com/go-chassis/go-chassis/v2/storage"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"testing"
 )
 
 const (

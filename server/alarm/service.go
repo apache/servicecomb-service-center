@@ -16,12 +16,13 @@
 package alarm
 
 import (
+	"sync"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	nf "github.com/apache/servicecomb-service-center/pkg/notify"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/alarm/model"
 	"github.com/apache/servicecomb-service-center/server/notify"
-	"sync"
 )
 
 var (

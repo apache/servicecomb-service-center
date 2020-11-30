@@ -19,13 +19,14 @@ package integrationtest_test
 import (
 	"bytes"
 	"encoding/json"
+	"io/ioutil"
+	"net/http"
+	"strings"
+
 	. "github.com/apache/servicecomb-service-center/integration"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/widuu/gojson"
-	"io/ioutil"
-	"net/http"
-	"strings"
 )
 
 var _ = Describe("MicroService Api schema Test", func() {

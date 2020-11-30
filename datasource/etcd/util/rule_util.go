@@ -20,10 +20,11 @@ package util
 import (
 	"context"
 	"fmt"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"reflect"
 	"regexp"
 	"strings"
+
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"

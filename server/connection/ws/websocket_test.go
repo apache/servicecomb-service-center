@@ -17,20 +17,24 @@
 package ws_test
 
 // initialize
-import _ "github.com/apache/servicecomb-service-center/test"
 import (
 	"context"
 	"errors"
+
+	_ "github.com/apache/servicecomb-service-center/test"
+
 	wss "github.com/apache/servicecomb-service-center/server/connection/ws"
 	"github.com/apache/servicecomb-service-center/server/core"
-	. "github.com/apache/servicecomb-service-center/server/notify"
-	"github.com/go-chassis/cari/discovery"
-	"github.com/gorilla/websocket"
+
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
+
+	. "github.com/apache/servicecomb-service-center/server/notify"
+	"github.com/go-chassis/cari/discovery"
+	"github.com/gorilla/websocket"
 )
 
 var closeCh = make(chan struct{})

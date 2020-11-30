@@ -21,7 +21,7 @@ ROOT_PATH=$(dirname $CURRENT_PATH)
 
 export COVERAGE_PATH=$(pwd)
 cd $1
-for d in $(go list -f '{{.Dir}}' ./... | grep -v vendor); do
+for d in $(go list -f '{{.Dir}}' ./... | grep -v vendor| grep -v syncer); do
     cd $d
     if [ $(ls | grep _test.go | wc -l) -gt 0 ]; then
         go test -cover -covermode atomic -coverprofile coverage.out

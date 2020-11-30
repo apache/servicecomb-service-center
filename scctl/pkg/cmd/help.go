@@ -18,14 +18,15 @@ package cmd
 import (
 	"bytes"
 	"fmt"
-	"github.com/apache/servicecomb-service-center/scctl/pkg/version"
-	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 	"io"
 	"os"
 	"strings"
 	"text/tabwriter"
 	"text/template"
+
+	"github.com/apache/servicecomb-service-center/scctl/pkg/version"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 var (

@@ -18,11 +18,12 @@
 package config
 
 import (
+	"strings"
+	"time"
+
 	"github.com/astaxie/beego"
 	"github.com/go-chassis/go-archaius"
 	"github.com/iancoleman/strcase"
-	"strings"
-	"time"
 )
 
 func newOptions(key string, opts []Option) *Options {

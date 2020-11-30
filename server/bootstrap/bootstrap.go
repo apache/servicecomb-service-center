@@ -17,54 +17,55 @@
 package bootstrap
 
 //etcd
-import _ "github.com/apache/servicecomb-service-center/datasource/etcd/bootstrap"
-
-//mongo
-import _ "github.com/apache/servicecomb-service-center/datasource/mongo/bootstrap"
-
-//rest v3 api
-import _ "github.com/apache/servicecomb-service-center/server/rest/controller/v3"
-
-//rest v4 api
-import _ "github.com/apache/servicecomb-service-center/server/rest/controller/v4"
-import _ "github.com/apache/servicecomb-service-center/server/resource"
-
-//cipher
-import _ "github.com/apache/servicecomb-service-center/server/plugin/security/cipher/buildin"
-
-//quota
-import _ "github.com/apache/servicecomb-service-center/server/plugin/quota/buildin"
-import _ "github.com/apache/servicecomb-service-center/server/plugin/quota/unlimit"
-
-//auth
-import _ "github.com/apache/servicecomb-service-center/server/plugin/auth/buildin"
-
-//uuid
-import _ "github.com/apache/servicecomb-service-center/server/plugin/uuid/buildin"
-import _ "github.com/apache/servicecomb-service-center/server/plugin/uuid/context"
-
-//tracing
-import _ "github.com/apache/servicecomb-service-center/server/plugin/tracing/pzipkin"
-
-//tlsconf
-import _ "github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf/buildin"
-
-//module 'govern'
-import _ "github.com/apache/servicecomb-service-center/server/rest/govern"
-
-//module 'admin'
-import _ "github.com/apache/servicecomb-service-center/server/rest/admin"
-
-//module 'syncer'
-import _ "github.com/apache/servicecomb-service-center/server/rest/syncer"
-
-//metrics
-import _ "github.com/apache/servicecomb-service-center/server/rest/prometheus"
-
-//governance
-import _ "github.com/apache/servicecomb-service-center/server/service/gov/kie"
-
 import (
+	_ "github.com/apache/servicecomb-service-center/datasource/etcd/bootstrap"
+
+	//mongo
+	_ "github.com/apache/servicecomb-service-center/datasource/mongo/bootstrap"
+
+	//rest v3 api
+	_ "github.com/apache/servicecomb-service-center/server/rest/controller/v3"
+
+	//rest v4 api
+	_ "github.com/apache/servicecomb-service-center/server/rest/controller/v4"
+
+	_ "github.com/apache/servicecomb-service-center/server/resource"
+
+	//cipher
+	_ "github.com/apache/servicecomb-service-center/server/plugin/security/cipher/buildin"
+
+	//quota
+	_ "github.com/apache/servicecomb-service-center/server/plugin/quota/buildin"
+
+	_ "github.com/apache/servicecomb-service-center/server/plugin/quota/unlimit"
+
+	//auth
+	_ "github.com/apache/servicecomb-service-center/server/plugin/auth/buildin"
+
+	//uuid
+	_ "github.com/apache/servicecomb-service-center/server/plugin/uuid/buildin"
+
+	_ "github.com/apache/servicecomb-service-center/server/plugin/uuid/context"
+
+	//tracing
+	_ "github.com/apache/servicecomb-service-center/server/plugin/tracing/pzipkin"
+
+	//tlsconf
+	_ "github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf/buildin"
+
+	//module 'govern'
+	_ "github.com/apache/servicecomb-service-center/server/rest/govern"
+
+	//module 'admin'
+	_ "github.com/apache/servicecomb-service-center/server/rest/admin"
+
+	//module 'syncer'
+	_ "github.com/apache/servicecomb-service-center/server/rest/syncer"
+
+	//governance
+	_ "github.com/apache/servicecomb-service-center/server/service/gov/kie"
+
+	//metrics
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/broker"
 	"github.com/apache/servicecomb-service-center/server/handler/accesslog"
@@ -77,6 +78,7 @@ import (
 	"github.com/apache/servicecomb-service-center/server/interceptor"
 	"github.com/apache/servicecomb-service-center/server/interceptor/access"
 	"github.com/apache/servicecomb-service-center/server/interceptor/cors"
+	_ "github.com/apache/servicecomb-service-center/server/rest/prometheus"
 )
 
 func init() {

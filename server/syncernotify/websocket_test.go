@@ -20,17 +20,18 @@ package syncernotify_test
 import (
 	"context"
 	"errors"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/server/core"
 	. "github.com/apache/servicecomb-service-center/server/syncernotify"
 	"github.com/go-chassis/cari/discovery"
 	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/assert"
-	"net/http"
-	"net/http/httptest"
-	"strings"
-	"testing"
-	"time"
 )
 
 var closeCh = make(chan struct{})

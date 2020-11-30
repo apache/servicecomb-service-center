@@ -18,9 +18,10 @@
 package sd
 
 import (
-	"github.com/apache/servicecomb-service-center/datasource/etcd/value"
 	"testing"
 	"time"
+
+	"github.com/apache/servicecomb-service-center/datasource/etcd/value"
 )
 
 type mockDeferHandler struct {

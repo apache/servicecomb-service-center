@@ -18,6 +18,7 @@ package servicecenter
 
 import (
 	"context"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"

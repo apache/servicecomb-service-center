@@ -19,9 +19,10 @@ package ws
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"sync"
 	"time"
+
+	"github.com/apache/servicecomb-service-center/pkg/gopool"
 )
 
 var publisher *Publisher

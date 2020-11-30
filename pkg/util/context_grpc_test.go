@@ -18,8 +18,9 @@ package util
 
 import (
 	"context"
-	"google.golang.org/grpc/metadata"
 	"testing"
+
+	"google.golang.org/grpc/metadata"
 )
 
 func TestFromMetadata(t *testing.T) {

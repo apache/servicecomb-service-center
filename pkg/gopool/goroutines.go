@@ -19,10 +19,11 @@ package gopool
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/util"
 	"sync"
 	"time"
+
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
 var GlobalConfig = Configure()

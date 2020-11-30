@@ -19,11 +19,12 @@ package syncernotify
 
 import (
 	"context"
+	"sync"
+	"time"
+
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/alarm"
-	"sync"
-	"time"
 )
 
 var publisher *Publisher

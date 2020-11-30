@@ -16,14 +16,15 @@
 package adaptor
 
 import (
+	"net/url"
+	"strconv"
+	"strings"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	pb "github.com/go-chassis/cari/discovery"
-	"k8s.io/api/core/v1"
-	"net/url"
-	"strconv"
-	"strings"
+	v1 "k8s.io/api/core/v1"
 )
 
 func getLabel(labels map[string]string, key, def string) string {

@@ -19,8 +19,9 @@ package notify
 
 import (
 	"errors"
-	"github.com/apache/servicecomb-service-center/pkg/log"
 	"sync"
+
+	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
 type Service struct {

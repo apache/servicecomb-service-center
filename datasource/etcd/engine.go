@@ -21,12 +21,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
-	"github.com/apache/servicecomb-service-center/pkg/cluster"
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
+	"github.com/apache/servicecomb-service-center/pkg/cluster"
+	"github.com/apache/servicecomb-service-center/pkg/gopool"
 
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"

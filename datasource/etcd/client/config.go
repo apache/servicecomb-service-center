@@ -18,9 +18,10 @@
 package client
 
 import (
-	"github.com/apache/servicecomb-service-center/pkg/cluster"
 	"strings"
 	"time"
+
+	"github.com/apache/servicecomb-service-center/pkg/cluster"
 )
 
 type Config struct {

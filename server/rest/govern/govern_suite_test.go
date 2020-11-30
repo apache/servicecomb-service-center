@@ -17,17 +17,20 @@
 package govern_test
 
 // initialize
-import _ "github.com/apache/servicecomb-service-center/test"
-
 import (
 	"context"
+
 	"github.com/apache/servicecomb-service-center/pkg/proto"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/rest/govern"
+	_ "github.com/apache/servicecomb-service-center/test"
+
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
-	. "github.com/onsi/gomega"
+
 	"testing"
+
+	. "github.com/onsi/gomega"
 )
 
 func TestGovern(t *testing.T) {

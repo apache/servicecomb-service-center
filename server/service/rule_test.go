@@ -17,11 +17,12 @@
 package service_test
 
 import (
+	"strconv"
+
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	pb "github.com/go-chassis/cari/discovery"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"strconv"
 )
 
 var _ = Describe("'Rule' service", func() {

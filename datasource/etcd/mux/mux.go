@@ -18,9 +18,10 @@
 package mux
 
 import (
-	"github.com/apache/servicecomb-service-center/pkg/etcdsync"
 	"reflect"
 	"unsafe"
+
+	"github.com/apache/servicecomb-service-center/pkg/etcdsync"
 )
 
 type Type string

@@ -15,11 +15,13 @@
 
 package servicecenter_test
 
-import _ "github.com/apache/servicecomb-service-center/test"
 import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd"
-	. "github.com/apache/servicecomb-service-center/datasource/etcd/sd/servicecenter"
+	_ "github.com/apache/servicecomb-service-center/test"
+
 	"testing"
+
+	. "github.com/apache/servicecomb-service-center/datasource/etcd/sd/servicecenter"
 )
 
 func TestNewSCClientAggregate(t *testing.T) {

@@ -19,10 +19,11 @@ package accesslog
 
 import (
 	"fmt"
-	"github.com/apache/servicecomb-service-center/server/config"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/apache/servicecomb-service-center/server/config"
 
 	"github.com/apache/servicecomb-service-center/pkg/chain"
 	"github.com/apache/servicecomb-service-center/pkg/log"

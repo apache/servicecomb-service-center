@@ -21,6 +21,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/url"
+	"strings"
+	"time"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
@@ -34,9 +38,6 @@ import (
 	"github.com/coreos/etcd/etcdserver/etcdserverpb"
 	"github.com/coreos/etcd/lease"
 	"github.com/coreos/etcd/mvcc/mvccpb"
-	"net/url"
-	"strings"
-	"time"
 )
 
 func init() {

@@ -21,6 +21,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math/rand"
+	"strconv"
+	"testing"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/value"
@@ -28,9 +32,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	pb "github.com/go-chassis/cari/discovery"
-	"math/rand"
-	"strconv"
-	"testing"
 )
 
 type mockCache struct {

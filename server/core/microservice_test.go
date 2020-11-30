@@ -17,10 +17,11 @@ package core
 
 import (
 	"context"
+	"testing"
+
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/astaxie/beego"
 	"github.com/go-chassis/cari/discovery"
-	"testing"
 )
 
 func init() {

@@ -20,8 +20,9 @@ package etcd
 import (
 	"context"
 	"fmt"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"time"
+
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 )
 
 type ListWatchConfig struct {

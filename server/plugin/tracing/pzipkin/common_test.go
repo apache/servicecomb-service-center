@@ -16,11 +16,12 @@
 package pzipkin
 
 import (
-	"github.com/go-chassis/go-archaius"
-	"github.com/openzipkin/zipkin-go-opentracing"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/go-chassis/go-archaius"
+	"github.com/openzipkin/zipkin-go-opentracing"
 )
 
 func TestGetFilePath(t *testing.T) {

@@ -18,11 +18,12 @@
 package metrics
 
 import (
+	"time"
+
 	"github.com/apache/servicecomb-service-center/pkg/metrics"
 	helper "github.com/apache/servicecomb-service-center/pkg/prometheus"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/prometheus/client_golang/prometheus"
-	"time"
 )
 
 // keys of gauge

@@ -18,9 +18,10 @@
 package etcd
 
 import (
-	"github.com/apache/servicecomb-service-center/pkg/metrics"
 	"testing"
 	"time"
+
+	"github.com/apache/servicecomb-service-center/pkg/metrics"
 )
 
 func TestReportCacheSize(t *testing.T) {

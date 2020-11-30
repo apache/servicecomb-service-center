@@ -18,9 +18,10 @@
 package service
 
 import (
+	"regexp"
+
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/validate"
-	"regexp"
 )
 
 var (

@@ -18,9 +18,10 @@
 package service
 
 import (
+	"regexp"
+
 	"github.com/apache/servicecomb-service-center/pkg/validate"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
-	"regexp"
 )
 
 var (

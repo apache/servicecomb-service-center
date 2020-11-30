@@ -19,6 +19,7 @@ package etcd
 
 import (
 	"fmt"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"

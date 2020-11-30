@@ -19,10 +19,11 @@ package etcd
 
 import (
 	"context"
+	"sync"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"sync"
 )
 
 type innerWatcher struct {

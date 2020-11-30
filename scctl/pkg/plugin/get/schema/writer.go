@@ -16,9 +16,10 @@
 package schema
 
 import (
-	pb "github.com/go-chassis/cari/discovery"
 	"os"
 	"path/filepath"
+
+	pb "github.com/go-chassis/cari/discovery"
 )
 
 type Config struct {

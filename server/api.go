@@ -20,6 +20,10 @@ package server
 import (
 	"context"
 	"fmt"
+	"net"
+	"strconv"
+	"time"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/grace"
@@ -30,9 +34,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/metrics"
 	rs "github.com/apache/servicecomb-service-center/server/rest"
 	"github.com/apache/servicecomb-service-center/server/service"
-	"net"
-	"strconv"
-	"time"
 )
 
 var apiServer *APIServer

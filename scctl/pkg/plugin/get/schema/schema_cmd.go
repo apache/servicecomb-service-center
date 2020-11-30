@@ -18,6 +18,12 @@ package schema
 import (
 	"context"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
+
 	"github.com/apache/servicecomb-service-center/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/pkg/dump"
@@ -28,11 +34,6 @@ import (
 	"github.com/apache/servicecomb-service-center/scctl/pkg/progress-bar"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/spf13/cobra"
-	"io"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"strings"
 )
 
 var (

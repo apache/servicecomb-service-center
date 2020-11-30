@@ -19,8 +19,9 @@ package datasource
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/pkg/cluster"
 	"time"
+
+	"github.com/apache/servicecomb-service-center/pkg/cluster"
 )
 
 // SCManager contains the APIs of registration of SC itself

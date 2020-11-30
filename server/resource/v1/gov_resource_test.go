@@ -3,6 +3,10 @@ package v1_test
 import (
 	"bytes"
 	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
 	"github.com/apache/servicecomb-service-center/pkg/gov"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
@@ -11,9 +15,6 @@ import (
 	svc "github.com/apache/servicecomb-service-center/server/service/gov"
 	"github.com/go-chassis/go-archaius"
 	"github.com/stretchr/testify/assert"
-	"net/http"
-	"net/http/httptest"
-	"testing"
 
 	_ "github.com/apache/servicecomb-service-center/server/service/gov/mock"
 )

@@ -18,11 +18,12 @@
 package service
 
 import (
+	"math"
+	"regexp"
+
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/pkg/validate"
 	"github.com/go-chassis/cari/discovery"
-	"math"
-	"regexp"
 )
 
 var (

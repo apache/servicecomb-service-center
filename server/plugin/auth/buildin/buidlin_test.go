@@ -18,24 +18,25 @@
 package buildin_test
 
 // initialize
-import _ "github.com/apache/servicecomb-service-center/test"
 import (
 	"context"
+	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/plugin/auth/buildin"
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
 	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
+	_ "github.com/apache/servicecomb-service-center/test"
 	"github.com/astaxie/beego"
 	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-chassis/v2/security/authr"
 	"github.com/go-chassis/go-chassis/v2/security/secret"
 	"github.com/go-chassis/go-chassis/v2/server/restful"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
-	"net/http"
-	"net/http/httptest"
-	"testing"
 )
 
 func init() {

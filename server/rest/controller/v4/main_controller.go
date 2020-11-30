@@ -19,13 +19,14 @@ package v4
 
 import (
 	"encoding/json"
+	"net/http"
+	"sync"
+
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/rest/controller"
 	"github.com/apache/servicecomb-service-center/version"
 	pb "github.com/go-chassis/cari/discovery"
-	"net/http"
-	"sync"
 )
 
 var (

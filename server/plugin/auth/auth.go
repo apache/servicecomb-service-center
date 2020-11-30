@@ -18,8 +18,9 @@
 package auth
 
 import (
-	"github.com/apache/servicecomb-service-center/server/plugin"
 	"net/http"
+
+	"github.com/apache/servicecomb-service-center/server/plugin"
 )
 
 const AUTH plugin.Kind = "auth"

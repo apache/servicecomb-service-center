@@ -17,8 +17,9 @@
 package kv
 
 import (
-	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"testing"
+
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 )
 
 type extend struct {

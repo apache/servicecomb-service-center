@@ -20,6 +20,8 @@ package grpc
 import (
 	"context"
 	"errors"
+	"time"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/proto"
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -27,7 +29,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/metrics"
 	"github.com/apache/servicecomb-service-center/server/notify"
 	pb "github.com/go-chassis/cari/discovery"
-	"time"
 )
 
 const GRPC = "gRPC"

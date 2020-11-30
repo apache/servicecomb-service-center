@@ -18,14 +18,15 @@ package grpc_test
 
 import (
 	"context"
+	"testing"
+	"time"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	simple "github.com/apache/servicecomb-service-center/pkg/time"
 	stream "github.com/apache/servicecomb-service-center/server/connection/grpc"
 	"github.com/apache/servicecomb-service-center/server/notify"
 	pb "github.com/go-chassis/cari/discovery"
 	"google.golang.org/grpc"
-	"testing"
-	"time"
 )
 
 type grpcWatchServer struct {

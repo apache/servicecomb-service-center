@@ -17,11 +17,12 @@ package aggregate
 
 import (
 	"context"
+	"time"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"time"
 )
 
 type ConflictChecker struct {

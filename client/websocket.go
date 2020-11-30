@@ -19,9 +19,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/apache/servicecomb-service-center/pkg/util"
 	"net/http"
 	"net/url"
+
+	"github.com/apache/servicecomb-service-center/pkg/util"
 
 	"github.com/gorilla/websocket"
 )

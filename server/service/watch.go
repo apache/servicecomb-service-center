@@ -20,6 +20,7 @@ package service
 import (
 	"context"
 	"errors"
+
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/proto"

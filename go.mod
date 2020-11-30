@@ -18,7 +18,7 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-chassis/cari v0.0.0-20201124050026-32fbf4d53439
 	github.com/go-chassis/foundation v0.2.0
-	github.com/go-chassis/go-archaius v1.3.6-0.20201103103813-43dd1680ebfb
+	github.com/go-chassis/go-archaius v1.3.6-0.20201130023516-387922b408d0
 	github.com/go-chassis/go-chassis/v2 v2.0.5-0.20201125123124-2d38733810fd
 	github.com/go-chassis/kie-client v0.0.0-20201127085925-8ad6f8fdd9fc
 	github.com/go-chassis/openlog v1.1.2

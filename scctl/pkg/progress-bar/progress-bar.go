@@ -16,8 +16,9 @@
 package pb
 
 import (
-	"github.com/cheggaaa/pb"
 	"io"
+
+	"github.com/cheggaaa/pb"
 )
 
 func NewProgressBar(count int, w io.Writer) *pb.ProgressBar {

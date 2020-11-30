@@ -20,10 +20,11 @@ package mock
 import (
 	"encoding/json"
 	"fmt"
+	"log"
+
 	"github.com/apache/servicecomb-service-center/pkg/gov"
 	"github.com/apache/servicecomb-service-center/server/config"
 	svc "github.com/apache/servicecomb-service-center/server/service/gov"
-	"log"
 )
 
 type Distributor struct {

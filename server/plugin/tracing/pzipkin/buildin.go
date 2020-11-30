@@ -19,6 +19,10 @@ package pzipkin
 
 import (
 	"context"
+	"net/http"
+	"net/url"
+	"sync"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	mgr "github.com/apache/servicecomb-service-center/server/plugin"
@@ -26,9 +30,6 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/openzipkin/zipkin-go-opentracing/thrift/gen-go/zipkincore"
-	"net/http"
-	"net/url"
-	"sync"
 )
 
 var once sync.Once

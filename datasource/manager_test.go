@@ -18,16 +18,17 @@
 package datasource_test
 
 // initialize
-import _ "github.com/apache/servicecomb-service-center/test"
 import (
-	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/datasource/etcd"
-	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/go-chassis/go-archaius"
-	"github.com/stretchr/testify/assert"
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/datasource/etcd"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	_ "github.com/apache/servicecomb-service-center/test"
+	"github.com/go-chassis/go-archaius"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestInit(t *testing.T) {

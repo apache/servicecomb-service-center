@@ -19,9 +19,10 @@ package etcd
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/value"
-	"strings"
 
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/pkg/log"

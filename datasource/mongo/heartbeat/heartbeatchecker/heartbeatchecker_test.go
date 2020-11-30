@@ -19,13 +19,14 @@ package heartbeatchecker
 
 import (
 	"context"
+	"testing"
+	"time"
+
 	"github.com/apache/servicecomb-service-center/datasource/mongo"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson"
-	"testing"
-	"time"
 )
 
 func TestHeartbeat(t *testing.T) {

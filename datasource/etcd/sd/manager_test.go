@@ -18,11 +18,12 @@
 package sd_test
 
 // initialize
-import _ "github.com/apache/servicecomb-service-center/test"
 import (
-	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	_ "github.com/apache/servicecomb-service-center/test"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestInit(t *testing.T) {

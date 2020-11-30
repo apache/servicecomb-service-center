@@ -18,8 +18,9 @@
 package sd
 
 import (
-	"github.com/go-chassis/cari/discovery"
 	"testing"
+
+	"github.com/go-chassis/cari/discovery"
 )
 
 func TestNewCommonCacher(t *testing.T) {

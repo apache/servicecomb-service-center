@@ -19,6 +19,7 @@ package tracing
 
 import (
 	"context"
+
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/plugin"
 )

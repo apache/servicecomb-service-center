@@ -18,10 +18,11 @@
 package context
 
 import (
-	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/core"
 	"net/http"
 	"strings"
+
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/core"
 )
 
 type v3Context struct {

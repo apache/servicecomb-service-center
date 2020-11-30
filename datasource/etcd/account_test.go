@@ -2,10 +2,11 @@ package etcd_test
 
 import (
 	"context"
+	"testing"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 var (

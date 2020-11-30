@@ -18,19 +18,21 @@ package integrationtest_test
 
 import (
 	"encoding/json"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	"github.com/widuu/gojson"
 	"net/http"
 	"strings"
 
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"github.com/widuu/gojson"
+
 	"bytes"
-	. "github.com/apache/servicecomb-service-center/integration"
 	"io/ioutil"
 	"math/rand"
 	"strconv"
 	"testing"
 	"time"
+
+	. "github.com/apache/servicecomb-service-center/integration"
 )
 
 var _ = Describe("MicroService Api Test", func() {
