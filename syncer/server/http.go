@@ -4,7 +4,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/go-chassis/go-chassis/v2"
 	rf "github.com/go-chassis/go-chassis/v2/server/restful"
-	"github.com/go-chassis/openlog"
 	"net/http"
 )
 
@@ -25,7 +24,7 @@ func (s *Server) FullSync(b *rf.Context) {
 
 func (s *Server) URLPatterns() []rf.Route {
 	return []rf.Route{
-		{Method: http.MethodGet, Path: "/v1/syncer/full_sync", ResourceFunc: s.FullSync},
+		{Method: http.MethodGet, Path: "/v1/syncer/full-synchronization", ResourceFunc: s.FullSync},
 	}
 }
 
@@ -34,7 +33,7 @@ func (s *Server) URLPatterns() []rf.Route {
 func (s *Server) NewHttpServer() {
 	chassis.RegisterSchema("rest", s)
 	if err := chassis.Init(); err != nil {
-		openlog.Fatal("Init failed." + err.Error())
+		log.Error("Init failed.", err)
 		return
 	}
 	err := chassis.Run()

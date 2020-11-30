@@ -202,7 +202,7 @@ func (s *Server) incrementUserEvent(data ...[]byte) (success bool) {
 	// Get member information and get synchronized data from it
 	members := s.serf.MembersByTags(tags)
 	if len(members) == 0 {
-		log.Warnf("serf member = %s is not found", clusterName)
+		log.Warn(fmt.Sprintf("serf member = %s is not found", clusterName))
 		return
 	}
 
@@ -212,7 +212,7 @@ func (s *Server) incrementUserEvent(data ...[]byte) (success bool) {
 
 	enabled, err := strconv.ParseBool(members[0].Tags[tagKeyTLSEnabled])
 	if err != nil {
-		log.Warnf("get tls enabled failed, err = %s", err)
+		log.Warn(fmt.Sprintf("get tls enabled failed, err = %s", err))
 	}
 	var tlsConfig *tls.Config
 	if enabled {

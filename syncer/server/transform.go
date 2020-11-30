@@ -61,7 +61,7 @@ func (s *Server) EventQueueToSyncData(ctx context.Context, incrementQueue []*dum
 
 		ss, err := cli.GetSchemasByServiceID(ctx, domain, project, service.Value.ServiceId)
 		if err != nil {
-			log.Warnf("get schemas by serviceId failed: %s", err)
+			log.Warn(fmt.Sprintf("get schemas by serviceId failed: %s", err))
 		}
 		syncService.Expansions = append(syncService.Expansions, schemaExpansions(service.Value, ss)...)
 
