@@ -19,8 +19,9 @@ package cache
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/pkg/util"
 	"sync"
+
+	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
 type Cache struct {

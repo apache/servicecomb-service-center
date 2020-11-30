@@ -20,14 +20,15 @@ package etcdsync
 import (
 	"context"
 	"fmt"
+	"os"
+	"sync"
+	"time"
+
 	etcdclient "github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/coreos/etcd/client"
-	"os"
-	"sync"
-	"time"
 )
 
 const (

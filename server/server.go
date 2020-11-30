@@ -19,6 +19,10 @@ package server
 
 import (
 	"context"
+	"net"
+	"os"
+	"time"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -35,9 +39,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/service/gov"
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
 	snf "github.com/apache/servicecomb-service-center/server/syncernotify"
-	"net"
-	"os"
-	"time"
 )
 
 const defaultCollectPeriod = 30 * time.Second

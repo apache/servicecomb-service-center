@@ -18,15 +18,16 @@
 package dao_test
 
 // initialize
-import _ "github.com/apache/servicecomb-service-center/test"
 import (
 	"context"
+	"testing"
+
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
+	_ "github.com/apache/servicecomb-service-center/test"
 	"github.com/astaxie/beego"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/bcrypt"
-	"testing"
 )
 
 func init() {

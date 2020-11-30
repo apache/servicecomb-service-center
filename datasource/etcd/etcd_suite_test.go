@@ -17,16 +17,21 @@
 package etcd_test
 
 // initialize
-import _ "github.com/apache/servicecomb-service-center/test"
 import (
 	"context"
+
+	_ "github.com/apache/servicecomb-service-center/test"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
-	. "github.com/onsi/gomega"
+
 	"testing"
 	"time"
+
+	. "github.com/onsi/gomega"
 )
 
 var timeLimit = 2 * time.Second

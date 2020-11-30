@@ -16,11 +16,12 @@
 package etcd
 
 import (
+	"time"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/value"
 	"github.com/coreos/etcd/mvcc/mvccpb"
-	"time"
 )
 
 const (

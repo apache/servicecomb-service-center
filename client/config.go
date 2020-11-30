@@ -16,10 +16,11 @@
 package client
 
 import (
-	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"io/ioutil"
 	"strings"
 	"time"
+
+	"github.com/apache/servicecomb-service-center/pkg/rest"
 )
 
 const defaultRequestTimeout = 10 * time.Second

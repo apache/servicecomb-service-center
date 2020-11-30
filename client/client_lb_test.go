@@ -18,12 +18,13 @@ package client
 import (
 	"context"
 	"fmt"
-	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
+
+	"github.com/apache/servicecomb-service-center/pkg/rest"
 )
 
 func TestNewLBClient(t *testing.T) {

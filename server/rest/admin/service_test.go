@@ -17,16 +17,17 @@
 package admin_test
 
 // initialize
-import _ "github.com/apache/servicecomb-service-center/test"
 import (
 	"context"
+	"testing"
+
 	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/rest/admin"
+	_ "github.com/apache/servicecomb-service-center/test"
 	"github.com/astaxie/beego"
 	"github.com/go-chassis/cari/discovery"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func init() {

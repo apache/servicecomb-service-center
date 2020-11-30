@@ -23,6 +23,7 @@ import (
 	"strconv"
 
 	"errors"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/syncer/pkg/utils"
 	"gopkg.in/yaml.v2"

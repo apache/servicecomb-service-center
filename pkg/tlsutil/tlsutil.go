@@ -19,10 +19,11 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
-	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/util"
 	"io/ioutil"
 	"strings"
+
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
 func ParseSSLCipherSuites(ciphers string, permitTLSCipherSuiteMap map[string]uint16) []uint16 {

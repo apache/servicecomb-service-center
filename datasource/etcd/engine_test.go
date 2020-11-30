@@ -20,8 +20,9 @@ package etcd_test
 import (
 	"context"
 	"fmt"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"time"
+
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/util"

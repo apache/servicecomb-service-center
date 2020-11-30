@@ -17,16 +17,18 @@ package servicecenter
 
 import (
 	"fmt"
+	"sync"
+	"time"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/dump"
 	pb "github.com/go-chassis/cari/discovery"
-	"sync"
-	"time"
 
 	"context"
+
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"

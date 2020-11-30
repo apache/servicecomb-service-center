@@ -19,8 +19,9 @@ package sd
 
 import (
 	"fmt"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/value"
 	"time"
+
+	"github.com/apache/servicecomb-service-center/datasource/etcd/value"
 )
 
 type Config struct {

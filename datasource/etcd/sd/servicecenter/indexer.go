@@ -16,6 +16,8 @@
 package servicecenter
 
 import (
+	"strings"
+
 	"github.com/apache/servicecomb-service-center/client"
 	etcdclient "github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
@@ -24,7 +26,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/go-chassis/cari/discovery"
-	"strings"
 
 	"context"
 )

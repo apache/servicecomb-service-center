@@ -19,9 +19,10 @@ package remote
 
 import (
 	"context"
+	"net/http"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/server/plugin/tracing"
-	"net/http"
 )
 
 type EtcdOptions struct {

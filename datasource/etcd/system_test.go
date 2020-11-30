@@ -17,10 +17,11 @@
 package etcd_test
 
 import (
+	"testing"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestAdminService_Dump(t *testing.T) {

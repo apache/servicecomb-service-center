@@ -19,8 +19,9 @@ package gov_test
 
 import (
 	"encoding/json"
-	"github.com/apache/servicecomb-service-center/pkg/gov"
 	"testing"
+
+	"github.com/apache/servicecomb-service-center/pkg/gov"
 )
 
 func TestNewInstance3(t *testing.T) {

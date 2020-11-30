@@ -19,12 +19,13 @@ package metrics
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
-	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/prometheus"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/apache/servicecomb-service-center/pkg/gopool"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/prometheus"
 )
 
 func NewGatherer(opts Options) *Gather {

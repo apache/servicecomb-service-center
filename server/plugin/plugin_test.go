@@ -17,11 +17,12 @@
 package plugin_test
 
 import (
+	"net/http"
+	"testing"
+
 	"github.com/apache/servicecomb-service-center/server/config"
 	. "github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/auth"
-	"net/http"
-	"testing"
 )
 
 func init() {

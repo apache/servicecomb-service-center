@@ -17,11 +17,12 @@
 package config
 
 import (
-	"github.com/apache/servicecomb-service-center/syncer/pkg/utils"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/apache/servicecomb-service-center/syncer/pkg/utils"
 
 	"github.com/stretchr/testify/assert"
 )

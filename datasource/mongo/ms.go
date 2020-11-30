@@ -21,6 +21,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
+	"time"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/heartbeat"
@@ -31,8 +34,6 @@ import (
 	pb "github.com/go-chassis/cari/discovery"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"strconv"
-	"time"
 )
 
 func (ds *DataSource) RegisterService(ctx context.Context, request *pb.CreateServiceRequest) (

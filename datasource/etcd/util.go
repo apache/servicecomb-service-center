@@ -19,6 +19,10 @@ package etcd
 
 import (
 	"context"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
@@ -31,9 +35,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
 	pb "github.com/go-chassis/cari/discovery"
-	"strconv"
-	"strings"
-	"time"
 )
 
 type ServiceDetailOpt struct {

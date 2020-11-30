@@ -17,12 +17,13 @@
 package integrationtest_test
 
 import (
+	"io/ioutil"
+	"net/http"
+
 	. "github.com/apache/servicecomb-service-center/integration"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/widuu/gojson"
-	"io/ioutil"
-	"net/http"
 )
 
 var _ = Describe("Admin Api Test", func() {

@@ -18,12 +18,13 @@
 package event
 
 import (
+	"strings"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/server/metrics"
 	pb "github.com/go-chassis/cari/discovery"
-	"strings"
 )
 
 // SchemaSummaryEventHandler report schema metrics

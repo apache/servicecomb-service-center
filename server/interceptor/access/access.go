@@ -19,11 +19,12 @@ package access
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/pkg/validate"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"net/http"
 )
 
 var (

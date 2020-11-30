@@ -18,10 +18,11 @@
 package util
 
 import (
-	"github.com/prometheus/procfs"
 	"os"
 	"strconv"
 	"unsafe"
+
+	"github.com/prometheus/procfs"
 )
 
 const intSize = int(unsafe.Sizeof(0))

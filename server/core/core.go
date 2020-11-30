@@ -18,11 +18,12 @@
 package core
 
 import (
+	"os"
+
 	// import the grace package and parse grace cmd line
 	_ "github.com/apache/servicecomb-service-center/pkg/grace"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
-	"os"
 )
 
 func Initialize() {

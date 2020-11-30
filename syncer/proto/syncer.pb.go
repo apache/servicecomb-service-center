@@ -21,9 +21,10 @@ package proto
 import (
 	context "context"
 	fmt "fmt"
+	math "math"
+
 	proto1 "github.com/golang/protobuf/proto"
 	grpc "google.golang.org/grpc"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.

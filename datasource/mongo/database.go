@@ -18,8 +18,9 @@
 package mongo
 
 import (
-	pb "github.com/go-chassis/cari/discovery"
 	"time"
+
+	pb "github.com/go-chassis/cari/discovery"
 )
 
 const (

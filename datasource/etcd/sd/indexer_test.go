@@ -19,8 +19,9 @@ package sd
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"testing"
+
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 )
 
 type mockCache struct {

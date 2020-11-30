@@ -18,8 +18,9 @@
 package rest
 
 import (
-	"github.com/apache/servicecomb-service-center/server/config"
 	"net/http/pprof"
+
+	"github.com/apache/servicecomb-service-center/server/config"
 )
 
 func init() {

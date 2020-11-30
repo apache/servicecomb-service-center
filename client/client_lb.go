@@ -19,10 +19,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
+
 	"github.com/apache/servicecomb-service-center/pkg/lb"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"net/http"
 )
 
 func NewLBClient(endpoints []string, options rest.URLClientOption) (*LBClient, error) {

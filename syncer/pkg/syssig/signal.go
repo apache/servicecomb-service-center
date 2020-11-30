@@ -19,11 +19,12 @@ package syssig
 import (
 	"context"
 	"fmt"
-	"github.com/apache/servicecomb-service-center/pkg/log"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
+
+	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
 var (

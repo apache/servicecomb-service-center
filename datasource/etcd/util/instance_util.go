@@ -22,10 +22,11 @@ import (
 	"crypto/sha1"
 	"encoding/json"
 	"fmt"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"

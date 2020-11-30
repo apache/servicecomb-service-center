@@ -21,25 +21,24 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
-	"github.com/apache/servicecomb-service-center/pkg/rest"
-	v4 "github.com/apache/servicecomb-service-center/server/resource/v4"
-	"github.com/apache/servicecomb-service-center/server/service/rbac"
-	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
-	_ "github.com/apache/servicecomb-service-center/test"
-	"github.com/go-chassis/go-archaius"
-	"github.com/go-chassis/go-chassis/v2/security/secret"
-	"github.com/go-chassis/go-chassis/v2/server/restful"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
-)
-import (
+
+	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
+	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/config"
+	v4 "github.com/apache/servicecomb-service-center/server/resource/v4"
+	"github.com/apache/servicecomb-service-center/server/service/rbac"
+	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
+	_ "github.com/apache/servicecomb-service-center/test"
 	"github.com/astaxie/beego"
+	"github.com/go-chassis/go-archaius"
+	"github.com/go-chassis/go-chassis/v2/security/secret"
+	"github.com/go-chassis/go-chassis/v2/server/restful"
+	"github.com/stretchr/testify/assert"
 )
 
 func init() {

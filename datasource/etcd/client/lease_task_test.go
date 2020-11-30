@@ -19,10 +19,11 @@ package client_test
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	. "github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client/buildin"
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
-	"testing"
 )
 
 type mockRegistry struct {

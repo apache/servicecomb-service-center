@@ -17,6 +17,8 @@
 package service_test
 
 import (
+	"strconv"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/event"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
@@ -24,7 +26,6 @@ import (
 	pb "github.com/go-chassis/cari/discovery"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"strconv"
 )
 
 var deh event.DependencyEventHandler

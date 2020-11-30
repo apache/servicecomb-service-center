@@ -18,9 +18,10 @@ package ticker
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/pkg/log"
 	"sync"
 	"time"
+
+	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
 // TaskTicker task of ticker struct

@@ -18,15 +18,17 @@
 package etcdsync_test
 
 // initialize
-import _ "github.com/apache/servicecomb-service-center/test"
 import (
 	"fmt"
-	"github.com/apache/servicecomb-service-center/pkg/etcdsync"
-	"github.com/astaxie/beego"
-	"github.com/stretchr/testify/assert"
 	"testing"
 
+	"github.com/apache/servicecomb-service-center/pkg/etcdsync"
+	_ "github.com/apache/servicecomb-service-center/test"
+	"github.com/astaxie/beego"
+	"github.com/stretchr/testify/assert"
+
 	_ "github.com/apache/servicecomb-service-center/datasource/etcd/client/remote"
+
 	_ "github.com/apache/servicecomb-service-center/server/plugin/tracing/pzipkin"
 )
 

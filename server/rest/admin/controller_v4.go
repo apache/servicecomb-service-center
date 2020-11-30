@@ -18,12 +18,14 @@
 package admin
 
 import (
-	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"net/http"
+
+	"github.com/apache/servicecomb-service-center/pkg/dump"
+
+	"strings"
 
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/rest/controller"
-	"strings"
 )
 
 // Service 治理相关接口服务

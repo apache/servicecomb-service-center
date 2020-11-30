@@ -19,6 +19,8 @@ package event
 
 import (
 	"context"
+	"strings"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd/cache"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
@@ -32,7 +34,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/notify"
 	"github.com/apache/servicecomb-service-center/server/syncernotify"
 	pb "github.com/go-chassis/cari/discovery"
-	"strings"
 )
 
 const (

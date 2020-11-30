@@ -17,12 +17,15 @@
 
 package etcd_test
 
-import _ "github.com/apache/servicecomb-service-center/test"
 import (
+	_ "github.com/apache/servicecomb-service-center/test"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+
+	"testing"
+
 	. "github.com/apache/servicecomb-service-center/datasource/etcd/sd/etcd"
 	"github.com/apache/servicecomb-service-center/server/config"
-	"testing"
 )
 
 func TestNewKvEntity(t *testing.T) {

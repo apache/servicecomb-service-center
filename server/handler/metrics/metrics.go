@@ -18,12 +18,13 @@
 package metrics
 
 import (
+	"net/http"
+	"time"
+
 	"github.com/apache/servicecomb-service-center/pkg/chain"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/metrics"
-	"net/http"
-	"time"
 )
 
 type Handler struct {

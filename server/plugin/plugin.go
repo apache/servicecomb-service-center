@@ -18,8 +18,9 @@
 package plugin
 
 import (
-	"github.com/apache/servicecomb-service-center/server/config"
 	"sync"
+
+	"github.com/apache/servicecomb-service-center/server/config"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/plugin"

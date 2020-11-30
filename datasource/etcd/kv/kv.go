@@ -21,12 +21,13 @@ package kv
 import (
 	"context"
 	"errors"
+	"time"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/config"
-	"time"
 )
 
 var store = &TypeStore{}

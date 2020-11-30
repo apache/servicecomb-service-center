@@ -20,11 +20,12 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/apache/servicecomb-service-center/integration"
-	"github.com/widuu/gojson"
 	"io/ioutil"
 	"net/http"
 	"testing"
+
+	. "github.com/apache/servicecomb-service-center/integration"
+	"github.com/widuu/gojson"
 )
 
 var _ = Describe("Basic Api Test", func() {

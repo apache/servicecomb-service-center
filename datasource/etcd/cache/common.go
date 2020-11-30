@@ -19,9 +19,10 @@ package cache
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/datasource"
 	"sort"
 	"sync"
+
+	"github.com/apache/servicecomb-service-center/datasource"
 )
 
 type ContextKey string

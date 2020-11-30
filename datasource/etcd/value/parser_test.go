@@ -17,9 +17,10 @@
 package value
 
 import (
+	"testing"
+
 	"github.com/go-chassis/cari/discovery"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestParseInnerValueTypeFunc(t *testing.T) {

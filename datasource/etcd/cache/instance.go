@@ -19,11 +19,12 @@ package cache
 
 import (
 	"context"
+	"math"
+	"time"
+
 	"github.com/apache/servicecomb-service-center/pkg/cache"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	pb "github.com/go-chassis/cari/discovery"
-	"math"
-	"time"
 )
 
 var FindInstances = &FindInstancesCache{

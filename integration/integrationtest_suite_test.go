@@ -17,12 +17,13 @@
 package integrationtest_test
 
 import (
-	. "github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/reporters"
-	. "github.com/onsi/gomega"
 	"net/http"
 	"os"
 	"testing"
+
+	. "github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/reporters"
+	. "github.com/onsi/gomega"
 )
 
 const LengthUUID = 40

@@ -20,8 +20,9 @@ package util
 import (
 	"context"
 	"encoding/json"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"strings"
+
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"

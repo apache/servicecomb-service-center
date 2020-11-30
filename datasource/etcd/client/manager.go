@@ -19,9 +19,10 @@ package client
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/apache/servicecomb-service-center/pkg/backoff"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"time"
 )
 
 type newClientFunc func(opts Options) Registry

@@ -19,11 +19,12 @@ package rbacframe_test
 
 import (
 	"context"
+	"testing"
+
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	"github.com/go-chassis/go-chassis/v2/security/secret"
 	"github.com/go-chassis/go-chassis/v2/security/token"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestFromContext(t *testing.T) {

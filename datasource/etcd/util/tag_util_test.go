@@ -19,8 +19,9 @@ package util_test
 
 import (
 	"context"
-	. "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"testing"
+
+	. "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 )
 
 func TestAddTagIntoETCD(t *testing.T) {

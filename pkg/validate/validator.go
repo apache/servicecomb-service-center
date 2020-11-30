@@ -20,9 +20,10 @@ package validate
 import (
 	"errors"
 	"fmt"
-	"github.com/apache/servicecomb-service-center/pkg/util"
 	"reflect"
 	"sync"
+
+	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
 type Validator struct {
