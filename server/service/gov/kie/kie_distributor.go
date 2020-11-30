@@ -1,6 +1,7 @@
 package kie
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -19,15 +20,13 @@ type Distributor struct {
 	client     *kie.Client
 }
 
-const PREFIX = "servicecomb."
-
-const EnableStatus = "enabled"
-
-const ValueType = "text"
-
-const AppKey = "app"
-
-const EnvironmentKey = "environment"
+const (
+	PREFIX         = "servicecomb."
+	EnableStatus   = "enabled"
+	ValueType      = "text"
+	AppKey         = "app"
+	EnvironmentKey = "environment"
+)
 
 var rule = Validator{}
 
@@ -56,6 +55,7 @@ func (d *Distributor) Create(kind, project string, spec []byte) error {
 	}
 	_, err = d.client.Create(context.TODO(), kv, kie.WithProject(project))
 	if err != nil {
+		log.Fatal("kie create failed", err)
 		return err
 	}
 	d.lbPolicies[p.GovernancePolicy.Name] = p
@@ -84,6 +84,7 @@ func (d *Distributor) Update(id, kind, project string, spec []byte) error {
 	}
 	_, err = d.client.Put(context.TODO(), kv, kie.WithProject(project))
 	if err != nil {
+		log.Fatal("kie update failed", err)
 		return err
 	}
 	d.lbPolicies[p.GovernancePolicy.Name] = p
@@ -93,6 +94,7 @@ func (d *Distributor) Update(id, kind, project string, spec []byte) error {
 func (d *Distributor) Delete(id, project string) error {
 	err := d.client.Delete(context.TODO(), id, kie.WithProject(project))
 	if err != nil {
+		log.Fatal("kie delete failed", err)
 		return err
 	}
 	return nil
@@ -107,7 +109,7 @@ func (d *Distributor) List(kind, project, app, env string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	var r []*gov.LoadBalancer
+	r := make([]*gov.LoadBalancer, 0, list.Total)
 	for _, item := range list.Data {
 		goc := &gov.LoadBalancer{
 			GovernancePolicy: &gov.GovernancePolicy{},
@@ -116,6 +118,7 @@ func (d *Distributor) List(kind, project, app, env string) ([]byte, error) {
 		specJSON, _ := yaml.YAMLToJSON([]byte(item.Value))
 		err = json.Unmarshal(specJSON, &spec)
 		if err != nil {
+			log.Fatal("kie list failed", err)
 			return nil, err
 		}
 		goc.ID = item.ID
@@ -135,6 +138,7 @@ func (d *Distributor) List(kind, project, app, env string) ([]byte, error) {
 func (d *Distributor) Get(id, project string) ([]byte, error) {
 	kv, err := d.client.Get(context.TODO(), id, kie.WithGetProject(project))
 	if err != nil {
+		log.Fatal("kie get failed", err)
 		return nil, err
 	}
 	goc := &gov.LoadBalancer{
@@ -171,7 +175,6 @@ func initClient(endpoint string) *kie.Client {
 }
 
 func new(opts config.DistributorOptions) (svc.ConfigDistributor, error) {
-	//ep := config.GetString("gov.kie.endpoint", "")
 	return &Distributor{name: opts.Name, lbPolicies: map[string]*gov.LoadBalancer{}, client: initClient(opts.Endpoint)}, nil
 }
 
@@ -180,21 +183,21 @@ func toSnake(name string) string {
 		return ""
 	}
 	temp := strings.Split(name, "-")
-	var s string
+	var buffer bytes.Buffer
 	for num, v := range temp {
 		vv := []rune(v)
 		if num == 0 {
-			s += string(vv)
+			buffer.WriteString(string(vv))
 			continue
 		}
 		if len(vv) > 0 {
 			if vv[0] >= 'a' && vv[0] <= 'z' { //首字母大写
 				vv[0] -= 32
 			}
-			s += string(vv)
+			buffer.WriteString(string(vv))
 		}
 	}
-	return s
+	return buffer.String()
 }
 
 func init() {

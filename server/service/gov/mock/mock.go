@@ -50,7 +50,7 @@ func (d *Distributor) Delete(id, project string) error {
 	return nil
 }
 func (d *Distributor) List(kind, project, app, env string) ([]byte, error) {
-	r := make([]*gov.LoadBalancer, len(d.lbPolicies))
+	r := make([]*gov.LoadBalancer, 0, len(d.lbPolicies))
 	for _, g := range d.lbPolicies {
 		r = append(r, g)
 	}

@@ -81,7 +81,10 @@ func (t *Governance) List(w http.ResponseWriter, req *http.Request) {
 		controller.WriteError(w, discovery.ErrInternal, err.Error())
 		return
 	}
-	_, _ = w.Write(body)
+	_, err = w.Write(body)
+	if err != nil {
+		log.Error("", err)
+	}
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set(rest.HeaderContentType, rest.ContentTypeJSON)
 }
@@ -96,7 +99,10 @@ func (t *Governance) Get(w http.ResponseWriter, req *http.Request) {
 		controller.WriteError(w, discovery.ErrInternal, err.Error())
 		return
 	}
-	_, _ = w.Write(body)
+	_, err = w.Write(body)
+	if err != nil {
+		log.Error("", err)
+	}
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set(rest.HeaderContentType, rest.ContentTypeJSON)
 }
