@@ -19,12 +19,12 @@ package heartbeatchecker
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
 	"github.com/apache/servicecomb-service-center/datasource/mongo"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
+	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/go-chassis/v2/storage"
 	"github.com/stretchr/testify/assert"
@@ -41,7 +41,7 @@ func init() {
 func TestUpdateInstanceRefreshTime(t *testing.T) {
 	t.Run("update instance refresh time: if the instance does not exist,the update should fail", func(t *testing.T) {
 		err := updateInstanceRefreshTime(context.Background(), "not-exist", "not-exist")
-		fmt.Println(err)
+		log.Error("", err)
 		assert.NotNil(t, err)
 	})
 
@@ -58,8 +58,8 @@ func TestUpdateInstanceRefreshTime(t *testing.T) {
 		err = updateInstanceRefreshTime(context.Background(), instance1.InstanceInfo.ServiceId, instance1.InstanceInfo.InstanceId)
 		assert.Equal(t, nil, err)
 		filter := bson.M{
-			mongo.InstanceID: instance1.InstanceInfo.InstanceId,
-			mongo.ServiceID:  instance1.InstanceInfo.ServiceId,
+			mongo.StringBuilder([]string{mongo.ColumnInstanceInfo, mongo.ColumnInstanceID}): instance1.InstanceInfo.InstanceId,
+			mongo.StringBuilder([]string{mongo.ColumnInstanceInfo, mongo.ColumnServiceID}):  instance1.InstanceInfo.ServiceId,
 		}
 		result, err := client.GetMongoClient().FindOne(context.Background(), mongo.CollectionInstance, filter)
 		assert.Nil(t, err)
@@ -68,7 +68,7 @@ func TestUpdateInstanceRefreshTime(t *testing.T) {
 		assert.Nil(t, err)
 		assert.NotEqual(t, instance1.RefreshTime, ins.RefreshTime)
 		filter = bson.M{
-			mongo.InstanceID: instance1.InstanceInfo.InstanceId,
+			mongo.StringBuilder([]string{mongo.ColumnInstanceInfo, mongo.ColumnInstanceID}): instance1.InstanceInfo.InstanceId,
 		}
 		_, err = client.GetMongoClient().Delete(context.Background(), mongo.CollectionInstance, filter)
 		assert.Nil(t, err)

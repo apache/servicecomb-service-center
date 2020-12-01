@@ -19,7 +19,6 @@ package mongo
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -27,6 +26,7 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/heartbeat"
+	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
@@ -86,7 +86,8 @@ func (ds *DataSource) RegisterService(ctx context.Context, request *pb.CreateSer
 	}
 
 	remoteIP := util.GetIPFromContext(ctx)
-	log.Infof("create micro-service[%s][%s] successfully,operator: %s", service.ServiceId, insertRes.InsertedID, remoteIP)
+	log.Info(fmt.Sprintf("create micro-service[%s][%s] successfully,operator: %s",
+		service.ServiceId, insertRes.InsertedID, remoteIP))
 
 	return &pb.CreateServiceResponse{
 		Response:  pb.CreateResponse(pb.ResponseSuccess, "Register service successfully"),
@@ -100,7 +101,7 @@ func (ds *DataSource) GetServices(ctx context.Context, request *pb.GetServicesRe
 	domain := util.ParseDomain(ctx)
 	project := util.ParseProject(ctx)
 
-	filter := bson.M{Domain: domain, Project: project}
+	filter := bson.M{ColumnDomain: domain, ColumnProject: project}
 
 	services, err := GetServices(ctx, filter)
 	if err != nil {
@@ -119,7 +120,10 @@ func (ds *DataSource) GetApplications(ctx context.Context, request *pb.GetAppsRe
 	domain := util.ParseDomain(ctx)
 	project := util.ParseProject(ctx)
 
-	filter := bson.M{Domain: domain, Project: project, ServiceEnv: request.Environment}
+	filter := bson.M{
+		ColumnDomain:  domain,
+		ColumnProject: project,
+		StringBuilder([]string{ColumnServiceInfo, ColumnEnv}): request.Environment}
 
 	services, err := GetServices(ctx, filter)
 	if err != nil {
@@ -155,7 +159,7 @@ func (ds *DataSource) GetService(ctx context.Context, request *pb.GetServiceRequ
 	*pb.GetServiceResponse, error) {
 	svc, err := GetService(ctx, GeneratorServiceFilter(ctx, request.ServiceId))
 	if err != nil {
-		log.Errorf(err, "failed to get single service [%s] from mongo", request.ServiceId)
+		log.Error(fmt.Sprintf("failed to get single service %s from mongo", request.ServiceId), err)
 		return &pb.GetServiceResponse{
 			Response: pb.CreateResponse(pb.ErrInternal, "get service data from mongodb failed."),
 		}, err
@@ -281,24 +285,23 @@ func DelServicePri(ctx context.Context, serviceID string, force bool) (*pb.Respo
 	}
 
 	if serviceID == apt.Service.ServiceId {
-		err := errors.New("not allow to delete service center")
-		log.Errorf(err, "%s micro-service[%s] failed, operator: %s", title, serviceID, remoteIP)
-		return pb.CreateResponse(pb.ErrInvalidParams, err.Error()), nil
+		log.Error(fmt.Sprintf("%s micro-service %s failed, operator: %s", title, serviceID, remoteIP), ErrNotAllowDeleteSC)
+		return pb.CreateResponse(pb.ErrInvalidParams, ErrNotAllowDeleteSC.Error()), nil
 	}
 	microservice, err := GetService(ctx, GeneratorServiceFilter(ctx, serviceID))
 	if err != nil {
-		log.Errorf(err, "%s micro-service[%s] failed, get service file failed, operator: %s",
-			title, serviceID, remoteIP)
+		log.Error(fmt.Sprintf("%s micro-service %s failed, get service file failed, operator: %s",
+			title, serviceID, remoteIP), err)
 		return pb.CreateResponse(pb.ErrInternal, err.Error()), err
 	}
 	if microservice == nil {
-		log.Errorf(err, "%s micro-service[%s] failed, service does not exist, operator: %s",
-			title, serviceID, remoteIP)
+		log.Error(fmt.Sprintf("%s micro-service %s failed, service does not exist, operator: %s",
+			title, serviceID, remoteIP), err)
 		return pb.CreateResponse(pb.ErrServiceNotExists, "Service does not exist."), nil
 	}
 	// 强制删除，则与该服务相关的信息删除，非强制删除： 如果作为该被依赖（作为provider，提供服务,且不是只存在自依赖）或者存在实例，则不能删除
 	if !force {
-		log.Infof("force delete,should del instance...")
+		log.Info("force delete,should del instance...")
 		//todo wait for dep interface
 	}
 	filter := GeneratorServiceFilter(ctx, serviceID)
@@ -329,9 +332,13 @@ func (ds *DataSource) UpdateService(ctx context.Context, request *pb.UpdateServi
 		}, nil
 	}
 
-	err = UpdateService(ctx, GeneratorServiceFilter(ctx, request.ServiceId), bson.M{"$set": bson.M{ServiceModTime: strconv.FormatInt(time.Now().Unix(), 10), ServiceProperty: request.Properties}})
+	updateData := bson.M{
+		"$set": bson.M{
+			StringBuilder([]string{ColumnServiceInfo, ColumnModTime}):  strconv.FormatInt(time.Now().Unix(), 10),
+			StringBuilder([]string{ColumnServiceInfo, ColumnProperty}): request.Properties}}
+	err = UpdateService(ctx, GeneratorServiceFilter(ctx, request.ServiceId), updateData)
 	if err != nil {
-		log.Errorf(err, "update service [%s] properties failed, update mongo failed", request.ServiceId)
+		log.Error(fmt.Sprintf("update service %s properties failed, update mongo failed", request.ServiceId), err)
 		return &pb.UpdateServicePropsResponse{
 			Response: pb.CreateResponse(pb.ErrUnavailableBackend, "Update doc in mongo failed."),
 		}, nil
@@ -362,8 +369,7 @@ func (ds *DataSource) GetServiceDetail(ctx context.Context, request *pb.GetServi
 	svc := mgSvc.ServiceInfo
 	versions, err := GetServicesVersions(ctx, bson.M{})
 	if err != nil {
-		log.Errorf(err, "get service[%s/%s/%s] all versions failed",
-			svc.Environment, svc.AppId, svc.ServiceName)
+		log.Error(fmt.Sprintf("get service %s %s %s all versions failed", svc.Environment, svc.AppId, svc.ServiceName), err)
 		return &pb.GetServiceDetailResponse{
 			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
@@ -403,7 +409,7 @@ func (ds *DataSource) GetServicesInfo(ctx context.Context, request *pb.GetServic
 	//todo add get statistics info
 	services, err := GetMongoServices(ctx, bson.M{})
 	if err != nil {
-		log.Errorf(err, "get all services by domain failed")
+		log.Error("get all services by domain failed", err)
 		return &pb.GetServicesInfoResponse{
 			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
@@ -443,7 +449,7 @@ func (ds *DataSource) GetServicesInfo(ctx context.Context, request *pb.GetServic
 func (ds *DataSource) AddTags(ctx context.Context, request *pb.AddServiceTagsRequest) (*pb.AddServiceTagsResponse, error) {
 	service, err := GetService(ctx, GeneratorServiceFilter(ctx, request.ServiceId))
 	if err != nil {
-		log.Errorf(err, "failed to add tags for service [%s] for get service failed,", request.ServiceId)
+		log.Error(fmt.Sprintf("failed to add tags for service %s for get service failed", request.ServiceId), err)
 		return &pb.AddServiceTagsResponse{
 			Response: pb.CreateResponse(pb.ErrInternal, "Failed to check service exist"),
 		}, nil
@@ -460,9 +466,9 @@ func (ds *DataSource) AddTags(ctx context.Context, request *pb.AddServiceTagsReq
 		}
 		tags[key] = value
 	}
-	err = UpdateService(ctx, GeneratorServiceFilter(ctx, request.ServiceId), bson.M{"$set": bson.M{ServiceTag: tags}})
+	err = UpdateService(ctx, GeneratorServiceFilter(ctx, request.ServiceId), bson.M{"$set": bson.M{ColumnTag: tags}})
 	if err != nil {
-		log.Errorf(err, "update service [%s] tags failed.", request.ServiceId)
+		log.Error(fmt.Sprintf("update service %s tags failed.", request.ServiceId), err)
 		return &pb.AddServiceTagsResponse{
 			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, nil
@@ -475,7 +481,7 @@ func (ds *DataSource) AddTags(ctx context.Context, request *pb.AddServiceTagsReq
 func (ds *DataSource) GetTags(ctx context.Context, request *pb.GetServiceTagsRequest) (*pb.GetServiceTagsResponse, error) {
 	svc, err := GetService(ctx, GeneratorServiceFilter(ctx, request.ServiceId))
 	if err != nil {
-		log.Errorf(err, "failed to get service [%s] tags", request.ServiceId)
+		log.Error(fmt.Sprintf("failed to get service %s tags", request.ServiceId), err)
 		return &pb.GetServiceTagsResponse{
 			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, nil
@@ -494,7 +500,7 @@ func (ds *DataSource) GetTags(ctx context.Context, request *pb.GetServiceTagsReq
 func (ds *DataSource) UpdateTag(ctx context.Context, request *pb.UpdateServiceTagRequest) (*pb.UpdateServiceTagResponse, error) {
 	svc, err := GetService(ctx, GeneratorServiceFilter(ctx, request.ServiceId))
 	if err != nil {
-		log.Errorf(err, "failed to get service [%s] tags", request.ServiceId)
+		log.Error(fmt.Sprintf("failed to get %s tags", request.ServiceId), err)
 		return &pb.UpdateServiceTagResponse{
 			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, nil
@@ -518,9 +524,9 @@ func (ds *DataSource) UpdateTag(ctx context.Context, request *pb.UpdateServiceTa
 	}
 	newTags[request.Key] = request.Value
 
-	err = UpdateService(ctx, GeneratorServiceFilter(ctx, request.ServiceId), bson.M{"$set": bson.M{ServiceTag: newTags}})
+	err = UpdateService(ctx, GeneratorServiceFilter(ctx, request.ServiceId), bson.M{"$set": bson.M{ColumnTag: newTags}})
 	if err != nil {
-		log.Errorf(err, "update service [%s] tags failed.", request.ServiceId)
+		log.Error(fmt.Sprintf("update service %s tags failed", request.ServiceId), err)
 		return &pb.UpdateServiceTagResponse{
 			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, nil
@@ -533,7 +539,7 @@ func (ds *DataSource) UpdateTag(ctx context.Context, request *pb.UpdateServiceTa
 func (ds *DataSource) DeleteTags(ctx context.Context, request *pb.DeleteServiceTagsRequest) (*pb.DeleteServiceTagsResponse, error) {
 	svc, err := GetService(ctx, GeneratorServiceFilter(ctx, request.ServiceId))
 	if err != nil {
-		log.Errorf(err, "failed to get service [%s] tags", request.ServiceId)
+		log.Error(fmt.Sprintf("failed to get service %s tags", request.ServiceId), err)
 		return &pb.DeleteServiceTagsResponse{
 			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, nil
@@ -558,9 +564,9 @@ func (ds *DataSource) DeleteTags(ctx context.Context, request *pb.DeleteServiceT
 			delete(newTags, key)
 		}
 	}
-	err = UpdateService(ctx, GeneratorServiceFilter(ctx, request.ServiceId), bson.M{"$set": bson.M{ServiceTag: newTags}})
+	err = UpdateService(ctx, GeneratorServiceFilter(ctx, request.ServiceId), bson.M{"$set": bson.M{ColumnTag: newTags}})
 	if err != nil {
-		log.Errorf(err, "delete service [%s] tags failed.", request.ServiceId)
+		log.Error(fmt.Sprintf("delete service %s tags failed", request.ServiceId), err)
 		return &pb.DeleteServiceTagsResponse{
 			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, nil
@@ -698,7 +704,7 @@ func (ds *DataSource) ModifySchema(ctx context.Context, request *pb.ModifySchema
 	defer session.EndSession(ctx)
 	err = ds.modifySchema(ctx, request.ServiceId, &schema)
 	if err != nil {
-		log.Errorf(err, "modify schema[%s/%s] failed, operator: %s", serviceID, schemaID, remoteIP)
+		log.Error(fmt.Sprintf("modify schema %s %s failed, operator %s", serviceID, schemaID, remoteIP), err)
 		errAbort := session.AbortTransaction(ctx)
 		if errAbort != nil {
 			return &pb.ModifySchemaResponse{
@@ -715,7 +721,7 @@ func (ds *DataSource) ModifySchema(ctx context.Context, request *pb.ModifySchema
 			Response: pb.CreateResponse(pb.ErrInternal, "Txn ModifySchema CommitTransaction failed."),
 		}, err
 	}
-	log.Infof("modify schema[%s/%s] successfully, operator: %s", serviceID, schemaID, remoteIP)
+	log.Info(fmt.Sprintf("modify schema[%s/%s] successfully, operator: %s", serviceID, schemaID, remoteIP))
 	return &pb.ModifySchemaResponse{
 		Response: pb.CreateResponse(pb.ResponseSuccess, "modify schema info success."),
 	}, nil
@@ -791,13 +797,13 @@ func (ds *DataSource) modifySchema(ctx context.Context, serviceID string, schema
 		}
 		if schema != nil {
 			if len(schema.Summary) == 0 {
-				log.Errorf(err, "modify schema[%s/%s] failed, get schema summary failed, operator: %s",
-					serviceID, schema.SchemaId, remoteIP)
+				log.Error(fmt.Sprintf("modify schema %s %s failed, get schema summary failed, operator: %s",
+					serviceID, schema.SchemaId, remoteIP), err)
 				return pb.NewError(pb.ErrUnavailableBackend, err.Error())
 			}
 			if len(respSchema.SchemaSummary) != 0 {
-				log.Errorf(err, "%s mode, schema[%s/%s] already exist, can not be changed, operator: %s",
-					pb.ENV_PROD, serviceID, schema.SchemaId, remoteIP)
+				log.Error(fmt.Sprintf("mode, schema %s %s already exist, can not be changed, operator: %s",
+					serviceID, schema.SchemaId, remoteIP), err)
 				return pb.NewError(pb.ErrModifySchemaNotAllow, "schema already exist, can not be changed request "+pb.ENV_PROD)
 			}
 		}
@@ -812,12 +818,14 @@ func (ds *DataSource) modifySchema(ctx context.Context, serviceID string, schema
 		}
 	}
 	if len(newSchemas) != len(microservice.Schemas) {
-		err := UpdateService(ctx, GeneratorServiceFilter(ctx, serviceID), bson.M{"$set": bson.M{ServiceSchemas: newSchemas}})
+
+		updateData := bson.M{StringBuilder([]string{ColumnServiceInfo, ColumnSchemas}): newSchemas}
+		err := UpdateService(ctx, GeneratorServiceFilter(ctx, serviceID), bson.M{"$set": updateData})
 		if err != nil {
 			return pb.NewError(pb.ErrInternal, err.Error())
 		}
 	}
-	newSchema := bson.M{"$set": bson.M{SchemaInfo: schema.Schema, SchemaSummary: schema.Summary}}
+	newSchema := bson.M{"$set": bson.M{ColumnSchemaInfo: schema.Schema, ColumnSchemaSummary: schema.Summary}}
 	err = UpdateSchema(ctx, GeneratorSchemaFilter(ctx, serviceID, schema.SchemaId), newSchema, options.FindOneAndUpdate().SetUpsert(true))
 	if err != nil {
 		return pb.NewError(pb.ErrInternal, err.Error())
@@ -830,8 +838,7 @@ func (ds *DataSource) modifySchemas(ctx context.Context, service *pb.MicroServic
 	serviceID := service.ServiceId
 	schemasFromDatabase, err := GetSchemas(ctx, GeneratorServiceFilter(ctx, serviceID))
 	if err != nil {
-		log.Errorf(nil, "modify service[%s] schemas failed, get schemas failed, operator: %s",
-			serviceID, remoteIP)
+		log.Error(fmt.Sprintf("modify service %s schemas failed, get schemas failed, operator: %s", serviceID, remoteIP), err)
 		return pb.NewError(pb.ErrUnavailableBackend, err.Error())
 	}
 	needUpdateSchemas, needAddSchemas, needDeleteSchemas, nonExistSchemaIds :=
@@ -839,16 +846,17 @@ func (ds *DataSource) modifySchemas(ctx context.Context, service *pb.MicroServic
 	if !ds.isSchemaEditable(service) {
 		if len(service.Schemas) == 0 {
 			//todo add quota check
-			err := UpdateService(ctx, GeneratorServiceFilter(ctx, serviceID), bson.M{"$set": bson.M{ServiceSchemas: nonExistSchemaIds}})
+			updateData := bson.M{StringBuilder([]string{ColumnServiceInfo, ColumnSchemas}): nonExistSchemaIds}
+			err := UpdateService(ctx, GeneratorServiceFilter(ctx, serviceID), bson.M{"$set": updateData})
 			if err != nil {
-				log.Errorf(err, "modify service[%s] schemas failed, update service.Schemas failed, operator: %s",
-					serviceID, remoteIP)
+				log.Error(fmt.Sprintf("modify service %s schemas failed, update service.Schemas failed, operator: %s",
+					serviceID, remoteIP), err)
 				return pb.NewError(pb.ErrInternal, err.Error())
 			}
 		} else {
 			if len(nonExistSchemaIds) != 0 {
 				errInfo := fmt.Errorf("non-existent schemaIDs %v", nonExistSchemaIds)
-				log.Errorf(errInfo, "modify service[%s] schemas failed, operator: %s", serviceID, remoteIP)
+				log.Error(fmt.Sprintf("modify service %s schemas failed, operator: %s", serviceID, remoteIP), err)
 				return pb.NewError(pb.ErrUndefinedSchemaID, errInfo.Error())
 			}
 			for _, needUpdateSchema := range needUpdateSchemas {
@@ -857,20 +865,20 @@ func (ds *DataSource) modifySchemas(ctx context.Context, service *pb.MicroServic
 					return pb.NewError(pb.ErrInternal, err.Error())
 				}
 				if !exist {
-					err := UpdateSchema(ctx, GeneratorSchemaFilter(ctx, serviceID, needUpdateSchema.SchemaId), bson.M{"$set": bson.M{SchemaInfo: needUpdateSchema.Schema, SchemaSummary: needUpdateSchema.Summary}}, options.FindOneAndUpdate().SetUpsert(true))
+					err := UpdateSchema(ctx, GeneratorSchemaFilter(ctx, serviceID, needUpdateSchema.SchemaId), bson.M{"$set": bson.M{ColumnSchemaInfo: needUpdateSchema.Schema, ColumnSchemaSummary: needUpdateSchema.Summary}}, options.FindOneAndUpdate().SetUpsert(true))
 					if err != nil {
 						return pb.NewError(pb.ErrInternal, err.Error())
 					}
 				} else {
-					log.Warnf("schema[%s/%s] and it's summary already exist, skip to update, operator: %s",
-						serviceID, needUpdateSchema.SchemaId, remoteIP)
+					log.Warn(fmt.Sprintf("schema[%s/%s] and it's summary already exist, skip to update, operator: %s",
+						serviceID, needUpdateSchema.SchemaId, remoteIP))
 				}
 			}
 		}
 
 		for _, schema := range needAddSchemas {
-			log.Infof("add new schema[%s/%s], operator: %s", serviceID, schema.SchemaId, remoteIP)
-			err := UpdateSchema(ctx, GeneratorSchemaFilter(ctx, serviceID, schema.SchemaId), bson.M{"$set": bson.M{SchemaInfo: schema.Schema, SchemaSummary: schema.Summary}}, options.FindOneAndUpdate().SetUpsert(true))
+			log.Info(fmt.Sprintf("add new schema[%s/%s], operator: %s", serviceID, schema.SchemaId, remoteIP))
+			err := UpdateSchema(ctx, GeneratorSchemaFilter(ctx, serviceID, schema.SchemaId), bson.M{"$set": bson.M{ColumnSchemaInfo: schema.Schema, ColumnSchemaSummary: schema.Summary}}, options.FindOneAndUpdate().SetUpsert(true))
 			if err != nil {
 				return pb.NewError(pb.ErrInternal, err.Error())
 			}
@@ -879,8 +887,8 @@ func (ds *DataSource) modifySchemas(ctx context.Context, service *pb.MicroServic
 
 		var schemaIDs []string
 		for _, schema := range needAddSchemas {
-			log.Infof("add new schema[%s/%s], operator: %s", serviceID, schema.SchemaId, remoteIP)
-			err := UpdateSchema(ctx, GeneratorSchemaFilter(ctx, serviceID, schema.SchemaId), bson.M{"$set": bson.M{SchemaInfo: schema.Schema, SchemaSummary: schema.Summary}}, options.FindOneAndUpdate().SetUpsert(true))
+			log.Info(fmt.Sprintf("add new schema[%s/%s], operator: %s", serviceID, schema.SchemaId, remoteIP))
+			err := UpdateSchema(ctx, GeneratorSchemaFilter(ctx, serviceID, schema.SchemaId), bson.M{"$set": bson.M{ColumnSchemaInfo: schema.Schema, ColumnSchemaSummary: schema.Summary}}, options.FindOneAndUpdate().SetUpsert(true))
 			if err != nil {
 				return pb.NewError(pb.ErrInternal, err.Error())
 			}
@@ -888,8 +896,8 @@ func (ds *DataSource) modifySchemas(ctx context.Context, service *pb.MicroServic
 		}
 
 		for _, schema := range needUpdateSchemas {
-			log.Infof("update schema[%s/%s], operator: %s", serviceID, schema.SchemaId, remoteIP)
-			err := UpdateSchema(ctx, GeneratorSchemaFilter(ctx, serviceID, schema.SchemaId), bson.M{"$set": bson.M{SchemaInfo: schema.Schema, SchemaSummary: schema.Summary}}, options.FindOneAndUpdate().SetUpsert(true))
+			log.Info(fmt.Sprintf("update schema[%s/%s], operator: %s", serviceID, schema.SchemaId, remoteIP))
+			err := UpdateSchema(ctx, GeneratorSchemaFilter(ctx, serviceID, schema.SchemaId), bson.M{"$set": bson.M{ColumnSchemaInfo: schema.Schema, ColumnSchemaSummary: schema.Summary}}, options.FindOneAndUpdate().SetUpsert(true))
 			if err != nil {
 				return pb.NewError(pb.ErrInternal, err.Error())
 			}
@@ -897,17 +905,17 @@ func (ds *DataSource) modifySchemas(ctx context.Context, service *pb.MicroServic
 		}
 
 		for _, schema := range needDeleteSchemas {
-			log.Infof("delete non-existent schema[%s/%s], operator: %s", serviceID, schema.SchemaId, remoteIP)
+			log.Info(fmt.Sprintf("delete non-existent schema[%s/%s], operator: %s", serviceID, schema.SchemaId, remoteIP))
 			err = DeleteSchema(ctx, GeneratorSchemaFilter(ctx, serviceID, schema.SchemaId))
 			if err != nil {
 				return pb.NewError(pb.ErrInternal, err.Error())
 			}
 		}
 
-		err := UpdateService(ctx, GeneratorServiceFilter(ctx, serviceID), bson.M{"$set": bson.M{ServiceSchemas: schemaIDs}})
+		updateData := bson.M{StringBuilder([]string{ColumnServiceInfo, ColumnSchemas}): schemaIDs}
+		err := UpdateService(ctx, GeneratorServiceFilter(ctx, serviceID), bson.M{"$set": updateData})
 		if err != nil {
-			log.Errorf(err, "modify service[%s] schemas failed, update service.Schemas failed, operator: %s",
-				serviceID, remoteIP)
+			log.Error(fmt.Sprintf("modify service %s schemas failed, update service.Schemas failed, operator: %s", serviceID, remoteIP), err)
 			return pb.NewError(pb.ErrInternal, err.Error())
 		}
 	}
@@ -917,7 +925,7 @@ func (ds *DataSource) modifySchemas(ctx context.Context, service *pb.MicroServic
 func (ds *DataSource) AddRule(ctx context.Context, request *pb.AddServiceRulesRequest) (*pb.AddServiceRulesResponse, error) {
 	exist, err := ServiceExistID(ctx, request.ServiceId)
 	if err != nil {
-		log.Errorf(err, "failed to add rules for service [%s] for get service failed,", request.ServiceId)
+		log.Error(fmt.Sprintf("failed to add rules for service %s for get service failed", request.ServiceId), err)
 		return &pb.AddServiceRulesResponse{
 			Response: pb.CreateResponse(pb.ErrInternal, "Failed to check service exist"),
 		}, nil
@@ -1013,7 +1021,7 @@ func (ds *DataSource) DeleteRule(ctx context.Context, request *pb.DeleteServiceR
 	*pb.DeleteServiceRulesResponse, error) {
 	exist, err := ServiceExistID(ctx, request.ServiceId)
 	if err != nil {
-		log.Errorf(err, "failed to add tags for service [%s] for get service failed,", request.ServiceId)
+		log.Error(fmt.Sprintf("failed to add tags for service %s for get service failed", request.ServiceId), err)
 		return &pb.DeleteServiceRulesResponse{
 			Response: pb.CreateResponse(pb.ErrInternal, "Failed to check service exist"),
 		}, err
@@ -1046,7 +1054,6 @@ func (ds *DataSource) UpdateRule(ctx context.Context, request *pb.UpdateServiceR
 	if err != nil {
 		return &pb.UpdateServiceRuleResponse{
 			Response: pb.CreateResponse(pb.ErrServiceNotExists, "UpdateRule failed for get service failed."),
-			//Schemas:  nil,
 		}, nil
 	}
 	if !exist {
@@ -1077,12 +1084,14 @@ func (ds *DataSource) UpdateRule(ctx context.Context, request *pb.UpdateServiceR
 		}, nil
 	}
 
-	newRule := bson.M{"$set": bson.M{RuleRuletype: request.Rule.RuleType,
-		RulePattern: request.Rule.Pattern, RuleAttribute: request.Rule.Attribute,
-		RuleDescription: request.Rule.Description,
-		RuleModTime:     strconv.FormatInt(time.Now().Unix(), 10)}}
+	newRule := bson.M{
+		StringBuilder([]string{ColumnRuleInfo, ColumnRuleType}):    request.Rule.RuleType,
+		StringBuilder([]string{ColumnRuleInfo, ColumnPattern}):     request.Rule.Pattern,
+		StringBuilder([]string{ColumnRuleInfo, ColumnAttribute}):   request.Rule.Attribute,
+		StringBuilder([]string{ColumnRuleInfo, ColumnDescription}): request.Rule.Description,
+		StringBuilder([]string{ColumnRuleInfo, ColumnModTime}):     strconv.FormatInt(time.Now().Unix(), 10)}
 
-	err = UpdateRule(ctx, GeneratorRuleFilter(ctx, request.ServiceId, request.RuleId), newRule)
+	err = UpdateRule(ctx, GeneratorRuleFilter(ctx, request.ServiceId, request.RuleId), bson.M{"$set": newRule})
 	if err != nil {
 		return &pb.UpdateServiceRuleResponse{
 			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
@@ -1188,7 +1197,7 @@ func getServiceDetailUtil(ctx context.Context, mgs *Service, countOnly bool, opt
 		case "rules":
 			rules, err := GetRules(ctx, mgs.ServiceInfo.ServiceId)
 			if err != nil {
-				log.Errorf(err, "get service[%s]'s all rules failed", mgs.ServiceInfo.ServiceId)
+				log.Error(fmt.Sprintf("get service %s's all rules failed", mgs.ServiceInfo.ServiceId), err)
 				return nil, err
 			}
 			for _, rule := range rules {
@@ -1200,7 +1209,7 @@ func getServiceDetailUtil(ctx context.Context, mgs *Service, countOnly bool, opt
 		case "schemas":
 			schemas, err := GetSchemas(ctx, GeneratorServiceFilter(ctx, mgs.ServiceInfo.ServiceId))
 			if err != nil {
-				log.Errorf(err, "get service[%s]'s all schemas failed", mgs.ServiceInfo.ServiceId)
+				log.Error(fmt.Sprintf("get service %s's all schemas failed", mgs.ServiceInfo.ServiceId), err)
 				return nil, err
 			}
 			serviceDetail.SchemaInfos = schemas
@@ -1209,7 +1218,7 @@ func getServiceDetailUtil(ctx context.Context, mgs *Service, countOnly bool, opt
 		case "":
 			continue
 		default:
-			log.Errorf(nil, "request option[%s] is invalid", opt)
+			log.Info(fmt.Sprintf("request option %s is invalid", opt))
 		}
 	}
 	return serviceDetail, nil
@@ -1222,7 +1231,7 @@ func UpdateService(ctx context.Context, filter interface{}, m bson.M) error {
 func GetRules(ctx context.Context, serviceID string) ([]*pb.ServiceRule, error) {
 	domain := util.ParseDomain(ctx)
 	project := util.ParseProject(ctx)
-	filter := bson.M{Domain: domain, Project: project, RuleServiceID: serviceID}
+	filter := bson.M{ColumnDomain: domain, ColumnProject: project, ColumnServiceID: serviceID}
 
 	ruleRes, err := client.GetMongoClient().Find(ctx, CollectionRule, filter)
 	if err != nil {
@@ -1254,7 +1263,7 @@ func DeleteSchema(ctx context.Context, filter interface{}) error {
 		return err
 	}
 	if !res {
-		return errors.New("delete schema failed")
+		return ErrDeleteSchemaFailed
 	}
 	return nil
 }
@@ -1267,39 +1276,61 @@ func GeneratorServiceFilter(ctx context.Context, serviceID string) bson.M {
 	domain := util.ParseDomain(ctx)
 	project := util.ParseProject(ctx)
 
-	return bson.M{Domain: domain, Project: project, ServiceServiceID: serviceID}
+	return bson.M{
+		ColumnDomain:  domain,
+		ColumnProject: project,
+		StringBuilder([]string{ColumnServiceInfo, ColumnServiceID}): serviceID}
 }
 
 func GeneratorServiceNameFilter(ctx context.Context, service *pb.MicroServiceKey) bson.M {
 	domain := util.ParseDomain(ctx)
 	project := util.ParseProject(ctx)
 
-	return bson.M{Domain: domain, Project: project, ServiceEnv: service.Environment, ServiceAppID: service.AppId, ServiceServiceName: service.ServiceName, ServiceVersion: service.Version}
+	return bson.M{
+		ColumnDomain:  domain,
+		ColumnProject: project,
+		StringBuilder([]string{ColumnServiceInfo, ColumnEnv}):         service.Environment,
+		StringBuilder([]string{ColumnServiceInfo, ColumnAppID}):       service.AppId,
+		StringBuilder([]string{ColumnServiceInfo, ColumnServiceName}): service.ServiceName,
+		StringBuilder([]string{ColumnServiceInfo, ColumnVersion}):     service.Version}
 }
 
 func GeneratorServiceAliasFilter(ctx context.Context, service *pb.MicroServiceKey) bson.M {
 	domain := util.ParseDomain(ctx)
 	project := util.ParseProject(ctx)
 
-	return bson.M{Domain: domain, Project: project, ServiceEnv: service.Environment, ServiceAppID: service.AppId, ServiceAlias: service.Alias, ServiceVersion: service.Version}
+	return bson.M{
+		ColumnDomain:  domain,
+		ColumnProject: project,
+		StringBuilder([]string{ColumnServiceInfo, ColumnEnv}):     service.Environment,
+		StringBuilder([]string{ColumnServiceInfo, ColumnAppID}):   service.AppId,
+		StringBuilder([]string{ColumnServiceInfo, ColumnAlias}):   service.Alias,
+		StringBuilder([]string{ColumnServiceInfo, ColumnVersion}): service.Version}
 }
 
 func GeneratorRuleAttFilter(ctx context.Context, serviceID, attribute, pattern string) bson.M {
-	return bson.M{RuleServiceID: serviceID, RuleAttribute: attribute, RulePattern: pattern}
+	return bson.M{
+		ColumnServiceID: serviceID,
+		StringBuilder([]string{ColumnRuleInfo, ColumnAttribute}): attribute,
+		StringBuilder([]string{ColumnRuleInfo, ColumnPattern}):   pattern}
 }
 
 func GeneratorSchemaFilter(ctx context.Context, serviceID, schemaID string) bson.M {
 	domain := util.ParseDomain(ctx)
 	project := util.ParseProject(ctx)
 
-	return bson.M{Domain: domain, Project: project, SchemaServiceID: serviceID, SchemaID: schemaID}
+	return bson.M{ColumnDomain: domain, ColumnProject: project, ColumnServiceID: serviceID, ColumnSchemaID: schemaID}
 }
 
 func GeneratorRuleFilter(ctx context.Context, serviceID, ruleID string) bson.M {
 	domain := util.ParseDomain(ctx)
 	project := util.ParseProject(ctx)
 
-	return bson.M{Domain: domain, Project: project, RuleServiceID: serviceID, RuleRuleID: ruleID}
+	return bson.M{
+		ColumnDomain:    domain,
+		ColumnProject:   project,
+		ColumnServiceID: serviceID,
+		StringBuilder([]string{ColumnRuleInfo, ColumnRuleID}): ruleID}
 }
 
 func GetSchemas(ctx context.Context, filter bson.M) ([]*pb.Schema, error) {
@@ -1346,56 +1377,876 @@ func SchemaExist(ctx context.Context, serviceID, schemaID string) (bool, error) 
 
 // Instance management
 func (ds *DataSource) RegisterInstance(ctx context.Context, request *pb.RegisterInstanceRequest) (*pb.RegisterInstanceResponse, error) {
-	return &pb.RegisterInstanceResponse{}, nil
+	remoteIP := util.GetIPFromContext(ctx)
+	instance := request.Instance
+
+	// 允许自定义 id
+	if len(instance.InstanceId) > 0 {
+		resp, err := ds.Heartbeat(ctx, &pb.HeartbeatRequest{
+			InstanceId: instance.InstanceId,
+			ServiceId:  instance.ServiceId,
+		})
+		if err != nil || resp == nil {
+			log.Error(fmt.Sprintf("register service %s's instance failed, endpoints %s, host '%s', operator %s",
+				instance.ServiceId, instance.Endpoints, instance.HostName, remoteIP), err)
+			return &pb.RegisterInstanceResponse{
+				Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
+			}, nil
+		}
+		switch resp.Response.GetCode() {
+		case pb.ResponseSuccess:
+			log.Info(fmt.Sprintf("register instance successful, reuse instance[%s/%s], operator %s",
+				instance.ServiceId, instance.InstanceId, remoteIP))
+			return &pb.RegisterInstanceResponse{
+				Response:   resp.Response,
+				InstanceId: instance.InstanceId,
+			}, nil
+		case pb.ErrInstanceNotExists:
+			// register a new one
+			return registryInstance(ctx, request)
+		default:
+			log.Error(fmt.Sprintf("register instance failed, reuse instance %s %s, operator %s",
+				instance.ServiceId, instance.InstanceId, remoteIP), err)
+			return &pb.RegisterInstanceResponse{
+				Response: resp.Response,
+			}, err
+		}
+	}
+
+	if err := preProcessRegisterInstance(ctx, instance); err != nil {
+		log.Error(fmt.Sprintf("register service %s instance failed, endpoints %s, host %s operator %s",
+			instance.ServiceId, instance.Endpoints, instance.HostName, remoteIP), err)
+		return &pb.RegisterInstanceResponse{
+			Response: pb.CreateResponseWithSCErr(err),
+		}, nil
+	}
+	return registryInstance(ctx, request)
 }
 
 // GetInstances returns instances under the current domain
 func (ds *DataSource) GetInstance(ctx context.Context, request *pb.GetOneInstanceRequest) (*pb.GetOneInstanceResponse, error) {
-	return &pb.GetOneInstanceResponse{}, nil
+	service := &Service{}
+	var err error
+	if len(request.ConsumerServiceId) > 0 {
+		filter := GeneratorServiceFilter(ctx, request.ConsumerServiceId)
+		service, err = GetService(ctx, filter)
+		if err != nil {
+			log.Error(fmt.Sprintf(" get consumer failed, consumer %s find provider instance %s",
+				request.ConsumerServiceId, request.ProviderInstanceId), err)
+			return &pb.GetOneInstanceResponse{
+				Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
+			}, err
+		}
+		if service == nil {
+			log.Error(fmt.Sprintf("consumer does not exist, consumer %s find provider instance %s %s",
+				request.ConsumerServiceId, request.ProviderServiceId, request.ProviderInstanceId), err)
+			return &pb.GetOneInstanceResponse{
+				Response: pb.CreateResponse(pb.ErrServiceNotExists,
+					fmt.Sprintf("Consumer[%s] does not exist.", request.ConsumerServiceId)),
+			}, nil
+		}
+	}
+
+	filter := GeneratorServiceFilter(ctx, request.ProviderServiceId)
+	provider, err := GetService(ctx, filter)
+	if err != nil {
+		log.Error(fmt.Sprintf("get provider failed, consumer %s find provider instance %s %s",
+			request.ConsumerServiceId, request.ProviderServiceId, request.ProviderInstanceId), err)
+		return &pb.GetOneInstanceResponse{
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
+		}, err
+	}
+	if provider == nil {
+		log.Error(fmt.Sprintf("provider does not exist, consumer %s find provider instance %s %s",
+			request.ConsumerServiceId, request.ProviderServiceId, request.ProviderInstanceId), err)
+		return &pb.GetOneInstanceResponse{
+			Response: pb.CreateResponse(pb.ErrServiceNotExists,
+				fmt.Sprintf("Provider[%s] does not exist.", request.ProviderServiceId)),
+		}, nil
+	}
+
+	findFlag := func() string {
+		return fmt.Sprintf("Consumer[%s][%s/%s/%s/%s] find provider[%s][%s/%s/%s/%s] instance[%s]",
+			request.ConsumerServiceId, service.ServiceInfo.Environment, service.ServiceInfo.AppId, service.ServiceInfo.ServiceName, service.ServiceInfo.Version,
+			provider.ServiceInfo.ServiceId, provider.ServiceInfo.Environment, provider.ServiceInfo.AppId, provider.ServiceInfo.ServiceName, provider.ServiceInfo.Version,
+			request.ProviderInstanceId)
+	}
+
+	domain := util.ParseDomain(ctx)
+	project := util.ParseProject(ctx)
+	filter = bson.M{
+		ColumnDomain:  domain,
+		ColumnProject: project,
+		StringBuilder([]string{ColumnInstanceInfo, ColumnServiceID}): request.ProviderServiceId}
+	findOneRes, err := client.GetMongoClient().FindOne(ctx, CollectionInstance, filter)
+	if err != nil {
+		mes := fmt.Errorf("%s failed, provider instance does not exist", findFlag())
+		log.Error("FindInstances.GetWithProviderID failed", err)
+		return &pb.GetOneInstanceResponse{
+			Response: pb.CreateResponse(pb.ErrInstanceNotExists, mes.Error()),
+		}, nil
+	}
+	var instance Instance
+	err = findOneRes.Decode(&instance)
+	if err != nil {
+		log.Error(fmt.Sprintf("FindInstances.GetWithProviderID failed %s failed", findFlag()), err)
+		return &pb.GetOneInstanceResponse{
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
+		}, err
+	}
+
+	return &pb.GetOneInstanceResponse{
+		Response: pb.CreateResponse(pb.ResponseSuccess, "Get instance successfully."),
+		Instance: instance.InstanceInfo,
+	}, nil
 }
 
 func (ds *DataSource) GetInstances(ctx context.Context, request *pb.GetInstancesRequest) (*pb.GetInstancesResponse, error) {
-	return &pb.GetInstancesResponse{}, nil
+	service := &Service{}
+	var err error
+
+	if len(request.ConsumerServiceId) > 0 {
+		filter := GeneratorServiceFilter(ctx, request.ConsumerServiceId)
+		service, err = GetService(ctx, filter)
+		if err != nil {
+			log.Error(fmt.Sprintf("get consumer failed, consumer %s find provider %sinstances",
+				request.ConsumerServiceId, request.ProviderServiceId), err)
+			return &pb.GetInstancesResponse{
+				Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
+			}, err
+		}
+		if service == nil {
+			log.Error(fmt.Sprintf("consumer does not exist, consumer %s find provider %s instances",
+				request.ConsumerServiceId, request.ProviderServiceId), err)
+			return &pb.GetInstancesResponse{
+				Response: pb.CreateResponse(pb.ErrServiceNotExists,
+					fmt.Sprintf("Consumer[%s] does not exist.", request.ConsumerServiceId)),
+			}, nil
+		}
+	}
+
+	filter := GeneratorServiceFilter(ctx, request.ProviderServiceId)
+	provider, err := GetService(ctx, filter)
+	if err != nil {
+		log.Error(fmt.Sprintf("get provider failed, consumer %s find provider instances %s",
+			request.ConsumerServiceId, request.ProviderServiceId), err)
+		return &pb.GetInstancesResponse{
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
+		}, err
+	}
+	if provider == nil {
+		log.Error(fmt.Sprintf("provider does not exist, consumer %s find provider %s  instances",
+			request.ConsumerServiceId, request.ProviderServiceId), err)
+		return &pb.GetInstancesResponse{
+			Response: pb.CreateResponse(pb.ErrServiceNotExists,
+				fmt.Sprintf("Provider[%s] does not exist.", request.ProviderServiceId)),
+		}, nil
+	}
+
+	findFlag := fmt.Sprintf("Consumer[%s][%s/%s/%s/%s] find provider[%s][%s/%s/%s/%s] instances",
+		request.ConsumerServiceId, service.ServiceInfo.Environment, service.ServiceInfo.AppId, service.ServiceInfo.ServiceName, service.ServiceInfo.Version,
+		provider.ServiceInfo.ServiceId, provider.ServiceInfo.Environment, provider.ServiceInfo.AppId, provider.ServiceInfo.ServiceName, provider.ServiceInfo.Version)
+
+	domain := util.ParseDomain(ctx)
+	project := util.ParseProject(ctx)
+	filter = bson.M{
+		ColumnDomain:  domain,
+		ColumnProject: project,
+		StringBuilder([]string{ColumnInstanceInfo, ColumnServiceID}): request.ProviderServiceId}
+	resp, err := client.GetMongoClient().Find(ctx, CollectionInstance, filter)
+	if err != nil {
+		log.Error(fmt.Sprintf("FindInstancesCache.Get failed %s failed", findFlag), err)
+		return &pb.GetInstancesResponse{
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
+		}, err
+	}
+	if resp == nil {
+		mes := fmt.Errorf("%s failed, provider does not exist", findFlag)
+		log.Error("FindInstancesCache.Get failed", mes)
+		return &pb.GetInstancesResponse{
+			Response: pb.CreateResponse(pb.ErrServiceNotExists, mes.Error()),
+		}, nil
+	}
+
+	var instances []*pb.MicroServiceInstance
+	for resp.Next(ctx) {
+		var instance Instance
+		err := resp.Decode(&instance)
+		if err != nil {
+			log.Error(fmt.Sprintf("FindInstances.GetWithProviderID failed %s failed", findFlag), err)
+			return &pb.GetInstancesResponse{
+				Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
+			}, err
+		}
+		instances = append(instances, instance.InstanceInfo)
+	}
+
+	return &pb.GetInstancesResponse{
+		Response:  pb.CreateResponse(pb.ResponseSuccess, "Query service instances successfully."),
+		Instances: instances,
+	}, nil
 }
 
 // GetProviderInstances returns instances under the specified domain
 func (ds *DataSource) GetProviderInstances(ctx context.Context, request *pb.GetProviderInstancesRequest) (instances []*pb.MicroServiceInstance, rev string, err error) {
-	return nil, "", nil
+	domain := util.ParseDomain(ctx)
+	project := util.ParseProject(ctx)
+	filter := bson.M{
+		ColumnDomain:  domain,
+		ColumnProject: project,
+		StringBuilder([]string{ColumnInstanceInfo, ColumnServiceID}): request.ProviderServiceId}
+
+	findRes, err := client.GetMongoClient().Find(ctx, CollectionInstance, filter)
+	if err != nil {
+		return
+	}
+
+	for findRes.Next(ctx) {
+		var mongoInstance Instance
+		err := findRes.Decode(&mongoInstance)
+		if err == nil {
+			instances = append(instances, mongoInstance.InstanceInfo)
+		}
+	}
+
+	return instances, "", nil
 }
 
 func (ds *DataSource) GetAllInstances(ctx context.Context, request *pb.GetAllInstancesRequest) (*pb.GetAllInstancesResponse, error) {
-	return &pb.GetAllInstancesResponse{}, nil
+
+	domain := util.ParseDomain(ctx)
+	project := util.ParseProject(ctx)
+
+	filter := bson.M{ColumnDomain: domain, ColumnProject: project}
+
+	findRes, err := client.GetMongoClient().Find(ctx, CollectionInstance, filter)
+	if err != nil {
+		return nil, err
+	}
+	resp := &pb.GetAllInstancesResponse{
+		Response: pb.CreateResponse(pb.ResponseSuccess, "Get all instances successfully"),
+	}
+
+	for findRes.Next(ctx) {
+		var instance Instance
+		err := findRes.Decode(&instance)
+		if err != nil {
+			return &pb.GetAllInstancesResponse{
+				Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
+			}, err
+		}
+		resp.Instances = append(resp.Instances, instance.InstanceInfo)
+	}
+
+	return resp, nil
 }
 
 func (ds *DataSource) BatchGetProviderInstances(ctx context.Context, request *pb.BatchGetInstancesRequest) (instances []*pb.MicroServiceInstance, rev string, err error) {
-	return nil, "", nil
+	if request == nil || len(request.ServiceIds) == 0 {
+		return nil, "", ErrInvalidParamBatchGetInstancesRequest
+	}
+
+	domain := util.ParseDomain(ctx)
+	project := util.ParseProject(ctx)
+
+	for _, providerServiceID := range request.ServiceIds {
+		filter := bson.M{
+			ColumnDomain:  domain,
+			ColumnProject: project,
+			StringBuilder([]string{ColumnInstanceInfo, ColumnServiceID}): providerServiceID}
+		findRes, err := client.GetMongoClient().Find(ctx, CollectionInstance, filter)
+		if err != nil {
+			return instances, "", nil
+		}
+
+		for findRes.Next(ctx) {
+			var mongoInstance Instance
+			err := findRes.Decode(&mongoInstance)
+			if err == nil {
+				instances = append(instances, mongoInstance.InstanceInfo)
+			}
+		}
+	}
+
+	return instances, "", nil
 }
 
 // FindInstances returns instances under the specified domain
 func (ds *DataSource) FindInstances(ctx context.Context, request *pb.FindInstancesRequest) (*pb.FindInstancesResponse, error) {
-	return &pb.FindInstancesResponse{}, nil
+	provider := &pb.MicroServiceKey{
+		Tenant:      util.ParseTargetDomainProject(ctx),
+		Environment: request.Environment,
+		AppId:       request.AppId,
+		ServiceName: request.ServiceName,
+		Alias:       request.ServiceName,
+		Version:     request.VersionRule,
+	}
+
+	return ds.findInstance(ctx, request, provider)
 }
 
 func (ds *DataSource) UpdateInstanceStatus(ctx context.Context, request *pb.UpdateInstanceStatusRequest) (*pb.UpdateInstanceStatusResponse, error) {
-	return &pb.UpdateInstanceStatusResponse{}, nil
+	updateStatusFlag := util.StringJoin([]string{request.ServiceId, request.InstanceId, request.Status}, "/")
+
+	// todo finish get instance
+	instance, err := GetInstance(ctx, request.ServiceId, request.InstanceId)
+	if err != nil {
+		log.Error(fmt.Sprintf("update instance %s status failed", updateStatusFlag), err)
+		return &pb.UpdateInstanceStatusResponse{
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
+		}, err
+	}
+	if instance == nil {
+		log.Error(fmt.Sprintf("update instance %s status failed, instance does not exist", updateStatusFlag), err)
+		return &pb.UpdateInstanceStatusResponse{
+			Response: pb.CreateResponse(pb.ErrInstanceNotExists, "Service instance does not exist."),
+		}, nil
+	}
+
+	copyInstanceRef := *instance
+	copyInstanceRef.InstanceInfo.Status = request.Status
+
+	if err := UpdateInstanceS(ctx, copyInstanceRef.InstanceInfo); err != nil {
+		log.Error(fmt.Sprintf("update instance %s status failed", updateStatusFlag), err)
+		resp := &pb.UpdateInstanceStatusResponse{
+			Response: pb.CreateResponseWithSCErr(err),
+		}
+		if err.InternalError() {
+			return resp, err
+		}
+		return resp, nil
+	}
+
+	log.Infof("update instance[%s] status successfully", updateStatusFlag)
+	return &pb.UpdateInstanceStatusResponse{
+		Response: pb.CreateResponse(pb.ResponseSuccess, "Update service instance status successfully."),
+	}, nil
 }
 
 func (ds *DataSource) UpdateInstanceProperties(ctx context.Context, request *pb.UpdateInstancePropsRequest) (*pb.UpdateInstancePropsResponse, error) {
-	return &pb.UpdateInstancePropsResponse{}, nil
+	instanceFlag := util.StringJoin([]string{request.ServiceId, request.InstanceId}, "/")
+
+	instance, err := GetInstance(ctx, request.ServiceId, request.InstanceId)
+	if err != nil {
+		log.Error(fmt.Sprintf("update instance %s properties failed", instanceFlag), err)
+		return &pb.UpdateInstancePropsResponse{
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
+		}, err
+	}
+	if instance == nil {
+		log.Error(fmt.Sprintf("update instance %s properties failed, instance does not exist", instanceFlag), err)
+		return &pb.UpdateInstancePropsResponse{
+			Response: pb.CreateResponse(pb.ErrInstanceNotExists, "Service instance does not exist."),
+		}, nil
+	}
+
+	copyInstanceRef := *instance
+	copyInstanceRef.InstanceInfo.Properties = request.Properties
+
+	// todo finish update instance
+	if err := UpdateInstanceP(ctx, copyInstanceRef.InstanceInfo); err != nil {
+		log.Error(fmt.Sprintf("update instance %s properties failed", instanceFlag), err)
+		resp := &pb.UpdateInstancePropsResponse{
+			Response: pb.CreateResponseWithSCErr(err),
+		}
+		if err.InternalError() {
+			return resp, err
+		}
+		return resp, nil
+	}
+
+	log.Infof("update instance[%s] properties successfully", instanceFlag)
+	return &pb.UpdateInstancePropsResponse{
+		Response: pb.CreateResponse(pb.ResponseSuccess, "Update service instance properties successfully."),
+	}, nil
 }
 
 func (ds *DataSource) UnregisterInstance(ctx context.Context, request *pb.UnregisterInstanceRequest) (*pb.UnregisterInstanceResponse, error) {
-	return &pb.UnregisterInstanceResponse{}, nil
+	remoteIP := util.GetIPFromContext(ctx)
+	serviceID := request.ServiceId
+	instanceID := request.InstanceId
+
+	instanceFlag := util.StringJoin([]string{serviceID, instanceID}, "/")
+
+	domain := util.ParseDomain(ctx)
+	project := util.ParseProject(ctx)
+	filter := bson.M{
+		ColumnDomain:  domain,
+		ColumnProject: project,
+		StringBuilder([]string{ColumnInstanceInfo, ColumnServiceID}):  serviceID,
+		StringBuilder([]string{ColumnInstanceInfo, ColumnInstanceID}): instanceID}
+	_, err := client.GetMongoClient().Delete(ctx, CollectionInstance, filter)
+	if err != nil {
+		log.Error(fmt.Sprintf("unregister instance failed, instance %s, operator %s revoke instance failed", instanceFlag, remoteIP), err)
+		return &pb.UnregisterInstanceResponse{
+			Response: pb.CreateResponse(pb.ErrInternal, "delete instance failed"),
+		}, err
+	}
+
+	log.Infof("unregister instance[%s], operator %s", instanceFlag, remoteIP)
+	return &pb.UnregisterInstanceResponse{
+		Response: pb.CreateResponse(pb.ResponseSuccess, "Unregister service instance successfully."),
+	}, nil
 }
 
 func (ds *DataSource) Heartbeat(ctx context.Context, request *pb.HeartbeatRequest) (*pb.HeartbeatResponse, error) {
-	return heartbeat.Instance().Heartbeat(ctx, request)
+	remoteIP := util.GetIPFromContext(ctx)
+	instanceFlag := util.StringJoin([]string{request.ServiceId, request.InstanceId}, "/")
+	err := KeepAliveLease(ctx, request)
+	if err != nil {
+		log.Error(fmt.Sprintf("heartbeat failed, instance %s operator %s", instanceFlag, remoteIP), err)
+		resp := &pb.HeartbeatResponse{
+			Response: pb.CreateResponseWithSCErr(err),
+		}
+		if err.InternalError() {
+			return resp, err
+		}
+		return resp, nil
+	}
+	return &pb.HeartbeatResponse{
+		Response: pb.CreateResponse(pb.ResponseSuccess,
+			"Update service instance heartbeat successfully."),
+	}, nil
 }
 
 func (ds *DataSource) HeartbeatSet(ctx context.Context, request *pb.HeartbeatSetRequest) (*pb.HeartbeatSetResponse, error) {
-	return &pb.HeartbeatSetResponse{}, nil
+	domainProject := util.ParseDomainProject(ctx)
+
+	heartBeatCount := len(request.Instances)
+	existFlag := make(map[string]bool, heartBeatCount)
+	instancesHbRst := make(chan *pb.InstanceHbRst, heartBeatCount)
+	noMultiCounter := 0
+
+	for _, heartbeatElement := range request.Instances {
+		if _, ok := existFlag[heartbeatElement.ServiceId+heartbeatElement.InstanceId]; ok {
+			log.Warnf("instance[%s/%s] is duplicate request heartbeat set",
+				heartbeatElement.ServiceId, heartbeatElement.InstanceId)
+			continue
+		} else {
+			existFlag[heartbeatElement.ServiceId+heartbeatElement.InstanceId] = true
+			noMultiCounter++
+		}
+		gopool.Go(getHeartbeatFunc(ctx, domainProject, instancesHbRst, heartbeatElement))
+	}
+
+	count := 0
+	successFlag := false
+	failFlag := false
+	instanceHbRstArr := make([]*pb.InstanceHbRst, 0, heartBeatCount)
+
+	for hbRst := range instancesHbRst {
+		count++
+		if len(hbRst.ErrMessage) != 0 {
+			failFlag = true
+		} else {
+			successFlag = true
+		}
+		instanceHbRstArr = append(instanceHbRstArr, hbRst)
+		if count == noMultiCounter {
+			close(instancesHbRst)
+		}
+	}
+
+	if !failFlag && successFlag {
+		log.Infof("batch update heartbeats[%d] successfully", count)
+		return &pb.HeartbeatSetResponse{
+			Response:  pb.CreateResponse(pb.ResponseSuccess, "Heartbeat set successfully."),
+			Instances: instanceHbRstArr,
+		}, nil
+	}
+
+	log.Info(fmt.Sprintf("batch update heartbeats failed %v", request.Instances))
+	return &pb.HeartbeatSetResponse{
+		Response:  pb.CreateResponse(pb.ErrInstanceNotExists, "Heartbeat set failed."),
+		Instances: instanceHbRstArr,
+	}, nil
 }
 
 func (ds *DataSource) BatchFind(ctx context.Context, request *pb.BatchFindInstancesRequest) (*pb.BatchFindInstancesResponse, error) {
-	return &pb.BatchFindInstancesResponse{}, nil
+	response := &pb.BatchFindInstancesResponse{
+		Response: pb.CreateResponse(pb.ResponseSuccess, "Batch query service instances successfully."),
+	}
+
+	var err error
+
+	response.Services, err = ds.batchFindServices(ctx, request)
+	if err != nil {
+		return &pb.BatchFindInstancesResponse{
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
+		}, err
+	}
+
+	response.Instances, err = ds.batchFindInstances(ctx, request)
+	if err != nil {
+		return &pb.BatchFindInstancesResponse{
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
+		}, err
+	}
+
+	return response, nil
+}
+
+func registryInstance(ctx context.Context, request *pb.RegisterInstanceRequest) (*pb.RegisterInstanceResponse, error) {
+	domain := util.ParseDomain(ctx)
+	project := util.ParseProject(ctx)
+	remoteIP := util.GetIPFromContext(ctx)
+	instance := request.Instance
+	instanceID := instance.InstanceId
+	data := &Instance{
+		Domain:       domain,
+		Project:      project,
+		RefreshTime:  time.Now(),
+		InstanceInfo: instance,
+	}
+
+	instanceFlag := fmt.Sprintf("endpoints %v, host '%s', serviceID %s",
+		instance.Endpoints, instance.HostName, instance.ServiceId)
+
+	insertRes, err := client.GetMongoClient().Insert(ctx, CollectionInstance, data)
+	if err != nil {
+		log.Error(fmt.Sprintf("register instance failed %s instanceID %s operator %s", instanceFlag, instanceID, remoteIP), err)
+		return &pb.RegisterInstanceResponse{
+			Response: pb.CreateResponse(pb.ErrUnavailableBackend, err.Error()),
+		}, err
+	}
+
+	log.Infof("register instance %s, instanceID %s, operator %s",
+		instanceFlag, insertRes.InsertedID, remoteIP)
+	return &pb.RegisterInstanceResponse{
+		Response:   pb.CreateResponse(pb.ResponseSuccess, "Register service instance successfully."),
+		InstanceId: instanceID,
+	}, nil
+}
+
+func (ds *DataSource) findInstance(ctx context.Context, request *pb.FindInstancesRequest, provider *pb.MicroServiceKey) (*pb.FindInstancesResponse, error) {
+	var err error
+	domainProject := util.ParseDomainProject(ctx)
+	service := &Service{ServiceInfo: &pb.MicroService{Environment: request.Environment}}
+	if len(request.ConsumerServiceId) > 0 {
+		filter := GeneratorServiceFilter(ctx, request.ConsumerServiceId)
+		service, err = GetService(ctx, filter)
+		if err != nil {
+			log.Error(fmt.Sprintf("get consumer failed, consumer %s find provider %s/%s/%s/%s",
+				request.ConsumerServiceId, request.Environment, request.AppId, request.ServiceName, request.VersionRule), err)
+			return &pb.FindInstancesResponse{
+				Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
+			}, err
+		}
+		if service == nil {
+			log.Error(fmt.Sprintf("consumer does not exist, consumer %s find provider %s/%s/%s/%s",
+				request.ConsumerServiceId, request.Environment, request.AppId, request.ServiceName, request.VersionRule), err)
+			return &pb.FindInstancesResponse{
+				Response: pb.CreateResponse(pb.ErrServiceNotExists,
+					fmt.Sprintf("Consumer[%s] does not exist.", request.ConsumerServiceId)),
+			}, nil
+		}
+		provider.Environment = service.ServiceInfo.Environment
+	}
+
+	// provider is not a shared micro-service,
+	// only allow shared micro-service instances found request different domains.
+	ctx = util.SetTargetDomainProject(ctx, util.ParseDomain(ctx), util.ParseProject(ctx))
+	provider.Tenant = util.ParseTargetDomainProject(ctx)
+
+	findFlag := fmt.Sprintf("Consumer[%s][%s/%s/%s/%s] find provider[%s/%s/%s/%s]",
+		request.ConsumerServiceId, service.ServiceInfo.Environment, service.ServiceInfo.AppId, service.ServiceInfo.ServiceName, service.ServiceInfo.Version,
+		provider.Environment, provider.AppId, provider.ServiceName, provider.Version)
+
+	domain := util.ParseDomain(ctx)
+	project := util.ParseProject(ctx)
+	resp, err := client.GetMongoClient().Find(ctx, CollectionInstance, bson.M{ColumnDomain: domain, ColumnProject: project})
+	if err != nil {
+		log.Error(fmt.Sprintf("FindInstancesCache.Get failed %s failed", findFlag), err)
+		return &pb.FindInstancesResponse{
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
+		}, err
+	}
+	if resp == nil {
+		mes := fmt.Errorf("%s failed, provider does not exist", findFlag)
+		log.Error("FindInstancesCache.Get failed", mes)
+		return &pb.FindInstancesResponse{
+			Response: pb.CreateResponse(pb.ErrServiceNotExists, mes.Error()),
+		}, nil
+	}
+
+	var instances []*pb.MicroServiceInstance
+	for resp.Next(ctx) {
+		var instance Instance
+		err := resp.Decode(&instance)
+		if err != nil {
+			log.Error(fmt.Sprintf("FindInstances.GetWithProviderID failed %s failed", findFlag), err)
+			return &pb.FindInstancesResponse{
+				Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
+			}, err
+		}
+		instances = append(instances, instance.InstanceInfo)
+	}
+
+	// add dependency queue
+	if len(request.ConsumerServiceId) > 0 &&
+		len(instances) > 0 {
+		provider, err = ds.reshapeProviderKey(ctx, provider, instances[0].ServiceId)
+		if err != nil {
+			return nil, err
+		}
+		if provider != nil {
+			err = AddServiceVersionRule(ctx, domainProject, service.ServiceInfo, provider)
+		} else {
+			mes := fmt.Errorf("%s failed, provider does not exist", findFlag)
+			log.Error("AddServiceVersionRule failed", mes)
+			return &pb.FindInstancesResponse{
+				Response: pb.CreateResponse(pb.ErrServiceNotExists, mes.Error()),
+			}, nil
+		}
+		if err != nil {
+			log.Error(fmt.Sprintf("AddServiceVersionRule failed %s failed", findFlag), err)
+			return &pb.FindInstancesResponse{
+				Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
+			}, err
+		}
+	}
+
+	return &pb.FindInstancesResponse{
+		Response:  pb.CreateResponse(pb.ResponseSuccess, "Query service instances successfully."),
+		Instances: instances,
+	}, nil
+}
+
+func (ds *DataSource) reshapeProviderKey(ctx context.Context, provider *pb.MicroServiceKey, providerID string) (
+	*pb.MicroServiceKey, error) {
+	//维护version的规则,service name 可能是别名，所以重新获取
+	filter := GeneratorServiceFilter(ctx, providerID)
+	providerService, err := GetService(ctx, filter)
+	if providerService == nil {
+		return nil, err
+	}
+
+	versionRule := provider.Version
+	provider = pb.MicroServiceToKey(provider.Tenant, providerService.ServiceInfo)
+	provider.Version = versionRule
+	return provider, nil
+}
+
+func AddServiceVersionRule(ctx context.Context, domainProject string, consumer *pb.MicroService, provider *pb.MicroServiceKey) error {
+	return nil
+}
+
+func GetInstance(ctx context.Context, serviceID string, instanceID string) (*Instance, error) {
+	domain := util.ParseDomain(ctx)
+	project := util.ParseProject(ctx)
+	filter := bson.M{
+		ColumnDomain:  domain,
+		ColumnProject: project,
+		StringBuilder([]string{ColumnInstanceInfo, ColumnServiceID}):  serviceID,
+		StringBuilder([]string{ColumnInstanceInfo, ColumnInstanceID}): instanceID}
+	findRes, err := client.GetMongoClient().FindOne(ctx, CollectionInstance, filter)
+	if err != nil {
+		return nil, err
+	}
+	var instance *Instance
+	if findRes.Err() != nil {
+		//not get any service,not db err
+		return nil, nil
+	}
+	err = findRes.Decode(&instance)
+	if err != nil {
+		return nil, err
+	}
+	return instance, nil
+}
+
+func UpdateInstanceS(ctx context.Context, instance *pb.MicroServiceInstance) *pb.Error {
+	domain := util.ParseDomain(ctx)
+	project := util.ParseProject(ctx)
+	filter := bson.M{
+		ColumnDomain:  domain,
+		ColumnProject: project,
+		StringBuilder([]string{ColumnInstanceInfo, ColumnServiceID}):  instance.ServiceId,
+		StringBuilder([]string{ColumnInstanceInfo, ColumnInstanceID}): instance.InstanceId}
+	_, err := client.GetMongoClient().Update(ctx, CollectionInstance, filter, bson.M{"$set": bson.M{"instance.motTimestamp": strconv.FormatInt(time.Now().Unix(), 10), "instance.status": instance.Status}})
+	if err != nil {
+		return pb.NewError(pb.ErrUnavailableBackend, err.Error())
+	}
+	return nil
+}
+
+func UpdateInstanceP(ctx context.Context, instance *pb.MicroServiceInstance) *pb.Error {
+	domain := util.ParseDomain(ctx)
+	project := util.ParseProject(ctx)
+	filter := bson.M{
+		ColumnDomain:  domain,
+		ColumnProject: project,
+		StringBuilder([]string{ColumnInstanceInfo, ColumnServiceID}):  instance.ServiceId,
+		StringBuilder([]string{ColumnInstanceInfo, ColumnInstanceID}): instance.InstanceId}
+	_, err := client.GetMongoClient().Update(ctx, CollectionInstance, filter, bson.M{"$set": bson.M{"instance.motTimestamp": strconv.FormatInt(time.Now().Unix(), 10), "instance.properties": instance.Properties}})
+	if err != nil {
+		return pb.NewError(pb.ErrUnavailableBackend, err.Error())
+	}
+	return nil
+}
+
+func KeepAliveLease(ctx context.Context, request *pb.HeartbeatRequest) *pb.Error {
+	_, err := heartbeat.Instance().Heartbeat(ctx, request)
+	if err != nil {
+		return pb.NewError(pb.ErrInstanceNotExists, err.Error())
+	}
+	return nil
+}
+
+func getHeartbeatFunc(ctx context.Context, domainProject string, instancesHbRst chan<- *pb.InstanceHbRst, element *pb.HeartbeatSetElement) func(context.Context) {
+	return func(_ context.Context) {
+		hbRst := &pb.InstanceHbRst{
+			ServiceId:  element.ServiceId,
+			InstanceId: element.InstanceId,
+			ErrMessage: "",
+		}
+
+		req := &pb.HeartbeatRequest{
+			InstanceId: element.InstanceId,
+			ServiceId:  element.ServiceId,
+		}
+
+		err := KeepAliveLease(ctx, req)
+		if err != nil {
+			hbRst.ErrMessage = err.Error()
+			log.Error(fmt.Sprintf("heartbeat set failed %s %s", element.ServiceId, element.InstanceId), err)
+		}
+		instancesHbRst <- hbRst
+	}
+}
+
+func (ds *DataSource) batchFindServices(ctx context.Context, request *pb.BatchFindInstancesRequest) (
+	*pb.BatchFindResult, error) {
+	if len(request.Services) == 0 {
+		return nil, nil
+	}
+	cloneCtx := util.CloneContext(ctx)
+
+	services := &pb.BatchFindResult{}
+	failedResult := make(map[int32]*pb.FindFailedResult)
+	for index, key := range request.Services {
+		findCtx := util.SetContext(cloneCtx, util.CtxRequestRevision, key.Rev)
+		resp, err := ds.FindInstances(findCtx, &pb.FindInstancesRequest{
+			ConsumerServiceId: request.ConsumerServiceId,
+			AppId:             key.Service.AppId,
+			ServiceName:       key.Service.ServiceName,
+			VersionRule:       key.Service.Version,
+			Environment:       key.Service.Environment,
+		})
+		if err != nil {
+			return nil, err
+		}
+		failed, ok := failedResult[resp.Response.GetCode()]
+		AppendFindResponse(findCtx, int64(index), resp.Response, resp.Instances,
+			&services.Updated, &services.NotModified, &failed)
+		if !ok && failed != nil {
+			failedResult[resp.Response.GetCode()] = failed
+		}
+	}
+	for _, result := range failedResult {
+		services.Failed = append(services.Failed, result)
+	}
+	return services, nil
+}
+
+func (ds *DataSource) batchFindInstances(ctx context.Context, request *pb.BatchFindInstancesRequest) (*pb.BatchFindResult, error) {
+	if len(request.Instances) == 0 {
+		return nil, nil
+	}
+	cloneCtx := util.CloneContext(ctx)
+	// can not find the shared provider instances
+	cloneCtx = util.SetTargetDomainProject(cloneCtx, util.ParseDomain(ctx), util.ParseProject(ctx))
+
+	instances := &pb.BatchFindResult{}
+	failedResult := make(map[int32]*pb.FindFailedResult)
+	for index, key := range request.Instances {
+		getCtx := util.SetContext(cloneCtx, util.CtxRequestRevision, key.Rev)
+		resp, err := ds.GetInstance(getCtx, &pb.GetOneInstanceRequest{
+			ConsumerServiceId:  request.ConsumerServiceId,
+			ProviderServiceId:  key.Instance.ServiceId,
+			ProviderInstanceId: key.Instance.InstanceId,
+		})
+		if err != nil {
+			return nil, err
+		}
+		failed, ok := failedResult[resp.Response.GetCode()]
+		AppendFindResponse(getCtx, int64(index), resp.Response, []*pb.MicroServiceInstance{resp.Instance},
+			&instances.Updated, &instances.NotModified, &failed)
+		if !ok && failed != nil {
+			failedResult[resp.Response.GetCode()] = failed
+		}
+	}
+	for _, result := range failedResult {
+		instances.Failed = append(instances.Failed, result)
+	}
+	return instances, nil
+}
+
+func AppendFindResponse(ctx context.Context, index int64, resp *pb.Response, instances []*pb.MicroServiceInstance,
+	updatedResult *[]*pb.FindResult, notModifiedResult *[]int64, failedResult **pb.FindFailedResult) {
+	if code := resp.GetCode(); code != pb.ResponseSuccess {
+		if *failedResult == nil {
+			*failedResult = &pb.FindFailedResult{
+				Error: pb.NewError(code, resp.GetMessage()),
+			}
+		}
+		(*failedResult).Indexes = append((*failedResult).Indexes, index)
+		return
+	}
+	iv, _ := ctx.Value(util.CtxRequestRevision).(string)
+	ov, _ := ctx.Value(util.CtxResponseRevision).(string)
+	if len(iv) > 0 && iv == ov {
+		*notModifiedResult = append(*notModifiedResult, index)
+		return
+	}
+	*updatedResult = append(*updatedResult, &pb.FindResult{
+		Index:     index,
+		Instances: instances,
+		Rev:       ov,
+	})
+}
+
+func preProcessRegisterInstance(ctx context.Context, instance *pb.MicroServiceInstance) *pb.Error {
+	if len(instance.Status) == 0 {
+		instance.Status = pb.MSI_UP
+	}
+
+	if len(instance.InstanceId) == 0 {
+		instance.InstanceId = uuid.Generator().GetInstanceID(ctx)
+	}
+
+	instance.Timestamp = strconv.FormatInt(time.Now().Unix(), 10)
+	instance.ModTimestamp = instance.Timestamp
+
+	// 这里应该根据租约计时
+	renewalInterval := apt.RegistryDefaultLeaseRenewalinterval
+	retryTimes := apt.RegistryDefaultLeaseRetrytimes
+	if instance.HealthCheck == nil {
+		instance.HealthCheck = &pb.HealthCheck{
+			Mode:     pb.CHECK_BY_HEARTBEAT,
+			Interval: renewalInterval,
+			Times:    retryTimes,
+		}
+	} else {
+		// Health check对象仅用于呈现服务健康检查逻辑，如果CHECK_BY_PLATFORM类型，表明由sidecar代发心跳，实例120s超时
+		switch instance.HealthCheck.Mode {
+		case pb.CHECK_BY_HEARTBEAT:
+			d := instance.HealthCheck.Interval * (instance.HealthCheck.Times + 1)
+			if d <= 0 {
+				return pb.NewError(pb.ErrInvalidParams, "Invalid 'healthCheck' settings in request body.")
+			}
+		case pb.CHECK_BY_PLATFORM:
+			// 默认120s
+			instance.HealthCheck.Interval = renewalInterval
+			instance.HealthCheck.Times = retryTimes
+		}
+	}
+
+	filter := GeneratorServiceFilter(ctx, instance.ServiceId)
+	microservice, err := GetService(ctx, filter)
+	if microservice == nil || err != nil {
+		return pb.NewError(pb.ErrServiceNotExists, "Invalid 'serviceID' in request body.")
+	}
+	instance.Version = microservice.ServiceInfo.Version
+	return nil
 }

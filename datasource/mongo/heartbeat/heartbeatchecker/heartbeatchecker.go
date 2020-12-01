@@ -24,6 +24,8 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	pb "github.com/go-chassis/cari/discovery"
+
+	"fmt"
 )
 
 func init() {
@@ -41,8 +43,7 @@ func (h *HeartBeatChecker) Heartbeat(ctx context.Context, request *pb.HeartbeatR
 	remoteIP := util.GetIPFromContext(ctx)
 	err := updateInstanceRefreshTime(ctx, request.ServiceId, request.InstanceId)
 	if err != nil {
-		log.Errorf(err, "heartbeat failed, instance[%s]. operator %s",
-			request.InstanceId, remoteIP)
+		log.Error(fmt.Sprintf("heartbeat failed, instance[%s]. operator %s", request.InstanceId, remoteIP), err)
 		resp := &pb.HeartbeatResponse{
 			Response: pb.CreateResponseWithSCErr(pb.NewError(pb.ErrInstanceNotExists, err.Error())),
 		}

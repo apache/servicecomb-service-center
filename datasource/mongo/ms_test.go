@@ -24,11 +24,13 @@ import (
 	"time"
 
 	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/datasource/mongo"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/go-chassis/v2/storage"
 	"github.com/stretchr/testify/assert"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func init() {
@@ -185,34 +187,6 @@ func TestGetService(t *testing.T) {
 
 }
 
-// need mongodb cluster
-//func TestServiceDelete(t *testing.T) {
-//	t.Run("delete service by mongo, should pass", func(t *testing.T) {
-//		request := &pb.CreateServiceRequest{
-//			Service: &pb.MicroService{
-//				ServiceId:   "ms-service-delete-new-id",
-//				ServiceName: "ms-service-delete",
-//				AppId:       "default",
-//				Version:     "1.0.4",
-//				Level:       "BACK",
-//				Properties:  make(map[string]string),
-//			},
-//		}
-//
-//		resp, err := datasource.Instance().RegisterService(getContext(), request)
-//		assert.NoError(t, err)
-//		assert.Equal(t, resp.Response.GetCode(), pb.ResponseSuccess)
-//
-//		res, err := datasource.Instance().UnregisterService(getContext(), &pb.DeleteServiceRequest{
-//			ServiceId: "ms-service-delete-new-id",
-//			Force:     false,
-//		})
-//		fmt.Println(res.Response.Message)
-//		assert.NoError(t, err)
-//		assert.Equal(t, pb.ResponseSuccess, res.Response.GetCode())
-//	})
-//}
-
 func TestUpdateService(t *testing.T) {
 	t.Run("update service by mongo, should pass", func(t *testing.T) {
 		request := &pb.CreateServiceRequest{
@@ -247,7 +221,7 @@ func TestUpdateService(t *testing.T) {
 
 func TestTagsAdd(t *testing.T) {
 	// create service
-	t.Run("create service", func(t *testing.T) {
+	t.Run("create service, the request is valid, should pass", func(t *testing.T) {
 		svc1 := &pb.MicroService{
 			ServiceId:   "service_tag_id",
 			AppId:       "create_tag_group_ms",
@@ -264,7 +238,7 @@ func TestTagsAdd(t *testing.T) {
 	})
 
 	//
-	t.Run("the request is valid", func(t *testing.T) {
+	t.Run("create service, the request is valid, should pass", func(t *testing.T) {
 		defaultQuota := quota.DefaultTagQuota
 		tags := make(map[string]string, defaultQuota)
 		for i := 0; i < defaultQuota; i++ {
@@ -282,7 +256,7 @@ func TestTagsAdd(t *testing.T) {
 }
 
 func TestTagsGet(t *testing.T) {
-	t.Run("create service and add tags", func(t *testing.T) {
+	t.Run("create service and add tags, the request is valid, should pass", func(t *testing.T) {
 		svc := &pb.MicroService{
 			ServiceId:   "get_tag_group_ms_id",
 			AppId:       "get_tag_group_ms",
@@ -318,7 +292,7 @@ func TestTagsGet(t *testing.T) {
 }
 
 func TestTagUpdate(t *testing.T) {
-	t.Run("add service and add tags", func(t *testing.T) {
+	t.Run("add service and add tags, the request is valid, should pass", func(t *testing.T) {
 		svc := &pb.MicroService{
 			ServiceId:   "update_tag_group_ms_id",
 			AppId:       "update_tag_group_ms",
@@ -344,7 +318,7 @@ func TestTagUpdate(t *testing.T) {
 		assert.Equal(t, pb.ResponseSuccess, respAddTags.Response.GetCode())
 	})
 
-	t.Run("the request is valid", func(t *testing.T) {
+	t.Run("the request is valid, should pass", func(t *testing.T) {
 		resp, err := datasource.Instance().UpdateTag(getContext(), &pb.UpdateServiceTagRequest{
 			ServiceId: "update_tag_group_ms_id",
 			Key:       "a",
@@ -356,7 +330,7 @@ func TestTagUpdate(t *testing.T) {
 }
 
 func TestTagsDelete(t *testing.T) {
-	t.Run("create service and add tags", func(t *testing.T) {
+	t.Run("create service and add tags, the request is valid, should pass", func(t *testing.T) {
 		resp, err := datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
 				ServiceId:   "delete_tag_group_ms_id",
@@ -380,7 +354,7 @@ func TestTagsDelete(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, respAddTages.Response.GetCode())
 	})
-	t.Run("the request is valid", func(t *testing.T) {
+	t.Run("the request is valid, should pass", func(t *testing.T) {
 		resp, err := datasource.Instance().DeleteTags(getContext(), &pb.DeleteServiceTagsRequest{
 			ServiceId: "delete_tag_group_ms_id",
 			Keys:      []string{"b"},
@@ -398,7 +372,7 @@ func TestTagsDelete(t *testing.T) {
 }
 
 func TestRuleAdd(t *testing.T) {
-	t.Run("register service and datasource.Instance()", func(t *testing.T) {
+	t.Run("register service, the request is valid, should pass", func(t *testing.T) {
 		respCreateService, err := datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
 				ServiceId:   "create_rule_group_ms_id",
@@ -412,7 +386,7 @@ func TestRuleAdd(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 	})
-	t.Run("request is valid", func(t *testing.T) {
+	t.Run("register service, the request is valid, should pass", func(t *testing.T) {
 		respAddRule, err := datasource.Instance().AddRule(getContext(), &pb.AddServiceRulesRequest{
 			ServiceId: "create_rule_group_ms_id",
 			Rules: []*pb.AddOrUpdateServiceRule{
@@ -429,7 +403,7 @@ func TestRuleAdd(t *testing.T) {
 		ruleId := respAddRule.RuleIds[0]
 		assert.NotEqual(t, "", ruleId)
 	})
-	t.Run("request rule is already exist", func(t *testing.T) {
+	t.Run("request rule is already exist, should pass", func(t *testing.T) {
 		respAddRule, err := datasource.Instance().AddRule(getContext(), &pb.AddServiceRulesRequest{
 			ServiceId: "create_rule_group_ms_id",
 			Rules: []*pb.AddOrUpdateServiceRule{
@@ -448,7 +422,7 @@ func TestRuleAdd(t *testing.T) {
 }
 
 func TestRuleGet(t *testing.T) {
-	t.Run("register service and rules", func(t *testing.T) {
+	t.Run("register service and rules, the request is valid, should pass", func(t *testing.T) {
 		respCreateService, err := datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
 				ServiceId:   "get_rule_group_ms_id",
@@ -478,7 +452,7 @@ func TestRuleGet(t *testing.T) {
 		ruleId := respAddRule.RuleIds[0]
 		assert.NotEqual(t, "", ruleId)
 	})
-	t.Run("get when request is valid", func(t *testing.T) {
+	t.Run("get rule,  when request is valid, should pass", func(t *testing.T) {
 		respGetRule, err := datasource.Instance().GetRules(getContext(), &pb.GetServiceRulesRequest{
 			ServiceId: "get_rule_group_ms_id",
 		})
@@ -490,7 +464,7 @@ func TestRuleGet(t *testing.T) {
 
 func TestRuleDelete(t *testing.T) {
 	var ruleId string
-	t.Run("register service and rules", func(t *testing.T) {
+	t.Run("register service and rules, when request is valid, should pass", func(t *testing.T) {
 		respCreateService, err := datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
 				ServiceId:   "delete_rule_group_ms_id",
@@ -519,7 +493,7 @@ func TestRuleDelete(t *testing.T) {
 		assert.Equal(t, pb.ResponseSuccess, respAddRule.Response.GetCode())
 		ruleId = respAddRule.RuleIds[0]
 	})
-	t.Run("delete when request is valid", func(t *testing.T) {
+	t.Run("delete rule, when request is valid, should pass", func(t *testing.T) {
 		resp, err := datasource.Instance().DeleteRule(getContext(), &pb.DeleteServiceRulesRequest{
 			ServiceId: "delete_rule_group_ms_id",
 			RuleIds:   []string{ruleId},
@@ -538,7 +512,7 @@ func TestRuleDelete(t *testing.T) {
 
 func TestRuleUpdate(t *testing.T) {
 	var ruleId string
-	t.Run("create service and rules", func(t *testing.T) {
+	t.Run("create service and rules, when request is valid, should pass", func(t *testing.T) {
 		respCreateService, err := datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
 				ServiceId:   "update_rule_group_ms_id",
@@ -568,7 +542,7 @@ func TestRuleUpdate(t *testing.T) {
 		assert.NotEqual(t, "", respAddRule.RuleIds[0])
 		ruleId = respAddRule.RuleIds[0]
 	})
-	t.Run("update when request is valid", func(t *testing.T) {
+	t.Run("update rule, when request is valid, should pass", func(t *testing.T) {
 		resp, err := datasource.Instance().UpdateRule(getContext(), &pb.UpdateServiceRuleRequest{
 			ServiceId: "update_rule_group_ms_id",
 			RuleId:    ruleId,
@@ -584,70 +558,500 @@ func TestRuleUpdate(t *testing.T) {
 	})
 }
 
-// 需要多集群mongo支持
-//func TestSchema(t *testing.T) {
-//	t.Run("create a schema in production env", func(t *testing.T) {
-//		respCreateService, err := datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
-//			Service: &pb.MicroService{
-//				ServiceId:   "create_schema_prod_service_ms_id1",
-//				AppId:       "create_schema_prod_service_ms",
-//				ServiceName: "create_schema_service_service_ms",
-//				Version:     "1.0.0",
-//				Level:       "FRONT",
-//				Status:      pb.MS_UP,
-//				Environment: pb.ENV_PROD,
-//			},
-//		})
-//		assert.NoError(t, err)
-//		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
-//
-//		respCreateService, err = datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
-//			Service: &pb.MicroService{
-//				ServiceId:   "create_schema_prod_service_ms_id2",
-//				AppId:       "create_schema_prod_service_ms",
-//				ServiceName: "create_schema_service_service_ms",
-//				Version:     "1.0.1",
-//				Level:       "FRONT",
-//				Schemas: []string{
-//					"first_schemaId_service_ms",
-//					"second_schemaId_service_ms",
-//				},
-//				Status:      pb.MS_UP,
-//				Environment: pb.ENV_PROD,
-//			},
-//		})
-//		assert.NoError(t, err)
-//		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
-//
-//		respModifySchema, err := datasource.Instance().ModifySchema(getContext(), &pb.ModifySchemaRequest{
-//			ServiceId: "create_schema_prod_service_ms_id1",
-//			SchemaId:  "first_schemaId_service_ms",
-//			Schema:    "first_schema_service_ms",
-//		})
-//		assert.NoError(t, err)
-//		assert.Equal(t, pb.ResponseSuccess, respModifySchema.Response.GetCode())
-//
-//		respModifySchema, err = datasource.Instance().ModifySchema(getContext(), &pb.ModifySchemaRequest{
-//			ServiceId: "create_schema_prod_service_ms_id1",
-//			SchemaId:  "first_schemaId_service_ms",
-//			Schema:    "first_schema_change_service_ms",
-//			Summary:   "first0summary1change_service_ms",
-//		})
-//		assert.NoError(t, err)
-//		assert.Equal(t, pb.ResponseSuccess, respModifySchema.Response.GetCode())
-//		existRes, err := datasource.Instance().ExistSchema(getContext(), &pb.GetExistenceRequest{
-//			ServiceId: "create_schema_prod_service_ms_id1",
-//			SchemaId:  "first_schemaId_service_ms",
-//		})
-//		assert.NoError(t, err)
-//		assert.Equal(t, pb.ResponseSuccess, existRes.Response.GetCode())
-//		assert.Equal(t, "first0summary1change_service_ms", existRes.Summary)
-//
-//		resSchemas, err := datasource.Instance().GetAllSchemas(getContext(), &pb.GetAllSchemaRequest{
-//			ServiceId:  "create_schema_prod_service_ms_id1",
-//			WithSchema: true,
-//		})
-//		assert.NoError(t, err)
-//		assert.Equal(t, 1, len(resSchemas.Schemas))
-//	})
-//}
+func TestInstance_Creat(t *testing.T) {
+	var serviceId string
+
+	t.Run("create service, when request is valid, should pass", func(t *testing.T) {
+		insertRes, err := datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				ServiceId:   "service1",
+				ServiceName: "create_instance_service_ms",
+				AppId:       "create_instance_ms",
+				Version:     "1.0.0",
+				Level:       "FRONT",
+				Status:      pb.MS_UP,
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, insertRes.Response.GetCode())
+		serviceId = insertRes.ServiceId
+	})
+
+	t.Run("register instance, when request is valid, should pass", func(t *testing.T) {
+		respCreateInst, err := datasource.Instance().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
+			Instance: &pb.MicroServiceInstance{
+				ServiceId: serviceId,
+				Endpoints: []string{
+					"createInstance_ms:127.0.0.1:8080",
+				},
+				HostName: "UT-HOST",
+				Status:   pb.MSI_UP,
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, respCreateInst.Response.GetCode())
+		assert.NotEqual(t, "ins_instance", respCreateInst.InstanceId)
+
+		respCreateInst, err = datasource.Instance().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
+			Instance: &pb.MicroServiceInstance{
+				InstanceId: "instance2",
+				ServiceId:  serviceId,
+				Endpoints: []string{
+					"createInstance_ms:127.0.0.1:8080",
+				},
+				HostName: "UT-HOST",
+				Status:   pb.MSI_UP,
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, respCreateInst.Response.GetCode())
+		assert.Equal(t, "instance2", respCreateInst.InstanceId)
+	})
+
+	t.Run("update the same instance, should pass", func(t *testing.T) {
+		resp, err := datasource.Instance().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
+			Instance: &pb.MicroServiceInstance{
+				ServiceId:  serviceId,
+				InstanceId: "instance3",
+				Endpoints: []string{
+					"sameInstance:127.0.0.1:8080",
+				},
+				HostName: "UT-HOST",
+				Status:   pb.MSI_UP,
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
+
+		resp, err = datasource.Instance().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
+			Instance: &pb.MicroServiceInstance{
+				ServiceId:  serviceId,
+				InstanceId: "instance4",
+				Endpoints: []string{
+					"sameInstance:127.0.0.1:8080",
+				},
+				HostName: "UT-HOST",
+				Status:   pb.MSI_UP,
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, "instance4", resp.InstanceId)
+	})
+
+	t.Run("delete test data", func(t *testing.T) {
+		_, err := client.GetMongoClient().Delete(getContext(), mongo.CollectionService, bson.M{"domain": "default", "project": "default"})
+		assert.NoError(t, err)
+
+		_, err = client.GetMongoClient().Delete(getContext(), mongo.CollectionInstance, bson.M{"domain": "default", "project": "default"})
+		assert.NoError(t, err)
+	})
+}
+
+func TestInstance_update(t *testing.T) {
+
+	var (
+		serviceId  string
+		instanceId string
+	)
+
+	t.Run("register service and instance, when request is valid, should pass", func(t *testing.T) {
+		respCreateService, err := datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				ServiceId:   "service1",
+				ServiceName: "update_instance_service_ms",
+				AppId:       "update_instance_service_ms",
+				Version:     "1.0.0",
+				Level:       "FRONT",
+				Status:      pb.MS_UP,
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
+		serviceId = respCreateService.ServiceId
+
+		respCreateInstance, err := datasource.Instance().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
+			Instance: &pb.MicroServiceInstance{
+				ServiceId:  serviceId,
+				InstanceId: "instance1",
+				Endpoints: []string{
+					"updateInstance:127.0.0.1:8080",
+				},
+				HostName:   "UT-HOST-MS",
+				Status:     pb.MSI_UP,
+				Properties: map[string]string{"nodeIP": "test"},
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, respCreateInstance.Response.GetCode())
+		instanceId = respCreateInstance.InstanceId
+	})
+
+	t.Run("update instance status, should pass", func(t *testing.T) {
+		respUpdateStatus, err := datasource.Instance().UpdateInstanceStatus(getContext(), &pb.UpdateInstanceStatusRequest{
+			ServiceId:  serviceId,
+			InstanceId: instanceId,
+			Status:     pb.MSI_DOWN,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, respUpdateStatus.Response.GetCode())
+
+		respUpdateStatus, err = datasource.Instance().UpdateInstanceStatus(getContext(), &pb.UpdateInstanceStatusRequest{
+			ServiceId:  serviceId,
+			InstanceId: instanceId,
+			Status:     pb.MSI_OUTOFSERVICE,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, respUpdateStatus.Response.GetCode())
+
+		respUpdateStatus, err = datasource.Instance().UpdateInstanceStatus(getContext(), &pb.UpdateInstanceStatusRequest{
+			ServiceId:  serviceId,
+			InstanceId: instanceId,
+			Status:     pb.MSI_STARTING,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, respUpdateStatus.Response.GetCode())
+
+		respUpdateStatus, err = datasource.Instance().UpdateInstanceStatus(getContext(), &pb.UpdateInstanceStatusRequest{
+			ServiceId:  serviceId,
+			InstanceId: instanceId,
+			Status:     pb.MSI_TESTING,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, respUpdateStatus.Response.GetCode())
+
+		respUpdateStatus, err = datasource.Instance().UpdateInstanceStatus(getContext(), &pb.UpdateInstanceStatusRequest{
+			ServiceId:  serviceId,
+			InstanceId: instanceId,
+			Status:     pb.MSI_UP,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, respUpdateStatus.Response.GetCode())
+
+		respUpdateStatus, err = datasource.Instance().UpdateInstanceStatus(getContext(), &pb.UpdateInstanceStatusRequest{
+			ServiceId:  serviceId,
+			InstanceId: "notexistins",
+			Status:     pb.MSI_STARTING,
+		})
+		assert.NoError(t, err)
+		assert.NotEqual(t, pb.ResponseSuccess, respUpdateStatus.Response.GetCode())
+	})
+
+	t.Run("update instance properties, should pass", func(t *testing.T) {
+		respUpdateProperties, err := datasource.Instance().UpdateInstanceProperties(getContext(),
+			&pb.UpdateInstancePropsRequest{
+				ServiceId:  serviceId,
+				InstanceId: instanceId,
+				Properties: map[string]string{
+					"test": "test",
+				},
+			})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, respUpdateProperties.Response.GetCode())
+
+		size := 1000
+		properties := make(map[string]string, size)
+		for i := 0; i < size; i++ {
+			s := strconv.Itoa(i) + strings.Repeat("x", 253)
+			properties[s] = s
+		}
+		respUpdateProperties, err = datasource.Instance().UpdateInstanceProperties(getContext(),
+			&pb.UpdateInstancePropsRequest{
+				ServiceId:  serviceId,
+				InstanceId: instanceId,
+				Properties: properties,
+			})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, respUpdateProperties.Response.GetCode())
+
+		respUpdateProperties, err = datasource.Instance().UpdateInstanceProperties(getContext(),
+			&pb.UpdateInstancePropsRequest{
+				ServiceId:  serviceId,
+				InstanceId: "not_exist_ins",
+				Properties: map[string]string{
+					"test": "test",
+				},
+			})
+		assert.NoError(t, err)
+		assert.NotEqual(t, pb.ResponseSuccess, respUpdateProperties.Response.GetCode())
+
+		respUpdateProperties, err = datasource.Instance().UpdateInstanceProperties(getContext(),
+			&pb.UpdateInstancePropsRequest{
+				ServiceId:  serviceId,
+				InstanceId: instanceId,
+			})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, respUpdateProperties.Response.GetCode())
+
+		respUpdateProperties, err = datasource.Instance().UpdateInstanceProperties(getContext(),
+			&pb.UpdateInstancePropsRequest{
+				ServiceId:  "not_exist_service",
+				InstanceId: instanceId,
+				Properties: map[string]string{
+					"test": "test",
+				},
+			})
+		assert.NoError(t, err)
+		assert.NotEqual(t, pb.ResponseSuccess, respUpdateProperties.Response.GetCode())
+	})
+
+	t.Run("delete test data", func(t *testing.T) {
+		_, err := client.GetMongoClient().Delete(getContext(), mongo.CollectionService, bson.M{"domain": "default", "project": "default"})
+		assert.NoError(t, err)
+
+		_, err = client.GetMongoClient().Delete(getContext(), mongo.CollectionInstance, bson.M{"domain": "default", "project": "default"})
+		assert.NoError(t, err)
+	})
+}
+
+func TestInstance_Query(t *testing.T) {
+
+	var (
+		serviceId1  string
+		instanceId1 string
+	)
+
+	t.Run("register services and instance for testInstance_query, when request is invalid, should pass", func(t *testing.T) {
+		insertServiceRes, err := datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				ServiceId:   "service1",
+				AppId:       "query_instance_ms",
+				ServiceName: "query_instance_service_ms",
+				Version:     "1.0.0",
+				Level:       "FRONT",
+				Status:      pb.MS_UP,
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, insertServiceRes.Response.GetCode())
+		serviceId1 = insertServiceRes.ServiceId
+
+		insertInstanceRes, err := datasource.Instance().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
+			Instance: &pb.MicroServiceInstance{
+				InstanceId: "instance1",
+				ServiceId:  serviceId1,
+				HostName:   "UT-HOST-MS",
+				Endpoints: []string{
+					"find:127.0.0.1:8080",
+				},
+				Status: pb.MSI_UP,
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, insertInstanceRes.Response.GetCode())
+		instanceId1 = insertInstanceRes.InstanceId
+	})
+
+	t.Run("query instance, when request is invalid, should pass", func(t *testing.T) {
+		findRes, err := datasource.Instance().FindInstances(getContext(), &pb.FindInstancesRequest{
+			ConsumerServiceId: serviceId1,
+			AppId:             "query_instance_ms",
+			ServiceName:       "query_instance_service_ms",
+			VersionRule:       "latest",
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, findRes.Response.GetCode())
+		assert.Equal(t, instanceId1, findRes.Instances[0].InstanceId)
+	})
+
+	t.Run("batch query instance, when request is invalid, should pass", func(t *testing.T) {
+		respFind, err := datasource.Instance().BatchFind(getContext(), &pb.BatchFindInstancesRequest{
+			ConsumerServiceId: serviceId1,
+			Services: []*pb.FindService{
+				{
+					Service: &pb.MicroServiceKey{
+						AppId:       "query_instance_ms",
+						ServiceName: "query_instance_service_ms",
+						Version:     "latest",
+					},
+				},
+				{
+					Service: &pb.MicroServiceKey{
+						AppId:       "query_instance_ms",
+						ServiceName: "query_instance_service_ms",
+						Version:     "1.0.0+",
+					},
+				},
+				{
+					Service: &pb.MicroServiceKey{
+						AppId:       "query_instance_ms",
+						ServiceName: "query_instance_service_ms",
+						Version:     "0.0.0",
+					},
+				},
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
+		assert.Equal(t, int64(0), respFind.Services.Updated[0].Index)
+
+	})
+
+	t.Run("delete test data", func(t *testing.T) {
+		_, err := client.GetMongoClient().Delete(getContext(), mongo.CollectionService, bson.M{"domain": "default", "project": "default"})
+		assert.NoError(t, err)
+
+		_, err = client.GetMongoClient().Delete(getContext(), mongo.CollectionInstance, bson.M{"domain": "default", "project": "default"})
+		assert.NoError(t, err)
+	})
+}
+
+func TestInstance_GetOne(t *testing.T) {
+
+	var (
+		serviceId1  string
+		serviceId2  string
+		serviceId3  string
+		instanceId2 string
+	)
+
+	t.Run("register service and instances, when request is invalid, should pass", func(t *testing.T) {
+		respCreateService, err := datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				ServiceId:   "service1",
+				AppId:       "get_instance_ms",
+				ServiceName: "get_instance_service_ms",
+				Version:     "1.0.0",
+				Level:       "FRONT",
+				Status:      pb.MS_UP,
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
+		serviceId1 = respCreateService.ServiceId
+
+		respCreateService, err = datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				ServiceId:   "service2",
+				AppId:       "get_instance_ms",
+				ServiceName: "get_instance_service_ms",
+				Version:     "1.0.5",
+				Level:       "FRONT",
+				Status:      pb.MS_UP,
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
+		serviceId2 = respCreateService.ServiceId
+
+		respCreateInstance, err := datasource.Instance().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
+			Instance: &pb.MicroServiceInstance{
+				InstanceId: "instance1",
+				ServiceId:  serviceId2,
+				HostName:   "UT-HOST-MS",
+				Endpoints: []string{
+					"get:127.0.0.2:8080",
+				},
+				Status: pb.MSI_UP,
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
+		instanceId2 = respCreateInstance.InstanceId
+
+		respCreateService, err = datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				ServiceId:   "service3",
+				AppId:       "get_instance_cross_ms",
+				ServiceName: "get_instance_service_ms",
+				Version:     "1.0.0",
+				Level:       "FRONT",
+				Status:      pb.MS_UP,
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
+		serviceId3 = respCreateService.ServiceId
+	})
+
+	t.Run("get between diff apps, when request is invalid, should pass", func(t *testing.T) {
+		resp, err := datasource.Instance().GetInstance(getContext(), &pb.GetOneInstanceRequest{
+			ConsumerServiceId:  serviceId3,
+			ProviderServiceId:  serviceId2,
+			ProviderInstanceId: instanceId2,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
+	})
+
+	t.Run("get instances, when request is invalid, should pass", func(t *testing.T) {
+		resp, err := datasource.Instance().GetInstances(getContext(), &pb.GetInstancesRequest{
+			ConsumerServiceId: "not-exist-service-ms",
+			ProviderServiceId: serviceId2,
+		})
+		assert.NoError(t, err)
+		assert.NotEqual(t, pb.ResponseSuccess, resp.Response.GetCode())
+		resp, err = datasource.Instance().GetInstances(getContext(), &pb.GetInstancesRequest{
+			ConsumerServiceId: serviceId1,
+			ProviderServiceId: serviceId2,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
+	})
+
+	t.Run("delete test data", func(t *testing.T) {
+		_, err := client.GetMongoClient().Delete(getContext(), mongo.CollectionService, bson.M{"domain": "default", "project": "default"})
+		assert.NoError(t, err)
+
+		_, err = client.GetMongoClient().Delete(getContext(), mongo.CollectionInstance, bson.M{"domain": "default", "project": "default"})
+		assert.NoError(t, err)
+	})
+}
+
+func TestInstance_Unregister(t *testing.T) {
+	var (
+		serviceId  string
+		instanceId string
+	)
+
+	t.Run("register service and instances, when request is invalid, should pass", func(t *testing.T) {
+		respCreateService, err := datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				ServiceId:   "service1",
+				AppId:       "unregister_instance_ms",
+				ServiceName: "unregister_instance_service_ms",
+				Version:     "1.0.5",
+				Level:       "FRONT",
+				Status:      pb.MS_UP,
+			},
+			Tags: map[string]string{
+				"test": "test",
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
+		serviceId = respCreateService.ServiceId
+
+		respCreateInstance, err := datasource.Instance().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
+			Instance: &pb.MicroServiceInstance{
+				InstanceId: "instance1",
+				ServiceId:  serviceId,
+				HostName:   "UT-HOST-MS",
+				Endpoints: []string{
+					"unregister:127.0.0.2:8080",
+				},
+				Status: pb.MSI_UP,
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, respCreateInstance.Response.GetCode())
+		instanceId = respCreateInstance.InstanceId
+	})
+
+	t.Run("unregister instance, when request is invalid, should pass", func(t *testing.T) {
+		resp, err := datasource.Instance().UnregisterInstance(getContext(), &pb.UnregisterInstanceRequest{
+			ServiceId:  serviceId,
+			InstanceId: instanceId,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
+	})
+
+	t.Run("delete test data", func(t *testing.T) {
+		_, err := client.GetMongoClient().Delete(getContext(), mongo.CollectionService, bson.M{"domain": "default", "project": "default"})
+		assert.NoError(t, err)
+
+		_, err = client.GetMongoClient().Delete(getContext(), mongo.CollectionInstance, bson.M{"domain": "default", "project": "default"})
+		assert.NoError(t, err)
+	})
+}

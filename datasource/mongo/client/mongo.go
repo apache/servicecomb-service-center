@@ -17,7 +17,7 @@ package client
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"time"
 
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
@@ -55,7 +55,7 @@ func GetMongoClient() *MongoClient {
 func NewMongoClient(config storage.Options) {
 	inst := &MongoClient{}
 	if err := inst.Initialize(config); err != nil {
-		log.Errorf(err, "failed to init mongodb")
+		log.Error("failed to init mongodb", err)
 		inst.err <- err
 	}
 	mc = inst
@@ -86,7 +86,7 @@ func (mc *MongoClient) Ready() <-chan struct{} {
 func (mc *MongoClient) Close() {
 	if mc.client != nil {
 		if err := mc.client.Disconnect(context.TODO()); err != nil {
-			log.Errorf(err, "[close mongo client] failed disconnect the mongo client")
+			log.Error("[close mongo client] failed disconnect the mongo client", err)
 		}
 	}
 }
@@ -107,7 +107,7 @@ func (mc *MongoClient) HealthCheck(ctx context.Context) {
 				if err == nil {
 					break
 				}
-				log.Errorf(err, "retry to connect to mongodb %s after %s", mc.dbconfig.URI, MongoCheckDelay)
+				log.Error(fmt.Sprintf("retry to connect to mongodb %s after %s", mc.dbconfig.URI, MongoCheckDelay), err)
 				select {
 				case <-ctx.Done():
 					mc.Close()
@@ -124,13 +124,13 @@ func (mc *MongoClient) newClient(ctx context.Context) (err error) {
 	mc.client, err = mongo.Connect(ctx, clientOptions)
 	if err != nil {
 		if derr := mc.client.Disconnect(ctx); derr != nil {
-			log.Errorf(derr, "[init mongo client] failed to disconnect mongo client ")
+			log.Error("[init mongo client] failed to disconnect mongo clients", derr)
 		}
 		return
 	}
 	mc.db = mc.client.Database(MongoDB)
 	if mc.db == nil {
-		return errors.New("open db failed")
+		return ErrOpenDbFailed
 	}
 	return nil
 }
