@@ -62,6 +62,9 @@ import (
 	//module 'syncer'
 	_ "github.com/apache/servicecomb-service-center/server/rest/syncer"
 
+	//governance
+	_ "github.com/apache/servicecomb-service-center/server/service/gov/kie"
+
 	//metrics
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/broker"

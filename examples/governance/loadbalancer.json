@@ -1,7 +1,0 @@
-{
-  "name": "adminAPIRetry",
-  "spec": {
-    "match": "traffic2adminAPI",
-    "retryNext": 3
-  }
-}

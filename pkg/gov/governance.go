@@ -22,15 +22,25 @@ package gov
 //Name is the policy name, for example: "rate-limit-payment-api"
 //MD is metadata.
 type GovernancePolicy struct {
-	Name string            `json:"name,omitempty"`
-	MD   map[string]string `json:"metadata,omitempty"`
+	Name       string   `json:"name,omitempty"`
+	ID         string   `json:"id,omitempty"`
+	Status     string   `json:"status,omitempty"`
+	CreatTime  int64    `json:"creatTime,omitempty"`
+	UpdateTime int64    `json:"updateTime,omitempty"`
+	Selector   Selector `json:"selector,omitempty"`
 }
 
-//LoadBalancer define policy and fault tolerant policy
-type LoadBalancer struct {
+//Policy define policy and fault tolerant policy
+type Policy struct {
 	*GovernancePolicy
-	Spec *LBSpec `json:"spec,omitempty"`
+	Spec interface{} `json:"spec,omitempty"`
 }
+
+type Selector struct {
+	App         string `json:"app,omitempty"`
+	Environment string `json:"environment,omitempty"`
+}
+
 type LBSpec struct {
 	MarkerName string         `json:"match"`
 	RetrySame  int            `json:"retrySame,omitempty"`

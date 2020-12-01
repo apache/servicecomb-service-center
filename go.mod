@@ -3,6 +3,7 @@ module github.com/apache/servicecomb-service-center
 replace google.golang.org/grpc => google.golang.org/grpc v1.19.0
 
 require (
+	bou.ke/monkey v1.0.2
 	github.com/NYTimes/gziphandler v1.0.2-0.20180820182813-253f1acb9d9f
 	github.com/Shopify/sarama v1.27.2 // indirect
 	github.com/apache/thrift v0.0.0-20180125231006-3d556248a8b9 // indirect
@@ -15,11 +16,12 @@ require (
 	github.com/coreos/pkg v0.0.0-20180108230652-97fdf19511ea // v4
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/dustin/go-humanize v1.0.0 // indirect
+	github.com/ghodss/yaml v1.0.0
 	github.com/go-chassis/cari v0.0.0-20201124050026-32fbf4d53439
 	github.com/go-chassis/foundation v0.2.0
 	github.com/go-chassis/go-archaius v1.3.6-0.20201130023516-387922b408d0
 	github.com/go-chassis/go-chassis/v2 v2.0.5-0.20201125123124-2d38733810fd
-	github.com/go-chassis/openlog v1.1.2
+	github.com/go-chassis/kie-client v0.0.0-20201127085925-8ad6f8fdd9fc
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/protobuf v1.4.2
 	github.com/gorilla/websocket v1.4.0
@@ -30,6 +32,7 @@ require (
 	github.com/iancoleman/strcase v0.1.2
 	github.com/jonboulle/clockwork v0.2.2 // indirect
 	github.com/karlseguin/ccache v2.0.3-0.20170217060820-3ba9789cfd2c+incompatible
+	github.com/karlseguin/expect v1.0.7 // indirect
 	github.com/labstack/echo v3.2.2-0.20180316170059-a5d81b8d4a62+incompatible
 	github.com/labstack/echo/v4 v4.1.17
 	github.com/mattn/go-runewidth v0.0.9 // indirect
@@ -54,12 +57,14 @@ require (
 	github.com/urfave/cli v1.22.4
 	github.com/widuu/gojson v0.0.0-20170212122013-7da9d2cd949b
 	github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2 // indirect
+	go.etcd.io/bbolt v1.3.5 // indirect
 	go.mongodb.org/mongo-driver v1.4.2
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.10.0
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4
 	google.golang.org/grpc v1.33.1
+	gopkg.in/cheggaaa/pb.v1 v1.0.28 // indirect
 	gopkg.in/yaml.v2 v2.3.0
 	k8s.io/api v0.17.0
 	k8s.io/apimachinery v0.17.0

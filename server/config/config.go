@@ -50,7 +50,7 @@ var Configurations = &Config{}
 var ServerInfo = NewServerInformation()
 
 //GetGov return governance configs
-func GetGov() Gov {
+func GetGov() *Gov {
 	return Configurations.Gov
 }
 

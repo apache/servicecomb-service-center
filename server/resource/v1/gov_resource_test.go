@@ -10,6 +10,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/gov"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
+	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/resource/v1"
 	svc "github.com/apache/servicecomb-service-center/server/service/gov"
 	"github.com/go-chassis/go-archaius"
@@ -19,6 +20,14 @@ import (
 )
 
 func init() {
+	config.Configurations.Gov = &config.Gov{
+		DistOptions: []config.DistributorOptions{
+			{
+				Name: "mock",
+				Type: "mock",
+			},
+		},
+	}
 	err := svc.Init()
 	if err != nil {
 		log.Fatal("", err)
@@ -32,7 +41,7 @@ func TestAuthResource_Login(t *testing.T) {
 	rest.RegisterServant(&v1.Governance{})
 
 	t.Run("create policy", func(t *testing.T) {
-		b, _ := json.Marshal(&gov.LoadBalancer{
+		b, _ := json.Marshal(&gov.Policy{
 			GovernancePolicy: &gov.GovernancePolicy{Name: "test"},
 			Spec: &gov.LBSpec{
 				Bo: &gov.BackOffPolicy{InitialInterval: 1}}})

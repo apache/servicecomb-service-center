@@ -1,0 +1,277 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+swagger: '2.0'
+info:
+  title: Service Center API
+  version: "4.0.0"
+# the domain of the service
+host: 127.0.0.1:30100
+# array of all schemes that your API supports
+schemes:
+  - http
+  - https
+# will be prefixed to all paths
+produces:
+  - application/json
+paths:
+  /v1/{project}/gov/{kind}:
+    get:
+      description: |
+        查询所有的policy/match-group集合。
+      parameters:
+        - name: x-domain-name
+          in: header
+          type: string
+          default: default
+        - name: project
+          in: path
+          required: true
+          type: string
+        - name: kind
+          in: path
+          required: true
+          type: string
+        - name: app
+          in: query
+          required: false
+          type: string
+        - name: env
+          in: query
+          required: false
+          type: string
+      tags:
+        - base
+      responses:
+        200:
+          description: 版本信息结构体
+          schema:
+            $ref: '#/definitions/GovItemList'
+        400:
+          description: 错误的请求
+          schema:
+            $ref: '#/definitions/Error'
+        500:
+          description: 内部错误
+          schema:
+            $ref: '#/definitions/Error'
+    post:
+      description: |
+        添加一个policy/match-group。
+      parameters:
+        - name: x-domain-name
+          in: header
+          type: string
+          default: default
+        - name: project
+          in: path
+          required: true
+          type: string
+        - name: kind
+          in: path
+          required: true
+          type: string
+        - name: GovItem
+          in: body
+          description: "治理规则"
+          required: true
+          schema:
+            $ref: '#/definitions/GovItem'
+      tags:
+        - base
+      responses:
+        200:
+          description: 治理项结构体
+          schema:
+            $ref: '#/definitions/GovItem'
+        400:
+          description: 错误的请求
+          schema:
+            $ref: '#/definitions/Error'
+        500:
+          description: 内部错误
+          schema:
+            $ref: '#/definitions/Error'
+  /v1/{project}/gov/{kind}/{id}:
+    get:
+      description: |
+        查询指定的policy。
+      parameters:
+        - name: x-domain-name
+          in: header
+          type: string
+          default: default
+        - name: project
+          in: path
+          required: true
+          type: string
+        - name: kind
+          in: path
+          required: true
+          type: string
+        - name: id
+          in: path
+          required: true
+          type: string
+        - name: app
+          in: query
+          required: false
+          type: string
+        - name: env
+          in: query
+          required: false
+          type: string
+      tags:
+        - base
+      responses:
+        200:
+          description: 版本信息结构体
+          schema:
+            $ref: '#/definitions/GovItem'
+        400:
+          description: 错误的请求
+          schema:
+            $ref: '#/definitions/Error'
+        500:
+          description: 内部错误
+          schema:
+            $ref: '#/definitions/Error'
+    put:
+      description: |
+        修改指定的policy。
+      parameters:
+        - name: x-domain-name
+          in: header
+          type: string
+          default: default
+        - name: project
+          in: path
+          required: true
+          type: string
+        - name: kind
+          in: path
+          required: true
+          type: string
+        - name: id
+          in: path
+          required: true
+          type: string
+        - name: GovItem
+          in: body
+          description: "治理规则"
+          required: true
+          schema:
+            $ref: '#/definitions/GovItem'
+      tags:
+        - base
+      responses:
+        200:
+          description: 治理项结构体
+          schema:
+            $ref: '#/definitions/GovItem'
+        400:
+          description: 错误的请求
+          schema:
+            $ref: '#/definitions/Error'
+        500:
+          description: 内部错误
+          schema:
+            $ref: '#/definitions/Error'
+    delete:
+      description: |
+        删除指定的policy。
+      parameters:
+        - name: x-domain-name
+          in: header
+          type: string
+          default: default
+        - name: project
+          in: path
+          required: true
+          type: string
+        - name: kind
+          in: path
+          required: true
+          type: string
+        - name: id
+          in: path
+          required: true
+          type: string
+        - name: GovItem
+          in: body
+          description: "治理规则"
+          required: true
+          schema:
+            $ref: '#/definitions/GovItem'
+      tags:
+        - base
+      responses:
+        200:
+          description: 治理项结构体
+          schema:
+            $ref: '#/definitions/GovItem'
+        400:
+          description: 错误的请求
+          schema:
+            $ref: '#/definitions/Error'
+        500:
+          description: 内部错误
+          schema:
+            $ref: '#/definitions/Error'
+
+definitions:
+  GovItemList:
+    type: object
+    properties:
+      total:
+        type: integer
+        format: int32
+      data:
+        type: array
+        items:
+          $ref: '#/definitions/GovItem'
+  GovItem:
+    type: object
+    properties:
+      name:
+        type: string
+      id:
+        type: string
+      status:
+        type: string
+      creatTime:
+        type: integer
+      updateTime:
+        type: integer
+      selector:
+        $ref: '#/definitions/Selector'
+      spec:
+        type: object
+  Selector:
+    type: object
+    properties:
+      app:
+        type: string
+      environment:
+        type: string
+  Error:
+    type: object
+    properties:
+      errorCode:
+        type: string
+      errorMessage:
+        type: string
+      detail:
+        type: string

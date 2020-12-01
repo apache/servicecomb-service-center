@@ -1,10 +1,10 @@
 {
-  "name": "limitTraffic2adminAPI",
+  "name": "adminAPIRetry",
   "id": "xxx",
   "status": "enabled",
   "createTime": "123",
   "updateTime": "123",
-  "selector" : {
+  "selector": {
     "app": "xx",
     "environment": "xx"
   },
@@ -12,7 +12,7 @@
     "rules": {
       "match": "traffic2adminAPI"
     },
-    "rate": 100,
-    "burst": 10
+    "maxAttempts": 3,
+    "onSame": false
   }
 }

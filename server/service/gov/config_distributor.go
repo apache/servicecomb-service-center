@@ -38,10 +38,11 @@ var distributorPlugins = map[string]NewDistributors{}
 //or service mesh system like istio, linkerd.
 //ConfigDistributor will convert standard servicecomb gov config to concrete spec, that data plane can recognize.
 type ConfigDistributor interface {
-	Create(kind string, spec []byte) error
-	Update(kind string, spec []byte) error
-	Delete(name, kind string) error
-	List(kind string) ([]byte, error)
+	Create(kind, project string, spec []byte) error
+	Update(id, kind, project string, spec []byte) error
+	Delete(id, project string) error
+	List(kind, project, app, env string) ([]byte, error)
+	Get(id, project string) ([]byte, error)
 	Type() string
 	Name() string
 }
@@ -72,13 +73,42 @@ func Init() error {
 	}
 	return nil
 }
-func Create(kind string, spec []byte) error {
+
+func Create(kind, project string, spec []byte) error {
 	var err error
 	for _, cd := range distributors {
-		err = cd.Create(kind, spec)
+		err = cd.Create(kind, project, spec)
 		if err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+func List(kind, project, app, env string) ([]byte, error) {
+	for _, cd := range distributors {
+		return cd.List(kind, project, app, env)
+	}
+	return nil, nil
+}
+
+func Get(id, project string) ([]byte, error) {
+	for _, cd := range distributors {
+		return cd.Get(id, project)
+	}
+	return nil, nil
+}
+
+func Delete(id, project string) error {
+	for _, cd := range distributors {
+		return cd.Delete(id, project)
+	}
+	return nil
+}
+
+func Update(id, kind, project string, spec []byte) error {
+	for _, cd := range distributors {
+		return cd.Update(id, kind, project, spec)
 	}
 	return nil
 }
