@@ -29,15 +29,15 @@ import (
 
 func updateInstanceRefreshTime(ctx context.Context, serviceID string, instanceID string) error {
 	filter := bson.M{
-		mongo.InstanceID: instanceID,
-		mongo.ServiceID:  serviceID,
+		mongo.StringBuilder([]string{mongo.ColumnInstanceInfo, mongo.ColumnInstanceID}): instanceID,
+		mongo.StringBuilder([]string{mongo.ColumnInstanceInfo, mongo.ColumnServiceID}):  serviceID,
 	}
 	update := bson.M{
 		"$set": bson.M{mongo.RefreshTime: time.Now()},
 	}
 	result, err := client.GetMongoClient().FindOneAndUpdate(ctx, mongo.CollectionInstance, filter, update)
 	if err != nil {
-		log.Errorf(err, "failed to update refresh time of instance: ")
+		log.Error("failed to update refresh time of instance: ", err)
 		return err
 	}
 	if result.Err() != nil {

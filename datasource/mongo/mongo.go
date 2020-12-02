@@ -39,7 +39,7 @@ type DataSource struct {
 
 func NewDataSource(opts datasource.Options) (datasource.DataSource, error) {
 	// TODO: construct a reasonable DataSource instance
-	log.Warnf("dependency data source enable etcd mode")
+	log.Warn("dependency data source enable etcd mode")
 
 	inst := &DataSource{
 		SchemaEditable: opts.SchemaEditable,
@@ -71,7 +71,7 @@ func (ds *DataSource) initPlugins() error {
 	kind := config.GetString("registry.heartbeat.kind", "heartbeatchecker", config.WithStandby("heartbeat_plugin"))
 	err := heartbeat.Init(heartbeat.Options{PluginImplName: heartbeat.ImplName(kind)})
 	if err != nil {
-		log.Fatalf(err, "heartbeat init failed")
+		log.Fatal("heartbeat init failed", err)
 		return err
 	}
 	return nil

@@ -19,7 +19,6 @@ package mongo
 
 import (
 	"context"
-	"errors"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
@@ -34,7 +33,7 @@ import (
 func (ds *DataSource) CreateAccount(ctx context.Context, a *rbacframe.Account) error {
 	exist, err := ds.AccountExist(ctx, a.Name)
 	if err != nil {
-		log.Errorf(err, "can not save account info")
+		log.Error("can not save account info", err)
 		return err
 	}
 	if exist {
@@ -42,7 +41,7 @@ func (ds *DataSource) CreateAccount(ctx context.Context, a *rbacframe.Account) e
 	}
 	hash, err := bcrypt.GenerateFromPassword([]byte(a.Password), 14)
 	if err != nil {
-		log.Errorf(err, "pwd hash failed")
+		log.Error("pwd hash failed", err)
 		return err
 	}
 	a.Password = stringutil.Bytes2str(hash)
@@ -86,7 +85,7 @@ func (ds *DataSource) GetAccount(ctx context.Context, key string) (*rbacframe.Ac
 	var account rbacframe.Account
 	err = result.Decode(&account)
 	if err != nil {
-		log.Errorf(err, "Decode account failed: ")
+		log.Error("Decode account failed: ", err)
 		return nil, err
 	}
 	return &account, nil
@@ -106,7 +105,7 @@ func (ds *DataSource) ListAccount(ctx context.Context, key string) ([]*rbacframe
 		var account rbacframe.Account
 		err = cursor.Decode(&account)
 		if err != nil {
-			log.Errorf(err, "Decode account failed: ")
+			log.Error("Decode account failed: ", err)
 			break
 		}
 		accounts = append(accounts, &account)
@@ -142,7 +141,7 @@ func (ds *DataSource) UpdateAccount(ctx context.Context, key string, account *rb
 		return err
 	}
 	if result.ModifiedCount == 0 {
-		return errors.New("UpdateAccount: no data to update")
+		return ErrUpdateNodata
 	}
 	return nil
 }

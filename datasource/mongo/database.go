@@ -32,8 +32,6 @@ const (
 	AccountTokenExpirationTime = "tokenexpirationtime"
 	AccountCurrentPassword     = "currentpassword"
 	AccountStatus              = "status"
-	InstanceID                 = "instanceinfo.instanceid"
-	ServiceID                  = "instanceinfo.serviceid"
 	RefreshTime                = "refreshtime"
 )
 
@@ -43,36 +41,41 @@ const (
 	CollectionSchema   = "schema"
 	CollectionRule     = "rule"
 	CollectionInstance = "instance"
+	CollectionDep      = "dependency"
 )
 
 const (
+	DepsQueueUUID     = "0"
 	ErrorDuplicateKey = 11000
 )
 
 const (
-	Domain             = "domain"
-	Project            = "project"
-	ServiceTag         = "tags"
-	SchemaID           = "schemaid"
-	RuleServiceID      = "serviceid"
-	RuleRuleID         = "ruleinfo.ruleid"
-	SchemaServiceID    = "serviceid"
-	ServiceServiceID   = "serviceinfo.serviceid"
-	ServiceProperty    = "serviceinfo.properties"
-	ServiceModTime     = "serviceinfo.modtimestamp"
-	ServiceEnv         = "serviceinfo.environment"
-	ServiceAppID       = "serviceinfo.appid"
-	ServiceServiceName = "serviceinfo.servicename"
-	ServiceAlias       = "serviceinfo.alias"
-	ServiceVersion     = "serviceinfo.version"
-	ServiceSchemas     = "serviceinfo.schemas"
-	RuleAttribute      = "ruleinfo.attribute"
-	RulePattern        = "ruleinfo.pattern"
-	RuleModTime        = "ruleinfo.modtimestamp"
-	RuleDescription    = "ruleinfo.description"
-	RuleRuletype       = "ruleinfo.ruletype"
-	SchemaInfo         = "schemainfo"
-	SchemaSummary      = "schemasummary"
+	ColumnDomain         = "domain"
+	ColumnProject        = "project"
+	ColumnTag            = "tags"
+	ColumnSchemaID       = "schemaid"
+	ColumnServiceID      = "serviceid"
+	ColumnRuleID         = "ruleid"
+	ColumnServiceInfo    = "serviceinfo"
+	ColumnProperty       = "properties"
+	ColumnModTime        = "modtimestamp"
+	ColumnEnv            = "environment"
+	ColumnAppID          = "appid"
+	ColumnServiceName    = "servicename"
+	ColumnAlias          = "alias"
+	ColumnVersion        = "version"
+	ColumnSchemas        = "schemas"
+	ColumnAttribute      = "attribute"
+	ColumnPattern        = "pattern"
+	ColumnDescription    = "description"
+	ColumnRuleType       = "ruletype"
+	ColumnSchemaInfo     = "schemainfo"
+	ColumnSchemaSummary  = "schemasummary"
+	ColumnConsumer       = "consumer"
+	ColumnDependencyInfo = "dependencyinfo"
+	ColumnRuleInfo       = "ruleinfo"
+	ColumnInstanceInfo   = "instanceinfo"
+	ColumnInstanceID     = "instanceid"
 )
 
 type Service struct {
@@ -103,4 +106,12 @@ type Instance struct {
 	Project      string
 	RefreshTime  time.Time
 	InstanceInfo *pb.MicroServiceInstance
+}
+
+type Dependency struct {
+	Domain         string
+	Project        string
+	ConsumerID     string
+	UUID           string
+	DependencyInfo *pb.ConsumerDependency
 }

@@ -48,11 +48,11 @@ func Init(opts Options) error {
 
 func New(opts Options) (HealthCheck, error) {
 	if opts.PluginImplName == "" {
-		return nil, fmt.Errorf("plugin implement name is nil")
+		return nil, ErrPluginNameNil
 	}
 	f, ok := plugins[opts.PluginImplName]
 	if !ok {
-		return nil, fmt.Errorf("plugin implement not supported [#{opts.PluginImplName}]")
+		return nil, ErrPluginNotSupport
 	}
 	return f(opts)
 }
