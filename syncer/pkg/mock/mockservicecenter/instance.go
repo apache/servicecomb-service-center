@@ -19,10 +19,12 @@ package mockservicecenter
 
 import (
 	"net/http"
+
+	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
 func (m *mockServer) DiscoveryInstances(rw http.ResponseWriter, req *http.Request) {
-	rw.Write([]byte(`{
+	_, err := rw.Write([]byte(`{
   "instances": [
     {
       "instanceId": "7a6be9f861a811e9b3f6fa163eca30e0",
@@ -60,16 +62,28 @@ func (m *mockServer) DiscoveryInstances(rw http.ResponseWriter, req *http.Reques
     }
   ]
 }`))
+	if err != nil {
+		log.Error("", err)
+	}
 }
 
 func (m *mockServer) RegisterInstance(rw http.ResponseWriter, req *http.Request) {
-	rw.Write([]byte(`{"instanceId": "8e0fe4b961a811e981a6fa163e86b81a"}`))
+	_, err := rw.Write([]byte(`{"instanceId": "8e0fe4b961a811e981a6fa163e86b81a"}`))
+	if err != nil {
+		log.Error("", err)
+	}
 }
 
 func (m *mockServer) UnregisterInstance(rw http.ResponseWriter, req *http.Request) {
-	rw.Write([]byte(`{"instanceId": "8e0fe4b961a811e981a6fa163e86b81a"}`))
+	_, err := rw.Write([]byte(`{"instanceId": "8e0fe4b961a811e981a6fa163e86b81a"}`))
+	if err != nil {
+		log.Error("", err)
+	}
 }
 
 func (m *mockServer) Heartbeat(rw http.ResponseWriter, req *http.Request) {
-	rw.Write([]byte(`{"instanceId": "8e0fe4b961a811e981a6fa163e86b81a"}`))
+	_, err := rw.Write([]byte(`{"instanceId": "8e0fe4b961a811e981a6fa163e86b81a"}`))
+	if err != nil {
+		log.Error("", err)
+	}
 }

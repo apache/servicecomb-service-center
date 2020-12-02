@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package servicecenter
 
 import (
@@ -54,8 +55,8 @@ func (s *servicecenter) createService(service *pb.SyncService) string {
 	return serviceID
 }
 
-func (s *servicecenter) registryInstances(domainProject, serviceId string, instance *pb.SyncInstance) string {
-	instanceID, err := s.servicecenter.RegisterInstance(context.Background(), domainProject, serviceId, instance)
+func (s *servicecenter) registryInstances(domainProject, serviceID string, instance *pb.SyncInstance) string {
+	instanceID, err := s.servicecenter.RegisterInstance(context.Background(), domainProject, serviceID, instance)
 	if err != nil {
 		log.Errorf(err, "Servicecenter registry instance failed")
 		return ""

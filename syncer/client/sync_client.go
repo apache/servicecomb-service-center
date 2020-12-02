@@ -45,7 +45,7 @@ func NewSyncClient(addr string, tlsConf *tls.Config) (cli *Client) {
 	if ok {
 		cli = val.(*Client)
 	} else {
-		grpc.InjectClient(func(conn *ggrpc.ClientConn) {
+		err := grpc.InjectClient(func(conn *ggrpc.ClientConn) {
 			cli = &Client{
 				addr: addr,
 				conn: conn,
@@ -53,6 +53,9 @@ func NewSyncClient(addr string, tlsConf *tls.Config) (cli *Client) {
 			}
 			clients.Store(addr, cli)
 		}, grpc.WithAddr(addr), grpc.WithTLSConfig(tlsConf))
+		if err != nil {
+			log.Error("", err)
+		}
 	}
 	return
 }

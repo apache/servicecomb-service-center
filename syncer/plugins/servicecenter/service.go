@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package servicecenter
 
 import (
@@ -59,9 +60,9 @@ func (c *Client) CreateService(ctx context.Context, domainProject string, syncSe
 }
 
 // DeleteService deletes service from servicecenter
-func (c *Client) DeleteService(ctx context.Context, domainProject, serviceId string) error {
+func (c *Client) DeleteService(ctx context.Context, domainProject, serviceID string) error {
 	domain, project := util.FromDomainProject(domainProject)
-	err := c.cli.DeleteService(ctx, domain, project, serviceId)
+	err := c.cli.DeleteService(ctx, domain, project, serviceID)
 	if err != nil {
 		return err
 	}

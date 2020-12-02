@@ -22,6 +22,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/apache/servicecomb-service-center/pkg/log"
+
 	"github.com/apache/servicecomb-service-center/pkg/tlsutil"
 	"github.com/apache/servicecomb-service-center/syncer/config"
 	"github.com/apache/servicecomb-service-center/syncer/etcd"
@@ -79,7 +81,7 @@ func convertGRPCOptions(c *config.Config) []grpc.Option {
 		sslOps := append(tlsutil.DefaultServerTLSOptions(), tlsConfigToOptions(conf)...)
 		tlsConf, err := tlsutil.GetServerTLSConfig(sslOps...)
 		if err != nil {
-
+			log.Error("", err)
 		}
 		opts = append(opts, grpc.WithTLSConfig(tlsConf))
 	}
@@ -96,9 +98,7 @@ func convertTaskOptions(c *config.Config) []task.Option {
 
 func convertSCConfigOption(c *config.Config) []plugins.SCConfigOption {
 	endpoints := make([]string, 0, 10)
-	for _, endpoint := range strings.Split(c.Registry.Address, ",") {
-		endpoints = append(endpoints, endpoint)
-	}
+	endpoints = append(endpoints, strings.Split(c.Registry.Address, ",")...)
 	opts := []plugins.SCConfigOption{plugins.WithEndpoints(endpoints)}
 
 	if c.Registry.TLSMount.Enabled {

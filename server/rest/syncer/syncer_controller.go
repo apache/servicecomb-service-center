@@ -26,16 +26,16 @@ import (
 )
 
 // Syncer 有关的接口
-type SyncerController struct {
+type Controller struct {
 }
 
 // URLPatterns 路由
-func (ctrl *SyncerController) URLPatterns() []rest.Route {
+func (ctrl *Controller) URLPatterns() []rest.Route {
 	return []rest.Route{
 		{Method: http.MethodGet, Path: "/v4/syncer/watch", Func: ctrl.WatchInstance},
 	}
 }
 
-func (ctrl *SyncerController) WatchInstance(w http.ResponseWriter, r *http.Request) {
+func (ctrl *Controller) WatchInstance(w http.ResponseWriter, r *http.Request) {
 	service.ServiceAPI.WatchInstance(w, r)
 }

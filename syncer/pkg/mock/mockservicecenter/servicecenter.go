@@ -23,9 +23,9 @@ import (
 	"net/http/httptest"
 	"strconv"
 
-	"github.com/apache/servicecomb-service-center/server/interceptor"
-
+	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
+	"github.com/apache/servicecomb-service-center/server/interceptor"
 )
 
 const (
@@ -44,14 +44,14 @@ type mockServer struct{}
 
 func (m *mockServer) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{rest.HTTPMethodGet, "/v4/:project/admin/dump", m.GetAll},
-		{rest.HTTPMethodGet, "/v4/:project/registry/existence", m.ServiceExistence},
-		{rest.HTTPMethodPost, "/v4/:project/registry/microservices", m.CreateService},
-		{rest.HTTPMethodDelete, "/v4/:project/registry/microservices/:serviceId", m.DeleteService},
-		{rest.HTTPMethodGet, "/v4/:project/registry/instances", m.DiscoveryInstances},
-		{rest.HTTPMethodPost, "/v4/:project/registry/microservices/:serviceId/instances", m.RegisterInstance},
-		{rest.HTTPMethodDelete, "/v4/:project/registry/microservices/:serviceId/instances/:instanceId", m.UnregisterInstance},
-		{rest.HTTPMethodPut, "/v4/:project/registry/microservices/:serviceId/instances/:instanceId/heartbeat", m.Heartbeat},
+		{Method: rest.HTTPMethodGet, Path: "/v4/:project/admin/dump", Func: m.GetAll},
+		{Method: rest.HTTPMethodGet, Path: "/v4/:project/registry/existence", Func: m.ServiceExistence},
+		{Method: rest.HTTPMethodPost, Path: "/v4/:project/registry/microservices", Func: m.CreateService},
+		{Method: rest.HTTPMethodDelete, Path: "/v4/:project/registry/microservices/:serviceId", Func: m.DeleteService},
+		{Method: rest.HTTPMethodGet, Path: "/v4/:project/registry/instances", Func: m.DiscoveryInstances},
+		{Method: rest.HTTPMethodPost, Path: "/v4/:project/registry/microservices/:serviceId/instances", Func: m.RegisterInstance},
+		{Method: rest.HTTPMethodDelete, Path: "/v4/:project/registry/microservices/:serviceId/instances/:instanceId", Func: m.UnregisterInstance},
+		{Method: rest.HTTPMethodPut, Path: "/v4/:project/registry/microservices/:serviceId/instances/:instanceId/heartbeat", Func: m.Heartbeat},
 	}
 }
 
@@ -65,12 +65,15 @@ func (m *mockServer) WantHandler(rw http.ResponseWriter, req *http.Request) erro
 	if data == "" {
 		return nil
 	}
-	rw.Write([]byte(data))
+	_, err = rw.Write([]byte(data))
+	if err != nil {
+		log.Error("", err)
+	}
 	return errors.New(data)
 }
 
 func (m *mockServer) GetAll(rw http.ResponseWriter, req *http.Request) {
-	rw.Write([]byte(`{
+	_, err := rw.Write([]byte(`{
   "cache": {
     "services": [
       {
@@ -162,4 +165,7 @@ func (m *mockServer) GetAll(rw http.ResponseWriter, req *http.Request) {
     ]
   }
 }`))
+	if err != nil {
+		log.Error("", err)
+	}
 }

@@ -51,7 +51,7 @@ import (
 	_ "github.com/apache/servicecomb-service-center/syncer/task/ticker"
 )
 
-var stopChanErr = errors.New("stopped syncer by stopCh")
+var ErrStopChan = errors.New("stopped syncer by stopCh")
 
 type moduleServer interface {
 	// Starts launches the module server, the returned is not guaranteed that the server is ready
@@ -155,7 +155,7 @@ func (s *Server) Run(ctx context.Context) {
 
 	s.task.Run(ctx)
 
-	go s.NewHttpServer()
+	go s.NewHTTPServer()
 
 	err = s.watchInstance()
 	if err != nil {
@@ -168,7 +168,6 @@ func (s *Server) Run(ctx context.Context) {
 	<-s.stopCh
 
 	s.Stop()
-	return
 }
 
 // Stop Syncer Server
@@ -201,7 +200,7 @@ func (s *Server) startModuleServer(module moduleServer) (err error) {
 	case <-s.stopCh:
 	}
 	s.Stop()
-	return stopChanErr
+	return ErrStopChan
 }
 
 // initialization Initialize the starter of the syncer

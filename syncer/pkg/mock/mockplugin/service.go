@@ -48,9 +48,9 @@ func (c *mockPlugin) CreateService(ctx context.Context, domainProject string, se
 	return "5db1b794aa6f8a875d6e68110260b5491ee7e223", nil
 }
 
-func (c *mockPlugin) DeleteService(ctx context.Context, domainProject, serviceId string) error {
+func (c *mockPlugin) DeleteService(ctx context.Context, domainProject, serviceID string) error {
 	if createServiceHandler != nil {
-		return deleteService(ctx, domainProject, serviceId)
+		return deleteService(ctx, domainProject, serviceID)
 	}
 	return nil
 }

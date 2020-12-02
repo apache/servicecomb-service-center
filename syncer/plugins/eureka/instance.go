@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package eureka
 
 import (
@@ -33,8 +34,8 @@ const (
 )
 
 // RegisterInstance register instance to servicecenter
-func (c *Client) RegisterInstance(ctx context.Context, domainProject, serviceId string, syncInstance *pb.SyncInstance) (string, error) {
-	instance := toInstance(serviceId, syncInstance)
+func (c *Client) RegisterInstance(ctx context.Context, domainProject, serviceID string, syncInstance *pb.SyncInstance) (string, error) {
+	instance := toInstance(serviceID, syncInstance)
 	method := http.MethodPost
 	headers := c.CommonHeaders(method)
 	body, err := json.Marshal(&InstanceRequest{Instance: instance})
@@ -42,7 +43,7 @@ func (c *Client) RegisterInstance(ctx context.Context, domainProject, serviceId 
 		return "", err
 	}
 
-	apiURL := fmt.Sprintf(apiInstances, serviceId)
+	apiURL := fmt.Sprintf(apiInstances, serviceID)
 	resp, err := c.RestDoWithContext(ctx, method, apiURL, headers, body)
 	if err != nil {
 		return "", err
@@ -57,15 +58,15 @@ func (c *Client) RegisterInstance(ctx context.Context, domainProject, serviceId 
 		return "", c.toError(body)
 	}
 
-	return instance.InstanceId, nil
+	return instance.InstanceID, nil
 }
 
 // UnregisterInstance unregister instance from servicecenter
-func (c *Client) UnregisterInstance(ctx context.Context, domainProject, serviceId, instanceId string) error {
+func (c *Client) UnregisterInstance(ctx context.Context, domainProject, serviceID, instanceID string) error {
 	method := http.MethodDelete
 	headers := c.CommonHeaders(method)
 
-	apiURL := fmt.Sprintf(apiInstance, serviceId, instanceId)
+	apiURL := fmt.Sprintf(apiInstance, serviceID, instanceID)
 	resp, err := c.RestDoWithContext(ctx, method, apiURL, headers, nil)
 	if err != nil {
 		return err
@@ -85,10 +86,10 @@ func (c *Client) UnregisterInstance(ctx context.Context, domainProject, serviceI
 }
 
 // Heartbeat sends heartbeat to servicecenter
-func (c *Client) Heartbeat(ctx context.Context, domainProject, serviceId, instanceId string) error {
+func (c *Client) Heartbeat(ctx context.Context, domainProject, serviceID, instanceID string) error {
 	method := http.MethodPut
 	headers := c.CommonHeaders(method)
-	apiURL := fmt.Sprintf(apiInstance, serviceId, instanceId) + "?" + url.Values{"status": {UP}}.Encode()
+	apiURL := fmt.Sprintf(apiInstance, serviceID, instanceID) + "?" + url.Values{"status": {UP}}.Encode()
 	resp, err := c.RestDoWithContext(ctx, method, apiURL, headers, nil)
 	if err != nil {
 		return err

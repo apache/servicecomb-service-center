@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package version
 
 import (
@@ -21,20 +22,19 @@ import (
 )
 
 var (
-	// no need to modify
+	// VERSION no need to modify
 	// please use:
 	// 	go build -ldflags "-X github.com/apache/servicecomb-service-center/syncer/version.VERSION=x.x.x"
 	// to set these values.
-	VERSION   = "0.0.1"
-	BUILD_TAG = "Not provided"
-	TOOL_NAME = "syncer"
+	VERSION  = "0.0.1"
+	BuildTag = "Not provided"
 )
 
 var versionSet version.Set
 
 func init() {
 	versionSet.Version = VERSION
-	versionSet.BuildTag = BUILD_TAG
+	versionSet.BuildTag = BuildTag
 	versionSet.LoadRuntimeInfo()
 }
 

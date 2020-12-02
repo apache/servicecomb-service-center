@@ -19,22 +19,33 @@ package mockservicecenter
 
 import (
 	"net/http"
+
+	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
 func (m *mockServer) ServiceExistence(rw http.ResponseWriter, req *http.Request) {
-	rw.Write([]byte(`{
+	_, err := rw.Write([]byte(`{
     "serviceId": "4042a6a3e5a2893698ae363ea99a69eb63fc51cd"
 }`))
+	if err != nil {
+		log.Error("", err)
+	}
 }
 
 func (m *mockServer) CreateService(rw http.ResponseWriter, req *http.Request) {
-	rw.Write([]byte(`{
+	_, err := rw.Write([]byte(`{
     "serviceId": "4042a6a3e5a2893698ae363ea99a69eb63fc51cd"
 }`))
+	if err != nil {
+		log.Error("", err)
+	}
 }
 
 func (m *mockServer) DeleteService(rw http.ResponseWriter, req *http.Request) {
-	rw.Write([]byte(`{
+	_, err := rw.Write([]byte(`{
     "serviceId": "4042a6a3e5a2893698ae363ea99a69eb63fc51cc"
 }`))
+	if err != nil {
+		log.Error("", err)
+	}
 }

@@ -24,6 +24,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/hashicorp/serf/serf"
 	"github.com/stretchr/testify/assert"
 )
@@ -76,7 +77,10 @@ func TestServerFailed(t *testing.T) {
 
 func TestServerEventHandler(t *testing.T) {
 	svr := defaultServer()
-	startServer(context.Background(), svr)
+	err := startServer(context.Background(), svr)
+	if err != nil {
+		log.Error("", err)
+	}
 	svr.OnceEventHandler(NewEventHandler(MemberJoinFilter(), func(data ...[]byte) bool {
 		t.Log("Once event form member join triggered")
 		return true
@@ -102,8 +106,11 @@ func TestServerEventHandler(t *testing.T) {
 
 func TestUserQuery(t *testing.T) {
 	svr := defaultServer()
-	startServer(context.Background(), svr)
-	err := svr.Query("test-query", []byte("test-data"), func(from string, data []byte) {},
+	err := startServer(context.Background(), svr)
+	if err != nil {
+		log.Error("", err)
+	}
+	err = svr.Query("test-query", []byte("test-data"), func(from string, data []byte) {},
 		WithFilterNodes("syncer-test"),
 		WithFilterTags(map[string]string{"test-key": "test-value"}),
 		WithRequestAck(false),

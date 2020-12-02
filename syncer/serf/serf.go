@@ -88,7 +88,10 @@ func (s *Server) Start(ctx context.Context) {
 			return
 		}
 		s.serf = sf
-		s.Join(s.peerAddr)
+		_, err = s.Join(s.peerAddr)
+		if err != nil {
+			log.Error("", err)
+		}
 		close(s.readyCh)
 		go s.waitEvent(ctx)
 	})
@@ -229,7 +232,7 @@ func (s *Server) Member(node string) *serf.Member {
 }
 
 func (s *Server) responseCallback(resp *serf.QueryResponse, callback CallbackFunc) {
-	hourglass := time.After(resp.Deadline().Sub(time.Now()))
+	hourglass := time.After(time.Until(resp.Deadline()))
 	for {
 		select {
 		case a := <-resp.AckCh():

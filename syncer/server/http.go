@@ -20,7 +20,6 @@ func (s *Server) FullSync(b *rf.Context) {
 	if err != nil {
 		log.Error("", err)
 	}
-	return
 }
 
 func (s *Server) URLPatterns() []rf.Route {
@@ -31,7 +30,7 @@ func (s *Server) URLPatterns() []rf.Route {
 
 //if you use go run main.go instead of binary run, plz export CHASSIS_HOME=/{path}/{to}/server/
 
-func (s *Server) NewHttpServer() {
+func (s *Server) NewHTTPServer() {
 	chassis.RegisterSchema("rest", s)
 	if err := chassis.Init(); err != nil {
 		log.Error("Init failed.", err)

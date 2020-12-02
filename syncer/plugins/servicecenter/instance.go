@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package servicecenter
 
 import (
@@ -24,12 +25,12 @@ import (
 )
 
 // RegisterInstance register instance to servicecenter
-func (c *Client) RegisterInstance(ctx context.Context, domainProject, serviceId string, syncInstance *pb.SyncInstance) (string, error) {
+func (c *Client) RegisterInstance(ctx context.Context, domainProject, serviceID string, syncInstance *pb.SyncInstance) (string, error) {
 	instance := toInstance(syncInstance)
 	instance.InstanceId = ""
-	instance.ServiceId = serviceId
+	instance.ServiceId = serviceID
 	domain, project := util.FromDomainProject(domainProject)
-	instanceID, err := c.cli.RegisterInstance(ctx, domain, project, serviceId, instance)
+	instanceID, err := c.cli.RegisterInstance(ctx, domain, project, serviceID, instance)
 	if err != nil {
 		return "", err
 	}
@@ -37,9 +38,9 @@ func (c *Client) RegisterInstance(ctx context.Context, domainProject, serviceId 
 }
 
 // UnregisterInstance unregister instance from servicecenter
-func (c *Client) UnregisterInstance(ctx context.Context, domainProject, serviceId, instanceId string) error {
+func (c *Client) UnregisterInstance(ctx context.Context, domainProject, serviceID, instanceID string) error {
 	domain, project := util.FromDomainProject(domainProject)
-	err := c.cli.UnregisterInstance(ctx, domain, project, serviceId, instanceId)
+	err := c.cli.UnregisterInstance(ctx, domain, project, serviceID, instanceID)
 	if err != nil {
 		return err
 	}
@@ -47,9 +48,9 @@ func (c *Client) UnregisterInstance(ctx context.Context, domainProject, serviceI
 }
 
 // Heartbeat sends heartbeat to servicecenter
-func (c *Client) Heartbeat(ctx context.Context, domainProject, serviceId, instanceId string) error {
+func (c *Client) Heartbeat(ctx context.Context, domainProject, serviceID, instanceID string) error {
 	domain, project := util.FromDomainProject(domainProject)
-	err := c.cli.Heartbeat(ctx, domain, project, serviceId, instanceId)
+	err := c.cli.Heartbeat(ctx, domain, project, serviceID, instanceID)
 	if err != nil {
 		return err
 	}

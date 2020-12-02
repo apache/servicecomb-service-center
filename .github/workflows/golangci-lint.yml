@@ -1,5 +1,5 @@
 name: golangci-lint
-on: [push, pull_request]
+on: [ push, pull_request ]
 jobs:
   golangci:
     name: lint
@@ -10,4 +10,4 @@ jobs:
         uses: golangci/golangci-lint-action@v2
         with:
           version: v1.29
-          args: --timeout=5m --skip-dirs='test,pkg/registry,.*/controller/(v3|v4)$,.*/bootstrap$,server/broker/brokerpb,examples,syncer,frontend,scctl,integration' --out-format=colored-line-number --enable golint,gocyclo,goimports --skip-files=.*_test.go$
+          args: --timeout=5m --skip-dirs='test,pkg/registry,.*/controller/(v3|v4)$,.*/bootstrap$,server/broker/brokerpb,examples,frontend,scctl,integration' --out-format=colored-line-number --enable golint,gocyclo,goimports --skip-files=.*_test.go$

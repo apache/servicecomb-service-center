@@ -19,7 +19,6 @@ package storage
 
 import (
 	"context"
-	"sync"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
@@ -39,7 +38,6 @@ type Storage interface {
 type storage struct {
 	engine clientv3.KV
 	data   *pb.SyncData
-	lock   sync.RWMutex
 }
 
 func NewStorage(engine clientv3.KV) Storage {
@@ -179,8 +177,8 @@ func (s *storage) DeleteServices(services []*pb.SyncService) {
 }
 
 // DeleteServices Delete services from storage
-func (s *storage) deleteService(serviceId string) {
-	delOp := deleteServiceOp(serviceId)
+func (s *storage) deleteService(serviceID string) {
+	delOp := deleteServiceOp(serviceID)
 	_, err := s.engine.Do(context.Background(), delOp)
 	if err != nil {
 		log.Errorf(err, "Delete service from etcd failed: %s", err)

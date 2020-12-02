@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package plugins
 
 type PluginType int
@@ -22,10 +23,9 @@ const (
 	PluginServicecenter PluginType = iota
 	pluginTotal
 
-	BUILDIN       = "buildin"
-	STATIC        = "static"
-	DYNAMIC       = "dynamic"
-	keyPluginName = "name"
+	BUILDIN = "buildin"
+	STATIC  = "static"
+	DYNAMIC = "dynamic"
 )
 
 func (p PluginType) String() string {

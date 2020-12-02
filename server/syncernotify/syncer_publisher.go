@@ -19,7 +19,6 @@ package syncernotify
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
@@ -36,7 +35,6 @@ func init() {
 
 type Publisher struct {
 	ws        *WebSocket
-	lock      sync.Mutex
 	goroutine *gopool.Pool
 }
 
