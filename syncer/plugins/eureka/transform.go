@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package eureka
 
 import (
@@ -100,7 +101,7 @@ func toSyncInstances(serviceID string, instances []*Instance) []*pb.SyncInstance
 // toSyncInstance transform eureka instance to SyncInstance
 func toSyncInstance(serviceID string, instance *Instance) (syncInstance *pb.SyncInstance) {
 	syncInstance = &pb.SyncInstance{
-		InstanceId: instance.InstanceId,
+		InstanceId: instance.InstanceID,
 		ServiceId:  serviceID,
 		Endpoints:  make([]string, 0, 2),
 		HostName:   instance.HostName,
@@ -129,11 +130,11 @@ func toSyncInstance(serviceID string, instance *Instance) (syncInstance *pb.Sync
 		syncInstance.Endpoints = append(syncInstance.Endpoints, fmt.Sprintf("https://%s:%d", instance.IPAddr, instance.SecurePort.Port))
 	}
 
-	if instance.HealthCheckUrl != "" {
+	if instance.HealthCheckURL != "" {
 		syncInstance.HealthCheck = &pb.HealthCheck{
 			Interval: 30,
 			Times:    3,
-			Url:      instance.HealthCheckUrl,
+			Url:      instance.HealthCheckURL,
 		}
 	}
 
@@ -164,7 +165,7 @@ func toInstance(serviceID string, syncInstance *pb.SyncInstance) (instance *Inst
 				PluginName, syncInstance.InstanceId, matches[0].Kind, matches[0].Bytes)
 		}
 	}
-	instance.InstanceId = syncInstance.InstanceId
+	instance.InstanceID = syncInstance.InstanceId
 	instance.APP = serviceID
 	instance.Status = pb.SyncInstance_Status_name[int32(syncInstance.Status)]
 	instance.OverriddenStatus = UNKNOWN
@@ -212,15 +213,15 @@ func toInstance(serviceID string, syncInstance *pb.SyncInstance) (instance *Inst
 	instance.HostName = ipAddr
 
 	if syncInstance.HealthCheck != nil {
-		instance.HealthCheckUrl = syncInstance.HealthCheck.Url
+		instance.HealthCheckURL = syncInstance.HealthCheck.Url
 	}
 
 	instArr := strings.Split(syncInstance.InstanceId, ":")
 	if len(instArr) != 3 {
 		if instance.Port != nil && instance.Port.Enabled.Bool() {
-			instance.InstanceId = fmt.Sprintf(eurekaInstanceFormat, ipAddr, instance.APP, instance.Port.Port)
+			instance.InstanceID = fmt.Sprintf(eurekaInstanceFormat, ipAddr, instance.APP, instance.Port.Port)
 		} else if instance.SecurePort != nil && instance.SecurePort.Enabled.Bool() {
-			instance.InstanceId = fmt.Sprintf(eurekaInstanceFormat, ipAddr, instance.APP, instance.SecurePort.Port)
+			instance.InstanceID = fmt.Sprintf(eurekaInstanceFormat, ipAddr, instance.APP, instance.SecurePort.Port)
 		}
 	}
 	return

@@ -50,7 +50,7 @@ type InstanceRequest struct {
 }
 
 type Instance struct {
-	InstanceId                    string          `json:"instanceId"`
+	InstanceID                    string          `json:"instanceId"`
 	HostName                      string          `json:"hostName"`
 	APP                           string          `json:"app"`
 	IPAddr                        string          `json:"ipAddr"`
@@ -58,13 +58,13 @@ type Instance struct {
 	OverriddenStatus              string          `json:"overriddenStatus,omitempty"`
 	Port                          *Port           `json:"port,omitempty"`
 	SecurePort                    *Port           `json:"securePort,omitempty"`
-	CountryId                     int             `json:"countryId,omitempty"`
+	CountryID                     int             `json:"countryId,omitempty"`
 	DataCenterInfo                *DataCenterInfo `json:"dataCenterInfo"`
 	LeaseInfo                     *LeaseInfo      `json:"leaseInfo,omitempty"`
 	Metadata                      *MetaData       `json:"metadata,omitempty"`
-	HomePageUrl                   string          `json:"homePageUrl,omitempty"`
-	StatusPageUrl                 string          `json:"statusPageUrl,omitempty"`
-	HealthCheckUrl                string          `json:"healthCheckUrl,omitempty"`
+	HomePageURL                   string          `json:"homePageUrl,omitempty"`
+	StatusPageURL                 string          `json:"statusPageUrl,omitempty"`
+	HealthCheckURL                string          `json:"healthCheckUrl,omitempty"`
 	VipAddress                    string          `json:"vipAddress,omitempty"`
 	SecureVipAddress              string          `json:"secureVipAddress,omitempty"`
 	IsCoordinatingDiscoveryServer BoolString      `json:"isCoordinatingDiscoveryServer,omitempty"`
@@ -83,13 +83,13 @@ type DataCenterMetadata struct {
 	AmiLaunchIndex   string `json:"ami-launch-index,omitempty"`
 	LocalHostname    string `json:"local-hostname,omitempty"`
 	AvailabilityZone string `json:"availability-zone,omitempty"`
-	InstanceId       string `json:"instance-id,omitempty"`
+	InstanceID       string `json:"instance-id,omitempty"`
 	PublicIpv4       string `json:"public-ipv4,omitempty"`
 	PublicHostname   string `json:"public-hostname,omitempty"`
 	AmiManifestPath  string `json:"ami-manifest-path,omitempty"`
 	LocalIpv4        string `json:"local-ipv4,omitempty"`
 	Hostname         string `json:"hostname,omitempty"`
-	AmiId            string `json:"ami-id,omitempty"`
+	AmiID            string `json:"ami-id,omitempty"`
 	InstanceType     string `json:"instance-type,omitempty"`
 }
 

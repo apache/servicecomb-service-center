@@ -41,23 +41,23 @@ func SetHeartbeat(handler func(ctx context.Context, domainProject, serviceId, in
 	heartbeat = handler
 }
 
-func (c *mockPlugin) RegisterInstance(ctx context.Context, domainProject, serviceId string, instance *pb.SyncInstance) (string, error) {
+func (c *mockPlugin) RegisterInstance(ctx context.Context, domainProject, serviceID string, instance *pb.SyncInstance) (string, error) {
 	if registerInstance != nil {
-		return registerInstance(ctx, domainProject, serviceId, instance)
+		return registerInstance(ctx, domainProject, serviceID, instance)
 	}
 	return "4d41a637471f11e9888cfa163eca30e0", nil
 }
 
-func (c *mockPlugin) UnregisterInstance(ctx context.Context, domainProject, serviceId, instanceId string) error {
+func (c *mockPlugin) UnregisterInstance(ctx context.Context, domainProject, serviceID, instanceID string) error {
 	if unregisterInstance != nil {
-		return unregisterInstance(ctx, domainProject, serviceId, instanceId)
+		return unregisterInstance(ctx, domainProject, serviceID, instanceID)
 	}
 	return nil
 }
 
-func (c *mockPlugin) Heartbeat(ctx context.Context, domainProject, serviceId, instanceId string) error {
+func (c *mockPlugin) Heartbeat(ctx context.Context, domainProject, serviceID, instanceID string) error {
 	if heartbeat != nil {
-		return heartbeat(ctx, domainProject, serviceId, instanceId)
+		return heartbeat(ctx, domainProject, serviceID, instanceID)
 	}
 	return nil
 }

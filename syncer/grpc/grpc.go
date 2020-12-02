@@ -100,7 +100,6 @@ func (s *Server) Stop() {
 		}
 		log.Info("grpc: shutdown complete")
 	})
-	return
 }
 
 func (s *Server) wait(ctx context.Context) {

@@ -24,8 +24,8 @@ import (
 )
 
 // CreateSchemas Create schemas to servicecenter
-func (c *Client) CreateSchemas(ctx context.Context, domain, project, serviceId string, schemas []*pb.Schema) error {
-	err := c.cli.CreateSchemas(ctx, domain, project, serviceId, schemas)
+func (c *Client) CreateSchemas(ctx context.Context, domain, project, serviceID string, schemas []*pb.Schema) error {
+	err := c.cli.CreateSchemas(ctx, domain, project, serviceID, schemas)
 	if err != nil {
 		return err
 	}
@@ -33,8 +33,8 @@ func (c *Client) CreateSchemas(ctx context.Context, domain, project, serviceId s
 }
 
 // GetSchemasByServiceID Get schemas by serviceId from servicecenter
-func (c *Client) GetSchemasByServiceId(ctx context.Context, domain, project, serviceId string) ([]*pb.Schema, error) {
-	schemas, err := c.cli.GetSchemasByServiceID(ctx, domain, project, serviceId)
+func (c *Client) GetSchemasByServiceID(ctx context.Context, domain, project, serviceID string) ([]*pb.Schema, error) {
+	schemas, err := c.cli.GetSchemasByServiceID(ctx, domain, project, serviceID)
 	if err != nil {
 		return nil, err
 	}

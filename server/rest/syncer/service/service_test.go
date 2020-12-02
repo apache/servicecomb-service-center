@@ -63,7 +63,7 @@ enabled: true
 	assert.NoError(t, err)
 
 	svr := httptest.NewServer(&mockSyncerHandler{func(w http.ResponseWriter, r *http.Request) {
-		ctrl := &syncer.SyncerController{}
+		ctrl := &syncer.Controller{}
 		ctrl.WatchInstance(w, r.WithContext(getContext()))
 	}})
 	defer svr.Close()

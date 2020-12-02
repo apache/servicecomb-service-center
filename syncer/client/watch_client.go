@@ -16,7 +16,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-const watchInstanceUrl = "v4/syncer/watch"
+const watchInstanceURL = "v4/syncer/watch"
 const wsScheme = "ws"
 
 var (
@@ -66,7 +66,7 @@ func (c *WatchClient) WebsocketDial() error {
 	u := url.URL{
 		Scheme: wsScheme,
 		Host:   wsHost,
-		Path:   watchInstanceUrl,
+		Path:   watchInstanceURL,
 	}
 
 	conn, _, err := c.wsDialer.Dial(u.String(), c.GetDefaultHeaders())
@@ -158,6 +158,9 @@ func (c *WatchClient) WatchInstanceHeartbeat(callback func(*dump.WatchInstanceCh
 
 					if !connIsReady {
 						err = c.WatchInstances(callback)
+						if err != nil {
+							log.Error("", err)
+						}
 					}
 				}
 			}

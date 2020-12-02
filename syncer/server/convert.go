@@ -22,6 +22,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/apache/servicecomb-service-center/pkg/log"
+
 	"github.com/apache/servicecomb-service-center/pkg/tlsutil"
 	"github.com/apache/servicecomb-service-center/syncer/config"
 	"github.com/apache/servicecomb-service-center/syncer/etcd"
@@ -79,7 +81,7 @@ func convertGRPCOptions(c *config.Config) []grpc.Option {
 		sslOps := append(tlsutil.DefaultServerTLSOptions(), tlsConfigToOptions(conf)...)
 		tlsConf, err := tlsutil.GetServerTLSConfig(sslOps...)
 		if err != nil {
-
+			log.Error("", err)
 		}
 		opts = append(opts, grpc.WithTLSConfig(tlsConf))
 	}

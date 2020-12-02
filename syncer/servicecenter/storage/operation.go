@@ -31,16 +31,16 @@ var (
 	instancesKey = "/syncer/v1/instances"
 )
 
-func putServiceOp(serviceId string, data []byte) clientv3.Op {
-	return clientv3.OpPut(servicesKey+"/"+serviceId, util.BytesToStringWithNoCopy(data))
+func putServiceOp(serviceID string, data []byte) clientv3.Op {
+	return clientv3.OpPut(servicesKey+"/"+serviceID, util.BytesToStringWithNoCopy(data))
 }
 
 func getServicesOp() clientv3.Op {
 	return clientv3.OpGet(servicesKey, clientv3.WithPrefix())
 }
 
-func deleteServiceOp(serviceId string) clientv3.Op {
-	return clientv3.OpDelete(servicesKey + "/" + serviceId)
+func deleteServiceOp(serviceID string) clientv3.Op {
+	return clientv3.OpDelete(servicesKey + "/" + serviceID)
 }
 
 func putInstanceOp(instanceID string, data []byte) clientv3.Op {

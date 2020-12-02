@@ -29,6 +29,6 @@ func init() {
 func registerREST() {
 	syncerEnabled := config.GetBool("syncer.enabled", false)
 	if syncerEnabled {
-		roa.RegisterServant(&SyncerController{})
+		roa.RegisterServant(&Controller{})
 	}
 }

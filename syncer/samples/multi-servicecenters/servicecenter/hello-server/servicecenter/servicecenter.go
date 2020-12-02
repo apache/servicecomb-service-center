@@ -114,7 +114,7 @@ func Do(ctx context.Context, method, addr string, headers http.Header, body []by
 	if err != nil {
 		return nil, err
 	}
-	endpoints, err := serverNameToEndpoints(raw.Hostname())
+	endpoints, _ := serverNameToEndpoints(raw.Hostname())
 
 	client, err := client2.NewLBClient(endpoints, (&client2.Config{Endpoints: endpoints}).Merge())
 	if err != nil {
@@ -129,6 +129,9 @@ func createService(ctx context.Context, svc *MicroService) (*discovery.MicroServ
 
 	// 检测微服务是否存在
 	serviceID, err := cli.ServiceExistence(ctx, domain, project, service.AppId, service.ServiceName, service.Version, "")
+	if err != nil {
+		log.Error("", err)
+	}
 	if serviceID == "" {
 		// 注册微服务
 		serviceID, err = cli.CreateService(ctx, domain, project, service)

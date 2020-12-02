@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package plugins
 
 import (
@@ -31,9 +32,9 @@ type Adaptor interface {
 type Servicecenter interface {
 	GetAll(ctx context.Context) (*pb.SyncData, error)
 	CreateService(ctx context.Context, domainProject string, service *pb.SyncService) (string, error)
-	DeleteService(ctx context.Context, domainProject, serviceId string) error
+	DeleteService(ctx context.Context, domainProject, serviceID string) error
 	ServiceExistence(ctx context.Context, domainProject string, service *pb.SyncService) (string, error)
-	RegisterInstance(ctx context.Context, domainProject, serviceId string, instance *pb.SyncInstance) (string, error)
-	UnregisterInstance(ctx context.Context, domainProject, serviceId, instanceId string) error
-	Heartbeat(ctx context.Context, domainProject, serviceId, instanceId string) error
+	RegisterInstance(ctx context.Context, domainProject, serviceID string, instance *pb.SyncInstance) (string, error)
+	UnregisterInstance(ctx context.Context, domainProject, serviceID, instanceID string) error
+	Heartbeat(ctx context.Context, domainProject, serviceID, instanceID string) error
 }

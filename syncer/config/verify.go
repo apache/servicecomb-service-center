@@ -52,23 +52,23 @@ func Verify(c *Config) (err error) {
 		return
 	}
 	if c.Listener.TLSMount.Enabled {
-		listenerTls := c.GetTLSConfig(c.Listener.TLSMount.Name)
-		if listenerTls == nil {
+		listenerTLS := c.GetTLSConfig(c.Listener.TLSMount.Name)
+		if listenerTLS == nil {
 			err = errors.Errorf("listener tls config notfound, name = %s", c.Listener.TLSMount.Name)
 			return
 		}
-		if err = verifyTLSConfig(listenerTls); err == nil {
+		if err = verifyTLSConfig(listenerTLS); err == nil {
 			return
 		}
 	}
 
 	if c.Registry.TLSMount.Enabled {
-		registryTls := c.GetTLSConfig(c.Listener.TLSMount.Name)
-		if registryTls == nil {
+		registryTLS := c.GetTLSConfig(c.Listener.TLSMount.Name)
+		if registryTLS == nil {
 			err = errors.Errorf("registry tls config notfound, name = %s", c.Registry.TLSMount.Name)
 			return
 		}
-		if err = verifyTLSConfig(registryTls); err == nil {
+		if err = verifyTLSConfig(registryTLS); err == nil {
 			return
 		}
 	}

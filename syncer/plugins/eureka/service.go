@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package eureka
 
 import (
@@ -28,7 +29,7 @@ func (c *Client) CreateService(ctx context.Context, domainProject string, syncSe
 }
 
 // DeleteService Eureka's application is created with instance and does not need to be processed here.
-func (c *Client) DeleteService(ctx context.Context, domainProject, serviceId string) error {
+func (c *Client) DeleteService(context.Context, string, string) error {
 	return nil
 }
 
