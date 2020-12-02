@@ -114,7 +114,10 @@ func Do(ctx context.Context, method, addr string, headers http.Header, body []by
 	if err != nil {
 		return nil, err
 	}
-	endpoints, _ := serverNameToEndpoints(raw.Hostname())
+	endpoints, err := serverNameToEndpoints(raw.Hostname())
+	if err != nil {
+		log.Error("", err)
+	}
 
 	client, err := client2.NewLBClient(endpoints, (&client2.Config{Endpoints: endpoints}).Merge())
 	if err != nil {
