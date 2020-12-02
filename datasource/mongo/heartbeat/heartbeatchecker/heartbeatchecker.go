@@ -19,13 +19,13 @@ package heartbeatchecker
 
 import (
 	"context"
+	"fmt"
+
+	pb "github.com/go-chassis/cari/discovery"
 
 	"github.com/apache/servicecomb-service-center/datasource/mongo/heartbeat"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	pb "github.com/go-chassis/cari/discovery"
-
-	"fmt"
 )
 
 func init() {
@@ -41,7 +41,7 @@ func NewHeartBeatChecker(opts heartbeat.Options) (heartbeat.HealthCheck, error) 
 
 func (h *HeartBeatChecker) Heartbeat(ctx context.Context, request *pb.HeartbeatRequest) (*pb.HeartbeatResponse, error) {
 	remoteIP := util.GetIPFromContext(ctx)
-	err := updateInstanceRefreshTime(ctx, request.ServiceId, request.InstanceId)
+	err := updateInstanceRefreshTime(ctx, request.InstanceId)
 	if err != nil {
 		log.Error(fmt.Sprintf("heartbeat failed, instance[%s]. operator %s", request.InstanceId, remoteIP), err)
 		resp := &pb.HeartbeatResponse{
