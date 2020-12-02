@@ -22,10 +22,14 @@ import (
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/dump"
+	"github.com/apache/servicecomb-service-center/pkg/gopool"
 )
 
 func (ds *DataSource) DumpCache(ctx context.Context, cache *dump.Cache) {
-
+	gopool.New(ctx, gopool.Configure().Workers(2)).
+		Do(func(_ context.Context) { SetDumpServices(ctx, cache) }).
+		Do(func(_ context.Context) { SetDumpInstances(ctx, cache) }).
+		Done()
 }
 
 func (ds *DataSource) DLock(ctx context.Context, request *datasource.DLockRequest) error {
