@@ -288,18 +288,3 @@ func GetOneDomainProjectInstanceCount(ctx context.Context, domainProject string)
 	}
 	return resp.Count, nil
 }
-
-func SetServiceDefaultValue(service *pb.MicroService) {
-	if len(service.AppId) == 0 {
-		service.AppId = pb.AppID
-	}
-	if len(service.Version) == 0 {
-		service.Version = pb.VERSION
-	}
-	if len(service.Level) == 0 {
-		service.Level = "BACK"
-	}
-	if len(service.Status) == 0 {
-		service.Status = pb.MS_UP
-	}
-}

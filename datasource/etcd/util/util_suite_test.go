@@ -129,12 +129,3 @@ func TestRemandQuota(t *testing.T) {
 	serviceUtil.RemandServiceQuota(context.Background())
 	serviceUtil.RemandInstanceQuota(context.Background())
 }
-
-func TestSetDefault(t *testing.T) {
-	service := &proto.MicroService{}
-	serviceUtil.SetServiceDefaultValue(service)
-	if len(service.Level) == 0 ||
-		len(service.Status) == 0 {
-		t.Fatalf(`TestSetDefault failed`)
-	}
-}

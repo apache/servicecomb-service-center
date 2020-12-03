@@ -18,19 +18,13 @@
 package service
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
-	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/proto"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/core"
 	pb "github.com/go-chassis/cari/discovery"
 
 	"context"
@@ -76,7 +70,7 @@ func (s *MicroServiceService) CreateServicePri(ctx context.Context, in *pb.Creat
 	serviceFlag := util.StringJoin([]string{
 		service.Environment, service.AppId, service.ServiceName, service.Version}, "/")
 
-	serviceUtil.SetServiceDefaultValue(service)
+	datasource.SetServiceDefaultValue(service)
 	err := Validate(in)
 	if err != nil {
 		log.Errorf(err, "create micro-service[%s] failed, operator: %s",
@@ -86,148 +80,6 @@ func (s *MicroServiceService) CreateServicePri(ctx context.Context, in *pb.Creat
 		}, nil
 	}
 	return datasource.Instance().RegisterService(ctx, in)
-}
-
-func (s *MicroServiceService) DeleteServicePri(ctx context.Context, serviceID string, force bool) (*pb.Response, error) {
-	remoteIP := util.GetIPFromContext(ctx)
-	domainProject := util.ParseDomainProject(ctx)
-
-	title := "delete"
-	if force {
-		title = "force delete"
-	}
-
-	if serviceID == core.Service.ServiceId {
-		err := errors.New("not allow to delete service center")
-		log.Errorf(err, "%s micro-service[%s] failed, operator: %s", title, serviceID, remoteIP)
-		return pb.CreateResponse(pb.ErrInvalidParams, err.Error()), nil
-	}
-
-	service, err := serviceUtil.GetService(ctx, domainProject, serviceID)
-	if err != nil {
-		log.Errorf(err, "%s micro-service[%s] failed, get service file failed, operator: %s",
-			title, serviceID, remoteIP)
-		return pb.CreateResponse(pb.ErrInternal, err.Error()), err
-	}
-
-	if service == nil {
-		log.Errorf(err, "%s micro-service[%s] failed, service does not exist, operator: %s",
-			title, serviceID, remoteIP)
-		return pb.CreateResponse(pb.ErrServiceNotExists, "Service does not exist."), nil
-	}
-
-	// 强制删除，则与该服务相关的信息删除，非强制删除： 如果作为该被依赖（作为provider，提供服务,且不是只存在自依赖）或者存在实例，则不能删除
-	if !force {
-		dr := serviceUtil.NewProviderDependencyRelation(ctx, domainProject, service)
-		services, err := dr.GetDependencyConsumerIds()
-		if err != nil {
-			log.Errorf(err, "delete micro-service[%s] failed, get service dependency failed, operator: %s",
-				serviceID, remoteIP)
-			return pb.CreateResponse(pb.ErrInternal, err.Error()), err
-		}
-		if l := len(services); l > 1 || (l == 1 && services[0] != serviceID) {
-			log.Errorf(nil, "delete micro-service[%s] failed, other services[%d] depend on it, operator: %s",
-				serviceID, l, remoteIP)
-			return pb.CreateResponse(pb.ErrDependedOnConsumer, "Can not delete this service, other service rely it."), err
-		}
-
-		instancesKey := path.GenerateInstanceKey(domainProject, serviceID, "")
-		rsp, err := kv.Store().Instance().Search(ctx,
-			client.WithStrKey(instancesKey),
-			client.WithPrefix(),
-			client.WithCountOnly())
-		if err != nil {
-			log.Errorf(err, "delete micro-service[%s] failed, get instances failed, operator: %s",
-				serviceID, remoteIP)
-			return pb.CreateResponse(pb.ErrUnavailableBackend, err.Error()), err
-		}
-
-		if rsp.Count > 0 {
-			log.Errorf(nil, "delete micro-service[%s] failed, service deployed instances[%s], operator: %s",
-				serviceID, rsp.Count, remoteIP)
-			return pb.CreateResponse(pb.ErrDeployedInstance, "Can not delete the service deployed instance(s)."), err
-		}
-	}
-
-	serviceIDKey := path.GenerateServiceKey(domainProject, serviceID)
-	serviceKey := &pb.MicroServiceKey{
-		Tenant:      domainProject,
-		Environment: service.Environment,
-		AppId:       service.AppId,
-		ServiceName: service.ServiceName,
-		Version:     service.Version,
-		Alias:       service.Alias,
-	}
-	opts := []client.PluginOp{
-		client.OpDel(client.WithStrKey(path.GenerateServiceIndexKey(serviceKey))),
-		client.OpDel(client.WithStrKey(path.GenerateServiceAliasKey(serviceKey))),
-		client.OpDel(client.WithStrKey(serviceIDKey)),
-	}
-
-	//删除依赖规则
-	optDeleteDep, err := serviceUtil.DeleteDependencyForDeleteService(domainProject, serviceID, serviceKey)
-	if err != nil {
-		log.Errorf(err, "%s micro-service[%s] failed, delete dependency failed, operator: %s",
-			title, serviceID, remoteIP)
-		return pb.CreateResponse(pb.ErrInternal, err.Error()), err
-	}
-	opts = append(opts, optDeleteDep)
-
-	//删除黑白名单
-	opts = append(opts, client.OpDel(
-		client.WithStrKey(path.GenerateServiceRuleKey(domainProject, serviceID, "")),
-		client.WithPrefix()))
-	opts = append(opts, client.OpDel(client.WithStrKey(
-		util.StringJoin([]string{path.GetServiceRuleIndexRootKey(domainProject), serviceID, ""}, "/")),
-		client.WithPrefix()))
-
-	//删除schemas
-	opts = append(opts, client.OpDel(
-		client.WithStrKey(path.GenerateServiceSchemaKey(domainProject, serviceID, "")),
-		client.WithPrefix()))
-	opts = append(opts, client.OpDel(
-		client.WithStrKey(path.GenerateServiceSchemaSummaryKey(domainProject, serviceID, "")),
-		client.WithPrefix()))
-
-	//删除tags
-	opts = append(opts, client.OpDel(
-		client.WithStrKey(path.GenerateServiceTagKey(domainProject, serviceID))))
-
-	//删除instances
-	opts = append(opts, client.OpDel(
-		client.WithStrKey(path.GenerateInstanceKey(domainProject, serviceID, "")),
-		client.WithPrefix()))
-	opts = append(opts, client.OpDel(
-		client.WithStrKey(path.GenerateInstanceLeaseKey(domainProject, serviceID, "")),
-		client.WithPrefix()))
-
-	//删除实例
-	err = serviceUtil.DeleteServiceAllInstances(ctx, serviceID)
-	if err != nil {
-		log.Errorf(err, "%s micro-service[%s] failed, revoke all instances failed, operator: %s",
-			title, serviceID, remoteIP)
-		return pb.CreateResponse(pb.ErrUnavailableBackend, err.Error()), err
-	}
-
-	resp, err := client.Instance().TxnWithCmp(ctx, opts,
-		[]client.CompareOp{client.OpCmp(
-			client.CmpVer(util.StringToBytesWithNoCopy(serviceIDKey)),
-			client.CmpNotEqual, 0)},
-		nil)
-	if err != nil {
-		log.Errorf(err, "%s micro-service[%s] failed, operator: %s", title, serviceID, remoteIP)
-		return pb.CreateResponse(pb.ErrUnavailableBackend, err.Error()), err
-	}
-	if !resp.Succeeded {
-		log.Errorf(err, "%s micro-service[%s] failed, service does not exist, operator: %s",
-			title, serviceID, remoteIP)
-		return pb.CreateResponse(pb.ErrServiceNotExists, "Service does not exist."), nil
-	}
-
-	serviceUtil.RemandServiceQuota(ctx)
-
-	log.Infof("%s micro-service[%s] successfully, operator: %s", title, serviceID, remoteIP)
-	return pb.CreateResponse(pb.ResponseSuccess, "Unregister service successfully."), nil
 }
 
 func (s *MicroServiceService) Delete(ctx context.Context, in *pb.DeleteServiceRequest) (*pb.DeleteServiceResponse, error) {
@@ -323,11 +175,14 @@ func (s *MicroServiceService) getDeleteServiceFunc(ctx context.Context, serviceI
 			ServiceId:  serviceID,
 			ErrMessage: "",
 		}
-		resp, err := s.DeleteServicePri(ctx, serviceID, force)
+		resp, err := datasource.Instance().UnregisterService(ctx, &pb.DeleteServiceRequest{
+			ServiceId: serviceID,
+			Force:     force,
+		})
 		if err != nil {
 			serviceRst.ErrMessage = err.Error()
-		} else if resp.GetCode() != pb.ResponseSuccess {
-			serviceRst.ErrMessage = resp.GetMessage()
+		} else if resp.Response.GetCode() != pb.ResponseSuccess {
+			serviceRst.ErrMessage = resp.Response.GetMessage()
 		}
 
 		serviceRespChan <- serviceRst

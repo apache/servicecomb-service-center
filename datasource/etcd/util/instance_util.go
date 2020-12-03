@@ -142,63 +142,6 @@ func DeleteServiceAllInstances(ctx context.Context, serviceID string) error {
 	return nil
 }
 
-func QueryAllProvidersInstances(ctx context.Context, selfServiceID string) (results []*pb.WatchInstanceResponse, rev int64) {
-	results = []*pb.WatchInstanceResponse{}
-
-	domainProject := util.ParseDomainProject(ctx)
-
-	service, err := GetService(ctx, domainProject, selfServiceID)
-	if err != nil {
-		log.Errorf(err, "get service[%s]'s file failed", selfServiceID)
-		return
-	}
-	if service == nil {
-		log.Errorf(nil, "service[%s] does not exist", selfServiceID)
-		return
-	}
-	providerIDs, _, err := GetAllProviderIds(ctx, domainProject, service)
-	if err != nil {
-		log.Errorf(err, "get service[%s]'s providerIDs failed", selfServiceID)
-		return
-	}
-
-	rev = kv.Revision()
-
-	for _, providerID := range providerIDs {
-		service, err := GetServiceWithRev(ctx, domainProject, providerID, rev)
-		if err != nil {
-			log.Errorf(err, "get service[%s]'s provider[%s] file with revision %d failed",
-				selfServiceID, providerID, rev)
-			return
-		}
-		if service == nil {
-			continue
-		}
-
-		kvs, err := QueryServiceInstancesKvs(ctx, providerID, rev)
-		if err != nil {
-			log.Errorf(err, "get service[%s]'s provider[%s] instances with revision %d failed",
-				selfServiceID, providerID, rev)
-			return
-		}
-
-		for _, kv := range kvs {
-			results = append(results, &pb.WatchInstanceResponse{
-				Response: pb.CreateResponse(pb.ResponseSuccess, "List instance successfully."),
-				Action:   string(pb.EVT_INIT),
-				Key: &pb.MicroServiceKey{
-					Environment: service.Environment,
-					AppId:       service.AppId,
-					ServiceName: service.ServiceName,
-					Version:     service.Version,
-				},
-				Instance: kv.Value.(*pb.MicroServiceInstance),
-			})
-		}
-	}
-	return
-}
-
 func QueryServiceInstancesKvs(ctx context.Context, serviceID string, rev int64) ([]*sd.KeyValue, error) {
 	domainProject := util.ParseDomainProject(ctx)
 	key := path.GenerateInstanceKey(domainProject, serviceID, "")

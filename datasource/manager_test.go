@@ -17,7 +17,6 @@
 
 package datasource_test
 
-// initialize
 import (
 	"strconv"
 	"strings"

@@ -15,32 +15,16 @@
  * limitations under the License.
  */
 
-//Package test prepare service center required module before UT
-package test
+package datasource_test
 
 import (
-	_ "github.com/apache/servicecomb-service-center/server/init"
-
-	_ "github.com/apache/servicecomb-service-center/server/bootstrap"
-
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/service"
-	"github.com/go-chassis/go-archaius"
+	"testing"
 )
 
-func init() {
-	t := archaius.Get("TEST_MODE")
-	if t == nil {
-		t = "etcd"
+func TestBadParamsResponse(t *testing.T) {
+	p := datasource.BadParamsResponse("a")
+	if p == nil {
+		t.Fatalf(`BadParamsResponse failed`)
 	}
-	if t == "etcd" {
-		archaius.Set("registry.cache.mode", 0)
-		archaius.Set("discovery.kind", "etcd")
-		archaius.Set("registry.kind", "etcd")
-	} else {
-		archaius.Set("registry.heartbeat.kind", "heartbeatchecker")
-	}
-	datasource.Init(datasource.Options{PluginImplName: datasource.ImplName(t.(string))})
-	core.ServiceAPI, core.InstanceAPI = service.AssembleResources()
 }

@@ -66,6 +66,8 @@ import (
 	_ "github.com/apache/servicecomb-service-center/server/service/gov/kie"
 
 	//metrics
+	_ "github.com/apache/servicecomb-service-center/server/rest/prometheus"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/broker"
 	"github.com/apache/servicecomb-service-center/server/handler/accesslog"
@@ -78,7 +80,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/interceptor"
 	"github.com/apache/servicecomb-service-center/server/interceptor/access"
 	"github.com/apache/servicecomb-service-center/server/interceptor/cors"
-	_ "github.com/apache/servicecomb-service-center/server/rest/prometheus"
 )
 
 func init() {

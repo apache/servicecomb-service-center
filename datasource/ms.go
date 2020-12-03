@@ -19,9 +19,12 @@ package datasource
 
 import (
 	"context"
+	"errors"
 
 	pb "github.com/go-chassis/cari/discovery"
 )
+
+var ErrServiceNotExists = errors.New("service does not exist")
 
 // Attention: request validation must be finished before the following interface being invoked!!!
 // MetadataManager contains the CRUD of cache metadata
@@ -41,7 +44,8 @@ type MetadataManager interface {
 	UnregisterService(ctx context.Context, request *pb.DeleteServiceRequest) (*pb.DeleteServiceResponse, error)
 	GetDeleteServiceFunc(ctx context.Context, serviceID string, force bool,
 		serviceRespChan chan<- *pb.DelServicesRspInfo) func(context.Context)
-	GetServiceCountByDomainProject(ctx context.Context, request *pb.GetServiceCountRequest) (*pb.GetServiceCountResponse, error)
+	GetServiceCountByDomainProject(ctx context.Context,
+		request *pb.GetServiceCountRequest) (*pb.GetServiceCountResponse, error)
 
 	// Instance management
 	RegisterInstance(ctx context.Context, request *pb.RegisterInstanceRequest) (*pb.RegisterInstanceResponse, error)
@@ -49,9 +53,11 @@ type MetadataManager interface {
 	GetInstance(ctx context.Context, request *pb.GetOneInstanceRequest) (*pb.GetOneInstanceResponse, error)
 	GetInstances(ctx context.Context, request *pb.GetInstancesRequest) (*pb.GetInstancesResponse, error)
 	// GetProviderInstances returns instances under the specified service
-	GetProviderInstances(ctx context.Context, request *pb.GetProviderInstancesRequest) (instances []*pb.MicroServiceInstance, rev string, err error)
+	GetProviderInstances(ctx context.Context,
+		request *pb.GetProviderInstancesRequest) (instances []*pb.MicroServiceInstance, rev string, err error)
 	// BatchGetProviderInstances returns instances under the specified services
-	BatchGetProviderInstances(ctx context.Context, request *pb.BatchGetInstancesRequest) (instances []*pb.MicroServiceInstance, rev string, err error)
+	BatchGetProviderInstances(ctx context.Context,
+		request *pb.BatchGetInstancesRequest) (instances []*pb.MicroServiceInstance, rev string, err error)
 	// FindInstances returns instances under the specified domain
 	FindInstances(ctx context.Context, request *pb.FindInstancesRequest) (*pb.FindInstancesResponse, error)
 	UpdateInstanceStatus(ctx context.Context, request *pb.UpdateInstanceStatusRequest) (
