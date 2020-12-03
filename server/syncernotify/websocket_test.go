@@ -117,7 +117,6 @@ func TestDoWebSocketWatch(t *testing.T) {
 					HostName: "sunlisen",
 				},
 			},
-			Revision: 10,
 		}
 
 		GetSyncerNotifyCenter().AddEvent(instanceEvent)

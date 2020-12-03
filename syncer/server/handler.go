@@ -21,9 +21,9 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"math"
 	"strconv"
-	"time"
+
+	"github.com/apache/servicecomb-service-center/pkg/dump"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/tlsutil"
@@ -37,6 +37,7 @@ const (
 	EventDiscovered       = "discovered"
 	EventIncrementPulled  = "incrementPulled"
 	EventNotifyFullPulled = "notifyFullPulled"
+	BufferSize            = 1000
 )
 
 // tickHandler Timed task handler
@@ -70,69 +71,16 @@ func (s *Server) tickHandler() {
 	}
 }
 
-func (s *Server) DataRemoveTickHandler() chan bool {
-	ticker := time.NewTicker(time.Second * 30)
-	stopChan := make(chan bool)
-	go func(trick *time.Ticker) {
-		//defer ticker.Stop()
-		for {
-			select {
-			case <-ticker.C:
-				s.eventQueueDataRemoveTickHandler()
-				log.Info(fmt.Sprintf("size of records map = %d, size of events slice = %d", len(s.revisionMap), len(s.eventQueue)))
-			case stop := <-stopChan:
-				if stop {
-					log.Info("data remove ticker stop")
-					return
-				}
-			case <-context.Background().Done():
-				return
-			}
-		}
-	}(ticker)
-	return stopChan
-}
-
-func (s *Server) eventQueueDataRemoveTickHandler() {
-	if len(s.revisionMap) == 0 || len(s.eventQueue) == 0 {
-		log.Info("RevisionMap or EventQueue is empty")
-		return
-	}
-
-	log.Info(fmt.Sprintf("length of map : %d", len(s.revisionMap)))
-	var minRevision int64 = math.MaxInt64
-	for _, value := range s.revisionMap {
-		var tempRevision = value.revision
-		if tempRevision < minRevision {
-			minRevision = tempRevision
-		}
-	}
-
-	log.Info(fmt.Sprintf("revision of item will remove : %d", minRevision))
-
-	j := 0
-	for _, value := range s.eventQueue {
-		var tempRevision = value.Revision
-		if tempRevision == minRevision {
-			break
-		}
-		j++
-	}
-	s.eventQueue = s.eventQueue[j:]
-	log.Info(fmt.Sprintf("size of event queue : %d", len(s.eventQueue)))
-	if len(s.eventQueue) > 0 {
-		log.Info(fmt.Sprintf("revision of first element in event queue : %d", s.eventQueue[0].Revision))
-	}
-}
-
 // Pull returns sync data of servicecenter
-func (s *Server) Pull(context.Context, *pb.PullRequest) (*pb.SyncData, error) {
+func (s *Server) Pull(ctx context.Context, req *pb.PullRequest) (*pb.SyncData, error) {
+	if _, ok := s.channelMap[req.GetAddr()]; !ok {
+		s.channelMap[req.GetAddr()] = make(chan *dump.WatchInstanceChangedEvent, BufferSize)
+	}
 	return s.servicecenter.Discovery(), nil
 }
 
 func (s *Server) IncrementPull(ctx context.Context, req *pb.IncrementPullRequest) (*pb.SyncData, error) {
 	incrementQueue := s.GetIncrementQueue(req.GetAddr())
-	s.updateRevisionMap(req.GetAddr(), incrementQueue)
 	return s.GetIncrementData(ctx, incrementQueue), nil
 }
 
@@ -179,7 +127,7 @@ func (s *Server) userEvent(data ...[]byte) (success bool) {
 	}
 
 	cli := client.NewSyncClient(endpoint, tlsConfig)
-	syncData, err := cli.Pull(context.Background())
+	syncData, err := cli.Pull(context.Background(), s.conf.Listener.RPCAddr)
 	if err != nil {
 		log.Errorf(err, "Pull other serf instances failed, node name is '%s'", members[0].Name)
 		return

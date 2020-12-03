@@ -6,6 +6,7 @@ message PullRequest {
     string serviceName = 1;
     string options = 2;
     string time = 3;
+    string addr = 4;
 }
 
 message IncrementPullRequest {

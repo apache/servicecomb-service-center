@@ -61,8 +61,8 @@ func NewSyncClient(addr string, tlsConf *tls.Config) (cli *Client) {
 }
 
 // Pull implement the interface of sync server
-func (c *Client) Pull(ctx context.Context) (*pb.SyncData, error) {
-	data, err := c.cli.Pull(ctx, &pb.PullRequest{})
+func (c *Client) Pull(ctx context.Context, addr string) (*pb.SyncData, error) {
+	data, err := c.cli.Pull(ctx, &pb.PullRequest{Addr: addr})
 	if err != nil {
 		log.Errorf(err, "Pull from grpc client failed, going to close the client")
 		closeClient(c.addr)
