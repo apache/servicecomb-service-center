@@ -20,7 +20,6 @@ package service
 import (
 	"regexp"
 
-	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/pkg/validate"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
@@ -41,9 +40,9 @@ var (
 	// find 支持alias，多个:
 	serviceNameForFindRegex, _ = regexp.Compile(`^[a-zA-Z0-9]*$|^[a-zA-Z0-9][a-zA-Z0-9_\-.:]*[a-zA-Z0-9]$`)
 	// version規則: x[.y[.z]]
-	versionRegex = serviceUtil.NewVersionRegexp(false)
+	versionRegex = validate.NewVersionRegexp(false)
 	// version模糊规则: 1.0, 1.0+, 1.0-2.0, latest
-	versionFuzzyRegex  = serviceUtil.NewVersionRegexp(true)
+	versionFuzzyRegex  = validate.NewVersionRegexp(true)
 	pathRegex, _       = regexp.Compile(`^[A-Za-z0-9.,?'\\/+&amp;%$#=~_\-@{}]*$`)
 	levelRegex, _      = regexp.Compile(`^(FRONT|MIDDLE|BACK)$`)
 	statusRegex, _     = regexp.Compile("^(" + discovery.MS_UP + "|" + discovery.MS_DOWN + ")?$")

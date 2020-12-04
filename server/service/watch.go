@@ -20,11 +20,11 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 
-	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/proto"
-	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/connection/grpc"
 	"github.com/apache/servicecomb-service-center/server/connection/ws"
 	pb "github.com/go-chassis/cari/discovery"
@@ -35,9 +35,14 @@ func (s *InstanceService) WatchPreOpera(ctx context.Context, in *pb.WatchInstanc
 	if in == nil || len(in.SelfServiceId) == 0 {
 		return errors.New("request format invalid")
 	}
-	domainProject := util.ParseDomainProject(ctx)
-	if !serviceUtil.ServiceExist(ctx, domainProject, in.SelfServiceId) {
-		return errors.New("service does not exist")
+	resp, err := datasource.Instance().ExistServiceByID(ctx, &pb.GetExistenceByIDRequest{
+		ServiceId: in.SelfServiceId,
+	})
+	if err != nil {
+		return err
+	}
+	if !resp.Exist {
+		return datasource.ErrServiceNotExists
 	}
 	return nil
 }
@@ -68,6 +73,50 @@ func (s *InstanceService) WebSocketListAndWatch(ctx context.Context, in *pb.Watc
 		return
 	}
 	ws.ListAndWatch(ctx, in.SelfServiceId, func() ([]*pb.WatchInstanceResponse, int64) {
-		return serviceUtil.QueryAllProvidersInstances(ctx, in.SelfServiceId)
+		return s.QueryAllProvidersInstances(ctx, in)
 	}, conn)
+}
+
+func (s *InstanceService) QueryAllProvidersInstances(ctx context.Context, in *pb.WatchInstanceRequest) ([]*pb.WatchInstanceResponse, int64) {
+	depResp, err := datasource.Instance().SearchConsumerDependency(ctx, &pb.GetDependenciesRequest{
+		ServiceId: in.SelfServiceId,
+	})
+	if err != nil {
+		log.Error(fmt.Sprintf("search service[%s] dependencies failed", in.SelfServiceId), err)
+		return nil, 0
+	}
+	if depResp.Response.GetCode() != pb.ResponseSuccess {
+		log.Error(fmt.Sprintf("search service[%s] dependencies failed. %s",
+			in.SelfServiceId, depResp.Response.GetMessage()), nil)
+		return nil, 0
+	}
+	var results []*pb.WatchInstanceResponse
+	for _, provider := range depResp.Providers {
+		instResp, err := datasource.Instance().GetInstances(ctx, &pb.GetInstancesRequest{
+			ProviderServiceId: provider.ServiceId,
+		})
+		if err != nil {
+			log.Error(fmt.Sprintf("get service[%s] instances failed", in.SelfServiceId), err)
+			return nil, 0
+		}
+		if instResp.Response.GetCode() != pb.ResponseSuccess {
+			log.Error(fmt.Sprintf("get service[%s] instances failed. %s",
+				in.SelfServiceId, instResp.Response.GetMessage()), nil)
+			return nil, 0
+		}
+		for _, instance := range instResp.Instances {
+			results = append(results, &pb.WatchInstanceResponse{
+				Response: pb.CreateResponse(pb.ResponseSuccess, "List instance successfully."),
+				Action:   string(pb.EVT_INIT),
+				Key: &pb.MicroServiceKey{
+					Environment: provider.Environment,
+					AppId:       provider.AppId,
+					ServiceName: provider.ServiceName,
+					Version:     provider.Version,
+				},
+				Instance: instance,
+			})
+		}
+	}
+	return results, 0
 }

@@ -18,13 +18,12 @@
 package util
 
 import (
-	"regexp"
 	"sort"
-	"strconv"
 	"strings"
 
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/pkg/validate"
 )
 
 type VersionRule func(sorted []string, kvs map[string]*sd.KeyValue, start, end string) []string
@@ -72,28 +71,9 @@ func (sks *serviceKeySorter) Less(i, j int) bool {
 	return sks.cmp(sks.sortArr[i], sks.sortArr[j])
 }
 
-func VersionToInt64(versionStr string) (ret int64, err error) {
-	verBytes := [4]int16{}
-	idx := 0
-	for i := 0; i < 4 && idx < len(versionStr); i++ {
-		f := strings.IndexRune(versionStr[idx:], '.')
-		if f < 0 {
-			f = len(versionStr) - idx
-		}
-		integer, err := strconv.ParseInt(versionStr[idx:idx+f], 10, 16)
-		if err != nil {
-			return 0, err
-		}
-		verBytes[i] = int16(integer)
-		idx += f + 1
-	}
-	ret = util.Int16ToInt64(verBytes[:])
-	return
-}
-
 func Larger(start, end string) bool {
-	s, _ := VersionToInt64(start)
-	e, _ := VersionToInt64(end)
+	s, _ := validate.VersionToInt64(start)
+	e, _ := validate.VersionToInt64(end)
 	return s > e
 }
 
@@ -199,66 +179,4 @@ func VersionMatchRule(version string, versionRule string) bool {
 			Value: "",
 		},
 	})) > 0
-}
-
-type VersionRegexp struct {
-	Regex *regexp.Regexp
-	Fuzzy bool
-}
-
-func (vr *VersionRegexp) MatchString(s string) bool {
-	if vr.Regex != nil && !vr.Regex.MatchString(s) {
-		return false
-	}
-	return vr.validateVersionRule(s) == nil
-}
-
-func (vr *VersionRegexp) String() string {
-	if vr.Fuzzy {
-		return "the form x[.y[.z]] or x[.y[.z]]+ or x[.y[.z]]-x[.y[.z]] or 'latest' where x y and z are 0-32767 range"
-	}
-	return "the form x[.y[.z]] where x y and z are 0-32767 range"
-}
-
-func (vr *VersionRegexp) validateVersionRule(versionRule string) (err error) {
-	if len(versionRule) == 0 {
-		return
-	}
-
-	if !vr.Fuzzy {
-		_, err = VersionToInt64(versionRule)
-		return
-	}
-
-	rangeIdx := strings.Index(versionRule, "-")
-	switch {
-	case versionRule == "latest":
-		return
-	case versionRule[len(versionRule)-1:] == "+":
-		// 取最低版本及高版本集合
-		start := versionRule[:len(versionRule)-1]
-		_, err = VersionToInt64(start)
-	case rangeIdx > 0:
-		// 取版本范围集合
-		start := versionRule[:rangeIdx]
-		end := versionRule[rangeIdx+1:]
-		_, err = VersionToInt64(start)
-		if err == nil {
-			_, err = VersionToInt64(end)
-		}
-	default:
-		// 精确匹配
-		_, err = VersionToInt64(versionRule)
-	}
-	return
-}
-
-func NewVersionRegexp(fuzzy bool) (vr *VersionRegexp) {
-	vr = &VersionRegexp{Fuzzy: fuzzy}
-	if fuzzy {
-		vr.Regex, _ = regexp.Compile(`^\d+(\.\d+){0,3}\+?$|^\d+(\.\d+){0,3}-\d+(\.\d+){0,3}$|^latest$`)
-		return
-	}
-	vr.Regex, _ = regexp.Compile(`^\d+(\.\d+){0,3}$`)
-	return
 }

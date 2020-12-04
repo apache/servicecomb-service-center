@@ -53,7 +53,7 @@ func (ds *DataSource) RegisterService(ctx context.Context, request *pb.CreateSer
 	serviceFlag := util.StringJoin([]string{
 		service.Environment, service.AppId, service.ServiceName, service.Version}, "/")
 
-	serviceUtil.SetServiceDefaultValue(service)
+	datasource.SetServiceDefaultValue(service)
 	domainProject := util.ParseDomainProject(ctx)
 
 	serviceKey := &pb.MicroServiceKey{

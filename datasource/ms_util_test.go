@@ -15,32 +15,19 @@
  * limitations under the License.
  */
 
-//Package test prepare service center required module before UT
-package test
+package datasource_test
 
 import (
-	_ "github.com/apache/servicecomb-service-center/server/init"
-
-	_ "github.com/apache/servicecomb-service-center/server/bootstrap"
-
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/service"
-	"github.com/go-chassis/go-archaius"
+	"github.com/go-chassis/cari/discovery"
+	"testing"
 )
 
-func init() {
-	t := archaius.Get("TEST_MODE")
-	if t == nil {
-		t = "etcd"
+func TestSetDefault(t *testing.T) {
+	service := &discovery.MicroService{}
+	datasource.SetServiceDefaultValue(service)
+	if len(service.Level) == 0 ||
+		len(service.Status) == 0 {
+		t.Fatalf(`TestSetDefault failed`)
 	}
-	if t == "etcd" {
-		archaius.Set("registry.cache.mode", 0)
-		archaius.Set("discovery.kind", "etcd")
-		archaius.Set("registry.kind", "etcd")
-	} else {
-		archaius.Set("registry.heartbeat.kind", "heartbeatchecker")
-	}
-	datasource.Init(datasource.Options{PluginImplName: datasource.ImplName(t.(string))})
-	core.ServiceAPI, core.InstanceAPI = service.AssembleResources()
 }

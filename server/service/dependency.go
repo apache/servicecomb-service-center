@@ -21,38 +21,36 @@ import (
 	"context"
 
 	"github.com/apache/servicecomb-service-center/datasource"
-	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/go-chassis/cari/discovery"
 )
 
-func (s *MicroServiceService) AddDependenciesForMicroServices(ctx context.Context, in *pb.AddDependenciesRequest) (*pb.AddDependenciesResponse, error) {
+func (s *MicroServiceService) AddDependenciesForMicroServices(ctx context.Context,
+	in *pb.AddDependenciesRequest) (*pb.AddDependenciesResponse, error) {
 	if err := Validate(in); err != nil {
 		return &pb.AddDependenciesResponse{
-			Response: serviceUtil.BadParamsResponse(err.Error()).Response,
+			Response: datasource.BadParamsResponse(err.Error()).Response,
 		}, nil
 	}
 
 	resp, err := datasource.Instance().AddOrUpdateDependencies(ctx, in.Dependencies, false)
-	return &pb.AddDependenciesResponse{
-		Response: resp,
-	}, err
+	return &pb.AddDependenciesResponse{Response: resp}, err
 }
 
-func (s *MicroServiceService) CreateDependenciesForMicroServices(ctx context.Context, in *pb.CreateDependenciesRequest) (*pb.CreateDependenciesResponse, error) {
+func (s *MicroServiceService) CreateDependenciesForMicroServices(ctx context.Context,
+	in *pb.CreateDependenciesRequest) (*pb.CreateDependenciesResponse, error) {
 	if err := Validate(in); err != nil {
 		return &pb.CreateDependenciesResponse{
-			Response: serviceUtil.BadParamsResponse(err.Error()).Response,
+			Response: datasource.BadParamsResponse(err.Error()).Response,
 		}, nil
 	}
 
 	resp, err := datasource.Instance().AddOrUpdateDependencies(ctx, in.Dependencies, true)
-	return &pb.CreateDependenciesResponse{
-		Response: resp,
-	}, err
+	return &pb.CreateDependenciesResponse{Response: resp}, err
 }
 
-func (s *MicroServiceService) GetProviderDependencies(ctx context.Context, in *pb.GetDependenciesRequest) (*pb.GetProDependenciesResponse, error) {
+func (s *MicroServiceService) GetProviderDependencies(ctx context.Context,
+	in *pb.GetDependenciesRequest) (*pb.GetProDependenciesResponse, error) {
 	err := Validate(in)
 	if err != nil {
 		log.Errorf(err, "GetProviderDependencies failed for validating parameters failed")

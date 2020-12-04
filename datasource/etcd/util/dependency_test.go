@@ -112,13 +112,6 @@ func TestCreateDependencyRule(t *testing.T) {
 	}
 }
 
-func TestBadParamsResponse(t *testing.T) {
-	p := BadParamsResponse("a")
-	if p == nil {
-		t.Fatalf(`BadParamsResponse failed`)
-	}
-}
-
 func TestDependencyRuleExistUtil(t *testing.T) {
 	_, err := DependencyRuleExistUtil(context.Background(), "", &discovery.MicroServiceKey{})
 	if err == nil {

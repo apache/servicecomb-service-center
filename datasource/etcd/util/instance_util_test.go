@@ -59,8 +59,6 @@ func TestGetInstance(t *testing.T) {
 		t.Fatalf(`GetAllInstancesOfOneService failed`)
 	}
 
-	QueryAllProvidersInstances(context.Background(), "")
-
 	_, err = QueryServiceInstancesKvs(context.Background(), "", 0)
 	if err != nil {
 		t.Fatalf(`QueryServiceInstancesKvs failed`)

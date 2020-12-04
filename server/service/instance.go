@@ -22,7 +22,6 @@ import (
 	"errors"
 
 	"github.com/apache/servicecomb-service-center/datasource"
-	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
@@ -33,7 +32,8 @@ import (
 type InstanceService struct {
 }
 
-func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceRequest) (*pb.RegisterInstanceResponse, error) {
+func (s *InstanceService) Register(ctx context.Context,
+	in *pb.RegisterInstanceRequest) (*pb.RegisterInstanceResponse, error) {
 	if err := Validate(in); err != nil {
 		remoteIP := util.GetIPFromContext(ctx)
 		log.Errorf(err, "register instance failed, invalid parameters, operator %s", remoteIP)
@@ -45,7 +45,8 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 	return datasource.Instance().RegisterInstance(ctx, in)
 }
 
-func (s *InstanceService) Unregister(ctx context.Context, in *pb.UnregisterInstanceRequest) (*pb.UnregisterInstanceResponse, error) {
+func (s *InstanceService) Unregister(ctx context.Context,
+	in *pb.UnregisterInstanceRequest) (*pb.UnregisterInstanceResponse, error) {
 	if err := Validate(in); err != nil {
 		remoteIP := util.GetIPFromContext(ctx)
 		log.Errorf(err, "unregister instance failed, invalid parameters, operator %s", remoteIP)
@@ -69,7 +70,8 @@ func (s *InstanceService) Heartbeat(ctx context.Context, in *pb.HeartbeatRequest
 	return datasource.Instance().Heartbeat(ctx, in)
 }
 
-func (s *InstanceService) HeartbeatSet(ctx context.Context, in *pb.HeartbeatSetRequest) (*pb.HeartbeatSetResponse, error) {
+func (s *InstanceService) HeartbeatSet(ctx context.Context,
+	in *pb.HeartbeatSetRequest) (*pb.HeartbeatSetResponse, error) {
 	if len(in.Instances) == 0 {
 		log.Errorf(nil, "heartbeats failed, invalid request. Body not contain Instances or is empty")
 		return &pb.HeartbeatSetResponse{
@@ -79,7 +81,8 @@ func (s *InstanceService) HeartbeatSet(ctx context.Context, in *pb.HeartbeatSetR
 	return datasource.Instance().HeartbeatSet(ctx, in)
 }
 
-func (s *InstanceService) GetOneInstance(ctx context.Context, in *pb.GetOneInstanceRequest) (*pb.GetOneInstanceResponse, error) {
+func (s *InstanceService) GetOneInstance(ctx context.Context,
+	in *pb.GetOneInstanceRequest) (*pb.GetOneInstanceResponse, error) {
 	err := Validate(in)
 	if err != nil {
 		log.Errorf(err, "get instance failed: invalid parameters")
@@ -165,14 +168,13 @@ func (s *InstanceService) ClusterHealth(ctx context.Context) (*pb.GetInstancesRe
 			Response: pb.CreateResponse(pb.ErrUnhealthy, err.Error()),
 		}, nil
 	}
-
-	domainProject := apt.RegistryDomainProject
-	serviceID, err := serviceUtil.GetServiceID(ctx, &pb.MicroServiceKey{
+	cloneContext := util.SetDomainProject(util.CloneContext(ctx), apt.RegistryDomain, apt.RegistryProject)
+	svcResp, err := datasource.Instance().ExistService(cloneContext, &pb.GetExistenceRequest{
+		Type:        pb.ExistenceMicroservice,
 		AppId:       apt.Service.AppId,
 		Environment: apt.Service.Environment,
 		ServiceName: apt.Service.ServiceName,
 		Version:     apt.Service.Version,
-		Tenant:      domainProject,
 	})
 
 	if err != nil {
@@ -182,7 +184,7 @@ func (s *InstanceService) ClusterHealth(ctx context.Context) (*pb.GetInstancesRe
 			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
 	}
-	if len(serviceID) == 0 {
+	if len(svcResp.ServiceId) == 0 {
 		log.Errorf(nil, "health check failed: service center[%s/%s/%s/%s]'s serviceID does not exist",
 			apt.Service.Environment, apt.Service.AppId, apt.Service.ServiceName, apt.Service.Version)
 		return &pb.GetInstancesResponse{
@@ -190,16 +192,18 @@ func (s *InstanceService) ClusterHealth(ctx context.Context) (*pb.GetInstancesRe
 		}, nil
 	}
 
-	instances, err := serviceUtil.GetAllInstancesOfOneService(ctx, domainProject, serviceID)
+	instResp, err := datasource.Instance().GetInstances(cloneContext, &pb.GetInstancesRequest{
+		ProviderServiceId: svcResp.ServiceId,
+	})
 	if err != nil {
 		log.Errorf(err, "health check failed: get service center[%s][%s/%s/%s/%s]'s instances failed",
-			serviceID, apt.Service.Environment, apt.Service.AppId, apt.Service.ServiceName, apt.Service.Version)
+			svcResp.ServiceId, apt.Service.Environment, apt.Service.AppId, apt.Service.ServiceName, apt.Service.Version)
 		return &pb.GetInstancesResponse{
 			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
 	}
 	return &pb.GetInstancesResponse{
 		Response:  pb.CreateResponse(pb.ResponseSuccess, "Health check successfully."),
-		Instances: instances,
+		Instances: instResp.Instances,
 	}, nil
 }

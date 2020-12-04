@@ -20,7 +20,6 @@ package service
 import (
 	"regexp"
 
-	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/validate"
 )
 
@@ -39,7 +38,7 @@ func defaultDependencyValidator() *validate.Validator {
 	appIDRule.Min = 0
 	serviceNameRule := *(MicroServiceKeyValidator().GetRule("ServiceName"))
 	serviceNameRule.Regexp = nameFuzzyRegex
-	versionRule := &validate.Rule{Max: 128, Regexp: &serviceUtil.VersionRegexp{Fuzzy: true, Regex: versionAllowEmptyRegex}}
+	versionRule := &validate.Rule{Max: 128, Regexp: &validate.VersionRegexp{Fuzzy: true, Regex: versionAllowEmptyRegex}}
 
 	var (
 		consumerMsValidator validate.Validator
