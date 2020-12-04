@@ -52,8 +52,6 @@ func (ds *DataSource) RegisterService(ctx context.Context, request *pb.CreateSer
 	service := request.Service
 	serviceFlag := util.StringJoin([]string{
 		service.Environment, service.AppId, service.ServiceName, service.Version}, "/")
-
-	datasource.SetServiceDefaultValue(service)
 	domainProject := util.ParseDomainProject(ctx)
 
 	serviceKey := &pb.MicroServiceKey{
@@ -67,7 +65,6 @@ func (ds *DataSource) RegisterService(ctx context.Context, request *pb.CreateSer
 
 	reporter := checkQuota(ctx, domainProject)
 	defer reporter.Close(ctx)
-
 	if reporter != nil && reporter.Err != nil {
 		log.Errorf(reporter.Err, "create micro-service[%s] failed, operator: %s",
 			serviceFlag, remoteIP)

@@ -73,6 +73,9 @@ func (c *Client) Initialize() (err error) {
 		// parse the endpoints from config
 		c.parseEndpoints()
 	}
+	log.Info(fmt.Sprintf("parse %v -> endpoints: %v, ssl: %v",
+		etcd.Configuration().Clusters, c.Endpoints, etcd.Configuration().SslEnabled))
+
 	if c.TLSConfig == nil && etcd.Configuration().SslEnabled {
 		var err error
 		// go client tls限制，提供身份证书、不认证服务端、不校验CN
@@ -99,8 +102,8 @@ func (c *Client) Initialize() (err error) {
 
 	close(c.ready)
 
-	log.Warnf("get etcd client %v completed, auto sync endpoints interval is %s.",
-		c.Endpoints, c.AutoSyncInterval)
+	log.Warn(fmt.Sprintf("get etcd client %v completed, ssl: %v, dial timeout: %s, auto sync endpoints interval is %s.",
+		c.Endpoints, c.TLSConfig != nil, c.DialTimeout, c.AutoSyncInterval))
 	return
 }
 

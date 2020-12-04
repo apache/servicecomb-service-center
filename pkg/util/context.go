@@ -24,10 +24,10 @@ import (
 )
 
 const (
-	CtxDomain        = "domain"
-	CtxProject       = "project"
-	CtxTargetDomain  = "target-domain"
-	CtxTargetProject = "target-project"
+	CtxDomain        CtxKey = "domain"
+	CtxProject       CtxKey = "project"
+	CtxTargetDomain  CtxKey = "target-domain"
+	CtxTargetProject CtxKey = "target-project"
 )
 
 type StringContext struct {

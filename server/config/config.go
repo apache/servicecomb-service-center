@@ -149,10 +149,7 @@ func newInfo() ServerInformation {
 
 			EnablePProf: GetInt("server.pprof.mode", 0, WithStandby("enable_pprof")) != 0,
 
-			SslEnabled:    GetInt("ssl.mode", 1, WithStandby("ssl_mode")) != 0,
-			SslMinVersion: GetString("ssl.minVersion", "TLSv1.2", WithStandby("ssl_min_version")),
-			SslVerifyPeer: GetInt("ssl.verifyClient", 1, WithStandby("ssl_verify_client")) != 0,
-			SslCiphers:    GetString("ssl.ciphers", "", WithStandby("ssl_ciphers")),
+			SslEnabled: GetInt("ssl.mode", 1, WithStandby("ssl_mode")) != 0,
 
 			CompactIndexDelta: GetInt64("registry.compact.indexDelta", 100, WithStandby("compact_index_delta")),
 			CompactInterval:   GetDuration("registry.compact.interval", 12*time.Hour, WithStandby("compact_interval")),

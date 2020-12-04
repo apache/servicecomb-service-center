@@ -25,11 +25,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
+	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/cluster"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
-
-	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
@@ -46,7 +46,8 @@ func (ds *DataSource) SelfRegister(ctx context.Context) error {
 	return nil
 }
 
-func (ds *DataSource) selfRegister(ctx context.Context) error {
+func (ds *DataSource) selfRegister(pCtx context.Context) error {
+	ctx := core.AddDefaultContextValue(pCtx)
 	err := ds.registerService(ctx)
 	if err != nil {
 		return err
@@ -55,8 +56,7 @@ func (ds *DataSource) selfRegister(ctx context.Context) error {
 	return ds.registerInstance(ctx)
 }
 
-func (ds *DataSource) registerService(pCtx context.Context) error {
-	ctx := core.AddDefaultContextValue(pCtx)
+func (ds *DataSource) registerService(ctx context.Context) error {
 	respE, err := core.ServiceAPI.Exist(ctx, core.GetExistenceRequest())
 	if err != nil {
 		log.Error("query service center existence failed", err)
@@ -67,7 +67,7 @@ func (ds *DataSource) registerService(pCtx context.Context) error {
 		respG, err := core.ServiceAPI.GetOne(ctx, core.GetServiceRequest(respE.ServiceId))
 		if respG.Response.GetCode() != pb.ResponseSuccess {
 			log.Errorf(err, "query service center service[%s] info failed", respE.ServiceId)
-			return fmt.Errorf("service center service file lost")
+			return datasource.ErrServiceNotExists
 		}
 		core.Service = respG.Service
 		return nil
@@ -78,27 +78,27 @@ func (ds *DataSource) registerService(pCtx context.Context) error {
 		log.Error("register service center failed", err)
 		return err
 	}
+	if respS.Response.GetCode() != pb.ResponseSuccess {
+		log.Error("register service center failed, msg: "+respS.Response.GetMessage(), nil)
+		return errors.New(respS.Response.GetMessage())
+	}
 	core.Service.ServiceId = respS.ServiceId
 	log.Infof("register service center service[%s]", respS.ServiceId)
 	return nil
 }
 
-func (ds *DataSource) registerInstance(pCtx context.Context) error {
+func (ds *DataSource) registerInstance(ctx context.Context) error {
 	core.Instance.InstanceId = ""
 	core.Instance.ServiceId = core.Service.ServiceId
-
-	ctx := core.AddDefaultContextValue(pCtx)
-
 	respI, err := core.InstanceAPI.Register(ctx, core.RegisterInstanceRequest())
 	if err != nil {
 		log.Error("register failed", err)
 		return err
 	}
 	if respI.Response.GetCode() != pb.ResponseSuccess {
-		err = fmt.Errorf("register service center[%s] instance failed, %s",
-			core.Instance.ServiceId, respI.Response.GetMessage())
-		log.Error(err.Error(), nil)
-		return err
+		log.Error(fmt.Sprintf("register service center[%s] instance failed, %s",
+			core.Instance.ServiceId, respI.Response.GetMessage()), nil)
+		return errors.New(respI.Response.GetMessage())
 	}
 	core.Instance.InstanceId = respI.InstanceId
 	log.Infof("register service center instance[%s/%s], endpoints is %s",

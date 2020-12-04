@@ -26,13 +26,15 @@ import (
 	"strings"
 )
 
+const CtxRemoteIP CtxKey = "x-remote-ip"
+
 type IPPort struct {
 	IP   string
 	Port uint16
 }
 
 func GetIPFromContext(ctx context.Context) string {
-	v, ok := FromContext(ctx, "x-remote-ip").(string)
+	v, ok := FromContext(ctx, CtxRemoteIP).(string)
 	if !ok {
 		return "UNKNOWN"
 	}

@@ -23,17 +23,17 @@ import (
 	"sync"
 
 	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
-type ContextKey string
 type ClustersIndex map[string]int
 
 const (
-	CtxFindConsumer         ContextKey = "_consumer"
-	CtxFindProvider         ContextKey = "_provider"
-	CtxFindProviderInstance ContextKey = "_provider_instance"
-	CtxFindTags             ContextKey = "_tags"
-	CtxFindRequestRev       ContextKey = "_rev"
+	CtxFindConsumer         util.CtxKey = "_consumer"
+	CtxFindProvider         util.CtxKey = "_provider"
+	CtxFindProviderInstance util.CtxKey = "_provider_instance"
+	CtxFindTags             util.CtxKey = "_tags"
+	CtxFindRequestRev       util.CtxKey = "_rev"
 
 	Find = "_find"
 	Dep  = "_dep"

@@ -16,8 +16,8 @@
  */
 package bootstrap
 
-//etcd
 import (
+	//etcd
 	_ "github.com/apache/servicecomb-service-center/datasource/etcd/bootstrap"
 
 	//mongo
