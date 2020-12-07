@@ -41,7 +41,7 @@ func init() {
 
 func TestUpdateInstanceRefreshTime(t *testing.T) {
 	t.Run("update instance refresh time: if the instance does not exist,the update should fail", func(t *testing.T) {
-		err := updateInstanceRefreshTime(context.Background(), "not-exist")
+		err := updateInstanceRefreshTime(context.Background(), "not-exist", "not-exist")
 		log.Error("", err)
 		assert.NotNil(t, err)
 	})
@@ -56,10 +56,11 @@ func TestUpdateInstanceRefreshTime(t *testing.T) {
 		}
 		_, err := client.GetMongoClient().Insert(context.Background(), mongo.CollectionInstance, instance1)
 		assert.Equal(t, nil, err)
-		err = updateInstanceRefreshTime(context.Background(), instance1.InstanceInfo.InstanceId)
+		err = updateInstanceRefreshTime(context.Background(), instance1.InstanceInfo.ServiceId, instance1.InstanceInfo.InstanceId)
 		assert.Equal(t, nil, err)
 		filter := bson.M{
 			mongo.StringBuilder([]string{mongo.ColumnInstanceInfo, mongo.ColumnInstanceID}): instance1.InstanceInfo.InstanceId,
+			mongo.StringBuilder([]string{mongo.ColumnInstanceInfo, mongo.ColumnServiceID}):  instance1.InstanceInfo.ServiceId,
 		}
 		result, err := client.GetMongoClient().FindOne(context.Background(), mongo.CollectionInstance, filter)
 		assert.Nil(t, err)
@@ -69,6 +70,7 @@ func TestUpdateInstanceRefreshTime(t *testing.T) {
 		assert.NotEqual(t, instance1.RefreshTime, ins.RefreshTime)
 		filter = bson.M{
 			mongo.StringBuilder([]string{mongo.ColumnInstanceInfo, mongo.ColumnInstanceID}): instance1.InstanceInfo.InstanceId,
+			mongo.StringBuilder([]string{mongo.ColumnInstanceInfo, mongo.ColumnServiceID}):  instance1.InstanceInfo.ServiceId,
 		}
 		_, err = client.GetMongoClient().Delete(context.Background(), mongo.CollectionInstance, filter)
 		assert.Nil(t, err)

@@ -60,6 +60,7 @@ func TestHeartbeat(t *testing.T) {
 		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 		filter := bson.M{
 			mongo.StringBuilder([]string{mongo.ColumnInstanceInfo, mongo.ColumnInstanceID}): instance1.InstanceInfo.InstanceId,
+			mongo.StringBuilder([]string{mongo.ColumnInstanceInfo, mongo.ColumnServiceID}):  instance1.InstanceInfo.ServiceId,
 		}
 		_, err = client.GetMongoClient().Delete(context.Background(), mongo.CollectionInstance, filter)
 		assert.Nil(t, err)
