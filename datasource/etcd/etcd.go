@@ -56,7 +56,7 @@ type DataSource struct {
 
 func NewDataSource(opts datasource.Options) (datasource.DataSource, error) {
 	// TODO: construct a reasonable DataSource instance
-	log.Warnf("dependency data source enable etcd mode")
+	log.Warnf("data source enable etcd mode")
 
 	inst := &DataSource{
 		SchemaEditable:    opts.SchemaEditable,

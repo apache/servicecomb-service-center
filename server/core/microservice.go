@@ -49,7 +49,7 @@ const (
 	RegistryDefaultLeaseRenewalinterval int32 = 30
 	RegistryDefaultLeaseRetrytimes      int32 = 3
 
-	CtxScSelf = "_sc_self"
+	CtxScSelf util.CtxKey = "_sc_self"
 )
 
 func init() {

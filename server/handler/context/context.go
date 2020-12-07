@@ -50,7 +50,7 @@ func (c *Handler) Handle(i *chain.Invocation) {
 		return
 	}
 
-	i.WithContext("x-remote-ip", util.GetRealIP(r))
+	i.WithContext(util.CtxRemoteIP, util.GetRealIP(r))
 
 	i.Next()
 }

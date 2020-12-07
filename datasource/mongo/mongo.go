@@ -39,7 +39,7 @@ type DataSource struct {
 
 func NewDataSource(opts datasource.Options) (datasource.DataSource, error) {
 	// TODO: construct a reasonable DataSource instance
-	log.Warn("dependency data source enable etcd mode")
+	log.Warn("data source enable mongo mode")
 
 	inst := &DataSource{
 		SchemaEditable: opts.SchemaEditable,
