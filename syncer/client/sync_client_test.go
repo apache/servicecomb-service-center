@@ -15,18 +15,18 @@ var c = NewSyncClient("", new(tls.Config))
 
 func TestClient_IncrementPull(t *testing.T) {
 	t.Run("Test IncrementPull", func(t *testing.T) {
-		_, err := c.IncrementPull(context.Background(), "http://127.0.0.1")
+		_, err := c.IncrementPull(context.Background(), &pb.IncrementPullRequest{Addr: "http://127.0.0.1", Length: 3})
 		assert.Error(t, err, "IncrementPull fail without grpc")
 	})
 	t.Run("Test IncrementPull", func(t *testing.T) {
 		defer monkey.UnpatchAll()
 
 		monkey.PatchInstanceMethod(reflect.TypeOf((*Client)(nil)),
-			"IncrementPull", func(client *Client, ctx context.Context, string2 string) (*pb.SyncData, error) {
+			"IncrementPull", func(client *Client, ctx context.Context, req *pb.IncrementPullRequest) (*pb.SyncData, error) {
 				return syncDataCreate(), nil
 			})
 
-		syncData, err := c.IncrementPull(context.Background(), "http://127.0.0.1")
+		syncData, err := c.IncrementPull(context.Background(), &pb.IncrementPullRequest{Addr: "http://127.0.0.1", Length: 3})
 		assert.NoError(t, err, "IncrementPull no err when client exist")
 		assert.NotNil(t, syncData, "syncData not nil when client exist")
 	})

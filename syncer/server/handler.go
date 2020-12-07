@@ -24,7 +24,6 @@ import (
 	"strconv"
 
 	"github.com/apache/servicecomb-service-center/pkg/dump"
-
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/tlsutil"
 	"github.com/apache/servicecomb-service-center/pkg/util"
