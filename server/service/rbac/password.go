@@ -21,7 +21,7 @@ import (
 	"context"
 
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
-	stringutil "github.com/go-chassis/foundation/string"
+	"github.com/go-chassis/foundation/stringutil"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
