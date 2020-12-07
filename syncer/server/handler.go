@@ -37,7 +37,7 @@ const (
 	EventDiscovered       = "discovered"
 	EventIncrementPulled  = "incrementPulled"
 	EventNotifyFullPulled = "notifyFullPulled"
-	BufferSize            = 1000
+	ChannelBufferSize     = 1000
 )
 
 // tickHandler Timed task handler
@@ -74,13 +74,13 @@ func (s *Server) tickHandler() {
 // Pull returns sync data of servicecenter
 func (s *Server) Pull(ctx context.Context, req *pb.PullRequest) (*pb.SyncData, error) {
 	if _, ok := s.channelMap[req.GetAddr()]; !ok {
-		s.channelMap[req.GetAddr()] = make(chan *dump.WatchInstanceChangedEvent, BufferSize)
+		s.channelMap[req.GetAddr()] = make(chan *dump.WatchInstanceChangedEvent, ChannelBufferSize)
 	}
 	return s.servicecenter.Discovery(), nil
 }
 
 func (s *Server) IncrementPull(ctx context.Context, req *pb.IncrementPullRequest) (*pb.SyncData, error) {
-	incrementQueue := s.GetIncrementQueue(req.GetAddr())
+	incrementQueue := s.GetIncrementQueue(req)
 	return s.GetIncrementData(ctx, incrementQueue), nil
 }
 
@@ -182,7 +182,8 @@ func (s *Server) incrementUserEvent(data ...[]byte) (success bool) {
 	syncDataLength := declareResponse.SyncDataLength
 
 	if syncDataLength != 0 {
-		syncData, err := cli.IncrementPull(context.Background(), s.conf.Listener.RPCAddr)
+		syncData, err := cli.IncrementPull(
+			context.Background(), &pb.IncrementPullRequest{Addr: s.conf.Listener.RPCAddr, Length: syncDataLength})
 		if err != nil {
 			log.Error(fmt.Sprintf("IncrementPull other serf instances failed, node name is '%s'", members[0].Name), err)
 			return

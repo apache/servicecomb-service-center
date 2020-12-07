@@ -57,6 +57,12 @@ $ go build
 - cluster-port： 当mode为“cluster”时，Syncer集群成员之间进行通信的端口
 - node：当mode为“cluster”时，syncer集群成员名称。
 
+###### 同步模式说明
+- 增量同步：默认的同步模式。
+- 全量同步：每个syncer启动加入时自动触发一次，也可以在增量同步异常告警之后手动调用接口触发。
+```bash
+$ curl http://0.0.0.0:30300/v1/syncer/full-synchronization
+```
 
 假设有2个服务中心，每个服务中心都有一个用于微服务发现和注册的服务中心集群，如下所示：   
 
@@ -111,3 +117,4 @@ Syncer是一个开发中版本，在下面列出已支持的特性，更多开�
 - 支持多个servicecomb-service-center 服务中心之间进行数据同步
 - 在etcd中固化存储微服务实例映射表
 - 支持集群模式部署Syncer，每个syncer集群拥有3个实例
+- 支持增量同步为主要同步机制，每个syncer加入时触发一次全量同步，增量同步异常告警后也可手动进行全量同步

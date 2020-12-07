@@ -330,15 +330,15 @@ func (s *Server) getSyncDataLength(addr string) (response *pb.DeclareResponse) {
 	return response
 }
 
-func (s *Server) GetIncrementQueue(addr string) (queue []*dump.WatchInstanceChangedEvent) {
-	ch, ok := s.channelMap[addr]
+func (s *Server) GetIncrementQueue(req *pb.IncrementPullRequest) (queue []*dump.WatchInstanceChangedEvent) {
+	ch, ok := s.channelMap[req.GetAddr()]
 	if !ok {
 		log.Debug("fail to find the queue according to the addr")
 		return nil
 	}
 
 	queue = make([]*dump.WatchInstanceChangedEvent, 0, len(ch))
-	for {
+	for i := 0; i < int(req.GetLength()); i++ {
 		select {
 		case temp, ok := <-ch:
 			if !ok {
@@ -350,6 +350,7 @@ func (s *Server) GetIncrementQueue(addr string) (queue []*dump.WatchInstanceChan
 			return
 		}
 	}
+	return
 }
 
 func (s *Server) GetIncrementData(ctx context.Context, incrementQueue []*dump.WatchInstanceChangedEvent) (data *pb.SyncData) {

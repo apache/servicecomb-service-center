@@ -22,7 +22,8 @@ func TestServer_IncrementPull(t *testing.T) {
 
 	t.Run("increment when address exist", func(t *testing.T) {
 		iPReq := pb.IncrementPullRequest{
-			Addr: "1",
+			Addr:   "1",
+			Length: 1,
 		}
 		syncData, err := s.IncrementPull(context.Background(), &iPReq)
 		assert.NoError(t, err, "no error when DeclareDataLength")
