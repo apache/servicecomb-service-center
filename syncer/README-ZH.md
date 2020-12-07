@@ -61,7 +61,7 @@ $ go build
 - 增量同步：默认的同步模式。
 - 全量同步：每个syncer启动加入时自动触发一次，也可以在增量同步异常告警之后手动调用接口触发。
 ```bash
-$ curl http://0.0.0.0:30300/v1/syncer/full-synchronization
+$ curl http://localhost:30300/v1/syncer/full-synchronization
 ```
 
 假设有2个服务中心，每个服务中心都有一个用于微服务发现和注册的服务中心集群，如下所示：   

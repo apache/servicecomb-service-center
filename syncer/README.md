@@ -91,7 +91,7 @@ $ go build
   or it can be triggered manually by calling the interface after an exception occurs in the incremental synchronization.
 
 ```bash
-$ curl http://0.0.0.0:30300/v1/syncer/full-synchronization
+$ curl http://localhost:30300/v1/syncer/full-synchronization
 ```
 
 Suppose there are 2 Service centers, each of them with a Service-center cluster for microservices discovery and registry, as following,   
