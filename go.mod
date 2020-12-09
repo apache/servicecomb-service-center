@@ -18,10 +18,10 @@ require (
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-chassis/cari v0.0.0-20201124050026-32fbf4d53439
-	github.com/go-chassis/foundation v0.2.0
+	github.com/go-chassis/foundation v0.2.2-0.20201208060254-d5e8e5beb1f0
 	github.com/go-chassis/go-archaius v1.3.6-0.20201130023516-387922b408d0
-	github.com/go-chassis/go-chassis/v2 v2.0.5-0.20201125123124-2d38733810fd
-	github.com/go-chassis/kie-client v0.0.0-20201127085925-8ad6f8fdd9fc
+	github.com/go-chassis/go-chassis/v2 v2.1.1-0.20201208095114-93feb76fd997
+	github.com/go-chassis/kie-client v0.0.0-20201208074213-6216c99bc6cc
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/protobuf v1.4.2
 	github.com/gorilla/websocket v1.4.0
