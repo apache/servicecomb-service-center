@@ -1150,7 +1150,7 @@ var _ = Describe("'Instance' service", func() {
 					VersionRule:       "latest",
 				})
 				Expect(err).To(BeNil())
-				Expect(respFind.Response.GetCode()).ToNot(Equal(pb.ResponseSuccess))
+				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrServiceNotExists))
 
 				By("provider does not contain 3.0.0+ versions")
 				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
@@ -1182,7 +1182,7 @@ var _ = Describe("'Instance' service", func() {
 					VersionRule:       "2.0.0",
 				})
 				Expect(err).To(BeNil())
-				Expect(respFind.Response.GetCode()).ToNot(Equal(pb.ResponseSuccess))
+				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrServiceNotExists))
 
 				By("consumer does not exist")
 				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{

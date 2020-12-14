@@ -82,8 +82,9 @@ registry:
       timeout:
     request:
       timeout:
-  mongodb:
-    xxx:
+  mongo:
+    cluster:
+      uri: mongodb://localhost:27017
 
   service:
     # enable the job clear the microservices which deploy no instance

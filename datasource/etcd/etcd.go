@@ -17,6 +17,7 @@ package etcd
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/event"
 	"sort"
 	"strings"
 	"sync"
@@ -80,6 +81,8 @@ func (ds *DataSource) initialize() error {
 	ds.initClustersIndex()
 	// init client/sd plugins
 	ds.initPlugins()
+	// Add events handlers
+	event.Initialize()
 	// Wait for kv store ready
 	ds.initKvStore()
 	// Compact

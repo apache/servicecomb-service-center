@@ -37,7 +37,4 @@ import (
 	_ "github.com/apache/servicecomb-service-center/datasource/etcd/sd/etcd"
 
 	_ "github.com/apache/servicecomb-service-center/datasource/etcd/sd/k8s"
-
-	//events
-	_ "github.com/apache/servicecomb-service-center/datasource/etcd/event"
 )

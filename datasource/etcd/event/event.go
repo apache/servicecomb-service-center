@@ -21,7 +21,7 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 )
 
-func init() {
+func Initialize() {
 	sd.AddEventHandler(NewDomainEventHandler())
 	sd.AddEventHandler(NewServiceEventHandler())
 	sd.AddEventHandler(NewInstanceEventHandler())
