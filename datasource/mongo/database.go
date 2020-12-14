@@ -76,6 +76,9 @@ const (
 	ColumnRuleInfo       = "ruleinfo"
 	ColumnInstanceInfo   = "instanceinfo"
 	ColumnInstanceID     = "instanceid"
+	ColumnConsumerID     = "consumerid"
+	ColumnMongoID        = "_id"
+	ColumnTenant         = "tenant"
 )
 
 type Service struct {

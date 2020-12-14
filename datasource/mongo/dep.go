@@ -19,12 +19,10 @@ package mongo
 
 import (
 	"context"
+	"fmt"
 
 	pb "github.com/go-chassis/cari/discovery"
 	"go.mongodb.org/mongo-driver/bson"
-
-	"fmt"
-	"strings"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
@@ -33,6 +31,7 @@ import (
 )
 
 func (ds *DataSource) SearchProviderDependency(ctx context.Context, request *pb.GetDependenciesRequest) (*pb.GetProDependenciesResponse, error) {
+	domainProject := util.ParseDomainProject(ctx)
 	providerServiceID := request.ServiceId
 	filter := GeneratorServiceFilter(ctx, providerServiceID)
 	provider, err := GetService(ctx, filter)
@@ -47,7 +46,8 @@ func (ds *DataSource) SearchProviderDependency(ctx context.Context, request *pb.
 		}, nil
 	}
 
-	services, err := GetDependencyProviders(ctx, provider.ServiceInfo, request)
+	dr := NewProviderDependencyRelation(ctx, domainProject, provider.ServiceInfo)
+	services, err := dr.GetDependencyConsumers(ToDependencyFilterOptions(request)...)
 	if err != nil {
 		log.Error(fmt.Sprintf("GetProviderDependencies failed, provider is %s/%s/%s/%s",
 			provider.ServiceInfo.Environment, provider.ServiceInfo.AppId, provider.ServiceInfo.ServiceName, provider.ServiceInfo.Version), err)
@@ -63,6 +63,7 @@ func (ds *DataSource) SearchProviderDependency(ctx context.Context, request *pb.
 }
 
 func (ds *DataSource) SearchConsumerDependency(ctx context.Context, request *pb.GetDependenciesRequest) (*pb.GetConDependenciesResponse, error) {
+	domainProject := util.ParseDomainProject(ctx)
 	consumerID := request.ServiceId
 
 	filter := GeneratorServiceFilter(ctx, consumerID)
@@ -78,7 +79,8 @@ func (ds *DataSource) SearchConsumerDependency(ctx context.Context, request *pb.
 		}, nil
 	}
 
-	services, err := GetDependencyProviders(ctx, consumer.ServiceInfo, request)
+	dr := NewConsumerDependencyRelation(ctx, domainProject, consumer.ServiceInfo)
+	services, err := dr.GetDependencyProviders(ToDependencyFilterOptions(request)...)
 	if err != nil {
 		log.Error(fmt.Sprintf("GetConsumerDependencies failed, consumer is %s/%s/%s/%s",
 			consumer.ServiceInfo.Environment, consumer.ServiceInfo.AppId, consumer.ServiceInfo.ServiceName, consumer.ServiceInfo.Version), err)
@@ -150,197 +152,6 @@ func (ds *DataSource) AddOrUpdateDependencies(ctx context.Context, dependencyInf
 
 func (ds *DataSource) DeleteDependency() {
 	panic("implement me")
-}
-
-func GetDependencyProviders(ctx context.Context, consumer *pb.MicroService, request *pb.GetDependenciesRequest) ([]*pb.MicroService, error) {
-	keys, err := GetProviderKeys(ctx, consumer)
-	if err != nil {
-		return nil, err
-	}
-
-	services := make([]*pb.MicroService, 0, len(keys))
-
-	for _, key := range keys {
-		domainProject := util.ParseDomainProject(ctx)
-		if request.SameDomain && key.Tenant != domainProject {
-			continue
-		}
-
-		providerIDs, err := ParseDependencyRule(ctx, key)
-		if err != nil {
-			return nil, err
-		}
-
-		if key.ServiceName == "*" {
-			services = services[:0]
-		}
-
-		for _, providerID := range providerIDs {
-			filter := GeneratorServiceFilter(ctx, providerID)
-			provider, err := GetService(ctx, filter)
-			if err != nil {
-				log.Warn(fmt.Sprintf("get provider[%s/%s/%s/%s] failed",
-					key.Environment, key.AppId, key.ServiceName, key.Version))
-				continue
-			}
-			if provider == nil {
-				log.Warn(fmt.Sprintf("provider[%s/%s/%s/%s] does not exist",
-					key.Environment, key.AppId, key.ServiceName, key.Version))
-				continue
-			}
-			if request.NoSelf && providerID == consumer.ServiceId {
-				continue
-			}
-			services = append(services, provider.ServiceInfo)
-		}
-
-		if key.ServiceName == "*" {
-			break
-		}
-	}
-
-	return services, nil
-}
-
-func GetProviderKeys(ctx context.Context, consumer *pb.MicroService) ([]*pb.MicroServiceKey, error) {
-	if consumer == nil {
-		return nil, ErrInvalidConsumer
-	}
-	domainProject := util.ParseDomainProject(ctx)
-	consumerMicroServiceKey := &pb.MicroServiceKey{
-		Tenant:      domainProject,
-		Environment: consumer.Environment,
-		AppId:       consumer.AppId,
-		ServiceName: consumer.ServiceName,
-		Alias:       consumer.Alias,
-		Version:     consumer.Version,
-	}
-
-	filter := GenerateConsumerDependencyRuleKey(ctx, consumerMicroServiceKey)
-
-	findRes, err := client.GetMongoClient().Find(ctx, CollectionDep, filter)
-	if err != nil {
-		return nil, err
-	}
-	var services []*pb.MicroServiceKey
-	for findRes.Next(ctx) {
-		var tempMongoDep Dependency
-		err := findRes.Decode(&tempMongoDep)
-		if err != nil {
-			return nil, err
-		}
-		providers := tempMongoDep.DependencyInfo.Providers
-		services = append(services, providers...)
-	}
-	return services, nil
-}
-
-func GenerateConsumerDependencyRuleKey(ctx context.Context, in *pb.MicroServiceKey) bson.M {
-
-	domain := util.ParseDomain(ctx)
-	project := util.ParseProject(ctx)
-	if in == nil {
-		return bson.M{
-			ColumnDomain:  domain,
-			ColumnProject: project,
-		}
-	}
-	if in.ServiceName == "*" {
-		return bson.M{
-			ColumnDomain:  domain,
-			ColumnProject: project,
-			StringBuilder([]string{ColumnDependencyInfo, ColumnConsumer, ColumnEnv}): in.Environment,
-		}
-	}
-	return bson.M{
-		ColumnDomain:  domain,
-		ColumnProject: project,
-		StringBuilder([]string{ColumnDependencyInfo, ColumnConsumer, ColumnEnv}):     in.Environment,
-		StringBuilder([]string{ColumnDependencyInfo, ColumnConsumer, ColumnAppID}):   in.AppId,
-		StringBuilder([]string{ColumnDependencyInfo, ColumnConsumer, ColumnVersion}): in.Version,
-	}
-}
-
-func ParseDependencyRule(ctx context.Context, dependencyRule *pb.MicroServiceKey) (serviceIDs []string, err error) {
-	switch {
-	case dependencyRule.ServiceName == "*":
-		splited := strings.Split(dependencyRule.Tenant, "/")
-		filter := bson.M{
-			ColumnDomain:  splited[0],
-			ColumnProject: splited[1],
-			StringBuilder([]string{ColumnServiceInfo, ColumnEnv}): dependencyRule.Environment}
-		findRes, err := client.GetMongoClient().Find(ctx, CollectionService, filter)
-		if err != nil {
-			return nil, err
-		}
-		for findRes.Next(ctx) {
-			var service Service
-			err = findRes.Decode(&service)
-			if err != nil {
-				return nil, err
-			}
-			serviceIDs = append(serviceIDs, service.ServiceInfo.ServiceId)
-		}
-	default:
-		serviceIDs, err = FindServiceIds(ctx, dependencyRule)
-	}
-	return
-}
-
-func FindServiceIds(ctx context.Context, key *pb.MicroServiceKey) ([]string, error) {
-	versionRule := key.Version
-	splited := strings.Split(key.Tenant, "/")
-	if len(versionRule) == 0 {
-		return nil, nil
-	}
-	rangeIdx := strings.Index(versionRule, "-")
-	switch {
-	case versionRule == "latest":
-		filter := bson.M{
-			ColumnDomain:  splited[0],
-			ColumnProject: splited[1]}
-		return GetFilterVersionService(ctx, filter)
-	case versionRule[len(versionRule)-1:] == "+":
-		start := versionRule[:len(versionRule)-1]
-		filter := bson.M{
-			ColumnDomain:  splited[0],
-			ColumnProject: splited[1],
-			StringBuilder([]string{ColumnServiceInfo, ColumnVersion}): bson.M{"$gte": start}}
-		return GetFilterVersionService(ctx, filter)
-	case rangeIdx > 0:
-		start := versionRule[:rangeIdx]
-		end := versionRule[rangeIdx+1:]
-		filter := bson.M{
-			ColumnDomain:  splited[0],
-			ColumnProject: splited[1],
-			StringBuilder([]string{ColumnServiceInfo, ColumnVersion}): bson.M{"$gts": start, "$lt": end}}
-		return GetFilterVersionService(ctx, filter)
-	default:
-		filter := bson.M{
-			ColumnDomain:  splited[0],
-			ColumnProject: splited[1],
-			StringBuilder([]string{ColumnServiceInfo, ColumnEnv}):         key.Environment,
-			StringBuilder([]string{ColumnServiceInfo, ColumnAppID}):       key.AppId,
-			StringBuilder([]string{ColumnServiceInfo, ColumnServiceName}): key.ServiceName,
-			StringBuilder([]string{ColumnServiceInfo, ColumnVersion}):     key.Version}
-		return GetFilterVersionService(ctx, filter)
-	}
-}
-
-func GetFilterVersionService(ctx context.Context, m bson.M) (serviceIDs []string, err error) {
-	findRes, err := client.GetMongoClient().Find(ctx, CollectionService, m)
-	if err != nil {
-		return nil, err
-	}
-	for findRes.Next(ctx) {
-		var service Service
-		err = findRes.Decode(&service)
-		if err != nil {
-			return nil, err
-		}
-		serviceIDs = append(serviceIDs, service.ServiceInfo.ServiceId)
-	}
-	return
 }
 
 func GetServiceID(ctx context.Context, key *pb.MicroServiceKey) (serviceID string, err error) {

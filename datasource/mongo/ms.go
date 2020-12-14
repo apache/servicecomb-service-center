@@ -1470,15 +1470,17 @@ func (ds *DataSource) GetInstance(ctx context.Context, request *discovery.GetOne
 				fmt.Sprintf("Provider[%s] does not exist.", request.ProviderServiceId)),
 		}, nil
 	}
-	findFlag := fmt.Sprintf("consumer[%s][%s/%s/%s/%s] find provider[%s][%s/%s/%s/%s] instance[%s]",
-		request.ConsumerServiceId, service.ServiceInfo.Environment, service.ServiceInfo.AppId, service.ServiceInfo.ServiceName, service.ServiceInfo.Version,
-		provider.ServiceInfo.ServiceId, provider.ServiceInfo.Environment, provider.ServiceInfo.AppId, provider.ServiceInfo.ServiceName, provider.ServiceInfo.Version,
-		request.ProviderInstanceId)
+	findFlag := func() string {
+		return fmt.Sprintf("consumer[%s][%s/%s/%s/%s] find provider[%s][%s/%s/%s/%s] instance[%s]",
+			request.ConsumerServiceId, service.ServiceInfo.Environment, service.ServiceInfo.AppId, service.ServiceInfo.ServiceName, service.ServiceInfo.Version,
+			provider.ServiceInfo.ServiceId, provider.ServiceInfo.Environment, provider.ServiceInfo.AppId, provider.ServiceInfo.ServiceName, provider.ServiceInfo.Version,
+			request.ProviderInstanceId)
+	}
 
 	domainProject := util.ParseDomainProject(ctx)
 	services, err := findServices(ctx, discovery.MicroServiceToKey(domainProject, provider.ServiceInfo))
 	if err != nil {
-		log.Error(fmt.Sprintf("get instance failed %s", findFlag), err)
+		log.Error(fmt.Sprintf("get instance failed %s", findFlag()), err)
 		return &discovery.GetOneInstanceResponse{
 			Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
 		}, err
@@ -1487,7 +1489,7 @@ func (ds *DataSource) GetInstance(ctx context.Context, request *discovery.GetOne
 		serviceIDs = filterServiceIDs(ctx, request.ConsumerServiceId, request.Tags, services)
 	}
 	if services == nil || len(serviceIDs) == 0 {
-		mes := fmt.Errorf("%s failed, provider does not exist", findFlag)
+		mes := fmt.Errorf("%s failed, provider does not exist", findFlag())
 		log.Error("get instance failed", mes)
 		return &discovery.GetOneInstanceResponse{
 			Response: discovery.CreateResponse(discovery.ErrServiceNotExists, mes.Error()),
@@ -1495,7 +1497,7 @@ func (ds *DataSource) GetInstance(ctx context.Context, request *discovery.GetOne
 	}
 	instances, err := instancesFilter(ctx, serviceIDs)
 	if len(instances) == 0 {
-		mes := fmt.Errorf("%s failed, provider instance does not exist", findFlag)
+		mes := fmt.Errorf("%s failed, provider instance does not exist", findFlag())
 		log.Error("get instance failed", err)
 		return &discovery.GetOneInstanceResponse{
 			Response: discovery.CreateResponse(discovery.ErrInstanceNotExists, mes.Error()),
@@ -1551,13 +1553,15 @@ func (ds *DataSource) GetInstances(ctx context.Context, request *discovery.GetIn
 		}, nil
 	}
 
-	findFlag := fmt.Sprintf("consumer[%s][%s/%s/%s/%s] find provider[%s][%s/%s/%s/%s] instances",
-		request.ConsumerServiceId, service.ServiceInfo.Environment, service.ServiceInfo.AppId, service.ServiceInfo.ServiceName, service.ServiceInfo.Version,
-		provider.ServiceInfo.ServiceId, provider.ServiceInfo.Environment, provider.ServiceInfo.AppId, provider.ServiceInfo.ServiceName, provider.ServiceInfo.Version)
+	findFlag := func() string {
+		return fmt.Sprintf("consumer[%s][%s/%s/%s/%s] find provider[%s][%s/%s/%s/%s] instances",
+			request.ConsumerServiceId, service.ServiceInfo.Environment, service.ServiceInfo.AppId, service.ServiceInfo.ServiceName, service.ServiceInfo.Version,
+			provider.ServiceInfo.ServiceId, provider.ServiceInfo.Environment, provider.ServiceInfo.AppId, provider.ServiceInfo.ServiceName, provider.ServiceInfo.Version)
+	}
 
 	services, err := findServices(ctx, discovery.MicroServiceToKey(domainProject, provider.ServiceInfo))
 	if err != nil {
-		log.Error(fmt.Sprintf("get instances failed %s", findFlag), err)
+		log.Error(fmt.Sprintf("get instances failed %s", findFlag()), err)
 		return &discovery.GetInstancesResponse{
 			Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
 		}, err
@@ -1566,7 +1570,7 @@ func (ds *DataSource) GetInstances(ctx context.Context, request *discovery.GetIn
 		serviceIDs = filterServiceIDs(ctx, request.ConsumerServiceId, request.Tags, services)
 	}
 	if services == nil || len(serviceIDs) == 0 {
-		mes := fmt.Errorf("%s failed, provider does not exist", findFlag)
+		mes := fmt.Errorf("%s failed, provider does not exist", findFlag())
 		log.Error("get instances failed", mes)
 		return &discovery.GetInstancesResponse{
 			Response: discovery.CreateResponse(discovery.ErrServiceNotExists, mes.Error()),
@@ -1574,7 +1578,7 @@ func (ds *DataSource) GetInstances(ctx context.Context, request *discovery.GetIn
 	}
 	instances, err := instancesFilter(ctx, serviceIDs)
 	if err != nil {
-		log.Error(fmt.Sprintf("get instances failed %s", findFlag), err)
+		log.Error(fmt.Sprintf("get instances failed %s", findFlag()), err)
 		return &discovery.GetInstancesResponse{
 			Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
 		}, err
@@ -1924,16 +1928,18 @@ func (ds *DataSource) findSharedServiceInstance(ctx context.Context, request *di
 	var err error
 	// it means the shared micro-services must be the same env with SC.
 	provider.Environment = apt.Service.Environment
-	findFlag := fmt.Sprintf("find shared provider[%s/%s/%s/%s]", provider.Environment, provider.AppId, provider.ServiceName, provider.Version)
+	findFlag := func() string {
+		return fmt.Sprintf("find shared provider[%s/%s/%s/%s]", provider.Environment, provider.AppId, provider.ServiceName, provider.Version)
+	}
 	services, err := findServices(ctx, provider)
 	if err != nil {
-		log.Error(fmt.Sprintf("find shared service instance failed %s", findFlag), err)
+		log.Error(fmt.Sprintf("find shared service instance failed %s", findFlag()), err)
 		return &discovery.FindInstancesResponse{
 			Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
 		}, err
 	}
 	if services == nil {
-		mes := fmt.Errorf("%s failed, provider does not exist", findFlag)
+		mes := fmt.Errorf("%s failed, provider does not exist", findFlag())
 		log.Error("find shared service instance failed", mes)
 		return &discovery.FindInstancesResponse{
 			Response: discovery.CreateResponse(discovery.ErrServiceNotExists, mes.Error()),
@@ -1948,7 +1954,7 @@ func (ds *DataSource) findSharedServiceInstance(ctx context.Context, request *di
 	}
 	instances, err := instancesFilter(ctx, serviceIDs)
 	if err != nil {
-		log.Error(fmt.Sprintf("find shared service instance failed %s", findFlag), err)
+		log.Error(fmt.Sprintf("find shared service instance failed %s", findFlag()), err)
 		return &discovery.FindInstancesResponse{
 			Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
 		}, err
@@ -1989,18 +1995,20 @@ func (ds *DataSource) findInstance(ctx context.Context, request *discovery.FindI
 	ctx = util.SetTargetDomainProject(ctx, util.ParseDomain(ctx), util.ParseProject(ctx))
 	provider.Tenant = util.ParseTargetDomainProject(ctx)
 
-	findFlag := fmt.Sprintf("Consumer[%s][%s/%s/%s/%s] find provider[%s/%s/%s/%s]",
-		request.ConsumerServiceId, service.ServiceInfo.Environment, service.ServiceInfo.AppId, service.ServiceInfo.ServiceName, service.ServiceInfo.Version,
-		provider.Environment, provider.AppId, provider.ServiceName, provider.Version)
+	findFlag := func() string {
+		return fmt.Sprintf("Consumer[%s][%s/%s/%s/%s] find provider[%s/%s/%s/%s]",
+			request.ConsumerServiceId, service.ServiceInfo.Environment, service.ServiceInfo.AppId, service.ServiceInfo.ServiceName, service.ServiceInfo.Version,
+			provider.Environment, provider.AppId, provider.ServiceName, provider.Version)
+	}
 	services, err := findServices(ctx, provider)
 	if err != nil {
-		log.Error(fmt.Sprintf("find instance failed %s", findFlag), err)
+		log.Error(fmt.Sprintf("find instance failed %s", findFlag()), err)
 		return &discovery.FindInstancesResponse{
 			Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
 		}, err
 	}
 	if services == nil {
-		mes := fmt.Errorf("%s failed, provider does not exist", findFlag)
+		mes := fmt.Errorf("%s failed, provider does not exist", findFlag())
 		log.Error("find instance failed", mes)
 		return &discovery.FindInstancesResponse{
 			Response: discovery.CreateResponse(discovery.ErrServiceNotExists, mes.Error()),
@@ -2015,7 +2023,7 @@ func (ds *DataSource) findInstance(ctx context.Context, request *discovery.FindI
 	}
 	instances, err := instancesFilter(ctx, serviceIDs)
 	if err != nil {
-		log.Error(fmt.Sprintf("find instance failed %s", findFlag), err)
+		log.Error(fmt.Sprintf("find instance failed %s", findFlag()), err)
 		return &discovery.FindInstancesResponse{
 			Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
 		}, err
@@ -2030,14 +2038,14 @@ func (ds *DataSource) findInstance(ctx context.Context, request *discovery.FindI
 		if provider != nil {
 			err = AddServiceVersionRule(ctx, domainProject, service.ServiceInfo, provider)
 		} else {
-			mes := fmt.Errorf("%s failed, provider does not exist", findFlag)
+			mes := fmt.Errorf("%s failed, provider does not exist", findFlag())
 			log.Error("add service version rule failed", mes)
 			return &discovery.FindInstancesResponse{
 				Response: discovery.CreateResponse(discovery.ErrServiceNotExists, mes.Error()),
 			}, nil
 		}
 		if err != nil {
-			log.Error(fmt.Sprintf("add service version rule failed %s", findFlag), err)
+			log.Error(fmt.Sprintf("add service version rule failed %s", findFlag()), err)
 			return &discovery.FindInstancesResponse{
 				Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
 			}, err
