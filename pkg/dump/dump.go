@@ -227,5 +227,4 @@ type WatchInstanceChangedEvent struct {
 	Action   string        `protobuf:"bytes,1,opt,name=action" json:"action,omitempty"`
 	Service  *Microservice `protobuf:"bytes,2,opt,name=service" json:"service,omitempty"`
 	Instance *Instance     `protobuf:"bytes,3,opt,name=instance" json:"instance,omitempty"`
-	Revision int64         `protobuf:"bytes,4,opt,name=revision" json:"revision,omitempty"`
 }

@@ -3,12 +3,8 @@ package server
 import (
 	"context"
 	"errors"
-	"fmt"
-	"log"
 	"strconv"
-	"sync"
 	"testing"
-	"time"
 
 	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/syncer/config"
@@ -20,57 +16,14 @@ import (
 
 var s Server
 
-func TestServer_DataRemoveTickHandler(t *testing.T) {
-	log.Print("start")
-	var actions = []string{"CREATE", "UPDATE", "DELETE"}
-	var s Server
-
-	var recoders = make(map[string]record, 9)
-	var events = make([]*dump.WatchInstanceChangedEvent, 10)
-	s.revisionMap = recoders
-	s.eventQueue = events
-
-	for i := 2; i < 10; i++ {
-		var recoder = new(record)
-		recoder.revision = int64(i)
-		s.revisionMap[strconv.FormatInt(int64(i), 10)] = *recoder
-	}
-	log.Printf("size of records map = %d", len(s.revisionMap))
-
-	for i := 0; i < 10; i++ {
-		var event = new(dump.WatchInstanceChangedEvent)
-		event.Revision = int64(i)
-
-		event.Action = actions[i%3]
-
-		s.eventQueue[i] = event
-	}
-
-	removeMapElement(s.revisionMap, 2)
-	t.Run("start update queue stop after 15 second", func(t *testing.T) {
-		ch := s.DataRemoveTickHandler()
-		time.Sleep(15 * time.Second)
-		ch <- true
-		close(ch)
-	})
-
-}
-
 func TestServer_IncrementPull(t *testing.T) {
 	confCreate()
-	s.revisionMap, s.eventQueue = getMapAndQueue(9, 10)
-	t.Run("increment when address is new", func(t *testing.T) {
-		iPReq := pb.IncrementPullRequest{
-			Addr: "171.0.0.1",
-		}
-		syncData, err := s.IncrementPull(context.Background(), &iPReq)
-		assert.NoError(t, err, "no error when DeclareDataLength")
-		assert.NotEmpty(t, syncData, "increase succeed")
-	})
+	s.channelMap = setChannel()
 
 	t.Run("increment when address exist", func(t *testing.T) {
 		iPReq := pb.IncrementPullRequest{
-			Addr: "1",
+			Addr:   "1",
+			Length: 1,
 		}
 		syncData, err := s.IncrementPull(context.Background(), &iPReq)
 		assert.NoError(t, err, "no error when DeclareDataLength")
@@ -79,17 +32,7 @@ func TestServer_IncrementPull(t *testing.T) {
 }
 
 func TestServer_DeclareDataLength(t *testing.T) {
-	s.revisionMap, s.eventQueue = getMapAndQueue(9, 10)
-	t.Run("run with new address", func(t *testing.T) {
-		dReq := pb.DeclareRequest{
-			Addr: "http://127.0.0.1",
-		}
-		declareResp, err := s.DeclareDataLength(context.Background(), &dReq)
-
-		assert.NoError(t, err, "error when DeclareDataLength")
-		assert.Empty(t, err, "declareResp.SyncDataLength is empty")
-		assert.NotZero(t, declareResp.SyncDataLength, "declareResp.SyncDataLength is empty")
-	})
+	s.channelMap = setChannel()
 	t.Run("when address exist", func(t *testing.T) {
 		dReq := pb.DeclareRequest{
 			Addr: "3",
@@ -118,33 +61,24 @@ func TestService_incrementUserEvent(t *testing.T) {
 	})
 }
 
-func getMapAndQueue(mapSize int, queueSize int) (map[string]record, []*dump.WatchInstanceChangedEvent) {
-	var actions = []string{"CREATE", "UPDATE", "DELETE"}
+func setChannel() map[string]chan *dump.WatchInstanceChangedEvent {
+	var channelMap = make(map[string]chan *dump.WatchInstanceChangedEvent)
+	var ch1 = make(chan *dump.WatchInstanceChangedEvent, 1000)
+	var ch2 = make(chan *dump.WatchInstanceChangedEvent, 1000)
+	var ch3 = make(chan *dump.WatchInstanceChangedEvent, 1000)
+	channelMap["1"] = ch1
+	channelMap["2"] = ch2
+	channelMap["3"] = ch3
 
-	var recoders = make(map[string]record, mapSize)
-	var events = make([]*dump.WatchInstanceChangedEvent, queueSize)
+	var event1 = instanceAndServiceCreate(1)
 
-	for i := 2; i < queueSize; i++ {
-		var recoder = new(record)
-		recoder.revision = int64(i)
-
-		recoder.action = actions[i%3]
-
-		recoders[strconv.FormatInt(int64(i), 10)] = *recoder
+	for _, ch := range channelMap {
+		select {
+		case ch <- event1:
+		default:
+		}
 	}
-	log.Printf("size of records map = %d", len(s.revisionMap))
-
-	for i := 0; i < queueSize; i++ {
-		var event = new(dump.WatchInstanceChangedEvent)
-		var event1 = instanceAndServiceCreate(i)
-		event.Revision = int64(i)
-		event.Action = actions[i%3]
-		event.Service = event1.Service
-		event.Instance = event1.Instance
-
-		events[i] = event
-	}
-	return recoders, events
+	return channelMap
 }
 
 func confCreate() {
@@ -262,7 +196,6 @@ func instanceAndServiceCreate(i int) *dump.WatchInstanceChangedEvent {
 	is.Value = iv
 	is.Rev = int64(i)
 
-	event.Revision = int64(i)
 	event.Instance = is
 	event.Service = ss
 
@@ -276,21 +209,4 @@ func defaultServer() *serf.Server {
 		serf.WithBindAddr("127.0.0.1"),
 		serf.WithBindPort(35151),
 	)
-}
-
-func removeMapElement(events map[string]record, start int64) {
-	var mutex sync.Mutex
-	testTicker := time.NewTicker(time.Second * 1)
-	go func(tick *time.Ticker) {
-		for k := start; k < 10; k++ {
-			<-testTicker.C
-			mutex.Lock()
-			delete(events, strconv.FormatInt(int64(k), 10))
-			mutex.Unlock()
-			fmt.Println("remove element in map")
-		}
-	}(testTicker)
-	if len(events) == 0 {
-		defer testTicker.Stop()
-	}
 }

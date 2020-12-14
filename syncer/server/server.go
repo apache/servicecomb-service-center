@@ -20,7 +20,6 @@ package server
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strconv"
 	"sync"
 	"syscall"
@@ -86,38 +85,26 @@ type Server struct {
 	// Wraps the grpc server
 	grpc *grpc.Server
 
-	revisionMap map[string]record
-
-	eventQueue []*dump.WatchInstanceChangedEvent
-
-	mapLock sync.RWMutex
-
-	queueLock sync.RWMutex
-
 	mux sync.RWMutex
 
 	triggered bool
 
+	channelMap map[string]chan *dump.WatchInstanceChangedEvent
+
 	// The channel will be closed when receiving a system interrupt signal
 	stopCh chan struct{}
-}
-
-type record struct {
-	revision int64
-	action   string
 }
 
 // NewServer new server with Config
 func NewServer(conf *config.Config) *Server {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &Server{
-		ctx:         ctx,
-		cancel:      cancel,
-		conf:        conf,
-		stopCh:      make(chan struct{}),
-		revisionMap: make(map[string]record),
-		eventQueue:  make([]*dump.WatchInstanceChangedEvent, 0),
-		triggered:   true,
+		ctx:        ctx,
+		cancel:     cancel,
+		conf:       conf,
+		stopCh:     make(chan struct{}),
+		triggered:  true,
+		channelMap: make(map[string]chan *dump.WatchInstanceChangedEvent),
 	}
 }
 
@@ -150,8 +137,6 @@ func (s *Server) Run(ctx context.Context) {
 	s.servicecenter.SetStorageEngine(s.etcd.Storage())
 
 	s.task.Handle(s.tickHandler)
-
-	s.DataRemoveTickHandler()
 
 	s.task.Run(ctx)
 
@@ -302,6 +287,13 @@ func (s *Server) watchInstance() error {
 	return nil
 }
 
+func instFromOtherSC(instance *dump.Instance, m *pb.MappingEntry) bool {
+	if instance.Value.InstanceId == m.CurInstanceID && m.OrgInstanceID != "" {
+		return true
+	}
+	return false
+}
+
 func (s *Server) addToQueue(event *dump.WatchInstanceChangedEvent) {
 	mapping := s.servicecenter.GetSyncMapping()
 
@@ -313,96 +305,52 @@ func (s *Server) addToQueue(event *dump.WatchInstanceChangedEvent) {
 		}
 	}
 
-	s.queueLock.Lock()
-	s.eventQueue = append(s.eventQueue, event)
-	log.Debugf("success add instance event to queue:%s   len:%s", event, len(s.eventQueue))
-	s.queueLock.Unlock()
-}
-
-func instFromOtherSC(instance *dump.Instance, m *pb.MappingEntry) bool {
-	if instance.Value.InstanceId == m.CurInstanceID && m.OrgInstanceID != "" {
-		return true
+	for _, ch := range s.channelMap {
+		select {
+		case ch <- event:
+			log.Info("add event to queue")
+		default:
+			log.Info("channel buffer is full")
+		}
 	}
-	return false
-}
-
-func (s *Server) getRevision(addr string) int64 {
-	s.mapLock.RLock()
-	value, ok := s.revisionMap[addr]
-	s.mapLock.RUnlock()
-	if ok {
-		return value.revision
-	}
-	return -1
-}
-
-func (s *Server) getAction(addr string) string {
-	s.mapLock.RLock()
-	value, ok := s.revisionMap[addr]
-	s.mapLock.RUnlock()
-	if ok {
-		return value.action
-	}
-	return ""
 }
 
 func (s *Server) getSyncDataLength(addr string) (response *pb.DeclareResponse) {
+	ch, ok := s.channelMap[addr]
+	var length int64
+	if ok {
+		length = int64(len(ch))
+	} else {
+		length = 0
+		log.Error("fail to  find the specific channel according to the addr", utils.ErrChannelSearch)
+	}
 	response = &pb.DeclareResponse{
-		SyncDataLength: int64(len(s.GetIncrementQueue(addr))),
+		SyncDataLength: length,
 	}
 	return response
 }
 
-func (s *Server) updateRevisionMap(addr string, incrementQueue []*dump.WatchInstanceChangedEvent) {
-	if len(incrementQueue) == 0 {
-		log.Info("incrementQueue is empty, no need to update RevisionMap")
-		return
-	}
-
-	log.Debug(fmt.Sprintf("update RevisionMap, addr = %s", addr))
-	s.mapLock.Lock()
-	s.revisionMap[addr] = record{
-		incrementQueue[len(incrementQueue)-1].Revision,
-		incrementQueue[len(incrementQueue)-1].Action,
-	}
-	s.mapLock.Unlock()
-}
-
-func (s *Server) GetIncrementQueue(addr string) []*dump.WatchInstanceChangedEvent {
-	revision := s.getRevision(addr)
-	action := s.getAction(addr)
-
-	s.queueLock.RLock()
-	defer s.queueLock.RUnlock()
-
-	length := len(s.eventQueue)
-	if length == 0 {
-		log.Info("eventQueue is empty")
+func (s *Server) GetIncrementQueue(req *pb.IncrementPullRequest) (queue []*dump.WatchInstanceChangedEvent) {
+	ch, ok := s.channelMap[req.GetAddr()]
+	if !ok {
+		log.Debug("fail to find the queue according to the addr")
 		return nil
 	}
 
-	if revision == -1 {
-		return s.eventQueue
-	}
-
-	index := 0
-	for _, event := range s.eventQueue {
-		if event.Revision == revision && event.Action == action {
-			break
+	queue = make([]*dump.WatchInstanceChangedEvent, 0, len(ch))
+	for i := 0; i < int(req.GetLength()); i++ {
+		select {
+		case temp, ok := <-ch:
+			if !ok {
+				log.Debug("channel closed")
+				return
+			}
+			queue = append(queue, temp)
+		default:
+			return
 		}
-		index++
 	}
-
-	if index == length-1 {
-		log.Info("no incremental event in the queue")
-		return nil
-	}
-
-	if index == length {
-		log.Info(fmt.Sprintf("fail to find the event in the queue by RevisionMap, Revision = %d, Action = %s", revision, action))
-		return s.eventQueue
-	}
-	return s.eventQueue[index+1:]
+	return
 }
 
 func (s *Server) GetIncrementData(ctx context.Context, incrementQueue []*dump.WatchInstanceChangedEvent) (data *pb.SyncData) {

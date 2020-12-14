@@ -168,7 +168,6 @@ func NotifySyncerInstanceEvent(evt sd.KvEvent, domainProject string, ms *pb.Micr
 		Action:   string(evt.Type),
 		Service:  service,
 		Instance: instance,
-		Revision: evt.Revision,
 	}
 
 	syncernotify.GetSyncerNotifyCenter().AddEvent(instEvent)

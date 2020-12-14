@@ -26,4 +26,5 @@ var (
 	ErrActionInvalid  = errors.New("action invalid")
 	ErrMappingSearch  = errors.New("mapping does not exist")
 	ErrInstanceDelete = errors.New("delete instance failed")
+	ErrChannelSearch  = errors.New("channel does not exist")
 )

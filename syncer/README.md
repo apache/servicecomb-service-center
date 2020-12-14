@@ -80,8 +80,19 @@ $ go build
 
   Member name of Syncer cluster when mode is set to be "cluster".
   
-  
+###### Synchronization Mode Description
+- Incremental Synchronization:
 
+  Default synchronization mode.
+  
+- Full Synchronization:
+
+  A full synchronization is automatically triggered when each syncer starts to join, 
+  or it can be triggered manually by calling the interface after an exception occurs in the incremental synchronization.
+
+```bash
+$ curl http://localhost:30300/v1/syncer/full-synchronization
+```
 
 Suppose there are 2 Service centers, each of them with a Service-center cluster for microservices discovery and registry, as following,   
 
@@ -136,4 +147,5 @@ Syncer is in developing progress, reference to [TODO](./TODO.md) to get more dev
 - Data synchronization among multiple servicecomb-service-centers
 - Solidify the mapping table of micro-service instances into etcd
 - Support Syncer cluster mode, each Syncer has 3 instances
-
+- Support incremental synchronization as the main synchronization mechanism. 
+  When each syncer joins, a full synchronization is triggered. It can also be performed manually after an exception occurs in incremental synchronization.
