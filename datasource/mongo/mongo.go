@@ -18,12 +18,17 @@
 package mongo
 
 import (
+	"context"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/heartbeat"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/go-chassis/go-chassis/v2/storage"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/x/bsonx"
 )
 
 func init() {
@@ -39,7 +44,6 @@ type DataSource struct {
 
 func NewDataSource(opts datasource.Options) (datasource.DataSource, error) {
 	// TODO: construct a reasonable DataSource instance
-	log.Warn("data source enable mongo mode")
 
 	inst := &DataSource{
 		SchemaEditable: opts.SchemaEditable,
@@ -61,6 +65,10 @@ func (ds *DataSource) initialize() error {
 	}
 	// init mongo client
 	err = ds.initClient()
+	if err != nil {
+		return err
+	}
+	err = ds.createIndexes()
 	if err != nil {
 		return err
 	}
@@ -87,4 +95,26 @@ func (ds *DataSource) initClient() error {
 	case <-client.GetMongoClient().Ready():
 		return nil
 	}
+}
+
+//{Key: StringBuilder([]string{ColumnServiceInfo, ColumnAlias}), Value: bsonx.Int32(1)}
+func (ds *DataSource) createIndexes() (err error) {
+	err = client.GetMongoClient().CreateIndexes(context.TODO(), CollectionService, []mongo.IndexModel{{
+		Keys:    bsonx.Doc{{Key: StringBuilder([]string{ColumnServiceInfo, ColumnServiceID}), Value: bsonx.Int32(1)}},
+		Options: options.Index().SetUnique(true),
+	}, {
+		Keys:    bsonx.Doc{{Key: StringBuilder([]string{ColumnServiceInfo, ColumnAppID}), Value: bsonx.Int32(1)}, {Key: StringBuilder([]string{ColumnServiceInfo, ColumnServiceName}), Value: bsonx.Int32(1)}, {Key: StringBuilder([]string{ColumnServiceInfo, ColumnEnv}), Value: bsonx.Int32(1)}, {Key: StringBuilder([]string{ColumnServiceInfo, ColumnVersion}), Value: bsonx.Int32(1)}},
+		Options: options.Index().SetUnique(true),
+	}})
+	if err != nil {
+		return
+	}
+	err = client.GetMongoClient().CreateIndexes(context.TODO(), CollectionInstance, []mongo.IndexModel{{
+		Keys:    bsonx.Doc{{Key: StringBuilder([]string{ColumnInstanceInfo, ColumnInstanceID}), Value: bsonx.Int32(1)}},
+		Options: options.Index().SetUnique(true),
+	}, {Keys: bsonx.Doc{{Key: StringBuilder([]string{ColumnInstanceID, ColumnServiceID}), Value: bsonx.Int32(1)}}}})
+	if err != nil {
+		return
+	}
+	return
 }

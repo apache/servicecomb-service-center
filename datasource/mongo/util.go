@@ -17,7 +17,16 @@
 
 package mongo
 
-import "strings"
+import (
+	"context"
+	"strings"
+
+	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/pkg/gopool"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	pb "github.com/go-chassis/cari/discovery"
+	"go.mongodb.org/mongo-driver/bson"
+)
 
 func StringBuilder(data []string) string {
 	var str strings.Builder
@@ -29,4 +38,64 @@ func StringBuilder(data []string) string {
 		}
 	}
 	return str.String()
+}
+
+func statistics(ctx context.Context, withShared bool) (*pb.Statistics, error) {
+	result := &pb.Statistics{
+		Services:  &pb.StService{},
+		Instances: &pb.StInstance{},
+		Apps:      &pb.StApp{},
+	}
+	domain := util.ParseDomain(ctx)
+	project := util.ParseProject(ctx)
+
+	filter := bson.M{ColumnDomain: domain, ColumnProject: project}
+
+	services, err := GetServices(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	var svcIDs []string
+	var svcKeys []*pb.MicroServiceKey
+	for _, svc := range services {
+		svcIDs = append(svcIDs, svc.ServiceId)
+		svcKeys = append(svcKeys, datasource.TransServiceToKey(util.ParseDomainProject(ctx), svc))
+	}
+	svcIDToNonVerKey := datasource.SetStaticServices(result, svcKeys, svcIDs, withShared)
+
+	respGetInstanceCountByDomain := make(chan datasource.GetInstanceCountByDomainResponse, 1)
+	gopool.Go(func(_ context.Context) {
+		getInstanceCountByDomain(ctx, svcIDToNonVerKey, respGetInstanceCountByDomain)
+	})
+
+	instances, err := GetInstances(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	var instIDs []string
+	for _, inst := range instances {
+		instIDs = append(instIDs, inst.InstanceInfo.ServiceId)
+	}
+	datasource.SetStaticInstances(result, svcIDToNonVerKey, instIDs)
+	data := <-respGetInstanceCountByDomain
+	close(respGetInstanceCountByDomain)
+	if data.Err != nil {
+		return nil, data.Err
+	}
+	result.Instances.CountByDomain = data.CountByDomain
+	return result, nil
+}
+
+func getInstanceCountByDomain(ctx context.Context, svcIDToNonVerKey map[string]string, resp chan datasource.GetInstanceCountByDomainResponse) {
+	ret := datasource.GetInstanceCountByDomainResponse{}
+	for _, sid := range svcIDToNonVerKey {
+		num, err := GetInstanceCountOfOneService(ctx, sid)
+		if err != nil {
+			ret.Err = err
+			return
+		}
+		ret.CountByDomain = ret.CountByDomain + num
+	}
+	resp <- ret
 }
