@@ -23,6 +23,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/apache/servicecomb-service-center/datasource"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
@@ -42,11 +44,6 @@ type ServiceDetailOpt struct {
 	service       *pb.MicroService
 	countOnly     bool
 	options       []string
-}
-
-type GetInstanceCountByDomainResponse struct {
-	err           error
-	countByDomain int64
 }
 
 // schema
@@ -386,30 +383,17 @@ func statistics(ctx context.Context, withShared bool) (*pb.Statistics, error) {
 		return nil, err
 	}
 
-	app := make(map[string]struct{}, respSvc.Count)
-	svcWithNonVersion := make(map[string]struct{}, respSvc.Count)
-	svcIDToNonVerKey := make(map[string]string, respSvc.Count)
+	var svcIDs []string
+	var svcKeys []*pb.MicroServiceKey
 	for _, keyValue := range respSvc.Kvs {
 		key := path.GetInfoFromSvcIndexKV(keyValue.Key)
-		if !withShared && core.IsGlobal(key) {
-			continue
-		}
-		if _, ok := app[key.AppId]; !ok {
-			app[key.AppId] = struct{}{}
-		}
-
-		key.Version = ""
-		svcWithNonVersionKey := path.GenerateServiceIndexKey(key)
-		if _, ok := svcWithNonVersion[svcWithNonVersionKey]; !ok {
-			svcWithNonVersion[svcWithNonVersionKey] = struct{}{}
-		}
-		svcIDToNonVerKey[keyValue.Value.(string)] = svcWithNonVersionKey
+		svcKeys = append(svcKeys, key)
+		svcIDs = append(svcIDs, keyValue.Value.(string))
 	}
 
-	result.Services.Count = int64(len(svcWithNonVersion))
-	result.Apps.Count = int64(len(app))
+	svcIDToNonVerKey := datasource.SetStaticServices(result, svcKeys, svcIDs, withShared)
 
-	respGetInstanceCountByDomain := make(chan GetInstanceCountByDomainResponse, 1)
+	respGetInstanceCountByDomain := make(chan datasource.GetInstanceCountByDomainResponse, 1)
 	gopool.Go(func(_ context.Context) {
 		getInstanceCountByDomain(ctx, svcIDToNonVerKey, respGetInstanceCountByDomain)
 	})
@@ -425,30 +409,23 @@ func statistics(ctx context.Context, withShared bool) (*pb.Statistics, error) {
 		return nil, err
 	}
 
-	onlineServices := make(map[string]struct{}, respSvc.Count)
+	var instIDs []string
 	for _, keyValue := range respIns.Kvs {
 		serviceID, _, _ := path.GetInfoFromInstKV(keyValue.Key)
-		key, ok := svcIDToNonVerKey[serviceID]
-		if !ok {
-			continue
-		}
-		result.Instances.Count++
-		if _, ok := onlineServices[key]; !ok {
-			onlineServices[key] = struct{}{}
-		}
+		instIDs = append(instIDs, serviceID)
 	}
-	result.Services.OnlineCount = int64(len(onlineServices))
+	datasource.SetStaticInstances(result, svcIDToNonVerKey, instIDs)
 
 	data := <-respGetInstanceCountByDomain
 	close(respGetInstanceCountByDomain)
-	if data.err != nil {
-		return nil, data.err
+	if data.Err != nil {
+		return nil, data.Err
 	}
-	result.Instances.CountByDomain = data.countByDomain
+	result.Instances.CountByDomain = data.CountByDomain
 	return result, nil
 }
 
-func getInstanceCountByDomain(ctx context.Context, svcIDToNonVerKey map[string]string, resp chan GetInstanceCountByDomainResponse) {
+func getInstanceCountByDomain(ctx context.Context, svcIDToNonVerKey map[string]string, resp chan datasource.GetInstanceCountByDomainResponse) {
 	domainID := util.ParseDomain(ctx)
 	key := path.GetInstanceRootKey(domainID) + "/"
 	instOpts := append([]client.PluginOpOption{},
@@ -456,8 +433,8 @@ func getInstanceCountByDomain(ctx context.Context, svcIDToNonVerKey map[string]s
 		client.WithPrefix(),
 		client.WithKeyOnly())
 	respIns, err := kv.Store().Instance().Search(ctx, instOpts...)
-	ret := GetInstanceCountByDomainResponse{
-		err: err,
+	ret := datasource.GetInstanceCountByDomainResponse{
+		Err: err,
 	}
 
 	if err != nil {
@@ -469,7 +446,7 @@ func getInstanceCountByDomain(ctx context.Context, svcIDToNonVerKey map[string]s
 			if !ok {
 				continue
 			}
-			ret.countByDomain++
+			ret.CountByDomain++
 		}
 	}
 

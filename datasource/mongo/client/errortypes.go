@@ -15,7 +15,15 @@
 
 package client
 
-import "go.mongodb.org/mongo-driver/mongo"
+import (
+	"errors"
+
+	"go.mongodb.org/mongo-driver/mongo"
+)
+
+var (
+	ErrNoDocuments = errors.New("no doc found")
+)
 
 const (
 	DuplicateKey = 11000
@@ -33,4 +41,8 @@ func IsDuplicateKey(err error) bool {
 		}
 	}
 	return false
+}
+
+func IsNoneDoc(err error) bool {
+	return err == ErrNoDocuments
 }

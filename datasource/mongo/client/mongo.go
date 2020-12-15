@@ -48,6 +48,11 @@ type MongoClient struct {
 	goroutine *gopool.Pool
 }
 
+type MongoOperation struct {
+	Table  string
+	Models []mongo.WriteModel
+}
+
 func GetMongoClient() *MongoClient {
 	return mc
 }
@@ -135,6 +140,14 @@ func (mc *MongoClient) newClient(ctx context.Context) (err error) {
 	return nil
 }
 
+func (mc *MongoClient) CreateIndexes(ctx context.Context, Table string, indexes []mongo.IndexModel) error {
+	_, err := mc.db.Collection(Table).Indexes().CreateMany(ctx, indexes)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (mc *MongoClient) Insert(ctx context.Context, Table string, document interface{}, opts ...*options.InsertOneOptions) (*mongo.InsertOneResult, error) {
 	return mc.db.Collection(Table).InsertOne(ctx, document, opts...)
 }
@@ -187,6 +200,16 @@ func (mc *MongoClient) StartSession(ctx context.Context) (mongo.Session, error) 
 	return mc.client.StartSession()
 }
 
+func (mc *MongoClient) MultiTableBatchUpdate(ctx context.Context, opts []MongoOperation) error {
+	for _, op := range opts {
+		_, err := mc.BatchUpdate(ctx, op.Table, op.Models)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (mc *MongoClient) DocExist(ctx context.Context, table string, filter bson.M) (bool, error) {
 	res, err := mc.FindOne(ctx, table, filter)
 	if err != nil {
@@ -205,7 +228,7 @@ func (mc *MongoClient) DocUpdate(ctx context.Context, table string, filter inter
 	}
 	if res.Err() != nil {
 		// means no doc find, if the operation is update,should return err
-		return res.Err()
+		return ErrNoDocuments
 	}
 	return nil
 }

@@ -27,6 +27,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/apache/servicecomb-service-center/server/plugin/quota"
+	"go.mongodb.org/mongo-driver/mongo"
+
 	"github.com/go-chassis/cari/discovery"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -44,9 +47,11 @@ import (
 func (ds *DataSource) RegisterService(ctx context.Context, request *discovery.CreateServiceRequest) (
 	*discovery.CreateServiceResponse, error) {
 	service := request.Service
-
+	remoteIP := util.GetIPFromContext(ctx)
 	domain := util.ParseDomain(ctx)
 	project := util.ParseProject(ctx)
+	serviceFlag := util.StringJoin([]string{
+		service.Environment, service.AppId, service.ServiceName, service.Version}, "/")
 	//todo add quota check
 	requestServiceID := service.ServiceId
 
@@ -54,45 +59,48 @@ func (ds *DataSource) RegisterService(ctx context.Context, request *discovery.Cr
 		ctx = util.SetContext(ctx, uuid.ContextKey, util.StringJoin([]string{domain, project, service.Environment, service.AppId, service.ServiceName, service.Alias, service.Version}, "/"))
 		service.ServiceId = uuid.Generator().GetServiceID(ctx)
 	}
+	service.Timestamp = strconv.FormatInt(time.Now().Unix(), 10)
+	service.ModTimestamp = service.Timestamp
 	// the service unique index in table is (serviceId,serviceEnv,serviceAppid,servicename,serviceAlias,serviceVersion)
-	existID, err := ServiceExistID(ctx, service.ServiceId)
-	if err != nil {
-		return &discovery.CreateServiceResponse{
-			Response: discovery.CreateResponse(discovery.ErrInternal, "Check service exist failed"),
-		}, err
-	}
-	exist, err := ServiceExist(ctx, &discovery.MicroServiceKey{
-		Environment: service.Environment,
-		AppId:       service.AppId,
-		ServiceName: service.ServiceName,
-		Alias:       service.Alias,
-		Version:     service.Version,
-	})
-	if err != nil {
-		return &discovery.CreateServiceResponse{
-			Response: discovery.CreateResponse(discovery.ErrInternal, "Check service exist failed"),
-		}, err
-	}
-	if existID || exist {
-		return &discovery.CreateServiceResponse{
-			Response: discovery.CreateResponse(discovery.ErrServiceAlreadyExists, "ServiceID conflict or found the same service."),
-		}, nil
-	}
 	insertRes, err := client.GetMongoClient().Insert(ctx, CollectionService, &Service{Domain: domain, Project: project, ServiceInfo: service})
 	if err != nil {
 		if client.IsDuplicateKey(err) {
+			if len(requestServiceID) == 0 {
+				serviceIDInner, err := GetServiceID(ctx, &discovery.MicroServiceKey{
+					Environment: service.Environment,
+					AppId:       service.AppId,
+					ServiceName: service.ServiceName,
+					Version:     service.Version,
+				})
+				if err != nil {
+					return &discovery.CreateServiceResponse{
+						Response: discovery.CreateResponse(discovery.ErrUnavailableBackend, err.Error()),
+					}, err
+				}
+				if len(serviceIDInner) != 0 {
+					log.Warn(fmt.Sprintf("create micro-service[%s][%s] failed, service already exists, operator: %s",
+						serviceIDInner, serviceFlag, remoteIP))
+					return &discovery.CreateServiceResponse{
+						Response:  discovery.CreateResponse(discovery.ResponseSuccess, "register service successfully"),
+						ServiceId: serviceIDInner,
+					}, nil
+				}
+			}
+			log.Warn(fmt.Sprintf("create micro-service[%s] failed, service already exists, operator: %s",
+				serviceFlag, remoteIP))
 			return &discovery.CreateServiceResponse{
-				Response: discovery.CreateResponse(discovery.ErrServiceAlreadyExists, "ServiceID or ServiceInfo conflict."),
+				Response: discovery.CreateResponse(discovery.ErrServiceAlreadyExists,
+					"ServiceID conflict or found the same service with different id."),
 			}, nil
 		}
+		log.Error(fmt.Sprintf("create micro-service[%s] failed, service already exists, operator: %s",
+			serviceFlag, remoteIP), err)
 		return &discovery.CreateServiceResponse{
-			Response: discovery.CreateResponse(discovery.ErrInternal, "Register service failed."),
+			Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
 		}, err
 	}
 
-	remoteIP := util.GetIPFromContext(ctx)
-	log.Info(fmt.Sprintf("create micro-service[%s][%s] successfully,operator: %s",
-		service.ServiceId, insertRes.InsertedID, remoteIP))
+	log.Info(fmt.Sprintf("create micro-service[%s][%s] successfully,operator: %s", service.ServiceId, insertRes.InsertedID, remoteIP))
 
 	return &discovery.CreateServiceResponse{
 		Response:  discovery.CreateResponse(discovery.ResponseSuccess, "Register service successfully"),
@@ -139,7 +147,7 @@ func (ds *DataSource) GetApplications(ctx context.Context, request *discovery.Ge
 	l := len(services)
 	if l == 0 {
 		return &discovery.GetAppsResponse{
-			Response: discovery.CreateResponse(discovery.ErrInternal, "get services data failed."),
+			Response: discovery.CreateResponse(discovery.ResponseSuccess, "Get all applications successfully."),
 		}, nil
 	}
 	apps := make([]string, 0, l)
@@ -235,54 +243,18 @@ func (ds *DataSource) ExistService(ctx context.Context, request *discovery.GetEx
 }
 
 func (ds *DataSource) UnregisterService(ctx context.Context, request *discovery.DeleteServiceRequest) (*discovery.DeleteServiceResponse, error) {
-	exist, err := ServiceExistID(ctx, request.ServiceId)
+	res, err := ds.DelServicePri(ctx, request.ServiceId, request.Force)
 	if err != nil {
-		return &discovery.DeleteServiceResponse{
-			Response: discovery.CreateResponse(discovery.ErrInternal, "Delete service failed,failed to get service."),
-		}, err
-	}
-	if !exist {
-		return &discovery.DeleteServiceResponse{
-			Response: discovery.CreateResponse(discovery.ErrServiceNotExists, "Delete service failed,service not exist."),
-		}, nil
-	}
-	session, err := client.GetMongoClient().StartSession(ctx)
-	if err != nil {
-		return &discovery.DeleteServiceResponse{
-			Response: discovery.CreateResponse(discovery.ErrInternal, "DelService failed to create session."),
-		}, err
-	}
-	if err = session.StartTransaction(); err != nil {
-		return &discovery.DeleteServiceResponse{
-			Response: discovery.CreateResponse(discovery.ErrInternal, "DelService failed to start session."),
-		}, err
-	}
-	defer session.EndSession(ctx)
-	//todo delete instance,tags,schemas...
-	res, err := DelServicePri(ctx, request.ServiceId, request.Force)
-	if err != nil {
-		errAbort := session.AbortTransaction(ctx)
-		if errAbort != nil {
-			return &discovery.DeleteServiceResponse{
-				Response: discovery.CreateResponse(discovery.ErrInternal, "Txn delete service abort failed."),
-			}, errAbort
-		}
 		return &discovery.DeleteServiceResponse{
 			Response: discovery.CreateResponse(discovery.ErrInternal, "Delete service failed"),
 		}, err
-	}
-	errCommit := session.CommitTransaction(ctx)
-	if errCommit != nil {
-		return &discovery.DeleteServiceResponse{
-			Response: discovery.CreateResponse(discovery.ErrInternal, "Txn delete service commit failed."),
-		}, errCommit
 	}
 	return &discovery.DeleteServiceResponse{
 		Response: res,
 	}, nil
 }
 
-func DelServicePri(ctx context.Context, serviceID string, force bool) (*discovery.Response, error) {
+func (ds *DataSource) DelServicePri(ctx context.Context, serviceID string, force bool) (*discovery.Response, error) {
 	remoteIP := util.GetIPFromContext(ctx)
 	title := "delete"
 	if force {
@@ -306,42 +278,41 @@ func DelServicePri(ctx context.Context, serviceID string, force bool) (*discover
 	}
 	// 强制删除，则与该服务相关的信息删除，非强制删除： 如果作为该被依赖（作为provider，提供服务,且不是只存在自依赖）或者存在实例，则不能删除
 	if !force {
-		log.Info("force delete,should del instance...")
 		//todo wait for dep interface
-	}
-	filter := GeneratorServiceFilter(ctx, serviceID)
-	//todo del instances
-	tables := []string{CollectionService, CollectionSchema, CollectionRule}
-	for _, col := range tables {
-		_, err := client.GetMongoClient().Delete(ctx, col, filter)
+		instancesExist, err := client.GetMongoClient().DocExist(ctx, CollectionInstance, bson.M{StringBuilder([]string{ColumnInstanceInfo, ColumnServiceID}): serviceID})
 		if err != nil {
-			return discovery.CreateResponse(discovery.ErrInternal, err.Error()), err
+			log.Error(fmt.Sprintf("delete micro-service[%s] failed, get instances number failed, operator: %s",
+				serviceID, remoteIP), err)
+			return discovery.CreateResponse(discovery.ErrUnavailableBackend, err.Error()), err
 		}
+		if instancesExist {
+			log.Error(fmt.Sprintf("delete micro-service[%s] failed, service deployed instances, operator: %s",
+				serviceID, remoteIP), nil)
+			return discovery.CreateResponse(discovery.ErrDeployedInstance, "Can not delete the service deployed instance(s)."), err
+		}
+
+	}
+	//todo del dep
+	schemaOps := client.MongoOperation{Table: CollectionSchema, Models: []mongo.WriteModel{mongo.NewDeleteManyModel().SetFilter(bson.M{ColumnServiceID: serviceID})}}
+	rulesOps := client.MongoOperation{Table: CollectionRule, Models: []mongo.WriteModel{mongo.NewDeleteManyModel().SetFilter(bson.M{ColumnServiceID: serviceID})}}
+	instanceOps := client.MongoOperation{Table: CollectionInstance, Models: []mongo.WriteModel{mongo.NewDeleteManyModel().SetFilter(bson.M{StringBuilder([]string{ColumnInstanceInfo, ColumnServiceID}): serviceID})}}
+	serviceOps := client.MongoOperation{Table: CollectionService, Models: []mongo.WriteModel{mongo.NewDeleteOneModel().SetFilter(bson.M{StringBuilder([]string{ColumnServiceInfo, ColumnServiceID}): serviceID})}}
+
+	err = client.GetMongoClient().MultiTableBatchUpdate(ctx, []client.MongoOperation{schemaOps, rulesOps, instanceOps, serviceOps})
+	if err != nil {
+		log.Error(fmt.Sprintf("micro-service[%s] failed, operator: %s", serviceID, remoteIP), err)
+		return discovery.CreateResponse(discovery.ErrUnavailableBackend, err.Error()), err
 	}
 	return discovery.CreateResponse(discovery.ResponseSuccess, "Unregister service successfully."), nil
-
 }
 
 func (ds *DataSource) UpdateService(ctx context.Context, request *discovery.UpdateServicePropsRequest) (
 	*discovery.UpdateServicePropsResponse, error) {
-
-	exist, err := ServiceExistID(ctx, request.ServiceId)
-	if err != nil {
-		return &discovery.UpdateServicePropsResponse{
-			Response: discovery.CreateResponse(discovery.ErrInternal, "UpdateService failed,failed to get service."),
-		}, err
-	}
-	if !exist {
-		return &discovery.UpdateServicePropsResponse{
-			Response: discovery.CreateResponse(discovery.ErrServiceNotExists, "UpdateService failed,service not exist."),
-		}, nil
-	}
-
 	updateData := bson.M{
 		"$set": bson.M{
 			StringBuilder([]string{ColumnServiceInfo, ColumnModTime}):  strconv.FormatInt(time.Now().Unix(), 10),
 			StringBuilder([]string{ColumnServiceInfo, ColumnProperty}): request.Properties}}
-	err = UpdateService(ctx, GeneratorServiceFilter(ctx, request.ServiceId), updateData)
+	err := UpdateService(ctx, GeneratorServiceFilter(ctx, request.ServiceId), updateData)
 	if err != nil {
 		log.Error(fmt.Sprintf("update service %s properties failed, update mongo failed", request.ServiceId), err)
 		return &discovery.UpdateServicePropsResponse{
@@ -355,7 +326,20 @@ func (ds *DataSource) UpdateService(ctx context.Context, request *discovery.Upda
 
 func (ds *DataSource) GetDeleteServiceFunc(ctx context.Context, serviceID string, force bool,
 	serviceRespChan chan<- *discovery.DelServicesRspInfo) func(context.Context) {
-	return func(_ context.Context) {}
+	return func(_ context.Context) {
+		serviceRst := &discovery.DelServicesRspInfo{
+			ServiceId:  serviceID,
+			ErrMessage: "",
+		}
+		resp, err := ds.DelServicePri(ctx, serviceID, force)
+		if err != nil {
+			serviceRst.ErrMessage = err.Error()
+		} else if resp.GetCode() != discovery.ResponseSuccess {
+			serviceRst.ErrMessage = resp.GetMessage()
+		}
+
+		serviceRespChan <- serviceRst
+	}
 }
 
 func (ds *DataSource) GetServiceDetail(ctx context.Context, request *discovery.GetServiceRequest) (
@@ -372,7 +356,12 @@ func (ds *DataSource) GetServiceDetail(ctx context.Context, request *discovery.G
 		}, nil
 	}
 	svc := mgSvc.ServiceInfo
-	versions, err := GetServicesVersions(ctx, bson.M{})
+	key := &discovery.MicroServiceKey{
+		Environment: svc.Environment,
+		AppId:       svc.AppId,
+		ServiceName: svc.ServiceName,
+	}
+	versions, err := GetServicesVersions(ctx, GeneratorServiceVersionsFilter(ctx, key))
 	if err != nil {
 		log.Error(fmt.Sprintf("get service %s %s %s all versions failed", svc.Environment, svc.AppId, svc.ServiceName), err)
 		return &discovery.GetServiceDetailResponse{
@@ -411,7 +400,22 @@ func (ds *DataSource) GetServicesInfo(ctx context.Context, request *discovery.Ge
 			options = append(options, opt)
 		}
 	}
-	//todo add get statistics info
+	var st *discovery.Statistics
+	if _, ok := optionMap["statistics"]; ok {
+		var err error
+		st, err = statistics(ctx, request.WithShared)
+		if err != nil {
+			return &discovery.GetServicesInfoResponse{
+				Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
+			}, err
+		}
+		if len(optionMap) == 1 {
+			return &discovery.GetServicesInfoResponse{
+				Response:   discovery.CreateResponse(discovery.ResponseSuccess, "Statistics successfully."),
+				Statistics: st,
+			}, nil
+		}
+	}
 	services, err := GetMongoServices(ctx, bson.M{})
 	if err != nil {
 		log.Error("get all services by domain failed", err)
@@ -452,6 +456,7 @@ func (ds *DataSource) GetServicesInfo(ctx context.Context, request *discovery.Ge
 }
 
 func (ds *DataSource) AddTags(ctx context.Context, request *discovery.AddServiceTagsRequest) (*discovery.AddServiceTagsResponse, error) {
+	remoteIP := util.GetIPFromContext(ctx)
 	service, err := GetService(ctx, GeneratorServiceFilter(ctx, request.ServiceId))
 	if err != nil {
 		log.Error(fmt.Sprintf("failed to add tags for service %s for get service failed", request.ServiceId), err)
@@ -462,9 +467,21 @@ func (ds *DataSource) AddTags(ctx context.Context, request *discovery.AddService
 	if service == nil {
 		return &discovery.AddServiceTagsResponse{Response: discovery.CreateResponse(discovery.ErrServiceNotExists, "Service not exist")}, nil
 	}
-	//todo add quto check
-	dataTags := service.Tags
 	tags := request.Tags
+	res := quota.NewApplyQuotaResource(quota.TagQuotaType, util.ParseDomainProject(ctx), request.ServiceId, int64(len(tags)))
+	rst := quota.Apply(ctx, res)
+	errQuota := rst.Err
+	if errQuota != nil {
+		log.Error(fmt.Sprintf("add service[%s]'s tags %v failed, operator: %s", request.ServiceId, tags, remoteIP), errQuota)
+		response := &discovery.AddServiceTagsResponse{
+			Response: discovery.CreateResponseWithSCErr(errQuota),
+		}
+		if errQuota.InternalError() {
+			return response, errQuota
+		}
+		return response, nil
+	}
+	dataTags := service.Tags
 	for key, value := range dataTags {
 		if _, ok := tags[key]; ok {
 			continue
@@ -593,37 +610,63 @@ func (ds *DataSource) GetSchema(ctx context.Context, request *discovery.GetSchem
 			Response: discovery.CreateResponse(discovery.ErrServiceNotExists, "GetSchema service does not exist."),
 		}, nil
 	}
-	Schema, err := GetSchema(ctx, GeneratorSchemaFilter(ctx, request.ServiceId, request.SchemaId))
+	schema, err := GetSchema(ctx, GeneratorSchemaFilter(ctx, request.ServiceId, request.SchemaId))
 	if err != nil {
 		return &discovery.GetSchemaResponse{
 			Response: discovery.CreateResponse(discovery.ErrInternal, "GetSchema failed from mongodb."),
 		}, nil
 	}
+	if schema == nil {
+		return &discovery.GetSchemaResponse{
+			Response: discovery.CreateResponse(discovery.ErrSchemaNotExists, "Do not have this schema info."),
+		}, nil
+	}
 	return &discovery.GetSchemaResponse{
 		Response:      discovery.CreateResponse(discovery.ResponseSuccess, "Get schema info successfully."),
-		Schema:        Schema.SchemaInfo,
-		SchemaSummary: Schema.SchemaSummary,
+		Schema:        schema.SchemaInfo,
+		SchemaSummary: schema.SchemaSummary,
 	}, nil
 }
 
 func (ds *DataSource) GetAllSchemas(ctx context.Context, request *discovery.GetAllSchemaRequest) (*discovery.GetAllSchemaResponse, error) {
-	exist, err := ServiceExistID(ctx, request.ServiceId)
+	svc, err := GetService(ctx, GeneratorServiceFilter(ctx, request.ServiceId))
 	if err != nil {
+		log.Error(fmt.Sprintf("get service[%s] all schemas failed, get service failed", request.ServiceId), err)
 		return &discovery.GetAllSchemaResponse{
-			Response: discovery.CreateResponse(discovery.ErrServiceNotExists, "GetAllSchemas failed for get service failed"),
-		}, nil
+			Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
+		}, err
 	}
-	if !exist {
+	if svc == nil {
 		return &discovery.GetAllSchemaResponse{
 			Response: discovery.CreateResponse(discovery.ErrServiceNotExists, "GetAllSchemas failed for service not exist"),
 		}, nil
 	}
-
-	schemas, err := GetSchemas(ctx, GeneratorServiceFilter(ctx, request.ServiceId))
-	if err != nil {
+	schemasList := svc.ServiceInfo.Schemas
+	if len(schemasList) == 0 {
 		return &discovery.GetAllSchemaResponse{
-			Response: discovery.CreateResponse(discovery.ErrInternal, "GetAllSchemas failed for get schemas failed"),
+			Response: discovery.CreateResponse(discovery.ResponseSuccess, "Do not have this schema info."),
+			Schemas:  []*discovery.Schema{},
 		}, nil
+	}
+	schemas := make([]*discovery.Schema, 0, len(schemasList))
+	for _, schemaID := range schemasList {
+		tempSchema := &discovery.Schema{}
+		tempSchema.SchemaId = schemaID
+		schema, err := GetSchema(ctx, GeneratorSchemaFilter(ctx, request.ServiceId, schemaID))
+		if err != nil {
+			return &discovery.GetAllSchemaResponse{
+				Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
+			}, err
+		}
+		if schema == nil {
+			schemas = append(schemas, tempSchema)
+			continue
+		}
+		tempSchema.Summary = schema.SchemaSummary
+		if request.WithSchema {
+			tempSchema.Schema = schema.SchemaInfo
+		}
+		schemas = append(schemas, tempSchema)
 	}
 	return &discovery.GetAllSchemaResponse{
 		Response: discovery.CreateResponse(discovery.ResponseSuccess, "Get all schema info successfully."),
@@ -675,10 +718,15 @@ func (ds *DataSource) DeleteSchema(ctx context.Context, request *discovery.Delet
 		}, nil
 	}
 	filter := GeneratorSchemaFilter(ctx, request.ServiceId, request.SchemaId)
-	_, err = client.GetMongoClient().Delete(ctx, CollectionSchema, filter)
+	res, err := client.GetMongoClient().DocDelete(ctx, CollectionSchema, filter)
 	if err != nil {
 		return &discovery.DeleteSchemaResponse{
 			Response: discovery.CreateResponse(discovery.ErrUnavailableBackend, "DeleteSchema failed for delete schema failed."),
+		}, err
+	}
+	if !res {
+		return &discovery.DeleteSchemaResponse{
+			Response: discovery.CreateResponse(discovery.ErrSchemaNotExists, "DeleteSchema failed for schema not exist."),
 		}, nil
 	}
 	return &discovery.DeleteSchemaResponse{
@@ -695,36 +743,16 @@ func (ds *DataSource) ModifySchema(ctx context.Context, request *discovery.Modif
 		Summary:  request.Summary,
 		Schema:   request.Schema,
 	}
-	session, err := client.GetMongoClient().StartSession(ctx)
+	err := ds.modifySchema(ctx, request.ServiceId, &schema)
 	if err != nil {
-		return &discovery.ModifySchemaResponse{
-			Response: discovery.CreateResponse(discovery.ErrInternal, "ModifySchema failed to create session."),
-		}, err
-	}
-	if err = session.StartTransaction(); err != nil {
-		return &discovery.ModifySchemaResponse{
-			Response: discovery.CreateResponse(discovery.ErrInternal, "ModifySchema failed to start session."),
-		}, err
-	}
-	defer session.EndSession(ctx)
-	err = ds.modifySchema(ctx, request.ServiceId, &schema)
-	if err != nil {
-		log.Error(fmt.Sprintf("modify schema %s %s failed, operator %s", serviceID, schemaID, remoteIP), err)
-		errAbort := session.AbortTransaction(ctx)
-		if errAbort != nil {
-			return &discovery.ModifySchemaResponse{
-				Response: discovery.CreateResponse(discovery.ErrInternal, "Txn ModifySchema Abort failed."),
-			}, errAbort
+		log.Error(fmt.Sprintf("modify schema[%s/%s] failed, operator: %s", serviceID, schemaID, remoteIP), err)
+		resp := &discovery.ModifySchemaResponse{
+			Response: discovery.CreateResponseWithSCErr(err),
 		}
-		return &discovery.ModifySchemaResponse{
-			Response: discovery.CreateResponse(discovery.ErrInternal, "Txn ModifySchema failed."),
-		}, err
-	}
-	err = session.CommitTransaction(ctx)
-	if err != nil {
-		return &discovery.ModifySchemaResponse{
-			Response: discovery.CreateResponse(discovery.ErrInternal, "Txn ModifySchema CommitTransaction failed."),
-		}, err
+		if err.InternalError() {
+			return resp, err
+		}
+		return resp, nil
 	}
 	log.Info(fmt.Sprintf("modify schema[%s/%s] successfully, operator: %s", serviceID, schemaID, remoteIP))
 	return &discovery.ModifySchemaResponse{
@@ -740,33 +768,15 @@ func (ds *DataSource) ModifySchemas(ctx context.Context, request *discovery.Modi
 	if svc == nil {
 		return &discovery.ModifySchemasResponse{Response: discovery.CreateResponse(discovery.ErrServiceNotExists, "Service not exist")}, nil
 	}
-	session, err := client.GetMongoClient().StartSession(ctx)
-	if err != nil {
-		return &discovery.ModifySchemasResponse{
-			Response: discovery.CreateResponse(discovery.ErrInternal, "ModifySchemas failed to start session"),
-		}, err
-	}
-	if err = session.StartTransaction(); err != nil {
-		return &discovery.ModifySchemasResponse{
-			Response: discovery.CreateResponse(discovery.ErrInternal, "ModifySchemas failed to start session"),
-		}, err
-	}
-	defer session.EndSession(ctx)
-	err = ds.modifySchemas(ctx, svc.ServiceInfo, request.Schemas)
-	if err != nil {
-		errAbort := session.AbortTransaction(ctx)
-		if errAbort != nil {
-			return &discovery.ModifySchemasResponse{
-				Response: discovery.CreateResponse(discovery.ErrInternal, "Txn ModifySchemas Abort failed."),
-			}, errAbort
+	respErr := ds.modifySchemas(ctx, svc.ServiceInfo, request.Schemas)
+	if respErr != nil {
+		resp := &discovery.ModifySchemasResponse{
+			Response: discovery.CreateResponseWithSCErr(respErr),
 		}
-		return &discovery.ModifySchemasResponse{Response: discovery.CreateResponse(discovery.ErrInternal, err.Error())}, err
-	}
-	err = session.CommitTransaction(ctx)
-	if err != nil {
-		return &discovery.ModifySchemasResponse{
-			Response: discovery.CreateResponse(discovery.ErrInternal, "Txn ModifySchemas CommitTransaction failed."),
-		}, err
+		if respErr.InternalError() {
+			return resp, err
+		}
+		return resp, nil
 	}
 	return &discovery.ModifySchemasResponse{
 		Response: discovery.CreateResponse(discovery.ResponseSuccess, "modify schemas info success"),
@@ -774,6 +784,122 @@ func (ds *DataSource) ModifySchemas(ctx context.Context, request *discovery.Modi
 
 }
 
+func (ds *DataSource) modifySchemas(ctx context.Context, service *discovery.MicroService, schemas []*discovery.Schema) *discovery.Error {
+	domain := util.ParseDomain(ctx)
+	project := util.ParseProject(ctx)
+	remoteIP := util.GetIPFromContext(ctx)
+
+	serviceID := service.ServiceId
+	schemasFromDatabase, err := GetSchemas(ctx, bson.M{ColumnServiceID: serviceID})
+	if err != nil {
+		log.Error(fmt.Sprintf("modify service %s schemas failed, get schemas failed, operator: %s", serviceID, remoteIP), err)
+		return discovery.NewError(discovery.ErrUnavailableBackend, err.Error())
+	}
+
+	needUpdateSchemas, needAddSchemas, needDeleteSchemas, nonExistSchemaIds :=
+		datasource.SchemasAnalysis(schemas, schemasFromDatabase, service.Schemas)
+
+	var schemasOps []mongo.WriteModel
+	var serviceOps []mongo.WriteModel
+	if !ds.isSchemaEditable(service) {
+		if len(service.Schemas) == 0 {
+			res := quota.NewApplyQuotaResource(quota.SchemaQuotaType, util.ParseDomainProject(ctx), serviceID, int64(len(nonExistSchemaIds)))
+			rst := quota.Apply(ctx, res)
+			errQuota := rst.Err
+			if errQuota != nil {
+				log.Error(fmt.Sprintf("modify service[%s] schemas failed, operator: %s", serviceID, remoteIP), errQuota)
+				return errQuota
+			}
+			serviceOps = append(serviceOps, mongo.NewUpdateOneModel().SetUpdate(bson.M{"$set": bson.M{StringBuilder([]string{ColumnServiceInfo, ColumnSchemas}): nonExistSchemaIds}}).SetFilter(GeneratorServiceFilter(ctx, serviceID)))
+		} else {
+			if len(nonExistSchemaIds) != 0 {
+				errInfo := fmt.Errorf("non-existent schemaIDs %v", nonExistSchemaIds)
+				log.Error(fmt.Sprintf("modify service %s schemas failed, operator: %s", serviceID, remoteIP), err)
+				return discovery.NewError(discovery.ErrUndefinedSchemaID, errInfo.Error())
+			}
+			for _, needUpdateSchema := range needUpdateSchemas {
+				exist, err := SchemaSummaryExist(ctx, serviceID, needUpdateSchema.SchemaId)
+				if err != nil {
+					return discovery.NewError(discovery.ErrInternal, err.Error())
+				}
+				if !exist {
+					schemasOps = append(schemasOps, mongo.NewUpdateOneModel().SetFilter(GeneratorSchemaFilter(ctx, serviceID, needUpdateSchema.SchemaId)).SetUpdate(bson.M{"$set": bson.M{ColumnSchemaInfo: needUpdateSchema.Schema, ColumnSchemaSummary: needUpdateSchema.Summary}}))
+				} else {
+					log.Warn(fmt.Sprintf("schema[%s/%s] and it's summary already exist, skip to update, operator: %s",
+						serviceID, needUpdateSchema.SchemaId, remoteIP))
+				}
+			}
+		}
+
+		for _, schema := range needAddSchemas {
+			log.Info(fmt.Sprintf("add new schema[%s/%s], operator: %s", serviceID, schema.SchemaId, remoteIP))
+			schemasOps = append(schemasOps, mongo.NewInsertOneModel().SetDocument(&Schema{
+				Domain:        domain,
+				Project:       project,
+				ServiceID:     serviceID,
+				SchemaID:      schema.SchemaId,
+				SchemaInfo:    schema.Schema,
+				SchemaSummary: schema.Summary,
+			}))
+		}
+	} else {
+		quotaSize := len(needAddSchemas) - len(needDeleteSchemas)
+		if quotaSize > 0 {
+			res := quota.NewApplyQuotaResource(quota.SchemaQuotaType, util.ParseDomainProject(ctx), serviceID, int64(quotaSize))
+			rst := quota.Apply(ctx, res)
+			err := rst.Err
+			if err != nil {
+				log.Error(fmt.Sprintf("modify service[%s] schemas failed, operator: %s", serviceID, remoteIP), err)
+				return err
+			}
+		}
+		var schemaIDs []string
+		for _, schema := range needAddSchemas {
+			log.Info(fmt.Sprintf("add new schema[%s/%s], operator: %s", serviceID, schema.SchemaId, remoteIP))
+			schemasOps = append(schemasOps, mongo.NewInsertOneModel().SetDocument(&Schema{
+				Domain:        domain,
+				Project:       project,
+				ServiceID:     serviceID,
+				SchemaID:      schema.SchemaId,
+				SchemaInfo:    schema.Schema,
+				SchemaSummary: schema.Summary,
+			}))
+			schemaIDs = append(schemaIDs, schema.SchemaId)
+		}
+
+		for _, schema := range needUpdateSchemas {
+			log.Info(fmt.Sprintf("update schema[%s/%s], operator: %s", serviceID, schema.SchemaId, remoteIP))
+			schemasOps = append(schemasOps, mongo.NewUpdateOneModel().SetFilter(GeneratorSchemaFilter(ctx, serviceID, schema.SchemaId)).SetUpdate(bson.M{"$set": bson.M{ColumnSchemaInfo: schema.Schema, ColumnSchemaSummary: schema.Summary}}))
+			schemaIDs = append(schemaIDs, schema.SchemaId)
+		}
+
+		for _, schema := range needDeleteSchemas {
+			log.Info(fmt.Sprintf("delete non-existent schema[%s/%s], operator: %s", serviceID, schema.SchemaId, remoteIP))
+			schemasOps = append(schemasOps, mongo.NewDeleteOneModel().SetFilter(GeneratorSchemaFilter(ctx, serviceID, schema.SchemaId)))
+		}
+
+		serviceOps = append(serviceOps, mongo.NewUpdateOneModel().SetUpdate(bson.M{"$set": bson.M{StringBuilder([]string{ColumnServiceInfo, ColumnSchemas}): schemaIDs}}).SetFilter(GeneratorServiceFilter(ctx, serviceID)))
+	}
+	if len(schemasOps) > 0 {
+		_, err = client.GetMongoClient().BatchUpdate(ctx, CollectionSchema, schemasOps)
+		if err != nil {
+			return discovery.NewError(discovery.ErrInternal, err.Error())
+		}
+	}
+	if len(serviceOps) > 0 {
+		_, err = client.GetMongoClient().BatchUpdate(ctx, CollectionService, serviceOps)
+		if err != nil {
+			return discovery.NewError(discovery.ErrInternal, err.Error())
+		}
+	}
+	return nil
+}
+
+// modifySchema will be modified in the following cases
+// 1.service have no relation --> update the schema && update the service
+// 2.service is editable && service have relation with the schema --> update the shema
+// 3.service is editable && service have no relation with the schema --> update the schema && update the service
+// 4.service can't edit && service have relation with the schema && schema summary not exist --> update the schema
 func (ds *DataSource) modifySchema(ctx context.Context, serviceID string, schema *discovery.Schema) *discovery.Error {
 	remoteIP := util.GetIPFromContext(ctx)
 	svc, err := GetService(ctx, GeneratorServiceFilter(ctx, serviceID))
@@ -781,7 +907,7 @@ func (ds *DataSource) modifySchema(ctx context.Context, serviceID string, schema
 		return discovery.NewError(discovery.ErrInternal, err.Error())
 	}
 	if svc == nil {
-		return discovery.NewError(discovery.ErrServiceNotExists, "service does not exist.")
+		return discovery.NewError(discovery.ErrServiceNotExists, "Service does not exist.")
 	}
 	microservice := svc.ServiceInfo
 	var isExist bool
@@ -794,17 +920,18 @@ func (ds *DataSource) modifySchema(ctx context.Context, serviceID string, schema
 	var newSchemas []string
 	if !ds.isSchemaEditable(microservice) {
 		if len(microservice.Schemas) != 0 && !isExist {
-			return discovery.NewError(discovery.ErrUndefinedSchemaID, "non-existent schemaID can't be added request "+discovery.ENV_PROD)
+			return discovery.NewError(discovery.ErrUndefinedSchemaID, "Non-existent schemaID can't be added request "+discovery.ENV_PROD)
 		}
 		respSchema, err := GetSchema(ctx, GeneratorSchemaFilter(ctx, serviceID, schema.SchemaId))
 		if err != nil {
 			return discovery.NewError(discovery.ErrUnavailableBackend, err.Error())
 		}
-		if schema != nil {
+		if respSchema != nil {
 			if len(schema.Summary) == 0 {
 				log.Error(fmt.Sprintf("modify schema %s %s failed, get schema summary failed, operator: %s",
 					serviceID, schema.SchemaId, remoteIP), err)
-				return discovery.NewError(discovery.ErrUnavailableBackend, err.Error())
+				return discovery.NewError(discovery.ErrModifySchemaNotAllow,
+					"schema already exist, can not be changed request "+discovery.ENV_PROD)
 			}
 			if len(respSchema.SchemaSummary) != 0 {
 				log.Error(fmt.Sprintf("mode, schema %s %s already exist, can not be changed, operator: %s",
@@ -822,10 +949,9 @@ func (ds *DataSource) modifySchema(ctx context.Context, serviceID string, schema
 			newSchemas = append(newSchemas, schema.SchemaId)
 		}
 	}
-	if len(newSchemas) != len(microservice.Schemas) {
-
+	if len(newSchemas) != 0 {
 		updateData := bson.M{StringBuilder([]string{ColumnServiceInfo, ColumnSchemas}): newSchemas}
-		err := UpdateService(ctx, GeneratorServiceFilter(ctx, serviceID), bson.M{"$set": updateData})
+		err = UpdateService(ctx, GeneratorServiceFilter(ctx, serviceID), bson.M{"$set": updateData})
 		if err != nil {
 			return discovery.NewError(discovery.ErrInternal, err.Error())
 		}
@@ -838,96 +964,8 @@ func (ds *DataSource) modifySchema(ctx context.Context, serviceID string, schema
 	return nil
 }
 
-func (ds *DataSource) modifySchemas(ctx context.Context, service *discovery.MicroService, schemas []*discovery.Schema) *discovery.Error {
-	remoteIP := util.GetIPFromContext(ctx)
-	serviceID := service.ServiceId
-	schemasFromDatabase, err := GetSchemas(ctx, GeneratorServiceFilter(ctx, serviceID))
-	if err != nil {
-		log.Error(fmt.Sprintf("modify service %s schemas failed, get schemas failed, operator: %s", serviceID, remoteIP), err)
-		return discovery.NewError(discovery.ErrUnavailableBackend, err.Error())
-	}
-	needUpdateSchemas, needAddSchemas, needDeleteSchemas, nonExistSchemaIds :=
-		datasource.SchemasAnalysis(schemas, schemasFromDatabase, service.Schemas)
-	if !ds.isSchemaEditable(service) {
-		if len(service.Schemas) == 0 {
-			//todo add quota check
-			updateData := bson.M{StringBuilder([]string{ColumnServiceInfo, ColumnSchemas}): nonExistSchemaIds}
-			err := UpdateService(ctx, GeneratorServiceFilter(ctx, serviceID), bson.M{"$set": updateData})
-			if err != nil {
-				log.Error(fmt.Sprintf("modify service %s schemas failed, update service.Schemas failed, operator: %s",
-					serviceID, remoteIP), err)
-				return discovery.NewError(discovery.ErrInternal, err.Error())
-			}
-		} else {
-			if len(nonExistSchemaIds) != 0 {
-				errInfo := fmt.Errorf("non-existent schemaIDs %v", nonExistSchemaIds)
-				log.Error(fmt.Sprintf("modify service %s schemas failed, operator: %s", serviceID, remoteIP), err)
-				return discovery.NewError(discovery.ErrUndefinedSchemaID, errInfo.Error())
-			}
-			for _, needUpdateSchema := range needUpdateSchemas {
-				exist, err := SchemaExist(ctx, serviceID, needUpdateSchema.SchemaId)
-				if err != nil {
-					return discovery.NewError(discovery.ErrInternal, err.Error())
-				}
-				if !exist {
-					err := UpdateSchema(ctx, GeneratorSchemaFilter(ctx, serviceID, needUpdateSchema.SchemaId), bson.M{"$set": bson.M{ColumnSchemaInfo: needUpdateSchema.Schema, ColumnSchemaSummary: needUpdateSchema.Summary}}, options.FindOneAndUpdate().SetUpsert(true))
-					if err != nil {
-						return discovery.NewError(discovery.ErrInternal, err.Error())
-					}
-				} else {
-					log.Warn(fmt.Sprintf("schema[%s/%s] and it's summary already exist, skip to update, operator: %s",
-						serviceID, needUpdateSchema.SchemaId, remoteIP))
-				}
-			}
-		}
-
-		for _, schema := range needAddSchemas {
-			log.Info(fmt.Sprintf("add new schema[%s/%s], operator: %s", serviceID, schema.SchemaId, remoteIP))
-			err := UpdateSchema(ctx, GeneratorSchemaFilter(ctx, serviceID, schema.SchemaId), bson.M{"$set": bson.M{ColumnSchemaInfo: schema.Schema, ColumnSchemaSummary: schema.Summary}}, options.FindOneAndUpdate().SetUpsert(true))
-			if err != nil {
-				return discovery.NewError(discovery.ErrInternal, err.Error())
-			}
-		}
-	} else {
-
-		var schemaIDs []string
-		for _, schema := range needAddSchemas {
-			log.Info(fmt.Sprintf("add new schema[%s/%s], operator: %s", serviceID, schema.SchemaId, remoteIP))
-			err := UpdateSchema(ctx, GeneratorSchemaFilter(ctx, serviceID, schema.SchemaId), bson.M{"$set": bson.M{ColumnSchemaInfo: schema.Schema, ColumnSchemaSummary: schema.Summary}}, options.FindOneAndUpdate().SetUpsert(true))
-			if err != nil {
-				return discovery.NewError(discovery.ErrInternal, err.Error())
-			}
-			schemaIDs = append(schemaIDs, schema.SchemaId)
-		}
-
-		for _, schema := range needUpdateSchemas {
-			log.Info(fmt.Sprintf("update schema[%s/%s], operator: %s", serviceID, schema.SchemaId, remoteIP))
-			err := UpdateSchema(ctx, GeneratorSchemaFilter(ctx, serviceID, schema.SchemaId), bson.M{"$set": bson.M{ColumnSchemaInfo: schema.Schema, ColumnSchemaSummary: schema.Summary}}, options.FindOneAndUpdate().SetUpsert(true))
-			if err != nil {
-				return discovery.NewError(discovery.ErrInternal, err.Error())
-			}
-			schemaIDs = append(schemaIDs, schema.SchemaId)
-		}
-
-		for _, schema := range needDeleteSchemas {
-			log.Info(fmt.Sprintf("delete non-existent schema[%s/%s], operator: %s", serviceID, schema.SchemaId, remoteIP))
-			err = DeleteSchema(ctx, GeneratorSchemaFilter(ctx, serviceID, schema.SchemaId))
-			if err != nil {
-				return discovery.NewError(discovery.ErrInternal, err.Error())
-			}
-		}
-
-		updateData := bson.M{StringBuilder([]string{ColumnServiceInfo, ColumnSchemas}): schemaIDs}
-		err := UpdateService(ctx, GeneratorServiceFilter(ctx, serviceID), bson.M{"$set": updateData})
-		if err != nil {
-			log.Error(fmt.Sprintf("modify service %s schemas failed, update service.Schemas failed, operator: %s", serviceID, remoteIP), err)
-			return discovery.NewError(discovery.ErrInternal, err.Error())
-		}
-	}
-	return nil
-}
-
 func (ds *DataSource) AddRule(ctx context.Context, request *discovery.AddServiceRulesRequest) (*discovery.AddServiceRulesResponse, error) {
+	remoteIP := util.GetIPFromContext(ctx)
 	exist, err := ServiceExistID(ctx, request.ServiceId)
 	if err != nil {
 		log.Error(fmt.Sprintf("failed to add rules for service %s for get service failed", request.ServiceId), err)
@@ -938,7 +976,19 @@ func (ds *DataSource) AddRule(ctx context.Context, request *discovery.AddService
 	if !exist {
 		return &discovery.AddServiceRulesResponse{Response: discovery.CreateResponse(discovery.ErrServiceNotExists, "Service does not exist")}, nil
 	}
-	//todo add quota check
+	res := quota.NewApplyQuotaResource(quota.RuleQuotaType, util.ParseDomainProject(ctx), request.ServiceId, int64(len(request.Rules)))
+	rst := quota.Apply(ctx, res)
+	errQuota := rst.Err
+	if errQuota != nil {
+		log.Error(fmt.Sprintf("add service[%s] rule failed, operator: %s", request.ServiceId, remoteIP), errQuota)
+		response := &discovery.AddServiceRulesResponse{
+			Response: discovery.CreateResponseWithSCErr(errQuota),
+		}
+		if errQuota.InternalError() {
+			return response, errQuota
+		}
+		return response, nil
+	}
 	rules, err := GetRules(ctx, request.ServiceId)
 	if err != nil {
 		return &discovery.AddServiceRulesResponse{
@@ -1034,25 +1084,33 @@ func (ds *DataSource) DeleteRule(ctx context.Context, request *discovery.DeleteS
 	if !exist {
 		return &discovery.DeleteServiceRulesResponse{Response: discovery.CreateResponse(discovery.ErrServiceNotExists, "Service not exist")}, nil
 	}
+	var delRules []mongo.WriteModel
 	for _, ruleID := range request.RuleIds {
 		exist, err := RuleExist(ctx, GeneratorRuleFilter(ctx, request.ServiceId, ruleID))
 		if err != nil {
 			return &discovery.DeleteServiceRulesResponse{
 				Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
-			}, nil
+			}, err
 		}
 		if !exist {
 			return &discovery.DeleteServiceRulesResponse{
 				Response: discovery.CreateResponse(discovery.ErrRuleNotExists, "This rule does not exist."),
 			}, nil
 		}
+		delRules = append(delRules, mongo.NewDeleteOneModel().SetFilter(GeneratorRuleFilter(ctx, request.ServiceId, ruleID)))
 	}
-
+	if len(delRules) > 0 {
+		_, err := client.GetMongoClient().BatchDelete(ctx, CollectionRule, delRules)
+		if err != nil {
+			return &discovery.DeleteServiceRulesResponse{
+				Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
+			}, err
+		}
+	}
 	return &discovery.DeleteServiceRulesResponse{
 		Response: discovery.CreateResponse(discovery.ResponseSuccess, "Delete service rules successfully."),
 	}, nil
 }
-
 func (ds *DataSource) UpdateRule(ctx context.Context, request *discovery.UpdateServiceRuleRequest) (
 	*discovery.UpdateServiceRuleResponse, error) {
 	exist, err := ServiceExistID(ctx, request.ServiceId)
@@ -1179,18 +1237,19 @@ func GetServicesVersions(ctx context.Context, filter interface{}) ([]string, err
 	}
 	var versions []string
 	for res.Next(ctx) {
-		var tmp string
+		var tmp Service
 		err := res.Decode(&tmp)
 		if err != nil {
 			return nil, err
 		}
-		versions = append(versions, tmp)
+		versions = append(versions, tmp.ServiceInfo.Version)
 	}
 	return versions, nil
 }
 
 func getServiceDetailUtil(ctx context.Context, mgs *Service, countOnly bool, options []string) (*discovery.ServiceDetail, error) {
 	serviceDetail := new(discovery.ServiceDetail)
+	serviceID := mgs.ServiceInfo.ServiceId
 	if countOnly {
 		serviceDetail.Statics = new(discovery.Statistics)
 	}
@@ -1210,7 +1269,23 @@ func getServiceDetailUtil(ctx context.Context, mgs *Service, countOnly bool, opt
 			}
 			serviceDetail.Rules = rules
 		case "instances":
-			//todo wait instance interface
+			if countOnly {
+				instanceCount, err := GetInstanceCountOfOneService(ctx, serviceID)
+				if err != nil {
+					log.Error(fmt.Sprintf("get number of service [%s]'s instances failed", serviceID), err)
+					return nil, err
+				}
+				serviceDetail.Statics.Instances = &discovery.StInstance{
+					Count: instanceCount,
+				}
+				continue
+			}
+			instances, err := GetAllInstancesOfOneService(ctx, serviceID)
+			if err != nil {
+				log.Error(fmt.Sprintf("get service[%s]'s all instances failed", serviceID), err)
+				return nil, err
+			}
+			serviceDetail.Instances = instances
 		case "schemas":
 			schemas, err := GetSchemas(ctx, GeneratorServiceFilter(ctx, mgs.ServiceInfo.ServiceId))
 			if err != nil {
@@ -1219,7 +1294,7 @@ func getServiceDetailUtil(ctx context.Context, mgs *Service, countOnly bool, opt
 			}
 			serviceDetail.SchemaInfos = schemas
 		case "dependencies":
-			//todo wait dependencied interface
+			//todo wait dependency interface
 		case "":
 			continue
 		default:
@@ -1259,7 +1334,11 @@ func UpdateRule(ctx context.Context, filter interface{}, m bson.M) error {
 }
 
 func UpdateSchema(ctx context.Context, filter interface{}, m bson.M, opts ...*options.FindOneAndUpdateOptions) error {
-	return client.GetMongoClient().DocUpdate(ctx, CollectionSchema, filter, m, opts...)
+	_, err := client.GetMongoClient().FindOneAndUpdate(ctx, CollectionSchema, filter, m, opts...)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func DeleteSchema(ctx context.Context, filter interface{}) error {
@@ -1364,6 +1443,10 @@ func GetSchema(ctx context.Context, filter bson.M) (*Schema, error) {
 	if err != nil {
 		return nil, err
 	}
+	if findRes.Err() != nil {
+		//not get any service,not db err
+		return nil, nil
+	}
 	var schema *Schema
 	err = findRes.Decode(&schema)
 	if err != nil {
@@ -1372,12 +1455,20 @@ func GetSchema(ctx context.Context, filter bson.M) (*Schema, error) {
 	return schema, nil
 }
 
-func SchemaExist(ctx context.Context, serviceID, schemaID string) (bool, error) {
-	num, err := client.GetMongoClient().Count(ctx, CollectionSchema, GeneratorSchemaFilter(ctx, serviceID, schemaID))
+func SchemaSummaryExist(ctx context.Context, serviceID, schemaID string) (bool, error) {
+	res, err := client.GetMongoClient().FindOne(ctx, CollectionSchema, GeneratorSchemaFilter(ctx, serviceID, schemaID))
 	if err != nil {
 		return false, err
 	}
-	return num != 0, nil
+	if res.Err() != nil {
+		return false, nil
+	}
+	var s Schema
+	err = res.Decode(&s)
+	if err != nil {
+		return false, err
+	}
+	return len(s.SchemaSummary) != 0, nil
 }
 
 // Instance management
@@ -1430,7 +1521,7 @@ func (ds *DataSource) RegisterInstance(ctx context.Context, request *discovery.R
 
 // GetInstances returns instances under the current domain
 func (ds *DataSource) GetInstance(ctx context.Context, request *discovery.GetOneInstanceRequest) (*discovery.GetOneInstanceResponse, error) {
-	service := &Service{}
+	var service *Service
 	var err error
 	var serviceIDs []string
 	if len(request.ConsumerServiceId) > 0 {
@@ -2656,4 +2747,69 @@ func allowAcrossDimension(ctx context.Context, providerService *Service, consume
 		return fmt.Errorf("not allow across environment access")
 	}
 	return nil
+}
+
+func GetInstanceCountOfOneService(ctx context.Context, serviceID string) (int64, error) {
+	filter := GeneratorServiceInstanceFilter(ctx, serviceID)
+	count, err := client.GetMongoClient().Count(ctx, CollectionInstance, filter)
+	if err != nil {
+		return 0, nil
+	}
+	return count, nil
+}
+
+func GetAllInstancesOfOneService(ctx context.Context, serviceID string) ([]*discovery.MicroServiceInstance, error) {
+	filter := GeneratorServiceInstanceFilter(ctx, serviceID)
+	res, err := client.GetMongoClient().Find(ctx, CollectionInstance, filter)
+	if err != nil {
+		return nil, err
+	}
+	var instances []*discovery.MicroServiceInstance
+	for res.Next(ctx) {
+		var tmp Instance
+		err := res.Decode(&tmp)
+		if err != nil {
+			return nil, err
+		}
+		instances = append(instances, tmp.InstanceInfo)
+	}
+	return instances, nil
+}
+
+func GetInstances(ctx context.Context, filter bson.M) ([]*Instance, error) {
+	res, err := client.GetMongoClient().Find(ctx, CollectionInstance, filter)
+	if err != nil {
+		return nil, err
+	}
+	var instances []*Instance
+	for res.Next(ctx) {
+		var tmp *Instance
+		err := res.Decode(&tmp)
+		if err != nil {
+			return nil, err
+		}
+		instances = append(instances, tmp)
+	}
+	return instances, nil
+}
+
+func GeneratorServiceVersionsFilter(ctx context.Context, service *discovery.MicroServiceKey) bson.M {
+	domain := util.ParseDomain(ctx)
+	project := util.ParseProject(ctx)
+
+	return bson.M{
+		ColumnDomain:  domain,
+		ColumnProject: project,
+		StringBuilder([]string{ColumnServiceInfo, ColumnEnv}):         service.Environment,
+		StringBuilder([]string{ColumnServiceInfo, ColumnAppID}):       service.AppId,
+		StringBuilder([]string{ColumnServiceInfo, ColumnServiceName}): service.ServiceName}
+}
+
+func GeneratorServiceInstanceFilter(ctx context.Context, serviceID string) bson.M {
+	domain := util.ParseDomain(ctx)
+	project := util.ParseProject(ctx)
+	return bson.M{
+		ColumnDomain:  domain,
+		ColumnProject: project,
+		StringBuilder([]string{ColumnInstanceInfo, ColumnServiceID}): serviceID}
 }
