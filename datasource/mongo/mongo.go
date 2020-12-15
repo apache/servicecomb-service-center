@@ -32,7 +32,7 @@ import (
 )
 
 func init() {
-	datasource.Install("mongo", NewDataSource)
+	datasource.Install("mongodb", NewDataSource)
 }
 
 type DataSource struct {
@@ -76,7 +76,7 @@ func (ds *DataSource) initialize() error {
 }
 
 func (ds *DataSource) initPlugins() error {
-	kind := config.GetString("registry.heartbeat.kind", "heartbeatchecker", config.WithStandby("heartbeat_plugin"))
+	kind := config.GetString("registry.mongodb.heartbeat.kind", "heartbeatchecker", config.WithStandby("heartbeat_plugin"))
 	err := heartbeat.Init(heartbeat.Options{PluginImplName: heartbeat.ImplName(kind)})
 	if err != nil {
 		log.Fatal("heartbeat init failed", err)
@@ -86,7 +86,7 @@ func (ds *DataSource) initPlugins() error {
 }
 
 func (ds *DataSource) initClient() error {
-	uri := config.GetString("registry.mongo.cluster.uri", "mongodb://localhost:27017", config.WithStandby("manager_cluster"))
+	uri := config.GetString("registry.mongodb.cluster.uri", "mongodb://localhost:27017", config.WithStandby("manager_cluster"))
 	cfg := storage.NewConfig(uri)
 	client.NewMongoClient(cfg)
 	select {
