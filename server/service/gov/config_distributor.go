@@ -26,6 +26,7 @@ const (
 	ConfigDistributorKie   = "kie"
 	ConfigDistributorIstio = "istio"
 	ConfigDistributorMock  = "mock"
+	DisplayKey             = "display"
 )
 
 type NewDistributors func(opts config.DistributorOptions) (ConfigDistributor, error)
@@ -41,8 +42,9 @@ type ConfigDistributor interface {
 	Create(kind, project string, spec []byte) error
 	Update(id, kind, project string, spec []byte) error
 	Delete(id, project string) error
+	Display(project, app, env string) ([]byte, error)
 	List(kind, project, app, env string) ([]byte, error)
-	Get(id, project string) ([]byte, error)
+	Get(kind, id, project string) ([]byte, error)
 	Type() string
 	Name() string
 }
@@ -87,14 +89,17 @@ func Create(kind, project string, spec []byte) error {
 
 func List(kind, project, app, env string) ([]byte, error) {
 	for _, cd := range distributors {
+		if kind == DisplayKey {
+			return cd.Display(project, app, env)
+		}
 		return cd.List(kind, project, app, env)
 	}
 	return nil, nil
 }
 
-func Get(id, project string) ([]byte, error) {
+func Get(kind, id, project string) ([]byte, error) {
 	for _, cd := range distributors {
-		return cd.Get(id, project)
+		return cd.Get(kind, id, project)
 	}
 	return nil, nil
 }

@@ -15,9 +15,9 @@ func (d *Validator) Validate(kind string, spec interface{}) error {
 		return matchValidate(spec)
 	case "retry":
 		return retryValidate(spec)
-	case "rateLimiting":
+	case "rate-limiting":
 		return rateLimitingValidate(spec)
-	case "circuitBreaker":
+	case "circuit-breaker":
 	case "bulkhead":
 	case "loadbalancer":
 		return nil
@@ -84,6 +84,7 @@ func rateLimitingValidate(val interface{}) error {
 }
 
 func policyValidate(val interface{}) error {
+	//todo : check repeat policy
 	spec, ok := val.(map[string]interface{})
 	if !ok {
 		return fmt.Errorf("illegal item : %v", val)

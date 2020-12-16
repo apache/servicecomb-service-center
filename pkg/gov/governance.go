@@ -30,9 +30,16 @@ type GovernancePolicy struct {
 	Selector   Selector `json:"selector,omitempty"`
 }
 
+//DisplayData define display data
+type DisplayData struct {
+	Policies   []*Policy `json:"policies,omitempty"`
+	MatchGroup *Policy   `json:"matchGroup,omitempty"`
+}
+
 //Policy define policy and fault tolerant policy
 type Policy struct {
 	*GovernancePolicy
+	Kind string      `json:"kind,omitempty"`
 	Spec interface{} `json:"spec,omitempty"`
 }
 

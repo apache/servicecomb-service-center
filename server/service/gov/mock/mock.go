@@ -50,6 +50,16 @@ func (d *Distributor) Delete(id, project string) error {
 	delete(d.lbPolicies, id)
 	return nil
 }
+
+func (d *Distributor) Display(project, app, env string) ([]byte, error) {
+	r := make([]*gov.Policy, 0, len(d.lbPolicies))
+	for _, g := range d.lbPolicies {
+		r = append(r, g)
+	}
+	b, _ := json.MarshalIndent(r, "", "  ")
+	return b, nil
+}
+
 func (d *Distributor) List(kind, project, app, env string) ([]byte, error) {
 	r := make([]*gov.Policy, 0, len(d.lbPolicies))
 	for _, g := range d.lbPolicies {
@@ -59,7 +69,7 @@ func (d *Distributor) List(kind, project, app, env string) ([]byte, error) {
 	return b, nil
 }
 
-func (d *Distributor) Get(id, project string) ([]byte, error) {
+func (d *Distributor) Get(kind, id, project string) ([]byte, error) {
 	return nil, nil
 }
 func (d *Distributor) Type() string {

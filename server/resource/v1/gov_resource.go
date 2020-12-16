@@ -100,9 +100,10 @@ func (t *Governance) List(w http.ResponseWriter, req *http.Request) {
 
 //Get gov config
 func (t *Governance) Get(w http.ResponseWriter, req *http.Request) {
+	kind := req.URL.Query().Get(KindKey)
 	id := req.URL.Query().Get(IDKey)
 	project := req.URL.Query().Get(ProjectKey)
-	body, err := gov.Get(id, project)
+	body, err := gov.Get(kind, id, project)
 	if err != nil {
 		log.Error("create gov err", err)
 		controller.WriteError(w, discovery.ErrInternal, err.Error())
