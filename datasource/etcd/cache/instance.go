@@ -19,7 +19,6 @@ package cache
 
 import (
 	"context"
-	"math"
 	"time"
 
 	"github.com/apache/servicecomb-service-center/pkg/cache"
@@ -28,9 +27,7 @@ import (
 )
 
 var FindInstances = &FindInstancesCache{
-	Tree: cache.NewTree(cache.Configure().
-		WithTTL(2 * time.Minute).
-		WithMaxSize(math.MaxInt64))}
+	Tree: cache.NewTree(cache.Configure().WithTTL(2 * time.Minute).WithMaxSize(10000))}
 
 func init() {
 	FindInstances.AddFilter(

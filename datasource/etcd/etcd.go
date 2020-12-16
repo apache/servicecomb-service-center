@@ -17,7 +17,6 @@ package etcd
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/event"
 	"sort"
 	"strings"
 	"sync"
@@ -25,6 +24,7 @@ import (
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/event"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/job"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/mux"
