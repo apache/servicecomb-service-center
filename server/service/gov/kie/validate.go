@@ -49,12 +49,16 @@ func matchValidate(val interface{}) error {
 		}
 		//apiPath & headers do not check
 		if match["methods"] != nil {
-			methods, ok := match["methods"].([]string)
+			methods, ok := match["methods"].([]interface{})
 			if !ok {
 				return fmt.Errorf("illegal item : %v", match)
 			}
 			for _, method := range methods {
-				if !methodSet[method] {
+				methodStr, ok := method.(string)
+				if !ok {
+					return fmt.Errorf("illegal item : %v", method)
+				}
+				if !methodSet[methodStr] {
 					return fmt.Errorf("method must be one of the GET/POST/PUT/DELETE: %v", match)
 				}
 			}
