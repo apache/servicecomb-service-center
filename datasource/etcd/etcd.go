@@ -24,6 +24,7 @@ import (
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/event"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/job"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/mux"
@@ -80,6 +81,8 @@ func (ds *DataSource) initialize() error {
 	ds.initClustersIndex()
 	// init client/sd plugins
 	ds.initPlugins()
+	// Add events handlers
+	event.Initialize()
 	// Wait for kv store ready
 	ds.initKvStore()
 	// Compact

@@ -19,7 +19,6 @@ package cache
 
 import (
 	"context"
-	"math"
 
 	"github.com/apache/servicecomb-service-center/pkg/cache"
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -27,8 +26,7 @@ import (
 )
 
 var DependencyRule = &DependencyRuleCache{
-	Tree: cache.NewTree(cache.Configure().
-		WithMaxSize(math.MaxInt64))}
+	Tree: cache.NewTree(cache.Configure().WithMaxSize(10000))}
 
 func init() {
 	DependencyRule.AddFilter(
