@@ -87,7 +87,7 @@ curl -X POST \
 Currently, two default roles are provided. You can also add new roles and assign resources.
 
 ### API and resources
-All APIs of the system are divided according to their attributes. For example, resource account has the permission to create or update or delete user account when assign the corresponding permissions, resource service has all permission to create, get, add or delete microservices when permissions equal to "*". For more details to see [https://github.com/apache/servicecomb-service-center/blob/master/server/service/rbac/resource.go]()
+All APIs of the system are divided according to their attributes. For example, resource account has the permission to create or update or delete user account when assign the corresponding permissions, resource service has all permission to create, get, add or delete microservices when permissions equal to "*". For more details to see [here](https://github.com/apache/servicecomb-service-center/blob/master/server/service/rbac/resource.go).  
 A new role named "tester" owns resources "service", "instance" and "rule".
  ```json
 {

@@ -38,7 +38,7 @@ var ErrConflictRole int32 = 409002
 type RoleResource struct {
 }
 
-//URLPatterns define htp pattern
+//URLPatterns define http pattern
 func (r *RoleResource) URLPatterns() []rest.Route {
 	return []rest.Route{
 		{Method: http.MethodGet, Path: "/v4/role", Func: r.GetRolePermission},
@@ -49,6 +49,7 @@ func (r *RoleResource) URLPatterns() []rest.Route {
 	}
 }
 
+//GetRolePermission list all roles and there's permissions
 func (r *RoleResource) GetRolePermission(w http.ResponseWriter, req *http.Request) {
 	rs, _, err := dao.ListRole(context.TODO())
 	if err != nil {
@@ -68,6 +69,19 @@ func (r *RoleResource) GetRolePermission(w http.ResponseWriter, req *http.Reques
 	controller.WriteJSON(w, b)
 }
 
+//roleParse parse the role info from the request body
+func (r *RoleResource) roleParse(body []byte) (*rbacframe.Role, error) {
+	role := &rbacframe.Role{}
+	err := json.Unmarshal(body, role)
+	if err != nil {
+		log.Error("json err", err)
+		return nil, err
+	}
+	// TODO: validate role
+	return role, nil
+}
+
+//CreateRolePermission create new role and assign permissions
 func (r *RoleResource) CreateRolePermission(w http.ResponseWriter, req *http.Request) {
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
@@ -75,14 +89,12 @@ func (r *RoleResource) CreateRolePermission(w http.ResponseWriter, req *http.Req
 		controller.WriteError(w, discovery.ErrInternal, err.Error())
 		return
 	}
-	a := &rbacframe.Role{}
-	if err = json.Unmarshal(body, a); err != nil {
-		log.Error("json err", err)
+	role, err := r.roleParse(body)
+	if err != nil {
 		controller.WriteError(w, discovery.ErrInvalidParams, errorsEx.MsgJSON)
 		return
 	}
-	// TODO: validate role
-	err = dao.CreateRole(context.TODO(), a)
+	err = dao.CreateRole(context.TODO(), role)
 	if err != nil {
 		if err == datasource.ErrRoleDuplicated {
 			controller.WriteError(w, ErrConflictRole, "")
@@ -94,6 +106,7 @@ func (r *RoleResource) CreateRolePermission(w http.ResponseWriter, req *http.Req
 	}
 }
 
+//UpdateRolePermission update role permissions
 func (r *RoleResource) UpdateRolePermission(w http.ResponseWriter, req *http.Request) {
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
@@ -101,32 +114,27 @@ func (r *RoleResource) UpdateRolePermission(w http.ResponseWriter, req *http.Req
 		controller.WriteError(w, discovery.ErrInternal, err.Error())
 		return
 	}
-	a := &rbacframe.Role{}
-	if err = json.Unmarshal(body, a); err != nil {
-		log.Error("json err", err)
+	role, err := r.roleParse(body)
+	if err != nil {
 		controller.WriteError(w, discovery.ErrInvalidParams, errorsEx.MsgJSON)
 		return
 	}
-	// TODO: validate role
-	err = dao.EditRole(context.TODO(), a)
+	err = dao.EditRole(context.TODO(), role)
 	if err != nil {
-		if err == datasource.ErrRoleDuplicated {
-			controller.WriteError(w, ErrConflictRole, "")
-			return
-		}
 		log.Error(errorsEx.MsgOperateRoleFailed, err)
 		controller.WriteError(w, discovery.ErrInternal, errorsEx.MsgOperateRoleFailed)
 		return
 	}
 }
 
+//GetRole get the role info according to role name
 func (r *RoleResource) GetRole(w http.ResponseWriter, req *http.Request) {
-	a, err := dao.GetRole(context.TODO(), req.URL.Query().Get(":roleName"))
+	role, err := dao.GetRole(context.TODO(), req.URL.Query().Get(":roleName"))
 	if err != nil {
 		log.Error(errorsEx.MsgGetRoleFailed, err)
 		controller.WriteError(w, discovery.ErrInternal, errorsEx.MsgGetRoleFailed)
 	}
-	v, err := json.Marshal(a)
+	v, err := json.Marshal(role)
 	if err != nil {
 		log.Error(errorsEx.MsgJSON, err)
 		controller.WriteError(w, discovery.ErrInternal, errorsEx.MsgJSON)
@@ -135,6 +143,7 @@ func (r *RoleResource) GetRole(w http.ResponseWriter, req *http.Request) {
 	controller.WriteJSON(w, v)
 }
 
+//DeleteRole delete the role info by role name
 func (r *RoleResource) DeleteRole(w http.ResponseWriter, req *http.Request) {
 	_, err := dao.DeleteRole(context.TODO(), req.URL.Query().Get(":roleName"))
 	if err != nil {
