@@ -33,8 +33,7 @@ require (
 	github.com/jonboulle/clockwork v0.2.2 // indirect
 	github.com/karlseguin/ccache v2.0.3-0.20170217060820-3ba9789cfd2c+incompatible
 	github.com/karlseguin/expect v1.0.7 // indirect
-	github.com/labstack/echo v3.2.2-0.20180316170059-a5d81b8d4a62+incompatible
-	github.com/labstack/echo/v4 v4.1.17
+	github.com/labstack/echo/v4 v4.1.18-0.20201218141459-936c48a17e97
 	github.com/mattn/go-runewidth v0.0.9 // indirect
 	github.com/natefinch/lumberjack v0.0.0-20170531160350-a96e63847dc3
 	github.com/olekukonko/tablewriter v0.0.0-20180506121414-d4647c9c7a84
