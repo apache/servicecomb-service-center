@@ -17,12 +17,13 @@
 package main
 
 import (
+	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
 	"sync"
 	"testing"
 
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 )
 
 const (
@@ -46,13 +47,9 @@ func TestStatic(t *testing.T) {
 
 	wg.Wait()
 	res, err := http.Get("http://" + FrontAddr)
-	if err != nil {
-		t.Errorf("Error accessing frontend: %s", err)
-	}
-	if res.StatusCode != http.StatusOK {
-		t.Errorf("Expected http %d, got %d", http.StatusOK, res.StatusCode)
-	}
-
+	assert.NoError(t, err, "Error accessing frontend: %s", err)
+	assert.Equal(t, http.StatusOK, res.StatusCode, "Expected http %d, got %d", http.StatusOK, res.StatusCode)
+	_ = res.Body.Close()
 }
 
 func TestSCProxy(t *testing.T) {
@@ -68,17 +65,14 @@ func TestSCProxy(t *testing.T) {
 			return c.String(http.StatusOK, greeting)
 		})
 		wg.Done()
-		e.Start(SCAddr)
+		_ = e.Start(SCAddr)
 	}()
 
 	wg.Wait()
 	res, err := http.Get("http://" + FrontAddr + "/sc/sayHi")
-	if err != nil {
-		t.Errorf("Error accessing sc proxy: %s", err)
-	}
-	if res.StatusCode != http.StatusOK {
-		t.Errorf("Expected http %d, got %d", http.StatusOK, res.StatusCode)
-	}
+	assert.NoError(t, err, "Error accessing sc proxy: %s", err)
+	assert.Equal(t, http.StatusOK, res.StatusCode, "Expected http %d, got %d", http.StatusOK, res.StatusCode)
+	defer res.Body.Close()
 
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
@@ -87,5 +81,25 @@ func TestSCProxy(t *testing.T) {
 	if string(body) != greeting {
 		t.Errorf("Expected %s, got %s", greeting, string(body))
 	}
+}
 
+func TestDirectoryTraversal(t *testing.T) {
+	var wg sync.WaitGroup
+
+	cfg := Config{
+		scAddr:       "http://" + SCAddr,
+		frontendAddr: FrontAddr,
+	}
+
+	wg.Add(1)
+	go func() {
+		wg.Done()
+		Serve(cfg)
+	}()
+
+	wg.Wait()
+	res, err := http.Get("http://" + FrontAddr + "/..\\schema/schemahandler.go")
+	assert.NoError(t, err, "Error accessing frontend: %s", err)
+	assert.Equal(t, http.StatusNotFound, res.StatusCode, "Expected http status is 404")
+	_ = res.Body.Close()
 }
