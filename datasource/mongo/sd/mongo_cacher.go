@@ -1,0 +1,436 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package sd
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"sync"
+	"time"
+
+	"github.com/apache/servicecomb-service-center/pkg/backoff"
+	"github.com/apache/servicecomb-service-center/pkg/gopool"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	rmodel "github.com/go-chassis/cari/discovery"
+)
+
+// MongoCacher manages mongo cache.
+// To updateOp cache, MongoCacher watch mongo event and pull data periodly from mongo.
+// When the cache data changes, MongoCacher creates events and notifies it's
+// subscribers.
+// Use Options to set it's behaviors.
+type MongoCacher struct {
+	Options     *Options
+	reListCount int
+	cache       *MongoCache
+	ready       chan struct{}
+	lw          ListWatch
+	mux         sync.Mutex
+	once        sync.Once
+	goroutine   *gopool.Pool
+}
+
+func (c *MongoCacher) Cache() *MongoCache {
+	return c.cache
+}
+
+func (c *MongoCacher) Run() {
+	c.once.Do(func() {
+		c.goroutine.Do(c.refresh)
+	})
+}
+
+func (c *MongoCacher) Stop() {
+	c.goroutine.Close(true)
+
+	util.SafeCloseChan(c.ready)
+}
+
+func (c *MongoCacher) Ready() <-chan struct{} {
+	return c.ready
+}
+
+func (c *MongoCacher) IsReady() bool {
+	select {
+	case <-c.ready:
+		return true
+	default:
+		return false
+	}
+}
+
+func (c *MongoCacher) needList() bool {
+	if c.lw.ResumeToken() == nil {
+		return true
+	}
+	c.reListCount++
+	if c.reListCount < DefaultForceListInterval {
+		return false
+	}
+	c.reListCount = 0
+	return true
+}
+
+func (c *MongoCacher) doList(cfg ListWatchConfig) error {
+	resp, err := c.lw.List(cfg)
+	if err != nil {
+		return err
+	}
+
+	infos := resp.Infos
+
+	defer log.Debug(fmt.Sprintf("finish to cache key %s, %d items",
+		c.Options.Key, len(infos)))
+
+	//just reset the cacher if cache marked dirty
+	if c.cache.Dirty() {
+		c.reset(infos)
+		log.Warn(fmt.Sprintf("Cache[%s] is reset!", c.cache.Name()))
+		return nil
+	}
+
+	// calc and return the diff between cache and mongodb
+	events := c.filter(infos)
+
+	//notify the subscribers
+	c.sync(events)
+	return nil
+}
+
+func (c *MongoCacher) reset(infos []MongoInfo) {
+	// clear cache before Set is safe, because the watch operation is stop,
+	// but here will make all API requests go to MONGO directly.
+	c.cache.Clear()
+	// do not notify when cacher is dirty status,
+	// otherwise, too many events will notify to downstream.
+	c.buildCache(c.filter(infos))
+}
+
+func (c *MongoCacher) doWatch(cfg ListWatchConfig) error {
+	if watcher := c.lw.Watch(cfg); watcher != nil {
+		return c.handleWatcher(watcher)
+	}
+	return fmt.Errorf("handle a nil watcher")
+}
+
+func (c *MongoCacher) ListAndWatch(ctx context.Context) error {
+	c.mux.Lock()
+	defer c.mux.Unlock()
+	defer log.Recover() // ensure ListAndWatch never raise panic
+
+	cfg := ListWatchConfig{
+		Timeout: c.Options.Timeout,
+		Context: ctx,
+	}
+
+	// the scenario need to list mongo:
+	// 1. Initial: cache is building, the lister's resume token is nil.
+	// 2. Runtime: error occurs in previous watch operation, the lister's status is set to error.
+	// 3. Runtime: watch operation timed out over DEFAULT_FORCE_LIST_INTERVAL times.
+	if c.needList() {
+		if err := c.doList(cfg); err != nil && (!c.IsReady()) {
+			return err // do retry to list etcd
+		}
+		// keep going to next step:
+		// 1. doList return OK.
+		// 2. some traps in mongo client
+	}
+
+	util.SafeCloseChan(c.ready)
+
+	return c.doWatch(cfg)
+}
+
+func (c *MongoCacher) handleWatcher(watcher Watcher) error {
+	defer watcher.Stop()
+
+	for resp := range watcher.WatchResponse() {
+		events := make([]MongoEvent, 0)
+
+		if resp == nil {
+			return errors.New("handle watcher error")
+		}
+
+		for _, info := range resp.Infos {
+			action := resp.OperationType
+			var event MongoEvent
+			switch action {
+			case insertOp:
+				event = NewMongoEventByMongoInf(info, rmodel.EVT_CREATE)
+			case updateOp, replaceOp:
+				event = NewMongoEventByMongoInf(info, rmodel.EVT_UPDATE)
+			case deleteOp:
+				info.BusinessID = c.cache.GetKeyByDocumentID(info.DocumentID)
+				info.Value = c.cache.Get(info.BusinessID)
+				event = NewMongoEventByMongoInf(info, rmodel.EVT_DELETE)
+			}
+			events = append(events, event)
+		}
+
+		c.sync(events)
+		log.Debug(fmt.Sprintf("finish to handle %d events, table: %s", len(events), c.Options.Key))
+	}
+
+	return nil
+}
+
+func (c *MongoCacher) refresh(ctx context.Context) {
+	log.Debug(fmt.Sprintf("start to list and watch %s", c.Options))
+	retries := 0
+
+	timer := time.NewTimer(minWaitInterval)
+	defer timer.Stop()
+	for {
+		nextPeriod := minWaitInterval
+		if err := c.ListAndWatch(ctx); err != nil {
+			retries++
+			nextPeriod = backoff.GetBackoff().Delay(retries)
+		} else {
+			retries = 0
+		}
+
+		select {
+		case <-ctx.Done():
+			log.Debug(fmt.Sprintf("stop to list and watch %s", c.Options))
+			return
+		case <-timer.C:
+			timer.Reset(nextPeriod)
+		}
+	}
+}
+
+// keep the evts valID when call sync
+func (c *MongoCacher) sync(evts []MongoEvent) {
+	if len(evts) == 0 {
+		return
+	}
+
+	c.onEvents(evts)
+}
+
+func (c *MongoCacher) filter(infos []MongoInfo) []MongoEvent {
+	nc := len(infos)
+	newStore := make(map[string]interface{}, nc)
+	documentIDRecord := make(map[string]string, nc)
+
+	for _, info := range infos {
+		event := NewMongoEventByMongoInf(info, rmodel.EVT_CREATE)
+		newStore[event.BusinessID] = info.Value
+		documentIDRecord[event.BusinessID] = info.DocumentID
+	}
+
+	filterStopCh := make(chan struct{})
+	eventsCh := make(chan [eventBlockSize]MongoEvent, 2)
+
+	go c.filterDelete(newStore, eventsCh, filterStopCh)
+
+	go c.filterCreateOrUpdate(newStore, documentIDRecord, eventsCh, filterStopCh)
+
+	events := make([]MongoEvent, 0, nc)
+	for block := range eventsCh {
+		for _, e := range block {
+			if e.Value == nil {
+				break
+			}
+			events = append(events, e)
+		}
+	}
+	return events
+}
+
+func (c *MongoCacher) filterDelete(newStore map[string]interface{},
+	eventsCh chan [eventBlockSize]MongoEvent, filterStopCh chan struct{}) {
+	var block [eventBlockSize]MongoEvent
+	i := 0
+
+	c.cache.ForEach(func(k string, v interface{}) (next bool) {
+		next = true
+
+		_, ok := newStore[k]
+		if ok {
+			// k in store, also in new store, is not deleted, return
+			return
+		}
+
+		// k in store but not in new store, it means k is deleted
+		if i >= eventBlockSize {
+			eventsCh <- block
+			block = [eventBlockSize]MongoEvent{}
+			i = 0
+		}
+
+		documentID := c.cache.GetDocumentIDByID(k)
+		block[i] = NewMongoEvent(k, documentID, rmodel.EVT_DELETE, v)
+		i++
+		return
+	})
+
+	if i > 0 {
+		eventsCh <- block
+	}
+
+	close(filterStopCh)
+}
+
+func (c *MongoCacher) filterCreateOrUpdate(newStore map[string]interface{}, newDocumentStore map[string]string,
+	eventsCh chan [eventBlockSize]MongoEvent, filterStopCh chan struct{}) {
+	var block [eventBlockSize]MongoEvent
+	i := 0
+
+	for k, v := range newStore {
+		ov := c.cache.Get(k)
+		if ov == nil {
+			if i >= eventBlockSize {
+				eventsCh <- block
+				block = [eventBlockSize]MongoEvent{}
+				i = 0
+			}
+
+			block[i] = NewMongoEvent(k, newDocumentStore[k], rmodel.EVT_CREATE, v)
+			i++
+
+			continue
+		}
+
+		if c.isValueNotUpdated(v, ov) {
+			continue
+		}
+
+		log.Debug(fmt.Sprintf("value is updateOp of key:%s, old value is:%s, new value is:%s", k, ov, v))
+
+		if i >= eventBlockSize {
+			eventsCh <- block
+			block = [eventBlockSize]MongoEvent{}
+			i = 0
+		}
+
+		block[i] = NewMongoEvent(k, newDocumentStore[k], rmodel.EVT_UPDATE, v)
+		i++
+	}
+
+	if i > 0 {
+		eventsCh <- block
+	}
+
+	<-filterStopCh
+
+	close(eventsCh)
+}
+
+func (c *MongoCacher) isValueNotUpdated(value interface{}, newValue interface{}) bool {
+	var modTime string
+	var newModTime string
+
+	switch c.Options.Key {
+	case instance:
+		instance := value.(Instance)
+		newInstance := newValue.(Instance)
+		if instance.InstanceInfo == nil || newInstance.InstanceInfo == nil {
+			return true
+		}
+		modTime = instance.InstanceInfo.ModTimestamp
+		newModTime = newInstance.InstanceInfo.ModTimestamp
+	case service:
+		service := value.(Service)
+		newService := newValue.(Service)
+		if service.ServiceInfo == nil || newService.ServiceInfo == nil {
+			return true
+		}
+		modTime = service.ServiceInfo.ModTimestamp
+		newModTime = newService.ServiceInfo.ModTimestamp
+	}
+
+	if newModTime == "" || modTime == newModTime {
+		return true
+	}
+
+	return false
+}
+
+func (c *MongoCacher) onEvents(events []MongoEvent) {
+	c.buildCache(events)
+
+	c.notify(events)
+}
+
+func (c *MongoCacher) buildCache(events []MongoEvent) {
+	for i, evt := range events {
+		key := evt.BusinessID
+		value := c.cache.Get(key)
+
+		ok := value != nil
+
+		switch evt.Type {
+		case rmodel.EVT_CREATE, rmodel.EVT_UPDATE:
+			switch {
+			case !c.IsReady():
+				evt.Type = rmodel.EVT_INIT
+			case !ok && evt.Type != rmodel.EVT_CREATE:
+				log.Warn(fmt.Sprintf("unexpected %s event! it should be %s key %s",
+					evt.Type, rmodel.EVT_CREATE, key))
+				evt.Type = rmodel.EVT_CREATE
+			case ok && evt.Type != rmodel.EVT_UPDATE:
+				log.Warn(fmt.Sprintf("unexpected %s event! it should be %s key %s",
+					evt.Type, rmodel.EVT_UPDATE, key))
+				evt.Type = rmodel.EVT_UPDATE
+			}
+
+			c.cache.Put(evt.BusinessID, evt.Value)
+			c.cache.PutDocumentID(evt.BusinessID, evt.DocumentID)
+
+			events[i] = evt
+		case rmodel.EVT_DELETE:
+			if !ok {
+				log.Warn(fmt.Sprintf("unexpected %s event! key %s does not cache",
+					evt.Type, key))
+			} else {
+				evt.Value = value
+
+				c.cache.Remove(key)
+				c.cache.RemoveDocumentID(evt.DocumentID)
+			}
+			events[i] = evt
+		}
+	}
+}
+
+func (c *MongoCacher) notify(evts []MongoEvent) {
+	if c.Options.OnEvent == nil {
+		return
+	}
+
+	defer log.Recover()
+
+	for _, evt := range evts {
+		c.Options.OnEvent(evt)
+	}
+}
+
+func NewMongoCacher(options *Options, cache *MongoCache) *MongoCacher {
+	return &MongoCacher{
+		Options: options,
+		cache:   cache,
+		ready:   make(chan struct{}),
+		lw: &innerListWatch{
+			Key: options.Key,
+		},
+		goroutine: gopool.New(context.Background()),
+	}
+}
