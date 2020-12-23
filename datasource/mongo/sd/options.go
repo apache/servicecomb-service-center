@@ -15,30 +15,42 @@
  * limitations under the License.
  */
 
-package etcd
+package sd
 
 import (
-	"context"
 	"fmt"
 	"time"
-
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 )
 
-type ListWatchConfig struct {
-	Timeout time.Duration
-	Context context.Context
+const (
+	FirstTimeout         = 2 * time.Second
+	DefaultTimeout       = 30 * time.Second
+	DefaultCacheInitSize = 100
+)
+
+type Options struct {
+	// Key is the table to unique specify resource type
+	Key      string
+	InitSize int
+	Timeout  time.Duration
+	Period   time.Duration
 }
 
-func (lo *ListWatchConfig) String() string {
-	return fmt.Sprintf("{timeout: %s}", lo.Timeout)
+func (options *Options) String() string {
+	return fmt.Sprintf("{key: %s, timeout: %s, period: %s}",
+		options.Key, options.Timeout, options.Period)
 }
 
-type ListWatch interface {
-	List(op ListWatchConfig) (*client.PluginResponse, error)
-	// not support new multiple watchers
-	Watch(op ListWatchConfig) Watcher
-	//
-	DoWatch(ctx context.Context, f func(*client.PluginResponse)) error
-	Revision() int64
+func (options *Options) SetTable(key string) *Options {
+	options.Key = key
+	return options
+}
+
+func DefaultOptions() *Options {
+	return &Options{
+		Key:      "",
+		Timeout:  DefaultTimeout,
+		Period:   time.Second,
+		InitSize: DefaultCacheInitSize,
+	}
 }

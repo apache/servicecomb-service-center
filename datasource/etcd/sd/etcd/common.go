@@ -16,22 +16,16 @@
 package etcd
 
 import (
-	"time"
-
 	"github.com/apache/servicecomb-service-center/datasource/etcd"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/value"
+	"github.com/apache/servicecomb-service-center/datasource/sdcommon"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 )
 
 const (
-	// force re-list
-	DefaultForceListInterval = 4
-	DefaultMetricsInterval   = 30 * time.Second
-
-	minWaitInterval = 1 * time.Second
-	eventBlockSize  = 1000
-	eventBusSize    = 1000
+	revMethodName = "Revision"
 )
 
 var closedCh = make(chan struct{})
@@ -50,5 +44,18 @@ func FromEtcdKeyValue(dist *sd.KeyValue, src *mvccpb.KeyValue, parser value.Pars
 		return
 	}
 	dist.Value, err = parser.Unmarshal(src.Value)
+	return
+}
+
+func ParseResourceToEtcdKeyValue(dist *sd.KeyValue, src *sdcommon.Resource, parser value.Parser) (err error) {
+	dist.ClusterName = etcd.Configuration().ClusterName
+	dist.Key = util.StringToBytesWithNoCopy(src.Key)
+	dist.Version = src.Version
+	dist.CreateRevision = src.CreateRevision
+	dist.ModRevision = src.ModRevision
+	if parser == nil {
+		return
+	}
+	dist.Value, err = parser.Unmarshal(src.Value.([]byte))
 	return
 }

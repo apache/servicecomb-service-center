@@ -22,7 +22,9 @@ import (
 	"fmt"
 
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/sdcommon"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
 type innerListWatch struct {
@@ -32,7 +34,7 @@ type innerListWatch struct {
 	rev int64
 }
 
-func (lw *innerListWatch) List(op ListWatchConfig) (*client.PluginResponse, error) {
+func (lw *innerListWatch) List(op sdcommon.ListWatchConfig) (*sdcommon.ListWatchResp, error) {
 	otCtx, cancel := context.WithTimeout(op.Context, op.Timeout)
 	defer cancel()
 	resp, err := lw.Client.Do(otCtx, client.WatchPrefixOpOptions(lw.Prefix)...)
@@ -41,7 +43,10 @@ func (lw *innerListWatch) List(op ListWatchConfig) (*client.PluginResponse, erro
 		return nil, err
 	}
 	lw.setRevision(resp.Revision)
-	return resp, nil
+
+	lwRsp := lw.doParsePluginRspToLwRsp(resp)
+
+	return lwRsp, nil
 }
 
 func (lw *innerListWatch) Revision() int64 {
@@ -52,11 +57,11 @@ func (lw *innerListWatch) setRevision(rev int64) {
 	lw.rev = rev
 }
 
-func (lw *innerListWatch) Watch(op ListWatchConfig) Watcher {
-	return newInnerWatcher(lw, op)
+func (lw *innerListWatch) EventBus(op sdcommon.ListWatchConfig) *sdcommon.EventBus {
+	return sdcommon.NewEventBus(lw, op)
 }
 
-func (lw *innerListWatch) DoWatch(ctx context.Context, f func(*client.PluginResponse)) error {
+func (lw *innerListWatch) DoWatch(ctx context.Context, f func(*sdcommon.ListWatchResp)) error {
 	rev := lw.Revision()
 	opts := append(
 		client.WatchPrefixOpOptions(lw.Prefix),
@@ -69,7 +74,17 @@ func (lw *innerListWatch) DoWatch(ctx context.Context, f func(*client.PluginResp
 
 				lw.setRevision(resp.Revision)
 
-				f(resp)
+				lwRsp := lw.doParsePluginRspToLwRsp(resp)
+				switch resp.Action {
+				case client.ActionPut:
+					lwRsp.Action = sdcommon.ActionPUT
+				case client.ActionDelete:
+					lwRsp.Action = sdcommon.ActionDelete
+				default:
+					log.Warn(fmt.Sprintf("unrecognized action::%s", lwRsp.Action))
+				}
+
+				f(lwRsp)
 				return nil
 			}))
 
@@ -81,4 +96,22 @@ func (lw *innerListWatch) DoWatch(ctx context.Context, f func(*client.PluginResp
 		f(nil)
 	}
 	return err
+}
+
+func (lw *innerListWatch) doParsePluginRspToLwRsp(pluginRsp *client.PluginResponse) *sdcommon.ListWatchResp {
+	lwRsp := &sdcommon.ListWatchResp{}
+
+	lwRsp.Revision = pluginRsp.Revision
+
+	for _, kv := range pluginRsp.Kvs {
+		resource := sdcommon.Resource{}
+		resource.Key = util.BytesToStringWithNoCopy(kv.Key)
+		resource.ModRevision = kv.ModRevision
+		resource.CreateRevision = kv.CreateRevision
+		resource.Version = kv.Version
+		resource.Value = kv.Value
+
+		lwRsp.Resources = append(lwRsp.Resources, &resource)
+	}
+	return lwRsp
 }

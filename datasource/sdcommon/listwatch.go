@@ -15,13 +15,27 @@
  * limitations under the License.
  */
 
-package etcd
+package sdcommon
 
 import (
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"context"
+	"fmt"
+	"time"
 )
 
-type Watcher interface {
-	EventBus() <-chan *client.PluginResponse
-	Stop()
+type ListWatchConfig struct {
+	Timeout time.Duration
+	Context context.Context
+}
+
+func (lo *ListWatchConfig) String() string {
+	return fmt.Sprintf("{timeout: %s}", lo.Timeout)
+}
+
+type ListWatch interface {
+	List(op ListWatchConfig) (*ListWatchResp, error)
+	// not support new multiple watchers
+	EventBus(op ListWatchConfig) *EventBus
+
+	DoWatch(ctx context.Context, f func(*ListWatchResp)) error
 }

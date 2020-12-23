@@ -25,12 +25,11 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/value"
+	"github.com/apache/servicecomb-service-center/datasource/sdcommon"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/coreos/etcd/mvcc/mvccpb"
 	pb "github.com/go-chassis/cari/discovery"
 )
 
@@ -74,12 +73,42 @@ func (n *mockCache) MarkDirty()  {}
 func (n *mockCache) Dirty() bool { return false }
 func (n *mockCache) Clear()      {}
 
-func TestNewKvCacher(t *testing.T) {
-	w := &mockWatcher{}
-	lw := &mockListWatch{
-		Bus: make(chan *client.PluginResponse, 100),
+type mockListWatch struct {
+	ListResponse  *sdcommon.ListWatchResp
+	WatchResponse *sdcommon.ListWatchResp
+	Rev           int64
+}
+
+func (lw *mockListWatch) List(sdcommon.ListWatchConfig) (*sdcommon.ListWatchResp, error) {
+	if lw.ListResponse == nil {
+		return nil, fmt.Errorf("list error")
 	}
-	w.lw = lw
+	lw.Rev = lw.ListResponse.Revision
+	return lw.ListResponse, nil
+}
+
+func (lw *mockListWatch) DoWatch(ctx context.Context, f func(*sdcommon.ListWatchResp)) error {
+	if lw.WatchResponse == nil {
+		return fmt.Errorf("error")
+	}
+	if len(lw.WatchResponse.Resources) > 0 {
+		lw.Rev = lw.WatchResponse.Resources[0].ModRevision
+	}
+	f(lw.WatchResponse)
+	<-ctx.Done()
+	return nil
+}
+
+func (lw *mockListWatch) EventBus(op sdcommon.ListWatchConfig) *sdcommon.EventBus {
+	return sdcommon.NewEventBus(lw, op)
+}
+
+func (lw *mockListWatch) Revision() int64 {
+	return lw.Rev
+}
+
+func TestNewKvCacher(t *testing.T) {
+	lw := &mockListWatch{}
 
 	cr := &KvCacher{
 		Cfg:       sd.Configure(),
@@ -111,17 +140,17 @@ func TestNewKvCacher(t *testing.T) {
 		cache:     &mockCache{},
 	}
 
-	lw.Watcher = w
-	data := &mvccpb.KeyValue{Key: []byte("ka"), Value: []byte("va"), Version: 1, ModRevision: 2}
-	test := &client.PluginResponse{
-		Action:   client.ActionPut,
-		Revision: 3,
-		Kvs:      []*mvccpb.KeyValue{data}}
+	data := &sdcommon.Resource{Key: "ka", Value: []byte("va"), Version: 1, ModRevision: 2}
 
+	test := &sdcommon.ListWatchResp{
+		Action:    sdcommon.ActionPUT,
+		Revision:  3,
+		Resources: []*sdcommon.Resource{data},
+	}
 	// case: list 1 resp and watch 0 event
 	cr.cache.Remove("ka")
 	lw.ListResponse = test
-	lw.Bus <- nil
+	lw.WatchResponse = nil
 
 	cr.refresh(ctx)
 	// check ready
@@ -142,7 +171,7 @@ func TestNewKvCacher(t *testing.T) {
 	data.ModRevision = 3
 
 	// case: re-list and should be no event
-	lw.Bus <- nil
+	lw.WatchResponse = nil
 	evt.KV = nil
 	cr.refresh(ctx)
 	if evt.KV != nil {
@@ -155,11 +184,11 @@ func TestNewKvCacher(t *testing.T) {
 	}
 
 	// case re-list and over no event times
-	for i := 0; i < DefaultForceListInterval; i++ {
-		lw.Bus <- nil
+	for i := 0; i < sdcommon.DefaultForceListInterval; i++ {
+		lw.WatchResponse = nil
 	}
 	evt.KV = nil
-	for i := 0; i < DefaultForceListInterval; i++ {
+	for i := 0; i < sdcommon.DefaultForceListInterval; i++ {
 		cr.refresh(ctx)
 	}
 	// check event
@@ -172,12 +201,12 @@ func TestNewKvCacher(t *testing.T) {
 		t.Fatalf("TestNewKvCacher failed")
 	}
 
-	lw.ListResponse = &client.PluginResponse{Revision: 5}
-	for i := 0; i < DefaultForceListInterval; i++ {
-		lw.Bus <- nil
+	lw.ListResponse = &sdcommon.ListWatchResp{Revision: 5}
+	for i := 0; i < sdcommon.DefaultForceListInterval; i++ {
+		lw.WatchResponse = nil
 	}
 	evt.KV = nil
-	for i := 0; i < DefaultForceListInterval; i++ {
+	for i := 0; i < sdcommon.DefaultForceListInterval; i++ {
 		cr.refresh(ctx)
 	}
 	// check event
@@ -193,8 +222,8 @@ func TestNewKvCacher(t *testing.T) {
 	// case: no list and watch 1 event
 	test.Revision = 6
 	data.ModRevision = 5
-	lw.Bus <- test
-	lw.Bus <- nil
+	lw.WatchResponse = test
+	lw.ListResponse = nil
 
 	cr.refresh(ctx)
 	// check event
@@ -210,8 +239,8 @@ func TestNewKvCacher(t *testing.T) {
 	test.Revision = 7
 	data.Version = 2
 	data.ModRevision = 6
-	lw.Bus <- test
-	lw.Bus <- nil
+	lw.WatchResponse = test
+	lw.ListResponse = nil
 
 	cr.refresh(ctx)
 	// check event
@@ -225,11 +254,11 @@ func TestNewKvCacher(t *testing.T) {
 	}
 
 	test.Revision = 8
-	test.Action = client.ActionDelete
+	test.Action = sdcommon.ActionDelete
 	data.Version = 0
 	data.ModRevision = 6
-	lw.Bus <- test
-	lw.Bus <- nil
+	lw.WatchResponse = test
+	lw.ListResponse = nil
 
 	cr.refresh(ctx)
 	// check event
@@ -248,7 +277,7 @@ func TestNewKvCacher(t *testing.T) {
 	data.Version = 1
 	data.ModRevision = 1
 	lw.ListResponse = test
-	lw.Bus <- nil
+	lw.WatchResponse = nil
 	evt.KV = nil
 	cr.refresh(ctx)
 	// check event
@@ -263,12 +292,12 @@ func TestNewKvCacher(t *testing.T) {
 
 	// case: caught delete event but value is nil
 	test.Revision = 10
-	test.Action = client.ActionDelete
+	test.Action = sdcommon.ActionDelete
 	data.Version = 0
 	data.ModRevision = 1
 	data.Value = nil
-	lw.Bus <- test
-	lw.Bus <- nil
+	lw.WatchResponse = test
+	lw.ListResponse = nil
 
 	cr.refresh(ctx)
 	data.Value = []byte("va")
@@ -288,7 +317,7 @@ func TestNewKvCacher(t *testing.T) {
 	data.Version = 1
 	data.ModRevision = 1
 	lw.ListResponse = test
-	lw.Bus <- nil
+	lw.WatchResponse = nil
 	evt.KV = nil
 	old := *cr.Cfg
 	cr.Cfg.WithParser(value.MapParser)
@@ -304,8 +333,8 @@ func TestNewKvCacher(t *testing.T) {
 	}
 
 	lw.ListResponse = test
-	lw.Bus <- test
-	lw.Bus <- nil
+	lw.WatchResponse = test
+
 	cr.refresh(ctx)
 	*cr.Cfg = old
 	// check event
@@ -322,19 +351,19 @@ func TestNewKvCacher(t *testing.T) {
 	var evts = make(map[string]sd.KvEvent)
 	lw.Rev = 0
 	test.Revision = 3
-	test.Kvs = nil
-	for i := 0; i < eventBlockSize+1; i++ {
+	test.Resources = nil
+	for i := 0; i < sdcommon.EventBlockSize+1; i++ {
 		kv := *data
-		kv.Key = []byte(strconv.Itoa(i))
+		kv.Key = strconv.Itoa(i)
 		kv.Value = []byte(strconv.Itoa(i))
 		kv.Version = int64(i)
 		kv.ModRevision = int64(i)
-		test.Kvs = append(test.Kvs, &kv)
+		test.Resources = append(test.Resources, &kv)
 	}
 	data.ModRevision = 2
-	test.Kvs = append(test.Kvs, data)
+	test.Resources = append(test.Resources, data)
 	lw.ListResponse = test
-	lw.Bus <- nil
+	lw.WatchResponse = nil
 	evt.KV = nil
 	old = *cr.Cfg
 	cr.Cfg.WithEventFunc(func(evt sd.KvEvent) {
@@ -343,18 +372,18 @@ func TestNewKvCacher(t *testing.T) {
 	cr.refresh(ctx)
 	*cr.Cfg = old
 	// check all events
-	for i := 0; i < eventBlockSize+1; i++ {
+	for i := 0; i < sdcommon.EventBlockSize+1; i++ {
 		s := strconv.Itoa(i)
 		if evt, ok := evts[s]; !ok || evt.Type != pb.EVT_CREATE || evt.KV.ModRevision != int64(i) || string(evt.KV.Value.([]byte)) != s {
 			t.Fatalf("TestNewKvCacher failed, %v", evt)
 		}
 		delete(evts, s)
 	}
-	evt = evts[string(data.Key)]
+	evt = evts[data.Key]
 	if len(evts) != 1 || evt.Type != pb.EVT_CREATE || evt.Revision != 3 || evt.KV.ModRevision != 2 {
 		t.Fatalf("TestNewKvCacher failed, %v %v", evts, evt)
 	}
-	delete(evts, string(data.Key))
+	delete(evts, data.Key)
 
 	// case: cacher is ready and the next list failed, prevent to watch with rev = 0
 	if !cr.IsReady() {
@@ -362,14 +391,13 @@ func TestNewKvCacher(t *testing.T) {
 	}
 	lw.Rev = 0            // watch failed
 	lw.ListResponse = nil // the next list
-	lw.Bus <- test
+	lw.WatchResponse = test
 	old = *cr.Cfg
 	cr.Cfg.WithEventFunc(func(evt sd.KvEvent) {
 		t.Fatalf("TestNewKvCacher failed, %v", evt)
 	})
 	cr.refresh(ctx)
 	*cr.Cfg = old
-	<-lw.Bus
 }
 
 func BenchmarkFilter(b *testing.B) {
@@ -385,13 +413,13 @@ func BenchmarkFilter(b *testing.B) {
 
 	n := 300 * 1000 // 30w
 	cache := sd.NewKvCache("test", cfg)
-	items := make([]*mvccpb.KeyValue, 0, n)
+	items := make([]*sdcommon.Resource, 0, n)
 	for ; n > 0; n-- {
 		k := fmt.Sprintf("/%d", n)
 		if n <= 10*1000 {
 			// create
-			items = append(items, &mvccpb.KeyValue{
-				Key:         util.StringToBytesWithNoCopy(k),
+			items = append(items, &sdcommon.Resource{
+				Key:         k,
 				Value:       v,
 				ModRevision: int64(rand.Int()),
 			})
@@ -402,8 +430,8 @@ func BenchmarkFilter(b *testing.B) {
 				Value:       inst,
 				ModRevision: 1,
 			})
-			items = append(items, &mvccpb.KeyValue{
-				Key:         util.StringToBytesWithNoCopy(k),
+			items = append(items, &sdcommon.Resource{
+				Key:         k,
 				Value:       v,
 				ModRevision: int64(rand.Int()),
 			})

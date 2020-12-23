@@ -15,36 +15,35 @@
  * limitations under the License.
  */
 
-package etcd
+package sdcommon
 
 import (
 	"context"
 	"sync"
 
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
-type innerWatcher struct {
+type EventBus struct {
 	Cfg    ListWatchConfig
-	lw     ListWatch
-	bus    chan *client.PluginResponse
+	Lw     ListWatch
+	Bus    chan *ListWatchResp
 	stopCh chan struct{}
 	stop   bool
 	mux    sync.Mutex
 }
 
-func (w *innerWatcher) EventBus() <-chan *client.PluginResponse {
-	return w.bus
+func (w *EventBus) ResourceEventBus() <-chan *ListWatchResp {
+	return w.Bus
 }
 
-func (w *innerWatcher) process(_ context.Context) {
+func (w *EventBus) process(_ context.Context) {
 	stopCh := make(chan struct{})
 	ctx, cancel := context.WithTimeout(w.Cfg.Context, w.Cfg.Timeout)
 	gopool.Go(func(_ context.Context) {
 		defer close(stopCh)
-		_ = w.lw.DoWatch(ctx, w.sendEvent)
+		_ = w.Lw.DoWatch(ctx, w.sendEvent)
 	})
 
 	select {
@@ -58,12 +57,12 @@ func (w *innerWatcher) process(_ context.Context) {
 
 }
 
-func (w *innerWatcher) sendEvent(resp *client.PluginResponse) {
+func (w *EventBus) sendEvent(resp *ListWatchResp) {
 	defer log.Recover()
-	w.bus <- resp
+	w.Bus <- resp
 }
 
-func (w *innerWatcher) Stop() {
+func (w *EventBus) Stop() {
 	w.mux.Lock()
 	if w.stop {
 		w.mux.Unlock()
@@ -71,15 +70,15 @@ func (w *innerWatcher) Stop() {
 	}
 	w.stop = true
 	close(w.stopCh)
-	close(w.bus)
+	close(w.Bus)
 	w.mux.Unlock()
 }
 
-func newInnerWatcher(lw ListWatch, cfg ListWatchConfig) *innerWatcher {
-	w := &innerWatcher{
+func NewEventBus(lw ListWatch, cfg ListWatchConfig) *EventBus {
+	w := &EventBus{
 		Cfg:    cfg,
-		lw:     lw,
-		bus:    make(chan *client.PluginResponse, eventBusSize),
+		Lw:     lw,
+		Bus:    make(chan *ListWatchResp, EventBusSize),
 		stopCh: make(chan struct{}),
 	}
 	gopool.Go(w.process)

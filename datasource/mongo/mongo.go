@@ -23,6 +23,7 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/heartbeat"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/go-chassis/go-chassis/v2/storage"
@@ -72,6 +73,8 @@ func (ds *DataSource) initialize() error {
 	if err != nil {
 		return err
 	}
+	// init mongo cache
+	ds.initStore()
 	return nil
 }
 
@@ -117,4 +120,13 @@ func (ds *DataSource) createIndexes() (err error) {
 		return
 	}
 	return
+}
+
+func (ds *DataSource) initStore() {
+	if !config.GetRegistry().EnableCache {
+		log.Debug("cache is disabled")
+		return
+	}
+	sd.Store().Run()
+	<-sd.Store().Ready()
 }
