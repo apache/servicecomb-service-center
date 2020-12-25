@@ -32,6 +32,9 @@ func matchValidate(val interface{}) error {
 	if !ok {
 		return fmt.Errorf("illegal item : %v", val)
 	}
+	if spec["matches"] == nil {
+		return nil
+	}
 	matches, ok := spec["matches"].([]interface{})
 	if !ok {
 		return fmt.Errorf("illegal item : %v", spec)
@@ -84,17 +87,18 @@ func rateLimitingValidate(val interface{}) error {
 }
 
 func policyValidate(val interface{}) error {
-	//todo : check repeat policy
 	spec, ok := val.(map[string]interface{})
 	if !ok {
 		return fmt.Errorf("illegal item : %v", val)
 	}
-	rules, ok := spec["rules"].(map[string]interface{})
-	if !ok {
-		return fmt.Errorf("illegal item : %v", spec)
-	}
-	if "" == rules["match"] {
-		return fmt.Errorf("policy's match can not be nil: %v", spec)
+	if spec["rules"] != nil {
+		rules, ok := spec["rules"].(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("illegal item : %v", spec)
+		}
+		if "" == rules["match"] {
+			return fmt.Errorf("policy's match can not be nil: %v", spec)
+		}
 	}
 	return nil
 }

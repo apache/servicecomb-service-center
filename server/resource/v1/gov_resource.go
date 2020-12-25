@@ -52,6 +52,7 @@ func (t *Governance) Create(w http.ResponseWriter, req *http.Request) {
 	err = gov.Create(kind, project, body)
 	if err != nil {
 		log.Error("create gov err", err)
+		w.WriteHeader(http.StatusBadRequest)
 		controller.WriteError(w, discovery.ErrInternal, err.Error())
 		return
 	}
@@ -71,7 +72,8 @@ func (t *Governance) Put(w http.ResponseWriter, req *http.Request) {
 	}
 	err = gov.Update(id, kind, project, body)
 	if err != nil {
-		log.Error("create gov err", err)
+		log.Error("put gov err", err)
+		w.WriteHeader(http.StatusBadRequest)
 		controller.WriteError(w, discovery.ErrInternal, err.Error())
 		return
 	}
@@ -86,13 +88,17 @@ func (t *Governance) List(w http.ResponseWriter, req *http.Request) {
 	environment := req.URL.Query().Get(EnvironmentKey)
 	body, err := gov.List(kind, project, app, environment)
 	if err != nil {
-		log.Error("create gov err", err)
+		log.Error("list gov err", err)
+		w.WriteHeader(http.StatusBadRequest)
 		controller.WriteError(w, discovery.ErrInternal, err.Error())
 		return
 	}
 	_, err = w.Write(body)
 	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
 		log.Error("", err)
+		controller.WriteError(w, discovery.ErrInternal, err.Error())
+		return
 	}
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set(rest.HeaderContentType, rest.ContentTypeJSON)
@@ -105,13 +111,17 @@ func (t *Governance) Get(w http.ResponseWriter, req *http.Request) {
 	project := req.URL.Query().Get(ProjectKey)
 	body, err := gov.Get(kind, id, project)
 	if err != nil {
-		log.Error("create gov err", err)
+		w.WriteHeader(http.StatusBadRequest)
+		log.Error("get gov err", err)
 		controller.WriteError(w, discovery.ErrInternal, err.Error())
 		return
 	}
 	_, err = w.Write(body)
 	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
 		log.Error("", err)
+		controller.WriteError(w, discovery.ErrInternal, err.Error())
+		return
 	}
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set(rest.HeaderContentType, rest.ContentTypeJSON)
@@ -123,7 +133,8 @@ func (t *Governance) Delete(w http.ResponseWriter, req *http.Request) {
 	project := req.URL.Query().Get(ProjectKey)
 	err := gov.Delete(id, project)
 	if err != nil {
-		log.Error("create gov err", err)
+		w.WriteHeader(http.StatusBadRequest)
+		log.Error("delete gov err", err)
 		controller.WriteError(w, discovery.ErrInternal, err.Error())
 		return
 	}
