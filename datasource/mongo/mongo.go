@@ -19,6 +19,7 @@ package mongo
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
@@ -72,6 +73,8 @@ func (ds *DataSource) initialize() error {
 	if err != nil {
 		return err
 	}
+	// init mongo cache
+	ds.initStore()
 	return nil
 }
 
@@ -117,4 +120,9 @@ func (ds *DataSource) createIndexes() (err error) {
 		return
 	}
 	return
+}
+
+func (ds *DataSource) initStore() {
+	sd.Store().Run()
+	<-sd.Store().Ready()
 }

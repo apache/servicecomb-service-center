@@ -15,14 +15,9 @@
  * limitations under the License.
  */
 
-package bootstrap
+package sd
 
-import (
-	_ "github.com/apache/servicecomb-service-center/datasource/mongo"
-
-	// heartbeat
-	_ "github.com/apache/servicecomb-service-center/datasource/mongo/heartbeat/heartbeatchecker"
-
-	// events
-	_ "github.com/apache/servicecomb-service-center/datasource/mongo/event"
-)
+type Watcher interface {
+	EventBus() <-chan *MongoListWatchResponse
+	Stop()
+}

@@ -15,14 +15,31 @@
  * limitations under the License.
  */
 
-package bootstrap
+package sd
 
 import (
-	_ "github.com/apache/servicecomb-service-center/datasource/mongo"
+	"context"
+	"fmt"
+	"go.mongodb.org/mongo-driver/bson"
+	"time"
 
-	// heartbeat
-	_ "github.com/apache/servicecomb-service-center/datasource/mongo/heartbeat/heartbeatchecker"
-
-	// events
-	_ "github.com/apache/servicecomb-service-center/datasource/mongo/event"
 )
+
+type ListWatchConfig struct {
+	Timeout time.Duration
+	Context context.Context
+}
+
+func (lo *ListWatchConfig) String() string {
+	return fmt.Sprintf("{timeout: %s}", lo.Timeout)
+}
+
+type ListWatch interface {
+	List(op ListWatchConfig) (*MongoListWatchResponse, error)
+	// not support new multiple watchers
+	Watch(op ListWatchConfig) Watcher
+
+	DoWatch(ctx context.Context, f func(*MongoListWatchResponse)) error
+
+    ResumeToken() bson.Raw
+}
