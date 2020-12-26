@@ -22,6 +22,8 @@ import (
 	"fmt"
 	"log"
 
+	uuid "github.com/satori/go.uuid"
+
 	"github.com/apache/servicecomb-service-center/pkg/gov"
 	"github.com/apache/servicecomb-service-center/server/config"
 	svc "github.com/apache/servicecomb-service-center/server/service/gov"
@@ -32,46 +34,81 @@ type Distributor struct {
 	name       string
 }
 
-func (d *Distributor) Create(kind, project string, spec []byte) error {
+const MatchGroup = "match-group"
+
+var PolicyNames = []string{"retry", "rateLimiting", "circuitBreaker", "bulkhead"}
+
+func (d *Distributor) Create(kind, project string, spec []byte) ([]byte, error) {
 	p := &gov.Policy{}
 	err := json.Unmarshal(spec, p)
+	p.ID = uuid.NewV4().String()
+	p.Kind = kind
 	log.Println(fmt.Sprintf("create %v", &p))
-	d.lbPolicies[p.GovernancePolicy.Name] = p
-	return err
+	d.lbPolicies[p.GovernancePolicy.ID] = p
+	return []byte(p.ID), err
 }
+
 func (d *Distributor) Update(id, kind, project string, spec []byte) error {
 	p := &gov.Policy{}
 	err := json.Unmarshal(spec, p)
+	p.ID = id
+	p.Kind = kind
 	log.Println("update ", p)
-	d.lbPolicies[p.GovernancePolicy.Name] = p
+	d.lbPolicies[p.GovernancePolicy.ID] = p
 	return err
 }
+
 func (d *Distributor) Delete(id, project string) error {
 	delete(d.lbPolicies, id)
 	return nil
 }
 
 func (d *Distributor) Display(project, app, env string) ([]byte, error) {
-	r := make([]*gov.Policy, 0, len(d.lbPolicies))
+	list := make([]*gov.Policy, 0)
 	for _, g := range d.lbPolicies {
-		r = append(r, g)
+		if g.Kind == MatchGroup && g.Selector.App == app && g.Selector.Environment == env {
+			list = append(list, g)
+		}
+	}
+	policyMap := make(map[string]*gov.Policy)
+	for _, g := range d.lbPolicies {
+		for _, kind := range PolicyNames {
+			if g.Kind == kind && g.Selector.App == app && g.Selector.Environment == env {
+				policyMap[g.Name+kind] = g
+			}
+		}
+	}
+	r := make([]*gov.DisplayData, 0, len(list))
+	for _, g := range list {
+		policies := make([]*gov.Policy, 0)
+		for _, kind := range PolicyNames {
+			policies = append(policies, policyMap[g.Name+kind])
+		}
+		r = append(r, &gov.DisplayData{
+			MatchGroup: g,
+			Policies:   policies,
+		})
 	}
 	b, _ := json.MarshalIndent(r, "", "  ")
 	return b, nil
 }
-
 func (d *Distributor) List(kind, project, app, env string) ([]byte, error) {
 	r := make([]*gov.Policy, 0, len(d.lbPolicies))
 	for _, g := range d.lbPolicies {
-		r = append(r, g)
+		if g.Kind == kind && g.Selector.App == app && g.Selector.Environment == env {
+			r = append(r, g)
+		}
 	}
 	b, _ := json.MarshalIndent(r, "", "  ")
 	return b, nil
 }
 
 func (d *Distributor) Get(kind, id, project string) ([]byte, error) {
-	return nil, nil
+	r := d.lbPolicies[id]
+	b, _ := json.MarshalIndent(r, "", "  ")
+	return b, nil
 }
+
 func (d *Distributor) Type() string {
 	return svc.ConfigDistributorMock
 }

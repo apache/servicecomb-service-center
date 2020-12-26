@@ -28,7 +28,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCreate(t *testing.T) {
+const Project = "default"
+
+const MockKind = "default"
+
+func init() {
 	config.Configurations = &config.Config{
 		Gov: &config.Gov{
 			DistOptions: []config.DistributorOptions{
@@ -40,13 +44,44 @@ func TestCreate(t *testing.T) {
 		},
 	}
 	err := svc.Init()
-	assert.NoError(t, err)
+	panic(err)
+}
+
+func TestCreate(t *testing.T) {
 	b, _ := json.MarshalIndent(&gov.Policy{
 		GovernancePolicy: &gov.GovernancePolicy{
 			Name: "Traffic2adminAPI",
 		},
 		Spec: &gov.LBSpec{RetryNext: 3, MarkerName: "traffic2adminAPI"},
 	}, "", "  ")
-	err = svc.Create("lb", "default", b)
+	_, err := svc.Create(MockKind, Project, b)
 	assert.NoError(t, err)
+}
+
+func TestUpdate(t *testing.T) {
+	b, _ := json.MarshalIndent(&gov.Policy{
+		GovernancePolicy: &gov.GovernancePolicy{
+			Name: "Traffic2adminAPI",
+		},
+		Spec: &gov.LBSpec{RetryNext: 3, MarkerName: "traffic2adminAPI"},
+	}, "", "  ")
+	err := svc.Update("xxxxxx", MockKind, Project, b)
+	assert.NoError(t, err)
+}
+
+func TestDelete(t *testing.T) {
+}
+
+func TestDisplay(t *testing.T) {
+}
+
+func TestList(t *testing.T) {
+	//policies := &[]*gov.Policy{}
+	//res, err := svc.List(MockKind, Project, "", "")
+	//panic(err)
+	//err = json.Unmarshal(res, policies)
+	//panic(err)
+}
+
+func TestGet(t *testing.T) {
 }

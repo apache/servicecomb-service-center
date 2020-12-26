@@ -37,6 +37,7 @@ const (
 	KindKey        = ":kind"
 	ProjectKey     = ":project"
 	IDKey          = ":id"
+	DisplayKey     = "display"
 )
 
 //Create gov config
@@ -49,10 +50,18 @@ func (t *Governance) Create(w http.ResponseWriter, req *http.Request) {
 		controller.WriteError(w, discovery.ErrInternal, err.Error())
 		return
 	}
-	err = gov.Create(kind, project, body)
+	id, err := gov.Create(kind, project, body)
+	//todo: 错误处理抽函数
 	if err != nil {
 		log.Error("create gov err", err)
 		w.WriteHeader(http.StatusBadRequest)
+		controller.WriteError(w, discovery.ErrInternal, err.Error())
+		return
+	}
+	_, err = w.Write(id)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		log.Error("", err)
 		controller.WriteError(w, discovery.ErrInternal, err.Error())
 		return
 	}
@@ -80,13 +89,19 @@ func (t *Governance) Put(w http.ResponseWriter, req *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-//List return all gov config
-func (t *Governance) List(w http.ResponseWriter, req *http.Request) {
+//ListOrDisPlay return all gov config
+func (t *Governance) ListOrDisPlay(w http.ResponseWriter, req *http.Request) {
 	kind := req.URL.Query().Get(KindKey)
 	project := req.URL.Query().Get(ProjectKey)
 	app := req.URL.Query().Get(AppKey)
 	environment := req.URL.Query().Get(EnvironmentKey)
-	body, err := gov.List(kind, project, app, environment)
+	var body []byte
+	var err error
+	if kind == DisplayKey {
+		body, err = gov.Display(project, app, environment)
+	} else {
+		body, err = gov.List(kind, project, app, environment)
+	}
 	if err != nil {
 		log.Error("list gov err", err)
 		w.WriteHeader(http.StatusBadRequest)
@@ -147,7 +162,7 @@ func (t *Governance) URLPatterns() []rest.Route {
 		//servicecomb.rateLimiter.{name}
 		//....
 		{Method: http.MethodPost, Path: "/v1/:project/gov/" + KindKey, Func: t.Create},
-		{Method: http.MethodGet, Path: "/v1/:project/gov/" + KindKey, Func: t.List},
+		{Method: http.MethodGet, Path: "/v1/:project/gov/" + KindKey, Func: t.ListOrDisPlay},
 		{Method: http.MethodGet, Path: "/v1/:project/gov/" + KindKey + "/" + IDKey, Func: t.Get},
 		{Method: http.MethodPut, Path: "/v1/:project/gov/" + KindKey + "/" + IDKey, Func: t.Put},
 		{Method: http.MethodDelete, Path: "/v1/:project/gov/" + KindKey + "/" + IDKey, Func: t.Delete},

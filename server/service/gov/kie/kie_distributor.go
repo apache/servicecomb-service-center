@@ -35,21 +35,21 @@ var PolicyNames = []string{"retry", "rateLimiting", "circuitBreaker", "bulkhead"
 
 var rule = Validator{}
 
-func (d *Distributor) Create(kind, project string, spec []byte) error {
+func (d *Distributor) Create(kind, project string, spec []byte) ([]byte, error) {
 	p := &gov.Policy{}
 	err := json.Unmarshal(spec, p)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	log.Info(fmt.Sprintf("create %v", &p))
 	key := toSnake(kind) + "." + p.Name
 	err = rule.Validate(kind, p.Spec)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	yamlByte, err := yaml.Marshal(p.Spec)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	kv := kie.KVRequest{
 		Key:       PREFIX + key,
@@ -58,13 +58,13 @@ func (d *Distributor) Create(kind, project string, spec []byte) error {
 		ValueType: ValueType,
 		Labels:    map[string]string{AppKey: p.Selector.App, EnvironmentKey: p.Selector.Environment},
 	}
-	_, err = d.client.Create(context.TODO(), kv, kie.WithProject(project))
+	res, err := d.client.Create(context.TODO(), kv, kie.WithProject(project))
 	if err != nil {
 		log.Error("kie create failed", err)
-		return err
+		return nil, err
 	}
 	d.lbPolicies[p.GovernancePolicy.Name] = p
-	return nil
+	return []byte(res.ID), nil
 }
 
 func (d *Distributor) Update(id, kind, project string, spec []byte) error {
