@@ -49,6 +49,9 @@ func (d *Distributor) Create(kind, project string, spec []byte) ([]byte, error) 
 }
 
 func (d *Distributor) Update(id, kind, project string, spec []byte) error {
+	if d.lbPolicies[id] == nil {
+		return fmt.Errorf("id not exsit")
+	}
 	p := &gov.Policy{}
 	err := json.Unmarshal(spec, p)
 	p.ID = id

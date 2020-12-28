@@ -29,8 +29,11 @@ import (
 )
 
 const Project = "default"
-
 const MockKind = "default"
+const MockEnv = ""
+const MockApp = ""
+
+var id = ""
 
 func init() {
 	config.Configurations = &config.Config{
@@ -44,7 +47,9 @@ func init() {
 		},
 	}
 	err := svc.Init()
-	panic(err)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func TestCreate(t *testing.T) {
@@ -54,7 +59,8 @@ func TestCreate(t *testing.T) {
 		},
 		Spec: &gov.LBSpec{RetryNext: 3, MarkerName: "traffic2adminAPI"},
 	}, "", "  ")
-	_, err := svc.Create(MockKind, Project, b)
+	res, err := svc.Create(MockKind, Project, b)
+	id = string(res)
 	assert.NoError(t, err)
 }
 
@@ -65,23 +71,37 @@ func TestUpdate(t *testing.T) {
 		},
 		Spec: &gov.LBSpec{RetryNext: 3, MarkerName: "traffic2adminAPI"},
 	}, "", "  ")
-	err := svc.Update("xxxxxx", MockKind, Project, b)
+	err := svc.Update(id, MockKind, Project, b)
 	assert.NoError(t, err)
 }
 
-func TestDelete(t *testing.T) {
-}
-
 func TestDisplay(t *testing.T) {
+	policies := &[]*gov.DisplayData{}
+	res, err := svc.Display(Project, MockApp, MockEnv)
+	assert.NoError(t, err)
+	err = json.Unmarshal(res, policies)
+	assert.NoError(t, err)
 }
 
 func TestList(t *testing.T) {
-	//policies := &[]*gov.Policy{}
-	//res, err := svc.List(MockKind, Project, "", "")
-	//panic(err)
-	//err = json.Unmarshal(res, policies)
-	//panic(err)
+	policies := &[]*gov.Policy{}
+	res, err := svc.List(MockKind, Project, MockApp, MockEnv)
+	assert.NoError(t, err)
+	err = json.Unmarshal(res, policies)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, policies)
 }
 
 func TestGet(t *testing.T) {
+	policy := &gov.Policy{}
+	res, err := svc.Get(MockKind, id, Project)
+	assert.NoError(t, err)
+	err = json.Unmarshal(res, policy)
+	assert.NoError(t, err)
+	assert.NotNil(t, policy)
+}
+
+func TestDelete(t *testing.T) {
+	err := svc.Delete(id, Project)
+	assert.NoError(t, err)
 }
