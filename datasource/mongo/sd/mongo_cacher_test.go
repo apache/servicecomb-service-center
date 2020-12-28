@@ -230,6 +230,7 @@ func TestNewMongoCacher(t *testing.T) {
 		if cache == nil || cache.(Instance).Domain != "default" || cache.(Instance).Project != "default" {
 			t.Fatalf("TestNewMongoCacher failed")
 		}
+
 	})
 
 	t.Run("case watch: caught updateOp event", func(t *testing.T) {

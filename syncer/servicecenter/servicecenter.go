@@ -90,7 +90,6 @@ func (s *servicecenter) Registry(clusterName string, data *pb.SyncData) {
 
 		// If the svc is in the mapping, just do nothing, if not, created it in servicecenter and get the new serviceID
 		svcID := s.createService(svc)
-		log.Debugf("create service success orgServiceID= %s, curServiceID = %s", inst.ServiceId, svcID)
 
 		// If inst is in the mapping, just heart beat it in servicecenter
 		log.Debugf("trying to do registration of instance, instanceID = %s", inst.InstanceId)
@@ -136,10 +135,6 @@ func (s *servicecenter) IncrementRegistry(clusterName string, data *pb.SyncData)
 			continue
 		}
 
-		// If the svc is in the mapping, just do nothing, if not, created it in servicecenter and get the new serviceID
-		svcID := s.createService(svc)
-		log.Debug(fmt.Sprintf("create service success orgServiceID= %s, curServiceID = %s", inst.ServiceId, svcID))
-
 		matches := pb.Expansions(inst.Expansions).Find("action", map[string]string{})
 		if len(matches) != 1 {
 			err := utils.ErrActionInvalid
@@ -149,6 +144,9 @@ func (s *servicecenter) IncrementRegistry(clusterName string, data *pb.SyncData)
 		action := string(matches[0].Bytes[:])
 
 		if action == string(discovery.EVT_CREATE) {
+			// If the svc is in the mapping, just do nothing, if not, created it in servicecenter and get the new serviceID
+			svcID := s.createService(svc)
+
 			log.Debug(fmt.Sprintf("trying to do registration of instance, instanceID = %s", inst.InstanceId))
 
 			// If inst is in the mapping, just heart beat it in servicecenter

@@ -39,14 +39,18 @@ type Server struct {
 	stopCh  chan struct{}
 }
 
+const (
+	MaxMsgSize = 2147483647
+)
+
 // NewServer new grpc server with options
 func NewServer(ops ...Option) (*Server, error) {
 	conf := toGRPCConfig(ops...)
 	var srv *grpc.Server
 	if conf.tlsConfig != nil {
-		srv = grpc.NewServer(grpc.Creds(credentials.NewTLS(conf.tlsConfig)))
+		srv = grpc.NewServer(grpc.Creds(credentials.NewTLS(conf.tlsConfig)), grpc.MaxRecvMsgSize(MaxMsgSize), grpc.MaxSendMsgSize(MaxMsgSize))
 	} else {
-		srv = grpc.NewServer()
+		srv = grpc.NewServer(grpc.MaxRecvMsgSize(MaxMsgSize), grpc.MaxSendMsgSize(MaxMsgSize))
 	}
 
 	rpc.RegisterGRpcServer(srv)
@@ -120,9 +124,11 @@ func InjectClient(injection func(conn *grpc.ClientConn), ops ...Option) error {
 	var err error
 
 	if conf.tlsConfig != nil {
-		conn, err = grpc.Dial(conf.addr, grpc.WithTransportCredentials(credentials.NewTLS(conf.tlsConfig)))
+		conn, err = grpc.Dial(conf.addr, grpc.WithTransportCredentials(credentials.NewTLS(conf.tlsConfig)),
+			grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(MaxMsgSize), grpc.MaxCallSendMsgSize(MaxMsgSize)))
 	} else {
-		conn, err = grpc.Dial(conf.addr, grpc.WithInsecure())
+		conn, err = grpc.Dial(conf.addr, grpc.WithInsecure(),
+			grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(MaxMsgSize), grpc.MaxCallSendMsgSize(MaxMsgSize)))
 	}
 
 	if err != nil {
