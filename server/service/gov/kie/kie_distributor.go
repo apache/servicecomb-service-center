@@ -29,6 +29,7 @@ const (
 	ValueType      = "text"
 	AppKey         = "app"
 	EnvironmentKey = "environment"
+	EnvAll         = "all"
 )
 
 var PolicyNames = []string{"retry", "rateLimiting", "circuitBreaker", "bulkhead"}
@@ -64,7 +65,8 @@ func (d *Distributor) Create(kind, project string, spec []byte) ([]byte, error) 
 		return nil, err
 	}
 	d.lbPolicies[p.GovernancePolicy.Name] = p
-	return []byte(res.ID), nil
+	b, _ := json.MarshalIndent(res.ID, "", "  ")
+	return b, nil
 }
 
 func (d *Distributor) Update(id, kind, project string, spec []byte) error {
@@ -221,11 +223,22 @@ func toSnake(name string) string {
 }
 
 func (d *Distributor) listDataByKind(kind, project, app, env string) (*kie.KVResponse, int, error) {
-	return d.client.List(context.TODO(),
-		kie.WithKey("beginWith("+PREFIX+toSnake(kind)+")"),
-		kie.WithLabels(map[string]string{AppKey: app, EnvironmentKey: env}),
+	ops := []kie.GetOption{
+		kie.WithKey("beginWith(" + PREFIX + toSnake(kind) + ")"),
 		kie.WithRevision(0),
-		kie.WithGetProject(project))
+		kie.WithGetProject(project),
+	}
+	labels := map[string]string{}
+	if env != EnvAll {
+		labels[EnvironmentKey] = env
+	}
+	if app != "" {
+		labels[AppKey] = app
+	}
+	if len(labels) > 0 {
+		ops = append(ops, kie.WithLabels(labels))
+	}
+	return d.client.List(context.TODO(), ops...)
 }
 
 func (d *Distributor) transform(kv *kie.KVDoc, kind string) (*gov.Policy, error) {
