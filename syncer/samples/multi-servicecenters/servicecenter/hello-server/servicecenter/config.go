@@ -56,6 +56,15 @@ type Instance struct {
 type Registry struct {
 	Address   string   `yaml:"address"`
 	Endpoints []string `yaml:"-"`
+	MongoDB   *MongoDB `yaml:"mongo"`
+}
+
+type MongoDB struct {
+	Cluster  Cluster `yaml:"cluster"`
+}
+
+type Cluster struct {
+	Uri      string `yaml:"uri"`
 }
 
 // Tenant configuration
