@@ -15,14 +15,15 @@
  * limitations under the License.
  */
 
-package bootstrap
+package event
 
 import (
-	_ "github.com/apache/servicecomb-service-center/datasource/mongo"
-
-	// heartbeat
-	_ "github.com/apache/servicecomb-service-center/datasource/mongo/heartbeat/heartbeatchecker"
-
-	// events
-	_ "github.com/apache/servicecomb-service-center/datasource/mongo/event"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
+	"github.com/apache/servicecomb-service-center/pkg/log"
 )
+
+
+func init() {
+	log.Debugf("***************event init*************")
+	sd.AddEventHandler(NewInstanceEventHandler())
+}
