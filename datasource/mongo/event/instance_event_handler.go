@@ -20,24 +20,21 @@ package event
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
-	"path/filepath"
-
-	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/mongo"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
 	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/notify"
 	"github.com/apache/servicecomb-service-center/server/syncernotify"
-	"github.com/apache/servicecomb-service-center/syncer/samples/multi-servicecenters/servicecenter/hello-server/servicecenter"
 	"github.com/go-chassis/cari/discovery"
-	"github.com/go-chassis/go-chassis/v2/storage"
 	"go.mongodb.org/mongo-driver/bson"
-	"gopkg.in/yaml.v2"
 )
 
+const (
+	SPLIT = "/"
+	ServiceRootKey = "/cse-sr/ms/files"
+	InstanceRootKey = "/cse-sr/inst/files"
+)
 // InstanceEventHandler is the handler to handle events
 //as instance registry or instance delete, and notify syncer
 type InstanceEventHandler struct {
@@ -60,7 +57,12 @@ func (h InstanceEventHandler) OnEvent(evt sd.MongoEvent) {
 	}
 	if ms == nil {
 		log.Info("get cached service failed, then get from data base")
-		ms = getServiceFromDB(providerID) // service in the cache may not ready, query from db one time
+		service, errs := mongo.GetService(context.Background(), bson.M{"serviceinfo.serviceid": providerID})
+		if service == nil || errs != nil {
+			log.Error("get service from database failed", errs)
+			return
+		}
+		ms = service.ServiceInfo // service in the cache may not ready, query from db once
 		if ms == nil {
 			log.Warn(fmt.Sprintf("caught [%s] instance[%s/%s] event, endpoints %v, get provider's file failed from db\n",
 				action, providerID, providerInstanceID, instance.InstanceInfo.Endpoints))
@@ -69,12 +71,6 @@ func (h InstanceEventHandler) OnEvent(evt sd.MongoEvent) {
 	}
 	if !syncernotify.GetSyncerNotifyCenter().Closed() {
 		NotifySyncerInstanceEvent(evt, ms)
-	}
-
-	if notify.Center().Closed() {
-		log.Warn(fmt.Sprintf("caught [%s] instance[%s/%s] event, endpoints %v, but notify service is closed\n",
-			evt.Type, providerID, providerInstanceID, instance.InstanceInfo.Endpoints))
-		return
 	}
 }
 
@@ -85,8 +81,8 @@ func NewInstanceEventHandler() *InstanceEventHandler {
 func NotifySyncerInstanceEvent(evt sd.MongoEvent, ms *discovery.MicroService) {
 	instance := evt.Value.(sd.Instance).InstanceInfo
 	log.Info(fmt.Sprintf("instance in NotifySyncerInstanceEvent : %v", instance))
-	instanceKey := path.GenerateInstanceKey(evt.Value.(sd.Instance).Domain+"/"+
-		evt.Value.(sd.Instance).Project, instance.ServiceId, instance.InstanceId)
+	instanceKey := util.StringJoin([]string{InstanceRootKey, evt.Value.(sd.Instance).Domain,
+		evt.Value.(sd.Instance).Project, instance.ServiceId, instance.InstanceId}, SPLIT)
 
 	instanceKv := dump.KV{
 		Key:   instanceKey,
@@ -97,8 +93,8 @@ func NotifySyncerInstanceEvent(evt sd.MongoEvent, ms *discovery.MicroService) {
 		KV:    &instanceKv,
 		Value: instance,
 	}
-	serviceKey := path.GenerateServiceKey(evt.Value.(sd.Instance).Domain+"/"+
-		evt.Value.(sd.Instance).Project, ms.ServiceId)
+	serviceKey := util.StringJoin([]string{ServiceRootKey, evt.Value.(sd.Instance).Domain,
+		evt.Value.(sd.Instance).Project, instance.ServiceId}, SPLIT)
 	serviceKv := dump.KV{
 		Key:   serviceKey,
 		Value: ms,
@@ -117,36 +113,4 @@ func NotifySyncerInstanceEvent(evt sd.MongoEvent, ms *discovery.MicroService) {
 	syncernotify.GetSyncerNotifyCenter().AddEvent(instEvent)
 
 	log.Debug(fmt.Sprintf("success to add instance change event:%v to event queue", instEvent))
-}
-
-func getServiceFromDB(providerID string) *discovery.MicroService {
-	uri, err := getUri()
-	if err != nil {
-		log.Error("get uri from config err ", err)
-		return nil
-	}
-	cfg := storage.NewConfig(uri)
-	cfg.Timeout = "1s"
-	service, errs := mongo.GetService(context.Background(), bson.M{"serviceinfo.serviceid": providerID})
-	if errs != nil || service == nil {
-		log.Error("get service from db err", err)
-		return nil
-	}
-	return service.ServiceInfo
-}
-
-func getUri() (string, error) {
-	var c *servicecenter.Config
-	filePath := filepath.Join(util.GetAppRoot(), "conf", "app.yaml")
-	yamlFile, err := ioutil.ReadFile(filePath)
-	if err != nil {
-		log.Error("get yaml file err", err)
-		return "", err
-	}
-	err = yaml.Unmarshal(yamlFile, &c)
-	if err != nil {
-		log.Error("Unmarshal yaml err", err)
-		return "", err
-	}
-	return c.Registry.MongoDB.Cluster.Uri, nil
 }
