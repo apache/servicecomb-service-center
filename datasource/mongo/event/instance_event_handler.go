@@ -31,10 +31,11 @@ import (
 )
 
 const (
-	SPLIT = "/"
-	ServiceRootKey = "/cse-sr/ms/files"
+	SPLIT           = "/"
+	ServiceRootKey  = "/cse-sr/ms/files"
 	InstanceRootKey = "/cse-sr/inst/files"
 )
+
 // InstanceEventHandler is the handler to handle events
 //as instance registry or instance delete, and notify syncer
 type InstanceEventHandler struct {
