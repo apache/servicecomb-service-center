@@ -21,17 +21,18 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"reflect"
 	"sync"
 	"time"
 
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	"github.com/apache/servicecomb-service-center/datasource/sdcommon"
 	"github.com/apache/servicecomb-service-center/pkg/backoff"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/config"
-	"github.com/coreos/etcd/mvcc/mvccpb"
 	rmodel "github.com/go-chassis/cari/discovery"
 )
 
@@ -47,7 +48,7 @@ type KvCacher struct {
 	reListCount int
 
 	ready     chan struct{}
-	lw        ListWatch
+	lw        sdcommon.ListWatch
 	mux       sync.Mutex
 	once      sync.Once
 	cache     sd.Cache
@@ -59,42 +60,42 @@ func (c *KvCacher) Config() *sd.Config {
 }
 
 func (c *KvCacher) needList() bool {
-	rev := c.lw.Revision()
+	rev := c.getRevision()
 	if rev == 0 {
 		c.reListCount = 0
 		return true
 	}
 	c.reListCount++
-	if c.reListCount < DefaultForceListInterval {
+	if c.reListCount < sdcommon.DefaultForceListInterval {
 		return false
 	}
 	c.reListCount = 0
 	return true
 }
 
-func (c *KvCacher) doList(cfg ListWatchConfig) error {
+func (c *KvCacher) doList(cfg sdcommon.ListWatchConfig) error {
 	resp, err := c.lw.List(cfg)
 	if err != nil {
 		return err
 	}
 
-	rev := c.lw.Revision()
-	kvs := resp.Kvs
+	rev := c.getRevision()
+	resources := resp.Resources
 	start := time.Now()
 	defer log.DebugOrWarnf(start, "finish to cache key %s, %d items, rev: %d",
-		c.Cfg.Key, len(kvs), rev)
+		c.Cfg.Key, len(resources), rev)
 
 	// just reset the cacher if cache marked dirty
 	if c.cache.Dirty() {
-		c.reset(rev, kvs)
+		c.reset(rev, resources)
 		log.Warnf("Cache[%s] is reset!", c.cache.Name())
 		return nil
 	}
 
 	// calc and return the diff between cache and ETCD
-	evts := c.filter(rev, kvs)
+	evts := c.filter(rev, resources)
 	// there is no change between List() and cache, then stop the self preservation
-	if ec, kc := len(evts), len(kvs); c.Cfg.DeferHandler != nil && ec == 0 && kc != 0 &&
+	if ec, kc := len(evts), len(resources); c.Cfg.DeferHandler != nil && ec == 0 && kc != 0 &&
 		c.Cfg.DeferHandler.Reset() {
 		log.Warnf("most of the protected data(%d/%d) are recovered",
 			kc, c.cache.GetAll(nil))
@@ -105,7 +106,7 @@ func (c *KvCacher) doList(cfg ListWatchConfig) error {
 	return nil
 }
 
-func (c *KvCacher) reset(rev int64, kvs []*mvccpb.KeyValue) {
+func (c *KvCacher) reset(rev int64, kvs []*sdcommon.Resource) {
 	if c.Cfg.DeferHandler != nil {
 		c.Cfg.DeferHandler.Reset()
 	}
@@ -117,9 +118,9 @@ func (c *KvCacher) reset(rev int64, kvs []*mvccpb.KeyValue) {
 	c.buildCache(c.filter(rev, kvs))
 }
 
-func (c *KvCacher) doWatch(cfg ListWatchConfig) error {
-	if watcher := c.lw.Watch(cfg); watcher != nil {
-		return c.handleWatcher(watcher)
+func (c *KvCacher) doWatch(cfg sdcommon.ListWatchConfig) error {
+	if eventBus := c.lw.EventBus(cfg); eventBus != nil {
+		return c.handleEventBus(eventBus)
 	}
 	return fmt.Errorf("handle a nil watcher")
 }
@@ -129,7 +130,7 @@ func (c *KvCacher) ListAndWatch(ctx context.Context) error {
 	defer c.mux.Unlock()
 	defer log.Recover() // ensure ListAndWatch never raise panic
 
-	cfg := ListWatchConfig{
+	cfg := sdcommon.ListWatchConfig{
 		Timeout: c.Cfg.Timeout,
 		Context: ctx,
 	}
@@ -139,7 +140,7 @@ func (c *KvCacher) ListAndWatch(ctx context.Context) error {
 	// 2. Runtime: error occurs in previous watch operation, the lister's revision is set to 0.
 	// 3. Runtime: watch operation timed out over DEFAULT_FORCE_LIST_INTERVAL times.
 	if c.needList() {
-		if err := c.doList(cfg); err != nil && (!c.IsReady() || c.lw.Revision() == 0) {
+		if err := c.doList(cfg); err != nil && (!c.IsReady() || c.getRevision() == 0) {
 			return err // do retry to list etcd
 		}
 		// keep going to next step:
@@ -153,37 +154,37 @@ func (c *KvCacher) ListAndWatch(ctx context.Context) error {
 	return c.doWatch(cfg)
 }
 
-func (c *KvCacher) handleWatcher(watcher Watcher) error {
-	defer watcher.Stop()
-	for resp := range watcher.EventBus() {
+func (c *KvCacher) handleEventBus(eventBus *sdcommon.EventBus) error {
+	defer eventBus.Stop()
+	for resp := range eventBus.ResourceEventBus() {
 		if resp == nil {
 			return errors.New("handle watcher error")
 		}
 
 		start := time.Now()
 		rev := resp.Revision
-		evts := make([]sd.KvEvent, 0, len(resp.Kvs))
-		for _, kv := range resp.Kvs {
-			evt := sd.NewKvEvent(rmodel.EVT_CREATE, nil, kv.ModRevision)
+		evts := make([]sd.KvEvent, 0, len(resp.Resources))
+		for _, resource := range resp.Resources {
+			evt := sd.NewKvEvent(rmodel.EVT_CREATE, nil, resource.ModRevision)
 			switch {
-			case resp.Action == client.ActionPut && kv.Version == 1:
-				evt.Type, evt.KV = rmodel.EVT_CREATE, c.doParse(kv)
-			case resp.Action == client.ActionPut:
-				evt.Type, evt.KV = rmodel.EVT_UPDATE, c.doParse(kv)
-			case resp.Action == client.ActionDelete:
+			case resp.Action == sdcommon.ActionPUT && resource.Version == 1:
+				evt.Type, evt.KV = rmodel.EVT_CREATE, c.doParse(resource)
+			case resp.Action == sdcommon.ActionPUT:
+				evt.Type, evt.KV = rmodel.EVT_UPDATE, c.doParse(resource)
+			case resp.Action == sdcommon.ActionDelete:
 				evt.Type = rmodel.EVT_DELETE
-				if kv.Value == nil {
+				if resource.Value == nil {
 					// it will happen in embed mode, and then need to get the cache value not unmarshal
-					evt.KV = c.cache.Get(util.BytesToStringWithNoCopy(kv.Key))
+					evt.KV = c.cache.Get(resource.Key)
 				} else {
-					evt.KV = c.doParse(kv)
+					evt.KV = c.doParse(resource)
 				}
 			default:
-				log.Errorf(nil, "unknown KeyValue %v", kv)
+				log.Errorf(nil, "unknown KeyValue %v", resource)
 				continue
 			}
 			if evt.KV == nil {
-				log.Errorf(nil, "failed to parse KeyValue %v", kv)
+				log.Errorf(nil, "failed to parse KeyValue %v", resource)
 				continue
 			}
 			evts = append(evts, evt)
@@ -207,10 +208,10 @@ func (c *KvCacher) refresh(ctx context.Context) {
 	log.Debugf("start to list and watch %s", c.Cfg)
 	retries := 0
 
-	timer := time.NewTimer(minWaitInterval)
+	timer := time.NewTimer(sdcommon.MinWaitInterval)
 	defer timer.Stop()
 	for {
-		nextPeriod := minWaitInterval
+		nextPeriod := sdcommon.MinWaitInterval
 		if err := c.ListAndWatch(ctx); err != nil {
 			retries++
 			nextPeriod = backoff.GetBackoff().Delay(retries)
@@ -241,14 +242,14 @@ func (c *KvCacher) sync(evts []sd.KvEvent) {
 	c.onEvents(evts)
 }
 
-func (c *KvCacher) filter(rev int64, items []*mvccpb.KeyValue) []sd.KvEvent {
+func (c *KvCacher) filter(rev int64, items []*sdcommon.Resource) []sd.KvEvent {
 	nc := len(items)
-	newStore := make(map[string]*mvccpb.KeyValue, nc)
+	newStore := make(map[string]*sdcommon.Resource, nc)
 	for _, kv := range items {
-		newStore[util.BytesToStringWithNoCopy(kv.Key)] = kv
+		newStore[kv.Key] = kv
 	}
 	filterStopCh := make(chan struct{})
-	eventsCh := make(chan [eventBlockSize]sd.KvEvent, 2)
+	eventsCh := make(chan [sdcommon.EventBlockSize]sd.KvEvent, 2)
 
 	go c.filterDelete(newStore, rev, eventsCh, filterStopCh)
 
@@ -266,9 +267,9 @@ func (c *KvCacher) filter(rev int64, items []*mvccpb.KeyValue) []sd.KvEvent {
 	return evts
 }
 
-func (c *KvCacher) filterDelete(newStore map[string]*mvccpb.KeyValue,
-	rev int64, eventsCh chan [eventBlockSize]sd.KvEvent, filterStopCh chan struct{}) {
-	var block [eventBlockSize]sd.KvEvent
+func (c *KvCacher) filterDelete(newStore map[string]*sdcommon.Resource,
+	rev int64, eventsCh chan [sdcommon.EventBlockSize]sd.KvEvent, filterStopCh chan struct{}) {
+	var block [sdcommon.EventBlockSize]sd.KvEvent
 	i := 0
 
 	c.cache.ForEach(func(k string, v *sd.KeyValue) (next bool) {
@@ -279,9 +280,9 @@ func (c *KvCacher) filterDelete(newStore map[string]*mvccpb.KeyValue,
 			return
 		}
 
-		if i >= eventBlockSize {
+		if i >= sdcommon.EventBlockSize {
 			eventsCh <- block
-			block = [eventBlockSize]sd.KvEvent{}
+			block = [sdcommon.EventBlockSize]sd.KvEvent{}
 			i = 0
 		}
 
@@ -297,17 +298,17 @@ func (c *KvCacher) filterDelete(newStore map[string]*mvccpb.KeyValue,
 	close(filterStopCh)
 }
 
-func (c *KvCacher) filterCreateOrUpdate(newStore map[string]*mvccpb.KeyValue,
-	rev int64, eventsCh chan [eventBlockSize]sd.KvEvent, filterStopCh chan struct{}) {
-	var block [eventBlockSize]sd.KvEvent
+func (c *KvCacher) filterCreateOrUpdate(newStore map[string]*sdcommon.Resource,
+	rev int64, eventsCh chan [sdcommon.EventBlockSize]sd.KvEvent, filterStopCh chan struct{}) {
+	var block [sdcommon.EventBlockSize]sd.KvEvent
 	i := 0
 
 	for k, v := range newStore {
 		ov := c.cache.Get(k)
 		if ov == nil {
-			if i >= eventBlockSize {
+			if i >= sdcommon.EventBlockSize {
 				eventsCh <- block
-				block = [eventBlockSize]sd.KvEvent{}
+				block = [sdcommon.EventBlockSize]sd.KvEvent{}
 				i = 0
 			}
 
@@ -322,9 +323,9 @@ func (c *KvCacher) filterCreateOrUpdate(newStore map[string]*mvccpb.KeyValue,
 			continue
 		}
 
-		if i >= eventBlockSize {
+		if i >= sdcommon.EventBlockSize {
 			eventsCh <- block
-			block = [eventBlockSize]sd.KvEvent{}
+			block = [sdcommon.EventBlockSize]sd.KvEvent{}
 			i = 0
 		}
 
@@ -360,7 +361,7 @@ func (c *KvCacher) deferHandle(ctx context.Context) {
 func (c *KvCacher) handleDeferEvents(ctx context.Context) {
 	defer log.Recover()
 	var (
-		evts = make([]sd.KvEvent, eventBlockSize)
+		evts = make([]sd.KvEvent, sdcommon.EventBlockSize)
 		i    int
 	)
 	interval := 300 * time.Millisecond
@@ -375,9 +376,9 @@ func (c *KvCacher) handleDeferEvents(ctx context.Context) {
 				return
 			}
 
-			if i >= eventBlockSize {
+			if i >= sdcommon.EventBlockSize {
 				c.onEvents(evts[:i])
-				evts = make([]sd.KvEvent, eventBlockSize)
+				evts = make([]sd.KvEvent, sdcommon.EventBlockSize)
 				i = 0
 			}
 
@@ -393,7 +394,7 @@ func (c *KvCacher) handleDeferEvents(ctx context.Context) {
 			}
 
 			c.onEvents(evts[:i])
-			evts = make([]sd.KvEvent, eventBlockSize)
+			evts = make([]sd.KvEvent, sdcommon.EventBlockSize)
 			i = 0
 		}
 	}
@@ -453,10 +454,10 @@ func (c *KvCacher) notify(evts []sd.KvEvent) {
 	}
 }
 
-func (c *KvCacher) doParse(src *mvccpb.KeyValue) (kv *sd.KeyValue) {
+func (c *KvCacher) doParse(src *sdcommon.Resource) (kv *sd.KeyValue) {
 	kv = sd.NewKeyValue()
-	if err := FromEtcdKeyValue(kv, src, c.Cfg.Parser); err != nil {
-		log.Errorf(err, "parse %s value failed", util.BytesToStringWithNoCopy(src.Key))
+	if err := ParseResourceToEtcdKeyValue(kv, src, c.Cfg.Parser); err != nil {
+		log.Errorf(err, "parse %s value failed", src.Key)
 		return nil
 	}
 	return
@@ -497,7 +498,7 @@ func (c *KvCacher) reportMetrics(ctx context.Context) {
 	if !config.GetServer().EnablePProf {
 		return
 	}
-	timer := time.NewTimer(DefaultMetricsInterval)
+	timer := time.NewTimer(sdcommon.DefaultMetricsInterval)
 	defer timer.Stop()
 	for {
 		select {
@@ -505,7 +506,7 @@ func (c *KvCacher) reportMetrics(ctx context.Context) {
 			return
 		case <-timer.C:
 			ReportCacheSize(c.cache.Name(), "raw", c.cache.Size())
-			timer.Reset(DefaultMetricsInterval)
+			timer.Reset(sdcommon.DefaultMetricsInterval)
 		}
 	}
 }
@@ -521,4 +522,18 @@ func NewKvCacher(cfg *sd.Config, cache sd.Cache) *KvCacher {
 		},
 		goroutine: gopool.New(context.Background()),
 	}
+}
+
+func (c *KvCacher) getRevision() int64 {
+	lw := reflect.ValueOf(c.lw)
+	revMethod := lw.MethodByName(revMethodName)
+
+	if !revMethod.IsValid() {
+		log.Warn("get revision failed")
+		return 0
+	}
+
+	revs := revMethod.Call(make([]reflect.Value, 0))
+	rev := revs[0].Int()
+	return rev
 }
