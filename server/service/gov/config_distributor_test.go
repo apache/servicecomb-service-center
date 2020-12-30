@@ -30,6 +30,7 @@ import (
 
 const Project = "default"
 const MockKind = "default"
+const MatchGroup = "match-group"
 const MockEnv = ""
 const MockApp = ""
 
@@ -76,11 +77,20 @@ func TestUpdate(t *testing.T) {
 }
 
 func TestDisplay(t *testing.T) {
+	b, _ := json.MarshalIndent(&gov.Policy{
+		GovernancePolicy: &gov.GovernancePolicy{
+			Name: "Traffic2adminAPI",
+		},
+	}, "", "  ")
+	res, err := svc.Create(MatchGroup, Project, b)
+	id = string(res)
+	assert.NoError(t, err)
 	policies := &[]*gov.DisplayData{}
-	res, err := svc.Display(Project, MockApp, MockEnv)
+	res, err = svc.Display(Project, MockApp, MockEnv)
 	assert.NoError(t, err)
 	err = json.Unmarshal(res, policies)
 	assert.NoError(t, err)
+	assert.NotEmpty(t, policies)
 }
 
 func TestList(t *testing.T) {
@@ -104,4 +114,6 @@ func TestGet(t *testing.T) {
 func TestDelete(t *testing.T) {
 	err := svc.Delete(id, Project)
 	assert.NoError(t, err)
+	res, _ := svc.Get(MockKind, id, Project)
+	assert.Nil(t, res)
 }

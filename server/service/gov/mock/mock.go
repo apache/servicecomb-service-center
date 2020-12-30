@@ -108,6 +108,9 @@ func (d *Distributor) List(kind, project, app, env string) ([]byte, error) {
 
 func (d *Distributor) Get(kind, id, project string) ([]byte, error) {
 	r := d.lbPolicies[id]
+	if r == nil {
+		return nil, nil
+	}
 	b, _ := json.MarshalIndent(r, "", "  ")
 	return b, nil
 }
