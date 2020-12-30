@@ -94,7 +94,7 @@ func (c *Client) ServiceExistence(ctx context.Context, domain, project string, a
 	query := url.Values{}
 	query.Set("type", "microservice")
 	query.Set("env", env)
-	query.Set("appID", appID)
+	query.Set("appId", appID)
 	query.Set("serviceName", serviceName)
 	query.Set("version", versionRule)
 

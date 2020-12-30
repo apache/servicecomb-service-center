@@ -84,16 +84,19 @@ func (s *servicecenter) Registry(clusterName string, data *pb.SyncData) {
 		svc := searchService(inst, data.Services)
 		if svc == nil {
 			err := errors.New("service does not exist")
-			log.Errorf(err, "servicecenter.Registry, serviceID = %s, instanceId = %s", inst.ServiceId, inst.InstanceId)
+			log.Error(fmt.Sprintf("servicecenter.Registry, serviceID = %s, instanceId = %s", inst.ServiceId, inst.InstanceId), err)
 			continue
 		}
 
 		// If the svc is in the mapping, just do nothing, if not, created it in servicecenter and get the new serviceID
-		svcID := s.createService(svc)
-		log.Debugf("create service success orgServiceID= %s, curServiceID = %s", inst.ServiceId, svcID)
+		svcID, err := s.createService(svc)
+		if err != nil {
+			log.Error("create service failed", err)
+			continue
+		}
 
 		// If inst is in the mapping, just heart beat it in servicecenter
-		log.Debugf("trying to do registration of instance, instanceID = %s", inst.InstanceId)
+		log.Debug(fmt.Sprintf("trying to do registration of instance, instanceID = %s", inst.InstanceId))
 		if s.heartbeatInstances(mapping, inst) {
 			continue
 		}
@@ -136,10 +139,6 @@ func (s *servicecenter) IncrementRegistry(clusterName string, data *pb.SyncData)
 			continue
 		}
 
-		// If the svc is in the mapping, just do nothing, if not, created it in servicecenter and get the new serviceID
-		svcID := s.createService(svc)
-		log.Debug(fmt.Sprintf("create service success orgServiceID= %s, curServiceID = %s", inst.ServiceId, svcID))
-
 		matches := pb.Expansions(inst.Expansions).Find("action", map[string]string{})
 		if len(matches) != 1 {
 			err := utils.ErrActionInvalid
@@ -149,6 +148,13 @@ func (s *servicecenter) IncrementRegistry(clusterName string, data *pb.SyncData)
 		action := string(matches[0].Bytes[:])
 
 		if action == string(discovery.EVT_CREATE) {
+			// If the svc is in the mapping, just do nothing, if not, created it in servicecenter and get the new serviceID
+			svcID, err := s.createService(svc)
+			if err != nil {
+				log.Error("create service failed", err)
+				continue
+			}
+
 			log.Debug(fmt.Sprintf("trying to do registration of instance, instanceID = %s", inst.InstanceId))
 
 			// If inst is in the mapping, just heart beat it in servicecenter

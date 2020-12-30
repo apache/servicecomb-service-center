@@ -25,7 +25,7 @@ import (
 
 // SystemManager contains the APIs of system management
 type SystemManager interface {
-	DumpCache(ctx context.Context, cache *dump.Cache)
+	DumpCache(ctx context.Context) *dump.Cache
 	DLock(ctx context.Context, request *DLockRequest) error
 	DUnlock(ctx context.Context, request *DUnlockRequest) error
 }
