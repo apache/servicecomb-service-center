@@ -77,9 +77,7 @@ func (service *Service) dump(ctx context.Context, option string, resp *dump.Resp
 	case "config":
 		resp.AppConfig = archaius.GetConfigs()
 	case "cache":
-		var cache dump.Cache
-		datasource.Instance().DumpCache(ctx, &cache)
-		resp.Cache = &cache
+		resp.Cache = datasource.Instance().DumpCache(ctx)
 	case "all":
 		service.dump(ctx, "info", resp)
 		service.dump(ctx, "config", resp)

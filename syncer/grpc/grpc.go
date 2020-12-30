@@ -19,6 +19,7 @@ package grpc
 
 import (
 	"context"
+	"math"
 	"net"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -44,9 +45,9 @@ func NewServer(ops ...Option) (*Server, error) {
 	conf := toGRPCConfig(ops...)
 	var srv *grpc.Server
 	if conf.tlsConfig != nil {
-		srv = grpc.NewServer(grpc.Creds(credentials.NewTLS(conf.tlsConfig)))
+		srv = grpc.NewServer(grpc.Creds(credentials.NewTLS(conf.tlsConfig)), grpc.MaxRecvMsgSize(math.MaxInt32), grpc.MaxSendMsgSize(math.MaxInt32))
 	} else {
-		srv = grpc.NewServer()
+		srv = grpc.NewServer(grpc.MaxRecvMsgSize(math.MaxInt32), grpc.MaxSendMsgSize(math.MaxInt32))
 	}
 
 	rpc.RegisterGRpcServer(srv)
@@ -120,9 +121,11 @@ func InjectClient(injection func(conn *grpc.ClientConn), ops ...Option) error {
 	var err error
 
 	if conf.tlsConfig != nil {
-		conn, err = grpc.Dial(conf.addr, grpc.WithTransportCredentials(credentials.NewTLS(conf.tlsConfig)))
+		conn, err = grpc.Dial(conf.addr, grpc.WithTransportCredentials(credentials.NewTLS(conf.tlsConfig)),
+			grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(math.MaxInt32), grpc.MaxCallSendMsgSize(math.MaxInt32)))
 	} else {
-		conn, err = grpc.Dial(conf.addr, grpc.WithInsecure())
+		conn, err = grpc.Dial(conf.addr, grpc.WithInsecure(),
+			grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(math.MaxInt32), grpc.MaxCallSendMsgSize(math.MaxInt32)))
 	}
 
 	if err != nil {

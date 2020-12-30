@@ -29,7 +29,8 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 )
 
-func (ds *DataSource) DumpCache(ctx context.Context, cache *dump.Cache) {
+func (ds *DataSource) DumpCache(ctx context.Context) *dump.Cache {
+	var cache dump.Cache
 	gopool.New(ctx, gopool.Configure().Workers(2)).
 		Do(func(_ context.Context) { setValue(kv.Store().Service(), &cache.Microservices) }).
 		Do(func(_ context.Context) { setValue(kv.Store().ServiceIndex(), &cache.Indexes) }).
@@ -41,6 +42,7 @@ func (ds *DataSource) DumpCache(ctx context.Context, cache *dump.Cache) {
 		Do(func(_ context.Context) { setValue(kv.Store().SchemaSummary(), &cache.Summaries) }).
 		Do(func(_ context.Context) { setValue(kv.Store().Instance(), &cache.Instances) }).
 		Done()
+	return &cache
 }
 
 func setValue(e sd.Adaptor, setter dump.Setter) {
