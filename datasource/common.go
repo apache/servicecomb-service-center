@@ -14,17 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package etcd_test
 
-import (
-	"testing"
+package datasource
 
-	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/stretchr/testify/assert"
+const (
+	ServiceKeyPrefix  = "/cse-sr/ms/files"
+	InstanceKeyPrefix = "/cse-sr/inst/files"
+	SPLIT             = "/"
 )
-
-func TestAdminService_Dump(t *testing.T) {
-	t.Log("execute 'dump' operation,when get all,should be passed")
-	cache := datasource.Instance().DumpCache(getContext())
-	assert.Equal(t, len(cache.Indexes), len(cache.Microservices))
-}

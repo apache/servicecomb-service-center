@@ -19,6 +19,7 @@ package servicecenter
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
@@ -40,19 +41,25 @@ func (s *servicecenter) heartbeatInstances(mapping pb.SyncMapping, instance *pb.
 	return true
 }
 
-func (s *servicecenter) createService(service *pb.SyncService) string {
+func (s *servicecenter) createService(service *pb.SyncService) (string, error) {
 	ctx := context.Background()
-	serviceID, _ := s.servicecenter.ServiceExistence(ctx, service.DomainProject, service)
+	serviceID, err := s.servicecenter.ServiceExistence(ctx, service.DomainProject, service)
+	if err != nil {
+		log.Error("get service existence failed", err)
+		return "", err
+	}
+
 	if serviceID == "" {
-		var err error
 		serviceID, err = s.servicecenter.CreateService(ctx, service.DomainProject, service)
 		if err != nil {
-			log.Errorf(err, "Servicecenter create service failed")
-			return ""
+			log.Error("create service failed", err)
+			return "", err
 		}
-		log.Debugf("Create service successful, serviceID = %s", serviceID)
+		log.Debug(fmt.Sprintf("create service successful, serviceID = %s", serviceID))
+	} else {
+		log.Debug(fmt.Sprintf("service already exists, serviceID = %s", serviceID))
 	}
-	return serviceID
+	return serviceID, nil
 }
 
 func (s *servicecenter) registryInstances(domainProject, serviceID string, instance *pb.SyncInstance) string {

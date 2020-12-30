@@ -46,8 +46,6 @@ func (s *Server) tickHandler() {
 		return
 	}
 	log.Debugf("Handle Tick")
-	// Flush data to the storage of servicecenter
-	s.servicecenter.FlushData()
 
 	// sends a UserEvent on Serf, the event will be broadcast between members
 	s.mux.Lock()
@@ -200,6 +198,9 @@ func (s *Server) incrementUserEvent(data ...[]byte) (success bool) {
 }
 
 func (s *Server) notifyUserEvent(data ...[]byte) (success bool) {
+	// Flush data to the storage of servicecenter
+	s.servicecenter.FlushData()
+
 	err := s.serf.UserEvent(EventDiscovered, util.StringToBytesWithNoCopy(s.conf.Cluster))
 	if err != nil {
 		log.Error("Syncer send discovered user event failed", err)
