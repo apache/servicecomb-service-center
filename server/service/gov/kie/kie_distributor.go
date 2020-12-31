@@ -5,8 +5,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"strings"
+
+	"github.com/apache/servicecomb-service-center/pkg/log"
 
 	"github.com/apache/servicecomb-service-center/pkg/gov"
 	"github.com/apache/servicecomb-service-center/server/config"
@@ -23,29 +24,33 @@ type Distributor struct {
 
 const (
 	PREFIX         = "servicecomb."
+	MatchGroup     = "match-group"
 	EnableStatus   = "enabled"
 	ValueType      = "text"
 	AppKey         = "app"
 	EnvironmentKey = "environment"
+	EnvAll         = "all"
 )
+
+var PolicyNames = []string{"retry", "rateLimiting", "circuitBreaker", "bulkhead"}
 
 var rule = Validator{}
 
-func (d *Distributor) Create(kind, project string, spec []byte) error {
+func (d *Distributor) Create(kind, project string, spec []byte) ([]byte, error) {
 	p := &gov.Policy{}
 	err := json.Unmarshal(spec, p)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	log.Println(fmt.Sprintf("create %v", &p))
+	log.Info(fmt.Sprintf("create %v", &p))
 	key := toSnake(kind) + "." + p.Name
 	err = rule.Validate(kind, p.Spec)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	yamlByte, err := yaml.Marshal(p.Spec)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	kv := kie.KVRequest{
 		Key:       PREFIX + key,
@@ -54,13 +59,14 @@ func (d *Distributor) Create(kind, project string, spec []byte) error {
 		ValueType: ValueType,
 		Labels:    map[string]string{AppKey: p.Selector.App, EnvironmentKey: p.Selector.Environment},
 	}
-	_, err = d.client.Create(context.TODO(), kv, kie.WithProject(project))
+	res, err := d.client.Create(context.TODO(), kv, kie.WithProject(project))
 	if err != nil {
-		log.Fatal("kie create failed", err)
-		return err
+		log.Error("kie create failed", err)
+		return nil, err
 	}
 	d.lbPolicies[p.GovernancePolicy.Name] = p
-	return nil
+	b, _ := json.MarshalIndent(res.ID, "", "  ")
+	return b, nil
 }
 
 func (d *Distributor) Update(id, kind, project string, spec []byte) error {
@@ -69,7 +75,7 @@ func (d *Distributor) Update(id, kind, project string, spec []byte) error {
 	if err != nil {
 		return err
 	}
-	log.Println(fmt.Sprintf("update %v", &p))
+	log.Info(fmt.Sprintf("update %v", &p))
 	err = rule.Validate(kind, p.Spec)
 	if err != nil {
 		return err
@@ -85,7 +91,7 @@ func (d *Distributor) Update(id, kind, project string, spec []byte) error {
 	}
 	_, err = d.client.Put(context.TODO(), kv, kie.WithProject(project))
 	if err != nil {
-		log.Fatal("kie update failed", err)
+		log.Error("kie update failed", err)
 		return err
 	}
 	d.lbPolicies[p.GovernancePolicy.Name] = p
@@ -95,65 +101,80 @@ func (d *Distributor) Update(id, kind, project string, spec []byte) error {
 func (d *Distributor) Delete(id, project string) error {
 	err := d.client.Delete(context.TODO(), id, kie.WithProject(project))
 	if err != nil {
-		log.Fatal("kie delete failed", err)
+		log.Error("kie delete failed", err)
 		return err
 	}
 	return nil
 }
 
-func (d *Distributor) List(kind, project, app, env string) ([]byte, error) {
-	list, _, err := d.client.List(context.TODO(),
-		kie.WithKey("beginWith("+PREFIX+toSnake(kind)+")"),
-		kie.WithLabels(map[string]string{AppKey: app, EnvironmentKey: env}),
-		kie.WithRevision(0),
-		kie.WithGetProject(project))
+func (d *Distributor) Display(project, app, env string) ([]byte, error) {
+	list, _, err := d.listDataByKind(MatchGroup, project, app, env)
 	if err != nil {
 		return nil, err
 	}
-	r := make([]*gov.Policy, 0, list.Total)
-	for _, item := range list.Data {
-		goc := &gov.Policy{
-			GovernancePolicy: &gov.GovernancePolicy{},
-		}
-		spec := make(map[string]interface{})
-		specJSON, _ := yaml.YAMLToJSON([]byte(item.Value))
-		err = json.Unmarshal(specJSON, &spec)
+	policyMap := make(map[string]*gov.Policy)
+	for _, kind := range PolicyNames {
+		policies, _, err := d.listDataByKind(kind, project, app, env)
 		if err != nil {
-			log.Fatal("kie list failed", err)
+			continue
+		}
+		for _, policy := range policies.Data {
+			item, err := d.transform(policy, kind)
+			if err != nil {
+				continue
+			}
+			policyMap[item.Name+kind] = item
+		}
+	}
+	r := make([]*gov.DisplayData, 0, list.Total)
+	for _, item := range list.Data {
+		match, err := d.transform(item, MatchGroup)
+		if err != nil {
 			return nil, err
 		}
-		goc.ID = item.ID
-		goc.Status = item.Status
-		goc.Name = item.Key
-		goc.Spec = spec
-		goc.Selector.App = item.Labels[AppKey]
-		goc.Selector.Environment = item.Labels[EnvironmentKey]
-		goc.CreatTime = item.CreatTime
-		goc.UpdateTime = item.UpdateTime
-		r = append(r, goc)
+		var policies []*gov.Policy
+		for _, kind := range PolicyNames {
+			if policyMap[match.Name+kind] != nil {
+				policies = append(policies, policyMap[match.Name+kind])
+			}
+		}
+		result := &gov.DisplayData{
+			Policies:   policies,
+			MatchGroup: match,
+		}
+		r = append(r, result)
 	}
 	b, _ := json.MarshalIndent(r, "", "  ")
 	return b, nil
 }
 
-func (d *Distributor) Get(id, project string) ([]byte, error) {
-	kv, err := d.client.Get(context.TODO(), id, kie.WithGetProject(project))
+func (d *Distributor) List(kind, project, app, env string) ([]byte, error) {
+	list, _, err := d.listDataByKind(kind, project, app, env)
 	if err != nil {
-		log.Fatal("kie get failed", err)
 		return nil, err
 	}
-	goc := &gov.Policy{
-		GovernancePolicy: &gov.GovernancePolicy{},
+	r := make([]*gov.Policy, 0, list.Total)
+	for _, item := range list.Data {
+		policy, err := d.transform(item, kind)
+		if err != nil {
+			return nil, err
+		}
+		r = append(r, policy)
 	}
-	goc.ID = kv.ID
-	goc.Status = kv.Status
-	goc.Name = kv.Key
-	goc.Spec = kv
-	goc.Selector.App = kv.Labels[AppKey]
-	goc.Selector.Environment = kv.Labels[EnvironmentKey]
-	goc.CreatTime = kv.CreatTime
-	goc.UpdateTime = kv.UpdateTime
-	b, _ := json.MarshalIndent(goc, "", "  ")
+	b, _ := json.MarshalIndent(r, "", "  ")
+	return b, nil
+}
+
+func (d *Distributor) Get(kind, id, project string) ([]byte, error) {
+	kv, err := d.client.Get(context.TODO(), id, kie.WithGetProject(project))
+	if err != nil {
+		return nil, err
+	}
+	policy, err := d.transform(kv, kind)
+	if err != nil {
+		return nil, err
+	}
+	b, _ := json.MarshalIndent(policy, "", "  ")
 	return b, nil
 }
 
@@ -170,7 +191,7 @@ func initClient(endpoint string) *kie.Client {
 			DefaultLabels: map[string]string{},
 		})
 	if err != nil {
-		log.Fatalf("init kie client failed, err: %s", err)
+		log.Fatal("init kie client failed, err: %s", err)
 	}
 	return client
 }
@@ -199,6 +220,48 @@ func toSnake(name string) string {
 		}
 	}
 	return buffer.String()
+}
+
+func (d *Distributor) listDataByKind(kind, project, app, env string) (*kie.KVResponse, int, error) {
+	ops := []kie.GetOption{
+		kie.WithKey("beginWith(" + PREFIX + toSnake(kind) + ")"),
+		kie.WithRevision(0),
+		kie.WithGetProject(project),
+	}
+	labels := map[string]string{}
+	if env != EnvAll {
+		labels[EnvironmentKey] = env
+	}
+	if app != "" {
+		labels[AppKey] = app
+	}
+	if len(labels) > 0 {
+		ops = append(ops, kie.WithLabels(labels))
+	}
+	return d.client.List(context.TODO(), ops...)
+}
+
+func (d *Distributor) transform(kv *kie.KVDoc, kind string) (*gov.Policy, error) {
+	goc := &gov.Policy{
+		GovernancePolicy: &gov.GovernancePolicy{},
+	}
+	spec := make(map[string]interface{})
+	specJSON, _ := yaml.YAMLToJSON([]byte(kv.Value))
+	err := json.Unmarshal(specJSON, &spec)
+	if err != nil {
+		log.Fatal("kie transform kv failed", err)
+		return nil, err
+	}
+	goc.Kind = kind
+	goc.ID = kv.ID
+	goc.Status = kv.Status
+	goc.Name = kv.Key[strings.LastIndex(kv.Key, ".")+1 : len(kv.Key)]
+	goc.Spec = spec
+	goc.Selector.App = kv.Labels[AppKey]
+	goc.Selector.Environment = kv.Labels[EnvironmentKey]
+	goc.CreatTime = kv.CreatTime
+	goc.UpdateTime = kv.UpdateTime
+	return goc, nil
 }
 
 func init() {
