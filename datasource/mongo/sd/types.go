@@ -18,9 +18,9 @@
 package sd
 
 import (
-	"github.com/apache/servicecomb-service-center/datasource/sdcommon"
 	"time"
 
+	"github.com/apache/servicecomb-service-center/datasource/sdcommon"
 	"github.com/go-chassis/cari/discovery"
 	pb "github.com/go-chassis/cari/discovery"
 	"go.mongodb.org/mongo-driver/bson"
@@ -43,6 +43,7 @@ func RegisterType(name string) {
 type MongoEvent struct {
 	DocumentID string
 	ResourceID string
+	Index      string
 	Value      interface{}
 	Type       discovery.EventType
 }
@@ -58,10 +59,11 @@ func NewMongoEventByResource(resource *sdcommon.Resource, action discovery.Event
 	return MongoEvent{ResourceID: resource.Key, DocumentID: resource.DocumentID, Value: resource.Value, Type: action}
 }
 
-func NewMongoEvent(id string, documentID string, action discovery.EventType, v interface{}) MongoEvent {
+func NewMongoEvent(id string, documentID string, index string, action discovery.EventType, v interface{}) MongoEvent {
 	event := MongoEvent{}
 	event.ResourceID = id
 	event.DocumentID = documentID
+	event.Index = index
 	event.Type = action
 	event.Value = v
 	return event
@@ -79,12 +81,6 @@ type MongoDocument struct {
 
 type ResumeToken struct {
 	Data []byte `bson:"_data"`
-}
-
-type MongoInfo struct {
-	DocumentID string
-	ResourceID string
-	Value      interface{}
 }
 
 type Service struct {

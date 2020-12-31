@@ -21,10 +21,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/apache/servicecomb-service-center/datasource/sdcommon"
 	"sync"
 	"time"
 
+	"github.com/apache/servicecomb-service-center/datasource/sdcommon"
 	"github.com/apache/servicecomb-service-center/pkg/backoff"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -252,11 +252,13 @@ func (c *MongoCacher) filter(infos []*sdcommon.Resource) []MongoEvent {
 	nc := len(infos)
 	newStore := make(map[string]interface{}, nc)
 	documentIDRecord := make(map[string]string, nc)
+	indexRecord := make(map[string]string, nc)
 
 	for _, info := range infos {
 		event := NewMongoEventByResource(info, rmodel.EVT_CREATE)
 		newStore[event.ResourceID] = info.Value
 		documentIDRecord[event.ResourceID] = info.DocumentID
+		indexRecord[event.ResourceID] = info.Index
 	}
 
 	filterStopCh := make(chan struct{})
@@ -264,7 +266,7 @@ func (c *MongoCacher) filter(infos []*sdcommon.Resource) []MongoEvent {
 
 	go c.filterDelete(newStore, eventsCh, filterStopCh)
 
-	go c.filterCreateOrUpdate(newStore, documentIDRecord, eventsCh, filterStopCh)
+	go c.filterCreateOrUpdate(newStore, documentIDRecord, indexRecord, eventsCh, filterStopCh)
 
 	events := make([]MongoEvent, 0, nc)
 	for block := range eventsCh {
@@ -299,8 +301,9 @@ func (c *MongoCacher) filterDelete(newStore map[string]interface{},
 			i = 0
 		}
 
-		documentID := c.cache.GetDocumentIDByID(k)
-		block[i] = NewMongoEvent(k, documentID, rmodel.EVT_DELETE, v)
+		documentID := c.cache.GetDocumentIDByBussinessID(k)
+		index := c.cache.GetIndexByBussinessID(k)
+		block[i] = NewMongoEvent(k, documentID, index, rmodel.EVT_DELETE, v)
 		i++
 		return
 	})
@@ -312,7 +315,7 @@ func (c *MongoCacher) filterDelete(newStore map[string]interface{},
 	close(filterStopCh)
 }
 
-func (c *MongoCacher) filterCreateOrUpdate(newStore map[string]interface{}, newDocumentStore map[string]string,
+func (c *MongoCacher) filterCreateOrUpdate(newStore map[string]interface{}, newDocumentStore map[string]string, indexRecord map[string]string,
 	eventsCh chan [sdcommon.EventBlockSize]MongoEvent, filterStopCh chan struct{}) {
 	var block [sdcommon.EventBlockSize]MongoEvent
 	i := 0
@@ -326,7 +329,7 @@ func (c *MongoCacher) filterCreateOrUpdate(newStore map[string]interface{}, newD
 				i = 0
 			}
 
-			block[i] = NewMongoEvent(k, newDocumentStore[k], rmodel.EVT_CREATE, v)
+			block[i] = NewMongoEvent(k, newDocumentStore[k], indexRecord[k], rmodel.EVT_CREATE, v)
 			i++
 
 			continue
@@ -344,7 +347,7 @@ func (c *MongoCacher) filterCreateOrUpdate(newStore map[string]interface{}, newD
 			i = 0
 		}
 
-		block[i] = NewMongoEvent(k, newDocumentStore[k], rmodel.EVT_UPDATE, v)
+		block[i] = NewMongoEvent(k, newDocumentStore[k], indexRecord[k], rmodel.EVT_UPDATE, v)
 		i++
 	}
 
@@ -416,6 +419,7 @@ func (c *MongoCacher) buildCache(events []MongoEvent) {
 
 			c.cache.Put(key, evt.Value)
 			c.cache.PutDocumentID(key, evt.DocumentID)
+			c.cache.PutIndex(evt.Index, evt.ResourceID)
 
 			events[i] = evt
 		case rmodel.EVT_DELETE:
@@ -427,6 +431,7 @@ func (c *MongoCacher) buildCache(events []MongoEvent) {
 
 				c.cache.Remove(key)
 				c.cache.RemoveDocumentID(evt.DocumentID)
+				c.cache.RemoveIndex(evt.Index, evt.ResourceID)
 			}
 			events[i] = evt
 		}

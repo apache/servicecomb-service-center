@@ -27,6 +27,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	"go.mongodb.org/mongo-driver/mongo"
 
@@ -170,7 +171,7 @@ func (ds *DataSource) GetApplications(ctx context.Context, request *discovery.Ge
 
 func (ds *DataSource) GetService(ctx context.Context, request *discovery.GetServiceRequest) (
 	*discovery.GetServiceResponse, error) {
-	svc, err := GetService(ctx, GeneratorServiceFilter(ctx, request.ServiceId))
+	svc, err := GetServiceByID(ctx, request.ServiceId)
 	if err != nil {
 		log.Error(fmt.Sprintf("failed to get single service %s from mongo", request.ServiceId), err)
 		return &discovery.GetServiceResponse{
@@ -1601,14 +1602,11 @@ func (ds *DataSource) GetInstance(ctx context.Context, request *discovery.GetOne
 }
 
 func (ds *DataSource) GetInstances(ctx context.Context, request *discovery.GetInstancesRequest) (*discovery.GetInstancesResponse, error) {
-	domainProject := util.ParseDomainProject(ctx)
 	service := &Service{}
 	var err error
-	var serviceIDs []string
 
 	if len(request.ConsumerServiceId) > 0 {
-		filter := GeneratorServiceFilter(ctx, request.ConsumerServiceId)
-		service, err = GetService(ctx, filter)
+		service, err = GetServiceByID(ctx, request.ConsumerServiceId)
 		if err != nil {
 			log.Error(fmt.Sprintf("get consumer failed, consumer %s find provider %s instances",
 				request.ConsumerServiceId, request.ProviderServiceId), err)
@@ -1626,8 +1624,7 @@ func (ds *DataSource) GetInstances(ctx context.Context, request *discovery.GetIn
 		}
 	}
 
-	filter := GeneratorServiceFilter(ctx, request.ProviderServiceId)
-	provider, err := GetService(ctx, filter)
+	provider, err := GetServiceByID(ctx, request.ProviderServiceId)
 	if err != nil {
 		log.Error(fmt.Sprintf("get provider failed, consumer %s find provider instances %s",
 			request.ConsumerServiceId, request.ProviderServiceId), err)
@@ -1650,24 +1647,15 @@ func (ds *DataSource) GetInstances(ctx context.Context, request *discovery.GetIn
 			provider.ServiceInfo.ServiceId, provider.ServiceInfo.Environment, provider.ServiceInfo.AppId, provider.ServiceInfo.ServiceName, provider.ServiceInfo.Version)
 	}
 
-	services, err := findServices(ctx, discovery.MicroServiceToKey(domainProject, provider.ServiceInfo))
-	if err != nil {
-		log.Error(fmt.Sprintf("get instances failed %s", findFlag()), err)
-		return &discovery.GetInstancesResponse{
-			Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
-		}, err
-	}
-	if services != nil {
-		serviceIDs = filterServiceIDs(ctx, request.ConsumerServiceId, request.Tags, services)
-	}
-	if services == nil || len(serviceIDs) == 0 {
+	serviceIDs := filterServiceIDs(ctx, request.ConsumerServiceId, request.Tags, []*Service{provider})
+	if len(serviceIDs) == 0 {
 		mes := fmt.Errorf("%s failed, provider does not exist", findFlag())
 		log.Error("get instances failed", mes)
 		return &discovery.GetInstancesResponse{
 			Response: discovery.CreateResponse(discovery.ErrServiceNotExists, mes.Error()),
 		}, nil
 	}
-	instances, err := instancesFilter(ctx, serviceIDs)
+	instances, err := GetInstancesByServiceID(ctx, request.ProviderServiceId)
 	if err != nil {
 		log.Error(fmt.Sprintf("get instances failed %s", findFlag()), err)
 		return &discovery.GetInstancesResponse{
@@ -2820,4 +2808,44 @@ func GeneratorServiceInstanceFilter(ctx context.Context, serviceID string) bson.
 		ColumnDomain:  domain,
 		ColumnProject: project,
 		StringBuilder([]string{ColumnInstanceInfo, ColumnServiceID}): serviceID}
+}
+
+func GetServiceByID(ctx context.Context, serviceID string) (*Service, error) {
+	cacheService, ok := sd.Store().Service().Cache().Get(serviceID).(sd.Service)
+	if !ok {
+		//no service in cache,get it from mongodb
+		return GetService(ctx, GeneratorServiceFilter(ctx, serviceID))
+	}
+	return cacheToService(cacheService), nil
+}
+
+func cacheToService(service sd.Service) *Service {
+	return &Service{
+		Domain:      service.Domain,
+		Project:     service.Project,
+		Tags:        service.Tags,
+		ServiceInfo: service.ServiceInfo,
+	}
+}
+
+func GetInstancesByServiceID(ctx context.Context, serviceID string) ([]*discovery.MicroServiceInstance, error) {
+	var res []*discovery.MicroServiceInstance
+	var cacheUnavailable bool
+	cacheInstances := sd.Store().Instance().Cache().GetIndexData(serviceID)
+	for _, instID := range cacheInstances {
+		inst, ok := sd.Store().Instance().Cache().Get(instID).(sd.Instance)
+		if !ok {
+			cacheUnavailable = true
+			break
+		}
+		res = append(res, inst.InstanceInfo)
+	}
+	if cacheUnavailable {
+		res, err := instancesFilter(ctx, []string{serviceID})
+		if err != nil {
+			return nil, err
+		}
+		return res, nil
+	}
+	return res, nil
 }
