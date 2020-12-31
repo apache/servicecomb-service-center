@@ -28,7 +28,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCreate(t *testing.T) {
+const Project = "default"
+const MockKind = "default"
+const MatchGroup = "match-group"
+const MockEnv = ""
+const MockApp = ""
+
+var id = ""
+
+func init() {
 	config.Configurations = &config.Config{
 		Gov: &config.Gov{
 			DistOptions: []config.DistributorOptions{
@@ -40,13 +48,72 @@ func TestCreate(t *testing.T) {
 		},
 	}
 	err := svc.Init()
-	assert.NoError(t, err)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func TestCreate(t *testing.T) {
 	b, _ := json.MarshalIndent(&gov.Policy{
 		GovernancePolicy: &gov.GovernancePolicy{
 			Name: "Traffic2adminAPI",
 		},
 		Spec: &gov.LBSpec{RetryNext: 3, MarkerName: "traffic2adminAPI"},
 	}, "", "  ")
-	err = svc.Create("lb", "default", b)
+	res, err := svc.Create(MockKind, Project, b)
+	id = string(res)
 	assert.NoError(t, err)
+}
+
+func TestUpdate(t *testing.T) {
+	b, _ := json.MarshalIndent(&gov.Policy{
+		GovernancePolicy: &gov.GovernancePolicy{
+			Name: "Traffic2adminAPI",
+		},
+		Spec: &gov.LBSpec{RetryNext: 3, MarkerName: "traffic2adminAPI"},
+	}, "", "  ")
+	err := svc.Update(id, MockKind, Project, b)
+	assert.NoError(t, err)
+}
+
+func TestDisplay(t *testing.T) {
+	b, _ := json.MarshalIndent(&gov.Policy{
+		GovernancePolicy: &gov.GovernancePolicy{
+			Name: "Traffic2adminAPI",
+		},
+	}, "", "  ")
+	res, err := svc.Create(MatchGroup, Project, b)
+	id = string(res)
+	assert.NoError(t, err)
+	policies := &[]*gov.DisplayData{}
+	res, err = svc.Display(Project, MockApp, MockEnv)
+	assert.NoError(t, err)
+	err = json.Unmarshal(res, policies)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, policies)
+}
+
+func TestList(t *testing.T) {
+	policies := &[]*gov.Policy{}
+	res, err := svc.List(MockKind, Project, MockApp, MockEnv)
+	assert.NoError(t, err)
+	err = json.Unmarshal(res, policies)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, policies)
+}
+
+func TestGet(t *testing.T) {
+	policy := &gov.Policy{}
+	res, err := svc.Get(MockKind, id, Project)
+	assert.NoError(t, err)
+	err = json.Unmarshal(res, policy)
+	assert.NoError(t, err)
+	assert.NotNil(t, policy)
+}
+
+func TestDelete(t *testing.T) {
+	err := svc.Delete(id, Project)
+	assert.NoError(t, err)
+	res, _ := svc.Get(MockKind, id, Project)
+	assert.Nil(t, res)
 }
