@@ -60,6 +60,8 @@ type Resource struct {
 	// DocumentID is only for mongo
 	DocumentID string
 
+	// Index is the index of the resource
+	Index string
 	// this is only for etcd
 	CreateRevision int64
 	ModRevision    int64
