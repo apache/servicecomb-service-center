@@ -18,21 +18,25 @@
 package sd
 
 import (
-	"sync"
-
-	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/patrickmn/go-cache"
 )
 
 // MongoCache implements Cache.
 // MongoCache is dedicated to stores service discovery data,
 // e.g. service, instance, lease.
+// the docStore consists of two parts.
+// 1. documentID --> bussinessID
+// 2. bussinessID --> documentID
+// the store consists of two parts.
+// 1. index --> bussinessID list
+// 2. bussinessID --> index
 type MongoCache struct {
-	Options       *Options
-	name          string
-	store         map[string]interface{}
-	documentStore map[string]string
-	rwMux         sync.RWMutex
-	dirty         bool
+	Options    *Options
+	name       string
+	store      *cache.Cache
+	docStore   *cache.Cache
+	indexStore *cache.Cache
+	dirty      bool
 }
 
 func (c *MongoCache) Name() string {
@@ -40,64 +44,110 @@ func (c *MongoCache) Name() string {
 }
 
 func (c *MongoCache) Size() (l int) {
-	c.rwMux.RLock()
-	l = int(util.Sizeof(c.store))
-	c.rwMux.RUnlock()
-	return
+	return c.store.ItemCount()
 }
 
 func (c *MongoCache) Get(id string) (v interface{}) {
-	c.rwMux.RLock()
-	if p, ok := c.store[id]; ok {
-		v = p
-	}
-	c.rwMux.RUnlock()
+	v, _ = c.store.Get(id)
 	return
 }
 
 func (c *MongoCache) GetKeyByDocumentID(documentKey string) (id string) {
-	c.rwMux.RLock()
-	id = c.documentStore[documentKey]
-	c.rwMux.RUnlock()
+	if v, f := c.docStore.Get(documentKey); f {
+		t, ok := v.(string)
+		if ok {
+			id = t
+		}
+	}
 	return
 }
 
-func (c *MongoCache) GetDocumentIDByID(id string) (documentID string) {
-	c.rwMux.RLock()
-	for k, v := range c.documentStore {
-		if v == id {
-			documentID = k
-			break
+func (c *MongoCache) GetDocumentIDByBussinessID(id string) (documentID string) {
+	v, f := c.docStore.Get(id)
+	if f {
+		if id, ok := v.(string); ok {
+			documentID = id
 		}
 	}
-	c.rwMux.RUnlock()
 	return
 }
 
 func (c *MongoCache) Put(id string, v interface{}) {
-	c.rwMux.Lock()
-	c.store[id] = v
-	c.rwMux.Unlock()
+	c.store.Set(id, v, cache.NoExpiration)
 }
 
 func (c *MongoCache) PutDocumentID(id string, documentID string) {
-	c.rwMux.Lock()
-	c.documentStore[documentID] = id
-	c.rwMux.Unlock()
+	//store docID-->ID&ID-->docID
+	c.docStore.Set(documentID, id, cache.NoExpiration)
+	c.docStore.Set(id, documentID, cache.NoExpiration)
 }
 
 func (c *MongoCache) Remove(id string) {
-	c.rwMux.Lock()
-	delete(c.store, id)
-	c.rwMux.Unlock()
+	c.store.Delete(id)
+	c.docStore.Delete(id)
+	c.indexStore.Delete(id)
 }
 
 func (c *MongoCache) RemoveDocumentID(documentID string) {
-	c.rwMux.Lock()
+	c.docStore.Delete(documentID)
+}
 
-	delete(c.documentStore, documentID)
+func (c *MongoCache) GetIndexData(index string) (res []string) {
+	if p, found := c.indexStore.Get(index); found {
+		res, ok := p.([]string)
+		if ok {
+			return res
+		}
+	}
+	return
+}
 
-	c.rwMux.Unlock()
+func (c *MongoCache) GetIndexByBussinessID(id string) (index string) {
+	if v, found := c.indexStore.Get(id); found {
+		if t, ok := v.(string); ok {
+			index = t
+		}
+	}
+	return
+}
+
+func (c *MongoCache) PutIndex(index string, newID string) {
+	v, found := c.indexStore.Get(index)
+	if !found {
+		c.indexStore.Set(index, []string{newID}, cache.NoExpiration)
+	} else {
+		if ids, ok := v.([]string); ok {
+			for _, id := range ids {
+				if id == newID {
+					return
+				}
+			}
+			ids = append(ids, newID)
+			c.indexStore.Set(index, ids, cache.NoExpiration)
+		}
+	}
+	//set id-->index for filterdelete
+	c.indexStore.Set(newID, index, cache.NoExpiration)
+}
+
+func (c *MongoCache) RemoveIndex(index string, oldID string) {
+	if v, found := c.indexStore.Get(index); found {
+		ids, ok := v.([]string)
+		if ok {
+			var newIDs []string
+			for _, id := range ids {
+				if id == oldID {
+					continue
+				}
+				newIDs = append(newIDs, id)
+			}
+			if len(newIDs) == 0 {
+				c.indexStore.Delete(index)
+			} else {
+				c.indexStore.Set(index, newIDs, cache.NoExpiration)
+			}
+		}
+	}
 }
 
 func (c *MongoCache) MarkDirty() {
@@ -107,31 +157,30 @@ func (c *MongoCache) MarkDirty() {
 func (c *MongoCache) Dirty() bool { return c.dirty }
 
 func (c *MongoCache) Clear() {
-	c.rwMux.Lock()
 	c.dirty = false
-	c.store = make(map[string]interface{})
-	c.rwMux.Unlock()
+	c.store.Flush()
+	c.docStore.Flush()
+	c.indexStore.Flush()
 }
 
 func (c *MongoCache) ForEach(iter func(k string, v interface{}) (next bool)) {
-	c.rwMux.RLock()
-loopParent:
-	for k, v := range c.store {
-		if v == nil {
-			continue loopParent
+	items := c.store.Items()
+	for k, v := range items {
+		if v.Object == nil {
+			continue
 		}
 		if !iter(k, v) {
-			break loopParent
+			break
 		}
 	}
-	c.rwMux.RUnlock()
 }
 
 func NewMongoCache(name string, options *Options) *MongoCache {
 	return &MongoCache{
-		Options:       options,
-		name:          name,
-		store:         make(map[string]interface{}),
-		documentStore: make(map[string]string),
+		Options:    options,
+		name:       name,
+		store:      cache.New(cache.NoExpiration, 0),
+		docStore:   cache.New(cache.NoExpiration, 0),
+		indexStore: cache.New(cache.NoExpiration, 0),
 	}
 }

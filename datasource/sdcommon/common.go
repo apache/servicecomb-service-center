@@ -23,6 +23,6 @@ const (
 	DefaultMetricsInterval   = 30 * time.Second
 
 	MinWaitInterval = 1 * time.Second
-	EventBlockSize  = 1000
+	EventBlockSize  = 800
 	EventBusSize    = 1000
 )

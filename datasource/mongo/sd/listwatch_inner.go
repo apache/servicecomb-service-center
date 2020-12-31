@@ -24,6 +24,7 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
 	"github.com/apache/servicecomb-service-center/datasource/sdcommon"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	"go.mongodb.org/mongo-driver/bson"
 	md "go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -131,6 +132,7 @@ func (lw *mongoListWatch) doParseDocumentToResource(fullDocument bson.Raw) (reso
 		}
 		resource.Key = instance.InstanceInfo.InstanceId
 		resource.Value = instance
+		resource.Index = instance.InstanceInfo.ServiceId
 	case service:
 		service := Service{}
 		err := bson.Unmarshal(fullDocument, &service)
@@ -140,6 +142,7 @@ func (lw *mongoListWatch) doParseDocumentToResource(fullDocument bson.Raw) (reso
 		}
 		resource.Key = service.ServiceInfo.ServiceId
 		resource.Value = service
+		resource.Index = util.StringJoin([]string{service.Domain, service.Project, service.ServiceInfo.ServiceName, service.ServiceInfo.Version, service.ServiceInfo.AppId, service.ServiceInfo.Environment}, "/")
 	default:
 		return
 	}
