@@ -5,7 +5,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"strings"
+	"time"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 
@@ -30,6 +32,7 @@ const (
 	AppKey         = "app"
 	EnvironmentKey = "environment"
 	EnvAll         = "all"
+	BusinessPrefix = "scene-"
 )
 
 var PolicyNames = []string{"retry", "rateLimiting", "circuitBreaker", "bulkhead"}
@@ -42,8 +45,13 @@ func (d *Distributor) Create(kind, project string, spec []byte) ([]byte, error) 
 	if err != nil {
 		return nil, err
 	}
+	if kind == MatchGroup {
+		err = d.generateID(project, p)
+	}
+	if err != nil {
+		return nil, err
+	}
 	log.Info(fmt.Sprintf("create %v", &p))
-	key := toSnake(kind) + "." + p.Name
 	err = rule.Validate(kind, p.Spec)
 	if err != nil {
 		return nil, err
@@ -53,7 +61,7 @@ func (d *Distributor) Create(kind, project string, spec []byte) ([]byte, error) 
 		return nil, err
 	}
 	kv := kie.KVRequest{
-		Key:       PREFIX + key,
+		Key:       PREFIX + toSnake(kind) + "." + p.Name,
 		Value:     string(yamlByte),
 		Status:    EnableStatus,
 		ValueType: ValueType,
@@ -239,6 +247,70 @@ func (d *Distributor) listDataByKind(kind, project, app, env string) (*kie.KVRes
 		ops = append(ops, kie.WithLabels(labels))
 	}
 	return d.client.List(context.TODO(), ops...)
+}
+
+func (d *Distributor) generateID(project string, p *gov.Policy) error {
+	if p.Name != "" {
+		return nil
+	}
+	list, _, err := d.listDataByKind(MatchGroup, project, p.Selector.App, p.Selector.Environment)
+	if err != nil {
+		return err
+	}
+	alias, err := getAlias(p)
+	if err != nil {
+		return err
+	}
+	var id string
+	for {
+		var repeat bool
+		id = getID()
+		for _, datum := range list.Data {
+			itemP, err := d.transform(datum, MatchGroup)
+			if err != nil {
+				return err
+			}
+			temp, err := getAlias(itemP)
+			if err != nil {
+				return err
+			}
+			if alias == temp {
+				return &ErrIllegalItem{"alias can not repeat", alias}
+			}
+			if id == MatchGroup+datum.Key {
+				repeat = true
+				break
+			}
+		}
+		if !repeat {
+			break
+		}
+	}
+	p.Name = id
+	return nil
+}
+
+func getAlias(p *gov.Policy) (string, error) {
+	spec, ok := p.Spec.(map[string]interface{})
+	if !ok {
+		return "", &ErrIllegalItem{"can not cast to map", spec}
+	}
+	alias, ok := spec["alias"].(string)
+	if !ok {
+		return "", nil
+	}
+	return alias, nil
+}
+
+func getID() string {
+	str := "0123456789abcdefghijklmnopqrstuvwxyz"
+	b := []byte(str)
+	var result []byte
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	for i := 0; i < 4; i++ {
+		result = append(result, b[r.Intn(len(b))])
+	}
+	return BusinessPrefix + string(result)
 }
 
 func (d *Distributor) transform(kv *kie.KVDoc, kind string) (*gov.Policy, error) {
