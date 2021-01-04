@@ -35,3 +35,6 @@ docs/_static
 docs/_templates
 
 .DS_Store
+
+# go mod
+go.sum
