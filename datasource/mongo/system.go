@@ -25,6 +25,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/patrickmn/go-cache"
 )
 
 func (ds *DataSource) DumpCache(ctx context.Context) *dump.Cache {
@@ -46,10 +47,11 @@ func (ds *DataSource) DUnlock(ctx context.Context, request *datasource.DUnlockRe
 
 func setServiceValue(e *sd.MongoCacher, setter dump.Setter) {
 	e.Cache().ForEach(func(k string, kv interface{}) (next bool) {
+		service := kv.(cache.Item).Object.(sd.Service)
 		setter.SetValue(&dump.KV{
-			Key: util.StringJoin([]string{datasource.ServiceKeyPrefix, kv.(sd.Service).Domain,
-				kv.(sd.Service).Project, k}, datasource.SPLIT),
-			Value: kv.(sd.Service).ServiceInfo,
+			Key: util.StringJoin([]string{datasource.ServiceKeyPrefix, service.Domain, service.Project, k},
+				datasource.SPLIT),
+			Value: service.ServiceInfo,
 		})
 		return true
 	})
@@ -57,10 +59,11 @@ func setServiceValue(e *sd.MongoCacher, setter dump.Setter) {
 
 func setInstanceValue(e *sd.MongoCacher, setter dump.Setter) {
 	e.Cache().ForEach(func(k string, kv interface{}) (next bool) {
+		instance := kv.(cache.Item).Object.(sd.Instance)
 		setter.SetValue(&dump.KV{
-			Key: util.StringJoin([]string{datasource.InstanceKeyPrefix, kv.(sd.Instance).Domain,
-				kv.(sd.Instance).Project, kv.(sd.Instance).InstanceInfo.ServiceId, k}, datasource.SPLIT),
-			Value: kv.(sd.Instance).InstanceInfo,
+			Key: util.StringJoin([]string{datasource.InstanceKeyPrefix, instance.Domain, instance.Project,
+				instance.InstanceInfo.ServiceId, k}, datasource.SPLIT),
+			Value: instance.InstanceInfo,
 		})
 		return true
 	})
