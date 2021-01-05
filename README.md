@@ -107,6 +107,10 @@ you can download dependencies directly using command `go mod`. Please follow bel
 download all the dependency.
 
 ```sh
+# skip the checksum verifying if you use the private proxy
+export GOSUMDB=off
+
+# Download the modules
 GO111MODULE=on go mod download
 GO111MODULE=on go mod vendor
 ```
