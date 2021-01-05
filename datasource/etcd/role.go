@@ -39,13 +39,13 @@ func (ds *DataSource) CreateRole(ctx context.Context, r *rbacframe.Role) error {
 	defer func() {
 		err := lock.Unlock()
 		if err != nil {
-			log.Errorf(err, "can not release role lock")
+			log.Error("can not release role lock", err)
 		}
 	}()
 	key := path.GenerateRBACRoleKey(r.Name)
 	exist, err := datasource.Instance().RoleExist(ctx, r.Name)
 	if err != nil {
-		log.Errorf(err, "can not save role info")
+		log.Error("can not save role info", err)
 		return err
 	}
 	if exist {
@@ -54,12 +54,12 @@ func (ds *DataSource) CreateRole(ctx context.Context, r *rbacframe.Role) error {
 	r.ID = util.GenerateUUID()
 	value, err := json.Marshal(r)
 	if err != nil {
-		log.Errorf(err, "role info is invalid")
+		log.Error("role info is invalid", err)
 		return err
 	}
 	err = client.PutBytes(ctx, key, value)
 	if err != nil {
-		log.Errorf(err, "can not save account info")
+		log.Error("can not save account info", err)
 		return err
 	}
 	log.Info("create new role: " + r.ID)
@@ -119,7 +119,7 @@ func (ds *DataSource) DeleteRole(ctx context.Context, name string) (bool, error)
 	if err != nil {
 		return false, err
 	}
-	return resp.Count != 0, nil
+	return resp.Succeeded, nil
 }
 func (ds *DataSource) UpdateRole(ctx context.Context, name string, role *rbacframe.Role) error {
 	value, err := json.Marshal(role)

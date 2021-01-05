@@ -154,7 +154,7 @@ func TestService_Register(t *testing.T) {
 		})
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ErrServiceAlreadyExists, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
 		// serviceName: some-relay-ms-service-name
 		// alias: sr1-ms-service-name
@@ -175,7 +175,7 @@ func TestService_Register(t *testing.T) {
 		})
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ErrServiceAlreadyExists, resp.Response.GetCode())
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
 		// serviceName: some-relay-ms-service-name
 		// alias: sr1-ms-service-name
@@ -2364,6 +2364,14 @@ func TestInstance_HeartBeat(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
+		log.Info("serviceId does not exist")
+		resp, err = datasource.Instance().Heartbeat(getContext(), &pb.HeartbeatRequest{
+			ServiceId:  "100000000000",
+			InstanceId: instanceID1,
+		})
+		assert.NoError(t, err)
+		assert.NotEqual(t, pb.ResponseSuccess, resp.Response.GetCode())
+
 		log.Info("instance does not exist")
 		resp, err = datasource.Instance().Heartbeat(getContext(), &pb.HeartbeatRequest{
 			ServiceId:  serviceID,
@@ -2839,8 +2847,8 @@ func TestInstance_Query(t *testing.T) {
 
 		respFind, err = datasource.Instance().FindInstances(getContext(), &pb.FindInstancesRequest{
 			ConsumerServiceId: serviceID1,
-			AppId:             "query_instance_ms",
-			ServiceName:       "query_instance_service_ms",
+			AppId:             "query_instance",
+			ServiceName:       "query_instance_service",
 			VersionRule:       "0.0.0",
 		})
 		assert.NoError(t, err)

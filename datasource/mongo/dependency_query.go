@@ -269,7 +269,7 @@ func (dr *DependencyRelation) GetDependencyConsumerIds() ([]string, error) {
 	consumerIDs := make([]string, 0, len(consumerDependAllList))
 	for _, consumer := range consumerDependAllList {
 		consumerID, err := GetServiceID(dr.ctx, consumer)
-		if err != nil {
+		if err != nil && !errors.Is(err, datasource.ErrNoData) {
 			log.Error(fmt.Sprintf("get consumer[%s/%s/%s/%s] failed",
 				consumer.Environment, consumer.AppId, consumer.ServiceName, consumer.Version), err)
 			return nil, err

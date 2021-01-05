@@ -883,7 +883,7 @@ func (ds *DataSource) FindInstances(ctx context.Context, request *pb.FindInstanc
 		Environment: request.Environment,
 		AppId:       request.AppId,
 		ServiceName: request.ServiceName,
-		Alias:       request.ServiceName,
+		Alias:       request.Alias,
 		Version:     request.VersionRule,
 	}
 

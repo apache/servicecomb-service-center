@@ -28,6 +28,20 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
+type InstanceSlice []*pb.MicroServiceInstance
+
+func (s InstanceSlice) Len() int {
+	return len(s)
+}
+
+func (s InstanceSlice) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+
+func (s InstanceSlice) Less(i, j int) bool {
+	return s[i].InstanceId < s[j].InstanceId
+}
+
 func StringBuilder(data []string) string {
 	var str strings.Builder
 	for index, value := range data {
