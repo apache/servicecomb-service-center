@@ -48,35 +48,4 @@ angular.module('serviceCenter')
                 method: 'DELETE'
             }
         }
-//       v3 api's
-//		api : {
-//			microservice: {
-//				url: 'registry/v3/microservices',
-//				method: 'GET'
-//			},
-//			instances: {
-//				url: 'registry/v3/microservices/{{serviceId}}/instances?tags=',
-//				method: 'GET'
-//			},
-//			consumer: {
-//				url: 'registry/v3/microservices/{{consumerId}}/providers',
-//				method: 'GET'
-//			},
-//			provider: {
-//				url: 'registry/v3/microservices/{{providerId}}/consumers',
-//				method: 'GET'
-//			},
-//			schema: {
-//				url: 'registry/v3/microservices/{{serviceId}}/schemas/{{schemaId}}',
-//				method: 'GET'
-//			},
-//			allServices: {
-//				url: 'registry/v3/govern/services?options=all',
-//				method: 'GET'
-//			},
-//          deleteService: {
-//              url: 'registry/v3/microservices/{{serviceId}}',
-//              method: 'DELETE'
-//          }
-//		}
 	});
