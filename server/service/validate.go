@@ -30,6 +30,7 @@ import (
 var createAccountValidator = &validate.Validator{}
 var changePWDValidator = &validate.Validator{}
 var accountLoginValidator = &validate.Validator{}
+var pwdValidator = &validate.Rule{Regexp: &validate.PasswordChecker{}, Hide: true}
 
 func init() {
 	var roleRegex, _ = regexp.Compile(`^$|^(admin|developer)$`)
@@ -37,9 +38,9 @@ func init() {
 	var expirationRegex, _ = regexp.Compile(`^$|^(\d{1,2}d|\d{1,2}h|\d{1,3}m|\d{2,3}s)$`)
 	createAccountValidator.AddRule("Name", &validate.Rule{Regexp: accountRegex})
 	createAccountValidator.AddRule("Role", &validate.Rule{Regexp: roleRegex})
-	createAccountValidator.AddRule("Password", &validate.Rule{Regexp: &validate.PasswordChecker{}})
+	createAccountValidator.AddRule("Password", pwdValidator)
 
-	changePWDValidator.AddRule("Password", &validate.Rule{Regexp: &validate.PasswordChecker{}})
+	changePWDValidator.AddRule("Password", pwdValidator)
 	changePWDValidator.AddRule("Name", &validate.Rule{Regexp: accountRegex})
 
 	accountLoginValidator.AddRule("TokenExpirationTime", &validate.Rule{Regexp: expirationRegex})
