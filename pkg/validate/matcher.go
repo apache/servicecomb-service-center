@@ -48,5 +48,5 @@ func (p *PasswordChecker) MatchString(s string) bool {
 	return hasMinLen && hasUpper && hasLower && hasNumber && hasSpecial
 }
 func (p *PasswordChecker) String() string {
-	return "password"
+	return "should len >= 8, contain upper && lower && number && special chars"
 }
