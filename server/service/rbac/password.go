@@ -19,8 +19,9 @@ package rbac
 
 import (
 	"context"
-
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
+	rbacmodel "github.com/go-chassis/cari/rbac"
+
 	"github.com/go-chassis/foundation/stringutil"
 	"golang.org/x/crypto/bcrypt"
 
@@ -28,7 +29,7 @@ import (
 	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
 )
 
-func ChangePassword(ctx context.Context, changerRole []string, changerName string, a *rbacframe.Account) error {
+func ChangePassword(ctx context.Context, changerRole []string, changerName string, a *rbacmodel.Account) error {
 	if changerName == a.Name {
 		if a.CurrentPassword == "" {
 			log.Error("current pwd is empty", nil)
@@ -79,7 +80,7 @@ func changePassword(ctx context.Context, name, currentPassword, pwd string) erro
 	return nil
 }
 
-func doChangePassword(ctx context.Context, old *rbacframe.Account, pwd string) error {
+func doChangePassword(ctx context.Context, old *rbacmodel.Account, pwd string) error {
 	hash, err := bcrypt.GenerateFromPassword([]byte(pwd), 14)
 	if err != nil {
 		log.Error("pwd hash failed", err)

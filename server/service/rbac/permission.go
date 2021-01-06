@@ -17,7 +17,10 @@
 
 package rbac
 
-import "github.com/apache/servicecomb-service-center/pkg/rbacframe"
+import (
+	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
+	"github.com/go-chassis/cari/rbac"
+)
 
 // method to verbs
 var (
@@ -30,10 +33,10 @@ var (
 )
 
 // AdminPerms allocate all resource permissions
-func AdminPerms() []*rbacframe.Permission {
+func AdminPerms() []*rbac.Permission {
 	resources := rbacframe.BuildResourceList(ResourceAccount, ResourceRole, ResourceService, ResourceInstance,
 		ResourceDep, ResourceTag, ResourceRule, ResourceGovern, ResourceAdminister, ResourceSchema)
-	perm := []*rbacframe.Permission{
+	perm := []*rbac.Permission{
 		{
 			Resources: resources,
 			Verbs:     []string{"*"},
@@ -43,10 +46,10 @@ func AdminPerms() []*rbacframe.Permission {
 }
 
 // DevPerms allocate all resource permissions except account and role resources
-func DevPerms() []*rbacframe.Permission {
+func DevPerms() []*rbac.Permission {
 	resources := rbacframe.BuildResourceList(ResourceService, ResourceInstance,
 		ResourceDep, ResourceTag, ResourceRule, ResourceGovern, ResourceAdminister, ResourceSchema)
-	perm := []*rbacframe.Permission{
+	perm := []*rbac.Permission{
 		{
 			Resources: resources,
 			Verbs:     []string{"*"},

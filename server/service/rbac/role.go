@@ -19,17 +19,17 @@ package rbac
 
 import (
 	"context"
+	"github.com/go-chassis/cari/rbac"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
 )
 
-var roleMap = map[string]*rbacframe.Role{}
+var roleMap = map[string]*rbac.Role{}
 
 // Assign resources to admin role, admin role own all permissions
 func initAdminRole() {
-	roleMap["admin"] = &rbacframe.Role{
+	roleMap["admin"] = &rbac.Role{
 		Name:  "admin",
 		Perms: AdminPerms(),
 	}
@@ -41,7 +41,7 @@ func initAdminRole() {
 
 // Assign resources to developer role
 func initDevRole() {
-	roleMap["developer"] = &rbacframe.Role{
+	roleMap["developer"] = &rbac.Role{
 		Name:  "developer",
 		Perms: DevPerms(),
 	}

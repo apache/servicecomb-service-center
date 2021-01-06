@@ -23,9 +23,9 @@ import (
 	"regexp"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	"github.com/apache/servicecomb-service-center/pkg/validate"
 	pb "github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/cari/rbac"
 )
 
 var createAccountValidator = &validate.Validator{}
@@ -121,21 +121,21 @@ func baseCheck(v interface{}) error {
 	}
 	return nil
 }
-func ValidateCreateAccount(a *rbacframe.Account) error {
+func ValidateCreateAccount(a *rbac.Account) error {
 	err := baseCheck(a)
 	if err != nil {
 		return err
 	}
 	return createAccountValidator.Validate(a)
 }
-func ValidateAccountLogin(a *rbacframe.Account) error {
+func ValidateAccountLogin(a *rbac.Account) error {
 	err := baseCheck(a)
 	if err != nil {
 		return err
 	}
 	return accountLoginValidator.Validate(a)
 }
-func ValidateChangePWD(a *rbacframe.Account) error {
+func ValidateChangePWD(a *rbac.Account) error {
 	err := baseCheck(a)
 	if err != nil {
 		return err

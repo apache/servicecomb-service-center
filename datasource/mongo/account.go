@@ -20,17 +20,17 @@ package mongo
 import (
 	"context"
 	"errors"
-	"github.com/apache/servicecomb-service-center/pkg/pravicy"
+	"github.com/apache/servicecomb-service-center/pkg/privacy"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/go-chassis/cari/rbac"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func (ds *DataSource) CreateAccount(ctx context.Context, a *rbacframe.Account) error {
+func (ds *DataSource) CreateAccount(ctx context.Context, a *rbac.Account) error {
 	exist, err := ds.AccountExist(ctx, a.Name)
 	if err != nil {
 		log.Error("can not save account info", err)
@@ -39,7 +39,7 @@ func (ds *DataSource) CreateAccount(ctx context.Context, a *rbacframe.Account) e
 	if exist {
 		return datasource.ErrAccountDuplicated
 	}
-	a.Password, err = pravicy.HashPassword(a.Password)
+	a.Password, err = privacy.HashPassword(a.Password)
 	if err != nil {
 		log.Error("pwd hash failed", err)
 		return err
@@ -70,7 +70,7 @@ func (ds *DataSource) AccountExist(ctx context.Context, key string) (bool, error
 	return true, nil
 }
 
-func (ds *DataSource) GetAccount(ctx context.Context, key string) (*rbacframe.Account, error) {
+func (ds *DataSource) GetAccount(ctx context.Context, key string) (*rbac.Account, error) {
 	filter := bson.M{
 		ColumnAccountName: key,
 	}
@@ -82,7 +82,7 @@ func (ds *DataSource) GetAccount(ctx context.Context, key string) (*rbacframe.Ac
 		log.Error("failed to get account: ", result.Err())
 		return nil, errors.New("failed to get account")
 	}
-	var account rbacframe.Account
+	var account rbac.Account
 	err = result.Decode(&account)
 	if err != nil {
 		log.Error("decode account failed: ", err)
@@ -91,7 +91,7 @@ func (ds *DataSource) GetAccount(ctx context.Context, key string) (*rbacframe.Ac
 	return &account, nil
 }
 
-func (ds *DataSource) ListAccount(ctx context.Context, key string) ([]*rbacframe.Account, int64, error) {
+func (ds *DataSource) ListAccount(ctx context.Context, key string) ([]*rbac.Account, int64, error) {
 	filter := bson.M{
 		ColumnAccountName: bson.M{"$regex": key},
 	}
@@ -102,10 +102,10 @@ func (ds *DataSource) ListAccount(ctx context.Context, key string) ([]*rbacframe
 	if err != nil {
 		return nil, 0, err
 	}
-	var accounts []*rbacframe.Account
+	var accounts []*rbac.Account
 	defer cursor.Close(ctx)
 	for cursor.Next(ctx) {
-		var account rbacframe.Account
+		var account rbac.Account
 		err = cursor.Decode(&account)
 		if err != nil {
 			log.Error("decode account failed: ", err)
@@ -131,7 +131,7 @@ func (ds *DataSource) DeleteAccount(ctx context.Context, key string) (bool, erro
 	return true, nil
 }
 
-func (ds *DataSource) UpdateAccount(ctx context.Context, key string, account *rbacframe.Account) error {
+func (ds *DataSource) UpdateAccount(ctx context.Context, key string, account *rbac.Account) error {
 	filter := bson.M{
 		ColumnAccountName: key,
 	}

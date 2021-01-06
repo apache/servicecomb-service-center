@@ -19,18 +19,18 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/apache/servicecomb-service-center/pkg/pravicy"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/pkg/etcdsync"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
+	"github.com/apache/servicecomb-service-center/pkg/privacy"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/go-chassis/cari/rbac"
 )
 
-func (ds *DataSource) CreateAccount(ctx context.Context, a *rbacframe.Account) error {
+func (ds *DataSource) CreateAccount(ctx context.Context, a *rbac.Account) error {
 	lock, err := etcdsync.Lock("/account-creating/"+a.Name, -1, false)
 	if err != nil {
 		return fmt.Errorf("account %s is creating", a.Name)
@@ -50,7 +50,7 @@ func (ds *DataSource) CreateAccount(ctx context.Context, a *rbacframe.Account) e
 	if exist {
 		return datasource.ErrAccountDuplicated
 	}
-	a.Password, err = pravicy.HashPassword(a.Password)
+	a.Password, err = privacy.HashPassword(a.Password)
 	if err != nil {
 		log.Error("pwd hash failed", err)
 		return err
@@ -81,7 +81,7 @@ func (ds *DataSource) AccountExist(ctx context.Context, key string) (bool, error
 	}
 	return true, nil
 }
-func (ds *DataSource) GetAccount(ctx context.Context, key string) (*rbacframe.Account, error) {
+func (ds *DataSource) GetAccount(ctx context.Context, key string) (*rbac.Account, error) {
 	resp, err := client.Instance().Do(ctx, client.GET,
 		client.WithStrKey(path.GenerateRBACAccountKey(key)))
 	if err != nil {
@@ -90,7 +90,7 @@ func (ds *DataSource) GetAccount(ctx context.Context, key string) (*rbacframe.Ac
 	if resp.Count != 1 {
 		return nil, client.ErrNotUnique
 	}
-	account := &rbacframe.Account{}
+	account := &rbac.Account{}
 	err = json.Unmarshal(resp.Kvs[0].Value, account)
 	if err != nil {
 		log.Errorf(err, "account info format invalid")
@@ -98,15 +98,15 @@ func (ds *DataSource) GetAccount(ctx context.Context, key string) (*rbacframe.Ac
 	}
 	return account, nil
 }
-func (ds *DataSource) ListAccount(ctx context.Context, key string) ([]*rbacframe.Account, int64, error) {
+func (ds *DataSource) ListAccount(ctx context.Context, key string) ([]*rbac.Account, int64, error) {
 	resp, err := client.Instance().Do(ctx, client.GET,
 		client.WithStrKey(path.GenerateRBACAccountKey(key)), client.WithPrefix())
 	if err != nil {
 		return nil, 0, err
 	}
-	accounts := make([]*rbacframe.Account, 0, resp.Count)
+	accounts := make([]*rbac.Account, 0, resp.Count)
 	for _, v := range resp.Kvs {
-		a := &rbacframe.Account{}
+		a := &rbac.Account{}
 		err = json.Unmarshal(v.Value, a)
 		if err != nil {
 			log.Error("account info format invalid:", err)
@@ -125,7 +125,7 @@ func (ds *DataSource) DeleteAccount(ctx context.Context, key string) (bool, erro
 	}
 	return resp.Succeeded, nil
 }
-func (ds *DataSource) UpdateAccount(ctx context.Context, key string, account *rbacframe.Account) error {
+func (ds *DataSource) UpdateAccount(ctx context.Context, key string, account *rbac.Account) error {
 	value, err := json.Marshal(account)
 	if err != nil {
 		log.Errorf(err, "account info is invalid")

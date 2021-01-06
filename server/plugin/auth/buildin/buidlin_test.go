@@ -20,6 +20,7 @@ package buildin_test
 // initialize
 import (
 	"context"
+	rbacmodel "github.com/go-chassis/cari/rbac"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -102,7 +103,7 @@ func TestTokenAuthenticator_Identify(t *testing.T) {
 		assert.NoError(t, err)
 	})
 	t.Run("valid normal token, should no be able to get account", func(t *testing.T) {
-		err := dao.CreateAccount(context.TODO(), &rbacframe.Account{Name: "non-admin", Password: "Complicated_password1"})
+		err := dao.CreateAccount(context.TODO(), &rbacmodel.Account{Name: "non-admin", Password: "Complicated_password1"})
 		assert.NoError(t, err)
 		r := httptest.NewRequest(http.MethodGet, "/v4/account", nil)
 		to, err := authr.Login(context.TODO(), "non-admin", "Complicated_password1")

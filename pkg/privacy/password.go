@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package pravicy
+package privacy
 
 import (
 	"github.com/go-chassis/foundation/stringutil"

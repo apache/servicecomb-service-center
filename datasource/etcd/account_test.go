@@ -2,15 +2,15 @@ package etcd_test
 
 import (
 	"context"
+	"github.com/go-chassis/cari/rbac"
 	"testing"
 
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	"github.com/stretchr/testify/assert"
 )
 
 var (
-	a1 = rbacframe.Account{
+	a1 = rbac.Account{
 		ID:                  "11111-22222-33333",
 		Name:                "test-account1",
 		Password:            "tnuocca-tset",
@@ -18,7 +18,7 @@ var (
 		TokenExpirationTime: "2020-12-30",
 		CurrentPassword:     "tnuocca-tset1",
 	}
-	a2 = rbacframe.Account{
+	a2 = rbac.Account{
 		ID:                  "11111-22222-33333-44444",
 		Name:                "test-account2",
 		Password:            "tnuocca-tset",

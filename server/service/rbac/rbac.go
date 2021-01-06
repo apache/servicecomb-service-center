@@ -21,6 +21,7 @@ import (
 	"context"
 	"crypto/rsa"
 	"errors"
+	"github.com/go-chassis/cari/rbac"
 	"io/ioutil"
 
 	"github.com/apache/servicecomb-service-center/datasource"
@@ -113,7 +114,7 @@ func initFirstTime(admin string) {
 	if pwd == "" {
 		log.Fatal("can not enable rbac, password is empty", nil)
 	}
-	a := &rbacframe.Account{
+	a := &rbac.Account{
 		Name:     admin,
 		Password: pwd,
 		Roles:    []string{rbacframe.RoleAdmin},

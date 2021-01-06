@@ -19,19 +19,19 @@ package rbac_test
 
 import (
 	"context"
-	"io/ioutil"
-	"testing"
-
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
 	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
 	_ "github.com/apache/servicecomb-service-center/test"
 	"github.com/astaxie/beego"
+	rbacmodel "github.com/go-chassis/cari/rbac"
 	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-chassis/v2/security/authr"
 	"github.com/go-chassis/go-chassis/v2/security/secret"
 	"github.com/stretchr/testify/assert"
+	"io/ioutil"
+	"testing"
 )
 
 func init() {
@@ -79,19 +79,19 @@ func TestInitRBAC(t *testing.T) {
 	})
 
 	t.Run("change pwd,admin can change any one password", func(t *testing.T) {
-		persisted := &rbacframe.Account{Name: "a", Password: "Complicated_password1"}
+		persisted := &rbacmodel.Account{Name: "a", Password: "Complicated_password1"}
 		err := dao.CreateAccount(context.Background(), persisted)
 		assert.NoError(t, err)
-		err = rbac.ChangePassword(context.Background(), []string{rbacframe.RoleAdmin}, "admin", &rbacframe.Account{Name: "a", Password: "Complicated_password2"})
+		err = rbac.ChangePassword(context.Background(), []string{rbacframe.RoleAdmin}, "admin", &rbacmodel.Account{Name: "a", Password: "Complicated_password2"})
 		assert.NoError(t, err)
 		a, err := dao.GetAccount(context.Background(), "a")
 		assert.NoError(t, err)
 		assert.True(t, rbac.SamePassword(a.Password, "Complicated_password2"))
 	})
 	t.Run("change self password", func(t *testing.T) {
-		err := dao.CreateAccount(context.Background(), &rbacframe.Account{Name: "b", Password: "Complicated_password1"})
+		err := dao.CreateAccount(context.Background(), &rbacmodel.Account{Name: "b", Password: "Complicated_password1"})
 		assert.NoError(t, err)
-		err = rbac.ChangePassword(context.Background(), nil, "b", &rbacframe.Account{Name: "b", CurrentPassword: "Complicated_password1", Password: "Complicated_password2"})
+		err = rbac.ChangePassword(context.Background(), nil, "b", &rbacmodel.Account{Name: "b", CurrentPassword: "Complicated_password1", Password: "Complicated_password2"})
 		assert.NoError(t, err)
 		a, err := dao.GetAccount(context.Background(), "b")
 		assert.NoError(t, err)
@@ -138,9 +138,9 @@ func TestInitRBAC(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
-	tester := &rbacframe.Role{
+	tester := &rbacmodel.Role{
 		Name: "tester",
-		Perms: []*rbacframe.Permission{
+		Perms: []*rbacmodel.Permission{
 			{
 				Resources: []string{"service", "instance"},
 				Verbs:     []string{"get", "create", "update"},

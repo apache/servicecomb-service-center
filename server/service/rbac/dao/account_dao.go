@@ -20,22 +20,22 @@ package dao
 
 import (
 	"context"
+	rbacmodel "github.com/go-chassis/cari/rbac"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 )
 
 //CreateAccount save 2 kv
 //1. account info
-func CreateAccount(ctx context.Context, a *rbacframe.Account) error {
+func CreateAccount(ctx context.Context, a *rbacmodel.Account) error {
 	return datasource.Instance().CreateAccount(ctx, a)
 }
 
-func GetAccount(ctx context.Context, name string) (*rbacframe.Account, error) {
+func GetAccount(ctx context.Context, name string) (*rbacmodel.Account, error) {
 	return datasource.Instance().GetAccount(ctx, name)
 }
-func ListAccount(ctx context.Context) ([]*rbacframe.Account, int64, error) {
+func ListAccount(ctx context.Context) ([]*rbacmodel.Account, int64, error) {
 	return datasource.Instance().ListAccount(ctx, "")
 }
 func AccountExist(ctx context.Context, name string) (bool, error) {
@@ -47,7 +47,7 @@ func DeleteAccount(ctx context.Context, name string) (bool, error) {
 
 //CreateAccount save 2 kv
 //1. account info
-func EditAccount(ctx context.Context, a *rbacframe.Account) error {
+func EditAccount(ctx context.Context, a *rbacmodel.Account) error {
 	exist, err := datasource.Instance().AccountExist(ctx, a.Name)
 	if err != nil {
 		log.Errorf(err, "can not edit account info")

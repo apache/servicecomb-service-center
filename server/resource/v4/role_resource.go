@@ -20,13 +20,13 @@ package v4
 import (
 	"context"
 	"encoding/json"
+	"github.com/go-chassis/cari/rbac"
 	"io/ioutil"
 	"net/http"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/rest/controller"
 	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
@@ -57,7 +57,7 @@ func (r *RoleResource) GetRolePermission(w http.ResponseWriter, req *http.Reques
 		controller.WriteError(w, discovery.ErrInternal, errorsEx.MsgGetRoleFailed)
 		return
 	}
-	resp := &rbacframe.RoleResponse{
+	resp := &rbac.RoleResponse{
 		Roles: rs,
 	}
 	b, err := json.Marshal(resp)
@@ -70,8 +70,8 @@ func (r *RoleResource) GetRolePermission(w http.ResponseWriter, req *http.Reques
 }
 
 //roleParse parse the role info from the request body
-func (r *RoleResource) roleParse(body []byte) (*rbacframe.Role, error) {
-	role := &rbacframe.Role{}
+func (r *RoleResource) roleParse(body []byte) (*rbac.Role, error) {
+	role := &rbac.Role{}
 	err := json.Unmarshal(body, role)
 	if err != nil {
 		log.Error("json err", err)
