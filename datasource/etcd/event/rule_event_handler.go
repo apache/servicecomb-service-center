@@ -19,8 +19,10 @@ package event
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
@@ -59,13 +61,13 @@ func (apt *RulesChangedTask) publish(ctx context.Context, domainProject, provide
 	ctx = util.WithGlobal(util.WithCacheOnly(ctx))
 
 	provider, err := serviceUtil.GetService(ctx, domainProject, providerID)
-	if err != nil {
-		log.Errorf(err, "get provider[%s] service file failed", providerID)
+	if errors.Is(err, datasource.ErrNoDocuments) {
+		log.Error(fmt.Sprintf("provider[%s] does not exist", providerID), err)
 		return err
 	}
-	if provider == nil {
-		log.Errorf(nil, "provider[%s] does not exist", providerID)
-		return fmt.Errorf("provider %s does not exist", providerID)
+	if err != nil {
+		log.Error(fmt.Sprintf("get provider[%s] service file failed", providerID), err)
+		return err
 	}
 
 	consumerIds, err := serviceUtil.GetConsumerIds(ctx, domainProject, provider)

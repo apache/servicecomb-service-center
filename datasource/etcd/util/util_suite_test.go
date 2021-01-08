@@ -20,8 +20,11 @@ package util_test
 // initialize
 import (
 	"context"
+	"errors"
+	"github.com/stretchr/testify/assert"
 	"testing"
 
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	_ "github.com/apache/servicecomb-service-center/test"
 
@@ -66,10 +69,14 @@ func TestFindServiceIds(t *testing.T) {
 }
 
 func TestGetService(t *testing.T) {
-	_, err := serviceUtil.GetService(context.Background(), "", "")
-	if err != nil {
-		t.Fatalf("TestGetService failed")
-	}
+	var err error
+	t.Run("when there is no such a service in db", func(t *testing.T) {
+		_, err = serviceUtil.GetService(context.Background(), "", "")
+		if err != nil && !errors.Is(err, datasource.ErrNoDocuments) {
+			t.Fatalf("TestGetService failed")
+		}
+		assert.Equal(t, datasource.ErrNoDocuments, err)
+	})
 
 	_, err = serviceUtil.GetServicesByDomainProject(context.Background(), "")
 	if err != nil {
@@ -81,10 +88,13 @@ func TestGetService(t *testing.T) {
 		t.Fatalf("TestGetService failed")
 	}
 
-	_, err = serviceUtil.GetServiceWithRev(context.Background(), "", "", 0)
-	if err != nil {
-		t.Fatalf("TestGetService failed")
-	}
+	t.Run("when there is no such a service in db", func(t *testing.T) {
+		_, err = serviceUtil.GetServiceWithRev(context.Background(), "", "", 0)
+		if err != nil && !errors.Is(err, datasource.ErrNoDocuments) {
+			t.Fatalf("TestGetService failed")
+		}
+		assert.Equal(t, datasource.ErrNoDocuments, err)
+	})
 
 	//_, err = serviceUtil.GetServiceWithRev(context.Background(), "", "", 1)
 	//if err != nil {

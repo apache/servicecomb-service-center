@@ -19,9 +19,11 @@ package mongo
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/go-chassis/cari/discovery"
@@ -85,13 +87,13 @@ func (dr *DependencyRelation) GetDependencyProviders(opts ...DependencyRelationF
 		for _, providerID := range providerIDs {
 			filter := GeneratorServiceFilter(dr.ctx, providerID)
 			provider, err := GetService(dr.ctx, filter)
-			if err != nil {
-				log.Warn(fmt.Sprintf("get provider[%s/%s/%s/%s] failed",
+			if errors.Is(err, datasource.ErrNoDocuments) {
+				log.Warn(fmt.Sprintf("provider[%s/%s/%s/%s] does not exist",
 					key.Environment, key.AppId, key.ServiceName, key.Version))
 				continue
 			}
-			if provider == nil {
-				log.Warn(fmt.Sprintf("provider[%s/%s/%s/%s] does not exist",
+			if err != nil {
+				log.Warn(fmt.Sprintf("get provider[%s/%s/%s/%s] failed",
 					key.Environment, key.AppId, key.ServiceName, key.Version))
 				continue
 			}

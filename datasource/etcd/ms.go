@@ -66,8 +66,8 @@ func (ds *DataSource) RegisterService(ctx context.Context, request *pb.CreateSer
 	reporter := checkQuota(ctx, domainProject)
 	defer reporter.Close(ctx)
 	if reporter != nil && reporter.Err != nil {
-		log.Errorf(reporter.Err, "create micro-service[%s] failed, operator: %s",
-			serviceFlag, remoteIP)
+		log.Error(fmt.Sprintf("create micro-service[%s] failed, operator: %s",
+			serviceFlag, remoteIP), reporter.Err)
 		resp := &pb.CreateServiceResponse{
 			Response: pb.CreateResponseWithSCErr(reporter.Err),
 		}
@@ -90,8 +90,8 @@ func (ds *DataSource) RegisterService(ctx context.Context, request *pb.CreateSer
 
 	data, err := json.Marshal(service)
 	if err != nil {
-		log.Errorf(err, "create micro-service[%s] failed, json marshal service failed, operator: %s",
-			serviceFlag, remoteIP)
+		log.Error(fmt.Sprintf("create micro-service[%s] failed, json marshal service failed, operator: %s",
+			serviceFlag, remoteIP), err)
 		return &pb.CreateServiceResponse{
 			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
@@ -123,8 +123,8 @@ func (ds *DataSource) RegisterService(ctx context.Context, request *pb.CreateSer
 
 	resp, err := client.Instance().TxnWithCmp(ctx, opts, uniqueCmpOpts, failOpts)
 	if err != nil {
-		log.Errorf(err, "create micro-service[%s] failed, operator: %s",
-			serviceFlag, remoteIP)
+		log.Error(fmt.Sprintf("create micro-service[%s] failed, operator: %s",
+			serviceFlag, remoteIP), err)
 		return &pb.CreateServiceResponse{
 			Response: pb.CreateResponse(pb.ErrUnavailableBackend, err.Error()),
 		}, err
@@ -133,8 +133,8 @@ func (ds *DataSource) RegisterService(ctx context.Context, request *pb.CreateSer
 		if len(requestServiceID) != 0 {
 			if len(resp.Kvs) == 0 ||
 				requestServiceID != util.BytesToStringWithNoCopy(resp.Kvs[0].Value) {
-				log.Warnf("create micro-service[%s] failed, service already exists, operator: %s",
-					serviceFlag, remoteIP)
+				log.Warn(fmt.Sprintf("create micro-service[%s] failed, service already exists, operator: %s",
+					serviceFlag, remoteIP))
 				return &pb.CreateServiceResponse{
 					Response: pb.CreateResponse(pb.ErrServiceAlreadyExists,
 						"ServiceID conflict or found the same service with different id."),
@@ -144,16 +144,16 @@ func (ds *DataSource) RegisterService(ctx context.Context, request *pb.CreateSer
 
 		if len(resp.Kvs) == 0 {
 			// internal error?
-			log.Errorf(nil, "create micro-service[%s] failed, unexpected txn response, operator: %s",
-				serviceFlag, remoteIP)
+			log.Error(fmt.Sprintf("create micro-service[%s] failed, unexpected txn response, operator: %s",
+				serviceFlag, remoteIP), nil)
 			return &pb.CreateServiceResponse{
 				Response: pb.CreateResponse(pb.ErrInternal, "Unexpected txn response."),
 			}, nil
 		}
 
 		serviceIDInner := util.BytesToStringWithNoCopy(resp.Kvs[0].Value)
-		log.Warnf("create micro-service[%s][%s] failed, service already exists, operator: %s",
-			serviceIDInner, serviceFlag, remoteIP)
+		log.Warn(fmt.Sprintf("create micro-service[%s][%s] failed, service already exists, operator: %s",
+			serviceIDInner, serviceFlag, remoteIP))
 		return &pb.CreateServiceResponse{
 			Response:  pb.CreateResponse(pb.ResponseSuccess, "register service successfully"),
 			ServiceId: serviceIDInner,
@@ -161,11 +161,11 @@ func (ds *DataSource) RegisterService(ctx context.Context, request *pb.CreateSer
 	}
 
 	if err := reporter.ReportUsedQuota(ctx); err != nil {
-		log.Errorf(err, "report the used quota failed")
+		log.Error("report the used quota failed", err)
 	}
 
-	log.Infof("create micro-service[%s][%s] successfully, operator: %s",
-		service.ServiceId, serviceFlag, remoteIP)
+	log.Info(fmt.Sprintf("create micro-service[%s][%s] successfully, operator: %s",
+		service.ServiceId, serviceFlag, remoteIP))
 	return &pb.CreateServiceResponse{
 		Response:  pb.CreateResponse(pb.ResponseSuccess, "Register service successfully."),
 		ServiceId: service.ServiceId,
@@ -177,7 +177,7 @@ func (ds *DataSource) GetServices(ctx context.Context, request *pb.GetServicesRe
 	*pb.GetServicesResponse, error) {
 	services, err := serviceUtil.GetAllServiceUtil(ctx)
 	if err != nil {
-		log.Errorf(err, "get all services by domain failed")
+		log.Error("get all services by domain failed", err)
 		return &pb.GetServicesResponse{
 			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
@@ -194,17 +194,17 @@ func (ds *DataSource) GetService(ctx context.Context, request *pb.GetServiceRequ
 	domainProject := util.ParseDomainProject(ctx)
 	singleService, err := serviceUtil.GetService(ctx, domainProject, request.ServiceId)
 
-	if err != nil {
-		log.Errorf(err, "get micro-service[%s] failed, get service file failed", request.ServiceId)
-		return &pb.GetServiceResponse{
-			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
-		}, err
-	}
-	if singleService == nil {
-		log.Errorf(nil, "get micro-service[%s] failed, service does not exist", request.ServiceId)
+	if errors.Is(err, datasource.ErrNoDocuments) {
+		log.Error(fmt.Sprintf("get micro-service[%s] failed, service does not exist", request.ServiceId), err)
 		return &pb.GetServiceResponse{
 			Response: pb.CreateResponse(pb.ErrServiceNotExists, "Service does not exist."),
 		}, nil
+	}
+	if err != nil {
+		log.Error(fmt.Sprintf("get micro-service[%s] failed, get service file failed", request.ServiceId), err)
+		return &pb.GetServiceResponse{
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
+		}, err
 	}
 	return &pb.GetServiceResponse{
 		Response: pb.CreateResponse(pb.ResponseSuccess, "Get service successfully."),
@@ -217,7 +217,7 @@ func (ds *DataSource) GetServiceDetail(ctx context.Context, request *pb.GetServi
 	domainProject := util.ParseDomainProject(ctx)
 
 	service, err := serviceUtil.GetService(ctx, domainProject, request.ServiceId)
-	if service == nil {
+	if errors.Is(err, datasource.ErrNoDocuments) {
 		return &pb.GetServiceDetailResponse{
 			Response: pb.CreateResponse(pb.ErrServiceNotExists, "Service does not exist."),
 		}, nil
@@ -237,8 +237,8 @@ func (ds *DataSource) GetServiceDetail(ctx context.Context, request *pb.GetServi
 	}
 	versions, err := getServiceAllVersions(ctx, key)
 	if err != nil {
-		log.Errorf(err, "get service[%s/%s/%s] all versions failed",
-			service.Environment, service.AppId, service.ServiceName)
+		log.Error(fmt.Sprintf("get service[%s/%s/%s] all versions failed",
+			service.Environment, service.AppId, service.ServiceName), err)
 		return &pb.GetServiceDetailResponse{
 			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
@@ -303,7 +303,7 @@ func (ds *DataSource) GetServicesInfo(ctx context.Context, request *pb.GetServic
 	//获取所有服务
 	services, err := serviceUtil.GetAllServiceUtil(ctx)
 	if err != nil {
-		log.Errorf(err, "get all services by domain failed")
+		log.Error("get all services by domain failed", err)
 		return &pb.GetServicesInfoResponse{
 			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
@@ -409,19 +409,19 @@ func (ds *DataSource) ExistService(ctx context.Context, request *pb.GetExistence
 		Tenant:      domainProject,
 	})
 	if err != nil {
-		log.Errorf(err, "micro-service[%s] exist failed, find serviceIDs failed", serviceFlag)
+		log.Error(fmt.Sprintf("micro-service[%s] exist failed, find serviceIDs failed", serviceFlag), err)
 		return &pb.GetExistenceResponse{
 			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
 	}
 	if !exist {
-		log.Infof("micro-service[%s] exist failed, service does not exist", serviceFlag)
+		log.Info(fmt.Sprintf("micro-service[%s] exist failed, service does not exist", serviceFlag))
 		return &pb.GetExistenceResponse{
 			Response: pb.CreateResponse(pb.ErrServiceNotExists, serviceFlag+" does not exist."),
 		}, nil
 	}
 	if len(ids) == 0 {
-		log.Infof("micro-service[%s] exist failed, version mismatch", serviceFlag)
+		log.Info(fmt.Sprintf("micro-service[%s] exist failed, version mismatch", serviceFlag))
 		return &pb.GetExistenceResponse{
 			Response: pb.CreateResponse(pb.ErrServiceVersionNotExists, serviceFlag+" version mismatch."),
 		}, nil
@@ -439,19 +439,19 @@ func (ds *DataSource) UpdateService(ctx context.Context, request *pb.UpdateServi
 
 	key := path.GenerateServiceKey(domainProject, request.ServiceId)
 	microservice, err := serviceUtil.GetService(ctx, domainProject, request.ServiceId)
-	if err != nil {
-		log.Errorf(err, "update service[%s] properties failed, get service file failed, operator: %s",
-			request.ServiceId, remoteIP)
-		return &pb.UpdateServicePropsResponse{
-			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
-		}, err
-	}
-	if microservice == nil {
-		log.Errorf(nil, "update service[%s] properties failed, service does not exist, operator: %s",
-			request.ServiceId, remoteIP)
+	if errors.Is(err, datasource.ErrNoDocuments) {
+		log.Error(fmt.Sprintf("update service[%s] properties failed, service does not exist, operator: %s",
+			request.ServiceId, remoteIP), err)
 		return &pb.UpdateServicePropsResponse{
 			Response: pb.CreateResponse(pb.ErrServiceNotExists, "Service does not exist."),
 		}, nil
+	}
+	if err != nil {
+		log.Error(fmt.Sprintf("update service[%s] properties failed, get service file failed, operator: %s",
+			request.ServiceId, remoteIP), err)
+		return &pb.UpdateServicePropsResponse{
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
+		}, err
 	}
 
 	copyServiceRef := *microservice
@@ -541,8 +541,8 @@ func (ds *DataSource) RegisterInstance(ctx context.Context, request *pb.Register
 		}
 		switch resp.Response.GetCode() {
 		case pb.ResponseSuccess:
-			log.Infof("register instance successful, reuse instance[%s/%s], operator %s",
-				instance.ServiceId, instance.InstanceId, remoteIP)
+			log.Info(fmt.Sprintf("register instance successful, reuse instance[%s/%s], operator %s",
+				instance.ServiceId, instance.InstanceId, remoteIP))
 			return &pb.RegisterInstanceResponse{
 				Response:   resp.Response,
 				InstanceId: instance.InstanceId,
@@ -550,8 +550,8 @@ func (ds *DataSource) RegisterInstance(ctx context.Context, request *pb.Register
 		case pb.ErrInstanceNotExists:
 			// register a new one
 		default:
-			log.Errorf(err, "register instance failed, reuse instance[%s/%s], operator %s",
-				instance.ServiceId, instance.InstanceId, remoteIP)
+			log.Error(fmt.Sprintf("register instance failed, reuse instance[%s/%s], operator %s",
+				instance.ServiceId, instance.InstanceId, remoteIP), err)
 			return &pb.RegisterInstanceResponse{
 				Response: resp.Response,
 			}, err
@@ -559,8 +559,8 @@ func (ds *DataSource) RegisterInstance(ctx context.Context, request *pb.Register
 	}
 
 	if err := preProcessRegisterInstance(ctx, instance); err != nil {
-		log.Errorf(err, "register service[%s]'s instance failed, endpoints %v, host '%s', operator %s",
-			instance.ServiceId, instance.Endpoints, instance.HostName, remoteIP)
+		log.Error(fmt.Sprintf("register service[%s]'s instance failed, endpoints %v, host '%s', operator %s",
+			instance.ServiceId, instance.Endpoints, instance.HostName, remoteIP), err)
 		return &pb.RegisterInstanceResponse{
 			Response: pb.CreateResponseWithSCErr(err),
 		}, nil
@@ -584,8 +584,8 @@ func (ds *DataSource) RegisterInstance(ctx context.Context, request *pb.Register
 		defer reporter.Close(ctx)
 
 		if reporter.Err != nil {
-			log.Errorf(reporter.Err, "register instance failed, %s, operator %s",
-				instanceFlag, remoteIP)
+			log.Error(fmt.Sprintf("register instance failed, %s, operator %s",
+				instanceFlag, remoteIP), reporter.Err)
 			response := &pb.RegisterInstanceResponse{
 				Response: pb.CreateResponseWithSCErr(reporter.Err),
 			}
@@ -599,9 +599,8 @@ func (ds *DataSource) RegisterInstance(ctx context.Context, request *pb.Register
 	instanceID := instance.InstanceId
 	data, err := json.Marshal(instance)
 	if err != nil {
-		log.Errorf(err,
-			"register instance failed, %s, instanceID %s, operator %s",
-			instanceFlag, instanceID, remoteIP)
+		log.Error(fmt.Sprintf("register instance failed, %s, instanceID %s, operator %s",
+			instanceFlag, instanceID, remoteIP), err)
 		return &pb.RegisterInstanceResponse{
 			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
@@ -609,7 +608,7 @@ func (ds *DataSource) RegisterInstance(ctx context.Context, request *pb.Register
 
 	leaseID, err := client.Instance().LeaseGrant(ctx, ttl)
 	if err != nil {
-		log.Errorf(err, "grant lease failed, %s, operator: %s", instanceFlag, remoteIP)
+		log.Error(fmt.Sprintf("grant lease failed, %s, operator: %s", instanceFlag, remoteIP), err)
 		return &pb.RegisterInstanceResponse{
 			Response: pb.CreateResponse(pb.ErrUnavailableBackend, err.Error()),
 		}, err
@@ -632,30 +631,27 @@ func (ds *DataSource) RegisterInstance(ctx context.Context, request *pb.Register
 			client.CmpNotEqual, 0)},
 		nil)
 	if err != nil {
-		log.Errorf(err,
-			"register instance failed, %s, instanceID %s, operator %s",
-			instanceFlag, instanceID, remoteIP)
+		log.Error(fmt.Sprintf("register instance failed, %s, instanceID %s, operator %s",
+			instanceFlag, instanceID, remoteIP), err)
 		return &pb.RegisterInstanceResponse{
 			Response: pb.CreateResponse(pb.ErrUnavailableBackend, err.Error()),
 		}, err
 	}
 	if !resp.Succeeded {
-		log.Errorf(nil,
-			"register instance failed, %s, instanceID %s, operator %s: service does not exist",
-			instanceFlag, instanceID, remoteIP)
+		log.Error(fmt.Sprintf("register instance failed, %s, instanceID %s, operator %s: service does not exist",
+			instanceFlag, instanceID, remoteIP), nil)
 		return &pb.RegisterInstanceResponse{
 			Response: pb.CreateResponse(pb.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
 
 	if err := reporter.ReportUsedQuota(ctx); err != nil {
-		log.Errorf(err,
-			"register instance failed, %s, instanceID %s, operator %s",
-			instanceFlag, instanceID, remoteIP)
+		log.Error(fmt.Sprintf("register instance failed, %s, instanceID %s, operator %s",
+			instanceFlag, instanceID, remoteIP), err)
 	}
 
-	log.Infof("register instance %s, instanceID %s, operator %s",
-		instanceFlag, instanceID, remoteIP)
+	log.Info(fmt.Sprintf("register instance %s, instanceID %s, operator %s",
+		instanceFlag, instanceID, remoteIP))
 	return &pb.RegisterInstanceResponse{
 		Response:   pb.CreateResponse(pb.ResponseSuccess, "Register service instance successfully."),
 		InstanceId: instanceID,
@@ -670,38 +666,38 @@ func (ds *DataSource) GetInstance(ctx context.Context, request *pb.GetOneInstanc
 	var err error
 	if len(request.ConsumerServiceId) > 0 {
 		service, err = serviceUtil.GetService(ctx, domainProject, request.ConsumerServiceId)
-		if err != nil {
-			log.Errorf(err, "get consumer failed, consumer[%s] find provider instance[%s/%s]",
-				request.ConsumerServiceId, request.ProviderServiceId, request.ProviderInstanceId)
-			return &pb.GetOneInstanceResponse{
-				Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
-			}, err
-		}
-		if service == nil {
-			log.Errorf(nil, "consumer does not exist, consumer[%s] find provider instance[%s/%s]",
-				request.ConsumerServiceId, request.ProviderServiceId, request.ProviderInstanceId)
+		if errors.Is(err, datasource.ErrNoDocuments) {
+			log.Error(fmt.Sprintf("consumer does not exist, consumer[%s] find provider instance[%s/%s]",
+				request.ConsumerServiceId, request.ProviderServiceId, request.ProviderInstanceId), err)
 			return &pb.GetOneInstanceResponse{
 				Response: pb.CreateResponse(pb.ErrServiceNotExists,
 					fmt.Sprintf("Consumer[%s] does not exist.", request.ConsumerServiceId)),
 			}, nil
 		}
+		if err != nil {
+			log.Error(fmt.Sprintf("get consumer failed, consumer[%s] find provider instance[%s/%s]",
+				request.ConsumerServiceId, request.ProviderServiceId, request.ProviderInstanceId), err)
+			return &pb.GetOneInstanceResponse{
+				Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
+			}, err
+		}
 	}
 
 	provider, err := serviceUtil.GetService(ctx, domainProject, request.ProviderServiceId)
-	if err != nil {
-		log.Errorf(err, "get provider failed, consumer[%s] find provider instance[%s/%s]",
-			request.ConsumerServiceId, request.ProviderServiceId, request.ProviderInstanceId)
-		return &pb.GetOneInstanceResponse{
-			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
-		}, err
-	}
-	if provider == nil {
-		log.Errorf(nil, "provider does not exist, consumer[%s] find provider instance[%s/%s]",
-			request.ConsumerServiceId, request.ProviderServiceId, request.ProviderInstanceId)
+	if errors.Is(err, datasource.ErrNoDocuments) {
+		log.Error(fmt.Sprintf("provider does not exist, consumer[%s] find provider instance[%s/%s]",
+			request.ConsumerServiceId, request.ProviderServiceId, request.ProviderInstanceId), err)
 		return &pb.GetOneInstanceResponse{
 			Response: pb.CreateResponse(pb.ErrServiceNotExists,
 				fmt.Sprintf("Provider[%s] does not exist.", request.ProviderServiceId)),
 		}, nil
+	}
+	if err != nil {
+		log.Error(fmt.Sprintf("get provider failed, consumer[%s] find provider instance[%s/%s]",
+			request.ConsumerServiceId, request.ProviderServiceId, request.ProviderInstanceId), err)
+		return &pb.GetOneInstanceResponse{
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
+		}, err
 	}
 
 	findFlag := func() string {
@@ -718,14 +714,14 @@ func (ds *DataSource) GetInstance(ctx context.Context, request *pb.GetOneInstanc
 			ServiceId: request.ProviderServiceId, InstanceId: request.ProviderInstanceId,
 		}, request.Tags, rev)
 	if err != nil {
-		log.Errorf(err, "FindInstances.GetWithProviderID failed, %s failed", findFlag())
+		log.Error(fmt.Sprintf("FindInstances.GetWithProviderID failed, %s failed", findFlag()), err)
 		return &pb.GetOneInstanceResponse{
 			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
 	}
 	if item == nil || len(item.Instances) == 0 {
 		mes := fmt.Errorf("%s failed, provider instance does not exist", findFlag())
-		log.Errorf(mes, "FindInstances.GetWithProviderID failed")
+		log.Error("FindInstances.GetWithProviderID failed", mes)
 		return &pb.GetOneInstanceResponse{
 			Response: pb.CreateResponse(pb.ErrInstanceNotExists, mes.Error()),
 		}, nil
@@ -751,38 +747,38 @@ func (ds *DataSource) GetInstances(ctx context.Context, request *pb.GetInstances
 	var err error
 	if len(request.ConsumerServiceId) > 0 {
 		service, err = serviceUtil.GetService(ctx, domainProject, request.ConsumerServiceId)
-		if err != nil {
-			log.Errorf(err, "get consumer failed, consumer[%s] find provider instances",
-				request.ConsumerServiceId, request.ProviderServiceId)
-			return &pb.GetInstancesResponse{
-				Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
-			}, err
-		}
-		if service == nil {
-			log.Errorf(nil, "consumer does not exist, consumer[%s] find provider instances",
-				request.ConsumerServiceId, request.ProviderServiceId)
+		if errors.Is(err, datasource.ErrNoDocuments) {
+			log.Error(fmt.Sprintf("consumer does not exist, consumer[%s] find provider[%s] instances",
+				request.ConsumerServiceId, request.ProviderServiceId), err)
 			return &pb.GetInstancesResponse{
 				Response: pb.CreateResponse(pb.ErrServiceNotExists,
 					fmt.Sprintf("Consumer[%s] does not exist.", request.ConsumerServiceId)),
 			}, nil
 		}
+		if err != nil {
+			log.Error(fmt.Sprintf("get consumer failed, consumer[%s] find provider[%s] instances",
+				request.ConsumerServiceId, request.ProviderServiceId), err)
+			return &pb.GetInstancesResponse{
+				Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
+			}, err
+		}
 	}
 
 	provider, err := serviceUtil.GetService(ctx, domainProject, request.ProviderServiceId)
-	if err != nil {
-		log.Errorf(err, "get provider failed, consumer[%s] find provider instances",
-			request.ConsumerServiceId, request.ProviderServiceId)
-		return &pb.GetInstancesResponse{
-			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
-		}, err
-	}
-	if provider == nil {
-		log.Errorf(nil, "provider does not exist, consumer[%s] find provider instances",
-			request.ConsumerServiceId, request.ProviderServiceId)
+	if errors.Is(err, datasource.ErrNoDocuments) {
+		log.Error(fmt.Sprintf("provider does not exist, consumer[%s] find provider[%s] instances",
+			request.ConsumerServiceId, request.ProviderServiceId), err)
 		return &pb.GetInstancesResponse{
 			Response: pb.CreateResponse(pb.ErrServiceNotExists,
 				fmt.Sprintf("Provider[%s] does not exist.", request.ProviderServiceId)),
 		}, nil
+	}
+	if err != nil {
+		log.Error(fmt.Sprintf("get provider failed, consumer[%s] find provider[%s] instances",
+			request.ConsumerServiceId, request.ProviderServiceId), err)
+		return &pb.GetInstancesResponse{
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
+		}, err
 	}
 
 	findFlag := func() string {
@@ -913,20 +909,20 @@ func (ds *DataSource) findInstance(ctx context.Context, request *pb.FindInstance
 	service := &pb.MicroService{Environment: request.Environment}
 	if len(request.ConsumerServiceId) > 0 {
 		service, err = serviceUtil.GetService(ctx, domainProject, request.ConsumerServiceId)
-		if err != nil {
-			log.Errorf(err, "get consumer failed, consumer[%s] find provider[%s/%s/%s/%s]",
-				request.ConsumerServiceId, request.Environment, request.AppId, request.ServiceName, request.VersionRule)
-			return &pb.FindInstancesResponse{
-				Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
-			}, err
-		}
-		if service == nil {
-			log.Errorf(nil, "consumer does not exist, consumer[%s] find provider[%s/%s/%s/%s]",
-				request.ConsumerServiceId, request.Environment, request.AppId, request.ServiceName, request.VersionRule)
+		if errors.Is(err, datasource.ErrNoDocuments) {
+			log.Error(fmt.Sprintf("consumer does not exist, consumer[%s] find provider[%s/%s/%s/%s]",
+				request.ConsumerServiceId, request.Environment, request.AppId, request.ServiceName, request.VersionRule), err)
 			return &pb.FindInstancesResponse{
 				Response: pb.CreateResponse(pb.ErrServiceNotExists,
 					fmt.Sprintf("Consumer[%s] does not exist.", request.ConsumerServiceId)),
 			}, nil
+		}
+		if err != nil {
+			log.Error(fmt.Sprintf("get consumer failed, consumer[%s] find provider[%s/%s/%s/%s]",
+				request.ConsumerServiceId, request.Environment, request.AppId, request.ServiceName, request.VersionRule), err)
+			return &pb.FindInstancesResponse{
+				Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
+			}, err
 		}
 		provider.Environment = service.Environment
 	}
@@ -1031,7 +1027,7 @@ func (ds *DataSource) reshapeProviderKey(ctx context.Context, provider *pb.Micro
 	*pb.MicroServiceKey, error) {
 	//维护version的规则,service name 可能是别名，所以重新获取
 	providerService, err := serviceUtil.GetService(ctx, provider.Tenant, providerID)
-	if providerService == nil {
+	if err != nil {
 		return nil, err
 	}
 
@@ -1347,24 +1343,24 @@ func (ds *DataSource) ModifySchemas(ctx context.Context, request *pb.ModifySchem
 	domainProject := util.ParseDomainProject(ctx)
 
 	serviceInfo, err := serviceUtil.GetService(ctx, domainProject, serviceID)
-	if err != nil {
-		log.Errorf(err, "modify service[%s] schemas failed, get service failed, operator: %s",
-			serviceID, remoteIP)
-		return &pb.ModifySchemasResponse{
-			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
-		}, err
-	}
-	if serviceInfo == nil {
-		log.Errorf(nil, "modify service[%s] schemas failed, service does not exist, operator: %s",
-			serviceID, remoteIP)
+	if errors.Is(err, datasource.ErrNoDocuments) {
+		log.Error(fmt.Sprintf("modify service[%s] schemas failed, service does not exist, operator: %s",
+			serviceID, remoteIP), err)
 		return &pb.ModifySchemasResponse{
 			Response: pb.CreateResponse(pb.ErrServiceNotExists, "Service does not exist."),
 		}, nil
 	}
+	if err != nil {
+		log.Error(fmt.Sprintf("modify service[%s] schemas failed, get service failed, operator: %s",
+			serviceID, remoteIP), err)
+		return &pb.ModifySchemasResponse{
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
+		}, err
+	}
 
 	respErr := ds.modifySchemas(ctx, domainProject, serviceInfo, request.Schemas)
 	if respErr != nil {
-		log.Errorf(nil, "modify service[%s] schemas failed, operator: %s", serviceID, remoteIP)
+		log.Error(fmt.Sprintf("modify service[%s] schemas failed, operator: %s", serviceID, remoteIP), nil)
 		resp := &pb.ModifySchemasResponse{
 			Response: pb.CreateResponseWithSCErr(respErr),
 		}
@@ -1497,17 +1493,17 @@ func (ds *DataSource) GetAllSchemas(ctx context.Context, request *pb.GetAllSchem
 	domainProject := util.ParseDomainProject(ctx)
 
 	service, err := serviceUtil.GetService(ctx, domainProject, request.ServiceId)
-	if err != nil {
-		log.Errorf(err, "get service[%s] all schemas failed, get service failed", request.ServiceId)
-		return &pb.GetAllSchemaResponse{
-			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
-		}, err
-	}
-	if service == nil {
-		log.Errorf(nil, "get service[%s] all schemas failed, service does not exist", request.ServiceId)
+	if errors.Is(err, datasource.ErrNoDocuments) {
+		log.Error(fmt.Sprintf("get service[%s] all schemas failed, service does not exist", request.ServiceId), err)
 		return &pb.GetAllSchemaResponse{
 			Response: pb.CreateResponse(pb.ErrServiceNotExists, "Service does not exist."),
 		}, nil
+	}
+	if err != nil {
+		log.Error(fmt.Sprintf("get service[%s] all schemas failed, get service failed", request.ServiceId), err)
+		return &pb.GetAllSchemaResponse{
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
+		}, err
 	}
 
 	schemasList := service.Schemas
@@ -2300,15 +2296,15 @@ func (ds *DataSource) modifySchema(ctx context.Context, serviceID string, schema
 	schemaID := schema.SchemaId
 
 	microService, err := serviceUtil.GetService(ctx, domainProject, serviceID)
-	if err != nil {
-		log.Errorf(err, "modify schema[%s/%s] failed, get `microService failed, operator: %s",
-			serviceID, schemaID, remoteIP)
-		return pb.NewError(pb.ErrInternal, err.Error())
-	}
-	if microService == nil {
-		log.Errorf(nil, "modify schema[%s/%s] failed, microService does not exist, operator: %s",
-			serviceID, schemaID, remoteIP)
+	if errors.Is(err, datasource.ErrNoDocuments) {
+		log.Error(fmt.Sprintf("modify schema[%s/%s] failed, microService does not exist, operator: %s",
+			serviceID, schemaID, remoteIP), err)
 		return pb.NewError(pb.ErrServiceNotExists, "Service does not exist")
+	}
+	if err != nil {
+		log.Error(fmt.Sprintf("modify schema[%s/%s] failed, get `microService failed, operator: %s",
+			serviceID, schemaID, remoteIP), err)
+		return pb.NewError(pb.ErrInternal, err.Error())
 	}
 
 	var pluginOps []client.PluginOp
@@ -2399,21 +2395,20 @@ func (ds *DataSource) DeleteServicePri(ctx context.Context, serviceID string, fo
 
 	if serviceID == core.Service.ServiceId {
 		err := errors.New("not allow to delete service center")
-		log.Errorf(err, "%s micro-service[%s] failed, operator: %s", title, serviceID, remoteIP)
+		log.Error(fmt.Sprintf("%s micro-service[%s] failed, operator: %s", title, serviceID, remoteIP), err)
 		return pb.CreateResponse(pb.ErrInvalidParams, err.Error()), nil
 	}
 
 	microservice, err := serviceUtil.GetService(ctx, domainProject, serviceID)
-	if err != nil {
-		log.Errorf(err, "%s micro-service[%s] failed, get service file failed, operator: %s",
-			title, serviceID, remoteIP)
-		return pb.CreateResponse(pb.ErrInternal, err.Error()), err
-	}
-
-	if microservice == nil {
-		log.Errorf(err, "%s micro-service[%s] failed, service does not exist, operator: %s",
-			title, serviceID, remoteIP)
+	if errors.Is(err, datasource.ErrNoDocuments) {
+		log.Error(fmt.Sprintf("%s micro-service[%s] failed, service does not exist, operator: %s",
+			title, serviceID, remoteIP), err)
 		return pb.CreateResponse(pb.ErrServiceNotExists, "Service does not exist."), nil
+	}
+	if err != nil {
+		log.Error(fmt.Sprintf("%s micro-service[%s] failed, get service file failed, operator: %s",
+			title, serviceID, remoteIP), err)
+		return pb.CreateResponse(pb.ErrInternal, err.Error()), err
 	}
 
 	// 强制删除，则与该服务相关的信息删除，非强制删除： 如果作为该被依赖（作为provider，提供服务,且不是只存在自依赖）或者存在实例，则不能删除

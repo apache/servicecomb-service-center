@@ -295,7 +295,7 @@ func TestService_Get(t *testing.T) {
 		resp, err := datasource.Instance().GetService(getContext(), &pb.GetServiceRequest{
 			ServiceId: "no-exist-service",
 		})
-		assert.NoError(t, err)
+		assert.Equal(t, datasource.ErrNoDocuments, err)
 		assert.Equal(t, resp.Response.GetCode(), pb.ErrServiceNotExists)
 	})
 }
