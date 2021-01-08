@@ -23,8 +23,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/apache/servicecomb-service-center/datasource"
 
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
@@ -192,7 +192,7 @@ func preProcessRegisterInstance(ctx context.Context, instance *pb.MicroServiceIn
 
 	domainProject := util.ParseDomainProject(ctx)
 	microservice, err := serviceUtil.GetService(ctx, domainProject, instance.ServiceId)
-	if microservice == nil || err != nil {
+	if err != nil {
 		return pb.NewError(pb.ErrServiceNotExists, "Invalid 'serviceID' in request body.")
 	}
 	instance.Version = microservice.Version

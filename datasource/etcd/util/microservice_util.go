@@ -20,12 +20,13 @@ package util
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strings"
 
-	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
-
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -45,7 +46,7 @@ func GetServiceWithRev(ctx context.Context, domain string, id string, rev int64)
 		return nil, err
 	}
 	if len(serviceResp.Kvs) == 0 {
-		return nil, nil
+		return nil, datasource.ErrNoDocuments
 	}
 	return serviceResp.Kvs[0].Value.(*pb.MicroService), nil
 }
@@ -58,7 +59,7 @@ func GetService(ctx context.Context, domainProject string, serviceID string) (*p
 		return nil, err
 	}
 	if len(serviceResp.Kvs) == 0 {
-		return nil, nil
+		return nil, datasource.ErrNoDocuments
 	}
 	return serviceResp.Kvs[0].Value.(*pb.MicroService), nil
 }
@@ -108,7 +109,7 @@ func GetAllServicesAcrossDomainProject(ctx context.Context) (map[string][]*pb.Mi
 		domainProject := parts[4] + path.SPLIT + parts[5]
 		microService, ok := value.Value.(*pb.MicroService)
 		if !ok {
-			log.Errorf(nil, "backend key[%s]'s value is not type *pb.MicroService", prefix)
+			log.Error(fmt.Sprintf("backend key[%s]'s value is not type *pb.MicroService", prefix), nil)
 			continue
 		}
 		services[domainProject] = append(services[domainProject], microService)
@@ -135,8 +136,8 @@ func GetServiceID(ctx context.Context, key *pb.MicroServiceKey) (serviceID strin
 	}
 	if len(serviceID) == 0 {
 		// 别名查询
-		log.Debugf("could not search microservice[%s/%s/%s/%s] id by 'serviceName', now try 'alias'",
-			key.Environment, key.AppId, key.ServiceName, key.Version)
+		log.Debug(fmt.Sprintf("could not search microservice[%s/%s/%s/%s] id by 'serviceName', now try 'alias'",
+			key.Environment, key.AppId, key.ServiceName, key.Version))
 		return searchServiceIDFromAlias(ctx, key)
 	}
 	return
@@ -256,7 +257,7 @@ func UpdateService(domainProject string, serviceID string, service *pb.MicroServ
 	key := path.GenerateServiceKey(domainProject, serviceID)
 	data, err := json.Marshal(service)
 	if err != nil {
-		log.Errorf(err, "marshal service file failed")
+		log.Error("marshal service file failed", err)
 		return
 	}
 	opt = client.OpPut(client.WithStrKey(key), client.WithValue(data))

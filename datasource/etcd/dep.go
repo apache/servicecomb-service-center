@@ -20,8 +20,10 @@ package etcd
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
@@ -35,23 +37,23 @@ func (ds *DataSource) SearchProviderDependency(ctx context.Context, request *pb.
 	providerServiceID := request.ServiceId
 	provider, err := serviceUtil.GetService(ctx, domainProject, providerServiceID)
 
-	if err != nil {
-		log.Errorf(err, "GetProviderDependencies failed, provider is %s", providerServiceID)
-		return nil, err
-	}
-	if provider == nil {
-		log.Errorf(err, "GetProviderDependencies failed for provider[%s] does not exist", providerServiceID)
+	if errors.Is(err, datasource.ErrNoDocuments) {
+		log.Error(fmt.Sprintf("GetProviderDependencies failed for provider[%s] does not exist", providerServiceID), err)
 		return &pb.GetProDependenciesResponse{
 			Response: pb.CreateResponse(pb.ErrServiceNotExists, "Provider does not exist"),
-		}, nil
+		}, err
+	}
+	if err != nil {
+		log.Error(fmt.Sprintf("GetProviderDependencies failed, provider is %s", providerServiceID), err)
+		return nil, err
 	}
 
 	dr := serviceUtil.NewProviderDependencyRelation(ctx, domainProject, provider)
 	services, err := dr.GetDependencyConsumers(toDependencyFilterOptions(request)...)
 
 	if err != nil {
-		log.Errorf(err, "GetProviderDependencies failed, provider is %s/%s/%s/%s",
-			provider.Environment, provider.AppId, provider.ServiceName, provider.Version)
+		log.Error(fmt.Sprintf("GetProviderDependencies failed, provider is %s/%s/%s/%s",
+			provider.Environment, provider.AppId, provider.ServiceName, provider.Version), err)
 		return &pb.GetProDependenciesResponse{
 			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
@@ -68,22 +70,22 @@ func (ds *DataSource) SearchConsumerDependency(ctx context.Context, request *pb.
 	domainProject := util.ParseDomainProject(ctx)
 	consumer, err := serviceUtil.GetService(ctx, domainProject, consumerID)
 
-	if err != nil {
-		log.Errorf(err, "GetConsumerDependencies failed, consumer is %s", consumerID)
-		return nil, err
-	}
-	if consumer == nil {
-		log.Errorf(err, "GetConsumerDependencies failed for consumer[%s] does not exist", consumerID)
+	if errors.Is(err, datasource.ErrNoDocuments) {
+		log.Error(fmt.Sprintf("GetConsumerDependencies failed for consumer[%s] does not exist", consumerID), err)
 		return &pb.GetConDependenciesResponse{
 			Response: pb.CreateResponse(pb.ErrServiceNotExists, "Consumer does not exist"),
 		}, nil
+	}
+	if err != nil {
+		log.Error(fmt.Sprintf("GetConsumerDependencies failed, consumer is %s", consumerID), err)
+		return nil, err
 	}
 
 	dr := serviceUtil.NewConsumerDependencyRelation(ctx, domainProject, consumer)
 	services, err := dr.GetDependencyProviders(toDependencyFilterOptions(request)...)
 	if err != nil {
-		log.Errorf(err, "GetConsumerDependencies failed, consumer is %s/%s/%s/%s",
-			consumer.Environment, consumer.AppId, consumer.ServiceName, consumer.Version)
+		log.Error(fmt.Sprintf("GetConsumerDependencies failed, consumer is %s/%s/%s/%s",
+			consumer.Environment, consumer.AppId, consumer.ServiceName, consumer.Version), err)
 		return &pb.GetConDependenciesResponse{
 			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
