@@ -39,6 +39,7 @@ type Servicecenter interface {
 	Discovery() *pb.SyncData
 	IncrementRegistry(clusterName string, data *pb.SyncData)
 	GetSyncMapping() pb.SyncMapping
+	UpdateMapping(mapping pb.SyncMapping)
 }
 
 type servicecenter struct {
@@ -66,7 +67,7 @@ func (s *servicecenter) SetStorageEngine(engine clientv3.KV) {
 func (s *servicecenter) FlushData() {
 	data, err := s.servicecenter.GetAll(context.Background())
 	if err != nil {
-		log.Errorf(err, "Syncer discover instances failed")
+		log.Error("Syncer discover instances failed", err)
 		return
 	}
 
@@ -175,6 +176,7 @@ func (s *servicecenter) IncrementRegistry(clusterName string, data *pb.SyncData)
 			if item.CurInstanceID != "" {
 				mapping = append(mapping, item)
 			}
+			s.storage.UpdateMapByCluster(clusterName, mapping)
 		}
 
 		if action == string(discovery.EVT_DELETE) {
@@ -182,42 +184,28 @@ func (s *servicecenter) IncrementRegistry(clusterName string, data *pb.SyncData)
 			if len(mapping) == 0 {
 				err := utils.ErrMappingSearch
 				log.Error("fail to handle unregister", err)
-				return
+				continue
 			}
-
-			index := 0
-			ctx := context.Background()
 
 			for _, val := range mapping {
 				if val.OrgInstanceID == inst.InstanceId {
-					err := s.servicecenter.UnregisterInstance(ctx, val.DomainProject, val.CurServiceID, val.CurInstanceID)
+					err := s.servicecenter.UnregisterInstance(context.Background(), val.DomainProject, val.CurServiceID,
+						val.CurInstanceID)
 					if err != nil {
-						log.Error("Servicecenter delete instance failed", err)
+						log.Error("delete instance failed", err)
 					}
-					log.Debug(fmt.Sprintf("Unregistered instance, InstanceID = %s", val.CurInstanceID))
+					log.Debug(fmt.Sprintf("unregistered instance, InstanceID = %s", val.CurInstanceID))
 					break
 				}
-				index++
-			}
-
-			switch {
-			case len(mapping) == 1:
-				mapping = nil
-			case index == 0:
-				mapping = mapping[index+1:]
-			case index == len(mapping)-1:
-				mapping = mapping[:index]
-			case index == len(mapping):
-				err := utils.ErrInstanceDelete
-				log.Error(fmt.Sprintf("can not find instance to delete, OrgInstanceID: %s", inst.InstanceId), err)
-			default:
-				mapping = append(mapping[:index], mapping[index+1:]...)
 			}
 		}
-		s.storage.UpdateMapByCluster(clusterName, mapping)
 	}
 }
 
 func (s *servicecenter) GetSyncMapping() pb.SyncMapping {
 	return s.storage.GetMaps()
+}
+
+func (s *servicecenter) UpdateMapping(mapping pb.SyncMapping) {
+	s.storage.UpdateMaps(mapping)
 }
