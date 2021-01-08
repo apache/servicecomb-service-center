@@ -45,8 +45,7 @@ func (s *servicecenter) createService(service *pb.SyncService) (string, error) {
 	ctx := context.Background()
 	serviceID, err := s.servicecenter.ServiceExistence(ctx, service.DomainProject, service)
 	if err != nil {
-		log.Error("get service existence failed", err)
-		return "", err
+		log.Warn(fmt.Sprintf("get service existence failed %s", err))
 	}
 
 	if serviceID == "" {
