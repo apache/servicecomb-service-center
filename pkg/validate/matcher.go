@@ -24,14 +24,14 @@ type PasswordChecker struct {
 
 func (p *PasswordChecker) MatchString(s string) bool {
 	var (
-		hasMinLen  = false
-		hasUpper   = false
-		hasLower   = false
-		hasNumber  = false
-		hasSpecial = false
+		hasValidLen = false
+		hasUpper    = false
+		hasLower    = false
+		hasNumber   = false
+		hasSpecial  = false
 	)
-	if len(s) >= 8 {
-		hasMinLen = true
+	if len(s) >= 8 && len(s) <= 32 {
+		hasValidLen = true
 	}
 	for _, char := range s {
 		switch {
@@ -45,7 +45,7 @@ func (p *PasswordChecker) MatchString(s string) bool {
 			hasSpecial = true
 		}
 	}
-	return hasMinLen && hasUpper && hasLower && hasNumber && hasSpecial
+	return hasValidLen && hasUpper && hasLower && hasNumber && hasSpecial
 }
 func (p *PasswordChecker) String() string {
 	return "password"
