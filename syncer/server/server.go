@@ -20,6 +20,7 @@ package server
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 	"sync"
 	"syscall"
@@ -39,6 +40,7 @@ import (
 	"github.com/apache/servicecomb-service-center/syncer/serf"
 	"github.com/apache/servicecomb-service-center/syncer/servicecenter"
 	"github.com/apache/servicecomb-service-center/syncer/task"
+	"github.com/go-chassis/cari/discovery"
 	ggrpc "google.golang.org/grpc"
 
 	// import plugins
@@ -208,13 +210,13 @@ func (s *Server) initialization() (err error) {
 
 	s.etcd, err = etcd.NewServer(convertEtcdOptions(s.conf)...)
 	if err != nil {
-		log.Errorf(err, "Create etcd failed, %s", err)
+		log.Error("Create etcd failed, %s", err)
 		return
 	}
 
 	s.task, err = task.GenerateTasker(s.conf.Task.Kind, convertTaskOptions(s.conf)...)
 	if err != nil {
-		log.Errorf(err, "Create tasker failed, %s", err)
+		log.Error("Create tasker failed, %s", err)
 		return
 	}
 
@@ -297,10 +299,15 @@ func instFromOtherSC(instance *dump.Instance, m *pb.MappingEntry) bool {
 func (s *Server) addToQueue(event *dump.WatchInstanceChangedEvent) {
 	mapping := s.servicecenter.GetSyncMapping()
 
-	for _, m := range mapping {
+	for index, m := range mapping {
 		if instFromOtherSC(event.Instance, m) {
-			log.Debugf("instance[curId:%s, originId:%s] is from another sc, no need to put to queue",
-				m.CurInstanceID, m.OrgInstanceID)
+			log.Debug(fmt.Sprintf("instance[curId:%s, originId:%s] is from another sc, no need to put to queue",
+				m.CurInstanceID, m.OrgInstanceID))
+
+			if event.Action == string(discovery.EVT_DELETE) {
+				mapping = append(mapping[:index], mapping[index+1:]...)
+				s.servicecenter.UpdateMapping(mapping)
+			}
 			return
 		}
 	}
