@@ -37,6 +37,8 @@ const (
 
 	Find = "_find"
 	Dep  = "_dep"
+
+	DefaultCacheMaxSize = 10000
 )
 
 var (
