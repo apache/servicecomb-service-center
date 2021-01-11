@@ -18,6 +18,7 @@ package tlsutil
 import (
 	"crypto/tls"
 	"io/ioutil"
+	"os"
 	"testing"
 )
 
@@ -39,6 +40,39 @@ func TestParseDefaultSSLCipherSuites(t *testing.T) {
 	c = ParseDefaultSSLCipherSuites("a,,b")
 	if len(c) != 0 {
 		t.Fatalf("ParseDefaultSSLCipherSuites failed")
+	}
+}
+
+func preFromEnvMode() []SSLConfigOption {
+	ca, _ := ioutil.ReadFile(sslRoot + "trust.cer")
+	cert, _ := ioutil.ReadFile(sslRoot + "server.cer")
+	key, _ := ioutil.ReadFile(sslRoot + "server_key.pem")
+	pwd, _ := ioutil.ReadFile(sslRoot + "cert_pwd")
+
+	_ = os.Setenv("ENV_CA", string(ca))
+	_ = os.Setenv("ENV_CERT", string(cert))
+	_ = os.Setenv("ENV_CERT_KEY", string(key))
+
+	return []SSLConfigOption{
+		WithKeyPass(string(pwd)),
+		WithEnvNameCA("ENV_CA"),
+		WithEnvNameCert("ENV_CERT"),
+		WithEnvNameCertKey("ENV_CERT_KEY"),
+	}
+}
+
+func TestGetServerTLSConfigFromEnv(t *testing.T) {
+	opts := append(DefaultServerTLSOptions(),
+		WithVerifyPeer(true),
+		WithVerifyHostName(false),
+		WithVersion(ParseSSLProtocol("TLSv1.0"), tls.VersionTLS12),
+		WithCipherSuits(ParseDefaultSSLCipherSuites("TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384")),
+	)
+
+	opts = append(opts, preFromEnvMode()...)
+	_, err := GetServerTLSConfig(opts...)
+	if err != nil {
+		t.Fatalf("GetServerTLSConfig from env mode failed")
 	}
 }
 
@@ -74,6 +108,21 @@ func TestGetServerTLSConfig(t *testing.T) {
 	}
 	if serverTLSConfig.ClientAuth != tls.RequireAndVerifyClientCert {
 		t.Fatalf("GetServerTLSConfig failed")
+	}
+}
+
+func TestGetClientTLSConfigFromEnv(t *testing.T) {
+	opts := append(DefaultServerTLSOptions(),
+		WithVerifyPeer(true),
+		WithVerifyHostName(false),
+		WithVersion(ParseSSLProtocol("TLSv1.0"), tls.VersionTLS12),
+		WithCipherSuits(ParseDefaultSSLCipherSuites("TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384")),
+	)
+
+	opts = append(opts, preFromEnvMode()...)
+	_, err := GetClientTLSConfig(opts...)
+	if err != nil {
+		t.Fatalf("GetClientTLSConfig failed")
 	}
 }
 

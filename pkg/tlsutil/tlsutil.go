@@ -19,10 +19,13 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
+	"fmt"
+	"io/ioutil"
+	"os"
+	"strings"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"io/ioutil"
-	"strings"
 )
 
 func ParseSSLCipherSuites(ciphers string, permitTLSCipherSuiteMap map[string]uint16) []uint16 {
@@ -64,11 +67,11 @@ func ParseSSLProtocol(sprotocol string) uint16 {
 	return result
 }
 
-func GetX509CACertPool(caCertFile string) (caCertPool *x509.CertPool, err error) {
+func GetX509CACertPool(loader CertLoader) (caCertPool *x509.CertPool, err error) {
 	pool := x509.NewCertPool()
-	caCert, err := ioutil.ReadFile(caCertFile)
+	caCert, err := loader.CADetail()
 	if err != nil {
-		log.Errorf(err, "read ca cert file %s failed.", caCertFile)
+		log.Errorf(err, "read ca cert failed.")
 		return nil, err
 	}
 
@@ -76,30 +79,172 @@ func GetX509CACertPool(caCertFile string) (caCertPool *x509.CertPool, err error)
 	return pool, nil
 }
 
-func LoadTLSCertificate(certFile, keyFile, plainPassphase string) (tlsCert []tls.Certificate, err error) {
-	certContent, err := ioutil.ReadFile(certFile)
+//CertLoader loads cert info
+type CertLoader interface {
+	CADetail() ([]byte, error)
+	CertDetail() ([]byte, error)
+	KeyDetail() ([]byte, error)
+	CanLoadCert() bool
+}
+
+var defaultLoader = new(fromNone)
+
+type fromNone struct {
+}
+
+//CADetail ...
+func (fn *fromNone) CADetail() ([]byte, error) {
+	return nil, nil
+}
+
+//CertDetail ...
+func (fn *fromNone) CertDetail() ([]byte, error) {
+	return nil, nil
+}
+
+//KeyDetail ...
+func (fn *fromNone) KeyDetail() ([]byte, error) {
+	return nil, nil
+}
+
+//CanLoadCert ...
+func (fn *fromNone) CanLoadCert() bool {
+	return false
+}
+
+//FromEnv ...
+func FromEnv() *fromEnv {
+	return new(fromEnv)
+}
+
+type fromEnv struct {
+	envCA     string
+	envCert   string
+	envKey    string
+	envKeyPwd string
+}
+
+//EnvNameCA ...
+func (fe *fromEnv) EnvNameCA(name string) *fromEnv {
+	fe.envCA = name
+	return fe
+}
+
+//EnvNameCert ...
+func (fe *fromEnv) EnvNameCert(name string) *fromEnv {
+	fe.envCert = name
+	return fe
+}
+
+//EnvNameKey ...
+func (fe *fromEnv) EnvNameKey(name string) *fromEnv {
+	fe.envKey = name
+	return fe
+}
+
+func (fe *fromEnv) getEnv(name string) ([]byte, error) {
+	data := os.Getenv(name)
+	if len(data) == 0 {
+		return nil, fmt.Errorf("%s not exist", name)
+	}
+	return util.StringToBytesWithNoCopy(data), nil
+}
+
+//CADetail ...
+func (fe *fromEnv) CADetail() ([]byte, error) {
+	return fe.getEnv(fe.envCA)
+}
+
+//CertDetail ...
+func (fe *fromEnv) CertDetail() ([]byte, error) {
+	return fe.getEnv(fe.envCert)
+}
+
+//KeyDetail ...
+func (fe *fromEnv) KeyDetail() ([]byte, error) {
+	return fe.getEnv(fe.envKey)
+}
+
+//CanLoadCert ...
+func (fe *fromEnv) CanLoadCert() bool {
+	return os.Getenv(fe.envCert) != "" &&
+		os.Getenv(fe.envKey) != ""
+}
+
+//FromFile loads cert info from file
+func FromFile() *fromFile {
+	return new(fromFile)
+}
+
+type fromFile struct {
+	caFile   string
+	certFile string
+	keyFile  string
+}
+
+//CaFile ...
+func (ff *fromFile) CaFile(name string) *fromFile {
+	ff.caFile = name
+	return ff
+}
+
+//CertFile ...
+func (ff *fromFile) CertFile(name string) *fromFile {
+	ff.certFile = name
+	return ff
+}
+
+//KeyFile ...
+func (ff *fromFile) KeyFile(name string) *fromFile {
+	ff.keyFile = name
+	return ff
+}
+
+//CADetail ...
+func (ff *fromFile) CADetail() ([]byte, error) {
+	return ioutil.ReadFile(ff.certFile)
+}
+
+//CertDetail ...
+func (ff *fromFile) CertDetail() ([]byte, error) {
+	return ioutil.ReadFile(ff.certFile)
+}
+
+//KeyDetail ...
+func (ff *fromFile) KeyDetail() ([]byte, error) {
+	return ioutil.ReadFile(ff.keyFile)
+}
+
+//CanLoadCert ...
+func (ff *fromFile) CanLoadCert() bool {
+	return ff.certFile != "" &&
+		ff.keyFile != ""
+}
+
+func LoadTLSCertificate(loader CertLoader, pwd string) (tlsCert []tls.Certificate, err error) {
+	certContent, err := loader.CertDetail()
 	if err != nil {
-		log.Errorf(err, "read cert file %s failed.", certFile)
+		log.Errorf(err, "read cert file failed.")
 		return nil, err
 	}
 
-	keyContent, err := ioutil.ReadFile(keyFile)
+	keyContent, err := loader.KeyDetail()
 	if err != nil {
-		log.Errorf(err, "read key file %s failed.", keyFile)
+		log.Errorf(err, "read key file failed.")
 		return nil, err
 	}
 
 	keyBlock, _ := pem.Decode(keyContent)
 	if keyBlock == nil {
-		log.Errorf(err, "decode key file %s failed.", keyFile)
+		log.Errorf(err, "decode key file failed.")
 		return nil, err
 	}
 
 	if x509.IsEncryptedPEMBlock(keyBlock) {
-		plainPassphaseBytes := util.StringToBytesWithNoCopy(plainPassphase)
-		keyData, err := x509.DecryptPEMBlock(keyBlock, plainPassphaseBytes)
+		plainPwdBytes := util.StringToBytesWithNoCopy(pwd)
+		keyData, err := x509.DecryptPEMBlock(keyBlock, plainPwdBytes)
 		if err != nil {
-			log.Errorf(err, "decrypt key file %s failed.", keyFile)
+			log.Errorf(err, "decrypt key file failed.")
 			return nil, err
 		}
 
@@ -114,7 +259,7 @@ func LoadTLSCertificate(certFile, keyFile, plainPassphase string) (tlsCert []tls
 
 	cert, err := tls.X509KeyPair(certContent, keyContent)
 	if err != nil {
-		log.Errorf(err, "load X509 key pair from cert file %s with key file %s failed.", certFile, keyFile)
+		log.Errorf(err, "load X509 key pair failed.")
 		return nil, err
 	}
 
@@ -124,24 +269,48 @@ func LoadTLSCertificate(certFile, keyFile, plainPassphase string) (tlsCert []tls
 	return certs, nil
 }
 
+func newLoad(cfg *SSLConfig) CertLoader {
+	var loader CertLoader = defaultLoader
+	if cfg.EnvNameCA != "" {
+		return FromEnv().
+			EnvNameCA(cfg.EnvNameCA).
+			EnvNameCert(cfg.EnvNameCert).
+			EnvNameKey(cfg.EnvNameCertKey)
+	}
+	if len(cfg.CACertFile) == 0 {
+		return loader
+	}
+
+	return FromFile().
+		CaFile(cfg.CACertFile).
+		CertFile(cfg.CertFile).
+		KeyFile(cfg.KeyFile)
+}
+
 /**
   verifyPeer    Whether verify client
   supplyCert    Whether send certificate
   verifyCN      Whether verify CommonName
 */
+
 func GetClientTLSConfig(opts ...SSLConfigOption) (tlsConfig *tls.Config, err error) {
 	cfg := toSSLConfig(opts...)
-	var pool *x509.CertPool = nil
-	var certs []tls.Certificate
+	var (
+		pool  *x509.CertPool
+		certs []tls.Certificate
+	)
+
+	loader := newLoad(&cfg)
+
 	if cfg.VerifyPeer {
-		pool, err = GetX509CACertPool(cfg.CACertFile)
+		pool, err = GetX509CACertPool(loader)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	if len(cfg.CertFile) > 0 {
-		certs, err = LoadTLSCertificate(cfg.CertFile, cfg.KeyFile, cfg.KeyPassphase)
+	if loader.CanLoadCert() {
+		certs, err = LoadTLSCertificate(loader, cfg.KeyPassphase)
 		if err != nil {
 			return nil, err
 		}
@@ -162,9 +331,12 @@ func GetClientTLSConfig(opts ...SSLConfigOption) (tlsConfig *tls.Config, err err
 func GetServerTLSConfig(opts ...SSLConfigOption) (tlsConfig *tls.Config, err error) {
 	cfg := toSSLConfig(opts...)
 	clientAuthMode := tls.NoClientCert
-	var pool *x509.CertPool = nil
+	var pool *x509.CertPool
+
+	loader := newLoad(&cfg)
+
 	if cfg.VerifyPeer {
-		pool, err = GetX509CACertPool(cfg.CACertFile)
+		pool, err = GetX509CACertPool(loader)
 		if err != nil {
 			return nil, err
 		}
@@ -173,8 +345,8 @@ func GetServerTLSConfig(opts ...SSLConfigOption) (tlsConfig *tls.Config, err err
 	}
 
 	var certs []tls.Certificate
-	if len(cfg.CertFile) > 0 {
-		certs, err = LoadTLSCertificate(cfg.CertFile, cfg.KeyFile, cfg.KeyPassphase)
+	if loader.CanLoadCert() {
+		certs, err = LoadTLSCertificate(loader, cfg.KeyPassphase)
 		if err != nil {
 			return nil, err
 		}

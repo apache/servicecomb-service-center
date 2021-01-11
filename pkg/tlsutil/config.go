@@ -29,6 +29,10 @@ type SSLConfig struct {
 	CertFile       string
 	KeyFile        string
 	KeyPassphase   string
+
+	EnvNameCA      string
+	EnvNameCert    string
+	EnvNameCertKey string
 }
 
 type SSLConfigOption func(*SSLConfig)
@@ -39,10 +43,20 @@ func WithCipherSuits(s []uint16) SSLConfigOption { return func(c *SSLConfig) { c
 func WithVersion(min, max uint16) SSLConfigOption {
 	return func(c *SSLConfig) { c.MinVersion, c.MaxVersion = min, max }
 }
+
+//WithEnvNameCA sets env name of ca
+func WithEnvNameCA(n string) SSLConfigOption { return func(c *SSLConfig) { c.EnvNameCA = n } }
+
+//WithEnvNameCert sets env name of cert
+func WithEnvNameCert(n string) SSLConfigOption { return func(c *SSLConfig) { c.EnvNameCert = n } }
+
+//WithEnvNameCertKey sets env name of cert pwd
+func WithEnvNameCertKey(n string) SSLConfigOption { return func(c *SSLConfig) { c.EnvNameCertKey = n } }
+
+func WithCA(f string) SSLConfigOption      { return func(c *SSLConfig) { c.CACertFile = f } }
 func WithCert(f string) SSLConfigOption    { return func(c *SSLConfig) { c.CertFile = f } }
 func WithKey(k string) SSLConfigOption     { return func(c *SSLConfig) { c.KeyFile = k } }
 func WithKeyPass(p string) SSLConfigOption { return func(c *SSLConfig) { c.KeyPassphase = p } }
-func WithCA(f string) SSLConfigOption      { return func(c *SSLConfig) { c.CACertFile = f } }
 
 func toSSLConfig(opts ...SSLConfigOption) (op SSLConfig) {
 	for _, opt := range opts {
