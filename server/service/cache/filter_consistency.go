@@ -19,6 +19,7 @@ package cache
 
 import (
 	"context"
+	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/cache"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -50,6 +51,10 @@ func (f *ConsistencyFilter) Name(ctx context.Context, parent *cache.Node) string
 func (f *ConsistencyFilter) Init(ctx context.Context, parent *cache.Node) (node *cache.Node, err error) {
 	pCache := parent.Cache.Get(Find).(*VersionRuleCacheItem)
 	requestRev := ctx.Value(CtxFindRequestRev).(string)
+	// do not need to check consistency between sc instances:
+	// 1. request without rev param
+	// 2. request rev is the same as cache current sc instance
+	// 3. datasource has no cache indexer
 	if len(requestRev) == 0 || requestRev == pCache.Rev ||
 		!(backend.Store().Instance().Creditable()) {
 		node = cache.NewNode()
@@ -65,15 +70,15 @@ func (f *ConsistencyFilter) Init(ctx context.Context, parent *cache.Node) (node 
 
 	cloneCtx := util.CloneContext(ctx)
 	cloneCtx = util.SetContext(cloneCtx, util.CtxNocache, "1")
-	insts, _, err := f.Find(cloneCtx, parent)
+	insts, rev, err := f.Find(cloneCtx, parent)
 	if err != nil {
 		pCache.InitBrokenQueue()
 		return nil, err
 	}
 
-	log.Warnf("the cache of finding instances api is broken, req[%s]!=cache[%s][%s]",
-		requestRev, pCache.Rev, parent.Name)
-	pCache.Instances = insts
+	log.Warn(fmt.Sprintf("inconsistent rev! %s, req[%s], cache[%s], datasource[%s]",
+		parent.Name, requestRev, pCache.Rev, rev))
+	pCache.Instances, pCache.Rev = insts, rev
 	pCache.Broken()
 
 	node = cache.NewNode()

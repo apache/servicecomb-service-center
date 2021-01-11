@@ -19,6 +19,7 @@ package notify
 
 import (
 	"errors"
+	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"sync"
 )
@@ -123,7 +124,7 @@ func (s *Service) Publish(job Event) error {
 	p, ok := s.processors[job.Type()]
 	if !ok {
 		s.mux.RUnlock()
-		return errors.New("Unknown job type")
+		return fmt.Errorf("unknown job type[%s]", job.Type())
 	}
 	s.mux.RUnlock()
 	p.Accept(job)

@@ -77,7 +77,7 @@ type AggregatorIndexer struct {
 	*discovery.CacheIndexer
 	// AdaptorsIndexer searches data from all the adaptors.
 	AdaptorsIndexer discovery.Indexer
-	// LocalIndexer data from local adaptor.
+	// LocalIndexer data from registry indexer.
 	LocalIndexer discovery.Indexer
 }
 
@@ -85,8 +85,14 @@ type AggregatorIndexer struct {
 func (i *AggregatorIndexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (resp *discovery.Response, err error) {
 	op := registry.OpGet(opts...)
 
+	indexer := i.LocalIndexer
+	if op.Global {
+		// request with global param then do not use local indexer
+		indexer = i.AdaptorsIndexer
+	}
+
 	if op.NoCache() || !op.Global {
-		return i.search(ctx, opts...)
+		return indexer.Search(ctx, opts...)
 	}
 
 	resp, err = i.CacheIndexer.Search(ctx, opts...)
@@ -98,16 +104,7 @@ func (i *AggregatorIndexer) Search(ctx context.Context, opts ...registry.PluginO
 		return resp, nil
 	}
 
-	return i.search(ctx, opts...)
-}
-
-func (i *AggregatorIndexer) search(ctx context.Context, opts ...registry.PluginOpOption) (*discovery.Response, error) {
-	op := registry.OptionsToOp(opts...)
-	if !op.Global {
-		return i.LocalIndexer.Search(ctx, opts...)
-	}
-
-	return i.AdaptorsIndexer.Search(ctx, opts...)
+	return indexer.Search(ctx, opts...)
 }
 
 // Creditable implements discovery.Indexer.Creditable.
