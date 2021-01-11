@@ -26,7 +26,7 @@ import (
 )
 
 var DependencyRule = &DependencyRuleCache{
-	Tree: cache.NewTree(cache.Configure().WithMaxSize(10000))}
+	Tree: cache.NewTree(cache.Configure().WithMaxSize(DefaultCacheMaxSize))}
 
 func init() {
 	DependencyRule.AddFilter(
