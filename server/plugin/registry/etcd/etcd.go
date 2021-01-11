@@ -18,24 +18,30 @@
 package etcd
 
 import (
+	"context"
 	"crypto/tls"
 	"errors"
 	"fmt"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/astaxie/beego"
 
 	"github.com/apache/servicecomb-service-center/pkg/backoff"
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/tlsutil"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/alarm"
+	"github.com/apache/servicecomb-service-center/server/core"
 	mgr "github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
+	"github.com/apache/servicecomb-service-center/server/service/cipher"
 
-	"context"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/etcdserver/api/v3rpc/rpctypes"
 	"github.com/coreos/etcd/etcdserver/etcdserverpb"
@@ -43,6 +49,20 @@ import (
 )
 
 var firstEndpoint string
+
+// env etcd cert
+const (
+	EnvNameEtcdCA            = "ETCD_CA"
+	EnvNameEtcdCert          = "ETCD_CERT"
+	EnvNameEtcdPrivateKey    = "ETCD_PRIVATE_KEY"
+	EnvNameEtcdPrivateKeyPwd = "ETCD_PRIVATE_KEY_PWD"
+)
+
+var (
+	tlsMinVersion = tlsutil.ParseSSLProtocol(
+		beego.AppConfig.DefaultString("ssl_client_min_version", core.ServerInfo.Config.SslMinVersion))
+	clientCipherSuits = tlsutil.ParseDefaultSSLCipherSuites(beego.AppConfig.String("ssl_client_ciphers"))
+)
 
 func init() {
 	clientv3.SetLogger(&clientLogger{})
@@ -74,7 +94,7 @@ func (c *Client) Initialize() (err error) {
 	if c.TLSConfig == nil && registry.Configuration().SslEnabled {
 		var err error
 		// go client tls限制，提供身份证书、不认证服务端、不校验CN
-		c.TLSConfig, err = mgr.Plugins().TLS().ClientConfig()
+		c.TLSConfig, err = c.clientConfig()
 		if err != nil {
 			log.Error("get etcd client tls config failed", err)
 			return err
@@ -100,6 +120,47 @@ func (c *Client) Initialize() (err error) {
 	log.Warnf("get etcd client %v completed, auto sync endpoints interval is %s.",
 		c.Endpoints, c.AutoSyncInterval)
 	return
+}
+
+// support load etcd cert, different from sc server cert
+func (c *Client) clientConfig() (*tls.Config, error) {
+	if os.Getenv(EnvNameEtcdCA) != "" {
+		return c.tlsConfigFromEnv()
+	}
+	return mgr.Plugins().TLS().ClientConfig()
+}
+
+func (c *Client) tlsConfigFromEnv() (*tls.Config, error) {
+	rawPwd := os.Getenv(EnvNameEtcdPrivateKeyPwd)
+	privateKeyPwd, err := cipher.Decrypt(rawPwd)
+	if err != nil {
+		log.Warnf("decrypt %s env failed", EnvNameEtcdPrivateKeyPwd)
+	}
+
+	opts := append(tlsutil.DefaultClientTLSOptions(),
+		tlsutil.WithVerifyPeer(core.ServerInfo.Config.SslVerifyPeer),
+		tlsutil.WithVersion(
+			tlsMinVersion,
+			tlsutil.MaxSupportedTLSVersion),
+		tlsutil.WithCipherSuits(clientCipherSuits),
+		tlsutil.WithKeyPass(privateKeyPwd),
+		tlsutil.WithEnvNameCA(EnvNameEtcdCA),
+		tlsutil.WithEnvNameCert(EnvNameEtcdCert),
+		tlsutil.WithEnvNameCertKey(EnvNameEtcdPrivateKey),
+	)
+	clientTLSConfig, err := tlsutil.GetClientTLSConfig(opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	if clientTLSConfig != nil {
+		log.Infof("client ssl configs enabled, verifyclient %t, minv %#x, cipers %d, pphase %d.",
+			core.ServerInfo.Config.SslVerifyPeer,
+			clientTLSConfig.MinVersion,
+			len(clientTLSConfig.CipherSuites),
+			len(privateKeyPwd))
+	}
+	return clientTLSConfig, nil
 }
 
 func (c *Client) newClient() (*clientv3.Client, error) {
