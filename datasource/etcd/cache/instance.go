@@ -27,7 +27,7 @@ import (
 )
 
 var FindInstances = &FindInstancesCache{
-	Tree: cache.NewTree(cache.Configure().WithTTL(2 * time.Minute).WithMaxSize(10000))}
+	Tree: cache.NewTree(cache.Configure().WithTTL(2 * time.Minute).WithMaxSize(DefaultCacheMaxSize))}
 
 func init() {
 	FindInstances.AddFilter(
