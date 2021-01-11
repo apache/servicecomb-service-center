@@ -69,14 +69,14 @@ func (d *Distributor) Delete(id, project string) error {
 func (d *Distributor) Display(project, app, env string) ([]byte, error) {
 	list := make([]*gov.Policy, 0)
 	for _, g := range d.lbPolicies {
-		if g.Kind == MatchGroup && g.Selector.App == app && g.Selector.Environment == env {
+		if checkPolicy(g, MatchGroup, app, env) {
 			list = append(list, g)
 		}
 	}
 	policyMap := make(map[string]*gov.Policy)
 	for _, g := range d.lbPolicies {
 		for _, kind := range PolicyNames {
-			if g.Kind == kind && g.Selector.App == app && g.Selector.Environment == env {
+			if checkPolicy(g, kind, app, env) {
 				policyMap[g.Name+kind] = g
 			}
 		}
@@ -98,12 +98,16 @@ func (d *Distributor) Display(project, app, env string) ([]byte, error) {
 func (d *Distributor) List(kind, project, app, env string) ([]byte, error) {
 	r := make([]*gov.Policy, 0, len(d.lbPolicies))
 	for _, g := range d.lbPolicies {
-		if g.Kind == kind && g.Selector.App == app && g.Selector.Environment == env {
+		if checkPolicy(g, kind, app, env) {
 			r = append(r, g)
 		}
 	}
 	b, _ := json.MarshalIndent(r, "", "  ")
 	return b, nil
+}
+
+func checkPolicy(g *gov.Policy, kind, app, env string) bool {
+	return g.Kind == kind && g.Selector.App == app && g.Selector.Environment == env
 }
 
 func (d *Distributor) Get(kind, id, project string) ([]byte, error) {

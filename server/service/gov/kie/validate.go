@@ -7,7 +7,18 @@ import (
 type Validator struct {
 }
 
-var methodSet map[string]bool
+type ErrIllegalItem struct {
+	err string
+	val interface{}
+}
+
+var (
+	methodSet map[string]bool
+)
+
+func (e *ErrIllegalItem) Error() string {
+	return fmt.Sprintf("illegal item : %v , msg: %s", e.val, e.err)
+}
 
 func (d *Validator) Validate(kind string, spec interface{}) error {
 	switch kind {
@@ -22,7 +33,7 @@ func (d *Validator) Validate(kind string, spec interface{}) error {
 	case "loadbalancer":
 		return nil
 	default:
-		return fmt.Errorf("not support kind yet")
+		return &ErrIllegalItem{"not support kind yet", kind}
 	}
 	return nil
 }
@@ -30,39 +41,39 @@ func (d *Validator) Validate(kind string, spec interface{}) error {
 func matchValidate(val interface{}) error {
 	spec, ok := val.(map[string]interface{})
 	if !ok {
-		return fmt.Errorf("illegal item : %v", val)
+		return &ErrIllegalItem{"can not cast to map", val}
 	}
 	if spec["matches"] == nil {
 		return nil
 	}
 	matches, ok := spec["matches"].([]interface{})
 	if !ok {
-		return fmt.Errorf("illegal item : %v", spec)
+		return &ErrIllegalItem{"don't have matches", spec}
 	}
 	for _, match := range matches {
 		match, ok := match.(map[string]interface{})
 		if !ok {
-			return fmt.Errorf("illegal item : %v", match)
+			return &ErrIllegalItem{"match can not cast to map", match}
 		}
 		if match["name"] == nil {
-			return fmt.Errorf("match's name can not be null : %v", match)
+			return &ErrIllegalItem{"match's name can not be null", match}
 		}
 		if match["apiPath"] == nil && match["headers"] == nil && match["methods"] == nil {
-			return fmt.Errorf("match must have a match item [apiPath/headers/methods] %v", match)
+			return &ErrIllegalItem{"match must have a match item [apiPath/headers/methods]", match}
 		}
 		//apiPath & headers do not check
 		if match["methods"] != nil {
 			methods, ok := match["methods"].([]interface{})
 			if !ok {
-				return fmt.Errorf("illegal item : %v", match)
+				return &ErrIllegalItem{"methods must be a list", match}
 			}
 			for _, method := range methods {
 				methodStr, ok := method.(string)
 				if !ok {
-					return fmt.Errorf("illegal item : %v", method)
+					return &ErrIllegalItem{"method must be a string", method}
 				}
 				if !methodSet[methodStr] {
-					return fmt.Errorf("method must be one of the GET/POST/PUT/DELETE: %v", match)
+					return &ErrIllegalItem{"method must be one of the GET/POST/PUT/DELETE", method}
 				}
 			}
 		}
@@ -89,15 +100,15 @@ func rateLimitingValidate(val interface{}) error {
 func policyValidate(val interface{}) error {
 	spec, ok := val.(map[string]interface{})
 	if !ok {
-		return fmt.Errorf("illegal item : %v", val)
+		return &ErrIllegalItem{"policy can not cast to map", val}
 	}
 	if spec["rules"] != nil {
 		rules, ok := spec["rules"].(map[string]interface{})
 		if !ok {
-			return fmt.Errorf("illegal item : %v", spec)
+			return &ErrIllegalItem{"policy's rules can not cast to map", spec}
 		}
 		if "" == rules["match"] {
-			return fmt.Errorf("policy's match can not be nil: %v", spec)
+			return &ErrIllegalItem{"policy's rules match can not be nil", spec}
 		}
 	}
 	return nil

@@ -21,6 +21,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/apache/servicecomb-service-center/server/service/gov/kie"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/rest/controller"
@@ -51,18 +53,18 @@ func (t *Governance) Create(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	id, err := gov.Create(kind, project, body)
-	//todo: 错误处理抽函数
 	if err != nil {
-		log.Error("create gov err", err)
-		w.WriteHeader(http.StatusBadRequest)
-		controller.WriteError(w, discovery.ErrInternal, err.Error())
+		if _, ok := err.(*kie.ErrIllegalItem); ok {
+			log.Error("", err)
+			controller.WriteError(w, discovery.ErrInvalidParams, err.Error())
+			return
+		}
+		processError(w, err, "create gov data err")
 		return
 	}
 	_, err = w.Write(id)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		log.Error("", err)
-		controller.WriteError(w, discovery.ErrInternal, err.Error())
+		processError(w, err, "")
 		return
 	}
 	w.WriteHeader(http.StatusOK)
@@ -81,9 +83,12 @@ func (t *Governance) Put(w http.ResponseWriter, req *http.Request) {
 	}
 	err = gov.Update(id, kind, project, body)
 	if err != nil {
-		log.Error("put gov err", err)
-		w.WriteHeader(http.StatusBadRequest)
-		controller.WriteError(w, discovery.ErrInternal, err.Error())
+		if _, ok := err.(*kie.ErrIllegalItem); ok {
+			log.Error("", err)
+			controller.WriteError(w, discovery.ErrInvalidParams, err.Error())
+			return
+		}
+		processError(w, err, "put gov err")
 		return
 	}
 	w.WriteHeader(http.StatusOK)
@@ -103,16 +108,12 @@ func (t *Governance) ListOrDisPlay(w http.ResponseWriter, req *http.Request) {
 		body, err = gov.List(kind, project, app, environment)
 	}
 	if err != nil {
-		log.Error("list gov err", err)
-		w.WriteHeader(http.StatusBadRequest)
-		controller.WriteError(w, discovery.ErrInternal, err.Error())
+		processError(w, err, "list gov err")
 		return
 	}
 	_, err = w.Write(body)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		log.Error("", err)
-		controller.WriteError(w, discovery.ErrInternal, err.Error())
+		processError(w, err, "")
 		return
 	}
 	w.WriteHeader(http.StatusOK)
@@ -133,9 +134,7 @@ func (t *Governance) Get(w http.ResponseWriter, req *http.Request) {
 	}
 	_, err = w.Write(body)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		log.Error("", err)
-		controller.WriteError(w, discovery.ErrInternal, err.Error())
+		processError(w, err, "")
 		return
 	}
 	w.WriteHeader(http.StatusOK)
@@ -148,12 +147,16 @@ func (t *Governance) Delete(w http.ResponseWriter, req *http.Request) {
 	project := req.URL.Query().Get(ProjectKey)
 	err := gov.Delete(id, project)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		log.Error("delete gov err", err)
-		controller.WriteError(w, discovery.ErrInternal, err.Error())
+		processError(w, err, "delete gov err")
 		return
 	}
 	w.WriteHeader(http.StatusOK)
+}
+
+func processError(w http.ResponseWriter, err error, msg string) {
+	w.WriteHeader(http.StatusBadRequest)
+	log.Error(msg, err)
+	controller.WriteError(w, discovery.ErrInternal, err.Error())
 }
 
 func (t *Governance) URLPatterns() []rest.Route {
