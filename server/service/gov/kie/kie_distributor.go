@@ -47,9 +47,9 @@ func (d *Distributor) Create(kind, project string, spec []byte) ([]byte, error) 
 	}
 	if kind == MatchGroup {
 		err = d.generateID(project, p)
-	}
-	if err != nil {
-		return nil, err
+		if err != nil {
+			return nil, err
+		}
 	}
 	log.Info(fmt.Sprintf("create %v", &p))
 	err = rule.Validate(kind, p.Spec)
@@ -257,26 +257,11 @@ func (d *Distributor) generateID(project string, p *gov.Policy) error {
 	if err != nil {
 		return err
 	}
-	alias, err := getAlias(p)
-	if err != nil {
-		return err
-	}
 	var id string
 	for {
 		var repeat bool
 		id = getID()
 		for _, datum := range list.Data {
-			itemP, err := d.transform(datum, MatchGroup)
-			if err != nil {
-				return err
-			}
-			temp, err := getAlias(itemP)
-			if err != nil {
-				return err
-			}
-			if alias == temp {
-				return &ErrIllegalItem{"alias can not repeat", alias}
-			}
 			if id == MatchGroup+datum.Key {
 				repeat = true
 				break
@@ -288,18 +273,6 @@ func (d *Distributor) generateID(project string, p *gov.Policy) error {
 	}
 	p.Name = id
 	return nil
-}
-
-func getAlias(p *gov.Policy) (string, error) {
-	spec, ok := p.Spec.(map[string]interface{})
-	if !ok {
-		return "", &ErrIllegalItem{"can not cast to map", spec}
-	}
-	alias, ok := spec["alias"].(string)
-	if !ok {
-		return "", nil
-	}
-	return alias, nil
 }
 
 func getID() string {

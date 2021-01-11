@@ -69,14 +69,14 @@ func (d *Distributor) Delete(id, project string) error {
 func (d *Distributor) Display(project, app, env string) ([]byte, error) {
 	list := make([]*gov.Policy, 0)
 	for _, g := range d.lbPolicies {
-		if check(g, MatchGroup, app, env) {
+		if checkPolicy(g, MatchGroup, app, env) {
 			list = append(list, g)
 		}
 	}
 	policyMap := make(map[string]*gov.Policy)
 	for _, g := range d.lbPolicies {
 		for _, kind := range PolicyNames {
-			if check(g, kind, app, env) {
+			if checkPolicy(g, kind, app, env) {
 				policyMap[g.Name+kind] = g
 			}
 		}
@@ -98,7 +98,7 @@ func (d *Distributor) Display(project, app, env string) ([]byte, error) {
 func (d *Distributor) List(kind, project, app, env string) ([]byte, error) {
 	r := make([]*gov.Policy, 0, len(d.lbPolicies))
 	for _, g := range d.lbPolicies {
-		if check(g, kind, app, env) {
+		if checkPolicy(g, kind, app, env) {
 			r = append(r, g)
 		}
 	}
@@ -106,7 +106,7 @@ func (d *Distributor) List(kind, project, app, env string) ([]byte, error) {
 	return b, nil
 }
 
-func check(g *gov.Policy, kind, app, env string) bool {
+func checkPolicy(g *gov.Policy, kind, app, env string) bool {
 	return g.Kind == kind && g.Selector.App == app && g.Selector.Environment == env
 }
 
