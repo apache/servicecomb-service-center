@@ -19,6 +19,7 @@ package event
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/apache/servicecomb-service-center/datasource"
@@ -56,11 +57,11 @@ func (h InstanceEventHandler) OnEvent(evt sd.MongoEvent) {
 		log.Info("get cached service failed, then get from database")
 		service, err := mongo.GetService(context.Background(), bson.M{"serviceinfo.serviceid": providerID})
 		if err != nil {
-			log.Error("query database error", err)
-			return
-		}
-		if service == nil {
-			log.Warn(fmt.Sprintf("there is no service with id [%s] in the database", providerID))
+			if errors.Is(err, datasource.ErrNoData) {
+				log.Warn(fmt.Sprintf("there is no service with id [%s] in the database", providerID))
+			} else {
+				log.Error("query database error", err)
+			}
 			return
 		}
 		microService = service.ServiceInfo // service in the cache may not ready, query from db once

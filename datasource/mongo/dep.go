@@ -19,6 +19,7 @@ package mongo
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	pb "github.com/go-chassis/cari/discovery"
@@ -36,14 +37,14 @@ func (ds *DataSource) SearchProviderDependency(ctx context.Context, request *pb.
 	filter := GeneratorServiceFilter(ctx, providerServiceID)
 	provider, err := GetService(ctx, filter)
 	if err != nil {
-		log.Error("GetProviderDependencies failed, provider is "+providerServiceID, err)
+		if errors.Is(err, datasource.ErrNoData) {
+			log.Debug(fmt.Sprintf("query provider service failed, there is no provider %s in db", providerServiceID))
+			return &pb.GetProDependenciesResponse{
+				Response: pb.CreateResponse(pb.ErrServiceNotExists, "Provider does not exist"),
+			}, nil
+		}
+		log.Error(fmt.Sprintf("query provider from db error, provider is %s", providerServiceID), err)
 		return nil, err
-	}
-	if provider == nil {
-		log.Error(fmt.Sprintf("GetProviderDependencies failed for provider %s", providerServiceID), err)
-		return &pb.GetProDependenciesResponse{
-			Response: pb.CreateResponse(pb.ErrServiceNotExists, "Provider does not exist"),
-		}, nil
 	}
 
 	dr := NewProviderDependencyRelation(ctx, domainProject, provider.ServiceInfo)
@@ -69,20 +70,20 @@ func (ds *DataSource) SearchConsumerDependency(ctx context.Context, request *pb.
 	filter := GeneratorServiceFilter(ctx, consumerID)
 	consumer, err := GetService(ctx, filter)
 	if err != nil {
-		log.Error(fmt.Sprintf("GetConsumerDependencies failed, consumer is %s", consumerID), err)
+		if errors.Is(err, datasource.ErrNoData) {
+			log.Debug(fmt.Sprintf("query consumer service failed, there is no consumer %s in db", consumerID))
+			return &pb.GetConDependenciesResponse{
+				Response: pb.CreateResponse(pb.ErrServiceNotExists, "Consumer does not exist"),
+			}, nil
+		}
+		log.Error(fmt.Sprintf("query consumer from db error, consumer is %s", consumerID), err)
 		return nil, err
-	}
-	if consumer == nil {
-		log.Error(fmt.Sprintf("GetConsumerDependencies failed for consumer %s does not exist", consumerID), err)
-		return &pb.GetConDependenciesResponse{
-			Response: pb.CreateResponse(pb.ErrServiceNotExists, "Consumer does not exist"),
-		}, nil
 	}
 
 	dr := NewConsumerDependencyRelation(ctx, domainProject, consumer.ServiceInfo)
 	services, err := dr.GetDependencyProviders(ToDependencyFilterOptions(request)...)
 	if err != nil {
-		log.Error(fmt.Sprintf("GetConsumerDependencies failed, consumer is %s/%s/%s/%s",
+		log.Error(fmt.Sprintf("query consumer failed, consumer is %s/%s/%s/%s",
 			consumer.ServiceInfo.Environment, consumer.ServiceInfo.AppId, consumer.ServiceInfo.ServiceName, consumer.ServiceInfo.Version), err)
 		return &pb.GetConDependenciesResponse{
 			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
@@ -90,7 +91,7 @@ func (ds *DataSource) SearchConsumerDependency(ctx context.Context, request *pb.
 	}
 
 	return &pb.GetConDependenciesResponse{
-		Response:  pb.CreateResponse(pb.ResponseSuccess, "Get all providers successfully."),
+		Response:  pb.CreateResponse(pb.ResponseSuccess, "get all providers successfully."),
 		Providers: services,
 	}, nil
 }

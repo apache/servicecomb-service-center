@@ -19,15 +19,16 @@ package util
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"reflect"
 	"regexp"
 	"strings"
 
-	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
-
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
@@ -42,7 +43,7 @@ type RuleFilter struct {
 func (rf *RuleFilter) Filter(ctx context.Context, consumerID string) (bool, error) {
 	copyCtx := util.WithCacheOnly(util.CloneContext(ctx))
 	consumer, err := GetService(copyCtx, rf.DomainProject, consumerID)
-	if consumer == nil {
+	if err != nil {
 		return false, err
 	}
 
@@ -259,19 +260,19 @@ func Accessible(ctx context.Context, consumerID string, providerID string) *disc
 
 	consumerService, err := GetService(ctx, domainProject, consumerID)
 	if err != nil {
+		if errors.Is(err, datasource.ErrNoData) {
+			return discovery.NewError(discovery.ErrServiceNotExists, "consumer serviceID is invalid")
+		}
 		return discovery.NewErrorf(discovery.ErrInternal, "An error occurred in query consumer(%s)", err.Error())
-	}
-	if consumerService == nil {
-		return discovery.NewError(discovery.ErrServiceNotExists, "consumer serviceID is invalid")
 	}
 
 	// 跨应用权限
 	providerService, err := GetService(ctx, targetDomainProject, providerID)
 	if err != nil {
+		if errors.Is(err, datasource.ErrNoData) {
+			return discovery.NewError(discovery.ErrServiceNotExists, "provider serviceID is invalid")
+		}
 		return discovery.NewErrorf(discovery.ErrInternal, "An error occurred in query provider(%s)", err.Error())
-	}
-	if providerService == nil {
-		return discovery.NewError(discovery.ErrServiceNotExists, "provider serviceID is invalid")
 	}
 
 	err = AllowAcrossDimension(ctx, providerService, consumerService)

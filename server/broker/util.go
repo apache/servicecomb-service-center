@@ -20,11 +20,14 @@ package broker
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"math"
 	"net/url"
 	"strconv"
 	"strings"
 
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -438,30 +441,30 @@ func RetrieveProviderConsumerPact(ctx context.Context,
 	// Get provider microservice
 	provider, err := serviceUtil.GetService(ctx, tenant, in.ProviderId)
 	if err != nil {
-		PactLogger.Errorf(err, "pact retrieve failed, providerId is %s: query provider failed.", in.ProviderId)
+		if errors.Is(err, datasource.ErrNoData) {
+			PactLogger.Debug(fmt.Sprintf("pact retrieve failed, providerId is %s: provider not exist.", in.ProviderId))
+			return &brokerpb.GetProviderConsumerVersionPactResponse{
+				Response: pb.CreateResponse(pb.ErrInternal, "Provider does not exist."),
+			}, -1, nil
+		}
+		PactLogger.Error(fmt.Sprintf("pact retrieve failed, providerId is %s: query provider failed.", in.ProviderId), err)
 		return &brokerpb.GetProviderConsumerVersionPactResponse{
 			Response: pb.CreateResponse(pb.ErrInternal, "Query provider failed."),
 		}, -1, err
 	}
-	if provider == nil {
-		PactLogger.Errorf(nil, "pact retrieve failed, providerId is %s: provider not exist.", in.ProviderId)
-		return &brokerpb.GetProviderConsumerVersionPactResponse{
-			Response: pb.CreateResponse(pb.ErrInternal, "Provider does not exist."),
-		}, -1, nil
-	}
 	// Get consumer microservice
 	consumer, err := serviceUtil.GetService(ctx, tenant, in.ConsumerId)
 	if err != nil {
-		PactLogger.Errorf(err, "pact retrieve failed, consumerId is %s: query consumer failed.", in.ConsumerId)
+		if errors.Is(err, datasource.ErrNoData) {
+			PactLogger.Debug(fmt.Sprintf("pact retrieve failed, consumerId is %s: consumer not exist.", in.ConsumerId))
+			return &brokerpb.GetProviderConsumerVersionPactResponse{
+				Response: pb.CreateResponse(pb.ErrInternal, "Consumer does not exist."),
+			}, -1, nil
+		}
+		PactLogger.Error(fmt.Sprintf("pact retrieve failed, consumerId is %s: query consumer failed.", in.ConsumerId), err)
 		return &brokerpb.GetProviderConsumerVersionPactResponse{
 			Response: pb.CreateResponse(pb.ErrInternal, "Query consumer failed."),
 		}, -1, err
-	}
-	if consumer == nil {
-		PactLogger.Errorf(nil, "pact retrieve failed, consumerId is %s: consumer not exist.", in.ConsumerId)
-		return &brokerpb.GetProviderConsumerVersionPactResponse{
-			Response: pb.CreateResponse(pb.ErrInternal, "Consumer does not exist."),
-		}, -1, nil
 	}
 	// Get provider participant
 	//providerParticipantKey := apt.GenerateBrokerParticipantKey(tenant, provider.AppId, provider.ServiceName)
