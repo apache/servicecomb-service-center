@@ -19,13 +19,14 @@ package util
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
-	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
-
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	pb "github.com/go-chassis/cari/discovery"
@@ -90,13 +91,13 @@ func (dr *DependencyRelation) GetDependencyProviders(opts ...DependencyRelationF
 		for _, providerID := range providerIDs {
 			provider, err := GetService(dr.ctx, key.Tenant, providerID)
 			if err != nil {
-				log.Warnf("get provider[%s/%s/%s/%s] failed",
-					key.Environment, key.AppId, key.ServiceName, key.Version)
-				continue
-			}
-			if provider == nil {
-				log.Warnf("provider[%s/%s/%s/%s] does not exist",
-					key.Environment, key.AppId, key.ServiceName, key.Version)
+				if errors.Is(err, datasource.ErrNoData) {
+					log.Warn(fmt.Sprintf("provider[%s/%s/%s/%s] does not exist",
+						key.Environment, key.AppId, key.ServiceName, key.Version))
+				} else {
+					log.Warn(fmt.Sprintf("get provider[%s/%s/%s/%s] failed",
+						key.Environment, key.AppId, key.ServiceName, key.Version))
+				}
 				continue
 			}
 			if op.NonSelf && providerID == dr.consumer.ServiceId {
@@ -202,12 +203,13 @@ func (dr *DependencyRelation) GetDependencyConsumers(opts ...DependencyRelationF
 
 		service, err := dr.GetServiceByMicroServiceKey(consumer)
 		if err != nil {
-			return nil, err
-		}
-		if service == nil {
-			log.Warnf("consumer[%s/%s/%s/%s] does not exist",
-				consumer.Environment, consumer.AppId, consumer.ServiceName, consumer.Version)
-			continue
+			if errors.Is(err, datasource.ErrNoData) {
+				log.Warn(fmt.Sprintf("consumer[%s/%s/%s/%s] does not exist",
+					consumer.Environment, consumer.AppId, consumer.ServiceName, consumer.Version))
+				continue
+			} else {
+				return nil, err
+			}
 		}
 
 		if op.NonSelf && service.ServiceId == dr.provider.ServiceId {
@@ -225,9 +227,9 @@ func (dr *DependencyRelation) GetServiceByMicroServiceKey(service *pb.MicroServi
 		return nil, err
 	}
 	if len(serviceID) == 0 {
-		log.Warnf("service[%s/%s/%s/%s] not exist",
-			service.Environment, service.AppId, service.ServiceName, service.Version)
-		return nil, nil
+		log.Warn(fmt.Sprintf("service[%s/%s/%s/%s] not exist",
+			service.Environment, service.AppId, service.ServiceName, service.Version))
+		return nil, datasource.ErrNoData
 	}
 	return GetService(dr.ctx, service.Tenant, serviceID)
 }

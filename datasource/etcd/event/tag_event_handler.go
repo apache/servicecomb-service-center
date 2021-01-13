@@ -19,8 +19,10 @@ package event
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/cache"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
@@ -61,12 +63,12 @@ func (apt *TagsChangedTask) publish(ctx context.Context, domainProject, consumer
 
 	consumer, err := serviceUtil.GetService(ctx, domainProject, consumerID)
 	if err != nil {
-		log.Errorf(err, "get consumer[%s] for publish event failed", consumerID)
+		if errors.Is(err, datasource.ErrNoData) {
+			log.Debug(fmt.Sprintf("consumer[%s] does not exist in db", consumerID))
+		} else {
+			log.Error(fmt.Sprintf("get consumer[%s] for publish event failed", consumerID), err)
+		}
 		return err
-	}
-	if consumer == nil {
-		log.Errorf(nil, "consumer[%s] does not exist", consumerID)
-		return fmt.Errorf("consumer[%s] does not exist", consumerID)
 	}
 
 	serviceKey := pb.MicroServiceToKey(domainProject, consumer)
@@ -81,9 +83,9 @@ func (apt *TagsChangedTask) publish(ctx context.Context, domainProject, consumer
 
 	for _, providerID := range providerIDs {
 		provider, err := serviceUtil.GetService(ctx, domainProject, providerID)
-		if provider == nil {
-			log.Errorf(err, "get service[%s][%s/%s/%s/%s]'s provider[%s] file failed",
-				consumerID, consumer.Environment, consumer.AppId, consumer.ServiceName, consumer.Version, providerID)
+		if err != nil {
+			log.Error(fmt.Sprintf("get service[%s][%s/%s/%s/%s]'s provider[%s] file failed",
+				consumerID, consumer.Environment, consumer.AppId, consumer.ServiceName, consumer.Version, providerID), err)
 			continue
 		}
 

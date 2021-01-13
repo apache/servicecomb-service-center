@@ -19,6 +19,7 @@ package event
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/apache/servicecomb-service-center/datasource/etcd/cache"
@@ -92,9 +93,9 @@ func (h *InstanceEventHandler) OnEvent(evt sd.KvEvent) {
 	ctx := util.WithGlobal(util.WithCacheOnly(context.Background()))
 	ms, err := serviceUtil.GetService(ctx, domainProject, providerID)
 
-	if ms == nil {
-		log.Errorf(err, "caught [%s] instance[%s/%s] event, endpoints %v, get cached provider's file failed",
-			action, providerID, providerInstanceID, instance.Endpoints)
+	if err != nil {
+		log.Error(fmt.Sprintf("caught [%s] instance[%s/%s] event, endpoints %v, get cached provider's file failed",
+			action, providerID, providerInstanceID, instance.Endpoints), err)
 		return
 	}
 
@@ -103,8 +104,8 @@ func (h *InstanceEventHandler) OnEvent(evt sd.KvEvent) {
 	}
 
 	if notify.Center().Closed() {
-		log.Warnf("caught [%s] instance[%s/%s] event, endpoints %v, but notify service is closed",
-			action, providerID, providerInstanceID, instance.Endpoints)
+		log.Warn(fmt.Sprintf("caught [%s] instance[%s/%s] event, endpoints %v, but notify service is closed",
+			action, providerID, providerInstanceID, instance.Endpoints))
 		return
 	}
 

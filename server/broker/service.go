@@ -18,15 +18,17 @@
 package broker
 
 import (
+	"context"
 	"crypto/sha1"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"math"
 	"strconv"
 	"strings"
 	"time"
 
-	"context"
-
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -117,16 +119,16 @@ func (*Service) RetrieveProviderPacts(ctx context.Context,
 
 	provider, err := serviceUtil.GetService(ctx, tenant, in.ProviderId)
 	if err != nil {
-		PactLogger.Errorf(err, "all provider pact retrieve failed, providerId is %s: query provider failed.", in.ProviderId)
+		if errors.Is(err, datasource.ErrNoData) {
+			PactLogger.Debug(fmt.Sprintf("all provider pact retrieve failed, providerId is %s: provider not exist.", in.ProviderId))
+			return &brokerpb.GetAllProviderPactsResponse{
+				Response: pb.CreateResponse(pb.ErrInvalidParams, "Provider does not exist."),
+			}, nil
+		}
+		PactLogger.Error(fmt.Sprintf("all provider pact retrieve failed, providerId is %s: query provider failed.", in.ProviderId), err)
 		return &brokerpb.GetAllProviderPactsResponse{
 			Response: pb.CreateResponse(pb.ErrInvalidParams, "Query provider failed."),
 		}, err
-	}
-	if provider == nil {
-		PactLogger.Errorf(nil, "all provider pact retrieve failed, providerId is %s: provider not exist.", in.ProviderId)
-		return &brokerpb.GetAllProviderPactsResponse{
-			Response: pb.CreateResponse(pb.ErrInvalidParams, "Provider does not exist."),
-		}, nil
 	}
 	// Get the provider participant
 	//providerParticipantKey := apt.GenerateBrokerParticipantKey(tenant, provider.AppId, provider.ServiceName)
@@ -270,16 +272,16 @@ func (*Service) GetAllProviderPacts(ctx context.Context,
 
 	provider, err := serviceUtil.GetService(ctx, tenant, in.ProviderId)
 	if err != nil {
-		PactLogger.Errorf(err, "all provider pact retrieve failed, providerId is %s: query provider failed.", in.ProviderId)
+		if errors.Is(err, datasource.ErrNoData) {
+			PactLogger.Debug(fmt.Sprintf("all provider pact retrieve failed, providerId is %s: provider not exist.", in.ProviderId))
+			return &brokerpb.GetAllProviderPactsResponse{
+				Response: pb.CreateResponse(pb.ErrInvalidParams, "Provider does not exist."),
+			}, nil
+		}
+		PactLogger.Error(fmt.Sprintf("all provider pact retrieve failed, providerId is %s: query provider failed.", in.ProviderId), err)
 		return &brokerpb.GetAllProviderPactsResponse{
 			Response: pb.CreateResponse(pb.ErrInvalidParams, "Query provider failed."),
 		}, err
-	}
-	if provider == nil {
-		PactLogger.Errorf(nil, "all provider pact retrieve failed, providerId is %s: provider not exist.", in.ProviderId)
-		return &brokerpb.GetAllProviderPactsResponse{
-			Response: pb.CreateResponse(pb.ErrInvalidParams, "Provider does not exist."),
-		}, nil
 	}
 	// Get the provider participant
 	//providerParticipantKey := apt.GenerateBrokerParticipantKey(tenant, provider.AppId, provider.ServiceName)
@@ -420,16 +422,16 @@ func (*Service) RetrieveVerificationResults(ctx context.Context, in *brokerpb.Re
 	tenant := GetDefaultTenantProject()
 	consumer, err := serviceUtil.GetService(ctx, tenant, in.ConsumerId)
 	if err != nil {
-		PactLogger.Errorf(err, "verification result retrieve request failed, consumerID is %s: query consumer failed.", in.ConsumerId)
+		if errors.Is(err, datasource.ErrNoData) {
+			PactLogger.Debug(fmt.Sprintf("verification result retrieve request failed, consumerID is %s: consumer not exist.", in.ConsumerId))
+			return &brokerpb.RetrieveVerificationResponse{
+				Response: pb.CreateResponse(pb.ErrInvalidParams, "Consumer does not exist."),
+			}, nil
+		}
+		PactLogger.Error(fmt.Sprintf("verification result retrieve request failed, consumerID is %s: query consumer failed.", in.ConsumerId), err)
 		return &brokerpb.RetrieveVerificationResponse{
 			Response: pb.CreateResponse(pb.ErrInvalidParams, "Query consumer failed."),
 		}, err
-	}
-	if consumer == nil {
-		PactLogger.Errorf(nil, "verification result retrieve request failed, consumerID is %s: consumer not exist.", in.ConsumerId)
-		return &brokerpb.RetrieveVerificationResponse{
-			Response: pb.CreateResponse(pb.ErrInvalidParams, "Consumer does not exist."),
-		}, nil
 	}
 	PactLogger.Infof("Consumer service found: (%s, %s, %s, %s)", consumer.ServiceId, consumer.AppId, consumer.ServiceName, consumer.Version)
 	// Get consumer participant
@@ -595,18 +597,18 @@ func (*Service) PublishVerificationResults(ctx context.Context, in *brokerpb.Pub
 	tenant := GetDefaultTenantProject()
 	consumer, err := serviceUtil.GetService(ctx, tenant, in.ConsumerId)
 	if err != nil {
-		PactLogger.Errorf(err, "verification result publish request failed, consumerID is %s: query consumer failed.", in.ConsumerId)
+		if errors.Is(err, datasource.ErrNoData) {
+			PactLogger.Debug(fmt.Sprintf("verification result publish request failed, consumerID is %s: consumer not exist.", in.ConsumerId))
+			return &brokerpb.PublishVerificationResponse{
+				Response: pb.CreateResponse(pb.ErrInvalidParams, "Consumer does not exist."),
+			}, nil
+		}
+		PactLogger.Error(fmt.Sprintf("verification result publish request failed, consumerID is %s: query consumer failed.", in.ConsumerId), err)
 		return &brokerpb.PublishVerificationResponse{
 			Response: pb.CreateResponse(pb.ErrInvalidParams, "Query consumer failed."),
 		}, err
 	}
-	if consumer == nil {
-		PactLogger.Errorf(nil, "verification result publish request failed, consumerID is %s: consumer not exist.", in.ConsumerId)
-		return &brokerpb.PublishVerificationResponse{
-			Response: pb.CreateResponse(pb.ErrInvalidParams, "Consumer does not exist."),
-		}, nil
-	}
-	PactLogger.Infof("Consumer service found: (%s, %s, %s, %s)", consumer.ServiceId, consumer.AppId, consumer.ServiceName, consumer.Version)
+	PactLogger.Info(fmt.Sprintf("consumer service found: (%s, %s, %s, %s)", consumer.ServiceId, consumer.AppId, consumer.ServiceName, consumer.Version))
 	// Get consumer participant
 	consumerParticipant, err := GetParticipant(ctx, tenant, consumer.AppId, consumer.ServiceName)
 	if err != nil || consumerParticipant == nil {
@@ -615,7 +617,7 @@ func (*Service) PublishVerificationResults(ctx context.Context, in *brokerpb.Pub
 			Response: pb.CreateResponse(pb.ErrInvalidParams, "consumer participant cannot be searched."),
 		}, err
 	}
-	PactLogger.Infof("Consumer participant found: (%d, %s, %s)", consumerParticipant.Id, consumerParticipant.AppId, consumerParticipant.ServiceName)
+	PactLogger.Info(fmt.Sprintf("Consumer participant found: (%d, %s, %s)", consumerParticipant.Id, consumerParticipant.AppId, consumerParticipant.ServiceName))
 	// Get version
 	version, err := GetVersion(ctx, tenant, consumer.Version, consumerParticipant.Id)
 	if err != nil || version == nil {
@@ -744,47 +746,46 @@ func (*Service) PublishPact(ctx context.Context, in *brokerpb.PublishPactRequest
 
 	provider, err := serviceUtil.GetService(ctx, tenant, in.ProviderId)
 	if err != nil {
-		PactLogger.Errorf(err, "pact publish failed, providerId is %s: query provider failed.", in.ProviderId)
+		if errors.Is(err, datasource.ErrNoData) {
+			PactLogger.Debug(fmt.Sprintf("pact publish failed, providerId is %s: provider not exist.", in.ProviderId))
+			return &brokerpb.PublishPactResponse{
+				Response: pb.CreateResponse(pb.ErrInvalidParams, "Provider does not exist."),
+			}, nil
+		}
+		PactLogger.Error(fmt.Sprintf("pact publish failed, providerId is %s: query provider failed.", in.ProviderId), err)
 		return &brokerpb.PublishPactResponse{
 			Response: pb.CreateResponse(pb.ErrInvalidParams, "Query provider failed."),
 		}, err
 	}
-	if provider == nil {
-		PactLogger.Errorf(nil, "pact publish failed, providerId is %s: provider not exist.", in.ProviderId)
-		return &brokerpb.PublishPactResponse{
-			Response: pb.CreateResponse(pb.ErrInvalidParams, "Provider does not exist."),
-		}, nil
-	}
-	PactLogger.Infof("Provider service found: (%s, %s, %s, %s)", provider.ServiceId, provider.AppId, provider.ServiceName, provider.Version)
+	PactLogger.Info(fmt.Sprintf("provider service found: (%s, %s, %s, %s)", provider.ServiceId, provider.AppId, provider.ServiceName, provider.Version))
 	consumer, err := serviceUtil.GetService(ctx, tenant, in.ConsumerId)
 	if err != nil {
-		PactLogger.Errorf(err, "pact publish failed, consumerID is %s: query consumer failed.", in.ConsumerId)
+		if errors.Is(err, datasource.ErrNoData) {
+			PactLogger.Debug(fmt.Sprintf("pact publish failed, consumerID is %s: consumer not exist.", in.ConsumerId))
+			return &brokerpb.PublishPactResponse{
+				Response: pb.CreateResponse(pb.ErrInvalidParams, "Consumer does not exist."),
+			}, nil
+		}
+		PactLogger.Error(fmt.Sprintf("pact publish failed, consumerID is %s: query consumer failed.", in.ConsumerId), err)
 		return &brokerpb.PublishPactResponse{
 			Response: pb.CreateResponse(pb.ErrInvalidParams, "Query consumer failed."),
 		}, err
 	}
-	if consumer == nil {
-		PactLogger.Errorf(nil, "pact publish failed, consumerID is %s: consumer not exist.", in.ConsumerId)
-		return &brokerpb.PublishPactResponse{
-			Response: pb.CreateResponse(pb.ErrInvalidParams, "Consumer does not exist."),
-		}, nil
-	}
 
 	// check that the consumer has that vesion in the url
 	if strings.Compare(consumer.Version, in.Version) != 0 {
-		log.Errorf(nil,
-			"pact publish failed, version (%s) does not exist for consmer", in.Version)
+		log.Error(fmt.Sprintf("pact publish failed, version (%s) does not exist for consmer", in.Version), nil)
 		return &brokerpb.PublishPactResponse{
 			Response: pb.CreateResponse(pb.ErrInvalidParams, "Consumer Version does not exist."),
 		}, nil
 	}
 
-	PactLogger.Infof("Consumer service found: (%s, %s, %s, %s)", consumer.ServiceId, consumer.AppId, consumer.ServiceName, consumer.Version)
+	PactLogger.Info(fmt.Sprintf("consumer service found: (%s, %s, %s, %s)", consumer.ServiceId, consumer.AppId, consumer.ServiceName, consumer.Version))
 	// Get or create provider participant
 	providerParticipantKey := GenerateBrokerParticipantKey(tenant, provider.AppId, provider.ServiceName)
 	providerParticipant, err := GetParticipant(ctx, tenant, provider.AppId, provider.ServiceName)
 	if err != nil {
-		PactLogger.Errorf(nil, "pact publish failed, provider participant cannot be searched.", in.ProviderId)
+		PactLogger.Error(fmt.Sprintf("pact publish failed, provider[%s] participant cannot be searched.", in.ProviderId), nil)
 		return &brokerpb.PublishPactResponse{
 			Response: pb.CreateResponse(pb.ErrInvalidParams, "Provider participant cannot be searched."),
 		}, err

@@ -19,9 +19,12 @@ package util_test
 
 import (
 	"context"
+	"errors"
+	"github.com/stretchr/testify/assert"
 	"net/http"
 	"testing"
 
+	"github.com/apache/servicecomb-service-center/datasource"
 	. "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/go-chassis/cari/discovery"
@@ -32,21 +35,31 @@ func TestRuleFilter_Filter(t *testing.T) {
 		DomainProject: "",
 		ProviderRules: []*discovery.ServiceRule{},
 	}
-	_, err := rf.Filter(context.Background(), "")
-	if err != nil {
-		t.Fatalf("RuleFilter Filter failed")
-	}
-	_, _, err = rf.FilterAll(context.Background(), []string{""})
-	if err != nil {
-		t.Fatalf("RuleFilter FilterAll failed")
-	}
+	var err error
+	t.Run("when there is no such a customer in db", func(t *testing.T) {
+		_, err = rf.Filter(context.Background(), "")
+		if err != nil && !errors.Is(err, datasource.ErrNoData) {
+			t.Fatalf("RuleFilter Filter failed")
+		}
+		assert.Equal(t, datasource.ErrNoData, err, "no data found")
+	})
+	t.Run("FilterAll when customer not exist", func(t *testing.T) {
+		_, _, err = rf.FilterAll(context.Background(), []string{""})
+		if err != nil && !errors.Is(err, datasource.ErrNoData) {
+			t.Fatalf("RuleFilter FilterAll failed")
+		}
+		assert.Equal(t, nil, err, "no customer found err is nil")
+	})
 	rf.ProviderRules = []*discovery.ServiceRule{
 		{},
 	}
-	_, _, err = rf.FilterAll(context.Background(), []string{""})
-	if err != nil {
-		t.Fatalf("RuleFilter FilterAll failed")
-	}
+	t.Run("FilterAll when ProviderRules not nil and service not exist", func(t *testing.T) {
+		_, _, err = rf.FilterAll(context.Background(), []string{""})
+		if err != nil && !errors.Is(err, datasource.ErrNoData) {
+			t.Fatalf("RuleFilter FilterAll failed")
+		}
+		assert.Equal(t, datasource.ErrNoData, err, "no customer found when FilterAll")
+	})
 }
 
 func TestGetRulesUtil(t *testing.T) {
