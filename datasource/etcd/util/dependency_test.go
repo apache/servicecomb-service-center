@@ -19,8 +19,11 @@ package util_test
 
 import (
 	"context"
+	"errors"
+	"github.com/stretchr/testify/assert"
 	"testing"
 
+	"github.com/apache/servicecomb-service-center/datasource"
 	. "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/go-chassis/cari/discovery"
 )
@@ -227,10 +230,13 @@ func TestDependency(t *testing.T) {
 		t.Fatalf(`DependencyRelation_GetDependencyConsumers failed`)
 	}
 
-	_, err = dr.GetServiceByMicroServiceKey(&discovery.MicroServiceKey{})
-	if err != nil {
-		t.Fatalf(`DependencyRelation_getServiceByMicroServiceKey failed`)
-	}
+	t.Run("GetServiceByMicroServiceKey when service not exist", func(t *testing.T) {
+		_, err = dr.GetServiceByMicroServiceKey(&discovery.MicroServiceKey{})
+		if err != nil && !errors.Is(err, datasource.ErrNoData) {
+			t.Fatalf(`DependencyRelation_getServiceByMicroServiceKey failed`)
+		}
+		assert.Equal(t, datasource.ErrNoData, err, "service not exist")
+	})
 
 	_, err = dr.GetConsumerOfSameServiceNameAndAppID(&discovery.MicroServiceKey{})
 	if err != nil {

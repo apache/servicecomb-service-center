@@ -13,36 +13,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package client
+package datasource
 
-import (
-	"errors"
-
-	"go.mongodb.org/mongo-driver/mongo"
-)
+import "errors"
 
 var (
-	ErrNoDocuments = errors.New("no doc found")
+	ErrNoData = errors.New("no data found")
 )
-
-const (
-	DuplicateKey = 11000
-)
-
-func IsDuplicateKey(err error) bool {
-	if err != nil {
-		we, ok := err.(mongo.WriteException)
-		if ok {
-			for _, wr := range we.WriteErrors {
-				if wr.Code == DuplicateKey {
-					return true
-				}
-			}
-		}
-	}
-	return false
-}
-
-func IsNoneDocErr(err error) bool {
-	return err == ErrNoDocuments
-}
