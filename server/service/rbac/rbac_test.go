@@ -129,9 +129,8 @@ func TestInitRBAC(t *testing.T) {
 	})
 
 	t.Run("delete the not exist role", func(t *testing.T) {
-		r, err := dao.DeleteRole(context.Background(), "tester")
+		_, err := dao.DeleteRole(context.Background(), "tester")
 		assert.NoError(t, err)
-		assert.Equal(t, false, r)
 	})
 
 	t.Run("list exist role", func(t *testing.T) {
@@ -178,6 +177,6 @@ func TestInitRBAC(t *testing.T) {
 	t.Run("delete the new role", func(t *testing.T) {
 		r, err := dao.DeleteRole(context.Background(), "tester")
 		assert.NoError(t, err)
-		assert.Equal(t, false, r)
+		assert.Equal(t, true, r)
 	})
 }

@@ -28,12 +28,13 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
-func updateInstanceRefreshTime(ctx context.Context, instanceID string) error {
+func updateInstanceRefreshTime(ctx context.Context, serviceID string, instanceID string) error {
 	filter := bson.M{
+		mongo.StringBuilder([]string{mongo.ColumnInstanceInfo, mongo.ColumnServiceID}):  serviceID,
 		mongo.StringBuilder([]string{mongo.ColumnInstanceInfo, mongo.ColumnInstanceID}): instanceID,
 	}
 	update := bson.M{
-		"$set": bson.M{mongo.RefreshTime: time.Now()},
+		"$set": bson.M{mongo.ColumnRefreshTime: time.Now()},
 	}
 	result, err := client.GetMongoClient().FindOneAndUpdate(ctx, mongo.CollectionInstance, filter, update)
 	if err != nil {

@@ -115,7 +115,7 @@ func (ds *DataSource) AddOrUpdateDependencies(ctx context.Context, dependencyInf
 		}
 
 		consumerID, err := GetServiceID(ctx, consumerInfo)
-		if err != nil {
+		if err != nil && !errors.Is(err, datasource.ErrNoData) {
 			log.Error(fmt.Sprintf("put request into dependency queue failed, override: %t, get consumer %s id failed",
 				override, consumerFlag), err)
 			return pb.CreateResponse(pb.ErrInternal, err.Error()), err
@@ -155,32 +155,25 @@ func (ds *DataSource) DeleteDependency() {
 	panic("implement me")
 }
 
-func GetServiceID(ctx context.Context, key *pb.MicroServiceKey) (serviceID string, err error) {
-	domain := util.ParseDomain(ctx)
-	project := util.ParseProject(ctx)
-	filter := bson.M{
-		ColumnDomain:  domain,
-		ColumnProject: project,
-		StringBuilder([]string{ColumnServiceInfo, ColumnEnv}):         key.Environment,
-		StringBuilder([]string{ColumnServiceInfo, ColumnAppID}):       key.AppId,
-		StringBuilder([]string{ColumnServiceInfo, ColumnServiceName}): key.ServiceName,
-		StringBuilder([]string{ColumnServiceInfo, ColumnVersion}):     key.Version}
+func GetServiceID(ctx context.Context, key *pb.MicroServiceKey) (string, error) {
+	id, err := getServiceID(ctx, GeneratorServiceNameFilter(ctx, key))
+	if err != nil && !errors.Is(err, datasource.ErrNoData) {
+		return "", err
+	}
+	if len(id) == 0 && len(key.Alias) != 0 {
+		return getServiceID(ctx, GeneratorServiceAliasFilter(ctx, key))
+	}
+	return id, nil
+}
 
-	findRes, err := client.GetMongoClient().Find(ctx, CollectionService, filter)
+func getServiceID(ctx context.Context, filter bson.M) (serviceID string, err error) {
+	svc, err := GetService(ctx, filter)
 	if err != nil {
-		return "", nil
+		return
 	}
-	var service []*Service
-	for findRes.Next(ctx) {
-		var temp *Service
-		err := findRes.Decode(&temp)
-		if err != nil {
-			return "", nil
-		}
-		service = append(service, temp)
+	if svc != nil {
+		serviceID = svc.ServiceInfo.ServiceId
+		return
 	}
-	if service == nil {
-		return "", nil
-	}
-	return service[0].ServiceInfo.ServiceId, nil
+	return
 }

@@ -19,6 +19,7 @@ package mongo
 
 import (
 	"context"
+	"errors"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
@@ -59,7 +60,7 @@ func (ds *DataSource) CreateAccount(ctx context.Context, a *rbacframe.Account) e
 
 func (ds *DataSource) AccountExist(ctx context.Context, key string) (bool, error) {
 	filter := bson.M{
-		AccountName: key,
+		ColumnAccountName: key,
 	}
 	count, err := client.GetMongoClient().Count(ctx, CollectionAccount, filter)
 	if err != nil {
@@ -73,19 +74,20 @@ func (ds *DataSource) AccountExist(ctx context.Context, key string) (bool, error
 
 func (ds *DataSource) GetAccount(ctx context.Context, key string) (*rbacframe.Account, error) {
 	filter := bson.M{
-		AccountName: key,
+		ColumnAccountName: key,
 	}
 	result, err := client.GetMongoClient().FindOne(ctx, CollectionAccount, filter)
 	if err != nil {
 		return nil, err
 	}
 	if result.Err() != nil {
-		return nil, result.Err()
+		log.Error("failed to get account: ", result.Err())
+		return nil, errors.New("failed to get account")
 	}
 	var account rbacframe.Account
 	err = result.Decode(&account)
 	if err != nil {
-		log.Error("Decode account failed: ", err)
+		log.Error("decode account failed: ", err)
 		return nil, err
 	}
 	return &account, nil
@@ -93,7 +95,10 @@ func (ds *DataSource) GetAccount(ctx context.Context, key string) (*rbacframe.Ac
 
 func (ds *DataSource) ListAccount(ctx context.Context, key string) ([]*rbacframe.Account, int64, error) {
 	filter := bson.M{
-		AccountName: bson.M{"$regex": key},
+		ColumnAccountName: bson.M{"$regex": key},
+	}
+	if len(key) == 0 {
+		filter = bson.M{}
 	}
 	cursor, err := client.GetMongoClient().Find(ctx, CollectionAccount, filter)
 	if err != nil {
@@ -105,9 +110,10 @@ func (ds *DataSource) ListAccount(ctx context.Context, key string) ([]*rbacframe
 		var account rbacframe.Account
 		err = cursor.Decode(&account)
 		if err != nil {
-			log.Error("Decode account failed: ", err)
-			break
+			log.Error("decode account failed: ", err)
+			continue
 		}
+		account.Password = ""
 		accounts = append(accounts, &account)
 	}
 	return accounts, int64(len(accounts)), nil
@@ -115,7 +121,7 @@ func (ds *DataSource) ListAccount(ctx context.Context, key string) ([]*rbacframe
 
 func (ds *DataSource) DeleteAccount(ctx context.Context, key string) (bool, error) {
 	filter := bson.M{
-		AccountName: key,
+		ColumnAccountName: key,
 	}
 	result, err := client.GetMongoClient().Delete(ctx, CollectionAccount, filter)
 	if err != nil {
@@ -129,11 +135,17 @@ func (ds *DataSource) DeleteAccount(ctx context.Context, key string) (bool, erro
 
 func (ds *DataSource) UpdateAccount(ctx context.Context, key string, account *rbacframe.Account) error {
 	filter := bson.M{
-		AccountName: key,
+		ColumnAccountName: key,
 	}
 	update := bson.M{
-		"$set": bson.M{AccountID: account.ID, AccountPassword: account.Name, AccountRole: account.Roles, AccountTokenExpirationTime: account.TokenExpirationTime,
-			AccountCurrentPassword: account.CurrentPassword, AccountStatus: account.Status,
+		"$set": bson.M{
+			ColumnID:                  account.ID,
+			ColumnAccountName:         account.Name,
+			ColumnPassword:            account.Password,
+			ColumnRole:                account.Roles,
+			ColumnTokenExpirationTime: account.TokenExpirationTime,
+			ColumnCurrentPassword:     account.CurrentPassword,
+			ColumnStatus:              account.Status,
 		},
 	}
 	result, err := client.GetMongoClient().Update(ctx, CollectionAccount, filter, update)
