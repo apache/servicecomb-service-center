@@ -19,13 +19,42 @@ package rbac_test
 
 import (
 	"context"
+	"io/ioutil"
 	"testing"
 
-	"github.com/apache/servicecomb-service-center/server/service/rbac"
+	"github.com/go-chassis/go-archaius"
+	"github.com/go-chassis/go-chassis/v2/security/secret"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/apache/servicecomb-service-center/server/service/rbac"
+	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
 )
 
 func TestAllow(t *testing.T) {
+	err := archaius.Init(archaius.WithMemorySource(), archaius.WithENVSource())
+	assert.NoError(t, err)
+
+	pri, pub, err := secret.GenRSAKeyPair(4096)
+	assert.NoError(t, err)
+
+	b, err := secret.RSAPrivate2Bytes(pri)
+	assert.NoError(t, err)
+	ioutil.WriteFile("./private.key", b, 0600)
+	b, err = secret.RSAPublicKey2Bytes(pub)
+	err = ioutil.WriteFile("./rbac.pub", b, 0600)
+	assert.NoError(t, err)
+
+	archaius.Set(rbac.InitPassword, "Complicated_password1")
+
+	dao.DeleteAccount(context.Background(), "root")
+	dao.DeleteAccount(context.Background(), "a")
+	dao.DeleteAccount(context.Background(), "b")
+
+	rbac.Init()
+	a, err := dao.GetAccount(context.Background(), "root")
+	assert.NoError(t, err)
+	assert.Equal(t, "root", a.Name)
+
 	t.Run("admin can operate any resource", func(t *testing.T) {
 		ok, _ := rbac.Allow(context.TODO(), []string{"admin"}, "default", "account", "create")
 		assert.True(t, ok)

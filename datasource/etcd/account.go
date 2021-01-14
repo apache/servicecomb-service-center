@@ -125,7 +125,7 @@ func (ds *DataSource) DeleteAccount(ctx context.Context, key string) (bool, erro
 	if err != nil {
 		return false, err
 	}
-	return resp.Count != 0, nil
+	return resp.Succeeded, nil
 }
 func (ds *DataSource) UpdateAccount(ctx context.Context, key string, account *rbacframe.Account) error {
 	value, err := json.Marshal(account)

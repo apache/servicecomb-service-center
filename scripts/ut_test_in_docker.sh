@@ -67,11 +67,7 @@ fi
 
 export TEST_MODE=mongo
 [ $? == 0 ] && ut_for_dir datasource/mongo
-# 由於mongo接口未全部實現先注釋
-#[ $? == 0 ] && ut_for_dir pkg
-#[ $? == 0 ] && ut_for_dir server
-#[ $? == 0 ] && ut_for_dir scctl
-#[ $? == 0 ] && ut_for_dir syncer
+[ $? == 0 ] && ut_for_dir syncer
 ret=$?
 
 if [ ${ret} == 0 ]; then
