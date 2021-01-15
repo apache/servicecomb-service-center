@@ -104,7 +104,8 @@ func (w *InstanceEventListWatcher) OnMessage(job notify.Event) {
 		}
 	}
 
-	if wJob.Revision <= w.ListRevision {
+	// the negative revision is specially for mongo scene,should be removed after mongo support revison.
+	if wJob.Revision >= 0 && wJob.Revision <= w.ListRevision {
 		log.Warnf("unexpected notify %s job is coming in, watcher %s %s, job is %v, current revision is %v",
 			w.Type(), w.Group(), w.Subject(), job, w.ListRevision)
 		return
