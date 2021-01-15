@@ -2723,10 +2723,10 @@ func accessible(ctx context.Context, consumerID string, providerID string) *disc
 	if err != nil {
 		return discovery.NewError(discovery.ErrInternal, fmt.Sprintf("an error occurred in query consumer tags(%s)", err.Error()))
 	}
-	return matchRules(rules, consumerService.ServiceInfo, validateTags)
+	return MatchRules(rules, consumerService.ServiceInfo, validateTags)
 }
 
-func matchRules(rulesOfProvider []*Rule, consumer *discovery.MicroService, tagsOfConsumer map[string]string) *discovery.Error {
+func MatchRules(rulesOfProvider []*Rule, consumer *discovery.MicroService, tagsOfConsumer map[string]string) *discovery.Error {
 	if consumer == nil {
 		return discovery.NewError(discovery.ErrInvalidParams, "consumer is nil")
 	}
