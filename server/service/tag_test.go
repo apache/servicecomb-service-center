@@ -138,7 +138,7 @@ var _ = Describe("'Tag' service", func() {
 				Expect(err).To(BeNil())
 				Expect(respAddTags.Response.GetCode()).To(Equal(scerr.ErrInvalidParams))
 
-				size = quota.DefaultRuleQuota / 2
+				size = quota.DefaultRuleQuota
 				tags = make(map[string]string, size)
 				for i := 0; i < size; i++ {
 					s := "tag" + strconv.Itoa(i)
@@ -150,14 +150,6 @@ var _ = Describe("'Tag' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(respAddTags.Response.GetCode()).To(Equal(proto.Response_SUCCESS))
-
-				tags["out"] = "range"
-				respAddTags, _ = serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
-					ServiceId: serviceId2,
-					Tags:      tags,
-				})
-				Expect(err).To(BeNil())
-				Expect(respAddTags.Response.GetCode()).To(Equal(scerr.ErrNotEnoughQuota))
 			})
 		})
 	})
