@@ -1638,22 +1638,7 @@ func (ds *DataSource) AddTags(ctx context.Context, request *pb.AddServiceTagsReq
 		}, nil
 	}
 
-	addTags := request.Tags
-	res := quota.NewApplyQuotaResource(quota.TagQuotaType, domainProject, request.ServiceId, int64(len(addTags)))
-	rst := quota.Apply(ctx, res)
-	errQuota := rst.Err
-	if errQuota != nil {
-		log.Errorf(errQuota, "add service[%s]'s tags %v failed, operator: %s", request.ServiceId, addTags, remoteIP)
-		response := &pb.AddServiceTagsResponse{
-			Response: pb.CreateResponseWithSCErr(errQuota),
-		}
-		if errQuota.InternalError() {
-			return response, errQuota
-		}
-		return response, nil
-	}
-
-	checkErr := serviceUtil.AddTagIntoETCD(ctx, domainProject, request.ServiceId, addTags)
+	checkErr := serviceUtil.AddTagIntoETCD(ctx, domainProject, request.ServiceId, request.Tags)
 	if checkErr != nil {
 		log.Errorf(checkErr, "add service[%s]'s tags %v failed, operator: %s", request.ServiceId, request.Tags, remoteIP)
 		resp := &pb.AddServiceTagsResponse{

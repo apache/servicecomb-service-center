@@ -483,30 +483,20 @@ func (ds *DataSource) GetServicesInfo(ctx context.Context, request *discovery.Ge
 }
 
 func (ds *DataSource) AddTags(ctx context.Context, request *discovery.AddServiceTagsRequest) (*discovery.AddServiceTagsResponse, error) {
-	remoteIP := util.GetIPFromContext(ctx)
-	tags := request.Tags
-	res := quota.NewApplyQuotaResource(quota.TagQuotaType, util.ParseDomainProject(ctx), request.ServiceId, int64(len(tags)))
-	rst := quota.Apply(ctx, res)
-	errQuota := rst.Err
-	if errQuota != nil {
-		log.Error(fmt.Sprintf("add service[%s]'s tags %v failed, operator: %s", request.ServiceId, tags, remoteIP), errQuota)
-		response := &discovery.AddServiceTagsResponse{
-			Response: discovery.CreateResponseWithSCErr(errQuota),
-		}
-		if errQuota.InternalError() {
-			return response, errQuota
-		}
-		return response, nil
-	}
-	err := UpdateService(ctx, GeneratorServiceFilter(ctx, request.ServiceId), bson.M{"$set": bson.M{ColumnTag: tags}})
-	if err != nil {
-		log.Error(fmt.Sprintf("update service %s tags failed.", request.ServiceId), err)
+	err := UpdateService(ctx, GeneratorServiceFilter(ctx, request.ServiceId), bson.M{"$set": bson.M{ColumnTag: request.Tags}})
+	if err == nil {
 		return &discovery.AddServiceTagsResponse{
-			Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
+			Response: discovery.CreateResponse(discovery.ResponseSuccess, "Add service tags successfully."),
+		}, nil
+	}
+	log.Error(fmt.Sprintf("update service %s tags failed.", request.ServiceId), err)
+	if err == client.ErrNoDocuments {
+		return &discovery.AddServiceTagsResponse{
+			Response: discovery.CreateResponse(discovery.ErrServiceNotExists, err.Error()),
 		}, nil
 	}
 	return &discovery.AddServiceTagsResponse{
-		Response: discovery.CreateResponse(discovery.ResponseSuccess, "Add service tags successfully."),
+		Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
 	}, nil
 }
 
@@ -2937,9 +2927,9 @@ func GetInstancesByServiceID(ctx context.Context, serviceID string) ([]*discover
 	return res, nil
 }
 
-func formatRevision(consumerServiceId string, instances []*discovery.MicroServiceInstance) (string, error) {
+func formatRevision(consumerServiceID string, instances []*discovery.MicroServiceInstance) (string, error) {
 	if instances == nil {
-		return fmt.Sprintf("%x", sha1.Sum(util.StringToBytesWithNoCopy(consumerServiceId))), nil
+		return fmt.Sprintf("%x", sha1.Sum(util.StringToBytesWithNoCopy(consumerServiceID))), nil
 	}
 	copyInstance := make([]*discovery.MicroServiceInstance, len(instances))
 	copy(copyInstance, instances)
@@ -2949,6 +2939,6 @@ func formatRevision(consumerServiceId string, instances []*discovery.MicroServic
 		log.Error("fail to marshal instance json", err)
 		return "", err
 	}
-	s := fmt.Sprintf("%s.%x", consumerServiceId, sha1.Sum(data))
+	s := fmt.Sprintf("%s.%x", consumerServiceID, sha1.Sum(data))
 	return fmt.Sprintf("%x", sha1.Sum(util.StringToBytesWithNoCopy(s))), nil
 }

@@ -109,15 +109,8 @@ func resourceLimitHandler(ctx context.Context, res *quota.ApplyQuotaResource) (i
 			return int64(len(resp.Schemas)), nil
 		}
 	case quota.TagQuotaType:
-		{
-			resp, err := datasource.Instance().GetTags(ctx, &pb.GetServiceTagsRequest{
-				ServiceId: serviceID,
-			})
-			if err != nil {
-				return 0, err
-			}
-			return int64(len(resp.Tags)), nil
-		}
+		// always re-create the service old tags
+		return 0, nil
 	default:
 		return 0, fmt.Errorf("not define quota type '%s'", res.QuotaType)
 	}
