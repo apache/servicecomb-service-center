@@ -484,17 +484,6 @@ func (ds *DataSource) GetServicesInfo(ctx context.Context, request *discovery.Ge
 
 func (ds *DataSource) AddTags(ctx context.Context, request *discovery.AddServiceTagsRequest) (*discovery.AddServiceTagsResponse, error) {
 	remoteIP := util.GetIPFromContext(ctx)
-	service, err := GetService(ctx, GeneratorServiceFilter(ctx, request.ServiceId))
-	if err != nil {
-		if errors.Is(err, datasource.ErrNoData) {
-			log.Debug(fmt.Sprintf("service %s not exist in db", request.ServiceId))
-			return &discovery.AddServiceTagsResponse{Response: discovery.CreateResponse(discovery.ErrServiceNotExists, "Service not exist")}, nil
-		}
-		log.Error(fmt.Sprintf("failed to add tags for service %s for get service failed", request.ServiceId), err)
-		return &discovery.AddServiceTagsResponse{
-			Response: discovery.CreateResponse(discovery.ErrInternal, "Failed to check service exist"),
-		}, nil
-	}
 	tags := request.Tags
 	res := quota.NewApplyQuotaResource(quota.TagQuotaType, util.ParseDomainProject(ctx), request.ServiceId, int64(len(tags)))
 	rst := quota.Apply(ctx, res)
@@ -509,14 +498,7 @@ func (ds *DataSource) AddTags(ctx context.Context, request *discovery.AddService
 		}
 		return response, nil
 	}
-	dataTags := service.Tags
-	for key, value := range dataTags {
-		if _, ok := tags[key]; ok {
-			continue
-		}
-		tags[key] = value
-	}
-	err = UpdateService(ctx, GeneratorServiceFilter(ctx, request.ServiceId), bson.M{"$set": bson.M{ColumnTag: tags}})
+	err := UpdateService(ctx, GeneratorServiceFilter(ctx, request.ServiceId), bson.M{"$set": bson.M{ColumnTag: tags}})
 	if err != nil {
 		log.Error(fmt.Sprintf("update service %s tags failed.", request.ServiceId), err)
 		return &discovery.AddServiceTagsResponse{
