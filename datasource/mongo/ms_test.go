@@ -608,7 +608,6 @@ func TestApplication_Get(t *testing.T) {
 func TestTags_Add(t *testing.T) {
 	var (
 		serviceId1 string
-		serviceId2 string
 	)
 
 	// create service
@@ -626,20 +625,6 @@ func TestTags_Add(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotEqual(t, "", resp.ServiceId)
 		serviceId1 = resp.ServiceId
-
-		svc2 := &pb.MicroService{
-			AppId:       "create_tag_group_ms",
-			ServiceName: "create_tag_service_ms",
-			Version:     "1.0.1",
-			Level:       "FRONT",
-			Status:      pb.MS_UP,
-		}
-		resp, err = datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
-			Service: svc2,
-		})
-		assert.NoError(t, err)
-		assert.NotNil(t, "", resp.ServiceId)
-		serviceId2 = resp.ServiceId
 	})
 
 	t.Run("the request is invalid", func(t *testing.T) {
@@ -666,29 +651,6 @@ func TestTags_Add(t *testing.T) {
 		})
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
-	})
-
-	t.Run("tag's quota exceeded", func(t *testing.T) {
-		size := quota.DefaultTagQuota / 2
-		tags := make(map[string]string, size)
-		for i := 0; i < size; i++ {
-			s := "tag" + strconv.Itoa(i)
-			tags[s] = s
-		}
-		resp, err := datasource.Instance().AddTags(getContext(), &pb.AddServiceTagsRequest{
-			ServiceId: serviceId2,
-			Tags:      tags,
-		})
-		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
-
-		tags["out"] = "range"
-		resp, _ = datasource.Instance().AddTags(getContext(), &pb.AddServiceTagsRequest{
-			ServiceId: serviceId2,
-			Tags:      tags,
-		})
-		assert.NoError(t, err)
-		assert.Equal(t, pb.ErrNotEnoughQuota, resp.Response.GetCode())
 	})
 }
 
