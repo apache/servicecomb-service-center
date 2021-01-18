@@ -210,7 +210,7 @@ func (mc *MongoClient) MultiTableBatchUpdate(ctx context.Context, opts []MongoOp
 	return nil
 }
 
-func (mc *MongoClient) DocExist(ctx context.Context, table string, filter bson.M) (bool, error) {
+func (mc *MongoClient) DocExist(ctx context.Context, table string, filter interface{}) (bool, error) {
 	res, err := mc.FindOne(ctx, table, filter)
 	if err != nil {
 		return false, err
