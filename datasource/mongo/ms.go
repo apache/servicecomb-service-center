@@ -511,48 +511,20 @@ func (ds *DataSource) GetServicesInfo(ctx context.Context, request *discovery.Ge
 }
 
 func (ds *DataSource) AddTags(ctx context.Context, request *discovery.AddServiceTagsRequest) (*discovery.AddServiceTagsResponse, error) {
-	remoteIP := util.GetIPFromContext(ctx)
-	service, err := GetService(ctx, GeneratorServiceFilter(ctx, request.ServiceId))
-	if err != nil {
-		if errors.Is(err, datasource.ErrNoData) {
-			log.Debug(fmt.Sprintf("service %s not exist in db", request.ServiceId))
-			return &discovery.AddServiceTagsResponse{Response: discovery.CreateResponse(discovery.ErrServiceNotExists, "Service not exist")}, nil
-		}
-		log.Error(fmt.Sprintf("failed to add tags for service %s for get service failed", request.ServiceId), err)
+	err := UpdateService(ctx, GeneratorServiceFilter(ctx, request.ServiceId), bson.M{"$set": bson.M{ColumnTag: request.Tags}})
+	if err == nil {
 		return &discovery.AddServiceTagsResponse{
-			Response: discovery.CreateResponse(discovery.ErrInternal, "Failed to check service exist"),
+			Response: discovery.CreateResponse(discovery.ResponseSuccess, "Add service tags successfully."),
 		}, nil
 	}
-	tags := request.Tags
-	res := quota.NewApplyQuotaResource(quota.TagQuotaType, util.ParseDomainProject(ctx), request.ServiceId, int64(len(tags)))
-	rst := quota.Apply(ctx, res)
-	errQuota := rst.Err
-	if errQuota != nil {
-		log.Error(fmt.Sprintf("add service[%s]'s tags %v failed, operator: %s", request.ServiceId, tags, remoteIP), errQuota)
-		response := &discovery.AddServiceTagsResponse{
-			Response: discovery.CreateResponseWithSCErr(errQuota),
-		}
-		if errQuota.InternalError() {
-			return response, errQuota
-		}
-		return response, nil
-	}
-	dataTags := service.Tags
-	for key, value := range dataTags {
-		if _, ok := tags[key]; ok {
-			continue
-		}
-		tags[key] = value
-	}
-	err = UpdateService(ctx, GeneratorServiceFilter(ctx, request.ServiceId), bson.M{"$set": bson.M{ColumnTag: tags}})
-	if err != nil {
-		log.Error(fmt.Sprintf("update service %s tags failed.", request.ServiceId), err)
+	log.Error(fmt.Sprintf("update service %s tags failed.", request.ServiceId), err)
+	if err == client.ErrNoDocuments {
 		return &discovery.AddServiceTagsResponse{
-			Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
+			Response: discovery.CreateResponse(discovery.ErrServiceNotExists, err.Error()),
 		}, nil
 	}
 	return &discovery.AddServiceTagsResponse{
-		Response: discovery.CreateResponse(discovery.ResponseSuccess, "Add service tags successfully."),
+		Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
 	}, nil
 }
 
