@@ -26,8 +26,6 @@ import (
 	apt "github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
-	"github.com/apache/servicecomb-service-center/server/plugin"
-	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
@@ -53,38 +51,7 @@ func (s *MicroServiceService) AddTags(ctx context.Context, in *pb.AddServiceTags
 		}, nil
 	}
 
-	addTags := in.Tags
-	res := quota.NewApplyQuotaResource(quota.TagQuotaType, domainProject, in.ServiceId, int64(len(addTags)))
-	rst := plugin.Plugins().Quota().Apply4Quotas(ctx, res)
-	errQuota := rst.Err
-	if errQuota != nil {
-		log.Errorf(errQuota, "add service[%s]'s tags %v failed, operator: %s", in.ServiceId, addTags, remoteIP)
-		response := &pb.AddServiceTagsResponse{
-			Response: proto.CreateResponseWithSCErr(errQuota),
-		}
-		if errQuota.InternalError() {
-			return response, errQuota
-		}
-		return response, nil
-	}
-
-	dataTags, err := serviceUtil.GetTagsUtils(ctx, domainProject, in.ServiceId)
-	if err != nil {
-		log.Errorf(err, "add service[%s]'s tags %v failed, get existed tag failed, operator: %s",
-			in.ServiceId, addTags, remoteIP)
-		return &pb.AddServiceTagsResponse{
-			Response: proto.CreateResponse(scerr.ErrInternal, err.Error()),
-		}, err
-	}
-	for key, value := range dataTags {
-		if _, ok := addTags[key]; ok {
-			continue
-		}
-		addTags[key] = value
-	}
-	dataTags = addTags
-
-	checkErr := serviceUtil.AddTagIntoETCD(ctx, domainProject, in.ServiceId, dataTags)
+	checkErr := serviceUtil.AddTagIntoETCD(ctx, domainProject, in.ServiceId, in.Tags)
 	if checkErr != nil {
 		log.Errorf(checkErr, "add service[%s]'s tags %v failed, operator: %s", in.ServiceId, in.Tags, remoteIP)
 		resp := &pb.AddServiceTagsResponse{

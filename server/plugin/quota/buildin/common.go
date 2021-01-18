@@ -29,7 +29,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
-	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 )
 
 type GetCurUsedNum func(context.Context, *quota.ApplyQuotaResource) (int64, error)
@@ -96,11 +95,8 @@ func resourceLimitHandler(ctx context.Context, res *quota.ApplyQuotaResource) (i
 		key = core.GenerateServiceSchemaKey(domainProject, serviceID, "")
 		indexer = backend.Store().Schema()
 	case quota.TagQuotaType:
-		tags, err := serviceUtil.GetTagsUtils(ctx, domainProject, serviceID)
-		if err != nil {
-			return 0, err
-		}
-		return int64(len(tags)), nil
+		// always re-create the service old tags
+		return 0, nil
 	default:
 		return 0, fmt.Errorf("not define quota type '%s'", res.QuotaType)
 	}
