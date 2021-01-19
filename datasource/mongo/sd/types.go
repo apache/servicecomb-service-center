@@ -56,7 +56,13 @@ type MongoEventHandler interface {
 }
 
 func NewMongoEventByResource(resource *sdcommon.Resource, action discovery.EventType) MongoEvent {
-	return MongoEvent{ResourceID: resource.Key, DocumentID: resource.DocumentID, Value: resource.Value, Type: action}
+	return MongoEvent{
+		Type:       action,
+		Index:      resource.Index,
+		Value:      resource.Value,
+		ResourceID: resource.Key,
+		DocumentID: resource.DocumentID,
+	}
 }
 
 func NewMongoEvent(id string, documentID string, index string, action discovery.EventType, v interface{}) MongoEvent {
