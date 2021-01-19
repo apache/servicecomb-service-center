@@ -106,7 +106,12 @@ func (ds *DataSource) createIndexes() (err error) {
 		Keys:    bsonx.Doc{{Key: StringBuilder([]string{ColumnServiceInfo, ColumnServiceID}), Value: bsonx.Int32(1)}},
 		Options: options.Index().SetUnique(true),
 	}, {
-		Keys:    bsonx.Doc{{Key: StringBuilder([]string{ColumnServiceInfo, ColumnAppID}), Value: bsonx.Int32(1)}, {Key: StringBuilder([]string{ColumnServiceInfo, ColumnServiceName}), Value: bsonx.Int32(1)}, {Key: StringBuilder([]string{ColumnServiceInfo, ColumnEnv}), Value: bsonx.Int32(1)}, {Key: StringBuilder([]string{ColumnServiceInfo, ColumnVersion}), Value: bsonx.Int32(1)}},
+		Keys: bsonx.Doc{{Key: StringBuilder([]string{ColumnServiceInfo, ColumnAppID}), Value: bsonx.Int32(1)},
+			{Key: StringBuilder([]string{ColumnServiceInfo, ColumnServiceName}), Value: bsonx.Int32(1)},
+			{Key: StringBuilder([]string{ColumnServiceInfo, ColumnEnv}), Value: bsonx.Int32(1)},
+			{Key: StringBuilder([]string{ColumnServiceInfo, ColumnVersion}), Value: bsonx.Int32(1)},
+			{Key: ColumnDomain, Value: bsonx.Int32(1)},
+		},
 		Options: options.Index().SetUnique(true),
 	}})
 	if err != nil {
@@ -115,7 +120,12 @@ func (ds *DataSource) createIndexes() (err error) {
 	err = client.GetMongoClient().CreateIndexes(context.TODO(), CollectionInstance, []mongo.IndexModel{{
 		Keys:    bsonx.Doc{{Key: StringBuilder([]string{ColumnInstanceInfo, ColumnInstanceID}), Value: bsonx.Int32(1)}},
 		Options: options.Index().SetUnique(true),
-	}, {Keys: bsonx.Doc{{Key: StringBuilder([]string{ColumnInstanceID, ColumnServiceID}), Value: bsonx.Int32(1)}}}})
+	}, {
+		Keys: bsonx.Doc{{Key: StringBuilder([]string{ColumnInstanceID, ColumnServiceID}), Value: bsonx.Int32(1)}},
+	}, {
+		Keys:    bsonx.Doc{{Key: ColumnRefreshTime, Value: bsonx.Int32(1)}},
+		Options: options.Index().SetExpireAfterSeconds(60),
+	}})
 	if err != nil {
 		return
 	}
