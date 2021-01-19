@@ -21,13 +21,27 @@ ROOT_PATH=$(dirname $CURRENT_PATH)
 
 export COVERAGE_PATH=$(pwd)
 cd $1
-for d in $(go list -f '{{.Dir}}' ./... | grep -v vendor| grep -v syncer); do
-    cd $d
-    if [ $(ls | grep _test.go | wc -l) -gt 0 ]; then
+
+run_test() {
+  cd $1
+  if [ $(ls | grep _test.go | wc -l) -gt 0 ]; then
         go test -cover -covermode atomic -coverprofile coverage.out
         if [ -f coverage.out ]; then
             sed '1d;$d' coverage.out >> $ROOT_PATH/coverage.txt
         fi
     fi
-done
+}
+
+test_mode=${TEST_MODE}
+
+if [ ${test_mode} == "mongo" ];then
+  for d in $(go list -f '{{.Dir}}' ./... | grep -v vendor| grep -v syncer | grep -v broker); do
+    run_test $d
+  done
+else
+  for d in $(go list -f '{{.Dir}}' ./... | grep -v vendor| grep -v syncer); do
+    run_test $d
+  done
+fi
+
 

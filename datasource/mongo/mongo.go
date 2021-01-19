@@ -111,6 +111,7 @@ func (ds *DataSource) createIndexes() (err error) {
 			{Key: StringBuilder([]string{ColumnServiceInfo, ColumnEnv}), Value: bsonx.Int32(1)},
 			{Key: StringBuilder([]string{ColumnServiceInfo, ColumnVersion}), Value: bsonx.Int32(1)},
 			{Key: ColumnDomain, Value: bsonx.Int32(1)},
+			{Key: ColumnProject, Value: bsonx.Int32(1)},
 		},
 		Options: options.Index().SetUnique(true),
 	}})
