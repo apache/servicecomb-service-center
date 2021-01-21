@@ -34,6 +34,10 @@ const (
 )
 
 const (
+	serviceAppIDNameEnvVersionIndex = "DomainProjectAppIdNameEnvVersion"
+)
+
+const (
 	DepsQueueUUID = "0"
 )
 
