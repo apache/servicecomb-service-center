@@ -28,9 +28,10 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/syncer/plugins"
+	"github.com/apache/servicecomb-service-center/syncer/plugins/servicecenter"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
 	scpb "github.com/go-chassis/cari/discovery"
-	"github.com/gogo/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -94,7 +95,8 @@ func toSyncService(service *scpb.MicroService) (syncService *pb.SyncService) {
 		syncService.Status = pb.SyncService_UNKNOWN
 	}
 
-	content, err := proto.Marshal(service)
+	serviceInpbsc := servicecenter.ServiceCopy(service)
+	content, err := proto.Marshal(serviceInpbsc)
 	if err != nil {
 		log.Error("transform sc service to syncer service failed: %s", err)
 		return
@@ -158,7 +160,8 @@ func toSyncInstance(serviceID string, instance *scpb.MicroServiceInstance) (sync
 		}
 	}
 
-	content, err := proto.Marshal(instance)
+	instaceInpbsc := servicecenter.InstanceCopy(instance)
+	content, err := proto.Marshal(instaceInpbsc)
 	if err != nil {
 		log.Error("transform sc instance to syncer instance failed: %s", err)
 		return
@@ -178,7 +181,8 @@ func schemaExpansions(service *scpb.MicroService, schemas []*scpb.Schema) (expan
 			continue
 		}
 
-		content, err := proto.Marshal(val)
+		schemaInpbsc := servicecenter.SchemaCopy(val)
+		content, err := proto.Marshal(schemaInpbsc)
 		if err != nil {
 			log.Error(fmt.Sprintf("proto marshal schemas failed, app = %s, service = %s, version = %s datasource = %s",
 				service.AppId, service.ServiceName, service.Version, expansionSchema), err)
