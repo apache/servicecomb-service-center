@@ -18,16 +18,17 @@
 package servicecenter
 
 import (
+	"fmt"
 	"net/url"
 	"strconv"
 	"strings"
 
 	"github.com/apache/servicecomb-service-center/pkg/dump"
-
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
+	pbsc "github.com/apache/servicecomb-service-center/syncer/proto/sc"
 	scpb "github.com/go-chassis/cari/discovery"
-	"github.com/gogo/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -81,7 +82,8 @@ func toSyncService(service *scpb.MicroService) (syncService *pb.SyncService) {
 		syncService.Status = pb.SyncService_UNKNOWN
 	}
 
-	content, err := proto.Marshal(service)
+	serviceInpbsc := ServiceCopy(service)
+	content, err := proto.Marshal(serviceInpbsc)
 	if err != nil {
 		log.Errorf(err, "transform sc service to syncer service failed: %s", err)
 		return
@@ -159,7 +161,8 @@ func toSyncInstance(serviceID string, instance *scpb.MicroServiceInstance) (sync
 		}
 	}
 
-	content, err := proto.Marshal(instance)
+	instaceInpbsc := InstanceCopy(instance)
+	content, err := proto.Marshal(instaceInpbsc)
 	if err != nil {
 		log.Errorf(err, "transform sc instance to syncer instance failed: %s", err)
 		return
@@ -179,10 +182,11 @@ func schemaExpansions(service *scpb.MicroService, schemas []*scpb.Schema) (expan
 			continue
 		}
 
-		content, err := proto.Marshal(val)
+		schemaInpbsc := SchemaCopy(val)
+		content, err := proto.Marshal(schemaInpbsc)
 		if err != nil {
-			log.Errorf(err, "proto marshal schemas failed, app = %s, service = %s, version = %s datasource = %s",
-				service.AppId, service.ServiceName, service.Version, expansionSchema)
+			log.Error(fmt.Sprintf("proto marshal schemas failed, app = %s, service = %s, version = %s datasource = %s",
+				service.AppId, service.ServiceName, service.Version, expansionSchema), err)
 			continue
 		}
 		expansions = append(expansions, &pb.Expansion{
@@ -197,17 +201,19 @@ func schemaExpansions(service *scpb.MicroService, schemas []*scpb.Schema) (expan
 // toService transform SyncService to service-center service
 func toService(syncService *pb.SyncService) (service *scpb.MicroService) {
 	service = &scpb.MicroService{}
+	serviceInpbsc := &pbsc.MicroService{}
 	var err error
 	if syncService.PluginName == PluginName && len(syncService.Expansions) > 0 {
 		matches := pb.Expansions(syncService.Expansions).Find(expansionDatasource, map[string]string{})
 		if len(matches) > 0 {
-			err = proto.Unmarshal(matches[0].Bytes, service)
+			err = proto.Unmarshal(matches[0].Bytes, serviceInpbsc)
 			if err == nil {
+				service = ServiceCopyRe(serviceInpbsc)
 				service.ServiceId = syncService.ServiceId
 				return
 			}
-			log.Errorf(err, "proto unmarshal %s service, serviceID = %s, kind = %v, content = %v failed",
-				PluginName, service.ServiceId, matches[0].Kind, matches[0].Bytes)
+			log.Error(fmt.Sprintf("proto unmarshal %s service, serviceID = %s, kind = %v, content = %v failed",
+				PluginName, serviceInpbsc.ServiceId, matches[0].Kind, matches[0].Bytes), err)
 		}
 	}
 	service.AppId = syncService.App
@@ -222,17 +228,19 @@ func toService(syncService *pb.SyncService) (service *scpb.MicroService) {
 // toInstance transform SyncInstance to service-center instance
 func toInstance(syncInstance *pb.SyncInstance) (instance *scpb.MicroServiceInstance) {
 	instance = &scpb.MicroServiceInstance{}
+	instaceInpbsc := &pbsc.MicroServiceInstance{}
 	if syncInstance.PluginName == PluginName && len(syncInstance.Expansions) > 0 {
 		matches := pb.Expansions(syncInstance.Expansions).Find(expansionDatasource, map[string]string{})
 		if len(matches) > 0 {
-			err := proto.Unmarshal(matches[0].Bytes, instance)
+			err := proto.Unmarshal(matches[0].Bytes, instaceInpbsc)
 			if err == nil {
+				instance = InstanceCopyRe(instaceInpbsc)
 				instance.InstanceId = syncInstance.InstanceId
 				instance.ServiceId = syncInstance.ServiceId
 				return
 			}
-			log.Errorf(err, "proto unmarshal %s instance, instanceID = %s, kind = %v, content = %v failed",
-				PluginName, instance.InstanceId, matches[0].Kind, matches[0].Bytes)
+			log.Error(fmt.Sprintf("proto unmarshal %s instance, instanceID = %s, kind = %v, content = %v failed",
+				PluginName, instance.InstanceId, matches[0].Kind, matches[0].Bytes), err)
 
 		}
 	}
@@ -288,4 +296,198 @@ func inSlice(slice []string, val string) bool {
 		}
 	}
 	return false
+}
+
+func ServiceCopy(service *scpb.MicroService) *pbsc.MicroService {
+	var serviceInpbsc pbsc.MicroService
+	if service != nil {
+		paths := []*pbsc.ServicePath{}
+		if len(service.Paths) > 0 {
+			for i, path := range service.Paths {
+				paths[i].Path = path.Path
+				paths[i].Property = path.Property
+			}
+		}
+		providers := []*pbsc.MicroServiceKey{}
+		if len(service.Providers) > 0 {
+			for i, provider := range service.Providers {
+				providers[i].Tenant = provider.Tenant
+				providers[i].Environment = provider.Environment
+				providers[i].AppId = provider.AppId
+				providers[i].ServiceName = provider.ServiceName
+				providers[i].Alias = provider.Alias
+				providers[i].Version = provider.Version
+			}
+		}
+		var frameWorkProperty pbsc.FrameWorkProperty
+		if service.Framework != nil {
+			frameWorkProperty = pbsc.FrameWorkProperty{
+				Name:    service.Framework.Name,
+				Version: service.Framework.Version,
+			}
+		}
+		serviceInpbsc = pbsc.MicroService{
+			ServiceId:    service.ServiceId,
+			AppId:        service.AppId,
+			ServiceName:  service.ServiceName,
+			Version:      service.Version,
+			Description:  service.Description,
+			Level:        service.Level,
+			Schemas:      service.Schemas,
+			Paths:        paths,
+			Status:       service.Status,
+			Properties:   service.Properties,
+			Timestamp:    service.Timestamp,
+			Providers:    providers,
+			Alias:        service.Alias,
+			LBStrategy:   service.LBStrategy,
+			ModTimestamp: service.ModTimestamp,
+			Environment:  service.Environment,
+			RegisterBy:   service.RegisterBy,
+			Framework:    &frameWorkProperty,
+		}
+	}
+	return &serviceInpbsc
+}
+
+func ServiceCopyRe(service *pbsc.MicroService) *scpb.MicroService {
+	var serviceInpbsc scpb.MicroService
+	if service != nil {
+		paths := []*scpb.ServicePath{}
+		if len(service.Paths) > 0 {
+			for i, path := range service.Paths {
+				paths[i].Path = path.Path
+				paths[i].Property = path.Property
+			}
+		}
+		providers := []*scpb.MicroServiceKey{}
+		if len(service.Providers) > 0 {
+			for i, provider := range service.Providers {
+				providers[i].Tenant = provider.Tenant
+				providers[i].Environment = provider.Environment
+				providers[i].AppId = provider.AppId
+				providers[i].ServiceName = provider.ServiceName
+				providers[i].Alias = provider.Alias
+				providers[i].Version = provider.Version
+			}
+		}
+		var frameWorkProperty scpb.FrameWorkProperty
+		if service.Framework != nil {
+			frameWorkProperty = scpb.FrameWorkProperty{
+				Name:    service.Framework.Name,
+				Version: service.Framework.Version,
+			}
+		}
+		serviceInpbsc = scpb.MicroService{
+			ServiceId:    service.ServiceId,
+			AppId:        service.AppId,
+			ServiceName:  service.ServiceName,
+			Version:      service.Version,
+			Description:  service.Description,
+			Level:        service.Level,
+			Schemas:      service.Schemas,
+			Paths:        paths,
+			Status:       service.Status,
+			Properties:   service.Properties,
+			Timestamp:    service.Timestamp,
+			Providers:    providers,
+			Alias:        service.Alias,
+			LBStrategy:   service.LBStrategy,
+			ModTimestamp: service.ModTimestamp,
+			Environment:  service.Environment,
+			RegisterBy:   service.RegisterBy,
+			Framework:    &frameWorkProperty,
+		}
+	}
+	return &serviceInpbsc
+}
+
+func InstanceCopy(instance *scpb.MicroServiceInstance) *pbsc.MicroServiceInstance {
+	var instanceInpbs pbsc.MicroServiceInstance
+	if instance != nil {
+		var healthCheck pbsc.HealthCheck
+		if instance.HealthCheck != nil {
+			healthCheck = pbsc.HealthCheck{
+				Mode:     instance.HealthCheck.Mode,
+				Port:     instance.HealthCheck.Port,
+				Interval: instance.HealthCheck.Interval,
+				Times:    instance.HealthCheck.Times,
+				Url:      instance.HealthCheck.Url,
+			}
+		}
+		var dataCenterInfo pbsc.DataCenterInfo
+		if instance.DataCenterInfo != nil {
+			dataCenterInfo = pbsc.DataCenterInfo{
+				Name:          instance.DataCenterInfo.Name,
+				Region:        instance.DataCenterInfo.Region,
+				AvailableZone: instance.DataCenterInfo.AvailableZone,
+			}
+		}
+		instanceInpbs = pbsc.MicroServiceInstance{
+			InstanceId:     instance.InstanceId,
+			ServiceId:      instance.ServiceId,
+			Endpoints:      instance.Endpoints,
+			HostName:       instance.HostName,
+			Status:         instance.Status,
+			Properties:     instance.Properties,
+			HealthCheck:    &healthCheck,
+			Timestamp:      instance.Timestamp,
+			DataCenterInfo: &dataCenterInfo,
+			ModTimestamp:   instance.ModTimestamp,
+			Version:        instance.Version,
+		}
+	}
+	return &instanceInpbs
+}
+
+func InstanceCopyRe(instance *pbsc.MicroServiceInstance) *scpb.MicroServiceInstance {
+	var instanceInpbs scpb.MicroServiceInstance
+	if instance != nil {
+		var healthCheck scpb.HealthCheck
+		if instance.HealthCheck != nil {
+			healthCheck = scpb.HealthCheck{
+				Mode:     instance.HealthCheck.Mode,
+				Port:     instance.HealthCheck.Port,
+				Interval: instance.HealthCheck.Interval,
+				Times:    instance.HealthCheck.Times,
+				Url:      instance.HealthCheck.Url,
+			}
+		}
+		var dataCenterInfo scpb.DataCenterInfo
+		if instance.DataCenterInfo != nil {
+			dataCenterInfo = scpb.DataCenterInfo{
+				Name:          instance.DataCenterInfo.Name,
+				Region:        instance.DataCenterInfo.Region,
+				AvailableZone: instance.DataCenterInfo.AvailableZone,
+			}
+		}
+		instanceInpbs = scpb.MicroServiceInstance{
+			InstanceId:   instance.InstanceId,
+			ServiceId:    instance.ServiceId,
+			Endpoints:    instance.Endpoints,
+			HostName:     instance.HostName,
+			Status:       instance.Status,
+			Properties:   instance.Properties,
+			HealthCheck:  &healthCheck,
+			Timestamp:    instance.Timestamp,
+			ModTimestamp: instance.ModTimestamp,
+			Version:      instance.Version,
+		}
+		if instance.DataCenterInfo.Name != "" {
+			instanceInpbs.DataCenterInfo = &dataCenterInfo
+		}
+	}
+	return &instanceInpbs
+}
+
+func SchemaCopy(schema *scpb.Schema) *pbsc.Schema {
+	var schemaInpbsc pbsc.Schema
+	if schema != nil {
+		schemaInpbsc = pbsc.Schema{
+			SchemaId: schema.SchemaId,
+			Summary:  schema.Summary,
+			Schema:   schema.Schema,
+		}
+	}
+	return &schemaInpbsc
 }

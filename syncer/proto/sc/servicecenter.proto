@@ -1,0 +1,77 @@
+syntax = "proto3";
+package sc;
+option go_package = ".;sc";
+
+message Schema {
+  string schemaId = 1;
+  string summary = 2;
+  string schema = 3;
+}
+
+message MicroService {
+  string serviceId = 1;
+  string appId = 2;
+  string serviceName = 3;
+  string version = 4;
+  string description = 5;
+  string level = 6;
+  repeated string schemas = 7;
+  repeated ServicePath paths = 10;
+  string status = 8;
+  map<string, string> properties = 9;
+  string timestamp = 11;
+  repeated MicroServiceKey providers = 12;
+  string alias = 13;
+  map<string, string> LBStrategy = 14;
+  string modTimestamp = 15;
+  string environment = 16;
+  string registerBy = 17;
+  FrameWorkProperty framework = 18;
+}
+
+message MicroServiceInstance {
+  string instanceId = 1;
+  string serviceId = 2;
+  repeated string endpoints = 3;
+  string hostName = 4;
+  string status = 5;
+  map<string, string> properties = 6;
+  HealthCheck healthCheck = 7;
+  string timestamp = 8;
+  DataCenterInfo dataCenterInfo = 9;
+  string modTimestamp = 10;
+  string version = 11;
+}
+
+message ServicePath {
+  string path = 1;
+  map<string, string> property = 2;
+}
+
+message MicroServiceKey {
+    string tenant = 1;
+    string environment = 2;
+    string appId = 3;
+    string serviceName = 4;
+    string alias = 5;
+    string version = 6;
+}
+
+message FrameWorkProperty {
+  string name = 1;
+  string version = 2;
+}
+
+message HealthCheck {
+  string mode = 1;
+  int32 port = 2;
+  int32 interval = 3;
+  int32 times = 4;
+  string url = 5;
+}
+
+message DataCenterInfo {
+  string name = 1;
+  string region = 2;
+  string availableZone = 3;
+}
