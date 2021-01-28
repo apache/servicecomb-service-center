@@ -19,12 +19,14 @@ package servicecenter
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
+	pbsc "github.com/apache/servicecomb-service-center/syncer/proto/sc"
 	scpb "github.com/go-chassis/cari/discovery"
-	"github.com/gogo/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 )
 
 // CreateService creates the service of servicecenter
@@ -42,13 +44,18 @@ func (c *Client) CreateService(ctx context.Context, domainProject string, syncSe
 	if len(matches) > 0 {
 		schemas := make([]*scpb.Schema, 0, len(matches))
 		for _, expansion := range matches {
-			schema := &scpb.Schema{}
+			schema := &pbsc.Schema{}
 			err1 := proto.Unmarshal(expansion.Bytes, schema)
 			if err1 != nil {
-				log.Errorf(err1, "proto unmarshal %s service schema, serviceID = %s, kind = %v, content = %v failed",
-					PluginName, serviceID, expansion.Kind, expansion.Bytes)
+				log.Error(fmt.Sprintf("proto unmarshal %s service schema, serviceID = %s, kind = %v, content = %v failed",
+					PluginName, serviceID, expansion.Kind, expansion.Bytes), err1)
 			}
-			schemas = append(schemas, schema)
+			schematised := &scpb.Schema{
+				SchemaId: schema.SchemaId,
+				Summary:  schema.Summary,
+				Schema:   schema.Schema,
+			}
+			schemas = append(schemas, schematised)
 		}
 		err2 := c.CreateSchemas(ctx, domain, project, serviceID, schemas)
 		if err2 != nil {
