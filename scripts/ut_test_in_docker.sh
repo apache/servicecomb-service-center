@@ -25,8 +25,14 @@ set -e
 
 ut_for_dir() {
     local name=$1
-    echo "${green}Running UT for Service-Center $name${reset}"
+    echo "${green}Running  UT for Service-Center $name${reset}"
     bash -x ./scripts/ut.sh $name
+}
+
+ut_for_file() {
+    local name=$1
+    echo "${green}Running UT for Service-Center $name${reset}"
+    bash -x ./scripts/ut_file.sh $name
 }
 
 echo "${green}Starting Unit Testing for Service Center${reset}"
@@ -50,6 +56,7 @@ echo "${green}Preparing the env for UT....${reset}"
 ./scripts/prepare_env_ut.sh
 
 export TEST_MODE=etcd
+[ $? == 0 ] && ut_for_file datasource
 [ $? == 0 ] && ut_for_dir datasource/etcd
 [ $? == 0 ] && ut_for_dir pkg
 [ $? == 0 ] && ut_for_dir server
@@ -66,6 +73,7 @@ else
 fi
 
 export TEST_MODE=mongo
+[ $? == 0 ] && ut_for_file datasource
 [ $? == 0 ] && ut_for_dir datasource/mongo
 [ $? == 0 ] && ut_for_dir syncer
 ret=$?
