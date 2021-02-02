@@ -25,16 +25,11 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
 	pb "github.com/go-chassis/cari/discovery"
-	"github.com/go-chassis/go-chassis/v2/storage"
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
 func init() {
-	config := storage.Options{
-		URI: "mongodb://localhost:27017",
-	}
-	client.NewMongoClient(config)
 	// clean the mongodb
 	client.GetMongoClient().Delete(getContext(), mongo.CollectionInstance, bson.M{})
 	client.GetMongoClient().Delete(getContext(), mongo.CollectionService, bson.M{})

@@ -15,16 +15,16 @@
  * limitations under the License.
  */
 
-package etcd_test
+package datasource_test
 
 import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
-	"github.com/astaxie/beego"
-	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -40,10 +40,6 @@ var (
 		Perms: nil,
 	}
 )
-
-func init() {
-	beego.AppConfig.Set("registry_plugin", "etcd")
-}
 
 func TestRole(t *testing.T) {
 	t.Run("create role should success", func(t *testing.T) {
@@ -65,6 +61,7 @@ func TestRole(t *testing.T) {
 	})
 
 	t.Run("update role should success", func(t *testing.T) {
+		r1.ID = "11111-22222-33333-4"
 		err := datasource.Instance().UpdateRole(context.Background(), "test-role1", &r1)
 		assert.NoError(t, err)
 	})
