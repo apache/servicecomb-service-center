@@ -25,7 +25,6 @@ import (
 	"time"
 
 	pb "github.com/go-chassis/cari/discovery"
-	"github.com/go-chassis/go-chassis/v2/storage"
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson"
 
@@ -39,13 +38,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	"github.com/apache/servicecomb-service-center/server/service"
 )
-
-func init() {
-	config := storage.Options{
-		URI: "mongodb://localhost:27017",
-	}
-	client.NewMongoClient(config)
-}
 
 func TestService_Register(t *testing.T) {
 	t.Run("Register service after init & install, should pass", func(t *testing.T) {
