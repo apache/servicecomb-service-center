@@ -111,6 +111,7 @@ func (ds *DataSource) createIndexes() (err error) {
 			{Key: StringBuilder([]string{ColumnServiceInfo, ColumnEnv}), Value: bsonx.Int32(1)},
 			{Key: StringBuilder([]string{ColumnServiceInfo, ColumnVersion}), Value: bsonx.Int32(1)},
 			{Key: ColumnDomain, Value: bsonx.Int32(1)},
+			{Key: ColumnProject, Value: bsonx.Int32(1)},
 		},
 		Options: options.Index().SetUnique(true),
 	}})
@@ -125,6 +126,33 @@ func (ds *DataSource) createIndexes() (err error) {
 	}, {
 		Keys:    bsonx.Doc{{Key: ColumnRefreshTime, Value: bsonx.Int32(1)}},
 		Options: options.Index().SetExpireAfterSeconds(60),
+	}})
+	if err != nil {
+		return
+	}
+	err = client.GetMongoClient().CreateIndexes(context.TODO(), CollectionSchema, []mongo.IndexModel{{
+		Keys: bsonx.Doc{
+			{Key: ColumnDomain, Value: bsonx.Int32(1)},
+			{Key: ColumnProject, Value: bsonx.Int32(1)},
+			{Key: ColumnServiceID, Value: bsonx.Int32(1)}},
+	}})
+	if err != nil {
+		return
+	}
+	err = client.GetMongoClient().CreateIndexes(context.TODO(), CollectionRule, []mongo.IndexModel{{
+		Keys: bsonx.Doc{
+			{Key: ColumnDomain, Value: bsonx.Int32(1)},
+			{Key: ColumnProject, Value: bsonx.Int32(1)},
+			{Key: ColumnServiceID, Value: bsonx.Int32(1)}},
+	}})
+	if err != nil {
+		return
+	}
+	err = client.GetMongoClient().CreateIndexes(context.TODO(), CollectionDep, []mongo.IndexModel{{
+		Keys: bsonx.Doc{
+			{Key: ColumnDomain, Value: bsonx.Int32(1)},
+			{Key: ColumnProject, Value: bsonx.Int32(1)},
+			{Key: ColumnServiceKey, Value: bsonx.Int32(1)}},
 	}})
 	if err != nil {
 		return
