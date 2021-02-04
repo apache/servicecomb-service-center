@@ -130,9 +130,9 @@ func (lw *mongoListWatch) doParseDocumentToResource(fullDocument bson.Raw) (reso
 			log.Error("error to parse bson raw to documentInfo", err)
 			return
 		}
-		resource.Key = instance.InstanceInfo.InstanceId
+		resource.Key = instance.Instance.InstanceId
 		resource.Value = instance
-		resource.Index = instance.InstanceInfo.ServiceId
+		resource.Index = instance.Instance.ServiceId
 	case service:
 		service := Service{}
 		err := bson.Unmarshal(fullDocument, &service)
@@ -140,9 +140,9 @@ func (lw *mongoListWatch) doParseDocumentToResource(fullDocument bson.Raw) (reso
 			log.Error("error to parse bson raw to documentInfo", err)
 			return
 		}
-		resource.Key = service.ServiceInfo.ServiceId
+		resource.Key = service.Service.ServiceId
 		resource.Value = service
-		resource.Index = util.StringJoin([]string{service.Domain, service.Project, service.ServiceInfo.ServiceName, service.ServiceInfo.Version, service.ServiceInfo.AppId, service.ServiceInfo.Environment}, "/")
+		resource.Index = util.StringJoin([]string{service.Domain, service.Project, service.Service.ServiceName, service.Service.Version, service.Service.AppId, service.Service.Environment}, "/")
 	default:
 		return
 	}

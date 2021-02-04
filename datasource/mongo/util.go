@@ -89,7 +89,7 @@ func statistics(ctx context.Context, withShared bool) (*pb.Statistics, error) {
 	}
 	var instIDs []string
 	for _, inst := range instances {
-		instIDs = append(instIDs, inst.InstanceInfo.ServiceId)
+		instIDs = append(instIDs, inst.Instance.ServiceId)
 	}
 	datasource.SetStaticInstances(result, svcIDToNonVerKey, instIDs)
 	data := <-respGetInstanceCountByDomain

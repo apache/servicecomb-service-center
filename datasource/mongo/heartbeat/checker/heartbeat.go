@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package heartbeatchecker
+package checker
 
 import (
 	"context"
@@ -30,8 +30,8 @@ import (
 
 func updateInstanceRefreshTime(ctx context.Context, serviceID string, instanceID string) error {
 	filter := bson.M{
-		mongo.StringBuilder([]string{mongo.ColumnInstanceInfo, mongo.ColumnServiceID}):  serviceID,
-		mongo.StringBuilder([]string{mongo.ColumnInstanceInfo, mongo.ColumnInstanceID}): instanceID,
+		mongo.StringBuilder([]string{mongo.ColumnInstance, mongo.ColumnServiceID}):  serviceID,
+		mongo.StringBuilder([]string{mongo.ColumnInstance, mongo.ColumnInstanceID}): instanceID,
 	}
 	update := bson.M{
 		"$set": bson.M{mongo.ColumnRefreshTime: time.Now()},

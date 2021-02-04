@@ -90,15 +90,15 @@ type ResumeToken struct {
 }
 
 type Service struct {
-	Domain      string
-	Project     string
-	Tags        map[string]string
-	ServiceInfo *pb.MicroService
+	Domain  string
+	Project string
+	Tags    map[string]string
+	Service *pb.MicroService
 }
 
 type Instance struct {
-	Domain       string
-	Project      string
-	RefreshTime  time.Time
-	InstanceInfo *pb.MicroServiceInstance
+	Domain      string
+	Project     string
+	RefreshTime time.Time
+	Instance    *pb.MicroServiceInstance
 }

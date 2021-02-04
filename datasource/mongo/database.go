@@ -44,7 +44,7 @@ const (
 	ColumnSchemaID            = "schemaid"
 	ColumnServiceID           = "serviceid"
 	ColumnRuleID              = "ruleid"
-	ColumnServiceInfo         = "serviceinfo"
+	ColumnService             = "service"
 	ColumnProperty            = "properties"
 	ColumnModTime             = "modtimestamp"
 	ColumnEnv                 = "env"
@@ -57,12 +57,12 @@ const (
 	ColumnPattern             = "pattern"
 	ColumnDescription         = "description"
 	ColumnRuleType            = "ruletype"
-	ColumnSchemaInfo          = "schemainfo"
+	ColumnSchema              = "schema"
 	ColumnSchemaSummary       = "schemasummary"
-	ColumnDepInfo             = "depinfo"
+	ColumnDep                 = "dep"
 	ColumnDependency          = "dependency"
-	ColumnRuleInfo            = "ruleinfo"
-	ColumnInstanceInfo        = "instanceinfo"
+	ColumnRule                = "rule"
+	ColumnInstance            = "instance"
 	ColumnInstanceID          = "instanceid"
 	ColumnConsumerID          = "consumerid"
 	ColumnMongoID             = "_id"
@@ -70,7 +70,6 @@ const (
 	ColumnServiceType         = "type"
 	ColumnServiceKey          = "servicekey"
 	ColumnConsumer            = "consumer"
-	ColumnDependencyInfo      = "dependencyinfo"
 	ColumnID                  = "id"
 	ColumnAccountName         = "name"
 	ColumnRoleName            = "name"
@@ -84,10 +83,10 @@ const (
 )
 
 type Service struct {
-	Domain      string
-	Project     string
-	Tags        map[string]string
-	ServiceInfo *pb.MicroService
+	Domain  string
+	Project string
+	Tags    map[string]string
+	Service *pb.MicroService
 }
 
 type Schema struct {
@@ -95,7 +94,7 @@ type Schema struct {
 	Project       string
 	ServiceID     string
 	SchemaID      string
-	SchemaInfo    string
+	Schema        string
 	SchemaSummary string
 }
 
@@ -103,22 +102,22 @@ type Rule struct {
 	Domain    string
 	Project   string
 	ServiceID string
-	RuleInfo  *pb.ServiceRule
+	Rule      *pb.ServiceRule
 }
 
 type Instance struct {
-	Domain       string
-	Project      string
-	RefreshTime  time.Time
-	InstanceInfo *pb.MicroServiceInstance
+	Domain      string
+	Project     string
+	RefreshTime time.Time
+	Instance    *pb.MicroServiceInstance
 }
 
 type ConsumerDep struct {
-	Domain          string
-	Project         string
-	ConsumerID      string
-	UUID            string
-	ConsumerDepInfo *pb.ConsumerDependency
+	Domain      string
+	Project     string
+	ConsumerID  string
+	UUID        string
+	ConsumerDep *pb.ConsumerDependency
 }
 
 type DependencyRule struct {
@@ -126,7 +125,7 @@ type DependencyRule struct {
 	Domain     string
 	Project    string
 	ServiceKey *pb.MicroServiceKey
-	DepInfo    *pb.MicroServiceDependency
+	Dep        *pb.MicroServiceDependency
 }
 
 type DelDepCacheKey struct {

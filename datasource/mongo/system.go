@@ -51,7 +51,7 @@ func setServiceValue(e *sd.MongoCacher, setter dump.Setter) {
 		setter.SetValue(&dump.KV{
 			Key: util.StringJoin([]string{datasource.ServiceKeyPrefix, service.Domain, service.Project, k},
 				datasource.SPLIT),
-			Value: service.ServiceInfo,
+			Value: service.Service,
 		})
 		return true
 	})
@@ -62,8 +62,8 @@ func setInstanceValue(e *sd.MongoCacher, setter dump.Setter) {
 		instance := kv.(cache.Item).Object.(sd.Instance)
 		setter.SetValue(&dump.KV{
 			Key: util.StringJoin([]string{datasource.InstanceKeyPrefix, instance.Domain, instance.Project,
-				instance.InstanceInfo.ServiceId, k}, datasource.SPLIT),
-			Value: instance.InstanceInfo,
+				instance.Instance.ServiceId, k}, datasource.SPLIT),
+			Value: instance.Instance,
 		})
 		return true
 	})

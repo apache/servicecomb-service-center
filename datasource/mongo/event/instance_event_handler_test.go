@@ -67,7 +67,7 @@ func mongoAssign() sd.MongoEvent {
 		Endpoints:  endPoints,
 	}
 	mongoInstance := sd.Instance{}
-	mongoInstance.InstanceInfo = &instance
+	mongoInstance.Instance = &instance
 	mongoInstance.Domain = "default"
 	mongoInstance.Project = "default"
 	mongoEvent := sd.MongoEvent{}
@@ -87,7 +87,7 @@ func mongoEventWronServiceId() sd.MongoEvent {
 		Endpoints:  endPoints,
 	}
 	mongoInstance := sd.Instance{}
-	mongoInstance.InstanceInfo = &instance
+	mongoInstance.Instance = &instance
 	mongoInstance.Domain = "default"
 	mongoInstance.Project = "default"
 	mongoEvent := sd.MongoEvent{}

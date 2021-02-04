@@ -21,7 +21,8 @@ import (
 	_ "github.com/apache/servicecomb-service-center/datasource/mongo"
 
 	// heartbeat
-	_ "github.com/apache/servicecomb-service-center/datasource/mongo/heartbeat/heartbeatchecker"
+	_ "github.com/apache/servicecomb-service-center/datasource/mongo/heartbeat/cache"
+	_ "github.com/apache/servicecomb-service-center/datasource/mongo/heartbeat/checker"
 
 	// events
 	_ "github.com/apache/servicecomb-service-center/datasource/mongo/event"

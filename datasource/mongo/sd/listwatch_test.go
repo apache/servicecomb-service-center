@@ -27,10 +27,10 @@ func TestListWatchConfig_String(t *testing.T) {
 func TestDoParseWatchRspToMongoInfo(t *testing.T) {
 	documentID := primitive.NewObjectID()
 
-	mockDocument, _ := bson.Marshal(bson.M{"_id": documentID, "domain": "default", "project": "default", "instanceinfo": bson.M{"instanceid": "8064a600438511eb8584fa163e8a81c9", "serviceid": "91afbe0faa9dc1594689139f099eb293b0cd048d",
+	mockDocument, _ := bson.Marshal(bson.M{"_id": documentID, "domain": "default", "project": "default", "instance": bson.M{"instanceid": "8064a600438511eb8584fa163e8a81c9", "serviceid": "91afbe0faa9dc1594689139f099eb293b0cd048d",
 		"hostname": "ecs-hcsadlab-dev-0002", "status": "UP", "timestamp": "1608552622", "modtimestamp": "1608552622", "version": "0.0.1"}})
 
-	mockServiceDocument, _ := bson.Marshal(bson.M{"_id": documentID, "domain": "default", "project": "default", "serviceinfo": bson.M{"serviceid": "91afbe0faa9dc1594689139f099eb293b0cd048d", "timestamp": "1608552622", "modtimestamp": "1608552622", "version": "0.0.1"}})
+	mockServiceDocument, _ := bson.Marshal(bson.M{"_id": documentID, "domain": "default", "project": "default", "service": bson.M{"serviceid": "91afbe0faa9dc1594689139f099eb293b0cd048d", "timestamp": "1608552622", "modtimestamp": "1608552622", "version": "0.0.1"}})
 
 	// case instance insertOp
 
@@ -50,7 +50,7 @@ func TestDoParseWatchRspToMongoInfo(t *testing.T) {
 	info = ilw.doParseWatchRspToResource(mockWatchRsp)
 	assert.Equal(t, documentID.Hex(), info.DocumentID)
 	assert.Equal(t, "8064a600438511eb8584fa163e8a81c9", info.Key)
-	assert.Equal(t, "1608552622", info.Value.(Instance).InstanceInfo.ModTimestamp)
+	assert.Equal(t, "1608552622", info.Value.(Instance).Instance.ModTimestamp)
 
 	// case delete
 	mockWatchRsp.OperationType = deleteOp

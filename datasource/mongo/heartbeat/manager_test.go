@@ -23,7 +23,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/apache/servicecomb-service-center/datasource/mongo/heartbeat"
-	_ "github.com/apache/servicecomb-service-center/datasource/mongo/heartbeat/heartbeatchecker"
+	_ "github.com/apache/servicecomb-service-center/datasource/mongo/heartbeat/checker"
 )
 
 func TestInit(t *testing.T) {
@@ -33,7 +33,7 @@ func TestInit(t *testing.T) {
 		assert.Error(t, err)
 	})
 	t.Run("install and init heartbeat plugin, should pass", func(t *testing.T) {
-		pluginName := heartbeat.ImplName("heartbeatchecker")
+		pluginName := heartbeat.ImplName("checker")
 		err := heartbeat.Init(heartbeat.Options{
 			PluginImplName: pluginName,
 		})

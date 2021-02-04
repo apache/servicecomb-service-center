@@ -368,19 +368,19 @@ func (c *MongoCacher) isValueNotUpdated(value interface{}, newValue interface{})
 	case instance:
 		instance := value.(Instance)
 		newInstance := newValue.(Instance)
-		if instance.InstanceInfo == nil || newInstance.InstanceInfo == nil {
+		if instance.Instance == nil || newInstance.Instance == nil {
 			return true
 		}
-		modTime = instance.InstanceInfo.ModTimestamp
-		newModTime = newInstance.InstanceInfo.ModTimestamp
+		modTime = instance.Instance.ModTimestamp
+		newModTime = newInstance.Instance.ModTimestamp
 	case service:
 		service := value.(Service)
 		newService := newValue.(Service)
-		if service.ServiceInfo == nil || newService.ServiceInfo == nil {
+		if service.Service == nil || newService.Service == nil {
 			return true
 		}
-		modTime = service.ServiceInfo.ModTimestamp
-		newModTime = newService.ServiceInfo.ModTimestamp
+		modTime = service.Service.ModTimestamp
+		newModTime = newService.Service.ModTimestamp
 	}
 
 	if newModTime == "" || modTime == newModTime {
