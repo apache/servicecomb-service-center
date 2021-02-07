@@ -117,7 +117,7 @@ func (s *ServiceCenterServer) initDatasource() {
 		CompactInterval:   config.GetRegistry().CompactInterval,
 		CompactIndexDelta: config.GetRegistry().CompactIndexDelta,
 	}); err != nil {
-		log.Fatalf(err, "init datasource failed")
+		log.Fatal("init datasource failed", err)
 	}
 }
 
