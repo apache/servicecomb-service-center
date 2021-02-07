@@ -102,7 +102,7 @@ func TestNewMongoCacher(t *testing.T) {
 
 	var resources []*sdcommon.Resource
 	resource := &sdcommon.Resource{Key: mockResourceID, DocumentID: mockDocumentID, Value: Instance{Domain: "default", Project: "default",
-		InstanceInfo: &pb.MicroServiceInstance{InstanceId: mockResourceID, ModTimestamp: "100000"}}}
+		Instance: &pb.MicroServiceInstance{InstanceId: mockResourceID, ModTimestamp: "100000"}}}
 	resources = append(resources, resource)
 	test := &sdcommon.ListWatchResp{
 		Action:    sdcommon.ActionCreate,
@@ -159,7 +159,7 @@ func TestNewMongoCacher(t *testing.T) {
 		// prepare updateOp data
 		dataUpdate := &sdcommon.Resource{Key: mockResourceID, DocumentID: mockDocumentID,
 			Value: Instance{Domain: "default", Project: "default",
-				InstanceInfo: &pb.MicroServiceInstance{InstanceId: mockResourceID, HostName: "test", ModTimestamp: "100001"}}}
+				Instance: &pb.MicroServiceInstance{InstanceId: mockResourceID, HostName: "test", ModTimestamp: "100001"}}}
 
 		var mongoUpdateResources []*sdcommon.Resource
 		mongoUpdateResources = append(mongoUpdateResources, dataUpdate)
@@ -252,7 +252,7 @@ func TestNewMongoCacher(t *testing.T) {
 		// prepare updateOp data
 		dataUpdate := &sdcommon.Resource{Key: mockResourceID, DocumentID: mockDocumentID,
 			Value: Instance{Domain: "default", Project: "default",
-				InstanceInfo: &pb.MicroServiceInstance{InstanceId: mockResourceID, HostName: "test", ModTimestamp: "100001"}}}
+				Instance: &pb.MicroServiceInstance{InstanceId: mockResourceID, HostName: "test", ModTimestamp: "100001"}}}
 
 		var mongoUpdateResources []*sdcommon.Resource
 		mongoUpdateResources = append(mongoUpdateResources, dataUpdate)

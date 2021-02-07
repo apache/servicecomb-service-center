@@ -40,7 +40,7 @@ func Filter(ctx context.Context, rules []*Rule, consumerID string) (bool, error)
 	if err != nil {
 		return false, err
 	}
-	matchErr := MatchRules(rules, consumer.ServiceInfo, tags)
+	matchErr := MatchRules(rules, consumer.Service, tags)
 	if matchErr != nil {
 		if matchErr.Code == discovery.ErrPermissionDeny {
 			return false, nil

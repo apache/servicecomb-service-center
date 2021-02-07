@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package heartbeatchecker
+package checker
 
 import (
 	"context"
@@ -29,7 +29,7 @@ import (
 )
 
 func init() {
-	heartbeat.Install("heartbeatchecker", NewHeartBeatChecker)
+	heartbeat.Install("checker", NewHeartBeatChecker)
 }
 
 type HeartBeatChecker struct {

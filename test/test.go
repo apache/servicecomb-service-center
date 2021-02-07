@@ -39,7 +39,7 @@ func init() {
 		archaius.Set("discovery.kind", "etcd")
 		archaius.Set("registry.kind", "etcd")
 	} else {
-		archaius.Set("registry.heartbeat.kind", "heartbeatchecker")
+		archaius.Set("registry.heartbeat.kind", "checker")
 	}
 	datasource.Init(datasource.Options{PluginImplName: datasource.ImplName(t.(string))})
 	core.ServiceAPI, core.InstanceAPI = service.AssembleResources()

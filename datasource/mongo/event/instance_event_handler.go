@@ -49,13 +49,13 @@ func (h InstanceEventHandler) Type() string {
 func (h InstanceEventHandler) OnEvent(evt sd.MongoEvent) {
 	action := evt.Type
 	instance := evt.Value.(sd.Instance)
-	providerID := instance.InstanceInfo.ServiceId
-	providerInstanceID := instance.InstanceInfo.InstanceId
+	providerID := instance.Instance.ServiceId
+	providerInstanceID := instance.Instance.InstanceId
 	domainProject := instance.Domain + "/" + instance.Project
 	cacheService := sd.Store().Service().Cache().Get(providerID)
 	var microService *discovery.MicroService
 	if cacheService != nil {
-		microService = cacheService.(sd.Service).ServiceInfo
+		microService = cacheService.(sd.Service).Service
 	}
 	if microService == nil {
 		log.Info("get cached service failed, then get from database")
@@ -68,10 +68,10 @@ func (h InstanceEventHandler) OnEvent(evt sd.MongoEvent) {
 			}
 			return
 		}
-		microService = service.ServiceInfo // service in the cache may not ready, query from db once
+		microService = service.Service // service in the cache may not ready, query from db once
 		if microService == nil {
 			log.Warn(fmt.Sprintf("caught [%s] instance[%s/%s] event, endpoints %v, get provider's file failed from db\n",
-				action, providerID, providerInstanceID, instance.InstanceInfo.Endpoints))
+				action, providerID, providerInstanceID, instance.Instance.Endpoints))
 			return
 		}
 	}
@@ -100,7 +100,7 @@ func PublishInstanceEvent(evt sd.MongoEvent, domainProject string, serviceKey *d
 		Response: discovery.CreateResponse(discovery.ResponseSuccess, "Watch instance successfully."),
 		Action:   string(evt.Type),
 		Key:      serviceKey,
-		Instance: evt.Value.(sd.Instance).InstanceInfo,
+		Instance: evt.Value.(sd.Instance).Instance,
 	}
 	for _, consumerID := range subscribers {
 		evt := notify.NewInstanceEventWithTime(consumerID, domainProject, -1, simple.FromTime(time.Now()), response)
@@ -112,7 +112,7 @@ func PublishInstanceEvent(evt sd.MongoEvent, domainProject string, serviceKey *d
 }
 
 func NotifySyncerInstanceEvent(event sd.MongoEvent, microService *discovery.MicroService) {
-	instance := event.Value.(sd.Instance).InstanceInfo
+	instance := event.Value.(sd.Instance).Instance
 	log.Info(fmt.Sprintf("instanceId : %s and serviceId : %s in NotifySyncerInstanceEvent", instance.InstanceId, instance.ServiceId))
 	instanceKey := util.StringJoin([]string{datasource.InstanceKeyPrefix, event.Value.(sd.Instance).Domain,
 		event.Value.(sd.Instance).Project, instance.ServiceId, instance.InstanceId}, datasource.SPLIT)

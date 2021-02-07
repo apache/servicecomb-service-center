@@ -216,7 +216,7 @@ func GetAllServicesAcrossDomainProject(ctx context.Context) (map[string][]*pb.Mi
 			return nil, err
 		}
 		domainProject := mongoService.Domain + "/" + mongoService.Project
-		services[domainProject] = append(services[domainProject], mongoService.ServiceInfo)
+		services[domainProject] = append(services[domainProject], mongoService.Service)
 	}
 	return services, nil
 }

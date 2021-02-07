@@ -83,6 +83,17 @@ registry:
     request:
       timeout:
   mongo:
+    heartbeat:
+      # Mongo's heartbeat plugin
+      # heartbeat.kind="checker or cache"
+      # if heartbeat.kind equals to 'cache', should set cacheCapacity,workerNum and taskTimeout
+      # capacity = 10000
+      # workerNum = 10
+      # timeout = 10
+      kind: cache
+      cacheCapacity: 10000
+      workerNum: 10
+      timeout: 10
     cluster:
       uri: mongodb://localhost:27017
 

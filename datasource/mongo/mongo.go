@@ -79,7 +79,7 @@ func (ds *DataSource) initialize() error {
 }
 
 func (ds *DataSource) initPlugins() error {
-	kind := config.GetString("registry.heartbeat.kind", "heartbeatchecker", config.WithStandby("heartbeat_plugin"))
+	kind := config.GetString("registry.mongo.heartbeat.kind", "cache")
 	err := heartbeat.Init(heartbeat.Options{PluginImplName: heartbeat.ImplName(kind)})
 	if err != nil {
 		log.Fatal("heartbeat init failed", err)
@@ -100,16 +100,16 @@ func (ds *DataSource) initClient() error {
 	}
 }
 
-//{Key: StringBuilder([]string{ColumnServiceInfo, ColumnAlias}), Value: bsonx.Int32(1)}
+//{Key: StringBuilder([]string{ColumnService, ColumnAlias}), Value: bsonx.Int32(1)}
 func (ds *DataSource) createIndexes() (err error) {
 	err = client.GetMongoClient().CreateIndexes(context.TODO(), CollectionService, []mongo.IndexModel{{
-		Keys:    bsonx.Doc{{Key: StringBuilder([]string{ColumnServiceInfo, ColumnServiceID}), Value: bsonx.Int32(1)}},
+		Keys:    bsonx.Doc{{Key: StringBuilder([]string{ColumnService, ColumnServiceID}), Value: bsonx.Int32(1)}},
 		Options: options.Index().SetUnique(true),
 	}, {
-		Keys: bsonx.Doc{{Key: StringBuilder([]string{ColumnServiceInfo, ColumnAppID}), Value: bsonx.Int32(1)},
-			{Key: StringBuilder([]string{ColumnServiceInfo, ColumnServiceName}), Value: bsonx.Int32(1)},
-			{Key: StringBuilder([]string{ColumnServiceInfo, ColumnEnv}), Value: bsonx.Int32(1)},
-			{Key: StringBuilder([]string{ColumnServiceInfo, ColumnVersion}), Value: bsonx.Int32(1)},
+		Keys: bsonx.Doc{{Key: StringBuilder([]string{ColumnService, ColumnAppID}), Value: bsonx.Int32(1)},
+			{Key: StringBuilder([]string{ColumnService, ColumnServiceName}), Value: bsonx.Int32(1)},
+			{Key: StringBuilder([]string{ColumnService, ColumnEnv}), Value: bsonx.Int32(1)},
+			{Key: StringBuilder([]string{ColumnService, ColumnVersion}), Value: bsonx.Int32(1)},
 			{Key: ColumnDomain, Value: bsonx.Int32(1)},
 			{Key: ColumnProject, Value: bsonx.Int32(1)},
 		},
@@ -119,7 +119,7 @@ func (ds *DataSource) createIndexes() (err error) {
 		return
 	}
 	err = client.GetMongoClient().CreateIndexes(context.TODO(), CollectionInstance, []mongo.IndexModel{{
-		Keys:    bsonx.Doc{{Key: StringBuilder([]string{ColumnInstanceInfo, ColumnInstanceID}), Value: bsonx.Int32(1)}},
+		Keys:    bsonx.Doc{{Key: StringBuilder([]string{ColumnInstance, ColumnInstanceID}), Value: bsonx.Int32(1)}},
 		Options: options.Index().SetUnique(true),
 	}, {
 		Keys: bsonx.Doc{{Key: StringBuilder([]string{ColumnInstanceID, ColumnServiceID}), Value: bsonx.Int32(1)}},

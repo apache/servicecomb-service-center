@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package heartbeatchecker
+package checker
 
 import (
 	"context"
@@ -23,43 +23,54 @@ import (
 	"time"
 
 	pb "github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/go-chassis/v2/storage"
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/apache/servicecomb-service-center/datasource/mongo"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
+	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
-func TestHeartbeat(t *testing.T) {
-	t.Run("heartbeat: if the instance does not exist,the heartbeat should fail", func(t *testing.T) {
-		heartBeatChecker := &HeartBeatChecker{}
-		resp, err := heartBeatChecker.Heartbeat(context.Background(), &pb.HeartbeatRequest{
-			ServiceId:  "not-exist-ins",
-			InstanceId: "not-exist-ins",
-		})
+func init() {
+	config := storage.Options{
+		URI: "mongodb://localhost:27017",
+	}
+	client.NewMongoClient(config)
+}
+
+func TestUpdateInstanceRefreshTime(t *testing.T) {
+	t.Run("update instance refresh time: if the instance does not exist,the update should fail", func(t *testing.T) {
+		err := updateInstanceRefreshTime(context.Background(), "not-exist", "not-exist")
+		log.Error("", err)
 		assert.NotNil(t, err)
-		assert.NotEqual(t, pb.ResponseSuccess, resp.Response.GetCode())
 	})
 
-	t.Run("heartbeat: if the instance does exist,the heartbeat should succeed", func(t *testing.T) {
+	t.Run("update instance refresh time: if the instance does exist,the update should succeed", func(t *testing.T) {
 		instance1 := mongo.Instance{
 			RefreshTime: time.Now(),
-			InstanceInfo: &pb.MicroServiceInstance{
+			Instance: &pb.MicroServiceInstance{
 				InstanceId: "instanceId1",
 				ServiceId:  "serviceId1",
 			},
 		}
 		_, err := client.GetMongoClient().Insert(context.Background(), mongo.CollectionInstance, instance1)
 		assert.Equal(t, nil, err)
-		heartBeatChecker := &HeartBeatChecker{}
-		resp, err := heartBeatChecker.Heartbeat(context.Background(), &pb.HeartbeatRequest{
-			ServiceId:  instance1.InstanceInfo.ServiceId,
-			InstanceId: instance1.InstanceInfo.InstanceId,
-		})
-		assert.Nil(t, err)
-		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
+		err = updateInstanceRefreshTime(context.Background(), instance1.Instance.ServiceId, instance1.Instance.InstanceId)
+		assert.Equal(t, nil, err)
 		filter := bson.M{
-			mongo.StringBuilder([]string{mongo.ColumnInstanceInfo, mongo.ColumnInstanceID}): instance1.InstanceInfo.InstanceId,
+			mongo.StringBuilder([]string{mongo.ColumnInstance, mongo.ColumnServiceID}):  instance1.Instance.ServiceId,
+			mongo.StringBuilder([]string{mongo.ColumnInstance, mongo.ColumnInstanceID}): instance1.Instance.InstanceId,
+		}
+		result, err := client.GetMongoClient().FindOne(context.Background(), mongo.CollectionInstance, filter)
+		assert.Nil(t, err)
+		var ins mongo.Instance
+		err = result.Decode(&ins)
+		assert.Nil(t, err)
+		assert.NotEqual(t, instance1.RefreshTime, ins.RefreshTime)
+		filter = bson.M{
+			mongo.StringBuilder([]string{mongo.ColumnInstance, mongo.ColumnServiceID}):  instance1.Instance.ServiceId,
+			mongo.StringBuilder([]string{mongo.ColumnInstance, mongo.ColumnInstanceID}): instance1.Instance.InstanceId,
 		}
 		_, err = client.GetMongoClient().Delete(context.Background(), mongo.CollectionInstance, filter)
 		assert.Nil(t, err)
