@@ -448,6 +448,10 @@ func (c *MongoCacher) notify(evts []MongoEvent) {
 	defer log.Recover()
 
 	for _, evt := range evts {
+		if evt.Type == rmodel.EVT_DELETE && evt.Value == nil {
+			log.Warn(fmt.Sprintf("caught delete event:%s, but value can't get from caches, it may be deleted by last list", evt.ResourceID))
+			continue
+		}
 		eventProxy.OnEvent(evt)
 	}
 }
