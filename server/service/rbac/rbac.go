@@ -87,6 +87,7 @@ func readPrivateKey() {
 	err = archaius.Set("rbac_private_key", string(data))
 	if err != nil {
 		log.Fatal("can not init rbac", err)
+		return
 	}
 	log.Info("read private key success")
 }
