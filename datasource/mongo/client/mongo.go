@@ -128,6 +128,7 @@ func (mc *MongoClient) newClient(ctx context.Context) (err error) {
 	clientOptions := options.Client().ApplyURI(mc.dbconfig.URI)
 	mc.client, err = mongo.Connect(ctx, clientOptions)
 	if err != nil {
+		log.Error("failed to connect to mongo", err)
 		if derr := mc.client.Disconnect(ctx); derr != nil {
 			log.Error("[init mongo client] failed to disconnect mongo clients", derr)
 		}
