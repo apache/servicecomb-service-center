@@ -17,7 +17,7 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-chassis/cari v0.0.2-0.20210203013205-0083e3b092cf
+	github.com/go-chassis/cari v0.0.2-0.20210208095358-3bccdf2ce456
 	github.com/go-chassis/foundation v0.2.2
 	github.com/go-chassis/go-archaius v1.3.6-0.20201130023516-387922b408d0
 	github.com/go-chassis/go-chassis/v2 v2.1.1-0.20201208095114-93feb76fd997

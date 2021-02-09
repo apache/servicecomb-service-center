@@ -31,8 +31,8 @@ type Account struct {
 	Name                string   `json:"name,omitempty"`
 	Password            string   `json:"password,omitempty"`
 	Roles               []string `json:"roles,omitempty"`
-	TokenExpirationTime string   `json:"tokenExpirationTime,omitempty"`
-	CurrentPassword     string   `json:"currentPassword,omitempty"`
+	TokenExpirationTime string   `json:"tokenExpirationTime,omitempty" bson:"token_expiration_time"`
+	CurrentPassword     string   `json:"currentPassword,omitempty" bson:"current_password"`
 	Status              string   `json:"status,omitempty"`
 }
 

@@ -45,9 +45,8 @@ func NewHeartBeatCheck(opts heartbeat.Options) (heartbeat.HealthCheck, error) {
 func (h *HeartBeatCheck) Heartbeat(ctx context.Context, request *pb.HeartbeatRequest) (*pb.HeartbeatResponse, error) {
 	if ins, ok := instanceHeartbeatStore.Get(request.InstanceId); ok {
 		return inCacheStrategy(ctx, request, ins)
-	} else {
-		return notInCacheStrategy(ctx, request)
 	}
+	return notInCacheStrategy(ctx, request)
 }
 
 func inCacheStrategy(ctx context.Context, request *pb.HeartbeatRequest, insHeartbeatInfo interface{}) (*pb.HeartbeatResponse, error) {
