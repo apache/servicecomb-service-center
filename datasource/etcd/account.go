@@ -19,6 +19,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/pkg/pravicy"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
@@ -27,8 +28,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/go-chassis/foundation/stringutil"
-	"golang.org/x/crypto/bcrypt"
 )
 
 func (ds *DataSource) CreateAccount(ctx context.Context, a *rbacframe.Account) error {
@@ -51,12 +50,11 @@ func (ds *DataSource) CreateAccount(ctx context.Context, a *rbacframe.Account) e
 	if exist {
 		return datasource.ErrAccountDuplicated
 	}
-	hash, err := bcrypt.GenerateFromPassword([]byte(a.Password), 14)
+	a.Password, err = pravicy.HashPassword(a.Password)
 	if err != nil {
-		log.Errorf(err, "pwd hash failed")
+		log.Error("pwd hash failed", err)
 		return err
 	}
-	a.Password = stringutil.Bytes2str(hash)
 	a.ID = util.GenerateUUID()
 	value, err := json.Marshal(a)
 	if err != nil {
