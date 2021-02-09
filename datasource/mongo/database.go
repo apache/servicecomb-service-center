@@ -41,91 +41,88 @@ const (
 	ColumnDomain              = "domain"
 	ColumnProject             = "project"
 	ColumnTag                 = "tags"
-	ColumnSchemaID            = "schemaid"
-	ColumnServiceID           = "serviceid"
-	ColumnRuleID              = "ruleid"
+	ColumnSchemaID            = "schema_id"
+	ColumnServiceID           = "service_id"
+	ColumnRuleID              = "rule_id"
 	ColumnService             = "service"
 	ColumnProperty            = "properties"
-	ColumnModTime             = "modtimestamp"
+	ColumnModTime             = "mod_timestamp"
 	ColumnEnv                 = "env"
 	ColumnAppID               = "app"
-	ColumnServiceName         = "servicename"
+	ColumnServiceName         = "service_name"
 	ColumnAlias               = "alias"
 	ColumnVersion             = "version"
 	ColumnSchemas             = "schemas"
 	ColumnAttribute           = "attribute"
 	ColumnPattern             = "pattern"
 	ColumnDescription         = "description"
-	ColumnRuleType            = "ruletype"
+	ColumnRuleType            = "rule_type"
 	ColumnSchema              = "schema"
-	ColumnSchemaSummary       = "schemasummary"
+	ColumnSchemaSummary       = "schema_summary"
 	ColumnDep                 = "dep"
 	ColumnDependency          = "dependency"
 	ColumnRule                = "rule"
 	ColumnInstance            = "instance"
-	ColumnInstanceID          = "instanceid"
-	ColumnConsumerID          = "consumerid"
-	ColumnMongoID             = "_id"
+	ColumnInstanceID          = "instance_id"
 	ColumnTenant              = "tenant"
 	ColumnServiceType         = "type"
-	ColumnServiceKey          = "servicekey"
-	ColumnConsumer            = "consumer"
+	ColumnServiceKey          = "service_key"
 	ColumnID                  = "id"
 	ColumnAccountName         = "name"
 	ColumnRoleName            = "name"
 	ColumnPerms               = "perms"
 	ColumnPassword            = "password"
-	ColumnRole                = "role"
-	ColumnTokenExpirationTime = "tokenexpirationtime"
-	ColumnCurrentPassword     = "currentpassword"
+	ColumnRoles               = "roles"
+	ColumnTokenExpirationTime = "token_expiration_time"
+	ColumnCurrentPassword     = "current_password"
 	ColumnStatus              = "status"
-	ColumnRefreshTime         = "refreshtime"
+	ColumnRefreshTime         = "refresh_time"
 )
 
 type Service struct {
-	Domain  string
-	Project string
-	Tags    map[string]string
-	Service *pb.MicroService
+	Domain  string            `json:"domain,omitempty"`
+	Project string            `json:"project,omitempty"`
+	Tags    map[string]string `json:"tags,omitempty"`
+	Service *pb.MicroService  `json:"service,omitempty"`
 }
 
 type Schema struct {
-	Domain        string
-	Project       string
-	ServiceID     string
-	SchemaID      string
-	Schema        string
-	SchemaSummary string
+	Domain        string `json:"domain,omitempty"`
+	Project       string `json:"project,omitempty"`
+	ServiceID     string `json:"serviceID,omitempty" bson:"service_id"`
+	SchemaID      string `json:"schemaID,omitempty" bson:"schema_id"`
+	Schema        string `json:"schema,omitempty"`
+	SchemaSummary string `json:"schemaSummary,omitempty" bson:"schema_summary"`
 }
 
 type Rule struct {
-	Domain    string
-	Project   string
-	ServiceID string
-	Rule      *pb.ServiceRule
+	Domain    string          `json:"domain,omitempty"`
+	Project   string          `json:"project,omitempty"`
+	ServiceID string          `json:"serviceID,omitempty" bson:"service_id"`
+	Rule      *pb.ServiceRule `json:"rule,omitempty"`
 }
 
 type Instance struct {
-	Domain      string
-	Project     string
-	RefreshTime time.Time
-	Instance    *pb.MicroServiceInstance
+	Domain      string                   `json:"domain,omitempty"`
+	Project     string                   `json:"project,omitempty"`
+	RefreshTime time.Time                `json:"refreshTime,omitempty" bson:"refresh_time"`
+	Instance    *pb.MicroServiceInstance `json:"instance,omitempty"`
 }
 
 type ConsumerDep struct {
-	Domain      string
-	Project     string
-	ConsumerID  string
-	UUID        string
-	ConsumerDep *pb.ConsumerDependency
+	Domain      string                 `json:"domain,omitempty"`
+	Project     string                 `json:"project,omitempty"`
+	ConsumerID  string                 `json:"consumerID,omitempty" bson:"consumer_id"`
+	UUID        string                 `json:"uuID,omitempty" bson:"uu_id"`
+	ConsumerDep *pb.ConsumerDependency `json:"consumerDep,omitempty" bson:"consumer_dep"`
 }
 
 type DependencyRule struct {
-	Type       string
-	Domain     string
-	Project    string
-	ServiceKey *pb.MicroServiceKey
-	Dep        *pb.MicroServiceDependency
+	Type       string                     `json:"type,omitempty"`
+	Domain     string                     `json:"domain,omitempty"`
+	Project    string                     `json:"project,omitempty"`
+	ServiceKey *pb.MicroServiceKey        `json:"serviceKey,omitempty" bson:"service_key"`
+	Dep        *pb.MicroServiceDependency `json:"dep,omitempty"`
 }
 
 type DelDepCacheKey struct {

@@ -140,7 +140,7 @@ func (ds *DataSource) UpdateAccount(ctx context.Context, key string, account *rb
 			ColumnID:                  account.ID,
 			ColumnAccountName:         account.Name,
 			ColumnPassword:            account.Password,
-			ColumnRole:                account.Roles,
+			ColumnRoles:               account.Roles,
 			ColumnTokenExpirationTime: account.TokenExpirationTime,
 			ColumnCurrentPassword:     account.CurrentPassword,
 			ColumnStatus:              account.Status,
