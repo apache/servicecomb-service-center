@@ -18,19 +18,19 @@ git clone https://github.com/apache/servicecomb-service-center
 ```
 
 ```
-wget http://mirrors.hust.edu.cn/apache//creadur/apache-rat-0.12/apache-rat-0.12-bin.tar.gz
+wget http://mirrors.hust.edu.cn/apache//creadur/apache-rat-0.13/apache-rat-0.13-bin.tar.gz
 
 # Untar the release
-tar -xvf apache-rat-0.12-bin.tar.gz
+tar -xvf apache-rat-0.13-bin.tar.gz
 
 # Copy the jar in the root directory
-cp  apache-rat-0.12/apache-rat-0.12.jar ./
+cp  apache-rat-0.13/apache-rat-0.13.jar ./
 ```
 ##### Step 2
 Run the Rat tool using the below command
 
 ```
-java -jar apache-rat-0.12.jar -a -d servicecomb-service-center/ -e *.md *.MD .gitignore .gitmodules .travis.yml manifest **vendor** **licenses** bower.json cert_pwd *.cer *.tpl glide.yaml go.mod go.sum
+java -jar apache-rat-0.13.jar -a -d servicecomb-service-center/ -e '(.+(\.svg|\.md|\.MD|\.gitignore|\.gitmodules|\.cer|\.tpl))|(vendor|licenses|bower.json|cert_pwd|glide.yaml|go.mod|go.sum)'
 ```
 
 Below is the list of the files which has been excluded from the list of RAT tool.
@@ -41,6 +41,7 @@ Below is the list of the files which has been excluded from the list of RAT tool
  - cert_pwd server.cer trust.cer :  Skip ssl files
  - *.tpl : Ignore template files
  - glide.yaml go.mod go.sum : Skip dependency config files 
-You can access the latest RAT report [here](/rat-report)  
+
+You can access the latest RAT report [here](rat-report)  
  
  
