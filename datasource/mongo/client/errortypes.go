@@ -26,7 +26,8 @@ var (
 )
 
 const (
-	DuplicateKey = 11000
+	DuplicateKey      = 11000
+	CollectionsExists = 48
 )
 
 func IsDuplicateKey(err error) bool {

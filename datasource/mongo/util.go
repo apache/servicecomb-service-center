@@ -21,6 +21,9 @@ import (
 	"context"
 	"strings"
 
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/x/bsonx"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -40,6 +43,17 @@ func (s InstanceSlice) Swap(i, j int) {
 
 func (s InstanceSlice) Less(i, j int) bool {
 	return s[i].InstanceId < s[j].InstanceId
+}
+
+func BuildIndexDoc(keys ...string) mongo.IndexModel {
+	keysDoc := bsonx.Doc{}
+	for _, key := range keys {
+		keysDoc = keysDoc.Append(key, bsonx.Int32(1))
+	}
+	index := mongo.IndexModel{
+		Keys: keysDoc,
+	}
+	return index
 }
 
 func StringBuilder(data []string) string {
