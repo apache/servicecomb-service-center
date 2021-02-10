@@ -19,8 +19,8 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-chassis/cari v0.0.2-0.20210208095358-3bccdf2ce456
 	github.com/go-chassis/foundation v0.2.2
-	github.com/go-chassis/go-archaius v1.3.6-0.20201130023516-387922b408d0
-	github.com/go-chassis/go-chassis/v2 v2.1.1-0.20201208095114-93feb76fd997
+	github.com/go-chassis/go-archaius v1.3.6-0.20201210061741-7450779aaeb8
+	github.com/go-chassis/go-chassis/v2 v2.1.1-0.20210218100404-85e04ad6bd31
 	github.com/go-chassis/kie-client v0.0.0-20210122061843-eee856b0a9af
 	github.com/golang/protobuf v1.4.2
 	github.com/gorilla/websocket v1.4.2
@@ -34,6 +34,7 @@ require (
 	github.com/karlseguin/expect v1.0.7 // indirect
 	github.com/labstack/echo/v4 v4.1.18-0.20201218141459-936c48a17e97
 	github.com/mattn/go-runewidth v0.0.9 // indirect
+	github.com/mitchellh/mapstructure v1.3.3 // indirect
 	github.com/natefinch/lumberjack v0.0.0-20170531160350-a96e63847dc3
 	github.com/olekukonko/tablewriter v0.0.0-20180506121414-d4647c9c7a84
 	github.com/onsi/ginkgo v1.14.0
