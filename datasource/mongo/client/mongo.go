@@ -128,6 +128,7 @@ func (mc *MongoClient) newClient(ctx context.Context) (err error) {
 	clientOptions := options.Client().ApplyURI(mc.dbconfig.URI)
 	mc.client, err = mongo.Connect(ctx, clientOptions)
 	if err != nil {
+		log.Error("failed to connect to mongo", err)
 		if derr := mc.client.Disconnect(ctx); derr != nil {
 			log.Error("[init mongo client] failed to disconnect mongo clients", derr)
 		}
@@ -243,4 +244,8 @@ func (mc *MongoClient) DocDelete(ctx context.Context, table string, filter inter
 
 func (mc *MongoClient) DeleteOne(ctx context.Context, Table string, filter interface{}, opts ...*options.DeleteOptions) (*mongo.DeleteResult, error) {
 	return mc.db.Collection(Table).DeleteOne(ctx, filter, opts...)
+}
+
+func (mc *MongoClient) GetDB() *mongo.Database {
+	return mc.db
 }
