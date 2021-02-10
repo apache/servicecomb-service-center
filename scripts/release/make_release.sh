@@ -17,6 +17,8 @@
 
 set -e
 
+umask 027
+
 ## Get the Release Number
 if [[ $2 == "" ]]; then
     echo "Invalid version number....exiting...."
@@ -57,27 +59,10 @@ esac
 
 ## Get the arch type
 export GOARCH=${4:-"amd64"}
-export CGO_ENABLED=${CGO_ENABLED:-0} # prevent to compile cgo file
-export GO_EXTLINK_ENABLED=${GO_EXTLINK_ENABLED:-0} # do not use host linker
-export GO_LDFLAGS=${GO_LDFLAGS:-" -s -w"}
 
-root_path=$(cd "$(dirname "$0")"; pwd)
+script_path=$(cd "$(dirname "$0")"; pwd)
 
-source ${root_path}/../build/tools.sh
-
-build() {
-    frontend_deps
-
-    build_service_center
-
-    build_frontend
-
-    build_scctl
-
-    build_syncer
-
-    package
-}
+source ${script_path}/../build/tools.sh
 
 # Build Linux Release
 build_linux(){
