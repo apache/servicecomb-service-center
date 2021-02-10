@@ -24,31 +24,11 @@ SCRIPT_DIR=$(cd $(dirname $0); pwd)
 BASE_DIR=${SCRIPT_DIR}/../../../
 
 # build all
-PACKAGE=${1:-"latest"}
+export RELEASE=${1:-"latest"}
 
-PACKAGE_PREFIX=apache-servicecomb-service-center
+source ${SCRIPT_DIR}/../../build/tools.sh
 
-PACKAGE_DIR=$SCRIPT_DIR/../$PACKAGE_PREFIX-$PACKAGE-linux-amd64
-
-docker_builder_pattern() {
-    local dockerfile_dir=${1:-"."}
-    local output=${2:-"."}
-    local builder_name=servicecomb/service-center:build
-    local builder_path=/go/src/github.com/apache/servicecomb-service-center
-    local app=$PACKAGE_PREFIX-$PACKAGE-linux-amd64
-
-    set +e
-
-    docker rmi $builder_name
-
-    set -e
-
-    cd $dockerfile_dir
-    docker build -t $builder_name . -f Dockerfile.build
-    docker create --name builder $builder_name
-    docker cp builder:$builder_path/$app $output
-    docker rm -f builder
-}
+PACKAGE_DIR=$SCRIPT_DIR/../$PACKAGE_PREFIX-$RELEASE-linux-amd64
 if [ ! -d $PACKAGE_DIR ]; then
     docker_builder_pattern $BASE_DIR $SCRIPT_DIR/../
 fi
@@ -74,8 +54,8 @@ cp Dockerfile.tmpl Dockerfile
 sed -i "s|{{.BASE_IMAGE}}|${BASE_IMAGE}|g" Dockerfile
 sed -i "s|{{.BASE_IMAGE_VERSION}}|${BASE_IMAGE_VERSION}|g" Dockerfile
 
-docker build --no-cache -t servicecomb/service-center:$PACKAGE .
-docker save servicecomb/service-center:$PACKAGE |gzip >service-center-dev.tgz
+docker build --no-cache -t servicecomb/service-center:$RELEASE .
+docker save servicecomb/service-center:$RELEASE |gzip >service-center-dev.tgz
 
 # remove the service-center directory from the build-image path
 rm -rf service-center Dockerfile

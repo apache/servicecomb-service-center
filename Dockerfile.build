@@ -17,6 +17,8 @@ FROM golang:1.14
 
 WORKDIR /go/src/github.com/apache/servicecomb-service-center
 
+ENV GOPROXY https://goproxy.io
+
 COPY . .
-RUN export GOPROXY=https://goproxy.io
-RUN bash -x scripts/build/local.sh linux 1.4.0 latest
+
+RUN bash -x scripts/build/local.sh linux 2.0.0 amd64 {{BUILD}}
