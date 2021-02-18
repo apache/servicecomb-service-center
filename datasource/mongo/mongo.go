@@ -126,10 +126,7 @@ func EnsureService() {
 	serviceIndexs = append(serviceIndexs, serviceIDIndex, serviceIndex)
 
 	err = client.GetMongoClient().CreateIndexes(context.Background(), CollectionService, serviceIndexs)
-	if err != nil {
-		log.Fatal("failed to create service collection indexs", err)
-		return
-	}
+	wrapCreateIndexesError(err)
 }
 
 func EnsureInstance() {
@@ -145,10 +142,7 @@ func EnsureInstance() {
 	instanceIndexs = append(instanceIndexs, instanceIndex, instanceServiceIndex)
 
 	err = client.GetMongoClient().CreateIndexes(context.Background(), CollectionInstance, instanceIndexs)
-	if err != nil {
-		log.Fatal("failed to create instance collection indexs", err)
-		return
-	}
+	wrapCreateIndexesError(err)
 }
 
 func EnsureSchema() {
@@ -164,10 +158,7 @@ func EnsureSchema() {
 	schemaIndexs = append(schemaIndexs, schemaServiceIndex)
 
 	err = client.GetMongoClient().CreateIndexes(context.Background(), CollectionSchema, schemaIndexs)
-	if err != nil {
-		log.Fatal("failed to create schema collection indexs", err)
-		return
-	}
+	wrapCreateIndexesError(err)
 }
 
 func EnsureRule() {
@@ -183,10 +174,7 @@ func EnsureRule() {
 	ruleIndexs = append(ruleIndexs, ruleServiceIndex)
 
 	err = client.GetMongoClient().CreateIndexes(context.Background(), CollectionRule, ruleIndexs)
-	if err != nil {
-		log.Fatal("failed to create rule collection indexs", err)
-		return
-	}
+	wrapCreateIndexesError(err)
 }
 
 func EnsureDep() {
@@ -216,6 +204,17 @@ func wrapCreateCollectionError(err error) {
 			return
 		}
 		log.Fatal("failed to create collection with validation", err)
+	}
+}
+
+func wrapCreateIndexesError(err error) {
+	if err != nil {
+		// commandError can be returned by any operation
+		cmdErr, ok := err.(mongo.CommandError)
+		if ok && cmdErr.Code == client.DuplicateKey {
+			return
+		}
+		log.Fatal("failed to create indexes ", err)
 	}
 }
 
