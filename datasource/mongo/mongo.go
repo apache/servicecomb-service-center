@@ -86,8 +86,13 @@ func (ds *DataSource) initPlugins() error {
 }
 
 func (ds *DataSource) initClient() error {
-	uri := config.GetString("registry.mongo.cluster.uri", "mongodb://localhost:27017", config.WithStandby("manager_cluster"))
-	cfg := storage.NewConfig(uri)
+	uri := config.GetString("registry.mongo.cluster.uri", "mongodb://localhost:27017")
+	sslEnable := config.GetBool("registry.mongo.cluster.sslEnabled", false)
+	rootCA := config.GetString("registry.mongo.cluster.rootCAFile", "/opt/ssl/ca.crt")
+	verifyPeer := config.GetBool("registry.mongo.cluster.verifyPeer", false)
+	certFile := config.GetString("registry.mongo.cluster.certFile", "")
+	keyFile := config.GetString("registry.mongo.cluster.keyFile", "")
+	cfg := storage.NewConfig(uri, storage.SSLEnabled(sslEnable), storage.RootCA(rootCA), storage.VerifyPeer(verifyPeer), storage.CertFile(certFile), storage.KeyFile(keyFile))
 	client.NewMongoClient(cfg)
 	select {
 	case err := <-client.GetMongoClient().Err():

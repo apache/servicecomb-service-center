@@ -96,6 +96,11 @@ registry:
       timeout: 10
     cluster:
       uri: mongodb://localhost:27017
+      sslEnabled: false
+      rootCAFile: /opt/ssl/ca.crt
+      verifyPeer: false
+      certFile: /opt/ssl/client.crt
+      keyFile: /opt/ssl/client.key
 
   service:
     # enable the job clear the microservices which deploy no instance
