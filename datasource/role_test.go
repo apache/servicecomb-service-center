@@ -19,22 +19,22 @@ package datasource_test
 
 import (
 	"context"
+	"github.com/go-chassis/cari/rbac"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 )
 
 var (
-	r1 = rbacframe.Role{
+	r1 = rbac.Role{
 		ID:    "11111-22222-33333",
 		Name:  "test-role1",
 		Perms: nil,
 	}
 
-	r2 = rbacframe.Role{
+	r2 = rbac.Role{
 		ID:    "11111-22222-33333-44444",
 		Name:  "test-role2",
 		Perms: nil,

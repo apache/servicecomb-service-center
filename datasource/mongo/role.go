@@ -25,11 +25,11 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/go-chassis/cari/rbac"
 )
 
-func (ds *DataSource) CreateRole(ctx context.Context, r *rbacframe.Role) error {
+func (ds *DataSource) CreateRole(ctx context.Context, r *rbac.Role) error {
 	exist, err := ds.RoleExist(ctx, r.Name)
 	if err != nil {
 		log.Error("failed to query role", err)
@@ -64,7 +64,7 @@ func (ds *DataSource) RoleExist(ctx context.Context, name string) (bool, error) 
 	return true, nil
 }
 
-func (ds *DataSource) GetRole(ctx context.Context, name string) (*rbacframe.Role, error) {
+func (ds *DataSource) GetRole(ctx context.Context, name string) (*rbac.Role, error) {
 	filter := bson.M{
 		ColumnRoleName: name,
 	}
@@ -75,7 +75,7 @@ func (ds *DataSource) GetRole(ctx context.Context, name string) (*rbacframe.Role
 	if result.Err() != nil {
 		return nil, client.ErrNoDocuments
 	}
-	var role rbacframe.Role
+	var role rbac.Role
 	err = result.Decode(&role)
 	if err != nil {
 		log.Error("Decode role failed: ", err)
@@ -84,15 +84,15 @@ func (ds *DataSource) GetRole(ctx context.Context, name string) (*rbacframe.Role
 	return &role, nil
 }
 
-func (ds *DataSource) ListRole(ctx context.Context) ([]*rbacframe.Role, int64, error) {
+func (ds *DataSource) ListRole(ctx context.Context) ([]*rbac.Role, int64, error) {
 	cursor, err := client.GetMongoClient().Find(ctx, CollectionRole, bson.M{})
 	if err != nil {
 		return nil, 0, err
 	}
-	var roles []*rbacframe.Role
+	var roles []*rbac.Role
 	defer cursor.Close(ctx)
 	for cursor.Next(ctx) {
-		var role rbacframe.Role
+		var role rbac.Role
 		err = cursor.Decode(&role)
 		if err != nil {
 			log.Error("decode role failed: ", err)
@@ -117,7 +117,7 @@ func (ds *DataSource) DeleteRole(ctx context.Context, name string) (bool, error)
 	return true, nil
 }
 
-func (ds *DataSource) UpdateRole(ctx context.Context, name string, role *rbacframe.Role) error {
+func (ds *DataSource) UpdateRole(ctx context.Context, name string, role *rbac.Role) error {
 	filter := bson.M{
 		ColumnRoleName: name,
 	}

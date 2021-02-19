@@ -19,10 +19,10 @@ package rbac
 
 import (
 	"context"
+	"github.com/go-chassis/cari/rbac"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 )
 
 func Allow(ctx context.Context, roleList []string, project, resource, verbs string) (bool, error) {
@@ -31,7 +31,7 @@ func Allow(ctx context.Context, roleList []string, project, resource, verbs stri
 		return true, nil
 	}
 	// allPerms combines the roleList permission
-	var allPerms = make([]*rbacframe.Permission, 0)
+	var allPerms = make([]*rbac.Permission, 0)
 	for i := 0; i < len(roleList); i++ {
 		r, err := datasource.Instance().GetRole(ctx, roleList[i])
 		if err != nil {

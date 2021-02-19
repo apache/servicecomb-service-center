@@ -21,6 +21,7 @@ package rbacframe
 import (
 	"context"
 	"crypto/rsa"
+	"github.com/go-chassis/cari/rbac"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/go-chassis/go-chassis/v2/security/token"
@@ -31,7 +32,7 @@ const (
 	ClaimsRoles = "roles"
 )
 
-func AccountFromContext(ctx context.Context) (*Account, error) {
+func AccountFromContext(ctx context.Context) (*rbac.Account, error) {
 	claims := FromContext(ctx)
 	m, ok := claims.(map[string]interface{})
 	if !ok {
@@ -48,7 +49,7 @@ func AccountFromContext(ctx context.Context) (*Account, error) {
 		log.Error("role convert failed ", err)
 		return nil, ErrConvertErr
 	}
-	account := &Account{Name: a, Roles: roleList}
+	account := &rbac.Account{Name: a, Roles: roleList}
 	return account, nil
 }
 

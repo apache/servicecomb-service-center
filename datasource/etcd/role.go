@@ -21,17 +21,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/go-chassis/cari/rbac"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/pkg/etcdsync"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
-func (ds *DataSource) CreateRole(ctx context.Context, r *rbacframe.Role) error {
+func (ds *DataSource) CreateRole(ctx context.Context, r *rbac.Role) error {
 	lock, err := etcdsync.Lock("/role-creating/"+r.Name, -1, false)
 	if err != nil {
 		return fmt.Errorf("role %s is creating", r.Name)
@@ -77,7 +77,7 @@ func (ds *DataSource) RoleExist(ctx context.Context, name string) (bool, error) 
 	}
 	return true, nil
 }
-func (ds *DataSource) GetRole(ctx context.Context, name string) (*rbacframe.Role, error) {
+func (ds *DataSource) GetRole(ctx context.Context, name string) (*rbac.Role, error) {
 	resp, err := client.Instance().Do(ctx, client.GET,
 		client.WithStrKey(path.GenerateRBACRoleKey(name)))
 	if err != nil {
@@ -86,7 +86,7 @@ func (ds *DataSource) GetRole(ctx context.Context, name string) (*rbacframe.Role
 	if resp.Count != 1 {
 		return nil, client.ErrNotUnique
 	}
-	role := &rbacframe.Role{}
+	role := &rbac.Role{}
 	err = json.Unmarshal(resp.Kvs[0].Value, role)
 	if err != nil {
 		log.Errorf(err, "role info format invalid")
@@ -94,15 +94,15 @@ func (ds *DataSource) GetRole(ctx context.Context, name string) (*rbacframe.Role
 	}
 	return role, nil
 }
-func (ds *DataSource) ListRole(ctx context.Context) ([]*rbacframe.Role, int64, error) {
+func (ds *DataSource) ListRole(ctx context.Context) ([]*rbac.Role, int64, error) {
 	resp, err := client.Instance().Do(ctx, client.GET,
 		client.WithStrKey(path.GenerateRBACRoleKey("")), client.WithPrefix())
 	if err != nil {
 		return nil, 0, err
 	}
-	roles := make([]*rbacframe.Role, 0, resp.Count)
+	roles := make([]*rbac.Role, 0, resp.Count)
 	for _, v := range resp.Kvs {
-		r := &rbacframe.Role{}
+		r := &rbac.Role{}
 		err = json.Unmarshal(v.Value, r)
 		if err != nil {
 			log.Error("role info format invalid:", err)
@@ -121,7 +121,7 @@ func (ds *DataSource) DeleteRole(ctx context.Context, name string) (bool, error)
 	}
 	return resp.Succeeded, nil
 }
-func (ds *DataSource) UpdateRole(ctx context.Context, name string, role *rbacframe.Role) error {
+func (ds *DataSource) UpdateRole(ctx context.Context, name string, role *rbac.Role) error {
 	value, err := json.Marshal(role)
 	if err != nil {
 		log.Errorf(err, "role info is invalid")

@@ -20,8 +20,7 @@ package datasource
 import (
 	"context"
 	"errors"
-
-	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
+	"github.com/go-chassis/cari/rbac"
 )
 
 var (
@@ -31,10 +30,10 @@ var (
 
 // RoleManager contains the RBAC CRUD
 type RoleManager interface {
-	CreateRole(ctx context.Context, r *rbacframe.Role) error
+	CreateRole(ctx context.Context, r *rbac.Role) error
 	RoleExist(ctx context.Context, name string) (bool, error)
-	GetRole(ctx context.Context, name string) (*rbacframe.Role, error)
-	ListRole(ctx context.Context) ([]*rbacframe.Role, int64, error)
+	GetRole(ctx context.Context, name string) (*rbac.Role, error)
+	ListRole(ctx context.Context) ([]*rbac.Role, int64, error)
 	DeleteRole(ctx context.Context, name string) (bool, error)
-	UpdateRole(ctx context.Context, name string, role *rbacframe.Role) error
+	UpdateRole(ctx context.Context, name string, role *rbac.Role) error
 }

@@ -19,15 +19,15 @@ package mongo_test
 
 import (
 	"context"
+	"github.com/go-chassis/cari/rbac"
 	"testing"
 
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestCreateAccount(t *testing.T) {
-	account := rbacframe.Account{
+	account := rbac.Account{
 		ID:                  "11111-22222-33333",
 		Name:                "test-account1",
 		Password:            "tnuocca-tset",
@@ -53,7 +53,7 @@ func TestCreateAccount(t *testing.T) {
 }
 
 func TestGetAccount(t *testing.T) {
-	account := rbacframe.Account{
+	account := rbac.Account{
 		ID:                  "11111-22222-33333",
 		Name:                "test-account1",
 		Password:            "tnuocca-tset",
@@ -78,7 +78,7 @@ func TestGetAccount(t *testing.T) {
 }
 
 func TestListAccount(t *testing.T) {
-	account1 := rbacframe.Account{
+	account1 := rbac.Account{
 		ID:                  "11111-22222-33333",
 		Name:                "test-account1",
 		Password:            "tnuocca-tset",
@@ -86,7 +86,7 @@ func TestListAccount(t *testing.T) {
 		TokenExpirationTime: "2020-12-30",
 		CurrentPassword:     "tnuocca-tset1",
 	}
-	account2 := rbacframe.Account{
+	account2 := rbac.Account{
 		ID:                  "11111-22222-33333",
 		Name:                "test-account2",
 		Password:            "tnuocca-tset",
@@ -112,7 +112,7 @@ func TestDeleteAccount(t *testing.T) {
 	})
 
 	t.Run("delete account, if the account exists,it should be deleted", func(t *testing.T) {
-		account := rbacframe.Account{
+		account := rbac.Account{
 			ID:                  "11111-22222-33333",
 			Name:                "test-account1",
 			Password:            "tnuocca-tset",
@@ -131,7 +131,7 @@ func TestDeleteAccount(t *testing.T) {
 
 func TestUpdateAccount(t *testing.T) {
 	t.Run("update account: if the account does not exist,the update should fail", func(t *testing.T) {
-		account := rbacframe.Account{
+		account := rbac.Account{
 			ID:                  "11111-22222-33333",
 			Name:                "test-account1",
 			Password:            "tnuocca-tset",
@@ -145,7 +145,7 @@ func TestUpdateAccount(t *testing.T) {
 	})
 
 	t.Run("update account: if the account exists,it should be updated successfully", func(t *testing.T) {
-		account := rbacframe.Account{
+		account := rbac.Account{
 			ID:                  "11111-22222-33333",
 			Name:                "test-account1",
 			Password:            "tnuocca-tset",

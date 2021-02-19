@@ -20,8 +20,7 @@ package datasource
 import (
 	"context"
 	"errors"
-
-	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
+	"github.com/go-chassis/cari/rbac"
 )
 
 var (
@@ -32,10 +31,10 @@ var (
 
 // AccountManager contains the RBAC CRUD
 type AccountManager interface {
-	CreateAccount(ctx context.Context, a *rbacframe.Account) error
+	CreateAccount(ctx context.Context, a *rbac.Account) error
 	AccountExist(ctx context.Context, key string) (bool, error)
-	GetAccount(ctx context.Context, key string) (*rbacframe.Account, error)
-	ListAccount(ctx context.Context, key string) ([]*rbacframe.Account, int64, error)
+	GetAccount(ctx context.Context, key string) (*rbac.Account, error)
+	ListAccount(ctx context.Context, key string) ([]*rbac.Account, int64, error)
 	DeleteAccount(ctx context.Context, key string) (bool, error)
-	UpdateAccount(ctx context.Context, key string, account *rbacframe.Account) error
+	UpdateAccount(ctx context.Context, key string, account *rbac.Account) error
 }

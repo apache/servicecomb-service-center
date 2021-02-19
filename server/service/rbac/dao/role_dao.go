@@ -19,21 +19,21 @@ package dao
 
 import (
 	"context"
+	"github.com/go-chassis/cari/rbac"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 )
 
-func CreateRole(ctx context.Context, r *rbacframe.Role) error {
+func CreateRole(ctx context.Context, r *rbac.Role) error {
 	return datasource.Instance().CreateRole(ctx, r)
 }
 
-func GetRole(ctx context.Context, name string) (*rbacframe.Role, error) {
+func GetRole(ctx context.Context, name string) (*rbac.Role, error) {
 	return datasource.Instance().GetRole(ctx, name)
 }
 
-func ListRole(ctx context.Context) ([]*rbacframe.Role, int64, error) {
+func ListRole(ctx context.Context) ([]*rbac.Role, int64, error) {
 	return datasource.Instance().ListRole(ctx)
 }
 
@@ -49,7 +49,7 @@ func DeleteRole(ctx context.Context, name string) (bool, error) {
 	return datasource.Instance().DeleteRole(ctx, name)
 }
 
-func EditRole(ctx context.Context, a *rbacframe.Role) error {
+func EditRole(ctx context.Context, a *rbac.Role) error {
 	exist, err := datasource.Instance().RoleExist(ctx, a.Name)
 	if err != nil {
 		log.Errorf(err, "can not edit account info")
