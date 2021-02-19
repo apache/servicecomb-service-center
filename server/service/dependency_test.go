@@ -19,13 +19,15 @@ package service_test
 import (
 	"strconv"
 
+	pb "github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/go-archaius"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/event"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
-	pb "github.com/go-chassis/cari/discovery"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 )
 
 var deh event.DependencyEventHandler
@@ -883,18 +885,24 @@ var _ = Describe("'Dependency' service", func() {
 })
 
 func DependencyHandle() {
-	for {
-		Expect(deh.Handle()).To(BeNil())
+	t := archaius.Get("TEST_MODE")
+	if t == nil {
+		t = "etcd"
+	}
+	if t == "etcd" {
+		for {
+			Expect(deh.Handle()).To(BeNil())
 
-		key := path.GetServiceDependencyQueueRootKey("")
-		resp, err := kv.Store().DependencyQueue().Search(getContext(),
-			client.WithStrKey(key), client.WithPrefix(), client.WithCountOnly())
+			key := path.GetServiceDependencyQueueRootKey("")
+			resp, err := kv.Store().DependencyQueue().Search(getContext(),
+				client.WithStrKey(key), client.WithPrefix(), client.WithCountOnly())
 
-		Expect(err).To(BeNil())
+			Expect(err).To(BeNil())
 
-		// maintain dependency rules.
-		if resp.Count == 0 {
-			break
+			// maintain dependency rules.
+			if resp.Count == 0 {
+				break
+			}
 		}
 	}
 }

@@ -76,6 +76,7 @@ export TEST_MODE=mongo
 [ $? == 0 ] && ut_for_file datasource
 [ $? == 0 ] && ut_for_dir datasource/mongo
 [ $? == 0 ] && ut_for_dir syncer
+[ $? == 0 ] && ut_for_dir server
 ret=$?
 
 if [ ${ret} == 0 ]; then
