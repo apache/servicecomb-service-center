@@ -58,7 +58,7 @@ plugin:
   dir:
 
 registry:
-  # buildin, etcd, embeded_etcd, mongodb
+  # buildin, etcd, embeded_etcd, mongo
   kind: etcd
   compact:
     indexDelta:

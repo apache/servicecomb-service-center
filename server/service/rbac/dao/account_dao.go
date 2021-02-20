@@ -36,13 +36,13 @@ func GetAccount(ctx context.Context, name string) (*rbacmodel.Account, error) {
 	return datasource.Instance().GetAccount(ctx, name)
 }
 func ListAccount(ctx context.Context) ([]*rbacmodel.Account, int64, error) {
-	return datasource.Instance().ListAccount(ctx, "")
+	return datasource.Instance().ListAccount(ctx)
 }
 func AccountExist(ctx context.Context, name string) (bool, error) {
 	return datasource.Instance().AccountExist(ctx, name)
 }
 func DeleteAccount(ctx context.Context, name string) (bool, error) {
-	return datasource.Instance().DeleteAccount(ctx, name)
+	return datasource.Instance().DeleteAccount(ctx, []string{name})
 }
 
 //CreateAccount save 2 kv
