@@ -17,12 +17,13 @@
  * under the License.
  */
 
-package etcd_test
+package datasource_test
 
 import (
 	"context"
-	"github.com/go-chassis/cari/rbac"
 	"testing"
+
+	"github.com/go-chassis/cari/rbac"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/stretchr/testify/assert"
@@ -43,37 +44,49 @@ var (
 		Password:            "tnuocca-tset",
 		Roles:               []string{"admin"},
 		TokenExpirationTime: "2020-12-30",
-		CurrentPassword:     "tnuocca-tset1",
+		CurrentPassword:     "tnuocca-tset2",
 	}
 )
 
 func TestAccount(t *testing.T) {
 	t.Run("add and get account", func(t *testing.T) {
-		err := datasource.Instance().UpdateAccount(context.Background(), "test-account-key", &a1)
+		err := datasource.Instance().CreateAccount(context.Background(), &a1)
 		assert.NoError(t, err)
-		r, err := datasource.Instance().GetAccount(context.Background(), "test-account-key")
+		r, err := datasource.Instance().GetAccount(context.Background(), a1.Name)
 		assert.NoError(t, err)
 		assert.Equal(t, a1, *r)
+		_, err = datasource.Instance().DeleteAccount(context.Background(), []string{a1.Name})
+		assert.NoError(t, err)
 	})
 	t.Run("account should exist", func(t *testing.T) {
-		exist, err := datasource.Instance().AccountExist(context.Background(), "test-account-key")
+		err := datasource.Instance().CreateAccount(context.Background(), &a1)
+		assert.NoError(t, err)
+		exist, err := datasource.Instance().AccountExist(context.Background(), a1.Name)
 		assert.NoError(t, err)
 		assert.True(t, exist)
+		_, err = datasource.Instance().DeleteAccount(context.Background(), []string{a1.Name})
+		assert.NoError(t, err)
 	})
 	t.Run("delete account", func(t *testing.T) {
-		err := datasource.Instance().UpdateAccount(context.Background(), "test-account-key222", &a1)
+		err := datasource.Instance().CreateAccount(context.Background(), &a2)
 		assert.NoError(t, err)
-		_, err = datasource.Instance().DeleteAccount(context.Background(), "test-account-key222")
+		_, err = datasource.Instance().DeleteAccount(context.Background(), []string{a2.Name})
 		assert.NoError(t, err)
 	})
-	t.Run("add two accounts and list", func(t *testing.T) {
-		err := datasource.Instance().UpdateAccount(context.Background(), "key1", &a1)
+	t.Run("add and update accounts then list", func(t *testing.T) {
+		err := datasource.Instance().CreateAccount(context.Background(), &a1)
 		assert.NoError(t, err)
-		err = datasource.Instance().UpdateAccount(context.Background(), "key2", &a2)
+		err = datasource.Instance().CreateAccount(context.Background(), &a2)
 		assert.NoError(t, err)
-		accs, n, err := datasource.Instance().ListAccount(context.Background(), "key")
+		a2.Password = "new-password"
+		err = datasource.Instance().UpdateAccount(context.Background(), a2.Name, &a2)
+		assert.NoError(t, err)
+		_, n, err := datasource.Instance().ListAccount(context.Background())
 		assert.NoError(t, err)
 		assert.Equal(t, int64(2), n)
-		t.Log(accs)
+		_, err = datasource.Instance().DeleteAccount(context.Background(), []string{a1.Name})
+		assert.NoError(t, err)
+		_, err = datasource.Instance().DeleteAccount(context.Background(), []string{a2.Name})
+		assert.NoError(t, err)
 	})
 }

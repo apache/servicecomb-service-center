@@ -41,7 +41,7 @@ func (ds *DataSource) CreateAccount(ctx context.Context, a *rbac.Account) error 
 			log.Errorf(err, "can not release account lock")
 		}
 	}()
-	key := path.GenerateRBACAccountKey(a.Name)
+	name := path.GenerateRBACAccountKey(a.Name)
 	exist, err := datasource.Instance().AccountExist(ctx, a.Name)
 	if err != nil {
 		log.Errorf(err, "can not save account info")
@@ -61,7 +61,7 @@ func (ds *DataSource) CreateAccount(ctx context.Context, a *rbac.Account) error 
 		log.Errorf(err, "account info is invalid")
 		return err
 	}
-	err = client.PutBytes(ctx, key, value)
+	err = client.PutBytes(ctx, name, value)
 	if err != nil {
 		log.Errorf(err, "can not save account info")
 		return err
@@ -70,9 +70,9 @@ func (ds *DataSource) CreateAccount(ctx context.Context, a *rbac.Account) error 
 	return nil
 }
 
-func (ds *DataSource) AccountExist(ctx context.Context, key string) (bool, error) {
+func (ds *DataSource) AccountExist(ctx context.Context, name string) (bool, error) {
 	resp, err := client.Instance().Do(ctx, client.GET,
-		client.WithStrKey(path.GenerateRBACAccountKey(key)))
+		client.WithStrKey(path.GenerateRBACAccountKey(name)))
 	if err != nil {
 		return false, err
 	}
@@ -81,9 +81,9 @@ func (ds *DataSource) AccountExist(ctx context.Context, key string) (bool, error
 	}
 	return true, nil
 }
-func (ds *DataSource) GetAccount(ctx context.Context, key string) (*rbac.Account, error) {
+func (ds *DataSource) GetAccount(ctx context.Context, name string) (*rbac.Account, error) {
 	resp, err := client.Instance().Do(ctx, client.GET,
-		client.WithStrKey(path.GenerateRBACAccountKey(key)))
+		client.WithStrKey(path.GenerateRBACAccountKey(name)))
 	if err != nil {
 		return nil, err
 	}
@@ -98,9 +98,9 @@ func (ds *DataSource) GetAccount(ctx context.Context, key string) (*rbac.Account
 	}
 	return account, nil
 }
-func (ds *DataSource) ListAccount(ctx context.Context, key string) ([]*rbac.Account, int64, error) {
+func (ds *DataSource) ListAccount(ctx context.Context) ([]*rbac.Account, int64, error) {
 	resp, err := client.Instance().Do(ctx, client.GET,
-		client.WithStrKey(path.GenerateRBACAccountKey(key)), client.WithPrefix())
+		client.WithStrKey(path.GenerateRBACAccountKey("")), client.WithPrefix())
 	if err != nil {
 		return nil, 0, err
 	}
@@ -117,22 +117,25 @@ func (ds *DataSource) ListAccount(ctx context.Context, key string) ([]*rbac.Acco
 	}
 	return accounts, resp.Count, nil
 }
-func (ds *DataSource) DeleteAccount(ctx context.Context, key string) (bool, error) {
+func (ds *DataSource) DeleteAccount(ctx context.Context, names []string) (bool, error) {
+	if len(names) == 0 {
+		return false, nil
+	}
 	resp, err := client.Instance().Do(ctx, client.DEL,
-		client.WithStrKey(path.GenerateRBACAccountKey(key)))
+		client.WithStrKey(path.GenerateRBACAccountKey(names[0])))
 	if err != nil {
 		return false, err
 	}
 	return resp.Succeeded, nil
 }
-func (ds *DataSource) UpdateAccount(ctx context.Context, key string, account *rbac.Account) error {
+func (ds *DataSource) UpdateAccount(ctx context.Context, name string, account *rbac.Account) error {
 	value, err := json.Marshal(account)
 	if err != nil {
 		log.Errorf(err, "account info is invalid")
 		return err
 	}
 	_, err = client.Instance().Do(ctx, client.PUT,
-		client.WithStrKey(path.GenerateRBACAccountKey(key)),
+		client.WithStrKey(path.GenerateRBACAccountKey(name)),
 		client.WithValue(value))
 	return err
 }

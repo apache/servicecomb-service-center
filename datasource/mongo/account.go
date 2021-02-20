@@ -20,11 +20,11 @@ package mongo
 import (
 	"context"
 	"errors"
-	"github.com/apache/servicecomb-service-center/pkg/privacy"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/privacy"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/go-chassis/cari/rbac"
 	"go.mongodb.org/mongo-driver/bson"
@@ -56,9 +56,9 @@ func (ds *DataSource) CreateAccount(ctx context.Context, a *rbac.Account) error 
 	return nil
 }
 
-func (ds *DataSource) AccountExist(ctx context.Context, key string) (bool, error) {
+func (ds *DataSource) AccountExist(ctx context.Context, name string) (bool, error) {
 	filter := bson.M{
-		ColumnAccountName: key,
+		ColumnAccountName: name,
 	}
 	count, err := client.GetMongoClient().Count(ctx, CollectionAccount, filter)
 	if err != nil {
@@ -70,9 +70,9 @@ func (ds *DataSource) AccountExist(ctx context.Context, key string) (bool, error
 	return true, nil
 }
 
-func (ds *DataSource) GetAccount(ctx context.Context, key string) (*rbac.Account, error) {
+func (ds *DataSource) GetAccount(ctx context.Context, name string) (*rbac.Account, error) {
 	filter := bson.M{
-		ColumnAccountName: key,
+		ColumnAccountName: name,
 	}
 	result, err := client.GetMongoClient().FindOne(ctx, CollectionAccount, filter)
 	if err != nil {
@@ -91,14 +91,8 @@ func (ds *DataSource) GetAccount(ctx context.Context, key string) (*rbac.Account
 	return &account, nil
 }
 
-func (ds *DataSource) ListAccount(ctx context.Context, key string) ([]*rbac.Account, int64, error) {
-	filter := bson.M{
-		ColumnAccountName: bson.M{"$regex": key},
-	}
-	if len(key) == 0 {
-		filter = bson.M{}
-	}
-	cursor, err := client.GetMongoClient().Find(ctx, CollectionAccount, filter)
+func (ds *DataSource) ListAccount(ctx context.Context) ([]*rbac.Account, int64, error) {
+	cursor, err := client.GetMongoClient().Find(ctx, CollectionAccount, bson.M{})
 	if err != nil {
 		return nil, 0, err
 	}
@@ -117,9 +111,12 @@ func (ds *DataSource) ListAccount(ctx context.Context, key string) ([]*rbac.Acco
 	return accounts, int64(len(accounts)), nil
 }
 
-func (ds *DataSource) DeleteAccount(ctx context.Context, key string) (bool, error) {
+func (ds *DataSource) DeleteAccount(ctx context.Context, names []string) (bool, error) {
+	if len(names) == 0 {
+		return false, nil
+	}
 	filter := bson.M{
-		ColumnAccountName: key,
+		ColumnAccountName: names[0],
 	}
 	result, err := client.GetMongoClient().Delete(ctx, CollectionAccount, filter)
 	if err != nil {
@@ -131,14 +128,13 @@ func (ds *DataSource) DeleteAccount(ctx context.Context, key string) (bool, erro
 	return true, nil
 }
 
-func (ds *DataSource) UpdateAccount(ctx context.Context, key string, account *rbac.Account) error {
+func (ds *DataSource) UpdateAccount(ctx context.Context, name string, account *rbac.Account) error {
 	filter := bson.M{
-		ColumnAccountName: key,
+		ColumnAccountName: name,
 	}
 	update := bson.M{
 		"$set": bson.M{
 			ColumnID:                  account.ID,
-			ColumnAccountName:         account.Name,
 			ColumnPassword:            account.Password,
 			ColumnRoles:               account.Roles,
 			ColumnTokenExpirationTime: account.TokenExpirationTime,
@@ -146,11 +142,11 @@ func (ds *DataSource) UpdateAccount(ctx context.Context, key string, account *rb
 			ColumnStatus:              account.Status,
 		},
 	}
-	result, err := client.GetMongoClient().Update(ctx, CollectionAccount, filter, update)
+	res, err := client.GetMongoClient().Update(ctx, CollectionAccount, filter, update)
 	if err != nil {
 		return err
 	}
-	if result.ModifiedCount == 0 {
+	if res.ModifiedCount == 0 {
 		return ErrUpdateNodata
 	}
 	return nil
