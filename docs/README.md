@@ -27,4 +27,7 @@ make html
 ## Check the result
 
 1. See html pages in _build folder
-2. You can start a http server using `python -m http.server` which will serve at http://0.0.0.0:8000/.
+```shell
+cd _build/html
+```   
+2. You can start a http server using `python -m http.server` which will serve at http://127.0.0.1:8000/.
