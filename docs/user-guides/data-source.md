@@ -115,14 +115,8 @@ registry:
 | registry.mongo.cluster.certFile | the cert file path need to be set according to the configuration of mongodb server | no | string, like /opt/ssl/client.crt |
 | registry.mongo.cluster.keyFile | the key file path need to be set according to the configuration of mongodb server | no | string, like /opt/ssl/client.key |
 
-**For example, I want to run the service-center in linux environment, the database is Mongo, and the SSL/TLS
-authentication is enabled for the database.**
-
 1. Download mongodb package.
-2. Unzip, modify the configuration and start mongodb.
-
-> [configure-ssl](https://docs.mongodb.com/v4.0/tutorial/configure-ssl/)
-
+2. Unzip, modify the configuration and start mongodb.[mongodb configure ssl](https://docs.mongodb.com/v4.0/tutorial/configure-ssl/)
 3. Download the latest release from [ServiceComb Website](http://servicecomb.apache.org/release/).
 4. Decompress, modify /conf/app.yaml.
 5. Execute the start script to run service center
