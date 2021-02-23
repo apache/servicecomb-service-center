@@ -25,14 +25,16 @@ import (
 )
 
 type Config struct {
-	SslEnabled       bool             `json:"-"`
-	ManagerAddress   string           `json:"manageAddress,omitempty"`
-	ClusterName      string           `json:"manageName,omitempty"`
-	ClusterAddresses string           `json:"manageClusters,omitempty"` // the raw string of cluster configuration
-	Clusters         cluster.Clusters `json:"-"`                        // parsed from ClusterAddresses
-	DialTimeout      time.Duration    `json:"connectTimeout"`
-	RequestTimeOut   time.Duration    `json:"registryTimeout"`
-	AutoSyncInterval time.Duration    `json:"autoSyncInterval"`
+	SslEnabled        bool             `json:"-"`
+	ManagerAddress    string           `json:"manageAddress,omitempty"`
+	ClusterName       string           `json:"manageName,omitempty"`
+	ClusterAddresses  string           `json:"manageClusters,omitempty"` // the raw string of cluster configuration
+	Clusters          cluster.Clusters `json:"-"`                        // parsed from ClusterAddresses
+	DialTimeout       time.Duration    `json:"connectTimeout"`
+	RequestTimeOut    time.Duration    `json:"registryTimeout"`
+	AutoSyncInterval  time.Duration    `json:"autoSyncInterval"`
+	CompactIndexDelta int64            `json:"-"`
+	CompactInterval   time.Duration    `json:"-"`
 }
 
 //InitClusterInfo re-org address info with node name

@@ -41,6 +41,8 @@ func Configuration() *client.Config {
 		defaultRegistryConfig.DialTimeout = config.GetDuration("registry.etcd.connect.timeout", client.DefaultDialTimeout, config.WithStandby("connect_timeout"))
 		defaultRegistryConfig.RequestTimeOut = config.GetDuration("registry.etcd.request.timeout", client.DefaultRequestTimeout, config.WithStandby("registry_timeout"))
 		defaultRegistryConfig.AutoSyncInterval = config.GetDuration("registry.etcd.autoSyncInterval", 30*time.Second, config.WithStandby("auto_sync_interval"))
+		defaultRegistryConfig.CompactIndexDelta = config.GetInt64("registry.etcd.compact.indexDelta", 100, config.WithStandby("compact_index_delta"))
+		defaultRegistryConfig.CompactInterval = config.GetDuration("registry.etcd.compact.interval", 12*time.Hour, config.WithStandby("compact_interval"))
 	})
 	return &defaultRegistryConfig
 }

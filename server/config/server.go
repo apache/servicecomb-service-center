@@ -38,9 +38,7 @@ type ServerConfig struct {
 
 	SslEnabled bool `json:"sslEnabled,string"`
 
-	AutoSyncInterval  time.Duration `json:"-"`
-	CompactIndexDelta int64         `json:"-"`
-	CompactInterval   time.Duration `json:"-"`
+	AutoSyncInterval time.Duration `json:"-"`
 
 	EnablePProf bool `json:"enablePProf"`
 	EnableCache bool `json:"enableCache"`

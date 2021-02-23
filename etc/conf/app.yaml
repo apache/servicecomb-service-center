@@ -14,19 +14,26 @@
 # limitations under the License.
 
 server:
-  host:
-  port:
+  host: 127.0.0.1
+  port: 30100
   request:
-    maxHeaderBytes:
-    maxBodyBytes:
-    headerTimeout:
-    timeout:
+    maxHeaderBytes: 32768
+    maxBodyBytes: 2097152
+    headerTimeout: 60s
+    timeout: 60s
   response:
-    timeout:
+    timeout: 60s
   idle:
-    timeout:
+    timeout: 60s
   pprof:
     mode: 0
+  limit:
+    #ttl=m, s, ms
+    unit: s
+    #set 0 to disable rate limit
+    connections: 0
+    #list of places to look for IP address
+    ipLookups: RemoteAddr,X-Forwarded-For,X-Real-IP
 
 gov:
   plugins:
@@ -35,23 +42,35 @@ gov:
       endpoint: http://127.0.0.1:30110
 
 log:
+  # DEBUG, INFO, WARN, ERROR, FATAL
   level: DEBUG
-  file:
+  file: ./service-center.log
   accessEnable: false
-  accessFile:
-  format:
+  # access log format: remoteIp requestReceiveTime "method requestUri proto" statusCode requestBodySize delay(ms)
+  # example: 127.0.0.1 2006-01-02T15:04:05.000Z07:00 "GET /v4/default/registry/microservices HTTP/1.1" 200 0 0
+  # access log inherits log's rotate and backup configuration
+  # whether enable access log
+  # enable_access_log = true
+  # access log file
+  accessFile: ./access.log
+  # log format(text or json type)
+  format: text
+  # whether enable record syslog
   system: false
-  rotateSize:
-  backupCount:
+  # MaxSize of a log file before rotate. By M Bytes.
+  rotateSize: 20
+  # Max counts to keep of a log's backup files.
+  backupCount: 50
 
 ssl:
   dir:
   # ssl.mode enable ssl or not, set 1 if enable
   mode: 0
-  minVersion:
+  # minimal tls protocol, [TLSv1.0, TLSv1.1, TLSv1.2]
+  minVersion: TLSv1.2
   # ssl.verifyClient enable verify client certification CN
   verifyClient: 1
-  ciphers:
+  ciphers: TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_128_GCM_SHA256
 
 plugin:
   # plugin.dir is the directory of the *.so files
@@ -60,16 +79,20 @@ plugin:
 registry:
   # buildin, etcd, embeded_etcd, mongo
   kind: etcd
-  compact:
-    indexDelta:
-    interval:
+  # registry cache, if this option value set 0, service center can run
+  # in lower memory but no longer push the events to client.
   cache:
     mode: 1
+    # the cache will be clear after X, if not set cache will be never clear
     ttl:
   # enabled if registry.kind equal to etcd or embeded_etcd
   etcd:
     # the interval of etcd health check, aggregation conflict check and sync loop
-    autoSyncInterval:
+    autoSyncInterval: 30s
+    compact:
+      # indicate how many revision you want to keep in etcd
+      indexDelta: 100
+      interval: 12h
     cluster:
       # if registry_plugin equals to 'embeded_etcd', then
       # name: sc-0
@@ -78,10 +101,12 @@ registry:
       # if registry_plugin equals to 'etcd', then
       # endpoints: 127.0.0.1:2379
       endpoints: 127.0.0.1:2379
+    # the timeout for failing to establish a connection
     connect:
-      timeout:
+      timeout: 10s
+    # the timeout for failing to read response of registry
     request:
-      timeout:
+      timeout: 30s
   mongo:
     heartbeat:
       # Mongo's heartbeat plugin
@@ -97,7 +122,7 @@ registry:
     cluster:
       uri: mongodb://localhost:27017
       sslEnabled: false
-      rootCAFile: /opt/ssl/ca.crt
+      rootCAFile: /opt/ssl/ca.pem
       verifyPeer: false
       certFile: /opt/ssl/client.crt
       keyFile: /opt/ssl/client.key
@@ -121,8 +146,11 @@ registry:
   # enable to register sc itself when startup
   selfRegister: 1
 
+# pluggable discovery service
 discovery:
-  kind:
+  kind: etcd
+  aggregate:
+    mode:
 
 rbac:
   enable: false
