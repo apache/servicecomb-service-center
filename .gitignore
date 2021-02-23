@@ -40,3 +40,9 @@ docs/_templates
 main
 # go mod
 go.sum
+
+# VS Code Project files
+.vscode
+
+# Delve 
+__debug_bin
