@@ -47,9 +47,6 @@ type DataSource struct {
 	SchemaEditable bool
 	// InstanceTTL options
 	InstanceTTL int64
-	// Compact options
-	CompactIndexDelta int64
-	CompactInterval   time.Duration
 
 	lockMux sync.Mutex
 	locks   map[string]*etcdsync.DLock
@@ -60,12 +57,9 @@ func NewDataSource(opts datasource.Options) (datasource.DataSource, error) {
 	log.Warnf("data source enable etcd mode")
 
 	inst := &DataSource{
-		SchemaEditable:    opts.SchemaEditable,
-		InstanceTTL:       opts.InstanceTTL,
-		CompactInterval:   opts.CompactInterval,
-		CompactIndexDelta: opts.CompactIndexDelta,
-
-		locks: make(map[string]*etcdsync.DLock),
+		SchemaEditable: opts.SchemaEditable,
+		InstanceTTL:    opts.InstanceTTL,
+		locks:          make(map[string]*etcdsync.DLock),
 	}
 
 	registryAddresses := strings.Join(Configuration().RegistryAddresses(), ",")
@@ -122,8 +116,8 @@ func (ds *DataSource) initKvStore() {
 }
 
 func (ds *DataSource) autoCompact() {
-	delta := ds.CompactIndexDelta
-	interval := ds.CompactInterval
+	delta := Configuration().CompactIndexDelta
+	interval := Configuration().CompactInterval
 	if delta <= 0 || interval == 0 {
 		return
 	}

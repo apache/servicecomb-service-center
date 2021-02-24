@@ -151,9 +151,6 @@ func newInfo() ServerInformation {
 
 			SslEnabled: GetInt("ssl.mode", 1, WithStandby("ssl_mode")) != 0,
 
-			CompactIndexDelta: GetInt64("registry.compact.indexDelta", 100, WithStandby("compact_index_delta")),
-			CompactInterval:   GetDuration("registry.compact.interval", 12*time.Hour, WithStandby("compact_interval")),
-
 			LogRotateSize:   maxLogFileSize,
 			LogBackupCount:  maxLogBackupCount,
 			LogFilePath:     GetString("log.file", "", WithStandby("logfile")),

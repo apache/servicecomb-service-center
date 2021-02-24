@@ -110,12 +110,10 @@ func (s *ServiceCenterServer) initDatasource() {
 	// init datasource
 	kind := datasource.ImplName(config.GetString("registry.kind", "", config.WithStandby("registry_plugin")))
 	if err := datasource.Init(datasource.Options{
-		PluginImplName:    kind,
-		SslEnabled:        config.GetSSL().SslEnabled,
-		InstanceTTL:       config.GetRegistry().InstanceTTL,
-		SchemaEditable:    config.GetRegistry().SchemaEditable,
-		CompactInterval:   config.GetRegistry().CompactInterval,
-		CompactIndexDelta: config.GetRegistry().CompactIndexDelta,
+		PluginImplName: kind,
+		SslEnabled:     config.GetSSL().SslEnabled,
+		InstanceTTL:    config.GetRegistry().InstanceTTL,
+		SchemaEditable: config.GetRegistry().SchemaEditable,
 	}); err != nil {
 		log.Fatal("init datasource failed", err)
 	}
