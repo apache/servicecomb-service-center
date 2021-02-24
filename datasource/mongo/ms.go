@@ -1546,6 +1546,13 @@ func (ds *DataSource) RegisterInstance(ctx context.Context, request *discovery.R
 			}, nil
 		case discovery.ErrInstanceNotExists:
 			// register a new one
+			if request.Instance.HealthCheck == nil {
+				request.Instance.HealthCheck = &discovery.HealthCheck{
+					Mode:     discovery.CHECK_BY_HEARTBEAT,
+					Interval: apt.RegistryDefaultLeaseRenewalinterval,
+					Times:    apt.RegistryDefaultLeaseRetrytimes,
+				}
+			}
 			return registryInstance(ctx, request)
 		default:
 			log.Error(fmt.Sprintf("register instance failed, reuse instance %s %s, operator %s",
@@ -2082,6 +2089,17 @@ func registryInstance(ctx context.Context, request *discovery.RegisterInstanceRe
 
 	log.Info(fmt.Sprintf("register instance %s, instanceID %s, operator %s",
 		instanceFlag, insertRes.InsertedID, remoteIP))
+	heartbeatRequest := discovery.HeartbeatRequest{
+		ServiceId:  instance.ServiceId,
+		InstanceId: instance.InstanceId,
+	}
+	aliveErr := KeepAliveLease(ctx, &heartbeatRequest)
+	if aliveErr != nil {
+		log.Error(fmt.Sprintf("failed to send heartbeat after registering instance, instance %s operator %s", instanceFlag, remoteIP), err)
+		return &discovery.RegisterInstanceResponse{
+			Response: discovery.CreateResponseWithSCErr(aliveErr),
+		}, err
+	}
 	return &discovery.RegisterInstanceResponse{
 		Response:   discovery.CreateResponse(discovery.ResponseSuccess, "Register service instance successfully."),
 		InstanceId: instanceID,
