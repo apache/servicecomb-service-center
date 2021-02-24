@@ -20,10 +20,11 @@ package v4
 import (
 	"context"
 	"encoding/json"
-	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
-	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
+	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
@@ -195,13 +196,13 @@ func (r *AuthResource) Login(w http.ResponseWriter, req *http.Request) {
 		controller.WriteError(w, discovery.ErrInvalidParams, err.Error())
 		return
 	}
+	if a.TokenExpirationTime == "" {
+		a.TokenExpirationTime = "30m"
+	}
 	err = service.ValidateAccountLogin(a)
 	if err != nil {
 		controller.WriteError(w, discovery.ErrInvalidParams, err.Error())
 		return
-	}
-	if a.TokenExpirationTime == "" {
-		a.TokenExpirationTime = "30m"
 	}
 	t, err := authr.Login(context.TODO(), a.Name, a.Password,
 		authr.ExpireAfter(a.TokenExpirationTime))

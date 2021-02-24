@@ -46,3 +46,5 @@ go.sum
 
 # Delve 
 __debug_bin
+private.key
+rbac.pub
