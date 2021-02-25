@@ -141,7 +141,7 @@ func EnsureInstance() {
 	instanceIndex := BuildIndexDoc(ColumnRefreshTime)
 	instanceIndex.Options = options.Index().SetExpireAfterSeconds(60)
 
-	instanceServiceIndex := BuildIndexDoc(StringBuilder([]string{ColumnInstanceID, ColumnServiceID}))
+	instanceServiceIndex := BuildIndexDoc(StringBuilder([]string{ColumnInstance, ColumnServiceID}))
 
 	var instanceIndexs []mongo.IndexModel
 	instanceIndexs = append(instanceIndexs, instanceIndex, instanceServiceIndex)

@@ -1,12 +1,6 @@
 Data Source
 ========================
-
-Etcd
-----------------------------------------
-Download the etcd according to your own
-environment. `Etcd Installation package address`_.
-
-Configure app.yaml according to your needs.
+Service-Center support multiple DB configurations. Configure app.yaml according to your needs.
 
 ::
 
@@ -20,6 +14,37 @@ Configure app.yaml according to your needs.
        # the cache will be clear after X, if not set cache will be never clear
        ttl:
      # enabled if registry.kind equal to etcd or embeded_etcd
+
+.. list-table::
+  :widths: 15 20 5 10
+  :header-rows: 1
+
+  * - field
+    - description
+    - required
+    - value
+  * - registry.kind
+    - database type (etcd or mongo)
+    - yes
+    - etcd / embeded_etcd /mongo
+  * - registry.cache.mode
+    - open cache (1 is on, 0 is off)
+    - yes
+    - 1 / 0
+  * - registry.cache.ttl
+    - cache timeout (if not set cache will be never clear)
+    - no
+    - an integer time, like 30s/20m/10h
+
+Etcd
+----------------------------------------
+Download the etcd according to your own
+environment. `Etcd Installation package address`_.
+
+Configure app.yaml according to your needs.
+
+::
+
      etcd:
        # the interval of etcd health check, aggregation conflict check and sync loop
        autoSyncInterval: 30s
@@ -50,18 +75,6 @@ Configure app.yaml according to your needs.
     - description
     - required
     - value
-  * - registry.kind
-    - database type (etcd or mongo)
-    - yes
-    - etcd / mongo
-  * - registry.cache.mode
-    - open cache (1 is on, 0 is off)
-    - yes
-    - 1 / 0
-  * - registry.cache.ttl
-    - cache timeout (if not set cache will be never clear)
-    - no
-    - an integer time, like 30s/20m/10h
   * - registry.etcd.autoSyncInterval
     - synchronization interval
     - yes
@@ -107,15 +120,6 @@ Configure app.yaml according to your needs.
 
 ::
 
-   registry:
-     # buildin, etcd, embeded_etcd, mongo
-     kind: mongo
-     # registry cache, if this option value set 0, service center can run
-     # in lower memory but no longer push the events to client.
-     cache:
-       mode: 1
-       # the cache will be clear after X, if not set cache will be never clear
-       ttl:
      mongo:
        heartbeat:
          # Mongo's heartbeat plugin
@@ -144,18 +148,6 @@ Configure app.yaml according to your needs.
     - description
     - required
     - value
-  * - registry.kind
-    - database type (etcd or mongo)
-    - yes
-    - mongo / etcd
-  * - registry.cache.mode
-    - open cache (1 is on, 0 is off)
-    - yes
-    - 1 / 0
-  * - registry.cache.ttl
-    - cache timeout (if not set cache will be never clear)
-    - no
-    - an integer time, like 30s/20m/10h
   * - registry.mongo.heartbeat.kind
     - there are two types of heartbeat plug-ins. With cache and without cache.
     - yes
