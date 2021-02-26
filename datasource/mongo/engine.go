@@ -19,23 +19,23 @@ package mongo
 
 import (
 	"context"
-	"time"
-
-	"github.com/apache/servicecomb-service-center/pkg/cluster"
-
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
+
+	pb "github.com/go-chassis/cari/discovery"
+	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
+	"github.com/apache/servicecomb-service-center/pkg/cluster"
+	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/metrics"
-	pb "github.com/go-chassis/cari/discovery"
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 func (ds *DataSource) SelfRegister(ctx context.Context) error {
@@ -192,8 +192,44 @@ func (ds *DataSource) registryInstance(pCtx context.Context) error {
 	return nil
 }
 
+func (ds *DataSource) selfHeartBeat(pCtx context.Context) error {
+	ctx := core.AddDefaultContextValue(pCtx)
+	respI, err := core.InstanceAPI.Heartbeat(ctx, core.HeartbeatRequest())
+	if err != nil {
+		log.Error("send heartbeat failed", err)
+		return err
+	}
+	if respI.Response.GetCode() == pb.ResponseSuccess {
+		log.Debugf("update service center instance[%s/%s] heartbeat",
+			core.Instance.ServiceId, core.Instance.InstanceId)
+		return nil
+	}
+	err = fmt.Errorf(respI.Response.GetMessage())
+	log.Errorf(err, "update service center instance[%s/%s] heartbeat failed",
+		core.Instance.ServiceId, core.Instance.InstanceId)
+	return err
+}
+
 func (ds *DataSource) autoSelfHeartBeat() {
-	//todo
+	gopool.Go(func(ctx context.Context) {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(time.Duration(core.Instance.HealthCheck.Interval) * time.Second):
+				err := ds.selfHeartBeat(ctx)
+				if err == nil {
+					continue
+				}
+				//服务不存在，创建服务
+				err = ds.SelfRegister(ctx)
+				if err != nil {
+					log.Errorf(err, "retry to register[%s/%s/%s/%s] failed",
+						core.Service.Environment, core.Service.AppId, core.Service.ServiceName, core.Service.Version)
+				}
+			}
+		}
+	})
 }
 
 func GetAllServicesAcrossDomainProject(ctx context.Context) (map[string][]*pb.MicroService, error) {

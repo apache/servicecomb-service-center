@@ -31,6 +31,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+const defaultExpireTime = 300
+
 func init() {
 	datasource.Install("mongo", NewDataSource)
 }
@@ -139,7 +141,7 @@ func EnsureInstance() {
 	wrapCreateCollectionError(err)
 
 	instanceIndex := BuildIndexDoc(ColumnRefreshTime)
-	instanceIndex.Options = options.Index().SetExpireAfterSeconds(60)
+	instanceIndex.Options = options.Index().SetExpireAfterSeconds(defaultExpireTime)
 
 	instanceServiceIndex := BuildIndexDoc(StringBuilder([]string{ColumnInstance, ColumnServiceID}))
 

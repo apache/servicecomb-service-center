@@ -29,6 +29,14 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
+const (
+	maxInterval     = 60
+	minInterval     = 0
+	defaultInterval = 30
+	maxTimes        = 3
+	minTimes        = 0
+)
+
 var ErrHeartbeatConversionFailed = errors.New("instanceHeartbeatInfo type conversion failed. ")
 
 func init() {
@@ -91,6 +99,13 @@ func notInCacheStrategy(ctx context.Context, request *pb.HeartbeatRequest) (*pb.
 		return resp, err
 	}
 	interval, times := instance.Instance.HealthCheck.Interval, instance.Instance.HealthCheck.Times
+	// Set the range of interval and time
+	if interval > maxInterval || interval < minTimes {
+		interval = defaultInterval
+	}
+	if times > maxTimes || times < minTimes {
+		times = maxTimes
+	}
 	err = addHeartbeatTask(request.ServiceId, request.InstanceId, interval*(times+1))
 	if err != nil {
 		log.Error(fmt.Sprintf("heartbeat failed, instance[%s]. operator %s", request.InstanceId, remoteIP), err)
