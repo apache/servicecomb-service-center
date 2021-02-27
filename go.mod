@@ -19,14 +19,16 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-chassis/cari v0.0.2-0.20210208095358-3bccdf2ce456
 	github.com/go-chassis/foundation v0.2.2
-	github.com/go-chassis/go-archaius v1.3.6-0.20201210061741-7450779aaeb8
+	github.com/go-chassis/go-archaius v1.4.0
 	github.com/go-chassis/go-chassis/v2 v2.1.1-0.20210218100404-85e04ad6bd31
 	github.com/go-chassis/kie-client v0.0.0-20210122061843-eee856b0a9af
 	github.com/golang/protobuf v1.4.2
+	github.com/google/go-cmp v0.5.4 // indirect
 	github.com/gorilla/websocket v1.4.2
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.2 // indirect
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0 // indirect
+	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/hashicorp/serf v0.8.3
 	github.com/iancoleman/strcase v0.1.2
 	github.com/jonboulle/clockwork v0.2.2 // indirect
@@ -34,7 +36,6 @@ require (
 	github.com/karlseguin/expect v1.0.7 // indirect
 	github.com/labstack/echo/v4 v4.1.18-0.20201218141459-936c48a17e97
 	github.com/mattn/go-runewidth v0.0.9 // indirect
-	github.com/mitchellh/mapstructure v1.3.3 // indirect
 	github.com/natefinch/lumberjack v0.0.0-20170531160350-a96e63847dc3
 	github.com/olekukonko/tablewriter v0.0.0-20180506121414-d4647c9c7a84
 	github.com/onsi/ginkgo v1.14.0
@@ -49,6 +50,7 @@ require (
 	github.com/prometheus/procfs v0.0.0-20190117184657-bf6a532e95b1
 	github.com/rs/cors v0.0.0-20170608165155-8dd4211afb5d // v1.1
 	github.com/satori/go.uuid v1.1.0
+	github.com/sirupsen/logrus v1.6.0 // indirect
 	github.com/soheilhy/cmux v0.1.4 // indirect
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/pflag v1.0.5
@@ -62,6 +64,8 @@ require (
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.10.0
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
+	golang.org/x/sync v0.0.0-20201020160332-67f06af15bc9 // indirect
+	golang.org/x/sys v0.0.0-20210119212857-b64e53b001e4 // indirect
 	golang.org/x/text v0.3.5 // indirect
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4
 	google.golang.org/grpc v1.33.1
