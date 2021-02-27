@@ -21,12 +21,13 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	rbacmodel "github.com/go-chassis/cari/rbac"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	rbacmodel "github.com/go-chassis/cari/rbac"
 
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/config"
@@ -224,6 +225,14 @@ func TestAuthResource_GetAccount(t *testing.T) {
 		r, _ := http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(b))
 		w := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w, r)
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("get a expiration token", func(t *testing.T) {
+		b, _ := json.Marshal(&rbacmodel.Account{Name: "root", Password: "Complicated_password1", TokenExpirationTime: "15m"})
+		r, _ := http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(b))
+		w := httptest.NewRecorder()
+		rest.GetRouter().ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code)
 		to := &rbacmodel.Token{}
 		json.Unmarshal(w.Body.Bytes(), to)
@@ -233,7 +242,7 @@ func TestAuthResource_GetAccount(t *testing.T) {
 		r3.Header.Set(restful.HeaderAuth, "Bearer "+to.TokenStr)
 		w3 := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w3, r3)
-		assert.Equal(t, http.StatusUnauthorized, w3.Code)
+		assert.Equal(t, http.StatusOK, w3.Code)
 	})
 }
 
