@@ -473,7 +473,7 @@ func InstanceCopyRe(instance *pbsc.MicroServiceInstance) *scpb.MicroServiceInsta
 			ModTimestamp: instance.ModTimestamp,
 			Version:      instance.Version,
 		}
-		if instance.DataCenterInfo.Name != "" {
+		if instance.DataCenterInfo != nil && instance.DataCenterInfo.Name != "" {
 			instanceInpbs.DataCenterInfo = &dataCenterInfo
 		}
 	}
