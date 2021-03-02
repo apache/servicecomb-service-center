@@ -1634,7 +1634,7 @@ func (ds *DataSource) GetInstance(ctx context.Context, request *discovery.GetOne
 	serviceIDs = filterServiceIDs(ctx, request.ConsumerServiceId, request.Tags, services)
 	if len(serviceIDs) == 0 {
 		mes := fmt.Errorf("%s failed, provider instance does not exist", findFlag())
-		log.Error("get instance failed", err)
+		log.Error("query service failed", mes)
 		return &discovery.GetOneInstanceResponse{
 			Response: discovery.CreateResponse(discovery.ErrInstanceNotExists, mes.Error()),
 		}, nil
@@ -1659,7 +1659,7 @@ func (ds *DataSource) GetInstance(ctx context.Context, request *discovery.GetOne
 		}
 		if !isExist {
 			mes := fmt.Errorf("%s failed, provider instance does not exist", findFlag())
-			log.Error("get instance failed", err)
+			log.Error("get instance failed", mes)
 			return &discovery.GetOneInstanceResponse{
 				Response: discovery.CreateResponse(discovery.ErrInstanceNotExists, mes.Error()),
 			}, nil
@@ -1729,7 +1729,7 @@ func (ds *DataSource) GetInstances(ctx context.Context, request *discovery.GetIn
 	serviceIDs := filterServiceIDs(ctx, request.ConsumerServiceId, request.Tags, []*Service{provider})
 	if len(serviceIDs) == 0 {
 		mes := fmt.Errorf("%s failed, provider does not exist", findFlag())
-		log.Error("get instances failed", mes)
+		log.Error("query service failed", mes)
 		return &discovery.GetInstancesResponse{
 			Response: discovery.CreateResponse(discovery.ErrServiceNotExists, mes.Error()),
 		}, nil
