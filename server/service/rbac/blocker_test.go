@@ -34,27 +34,9 @@ func TestCountFailure(t *testing.T) {
 	assert.False(t, rbac.IsBanned("1"))
 
 	rbac.CountFailure("1")
-	assert.False(t, rbac.IsBanned("1"))
-
-	rbac.CountFailure("1")
-	assert.False(t, rbac.IsBanned("1"))
-
-	rbac.CountFailure("1")
-	assert.False(t, rbac.IsBanned("1"))
-
-	rbac.CountFailure("1")
 	assert.True(t, rbac.IsBanned("1"))
 
 	t.Run("ban 1 more", func(t *testing.T) {
-		rbac.CountFailure("2")
-		assert.False(t, rbac.IsBanned("2"))
-
-		rbac.CountFailure("2")
-		assert.False(t, rbac.IsBanned("2"))
-
-		rbac.CountFailure("2")
-		assert.False(t, rbac.IsBanned("2"))
-
 		rbac.CountFailure("2")
 		assert.False(t, rbac.IsBanned("2"))
 

@@ -17,12 +17,12 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-chassis/cari v0.0.2-0.20210208095358-3bccdf2ce456
-	github.com/go-chassis/foundation v0.2.2
+	github.com/go-chassis/cari v0.2.0
+	github.com/go-chassis/foundation v0.3.0
 	github.com/go-chassis/go-archaius v1.4.0
 	github.com/go-chassis/go-chassis/v2 v2.1.1-0.20210218100404-85e04ad6bd31
-	github.com/go-chassis/kie-client v0.0.0-20210122061843-eee856b0a9af
-	github.com/golang/protobuf v1.4.2
+	github.com/go-chassis/kie-client v0.1.0
+	github.com/golang/protobuf v1.4.2 // indirect
 	github.com/google/go-cmp v0.5.4 // indirect
 	github.com/gorilla/websocket v1.4.2
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.2 // indirect
