@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	MaxAttempts = 5
+	MaxAttempts = 2
 
 	BlockInterval = 1 * time.Hour
 )
