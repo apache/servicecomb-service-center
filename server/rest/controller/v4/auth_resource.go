@@ -190,11 +190,10 @@ func (r *AuthResource) Login(w http.ResponseWriter, req *http.Request) {
 		controller.WriteError(w, scerror.ErrInvalidParams, err.Error())
 		return
 	}
-	err = service.ValidateAccountLogin(a)
-
 	if a.TokenExpirationTime == "" {
 		a.TokenExpirationTime = "30m"
 	}
+	err = service.ValidateAccountLogin(a)
 
 	if err != nil {
 		controller.WriteError(w, scerror.ErrInvalidParams, err.Error())
