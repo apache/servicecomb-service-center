@@ -35,3 +35,6 @@ docs/_static
 docs/_templates
 
 .DS_Store
+/cmd/scctl/scctl
+/cmd/scserver/scserver
+/cmd/syncer/syncer
