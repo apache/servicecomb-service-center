@@ -226,6 +226,22 @@ func TestAuthResource_GetAccount(t *testing.T) {
 		rest.GetRouter().ServeHTTP(w3, r3)
 		assert.Equal(t, http.StatusUnauthorized, w3.Code)
 	})
+	t.Run("get default expiration time token", func(t *testing.T) {
+		b, _ := json.Marshal(&rbacframe.Account{Name: "root", Password: "Complicated_password1"})
+		r, _ := http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(b))
+		w := httptest.NewRecorder()
+		rest.GetRouter().ServeHTTP(w, r)
+		assert.Equal(t, http.StatusOK, w.Code)
+		to := &rbacframe.Token{}
+		json.Unmarshal(w.Body.Bytes(), to)
+
+		time.Sleep(11 * time.Second)
+		r3, _ := http.NewRequest(http.MethodGet, "/v4/account", nil)
+		r3.Header.Set(restful.HeaderAuth, "Bearer "+to.TokenStr)
+		w3 := httptest.NewRecorder()
+		rest.GetRouter().ServeHTTP(w3, r3)
+		assert.Equal(t, http.StatusOK, w3.Code)
+	})
 }
 func TestAuthResource_Login2(t *testing.T) {
 	t.Run("bock user dev_account", func(t *testing.T) {
