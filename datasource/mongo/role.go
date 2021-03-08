@@ -24,6 +24,7 @@ import (
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/db"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/go-chassis/cari/rbac"
@@ -39,7 +40,7 @@ func (ds *DataSource) CreateRole(ctx context.Context, r *rbac.Role) error {
 		return datasource.ErrRoleDuplicated
 	}
 	r.ID = util.GenerateUUID()
-	_, err = client.GetMongoClient().Insert(ctx, CollectionRole, r)
+	_, err = client.GetMongoClient().Insert(ctx, db.CollectionRole, r)
 	if err != nil {
 		if client.IsDuplicateKey(err) {
 			return datasource.ErrRoleDuplicated
@@ -52,9 +53,9 @@ func (ds *DataSource) CreateRole(ctx context.Context, r *rbac.Role) error {
 
 func (ds *DataSource) RoleExist(ctx context.Context, name string) (bool, error) {
 	filter := bson.M{
-		ColumnRoleName: name,
+		db.ColumnRoleName: name,
 	}
-	count, err := client.GetMongoClient().Count(ctx, CollectionRole, filter)
+	count, err := client.GetMongoClient().Count(ctx, db.CollectionRole, filter)
 	if err != nil {
 		return false, err
 	}
@@ -66,9 +67,9 @@ func (ds *DataSource) RoleExist(ctx context.Context, name string) (bool, error) 
 
 func (ds *DataSource) GetRole(ctx context.Context, name string) (*rbac.Role, error) {
 	filter := bson.M{
-		ColumnRoleName: name,
+		db.ColumnRoleName: name,
 	}
-	result, err := client.GetMongoClient().FindOne(ctx, CollectionRole, filter)
+	result, err := client.GetMongoClient().FindOne(ctx, db.CollectionRole, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +86,7 @@ func (ds *DataSource) GetRole(ctx context.Context, name string) (*rbac.Role, err
 }
 
 func (ds *DataSource) ListRole(ctx context.Context) ([]*rbac.Role, int64, error) {
-	cursor, err := client.GetMongoClient().Find(ctx, CollectionRole, bson.M{})
+	cursor, err := client.GetMongoClient().Find(ctx, db.CollectionRole, bson.M{})
 	if err != nil {
 		return nil, 0, err
 	}
@@ -105,9 +106,9 @@ func (ds *DataSource) ListRole(ctx context.Context) ([]*rbac.Role, int64, error)
 
 func (ds *DataSource) DeleteRole(ctx context.Context, name string) (bool, error) {
 	filter := bson.M{
-		ColumnRoleName: name,
+		db.ColumnRoleName: name,
 	}
-	result, err := client.GetMongoClient().Delete(ctx, CollectionRole, filter)
+	result, err := client.GetMongoClient().Delete(ctx, db.CollectionRole, filter)
 	if err != nil {
 		return false, err
 	}
@@ -119,16 +120,16 @@ func (ds *DataSource) DeleteRole(ctx context.Context, name string) (bool, error)
 
 func (ds *DataSource) UpdateRole(ctx context.Context, name string, role *rbac.Role) error {
 	filter := bson.M{
-		ColumnRoleName: name,
+		db.ColumnRoleName: name,
 	}
 	update := bson.M{
 		"$set": bson.M{
-			ColumnID:       role.ID,
-			ColumnRoleName: role.Name,
-			ColumnPerms:    role.Perms,
+			db.ColumnID:       role.ID,
+			db.ColumnRoleName: role.Name,
+			db.ColumnPerms:    role.Perms,
 		},
 	}
-	_, err := client.GetMongoClient().Update(ctx, CollectionRole, filter, update)
+	_, err := client.GetMongoClient().Update(ctx, db.CollectionRole, filter, update)
 	if err != nil {
 		return err
 	}

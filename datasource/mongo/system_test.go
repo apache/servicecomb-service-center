@@ -20,19 +20,20 @@ package mongo_test
 import (
 	"testing"
 
-	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/datasource/mongo"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson"
+
+	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/db"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
 )
 
 func init() {
 	// clean the mongodb
-	client.GetMongoClient().Delete(getContext(), mongo.CollectionInstance, bson.M{})
-	client.GetMongoClient().Delete(getContext(), mongo.CollectionService, bson.M{})
+	client.GetMongoClient().Delete(getContext(), db.CollectionInstance, bson.M{})
+	client.GetMongoClient().Delete(getContext(), db.CollectionService, bson.M{})
 }
 
 func TestDumpCache(t *testing.T) {

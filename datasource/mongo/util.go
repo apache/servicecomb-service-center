@@ -21,14 +21,15 @@ import (
 	"context"
 	"strings"
 
+	pb "github.com/go-chassis/cari/discovery"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/x/bsonx"
 
 	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/db"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	pb "github.com/go-chassis/cari/discovery"
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 type InstanceSlice []*pb.MicroServiceInstance
@@ -77,7 +78,7 @@ func statistics(ctx context.Context, withShared bool) (*pb.Statistics, error) {
 	domain := util.ParseDomain(ctx)
 	project := util.ParseProject(ctx)
 
-	filter := bson.M{ColumnDomain: domain, ColumnProject: project}
+	filter := bson.M{db.ColumnDomain: domain, db.ColumnProject: project}
 
 	services, err := GetServices(ctx, filter)
 	if err != nil {

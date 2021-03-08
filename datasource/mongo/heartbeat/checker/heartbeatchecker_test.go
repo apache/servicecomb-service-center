@@ -28,6 +28,7 @@ import (
 
 	"github.com/apache/servicecomb-service-center/datasource/mongo"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/db"
 )
 
 func TestHeartbeat(t *testing.T) {
@@ -42,14 +43,14 @@ func TestHeartbeat(t *testing.T) {
 	})
 
 	t.Run("heartbeat: if the instance does exist,the heartbeat should succeed", func(t *testing.T) {
-		instance1 := mongo.Instance{
+		instance1 := db.Instance{
 			RefreshTime: time.Now(),
 			Instance: &pb.MicroServiceInstance{
 				InstanceId: "instanceId1",
 				ServiceId:  "serviceId1",
 			},
 		}
-		_, err := client.GetMongoClient().Insert(context.Background(), mongo.CollectionInstance, instance1)
+		_, err := client.GetMongoClient().Insert(context.Background(), db.CollectionInstance, instance1)
 		assert.Equal(t, nil, err)
 		heartBeatChecker := &HeartBeatChecker{}
 		resp, err := heartBeatChecker.Heartbeat(context.Background(), &pb.HeartbeatRequest{
@@ -59,9 +60,9 @@ func TestHeartbeat(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 		filter := bson.M{
-			mongo.StringBuilder([]string{mongo.ColumnInstance, mongo.ColumnInstanceID}): instance1.Instance.InstanceId,
+			mongo.StringBuilder([]string{db.ColumnInstance, db.ColumnInstanceID}): instance1.Instance.InstanceId,
 		}
-		_, err = client.GetMongoClient().Delete(context.Background(), mongo.CollectionInstance, filter)
+		_, err = client.GetMongoClient().Delete(context.Background(), db.CollectionInstance, filter)
 		assert.Nil(t, err)
 	})
 }

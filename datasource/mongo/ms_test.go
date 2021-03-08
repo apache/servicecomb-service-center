@@ -31,6 +31,7 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/mongo"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/db"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/config"
@@ -2532,10 +2533,10 @@ func TestInstance_Update(t *testing.T) {
 	})
 
 	t.Run("delete test data", func(t *testing.T) {
-		_, err := client.GetMongoClient().Delete(getContext(), mongo.CollectionService, bson.M{"domain": "default", "project": "default"})
+		_, err := client.GetMongoClient().Delete(getContext(), db.CollectionService, bson.M{"domain": "default", "project": "default"})
 		assert.NoError(t, err)
 
-		_, err = client.GetMongoClient().Delete(getContext(), mongo.CollectionInstance, bson.M{"domain": "default", "project": "default"})
+		_, err = client.GetMongoClient().Delete(getContext(), db.CollectionInstance, bson.M{"domain": "default", "project": "default"})
 		assert.NoError(t, err)
 	})
 }
@@ -3066,16 +3067,16 @@ func TestInstance_Query(t *testing.T) {
 	})
 
 	t.Run("delete test data", func(t *testing.T) {
-		_, err := client.GetMongoClient().Delete(getContext(), mongo.CollectionService, bson.M{"domain": "default", "project": "default"})
+		_, err := client.GetMongoClient().Delete(getContext(), db.CollectionService, bson.M{"domain": "default", "project": "default"})
 		assert.NoError(t, err)
 
-		_, err = client.GetMongoClient().Delete(getContext(), mongo.CollectionInstance, bson.M{"domain": "default", "project": "default"})
+		_, err = client.GetMongoClient().Delete(getContext(), db.CollectionInstance, bson.M{"domain": "default", "project": "default"})
 		assert.NoError(t, err)
 
-		_, err = client.GetMongoClient().Delete(getContext(), mongo.CollectionService, bson.M{"domain": "user", "project": "user"})
+		_, err = client.GetMongoClient().Delete(getContext(), db.CollectionService, bson.M{"domain": "user", "project": "user"})
 		assert.NoError(t, err)
 
-		_, err = client.GetMongoClient().Delete(getContext(), mongo.CollectionInstance, bson.M{"domain": "user", "project": "user"})
+		_, err = client.GetMongoClient().Delete(getContext(), db.CollectionInstance, bson.M{"domain": "user", "project": "user"})
 		assert.NoError(t, err)
 	})
 }
@@ -3199,10 +3200,10 @@ func TestInstance_GetOne(t *testing.T) {
 	})
 
 	t.Run("delete test data", func(t *testing.T) {
-		_, err := client.GetMongoClient().Delete(getContext(), mongo.CollectionService, bson.M{"domain": "default", "project": "default"})
+		_, err := client.GetMongoClient().Delete(getContext(), db.CollectionService, bson.M{"domain": "default", "project": "default"})
 		assert.NoError(t, err)
 
-		_, err = client.GetMongoClient().Delete(getContext(), mongo.CollectionInstance, bson.M{"domain": "default", "project": "default"})
+		_, err = client.GetMongoClient().Delete(getContext(), db.CollectionInstance, bson.M{"domain": "default", "project": "default"})
 		assert.NoError(t, err)
 	})
 }
@@ -3282,10 +3283,10 @@ func TestInstance_GetAll(t *testing.T) {
 	})
 
 	t.Run("delete test data", func(t *testing.T) {
-		_, err := client.GetMongoClient().Delete(getContext(), mongo.CollectionService, bson.M{"domain": "TestInstance_GetAll", "project": "1"})
+		_, err := client.GetMongoClient().Delete(getContext(), db.CollectionService, bson.M{"domain": "TestInstance_GetAll", "project": "1"})
 		assert.NoError(t, err)
 
-		_, err = client.GetMongoClient().Delete(getContext(), mongo.CollectionInstance, bson.M{"domain": "TestInstance_GetAll", "project": "1"})
+		_, err = client.GetMongoClient().Delete(getContext(), db.CollectionInstance, bson.M{"domain": "TestInstance_GetAll", "project": "1"})
 		assert.NoError(t, err)
 	})
 }

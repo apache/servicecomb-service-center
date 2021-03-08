@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package mongo
+package db
 
 import (
 	"time"
@@ -31,10 +31,6 @@ const (
 	CollectionInstance = "instance"
 	CollectionDep      = "dependency"
 	CollectionRole     = "role"
-)
-
-const (
-	DepsQueueUUID = "0"
 )
 
 const (
@@ -126,6 +122,6 @@ type DependencyRule struct {
 }
 
 type DelDepCacheKey struct {
-	key  *pb.MicroServiceKey
+	Key  *pb.MicroServiceKey
 	Type string
 }

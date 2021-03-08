@@ -18,13 +18,11 @@
 package sd
 
 import (
-	"time"
-
-	"github.com/apache/servicecomb-service-center/datasource/sdcommon"
 	"github.com/go-chassis/cari/discovery"
-	pb "github.com/go-chassis/cari/discovery"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+
+	"github.com/apache/servicecomb-service-center/datasource/sdcommon"
 )
 
 const (
@@ -87,18 +85,4 @@ type MongoDocument struct {
 
 type ResumeToken struct {
 	Data []byte `bson:"_data"`
-}
-
-type Service struct {
-	Domain  string
-	Project string
-	Tags    map[string]string
-	Service *pb.MicroService
-}
-
-type Instance struct {
-	Domain      string
-	Project     string
-	RefreshTime time.Time
-	Instance    *pb.MicroServiceInstance
 }

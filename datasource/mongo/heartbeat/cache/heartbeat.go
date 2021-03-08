@@ -29,6 +29,7 @@ import (
 
 	"github.com/apache/servicecomb-service-center/datasource/mongo"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/db"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
@@ -130,16 +131,16 @@ func cleanInstance(ctx context.Context, serviceID string, instanceID string) err
 	defer session.EndSession(ctx)
 
 	filter := bson.M{
-		mongo.StringBuilder([]string{mongo.ColumnInstance, mongo.ColumnServiceID}):  serviceID,
-		mongo.StringBuilder([]string{mongo.ColumnInstance, mongo.ColumnInstanceID}): instanceID,
+		mongo.StringBuilder([]string{db.ColumnInstance, db.ColumnServiceID}):  serviceID,
+		mongo.StringBuilder([]string{db.ColumnInstance, db.ColumnInstanceID}): instanceID,
 	}
 
-	result, err := client.GetMongoClient().FindOne(ctx, mongo.CollectionInstance, filter)
+	result, err := client.GetMongoClient().FindOne(ctx, db.CollectionInstance, filter)
 	if err != nil {
 		log.Error("failed to query instance: %v", err)
 		return err
 	}
-	var ins mongo.Instance
+	var ins db.Instance
 	err = result.Decode(&ins)
 	if err != nil {
 		log.Error("decode instance failed: %v", err)
@@ -167,10 +168,10 @@ func cleanInstance(ctx context.Context, serviceID string, instanceID string) err
 
 func removeDBInstance(ctx context.Context, serviceID string, instanceID string) error {
 	filter := bson.M{
-		mongo.StringBuilder([]string{mongo.ColumnInstance, mongo.ColumnServiceID}):  serviceID,
-		mongo.StringBuilder([]string{mongo.ColumnInstance, mongo.ColumnInstanceID}): instanceID,
+		mongo.StringBuilder([]string{db.ColumnInstance, db.ColumnServiceID}):  serviceID,
+		mongo.StringBuilder([]string{db.ColumnInstance, db.ColumnInstanceID}): instanceID,
 	}
-	res, err := client.GetMongoClient().DeleteOne(ctx, mongo.CollectionInstance, filter)
+	res, err := client.GetMongoClient().DeleteOne(ctx, db.CollectionInstance, filter)
 	if err != nil {
 		log.Error("failed to clean instance", err)
 		return err
@@ -179,16 +180,16 @@ func removeDBInstance(ctx context.Context, serviceID string, instanceID string) 
 	return nil
 }
 
-func findInstance(ctx context.Context, serviceID string, instanceID string) (*mongo.Instance, error) {
+func findInstance(ctx context.Context, serviceID string, instanceID string) (*db.Instance, error) {
 	filter := bson.M{
-		mongo.StringBuilder([]string{mongo.ColumnInstance, mongo.ColumnServiceID}):  serviceID,
-		mongo.StringBuilder([]string{mongo.ColumnInstance, mongo.ColumnInstanceID}): instanceID,
+		mongo.StringBuilder([]string{db.ColumnInstance, db.ColumnServiceID}):  serviceID,
+		mongo.StringBuilder([]string{db.ColumnInstance, db.ColumnInstanceID}): instanceID,
 	}
-	result, err := client.GetMongoClient().FindOne(ctx, mongo.CollectionInstance, filter)
+	result, err := client.GetMongoClient().FindOne(ctx, db.CollectionInstance, filter)
 	if err != nil {
 		return nil, err
 	}
-	var ins mongo.Instance
+	var ins db.Instance
 	err = result.Decode(&ins)
 	if err != nil {
 		log.Error("decode instance failed: ", err)
@@ -199,13 +200,13 @@ func findInstance(ctx context.Context, serviceID string, instanceID string) (*mo
 
 func updateInstance(ctx context.Context, serviceID string, instanceID string) error {
 	filter := bson.M{
-		mongo.StringBuilder([]string{mongo.ColumnInstance, mongo.ColumnServiceID}):  serviceID,
-		mongo.StringBuilder([]string{mongo.ColumnInstance, mongo.ColumnInstanceID}): instanceID,
+		mongo.StringBuilder([]string{db.ColumnInstance, db.ColumnServiceID}):  serviceID,
+		mongo.StringBuilder([]string{db.ColumnInstance, db.ColumnInstanceID}): instanceID,
 	}
 	update := bson.M{
-		"$set": bson.M{mongo.ColumnRefreshTime: time.Now()},
+		"$set": bson.M{db.ColumnRefreshTime: time.Now()},
 	}
-	result, err := client.GetMongoClient().FindOneAndUpdate(ctx, mongo.CollectionInstance, filter, update)
+	result, err := client.GetMongoClient().FindOneAndUpdate(ctx, db.CollectionInstance, filter, update)
 	if err != nil {
 		log.Error("failed to update refresh time of instance: ", err)
 		return err
