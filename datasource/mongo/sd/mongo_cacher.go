@@ -24,12 +24,14 @@ import (
 	"sync"
 	"time"
 
+	rmodel "github.com/go-chassis/cari/discovery"
+
+	"github.com/apache/servicecomb-service-center/datasource/mongo/db"
 	"github.com/apache/servicecomb-service-center/datasource/sdcommon"
 	"github.com/apache/servicecomb-service-center/pkg/backoff"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	rmodel "github.com/go-chassis/cari/discovery"
 )
 
 // MongoCacher manages mongo cache.
@@ -366,16 +368,16 @@ func (c *MongoCacher) isValueNotUpdated(value interface{}, newValue interface{})
 
 	switch c.Options.Key {
 	case instance:
-		instance := value.(Instance)
-		newInstance := newValue.(Instance)
+		instance := value.(db.Instance)
+		newInstance := newValue.(db.Instance)
 		if instance.Instance == nil || newInstance.Instance == nil {
 			return true
 		}
 		modTime = instance.Instance.ModTimestamp
 		newModTime = newInstance.Instance.ModTimestamp
 	case service:
-		service := value.(Service)
-		newService := newValue.(Service)
+		service := value.(db.Service)
+		newService := newValue.(db.Service)
 		if service.Service == nil || newService.Service == nil {
 			return true
 		}

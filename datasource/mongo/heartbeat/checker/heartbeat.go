@@ -25,18 +25,19 @@ import (
 
 	"github.com/apache/servicecomb-service-center/datasource/mongo"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/db"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
 func updateInstanceRefreshTime(ctx context.Context, serviceID string, instanceID string) error {
 	filter := bson.M{
-		mongo.StringBuilder([]string{mongo.ColumnInstance, mongo.ColumnServiceID}):  serviceID,
-		mongo.StringBuilder([]string{mongo.ColumnInstance, mongo.ColumnInstanceID}): instanceID,
+		mongo.StringBuilder([]string{db.ColumnInstance, db.ColumnServiceID}):  serviceID,
+		mongo.StringBuilder([]string{db.ColumnInstance, db.ColumnInstanceID}): instanceID,
 	}
 	update := bson.M{
-		"$set": bson.M{mongo.ColumnRefreshTime: time.Now()},
+		"$set": bson.M{db.ColumnRefreshTime: time.Now()},
 	}
-	result, err := client.GetMongoClient().FindOneAndUpdate(ctx, mongo.CollectionInstance, filter, update)
+	result, err := client.GetMongoClient().FindOneAndUpdate(ctx, db.CollectionInstance, filter, update)
 	if err != nil {
 		log.Error("failed to update refresh time of instance: ", err)
 		return err

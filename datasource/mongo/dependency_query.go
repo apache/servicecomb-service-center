@@ -23,15 +23,16 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
-	"github.com/apache/servicecomb-service-center/pkg/validate"
-
-	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/go-chassis/cari/discovery"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
+
+	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/db"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/validate"
 )
 
 type DependencyRelation struct {
@@ -230,7 +231,7 @@ func (dr *DependencyRelation) GetServiceByMicroServiceKey(service *pb.MicroServi
 		log.Error("get serivce failed", err)
 		return nil, err
 	}
-	findRes, err := client.GetMongoClient().Find(dr.ctx, CollectionService, filter)
+	findRes, err := client.GetMongoClient().Find(dr.ctx, db.CollectionService, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -239,7 +240,7 @@ func (dr *DependencyRelation) GetServiceByMicroServiceKey(service *pb.MicroServi
 	}
 
 	for findRes.Next(dr.ctx) {
-		var service Service
+		var service db.Service
 		err = findRes.Decode(&service)
 		if err != nil {
 			return nil, err
@@ -255,7 +256,7 @@ func (dr *DependencyRelation) getConsumerOfDependAllServices() ([]*pb.MicroServi
 	providerService := pb.MicroServiceToKey(dr.domainProject, dr.provider)
 	providerService.ServiceName = "*"
 	filter := GenerateProviderDependencyRuleKey(dr.domainProject, providerService)
-	findRes, err := client.GetMongoClient().Find(dr.ctx, CollectionDep, filter)
+	findRes, err := client.GetMongoClient().Find(dr.ctx, db.CollectionDep, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -265,7 +266,7 @@ func (dr *DependencyRelation) getConsumerOfDependAllServices() ([]*pb.MicroServi
 
 	var msKeys []*pb.MicroServiceKey
 	for findRes.Next(dr.ctx) {
-		var depRule *DependencyRule
+		var depRule *db.DependencyRule
 		err = findRes.Decode(&depRule)
 		if err != nil {
 			return nil, err
@@ -275,15 +276,15 @@ func (dr *DependencyRelation) getConsumerOfDependAllServices() ([]*pb.MicroServi
 	return msKeys, nil
 }
 
-func getServiceKeysInDep(ctx context.Context, filter interface{}) ([]*DependencyRule, error) {
-	findRes, err := client.GetMongoClient().Find(ctx, CollectionDep, filter)
+func getServiceKeysInDep(ctx context.Context, filter interface{}) ([]*db.DependencyRule, error) {
+	findRes, err := client.GetMongoClient().Find(ctx, db.CollectionDep, filter)
 	if err != nil {
 		return nil, err
 	}
 	defer findRes.Close(ctx)
-	var depRules []*DependencyRule
+	var depRules []*db.DependencyRule
 	for findRes.Next(ctx) {
-		var tmp *DependencyRule
+		var tmp *db.DependencyRule
 		err := findRes.Decode(&tmp)
 		if err != nil {
 			return nil, err
@@ -317,12 +318,12 @@ func (dr *DependencyRelation) parseDependencyRule(dependencyRule *pb.MicroServic
 			log.Error("get serivce failed", err)
 			return nil, err
 		}
-		findRes, err := client.GetMongoClient().Find(dr.ctx, CollectionService, filter)
+		findRes, err := client.GetMongoClient().Find(dr.ctx, db.CollectionService, filter)
 		if err != nil {
 			return nil, err
 		}
 		for findRes.Next(dr.ctx) {
-			var service Service
+			var service db.Service
 			err = findRes.Decode(&service)
 			if err != nil {
 				return nil, err
@@ -364,12 +365,12 @@ func MicroServiceKeyFilter(key *pb.MicroServiceKey) (bson.M, error) {
 		return nil, ErrInvalidDomainProject
 	}
 	return bson.M{
-		ColumnDomain:  tenant[0],
-		ColumnProject: tenant[1],
-		StringBuilder([]string{ColumnService, ColumnEnv}):     key.Environment,
-		StringBuilder([]string{ColumnService, ColumnAppID}):   key.AppId,
-		StringBuilder([]string{ColumnService, ColumnAlias}):   key.Alias,
-		StringBuilder([]string{ColumnService, ColumnVersion}): key.Version}, nil
+		db.ColumnDomain:  tenant[0],
+		db.ColumnProject: tenant[1],
+		StringBuilder([]string{db.ColumnService, db.ColumnEnv}):     key.Environment,
+		StringBuilder([]string{db.ColumnService, db.ColumnAppID}):   key.AppId,
+		StringBuilder([]string{db.ColumnService, db.ColumnAlias}):   key.Alias,
+		StringBuilder([]string{db.ColumnService, db.ColumnVersion}): key.Version}, nil
 }
 
 func RelyAllServiceKey(key *pb.MicroServiceKey) (bson.M, error) {
@@ -378,9 +379,9 @@ func RelyAllServiceKey(key *pb.MicroServiceKey) (bson.M, error) {
 		return nil, ErrInvalidDomainProject
 	}
 	return bson.M{
-		ColumnDomain:  tenant[0],
-		ColumnProject: tenant[1],
-		StringBuilder([]string{ColumnService, ColumnEnv}): key.Environment}, nil
+		db.ColumnDomain:  tenant[0],
+		db.ColumnProject: tenant[1],
+		StringBuilder([]string{db.ColumnService, db.ColumnEnv}): key.Environment}, nil
 }
 
 func FindServiceIds(ctx context.Context, versionRule string, key *pb.MicroServiceKey) ([]string, bool, error) {
@@ -394,10 +395,10 @@ func FindServiceIds(ctx context.Context, versionRule string, key *pb.MicroServic
 	}
 
 	baseFilter := bson.D{
-		{Key: ColumnDomain, Value: tenant[0]},
-		{Key: ColumnProject, Value: tenant[1]},
-		{Key: StringBuilder([]string{ColumnService, ColumnEnv}), Value: key.Environment},
-		{Key: StringBuilder([]string{ColumnService, ColumnAppID}), Value: key.AppId}}
+		{Key: db.ColumnDomain, Value: tenant[0]},
+		{Key: db.ColumnProject, Value: tenant[1]},
+		{Key: StringBuilder([]string{db.ColumnService, db.ColumnEnv}), Value: key.Environment},
+		{Key: StringBuilder([]string{db.ColumnService, db.ColumnAppID}), Value: key.AppId}}
 
 	serviceIds, exist, err := findServiceKeysByServiceName(ctx, versionRule, key, baseFilter)
 	if err != nil {
@@ -421,7 +422,7 @@ func FindServiceIds(ctx context.Context, versionRule string, key *pb.MicroServic
 }
 
 func serviceVersionFilter(ctx context.Context, versionRule string, filter bson.D) ([]string, bool, error) {
-	baseExist, err := client.GetMongoClient().DocExist(ctx, CollectionService, filter)
+	baseExist, err := client.GetMongoClient().DocExist(ctx, db.CollectionService, filter)
 	if err != nil || !baseExist {
 		return nil, false, err
 	}
@@ -444,13 +445,13 @@ func serviceVersionFilter(ctx context.Context, versionRule string, filter bson.D
 
 func findServiceKeysByServiceName(ctx context.Context, versionRule string, key *pb.MicroServiceKey, baseFilter bson.D) ([]string, bool, error) {
 	filter := append(baseFilter,
-		bson.E{Key: StringBuilder([]string{ColumnService, ColumnServiceName}), Value: key.ServiceName})
+		bson.E{Key: StringBuilder([]string{db.ColumnService, db.ColumnServiceName}), Value: key.ServiceName})
 	return serviceVersionFilter(ctx, versionRule, filter)
 }
 
 func findServiceKeysByAlias(ctx context.Context, versionRule string, key *pb.MicroServiceKey, baseFilter bson.D) ([]string, bool, error) {
 	filter := append(baseFilter,
-		bson.E{Key: StringBuilder([]string{ColumnService, ColumnAlias}), Value: key.Alias})
+		bson.E{Key: StringBuilder([]string{db.ColumnService, db.ColumnAlias}), Value: key.Alias})
 	return serviceVersionFilter(ctx, versionRule, filter)
 }
 
@@ -463,23 +464,23 @@ func findServiceKeys(ctx context.Context, versionRule string, filter bson.D) (fi
 		return GetVersionServiceLatest, filter
 	case versionRule[len(versionRule)-1:] == "+":
 		start := versionRule[:len(versionRule)-1]
-		filter = append(filter, bson.E{Key: StringBuilder([]string{ColumnService, ColumnVersion}), Value: bson.M{"$gte": start}})
+		filter = append(filter, bson.E{Key: StringBuilder([]string{db.ColumnService, db.ColumnVersion}), Value: bson.M{"$gte": start}})
 		return GetVersionService, filter
 	case rangeIdx > 0:
 		start := versionRule[:rangeIdx]
 		end := versionRule[rangeIdx+1:]
-		filter = append(filter, bson.E{Key: StringBuilder([]string{ColumnService, ColumnVersion}), Value: bson.M{"$gte": start, "$lt": end}})
+		filter = append(filter, bson.E{Key: StringBuilder([]string{db.ColumnService, db.ColumnVersion}), Value: bson.M{"$gte": start, "$lt": end}})
 		return GetVersionService, filter
 	default:
-		filter = append(filter, bson.E{Key: StringBuilder([]string{ColumnService, ColumnVersion}), Value: versionRule})
+		filter = append(filter, bson.E{Key: StringBuilder([]string{db.ColumnService, db.ColumnVersion}), Value: versionRule})
 		return nil, filter
 	}
 }
 
 func GetVersionServiceLatest(ctx context.Context, m bson.D) (serviceIds []string, err error) {
-	findRes, err := client.GetMongoClient().Find(ctx, CollectionService, m,
+	findRes, err := client.GetMongoClient().Find(ctx, db.CollectionService, m,
 		&options.FindOptions{
-			Sort: bson.M{StringBuilder([]string{ColumnService, ColumnVersion}): -1}})
+			Sort: bson.M{StringBuilder([]string{db.ColumnService, db.ColumnVersion}): -1}})
 	if err != nil {
 		return nil, err
 	}
@@ -487,7 +488,7 @@ func GetVersionServiceLatest(ctx context.Context, m bson.D) (serviceIds []string
 		return nil, findRes.Err()
 	}
 	for findRes.Next(ctx) {
-		var service *Service
+		var service *db.Service
 		err = findRes.Decode(&service)
 		if err != nil {
 			return
@@ -501,8 +502,8 @@ func GetVersionServiceLatest(ctx context.Context, m bson.D) (serviceIds []string
 }
 
 func GetVersionService(ctx context.Context, m bson.D) (serviceIds []string, err error) {
-	findRes, err := client.GetMongoClient().Find(ctx, CollectionService, m, &options.FindOptions{
-		Sort: bson.M{StringBuilder([]string{ColumnService, ColumnVersion}): -1}})
+	findRes, err := client.GetMongoClient().Find(ctx, db.CollectionService, m, &options.FindOptions{
+		Sort: bson.M{StringBuilder([]string{db.ColumnService, db.ColumnVersion}): -1}})
 	if err != nil {
 		return
 	}
@@ -510,7 +511,7 @@ func GetVersionService(ctx context.Context, m bson.D) (serviceIds []string, err 
 		return nil, findRes.Err()
 	}
 	for findRes.Next(ctx) {
-		var service *Service
+		var service *db.Service
 		err = findRes.Decode(&service)
 		if err != nil {
 			return
@@ -533,23 +534,23 @@ func ParseVersionRule(ctx context.Context, versionRule string, key *pb.MicroServ
 	switch {
 	case versionRule == "latest":
 		filter := bson.M{
-			ColumnDomain:  tenant[0],
-			ColumnProject: tenant[1]}
+			db.ColumnDomain:  tenant[0],
+			db.ColumnProject: tenant[1]}
 		return GetFilterVersionServiceLatest(ctx, filter)
 	case versionRule[len(versionRule)-1:] == "+":
 		start := versionRule[:len(versionRule)-1]
 		filter := bson.M{
-			ColumnDomain:  tenant[0],
-			ColumnProject: tenant[1],
-			StringBuilder([]string{ColumnService, ColumnVersion}): bson.M{"$gte": start}}
+			db.ColumnDomain:  tenant[0],
+			db.ColumnProject: tenant[1],
+			StringBuilder([]string{db.ColumnService, db.ColumnVersion}): bson.M{"$gte": start}}
 		return GetFilterVersionService(ctx, filter)
 	case rangeIdx > 0:
 		start := versionRule[:rangeIdx]
 		end := versionRule[rangeIdx+1:]
 		filter := bson.M{
-			ColumnDomain:  tenant[0],
-			ColumnProject: tenant[1],
-			StringBuilder([]string{ColumnService, ColumnVersion}): bson.M{"$gte": start, "$lte": end}}
+			db.ColumnDomain:  tenant[0],
+			db.ColumnProject: tenant[1],
+			StringBuilder([]string{db.ColumnService, db.ColumnVersion}): bson.M{"$gte": start, "$lte": end}}
 		return GetFilterVersionService(ctx, filter)
 	default:
 		return nil, nil
@@ -557,7 +558,7 @@ func ParseVersionRule(ctx context.Context, versionRule string, key *pb.MicroServ
 }
 
 func GetFilterVersionService(ctx context.Context, m bson.M) (serviceIDs []string, err error) {
-	findRes, err := client.GetMongoClient().Find(ctx, CollectionService, m)
+	findRes, err := client.GetMongoClient().Find(ctx, db.CollectionService, m)
 	if err != nil {
 		return nil, err
 	}
@@ -565,7 +566,7 @@ func GetFilterVersionService(ctx context.Context, m bson.M) (serviceIDs []string
 		return nil, findRes.Err()
 	}
 	for findRes.Next(ctx) {
-		var service Service
+		var service db.Service
 		err = findRes.Decode(&service)
 		if err != nil {
 			return nil, err
@@ -576,9 +577,9 @@ func GetFilterVersionService(ctx context.Context, m bson.M) (serviceIDs []string
 }
 
 func GetFilterVersionServiceLatest(ctx context.Context, m bson.M) (serviceIDs []string, err error) {
-	findRes, err := client.GetMongoClient().Find(ctx, CollectionService, m,
+	findRes, err := client.GetMongoClient().Find(ctx, db.CollectionService, m,
 		&options.FindOptions{
-			Sort: bson.M{StringBuilder([]string{ColumnService, ColumnVersion}): -1}})
+			Sort: bson.M{StringBuilder([]string{db.ColumnService, db.ColumnVersion}): -1}})
 	if err != nil {
 		return nil, err
 	}
@@ -586,7 +587,7 @@ func GetFilterVersionServiceLatest(ctx context.Context, m bson.M) (serviceIDs []
 		return nil, findRes.Err()
 	}
 	for findRes.Next(ctx) {
-		var service Service
+		var service db.Service
 		err = findRes.Decode(&service)
 		if err != nil {
 			return nil, err
@@ -639,30 +640,30 @@ func GenerateProviderDependencyRuleKey(domainProject string, in *pb.MicroService
 
 func GenerateRuleKeyWithSameServiceNameAndAppID(serviceType string, domainProject string, in *pb.MicroServiceKey) bson.M {
 	return bson.M{
-		ColumnServiceType: serviceType,
-		StringBuilder([]string{ColumnServiceKey, ColumnTenant}):      domainProject,
-		StringBuilder([]string{ColumnServiceKey, ColumnAppID}):       in.AppId,
-		StringBuilder([]string{ColumnServiceKey, ColumnServiceName}): in.ServiceName}
+		db.ColumnServiceType: serviceType,
+		StringBuilder([]string{db.ColumnServiceKey, db.ColumnTenant}):      domainProject,
+		StringBuilder([]string{db.ColumnServiceKey, db.ColumnAppID}):       in.AppId,
+		StringBuilder([]string{db.ColumnServiceKey, db.ColumnServiceName}): in.ServiceName}
 }
 
 func GenerateServiceDependencyRuleKey(serviceType string, domainProject string, in *pb.MicroServiceKey) bson.M {
 	if in == nil {
 		return bson.M{
-			ColumnServiceType: serviceType,
-			StringBuilder([]string{ColumnServiceKey, ColumnTenant}): domainProject}
+			db.ColumnServiceType: serviceType,
+			StringBuilder([]string{db.ColumnServiceKey, db.ColumnTenant}): domainProject}
 	}
 	if in.ServiceName == "*" {
 		return bson.M{
-			ColumnServiceType: serviceType,
-			StringBuilder([]string{ColumnServiceKey, ColumnTenant}):      domainProject,
-			StringBuilder([]string{ColumnServiceKey, ColumnEnv}):         in.Environment,
-			StringBuilder([]string{ColumnServiceKey, ColumnServiceName}): in.ServiceName}
+			db.ColumnServiceType: serviceType,
+			StringBuilder([]string{db.ColumnServiceKey, db.ColumnTenant}):      domainProject,
+			StringBuilder([]string{db.ColumnServiceKey, db.ColumnEnv}):         in.Environment,
+			StringBuilder([]string{db.ColumnServiceKey, db.ColumnServiceName}): in.ServiceName}
 	}
 	return bson.M{
-		ColumnServiceType: serviceType,
-		StringBuilder([]string{ColumnServiceKey, ColumnTenant}):      domainProject,
-		StringBuilder([]string{ColumnServiceKey, ColumnEnv}):         in.Environment,
-		StringBuilder([]string{ColumnServiceKey, ColumnAppID}):       in.AppId,
-		StringBuilder([]string{ColumnServiceKey, ColumnVersion}):     in.Version,
-		StringBuilder([]string{ColumnServiceKey, ColumnServiceName}): in.ServiceName}
+		db.ColumnServiceType: serviceType,
+		StringBuilder([]string{db.ColumnServiceKey, db.ColumnTenant}):      domainProject,
+		StringBuilder([]string{db.ColumnServiceKey, db.ColumnEnv}):         in.Environment,
+		StringBuilder([]string{db.ColumnServiceKey, db.ColumnAppID}):       in.AppId,
+		StringBuilder([]string{db.ColumnServiceKey, db.ColumnVersion}):     in.Version,
+		StringBuilder([]string{db.ColumnServiceKey, db.ColumnServiceName}): in.ServiceName}
 }

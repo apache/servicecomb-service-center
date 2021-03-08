@@ -21,13 +21,15 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/sdcommon"
-	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/util"
 	"go.mongodb.org/mongo-driver/bson"
 	md "go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+
+	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/db"
+	"github.com/apache/servicecomb-service-center/datasource/sdcommon"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
 type mongoListWatch struct {
@@ -124,7 +126,7 @@ func (lw *mongoListWatch) doParseDocumentToResource(fullDocument bson.Raw) (reso
 
 	switch lw.Key {
 	case instance:
-		instance := Instance{}
+		instance := db.Instance{}
 		err = bson.Unmarshal(fullDocument, &instance)
 		if err != nil {
 			log.Error("error to parse bson raw to documentInfo", err)
@@ -134,7 +136,7 @@ func (lw *mongoListWatch) doParseDocumentToResource(fullDocument bson.Raw) (reso
 		resource.Value = instance
 		resource.Index = instance.Instance.ServiceId
 	case service:
-		service := Service{}
+		service := db.Service{}
 		err := bson.Unmarshal(fullDocument, &service)
 		if err != nil {
 			log.Error("error to parse bson raw to documentInfo", err)

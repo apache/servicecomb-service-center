@@ -20,15 +20,17 @@ package mongo
 import (
 	"context"
 
+	"github.com/go-chassis/go-chassis/v2/storage"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/db"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/heartbeat"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
-	"github.com/go-chassis/go-chassis/v2/storage"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 const defaultExpireTime = 300
@@ -113,90 +115,90 @@ func EnsureDB() {
 }
 
 func EnsureService() {
-	err := client.GetMongoClient().GetDB().CreateCollection(context.Background(), CollectionService, options.CreateCollection().SetValidator(nil))
+	err := client.GetMongoClient().GetDB().CreateCollection(context.Background(), db.CollectionService, options.CreateCollection().SetValidator(nil))
 	wrapCreateCollectionError(err)
 
 	serviceIDIndex := BuildIndexDoc(
-		StringBuilder([]string{ColumnService, ColumnServiceID}))
+		StringBuilder([]string{db.ColumnService, db.ColumnServiceID}))
 	serviceIDIndex.Options = options.Index().SetUnique(true)
 
 	serviceIndex := BuildIndexDoc(
-		StringBuilder([]string{ColumnService, ColumnAppID}),
-		StringBuilder([]string{ColumnService, ColumnServiceName}),
-		StringBuilder([]string{ColumnService, ColumnEnv}),
-		StringBuilder([]string{ColumnService, ColumnVersion}),
-		ColumnDomain,
-		ColumnProject)
+		StringBuilder([]string{db.ColumnService, db.ColumnAppID}),
+		StringBuilder([]string{db.ColumnService, db.ColumnServiceName}),
+		StringBuilder([]string{db.ColumnService, db.ColumnEnv}),
+		StringBuilder([]string{db.ColumnService, db.ColumnVersion}),
+		db.ColumnDomain,
+		db.ColumnProject)
 	serviceIndex.Options = options.Index().SetUnique(true)
 
 	var serviceIndexs []mongo.IndexModel
 	serviceIndexs = append(serviceIndexs, serviceIDIndex, serviceIndex)
 
-	err = client.GetMongoClient().CreateIndexes(context.Background(), CollectionService, serviceIndexs)
+	err = client.GetMongoClient().CreateIndexes(context.Background(), db.CollectionService, serviceIndexs)
 	wrapCreateIndexesError(err)
 }
 
 func EnsureInstance() {
-	err := client.GetMongoClient().GetDB().CreateCollection(context.Background(), CollectionInstance, options.CreateCollection().SetValidator(nil))
+	err := client.GetMongoClient().GetDB().CreateCollection(context.Background(), db.CollectionInstance, options.CreateCollection().SetValidator(nil))
 	wrapCreateCollectionError(err)
 
-	instanceIndex := BuildIndexDoc(ColumnRefreshTime)
+	instanceIndex := BuildIndexDoc(db.ColumnRefreshTime)
 	instanceIndex.Options = options.Index().SetExpireAfterSeconds(defaultExpireTime)
 
-	instanceServiceIndex := BuildIndexDoc(StringBuilder([]string{ColumnInstance, ColumnServiceID}))
+	instanceServiceIndex := BuildIndexDoc(StringBuilder([]string{db.ColumnInstance, db.ColumnServiceID}))
 
 	var instanceIndexs []mongo.IndexModel
 	instanceIndexs = append(instanceIndexs, instanceIndex, instanceServiceIndex)
 
-	err = client.GetMongoClient().CreateIndexes(context.Background(), CollectionInstance, instanceIndexs)
+	err = client.GetMongoClient().CreateIndexes(context.Background(), db.CollectionInstance, instanceIndexs)
 	wrapCreateIndexesError(err)
 }
 
 func EnsureSchema() {
-	err := client.GetMongoClient().GetDB().CreateCollection(context.Background(), CollectionSchema, options.CreateCollection().SetValidator(nil))
+	err := client.GetMongoClient().GetDB().CreateCollection(context.Background(), db.CollectionSchema, options.CreateCollection().SetValidator(nil))
 	wrapCreateCollectionError(err)
 
 	schemaServiceIndex := BuildIndexDoc(
-		ColumnDomain,
-		ColumnProject,
-		ColumnServiceID)
+		db.ColumnDomain,
+		db.ColumnProject,
+		db.ColumnServiceID)
 
 	var schemaIndexs []mongo.IndexModel
 	schemaIndexs = append(schemaIndexs, schemaServiceIndex)
 
-	err = client.GetMongoClient().CreateIndexes(context.Background(), CollectionSchema, schemaIndexs)
+	err = client.GetMongoClient().CreateIndexes(context.Background(), db.CollectionSchema, schemaIndexs)
 	wrapCreateIndexesError(err)
 }
 
 func EnsureRule() {
-	err := client.GetMongoClient().GetDB().CreateCollection(context.Background(), CollectionRule, options.CreateCollection().SetValidator(nil))
+	err := client.GetMongoClient().GetDB().CreateCollection(context.Background(), db.CollectionRule, options.CreateCollection().SetValidator(nil))
 	wrapCreateCollectionError(err)
 
 	ruleServiceIndex := BuildIndexDoc(
-		ColumnDomain,
-		ColumnProject,
-		ColumnServiceID)
+		db.ColumnDomain,
+		db.ColumnProject,
+		db.ColumnServiceID)
 
 	var ruleIndexs []mongo.IndexModel
 	ruleIndexs = append(ruleIndexs, ruleServiceIndex)
 
-	err = client.GetMongoClient().CreateIndexes(context.Background(), CollectionRule, ruleIndexs)
+	err = client.GetMongoClient().CreateIndexes(context.Background(), db.CollectionRule, ruleIndexs)
 	wrapCreateIndexesError(err)
 }
 
 func EnsureDep() {
-	err := client.GetMongoClient().GetDB().CreateCollection(context.Background(), CollectionDep, options.CreateCollection().SetValidator(nil))
+	err := client.GetMongoClient().GetDB().CreateCollection(context.Background(), db.CollectionDep, options.CreateCollection().SetValidator(nil))
 	wrapCreateCollectionError(err)
 
 	depServiceIndex := BuildIndexDoc(
-		ColumnDomain,
-		ColumnProject,
-		ColumnServiceKey)
+		db.ColumnDomain,
+		db.ColumnProject,
+		db.ColumnServiceKey)
 
 	var depIndexs []mongo.IndexModel
 	depIndexs = append(depIndexs, depServiceIndex)
 
-	err = client.GetMongoClient().CreateIndexes(context.Background(), CollectionDep, depIndexs)
+	err = client.GetMongoClient().CreateIndexes(context.Background(), db.CollectionDep, depIndexs)
 	if err != nil {
 		log.Fatal("failed to create dep collection indexs", err)
 		return

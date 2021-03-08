@@ -23,18 +23,19 @@ import (
 	"fmt"
 	"time"
 
-	simple "github.com/apache/servicecomb-service-center/pkg/time"
-	"github.com/apache/servicecomb-service-center/server/notify"
+	"github.com/go-chassis/cari/discovery"
+	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/mongo"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/db"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
 	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	simple "github.com/apache/servicecomb-service-center/pkg/time"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/notify"
 	"github.com/apache/servicecomb-service-center/server/syncernotify"
-	"github.com/go-chassis/cari/discovery"
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 // InstanceEventHandler is the handler to handle events
@@ -43,19 +44,19 @@ type InstanceEventHandler struct {
 }
 
 func (h InstanceEventHandler) Type() string {
-	return mongo.CollectionInstance
+	return db.CollectionInstance
 }
 
 func (h InstanceEventHandler) OnEvent(evt sd.MongoEvent) {
 	action := evt.Type
-	instance := evt.Value.(sd.Instance)
+	instance := evt.Value.(db.Instance)
 	providerID := instance.Instance.ServiceId
 	providerInstanceID := instance.Instance.InstanceId
 	domainProject := instance.Domain + "/" + instance.Project
 	cacheService := sd.Store().Service().Cache().Get(providerID)
 	var microService *discovery.MicroService
 	if cacheService != nil {
-		microService = cacheService.(sd.Service).Service
+		microService = cacheService.(db.Service).Service
 	}
 	if microService == nil {
 		log.Info("get cached service failed, then get from database")
@@ -100,7 +101,7 @@ func PublishInstanceEvent(evt sd.MongoEvent, domainProject string, serviceKey *d
 		Response: discovery.CreateResponse(discovery.ResponseSuccess, "Watch instance successfully."),
 		Action:   string(evt.Type),
 		Key:      serviceKey,
-		Instance: evt.Value.(sd.Instance).Instance,
+		Instance: evt.Value.(db.Instance).Instance,
 	}
 	for _, consumerID := range subscribers {
 		evt := notify.NewInstanceEventWithTime(consumerID, domainProject, -1, simple.FromTime(time.Now()), response)
@@ -112,10 +113,10 @@ func PublishInstanceEvent(evt sd.MongoEvent, domainProject string, serviceKey *d
 }
 
 func NotifySyncerInstanceEvent(event sd.MongoEvent, microService *discovery.MicroService) {
-	instance := event.Value.(sd.Instance).Instance
+	instance := event.Value.(db.Instance).Instance
 	log.Info(fmt.Sprintf("instanceId : %s and serviceId : %s in NotifySyncerInstanceEvent", instance.InstanceId, instance.ServiceId))
-	instanceKey := util.StringJoin([]string{datasource.InstanceKeyPrefix, event.Value.(sd.Instance).Domain,
-		event.Value.(sd.Instance).Project, instance.ServiceId, instance.InstanceId}, datasource.SPLIT)
+	instanceKey := util.StringJoin([]string{datasource.InstanceKeyPrefix, event.Value.(db.Instance).Domain,
+		event.Value.(db.Instance).Project, instance.ServiceId, instance.InstanceId}, datasource.SPLIT)
 
 	instanceKv := dump.KV{
 		Key:   instanceKey,
@@ -126,8 +127,8 @@ func NotifySyncerInstanceEvent(event sd.MongoEvent, microService *discovery.Micr
 		KV:    &instanceKv,
 		Value: instance,
 	}
-	serviceKey := util.StringJoin([]string{datasource.ServiceKeyPrefix, event.Value.(sd.Instance).Domain,
-		event.Value.(sd.Instance).Project, instance.ServiceId}, datasource.SPLIT)
+	serviceKey := util.StringJoin([]string{datasource.ServiceKeyPrefix, event.Value.(db.Instance).Domain,
+		event.Value.(db.Instance).Project, instance.ServiceId}, datasource.SPLIT)
 	serviceKv := dump.KV{
 		Key:   serviceKey,
 		Value: microService,

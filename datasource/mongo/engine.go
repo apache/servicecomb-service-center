@@ -30,6 +30,7 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/db"
 	"github.com/apache/servicecomb-service-center/pkg/cluster"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -238,7 +239,7 @@ func GetAllServicesAcrossDomainProject(ctx context.Context) (map[string][]*pb.Mi
 
 	filter := bson.M{"domain": domain, "project": project}
 
-	findRes, err := client.GetMongoClient().Find(ctx, CollectionService, filter)
+	findRes, err := client.GetMongoClient().Find(ctx, db.CollectionService, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -246,7 +247,7 @@ func GetAllServicesAcrossDomainProject(ctx context.Context) (map[string][]*pb.Mi
 	services := make(map[string][]*pb.MicroService)
 
 	for findRes.Next(ctx) {
-		var mongoService Service
+		var mongoService db.Service
 		err := findRes.Decode(&mongoService)
 		if err != nil {
 			return nil, err
