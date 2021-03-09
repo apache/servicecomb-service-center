@@ -27,6 +27,7 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/db"
+	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/privacy"
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -149,7 +150,7 @@ func (ds *DataSource) UpdateAccount(ctx context.Context, name string, account *r
 		return err
 	}
 	if res.ModifiedCount == 0 {
-		return ErrUpdateNodata
+		return mutil.ErrUpdateNodata
 	}
 	return nil
 }

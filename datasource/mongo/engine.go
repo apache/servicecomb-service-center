@@ -21,16 +21,13 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
 	pb "github.com/go-chassis/cari/discovery"
-	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/db"
+	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"github.com/apache/servicecomb-service-center/pkg/cluster"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -78,7 +75,7 @@ func (ds *DataSource) SelfUnregister(ctx context.Context) error {
 
 // OPS
 func (ds *DataSource) ClearNoInstanceServices(ctx context.Context, ttl time.Duration) error {
-	services, err := GetAllServicesAcrossDomainProject(ctx)
+	services, err := mutil.GetAllServicesAcrossDomainProject(ctx)
 	if err != nil {
 		return err
 	}
@@ -95,7 +92,7 @@ func (ds *DataSource) ClearNoInstanceServices(ctx context.Context, ttl time.Dura
 		if len(svcList) == 0 {
 			continue
 		}
-		ctx, err := ctxFromDomainProject(ctx, domainProject)
+		ctx, err := mutil.CtxFromDomainProject(ctx, domainProject)
 		if err != nil {
 			log.Error("get domain project context failed", err)
 			continue
@@ -104,7 +101,7 @@ func (ds *DataSource) ClearNoInstanceServices(ctx context.Context, ttl time.Dura
 			if svc == nil {
 				continue
 			}
-			ok, err := shouldClear(ctx, timeLimitStamp, svc)
+			ok, err := mutil.ShouldClearService(ctx, timeLimitStamp, svc)
 			if err != nil {
 				log.Error("check service clear necessity failed", err)
 				continue
@@ -154,7 +151,7 @@ func (ds *DataSource) registryService(pCtx context.Context) error {
 		respG, err := datasource.Instance().GetService(ctx, core.GetServiceRequest(respE.ServiceId))
 		if respG.Response.GetCode() != pb.ResponseSuccess {
 			log.Error(fmt.Sprintf("query service center service[%s] info failed", respE.ServiceId), err)
-			return ErrServiceFileLost
+			return mutil.ErrServiceFileLost
 		}
 		core.Service = respG.Service
 		return nil
@@ -231,63 +228,4 @@ func (ds *DataSource) autoSelfHeartBeat() {
 			}
 		}
 	})
-}
-
-func GetAllServicesAcrossDomainProject(ctx context.Context) (map[string][]*pb.MicroService, error) {
-	domain := util.ParseDomain(ctx)
-	project := util.ParseProject(ctx)
-
-	filter := bson.M{"domain": domain, "project": project}
-
-	findRes, err := client.GetMongoClient().Find(ctx, db.CollectionService, filter)
-	if err != nil {
-		return nil, err
-	}
-
-	services := make(map[string][]*pb.MicroService)
-
-	for findRes.Next(ctx) {
-		var mongoService db.Service
-		err := findRes.Decode(&mongoService)
-		if err != nil {
-			return nil, err
-		}
-		domainProject := mongoService.Domain + "/" + mongoService.Project
-		services[domainProject] = append(services[domainProject], mongoService.Service)
-	}
-	return services, nil
-}
-
-func ctxFromDomainProject(pCtx context.Context, domainProject string) (ctx context.Context, err error) {
-	splitIndex := strings.Index(domainProject, path.SPLIT)
-	if splitIndex == -1 {
-		return nil, NewError("invalid domainProject: ", domainProject)
-	}
-	domain := domainProject[:splitIndex]
-	project := domainProject[splitIndex+1:]
-	return util.SetDomainProject(pCtx, domain, project), nil
-}
-
-func shouldClear(ctx context.Context, timeLimitStamp string, svc *pb.MicroService) (bool, error) {
-	if svc.Timestamp > timeLimitStamp {
-		return false, nil
-	}
-
-	getInstsReq := &pb.GetInstancesRequest{
-		ConsumerServiceId: svc.ServiceId,
-		ProviderServiceId: svc.ServiceId,
-	}
-
-	getInstsResp, err := datasource.Instance().GetInstances(ctx, getInstsReq)
-	if err != nil {
-		return false, err
-	}
-	if getInstsResp.Response.GetCode() != pb.ResponseSuccess {
-		return false, NewError("get instance failed: ", getInstsResp.Response.GetMessage())
-	}
-	//ignore a service if it has instances
-	if len(getInstsResp.Instances) > 0 {
-		return false, nil
-	}
-	return true, nil
 }

@@ -27,9 +27,9 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/datasource/mongo"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/db"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
+	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	simple "github.com/apache/servicecomb-service-center/pkg/time"
@@ -60,7 +60,7 @@ func (h InstanceEventHandler) OnEvent(evt sd.MongoEvent) {
 	}
 	if microService == nil {
 		log.Info("get cached service failed, then get from database")
-		service, err := mongo.GetService(context.Background(), bson.M{"serviceinfo.serviceid": providerID})
+		service, err := mutil.GetService(context.Background(), bson.M{"serviceinfo.serviceid": providerID})
 		if err != nil {
 			if errors.Is(err, datasource.ErrNoData) {
 				log.Warn(fmt.Sprintf("there is no service with id [%s] in the database", providerID))
@@ -80,7 +80,7 @@ func (h InstanceEventHandler) OnEvent(evt sd.MongoEvent) {
 		NotifySyncerInstanceEvent(evt, microService)
 	}
 	ctx := util.SetDomainProject(context.Background(), instance.Domain, instance.Project)
-	consumerIDS, _, err := mongo.GetAllConsumerIds(ctx, microService)
+	consumerIDS, _, err := mutil.GetAllConsumerIds(ctx, microService)
 	if err != nil {
 		log.Error(fmt.Sprintf("get service[%s][%s/%s/%s/%s]'s consumerIDs failed",
 			providerID, microService.Environment, microService.AppId, microService.ServiceName, microService.Version), err)

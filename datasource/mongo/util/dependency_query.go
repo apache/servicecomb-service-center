@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package mongo
+package util
 
 import (
 	"context"
@@ -666,4 +666,17 @@ func GenerateServiceDependencyRuleKey(serviceType string, domainProject string, 
 		StringBuilder([]string{db.ColumnServiceKey, db.ColumnAppID}):       in.AppId,
 		StringBuilder([]string{db.ColumnServiceKey, db.ColumnVersion}):     in.Version,
 		StringBuilder([]string{db.ColumnServiceKey, db.ColumnServiceName}): in.ServiceName}
+}
+
+func getInstanceCountByDomain(ctx context.Context, svcIDToNonVerKey map[string]string, resp chan datasource.GetInstanceCountByDomainResponse) {
+	ret := datasource.GetInstanceCountByDomainResponse{}
+	for _, sid := range svcIDToNonVerKey {
+		num, err := GetInstanceCountOfOneService(ctx, sid)
+		if err != nil {
+			ret.Err = err
+			return
+		}
+		ret.CountByDomain = ret.CountByDomain + num
+	}
+	resp <- ret
 }

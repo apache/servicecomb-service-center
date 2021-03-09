@@ -26,9 +26,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson"
 
-	"github.com/apache/servicecomb-service-center/datasource/mongo"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/db"
+	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
 )
 
 func TestHeartbeat(t *testing.T) {
@@ -60,7 +60,7 @@ func TestHeartbeat(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 		filter := bson.M{
-			mongo.StringBuilder([]string{db.ColumnInstance, db.ColumnInstanceID}): instance1.Instance.InstanceId,
+			mutil.StringBuilder([]string{db.ColumnInstance, db.ColumnInstanceID}): instance1.Instance.InstanceId,
 		}
 		_, err = client.GetMongoClient().Delete(context.Background(), db.CollectionInstance, filter)
 		assert.Nil(t, err)

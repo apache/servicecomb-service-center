@@ -15,35 +15,55 @@
  * limitations under the License.
  */
 
-package checker
+package util
 
 import (
 	"context"
-	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/db"
-	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
-func updateInstanceRefreshTime(ctx context.Context, serviceID string, instanceID string) error {
+func GetTags(ctx context.Context, domain string, project string, serviceID string) (tags map[string]string, err error) {
 	filter := bson.M{
-		mutil.StringBuilder([]string{db.ColumnInstance, db.ColumnServiceID}):  serviceID,
-		mutil.StringBuilder([]string{db.ColumnInstance, db.ColumnInstanceID}): instanceID,
+		db.ColumnDomain:  domain,
+		db.ColumnProject: project,
+		StringBuilder([]string{db.ColumnService, db.ColumnServiceID}): serviceID,
 	}
-	update := bson.M{
-		"$set": bson.M{db.ColumnRefreshTime: time.Now()},
-	}
-	result, err := client.GetMongoClient().FindOneAndUpdate(ctx, db.CollectionInstance, filter, update)
+	result, err := client.GetMongoClient().FindOne(ctx, db.CollectionService, filter)
 	if err != nil {
-		log.Error("failed to update refresh time of instance: ", err)
-		return err
+		return nil, err
 	}
 	if result.Err() != nil {
-		return result.Err()
+		return nil, result.Err()
 	}
-	return nil
+	var service db.Service
+	err = result.Decode(&service)
+	if err != nil {
+		log.Error("type conversion error", err)
+		return nil, err
+	}
+	return service.Tags, nil
+}
+
+func FilterServicesByTags(services []*db.Service, tags []string) []*db.Service {
+	if len(tags) == 0 {
+		return services
+	}
+	var newServices []*db.Service
+	for _, service := range services {
+		index := 0
+		for ; index < len(tags); index++ {
+			if _, ok := service.Tags[tags[index]]; !ok {
+				break
+			}
+		}
+		if index == len(tags) {
+			newServices = append(newServices, service)
+		}
+	}
+	return newServices
 }

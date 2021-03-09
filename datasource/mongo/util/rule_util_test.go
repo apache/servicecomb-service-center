@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package mongo_test
+package util_test
 
 import (
 	"context"
@@ -25,28 +25,28 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/datasource/mongo"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/db"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/util"
 )
 
 func TestRuleFilter_Filter(t *testing.T) {
 	var err error
 	t.Run("when there is no such a customer in db", func(t *testing.T) {
-		_, err = mongo.Filter(context.Background(), []*db.Rule{}, "")
+		_, err = util.Filter(context.Background(), []*db.Rule{}, "")
 		if err != nil && !errors.Is(err, datasource.ErrNoData) {
 			t.Fatalf("RuleFilter Filter failed")
 		}
 		assert.Equal(t, datasource.ErrNoData, err, "no data found")
 	})
 	t.Run("FilterAll when customer not exist", func(t *testing.T) {
-		_, _, err = mongo.FilterAll(context.Background(), []string{""}, []*db.Rule{})
+		_, _, err = util.FilterAll(context.Background(), []string{""}, []*db.Rule{})
 		if err != nil && !errors.Is(err, datasource.ErrNoData) {
 			t.Fatalf("RuleFilter FilterAll failed")
 		}
 		assert.Equal(t, nil, err, "no customer found err is nil")
 	})
 	t.Run("FilterAll when ProviderRules not nil and service not exist", func(t *testing.T) {
-		_, _, err = mongo.FilterAll(context.Background(), []string{""}, []*db.Rule{{}})
+		_, _, err = util.FilterAll(context.Background(), []string{""}, []*db.Rule{{}})
 		if err != nil && !errors.Is(err, datasource.ErrNoData) {
 			t.Fatalf("RuleFilter FilterAll failed")
 		}

@@ -29,6 +29,7 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/mongo/db"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/heartbeat"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
+	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
 )
@@ -118,15 +119,15 @@ func EnsureService() {
 	err := client.GetMongoClient().GetDB().CreateCollection(context.Background(), db.CollectionService, options.CreateCollection().SetValidator(nil))
 	wrapCreateCollectionError(err)
 
-	serviceIDIndex := BuildIndexDoc(
-		StringBuilder([]string{db.ColumnService, db.ColumnServiceID}))
+	serviceIDIndex := mutil.BuildIndexDoc(
+		mutil.StringBuilder([]string{db.ColumnService, db.ColumnServiceID}))
 	serviceIDIndex.Options = options.Index().SetUnique(true)
 
-	serviceIndex := BuildIndexDoc(
-		StringBuilder([]string{db.ColumnService, db.ColumnAppID}),
-		StringBuilder([]string{db.ColumnService, db.ColumnServiceName}),
-		StringBuilder([]string{db.ColumnService, db.ColumnEnv}),
-		StringBuilder([]string{db.ColumnService, db.ColumnVersion}),
+	serviceIndex := mutil.BuildIndexDoc(
+		mutil.StringBuilder([]string{db.ColumnService, db.ColumnAppID}),
+		mutil.StringBuilder([]string{db.ColumnService, db.ColumnServiceName}),
+		mutil.StringBuilder([]string{db.ColumnService, db.ColumnEnv}),
+		mutil.StringBuilder([]string{db.ColumnService, db.ColumnVersion}),
 		db.ColumnDomain,
 		db.ColumnProject)
 	serviceIndex.Options = options.Index().SetUnique(true)
@@ -142,10 +143,10 @@ func EnsureInstance() {
 	err := client.GetMongoClient().GetDB().CreateCollection(context.Background(), db.CollectionInstance, options.CreateCollection().SetValidator(nil))
 	wrapCreateCollectionError(err)
 
-	instanceIndex := BuildIndexDoc(db.ColumnRefreshTime)
+	instanceIndex := mutil.BuildIndexDoc(db.ColumnRefreshTime)
 	instanceIndex.Options = options.Index().SetExpireAfterSeconds(defaultExpireTime)
 
-	instanceServiceIndex := BuildIndexDoc(StringBuilder([]string{db.ColumnInstance, db.ColumnServiceID}))
+	instanceServiceIndex := mutil.BuildIndexDoc(mutil.StringBuilder([]string{db.ColumnInstance, db.ColumnServiceID}))
 
 	var instanceIndexs []mongo.IndexModel
 	instanceIndexs = append(instanceIndexs, instanceIndex, instanceServiceIndex)
@@ -158,7 +159,7 @@ func EnsureSchema() {
 	err := client.GetMongoClient().GetDB().CreateCollection(context.Background(), db.CollectionSchema, options.CreateCollection().SetValidator(nil))
 	wrapCreateCollectionError(err)
 
-	schemaServiceIndex := BuildIndexDoc(
+	schemaServiceIndex := mutil.BuildIndexDoc(
 		db.ColumnDomain,
 		db.ColumnProject,
 		db.ColumnServiceID)
@@ -174,7 +175,7 @@ func EnsureRule() {
 	err := client.GetMongoClient().GetDB().CreateCollection(context.Background(), db.CollectionRule, options.CreateCollection().SetValidator(nil))
 	wrapCreateCollectionError(err)
 
-	ruleServiceIndex := BuildIndexDoc(
+	ruleServiceIndex := mutil.BuildIndexDoc(
 		db.ColumnDomain,
 		db.ColumnProject,
 		db.ColumnServiceID)
@@ -190,7 +191,7 @@ func EnsureDep() {
 	err := client.GetMongoClient().GetDB().CreateCollection(context.Background(), db.CollectionDep, options.CreateCollection().SetValidator(nil))
 	wrapCreateCollectionError(err)
 
-	depServiceIndex := BuildIndexDoc(
+	depServiceIndex := mutil.BuildIndexDoc(
 		db.ColumnDomain,
 		db.ColumnProject,
 		db.ColumnServiceKey)

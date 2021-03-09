@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package mongo
+package util
 
 import "errors"
 

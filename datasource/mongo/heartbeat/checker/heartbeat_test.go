@@ -19,6 +19,7 @@ package checker
 
 import (
 	"context"
+
 	"testing"
 	"time"
 
@@ -27,9 +28,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson"
 
-	"github.com/apache/servicecomb-service-center/datasource/mongo"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/db"
+	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
@@ -60,8 +61,8 @@ func TestUpdateInstanceRefreshTime(t *testing.T) {
 		err = updateInstanceRefreshTime(context.Background(), instance1.Instance.ServiceId, instance1.Instance.InstanceId)
 		assert.Equal(t, nil, err)
 		filter := bson.M{
-			mongo.StringBuilder([]string{db.ColumnInstance, db.ColumnServiceID}):  instance1.Instance.ServiceId,
-			mongo.StringBuilder([]string{db.ColumnInstance, db.ColumnInstanceID}): instance1.Instance.InstanceId,
+			mutil.StringBuilder([]string{db.ColumnInstance, db.ColumnServiceID}):  instance1.Instance.ServiceId,
+			mutil.StringBuilder([]string{db.ColumnInstance, db.ColumnInstanceID}): instance1.Instance.InstanceId,
 		}
 		result, err := client.GetMongoClient().FindOne(context.Background(), db.CollectionInstance, filter)
 		assert.Nil(t, err)
@@ -70,8 +71,8 @@ func TestUpdateInstanceRefreshTime(t *testing.T) {
 		assert.Nil(t, err)
 		assert.NotEqual(t, instance1.RefreshTime, ins.RefreshTime)
 		filter = bson.M{
-			mongo.StringBuilder([]string{db.ColumnInstance, db.ColumnServiceID}):  instance1.Instance.ServiceId,
-			mongo.StringBuilder([]string{db.ColumnInstance, db.ColumnInstanceID}): instance1.Instance.InstanceId,
+			mutil.StringBuilder([]string{db.ColumnInstance, db.ColumnServiceID}):  instance1.Instance.ServiceId,
+			mutil.StringBuilder([]string{db.ColumnInstance, db.ColumnInstanceID}): instance1.Instance.InstanceId,
 		}
 		_, err = client.GetMongoClient().Delete(context.Background(), db.CollectionInstance, filter)
 		assert.Nil(t, err)
