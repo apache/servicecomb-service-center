@@ -22,11 +22,6 @@ import (
 	"fmt"
 )
 
-//Options contains configuration for plugins
-type Options struct {
-	PluginImplName ImplName
-}
-
 type PluginOp struct {
 	Action        ActionType
 	Key           []byte

@@ -19,6 +19,7 @@ package remote_test
 import (
 	"context"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/datasource"
 	"strconv"
 	"strings"
 	"sync"
@@ -126,7 +127,7 @@ func TestEtcdClient(t *testing.T) {
 	}
 
 	// base test
-	inst := NewRegistry(client.Options{})
+	inst := NewRegistry(datasource.Options{})
 	if inst == nil || strings.Index(endpoint, FirstEndpoint) < 0 {
 		t.Fatalf("TestEtcdClient failed, %s != %s", FirstEndpoint, endpoint)
 	}
@@ -135,7 +136,7 @@ func TestEtcdClient(t *testing.T) {
 	etcd.Configuration().ClusterAddresses = "x"
 	etcd.Configuration().InitClusterInfo()
 	etcd.Configuration().DialTimeout = dialTimeout
-	inst = NewRegistry(client.Options{})
+	inst = NewRegistry(datasource.Options{})
 	if inst == nil {
 		t.Fatalf("TestEtcdClient failed, %#v", err)
 	}

@@ -88,7 +88,7 @@ func NewAggregator(t sd.Type, cfg *sd.Config) *Aggregator {
 	as := &Aggregator{Type: t}
 	for _, name := range repos {
 		// create and get all plugin instances
-		repo, err := sd.New(sd.Options{PluginImplName: sd.ImplName(name)})
+		repo, err := sd.New(sd.Options{Kind: sd.Kind(name)})
 		if err != nil {
 			log.Errorf(err, "failed to new plugin instance[%s]", name)
 			continue

@@ -19,27 +19,28 @@ package client
 
 import (
 	"fmt"
+	"github.com/apache/servicecomb-service-center/datasource"
 	"time"
 
 	"github.com/apache/servicecomb-service-center/pkg/backoff"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
-type newClientFunc func(opts Options) Registry
+type newClientFunc func(opts datasource.Options) Registry
 
 var (
-	plugins    = make(map[ImplName]newClientFunc)
+	plugins    = make(map[datasource.Kind]newClientFunc)
 	pluginInst Registry
 )
 
 // load plugins configuration into plugins
 func Install(pluginImplName string, newFunc newClientFunc) {
-	plugins[ImplName(pluginImplName)] = newFunc
+	plugins[datasource.Kind(pluginImplName)] = newFunc
 }
 
 // construct storage plugin instance
 // invoked by sc main process
-func Init(opts Options) error {
+func Init(opts datasource.Options) error {
 	for i := 0; ; i++ {
 		inst, err := New(opts)
 		if err == nil {
@@ -48,21 +49,21 @@ func Init(opts Options) error {
 		}
 
 		t := backoff.GetBackoff().Delay(i)
-		log.Errorf(err, "initialize client[%v] failed, retry after %s", opts.PluginImplName, t)
+		log.Errorf(err, "initialize client[%v] failed, retry after %s", opts.Kind, t)
 		<-time.After(t)
 	}
-	log.Info(fmt.Sprintf("client plugin [%s] enabled", opts.PluginImplName))
+	log.Info(fmt.Sprintf("client plugin [%s] enabled", opts.Kind))
 	return nil
 }
 
-func New(opts Options) (Registry, error) {
-	if opts.PluginImplName == "" {
+func New(opts datasource.Options) (Registry, error) {
+	if opts.Kind == "" {
 		return nil, fmt.Errorf("plugin implement name is nil")
 	}
 
-	f, ok := plugins[opts.PluginImplName]
+	f, ok := plugins[opts.Kind]
 	if !ok {
-		return nil, fmt.Errorf("plugin implement not supported [%s]", opts.PluginImplName)
+		return nil, fmt.Errorf("plugin implement not supported [%s]", opts.Kind)
 	}
 	inst := f(opts)
 	select {

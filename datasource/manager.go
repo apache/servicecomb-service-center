@@ -26,13 +26,13 @@ import (
 type dataSourceEngine func(opts Options) (DataSource, error)
 
 var (
-	plugins        = make(map[ImplName]dataSourceEngine)
+	plugins        = make(map[Kind]dataSourceEngine)
 	dataSourceInst DataSource
 )
 
 // load plugins configuration into plugins
 func Install(pluginImplName string, engineFunc dataSourceEngine) {
-	plugins[ImplName(pluginImplName)] = engineFunc
+	plugins[Kind(pluginImplName)] = engineFunc
 }
 
 // construct storage plugin instance
@@ -49,20 +49,20 @@ func Install(pluginImplName string, engineFunc dataSourceEngine) {
  * })
  */
 func Init(opts Options) error {
-	if opts.PluginImplName == "" {
+	if opts.Kind == "" {
 		return nil
 	}
 
-	dataSourceEngine, ok := plugins[opts.PluginImplName]
+	dataSourceEngine, ok := plugins[opts.Kind]
 	if !ok {
-		return fmt.Errorf("plugin implement not supported [%s]", opts.PluginImplName)
+		return fmt.Errorf("plugin implement not supported [%s]", opts.Kind)
 	}
 	var err error
 	dataSourceInst, err = dataSourceEngine(opts)
 	if err != nil {
 		return err
 	}
-	log.Info(fmt.Sprintf("datasource plugin [%s] enabled", opts.PluginImplName))
+	log.Info(fmt.Sprintf("datasource plugin [%s] enabled", opts.Kind))
 	return nil
 }
 

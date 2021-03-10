@@ -19,6 +19,7 @@ package buildin
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/datasource"
 
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 )
@@ -73,7 +74,7 @@ func (ec *Registry) Compact(ctx context.Context, reserve int64) error {
 func (ec *Registry) Close() {
 }
 
-func NewRegistry(opts client.Options) client.Registry {
+func NewRegistry(opts datasource.Options) client.Registry {
 	return &Registry{
 		ready: make(chan int),
 	}

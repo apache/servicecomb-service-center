@@ -40,7 +40,7 @@ const (
 
 type Type int
 
-type ImplName string
+type Kind string
 
 func (st Type) String() string {
 	if int(st) < 0 {

@@ -21,5 +21,5 @@ import "errors"
 
 var (
 	ErrPluginNameNil    = errors.New("plugin implement name is nil")
-	ErrPluginNotSupport = errors.New("plugin implement not supported [#{opts.PluginImplName}]")
+	ErrPluginNotSupport = errors.New("plugin implement not supported [#{opts.Kind}]")
 )

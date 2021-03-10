@@ -28,16 +28,16 @@ import (
 
 func TestInit(t *testing.T) {
 	t.Run("init microservice data source plugin, should not pass", func(t *testing.T) {
-		pluginName := sd.ImplName("unknown")
+		pluginName := sd.Kind("unknown")
 		err := sd.Init(sd.Options{
-			PluginImplName: pluginName,
+			Kind: pluginName,
 		})
 		assert.Error(t, err)
 	})
 	t.Run("install and init microservice data source plugin, should pass", func(t *testing.T) {
-		pluginName := sd.ImplName("etcd")
+		pluginName := sd.Kind("etcd")
 		err := sd.Init(sd.Options{
-			PluginImplName: pluginName,
+			Kind: pluginName,
 		})
 		assert.NoError(t, err)
 	})
