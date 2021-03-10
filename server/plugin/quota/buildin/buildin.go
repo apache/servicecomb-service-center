@@ -19,7 +19,6 @@ package buildin
 
 import (
 	"context"
-
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	mgr "github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
@@ -40,14 +39,21 @@ func New() mgr.Instance {
 type Quota struct {
 }
 
-//申请配额sourceType serviceinstance servicetype
-func (q *Quota) Apply4Quotas(ctx context.Context, res *quota.ApplyQuotaResource) *quota.ApplyQuotaResult {
-	df, ok := mgr.DynamicPluginFunc(quota.QUOTA, "Apply4Quotas").(func(context.Context, *quota.ApplyQuotaResource) *quota.ApplyQuotaResult)
-	if ok {
-		return df(ctx, res)
+func (q *Quota) GetQuota(t quota.ResourceType) int64 {
+	switch t {
+	case quota.TypeInstance:
+		return int64(quota.DefaultInstanceQuota)
+	case quota.TypeService:
+		return int64(quota.DefaultServiceQuota)
+	case quota.TypeRule:
+		return int64(quota.DefaultRuleQuota)
+	case quota.TypeSchema:
+		return int64(quota.DefaultSchemaQuota)
+	case quota.TypeTag:
+		return int64(quota.DefaultTagQuota)
+	default:
+		return 0
 	}
-
-	return CommonQuotaCheck(ctx, res, resourceQuota(res.QuotaType), resourceLimitHandler)
 }
 
 //向配额中心上报配额使用量

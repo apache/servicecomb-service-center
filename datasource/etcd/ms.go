@@ -63,16 +63,15 @@ func (ds *DataSource) RegisterService(ctx context.Context, request *pb.CreateSer
 		Version:     service.Version,
 	}
 
-	reporter := checkQuota(ctx, domainProject)
-	defer reporter.Close(ctx)
-	if reporter != nil && reporter.Err != nil {
+	Err := checkQuota(ctx, domainProject)
+	if Err != nil {
 		log.Error(fmt.Sprintf("create micro-service[%s] failed, operator: %s",
-			serviceFlag, remoteIP), reporter.Err)
+			serviceFlag, remoteIP), Err)
 		resp := &pb.CreateServiceResponse{
-			Response: pb.CreateResponseWithSCErr(reporter.Err),
+			Response: pb.CreateResponseWithSCErr(Err),
 		}
-		if reporter.Err.InternalError() {
-			return resp, reporter.Err
+		if Err.InternalError() {
+			return resp, Err
 		}
 		return resp, nil
 	}
@@ -160,9 +159,7 @@ func (ds *DataSource) RegisterService(ctx context.Context, request *pb.CreateSer
 		}, nil
 	}
 
-	if err := reporter.ReportUsedQuota(ctx); err != nil {
-		log.Error("report the used quota failed", err)
-	}
+	//TODO increase usage in quota system
 
 	log.Info(fmt.Sprintf("create micro-service[%s][%s] successfully, operator: %s",
 		service.ServiceId, serviceFlag, remoteIP))
@@ -576,21 +573,19 @@ func (ds *DataSource) RegisterInstance(ctx context.Context, request *pb.Register
 	//先以domain/project的方式组装
 	domainProject := util.ParseDomainProject(ctx)
 
-	var reporter *quota.ApplyQuotaResult
 	if !core.IsSCInstance(ctx) {
-		res := quota.NewApplyQuotaResource(quota.MicroServiceInstanceQuotaType,
+		res := quota.NewApplyQuotaResource(quota.TypeInstance,
 			domainProject, request.Instance.ServiceId, 1)
-		reporter = quota.Apply(ctx, res)
-		defer reporter.Close(ctx)
+		applyErr := quota.Apply(ctx, res)
 
-		if reporter.Err != nil {
+		if applyErr != nil {
 			log.Error(fmt.Sprintf("register instance failed, %s, operator %s",
-				instanceFlag, remoteIP), reporter.Err)
+				instanceFlag, remoteIP), applyErr)
 			response := &pb.RegisterInstanceResponse{
-				Response: pb.CreateResponseWithSCErr(reporter.Err),
+				Response: pb.CreateResponseWithSCErr(applyErr),
 			}
-			if reporter.Err.InternalError() {
-				return response, reporter.Err
+			if applyErr.InternalError() {
+				return response, applyErr
 			}
 			return response, nil
 		}
@@ -645,10 +640,7 @@ func (ds *DataSource) RegisterInstance(ctx context.Context, request *pb.Register
 		}, nil
 	}
 
-	if err := reporter.ReportUsedQuota(ctx); err != nil {
-		log.Error(fmt.Sprintf("register instance failed, %s, instanceID %s, operator %s",
-			instanceFlag, instanceID, remoteIP), err)
-	}
+	//TODO increase usage in quota system
 
 	log.Info(fmt.Sprintf("register instance %s, instanceID %s, operator %s",
 		instanceFlag, instanceID, remoteIP))
@@ -1823,9 +1815,8 @@ func (ds *DataSource) AddRule(ctx context.Context, request *pb.AddServiceRulesRe
 			Response: pb.CreateResponse(pb.ErrInvalidParams, "Service does not exist."),
 		}, nil
 	}
-	res := quota.NewApplyQuotaResource(quota.RuleQuotaType, domainProject, request.ServiceId, int64(len(request.Rules)))
-	rst := quota.Apply(ctx, res)
-	errQuota := rst.Err
+	res := quota.NewApplyQuotaResource(quota.TypeRule, domainProject, request.ServiceId, int64(len(request.Rules)))
+	errQuota := quota.Apply(ctx, res)
 	if errQuota != nil {
 		log.Errorf(errQuota, "add service[%s] rule failed, operator: %s", request.ServiceId, remoteIP)
 		response := &pb.AddServiceRulesResponse{
@@ -2154,9 +2145,8 @@ func (ds *DataSource) modifySchemas(ctx context.Context, domainProject string, s
 	pluginOps := make([]client.PluginOp, 0)
 	if !ds.isSchemaEditable(service) {
 		if len(service.Schemas) == 0 {
-			res := quota.NewApplyQuotaResource(quota.SchemaQuotaType, domainProject, serviceID, int64(len(nonExistSchemaIds)))
-			rst := quota.Apply(ctx, res)
-			errQuota := rst.Err
+			res := quota.NewApplyQuotaResource(quota.TypeSchema, domainProject, serviceID, int64(len(nonExistSchemaIds)))
+			errQuota := quota.Apply(ctx, res)
 			if errQuota != nil {
 				log.Errorf(errQuota, "modify service[%s] schemas failed, operator: %s", serviceID, remoteIP)
 				return errQuota
@@ -2199,9 +2189,8 @@ func (ds *DataSource) modifySchemas(ctx context.Context, domainProject string, s
 	} else {
 		quotaSize := len(needAddSchemas) - len(needDeleteSchemas)
 		if quotaSize > 0 {
-			res := quota.NewApplyQuotaResource(quota.SchemaQuotaType, domainProject, serviceID, int64(quotaSize))
-			rst := quota.Apply(ctx, res)
-			err := rst.Err
+			res := quota.NewApplyQuotaResource(quota.TypeSchema, domainProject, serviceID, int64(quotaSize))
+			err := quota.Apply(ctx, res)
 			if err != nil {
 				log.Errorf(err, "modify service[%s] schemas failed, operator: %s", serviceID, remoteIP)
 				return err
