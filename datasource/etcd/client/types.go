@@ -24,8 +24,6 @@ import (
 	"github.com/coreos/etcd/mvcc/mvccpb"
 )
 
-type ImplName string
-
 type ActionType int
 
 func (at ActionType) String() string {

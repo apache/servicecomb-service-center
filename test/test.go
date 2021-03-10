@@ -41,6 +41,6 @@ func init() {
 	} else {
 		archaius.Set("registry.heartbeat.kind", "checker")
 	}
-	datasource.Init(datasource.Options{PluginImplName: datasource.ImplName(t.(string))})
+	datasource.Init(datasource.Options{Kind: datasource.Kind(t.(string))})
 	core.ServiceAPI, core.InstanceAPI = service.AssembleResources()
 }

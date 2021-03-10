@@ -21,6 +21,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/datasource"
 	"net/url"
 	"strconv"
 	"strings"
@@ -878,7 +879,7 @@ func callback(action client.ActionType, rev int64, kvs []*mvccpb.KeyValue, cb cl
 	})
 }
 
-func NewRegistry(opts client.Options) client.Registry {
+func NewRegistry(opts datasource.Options) client.Registry {
 	log.Warnf("enable etcd registry mode")
 
 	inst := &Client{}

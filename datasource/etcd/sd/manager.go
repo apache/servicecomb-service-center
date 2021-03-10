@@ -26,13 +26,13 @@ import (
 type newCacheFunc func(opts Options) AdaptorRepository
 
 var (
-	plugins    = make(map[ImplName]newCacheFunc)
+	plugins    = make(map[Kind]newCacheFunc)
 	pluginInst AdaptorRepository
 )
 
 // load plugins configuration into plugins
 func Install(pluginImplName string, newFunc newCacheFunc) {
-	plugins[ImplName(pluginImplName)] = newFunc
+	plugins[Kind(pluginImplName)] = newFunc
 }
 
 // construct storage plugin instance
@@ -43,18 +43,18 @@ func Init(opts Options) error {
 		return err
 	}
 	pluginInst = inst
-	log.Info(fmt.Sprintf("cache plugin [%s] enabled", opts.PluginImplName))
+	log.Info(fmt.Sprintf("cache plugin [%s] enabled", opts.Kind))
 	return nil
 }
 
 func New(opts Options) (AdaptorRepository, error) {
-	if opts.PluginImplName == "" {
+	if opts.Kind == "" {
 		return nil, fmt.Errorf("plugin implement name is nil")
 	}
 
-	f, ok := plugins[opts.PluginImplName]
+	f, ok := plugins[opts.Kind]
 	if !ok {
-		return nil, fmt.Errorf("plugin implement not supported [%s]", opts.PluginImplName)
+		return nil, fmt.Errorf("plugin implement not supported [%s]", opts.Kind)
 	}
 	inst := f(opts)
 	return inst, nil

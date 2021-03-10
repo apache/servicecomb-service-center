@@ -17,7 +17,7 @@
 
 package datasource
 
-type ImplName string
+type Kind string
 
 type DLockRequest struct {
 	// ID is the lock global unique id

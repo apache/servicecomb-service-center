@@ -65,16 +65,16 @@ func NewDataSource(opts datasource.Options) (datasource.DataSource, error) {
 	registryAddresses := strings.Join(Configuration().RegistryAddresses(), ",")
 	Configuration().SslEnabled = opts.SslEnabled && strings.Contains(strings.ToLower(registryAddresses), "https://")
 
-	if err := inst.initialize(); err != nil {
+	if err := inst.initialize(opts); err != nil {
 		return nil, err
 	}
 	return inst, nil
 }
 
-func (ds *DataSource) initialize() error {
+func (ds *DataSource) initialize(opts datasource.Options) error {
 	ds.initClustersIndex()
 	// init client/sd plugins
-	ds.initPlugins()
+	ds.initPlugins(opts)
 	// Add events handlers
 	event.Initialize()
 	// Wait for kv store ready
@@ -97,14 +97,13 @@ func (ds *DataSource) initClustersIndex() {
 	}
 }
 
-func (ds *DataSource) initPlugins() {
-	kind := config.GetString("registry.kind", "", config.WithStandby("registry_plugin"))
-	err := client.Init(client.Options{PluginImplName: client.ImplName(kind)})
+func (ds *DataSource) initPlugins(opts datasource.Options) {
+	err := client.Init(opts)
 	if err != nil {
 		log.Fatalf(err, "client init failed")
 	}
-	kind = config.GetString("discovery.kind", "", config.WithStandby("discovery_plugin"))
-	err = sd.Init(sd.Options{PluginImplName: sd.ImplName(kind)})
+	kind := config.GetString("discovery.kind", "", config.WithStandby("discovery_plugin"))
+	err = sd.Init(sd.Options{Kind: sd.Kind(kind)})
 	if err != nil {
 		log.Fatalf(err, "sd init failed")
 	}

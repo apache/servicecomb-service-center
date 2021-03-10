@@ -19,5 +19,5 @@ package sd
 
 //Options contains configuration for plugins
 type Options struct {
-	PluginImplName ImplName
+	Kind Kind
 }

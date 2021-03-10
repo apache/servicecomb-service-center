@@ -21,6 +21,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/datasource"
 	"net/url"
 	"strings"
 	"time"
@@ -535,7 +536,7 @@ func callback(action client.ActionType, rev int64, kvs []*mvccpb.KeyValue, cb cl
 	})
 }
 
-func getEmbedInstance(opts client.Options) client.Registry {
+func getEmbedInstance(opts datasource.Options) client.Registry {
 	log.Warnf("enable embedded registry mode")
 
 	hostName := "sc-0"

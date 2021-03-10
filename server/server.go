@@ -108,9 +108,9 @@ func (s *ServiceCenterServer) initEndpoints() {
 
 func (s *ServiceCenterServer) initDatasource() {
 	// init datasource
-	kind := datasource.ImplName(config.GetString("registry.kind", "", config.WithStandby("registry_plugin")))
+	kind := datasource.Kind(config.GetString("registry.kind", "", config.WithStandby("registry_plugin")))
 	if err := datasource.Init(datasource.Options{
-		PluginImplName: kind,
+		Kind:           kind,
 		SslEnabled:     config.GetSSL().SslEnabled,
 		InstanceTTL:    config.GetRegistry().InstanceTTL,
 		SchemaEditable: config.GetRegistry().SchemaEditable,
