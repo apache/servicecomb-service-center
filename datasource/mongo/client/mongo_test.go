@@ -23,6 +23,9 @@ import (
 	"context"
 	"testing"
 
+	_ "github.com/apache/servicecomb-service-center/server/init"
+	_ "github.com/apache/servicecomb-service-center/server/plugin/security/cipher/buildin"
+
 	"github.com/go-chassis/go-chassis/v2/storage"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
