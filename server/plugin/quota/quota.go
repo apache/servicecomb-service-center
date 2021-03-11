@@ -89,7 +89,7 @@ func NewApplyQuotaResource(quotaType ResourceType, domainProject, serviceID stri
 
 type Manager interface {
 	RemandQuotas(ctx context.Context, quotaType ResourceType)
-	GetQuota(t ResourceType) int64
+	GetQuota(ctx context.Context, t ResourceType) int64
 }
 
 type ResourceType int
@@ -119,7 +119,7 @@ func Apply(ctx context.Context, res *ApplyQuotaResource) *pb.Error {
 		return pb.NewError(pb.ErrInternal, err.Error())
 	}
 
-	limitQuota := plugin.Plugins().Instance(QUOTA).(Manager).GetQuota(res.QuotaType)
+	limitQuota := plugin.Plugins().Instance(QUOTA).(Manager).GetQuota(ctx, res.QuotaType)
 	curNum, err := GetResourceUsage(ctx, res)
 	if err != nil {
 		log.Errorf(err, "%s quota check failed", res.QuotaType)

@@ -39,7 +39,7 @@ func New() mgr.Instance {
 type Quota struct {
 }
 
-func (q *Quota) GetQuota(t quota.ResourceType) int64 {
+func (q *Quota) GetQuota(ctx context.Context, t quota.ResourceType) int64 {
 	switch t {
 	case quota.TypeInstance:
 		return int64(quota.DefaultInstanceQuota)
