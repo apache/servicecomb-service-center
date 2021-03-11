@@ -37,8 +37,6 @@ import (
 	//quota
 	_ "github.com/apache/servicecomb-service-center/server/plugin/quota/buildin"
 
-	_ "github.com/apache/servicecomb-service-center/server/plugin/quota/unlimit"
-
 	//auth
 	_ "github.com/apache/servicecomb-service-center/server/plugin/auth/buildin"
 

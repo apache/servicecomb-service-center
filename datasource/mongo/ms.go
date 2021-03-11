@@ -835,9 +835,8 @@ func (ds *DataSource) modifySchemas(ctx context.Context, service *discovery.Micr
 	var serviceOps []mongo.WriteModel
 	if !ds.isSchemaEditable(service) {
 		if len(service.Schemas) == 0 {
-			res := quota.NewApplyQuotaResource(quota.SchemaQuotaType, util.ParseDomainProject(ctx), serviceID, int64(len(nonExistSchemaIds)))
-			rst := quota.Apply(ctx, res)
-			errQuota := rst.Err
+			res := quota.NewApplyQuotaResource(quota.TypeSchema, util.ParseDomainProject(ctx), serviceID, int64(len(nonExistSchemaIds)))
+			errQuota := quota.Apply(ctx, res)
 			if errQuota != nil {
 				log.Error(fmt.Sprintf("modify service[%s] schemas failed, operator: %s", serviceID, remoteIP), errQuota)
 				return errQuota
@@ -877,9 +876,8 @@ func (ds *DataSource) modifySchemas(ctx context.Context, service *discovery.Micr
 	} else {
 		quotaSize := len(needAddSchemas) - len(needDeleteSchemas)
 		if quotaSize > 0 {
-			res := quota.NewApplyQuotaResource(quota.SchemaQuotaType, util.ParseDomainProject(ctx), serviceID, int64(quotaSize))
-			rst := quota.Apply(ctx, res)
-			err := rst.Err
+			res := quota.NewApplyQuotaResource(quota.TypeSchema, util.ParseDomainProject(ctx), serviceID, int64(quotaSize))
+			err := quota.Apply(ctx, res)
 			if err != nil {
 				log.Error(fmt.Sprintf("modify service[%s] schemas failed, operator: %s", serviceID, remoteIP), err)
 				return err
@@ -1008,9 +1006,8 @@ func (ds *DataSource) AddRule(ctx context.Context, request *discovery.AddService
 	if !exist {
 		return &discovery.AddServiceRulesResponse{Response: discovery.CreateResponse(discovery.ErrServiceNotExists, "Service does not exist")}, nil
 	}
-	res := quota.NewApplyQuotaResource(quota.RuleQuotaType, util.ParseDomainProject(ctx), request.ServiceId, int64(len(request.Rules)))
-	rst := quota.Apply(ctx, res)
-	errQuota := rst.Err
+	res := quota.NewApplyQuotaResource(quota.TypeRule, util.ParseDomainProject(ctx), request.ServiceId, int64(len(request.Rules)))
+	errQuota := quota.Apply(ctx, res)
 	if errQuota != nil {
 		log.Error(fmt.Sprintf("add service[%s] rule failed, operator: %s", request.ServiceId, remoteIP), errQuota)
 		response := &discovery.AddServiceRulesResponse{

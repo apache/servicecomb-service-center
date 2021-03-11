@@ -245,11 +245,11 @@ func GetAllServiceUtil(ctx context.Context) ([]*pb.MicroService, error) {
 }
 
 func RemandServiceQuota(ctx context.Context) {
-	quota.Remand(ctx, quota.MicroServiceQuotaType)
+	quota.Remand(ctx, quota.TypeService)
 }
 
 func RemandInstanceQuota(ctx context.Context) {
-	quota.Remand(ctx, quota.MicroServiceInstanceQuotaType)
+	quota.Remand(ctx, quota.TypeInstance)
 }
 
 func UpdateService(domainProject string, serviceID string, service *pb.MicroService) (opt client.PluginOp, err error) {

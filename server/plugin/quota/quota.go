@@ -19,11 +19,18 @@ package quota
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/metrics"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/prometheus/client_golang/prometheus"
 	"strconv"
 
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/plugin"
-	"github.com/go-chassis/cari/discovery"
+	pb "github.com/go-chassis/cari/discovery"
 )
 
 const QUOTA plugin.Kind = "quota"
@@ -37,11 +44,15 @@ const (
 )
 
 const (
-	RuleQuotaType ResourceType = iota
-	SchemaQuotaType
-	TagQuotaType
-	MicroServiceQuotaType
-	MicroServiceInstanceQuotaType
+	TypeRule ResourceType = iota
+	TypeSchema
+	TypeTag
+	TypeService
+	TypeInstance
+)
+const (
+	TotalService  = "db_service_total"
+	TotalInstance = "db_instance_total"
 )
 
 var (
@@ -58,33 +69,6 @@ func Init() {
 	DefaultSchemaQuota = config.GetInt("quota.cap.schema", defaultSchemaLimit, config.WithStandby("QUOTA_SCHEMA"))
 	DefaultTagQuota = config.GetInt("quota.cap.tag", defaultTagLimit, config.WithStandby("QUOTA_TAG"))
 	DefaultRuleQuota = config.GetInt("quota.cap.rule", defaultRuleLimit, config.WithStandby("QUOTA_RULE"))
-}
-
-type ApplyQuotaResult struct {
-	Err *discovery.Error
-
-	reporter Reporter
-}
-
-func (r *ApplyQuotaResult) ReportUsedQuota(ctx context.Context) error {
-	if r == nil || r.reporter == nil {
-		return nil
-	}
-	return r.reporter.ReportUsedQuota(ctx)
-}
-
-func (r *ApplyQuotaResult) Close(ctx context.Context) {
-	if r == nil || r.reporter == nil {
-		return
-	}
-	r.reporter.Close(ctx)
-}
-
-func NewApplyQuotaResult(reporter Reporter, err *discovery.Error) *ApplyQuotaResult {
-	return &ApplyQuotaResult{
-		reporter: reporter,
-		Err:      err,
-	}
 }
 
 type ApplyQuotaResource struct {
@@ -104,38 +88,87 @@ func NewApplyQuotaResource(quotaType ResourceType, domainProject, serviceID stri
 }
 
 type Manager interface {
-	Apply4Quotas(ctx context.Context, res *ApplyQuotaResource) *ApplyQuotaResult
 	RemandQuotas(ctx context.Context, quotaType ResourceType)
-}
-
-type Reporter interface {
-	ReportUsedQuota(ctx context.Context) error
-	Close(ctx context.Context)
+	GetQuota(t ResourceType) int64
 }
 
 type ResourceType int
 
 func (r ResourceType) String() string {
 	switch r {
-	case RuleQuotaType:
+	case TypeRule:
 		return "RULE"
-	case SchemaQuotaType:
+	case TypeSchema:
 		return "SCHEMA"
-	case TagQuotaType:
+	case TypeTag:
 		return "TAG"
-	case MicroServiceQuotaType:
+	case TypeService:
 		return "SERVICE"
-	case MicroServiceInstanceQuotaType:
+	case TypeInstance:
 		return "INSTANCE"
 	default:
 		return "RESOURCE" + strconv.Itoa(int(r))
 	}
 }
 
-func Apply(ctx context.Context, res *ApplyQuotaResource) *ApplyQuotaResult {
-	return plugin.Plugins().Instance(QUOTA).(Manager).Apply4Quotas(ctx, res)
+//申请配额sourceType serviceinstance servicetype
+func Apply(ctx context.Context, res *ApplyQuotaResource) *pb.Error {
+	if res == nil {
+		err := errors.New("invalid parameters")
+		log.Errorf(err, "quota check failed")
+		return pb.NewError(pb.ErrInternal, err.Error())
+	}
+
+	limitQuota := plugin.Plugins().Instance(QUOTA).(Manager).GetQuota(res.QuotaType)
+	curNum, err := GetResourceUsage(ctx, res)
+	if err != nil {
+		log.Errorf(err, "%s quota check failed", res.QuotaType)
+		return pb.NewError(pb.ErrInternal, err.Error())
+	}
+	if curNum+res.QuotaSize > limitQuota {
+		mes := fmt.Sprintf("no quota to create %s, max num is %d, curNum is %d, apply num is %d",
+			res.QuotaType, limitQuota, curNum, res.QuotaSize)
+		log.Errorf(nil, mes)
+		return pb.NewError(pb.ErrNotEnoughQuota, mes)
+	}
+	return nil
 }
 
 func Remand(ctx context.Context, quotaType ResourceType) {
 	plugin.Plugins().Instance(QUOTA).(Manager).RemandQuotas(ctx, quotaType)
+}
+func GetResourceUsage(ctx context.Context, res *ApplyQuotaResource) (int64, error) {
+	serviceID := res.ServiceID
+	switch res.QuotaType {
+	case TypeService:
+		return metrics.GaugeValue(TotalService, prometheus.Labels{"domain": util.ParseDomain(ctx)}), nil
+	case TypeInstance:
+		return metrics.GaugeValue(TotalInstance, prometheus.Labels{"domain": util.ParseDomain(ctx)}), nil
+	case TypeRule:
+		{
+			resp, err := datasource.Instance().GetRules(ctx, &pb.GetServiceRulesRequest{
+				ServiceId: serviceID,
+			})
+			if err != nil {
+				return 0, err
+			}
+			return int64(len(resp.Rules)), nil
+		}
+	case TypeSchema:
+		{
+			resp, err := datasource.Instance().GetAllSchemas(ctx, &pb.GetAllSchemaRequest{
+				ServiceId:  serviceID,
+				WithSchema: false,
+			})
+			if err != nil {
+				return 0, err
+			}
+			return int64(len(resp.Schemas)), nil
+		}
+	case TypeTag:
+		// always re-create the service old tags
+		return 0, nil
+	default:
+		return 0, fmt.Errorf("not define quota type '%s'", res.QuotaType)
+	}
 }

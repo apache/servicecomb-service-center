@@ -463,12 +463,12 @@ func toDependencyFilterOptions(in *pb.GetDependenciesRequest) (opts []serviceUti
 	return opts
 }
 
-func checkQuota(ctx context.Context, domainProject string) *quota.ApplyQuotaResult {
+func checkQuota(ctx context.Context, domainProject string) *pb.Error {
 	if core.IsSCInstance(ctx) {
 		log.Debugf("skip quota check")
 		return nil
 	}
-	res := quota.NewApplyQuotaResource(quota.MicroServiceQuotaType, domainProject, "", 1)
+	res := quota.NewApplyQuotaResource(quota.TypeService, domainProject, "", 1)
 	rst := quota.Apply(ctx, res)
 	return rst
 }

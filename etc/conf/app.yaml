@@ -172,7 +172,7 @@ tracing:
       rate:
 
 quota:
-  kind:
+  kind: buildin
 
 
 syncer:

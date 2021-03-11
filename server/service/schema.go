@@ -129,9 +129,8 @@ func (s *MicroServiceService) canModifySchema(ctx context.Context, domainProject
 		return pb.NewError(pb.ErrInvalidParams, err.Error())
 	}
 
-	res := quota.NewApplyQuotaResource(quota.SchemaQuotaType, domainProject, serviceID, 1)
-	rst := quota.Apply(ctx, res)
-	errQuota := rst.Err
+	res := quota.NewApplyQuotaResource(quota.TypeSchema, domainProject, serviceID, 1)
+	errQuota := quota.Apply(ctx, res)
 	if errQuota != nil {
 		log.Errorf(errQuota, "update schema[%s/%s] failed, operator: %s", serviceID, schemaID, remoteIP)
 		return errQuota
