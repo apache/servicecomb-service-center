@@ -27,19 +27,3 @@ db.createUser(
         ]
     }
 );
-
-//index
-db.service.createIndex({"service.service_id": 1}, {unique: true});
-db.service.createIndex({
-    "service.app": 1,
-    "service.service_name": 1,
-    "service.env": 1,
-    "service.version": 1,
-    "domain": 1,
-    "project": 1,
-}, {unique: true});
-db.instance.createIndex({"refresh_time": 1}, {expireAfterSeconds: 60});
-db.instance.createIndex({"instance.service_id": 1});
-db.schema.createIndex({"domain": 1, "project": 1, "service_id": 1});
-db.rule.createIndex({"domain": 1, "project": 1, "service_id": 1});
-db.dependency.createIndex({"domain": 1, "project": 1, "service_key": 1});

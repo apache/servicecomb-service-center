@@ -1,0 +1,179 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+server:
+  host: 127.0.0.1
+  port: 30100
+  request:
+    maxHeaderBytes: 32768
+    maxBodyBytes: 2097152
+    headerTimeout: 60s
+    timeout: 60s
+  response:
+    timeout: 60s
+  idle:
+    timeout: 60s
+  pprof:
+    mode: 0
+  limit:
+    #ttl=m, s, ms
+    unit: s
+    #set 0 to disable rate limit
+    connections: 0
+    #list of places to look for IP address
+    ipLookups: RemoteAddr,X-Forwarded-For,X-Real-IP
+
+gov:
+  plugins:
+    - name: kie
+      type: kie
+      endpoint: http://127.0.0.1:30110
+
+log:
+  # DEBUG, INFO, WARN, ERROR, FATAL
+  level: DEBUG
+  file: ./service-center.log
+  accessEnable: false
+  # access log format: remoteIp requestReceiveTime "method requestUri proto" statusCode requestBodySize delay(ms)
+  # example: 127.0.0.1 2006-01-02T15:04:05.000Z07:00 "GET /v4/default/registry/microservices HTTP/1.1" 200 0 0
+  # access log inherits log's rotate and backup configuration
+  # whether enable access log
+  # enable_access_log = true
+  # access log file
+  accessFile: ./access.log
+  # log format(text or json type)
+  format: text
+  # whether enable record syslog
+  system: false
+  # MaxSize of a log file before rotate. By M Bytes.
+  rotateSize: 20
+  # Max counts to keep of a log's backup files.
+  backupCount: 50
+
+ssl:
+  dir:
+  # ssl.mode enable ssl or not, set 1 if enable
+  mode: 0
+  # minimal tls protocol, [TLSv1.0, TLSv1.1, TLSv1.2]
+  minVersion: TLSv1.2
+  # ssl.verifyClient enable verify client certification CN
+  verifyClient: 1
+  ciphers: TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_128_GCM_SHA256
+
+plugin:
+  # plugin.dir is the directory of the *.so files
+  dir:
+
+registry:
+  # buildin, etcd, embeded_etcd, mongo
+  kind: mongo
+  # registry cache, if this option value set 0, service center can run
+  # in lower memory but no longer push the events to client.
+  cache:
+    mode: 1
+    # the cache will be clear after X, if not set cache will be never clear
+    ttl:
+  # enabled if registry.kind equal to etcd or embeded_etcd
+  etcd:
+    # the interval of etcd health check, aggregation conflict check and sync loop
+    autoSyncInterval: 30s
+    compact:
+      # indicate how many revision you want to keep in etcd
+      indexDelta: 100
+      interval: 12h
+    cluster:
+      # if registry_plugin equals to 'embeded_etcd', then
+      # name: sc-0
+      # managerEndpoints: http://127.0.0.1:2380"
+      # endpoints: sc-0=http://127.0.0.1:2380
+      # if registry_plugin equals to 'etcd', then
+      # endpoints: 127.0.0.1:2379
+      endpoints: 127.0.0.1:2379
+    # the timeout for failing to establish a connection
+    connect:
+      timeout: 10s
+    # the timeout for failing to read response of registry
+    request:
+      timeout: 30s
+  mongo:
+    heartbeat:
+      # Mongo's heartbeat plugin
+      # heartbeat.kind="checker or cache"
+      # if heartbeat.kind equals to 'cache', should set cacheCapacity,workerNum and taskTimeout
+      # capacity = 10000
+      # workerNum = 10
+      # timeout = 10
+      kind: cache
+      cacheCapacity: 10000
+      workerNum: 10
+      timeout: 10
+    cluster:
+      uri: mongodb://sc:123@localhost:27017
+      sslEnabled: false
+      rootCAFile: /opt/ssl/ca.pem
+      verifyPeer: false
+      certFile: /opt/ssl/client.crt
+      keyFile: /opt/ssl/client.key
+
+  service:
+    # enable the job clear the microservices which deploy no instance
+    clearEnable: false
+    # the interval of job
+    clearInterval: 12h
+    # the duration between current datetime and microservice created datetime
+    clearTTL: 24h
+    globalVisible:
+  instance:
+    ttl:
+
+  schema:
+    # if want disable Test Schema, SchemaDisable set true
+    disable: false
+    # if want disable modification of Schema in production environment, SchemaEditable set false
+    editable: false
+  # enable to register sc itself when startup
+  selfRegister: 1
+
+# pluggable discovery service
+discovery:
+  kind: etcd
+  aggregate:
+    mode:
+
+rbac:
+  enable: false
+  privateKeyFile:
+  publicKeyFile:
+
+metrics:
+  interval: 30s
+
+tracing:
+  kind:
+  zipkin:
+    collector:
+      # type should be file or server
+      type:
+      path:
+      endpoint:
+    sampler:
+      rate:
+
+quota:
+  kind:
+
+
+syncer:
+  enabled: false
