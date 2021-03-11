@@ -23,7 +23,7 @@ import (
 
 	pb "github.com/go-chassis/cari/discovery"
 
-	"github.com/apache/servicecomb-service-center/datasource/mongo/db"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
@@ -48,7 +48,7 @@ func GetAllConsumerIds(ctx context.Context, provider *pb.MicroService) (allow []
 	return allow, deny, nil
 }
 
-func GetConsumerIDsWithFilter(ctx context.Context, provider *pb.MicroService, rules []*db.Rule) (allow []string, deny []string, err error) {
+func GetConsumerIDsWithFilter(ctx context.Context, provider *pb.MicroService, rules []*model.Rule) (allow []string, deny []string, err error) {
 	domainProject := util.ParseDomainProject(ctx)
 	dr := NewProviderDependencyRelation(ctx, domainProject, provider)
 	consumerIDs, err := dr.GetDependencyConsumerIds()

@@ -21,15 +21,12 @@ import (
 	"context"
 	"strings"
 
-	pb "github.com/go-chassis/cari/discovery"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/x/bsonx"
-
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/db"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	pb "github.com/go-chassis/cari/discovery"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type InstanceSlice []*pb.MicroServiceInstance
@@ -44,17 +41,6 @@ func (s InstanceSlice) Swap(i, j int) {
 
 func (s InstanceSlice) Less(i, j int) bool {
 	return s[i].InstanceId < s[j].InstanceId
-}
-
-func BuildIndexDoc(keys ...string) mongo.IndexModel {
-	keysDoc := bsonx.Doc{}
-	for _, key := range keys {
-		keysDoc = keysDoc.Append(key, bsonx.Int32(1))
-	}
-	index := mongo.IndexModel{
-		Keys: keysDoc,
-	}
-	return index
 }
 
 func StringBuilder(data []string) string {
@@ -78,7 +64,7 @@ func statistics(ctx context.Context, withShared bool) (*pb.Statistics, error) {
 	domain := util.ParseDomain(ctx)
 	project := util.ParseProject(ctx)
 
-	filter := bson.M{db.ColumnDomain: domain, db.ColumnProject: project}
+	filter := bson.M{model.ColumnDomain: domain, model.ColumnProject: project}
 
 	services, err := GetServices(ctx, filter)
 	if err != nil {
