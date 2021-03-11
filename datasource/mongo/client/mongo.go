@@ -23,12 +23,14 @@ import (
 	"io/ioutil"
 	"time"
 
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
-	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/go-chassis/go-chassis/v2/storage"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+
+	"github.com/apache/servicecomb-service-center/pkg/gopool"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/server/plugin/security/cipher"
 )
 
 const (
@@ -128,7 +130,13 @@ func (mc *MongoClient) HealthCheck(ctx context.Context) {
 }
 
 func (mc *MongoClient) newClient(ctx context.Context) (err error) {
-	clientOptions := []*options.ClientOptions{options.Client().ApplyURI(mc.dbconfig.URI)}
+	var uri string
+	uri, err = cipher.Decrypt(mc.dbconfig.URI)
+	if err != nil {
+		log.Info("cipher fallback: " + err.Error())
+		uri = mc.dbconfig.URI
+	}
+	clientOptions := []*options.ClientOptions{options.Client().ApplyURI(uri)}
 	if mc.dbconfig.SSLEnabled {
 		if mc.dbconfig.RootCA == "" {
 			err = ErrRootCAMissing

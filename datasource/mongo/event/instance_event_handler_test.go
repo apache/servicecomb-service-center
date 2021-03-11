@@ -32,6 +32,9 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/mongo/db"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
 	"github.com/apache/servicecomb-service-center/server/syncernotify"
+
+	_ "github.com/apache/servicecomb-service-center/server/init"
+	_ "github.com/apache/servicecomb-service-center/server/plugin/security/cipher/buildin"
 )
 
 func init() {

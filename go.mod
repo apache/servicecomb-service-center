@@ -19,8 +19,8 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-chassis/cari v0.2.0
 	github.com/go-chassis/foundation v0.3.0
-	github.com/go-chassis/go-archaius v1.4.0
-	github.com/go-chassis/go-chassis/v2 v2.1.1-0.20210218100404-85e04ad6bd31
+	github.com/go-chassis/go-archaius v1.5.1
+	github.com/go-chassis/go-chassis/v2 v2.1.2-0.20210310004133-c9bc42149a18
 	github.com/go-chassis/kie-client v0.1.0
 	github.com/golang/protobuf v1.4.2 // indirect
 	github.com/google/go-cmp v0.5.4 // indirect

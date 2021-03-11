@@ -22,6 +22,9 @@ import (
 	"testing"
 	"time"
 
+	_ "github.com/apache/servicecomb-service-center/server/init"
+	_ "github.com/apache/servicecomb-service-center/server/plugin/security/cipher/buildin"
+
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/go-chassis/v2/storage"
 	"github.com/stretchr/testify/assert"
