@@ -30,7 +30,8 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/db"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
+	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"github.com/apache/servicecomb-service-center/pkg/cluster"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -154,7 +155,7 @@ func (ds *DataSource) registryService(pCtx context.Context) error {
 		respG, err := datasource.Instance().GetService(ctx, core.GetServiceRequest(respE.ServiceId))
 		if respG.Response.GetCode() != pb.ResponseSuccess {
 			log.Error(fmt.Sprintf("query service center service[%s] info failed", respE.ServiceId), err)
-			return ErrServiceFileLost
+			return mutil.ErrLostServiceFile
 		}
 		core.Service = respG.Service
 		return nil
@@ -239,7 +240,7 @@ func GetAllServicesAcrossDomainProject(ctx context.Context) (map[string][]*pb.Mi
 
 	filter := bson.M{"domain": domain, "project": project}
 
-	findRes, err := client.GetMongoClient().Find(ctx, db.CollectionService, filter)
+	findRes, err := client.GetMongoClient().Find(ctx, model.CollectionService, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -247,7 +248,7 @@ func GetAllServicesAcrossDomainProject(ctx context.Context) (map[string][]*pb.Mi
 	services := make(map[string][]*pb.MicroService)
 
 	for findRes.Next(ctx) {
-		var mongoService db.Service
+		var mongoService model.Service
 		err := findRes.Decode(&mongoService)
 		if err != nil {
 			return nil, err
@@ -261,7 +262,7 @@ func GetAllServicesAcrossDomainProject(ctx context.Context) (map[string][]*pb.Mi
 func ctxFromDomainProject(pCtx context.Context, domainProject string) (ctx context.Context, err error) {
 	splitIndex := strings.Index(domainProject, path.SPLIT)
 	if splitIndex == -1 {
-		return nil, NewError("invalid domainProject: ", domainProject)
+		return nil, mutil.NewError("invalid domainProject: ", domainProject)
 	}
 	domain := domainProject[:splitIndex]
 	project := domainProject[splitIndex+1:]
@@ -283,7 +284,7 @@ func shouldClear(ctx context.Context, timeLimitStamp string, svc *pb.MicroServic
 		return false, err
 	}
 	if getInstsResp.Response.GetCode() != pb.ResponseSuccess {
-		return false, NewError("get instance failed: ", getInstsResp.Response.GetMessage())
+		return false, mutil.NewError("get instance failed: ", getInstsResp.Response.GetMessage())
 	}
 	//ignore a service if it has instances
 	if len(getInstsResp.Instances) > 0 {

@@ -26,14 +26,14 @@ import (
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/db"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
 )
 
 func init() {
 	// clean the mongodb
-	client.GetMongoClient().Delete(getContext(), db.CollectionInstance, bson.M{})
-	client.GetMongoClient().Delete(getContext(), db.CollectionService, bson.M{})
+	client.GetMongoClient().Delete(getContext(), model.CollectionInstance, bson.M{})
+	client.GetMongoClient().Delete(getContext(), model.CollectionService, bson.M{})
 }
 
 func TestDumpCache(t *testing.T) {

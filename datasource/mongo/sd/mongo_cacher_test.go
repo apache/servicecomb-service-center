@@ -26,7 +26,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson"
 
-	"github.com/apache/servicecomb-service-center/datasource/mongo/db"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
 	"github.com/apache/servicecomb-service-center/datasource/sdcommon"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 )
@@ -103,7 +103,7 @@ func TestNewMongoCacher(t *testing.T) {
 		bson.Marshal(bson.M{"_data": "825FDB4272000000012B022C0100296E5A10043E2D15AC82D9484C8090E68AF36FED2A46645F696400645FD76265066A6D2DF2AAC8D80004"})
 
 	var resources []*sdcommon.Resource
-	resource := &sdcommon.Resource{Key: mockResourceID, DocumentID: mockDocumentID, Value: db.Instance{Domain: "default", Project: "default",
+	resource := &sdcommon.Resource{Key: mockResourceID, DocumentID: mockDocumentID, Value: model.Instance{Domain: "default", Project: "default",
 		Instance: &pb.MicroServiceInstance{InstanceId: mockResourceID, ModTimestamp: "100000"}}}
 	resources = append(resources, resource)
 	test := &sdcommon.ListWatchResp{
@@ -160,7 +160,7 @@ func TestNewMongoCacher(t *testing.T) {
 
 		// prepare updateOp data
 		dataUpdate := &sdcommon.Resource{Key: mockResourceID, DocumentID: mockDocumentID,
-			Value: db.Instance{Domain: "default", Project: "default",
+			Value: model.Instance{Domain: "default", Project: "default",
 				Instance: &pb.MicroServiceInstance{InstanceId: mockResourceID, HostName: "test", ModTimestamp: "100001"}}}
 
 		var mongoUpdateResources []*sdcommon.Resource
@@ -253,7 +253,7 @@ func TestNewMongoCacher(t *testing.T) {
 	t.Run("case watch: caught updateOp event", func(t *testing.T) {
 		// prepare updateOp data
 		dataUpdate := &sdcommon.Resource{Key: mockResourceID, DocumentID: mockDocumentID,
-			Value: db.Instance{Domain: "default", Project: "default",
+			Value: model.Instance{Domain: "default", Project: "default",
 				Instance: &pb.MicroServiceInstance{InstanceId: mockResourceID, HostName: "test", ModTimestamp: "100001"}}}
 
 		var mongoUpdateResources []*sdcommon.Resource

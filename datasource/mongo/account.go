@@ -26,7 +26,8 @@ import (
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/db"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
+	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/privacy"
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -47,7 +48,7 @@ func (ds *DataSource) CreateAccount(ctx context.Context, a *rbac.Account) error 
 		return err
 	}
 	a.ID = util.GenerateUUID()
-	_, err = client.GetMongoClient().Insert(ctx, db.CollectionAccount, a)
+	_, err = client.GetMongoClient().Insert(ctx, model.CollectionAccount, a)
 	if err != nil {
 		if client.IsDuplicateKey(err) {
 			return datasource.ErrAccountDuplicated
@@ -60,9 +61,9 @@ func (ds *DataSource) CreateAccount(ctx context.Context, a *rbac.Account) error 
 
 func (ds *DataSource) AccountExist(ctx context.Context, name string) (bool, error) {
 	filter := bson.M{
-		db.ColumnAccountName: name,
+		model.ColumnAccountName: name,
 	}
-	count, err := client.GetMongoClient().Count(ctx, db.CollectionAccount, filter)
+	count, err := client.GetMongoClient().Count(ctx, model.CollectionAccount, filter)
 	if err != nil {
 		return false, err
 	}
@@ -74,9 +75,9 @@ func (ds *DataSource) AccountExist(ctx context.Context, name string) (bool, erro
 
 func (ds *DataSource) GetAccount(ctx context.Context, name string) (*rbac.Account, error) {
 	filter := bson.M{
-		db.ColumnAccountName: name,
+		model.ColumnAccountName: name,
 	}
-	result, err := client.GetMongoClient().FindOne(ctx, db.CollectionAccount, filter)
+	result, err := client.GetMongoClient().FindOne(ctx, model.CollectionAccount, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +95,7 @@ func (ds *DataSource) GetAccount(ctx context.Context, name string) (*rbac.Accoun
 }
 
 func (ds *DataSource) ListAccount(ctx context.Context) ([]*rbac.Account, int64, error) {
-	cursor, err := client.GetMongoClient().Find(ctx, db.CollectionAccount, bson.M{})
+	cursor, err := client.GetMongoClient().Find(ctx, model.CollectionAccount, bson.M{})
 	if err != nil {
 		return nil, 0, err
 	}
@@ -118,9 +119,9 @@ func (ds *DataSource) DeleteAccount(ctx context.Context, names []string) (bool, 
 		return false, nil
 	}
 	filter := bson.M{
-		db.ColumnAccountName: names[0],
+		model.ColumnAccountName: names[0],
 	}
-	result, err := client.GetMongoClient().Delete(ctx, db.CollectionAccount, filter)
+	result, err := client.GetMongoClient().Delete(ctx, model.CollectionAccount, filter)
 	if err != nil {
 		return false, err
 	}
@@ -132,24 +133,24 @@ func (ds *DataSource) DeleteAccount(ctx context.Context, names []string) (bool, 
 
 func (ds *DataSource) UpdateAccount(ctx context.Context, name string, account *rbac.Account) error {
 	filter := bson.M{
-		db.ColumnAccountName: name,
+		model.ColumnAccountName: name,
 	}
 	update := bson.M{
 		"$set": bson.M{
-			db.ColumnID:                  account.ID,
-			db.ColumnPassword:            account.Password,
-			db.ColumnRoles:               account.Roles,
-			db.ColumnTokenExpirationTime: account.TokenExpirationTime,
-			db.ColumnCurrentPassword:     account.CurrentPassword,
-			db.ColumnStatus:              account.Status,
+			model.ColumnID:                  account.ID,
+			model.ColumnPassword:            account.Password,
+			model.ColumnRoles:               account.Roles,
+			model.ColumnTokenExpirationTime: account.TokenExpirationTime,
+			model.ColumnCurrentPassword:     account.CurrentPassword,
+			model.ColumnStatus:              account.Status,
 		},
 	}
-	res, err := client.GetMongoClient().Update(ctx, db.CollectionAccount, filter, update)
+	res, err := client.GetMongoClient().Update(ctx, model.CollectionAccount, filter, update)
 	if err != nil {
 		return err
 	}
 	if res.ModifiedCount == 0 {
-		return ErrUpdateNodata
+		return mutil.ErrNoDataToUpdate
 	}
 	return nil
 }

@@ -37,9 +37,10 @@ import (
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/db"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/heartbeat"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
+	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -94,7 +95,7 @@ func (ds *DataSource) RegisterService(ctx context.Context, request *discovery.Cr
 			}, nil
 		}
 	}
-	insertRes, err := client.GetMongoClient().Insert(ctx, db.CollectionService, &db.Service{Domain: domain, Project: project, Service: service})
+	insertRes, err := client.GetMongoClient().Insert(ctx, model.CollectionService, &model.Service{Domain: domain, Project: project, Service: service})
 	if err != nil {
 		if client.IsDuplicateKey(err) {
 			serviceIDInner, err := GetServiceID(ctx, &discovery.MicroServiceKey{
@@ -141,7 +142,7 @@ func (ds *DataSource) GetServices(ctx context.Context, request *discovery.GetSer
 	domain := util.ParseDomain(ctx)
 	project := util.ParseProject(ctx)
 
-	filter := bson.M{db.ColumnDomain: domain, db.ColumnProject: project}
+	filter := bson.M{model.ColumnDomain: domain, model.ColumnProject: project}
 
 	services, err := GetServices(ctx, filter)
 	if err != nil {
@@ -161,9 +162,9 @@ func (ds *DataSource) GetApplications(ctx context.Context, request *discovery.Ge
 	project := util.ParseProject(ctx)
 
 	filter := bson.M{
-		db.ColumnDomain:  domain,
-		db.ColumnProject: project,
-		StringBuilder([]string{db.ColumnService, db.ColumnEnv}): request.Environment}
+		model.ColumnDomain:  domain,
+		model.ColumnProject: project,
+		StringBuilder([]string{model.ColumnService, model.ColumnEnv}): request.Environment}
 
 	services, err := GetServices(ctx, filter)
 	if err != nil {
@@ -288,8 +289,8 @@ func (ds *DataSource) DelServicePri(ctx context.Context, serviceID string, force
 	}
 
 	if serviceID == apt.Service.ServiceId {
-		log.Error(fmt.Sprintf("%s micro-service %s failed, operator: %s", title, serviceID, remoteIP), ErrNotAllowDeleteSC)
-		return discovery.CreateResponse(discovery.ErrInvalidParams, ErrNotAllowDeleteSC.Error()), nil
+		log.Error(fmt.Sprintf("%s micro-service %s failed, operator: %s", title, serviceID, remoteIP), mutil.ErrNotAllowDeleteSC)
+		return discovery.CreateResponse(discovery.ErrInvalidParams, mutil.ErrNotAllowDeleteSC.Error()), nil
 	}
 	microservice, err := GetService(ctx, GeneratorServiceFilter(ctx, serviceID))
 	if err != nil {
@@ -317,7 +318,7 @@ func (ds *DataSource) DelServicePri(ctx context.Context, serviceID string, force
 			return discovery.CreateResponse(discovery.ErrDependedOnConsumer, "Can not delete this service, other service rely it."), err
 		}
 		//todo wait for dep interface
-		instancesExist, err := client.GetMongoClient().DocExist(ctx, db.CollectionInstance, bson.M{StringBuilder([]string{db.ColumnInstance, db.ColumnServiceID}): serviceID})
+		instancesExist, err := client.GetMongoClient().DocExist(ctx, model.CollectionInstance, bson.M{StringBuilder([]string{model.ColumnInstance, model.ColumnServiceID}): serviceID})
 		if err != nil {
 			log.Error(fmt.Sprintf("delete micro-service[%s] failed, get instances number failed, operator: %s",
 				serviceID, remoteIP), err)
@@ -331,10 +332,10 @@ func (ds *DataSource) DelServicePri(ctx context.Context, serviceID string, force
 
 	}
 
-	schemaOps := client.MongoOperation{Table: db.CollectionSchema, Models: []mongo.WriteModel{mongo.NewDeleteManyModel().SetFilter(bson.M{db.ColumnServiceID: serviceID})}}
-	rulesOps := client.MongoOperation{Table: db.CollectionRule, Models: []mongo.WriteModel{mongo.NewDeleteManyModel().SetFilter(bson.M{db.ColumnServiceID: serviceID})}}
-	instanceOps := client.MongoOperation{Table: db.CollectionInstance, Models: []mongo.WriteModel{mongo.NewDeleteManyModel().SetFilter(bson.M{StringBuilder([]string{db.ColumnInstance, db.ColumnServiceID}): serviceID})}}
-	serviceOps := client.MongoOperation{Table: db.CollectionService, Models: []mongo.WriteModel{mongo.NewDeleteOneModel().SetFilter(bson.M{StringBuilder([]string{db.ColumnService, db.ColumnServiceID}): serviceID})}}
+	schemaOps := client.MongoOperation{Table: model.CollectionSchema, Models: []mongo.WriteModel{mongo.NewDeleteManyModel().SetFilter(bson.M{model.ColumnServiceID: serviceID})}}
+	rulesOps := client.MongoOperation{Table: model.CollectionRule, Models: []mongo.WriteModel{mongo.NewDeleteManyModel().SetFilter(bson.M{model.ColumnServiceID: serviceID})}}
+	instanceOps := client.MongoOperation{Table: model.CollectionInstance, Models: []mongo.WriteModel{mongo.NewDeleteManyModel().SetFilter(bson.M{StringBuilder([]string{model.ColumnInstance, model.ColumnServiceID}): serviceID})}}
+	serviceOps := client.MongoOperation{Table: model.CollectionService, Models: []mongo.WriteModel{mongo.NewDeleteOneModel().SetFilter(bson.M{StringBuilder([]string{model.ColumnService, model.ColumnServiceID}): serviceID})}}
 
 	err = client.GetMongoClient().MultiTableBatchUpdate(ctx, []client.MongoOperation{schemaOps, rulesOps, instanceOps, serviceOps})
 	if err != nil {
@@ -365,8 +366,8 @@ func (ds *DataSource) UpdateService(ctx context.Context, request *discovery.Upda
 	*discovery.UpdateServicePropsResponse, error) {
 	updateData := bson.M{
 		"$set": bson.M{
-			StringBuilder([]string{db.ColumnService, db.ColumnModTime}):  strconv.FormatInt(time.Now().Unix(), 10),
-			StringBuilder([]string{db.ColumnService, db.ColumnProperty}): request.Properties}}
+			StringBuilder([]string{model.ColumnService, model.ColumnModTime}):  strconv.FormatInt(time.Now().Unix(), 10),
+			StringBuilder([]string{model.ColumnService, model.ColumnProperty}): request.Properties}}
 	err := UpdateService(ctx, GeneratorServiceFilter(ctx, request.ServiceId), updateData)
 	if err != nil {
 		log.Error(fmt.Sprintf("update service %s properties failed, update mongo failed", request.ServiceId), err)
@@ -511,7 +512,7 @@ func (ds *DataSource) GetServicesInfo(ctx context.Context, request *discovery.Ge
 }
 
 func (ds *DataSource) AddTags(ctx context.Context, request *discovery.AddServiceTagsRequest) (*discovery.AddServiceTagsResponse, error) {
-	err := UpdateService(ctx, GeneratorServiceFilter(ctx, request.ServiceId), bson.M{"$set": bson.M{db.ColumnTag: request.Tags}})
+	err := UpdateService(ctx, GeneratorServiceFilter(ctx, request.ServiceId), bson.M{"$set": bson.M{model.ColumnTag: request.Tags}})
 	if err == nil {
 		return &discovery.AddServiceTagsResponse{
 			Response: discovery.CreateResponse(discovery.ResponseSuccess, "Add service tags successfully."),
@@ -576,7 +577,7 @@ func (ds *DataSource) UpdateTag(ctx context.Context, request *discovery.UpdateSe
 	}
 	newTags[request.Key] = request.Value
 
-	err = UpdateService(ctx, GeneratorServiceFilter(ctx, request.ServiceId), bson.M{"$set": bson.M{db.ColumnTag: newTags}})
+	err = UpdateService(ctx, GeneratorServiceFilter(ctx, request.ServiceId), bson.M{"$set": bson.M{model.ColumnTag: newTags}})
 	if err != nil {
 		log.Error(fmt.Sprintf("update service %s tags failed", request.ServiceId), err)
 		return &discovery.UpdateServiceTagResponse{
@@ -617,7 +618,7 @@ func (ds *DataSource) DeleteTags(ctx context.Context, request *discovery.DeleteS
 			delete(newTags, key)
 		}
 	}
-	err = UpdateService(ctx, GeneratorServiceFilter(ctx, request.ServiceId), bson.M{"$set": bson.M{db.ColumnTag: newTags}})
+	err = UpdateService(ctx, GeneratorServiceFilter(ctx, request.ServiceId), bson.M{"$set": bson.M{model.ColumnTag: newTags}})
 	if err != nil {
 		log.Error(fmt.Sprintf("delete service %s tags failed", request.ServiceId), err)
 		return &discovery.DeleteServiceTagsResponse{
@@ -750,7 +751,7 @@ func (ds *DataSource) DeleteSchema(ctx context.Context, request *discovery.Delet
 		}, nil
 	}
 	filter := GeneratorSchemaFilter(ctx, request.ServiceId, request.SchemaId)
-	res, err := client.GetMongoClient().DocDelete(ctx, db.CollectionSchema, filter)
+	res, err := client.GetMongoClient().DocDelete(ctx, model.CollectionSchema, filter)
 	if err != nil {
 		return &discovery.DeleteSchemaResponse{
 			Response: discovery.CreateResponse(discovery.ErrUnavailableBackend, "DeleteSchema failed for delete schema failed."),
@@ -822,7 +823,7 @@ func (ds *DataSource) modifySchemas(ctx context.Context, service *discovery.Micr
 	remoteIP := util.GetIPFromContext(ctx)
 
 	serviceID := service.ServiceId
-	schemasFromDatabase, err := GetSchemas(ctx, bson.M{db.ColumnServiceID: serviceID})
+	schemasFromDatabase, err := GetSchemas(ctx, bson.M{model.ColumnServiceID: serviceID})
 	if err != nil {
 		log.Error(fmt.Sprintf("modify service %s schemas failed, get schemas failed, operator: %s", serviceID, remoteIP), err)
 		return discovery.NewError(discovery.ErrUnavailableBackend, err.Error())
@@ -841,7 +842,7 @@ func (ds *DataSource) modifySchemas(ctx context.Context, service *discovery.Micr
 				log.Error(fmt.Sprintf("modify service[%s] schemas failed, operator: %s", serviceID, remoteIP), errQuota)
 				return errQuota
 			}
-			serviceOps = append(serviceOps, mongo.NewUpdateOneModel().SetUpdate(bson.M{"$set": bson.M{StringBuilder([]string{db.ColumnService, db.ColumnSchemas}): nonExistSchemaIds}}).SetFilter(GeneratorServiceFilter(ctx, serviceID)))
+			serviceOps = append(serviceOps, mongo.NewUpdateOneModel().SetUpdate(bson.M{"$set": bson.M{StringBuilder([]string{model.ColumnService, model.ColumnSchemas}): nonExistSchemaIds}}).SetFilter(GeneratorServiceFilter(ctx, serviceID)))
 		} else {
 			if len(nonExistSchemaIds) != 0 {
 				errInfo := fmt.Errorf("non-existent schemaIDs %v", nonExistSchemaIds)
@@ -854,7 +855,7 @@ func (ds *DataSource) modifySchemas(ctx context.Context, service *discovery.Micr
 					return discovery.NewError(discovery.ErrInternal, err.Error())
 				}
 				if !exist {
-					schemasOps = append(schemasOps, mongo.NewUpdateOneModel().SetFilter(GeneratorSchemaFilter(ctx, serviceID, needUpdateSchema.SchemaId)).SetUpdate(bson.M{"$set": bson.M{db.ColumnSchema: needUpdateSchema.Schema, db.ColumnSchemaSummary: needUpdateSchema.Summary}}))
+					schemasOps = append(schemasOps, mongo.NewUpdateOneModel().SetFilter(GeneratorSchemaFilter(ctx, serviceID, needUpdateSchema.SchemaId)).SetUpdate(bson.M{"$set": bson.M{model.ColumnSchema: needUpdateSchema.Schema, model.ColumnSchemaSummary: needUpdateSchema.Summary}}))
 				} else {
 					log.Warn(fmt.Sprintf("schema[%s/%s] and it's summary already exist, skip to update, operator: %s",
 						serviceID, needUpdateSchema.SchemaId, remoteIP))
@@ -864,7 +865,7 @@ func (ds *DataSource) modifySchemas(ctx context.Context, service *discovery.Micr
 
 		for _, schema := range needAddSchemas {
 			log.Info(fmt.Sprintf("add new schema[%s/%s], operator: %s", serviceID, schema.SchemaId, remoteIP))
-			schemasOps = append(schemasOps, mongo.NewInsertOneModel().SetDocument(&db.Schema{
+			schemasOps = append(schemasOps, mongo.NewInsertOneModel().SetDocument(&model.Schema{
 				Domain:        domain,
 				Project:       project,
 				ServiceID:     serviceID,
@@ -886,7 +887,7 @@ func (ds *DataSource) modifySchemas(ctx context.Context, service *discovery.Micr
 		var schemaIDs []string
 		for _, schema := range needAddSchemas {
 			log.Info(fmt.Sprintf("add new schema[%s/%s], operator: %s", serviceID, schema.SchemaId, remoteIP))
-			schemasOps = append(schemasOps, mongo.NewInsertOneModel().SetDocument(&db.Schema{
+			schemasOps = append(schemasOps, mongo.NewInsertOneModel().SetDocument(&model.Schema{
 				Domain:        domain,
 				Project:       project,
 				ServiceID:     serviceID,
@@ -899,7 +900,7 @@ func (ds *DataSource) modifySchemas(ctx context.Context, service *discovery.Micr
 
 		for _, schema := range needUpdateSchemas {
 			log.Info(fmt.Sprintf("update schema[%s/%s], operator: %s", serviceID, schema.SchemaId, remoteIP))
-			schemasOps = append(schemasOps, mongo.NewUpdateOneModel().SetFilter(GeneratorSchemaFilter(ctx, serviceID, schema.SchemaId)).SetUpdate(bson.M{"$set": bson.M{db.ColumnSchema: schema.Schema, db.ColumnSchemaSummary: schema.Summary}}))
+			schemasOps = append(schemasOps, mongo.NewUpdateOneModel().SetFilter(GeneratorSchemaFilter(ctx, serviceID, schema.SchemaId)).SetUpdate(bson.M{"$set": bson.M{model.ColumnSchema: schema.Schema, model.ColumnSchemaSummary: schema.Summary}}))
 			schemaIDs = append(schemaIDs, schema.SchemaId)
 		}
 
@@ -908,16 +909,16 @@ func (ds *DataSource) modifySchemas(ctx context.Context, service *discovery.Micr
 			schemasOps = append(schemasOps, mongo.NewDeleteOneModel().SetFilter(GeneratorSchemaFilter(ctx, serviceID, schema.SchemaId)))
 		}
 
-		serviceOps = append(serviceOps, mongo.NewUpdateOneModel().SetUpdate(bson.M{"$set": bson.M{StringBuilder([]string{db.ColumnService, db.ColumnSchemas}): schemaIDs}}).SetFilter(GeneratorServiceFilter(ctx, serviceID)))
+		serviceOps = append(serviceOps, mongo.NewUpdateOneModel().SetUpdate(bson.M{"$set": bson.M{StringBuilder([]string{model.ColumnService, model.ColumnSchemas}): schemaIDs}}).SetFilter(GeneratorServiceFilter(ctx, serviceID)))
 	}
 	if len(schemasOps) > 0 {
-		_, err = client.GetMongoClient().BatchUpdate(ctx, db.CollectionSchema, schemasOps)
+		_, err = client.GetMongoClient().BatchUpdate(ctx, model.CollectionSchema, schemasOps)
 		if err != nil {
 			return discovery.NewError(discovery.ErrInternal, err.Error())
 		}
 	}
 	if len(serviceOps) > 0 {
-		_, err = client.GetMongoClient().BatchUpdate(ctx, db.CollectionService, serviceOps)
+		_, err = client.GetMongoClient().BatchUpdate(ctx, model.CollectionService, serviceOps)
 		if err != nil {
 			return discovery.NewError(discovery.ErrInternal, err.Error())
 		}
@@ -980,13 +981,13 @@ func (ds *DataSource) modifySchema(ctx context.Context, serviceID string, schema
 		}
 	}
 	if len(newSchemas) != 0 {
-		updateData := bson.M{StringBuilder([]string{db.ColumnService, db.ColumnSchemas}): newSchemas}
+		updateData := bson.M{StringBuilder([]string{model.ColumnService, model.ColumnSchemas}): newSchemas}
 		err = UpdateService(ctx, GeneratorServiceFilter(ctx, serviceID), bson.M{"$set": updateData})
 		if err != nil {
 			return discovery.NewError(discovery.ErrInternal, err.Error())
 		}
 	}
-	newSchema := bson.M{"$set": bson.M{db.ColumnSchema: schema.Schema, db.ColumnSchemaSummary: schema.Summary}}
+	newSchema := bson.M{"$set": bson.M{model.ColumnSchema: schema.Schema, model.ColumnSchemaSummary: schema.Summary}}
 	err = UpdateSchema(ctx, GeneratorSchemaFilter(ctx, serviceID, schema.SchemaId), newSchema, options.FindOneAndUpdate().SetUpsert(true))
 	if err != nil {
 		return discovery.NewError(discovery.ErrInternal, err.Error())
@@ -1048,7 +1049,7 @@ func (ds *DataSource) AddRule(ctx context.Context, request *discovery.AddService
 			continue
 		}
 		timestamp := strconv.FormatInt(time.Now().Unix(), 10)
-		ruleAdd := &db.Rule{
+		ruleAdd := &model.Rule{
 			Domain:    util.ParseDomain(ctx),
 			Project:   util.ParseProject(ctx),
 			ServiceID: request.ServiceId,
@@ -1063,7 +1064,7 @@ func (ds *DataSource) AddRule(ctx context.Context, request *discovery.AddService
 			},
 		}
 		ruleIDs = append(ruleIDs, ruleAdd.Rule.RuleId)
-		_, err = client.GetMongoClient().Insert(ctx, db.CollectionRule, ruleAdd)
+		_, err = client.GetMongoClient().Insert(ctx, model.CollectionRule, ruleAdd)
 		if err != nil {
 			return &discovery.AddServiceRulesResponse{
 				Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
@@ -1129,7 +1130,7 @@ func (ds *DataSource) DeleteRule(ctx context.Context, request *discovery.DeleteS
 		delRules = append(delRules, mongo.NewDeleteOneModel().SetFilter(GeneratorRuleFilter(ctx, request.ServiceId, ruleID)))
 	}
 	if len(delRules) > 0 {
-		_, err := client.GetMongoClient().BatchDelete(ctx, db.CollectionRule, delRules)
+		_, err := client.GetMongoClient().BatchDelete(ctx, model.CollectionRule, delRules)
 		if err != nil {
 			return &discovery.DeleteServiceRulesResponse{
 				Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
@@ -1177,11 +1178,11 @@ func (ds *DataSource) UpdateRule(ctx context.Context, request *discovery.UpdateS
 	}
 
 	newRule := bson.M{
-		StringBuilder([]string{db.ColumnRule, db.ColumnRuleType}):    request.Rule.RuleType,
-		StringBuilder([]string{db.ColumnRule, db.ColumnPattern}):     request.Rule.Pattern,
-		StringBuilder([]string{db.ColumnRule, db.ColumnAttribute}):   request.Rule.Attribute,
-		StringBuilder([]string{db.ColumnRule, db.ColumnDescription}): request.Rule.Description,
-		StringBuilder([]string{db.ColumnRule, db.ColumnModTime}):     strconv.FormatInt(time.Now().Unix(), 10)}
+		StringBuilder([]string{model.ColumnRule, model.ColumnRuleType}):    request.Rule.RuleType,
+		StringBuilder([]string{model.ColumnRule, model.ColumnPattern}):     request.Rule.Pattern,
+		StringBuilder([]string{model.ColumnRule, model.ColumnAttribute}):   request.Rule.Attribute,
+		StringBuilder([]string{model.ColumnRule, model.ColumnDescription}): request.Rule.Description,
+		StringBuilder([]string{model.ColumnRule, model.ColumnModTime}):     strconv.FormatInt(time.Now().Unix(), 10)}
 
 	err = UpdateRule(ctx, GeneratorRuleFilter(ctx, request.ServiceId, request.RuleId), bson.M{"$set": newRule})
 	if err != nil {
@@ -1200,20 +1201,20 @@ func (ds *DataSource) isSchemaEditable(service *discovery.MicroService) bool {
 
 func ServiceExist(ctx context.Context, service *discovery.MicroServiceKey) (bool, error) {
 	filter := GeneratorServiceNameFilter(ctx, service)
-	return client.GetMongoClient().DocExist(ctx, db.CollectionService, filter)
+	return client.GetMongoClient().DocExist(ctx, model.CollectionService, filter)
 }
 
 func ServiceExistID(ctx context.Context, serviceID string) (bool, error) {
 	filter := GeneratorServiceFilter(ctx, serviceID)
-	return client.GetMongoClient().DocExist(ctx, db.CollectionService, filter)
+	return client.GetMongoClient().DocExist(ctx, model.CollectionService, filter)
 }
 
-func GetService(ctx context.Context, filter bson.M) (*db.Service, error) {
-	findRes, err := client.GetMongoClient().FindOne(ctx, db.CollectionService, filter)
+func GetService(ctx context.Context, filter bson.M) (*model.Service, error) {
+	findRes, err := client.GetMongoClient().FindOne(ctx, model.CollectionService, filter)
 	if err != nil {
 		return nil, err
 	}
-	var svc *db.Service
+	var svc *model.Service
 	if findRes.Err() != nil {
 		//not get any service,not db err
 		return nil, datasource.ErrNoData
@@ -1226,13 +1227,13 @@ func GetService(ctx context.Context, filter bson.M) (*db.Service, error) {
 }
 
 func GetServices(ctx context.Context, filter bson.M) ([]*discovery.MicroService, error) {
-	res, err := client.GetMongoClient().Find(ctx, db.CollectionService, filter)
+	res, err := client.GetMongoClient().Find(ctx, model.CollectionService, filter)
 	if err != nil {
 		return nil, err
 	}
 	var services []*discovery.MicroService
 	for res.Next(ctx) {
-		var tmp db.Service
+		var tmp model.Service
 		err := res.Decode(&tmp)
 		if err != nil {
 			return nil, err
@@ -1242,14 +1243,14 @@ func GetServices(ctx context.Context, filter bson.M) ([]*discovery.MicroService,
 	return services, nil
 }
 
-func GetMongoServices(ctx context.Context, filter bson.M) ([]*db.Service, error) {
-	res, err := client.GetMongoClient().Find(ctx, db.CollectionService, filter)
+func GetMongoServices(ctx context.Context, filter bson.M) ([]*model.Service, error) {
+	res, err := client.GetMongoClient().Find(ctx, model.CollectionService, filter)
 	if err != nil {
 		return nil, err
 	}
-	var services []*db.Service
+	var services []*model.Service
 	for res.Next(ctx) {
-		var tmp *db.Service
+		var tmp *model.Service
 		err := res.Decode(&tmp)
 		if err != nil {
 			return nil, err
@@ -1260,13 +1261,13 @@ func GetMongoServices(ctx context.Context, filter bson.M) ([]*db.Service, error)
 }
 
 func GetServicesVersions(ctx context.Context, filter interface{}) ([]string, error) {
-	res, err := client.GetMongoClient().Find(ctx, db.CollectionService, filter)
+	res, err := client.GetMongoClient().Find(ctx, model.CollectionService, filter)
 	if err != nil {
 		return nil, nil
 	}
 	var versions []string
 	for res.Next(ctx) {
-		var tmp db.Service
+		var tmp model.Service
 		err := res.Decode(&tmp)
 		if err != nil {
 			return nil, err
@@ -1276,7 +1277,7 @@ func GetServicesVersions(ctx context.Context, filter interface{}) ([]string, err
 	return versions, nil
 }
 
-func getServiceDetailUtil(ctx context.Context, mgs *db.Service, countOnly bool, options []string) (*discovery.ServiceDetail, error) {
+func getServiceDetailUtil(ctx context.Context, mgs *model.Service, countOnly bool, options []string) (*discovery.ServiceDetail, error) {
 	serviceDetail := new(discovery.ServiceDetail)
 	serviceID := mgs.Service.ServiceId
 	domainProject := util.ParseDomainProject(ctx)
@@ -1349,21 +1350,21 @@ func getServiceDetailUtil(ctx context.Context, mgs *db.Service, countOnly bool, 
 }
 
 func UpdateService(ctx context.Context, filter interface{}, m bson.M) error {
-	return client.GetMongoClient().DocUpdate(ctx, db.CollectionService, filter, m)
+	return client.GetMongoClient().DocUpdate(ctx, model.CollectionService, filter, m)
 }
 
 func GetRules(ctx context.Context, serviceID string) ([]*discovery.ServiceRule, error) {
 	domain := util.ParseDomain(ctx)
 	project := util.ParseProject(ctx)
-	filter := bson.M{db.ColumnDomain: domain, db.ColumnProject: project, db.ColumnServiceID: serviceID}
+	filter := bson.M{model.ColumnDomain: domain, model.ColumnProject: project, model.ColumnServiceID: serviceID}
 
-	ruleRes, err := client.GetMongoClient().Find(ctx, db.CollectionRule, filter)
+	ruleRes, err := client.GetMongoClient().Find(ctx, model.CollectionRule, filter)
 	if err != nil {
 		return nil, err
 	}
 	var rules []*discovery.ServiceRule
 	for ruleRes.Next(ctx) {
-		var tmpRule *db.Rule
+		var tmpRule *model.Rule
 		err := ruleRes.Decode(&tmpRule)
 		if err != nil {
 			return nil, err
@@ -1374,11 +1375,11 @@ func GetRules(ctx context.Context, serviceID string) ([]*discovery.ServiceRule, 
 }
 
 func UpdateRule(ctx context.Context, filter interface{}, m bson.M) error {
-	return client.GetMongoClient().DocUpdate(ctx, db.CollectionRule, filter, m)
+	return client.GetMongoClient().DocUpdate(ctx, model.CollectionRule, filter, m)
 }
 
 func UpdateSchema(ctx context.Context, filter interface{}, m bson.M, opts ...*options.FindOneAndUpdateOptions) error {
-	_, err := client.GetMongoClient().FindOneAndUpdate(ctx, db.CollectionSchema, filter, m, opts...)
+	_, err := client.GetMongoClient().FindOneAndUpdate(ctx, model.CollectionSchema, filter, m, opts...)
 	if err != nil {
 		return err
 	}
@@ -1386,18 +1387,18 @@ func UpdateSchema(ctx context.Context, filter interface{}, m bson.M, opts ...*op
 }
 
 func DeleteSchema(ctx context.Context, filter interface{}) error {
-	res, err := client.GetMongoClient().DocDelete(ctx, db.CollectionSchema, filter)
+	res, err := client.GetMongoClient().DocDelete(ctx, model.CollectionSchema, filter)
 	if err != nil {
 		return err
 	}
 	if !res {
-		return ErrDeleteSchemaFailed
+		return mutil.ErrDeleteSchemaFailed
 	}
 	return nil
 }
 
 func RuleExist(ctx context.Context, filter bson.M) (bool, error) {
-	return client.GetMongoClient().DocExist(ctx, db.CollectionRule, filter)
+	return client.GetMongoClient().DocExist(ctx, model.CollectionRule, filter)
 }
 
 func GeneratorServiceFilter(ctx context.Context, serviceID string) bson.M {
@@ -1405,9 +1406,9 @@ func GeneratorServiceFilter(ctx context.Context, serviceID string) bson.M {
 	project := util.ParseProject(ctx)
 
 	return bson.M{
-		db.ColumnDomain:  domain,
-		db.ColumnProject: project,
-		StringBuilder([]string{db.ColumnService, db.ColumnServiceID}): serviceID}
+		model.ColumnDomain:  domain,
+		model.ColumnProject: project,
+		StringBuilder([]string{model.ColumnService, model.ColumnServiceID}): serviceID}
 }
 
 func GeneratorServiceNameFilter(ctx context.Context, service *discovery.MicroServiceKey) bson.M {
@@ -1415,12 +1416,12 @@ func GeneratorServiceNameFilter(ctx context.Context, service *discovery.MicroSer
 	project := util.ParseProject(ctx)
 
 	return bson.M{
-		db.ColumnDomain:  domain,
-		db.ColumnProject: project,
-		StringBuilder([]string{db.ColumnService, db.ColumnEnv}):         service.Environment,
-		StringBuilder([]string{db.ColumnService, db.ColumnAppID}):       service.AppId,
-		StringBuilder([]string{db.ColumnService, db.ColumnServiceName}): service.ServiceName,
-		StringBuilder([]string{db.ColumnService, db.ColumnVersion}):     service.Version}
+		model.ColumnDomain:  domain,
+		model.ColumnProject: project,
+		StringBuilder([]string{model.ColumnService, model.ColumnEnv}):         service.Environment,
+		StringBuilder([]string{model.ColumnService, model.ColumnAppID}):       service.AppId,
+		StringBuilder([]string{model.ColumnService, model.ColumnServiceName}): service.ServiceName,
+		StringBuilder([]string{model.ColumnService, model.ColumnVersion}):     service.Version}
 }
 
 func GeneratorServiceAliasFilter(ctx context.Context, service *discovery.MicroServiceKey) bson.M {
@@ -1428,26 +1429,26 @@ func GeneratorServiceAliasFilter(ctx context.Context, service *discovery.MicroSe
 	project := util.ParseProject(ctx)
 
 	return bson.M{
-		db.ColumnDomain:  domain,
-		db.ColumnProject: project,
-		StringBuilder([]string{db.ColumnService, db.ColumnEnv}):     service.Environment,
-		StringBuilder([]string{db.ColumnService, db.ColumnAppID}):   service.AppId,
-		StringBuilder([]string{db.ColumnService, db.ColumnAlias}):   service.Alias,
-		StringBuilder([]string{db.ColumnService, db.ColumnVersion}): service.Version}
+		model.ColumnDomain:  domain,
+		model.ColumnProject: project,
+		StringBuilder([]string{model.ColumnService, model.ColumnEnv}):     service.Environment,
+		StringBuilder([]string{model.ColumnService, model.ColumnAppID}):   service.AppId,
+		StringBuilder([]string{model.ColumnService, model.ColumnAlias}):   service.Alias,
+		StringBuilder([]string{model.ColumnService, model.ColumnVersion}): service.Version}
 }
 
 func GeneratorRuleAttFilter(ctx context.Context, serviceID, attribute, pattern string) bson.M {
 	return bson.M{
-		db.ColumnServiceID: serviceID,
-		StringBuilder([]string{db.ColumnRule, db.ColumnAttribute}): attribute,
-		StringBuilder([]string{db.ColumnRule, db.ColumnPattern}):   pattern}
+		model.ColumnServiceID: serviceID,
+		StringBuilder([]string{model.ColumnRule, model.ColumnAttribute}): attribute,
+		StringBuilder([]string{model.ColumnRule, model.ColumnPattern}):   pattern}
 }
 
 func GeneratorSchemaFilter(ctx context.Context, serviceID, schemaID string) bson.M {
 	domain := util.ParseDomain(ctx)
 	project := util.ParseProject(ctx)
 
-	return bson.M{db.ColumnDomain: domain, db.ColumnProject: project, db.ColumnServiceID: serviceID, db.ColumnSchemaID: schemaID}
+	return bson.M{model.ColumnDomain: domain, model.ColumnProject: project, model.ColumnServiceID: serviceID, model.ColumnSchemaID: schemaID}
 }
 
 func GeneratorRuleFilter(ctx context.Context, serviceID, ruleID string) bson.M {
@@ -1455,20 +1456,20 @@ func GeneratorRuleFilter(ctx context.Context, serviceID, ruleID string) bson.M {
 	project := util.ParseProject(ctx)
 
 	return bson.M{
-		db.ColumnDomain:    domain,
-		db.ColumnProject:   project,
-		db.ColumnServiceID: serviceID,
-		StringBuilder([]string{db.ColumnRule, db.ColumnRuleID}): ruleID}
+		model.ColumnDomain:    domain,
+		model.ColumnProject:   project,
+		model.ColumnServiceID: serviceID,
+		StringBuilder([]string{model.ColumnRule, model.ColumnRuleID}): ruleID}
 }
 
 func GetSchemas(ctx context.Context, filter bson.M) ([]*discovery.Schema, error) {
-	getRes, err := client.GetMongoClient().Find(ctx, db.CollectionSchema, filter)
+	getRes, err := client.GetMongoClient().Find(ctx, model.CollectionSchema, filter)
 	if err != nil {
 		return nil, err
 	}
 	var schemas []*discovery.Schema
 	for getRes.Next(ctx) {
-		var tmp *db.Schema
+		var tmp *model.Schema
 		err = getRes.Decode(&tmp)
 		if err != nil {
 			return nil, err
@@ -1482,8 +1483,8 @@ func GetSchemas(ctx context.Context, filter bson.M) ([]*discovery.Schema, error)
 	return schemas, nil
 }
 
-func GetSchema(ctx context.Context, filter bson.M) (*db.Schema, error) {
-	findRes, err := client.GetMongoClient().FindOne(ctx, db.CollectionSchema, filter)
+func GetSchema(ctx context.Context, filter bson.M) (*model.Schema, error) {
+	findRes, err := client.GetMongoClient().FindOne(ctx, model.CollectionSchema, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -1491,7 +1492,7 @@ func GetSchema(ctx context.Context, filter bson.M) (*db.Schema, error) {
 		//not get any service,not db err
 		return nil, nil
 	}
-	var schema *db.Schema
+	var schema *model.Schema
 	err = findRes.Decode(&schema)
 	if err != nil {
 		return nil, err
@@ -1500,14 +1501,14 @@ func GetSchema(ctx context.Context, filter bson.M) (*db.Schema, error) {
 }
 
 func SchemaSummaryExist(ctx context.Context, serviceID, schemaID string) (bool, error) {
-	res, err := client.GetMongoClient().FindOne(ctx, db.CollectionSchema, GeneratorSchemaFilter(ctx, serviceID, schemaID))
+	res, err := client.GetMongoClient().FindOne(ctx, model.CollectionSchema, GeneratorSchemaFilter(ctx, serviceID, schemaID))
 	if err != nil {
 		return false, err
 	}
 	if res.Err() != nil {
 		return false, nil
 	}
-	var s db.Schema
+	var s model.Schema
 	err = res.Decode(&s)
 	if err != nil {
 		return false, err
@@ -1572,7 +1573,7 @@ func (ds *DataSource) RegisterInstance(ctx context.Context, request *discovery.R
 
 // GetInstance returns instance under the current domain
 func (ds *DataSource) GetInstance(ctx context.Context, request *discovery.GetOneInstanceRequest) (*discovery.GetOneInstanceResponse, error) {
-	var service *db.Service
+	var service *model.Service
 	var err error
 	var serviceIDs []string
 	if len(request.ConsumerServiceId) > 0 {
@@ -1677,7 +1678,7 @@ func (ds *DataSource) GetInstance(ctx context.Context, request *discovery.GetOne
 }
 
 func (ds *DataSource) GetInstances(ctx context.Context, request *discovery.GetInstancesRequest) (*discovery.GetInstancesResponse, error) {
-	service := &db.Service{}
+	service := &model.Service{}
 	var err error
 
 	if len(request.ConsumerServiceId) > 0 {
@@ -1723,7 +1724,7 @@ func (ds *DataSource) GetInstances(ctx context.Context, request *discovery.GetIn
 	}
 
 	rev, _ := ctx.Value(util.CtxRequestRevision).(string)
-	serviceIDs := filterServiceIDs(ctx, request.ConsumerServiceId, request.Tags, []*db.Service{provider})
+	serviceIDs := filterServiceIDs(ctx, request.ConsumerServiceId, request.Tags, []*model.Service{provider})
 	if len(serviceIDs) == 0 {
 		mes := fmt.Errorf("%s failed, provider does not exist", findFlag())
 		log.Error("query service failed", mes)
@@ -1754,17 +1755,17 @@ func (ds *DataSource) GetProviderInstances(ctx context.Context, request *discove
 	domain := util.ParseDomain(ctx)
 	project := util.ParseProject(ctx)
 	filter := bson.M{
-		db.ColumnDomain:  domain,
-		db.ColumnProject: project,
-		StringBuilder([]string{db.ColumnInstance, db.ColumnServiceID}): request.ProviderServiceId}
+		model.ColumnDomain:  domain,
+		model.ColumnProject: project,
+		StringBuilder([]string{model.ColumnInstance, model.ColumnServiceID}): request.ProviderServiceId}
 
-	findRes, err := client.GetMongoClient().Find(ctx, db.CollectionInstance, filter)
+	findRes, err := client.GetMongoClient().Find(ctx, model.CollectionInstance, filter)
 	if err != nil {
 		return
 	}
 
 	for findRes.Next(ctx) {
-		var mongoInstance db.Instance
+		var mongoInstance model.Instance
 		err := findRes.Decode(&mongoInstance)
 		if err == nil {
 			instances = append(instances, mongoInstance.Instance)
@@ -1779,9 +1780,9 @@ func (ds *DataSource) GetAllInstances(ctx context.Context, request *discovery.Ge
 	domain := util.ParseDomain(ctx)
 	project := util.ParseProject(ctx)
 
-	filter := bson.M{db.ColumnDomain: domain, db.ColumnProject: project}
+	filter := bson.M{model.ColumnDomain: domain, model.ColumnProject: project}
 
-	findRes, err := client.GetMongoClient().Find(ctx, db.CollectionInstance, filter)
+	findRes, err := client.GetMongoClient().Find(ctx, model.CollectionInstance, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -1790,7 +1791,7 @@ func (ds *DataSource) GetAllInstances(ctx context.Context, request *discovery.Ge
 	}
 
 	for findRes.Next(ctx) {
-		var instance db.Instance
+		var instance model.Instance
 		err := findRes.Decode(&instance)
 		if err != nil {
 			return &discovery.GetAllInstancesResponse{
@@ -1805,7 +1806,7 @@ func (ds *DataSource) GetAllInstances(ctx context.Context, request *discovery.Ge
 
 func (ds *DataSource) BatchGetProviderInstances(ctx context.Context, request *discovery.BatchGetInstancesRequest) (instances []*discovery.MicroServiceInstance, rev string, err error) {
 	if request == nil || len(request.ServiceIds) == 0 {
-		return nil, "", ErrInvalidParamBatchGetInstancesRequest
+		return nil, "", mutil.ErrInvalidParam
 	}
 
 	domain := util.ParseDomain(ctx)
@@ -1813,16 +1814,16 @@ func (ds *DataSource) BatchGetProviderInstances(ctx context.Context, request *di
 
 	for _, providerServiceID := range request.ServiceIds {
 		filter := bson.M{
-			db.ColumnDomain:  domain,
-			db.ColumnProject: project,
-			StringBuilder([]string{db.ColumnInstance, db.ColumnServiceID}): providerServiceID}
-		findRes, err := client.GetMongoClient().Find(ctx, db.CollectionInstance, filter)
+			model.ColumnDomain:  domain,
+			model.ColumnProject: project,
+			StringBuilder([]string{model.ColumnInstance, model.ColumnServiceID}): providerServiceID}
+		findRes, err := client.GetMongoClient().Find(ctx, model.CollectionInstance, filter)
 		if err != nil {
 			return instances, "", nil
 		}
 
 		for findRes.Next(ctx) {
-			var mongoInstance db.Instance
+			var mongoInstance model.Instance
 			err := findRes.Decode(&mongoInstance)
 			if err == nil {
 				instances = append(instances, mongoInstance.Instance)
@@ -1945,11 +1946,11 @@ func (ds *DataSource) UnregisterInstance(ctx context.Context, request *discovery
 	domain := util.ParseDomain(ctx)
 	project := util.ParseProject(ctx)
 	filter := bson.M{
-		db.ColumnDomain:  domain,
-		db.ColumnProject: project,
-		StringBuilder([]string{db.ColumnInstance, db.ColumnServiceID}):  serviceID,
-		StringBuilder([]string{db.ColumnInstance, db.ColumnInstanceID}): instanceID}
-	result, err := client.GetMongoClient().Delete(ctx, db.CollectionInstance, filter)
+		model.ColumnDomain:  domain,
+		model.ColumnProject: project,
+		StringBuilder([]string{model.ColumnInstance, model.ColumnServiceID}):  serviceID,
+		StringBuilder([]string{model.ColumnInstance, model.ColumnInstanceID}): instanceID}
+	result, err := client.GetMongoClient().Delete(ctx, model.CollectionInstance, filter)
 	if err != nil || result.DeletedCount == 0 {
 		log.Error(fmt.Sprintf("unregister instance failed, instance %s, operator %s revoke instance failed", instanceFlag, remoteIP), err)
 		return &discovery.UnregisterInstanceResponse{
@@ -2066,7 +2067,7 @@ func registryInstance(ctx context.Context, request *discovery.RegisterInstanceRe
 	remoteIP := util.GetIPFromContext(ctx)
 	instance := request.Instance
 	instanceID := instance.InstanceId
-	data := &db.Instance{
+	data := &model.Instance{
 		Domain:      domain,
 		Project:     project,
 		RefreshTime: time.Now(),
@@ -2076,7 +2077,7 @@ func registryInstance(ctx context.Context, request *discovery.RegisterInstanceRe
 	instanceFlag := fmt.Sprintf("endpoints %v, host '%s', serviceID %s",
 		instance.Endpoints, instance.HostName, instance.ServiceId)
 
-	insertRes, err := client.GetMongoClient().Insert(ctx, db.CollectionInstance, data)
+	insertRes, err := client.GetMongoClient().Insert(ctx, model.CollectionInstance, data)
 	if err != nil {
 		log.Error(fmt.Sprintf("register instance failed %s instanceID %s operator %s", instanceFlag, instanceID, remoteIP), err)
 		return &discovery.RegisterInstanceResponse{
@@ -2154,7 +2155,7 @@ func (ds *DataSource) findSharedServiceInstance(ctx context.Context, request *di
 func (ds *DataSource) findInstance(ctx context.Context, request *discovery.FindInstancesRequest, provider *discovery.MicroServiceKey, rev string) (*discovery.FindInstancesResponse, error) {
 	var err error
 	domainProject := util.ParseDomainProject(ctx)
-	service := &db.Service{Service: &discovery.MicroService{Environment: request.Environment}}
+	service := &model.Service{Service: &discovery.MicroService{Environment: request.Environment}}
 	if len(request.ConsumerServiceId) > 0 {
 		filter := GeneratorServiceFilter(ctx, request.ConsumerServiceId)
 		service, err = GetService(ctx, filter)
@@ -2318,19 +2319,19 @@ func DependencyRuleExistUtil(ctx context.Context, key bson.M, target *discovery.
 	return false, nil
 }
 
-func GetInstance(ctx context.Context, serviceID string, instanceID string) (*db.Instance, error) {
+func GetInstance(ctx context.Context, serviceID string, instanceID string) (*model.Instance, error) {
 	domain := util.ParseDomain(ctx)
 	project := util.ParseProject(ctx)
 	filter := bson.M{
-		db.ColumnDomain:  domain,
-		db.ColumnProject: project,
-		StringBuilder([]string{db.ColumnInstance, db.ColumnServiceID}):  serviceID,
-		StringBuilder([]string{db.ColumnInstance, db.ColumnInstanceID}): instanceID}
-	findRes, err := client.GetMongoClient().FindOne(ctx, db.CollectionInstance, filter)
+		model.ColumnDomain:  domain,
+		model.ColumnProject: project,
+		StringBuilder([]string{model.ColumnInstance, model.ColumnServiceID}):  serviceID,
+		StringBuilder([]string{model.ColumnInstance, model.ColumnInstanceID}): instanceID}
+	findRes, err := client.GetMongoClient().FindOne(ctx, model.CollectionInstance, filter)
 	if err != nil {
 		return nil, err
 	}
-	var instance *db.Instance
+	var instance *model.Instance
 	if findRes.Err() != nil {
 		//not get any service,not db err
 		return nil, nil
@@ -2346,11 +2347,11 @@ func UpdateInstanceS(ctx context.Context, instance *discovery.MicroServiceInstan
 	domain := util.ParseDomain(ctx)
 	project := util.ParseProject(ctx)
 	filter := bson.M{
-		db.ColumnDomain:  domain,
-		db.ColumnProject: project,
-		StringBuilder([]string{db.ColumnInstance, db.ColumnServiceID}):  instance.ServiceId,
-		StringBuilder([]string{db.ColumnInstance, db.ColumnInstanceID}): instance.InstanceId}
-	_, err := client.GetMongoClient().Update(ctx, db.CollectionInstance, filter, bson.M{"$set": bson.M{"instance.motTimestamp": strconv.FormatInt(time.Now().Unix(), 10), "instance.status": instance.Status}})
+		model.ColumnDomain:  domain,
+		model.ColumnProject: project,
+		StringBuilder([]string{model.ColumnInstance, model.ColumnServiceID}):  instance.ServiceId,
+		StringBuilder([]string{model.ColumnInstance, model.ColumnInstanceID}): instance.InstanceId}
+	_, err := client.GetMongoClient().Update(ctx, model.CollectionInstance, filter, bson.M{"$set": bson.M{"instance.motTimestamp": strconv.FormatInt(time.Now().Unix(), 10), "instance.status": instance.Status}})
 	if err != nil {
 		return discovery.NewError(discovery.ErrUnavailableBackend, err.Error())
 	}
@@ -2361,11 +2362,11 @@ func UpdateInstanceP(ctx context.Context, instance *discovery.MicroServiceInstan
 	domain := util.ParseDomain(ctx)
 	project := util.ParseProject(ctx)
 	filter := bson.M{
-		db.ColumnDomain:  domain,
-		db.ColumnProject: project,
-		StringBuilder([]string{db.ColumnInstance, db.ColumnServiceID}):  instance.ServiceId,
-		StringBuilder([]string{db.ColumnInstance, db.ColumnInstanceID}): instance.InstanceId}
-	_, err := client.GetMongoClient().Update(ctx, db.CollectionInstance, filter, bson.M{"$set": bson.M{"instance.motTimestamp": strconv.FormatInt(time.Now().Unix(), 10), "instance.properties": instance.Properties}})
+		model.ColumnDomain:  domain,
+		model.ColumnProject: project,
+		StringBuilder([]string{model.ColumnInstance, model.ColumnServiceID}):  instance.ServiceId,
+		StringBuilder([]string{model.ColumnInstance, model.ColumnInstanceID}): instance.InstanceId}
+	_, err := client.GetMongoClient().Update(ctx, model.CollectionInstance, filter, bson.M{"$set": bson.M{"instance.motTimestamp": strconv.FormatInt(time.Now().Unix(), 10), "instance.properties": instance.Properties}})
 	if err != nil {
 		return discovery.NewError(discovery.ErrUnavailableBackend, err.Error())
 	}
@@ -2539,18 +2540,18 @@ func preProcessRegisterInstance(ctx context.Context, instance *discovery.MicroSe
 }
 
 // servicesBasicFilter query services with domain, project, env, appID, serviceName, alias
-func servicesBasicFilter(ctx context.Context, key *discovery.MicroServiceKey) ([]*db.Service, error) {
+func servicesBasicFilter(ctx context.Context, key *discovery.MicroServiceKey) ([]*model.Service, error) {
 	tenant := strings.Split(key.Tenant, "/")
 	if len(tenant) != 2 {
 		return nil, errors.New("invalid 'domain' or 'project'")
 	}
 	filter := bson.M{
-		db.ColumnDomain:  tenant[0],
-		db.ColumnProject: tenant[1],
-		StringBuilder([]string{db.ColumnService, db.ColumnEnv}):         key.Environment,
-		StringBuilder([]string{db.ColumnService, db.ColumnAppID}):       key.AppId,
-		StringBuilder([]string{db.ColumnService, db.ColumnServiceName}): key.ServiceName,
-		StringBuilder([]string{db.ColumnService, db.ColumnAlias}):       key.Alias,
+		model.ColumnDomain:  tenant[0],
+		model.ColumnProject: tenant[1],
+		StringBuilder([]string{model.ColumnService, model.ColumnEnv}):         key.Environment,
+		StringBuilder([]string{model.ColumnService, model.ColumnAppID}):       key.AppId,
+		StringBuilder([]string{model.ColumnService, model.ColumnServiceName}): key.ServiceName,
+		StringBuilder([]string{model.ColumnService, model.ColumnAlias}):       key.Alias,
 	}
 	rangeIdx := strings.Index(key.Version, "-")
 	// if the version number is clear, need to add the version number to query
@@ -2562,39 +2563,39 @@ func servicesBasicFilter(ctx context.Context, key *discovery.MicroServiceKey) ([
 	case rangeIdx > 0:
 		return servicesFilter(ctx, filter)
 	default:
-		filter[StringBuilder([]string{db.ColumnService, db.ColumnVersion})] = key.Version
+		filter[StringBuilder([]string{model.ColumnService, model.ColumnVersion})] = key.Version
 		return servicesFilter(ctx, filter)
 	}
 }
 
-func findServices(ctx context.Context, key *discovery.MicroServiceKey) ([]*db.Service, error) {
+func findServices(ctx context.Context, key *discovery.MicroServiceKey) ([]*model.Service, error) {
 	tenant := strings.Split(key.Tenant, "/")
 	if len(tenant) != 2 {
 		return nil, errors.New("invalid 'domain' or 'project'")
 	}
 	rangeIdx := strings.Index(key.Version, "-")
 	filter := bson.M{
-		db.ColumnDomain:  tenant[0],
-		db.ColumnProject: tenant[1],
-		StringBuilder([]string{db.ColumnService, db.ColumnEnv}):         key.Environment,
-		StringBuilder([]string{db.ColumnService, db.ColumnAppID}):       key.AppId,
-		StringBuilder([]string{db.ColumnService, db.ColumnServiceName}): key.ServiceName,
-		StringBuilder([]string{db.ColumnService, db.ColumnAlias}):       key.Alias,
+		model.ColumnDomain:  tenant[0],
+		model.ColumnProject: tenant[1],
+		StringBuilder([]string{model.ColumnService, model.ColumnEnv}):         key.Environment,
+		StringBuilder([]string{model.ColumnService, model.ColumnAppID}):       key.AppId,
+		StringBuilder([]string{model.ColumnService, model.ColumnServiceName}): key.ServiceName,
+		StringBuilder([]string{model.ColumnService, model.ColumnAlias}):       key.Alias,
 	}
 	switch {
 	case key.Version == "latest":
 		return latestServicesFilter(ctx, filter)
 	case len(key.Version) > 0 && key.Version[len(key.Version)-1:] == "+":
 		start := key.Version[:len(key.Version)-1]
-		filter[StringBuilder([]string{db.ColumnService, db.ColumnVersion})] = bson.M{"$gte": start}
+		filter[StringBuilder([]string{model.ColumnService, model.ColumnVersion})] = bson.M{"$gte": start}
 		return servicesFilter(ctx, filter)
 	case rangeIdx > 0:
 		start := key.Version[:rangeIdx]
 		end := key.Version[rangeIdx+1:]
-		filter[StringBuilder([]string{db.ColumnService, db.ColumnVersion})] = bson.M{"$gte": start, "$lte": end}
+		filter[StringBuilder([]string{model.ColumnService, model.ColumnVersion})] = bson.M{"$gte": start, "$lte": end}
 		return servicesFilter(ctx, filter)
 	default:
-		filter[StringBuilder([]string{db.ColumnService, db.ColumnVersion})] = key.Version
+		filter[StringBuilder([]string{model.ColumnService, model.ColumnVersion})] = key.Version
 		return servicesFilter(ctx, filter)
 	}
 }
@@ -2604,8 +2605,8 @@ func instancesFilter(ctx context.Context, serviceIDs []string) ([]*discovery.Mic
 	if len(serviceIDs) == 0 {
 		return instances, nil
 	}
-	resp, err := client.GetMongoClient().Find(ctx, db.CollectionInstance, bson.M{StringBuilder([]string{db.ColumnInstance, db.ColumnServiceID}): bson.M{"$in": serviceIDs}}, &options.FindOptions{
-		Sort: bson.M{StringBuilder([]string{db.ColumnInstance, db.ColumnVersion}): -1}})
+	resp, err := client.GetMongoClient().Find(ctx, model.CollectionInstance, bson.M{StringBuilder([]string{model.ColumnInstance, model.ColumnServiceID}): bson.M{"$in": serviceIDs}}, &options.FindOptions{
+		Sort: bson.M{StringBuilder([]string{model.ColumnInstance, model.ColumnVersion}): -1}})
 	if err != nil {
 		return nil, err
 	}
@@ -2613,7 +2614,7 @@ func instancesFilter(ctx context.Context, serviceIDs []string) ([]*discovery.Mic
 		return nil, errors.New("no related instances were found")
 	}
 	for resp.Next(ctx) {
-		var instance db.Instance
+		var instance model.Instance
 		err := resp.Decode(&instance)
 		if err != nil {
 			return nil, err
@@ -2623,8 +2624,8 @@ func instancesFilter(ctx context.Context, serviceIDs []string) ([]*discovery.Mic
 	return instances, nil
 }
 
-func filterServiceIDs(ctx context.Context, consumerID string, tags []string, services []*db.Service) []string {
-	var filterService []*db.Service
+func filterServiceIDs(ctx context.Context, consumerID string, tags []string, services []*model.Service) []string {
+	var filterService []*model.Service
 	var serviceIDs []string
 	if len(services) == 0 {
 		return serviceIDs
@@ -2637,11 +2638,11 @@ func filterServiceIDs(ctx context.Context, consumerID string, tags []string, ser
 	return serviceIDs
 }
 
-func tagsFilter(services []*db.Service, tags []string) []*db.Service {
+func tagsFilter(services []*model.Service, tags []string) []*model.Service {
 	if len(tags) == 0 {
 		return services
 	}
-	var newServices []*db.Service
+	var newServices []*model.Service
 	for _, service := range services {
 		index := 0
 		for ; index < len(tags); index++ {
@@ -2656,8 +2657,8 @@ func tagsFilter(services []*db.Service, tags []string) []*db.Service {
 	return newServices
 }
 
-func accessibleFilter(ctx context.Context, consumerID string, services []*db.Service) []*db.Service {
-	var newServices []*db.Service
+func accessibleFilter(ctx context.Context, consumerID string, services []*model.Service) []*model.Service {
+	var newServices []*model.Service
 	for _, service := range services {
 		if err := accessible(ctx, consumerID, service.Service.ServiceId); err != nil {
 			findFlag := fmt.Sprintf("consumer '%s' find provider %s/%s/%s", consumerID,
@@ -2670,17 +2671,17 @@ func accessibleFilter(ctx context.Context, consumerID string, services []*db.Ser
 	return newServices
 }
 
-func servicesFilter(ctx context.Context, filter bson.M) ([]*db.Service, error) {
-	resp, err := client.GetMongoClient().Find(ctx, db.CollectionService, filter)
+func servicesFilter(ctx context.Context, filter bson.M) ([]*model.Service, error) {
+	resp, err := client.GetMongoClient().Find(ctx, model.CollectionService, filter)
 	if err != nil {
 		return nil, err
 	}
 	if resp == nil {
 		return nil, errors.New("no related services were found")
 	}
-	var services []*db.Service
+	var services []*model.Service
 	for resp.Next(ctx) {
-		var service db.Service
+		var service model.Service
 		err := resp.Decode(&service)
 		if err != nil {
 			log.Error("type conversion error", err)
@@ -2691,18 +2692,18 @@ func servicesFilter(ctx context.Context, filter bson.M) ([]*db.Service, error) {
 	return services, nil
 }
 
-func latestServicesFilter(ctx context.Context, filter bson.M) ([]*db.Service, error) {
-	resp, err := client.GetMongoClient().Find(ctx, db.CollectionService, filter, &options.FindOptions{
-		Sort: bson.M{StringBuilder([]string{db.ColumnService, db.ColumnVersion}): -1}})
+func latestServicesFilter(ctx context.Context, filter bson.M) ([]*model.Service, error) {
+	resp, err := client.GetMongoClient().Find(ctx, model.CollectionService, filter, &options.FindOptions{
+		Sort: bson.M{StringBuilder([]string{model.ColumnService, model.ColumnVersion}): -1}})
 	if err != nil {
 		return nil, err
 	}
 	if resp == nil {
 		return nil, errors.New("no related services were found")
 	}
-	var services []*db.Service
+	var services []*model.Service
 	for resp.Next(ctx) {
-		var service db.Service
+		var service model.Service
 		err := resp.Decode(&service)
 		if err != nil {
 			log.Error("type conversion error", err)
@@ -2718,18 +2719,18 @@ func latestServicesFilter(ctx context.Context, filter bson.M) ([]*db.Service, er
 
 func getTags(ctx context.Context, domain string, project string, serviceID string) (tags map[string]string, err error) {
 	filter := bson.M{
-		db.ColumnDomain:  domain,
-		db.ColumnProject: project,
-		StringBuilder([]string{db.ColumnService, db.ColumnServiceID}): serviceID,
+		model.ColumnDomain:  domain,
+		model.ColumnProject: project,
+		StringBuilder([]string{model.ColumnService, model.ColumnServiceID}): serviceID,
 	}
-	result, err := client.GetMongoClient().FindOne(ctx, db.CollectionService, filter)
+	result, err := client.GetMongoClient().FindOne(ctx, model.CollectionService, filter)
 	if err != nil {
 		return nil, err
 	}
 	if result.Err() != nil {
 		return nil, result.Err()
 	}
-	var service db.Service
+	var service model.Service
 	err = result.Decode(&service)
 	if err != nil {
 		log.Error("type conversion error", err)
@@ -2738,20 +2739,20 @@ func getTags(ctx context.Context, domain string, project string, serviceID strin
 	return service.Tags, nil
 }
 
-func getService(ctx context.Context, domain string, project string, serviceID string) (*db.Service, error) {
+func getService(ctx context.Context, domain string, project string, serviceID string) (*model.Service, error) {
 	filter := bson.M{
-		db.ColumnDomain:  domain,
-		db.ColumnProject: project,
-		StringBuilder([]string{db.ColumnService, db.ColumnServiceID}): serviceID,
+		model.ColumnDomain:  domain,
+		model.ColumnProject: project,
+		StringBuilder([]string{model.ColumnService, model.ColumnServiceID}): serviceID,
 	}
-	result, err := client.GetMongoClient().FindOne(ctx, db.CollectionService, filter)
+	result, err := client.GetMongoClient().FindOne(ctx, model.CollectionService, filter)
 	if err != nil {
 		return nil, err
 	}
 	if result.Err() != nil {
 		return nil, result.Err()
 	}
-	var svc db.Service
+	var svc model.Service
 	err = result.Decode(&svc)
 	if err != nil {
 		return nil, err
@@ -2805,7 +2806,7 @@ func accessible(ctx context.Context, consumerID string, providerID string) *disc
 	return MatchRules(rules, consumerService.Service, validateTags)
 }
 
-func MatchRules(rulesOfProvider []*db.Rule, consumer *discovery.MicroService, tagsOfConsumer map[string]string) *discovery.Error {
+func MatchRules(rulesOfProvider []*model.Rule, consumer *discovery.MicroService, tagsOfConsumer map[string]string) *discovery.Error {
 	if consumer == nil {
 		return discovery.NewError(discovery.ErrInvalidParams, "consumer is nil")
 	}
@@ -2838,7 +2839,7 @@ func parsePattern(v reflect.Value, rule *discovery.ServiceRule, tagsOfConsumer m
 
 }
 
-func patternWhiteList(rulesOfProvider []*db.Rule, tagsOfConsumer map[string]string, consumer *discovery.MicroService) *discovery.Error {
+func patternWhiteList(rulesOfProvider []*model.Rule, tagsOfConsumer map[string]string, consumer *discovery.MicroService) *discovery.Error {
 	v := reflect.Indirect(reflect.ValueOf(consumer))
 	consumerID := consumer.ServiceId
 	for _, rule := range rulesOfProvider {
@@ -2861,7 +2862,7 @@ func patternWhiteList(rulesOfProvider []*db.Rule, tagsOfConsumer map[string]stri
 	return discovery.NewError(discovery.ErrPermissionDeny, "not found in white list")
 }
 
-func patternBlackList(rulesOfProvider []*db.Rule, tagsOfConsumer map[string]string, consumer *discovery.MicroService) *discovery.Error {
+func patternBlackList(rulesOfProvider []*model.Rule, tagsOfConsumer map[string]string, consumer *discovery.MicroService) *discovery.Error {
 	v := reflect.Indirect(reflect.ValueOf(consumer))
 	consumerID := consumer.ServiceId
 	for _, rule := range rulesOfProvider {
@@ -2885,23 +2886,23 @@ func patternBlackList(rulesOfProvider []*db.Rule, tagsOfConsumer map[string]stri
 	return nil
 }
 
-func getRulesUtil(ctx context.Context, domain string, project string, serviceID string) ([]*db.Rule, error) {
+func getRulesUtil(ctx context.Context, domain string, project string, serviceID string) ([]*model.Rule, error) {
 	filter := bson.M{
-		db.ColumnDomain:    domain,
-		db.ColumnProject:   project,
-		db.ColumnServiceID: serviceID,
+		model.ColumnDomain:    domain,
+		model.ColumnProject:   project,
+		model.ColumnServiceID: serviceID,
 	}
-	cursor, err := client.GetMongoClient().Find(ctx, db.CollectionRule, filter)
+	cursor, err := client.GetMongoClient().Find(ctx, model.CollectionRule, filter)
 	if err != nil {
 		return nil, err
 	}
 	if cursor.Err() != nil {
 		return nil, cursor.Err()
 	}
-	var rules []*db.Rule
+	var rules []*model.Rule
 	defer cursor.Close(ctx)
 	for cursor.Next(ctx) {
-		var rule db.Rule
+		var rule model.Rule
 		err := cursor.Decode(&rule)
 		if err != nil {
 			log.Error("type conversion error", err)
@@ -2912,7 +2913,7 @@ func getRulesUtil(ctx context.Context, domain string, project string, serviceID 
 	return rules, nil
 }
 
-func allowAcrossDimension(ctx context.Context, providerService *db.Service, consumerService *db.Service) error {
+func allowAcrossDimension(ctx context.Context, providerService *model.Service, consumerService *model.Service) error {
 	if providerService.Service.AppId != consumerService.Service.AppId {
 		if len(providerService.Service.Properties) == 0 {
 			return fmt.Errorf("not allow across app access")
@@ -2931,7 +2932,7 @@ func allowAcrossDimension(ctx context.Context, providerService *db.Service, cons
 
 func GetInstanceCountOfOneService(ctx context.Context, serviceID string) (int64, error) {
 	filter := GeneratorServiceInstanceFilter(ctx, serviceID)
-	count, err := client.GetMongoClient().Count(ctx, db.CollectionInstance, filter)
+	count, err := client.GetMongoClient().Count(ctx, model.CollectionInstance, filter)
 	if err != nil {
 		return 0, nil
 	}
@@ -2940,13 +2941,13 @@ func GetInstanceCountOfOneService(ctx context.Context, serviceID string) (int64,
 
 func GetAllInstancesOfOneService(ctx context.Context, serviceID string) ([]*discovery.MicroServiceInstance, error) {
 	filter := GeneratorServiceInstanceFilter(ctx, serviceID)
-	res, err := client.GetMongoClient().Find(ctx, db.CollectionInstance, filter)
+	res, err := client.GetMongoClient().Find(ctx, model.CollectionInstance, filter)
 	if err != nil {
 		return nil, err
 	}
 	var instances []*discovery.MicroServiceInstance
 	for res.Next(ctx) {
-		var tmp db.Instance
+		var tmp model.Instance
 		err := res.Decode(&tmp)
 		if err != nil {
 			return nil, err
@@ -2956,14 +2957,14 @@ func GetAllInstancesOfOneService(ctx context.Context, serviceID string) ([]*disc
 	return instances, nil
 }
 
-func GetInstances(ctx context.Context, filter bson.M) ([]*db.Instance, error) {
-	res, err := client.GetMongoClient().Find(ctx, db.CollectionInstance, filter)
+func GetInstances(ctx context.Context, filter bson.M) ([]*model.Instance, error) {
+	res, err := client.GetMongoClient().Find(ctx, model.CollectionInstance, filter)
 	if err != nil {
 		return nil, err
 	}
-	var instances []*db.Instance
+	var instances []*model.Instance
 	for res.Next(ctx) {
-		var tmp *db.Instance
+		var tmp *model.Instance
 		err := res.Decode(&tmp)
 		if err != nil {
 			return nil, err
@@ -2978,24 +2979,24 @@ func GeneratorServiceVersionsFilter(ctx context.Context, service *discovery.Micr
 	project := util.ParseProject(ctx)
 
 	return bson.M{
-		db.ColumnDomain:  domain,
-		db.ColumnProject: project,
-		StringBuilder([]string{db.ColumnService, db.ColumnEnv}):         service.Environment,
-		StringBuilder([]string{db.ColumnService, db.ColumnAppID}):       service.AppId,
-		StringBuilder([]string{db.ColumnService, db.ColumnServiceName}): service.ServiceName}
+		model.ColumnDomain:  domain,
+		model.ColumnProject: project,
+		StringBuilder([]string{model.ColumnService, model.ColumnEnv}):         service.Environment,
+		StringBuilder([]string{model.ColumnService, model.ColumnAppID}):       service.AppId,
+		StringBuilder([]string{model.ColumnService, model.ColumnServiceName}): service.ServiceName}
 }
 
 func GeneratorServiceInstanceFilter(ctx context.Context, serviceID string) bson.M {
 	domain := util.ParseDomain(ctx)
 	project := util.ParseProject(ctx)
 	return bson.M{
-		db.ColumnDomain:  domain,
-		db.ColumnProject: project,
-		StringBuilder([]string{db.ColumnInstance, db.ColumnServiceID}): serviceID}
+		model.ColumnDomain:  domain,
+		model.ColumnProject: project,
+		StringBuilder([]string{model.ColumnInstance, model.ColumnServiceID}): serviceID}
 }
 
-func GetServiceByID(ctx context.Context, serviceID string) (*db.Service, error) {
-	cacheService, ok := sd.Store().Service().Cache().Get(serviceID).(db.Service)
+func GetServiceByID(ctx context.Context, serviceID string) (*model.Service, error) {
+	cacheService, ok := sd.Store().Service().Cache().Get(serviceID).(model.Service)
 	if !ok {
 		//no service in cache,get it from mongodb
 		return GetService(ctx, GeneratorServiceFilter(ctx, serviceID))
@@ -3003,8 +3004,8 @@ func GetServiceByID(ctx context.Context, serviceID string) (*db.Service, error) 
 	return cacheToService(cacheService), nil
 }
 
-func cacheToService(service db.Service) *db.Service {
-	return &db.Service{
+func cacheToService(service model.Service) *model.Service {
+	return &model.Service{
 		Domain:  service.Domain,
 		Project: service.Project,
 		Tags:    service.Tags,
@@ -3017,7 +3018,7 @@ func GetInstancesByServiceID(ctx context.Context, serviceID string) ([]*discover
 	var cacheUnavailable bool
 	cacheInstances := sd.Store().Instance().Cache().GetIndexData(serviceID)
 	for _, instID := range cacheInstances {
-		inst, ok := sd.Store().Instance().Cache().Get(instID).(db.Instance)
+		inst, ok := sd.Store().Instance().Cache().Get(instID).(model.Instance)
 		if !ok {
 			cacheUnavailable = true
 			break

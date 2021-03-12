@@ -32,7 +32,7 @@ import (
 
 	"github.com/apache/servicecomb-service-center/datasource/mongo"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/db"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
@@ -51,32 +51,32 @@ func TestUpdateInstanceRefreshTime(t *testing.T) {
 	})
 
 	t.Run("update instance refresh time: if the instance does exist,the update should succeed", func(t *testing.T) {
-		instance1 := db.Instance{
+		instance1 := model.Instance{
 			RefreshTime: time.Now(),
 			Instance: &pb.MicroServiceInstance{
 				InstanceId: "instanceId1",
 				ServiceId:  "serviceId1",
 			},
 		}
-		_, err := client.GetMongoClient().Insert(context.Background(), db.CollectionInstance, instance1)
+		_, err := client.GetMongoClient().Insert(context.Background(), model.CollectionInstance, instance1)
 		assert.Equal(t, nil, err)
 		err = updateInstanceRefreshTime(context.Background(), instance1.Instance.ServiceId, instance1.Instance.InstanceId)
 		assert.Equal(t, nil, err)
 		filter := bson.M{
-			mongo.StringBuilder([]string{db.ColumnInstance, db.ColumnServiceID}):  instance1.Instance.ServiceId,
-			mongo.StringBuilder([]string{db.ColumnInstance, db.ColumnInstanceID}): instance1.Instance.InstanceId,
+			mongo.StringBuilder([]string{model.ColumnInstance, model.ColumnServiceID}):  instance1.Instance.ServiceId,
+			mongo.StringBuilder([]string{model.ColumnInstance, model.ColumnInstanceID}): instance1.Instance.InstanceId,
 		}
-		result, err := client.GetMongoClient().FindOne(context.Background(), db.CollectionInstance, filter)
+		result, err := client.GetMongoClient().FindOne(context.Background(), model.CollectionInstance, filter)
 		assert.Nil(t, err)
-		var ins db.Instance
+		var ins model.Instance
 		err = result.Decode(&ins)
 		assert.Nil(t, err)
 		assert.NotEqual(t, instance1.RefreshTime, ins.RefreshTime)
 		filter = bson.M{
-			mongo.StringBuilder([]string{db.ColumnInstance, db.ColumnServiceID}):  instance1.Instance.ServiceId,
-			mongo.StringBuilder([]string{db.ColumnInstance, db.ColumnInstanceID}): instance1.Instance.InstanceId,
+			mongo.StringBuilder([]string{model.ColumnInstance, model.ColumnServiceID}):  instance1.Instance.ServiceId,
+			mongo.StringBuilder([]string{model.ColumnInstance, model.ColumnInstanceID}): instance1.Instance.InstanceId,
 		}
-		_, err = client.GetMongoClient().Delete(context.Background(), db.CollectionInstance, filter)
+		_, err = client.GetMongoClient().Delete(context.Background(), model.CollectionInstance, filter)
 		assert.Nil(t, err)
 	})
 }

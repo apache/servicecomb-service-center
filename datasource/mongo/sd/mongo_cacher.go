@@ -26,7 +26,7 @@ import (
 
 	rmodel "github.com/go-chassis/cari/discovery"
 
-	"github.com/apache/servicecomb-service-center/datasource/mongo/db"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
 	"github.com/apache/servicecomb-service-center/datasource/sdcommon"
 	"github.com/apache/servicecomb-service-center/pkg/backoff"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
@@ -368,16 +368,16 @@ func (c *MongoCacher) isValueNotUpdated(value interface{}, newValue interface{})
 
 	switch c.Options.Key {
 	case instance:
-		instance := value.(db.Instance)
-		newInstance := newValue.(db.Instance)
+		instance := value.(model.Instance)
+		newInstance := newValue.(model.Instance)
 		if instance.Instance == nil || newInstance.Instance == nil {
 			return true
 		}
 		modTime = instance.Instance.ModTimestamp
 		newModTime = newInstance.Instance.ModTimestamp
 	case service:
-		service := value.(db.Service)
-		newService := newValue.(db.Service)
+		service := value.(model.Service)
+		newService := newValue.(model.Service)
 		if service.Service == nil || newService.Service == nil {
 			return true
 		}
