@@ -30,20 +30,20 @@ import (
 )
 
 type deferItem struct {
-	ttl   int32 // in seconds
-	event sd.KvEvent
+	ReplayAfter int32 // in seconds
+	event       sd.KvEvent
 }
 
 type InstanceEventDeferHandler struct {
 	Percent float64
 
-	cache     sd.CacheReader
-	once      sync.Once
-	enabled   bool
-	items     map[string]*deferItem
-	pendingCh chan []sd.KvEvent
-	deferCh   chan sd.KvEvent
-	resetCh   chan struct{}
+	cache    sd.CacheReader
+	once     sync.Once
+	enabled  bool
+	items    map[string]*deferItem
+	evts     chan []sd.KvEvent
+	replayCh chan sd.KvEvent
+	resetCh  chan struct{}
 }
 
 func (iedh *InstanceEventDeferHandler) OnCondition(cache sd.CacheReader, evts []sd.KvEvent) bool {
@@ -54,19 +54,19 @@ func (iedh *InstanceEventDeferHandler) OnCondition(cache sd.CacheReader, evts []
 	iedh.once.Do(func() {
 		iedh.cache = cache
 		iedh.items = make(map[string]*deferItem)
-		iedh.pendingCh = make(chan []sd.KvEvent, eventBlockSize)
-		iedh.deferCh = make(chan sd.KvEvent, eventBlockSize)
+		iedh.evts = make(chan []sd.KvEvent, eventBlockSize)
+		iedh.replayCh = make(chan sd.KvEvent, eventBlockSize)
 		iedh.resetCh = make(chan struct{})
 		gopool.Go(iedh.check)
 	})
 
-	iedh.pendingCh <- evts
+	iedh.evts <- evts
 	return true
 }
 
 func (iedh *InstanceEventDeferHandler) recoverOrDefer(evt sd.KvEvent) {
 	if evt.KV == nil {
-		log.Errorf(nil, "defer or recover a %s nil KV", evt.Type)
+		log.Errorf(nil, "defer or replayEvent a %s nil KV", evt.Type)
 		return
 	}
 	kv := evt.KV
@@ -78,7 +78,7 @@ func (iedh *InstanceEventDeferHandler) recoverOrDefer(evt sd.KvEvent) {
 			log.Infof("recovered key %s events", key)
 			// return nil // no need to publish event to subscribers?
 		}
-		iedh.recover(evt)
+		iedh.replayEvent(evt)
 	case discovery.EVT_DELETE:
 		if ok {
 			return
@@ -86,7 +86,7 @@ func (iedh *InstanceEventDeferHandler) recoverOrDefer(evt sd.KvEvent) {
 
 		instance := kv.Value.(*discovery.MicroServiceInstance)
 		if instance == nil {
-			log.Errorf(nil, "defer or recover a %s nil Value, KV is %v", evt.Type, kv)
+			log.Errorf(nil, "defer or replayEvent a %s nil Value, KV is %v", evt.Type, kv)
 			return
 		}
 		ttl := instance.HealthCheck.Interval * (instance.HealthCheck.Times + 1)
@@ -94,27 +94,26 @@ func (iedh *InstanceEventDeferHandler) recoverOrDefer(evt sd.KvEvent) {
 			ttl = selfPreservationMaxTTL
 		}
 		iedh.items[key] = &deferItem{
-			ttl:   ttl,
-			event: evt,
+			ReplayAfter: ttl,
+			event:       evt,
 		}
 	}
 }
 
 func (iedh *InstanceEventDeferHandler) HandleChan() <-chan sd.KvEvent {
-	return iedh.deferCh
+	return iedh.replayCh
 }
 
 func (iedh *InstanceEventDeferHandler) check(ctx context.Context) {
 	defer log.Recover()
-
 	t, n := time.NewTimer(deferCheckWindow), false
-	interval := int32(deferCheckWindow / time.Second)
 	defer t.Stop()
 	for {
 		select {
 		case <-ctx.Done():
+			log.Error("self preservation routine dead", nil)
 			return
-		case evts := <-iedh.pendingCh:
+		case evts := <-iedh.evts:
 			for _, evt := range evts {
 				iedh.recoverOrDefer(evt)
 			}
@@ -145,45 +144,45 @@ func (iedh *InstanceEventDeferHandler) check(ctx context.Context) {
 
 			if !iedh.enabled {
 				for _, item := range iedh.items {
-					iedh.recover(item.event)
+					iedh.replayEvent(item.event)
 				}
 				continue
 			}
 
-			for key, item := range iedh.items {
-				item.ttl -= interval
-				if item.ttl > 0 {
-					continue
-				}
-				log.Warnf("defer handle timed out, removed key is %s", key)
-				iedh.recover(item.event)
-			}
-			if len(iedh.items) == 0 {
-				iedh.renew()
-				log.Warnf("self preservation is stopped")
-			}
+			iedh.ReplayEvents()
 		case <-iedh.resetCh:
-			iedh.renew()
-			log.Warnf("self preservation is reset")
-
+			iedh.ReplayEvents()
+			iedh.enabled = false
 			util.ResetTimer(t, deferCheckWindow)
 		}
 	}
 }
 
-func (iedh *InstanceEventDeferHandler) recover(evt sd.KvEvent) {
-	key := util.BytesToStringWithNoCopy(evt.KV.Key)
-	delete(iedh.items, key)
-	iedh.deferCh <- evt
+func (iedh *InstanceEventDeferHandler) ReplayEvents() {
+	interval := int32(deferCheckWindow / time.Second)
+	for key, item := range iedh.items {
+		item.ReplayAfter -= interval
+		if item.ReplayAfter > 0 {
+			continue
+		}
+		log.Warnf("replay delete event, remove key: %s", key)
+		iedh.replayEvent(item.event)
+	}
+	if len(iedh.items) == 0 {
+		iedh.enabled = false
+		log.Warnf("self preservation stopped")
+	}
 }
 
-func (iedh *InstanceEventDeferHandler) renew() {
-	iedh.enabled = false
-	iedh.items = make(map[string]*deferItem)
+func (iedh *InstanceEventDeferHandler) replayEvent(evt sd.KvEvent) {
+	key := util.BytesToStringWithNoCopy(evt.KV.Key)
+	delete(iedh.items, key)
+	iedh.replayCh <- evt
 }
 
 func (iedh *InstanceEventDeferHandler) Reset() bool {
-	if iedh.enabled {
+	if iedh.enabled || len(iedh.items) != 0 {
+		log.Warnf("self preservation is reset")
 		iedh.resetCh <- struct{}{}
 		return true
 	}

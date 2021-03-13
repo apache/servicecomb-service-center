@@ -73,6 +73,9 @@ func GetInt(key string, def int, opts ...Option) int {
 	if archaius.Exist(key) {
 		return archaius.GetInt(key, def)
 	}
+	if archaius.Exist(options.Standby) {
+		return archaius.GetInt(options.Standby, def)
+	}
 	return beego.AppConfig.DefaultInt(options.Standby, def)
 }
 

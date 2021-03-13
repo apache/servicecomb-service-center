@@ -23,9 +23,8 @@ import (
 	"fmt"
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/metrics"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/apache/servicecomb-service-center/server/metrics"
 	"strconv"
 
 	"github.com/apache/servicecomb-service-center/server/config"
@@ -49,10 +48,6 @@ const (
 	TypeTag
 	TypeService
 	TypeInstance
-)
-const (
-	TotalService  = "db_service_total"
-	TotalInstance = "db_instance_total"
 )
 
 var (
@@ -141,9 +136,10 @@ func GetResourceUsage(ctx context.Context, res *ApplyQuotaResource) (int64, erro
 	serviceID := res.ServiceID
 	switch res.QuotaType {
 	case TypeService:
-		return metrics.GaugeValue(TotalService, prometheus.Labels{"domain": util.ParseDomain(ctx)}), nil
+		return metrics.GetTotalService(util.ParseDomain(ctx)), nil
 	case TypeInstance:
-		return metrics.GaugeValue(TotalInstance, prometheus.Labels{"domain": util.ParseDomain(ctx)}), nil
+		usage := metrics.GetTotalInstance(util.ParseDomain(ctx))
+		return usage, nil
 	case TypeRule:
 		{
 			resp, err := datasource.Instance().GetRules(ctx, &pb.GetServiceRulesRequest{

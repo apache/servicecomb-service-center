@@ -18,6 +18,7 @@
 package metrics
 
 import (
+	"strings"
 	"time"
 
 	"github.com/apache/servicecomb-service-center/pkg/metrics"
@@ -29,24 +30,20 @@ import (
 // keys of gauge
 const (
 	KeyDomainTotal    = "domain_total"
-	KeyServiceTotal   = "service_total"
-	KeyInstanceTotal  = "instance_total"
 	KeySchemaTotal    = "schema_total"
 	KeyFrameworkTotal = "framework_total"
-
-	SubSystem = "db"
 )
 
 // Key return metrics key
 func Key(name string) string {
-	return util.StringJoin([]string{SubSystem, name}, "_")
+	return util.StringJoin([]string{metrics.SubSystem, name}, "_")
 }
 
 var (
 	domainCounter = helper.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace: metrics.FamilyName,
-			Subsystem: SubSystem,
+			Subsystem: metrics.SubSystem,
 			Name:      KeyDomainTotal,
 			Help:      "Gauge of domain created in Service Center",
 		}, []string{"instance"})
@@ -55,22 +52,22 @@ var (
 		prometheus.GaugeOpts{
 			Namespace: metrics.FamilyName,
 			Subsystem: "db",
-			Name:      KeyServiceTotal,
+			Name:      metrics.KeyServiceTotal,
 			Help:      "Gauge of microservice created in Service Center",
 		}, []string{"instance", "framework", "frameworkVersion", "domain"})
 
 	instanceCounter = helper.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace: metrics.FamilyName,
-			Subsystem: SubSystem,
-			Name:      KeyInstanceTotal,
+			Subsystem: metrics.SubSystem,
+			Name:      metrics.KeyInstanceTotal,
 			Help:      "Gauge of microservice created in Service Center",
 		}, []string{"instance", "domain"})
 
 	schemaCounter = helper.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace: metrics.FamilyName,
-			Subsystem: SubSystem,
+			Subsystem: metrics.SubSystem,
 			Name:      KeySchemaTotal,
 			Help:      "Gauge of schema created in Service Center",
 		}, []string{"instance", "domain"})
@@ -78,7 +75,7 @@ var (
 	frameworkCounter = helper.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace: metrics.FamilyName,
-			Subsystem: SubSystem,
+			Subsystem: metrics.SubSystem,
 			Name:      KeyFrameworkTotal,
 			Help:      "Gauge of client framework info in Service Center",
 		}, metrics.ToLabelNames(Framework{}))
@@ -126,12 +123,18 @@ func ReportServices(domain, framework, frameworkVersion string, c float64) {
 	instance := metrics.InstanceName()
 	serviceCounter.WithLabelValues(instance, framework, frameworkVersion, domain).Add(c)
 }
-
+func GetTotalService(domain string) int64 {
+	return metrics.GaugeValue(strings.Join([]string{metrics.SubSystem, metrics.KeyServiceTotal}, "_"), prometheus.Labels{"domain": domain})
+}
 func ReportInstances(domain string, c float64) {
 	instance := metrics.InstanceName()
 	instanceCounter.WithLabelValues(instance, domain).Add(c)
 }
-
+func GetTotalInstance(domain string) int64 {
+	mn := strings.Join([]string{metrics.SubSystem, metrics.KeyInstanceTotal}, "_")
+	usage := metrics.GaugeValue(mn, prometheus.Labels{"domain": domain})
+	return usage
+}
 func ReportSchemas(domain string, c float64) {
 	instance := metrics.InstanceName()
 	schemaCounter.WithLabelValues(instance, domain).Add(c)
