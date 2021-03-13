@@ -17,6 +17,7 @@ package buildin_test
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	_ "github.com/apache/servicecomb-service-center/server/init"
@@ -40,13 +41,15 @@ func init() {
 }
 func TestGetResourceLimit(t *testing.T) {
 	//var id string
+	ctx := context.TODO()
+	ctx = util.SetDomainProject(ctx, "quota", "quota")
 	t.Run("create service,should success", func(t *testing.T) {
-		res := quota.NewApplyQuotaResource(quota.TypeService, "default/default", "", 1)
-		err := quota.Apply(context.TODO(), res)
+		res := quota.NewApplyQuotaResource(quota.TypeService, "quota/quota", "", 1)
+		err := quota.Apply(ctx, res)
 		assert.Nil(t, err)
 	})
-	t.Run("create instance,should success", func(t *testing.T) {
-		resp, err := datasource.Instance().RegisterService(context.TODO(), &pb.CreateServiceRequest{
+	t.Run("create 1 instance,should success", func(t *testing.T) {
+		resp, err := datasource.Instance().RegisterService(ctx, &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
 				ServiceName: "quota",
 			},
@@ -54,9 +57,26 @@ func TestGetResourceLimit(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
-		res := quota.NewApplyQuotaResource(quota.TypeInstance, "default/default", resp.ServiceId, 1)
-		err = quota.Apply(context.TODO(), res)
+		res := quota.NewApplyQuotaResource(quota.TypeInstance, "quota/quota", resp.ServiceId, 1)
+		err = quota.Apply(ctx, res)
 		assert.Nil(t, err)
+
+		res = quota.NewApplyQuotaResource(quota.TypeInstance, "quota/quota", resp.ServiceId, 150001)
+		err = quota.Apply(ctx, res)
+		assert.NotNil(t, err)
+	})
+	t.Run("create 150001 instance,should failed", func(t *testing.T) {
+		resp, err := datasource.Instance().RegisterService(ctx, &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				ServiceName: "quota2",
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
+
+		res := quota.NewApplyQuotaResource(quota.TypeInstance, "quota/quota", resp.ServiceId, 150001)
+		err = quota.Apply(ctx, res)
+		assert.NotNil(t, err)
 	})
 
 }

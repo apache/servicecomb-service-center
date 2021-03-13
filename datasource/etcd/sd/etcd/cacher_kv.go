@@ -373,6 +373,7 @@ func (c *KvCacher) handleDeferEvents(ctx context.Context) {
 			return
 		case evt, ok := <-c.Cfg.DeferHandler.HandleChan():
 			if !ok {
+				log.Error("replay channel is closed", nil)
 				return
 			}
 

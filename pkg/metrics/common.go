@@ -23,7 +23,15 @@ import (
 	dto "github.com/prometheus/client_model/go"
 )
 
-func getValue(name string, labels prometheus.Labels, apply func(m *dto.Metric) float64) float64 {
+// keys of gauge
+const (
+	KeyServiceTotal  = "service_total"
+	KeyInstanceTotal = "instance_total"
+
+	SubSystem = "db"
+)
+
+func getValue(name string, labels prometheus.Labels) float64 {
 	f := Family(name)
 	if f == nil {
 		return 0
@@ -34,13 +42,13 @@ func getValue(name string, labels prometheus.Labels, apply func(m *dto.Metric) f
 		if !matchAll && !MatchLabels(m, labels) {
 			continue
 		}
-		sum += apply(m)
+		sum += m.GetGauge().GetValue()
 	}
 	return sum
 }
 
 func GaugeValue(name string, labels prometheus.Labels) int64 {
-	return int64(getValue(name, labels, func(m *dto.Metric) float64 { return m.GetGauge().GetValue() }))
+	return int64(getValue(name, labels))
 }
 
 func MatchLabels(m *dto.Metric, labels prometheus.Labels) bool {
