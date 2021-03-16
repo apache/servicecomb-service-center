@@ -23,17 +23,14 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 
-	"github.com/apache/servicecomb-service-center/datasource/mongo"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
 func updateInstanceRefreshTime(ctx context.Context, serviceID string, instanceID string) error {
-	filter := bson.M{
-		mongo.StringBuilder([]string{model.ColumnInstance, model.ColumnServiceID}):  serviceID,
-		mongo.StringBuilder([]string{model.ColumnInstance, model.ColumnInstanceID}): instanceID,
-	}
+	filter := util.NewFilter(util.InstanceServiceID(serviceID), util.InstanceInstanceID(instanceID))
 	update := bson.M{
 		"$set": bson.M{model.ColumnRefreshTime: time.Now()},
 	}

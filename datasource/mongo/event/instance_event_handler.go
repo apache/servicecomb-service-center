@@ -28,7 +28,8 @@ import (
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/mongo"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/client/dao"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
 	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -60,7 +61,7 @@ func (h InstanceEventHandler) OnEvent(evt sd.MongoEvent) {
 	}
 	if microService == nil {
 		log.Info("get cached service failed, then get from database")
-		service, err := mongo.GetService(context.Background(), bson.M{"serviceinfo.serviceid": providerID})
+		service, err := dao.GetService(context.Background(), bson.M{"serviceinfo.serviceid": providerID})
 		if err != nil {
 			if errors.Is(err, datasource.ErrNoData) {
 				log.Warn(fmt.Sprintf("there is no service with id [%s] in the database", providerID))

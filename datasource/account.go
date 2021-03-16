@@ -24,9 +24,11 @@ import (
 )
 
 var (
-	ErrAccountDuplicated = errors.New("account is duplicated")
-	ErrAccountCanNotEdit = errors.New("account can not be edited")
-	ErrDLockNotFound     = errors.New("dlock not found")
+	ErrAccountDuplicated   = errors.New("account is duplicated")
+	ErrAccountCanNotEdit   = errors.New("account can not be edited")
+	ErrDLockNotFound       = errors.New("dlock not found")
+	ErrDeleteAccountFailed = errors.New("failed to delete account")
+	ErrQueryAccountFailed  = errors.New("failed to query account")
 )
 
 // AccountManager contains the RBAC CRUD

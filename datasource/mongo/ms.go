@@ -37,8 +37,9 @@ import (
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/client/dao"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/heartbeat"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
 	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
@@ -49,8 +50,9 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
 )
 
-func (ds *DataSource) RegisterService(ctx context.Context, request *discovery.CreateServiceRequest) (
-	*discovery.CreateServiceResponse, error) {
+const baseTen = 10
+
+func (ds *DataSource) RegisterService(ctx context.Context, request *discovery.CreateServiceRequest) (*discovery.CreateServiceResponse, error) {
 	service := request.Service
 	remoteIP := util.GetIPFromContext(ctx)
 	domain := util.ParseDomain(ctx)
@@ -136,15 +138,13 @@ func (ds *DataSource) RegisterService(ctx context.Context, request *discovery.Cr
 	}, nil
 }
 
-func (ds *DataSource) GetServices(ctx context.Context, request *discovery.GetServicesRequest) (
-	*discovery.GetServicesResponse, error) {
-
+func (ds *DataSource) GetServices(ctx context.Context, request *discovery.GetServicesRequest) (*discovery.GetServicesResponse, error) {
 	domain := util.ParseDomain(ctx)
 	project := util.ParseProject(ctx)
 
 	filter := bson.M{model.ColumnDomain: domain, model.ColumnProject: project}
 
-	services, err := GetServices(ctx, filter)
+	services, err := dao.GetMicroServices(ctx, filter)
 	if err != nil {
 		return &discovery.GetServicesResponse{
 			Response: discovery.CreateResponse(discovery.ErrInternal, "get services data failed."),
@@ -164,9 +164,9 @@ func (ds *DataSource) GetApplications(ctx context.Context, request *discovery.Ge
 	filter := bson.M{
 		model.ColumnDomain:  domain,
 		model.ColumnProject: project,
-		StringBuilder([]string{model.ColumnService, model.ColumnEnv}): request.Environment}
+		mutil.ConnectWithDot([]string{model.ColumnService, model.ColumnEnv}): request.Environment}
 
-	services, err := GetServices(ctx, filter)
+	services, err := dao.GetMicroServices(ctx, filter)
 	if err != nil {
 		return &discovery.GetAppsResponse{
 			Response: discovery.CreateResponse(discovery.ErrInternal, "get services data failed."),
@@ -196,8 +196,7 @@ func (ds *DataSource) GetApplications(ctx context.Context, request *discovery.Ge
 	}, nil
 }
 
-func (ds *DataSource) GetService(ctx context.Context, request *discovery.GetServiceRequest) (
-	*discovery.GetServiceResponse, error) {
+func (ds *DataSource) GetService(ctx context.Context, request *discovery.GetServiceRequest) (*discovery.GetServiceResponse, error) {
 	svc, err := GetServiceByID(ctx, request.ServiceId)
 	if err != nil {
 		if errors.Is(err, datasource.ErrNoData) {
@@ -292,7 +291,8 @@ func (ds *DataSource) DelServicePri(ctx context.Context, serviceID string, force
 		log.Error(fmt.Sprintf("%s micro-service %s failed, operator: %s", title, serviceID, remoteIP), mutil.ErrNotAllowDeleteSC)
 		return discovery.CreateResponse(discovery.ErrInvalidParams, mutil.ErrNotAllowDeleteSC.Error()), nil
 	}
-	microservice, err := GetService(ctx, GeneratorServiceFilter(ctx, serviceID))
+	filter := mutil.NewBasicFilter(ctx, mutil.ServiceServiceID(serviceID))
+	microservice, err := dao.GetService(ctx, filter)
 	if err != nil {
 		if errors.Is(err, datasource.ErrNoData) {
 			log.Debug(fmt.Sprintf("%s micro-service %s failed, service does not exist, operator: %s",
@@ -318,7 +318,7 @@ func (ds *DataSource) DelServicePri(ctx context.Context, serviceID string, force
 			return discovery.CreateResponse(discovery.ErrDependedOnConsumer, "Can not delete this service, other service rely it."), err
 		}
 		//todo wait for dep interface
-		instancesExist, err := client.GetMongoClient().DocExist(ctx, model.CollectionInstance, bson.M{StringBuilder([]string{model.ColumnInstance, model.ColumnServiceID}): serviceID})
+		instancesExist, err := client.GetMongoClient().DocExist(ctx, model.CollectionInstance, bson.M{mutil.ConnectWithDot([]string{model.ColumnInstance, model.ColumnServiceID}): serviceID})
 		if err != nil {
 			log.Error(fmt.Sprintf("delete micro-service[%s] failed, get instances number failed, operator: %s",
 				serviceID, remoteIP), err)
@@ -334,8 +334,8 @@ func (ds *DataSource) DelServicePri(ctx context.Context, serviceID string, force
 
 	schemaOps := client.MongoOperation{Table: model.CollectionSchema, Models: []mongo.WriteModel{mongo.NewDeleteManyModel().SetFilter(bson.M{model.ColumnServiceID: serviceID})}}
 	rulesOps := client.MongoOperation{Table: model.CollectionRule, Models: []mongo.WriteModel{mongo.NewDeleteManyModel().SetFilter(bson.M{model.ColumnServiceID: serviceID})}}
-	instanceOps := client.MongoOperation{Table: model.CollectionInstance, Models: []mongo.WriteModel{mongo.NewDeleteManyModel().SetFilter(bson.M{StringBuilder([]string{model.ColumnInstance, model.ColumnServiceID}): serviceID})}}
-	serviceOps := client.MongoOperation{Table: model.CollectionService, Models: []mongo.WriteModel{mongo.NewDeleteOneModel().SetFilter(bson.M{StringBuilder([]string{model.ColumnService, model.ColumnServiceID}): serviceID})}}
+	instanceOps := client.MongoOperation{Table: model.CollectionInstance, Models: []mongo.WriteModel{mongo.NewDeleteManyModel().SetFilter(bson.M{mutil.ConnectWithDot([]string{model.ColumnInstance, model.ColumnServiceID}): serviceID})}}
+	serviceOps := client.MongoOperation{Table: model.CollectionService, Models: []mongo.WriteModel{mongo.NewDeleteOneModel().SetFilter(bson.M{mutil.ConnectWithDot([]string{model.ColumnService, model.ColumnServiceID}): serviceID})}}
 
 	err = client.GetMongoClient().MultiTableBatchUpdate(ctx, []client.MongoOperation{schemaOps, rulesOps, instanceOps, serviceOps})
 	if err != nil {
@@ -362,13 +362,16 @@ func (ds *DataSource) DelServicePri(ctx context.Context, serviceID string, force
 	return discovery.CreateResponse(discovery.ResponseSuccess, "Unregister service successfully."), nil
 }
 
-func (ds *DataSource) UpdateService(ctx context.Context, request *discovery.UpdateServicePropsRequest) (
-	*discovery.UpdateServicePropsResponse, error) {
-	updateData := bson.M{
-		"$set": bson.M{
-			StringBuilder([]string{model.ColumnService, model.ColumnModTime}):  strconv.FormatInt(time.Now().Unix(), 10),
-			StringBuilder([]string{model.ColumnService, model.ColumnProperty}): request.Properties}}
-	err := UpdateService(ctx, GeneratorServiceFilter(ctx, request.ServiceId), updateData)
+func (ds *DataSource) UpdateService(ctx context.Context, request *discovery.UpdateServicePropsRequest) (*discovery.UpdateServicePropsResponse, error) {
+	filter := mutil.NewBasicFilter(ctx, mutil.ServiceServiceID(request.ServiceId))
+	setFilter := mutil.NewFilter(
+		mutil.ServiceModTime(strconv.FormatInt(time.Now().Unix(), baseTen)),
+		mutil.ServiceProperty(request.Properties),
+	)
+	updateFilter := mutil.NewFilter(
+		mutil.Set(setFilter),
+	)
+	err := dao.UpdateService(ctx, filter, updateFilter)
 	if err != nil {
 		log.Error(fmt.Sprintf("update service %s properties failed, update mongo failed", request.ServiceId), err)
 		return &discovery.UpdateServicePropsResponse{
@@ -380,8 +383,7 @@ func (ds *DataSource) UpdateService(ctx context.Context, request *discovery.Upda
 	}, nil
 }
 
-func (ds *DataSource) GetDeleteServiceFunc(ctx context.Context, serviceID string, force bool,
-	serviceRespChan chan<- *discovery.DelServicesRspInfo) func(context.Context) {
+func (ds *DataSource) GetDeleteServiceFunc(ctx context.Context, serviceID string, force bool, serviceRespChan chan<- *discovery.DelServicesRspInfo) func(context.Context) {
 	return func(_ context.Context) {
 		serviceRst := &discovery.DelServicesRspInfo{
 			ServiceId:  serviceID,
@@ -398,9 +400,9 @@ func (ds *DataSource) GetDeleteServiceFunc(ctx context.Context, serviceID string
 	}
 }
 
-func (ds *DataSource) GetServiceDetail(ctx context.Context, request *discovery.GetServiceRequest) (
-	*discovery.GetServiceDetailResponse, error) {
-	mgSvc, err := GetService(ctx, GeneratorServiceFilter(ctx, request.ServiceId))
+func (ds *DataSource) GetServiceDetail(ctx context.Context, request *discovery.GetServiceRequest) (*discovery.GetServiceDetailResponse, error) {
+	filter := mutil.NewBasicFilter(ctx, mutil.ServiceServiceID(request.ServiceId))
+	mgSvc, err := dao.GetService(ctx, filter)
 	if err != nil {
 		if errors.Is(err, datasource.ErrNoData) {
 			return &discovery.GetServiceDetailResponse{
@@ -417,7 +419,12 @@ func (ds *DataSource) GetServiceDetail(ctx context.Context, request *discovery.G
 		AppId:       svc.AppId,
 		ServiceName: svc.ServiceName,
 	}
-	versions, err := GetServicesVersions(ctx, GeneratorServiceVersionsFilter(ctx, key))
+	filter = mutil.NewBasicFilter(ctx,
+		mutil.ServiceEnv(key.Environment),
+		mutil.ServiceAppID(key.AppId),
+		mutil.ServiceServiceName(key.ServiceName),
+	)
+	versions, err := dao.GetServicesVersions(ctx, filter)
 	if err != nil {
 		log.Error(fmt.Sprintf("get service %s %s %s all versions failed", svc.Environment, svc.AppId, svc.ServiceName), err)
 		return &discovery.GetServiceDetailResponse{
@@ -440,8 +447,7 @@ func (ds *DataSource) GetServiceDetail(ctx context.Context, request *discovery.G
 
 }
 
-func (ds *DataSource) GetServicesInfo(ctx context.Context, request *discovery.GetServicesInfoRequest) (
-	*discovery.GetServicesInfoResponse, error) {
+func (ds *DataSource) GetServicesInfo(ctx context.Context, request *discovery.GetServicesInfoRequest) (*discovery.GetServicesInfoResponse, error) {
 	optionMap := make(map[string]struct{}, len(request.Options))
 	for _, opt := range request.Options {
 		optionMap[opt] = struct{}{}
@@ -472,7 +478,7 @@ func (ds *DataSource) GetServicesInfo(ctx context.Context, request *discovery.Ge
 			}, nil
 		}
 	}
-	services, err := GetMongoServices(ctx, bson.M{})
+	services, err := dao.GetServices(ctx, bson.M{})
 	if err != nil {
 		log.Error("get all services by domain failed", err)
 		return &discovery.GetServicesInfoResponse{
@@ -512,7 +518,14 @@ func (ds *DataSource) GetServicesInfo(ctx context.Context, request *discovery.Ge
 }
 
 func (ds *DataSource) AddTags(ctx context.Context, request *discovery.AddServiceTagsRequest) (*discovery.AddServiceTagsResponse, error) {
-	err := UpdateService(ctx, GeneratorServiceFilter(ctx, request.ServiceId), bson.M{"$set": bson.M{model.ColumnTag: request.Tags}})
+	filter := mutil.NewBasicFilter(ctx, mutil.ServiceServiceID(request.ServiceId))
+	setFilter := mutil.NewFilter(
+		mutil.Tags(request.Tags),
+	)
+	updateFilter := mutil.NewFilter(
+		mutil.Set(setFilter),
+	)
+	err := dao.UpdateService(ctx, filter, updateFilter)
 	if err == nil {
 		return &discovery.AddServiceTagsResponse{
 			Response: discovery.CreateResponse(discovery.ResponseSuccess, "Add service tags successfully."),
@@ -530,7 +543,8 @@ func (ds *DataSource) AddTags(ctx context.Context, request *discovery.AddService
 }
 
 func (ds *DataSource) GetTags(ctx context.Context, request *discovery.GetServiceTagsRequest) (*discovery.GetServiceTagsResponse, error) {
-	svc, err := GetService(ctx, GeneratorServiceFilter(ctx, request.ServiceId))
+	filter := mutil.NewBasicFilter(ctx, mutil.ServiceServiceID(request.ServiceId))
+	svc, err := dao.GetService(ctx, filter)
 	if err != nil {
 		if errors.Is(err, datasource.ErrNoData) {
 			log.Debug(fmt.Sprintf("service %s not exist in db", request.ServiceId))
@@ -550,7 +564,8 @@ func (ds *DataSource) GetTags(ctx context.Context, request *discovery.GetService
 }
 
 func (ds *DataSource) UpdateTag(ctx context.Context, request *discovery.UpdateServiceTagRequest) (*discovery.UpdateServiceTagResponse, error) {
-	svc, err := GetService(ctx, GeneratorServiceFilter(ctx, request.ServiceId))
+	filter := mutil.NewBasicFilter(ctx, mutil.ServiceServiceID(request.ServiceId))
+	svc, err := dao.GetService(ctx, filter)
 	if err != nil {
 		if errors.Is(err, datasource.ErrNoData) {
 			log.Debug(fmt.Sprintf("service %s not exist in db", request.ServiceId))
@@ -576,8 +591,13 @@ func (ds *DataSource) UpdateTag(ctx context.Context, request *discovery.UpdateSe
 		newTags[k] = v
 	}
 	newTags[request.Key] = request.Value
-
-	err = UpdateService(ctx, GeneratorServiceFilter(ctx, request.ServiceId), bson.M{"$set": bson.M{model.ColumnTag: newTags}})
+	setFilter := mutil.NewFilter(
+		mutil.Tags(newTags),
+	)
+	updateFilter := mutil.NewFilter(
+		mutil.Set(setFilter),
+	)
+	err = dao.UpdateService(ctx, filter, updateFilter)
 	if err != nil {
 		log.Error(fmt.Sprintf("update service %s tags failed", request.ServiceId), err)
 		return &discovery.UpdateServiceTagResponse{
@@ -590,7 +610,8 @@ func (ds *DataSource) UpdateTag(ctx context.Context, request *discovery.UpdateSe
 }
 
 func (ds *DataSource) DeleteTags(ctx context.Context, request *discovery.DeleteServiceTagsRequest) (*discovery.DeleteServiceTagsResponse, error) {
-	svc, err := GetService(ctx, GeneratorServiceFilter(ctx, request.ServiceId))
+	filter := mutil.NewBasicFilter(ctx, mutil.ServiceServiceID(request.ServiceId))
+	svc, err := dao.GetService(ctx, filter)
 	if err != nil {
 		if errors.Is(err, datasource.ErrNoData) {
 			log.Debug(fmt.Sprintf("service %s not exist in db", request.ServiceId))
@@ -618,7 +639,13 @@ func (ds *DataSource) DeleteTags(ctx context.Context, request *discovery.DeleteS
 			delete(newTags, key)
 		}
 	}
-	err = UpdateService(ctx, GeneratorServiceFilter(ctx, request.ServiceId), bson.M{"$set": bson.M{model.ColumnTag: newTags}})
+	setFilter := mutil.NewFilter(
+		mutil.Tags(newTags),
+	)
+	updateFilter := mutil.NewFilter(
+		mutil.Set(setFilter),
+	)
+	err = dao.UpdateService(ctx, filter, updateFilter)
 	if err != nil {
 		log.Error(fmt.Sprintf("delete service %s tags failed", request.ServiceId), err)
 		return &discovery.DeleteServiceTagsResponse{
@@ -642,7 +669,8 @@ func (ds *DataSource) GetSchema(ctx context.Context, request *discovery.GetSchem
 			Response: discovery.CreateResponse(discovery.ErrServiceNotExists, "GetSchema service does not exist."),
 		}, nil
 	}
-	schema, err := GetSchema(ctx, GeneratorSchemaFilter(ctx, request.ServiceId, request.SchemaId))
+	filter := mutil.NewBasicFilter(ctx, mutil.ServiceID(request.ServiceId), mutil.SchemaID(request.SchemaId))
+	schema, err := dao.GetSchema(ctx, filter)
 	if err != nil {
 		return &discovery.GetSchemaResponse{
 			Response: discovery.CreateResponse(discovery.ErrInternal, "GetSchema failed from mongodb."),
@@ -661,7 +689,10 @@ func (ds *DataSource) GetSchema(ctx context.Context, request *discovery.GetSchem
 }
 
 func (ds *DataSource) GetAllSchemas(ctx context.Context, request *discovery.GetAllSchemaRequest) (*discovery.GetAllSchemaResponse, error) {
-	svc, err := GetService(ctx, GeneratorServiceFilter(ctx, request.ServiceId))
+	domain := util.ParseDomain(ctx)
+	project := util.ParseProject(ctx)
+	filter := mutil.NewDomainProjectFilter(domain, project, mutil.ServiceServiceID(request.ServiceId))
+	svc, err := dao.GetService(ctx, filter)
 	if err != nil {
 		if errors.Is(err, datasource.ErrNoData) {
 			log.Debug(fmt.Sprintf("service %s not exist in db", request.ServiceId))
@@ -685,7 +716,8 @@ func (ds *DataSource) GetAllSchemas(ctx context.Context, request *discovery.GetA
 	for _, schemaID := range schemasList {
 		tempSchema := &discovery.Schema{}
 		tempSchema.SchemaId = schemaID
-		schema, err := GetSchema(ctx, GeneratorSchemaFilter(ctx, request.ServiceId, schemaID))
+		filter := mutil.NewDomainProjectFilter(domain, project, mutil.ServiceID(request.ServiceId), mutil.SchemaID(schemaID))
+		schema, err := dao.GetSchema(ctx, filter)
 		if err != nil {
 			return &discovery.GetAllSchemaResponse{
 				Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
@@ -719,7 +751,8 @@ func (ds *DataSource) ExistSchema(ctx context.Context, request *discovery.GetExi
 			Response: discovery.CreateResponse(discovery.ErrServiceNotExists, "ExistSchema failed for service not exist"),
 		}, nil
 	}
-	Schema, err := GetSchema(ctx, GeneratorSchemaFilter(ctx, request.ServiceId, request.SchemaId))
+	filter := mutil.NewBasicFilter(ctx, mutil.ServiceID(request.ServiceId), mutil.SchemaID(request.SchemaId))
+	Schema, err := dao.GetSchema(ctx, filter)
 	if err != nil {
 		return &discovery.GetExistenceResponse{
 			Response: discovery.CreateResponse(discovery.ErrInternal, "ExistSchema failed for get schema failed."),
@@ -750,7 +783,7 @@ func (ds *DataSource) DeleteSchema(ctx context.Context, request *discovery.Delet
 			Response: discovery.CreateResponse(discovery.ErrServiceNotExists, "DeleteSchema failed for service not exist."),
 		}, nil
 	}
-	filter := GeneratorSchemaFilter(ctx, request.ServiceId, request.SchemaId)
+	filter := mutil.NewBasicFilter(ctx, mutil.ServiceID(request.ServiceId), mutil.SchemaID(request.SchemaId))
 	res, err := client.GetMongoClient().DocDelete(ctx, model.CollectionSchema, filter)
 	if err != nil {
 		return &discovery.DeleteSchemaResponse{
@@ -794,7 +827,8 @@ func (ds *DataSource) ModifySchema(ctx context.Context, request *discovery.Modif
 }
 
 func (ds *DataSource) ModifySchemas(ctx context.Context, request *discovery.ModifySchemasRequest) (*discovery.ModifySchemasResponse, error) {
-	svc, err := GetService(ctx, GeneratorServiceFilter(ctx, request.ServiceId))
+	filter := mutil.NewBasicFilter(ctx, mutil.ServiceServiceID(request.ServiceId))
+	svc, err := dao.GetService(ctx, filter)
 	if err != nil {
 		if errors.Is(err, datasource.ErrNoData) {
 			return &discovery.ModifySchemasResponse{Response: discovery.CreateResponse(discovery.ErrServiceNotExists, "Service not exist")}, nil
@@ -821,9 +855,9 @@ func (ds *DataSource) modifySchemas(ctx context.Context, service *discovery.Micr
 	domain := util.ParseDomain(ctx)
 	project := util.ParseProject(ctx)
 	remoteIP := util.GetIPFromContext(ctx)
-
 	serviceID := service.ServiceId
-	schemasFromDatabase, err := GetSchemas(ctx, bson.M{model.ColumnServiceID: serviceID})
+	filter := mutil.NewFilter(mutil.ServiceID(serviceID))
+	schemasFromDatabase, err := dao.GetSchemas(ctx, filter)
 	if err != nil {
 		log.Error(fmt.Sprintf("modify service %s schemas failed, get schemas failed, operator: %s", serviceID, remoteIP), err)
 		return discovery.NewError(discovery.ErrUnavailableBackend, err.Error())
@@ -842,7 +876,10 @@ func (ds *DataSource) modifySchemas(ctx context.Context, service *discovery.Micr
 				log.Error(fmt.Sprintf("modify service[%s] schemas failed, operator: %s", serviceID, remoteIP), errQuota)
 				return errQuota
 			}
-			serviceOps = append(serviceOps, mongo.NewUpdateOneModel().SetUpdate(bson.M{"$set": bson.M{StringBuilder([]string{model.ColumnService, model.ColumnSchemas}): nonExistSchemaIds}}).SetFilter(GeneratorServiceFilter(ctx, serviceID)))
+			filter = mutil.NewDomainProjectFilter(domain, project, mutil.ServiceServiceID(serviceID))
+			setFilter := mutil.NewFilter(mutil.ServiceSchemas(nonExistSchemaIds))
+			updateFilter := mutil.NewFilter(mutil.Set(setFilter))
+			serviceOps = append(serviceOps, mongo.NewUpdateOneModel().SetUpdate(updateFilter).SetFilter(filter))
 		} else {
 			if len(nonExistSchemaIds) != 0 {
 				errInfo := fmt.Errorf("non-existent schemaIDs %v", nonExistSchemaIds)
@@ -850,12 +887,20 @@ func (ds *DataSource) modifySchemas(ctx context.Context, service *discovery.Micr
 				return discovery.NewError(discovery.ErrUndefinedSchemaID, errInfo.Error())
 			}
 			for _, needUpdateSchema := range needUpdateSchemas {
-				exist, err := SchemaSummaryExist(ctx, serviceID, needUpdateSchema.SchemaId)
+				exist, err := dao.SchemaSummaryExist(ctx, serviceID, needUpdateSchema.SchemaId)
 				if err != nil {
 					return discovery.NewError(discovery.ErrInternal, err.Error())
 				}
 				if !exist {
-					schemasOps = append(schemasOps, mongo.NewUpdateOneModel().SetFilter(GeneratorSchemaFilter(ctx, serviceID, needUpdateSchema.SchemaId)).SetUpdate(bson.M{"$set": bson.M{model.ColumnSchema: needUpdateSchema.Schema, model.ColumnSchemaSummary: needUpdateSchema.Summary}}))
+					filter = mutil.NewDomainProjectFilter(domain, project, mutil.ServiceID(serviceID), mutil.SchemaID(needUpdateSchema.SchemaId))
+					setFilter := mutil.NewFilter(
+						mutil.Schema(needUpdateSchema.Schema),
+						mutil.SchemaSummary(needUpdateSchema.Summary),
+					)
+					updateFilter := mutil.NewFilter(
+						mutil.Set(setFilter),
+					)
+					schemasOps = append(schemasOps, mongo.NewUpdateOneModel().SetFilter(filter).SetUpdate(updateFilter))
 				} else {
 					log.Warn(fmt.Sprintf("schema[%s/%s] and it's summary already exist, skip to update, operator: %s",
 						serviceID, needUpdateSchema.SchemaId, remoteIP))
@@ -900,16 +945,27 @@ func (ds *DataSource) modifySchemas(ctx context.Context, service *discovery.Micr
 
 		for _, schema := range needUpdateSchemas {
 			log.Info(fmt.Sprintf("update schema[%s/%s], operator: %s", serviceID, schema.SchemaId, remoteIP))
-			schemasOps = append(schemasOps, mongo.NewUpdateOneModel().SetFilter(GeneratorSchemaFilter(ctx, serviceID, schema.SchemaId)).SetUpdate(bson.M{"$set": bson.M{model.ColumnSchema: schema.Schema, model.ColumnSchemaSummary: schema.Summary}}))
+			filter = mutil.NewDomainProjectFilter(domain, project, mutil.ServiceID(serviceID), mutil.SchemaID(schema.SchemaId))
+			setFilter := mutil.NewFilter(
+				mutil.Schema(schema.Schema),
+				mutil.SchemaSummary(schema.Summary),
+			)
+			updateFilter := mutil.NewFilter(
+				mutil.Set(setFilter),
+			)
+			schemasOps = append(schemasOps, mongo.NewUpdateOneModel().SetFilter(filter).SetUpdate(updateFilter))
 			schemaIDs = append(schemaIDs, schema.SchemaId)
 		}
 
 		for _, schema := range needDeleteSchemas {
 			log.Info(fmt.Sprintf("delete non-existent schema[%s/%s], operator: %s", serviceID, schema.SchemaId, remoteIP))
-			schemasOps = append(schemasOps, mongo.NewDeleteOneModel().SetFilter(GeneratorSchemaFilter(ctx, serviceID, schema.SchemaId)))
+			filter := mutil.NewDomainProjectFilter(domain, project, mutil.ServiceID(serviceID), mutil.SchemaID(schema.SchemaId))
+			schemasOps = append(schemasOps, mongo.NewDeleteOneModel().SetFilter(filter))
 		}
-
-		serviceOps = append(serviceOps, mongo.NewUpdateOneModel().SetUpdate(bson.M{"$set": bson.M{StringBuilder([]string{model.ColumnService, model.ColumnSchemas}): schemaIDs}}).SetFilter(GeneratorServiceFilter(ctx, serviceID)))
+		filter := mutil.NewDomainProjectFilter(domain, project, mutil.ServiceServiceID(serviceID))
+		setFilter := mutil.NewFilter(mutil.ServiceSchemas(schemaIDs))
+		updateFilter := mutil.NewFilter(mutil.Set(setFilter))
+		serviceOps = append(serviceOps, mongo.NewUpdateOneModel().SetUpdate(updateFilter).SetFilter(filter))
 	}
 	if len(schemasOps) > 0 {
 		_, err = client.GetMongoClient().BatchUpdate(ctx, model.CollectionSchema, schemasOps)
@@ -932,8 +988,11 @@ func (ds *DataSource) modifySchemas(ctx context.Context, service *discovery.Micr
 // 3.service is editable && service have no relation with the schema --> update the schema && update the service
 // 4.service can't edit && service have relation with the schema && schema summary not exist --> update the schema
 func (ds *DataSource) modifySchema(ctx context.Context, serviceID string, schema *discovery.Schema) *discovery.Error {
+	domain := util.ParseDomain(ctx)
+	project := util.ParseProject(ctx)
+	filter := mutil.NewDomainProjectFilter(domain, project, mutil.ServiceServiceID(serviceID))
 	remoteIP := util.GetIPFromContext(ctx)
-	svc, err := GetService(ctx, GeneratorServiceFilter(ctx, serviceID))
+	svc, err := dao.GetService(ctx, filter)
 	if err != nil {
 		if errors.Is(err, datasource.ErrNoData) {
 			return discovery.NewError(discovery.ErrServiceNotExists, "Service does not exist.")
@@ -953,7 +1012,8 @@ func (ds *DataSource) modifySchema(ctx context.Context, serviceID string, schema
 		if len(microservice.Schemas) != 0 && !isExist {
 			return discovery.NewError(discovery.ErrUndefinedSchemaID, "Non-existent schemaID can't be added request "+discovery.ENV_PROD)
 		}
-		respSchema, err := GetSchema(ctx, GeneratorSchemaFilter(ctx, serviceID, schema.SchemaId))
+		filter = mutil.NewDomainProjectFilter(domain, project, mutil.ServiceID(serviceID), mutil.SchemaID(schema.SchemaId))
+		respSchema, err := dao.GetSchema(ctx, filter)
 		if err != nil {
 			return discovery.NewError(discovery.ErrUnavailableBackend, err.Error())
 		}
@@ -981,14 +1041,25 @@ func (ds *DataSource) modifySchema(ctx context.Context, serviceID string, schema
 		}
 	}
 	if len(newSchemas) != 0 {
-		updateData := bson.M{StringBuilder([]string{model.ColumnService, model.ColumnSchemas}): newSchemas}
-		err = UpdateService(ctx, GeneratorServiceFilter(ctx, serviceID), bson.M{"$set": updateData})
+		filter = mutil.NewDomainProjectFilter(domain, project, mutil.ServiceServiceID(serviceID))
+		setFilter := mutil.NewFilter(
+			mutil.ServiceSchemas(newSchemas),
+		)
+		updateFilter := mutil.NewFilter(
+			mutil.Set(setFilter),
+		)
+		err = dao.UpdateService(ctx, filter, updateFilter)
 		if err != nil {
 			return discovery.NewError(discovery.ErrInternal, err.Error())
 		}
 	}
-	newSchema := bson.M{"$set": bson.M{model.ColumnSchema: schema.Schema, model.ColumnSchemaSummary: schema.Summary}}
-	err = UpdateSchema(ctx, GeneratorSchemaFilter(ctx, serviceID, schema.SchemaId), newSchema, options.FindOneAndUpdate().SetUpsert(true))
+	filter = mutil.NewDomainProjectFilter(domain, project, mutil.ServiceID(serviceID), mutil.SchemaID(schema.SchemaId))
+	setFilter := mutil.NewFilter(
+		mutil.Schema(schema.Schema),
+		mutil.SchemaSummary(schema.Summary),
+	)
+	updateFilter := mutil.NewFilter(mutil.Set(setFilter))
+	err = dao.UpdateSchema(ctx, filter, updateFilter, options.FindOneAndUpdate().SetUpsert(true))
 	if err != nil {
 		return discovery.NewError(discovery.ErrInternal, err.Error())
 	}
@@ -997,6 +1068,8 @@ func (ds *DataSource) modifySchema(ctx context.Context, serviceID string, schema
 
 func (ds *DataSource) AddRule(ctx context.Context, request *discovery.AddServiceRulesRequest) (*discovery.AddServiceRulesResponse, error) {
 	remoteIP := util.GetIPFromContext(ctx)
+	domain := util.ParseDomain(ctx)
+	project := util.ParseProject(ctx)
 	exist, err := ServiceExistID(ctx, request.ServiceId)
 	if err != nil {
 		log.Error(fmt.Sprintf("failed to add rules for service %s for get service failed", request.ServiceId), err)
@@ -1019,7 +1092,8 @@ func (ds *DataSource) AddRule(ctx context.Context, request *discovery.AddService
 		}
 		return response, nil
 	}
-	rules, err := GetRules(ctx, request.ServiceId)
+	filter := mutil.NewDomainProjectFilter(domain, project, mutil.ServiceID(request.ServiceId))
+	rules, err := dao.GetServiceRules(ctx, filter)
 	if err != nil {
 		return &discovery.AddServiceRulesResponse{
 			Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
@@ -1039,7 +1113,12 @@ func (ds *DataSource) AddRule(ctx context.Context, request *discovery.AddService
 			}, nil
 		}
 		//the rule unique index is (serviceid,attribute,pattern)
-		exist, err := RuleExist(ctx, GeneratorRuleAttFilter(ctx, request.ServiceId, rule.Attribute, rule.Pattern))
+		filter = mutil.NewFilter(
+			mutil.ServiceID(request.ServiceId),
+			mutil.RuleAttribute(rule.Attribute),
+			mutil.RulePattern(rule.Pattern),
+		)
+		exist, err := dao.RuleExist(ctx, filter)
 		if err != nil {
 			return &discovery.AddServiceRulesResponse{
 				Response: discovery.CreateResponse(discovery.ErrUnavailableBackend, "Can not check rule if exist."),
@@ -1077,8 +1156,7 @@ func (ds *DataSource) AddRule(ctx context.Context, request *discovery.AddService
 	}, nil
 }
 
-func (ds *DataSource) GetRules(ctx context.Context, request *discovery.GetServiceRulesRequest) (
-	*discovery.GetServiceRulesResponse, error) {
+func (ds *DataSource) GetRules(ctx context.Context, request *discovery.GetServiceRulesRequest) (*discovery.GetServiceRulesResponse, error) {
 	exist, err := ServiceExistID(ctx, request.ServiceId)
 	if err != nil {
 		return &discovery.GetServiceRulesResponse{
@@ -1090,7 +1168,8 @@ func (ds *DataSource) GetRules(ctx context.Context, request *discovery.GetServic
 			Response: discovery.CreateResponse(discovery.ErrServiceNotExists, "GetRules failed for service not exist."),
 		}, nil
 	}
-	rules, err := GetRules(ctx, request.ServiceId)
+	filter := mutil.NewBasicFilter(ctx, mutil.ServiceID(request.ServiceId))
+	rules, err := dao.GetServiceRules(ctx, filter)
 	if err != nil {
 		return &discovery.GetServiceRulesResponse{
 			Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
@@ -1102,9 +1181,10 @@ func (ds *DataSource) GetRules(ctx context.Context, request *discovery.GetServic
 	}, nil
 }
 
-func (ds *DataSource) DeleteRule(ctx context.Context, request *discovery.DeleteServiceRulesRequest) (
-	*discovery.DeleteServiceRulesResponse, error) {
+func (ds *DataSource) DeleteRule(ctx context.Context, request *discovery.DeleteServiceRulesRequest) (*discovery.DeleteServiceRulesResponse, error) {
 	exist, err := ServiceExistID(ctx, request.ServiceId)
+	domain := util.ParseDomain(ctx)
+	project := util.ParseProject(ctx)
 	if err != nil {
 		log.Error(fmt.Sprintf("failed to add tags for service %s for get service failed", request.ServiceId), err)
 		return &discovery.DeleteServiceRulesResponse{
@@ -1116,7 +1196,8 @@ func (ds *DataSource) DeleteRule(ctx context.Context, request *discovery.DeleteS
 	}
 	var delRules []mongo.WriteModel
 	for _, ruleID := range request.RuleIds {
-		exist, err := RuleExist(ctx, GeneratorRuleFilter(ctx, request.ServiceId, ruleID))
+		filter := mutil.NewDomainProjectFilter(domain, project, mutil.ServiceID(request.ServiceId), mutil.RuleRuleID(ruleID))
+		exist, err := dao.RuleExist(ctx, filter)
 		if err != nil {
 			return &discovery.DeleteServiceRulesResponse{
 				Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
@@ -1127,7 +1208,8 @@ func (ds *DataSource) DeleteRule(ctx context.Context, request *discovery.DeleteS
 				Response: discovery.CreateResponse(discovery.ErrRuleNotExists, "This rule does not exist."),
 			}, nil
 		}
-		delRules = append(delRules, mongo.NewDeleteOneModel().SetFilter(GeneratorRuleFilter(ctx, request.ServiceId, ruleID)))
+		filter = mutil.NewDomainProjectFilter(domain, project, mutil.ServiceID(request.ServiceId), mutil.RuleRuleID(ruleID))
+		delRules = append(delRules, mongo.NewDeleteOneModel().SetFilter(filter))
 	}
 	if len(delRules) > 0 {
 		_, err := client.GetMongoClient().BatchDelete(ctx, model.CollectionRule, delRules)
@@ -1141,8 +1223,10 @@ func (ds *DataSource) DeleteRule(ctx context.Context, request *discovery.DeleteS
 		Response: discovery.CreateResponse(discovery.ResponseSuccess, "Delete service rules successfully."),
 	}, nil
 }
-func (ds *DataSource) UpdateRule(ctx context.Context, request *discovery.UpdateServiceRuleRequest) (
-	*discovery.UpdateServiceRuleResponse, error) {
+
+func (ds *DataSource) UpdateRule(ctx context.Context, request *discovery.UpdateServiceRuleRequest) (*discovery.UpdateServiceRuleResponse, error) {
+	domain := util.ParseDomain(ctx)
+	project := util.ParseProject(ctx)
 	exist, err := ServiceExistID(ctx, request.ServiceId)
 	if err != nil {
 		return &discovery.UpdateServiceRuleResponse{
@@ -1154,7 +1238,8 @@ func (ds *DataSource) UpdateRule(ctx context.Context, request *discovery.UpdateS
 			Response: discovery.CreateResponse(discovery.ErrServiceNotExists, "UpdateRule failed for service not exist."),
 		}, nil
 	}
-	rules, err := GetRules(ctx, request.ServiceId)
+	filter := mutil.NewDomainProjectFilter(domain, project, mutil.ServiceID(request.ServiceId))
+	rules, err := dao.GetServiceRules(ctx, filter)
 	if err != nil {
 		return &discovery.UpdateServiceRuleResponse{
 			Response: discovery.CreateResponse(discovery.ErrUnavailableBackend, "UpdateRule failed for get rule."),
@@ -1165,7 +1250,8 @@ func (ds *DataSource) UpdateRule(ctx context.Context, request *discovery.UpdateS
 			Response: discovery.CreateResponse(discovery.ErrModifyRuleNotAllow, "Exist multiple rules, can not change rule type. Rule type is ."+rules[0].RuleType),
 		}, nil
 	}
-	exist, err = RuleExist(ctx, GeneratorRuleFilter(ctx, request.ServiceId, request.RuleId))
+	filter = mutil.NewDomainProjectFilter(domain, project, mutil.ServiceID(request.ServiceId), mutil.RuleRuleID(request.RuleId))
+	exist, err = dao.RuleExist(ctx, filter)
 	if err != nil {
 		return &discovery.UpdateServiceRuleResponse{
 			Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
@@ -1176,15 +1262,16 @@ func (ds *DataSource) UpdateRule(ctx context.Context, request *discovery.UpdateS
 			Response: discovery.CreateResponse(discovery.ErrRuleNotExists, "This rule does not exist."),
 		}, nil
 	}
-
-	newRule := bson.M{
-		StringBuilder([]string{model.ColumnRule, model.ColumnRuleType}):    request.Rule.RuleType,
-		StringBuilder([]string{model.ColumnRule, model.ColumnPattern}):     request.Rule.Pattern,
-		StringBuilder([]string{model.ColumnRule, model.ColumnAttribute}):   request.Rule.Attribute,
-		StringBuilder([]string{model.ColumnRule, model.ColumnDescription}): request.Rule.Description,
-		StringBuilder([]string{model.ColumnRule, model.ColumnModTime}):     strconv.FormatInt(time.Now().Unix(), 10)}
-
-	err = UpdateRule(ctx, GeneratorRuleFilter(ctx, request.ServiceId, request.RuleId), bson.M{"$set": newRule})
+	filter = mutil.NewDomainProjectFilter(domain, project, mutil.ServiceID(request.ServiceId), mutil.RuleRuleID(request.RuleId))
+	setFilter := mutil.NewFilter(
+		mutil.RuleRuleType(request.Rule.RuleType),
+		mutil.RulePattern(request.Rule.Pattern),
+		mutil.RuleAttribute(request.Rule.Attribute),
+		mutil.RuleDescription(request.Rule.Description),
+		mutil.RuleModTime(strconv.FormatInt(time.Now().Unix(), baseTen)),
+	)
+	updateFilter := mutil.NewFilter(mutil.Set(setFilter))
+	err = dao.UpdateRule(ctx, filter, updateFilter)
 	if err != nil {
 		return &discovery.UpdateServiceRuleResponse{
 			Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
@@ -1199,88 +1286,17 @@ func (ds *DataSource) isSchemaEditable(service *discovery.MicroService) bool {
 	return (len(service.Environment) != 0 && service.Environment != discovery.ENV_PROD) || ds.SchemaEditable
 }
 
-func ServiceExist(ctx context.Context, service *discovery.MicroServiceKey) (bool, error) {
-	filter := GeneratorServiceNameFilter(ctx, service)
-	return client.GetMongoClient().DocExist(ctx, model.CollectionService, filter)
-}
-
 func ServiceExistID(ctx context.Context, serviceID string) (bool, error) {
-	filter := GeneratorServiceFilter(ctx, serviceID)
+	filter := mutil.NewBasicFilter(ctx, mutil.ServiceServiceID(serviceID))
 	return client.GetMongoClient().DocExist(ctx, model.CollectionService, filter)
-}
-
-func GetService(ctx context.Context, filter bson.M) (*model.Service, error) {
-	findRes, err := client.GetMongoClient().FindOne(ctx, model.CollectionService, filter)
-	if err != nil {
-		return nil, err
-	}
-	var svc *model.Service
-	if findRes.Err() != nil {
-		//not get any service,not db err
-		return nil, datasource.ErrNoData
-	}
-	err = findRes.Decode(&svc)
-	if err != nil {
-		return nil, err
-	}
-	return svc, nil
-}
-
-func GetServices(ctx context.Context, filter bson.M) ([]*discovery.MicroService, error) {
-	res, err := client.GetMongoClient().Find(ctx, model.CollectionService, filter)
-	if err != nil {
-		return nil, err
-	}
-	var services []*discovery.MicroService
-	for res.Next(ctx) {
-		var tmp model.Service
-		err := res.Decode(&tmp)
-		if err != nil {
-			return nil, err
-		}
-		services = append(services, tmp.Service)
-	}
-	return services, nil
-}
-
-func GetMongoServices(ctx context.Context, filter bson.M) ([]*model.Service, error) {
-	res, err := client.GetMongoClient().Find(ctx, model.CollectionService, filter)
-	if err != nil {
-		return nil, err
-	}
-	var services []*model.Service
-	for res.Next(ctx) {
-		var tmp *model.Service
-		err := res.Decode(&tmp)
-		if err != nil {
-			return nil, err
-		}
-		services = append(services, tmp)
-	}
-	return services, nil
-}
-
-func GetServicesVersions(ctx context.Context, filter interface{}) ([]string, error) {
-	res, err := client.GetMongoClient().Find(ctx, model.CollectionService, filter)
-	if err != nil {
-		return nil, nil
-	}
-	var versions []string
-	for res.Next(ctx) {
-		var tmp model.Service
-		err := res.Decode(&tmp)
-		if err != nil {
-			return nil, err
-		}
-		versions = append(versions, tmp.Service.Version)
-	}
-	return versions, nil
 }
 
 func getServiceDetailUtil(ctx context.Context, mgs *model.Service, countOnly bool, options []string) (*discovery.ServiceDetail, error) {
 	serviceDetail := new(discovery.ServiceDetail)
 	serviceID := mgs.Service.ServiceId
 	domainProject := util.ParseDomainProject(ctx)
+	domain := util.ParseDomain(ctx)
+	project := util.ParseProject(ctx)
 	if countOnly {
 		serviceDetail.Statics = new(discovery.Statistics)
 	}
@@ -1290,7 +1306,8 @@ func getServiceDetailUtil(ctx context.Context, mgs *model.Service, countOnly boo
 		case "tags":
 			serviceDetail.Tags = mgs.Tags
 		case "rules":
-			rules, err := GetRules(ctx, mgs.Service.ServiceId)
+			filter := mutil.NewDomainProjectFilter(domain, project, mutil.ServiceID(mgs.Service.ServiceId))
+			rules, err := dao.GetServiceRules(ctx, filter)
 			if err != nil {
 				log.Error(fmt.Sprintf("get service %s's all rules failed", mgs.Service.ServiceId), err)
 				return nil, err
@@ -1301,7 +1318,8 @@ func getServiceDetailUtil(ctx context.Context, mgs *model.Service, countOnly boo
 			serviceDetail.Rules = rules
 		case "instances":
 			if countOnly {
-				instanceCount, err := GetInstanceCountOfOneService(ctx, serviceID)
+				filter := mutil.NewDomainProjectFilter(domain, project, mutil.InstanceServiceID(serviceID))
+				instanceCount, err := dao.CountInstance(ctx, filter)
 				if err != nil {
 					log.Error(fmt.Sprintf("get number of service [%s]'s instances failed", serviceID), err)
 					return nil, err
@@ -1311,14 +1329,16 @@ func getServiceDetailUtil(ctx context.Context, mgs *model.Service, countOnly boo
 				}
 				continue
 			}
-			instances, err := GetAllInstancesOfOneService(ctx, serviceID)
+			filter := mutil.NewDomainProjectFilter(domain, project, mutil.InstanceServiceID(serviceID))
+			instances, err := dao.GetMicroServiceInstances(ctx, filter)
 			if err != nil {
 				log.Error(fmt.Sprintf("get service[%s]'s all instances failed", serviceID), err)
 				return nil, err
 			}
 			serviceDetail.Instances = instances
 		case "schemas":
-			schemas, err := GetSchemas(ctx, GeneratorServiceFilter(ctx, mgs.Service.ServiceId))
+			filter := mutil.NewDomainProjectFilter(domain, project, mutil.ServiceServiceID(serviceID))
+			schemas, err := dao.GetSchemas(ctx, filter)
 			if err != nil {
 				log.Error(fmt.Sprintf("get service %s's all schemas failed", mgs.Service.ServiceId), err)
 				return nil, err
@@ -1347,173 +1367,6 @@ func getServiceDetailUtil(ctx context.Context, mgs *model.Service, countOnly boo
 		}
 	}
 	return serviceDetail, nil
-}
-
-func UpdateService(ctx context.Context, filter interface{}, m bson.M) error {
-	return client.GetMongoClient().DocUpdate(ctx, model.CollectionService, filter, m)
-}
-
-func GetRules(ctx context.Context, serviceID string) ([]*discovery.ServiceRule, error) {
-	domain := util.ParseDomain(ctx)
-	project := util.ParseProject(ctx)
-	filter := bson.M{model.ColumnDomain: domain, model.ColumnProject: project, model.ColumnServiceID: serviceID}
-
-	ruleRes, err := client.GetMongoClient().Find(ctx, model.CollectionRule, filter)
-	if err != nil {
-		return nil, err
-	}
-	var rules []*discovery.ServiceRule
-	for ruleRes.Next(ctx) {
-		var tmpRule *model.Rule
-		err := ruleRes.Decode(&tmpRule)
-		if err != nil {
-			return nil, err
-		}
-		rules = append(rules, tmpRule.Rule)
-	}
-	return rules, nil
-}
-
-func UpdateRule(ctx context.Context, filter interface{}, m bson.M) error {
-	return client.GetMongoClient().DocUpdate(ctx, model.CollectionRule, filter, m)
-}
-
-func UpdateSchema(ctx context.Context, filter interface{}, m bson.M, opts ...*options.FindOneAndUpdateOptions) error {
-	_, err := client.GetMongoClient().FindOneAndUpdate(ctx, model.CollectionSchema, filter, m, opts...)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func DeleteSchema(ctx context.Context, filter interface{}) error {
-	res, err := client.GetMongoClient().DocDelete(ctx, model.CollectionSchema, filter)
-	if err != nil {
-		return err
-	}
-	if !res {
-		return mutil.ErrDeleteSchemaFailed
-	}
-	return nil
-}
-
-func RuleExist(ctx context.Context, filter bson.M) (bool, error) {
-	return client.GetMongoClient().DocExist(ctx, model.CollectionRule, filter)
-}
-
-func GeneratorServiceFilter(ctx context.Context, serviceID string) bson.M {
-	domain := util.ParseDomain(ctx)
-	project := util.ParseProject(ctx)
-
-	return bson.M{
-		model.ColumnDomain:  domain,
-		model.ColumnProject: project,
-		StringBuilder([]string{model.ColumnService, model.ColumnServiceID}): serviceID}
-}
-
-func GeneratorServiceNameFilter(ctx context.Context, service *discovery.MicroServiceKey) bson.M {
-	domain := util.ParseDomain(ctx)
-	project := util.ParseProject(ctx)
-
-	return bson.M{
-		model.ColumnDomain:  domain,
-		model.ColumnProject: project,
-		StringBuilder([]string{model.ColumnService, model.ColumnEnv}):         service.Environment,
-		StringBuilder([]string{model.ColumnService, model.ColumnAppID}):       service.AppId,
-		StringBuilder([]string{model.ColumnService, model.ColumnServiceName}): service.ServiceName,
-		StringBuilder([]string{model.ColumnService, model.ColumnVersion}):     service.Version}
-}
-
-func GeneratorServiceAliasFilter(ctx context.Context, service *discovery.MicroServiceKey) bson.M {
-	domain := util.ParseDomain(ctx)
-	project := util.ParseProject(ctx)
-
-	return bson.M{
-		model.ColumnDomain:  domain,
-		model.ColumnProject: project,
-		StringBuilder([]string{model.ColumnService, model.ColumnEnv}):     service.Environment,
-		StringBuilder([]string{model.ColumnService, model.ColumnAppID}):   service.AppId,
-		StringBuilder([]string{model.ColumnService, model.ColumnAlias}):   service.Alias,
-		StringBuilder([]string{model.ColumnService, model.ColumnVersion}): service.Version}
-}
-
-func GeneratorRuleAttFilter(ctx context.Context, serviceID, attribute, pattern string) bson.M {
-	return bson.M{
-		model.ColumnServiceID: serviceID,
-		StringBuilder([]string{model.ColumnRule, model.ColumnAttribute}): attribute,
-		StringBuilder([]string{model.ColumnRule, model.ColumnPattern}):   pattern}
-}
-
-func GeneratorSchemaFilter(ctx context.Context, serviceID, schemaID string) bson.M {
-	domain := util.ParseDomain(ctx)
-	project := util.ParseProject(ctx)
-
-	return bson.M{model.ColumnDomain: domain, model.ColumnProject: project, model.ColumnServiceID: serviceID, model.ColumnSchemaID: schemaID}
-}
-
-func GeneratorRuleFilter(ctx context.Context, serviceID, ruleID string) bson.M {
-	domain := util.ParseDomain(ctx)
-	project := util.ParseProject(ctx)
-
-	return bson.M{
-		model.ColumnDomain:    domain,
-		model.ColumnProject:   project,
-		model.ColumnServiceID: serviceID,
-		StringBuilder([]string{model.ColumnRule, model.ColumnRuleID}): ruleID}
-}
-
-func GetSchemas(ctx context.Context, filter bson.M) ([]*discovery.Schema, error) {
-	getRes, err := client.GetMongoClient().Find(ctx, model.CollectionSchema, filter)
-	if err != nil {
-		return nil, err
-	}
-	var schemas []*discovery.Schema
-	for getRes.Next(ctx) {
-		var tmp *model.Schema
-		err = getRes.Decode(&tmp)
-		if err != nil {
-			return nil, err
-		}
-		schemas = append(schemas, &discovery.Schema{
-			SchemaId: tmp.SchemaID,
-			Summary:  tmp.SchemaSummary,
-			Schema:   tmp.Schema,
-		})
-	}
-	return schemas, nil
-}
-
-func GetSchema(ctx context.Context, filter bson.M) (*model.Schema, error) {
-	findRes, err := client.GetMongoClient().FindOne(ctx, model.CollectionSchema, filter)
-	if err != nil {
-		return nil, err
-	}
-	if findRes.Err() != nil {
-		//not get any service,not db err
-		return nil, nil
-	}
-	var schema *model.Schema
-	err = findRes.Decode(&schema)
-	if err != nil {
-		return nil, err
-	}
-	return schema, nil
-}
-
-func SchemaSummaryExist(ctx context.Context, serviceID, schemaID string) (bool, error) {
-	res, err := client.GetMongoClient().FindOne(ctx, model.CollectionSchema, GeneratorSchemaFilter(ctx, serviceID, schemaID))
-	if err != nil {
-		return false, err
-	}
-	if res.Err() != nil {
-		return false, nil
-	}
-	var s model.Schema
-	err = res.Decode(&s)
-	if err != nil {
-		return false, err
-	}
-	return len(s.SchemaSummary) != 0, nil
 }
 
 // Instance management
@@ -1576,9 +1429,11 @@ func (ds *DataSource) GetInstance(ctx context.Context, request *discovery.GetOne
 	var service *model.Service
 	var err error
 	var serviceIDs []string
+	domain := util.ParseDomain(ctx)
+	project := util.ParseProject(ctx)
 	if len(request.ConsumerServiceId) > 0 {
-		filter := GeneratorServiceFilter(ctx, request.ConsumerServiceId)
-		service, err = GetService(ctx, filter)
+		filter := mutil.NewDomainProjectFilter(domain, project, mutil.ServiceServiceID(request.ConsumerServiceId))
+		service, err = dao.GetService(ctx, filter)
 		if err != nil {
 			if errors.Is(err, datasource.ErrNoData) {
 				log.Debug(fmt.Sprintf("consumer does not exist, consumer %s find provider instance %s %s",
@@ -1595,9 +1450,8 @@ func (ds *DataSource) GetInstance(ctx context.Context, request *discovery.GetOne
 			}, err
 		}
 	}
-
-	filter := GeneratorServiceFilter(ctx, request.ProviderServiceId)
-	provider, err := GetService(ctx, filter)
+	filter := mutil.NewDomainProjectFilter(domain, project, mutil.ServiceServiceID(request.ProviderServiceId))
+	provider, err := dao.GetService(ctx, filter)
 	if err != nil {
 		if errors.Is(err, datasource.ErrNoData) {
 			log.Debug(fmt.Sprintf("provider does not exist, consumer %s find provider instance %s %s",
@@ -1621,7 +1475,7 @@ func (ds *DataSource) GetInstance(ctx context.Context, request *discovery.GetOne
 	}
 
 	domainProject := util.ParseDomainProject(ctx)
-	services, err := findServices(ctx, discovery.MicroServiceToKey(domainProject, provider.Service))
+	services, err := filterServices(ctx, discovery.MicroServiceToKey(domainProject, provider.Service))
 	if err != nil {
 		log.Error(fmt.Sprintf("get instance failed %s", findFlag()), err)
 		return &discovery.GetOneInstanceResponse{
@@ -1752,36 +1606,16 @@ func (ds *DataSource) GetInstances(ctx context.Context, request *discovery.GetIn
 
 // GetProviderInstances returns instances under the specified domain
 func (ds *DataSource) GetProviderInstances(ctx context.Context, request *discovery.GetProviderInstancesRequest) (instances []*discovery.MicroServiceInstance, rev string, err error) {
-	domain := util.ParseDomain(ctx)
-	project := util.ParseProject(ctx)
-	filter := bson.M{
-		model.ColumnDomain:  domain,
-		model.ColumnProject: project,
-		StringBuilder([]string{model.ColumnInstance, model.ColumnServiceID}): request.ProviderServiceId}
-
-	findRes, err := client.GetMongoClient().Find(ctx, model.CollectionInstance, filter)
+	filter := mutil.NewBasicFilter(ctx, mutil.InstanceServiceID(request.ProviderServiceId))
+	instances, err = dao.GetMicroServiceInstances(ctx, filter)
 	if err != nil {
 		return
 	}
-
-	for findRes.Next(ctx) {
-		var mongoInstance model.Instance
-		err := findRes.Decode(&mongoInstance)
-		if err == nil {
-			instances = append(instances, mongoInstance.Instance)
-		}
-	}
-
 	return instances, "", nil
 }
 
 func (ds *DataSource) GetAllInstances(ctx context.Context, request *discovery.GetAllInstancesRequest) (*discovery.GetAllInstancesResponse, error) {
-
-	domain := util.ParseDomain(ctx)
-	project := util.ParseProject(ctx)
-
-	filter := bson.M{model.ColumnDomain: domain, model.ColumnProject: project}
-
+	filter := mutil.NewBasicFilter(ctx)
 	findRes, err := client.GetMongoClient().Find(ctx, model.CollectionInstance, filter)
 	if err != nil {
 		return nil, err
@@ -1808,15 +1642,11 @@ func (ds *DataSource) BatchGetProviderInstances(ctx context.Context, request *di
 	if request == nil || len(request.ServiceIds) == 0 {
 		return nil, "", mutil.ErrInvalidParam
 	}
-
 	domain := util.ParseDomain(ctx)
 	project := util.ParseProject(ctx)
 
 	for _, providerServiceID := range request.ServiceIds {
-		filter := bson.M{
-			model.ColumnDomain:  domain,
-			model.ColumnProject: project,
-			StringBuilder([]string{model.ColumnInstance, model.ColumnServiceID}): providerServiceID}
+		filter := mutil.NewDomainProjectFilter(domain, project, mutil.InstanceServiceID(providerServiceID))
 		findRes, err := client.GetMongoClient().Find(ctx, model.CollectionInstance, filter)
 		if err != nil {
 			return instances, "", nil
@@ -1864,7 +1694,8 @@ func (ds *DataSource) UpdateInstanceStatus(ctx context.Context, request *discove
 	updateStatusFlag := util.StringJoin([]string{request.ServiceId, request.InstanceId, request.Status}, "/")
 
 	// todo finish get instance
-	instance, err := GetInstance(ctx, request.ServiceId, request.InstanceId)
+	filter := mutil.NewBasicFilter(ctx, mutil.InstanceServiceID(request.ServiceId), mutil.InstanceInstanceID(request.InstanceId))
+	instance, err := dao.GetInstance(ctx, filter)
 	if err != nil {
 		log.Error(fmt.Sprintf("update instance %s status failed", updateStatusFlag), err)
 		return &discovery.UpdateInstanceStatusResponse{
@@ -1880,8 +1711,12 @@ func (ds *DataSource) UpdateInstanceStatus(ctx context.Context, request *discove
 
 	copyInstanceRef := *instance
 	copyInstanceRef.Instance.Status = request.Status
-
-	if err := UpdateInstanceS(ctx, copyInstanceRef.Instance); err != nil {
+	setFilter := mutil.NewFilter(
+		mutil.InstanceModTime(strconv.FormatInt(time.Now().Unix(), baseTen)),
+		mutil.InstanceStatus(copyInstanceRef.Instance.Status),
+	)
+	updateFilter := mutil.NewFilter(mutil.Set(setFilter))
+	if err := dao.UpdateInstance(ctx, filter, updateFilter); err != nil {
 		log.Error(fmt.Sprintf("update instance %s status failed", updateStatusFlag), err)
 		resp := &discovery.UpdateInstanceStatusResponse{
 			Response: discovery.CreateResponseWithSCErr(err),
@@ -1900,8 +1735,10 @@ func (ds *DataSource) UpdateInstanceStatus(ctx context.Context, request *discove
 
 func (ds *DataSource) UpdateInstanceProperties(ctx context.Context, request *discovery.UpdateInstancePropsRequest) (*discovery.UpdateInstancePropsResponse, error) {
 	instanceFlag := util.StringJoin([]string{request.ServiceId, request.InstanceId}, "/")
-
-	instance, err := GetInstance(ctx, request.ServiceId, request.InstanceId)
+	domain := util.ParseDomain(ctx)
+	project := util.ParseProject(ctx)
+	filter := mutil.NewDomainProjectFilter(domain, project, mutil.InstanceServiceID(request.ServiceId), mutil.InstanceInstanceID(request.InstanceId))
+	instance, err := dao.GetInstance(ctx, filter)
 	if err != nil {
 		log.Error(fmt.Sprintf("update instance %s properties failed", instanceFlag), err)
 		return &discovery.UpdateInstancePropsResponse{
@@ -1919,7 +1756,13 @@ func (ds *DataSource) UpdateInstanceProperties(ctx context.Context, request *dis
 	copyInstanceRef.Instance.Properties = request.Properties
 
 	// todo finish update instance
-	if err := UpdateInstanceP(ctx, copyInstanceRef.Instance); err != nil {
+	filter = mutil.NewDomainProjectFilter(domain, project, mutil.InstanceServiceID(request.ServiceId), mutil.InstanceInstanceID(request.InstanceId))
+	setFilter := mutil.NewFilter(
+		mutil.InstanceModTime(strconv.FormatInt(time.Now().Unix(), baseTen)),
+		mutil.InstanceProperties(copyInstanceRef.Instance.Properties),
+	)
+	updateFilter := mutil.NewFilter(mutil.Set(setFilter))
+	if err := dao.UpdateInstance(ctx, filter, updateFilter); err != nil {
 		log.Error(fmt.Sprintf("update instance %s properties failed", instanceFlag), err)
 		resp := &discovery.UpdateInstancePropsResponse{
 			Response: discovery.CreateResponseWithSCErr(err),
@@ -1943,13 +1786,7 @@ func (ds *DataSource) UnregisterInstance(ctx context.Context, request *discovery
 
 	instanceFlag := util.StringJoin([]string{serviceID, instanceID}, "/")
 
-	domain := util.ParseDomain(ctx)
-	project := util.ParseProject(ctx)
-	filter := bson.M{
-		model.ColumnDomain:  domain,
-		model.ColumnProject: project,
-		StringBuilder([]string{model.ColumnInstance, model.ColumnServiceID}):  serviceID,
-		StringBuilder([]string{model.ColumnInstance, model.ColumnInstanceID}): instanceID}
+	filter := mutil.NewBasicFilter(ctx, mutil.InstanceServiceID(serviceID), mutil.InstanceInstanceID(instanceID))
 	result, err := client.GetMongoClient().Delete(ctx, model.CollectionInstance, filter)
 	if err != nil || result.DeletedCount == 0 {
 		log.Error(fmt.Sprintf("unregister instance failed, instance %s, operator %s revoke instance failed", instanceFlag, remoteIP), err)
@@ -2118,7 +1955,7 @@ func (ds *DataSource) findSharedServiceInstance(ctx context.Context, request *di
 			Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
 		}, err
 	}
-	services, err := findServices(ctx, provider)
+	services, err := filterServices(ctx, provider)
 	if err != nil {
 		log.Error(fmt.Sprintf("find shared service instance failed %s", findFlag()), err)
 		return &discovery.FindInstancesResponse{
@@ -2133,7 +1970,10 @@ func (ds *DataSource) findSharedServiceInstance(ctx context.Context, request *di
 		}, nil
 	}
 	serviceIDs := filterServiceIDs(ctx, request.ConsumerServiceId, request.Tags, services)
-	instances, err := instancesFilter(ctx, serviceIDs)
+	inFilter := mutil.NewFilter(mutil.In(serviceIDs))
+	filter := mutil.NewFilter(mutil.InstanceServiceID(inFilter))
+	option := &options.FindOptions{Sort: bson.M{mutil.ConnectWithDot([]string{model.ColumnInstance, model.ColumnVersion}): -1}}
+	instances, err := dao.GetMicroServiceInstances(ctx, filter, option)
 	if err != nil {
 		log.Error(fmt.Sprintf("find shared service instance failed %s", findFlag()), err)
 		return &discovery.FindInstancesResponse{
@@ -2157,8 +1997,8 @@ func (ds *DataSource) findInstance(ctx context.Context, request *discovery.FindI
 	domainProject := util.ParseDomainProject(ctx)
 	service := &model.Service{Service: &discovery.MicroService{Environment: request.Environment}}
 	if len(request.ConsumerServiceId) > 0 {
-		filter := GeneratorServiceFilter(ctx, request.ConsumerServiceId)
-		service, err = GetService(ctx, filter)
+		filter := mutil.NewBasicFilter(ctx, mutil.ServiceServiceID(request.ConsumerServiceId))
+		service, err = dao.GetService(ctx, filter)
 		if err != nil {
 			if errors.Is(err, datasource.ErrNoData) {
 				log.Debug(fmt.Sprintf("consumer does not exist, consumer %s find provider %s/%s/%s/%s",
@@ -2194,7 +2034,7 @@ func (ds *DataSource) findInstance(ctx context.Context, request *discovery.FindI
 			Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
 		}, err
 	}
-	services, err := findServices(ctx, provider)
+	services, err := filterServices(ctx, provider)
 	if err != nil {
 		log.Error(fmt.Sprintf("find instance failed %s", findFlag()), err)
 		return &discovery.FindInstancesResponse{
@@ -2209,7 +2049,10 @@ func (ds *DataSource) findInstance(ctx context.Context, request *discovery.FindI
 		}, nil
 	}
 	serviceIDs := filterServiceIDs(ctx, request.ConsumerServiceId, request.Tags, services)
-	instances, err := instancesFilter(ctx, serviceIDs)
+	inFilter := mutil.NewFilter(mutil.In(serviceIDs))
+	filter := mutil.NewFilter(mutil.InstanceServiceID(inFilter))
+	option := &options.FindOptions{Sort: bson.M{mutil.ConnectWithDot([]string{model.ColumnInstance, model.ColumnVersion}): -1}}
+	instances, err := dao.GetMicroServiceInstances(ctx, filter, option)
 	if err != nil {
 		log.Error(fmt.Sprintf("find instance failed %s", findFlag()), err)
 		return &discovery.FindInstancesResponse{
@@ -2251,11 +2094,10 @@ func (ds *DataSource) findInstance(ctx context.Context, request *discovery.FindI
 	}, nil
 }
 
-func (ds *DataSource) reshapeProviderKey(ctx context.Context, provider *discovery.MicroServiceKey, providerID string) (
-	*discovery.MicroServiceKey, error) {
+func (ds *DataSource) reshapeProviderKey(ctx context.Context, provider *discovery.MicroServiceKey, providerID string) (*discovery.MicroServiceKey, error) {
 	//维护version的规则,service name 可能是别名，所以重新获取
-	filter := GeneratorServiceFilter(ctx, providerID)
-	providerService, err := GetService(ctx, filter)
+	filter := mutil.NewBasicFilter(ctx, mutil.ServiceServiceID(providerID))
+	providerService, err := dao.GetService(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -2319,60 +2161,6 @@ func DependencyRuleExistUtil(ctx context.Context, key bson.M, target *discovery.
 	return false, nil
 }
 
-func GetInstance(ctx context.Context, serviceID string, instanceID string) (*model.Instance, error) {
-	domain := util.ParseDomain(ctx)
-	project := util.ParseProject(ctx)
-	filter := bson.M{
-		model.ColumnDomain:  domain,
-		model.ColumnProject: project,
-		StringBuilder([]string{model.ColumnInstance, model.ColumnServiceID}):  serviceID,
-		StringBuilder([]string{model.ColumnInstance, model.ColumnInstanceID}): instanceID}
-	findRes, err := client.GetMongoClient().FindOne(ctx, model.CollectionInstance, filter)
-	if err != nil {
-		return nil, err
-	}
-	var instance *model.Instance
-	if findRes.Err() != nil {
-		//not get any service,not db err
-		return nil, nil
-	}
-	err = findRes.Decode(&instance)
-	if err != nil {
-		return nil, err
-	}
-	return instance, nil
-}
-
-func UpdateInstanceS(ctx context.Context, instance *discovery.MicroServiceInstance) *discovery.Error {
-	domain := util.ParseDomain(ctx)
-	project := util.ParseProject(ctx)
-	filter := bson.M{
-		model.ColumnDomain:  domain,
-		model.ColumnProject: project,
-		StringBuilder([]string{model.ColumnInstance, model.ColumnServiceID}):  instance.ServiceId,
-		StringBuilder([]string{model.ColumnInstance, model.ColumnInstanceID}): instance.InstanceId}
-	_, err := client.GetMongoClient().Update(ctx, model.CollectionInstance, filter, bson.M{"$set": bson.M{"instance.motTimestamp": strconv.FormatInt(time.Now().Unix(), 10), "instance.status": instance.Status}})
-	if err != nil {
-		return discovery.NewError(discovery.ErrUnavailableBackend, err.Error())
-	}
-	return nil
-}
-
-func UpdateInstanceP(ctx context.Context, instance *discovery.MicroServiceInstance) *discovery.Error {
-	domain := util.ParseDomain(ctx)
-	project := util.ParseProject(ctx)
-	filter := bson.M{
-		model.ColumnDomain:  domain,
-		model.ColumnProject: project,
-		StringBuilder([]string{model.ColumnInstance, model.ColumnServiceID}):  instance.ServiceId,
-		StringBuilder([]string{model.ColumnInstance, model.ColumnInstanceID}): instance.InstanceId}
-	_, err := client.GetMongoClient().Update(ctx, model.CollectionInstance, filter, bson.M{"$set": bson.M{"instance.motTimestamp": strconv.FormatInt(time.Now().Unix(), 10), "instance.properties": instance.Properties}})
-	if err != nil {
-		return discovery.NewError(discovery.ErrUnavailableBackend, err.Error())
-	}
-	return nil
-}
-
 func KeepAliveLease(ctx context.Context, request *discovery.HeartbeatRequest) *discovery.Error {
 	_, err := heartbeat.Instance().Heartbeat(ctx, request)
 	if err != nil {
@@ -2403,8 +2191,7 @@ func getHeartbeatFunc(ctx context.Context, domainProject string, instancesHbRst 
 	}
 }
 
-func (ds *DataSource) batchFindServices(ctx context.Context, request *discovery.BatchFindInstancesRequest) (
-	*discovery.BatchFindResult, error) {
+func (ds *DataSource) batchFindServices(ctx context.Context, request *discovery.BatchFindInstancesRequest) (*discovery.BatchFindResult, error) {
 	if len(request.Services) == 0 {
 		return nil, nil
 	}
@@ -2529,9 +2316,8 @@ func preProcessRegisterInstance(ctx context.Context, instance *discovery.MicroSe
 			instance.HealthCheck.Times = retryTimes
 		}
 	}
-
-	filter := GeneratorServiceFilter(ctx, instance.ServiceId)
-	microservice, err := GetService(ctx, filter)
+	filter := mutil.NewBasicFilter(ctx, mutil.ServiceServiceID(instance.ServiceId))
+	microservice, err := dao.GetService(ctx, filter)
 	if err != nil {
 		return discovery.NewError(discovery.ErrServiceNotExists, "invalid 'serviceID' in request body.")
 	}
@@ -2545,100 +2331,73 @@ func servicesBasicFilter(ctx context.Context, key *discovery.MicroServiceKey) ([
 	if len(tenant) != 2 {
 		return nil, errors.New("invalid 'domain' or 'project'")
 	}
-	filter := bson.M{
-		model.ColumnDomain:  tenant[0],
-		model.ColumnProject: tenant[1],
-		StringBuilder([]string{model.ColumnService, model.ColumnEnv}):         key.Environment,
-		StringBuilder([]string{model.ColumnService, model.ColumnAppID}):       key.AppId,
-		StringBuilder([]string{model.ColumnService, model.ColumnServiceName}): key.ServiceName,
-		StringBuilder([]string{model.ColumnService, model.ColumnAlias}):       key.Alias,
-	}
+	filter := mutil.NewDomainProjectFilter(tenant[0], tenant[1],
+		mutil.ServiceEnv(key.Environment),
+		mutil.ServiceAppID(key.AppId),
+		mutil.ServiceServiceName(key.ServiceName),
+		mutil.ServiceAlias(key.Alias),
+	)
 	rangeIdx := strings.Index(key.Version, "-")
 	// if the version number is clear, need to add the version number to query
 	switch {
 	case key.Version == "latest":
-		return servicesFilter(ctx, filter)
+		return dao.GetServices(ctx, filter)
 	case len(key.Version) > 0 && key.Version[len(key.Version)-1:] == "+":
-		return servicesFilter(ctx, filter)
+		return dao.GetServices(ctx, filter)
 	case rangeIdx > 0:
-		return servicesFilter(ctx, filter)
+		return dao.GetServices(ctx, filter)
 	default:
-		filter[StringBuilder([]string{model.ColumnService, model.ColumnVersion})] = key.Version
-		return servicesFilter(ctx, filter)
+		filter[mutil.ConnectWithDot([]string{model.ColumnService, model.ColumnVersion})] = key.Version
+		return dao.GetServices(ctx, filter)
 	}
 }
 
-func findServices(ctx context.Context, key *discovery.MicroServiceKey) ([]*model.Service, error) {
+func filterServices(ctx context.Context, key *discovery.MicroServiceKey) ([]*model.Service, error) {
 	tenant := strings.Split(key.Tenant, "/")
 	if len(tenant) != 2 {
 		return nil, errors.New("invalid 'domain' or 'project'")
 	}
 	rangeIdx := strings.Index(key.Version, "-")
-	filter := bson.M{
-		model.ColumnDomain:  tenant[0],
-		model.ColumnProject: tenant[1],
-		StringBuilder([]string{model.ColumnService, model.ColumnEnv}):         key.Environment,
-		StringBuilder([]string{model.ColumnService, model.ColumnAppID}):       key.AppId,
-		StringBuilder([]string{model.ColumnService, model.ColumnServiceName}): key.ServiceName,
-		StringBuilder([]string{model.ColumnService, model.ColumnAlias}):       key.Alias,
-	}
+	filter := mutil.NewDomainProjectFilter(tenant[0], tenant[1],
+		mutil.ServiceEnv(key.Environment),
+		mutil.ServiceAppID(key.AppId),
+		mutil.ServiceServiceName(key.ServiceName),
+		mutil.ServiceAlias(key.Alias),
+	)
 	switch {
 	case key.Version == "latest":
-		return latestServicesFilter(ctx, filter)
+		findOption := &options.FindOptions{Sort: bson.M{mutil.ConnectWithDot([]string{model.ColumnService, model.ColumnVersion}): -1}}
+		return dao.GetServices(ctx, filter, findOption)
 	case len(key.Version) > 0 && key.Version[len(key.Version)-1:] == "+":
 		start := key.Version[:len(key.Version)-1]
-		filter[StringBuilder([]string{model.ColumnService, model.ColumnVersion})] = bson.M{"$gte": start}
-		return servicesFilter(ctx, filter)
+		filter[mutil.ConnectWithDot([]string{model.ColumnService, model.ColumnVersion})] = bson.M{"$gte": start}
+		return dao.GetServices(ctx, filter)
 	case rangeIdx > 0:
 		start := key.Version[:rangeIdx]
 		end := key.Version[rangeIdx+1:]
-		filter[StringBuilder([]string{model.ColumnService, model.ColumnVersion})] = bson.M{"$gte": start, "$lte": end}
-		return servicesFilter(ctx, filter)
+		filter[mutil.ConnectWithDot([]string{model.ColumnService, model.ColumnVersion})] = bson.M{"$gte": start, "$lte": end}
+		return dao.GetServices(ctx, filter)
 	default:
-		filter[StringBuilder([]string{model.ColumnService, model.ColumnVersion})] = key.Version
-		return servicesFilter(ctx, filter)
+		filter[mutil.ConnectWithDot([]string{model.ColumnService, model.ColumnVersion})] = key.Version
+		return dao.GetServices(ctx, filter)
 	}
-}
-
-func instancesFilter(ctx context.Context, serviceIDs []string) ([]*discovery.MicroServiceInstance, error) {
-	var instances []*discovery.MicroServiceInstance
-	if len(serviceIDs) == 0 {
-		return instances, nil
-	}
-	resp, err := client.GetMongoClient().Find(ctx, model.CollectionInstance, bson.M{StringBuilder([]string{model.ColumnInstance, model.ColumnServiceID}): bson.M{"$in": serviceIDs}}, &options.FindOptions{
-		Sort: bson.M{StringBuilder([]string{model.ColumnInstance, model.ColumnVersion}): -1}})
-	if err != nil {
-		return nil, err
-	}
-	if resp == nil {
-		return nil, errors.New("no related instances were found")
-	}
-	for resp.Next(ctx) {
-		var instance model.Instance
-		err := resp.Decode(&instance)
-		if err != nil {
-			return nil, err
-		}
-		instances = append(instances, instance.Instance)
-	}
-	return instances, nil
 }
 
 func filterServiceIDs(ctx context.Context, consumerID string, tags []string, services []*model.Service) []string {
 	var filterService []*model.Service
-	var serviceIDs []string
+	serviceIDs := make([]string, 0)
 	if len(services) == 0 {
 		return serviceIDs
 	}
-	filterService = tagsFilter(services, tags)
-	filterService = accessibleFilter(ctx, consumerID, filterService)
+	filterService = filterTags(services, tags)
+	filterService = filterAccess(ctx, consumerID, filterService)
 	for _, service := range filterService {
 		serviceIDs = append(serviceIDs, service.Service.ServiceId)
 	}
 	return serviceIDs
 }
 
-func tagsFilter(services []*model.Service, tags []string) []*model.Service {
+func filterTags(services []*model.Service, tags []string) []*model.Service {
 	if len(tags) == 0 {
 		return services
 	}
@@ -2657,8 +2416,8 @@ func tagsFilter(services []*model.Service, tags []string) []*model.Service {
 	return newServices
 }
 
-func accessibleFilter(ctx context.Context, consumerID string, services []*model.Service) []*model.Service {
-	var newServices []*model.Service
+func filterAccess(ctx context.Context, consumerID string, services []*model.Service) []*model.Service {
+	newServices := make([]*model.Service, 0)
 	for _, service := range services {
 		if err := accessible(ctx, consumerID, service.Service.ServiceId); err != nil {
 			findFlag := fmt.Sprintf("consumer '%s' find provider %s/%s/%s", consumerID,
@@ -2671,95 +2430,6 @@ func accessibleFilter(ctx context.Context, consumerID string, services []*model.
 	return newServices
 }
 
-func servicesFilter(ctx context.Context, filter bson.M) ([]*model.Service, error) {
-	resp, err := client.GetMongoClient().Find(ctx, model.CollectionService, filter)
-	if err != nil {
-		return nil, err
-	}
-	if resp == nil {
-		return nil, errors.New("no related services were found")
-	}
-	var services []*model.Service
-	for resp.Next(ctx) {
-		var service model.Service
-		err := resp.Decode(&service)
-		if err != nil {
-			log.Error("type conversion error", err)
-			return nil, err
-		}
-		services = append(services, &service)
-	}
-	return services, nil
-}
-
-func latestServicesFilter(ctx context.Context, filter bson.M) ([]*model.Service, error) {
-	resp, err := client.GetMongoClient().Find(ctx, model.CollectionService, filter, &options.FindOptions{
-		Sort: bson.M{StringBuilder([]string{model.ColumnService, model.ColumnVersion}): -1}})
-	if err != nil {
-		return nil, err
-	}
-	if resp == nil {
-		return nil, errors.New("no related services were found")
-	}
-	var services []*model.Service
-	for resp.Next(ctx) {
-		var service model.Service
-		err := resp.Decode(&service)
-		if err != nil {
-			log.Error("type conversion error", err)
-			return nil, err
-		}
-		services = append(services, &service)
-		if services != nil {
-			return services, nil
-		}
-	}
-	return services, nil
-}
-
-func getTags(ctx context.Context, domain string, project string, serviceID string) (tags map[string]string, err error) {
-	filter := bson.M{
-		model.ColumnDomain:  domain,
-		model.ColumnProject: project,
-		StringBuilder([]string{model.ColumnService, model.ColumnServiceID}): serviceID,
-	}
-	result, err := client.GetMongoClient().FindOne(ctx, model.CollectionService, filter)
-	if err != nil {
-		return nil, err
-	}
-	if result.Err() != nil {
-		return nil, result.Err()
-	}
-	var service model.Service
-	err = result.Decode(&service)
-	if err != nil {
-		log.Error("type conversion error", err)
-		return nil, err
-	}
-	return service.Tags, nil
-}
-
-func getService(ctx context.Context, domain string, project string, serviceID string) (*model.Service, error) {
-	filter := bson.M{
-		model.ColumnDomain:  domain,
-		model.ColumnProject: project,
-		StringBuilder([]string{model.ColumnService, model.ColumnServiceID}): serviceID,
-	}
-	result, err := client.GetMongoClient().FindOne(ctx, model.CollectionService, filter)
-	if err != nil {
-		return nil, err
-	}
-	if result.Err() != nil {
-		return nil, result.Err()
-	}
-	var svc model.Service
-	err = result.Decode(&svc)
-	if err != nil {
-		return nil, err
-	}
-	return &svc, nil
-}
-
 func accessible(ctx context.Context, consumerID string, providerID string) *discovery.Error {
 	if len(consumerID) == 0 {
 		return nil
@@ -2768,7 +2438,8 @@ func accessible(ctx context.Context, consumerID string, providerID string) *disc
 	consumerDomain, consumerProject := util.ParseDomain(ctx), util.ParseProject(ctx)
 	providerDomain, providerProject := util.ParseTargetDomain(ctx), util.ParseTargetProject(ctx)
 
-	consumerService, err := getService(ctx, consumerDomain, consumerProject, consumerID)
+	filter := mutil.NewDomainProjectFilter(consumerDomain, consumerProject, mutil.ServiceServiceID(consumerID))
+	consumerService, err := dao.GetService(ctx, filter)
 	if err != nil {
 		return discovery.NewError(discovery.ErrInternal, fmt.Sprintf("an error occurred in query consumer(%s)", err.Error()))
 	}
@@ -2776,8 +2447,9 @@ func accessible(ctx context.Context, consumerID string, providerID string) *disc
 		return discovery.NewError(discovery.ErrServiceNotExists, "consumer serviceID is invalid")
 	}
 
+	filter = mutil.NewDomainProjectFilter(providerDomain, providerProject, mutil.ServiceServiceID(providerID))
 	// 跨应用权限
-	providerService, err := getService(ctx, providerDomain, providerProject, providerID)
+	providerService, err := dao.GetService(ctx, filter)
 	if err != nil {
 		return discovery.NewError(discovery.ErrInternal, fmt.Sprintf("an error occurred in query provider(%s)", err.Error()))
 	}
@@ -2790,7 +2462,8 @@ func accessible(ctx context.Context, consumerID string, providerID string) *disc
 	}
 
 	// 黑白名单
-	rules, err := getRulesUtil(ctx, providerDomain, providerProject, providerID)
+	filter = mutil.NewDomainProjectFilter(providerDomain, providerProject, mutil.ServiceID(providerID))
+	rules, err := dao.GetRules(ctx, filter)
 	if err != nil {
 		return discovery.NewError(discovery.ErrInternal, fmt.Sprintf("an error occurred in query provider rules(%s)", err.Error()))
 	}
@@ -2798,12 +2471,7 @@ func accessible(ctx context.Context, consumerID string, providerID string) *disc
 	if len(rules) == 0 {
 		return nil
 	}
-
-	validateTags, err := getTags(ctx, consumerDomain, consumerProject, consumerService.Service.ServiceId)
-	if err != nil {
-		return discovery.NewError(discovery.ErrInternal, fmt.Sprintf("an error occurred in query consumer tags(%s)", err.Error()))
-	}
-	return MatchRules(rules, consumerService.Service, validateTags)
+	return MatchRules(rules, consumerService.Service, consumerService.Tags)
 }
 
 func MatchRules(rulesOfProvider []*model.Rule, consumer *discovery.MicroService, tagsOfConsumer map[string]string) *discovery.Error {
@@ -2885,34 +2553,6 @@ func patternBlackList(rulesOfProvider []*model.Rule, tagsOfConsumer map[string]s
 	}
 	return nil
 }
-
-func getRulesUtil(ctx context.Context, domain string, project string, serviceID string) ([]*model.Rule, error) {
-	filter := bson.M{
-		model.ColumnDomain:    domain,
-		model.ColumnProject:   project,
-		model.ColumnServiceID: serviceID,
-	}
-	cursor, err := client.GetMongoClient().Find(ctx, model.CollectionRule, filter)
-	if err != nil {
-		return nil, err
-	}
-	if cursor.Err() != nil {
-		return nil, cursor.Err()
-	}
-	var rules []*model.Rule
-	defer cursor.Close(ctx)
-	for cursor.Next(ctx) {
-		var rule model.Rule
-		err := cursor.Decode(&rule)
-		if err != nil {
-			log.Error("type conversion error", err)
-			return nil, err
-		}
-		rules = append(rules, &rule)
-	}
-	return rules, nil
-}
-
 func allowAcrossDimension(ctx context.Context, providerService *model.Service, consumerService *model.Service) error {
 	if providerService.Service.AppId != consumerService.Service.AppId {
 		if len(providerService.Service.Properties) == 0 {
@@ -2930,76 +2570,12 @@ func allowAcrossDimension(ctx context.Context, providerService *model.Service, c
 	return nil
 }
 
-func GetInstanceCountOfOneService(ctx context.Context, serviceID string) (int64, error) {
-	filter := GeneratorServiceInstanceFilter(ctx, serviceID)
-	count, err := client.GetMongoClient().Count(ctx, model.CollectionInstance, filter)
-	if err != nil {
-		return 0, nil
-	}
-	return count, nil
-}
-
-func GetAllInstancesOfOneService(ctx context.Context, serviceID string) ([]*discovery.MicroServiceInstance, error) {
-	filter := GeneratorServiceInstanceFilter(ctx, serviceID)
-	res, err := client.GetMongoClient().Find(ctx, model.CollectionInstance, filter)
-	if err != nil {
-		return nil, err
-	}
-	var instances []*discovery.MicroServiceInstance
-	for res.Next(ctx) {
-		var tmp model.Instance
-		err := res.Decode(&tmp)
-		if err != nil {
-			return nil, err
-		}
-		instances = append(instances, tmp.Instance)
-	}
-	return instances, nil
-}
-
-func GetInstances(ctx context.Context, filter bson.M) ([]*model.Instance, error) {
-	res, err := client.GetMongoClient().Find(ctx, model.CollectionInstance, filter)
-	if err != nil {
-		return nil, err
-	}
-	var instances []*model.Instance
-	for res.Next(ctx) {
-		var tmp *model.Instance
-		err := res.Decode(&tmp)
-		if err != nil {
-			return nil, err
-		}
-		instances = append(instances, tmp)
-	}
-	return instances, nil
-}
-
-func GeneratorServiceVersionsFilter(ctx context.Context, service *discovery.MicroServiceKey) bson.M {
-	domain := util.ParseDomain(ctx)
-	project := util.ParseProject(ctx)
-
-	return bson.M{
-		model.ColumnDomain:  domain,
-		model.ColumnProject: project,
-		StringBuilder([]string{model.ColumnService, model.ColumnEnv}):         service.Environment,
-		StringBuilder([]string{model.ColumnService, model.ColumnAppID}):       service.AppId,
-		StringBuilder([]string{model.ColumnService, model.ColumnServiceName}): service.ServiceName}
-}
-
-func GeneratorServiceInstanceFilter(ctx context.Context, serviceID string) bson.M {
-	domain := util.ParseDomain(ctx)
-	project := util.ParseProject(ctx)
-	return bson.M{
-		model.ColumnDomain:  domain,
-		model.ColumnProject: project,
-		StringBuilder([]string{model.ColumnInstance, model.ColumnServiceID}): serviceID}
-}
-
 func GetServiceByID(ctx context.Context, serviceID string) (*model.Service, error) {
 	cacheService, ok := sd.Store().Service().Cache().Get(serviceID).(model.Service)
 	if !ok {
 		//no service in cache,get it from mongodb
-		return GetService(ctx, GeneratorServiceFilter(ctx, serviceID))
+		filter := mutil.NewBasicFilter(ctx, mutil.ServiceServiceID(serviceID))
+		return dao.GetService(ctx, filter)
 	}
 	return cacheToService(cacheService), nil
 }
@@ -3026,7 +2602,9 @@ func GetInstancesByServiceID(ctx context.Context, serviceID string) ([]*discover
 		res = append(res, inst.Instance)
 	}
 	if cacheUnavailable || len(res) == 0 {
-		res, err := instancesFilter(ctx, []string{serviceID})
+		filter := mutil.NewFilter(mutil.InstanceServiceID(serviceID))
+		option := &options.FindOptions{Sort: bson.M{mutil.ConnectWithDot([]string{model.ColumnInstance, model.ColumnVersion}): -1}}
+		res, err := dao.GetMicroServiceInstances(ctx, filter, option)
 		if err != nil {
 			return nil, err
 		}

@@ -23,7 +23,9 @@ import (
 
 	pb "github.com/go-chassis/cari/discovery"
 
-	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/client/dao"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
+	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
@@ -36,7 +38,8 @@ func GetAllConsumerIds(ctx context.Context, provider *pb.MicroService) (allow []
 	//todo 删除服务，最后实例推送有误差
 	domain := util.ParseDomainProject(ctx)
 	project := util.ParseProject(ctx)
-	providerRules, err := getRulesUtil(ctx, domain, project, provider.ServiceId)
+	filter := mutil.NewDomainProjectFilter(domain, project, mutil.ServiceID(provider.ServiceId))
+	providerRules, err := dao.GetRules(ctx, filter)
 	if err != nil {
 		return nil, nil, err
 	}

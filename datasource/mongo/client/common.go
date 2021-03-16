@@ -23,4 +23,5 @@ var (
 	ErrCollectionsNil = errors.New("collection is nil")
 	ErrOpenDbFailed   = errors.New("open db failed")
 	ErrRootCAMissing  = errors.New("rootCAFile is empty in config file")
+	ErrNoDocuments    = errors.New("no doc found")
 )

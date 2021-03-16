@@ -19,14 +19,16 @@ package mongo
 
 import (
 	"context"
-	"strings"
 
-	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
-	"github.com/apache/servicecomb-service-center/pkg/util"
 	pb "github.com/go-chassis/cari/discovery"
 	"go.mongodb.org/mongo-driver/bson"
+
+	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/client/dao"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
+	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
+	"github.com/apache/servicecomb-service-center/pkg/gopool"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
 type InstanceSlice []*pb.MicroServiceInstance
@@ -43,18 +45,6 @@ func (s InstanceSlice) Less(i, j int) bool {
 	return s[i].InstanceId < s[j].InstanceId
 }
 
-func StringBuilder(data []string) string {
-	var str strings.Builder
-	for index, value := range data {
-		if index == 0 {
-			str.WriteString(value)
-		} else {
-			str.WriteString("." + value)
-		}
-	}
-	return str.String()
-}
-
 func statistics(ctx context.Context, withShared bool) (*pb.Statistics, error) {
 	result := &pb.Statistics{
 		Services:  &pb.StService{},
@@ -66,7 +56,7 @@ func statistics(ctx context.Context, withShared bool) (*pb.Statistics, error) {
 
 	filter := bson.M{model.ColumnDomain: domain, model.ColumnProject: project}
 
-	services, err := GetServices(ctx, filter)
+	services, err := dao.GetMicroServices(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +74,7 @@ func statistics(ctx context.Context, withShared bool) (*pb.Statistics, error) {
 		getInstanceCountByDomain(ctx, svcIDToNonVerKey, respGetInstanceCountByDomain)
 	})
 
-	instances, err := GetInstances(ctx, filter)
+	instances, err := dao.GetInstances(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -104,8 +94,11 @@ func statistics(ctx context.Context, withShared bool) (*pb.Statistics, error) {
 
 func getInstanceCountByDomain(ctx context.Context, svcIDToNonVerKey map[string]string, resp chan datasource.GetInstanceCountByDomainResponse) {
 	ret := datasource.GetInstanceCountByDomainResponse{}
+	domain := util.ParseDomain(ctx)
+	project := util.ParseProject(ctx)
 	for _, sid := range svcIDToNonVerKey {
-		num, err := GetInstanceCountOfOneService(ctx, sid)
+		filter := mutil.NewDomainProjectFilter(domain, project, mutil.InstanceServiceID(sid))
+		num, err := dao.CountInstance(ctx, filter)
 		if err != nil {
 			ret.Err = err
 			return
