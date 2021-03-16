@@ -46,6 +46,7 @@ var (
 	ErrNoPermChangeAccount  = errors.New("can not change other account password")
 	ErrWrongPassword        = errors.New("current pwd is wrong")
 	ErrSamePassword         = errors.New("the password can not be same as old one")
+	ErrEmptyPassword        = errors.New("empty password")
 )
 
 //Init decide whether enable rbac function and save root account to db
@@ -110,8 +111,8 @@ func readPublicKey() {
 }
 func initFirstTime(admin string) {
 	//handle root account
-	pwd := archaius.GetString(InitPassword, "")
-	if pwd == "" {
+	pwd, err := getPassword()
+	if err != nil {
 		log.Fatal("can not enable rbac, password is empty", nil)
 	}
 	a := &rbac.Account{
@@ -119,7 +120,7 @@ func initFirstTime(admin string) {
 		Password: pwd,
 		Roles:    []string{rbacframe.RoleAdmin},
 	}
-	err := service.ValidateCreateAccount(a)
+	err = service.ValidateCreateAccount(a)
 	if err != nil {
 		log.Fatal("invalid pwd", err)
 		return
@@ -132,6 +133,20 @@ func initFirstTime(admin string) {
 		log.Fatal("can not enable rbac, init root account failed", err)
 	}
 	log.Info("root account init success")
+}
+
+func getPassword() (string, error) {
+	p := archaius.GetString(InitPassword, "")
+	if p == "" {
+		log.Fatal("can not enable rbac, password is empty", nil)
+		return "", ErrEmptyPassword
+	}
+	d, err := cipher.Decrypt(p)
+	if err != nil {
+		log.Warn("cipher fallback: " + err.Error())
+		return p, nil
+	}
+	return d, nil
 }
 
 func Enabled() bool {
@@ -148,6 +163,7 @@ func privateKey() string {
 	ep := archaius.GetString("rbac_private_key", "")
 	p, err := cipher.Decrypt(ep)
 	if err != nil {
+		log.Warn("cipher fallback: " + err.Error())
 		return ep
 	}
 	return p
