@@ -54,8 +54,7 @@ func registerInnerTypes() {
 			WithInitSize(500).WithParser(proto.ServiceParser)))
 	INSTANCE = Store().MustInstall(NewAddOn("INSTANCE",
 		discovery.Configure().WithPrefix(core.GetInstanceRootKey("")).
-			WithInitSize(1000).WithParser(proto.InstanceParser).
-			WithDeferHandler(NewInstanceEventDeferHandler())))
+			WithInitSize(1000).WithParser(proto.InstanceParser)))
 	DOMAIN = Store().MustInstall(NewAddOn("DOMAIN",
 		discovery.Configure().WithPrefix(core.GetDomainRootKey()+core.SPLIT).
 			WithInitSize(100).WithParser(proto.StringParser)))
