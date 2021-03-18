@@ -54,7 +54,7 @@ func SamePassword(hashedPwd, pwd string) bool {
 		return err == nil
 	}
 	err := scrypt.CompareHashAndPassword([]byte(hashedPwd), []byte(pwd))
-	if err == bcrypt.ErrMismatchedHashAndPassword {
+	if err == scrypt.ErrMismatchedHashAndPassword {
 		log.Warn("incorrect password attempts")
 	}
 	return err == nil
