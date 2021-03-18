@@ -19,14 +19,13 @@ package mongo
 
 import (
 	"context"
-	"errors"
+	"fmt"
 
 	"github.com/go-chassis/cari/rbac"
-	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
 	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/privacy"
@@ -36,7 +35,8 @@ import (
 func (ds *DataSource) CreateAccount(ctx context.Context, a *rbac.Account) error {
 	exist, err := ds.AccountExist(ctx, a.Name)
 	if err != nil {
-		log.Error("can not save account info", err)
+		msg := fmt.Sprintf("failed to query account, account name %s", a.Name)
+		log.Error(msg, err)
 		return err
 	}
 	if exist {
@@ -44,7 +44,8 @@ func (ds *DataSource) CreateAccount(ctx context.Context, a *rbac.Account) error 
 	}
 	a.Password, err = privacy.HashPassword(a.Password)
 	if err != nil {
-		log.Error("pwd hash failed", err)
+		msg := fmt.Sprintf("failed to hash account pwd, account name %s", a.Name)
+		log.Error(msg, err)
 		return err
 	}
 	a.ID = util.GenerateUUID()
@@ -55,14 +56,12 @@ func (ds *DataSource) CreateAccount(ctx context.Context, a *rbac.Account) error 
 		}
 		return err
 	}
-	log.Info("create new account: " + a.ID)
+	log.Info("succeed to create new account: " + a.ID)
 	return nil
 }
 
 func (ds *DataSource) AccountExist(ctx context.Context, name string) (bool, error) {
-	filter := bson.M{
-		model.ColumnAccountName: name,
-	}
+	filter := mutil.NewFilter(mutil.AccountName(name))
 	count, err := client.GetMongoClient().Count(ctx, model.CollectionAccount, filter)
 	if err != nil {
 		return false, err
@@ -74,28 +73,30 @@ func (ds *DataSource) AccountExist(ctx context.Context, name string) (bool, erro
 }
 
 func (ds *DataSource) GetAccount(ctx context.Context, name string) (*rbac.Account, error) {
-	filter := bson.M{
-		model.ColumnAccountName: name,
-	}
+	filter := mutil.NewFilter(mutil.AccountName(name))
 	result, err := client.GetMongoClient().FindOne(ctx, model.CollectionAccount, filter)
 	if err != nil {
+		msg := fmt.Sprintf("failed to query account, account name %s", name)
+		log.Error(msg, err)
 		return nil, err
 	}
 	if result.Err() != nil {
-		log.Error("failed to get account: ", result.Err())
-		return nil, errors.New("failed to get account")
+		msg := fmt.Sprintf("failed to query account, account name %s", name)
+		log.Error(msg, result.Err())
+		return nil, datasource.ErrQueryAccountFailed
 	}
 	var account rbac.Account
 	err = result.Decode(&account)
 	if err != nil {
-		log.Error("decode account failed: ", err)
+		log.Error("failed to decode account", err)
 		return nil, err
 	}
 	return &account, nil
 }
 
 func (ds *DataSource) ListAccount(ctx context.Context) ([]*rbac.Account, int64, error) {
-	cursor, err := client.GetMongoClient().Find(ctx, model.CollectionAccount, bson.M{})
+	filter := mutil.NewFilter()
+	cursor, err := client.GetMongoClient().Find(ctx, model.CollectionAccount, filter)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -105,7 +106,7 @@ func (ds *DataSource) ListAccount(ctx context.Context) ([]*rbac.Account, int64, 
 		var account rbac.Account
 		err = cursor.Decode(&account)
 		if err != nil {
-			log.Error("decode account failed: ", err)
+			log.Error("failed to decode account", err)
 			continue
 		}
 		account.Password = ""
@@ -118,9 +119,8 @@ func (ds *DataSource) DeleteAccount(ctx context.Context, names []string) (bool, 
 	if len(names) == 0 {
 		return false, nil
 	}
-	filter := bson.M{
-		model.ColumnAccountName: names[0],
-	}
+	inFilter := mutil.NewFilter(mutil.In(names))
+	filter := mutil.NewFilter(mutil.AccountName(inFilter))
 	result, err := client.GetMongoClient().Delete(ctx, model.CollectionAccount, filter)
 	if err != nil {
 		return false, err
@@ -132,20 +132,16 @@ func (ds *DataSource) DeleteAccount(ctx context.Context, names []string) (bool, 
 }
 
 func (ds *DataSource) UpdateAccount(ctx context.Context, name string, account *rbac.Account) error {
-	filter := bson.M{
-		model.ColumnAccountName: name,
-	}
-	update := bson.M{
-		"$set": bson.M{
-			model.ColumnID:                  account.ID,
-			model.ColumnPassword:            account.Password,
-			model.ColumnRoles:               account.Roles,
-			model.ColumnTokenExpirationTime: account.TokenExpirationTime,
-			model.ColumnCurrentPassword:     account.CurrentPassword,
-			model.ColumnStatus:              account.Status,
-		},
-	}
-	res, err := client.GetMongoClient().Update(ctx, model.CollectionAccount, filter, update)
+	filter := mutil.NewFilter(mutil.AccountName(name))
+	setFilter := mutil.NewFilter(
+		mutil.ID(account.ID),
+		mutil.Password(account.Password), mutil.Roles(account.Roles),
+		mutil.TokenExpirationTime(account.TokenExpirationTime),
+		mutil.CurrentPassword(account.CurrentPassword),
+		mutil.Status(account.Status),
+	)
+	updateFilter := mutil.NewFilter(mutil.Set(setFilter))
+	res, err := client.GetMongoClient().Update(ctx, model.CollectionAccount, filter, updateFilter)
 	if err != nil {
 		return err
 	}

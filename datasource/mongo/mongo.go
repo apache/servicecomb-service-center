@@ -26,8 +26,8 @@ import (
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/heartbeat"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
 	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -120,14 +120,14 @@ func EnsureService() {
 	wrapCreateCollectionError(err)
 
 	serviceIDIndex := mutil.BuildIndexDoc(
-		StringBuilder([]string{model.ColumnService, model.ColumnServiceID}))
+		mutil.ConnectWithDot([]string{model.ColumnService, model.ColumnServiceID}))
 	serviceIDIndex.Options = options.Index().SetUnique(true)
 
 	serviceIndex := mutil.BuildIndexDoc(
-		StringBuilder([]string{model.ColumnService, model.ColumnAppID}),
-		StringBuilder([]string{model.ColumnService, model.ColumnServiceName}),
-		StringBuilder([]string{model.ColumnService, model.ColumnEnv}),
-		StringBuilder([]string{model.ColumnService, model.ColumnVersion}),
+		mutil.ConnectWithDot([]string{model.ColumnService, model.ColumnAppID}),
+		mutil.ConnectWithDot([]string{model.ColumnService, model.ColumnServiceName}),
+		mutil.ConnectWithDot([]string{model.ColumnService, model.ColumnEnv}),
+		mutil.ConnectWithDot([]string{model.ColumnService, model.ColumnVersion}),
 		model.ColumnDomain,
 		model.ColumnProject)
 	serviceIndex.Options = options.Index().SetUnique(true)
@@ -146,7 +146,7 @@ func EnsureInstance() {
 	instanceIndex := mutil.BuildIndexDoc(model.ColumnRefreshTime)
 	instanceIndex.Options = options.Index().SetExpireAfterSeconds(defaultExpireTime)
 
-	instanceServiceIndex := mutil.BuildIndexDoc(StringBuilder([]string{model.ColumnInstance, model.ColumnServiceID}))
+	instanceServiceIndex := mutil.BuildIndexDoc(mutil.ConnectWithDot([]string{model.ColumnInstance, model.ColumnServiceID}))
 
 	var instanceIndexs []mongo.IndexModel
 	instanceIndexs = append(instanceIndexs, instanceIndex, instanceServiceIndex)

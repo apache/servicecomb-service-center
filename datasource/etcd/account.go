@@ -121,12 +121,15 @@ func (ds *DataSource) DeleteAccount(ctx context.Context, names []string) (bool, 
 	if len(names) == 0 {
 		return false, nil
 	}
-	resp, err := client.Instance().Do(ctx, client.DEL,
-		client.WithStrKey(path.GenerateRBACAccountKey(names[0])))
-	if err != nil {
-		return false, err
+	for _, name := range names {
+		_, err := client.Instance().Do(ctx, client.DEL,
+			client.WithStrKey(path.GenerateRBACAccountKey(name)))
+		if err != nil {
+			log.Error(datasource.ErrDeleteAccountFailed.Error(), err)
+			return false, err
+		}
 	}
-	return resp.Succeeded, nil
+	return true, nil
 }
 func (ds *DataSource) UpdateAccount(ctx context.Context, name string, account *rbac.Account) error {
 	value, err := json.Marshal(account)

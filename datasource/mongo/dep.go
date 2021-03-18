@@ -29,7 +29,8 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/client/dao"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
 	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -38,8 +39,8 @@ import (
 func (ds *DataSource) SearchProviderDependency(ctx context.Context, request *discovery.GetDependenciesRequest) (*discovery.GetProDependenciesResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
 	providerServiceID := request.ServiceId
-	filter := GeneratorServiceFilter(ctx, providerServiceID)
-	provider, err := GetService(ctx, filter)
+	filter := mutil.NewBasicFilter(ctx, mutil.ServiceServiceID(providerServiceID))
+	provider, err := dao.GetService(ctx, filter)
 	if err != nil {
 		if errors.Is(err, datasource.ErrNoData) {
 			log.Debug(fmt.Sprintf("query provider service failed, there is no provider %s in db", providerServiceID))
@@ -76,9 +77,8 @@ func (ds *DataSource) SearchProviderDependency(ctx context.Context, request *dis
 func (ds *DataSource) SearchConsumerDependency(ctx context.Context, request *discovery.GetDependenciesRequest) (*discovery.GetConDependenciesResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
 	consumerID := request.ServiceId
-
-	filter := GeneratorServiceFilter(ctx, consumerID)
-	consumer, err := GetService(ctx, filter)
+	filter := mutil.NewBasicFilter(ctx, mutil.ServiceServiceID(consumerID))
+	consumer, err := dao.GetService(ctx, filter)
 	if err != nil {
 		if errors.Is(err, datasource.ErrNoData) {
 			log.Debug(fmt.Sprintf("query consumer service failed, there is no consumer %s in db", consumerID))
@@ -226,7 +226,7 @@ func updateDeps(domainProject string, dep *datasource.Dependency) error {
 	var upsert = true
 	for _, r := range dep.DeleteDependencyRuleList {
 		filter := GenerateProviderDependencyRuleKey(domainProject, r)
-		_, err := client.GetMongoClient().Update(context.TODO(), model.CollectionDep, filter, bson.M{"$pull": bson.M{StringBuilder([]string{model.ColumnDep, model.ColumnDependency}): dep.Consumer}})
+		_, err := client.GetMongoClient().Update(context.TODO(), model.CollectionDep, filter, bson.M{"$pull": bson.M{mutil.ConnectWithDot([]string{model.ColumnDep, model.ColumnDependency}): dep.Consumer}})
 		if err != nil {
 			return err
 		}
@@ -237,7 +237,7 @@ func updateDeps(domainProject string, dep *datasource.Dependency) error {
 	for _, r := range dep.CreateDependencyRuleList {
 		filter := GenerateProviderDependencyRuleKey(domainProject, r)
 		data := bson.M{
-			"$addToSet": bson.M{StringBuilder([]string{model.ColumnDep, model.ColumnDependency}): dep.Consumer},
+			"$addToSet": bson.M{mutil.ConnectWithDot([]string{model.ColumnDep, model.ColumnDependency}): dep.Consumer},
 		}
 		_, err := client.GetMongoClient().Update(context.TODO(), model.CollectionDep, filter, data, &options.UpdateOptions{Upsert: &upsert})
 		if err != nil {
@@ -255,7 +255,7 @@ func updateDeps(domainProject string, dep *datasource.Dependency) error {
 		}
 	} else {
 		updateData := bson.M{
-			"$set": bson.M{StringBuilder([]string{model.ColumnDep, model.ColumnDependency}): dep.ProvidersRule},
+			"$set": bson.M{mutil.ConnectWithDot([]string{model.ColumnDep, model.ColumnDependency}): dep.ProvidersRule},
 		}
 		_, err := client.GetMongoClient().Update(context.TODO(), model.CollectionDep, filter, updateData, &options.UpdateOptions{Upsert: &upsert})
 		if err != nil {
@@ -401,7 +401,7 @@ func removeConsumerDeps(ctx context.Context, depRule *model.DependencyRule, cach
 		_, err = client.GetMongoClient().DocDelete(ctx, model.CollectionDep, filter)
 	} else {
 		updateData := bson.M{
-			"$set": bson.M{StringBuilder([]string{model.ColumnDep, model.ColumnDependency}): left},
+			"$set": bson.M{mutil.ConnectWithDot([]string{model.ColumnDep, model.ColumnDependency}): left},
 		}
 		_, err = client.GetMongoClient().Update(ctx, model.CollectionDep, filter, updateData)
 	}
@@ -451,18 +451,32 @@ func GetConsumerDepInfo(ctx context.Context, filter bson.M) ([]*discovery.Consum
 }
 
 func GetServiceID(ctx context.Context, key *discovery.MicroServiceKey) (string, error) {
-	id, err := getServiceID(ctx, GeneratorServiceNameFilter(ctx, key))
+	filter := mutil.NewBasicFilter(
+		ctx,
+		mutil.ServiceEnv(key.Environment),
+		mutil.ServiceAppID(key.AppId),
+		mutil.ServiceServiceName(key.ServiceName),
+		mutil.ServiceVersion(key.Version),
+	)
+	id, err := getServiceID(ctx, filter)
 	if err != nil && !errors.Is(err, datasource.ErrNoData) {
 		return "", err
 	}
 	if len(id) == 0 && len(key.Alias) != 0 {
-		return getServiceID(ctx, GeneratorServiceAliasFilter(ctx, key))
+		filter = mutil.NewBasicFilter(
+			ctx,
+			mutil.ServiceEnv(key.Environment),
+			mutil.ServiceAppID(key.AppId),
+			mutil.ServiceAlias(key.Alias),
+			mutil.ServiceVersion(key.Version),
+		)
+		return getServiceID(ctx, filter)
 	}
 	return id, nil
 }
 
 func getServiceID(ctx context.Context, filter bson.M) (serviceID string, err error) {
-	svc, err := GetService(ctx, filter)
+	svc, err := dao.GetService(ctx, filter)
 	if err != nil {
 		return
 	}

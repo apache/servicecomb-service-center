@@ -16,13 +16,7 @@
 package client
 
 import (
-	"errors"
-
 	"go.mongodb.org/mongo-driver/mongo"
-)
-
-var (
-	ErrNoDocuments = errors.New("no doc found")
 )
 
 const (

@@ -22,7 +22,9 @@ import (
 
 	"github.com/go-chassis/cari/discovery"
 
-	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/client/dao"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
+	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
@@ -37,8 +39,8 @@ func Filter(ctx context.Context, rules []*model.Rule, consumerID string) (bool, 
 	}
 	domain := util.ParseDomainProject(ctx)
 	project := util.ParseProject(ctx)
-
-	tags, err := getTags(ctx, domain, project, consumerID)
+	filter := mutil.NewDomainProjectFilter(domain, project, mutil.ServiceServiceID(consumerID))
+	tags, err := dao.GetTags(ctx, filter)
 	if err != nil {
 		return false, err
 	}

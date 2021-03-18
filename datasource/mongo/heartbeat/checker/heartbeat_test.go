@@ -25,15 +25,13 @@ import (
 	_ "github.com/apache/servicecomb-service-center/server/init"
 	_ "github.com/apache/servicecomb-service-center/server/plugin/security/cipher/buildin"
 
+	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/util"
+	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/go-chassis/v2/storage"
 	"github.com/stretchr/testify/assert"
-	"go.mongodb.org/mongo-driver/bson"
-
-	"github.com/apache/servicecomb-service-center/datasource/mongo"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
-	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
 func init() {
@@ -62,20 +60,14 @@ func TestUpdateInstanceRefreshTime(t *testing.T) {
 		assert.Equal(t, nil, err)
 		err = updateInstanceRefreshTime(context.Background(), instance1.Instance.ServiceId, instance1.Instance.InstanceId)
 		assert.Equal(t, nil, err)
-		filter := bson.M{
-			mongo.StringBuilder([]string{model.ColumnInstance, model.ColumnServiceID}):  instance1.Instance.ServiceId,
-			mongo.StringBuilder([]string{model.ColumnInstance, model.ColumnInstanceID}): instance1.Instance.InstanceId,
-		}
+		filter := util.NewFilter(util.InstanceServiceID(instance1.Instance.ServiceId), util.InstanceInstanceID(instance1.Instance.InstanceId))
 		result, err := client.GetMongoClient().FindOne(context.Background(), model.CollectionInstance, filter)
 		assert.Nil(t, err)
 		var ins model.Instance
 		err = result.Decode(&ins)
 		assert.Nil(t, err)
 		assert.NotEqual(t, instance1.RefreshTime, ins.RefreshTime)
-		filter = bson.M{
-			mongo.StringBuilder([]string{model.ColumnInstance, model.ColumnServiceID}):  instance1.Instance.ServiceId,
-			mongo.StringBuilder([]string{model.ColumnInstance, model.ColumnInstanceID}): instance1.Instance.InstanceId,
-		}
+		filter = util.NewFilter(util.InstanceServiceID(instance1.Instance.ServiceId), util.InstanceInstanceID(instance1.Instance.InstanceId))
 		_, err = client.GetMongoClient().Delete(context.Background(), model.CollectionInstance, filter)
 		assert.Nil(t, err)
 	})

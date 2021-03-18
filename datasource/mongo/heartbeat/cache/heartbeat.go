@@ -27,9 +27,9 @@ import (
 	"github.com/patrickmn/go-cache"
 	"go.mongodb.org/mongo-driver/bson"
 
-	"github.com/apache/servicecomb-service-center/datasource/mongo"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
@@ -130,11 +130,7 @@ func cleanInstance(ctx context.Context, serviceID string, instanceID string) err
 	}
 	defer session.EndSession(ctx)
 
-	filter := bson.M{
-		mongo.StringBuilder([]string{model.ColumnInstance, model.ColumnServiceID}):  serviceID,
-		mongo.StringBuilder([]string{model.ColumnInstance, model.ColumnInstanceID}): instanceID,
-	}
-
+	filter := util.NewFilter(util.InstanceServiceID(serviceID), util.InstanceInstanceID(instanceID))
 	result, err := client.GetMongoClient().FindOne(ctx, model.CollectionInstance, filter)
 	if err != nil {
 		log.Error("failed to query instance: %v", err)
@@ -167,10 +163,7 @@ func cleanInstance(ctx context.Context, serviceID string, instanceID string) err
 }
 
 func removeDBInstance(ctx context.Context, serviceID string, instanceID string) error {
-	filter := bson.M{
-		mongo.StringBuilder([]string{model.ColumnInstance, model.ColumnServiceID}):  serviceID,
-		mongo.StringBuilder([]string{model.ColumnInstance, model.ColumnInstanceID}): instanceID,
-	}
+	filter := util.NewFilter(util.InstanceServiceID(serviceID), util.InstanceInstanceID(instanceID))
 	res, err := client.GetMongoClient().DeleteOne(ctx, model.CollectionInstance, filter)
 	if err != nil {
 		log.Error("failed to clean instance", err)
@@ -181,10 +174,7 @@ func removeDBInstance(ctx context.Context, serviceID string, instanceID string) 
 }
 
 func findInstance(ctx context.Context, serviceID string, instanceID string) (*model.Instance, error) {
-	filter := bson.M{
-		mongo.StringBuilder([]string{model.ColumnInstance, model.ColumnServiceID}):  serviceID,
-		mongo.StringBuilder([]string{model.ColumnInstance, model.ColumnInstanceID}): instanceID,
-	}
+	filter := util.NewFilter(util.InstanceServiceID(serviceID), util.InstanceInstanceID(instanceID))
 	result, err := client.GetMongoClient().FindOne(ctx, model.CollectionInstance, filter)
 	if err != nil {
 		return nil, err
@@ -199,10 +189,7 @@ func findInstance(ctx context.Context, serviceID string, instanceID string) (*mo
 }
 
 func updateInstance(ctx context.Context, serviceID string, instanceID string) error {
-	filter := bson.M{
-		mongo.StringBuilder([]string{model.ColumnInstance, model.ColumnServiceID}):  serviceID,
-		mongo.StringBuilder([]string{model.ColumnInstance, model.ColumnInstanceID}): instanceID,
-	}
+	filter := util.NewFilter(util.InstanceServiceID(serviceID), util.InstanceInstanceID(instanceID))
 	update := bson.M{
 		"$set": bson.M{model.ColumnRefreshTime: time.Now()},
 	}

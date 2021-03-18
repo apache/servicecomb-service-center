@@ -52,10 +52,12 @@ func TestAccount(t *testing.T) {
 	t.Run("add and get account", func(t *testing.T) {
 		err := datasource.Instance().CreateAccount(context.Background(), &a1)
 		assert.NoError(t, err)
+		err = datasource.Instance().CreateAccount(context.Background(), &a2)
+		assert.NoError(t, err)
 		r, err := datasource.Instance().GetAccount(context.Background(), a1.Name)
 		assert.NoError(t, err)
 		assert.Equal(t, a1, *r)
-		_, err = datasource.Instance().DeleteAccount(context.Background(), []string{a1.Name})
+		_, err = datasource.Instance().DeleteAccount(context.Background(), []string{a1.Name, a2.Name})
 		assert.NoError(t, err)
 	})
 	t.Run("account should exist", func(t *testing.T) {

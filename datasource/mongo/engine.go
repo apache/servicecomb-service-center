@@ -25,12 +25,11 @@ import (
 	"time"
 
 	pb "github.com/go-chassis/cari/discovery"
-	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
 	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"github.com/apache/servicecomb-service-center/pkg/cluster"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
@@ -235,10 +234,7 @@ func (ds *DataSource) autoSelfHeartBeat() {
 }
 
 func GetAllServicesAcrossDomainProject(ctx context.Context) (map[string][]*pb.MicroService, error) {
-	domain := util.ParseDomain(ctx)
-	project := util.ParseProject(ctx)
-
-	filter := bson.M{"domain": domain, "project": project}
+	filter := mutil.NewBasicFilter(ctx)
 
 	findRes, err := client.GetMongoClient().Find(ctx, model.CollectionService, filter)
 	if err != nil {

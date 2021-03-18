@@ -20,14 +20,14 @@ package mongo
 import (
 	"context"
 
-	"go.mongodb.org/mongo-driver/bson"
+	"github.com/go-chassis/cari/rbac"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
+	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/go-chassis/cari/rbac"
 )
 
 func (ds *DataSource) CreateRole(ctx context.Context, r *rbac.Role) error {
@@ -47,14 +47,12 @@ func (ds *DataSource) CreateRole(ctx context.Context, r *rbac.Role) error {
 		}
 		return err
 	}
-	log.Info("create new role: " + r.ID)
+	log.Info("succeed to create new role: " + r.ID)
 	return nil
 }
 
 func (ds *DataSource) RoleExist(ctx context.Context, name string) (bool, error) {
-	filter := bson.M{
-		model.ColumnRoleName: name,
-	}
+	filter := mutil.NewFilter(mutil.RoleName(name))
 	count, err := client.GetMongoClient().Count(ctx, model.CollectionRole, filter)
 	if err != nil {
 		return false, err
@@ -66,9 +64,7 @@ func (ds *DataSource) RoleExist(ctx context.Context, name string) (bool, error) 
 }
 
 func (ds *DataSource) GetRole(ctx context.Context, name string) (*rbac.Role, error) {
-	filter := bson.M{
-		model.ColumnRoleName: name,
-	}
+	filter := mutil.NewFilter(mutil.RoleName(name))
 	result, err := client.GetMongoClient().FindOne(ctx, model.CollectionRole, filter)
 	if err != nil {
 		return nil, err
@@ -79,14 +75,15 @@ func (ds *DataSource) GetRole(ctx context.Context, name string) (*rbac.Role, err
 	var role rbac.Role
 	err = result.Decode(&role)
 	if err != nil {
-		log.Error("Decode role failed: ", err)
+		log.Error("failed to decode role", err)
 		return nil, err
 	}
 	return &role, nil
 }
 
 func (ds *DataSource) ListRole(ctx context.Context) ([]*rbac.Role, int64, error) {
-	cursor, err := client.GetMongoClient().Find(ctx, model.CollectionRole, bson.M{})
+	filter := mutil.NewFilter()
+	cursor, err := client.GetMongoClient().Find(ctx, model.CollectionRole, filter)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -96,7 +93,7 @@ func (ds *DataSource) ListRole(ctx context.Context) ([]*rbac.Role, int64, error)
 		var role rbac.Role
 		err = cursor.Decode(&role)
 		if err != nil {
-			log.Error("decode role failed: ", err)
+			log.Error("failed to decode role", err)
 			continue
 		}
 		roles = append(roles, &role)
@@ -105,9 +102,7 @@ func (ds *DataSource) ListRole(ctx context.Context) ([]*rbac.Role, int64, error)
 }
 
 func (ds *DataSource) DeleteRole(ctx context.Context, name string) (bool, error) {
-	filter := bson.M{
-		model.ColumnRoleName: name,
-	}
+	filter := mutil.NewFilter(mutil.RoleName(name))
 	result, err := client.GetMongoClient().Delete(ctx, model.CollectionRole, filter)
 	if err != nil {
 		return false, err
@@ -119,17 +114,14 @@ func (ds *DataSource) DeleteRole(ctx context.Context, name string) (bool, error)
 }
 
 func (ds *DataSource) UpdateRole(ctx context.Context, name string, role *rbac.Role) error {
-	filter := bson.M{
-		model.ColumnRoleName: name,
-	}
-	update := bson.M{
-		"$set": bson.M{
-			model.ColumnID:       role.ID,
-			model.ColumnRoleName: role.Name,
-			model.ColumnPerms:    role.Perms,
-		},
-	}
-	_, err := client.GetMongoClient().Update(ctx, model.CollectionRole, filter, update)
+	filter := mutil.NewFilter(mutil.RoleName(name))
+	setFilter := mutil.NewFilter(
+		mutil.ID(role.ID),
+		mutil.RoleName(role.Name),
+		mutil.Perms(role.Perms),
+	)
+	updateFilter := mutil.NewFilter(mutil.Set(setFilter))
+	_, err := client.GetMongoClient().Update(ctx, model.CollectionRole, filter, updateFilter)
 	if err != nil {
 		return err
 	}
