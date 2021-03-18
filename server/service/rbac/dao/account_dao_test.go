@@ -19,6 +19,7 @@ package dao_test
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/pkg/privacy"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	mgr "github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery/etcd"
@@ -27,7 +28,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
 	"github.com/astaxie/beego"
 	"github.com/stretchr/testify/assert"
-	"golang.org/x/crypto/bcrypt"
 	"testing"
 )
 
@@ -46,8 +46,8 @@ func TestAccountDao_CreateAccount(t *testing.T) {
 		r, err := dao.GetAccount(context.Background(), "admin")
 		assert.NoError(t, err)
 		assert.Equal(t, "admin", r.Name)
-		hash, err := bcrypt.GenerateFromPassword([]byte("pwd"), 14)
-		err = bcrypt.CompareHashAndPassword(hash, []byte("pwd"))
-		assert.NoError(t, err)
+		hash, err := privacy.ScryptPassword("pwd")
+		b := privacy.SamePassword(hash, "pwd")
+		assert.True(t, b)
 	})
 }
