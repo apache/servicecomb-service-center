@@ -25,12 +25,11 @@ import (
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/etcdsync"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/privacy"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/service/kv"
-	stringutil "github.com/go-chassis/foundation/string"
-	"golang.org/x/crypto/bcrypt"
 )
 
 var ErrDuplicated = errors.New("account is duplicated")
@@ -58,12 +57,12 @@ func CreateAccount(ctx context.Context, a *rbacframe.Account) error {
 	if exist {
 		return ErrDuplicated
 	}
-	hash, err := bcrypt.GenerateFromPassword([]byte(a.Password), 14)
+	hash, err := privacy.ScryptPassword(a.Password)
 	if err != nil {
 		log.Errorf(err, "pwd hash failed")
 		return err
 	}
-	a.Password = stringutil.Bytes2str(hash)
+	a.Password = hash
 	a.ID = util.GenerateUUID()
 	value, err := json.Marshal(a)
 	if err != nil {

@@ -9,11 +9,12 @@ require (
 	github.com/coreos/etcd v3.3.22+incompatible
 	github.com/coreos/pkg v0.0.0-20180108230652-97fdf19511ea // v4
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/go-chassis/foundation v0.1.1-0.20200825060850-b16bf420f7b3
+	github.com/elithrar/simple-scrypt v1.3.0 // indirect
+	github.com/go-chassis/foundation v0.3.0
 	github.com/go-chassis/go-archaius v1.3.2
 	github.com/go-chassis/go-chassis v0.0.0-20200826064053-d90be848aa10
 	github.com/go-chassis/paas-lager v1.1.1
-	github.com/gogo/protobuf v1.2.2-0.20190723190241-65acae22fc9d
+	github.com/gogo/protobuf v1.3.1
 	github.com/golang/protobuf v1.3.2
 	github.com/gorilla/websocket v1.4.2
 	github.com/hashicorp/serf v0.8.3
@@ -34,7 +35,7 @@ require (
 	github.com/satori/go.uuid v1.1.0
 	github.com/spf13/cobra v0.0.0-20170624150100-4d647c8944eb
 	github.com/spf13/pflag v1.0.5
-	github.com/stretchr/testify v1.4.0
+	github.com/stretchr/testify v1.6.1
 	github.com/widuu/gojson v0.0.0-20170212122013-7da9d2cd949b
 	go.uber.org/zap v1.10.0
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a

@@ -19,9 +19,8 @@ package rbac
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/pkg/privacy"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
-	stringutil "github.com/go-chassis/foundation/string"
-	"golang.org/x/crypto/bcrypt"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
@@ -63,7 +62,7 @@ func changePassword(ctx context.Context, name, currentPassword, pwd string) erro
 		log.Error("can not change pwd", err)
 		return err
 	}
-	same := SamePassword(old.Password, currentPassword)
+	same := privacy.SamePassword(old.Password, currentPassword)
 	if !same {
 		log.Error("current password is wrong", nil)
 		return ErrWrongPassword
@@ -76,24 +75,16 @@ func changePassword(ctx context.Context, name, currentPassword, pwd string) erro
 }
 
 func doChangePassword(ctx context.Context, old *rbacframe.Account, pwd string) error {
-	hash, err := bcrypt.GenerateFromPassword([]byte(pwd), 14)
+	hash, err := privacy.ScryptPassword(pwd)
 	if err != nil {
 		log.Error("pwd hash failed", err)
 		return err
 	}
-	old.Password = stringutil.Bytes2str(hash)
+	old.Password = hash
 	err = dao.EditAccount(ctx, old)
 	if err != nil {
 		log.Error("can not change pwd", err)
 		return err
 	}
 	return nil
-}
-
-func SamePassword(hashedPwd, pwd string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(hashedPwd), []byte(pwd))
-	if err == bcrypt.ErrMismatchedHashAndPassword {
-		log.Warn("incorrect password attempts")
-	}
-	return err == nil
 }
