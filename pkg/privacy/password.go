@@ -18,15 +18,45 @@
 package privacy
 
 import (
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/elithrar/simple-scrypt"
 	"github.com/go-chassis/foundation/stringutil"
 	"golang.org/x/crypto/bcrypt"
+	"strings"
+)
+
+const (
+	algBcrypt = "$2a$"
 )
 
 //HashPassword
+//Deprecated: use ScryptPassword, this is only for unit test to test compatible with old version
 func HashPassword(pwd string) (string, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(pwd), 14)
 	if err != nil {
 		return "", err
 	}
 	return stringutil.Bytes2str(hash), nil
+}
+func ScryptPassword(pwd string) (string, error) {
+	hash, err := scrypt.GenerateFromPassword([]byte(pwd), scrypt.DefaultParams)
+	if err != nil {
+		return "", err
+	}
+	return string(hash), nil
+}
+func SamePassword(hashedPwd, pwd string) bool {
+	if strings.HasPrefix(hashedPwd, algBcrypt) {
+		err := bcrypt.CompareHashAndPassword([]byte(hashedPwd), []byte(pwd))
+		if err == bcrypt.ErrMismatchedHashAndPassword {
+			log.Warn("incorrect password attempts")
+		}
+		return err == nil
+	}
+	err := scrypt.CompareHashAndPassword([]byte(hashedPwd), []byte(pwd))
+	if err == bcrypt.ErrMismatchedHashAndPassword {
+		log.Warn("incorrect password attempts")
+	}
+	return err == nil
+
 }

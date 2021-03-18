@@ -19,6 +19,7 @@ package rbac_test
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/pkg/privacy"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
@@ -86,7 +87,7 @@ func TestInitRBAC(t *testing.T) {
 		assert.NoError(t, err)
 		a, err := dao.GetAccount(context.Background(), "a")
 		assert.NoError(t, err)
-		assert.True(t, rbac.SamePassword(a.Password, "Complicated_password2"))
+		assert.True(t, privacy.SamePassword(a.Password, "Complicated_password2"))
 	})
 	t.Run("change self password", func(t *testing.T) {
 		err := dao.CreateAccount(context.Background(), &rbacmodel.Account{Name: "b", Password: "Complicated_password1"})
@@ -95,7 +96,7 @@ func TestInitRBAC(t *testing.T) {
 		assert.NoError(t, err)
 		a, err := dao.GetAccount(context.Background(), "b")
 		assert.NoError(t, err)
-		assert.True(t, rbac.SamePassword(a.Password, "Complicated_password2"))
+		assert.True(t, privacy.SamePassword(a.Password, "Complicated_password2"))
 
 	})
 	t.Run("list kv", func(t *testing.T) {

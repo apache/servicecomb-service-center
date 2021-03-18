@@ -19,6 +19,7 @@ package rbac
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/pkg/privacy"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	rbacmodel "github.com/go-chassis/cari/rbac"
 
@@ -68,7 +69,7 @@ func changePassword(ctx context.Context, name, currentPassword, pwd string) erro
 		log.Error("can not change pwd", err)
 		return err
 	}
-	same := SamePassword(old.Password, currentPassword)
+	same := privacy.SamePassword(old.Password, currentPassword)
 	if !same {
 		log.Error("current password is wrong", nil)
 		return ErrWrongPassword
@@ -93,12 +94,4 @@ func doChangePassword(ctx context.Context, old *rbacmodel.Account, pwd string) e
 		return err
 	}
 	return nil
-}
-
-func SamePassword(hashedPwd, pwd string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(hashedPwd), []byte(pwd))
-	if err == bcrypt.ErrMismatchedHashAndPassword {
-		log.Warn("incorrect password attempts")
-	}
-	return err == nil
 }

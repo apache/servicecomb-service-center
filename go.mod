@@ -16,6 +16,7 @@ require (
 	github.com/coreos/pkg v0.0.0-20180108230652-97fdf19511ea // v4
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/dustin/go-humanize v1.0.0 // indirect
+	github.com/elithrar/simple-scrypt v1.3.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-chassis/cari v0.2.0
 	github.com/go-chassis/foundation v0.3.0
@@ -63,7 +64,7 @@ require (
 	go.mongodb.org/mongo-driver v1.4.2
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.10.0
-	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
+	golang.org/x/crypto v0.0.0-20210314154223-e6e6c4f2bb5b
 	golang.org/x/sync v0.0.0-20201020160332-67f06af15bc9 // indirect
 	golang.org/x/sys v0.0.0-20210119212857-b64e53b001e4 // indirect
 	golang.org/x/text v0.3.5 // indirect
