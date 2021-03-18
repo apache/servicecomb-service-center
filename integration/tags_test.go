@@ -100,11 +100,8 @@ var _ = Describe("MicroService Api Test", func() {
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 			})
 
-			It("Create MicroService tags with invalid params", func() {
-				tags := map[string]interface{}{}
-				bodyParams := map[string]interface{}{
-					"tags": tags,
-				}
+			It("Create MicroService tags with empty collections, should be pass", func() {
+				bodyParams := map[string]interface{}{}
 				url := strings.Replace(ADDTAGE, ":serviceId", serviceId, 1)
 				body, _ := json.Marshal(bodyParams)
 				bodyBuf := bytes.NewReader(body)
@@ -114,7 +111,22 @@ var _ = Describe("MicroService Api Test", func() {
 				Expect(err).To(BeNil())
 				defer resp.Body.Close()
 
-				Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
+				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+
+				tags := map[string]interface{}{}
+				bodyParams = map[string]interface{}{
+					"tags": tags,
+				}
+				url = strings.Replace(ADDTAGE, ":serviceId", serviceId, 1)
+				body, _ = json.Marshal(bodyParams)
+				bodyBuf = bytes.NewReader(body)
+				req, _ = http.NewRequest(POST, SCURL+url, bodyBuf)
+				req.Header.Set("X-Domain-Name", "default")
+				resp, err = scclient.Do(req)
+				Expect(err).To(BeNil())
+				defer resp.Body.Close()
+
+				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 			})
 
 			It("Create MicroService tags with invalid serviceID", func() {

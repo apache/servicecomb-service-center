@@ -43,7 +43,7 @@ func GetTagsReqValidator() *validate.Validator {
 func AddTagsReqValidator() *validate.Validator {
 	return addTagsReqValidator.Init(func(v *validate.Validator) {
 		v.AddRule("ServiceId", GetServiceReqValidator().GetRule("ServiceId"))
-		v.AddRule("Tags", &validate.Rule{Min: 1, Max: quota.DefaultTagQuota, Regexp: tagRegex})
+		v.AddRule("Tags", &validate.Rule{Max: quota.DefaultTagQuota, Regexp: tagRegex})
 	})
 }
 
