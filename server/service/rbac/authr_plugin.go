@@ -20,6 +20,7 @@ package rbac
 import (
 	"context"
 	"errors"
+	"github.com/apache/servicecomb-service-center/pkg/privacy"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
@@ -58,7 +59,7 @@ func (a *EmbeddedAuthenticator) Login(ctx context.Context, user string, password
 		log.Error("get account err", err)
 		return "", err
 	}
-	same := SamePassword(account.Password, password)
+	same := privacy.SamePassword(account.Password, password)
 	if user == account.Name && same {
 		secret, err := GetPrivateKey()
 		if err != nil {

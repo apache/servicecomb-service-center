@@ -42,7 +42,7 @@ func (ds *DataSource) CreateAccount(ctx context.Context, a *rbac.Account) error 
 	if exist {
 		return datasource.ErrAccountDuplicated
 	}
-	a.Password, err = privacy.HashPassword(a.Password)
+	a.Password, err = privacy.ScryptPassword(a.Password)
 	if err != nil {
 		log.Error("pwd hash failed", err)
 		return err
