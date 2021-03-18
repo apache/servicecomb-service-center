@@ -17,10 +17,8 @@
 
 set -x
 set +e
-export c_name="etcd"
-export mongo_docker="mongo"
-docker rm -f $c_name
-docker rm -f $mongo_docker
+db_name=$1
+docker rm -f $db_name
 set -e
 
 ut_for_dir() {
@@ -37,46 +35,49 @@ ut_for_file() {
 
 echo "${green}Starting Unit Testing for Service Center${reset}"
 
-echo "${green}Starting etcd in docker${reset}"
-docker run -d -v /usr/share/ca-certificates/:/etc/ssl/certs -p 40010:40010 -p 23800:23800 -p 2379:2379 --name etcd quay.io/coreos/etcd etcd -name etcd0 -advertise-client-urls http://127.0.0.1:2379,http://127.0.0.1:40010 -listen-client-urls http://0.0.0.0:2379,http://0.0.0.0:40010 -initial-advertise-peer-urls http://127.0.0.1:23800 -listen-peer-urls http://0.0.0.0:23800 -initial-cluster-token etcd-cluster-1 -initial-cluster etcd0=http://127.0.0.1:23800 -initial-cluster-state new
-while ! nc -z 127.0.0.1 2379; do
-  echo "Waiting Etcd to launch on 2379..."
-  sleep 1
-done
-echo "${green}Etcd is running......${reset}"
-
-docker run -d -p 27017:27017 --name mongo mongo
-while ! nc -z 127.0.0.1 27017; do
-  echo "Waiting mongo to launch on 27017..."
-  sleep 1
-done
-echo "${green}mongodb is running......${reset}"
+if [ ${db_name} == "etcd" ];then
+  echo "${green}Starting etcd in docker${reset}"
+  docker run -d -v /usr/share/ca-certificates/:/etc/ssl/certs -p 40010:40010 -p 23800:23800 -p 2379:2379 --name etcd quay.io/coreos/etcd etcd -name etcd0 -advertise-client-urls http://127.0.0.1:2379,http://127.0.0.1:40010 -listen-client-urls http://0.0.0.0:2379,http://0.0.0.0:40010 -initial-advertise-peer-urls http://127.0.0.1:23800 -listen-peer-urls http://0.0.0.0:23800 -initial-cluster-token etcd-cluster-1 -initial-cluster etcd0=http://127.0.0.1:23800 -initial-cluster-state new
+  while ! nc -z 127.0.0.1 2379; do
+    echo "Waiting Etcd to launch on 2379..."
+    sleep 1
+  done
+  echo "${green}Etcd is running......${reset}"
+elif [ ${db_name} == "mongo" ];then
+  echo "${green}Starting mongo in docker${reset}"
+  docker run -d -p 27017:27017 --name mongo mongo
+  while ! nc -z 127.0.0.1 27017; do
+    echo "Waiting mongo to launch on 27017..."
+    sleep 1
+  done
+  echo "${green}mongodb is running......${reset}"
+else
+  echo "${db_name} non-existent"
+	exit 1
+fi
 
 echo "${green}Preparing the env for UT....${reset}"
 ./scripts/prepare_env_ut.sh
 
-export TEST_MODE=etcd
-[ $? == 0 ] && ut_for_file datasource
-[ $? == 0 ] && ut_for_dir datasource/etcd
-[ $? == 0 ] && ut_for_dir pkg
-[ $? == 0 ] && ut_for_dir server
-[ $? == 0 ] && ut_for_dir scctl
-[ $? == 0 ] && ut_for_dir syncer
-ret=$?
-
-if [ ${ret} == 0 ]; then
-	echo "${green}All the unit test passed..${reset}"
-	echo "${green}Coverage is created in the file ./coverage.txt${reset}"
+if [ ${db_name} == "etcd" ];then
+  export TEST_MODE=etcd
+  [ $? == 0 ] && ut_for_file datasource
+  [ $? == 0 ] && ut_for_dir datasource/etcd
+  [ $? == 0 ] && ut_for_dir pkg
+  [ $? == 0 ] && ut_for_dir server
+  [ $? == 0 ] && ut_for_dir scctl
+  [ $? == 0 ] && ut_for_dir syncer
+elif [ ${db_name} == "mongo" ];then
+  export TEST_MODE=mongo
+  [ $? == 0 ] && ut_for_file datasource
+  [ $? == 0 ] && ut_for_dir datasource/mongo
+  [ $? == 0 ] && ut_for_dir syncer
+  [ $? == 0 ] && ut_for_dir server
 else
-	echo "${red}Some or all the unit test failed..please check the logs for more details.${reset}"
+  echo "${db_name} non-existent"
 	exit 1
 fi
 
-export TEST_MODE=mongo
-[ $? == 0 ] && ut_for_file datasource
-[ $? == 0 ] && ut_for_dir datasource/mongo
-[ $? == 0 ] && ut_for_dir syncer
-[ $? == 0 ] && ut_for_dir server
 ret=$?
 
 if [ ${ret} == 0 ]; then
@@ -89,6 +90,5 @@ fi
 
 echo "${green}Service-Center finished${reset}"
 
-echo "${green}Cleaning up the etcd docker container${reset}"
-docker rm -f $c_name
-docker rm -f $mongo_docker
+echo "${green}Cleaning up the $db_name docker container${reset}"
+docker rm -f $db_name
