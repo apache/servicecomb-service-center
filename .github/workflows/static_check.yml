@@ -1,40 +1,56 @@
 name: Merge check
-on: [push, pull_request]
+on: [ push, pull_request ]
 jobs:
   build:
     name: Merge check
     runs-on: ubuntu-latest
     steps:
-    - name: Set up Go 1.13
-      uses: actions/setup-go@v1
-      with:
-        go-version: 1.13
-      id: go
-    - name: Check out code into the Go module directory
-      uses: actions/checkout@v1
-    - name: build
-      run: |
-        bash -x scripts/build/local.sh
-    - name: UT
-      run: |
-        bash -x scripts/ut_test_in_docker.sh
-    - name: Integration Testing
-      run: |
-        bash -x scripts/integration_test.sh
-  tests:
+      - name: Set up Go 1.13
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.13
+        id: go
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v1
+      - name: build
+        run: |
+          bash -x scripts/build/local.sh
+  ut4etcd:
     runs-on: ubuntu-latest
     steps:
-    - name: Set up Go 1.13
-      uses: actions/setup-go@v1
-      with:
-        go-version: 1.13
-      id: go
-    - name: Check out code into the Go module directory
-      uses: actions/checkout@v1
-    - name: Fmt
-      run: |
-        bash scripts/ci/formatChecker.sh
-    - name: Misspell
-      run: |
-        go get -u github.com/client9/misspell/cmd/misspell
-        bash scripts/ci/formatChecker.sh
+      - name: Set up Go 1.13
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.13
+        id: go
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v1
+      - name: UT-ETCD
+        run: |
+          bash -x scripts/ut_test_in_docker.sh etcd
+  ut4mongo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Go 1.13
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.13
+        id: go
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v1
+      - name: UT-MONGO
+        run: |
+          bash -x scripts/ut_test_in_docker.sh mongo
+  integration-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Go 1.13
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.13
+        id: go
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v1
+      - name: Integration Testing
+        run: |
+          bash -x scripts/integration_test.sh

@@ -35,7 +35,7 @@ run_test() {
 test_mode=${TEST_MODE}
 
 if [ ${test_mode} == "mongo" ];then
-  for d in $(go list -f '{{.Dir}}' ./... | grep -v vendor| grep -v syncer | grep -v broker); do
+  for d in $(go list -f '{{.Dir}}' ./... | grep -v vendor| grep -v syncer | grep -v broker | grep -v quota); do
     run_test $d
   done
 else
