@@ -86,13 +86,6 @@ var _ = Describe("'Tag' service", func() {
 				})
 				Expect(respAddTags.Response.GetCode()).ToNot(Equal(pb.ResponseSuccess))
 
-				By("tag is empty")
-				respAddTags, _ = serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
-					ServiceId: serviceId1,
-					Tags:      map[string]string{},
-				})
-				Expect(respAddTags.Response.GetCode()).ToNot(Equal(pb.ResponseSuccess))
-
 				By("tag key is empty")
 				respAddTags, _ = serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
 					ServiceId: serviceId1,
@@ -119,6 +112,15 @@ var _ = Describe("'Tag' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(respAddTags.Response.GetCode()).To(Equal(pb.ResponseSuccess))
+
+				By("tag is empty")
+				respAddTags, _ = serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
+					ServiceId: serviceId1,
+					Tags:      map[string]string{},
+				})
+				Expect(respAddTags.Response.GetCode()).To(Equal(pb.ResponseSuccess))
+				getServiceTagsResponse, _ := serviceResource.GetTags(getContext(), &pb.GetServiceTagsRequest{ServiceId: serviceId1})
+				Expect(getServiceTagsResponse.Tags).To(BeEmpty())
 			})
 		})
 
