@@ -54,9 +54,9 @@ func TestGetInstance(t *testing.T) {
 		t.Fatalf(`GetInstance failed`)
 	}
 
-	_, err = GetAllInstancesOfOneService(context.Background(), "", "")
+	_, err = GetInstancesWithoutProperties(context.Background(), "", "")
 	if err != nil {
-		t.Fatalf(`GetAllInstancesOfOneService failed`)
+		t.Fatalf(`GetInstancesWithoutProperties failed`)
 	}
 
 	_, err = QueryServiceInstancesKvs(context.Background(), "", 0)
