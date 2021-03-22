@@ -72,7 +72,7 @@ func (brokerService *Controller) GetHome(w http.ResponseWriter, r *http.Request)
 
 	respInternal := resp.Response
 	resp.Response = nil
-	controller.WriteResponse(w, respInternal, resp)
+	controller.WriteResponse(w, r, respInternal, resp)
 }
 
 func (*Controller) PublishPact(w http.ResponseWriter, r *http.Request) {
@@ -99,7 +99,7 @@ func (*Controller) PublishPact(w http.ResponseWriter, r *http.Request) {
 	}
 	respInternal := resp.Response
 	resp.Response = nil
-	controller.WriteResponse(w, respInternal, resp)
+	controller.WriteResponse(w, r, respInternal, resp)
 }
 
 func (*Controller) GetAllProviderPacts(w http.ResponseWriter, r *http.Request) {
@@ -125,7 +125,7 @@ func (*Controller) GetAllProviderPacts(w http.ResponseWriter, r *http.Request) {
 	PactLogger.Infof("Pact info: %s\n", string(linksObj))
 	respInternal := resp.Response
 	resp.Response = nil
-	controller.WriteResponse(w, respInternal, resp)
+	controller.WriteResponse(w, r, respInternal, resp)
 }
 
 func (*Controller) GetPactsOfProvider(w http.ResponseWriter, r *http.Request) {
@@ -152,7 +152,7 @@ func (*Controller) DeletePacts(w http.ResponseWriter, r *http.Request) {
 		HostAddress: r.Host,
 		Scheme:      getScheme(r),
 	})
-	controller.WriteResponse(w, resp, nil)
+	controller.WriteResponse(w, r, resp, nil)
 }
 
 func (*Controller) PublishVerificationResults(w http.ResponseWriter, r *http.Request) {
@@ -191,7 +191,7 @@ func (*Controller) PublishVerificationResults(w http.ResponseWriter, r *http.Req
 	}
 	respInternal := resp.Response
 	resp.Response = nil
-	controller.WriteResponse(w, respInternal, resp)
+	controller.WriteResponse(w, r, respInternal, resp)
 }
 
 func (*Controller) RetrieveVerificationResults(w http.ResponseWriter, r *http.Request) {
@@ -204,7 +204,7 @@ func (*Controller) RetrieveVerificationResults(w http.ResponseWriter, r *http.Re
 	resp, _ := ServiceAPI.RetrieveVerificationResults(r.Context(), request)
 	respInternal := resp.Response
 	resp.Response = nil
-	controller.WriteResponse(w, respInternal, resp)
+	controller.WriteResponse(w, r, respInternal, resp)
 }
 
 func getScheme(r *http.Request) string {

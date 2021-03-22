@@ -68,7 +68,7 @@ func (s *TagService) AddTags(w http.ResponseWriter, r *http.Request) {
 		controller.WriteError(w, pb.ErrInternal, "can not add tag")
 		return
 	}
-	controller.WriteResponse(w, resp.Response, nil)
+	controller.WriteResponse(w, r, resp.Response, nil)
 }
 
 func (s *TagService) UpdateTag(w http.ResponseWriter, r *http.Request) {
@@ -78,7 +78,7 @@ func (s *TagService) UpdateTag(w http.ResponseWriter, r *http.Request) {
 		Key:       query.Get(":key"),
 		Value:     query.Get("value"),
 	})
-	controller.WriteResponse(w, resp.Response, nil)
+	controller.WriteResponse(w, r, resp.Response, nil)
 }
 
 func (s *TagService) GetTags(w http.ResponseWriter, r *http.Request) {
@@ -87,7 +87,7 @@ func (s *TagService) GetTags(w http.ResponseWriter, r *http.Request) {
 	})
 	respInternal := resp.Response
 	resp.Response = nil
-	controller.WriteResponse(w, respInternal, resp)
+	controller.WriteResponse(w, r, respInternal, resp)
 }
 
 func (s *TagService) DeleteTags(w http.ResponseWriter, r *http.Request) {
@@ -99,5 +99,5 @@ func (s *TagService) DeleteTags(w http.ResponseWriter, r *http.Request) {
 		ServiceId: query.Get(":serviceId"),
 		Keys:      ids,
 	})
-	controller.WriteResponse(w, resp.Response, nil)
+	controller.WriteResponse(w, r, resp.Response, nil)
 }

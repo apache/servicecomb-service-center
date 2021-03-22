@@ -86,7 +86,7 @@ func (governService *ResourceV4) GetGraph(w http.ResponseWriter, r *http.Request
 		if err != nil {
 			log.Errorf(err, "get service[%s/%s/%s/%s]'s providers failed",
 				service.Environment, service.AppId, service.ServiceName, service.Version)
-			controller.WriteResponse(w, proResp.Response, nil)
+			controller.WriteResponse(w, r, proResp.Response, nil)
 			return
 		}
 
@@ -95,7 +95,7 @@ func (governService *ResourceV4) GetGraph(w http.ResponseWriter, r *http.Request
 		graph.Lines = append(graph.Lines, lines...)
 	}
 	graph.Nodes = nodes
-	controller.WriteResponse(w, nil, graph)
+	controller.WriteResponse(w, r, nil, graph)
 }
 
 func (governService *ResourceV4) genLinesFromNode(withShared bool, domainProject string, node Node, providers []*pb.MicroService) []Line {
@@ -135,7 +135,7 @@ func (governService *ResourceV4) GetServiceDetail(w http.ResponseWriter, r *http
 
 	respInternal := resp.Response
 	resp.Response = nil
-	controller.WriteResponse(w, respInternal, resp)
+	controller.WriteResponse(w, r, respInternal, resp)
 }
 
 func (governService *ResourceV4) GetAllServicesInfo(w http.ResponseWriter, r *http.Request) {
@@ -159,7 +159,7 @@ func (governService *ResourceV4) GetAllServicesInfo(w http.ResponseWriter, r *ht
 
 	respInternal := resp.Response
 	resp.Response = nil
-	controller.WriteResponse(w, respInternal, resp)
+	controller.WriteResponse(w, r, respInternal, resp)
 }
 
 func (governService *ResourceV4) GetAllApplications(w http.ResponseWriter, r *http.Request) {
@@ -172,5 +172,5 @@ func (governService *ResourceV4) GetAllApplications(w http.ResponseWriter, r *ht
 
 	respInternal := resp.Response
 	resp.Response = nil
-	controller.WriteResponse(w, respInternal, resp)
+	controller.WriteResponse(w, r, respInternal, resp)
 }

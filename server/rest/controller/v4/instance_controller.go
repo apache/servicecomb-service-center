@@ -77,7 +77,7 @@ func (s *MicroServiceInstanceService) RegisterInstance(w http.ResponseWriter, r 
 	}
 	respInternal := resp.Response
 	resp.Response = nil
-	controller.WriteResponse(w, respInternal, resp)
+	controller.WriteResponse(w, r, respInternal, resp)
 }
 
 //TODO 什么样的服务允许更新服务心跳，只能是本服务才可以更新自己，如何屏蔽其他服务伪造的心跳更新？
@@ -88,7 +88,7 @@ func (s *MicroServiceInstanceService) Heartbeat(w http.ResponseWriter, r *http.R
 		InstanceId: query.Get(":instanceId"),
 	}
 	resp, _ := core.InstanceAPI.Heartbeat(r.Context(), request)
-	controller.WriteResponse(w, resp.Response, nil)
+	controller.WriteResponse(w, r, resp.Response, nil)
 }
 
 func (s *MicroServiceInstanceService) HeartbeatSet(w http.ResponseWriter, r *http.Request) {
@@ -109,12 +109,12 @@ func (s *MicroServiceInstanceService) HeartbeatSet(w http.ResponseWriter, r *htt
 	resp, _ := core.InstanceAPI.HeartbeatSet(r.Context(), request)
 
 	if resp.Response.GetCode() == pb.ResponseSuccess {
-		controller.WriteResponse(w, nil, nil)
+		controller.WriteResponse(w, r, nil, nil)
 		return
 	}
 	respInternal := resp.Response
 	resp.Response = nil
-	controller.WriteResponse(w, respInternal, resp)
+	controller.WriteResponse(w, r, respInternal, resp)
 }
 
 func (s *MicroServiceInstanceService) UnregisterInstance(w http.ResponseWriter, r *http.Request) {
@@ -124,7 +124,7 @@ func (s *MicroServiceInstanceService) UnregisterInstance(w http.ResponseWriter, 
 		InstanceId: query.Get(":instanceId"),
 	}
 	resp, _ := core.InstanceAPI.Unregister(r.Context(), request)
-	controller.WriteResponse(w, resp.Response, nil)
+	controller.WriteResponse(w, r, resp.Response, nil)
 }
 
 func (s *MicroServiceInstanceService) FindInstances(w http.ResponseWriter, r *http.Request) {
@@ -157,7 +157,7 @@ func (s *MicroServiceInstanceService) FindInstances(w http.ResponseWriter, r *ht
 		return
 	}
 
-	controller.WriteResponse(w, respInternal, resp)
+	controller.WriteResponse(w, r, respInternal, resp)
 }
 
 func (s *MicroServiceInstanceService) InstancesAction(w http.ResponseWriter, r *http.Request) {
@@ -183,7 +183,7 @@ func (s *MicroServiceInstanceService) InstancesAction(w http.ResponseWriter, r *
 		resp, _ := core.InstanceAPI.BatchFind(ctx, request)
 		respInternal := resp.Response
 		resp.Response = nil
-		controller.WriteResponse(w, respInternal, resp)
+		controller.WriteResponse(w, r, respInternal, resp)
 	default:
 		err = fmt.Errorf("Invalid action: %s", action)
 		log.Errorf(err, "invalid request")
@@ -216,7 +216,7 @@ func (s *MicroServiceInstanceService) GetOneInstance(w http.ResponseWriter, r *h
 		w.WriteHeader(http.StatusNotModified)
 		return
 	}
-	controller.WriteResponse(w, respInternal, resp)
+	controller.WriteResponse(w, r, respInternal, resp)
 }
 
 func (s *MicroServiceInstanceService) GetInstances(w http.ResponseWriter, r *http.Request) {
@@ -242,7 +242,7 @@ func (s *MicroServiceInstanceService) GetInstances(w http.ResponseWriter, r *htt
 		w.WriteHeader(http.StatusNotModified)
 		return
 	}
-	controller.WriteResponse(w, respInternal, resp)
+	controller.WriteResponse(w, r, respInternal, resp)
 }
 
 func (s *MicroServiceInstanceService) UpdateStatus(w http.ResponseWriter, r *http.Request) {
@@ -254,7 +254,7 @@ func (s *MicroServiceInstanceService) UpdateStatus(w http.ResponseWriter, r *htt
 		Status:     status,
 	}
 	resp, _ := core.InstanceAPI.UpdateStatus(r.Context(), request)
-	controller.WriteResponse(w, resp.Response, nil)
+	controller.WriteResponse(w, r, resp.Response, nil)
 }
 
 func (s *MicroServiceInstanceService) UpdateMetadata(w http.ResponseWriter, r *http.Request) {
@@ -280,5 +280,5 @@ func (s *MicroServiceInstanceService) UpdateMetadata(w http.ResponseWriter, r *h
 		log.Errorf(err, "can not update instance")
 		controller.WriteError(w, pb.ErrInternal, "can not update instance")
 	}
-	controller.WriteResponse(w, resp.Response, nil)
+	controller.WriteResponse(w, r, resp.Response, nil)
 }

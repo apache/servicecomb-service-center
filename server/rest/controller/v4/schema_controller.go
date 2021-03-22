@@ -69,7 +69,7 @@ func (s *SchemaService) GetSchemas(w http.ResponseWriter, r *http.Request) {
 	resp.SchemaSummary = ""
 	respInternal := resp.Response
 	resp.Response = nil
-	controller.WriteResponse(w, respInternal, resp)
+	controller.WriteResponse(w, r, respInternal, resp)
 }
 
 func (s *SchemaService) ModifySchema(w http.ResponseWriter, r *http.Request) {
@@ -96,7 +96,7 @@ func (s *SchemaService) ModifySchema(w http.ResponseWriter, r *http.Request) {
 		controller.WriteError(w, pb.ErrInternal, "can not update schema")
 		return
 	}
-	controller.WriteResponse(w, resp.Response, nil)
+	controller.WriteResponse(w, r, resp.Response, nil)
 }
 
 func (s *SchemaService) ModifySchemas(w http.ResponseWriter, r *http.Request) {
@@ -121,7 +121,7 @@ func (s *SchemaService) ModifySchemas(w http.ResponseWriter, r *http.Request) {
 		controller.WriteError(w, pb.ErrInternal, "can not update schema")
 		return
 	}
-	controller.WriteResponse(w, resp.Response, nil)
+	controller.WriteResponse(w, r, resp.Response, nil)
 }
 
 func (s *SchemaService) DeleteSchemas(w http.ResponseWriter, r *http.Request) {
@@ -131,7 +131,7 @@ func (s *SchemaService) DeleteSchemas(w http.ResponseWriter, r *http.Request) {
 		SchemaId:  query.Get(":schemaId"),
 	}
 	resp, _ := core.ServiceAPI.DeleteSchema(r.Context(), request)
-	controller.WriteResponse(w, resp.Response, nil)
+	controller.WriteResponse(w, r, resp.Response, nil)
 }
 
 func (s *SchemaService) GetAllSchemas(w http.ResponseWriter, r *http.Request) {
@@ -149,5 +149,5 @@ func (s *SchemaService) GetAllSchemas(w http.ResponseWriter, r *http.Request) {
 	resp, _ := core.ServiceAPI.GetAllSchemaInfo(r.Context(), request)
 	respInternal := resp.Response
 	resp.Response = nil
-	controller.WriteResponse(w, respInternal, resp)
+	controller.WriteResponse(w, r, respInternal, resp)
 }
