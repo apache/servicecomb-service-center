@@ -45,7 +45,7 @@ func WriteError(w http.ResponseWriter, code int32, detail string) {
 	}
 }
 
-func WriteResponse(w http.ResponseWriter, resp *discovery.Response, obj interface{}) {
+func WriteResponse(w http.ResponseWriter, r *http.Request, resp *discovery.Response, obj interface{}) {
 	if resp != nil && resp.GetCode() != discovery.ResponseSuccess {
 		WriteError(w, resp.GetCode(), resp.GetMessage())
 		return
@@ -57,6 +57,9 @@ func WriteResponse(w http.ResponseWriter, resp *discovery.Response, obj interfac
 		w.WriteHeader(http.StatusOK)
 		return
 	}
+
+	// async handler maybe need this obj
+	util.SetRequestContext(r, rest.CtxResponseObject, obj)
 
 	b, err := json.Marshal(obj)
 	if err != nil {

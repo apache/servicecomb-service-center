@@ -57,7 +57,7 @@ func (s *MainService) ClusterHealth(w http.ResponseWriter, r *http.Request) {
 	resp, _ := core.InstanceAPI.ClusterHealth(r.Context())
 	respInternal := resp.Response
 	resp.Response = nil
-	controller.WriteResponse(w, respInternal, resp)
+	controller.WriteResponse(w, r, respInternal, resp)
 }
 
 func (s *MainService) GetVersion(w http.ResponseWriter, r *http.Request) {

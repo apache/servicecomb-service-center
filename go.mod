@@ -23,7 +23,7 @@ require (
 	github.com/go-chassis/go-archaius v1.5.1
 	github.com/go-chassis/go-chassis/v2 v2.1.2-0.20210310004133-c9bc42149a18
 	github.com/go-chassis/kie-client v0.1.0
-	github.com/golang/protobuf v1.4.2 // indirect
+	github.com/golang/protobuf v1.4.2
 	github.com/google/go-cmp v0.5.4 // indirect
 	github.com/gorilla/websocket v1.4.2
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.2 // indirect
