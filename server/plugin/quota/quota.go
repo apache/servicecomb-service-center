@@ -59,11 +59,11 @@ var (
 )
 
 func Init() {
-	DefaultServiceQuota = config.GetInt("quota.cap.service", defaultServiceLimit, config.WithStandby("QUOTA_SERVICE"))
-	DefaultInstanceQuota = config.GetInt("quota.cap.instance", defaultInstanceLimit, config.WithStandby("QUOTA_INSTANCE"))
-	DefaultSchemaQuota = config.GetInt("quota.cap.schema", defaultSchemaLimit, config.WithStandby("QUOTA_SCHEMA"))
-	DefaultTagQuota = config.GetInt("quota.cap.tag", defaultTagLimit, config.WithStandby("QUOTA_TAG"))
-	DefaultRuleQuota = config.GetInt("quota.cap.rule", defaultRuleLimit, config.WithStandby("QUOTA_RULE"))
+	DefaultServiceQuota = config.GetInt("quota.cap.service.limit", defaultServiceLimit, config.WithStandby("QUOTA_SERVICE"))
+	DefaultInstanceQuota = config.GetInt("quota.cap.instance.limit", defaultInstanceLimit, config.WithStandby("QUOTA_INSTANCE"))
+	DefaultSchemaQuota = config.GetInt("quota.cap.schema.limit", defaultSchemaLimit, config.WithStandby("QUOTA_SCHEMA"))
+	DefaultTagQuota = config.GetInt("quota.cap.tag.limit", defaultTagLimit, config.WithStandby("QUOTA_TAG"))
+	DefaultRuleQuota = config.GetInt("quota.cap.rule.limit", defaultRuleLimit, config.WithStandby("QUOTA_RULE"))
 }
 
 type ApplyQuotaResource struct {

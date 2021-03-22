@@ -173,6 +173,13 @@ tracing:
 
 quota:
   kind: buildin
+  cap:
+    service:
+      limit: 50000
+    instance:
+      limit: 150000
+    schema:
+      limit: 100
 
 
 syncer:

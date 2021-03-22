@@ -23,6 +23,8 @@ import (
 	"strings"
 	"time"
 
+	pb "github.com/go-chassis/cari/discovery"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
@@ -33,9 +35,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
-	pb "github.com/go-chassis/cari/discovery"
 )
 
 type ServiceDetailOpt struct {
@@ -461,14 +461,4 @@ func toDependencyFilterOptions(in *pb.GetDependenciesRequest) (opts []serviceUti
 		opts = append(opts, serviceUtil.WithoutSelfDependency())
 	}
 	return opts
-}
-
-func checkQuota(ctx context.Context, domainProject string) *pb.Error {
-	if core.IsSCInstance(ctx) {
-		log.Debugf("skip quota check")
-		return nil
-	}
-	res := quota.NewApplyQuotaResource(quota.TypeService, domainProject, "", 1)
-	rst := quota.Apply(ctx, res)
-	return rst
 }
