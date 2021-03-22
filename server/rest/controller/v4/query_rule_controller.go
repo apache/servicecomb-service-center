@@ -69,7 +69,7 @@ func (s *RuleService) AddRule(w http.ResponseWriter, r *http.Request) {
 	}
 	respInternal := resp.Response
 	resp.Response = nil
-	controller.WriteResponse(w, respInternal, resp)
+	controller.WriteResponse(w, r, respInternal, resp)
 }
 
 func (s *RuleService) DeleteRule(w http.ResponseWriter, r *http.Request) {
@@ -81,7 +81,7 @@ func (s *RuleService) DeleteRule(w http.ResponseWriter, r *http.Request) {
 		ServiceId: query.Get(":serviceId"),
 		RuleIds:   ids,
 	})
-	controller.WriteResponse(w, resp.Response, nil)
+	controller.WriteResponse(w, r, resp.Response, nil)
 }
 
 func (s *RuleService) UpdateRule(w http.ResponseWriter, r *http.Request) {
@@ -110,7 +110,7 @@ func (s *RuleService) UpdateRule(w http.ResponseWriter, r *http.Request) {
 		controller.WriteError(w, scerr.ErrInternal, "update rule failed")
 		return
 	}
-	controller.WriteResponse(w, resp.Response, nil)
+	controller.WriteResponse(w, r, resp.Response, nil)
 }
 
 func (s *RuleService) GetRules(w http.ResponseWriter, r *http.Request) {
@@ -119,5 +119,5 @@ func (s *RuleService) GetRules(w http.ResponseWriter, r *http.Request) {
 	})
 	respInternal := resp.Response
 	resp.Response = nil
-	controller.WriteResponse(w, respInternal, resp)
+	controller.WriteResponse(w, r, respInternal, resp)
 }

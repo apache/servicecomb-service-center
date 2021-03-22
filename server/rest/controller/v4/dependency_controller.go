@@ -63,7 +63,7 @@ func (s *DependencyService) AddDependenciesForMicroServices(w http.ResponseWrite
 		controller.WriteError(w, scerr.ErrInternal, err.Error())
 	}
 	w.Header().Add("Deprecation", "version=\"v4\"")
-	controller.WriteResponse(w, resp.Response, nil)
+	controller.WriteResponse(w, r, resp.Response, nil)
 }
 
 func (s *DependencyService) CreateDependenciesForMicroServices(w http.ResponseWriter, r *http.Request) {
@@ -86,7 +86,7 @@ func (s *DependencyService) CreateDependenciesForMicroServices(w http.ResponseWr
 		controller.WriteError(w, scerr.ErrInternal, err.Error())
 	}
 	w.Header().Add("Deprecation", "version=\"v4\"")
-	controller.WriteResponse(w, resp.Response, nil)
+	controller.WriteResponse(w, r, resp.Response, nil)
 }
 
 func (s *DependencyService) GetConProDependencies(w http.ResponseWriter, r *http.Request) {
@@ -99,7 +99,7 @@ func (s *DependencyService) GetConProDependencies(w http.ResponseWriter, r *http
 	resp, _ := core.ServiceAPI.GetConsumerDependencies(r.Context(), request)
 	respInternal := resp.Response
 	resp.Response = nil
-	controller.WriteResponse(w, respInternal, resp)
+	controller.WriteResponse(w, r, respInternal, resp)
 }
 
 func (s *DependencyService) GetProConDependencies(w http.ResponseWriter, r *http.Request) {
@@ -112,5 +112,5 @@ func (s *DependencyService) GetProConDependencies(w http.ResponseWriter, r *http
 	resp, _ := core.ServiceAPI.GetProviderDependencies(r.Context(), request)
 	respInternal := resp.Response
 	resp.Response = nil
-	controller.WriteResponse(w, respInternal, resp)
+	controller.WriteResponse(w, r, respInternal, resp)
 }

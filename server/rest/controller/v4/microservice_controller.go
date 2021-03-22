@@ -70,7 +70,7 @@ func (s *MicroServiceService) Register(w http.ResponseWriter, r *http.Request) {
 	}
 	respInternal := resp.Response
 	resp.Response = nil
-	controller.WriteResponse(w, respInternal, resp)
+	controller.WriteResponse(w, r, respInternal, resp)
 }
 
 func (s *MicroServiceService) Update(w http.ResponseWriter, r *http.Request) {
@@ -95,7 +95,7 @@ func (s *MicroServiceService) Update(w http.ResponseWriter, r *http.Request) {
 		controller.WriteError(w, scerr.ErrInternal, "can not update service")
 		return
 	}
-	controller.WriteResponse(w, resp.Response, nil)
+	controller.WriteResponse(w, r, resp.Response, nil)
 }
 
 func (s *MicroServiceService) Unregister(w http.ResponseWriter, r *http.Request) {
@@ -119,7 +119,7 @@ func (s *MicroServiceService) Unregister(w http.ResponseWriter, r *http.Request)
 		controller.WriteError(w, scerr.ErrInternal, "delete service failed")
 		return
 	}
-	controller.WriteResponse(w, resp.Response, nil)
+	controller.WriteResponse(w, r, resp.Response, nil)
 }
 
 func (s *MicroServiceService) GetServices(w http.ResponseWriter, r *http.Request) {
@@ -132,7 +132,7 @@ func (s *MicroServiceService) GetServices(w http.ResponseWriter, r *http.Request
 	}
 	respInternal := resp.Response
 	resp.Response = nil
-	controller.WriteResponse(w, respInternal, resp)
+	controller.WriteResponse(w, r, respInternal, resp)
 }
 
 func (s *MicroServiceService) GetExistence(w http.ResponseWriter, r *http.Request) {
@@ -156,7 +156,7 @@ func (s *MicroServiceService) GetExistence(w http.ResponseWriter, r *http.Reques
 	respInternal := resp.Response
 	resp.Response = nil
 	resp.Summary = ""
-	controller.WriteResponse(w, respInternal, resp)
+	controller.WriteResponse(w, r, respInternal, resp)
 }
 
 func (s *MicroServiceService) GetServiceOne(w http.ResponseWriter, r *http.Request) {
@@ -171,7 +171,7 @@ func (s *MicroServiceService) GetServiceOne(w http.ResponseWriter, r *http.Reque
 	}
 	respInternal := resp.Response
 	resp.Response = nil
-	controller.WriteResponse(w, respInternal, resp)
+	controller.WriteResponse(w, r, respInternal, resp)
 }
 
 func (s *MicroServiceService) UnregisterServices(w http.ResponseWriter, r *http.Request) {
@@ -199,5 +199,5 @@ func (s *MicroServiceService) UnregisterServices(w http.ResponseWriter, r *http.
 	}
 	respInternal := resp.Response
 	resp.Response = nil
-	controller.WriteResponse(w, respInternal, resp)
+	controller.WriteResponse(w, r, respInternal, resp)
 }
