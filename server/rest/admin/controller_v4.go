@@ -54,7 +54,7 @@ func (ctrl *ControllerV4) Dump(w http.ResponseWriter, r *http.Request) {
 
 	respInternal := resp.Response
 	resp.Response = nil
-	controller.WriteResponse(w, respInternal, resp)
+	controller.WriteResponse(w, r, respInternal, resp)
 }
 
 func (ctrl *ControllerV4) Clusters(w http.ResponseWriter, r *http.Request) {
@@ -64,7 +64,7 @@ func (ctrl *ControllerV4) Clusters(w http.ResponseWriter, r *http.Request) {
 
 	respInternal := resp.Response
 	resp.Response = nil
-	controller.WriteResponse(w, respInternal, resp)
+	controller.WriteResponse(w, r, respInternal, resp)
 }
 
 func (ctrl *ControllerV4) AlarmList(w http.ResponseWriter, r *http.Request) {
@@ -74,12 +74,12 @@ func (ctrl *ControllerV4) AlarmList(w http.ResponseWriter, r *http.Request) {
 
 	respInternal := resp.Response
 	resp.Response = nil
-	controller.WriteResponse(w, respInternal, resp)
+	controller.WriteResponse(w, r, respInternal, resp)
 }
 
 func (ctrl *ControllerV4) ClearAlarm(w http.ResponseWriter, r *http.Request) {
 	request := &model.ClearAlarmRequest{}
 	ctx := r.Context()
 	resp, _ := AdminServiceAPI.ClearAlarm(ctx, request)
-	controller.WriteResponse(w, resp.Response, nil)
+	controller.WriteResponse(w, r, resp.Response, nil)
 }
