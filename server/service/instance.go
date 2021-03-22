@@ -961,7 +961,7 @@ func (s *InstanceService) ClusterHealth(ctx context.Context) (*pb.GetInstancesRe
 		}, nil
 	}
 
-	instances, err := serviceUtil.GetAllInstancesOfOneService(ctx, domainProject, serviceID)
+	instances, err := serviceUtil.GetInstancesWithoutProperties(ctx, domainProject, serviceID)
 	if err != nil {
 		log.Errorf(err, "health check failed: get service center[%s][%s/%s/%s/%s]'s instances failed",
 			serviceID, apt.Service.Environment, apt.Service.AppId, apt.Service.ServiceName, apt.Service.Version)
