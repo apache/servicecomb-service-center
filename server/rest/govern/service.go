@@ -317,7 +317,7 @@ func getServiceDetailUtil(ctx context.Context, serviceDetailOpt ServiceDetailOpt
 					Count: instanceCount}
 				continue
 			}
-			instances, err := serviceUtil.GetInstancesWithoutProperties(ctx, domainProject, serviceID)
+			instances, err := serviceUtil.GetAllInstancesOfOneService(ctx, domainProject, serviceID)
 			if err != nil {
 				log.Errorf(err, "get service[%s]'s all instances failed", serviceID)
 				return nil, err

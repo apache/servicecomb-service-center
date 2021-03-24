@@ -72,7 +72,7 @@ func FormatRevision(revs, counts []int64) (s string) {
 	return fmt.Sprintf("%x", sha1.Sum(util.StringToBytesWithNoCopy(s)))
 }
 
-func GetInstancesWithoutProperties(ctx context.Context, domainProject string, serviceID string) ([]*pb.MicroServiceInstance, error) {
+func GetAllInstancesOfOneService(ctx context.Context, domainProject string, serviceID string) ([]*pb.MicroServiceInstance, error) {
 	key := apt.GenerateInstanceKey(domainProject, serviceID, "")
 	opts := append(FromContext(ctx), registry.WithStrKey(key), registry.WithPrefix())
 	resp, err := backend.Store().Instance().Search(ctx, opts...)
@@ -83,9 +83,7 @@ func GetInstancesWithoutProperties(ctx context.Context, domainProject string, se
 
 	instances := make([]*pb.MicroServiceInstance, 0, len(resp.Kvs))
 	for _, kv := range resp.Kvs {
-		instance := kv.Value.(*pb.MicroServiceInstance)
-		instance.Properties = nil
-		instances = append(instances, instance)
+		instances = append(instances, kv.Value.(*pb.MicroServiceInstance))
 	}
 	return instances, nil
 }
