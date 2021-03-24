@@ -209,7 +209,6 @@ func (ds *DataSource) GetService(ctx context.Context, request *pb.GetServiceRequ
 	}, nil
 }
 
-// GetServiceDetail is only for govern API
 func (ds *DataSource) GetServiceDetail(ctx context.Context, request *pb.GetServiceRequest) (
 	*pb.GetServiceDetailResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
@@ -262,7 +261,6 @@ func (ds *DataSource) GetServiceDetail(ctx context.Context, request *pb.GetServi
 	}, nil
 }
 
-// GetServicesInfo is only for govern API
 func (ds *DataSource) GetServicesInfo(ctx context.Context, request *pb.GetServicesInfoRequest) (
 	*pb.GetServicesInfoResponse, error) {
 	ctx = util.WithCacheOnly(ctx)
@@ -322,8 +320,7 @@ func (ds *DataSource) GetServicesInfo(ctx context.Context, request *pb.GetServic
 				continue
 			}
 		}
-		service.Properties = nil
-		service.Schemas = nil
+
 		serviceDetail, err := getServiceDetailUtil(ctx, ServiceDetailOpt{
 			domainProject: domainProject,
 			service:       service,
