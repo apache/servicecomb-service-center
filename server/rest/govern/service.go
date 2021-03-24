@@ -102,8 +102,7 @@ func (governService *Service) GetServicesInfo(ctx context.Context, in *pb.GetSer
 				continue
 			}
 		}
-		service.Properties = nil
-		service.Schemas = nil
+
 		serviceDetail, err := getServiceDetailUtil(ctx, ServiceDetailOpt{
 			domainProject: domainProject,
 			service:       service,
