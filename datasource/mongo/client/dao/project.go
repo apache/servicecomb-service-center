@@ -15,22 +15,25 @@
  * limitations under the License.
  */
 
-package event
+package dao
 
 import (
-	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
+	"context"
+	"fmt"
+
+	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
-const (
-	increaseOne = 1
-	decreaseOne = -1
-)
+func AddProject(ctx context.Context, project model.Project) error {
+	result, err := client.GetMongoClient().Insert(ctx, model.CollectionProject, project)
+	if err == nil {
+		log.Info(fmt.Sprintf("insert project to mongodb success %s", result.InsertedID))
+	}
+	return err
+}
 
-func init() {
-	log.Info("event init")
-	instanceEventHandler := NewInstanceEventHandler()
-	sd.EventProxy(instanceEventHandler.Type()).AddHandleFunc(instanceEventHandler.OnEvent)
-	sd.AddEventHandler(NewServiceEventHandler())
-	sd.AddEventHandler(NewSchemaSummaryEventHandler())
+func ExistProject(ctx context.Context, filter interface{}) (bool, error) {
+	return client.GetMongoClient().DocExist(ctx, model.CollectionProject, filter)
 }

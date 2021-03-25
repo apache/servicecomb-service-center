@@ -59,7 +59,6 @@ func (ds *DataSource) RegisterService(ctx context.Context, request *discovery.Cr
 	project := util.ParseProject(ctx)
 	serviceFlag := util.StringJoin([]string{
 		service.Environment, service.AppId, service.ServiceName, service.Version}, "/")
-	//todo add quota check
 	requestServiceID := service.ServiceId
 
 	if len(requestServiceID) == 0 {
@@ -1903,6 +1902,11 @@ func registryInstance(ctx context.Context, request *discovery.RegisterInstanceRe
 	project := util.ParseProject(ctx)
 	remoteIP := util.GetIPFromContext(ctx)
 	instance := request.Instance
+	ttl := int64(instance.HealthCheck.Interval * (instance.HealthCheck.Times + 1))
+
+	instanceFlag := fmt.Sprintf("ttl %ds, endpoints %v, host '%s', serviceID %s",
+		ttl, instance.Endpoints, instance.HostName, instance.ServiceId)
+
 	instanceID := instance.InstanceId
 	data := &model.Instance{
 		Domain:      domain,
@@ -1910,9 +1914,6 @@ func registryInstance(ctx context.Context, request *discovery.RegisterInstanceRe
 		RefreshTime: time.Now(),
 		Instance:    instance,
 	}
-
-	instanceFlag := fmt.Sprintf("endpoints %v, host '%s', serviceID %s",
-		instance.Endpoints, instance.HostName, instance.ServiceId)
 
 	insertRes, err := client.GetMongoClient().Insert(ctx, model.CollectionInstance, data)
 	if err != nil {
