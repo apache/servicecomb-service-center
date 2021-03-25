@@ -180,6 +180,10 @@ quota:
       limit: 150000
     schema:
       limit: 100
+    rule:
+      limit: 100
+    tag:
+      limit: 100
 
 
 syncer:

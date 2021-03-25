@@ -18,20 +18,31 @@
 package event
 
 import (
+	"github.com/go-chassis/cari/discovery"
+
+	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
-	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/server/metrics"
 )
 
-const (
-	increaseOne = 1
-	decreaseOne = -1
-)
+// DomainEventHandler report domain & project total number
+type DomainEventHandler struct {
+}
 
-func init() {
-	log.Info("event init")
-	instanceEventHandler := NewInstanceEventHandler()
-	sd.EventProxy(instanceEventHandler.Type()).AddHandleFunc(instanceEventHandler.OnEvent)
-	sd.AddEventHandler(NewServiceEventHandler())
-	sd.AddEventHandler(NewSchemaSummaryEventHandler())
-	sd.AddEventHandler(NewDomainEventHandler())
+func NewDomainEventHandler() *DomainEventHandler {
+	return &DomainEventHandler{}
+}
+
+func (h *DomainEventHandler) Type() string {
+	return model.ColumnDomain
+}
+
+func (h *DomainEventHandler) OnEvent(evt sd.MongoEvent) {
+	action := evt.Type
+	switch action {
+	case discovery.EVT_INIT, discovery.EVT_CREATE:
+		metrics.ReportDomains(increaseOne)
+	case discovery.EVT_DELETE:
+		metrics.ReportDomains(decreaseOne)
+	}
 }
