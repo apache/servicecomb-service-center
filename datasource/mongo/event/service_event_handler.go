@@ -81,10 +81,7 @@ func getFramework(ms *pb.MicroService) (string, string) {
 func newDomain(ctx context.Context, domain string) error {
 	filter := util.NewFilter(util.Domain(domain))
 	exist, err := dao.ExistDomain(ctx, filter)
-	if exist {
-		log.Info(fmt.Sprintf("%s domain already exists", domain))
-	}
-	if err == nil {
+	if !exist && err == nil {
 		err = dao.AddDomain(ctx, domain)
 	}
 	return err
@@ -93,10 +90,7 @@ func newDomain(ctx context.Context, domain string) error {
 func newProject(ctx context.Context, domain string, project string) error {
 	filter := util.NewDomainProjectFilter(domain, project)
 	exist, err := dao.ExistProject(ctx, filter)
-	if exist {
-		log.Info(fmt.Sprintf("%s domain and %s project already exists", domain, project))
-	}
-	if err == nil {
+	if !exist && err == nil {
 		p := model.Project{
 			Domain:  domain,
 			Project: project,
