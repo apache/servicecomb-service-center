@@ -46,14 +46,6 @@ func (a *EmbeddedAuthenticator) Login(ctx context.Context, user string, password
 	for _, o := range opts {
 		o(opt)
 	}
-	exist, err := dao.AccountExist(ctx, user)
-	if err != nil {
-		log.Error("check account err", err)
-		return "", err
-	}
-	if !exist {
-		return "", ErrUnauthorized
-	}
 	account, err := dao.GetAccount(ctx, user)
 	if err != nil {
 		log.Error("get account err", err)
