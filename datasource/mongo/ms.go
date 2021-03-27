@@ -31,6 +31,7 @@ import (
 	"time"
 
 	"github.com/go-chassis/cari/discovery"
+	"github.com/jinzhu/copier"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -506,7 +507,20 @@ func (ds *DataSource) GetServicesInfo(ctx context.Context, request *discovery.Ge
 			}, err
 		}
 		serviceDetail.MicroService = mgSvc.Service
-		allServiceDetails = append(allServiceDetails, serviceDetail)
+		tmpServiceDetail := &discovery.ServiceDetail{}
+		err = copier.CopyWithOption(tmpServiceDetail, serviceDetail, copier.Option{DeepCopy: true})
+		if err != nil {
+			return &discovery.GetServicesInfoResponse{
+				Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
+			}, err
+		}
+		tmpServiceDetail.MicroService.Properties = nil
+		tmpServiceDetail.MicroService.Schemas = nil
+		instances := tmpServiceDetail.Instances
+		for _, instance := range instances {
+			instance.Properties = nil
+		}
+		allServiceDetails = append(allServiceDetails, tmpServiceDetail)
 	}
 
 	return &discovery.GetServicesInfoResponse{
