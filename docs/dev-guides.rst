@@ -11,3 +11,4 @@ Development guide
    dev-guides/multidcs2.rst
    dev-guides/helm.md
    dev-guides/kubeclusters.rst
+   dev-guides/profiling.md
