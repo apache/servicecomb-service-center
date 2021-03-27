@@ -26,10 +26,7 @@ import (
 )
 
 const (
-	algBcrypt  = "$2a$"
-	algBcrypt2 = "$2b$"
-	algBcrypt3 = "$2x$"
-	algBcrypt4 = "$2y$"
+	algBcrypt = "$2a$"
 )
 
 //HashPassword
@@ -49,7 +46,7 @@ func ScryptPassword(pwd string) (string, error) {
 	return string(hash), nil
 }
 func SamePassword(hashedPwd, pwd string) bool {
-	if isEncodedByBcrypt(hashedPwd) {
+	if strings.HasPrefix(hashedPwd, algBcrypt) {
 		err := bcrypt.CompareHashAndPassword([]byte(hashedPwd), []byte(pwd))
 		if err == bcrypt.ErrMismatchedHashAndPassword {
 			log.Warn("incorrect password attempts")
@@ -62,9 +59,4 @@ func SamePassword(hashedPwd, pwd string) bool {
 	}
 	return err == nil
 
-}
-func isEncodedByBcrypt(hashedPwd string) bool {
-	return strings.HasPrefix(hashedPwd, algBcrypt) ||
-		strings.HasPrefix(hashedPwd, algBcrypt2) ||
-		strings.HasPrefix(hashedPwd, algBcrypt3) || strings.HasPrefix(hashedPwd, algBcrypt4)
 }
