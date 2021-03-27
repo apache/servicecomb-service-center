@@ -26,6 +26,7 @@ import (
 	"time"
 
 	pb "github.com/go-chassis/cari/discovery"
+	"github.com/jinzhu/copier"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/cache"
@@ -321,7 +322,20 @@ func (ds *DataSource) GetServicesInfo(ctx context.Context, request *pb.GetServic
 			}, err
 		}
 		serviceDetail.MicroService = service
-		allServiceDetails = append(allServiceDetails, serviceDetail)
+		tmpServiceDetail := &pb.ServiceDetail{}
+		err = copier.CopyWithOption(tmpServiceDetail, serviceDetail, copier.Option{DeepCopy: true})
+		if err != nil {
+			return &pb.GetServicesInfoResponse{
+				Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
+			}, err
+		}
+		tmpServiceDetail.MicroService.Properties = nil
+		tmpServiceDetail.MicroService.Schemas = nil
+		instances := tmpServiceDetail.Instances
+		for _, instance := range instances {
+			instance.Properties = nil
+		}
+		allServiceDetails = append(allServiceDetails, tmpServiceDetail)
 	}
 
 	return &pb.GetServicesInfoResponse{
