@@ -38,3 +38,4 @@ docs/_templates
 /cmd/scctl/scctl
 /cmd/scserver/scserver
 /cmd/syncer/syncer
+main
