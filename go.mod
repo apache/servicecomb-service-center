@@ -18,7 +18,7 @@ require (
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/elithrar/simple-scrypt v1.3.0
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-chassis/cari v0.2.0
+	github.com/go-chassis/cari v0.2.1-0.20210324065859-014086287a4b
 	github.com/go-chassis/foundation v0.3.0
 	github.com/go-chassis/go-archaius v1.5.1
 	github.com/go-chassis/go-chassis/v2 v2.1.2-0.20210310004133-c9bc42149a18

@@ -1574,6 +1574,36 @@ paths:
           description: 内部错误
           schema:
             $ref: '#/definitions/Error'
+  /v4/{project}/govern/microservices/statistics:
+    get:
+      description: |
+        查询服务的统计信息信息。
+      operationId: GetServicesInfoStatistics
+      parameters:
+        - name: x-domain-name
+          in: header
+          type: string
+          default: default
+          required: true
+        - name: project
+          in: path
+          required: true
+          type: string       
+      tags:
+        - governance
+      responses:
+        200:
+          description: 单个服务的信息
+          schema:
+            $ref: '#/definitions/Statistics'
+        400:
+          description: 错误的请求
+          schema:
+            $ref: '#/definitions/Error'
+        500:
+          description: 内部错误
+          schema:
+            $ref: '#/definitions/Error'
   /v4/{project}/govern/relations:
     get:
       description: |
@@ -2711,6 +2741,9 @@ definitions:
      type: object
      properties:
        count:
+         description: 实例个数
+         type: integer
+       countByDomain:
          description: 实例个数
          type: integer
   StApp:

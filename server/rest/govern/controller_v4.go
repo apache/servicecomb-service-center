@@ -42,6 +42,7 @@ func (governService *ResourceV4) URLPatterns() []rest.Route {
 		{Method: rest.HTTPMethodGet, Path: "/v4/:project/govern/relations", Func: governService.GetGraph},
 		{Method: rest.HTTPMethodGet, Path: "/v4/:project/govern/microservices", Func: governService.GetAllServicesInfo},
 		{Method: rest.HTTPMethodGet, Path: "/v4/:project/govern/apps", Func: governService.GetAllApplications},
+		{Method: rest.HTTPMethodGet, Path: "/v4/:project/govern/statistics", Func: governService.GetAllServicesStatistics},
 	}
 }
 
@@ -157,6 +158,15 @@ func (governService *ResourceV4) GetAllServicesInfo(w http.ResponseWriter, r *ht
 	}
 	resp, _ := ServiceAPI.GetServicesInfo(ctx, request)
 
+	respInternal := resp.Response
+	resp.Response = nil
+	controller.WriteResponse(w, r, respInternal, resp)
+}
+
+func (governService *ResourceV4) GetAllServicesStatistics(w http.ResponseWriter, r *http.Request) {
+	request := &pb.GetServicesRequest{}
+	ctx := r.Context()
+	resp, _ := ServiceAPI.GetServicesStatistics(ctx, request)
 	respInternal := resp.Response
 	resp.Response = nil
 	controller.WriteResponse(w, r, respInternal, resp)

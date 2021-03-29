@@ -346,6 +346,24 @@ func (ds *DataSource) GetServicesInfo(ctx context.Context, request *pb.GetServic
 	}, nil
 }
 
+func (ds *DataSource) GetServicesStatistics(ctx context.Context, request *pb.GetServicesRequest) (
+	*pb.GetServicesInfoStatisticsResponse, error) {
+	ctx = util.WithCacheOnly(ctx)
+	var st *pb.Statistics
+	var err error
+	st, err = statistics(ctx, true)
+	if err != nil {
+		return &pb.GetServicesInfoStatisticsResponse{
+			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
+		}, err
+	}
+	return &pb.GetServicesInfoStatisticsResponse{
+		Response:          pb.CreateResponse(pb.ResponseSuccess, "Get services statistics successfully."),
+		Statistics:        st,
+	}, nil
+}
+
+
 func (ds *DataSource) GetApplications(ctx context.Context, request *pb.GetAppsRequest) (*pb.GetAppsResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
 	key := path.GetServiceAppKey(domainProject, request.Environment, "")

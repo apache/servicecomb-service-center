@@ -59,3 +59,9 @@ func (governService *Service) GetApplications(ctx context.Context, in *pb.GetApp
 
 	return datasource.Instance().GetApplications(ctx, in)
 }
+
+func (governService *Service) GetServicesStatistics(ctx context.Context, in *pb.GetServicesRequest) (*pb.GetServicesInfoStatisticsResponse, error) {
+	ctx = util.WithCacheOnly(ctx)
+	return datasource.Instance().GetServicesStatistics(ctx, in)
+}
+

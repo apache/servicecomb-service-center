@@ -70,4 +70,5 @@ type GovernServiceCtrlServer interface {
 	GetServiceDetail(context.Context, *discovery.GetServiceRequest) (*discovery.GetServiceDetailResponse, error)
 	GetServicesInfo(context.Context, *discovery.GetServicesInfoRequest) (*discovery.GetServicesInfoResponse, error)
 	GetApplications(context.Context, *discovery.GetAppsRequest) (*discovery.GetAppsResponse, error)
+	GetServicesStatistics(context.Context, *discovery.GetServicesRequest) (*discovery.GetServicesInfoStatisticsResponse, error)
 }

@@ -1763,6 +1763,120 @@ func TestInstance_Query(t *testing.T) {
 	})
 }
 
+func TestServicesStatistics_Get(t *testing.T) {
+	var ctx context.Context
+	var serviceId1 string
+	var serviceId2 string
+
+	t.Run("register services and instances for TestServicesStatistics_Get", func(t *testing.T) {
+
+		//service1
+		ctx =  util.WithNoCache(util.SetDomainProject(context.Background(), "default", "Project1"))
+		respCreateService, err := datasource.Instance().RegisterService(ctx, &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				AppId:       "query_statistics1",
+				ServiceName: "service1",
+				Version:     "1.0.0",
+				Level:       "FRONT",
+				Status:      pb.MS_UP,
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
+		serviceId1 = respCreateService.ServiceId
+
+		respCreateInstance, err := datasource.Instance().RegisterInstance(ctx, &pb.RegisterInstanceRequest{
+			Instance: &pb.MicroServiceInstance{
+				ServiceId: serviceId1,
+				HostName:  "UT-HOST-MS1",
+				Endpoints: []string{
+					"find:127.0.0.1:8080",
+				},
+				Status: pb.MSI_UP,
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, respCreateInstance.Response.GetCode())
+
+		respCreateInstance, err = datasource.Instance().RegisterInstance(ctx, &pb.RegisterInstanceRequest{
+			Instance: &pb.MicroServiceInstance{
+				ServiceId: serviceId1,
+				HostName:  "UT-HOST-MS2",
+				Endpoints: []string{
+					"find:127.0.0.1:8080",
+				},
+				Status: pb.MSI_UP,
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, respCreateInstance.Response.GetCode())
+
+        //service2
+		ctx =  util.WithNoCache(util.SetDomainProject(context.Background(), "DomainTest1", "Project1"))
+		respCreateService, err = datasource.Instance().RegisterService(ctx, &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				AppId:       "query_statistics2",
+				ServiceName: "service2-DomainTest1",
+				Version:     "1.0.5",
+				Level:       "FRONT",
+				Status:      pb.MS_UP,
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
+		serviceId2 = respCreateService.ServiceId
+
+		respCreateInstance, err = datasource.Instance().RegisterInstance(ctx, &pb.RegisterInstanceRequest{
+			Instance: &pb.MicroServiceInstance{
+				ServiceId: serviceId2,
+				HostName:  "UT-HOST-MS1",
+				Endpoints: []string{
+					"find:127.0.0.1:8080",
+				},
+				Status: pb.MSI_UP,
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, respCreateInstance.Response.GetCode())
+	})
+
+	t.Run("query services statistics", func(t *testing.T) {
+
+		ctx =  util.WithNoCache(util.SetDomainProject(context.Background(), "default", "Project1"))
+		log.Info("query services default domain statistics")
+		respFind, err := datasource.Instance().GetServicesStatistics(ctx, &pb.GetServicesRequest{})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
+		assert.Equal(t, int64(2), respFind.Statistics.Instances.CountByDomain)
+
+		log.Info("query services domain statistics")
+		ctx =  util.WithNoCache(util.SetDomainProject(context.Background(), "DomainTest1", "Project1"))
+		respFind, err = datasource.Instance().GetServicesStatistics(ctx, &pb.GetServicesRequest{})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
+		assert.Equal(t, int64(1), respFind.Statistics.Instances.CountByDomain)
+		})
+
+	t.Run("delete a service ", func(t *testing.T) {
+		ctx =  util.WithNoCache(util.SetDomainProject(context.Background(), "default", "Project1"))
+		resp, err := datasource.Instance().UnregisterService(ctx, &pb.DeleteServiceRequest{
+			ServiceId: serviceId1,
+			Force:     false,
+		})
+		assert.NoError(t, err)
+		assert.NotEqual(t, pb.ResponseSuccess, resp.Response.GetCode())
+
+		ctx =  util.WithNoCache(util.SetDomainProject(context.Background(), "DomainTest1", "Project1"))
+		resp, err = datasource.Instance().UnregisterService(ctx, &pb.DeleteServiceRequest{
+			ServiceId: serviceId2,
+			Force:     false,
+		})
+		assert.NoError(t, err)
+		assert.NotEqual(t, pb.ResponseSuccess, resp.Response.GetCode())
+	})
+
+}
+
 func TestInstance_GetOne(t *testing.T) {
 	var (
 		serviceId1  string
