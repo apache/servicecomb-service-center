@@ -530,6 +530,23 @@ func (ds *DataSource) GetServicesInfo(ctx context.Context, request *discovery.Ge
 	}, nil
 }
 
+func (ds *DataSource) GetServicesStatistics(ctx context.Context, request *discovery.GetServicesRequest) (
+	*discovery.GetServicesInfoStatisticsResponse, error) {
+	ctx = util.WithCacheOnly(ctx)
+	var st *discovery.Statistics
+	var err error
+	st, err  = statistics(ctx, true)
+	if err != nil {
+		return &discovery.GetServicesInfoStatisticsResponse{
+			Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
+		}, err
+	}
+	return &discovery.GetServicesInfoStatisticsResponse{
+		Response:          discovery.CreateResponse(discovery.ResponseSuccess, "Get services statistics successfully."),
+		Statistics:        st,
+	}, nil
+}
+
 func (ds *DataSource) AddTags(ctx context.Context, request *discovery.AddServiceTagsRequest) (*discovery.AddServiceTagsResponse, error) {
 	filter := mutil.NewBasicFilter(ctx, mutil.ServiceServiceID(request.ServiceId))
 	setFilter := mutil.NewFilter(
