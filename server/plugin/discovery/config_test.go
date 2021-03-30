@@ -74,7 +74,7 @@ func TestConfigure(t *testing.T) {
 	if cfg.Parser != proto.MapParser {
 		t.Fatalf("TestConfigure failed")
 	}
-	if cfg.String() != "{key: /test, timeout: 2s, period: 3s}" {
+	if cfg.String() != "{key: /test, timeout: 2s, period: 3s, lease: false}" {
 		t.Fatalf("TestConfigure failed")
 	}
 }

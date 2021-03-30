@@ -43,6 +43,7 @@ func FromEtcdKeyValue(dist *discovery.KeyValue, src *mvccpb.KeyValue, parser pro
 	dist.Version = src.Version
 	dist.CreateRevision = src.CreateRevision
 	dist.ModRevision = src.ModRevision
+	dist.Lease = src.Lease
 	if parser == nil {
 		return
 	}
