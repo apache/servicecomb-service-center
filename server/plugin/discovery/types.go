@@ -65,6 +65,7 @@ type KeyValue struct {
 	Version        int64
 	CreateRevision int64
 	ModRevision    int64
+	Lease          int64
 	ClusterName    string
 }
 

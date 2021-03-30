@@ -49,12 +49,15 @@ var (
 )
 
 func registerInnerTypes() {
+	leaseEventDeferHandler := NewLeaseEventDeferHandler()
+
 	SERVICE = Store().MustInstall(NewAddOn("SERVICE",
 		discovery.Configure().WithPrefix(core.GetServiceRootKey("")).
 			WithInitSize(500).WithParser(proto.ServiceParser)))
 	INSTANCE = Store().MustInstall(NewAddOn("INSTANCE",
 		discovery.Configure().WithPrefix(core.GetInstanceRootKey("")).
-			WithInitSize(1000).WithParser(proto.InstanceParser)))
+			WithInitSize(1000).WithParser(proto.InstanceParser).WithLease().
+			WithDeferHandler(leaseEventDeferHandler)))
 	DOMAIN = Store().MustInstall(NewAddOn("DOMAIN",
 		discovery.Configure().WithPrefix(core.GetDomainRootKey()+core.SPLIT).
 			WithInitSize(100).WithParser(proto.StringParser)))
@@ -69,7 +72,7 @@ func registerInnerTypes() {
 			WithInitSize(100).WithParser(proto.RuleParser)))
 	LEASE = Store().MustInstall(NewAddOn("LEASE",
 		discovery.Configure().WithPrefix(core.GetInstanceLeaseRootKey("")).
-			WithInitSize(1000).WithParser(proto.StringParser)))
+			WithInitSize(1000).WithParser(proto.StringParser).WithLease()))
 	ServiceIndex = Store().MustInstall(NewAddOn("SERVICE_INDEX",
 		discovery.Configure().WithPrefix(core.GetServiceIndexRootKey("")).
 			WithInitSize(500).WithParser(proto.StringParser)))

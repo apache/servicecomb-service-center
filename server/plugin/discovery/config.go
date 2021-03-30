@@ -31,11 +31,12 @@ type Config struct {
 	DeferHandler DeferHandler
 	OnEvent      KvEventFunc
 	Parser       proto.Parser
+	Lease        bool
 }
 
 func (cfg *Config) String() string {
-	return fmt.Sprintf("{key: %s, timeout: %s, period: %s}",
-		cfg.Key, cfg.Timeout, cfg.Period)
+	return fmt.Sprintf("{key: %s, timeout: %s, period: %s, lease: %v}",
+		cfg.Key, cfg.Timeout, cfg.Period, cfg.Lease)
 }
 
 func (cfg *Config) WithPrefix(key string) *Config {
@@ -82,6 +83,11 @@ func (cfg *Config) AppendEventFunc(f KvEventFunc) *Config {
 
 func (cfg *Config) WithParser(parser proto.Parser) *Config {
 	cfg.Parser = parser
+	return cfg
+}
+
+func (cfg *Config) WithLease() *Config {
+	cfg.Lease = true
 	return cfg
 }
 

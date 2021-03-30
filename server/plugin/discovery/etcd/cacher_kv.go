@@ -195,7 +195,7 @@ func (c *KvCacher) handleWatcher(watcher Watcher) error {
 }
 
 func (c *KvCacher) needDeferHandle(evts []discovery.KvEvent) bool {
-	if c.Cfg.DeferHandler == nil || !c.IsReady() {
+	if c.Cfg.DeferHandler == nil {
 		return false
 	}
 
@@ -362,6 +362,7 @@ func (c *KvCacher) handleDeferEvents(ctx context.Context) {
 		evts = make([]discovery.KvEvent, eventBlockSize)
 		i    int
 	)
+	// the interval of pack recv events into one block
 	interval := 300 * time.Millisecond
 	timer := time.NewTimer(interval)
 	defer timer.Stop()
@@ -371,6 +372,7 @@ func (c *KvCacher) handleDeferEvents(ctx context.Context) {
 			return
 		case evt, ok := <-c.Cfg.DeferHandler.HandleChan():
 			if !ok {
+				log.Error(fmt.Sprintf("[%s]defer handle chan is closed!", c.Cfg.Key), nil)
 				return
 			}
 
@@ -390,7 +392,6 @@ func (c *KvCacher) handleDeferEvents(ctx context.Context) {
 			if i == 0 {
 				continue
 			}
-
 			c.onEvents(evts[:i])
 			evts = make([]discovery.KvEvent, eventBlockSize)
 			i = 0
