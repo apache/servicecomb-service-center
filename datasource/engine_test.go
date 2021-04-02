@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package etcd_test
+package datasource_test
 
 import (
 	"context"
@@ -110,11 +110,11 @@ func serviceClearCheckFunc(domain string, project string) func() {
 
 			createService(domain, project, "svc1", withNoInstance, shouldClear)
 			createService(domain, project, "svc2", withInstance, shouldNotClear)
-			time.Sleep(timeLimit)
+			time.Sleep(2 * time.Second)
 			createService(domain, project, "svc3", withNoInstance, shouldNotClear)
 			createService(domain, project, "svc4", withInstance, shouldNotClear)
 
-			err = datasource.Instance().ClearNoInstanceServices(context.Background(), timeLimit)
+			err = datasource.Instance().ClearNoInstanceServices(context.Background(), 2*time.Second)
 			Expect(err).To(BeNil())
 
 			checkServiceCleared(domain, project)
