@@ -15,26 +15,16 @@
  * limitations under the License.
  */
 
-package mongo_test
+package datasource_test
 
 import (
 	"testing"
 
+	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/stretchr/testify/assert"
-	"go.mongodb.org/mongo-driver/bson"
-
-	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
 )
-
-func init() {
-	// clean the mongodb
-	client.GetMongoClient().Delete(getContext(), model.CollectionInstance, bson.M{})
-	client.GetMongoClient().Delete(getContext(), model.CollectionService, bson.M{})
-}
 
 func TestDumpCache(t *testing.T) {
 	var store = &sd.TypeStore{}
