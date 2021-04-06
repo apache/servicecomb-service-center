@@ -39,6 +39,7 @@ func (s *WatchService) URLPatterns() []rest.Route {
 }
 
 func upgrade(w http.ResponseWriter, r *http.Request) (*websocket.Conn, error) {
+	log.Info("111111111111111111111111111111111111111111111")
 	var upgrader = websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool {
 			return true
