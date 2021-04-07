@@ -19,7 +19,6 @@ package mongo
 
 import (
 	"context"
-
 	pb "github.com/go-chassis/cari/discovery"
 	"go.mongodb.org/mongo-driver/bson"
 
@@ -68,10 +67,9 @@ func statistics(ctx context.Context, withShared bool) (*pb.Statistics, error) {
 		svcKeys = append(svcKeys, datasource.TransServiceToKey(util.ParseDomainProject(ctx), svc))
 	}
 	svcIDToNonVerKey := datasource.SetStaticServices(result, svcKeys, svcIDs, withShared)
-
 	respGetInstanceCountByDomain := make(chan datasource.GetInstanceCountByDomainResponse, 1)
 	gopool.Go(func(_ context.Context) {
-		getInstanceCountByDomain(ctx, svcIDToNonVerKey, respGetInstanceCountByDomain)
+		getInstanceCountByDomain(ctx, svcIDs, respGetInstanceCountByDomain)
 	})
 
 	instances, err := dao.GetInstances(ctx, filter)
@@ -92,7 +90,7 @@ func statistics(ctx context.Context, withShared bool) (*pb.Statistics, error) {
 	return result, nil
 }
 
-func getInstanceCountByDomain(ctx context.Context, svcIDToNonVerKey map[string]string, resp chan datasource.GetInstanceCountByDomainResponse) {
+func getInstanceCountByDomain(ctx context.Context, svcIDToNonVerKey []string, resp chan datasource.GetInstanceCountByDomainResponse) {
 	ret := datasource.GetInstanceCountByDomainResponse{}
 	domain := util.ParseDomain(ctx)
 	project := util.ParseProject(ctx)

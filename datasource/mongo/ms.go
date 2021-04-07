@@ -31,6 +31,7 @@ import (
 	"time"
 
 	"github.com/go-chassis/cari/discovery"
+	"github.com/jinzhu/copier"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -59,7 +60,6 @@ func (ds *DataSource) RegisterService(ctx context.Context, request *discovery.Cr
 	project := util.ParseProject(ctx)
 	serviceFlag := util.StringJoin([]string{
 		service.Environment, service.AppId, service.ServiceName, service.Version}, "/")
-	//todo add quota check
 	requestServiceID := service.ServiceId
 
 	if len(requestServiceID) == 0 {
@@ -507,7 +507,20 @@ func (ds *DataSource) GetServicesInfo(ctx context.Context, request *discovery.Ge
 			}, err
 		}
 		serviceDetail.MicroService = mgSvc.Service
-		allServiceDetails = append(allServiceDetails, serviceDetail)
+		tmpServiceDetail := &discovery.ServiceDetail{}
+		err = copier.CopyWithOption(tmpServiceDetail, serviceDetail, copier.Option{DeepCopy: true})
+		if err != nil {
+			return &discovery.GetServicesInfoResponse{
+				Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
+			}, err
+		}
+		tmpServiceDetail.MicroService.Properties = nil
+		tmpServiceDetail.MicroService.Schemas = nil
+		instances := tmpServiceDetail.Instances
+		for _, instance := range instances {
+			instance.Properties = nil
+		}
+		allServiceDetails = append(allServiceDetails, tmpServiceDetail)
 	}
 
 	return &discovery.GetServicesInfoResponse{
@@ -1920,6 +1933,11 @@ func registryInstance(ctx context.Context, request *discovery.RegisterInstanceRe
 	project := util.ParseProject(ctx)
 	remoteIP := util.GetIPFromContext(ctx)
 	instance := request.Instance
+	ttl := int64(instance.HealthCheck.Interval * (instance.HealthCheck.Times + 1))
+
+	instanceFlag := fmt.Sprintf("ttl %ds, endpoints %v, host '%s', serviceID %s",
+		ttl, instance.Endpoints, instance.HostName, instance.ServiceId)
+
 	instanceID := instance.InstanceId
 	data := &model.Instance{
 		Domain:      domain,
@@ -1927,9 +1945,6 @@ func registryInstance(ctx context.Context, request *discovery.RegisterInstanceRe
 		RefreshTime: time.Now(),
 		Instance:    instance,
 	}
-
-	instanceFlag := fmt.Sprintf("endpoints %v, host '%s', serviceID %s",
-		instance.Endpoints, instance.HostName, instance.ServiceId)
 
 	insertRes, err := client.GetMongoClient().Insert(ctx, model.CollectionInstance, data)
 	if err != nil {
@@ -1941,17 +1956,6 @@ func registryInstance(ctx context.Context, request *discovery.RegisterInstanceRe
 
 	log.Info(fmt.Sprintf("register instance %s, instanceID %s, operator %s",
 		instanceFlag, insertRes.InsertedID, remoteIP))
-	heartbeatRequest := discovery.HeartbeatRequest{
-		ServiceId:  instance.ServiceId,
-		InstanceId: instance.InstanceId,
-	}
-	aliveErr := KeepAliveLease(ctx, &heartbeatRequest)
-	if aliveErr != nil {
-		log.Error(fmt.Sprintf("failed to send heartbeat after registering instance, instance %s operator %s", instanceFlag, remoteIP), err)
-		return &discovery.RegisterInstanceResponse{
-			Response: discovery.CreateResponseWithSCErr(aliveErr),
-		}, err
-	}
 	return &discovery.RegisterInstanceResponse{
 		Response:   discovery.CreateResponse(discovery.ResponseSuccess, "Register service instance successfully."),
 		InstanceId: instanceID,

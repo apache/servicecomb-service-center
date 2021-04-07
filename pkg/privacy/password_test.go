@@ -37,3 +37,37 @@ func TestHashPassword(t *testing.T) {
 	sameMac := privacy.SamePassword(mac, "test")
 	assert.True(t, sameMac)
 }
+func BenchmarkBcrypt(b *testing.B) {
+	h, _ := privacy.HashPassword("test")
+	for i := 0; i < b.N; i++ {
+		same := privacy.SamePassword(h, "test")
+		if !same {
+			panic("")
+		}
+
+	}
+	b.ReportAllocs()
+}
+func BenchmarkScrypt(b *testing.B) {
+	h, _ := privacy.ScryptPassword("test")
+	for i := 0; i < b.N; i++ {
+		same := privacy.SamePassword(h, "test")
+		if !same {
+			panic("")
+		}
+
+	}
+	b.ReportAllocs()
+}
+func BenchmarkScryptP(b *testing.B) {
+	h, _ := privacy.ScryptPassword("test")
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			same := privacy.SamePassword(h, "test")
+			if !same {
+				panic("")
+			}
+		}
+	})
+	b.ReportAllocs()
+}

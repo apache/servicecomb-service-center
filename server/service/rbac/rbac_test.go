@@ -40,29 +40,37 @@ func init() {
 	beego.AppConfig.Set("rbac_rsa_public_key_file", "./rbac.pub")
 	beego.AppConfig.Set("rbac_rsa_private_key_file", "./private.key")
 	config.Init()
-}
 
-func TestInitRBAC(t *testing.T) {
 	err := archaius.Init(archaius.WithMemorySource(), archaius.WithENVSource())
-	assert.NoError(t, err)
+	if err != nil {
+		panic(err)
+	}
 
 	pri, pub, err := secret.GenRSAKeyPair(4096)
-	assert.NoError(t, err)
+	if err != nil {
+		panic(err)
+	}
 
 	b, err := secret.RSAPrivate2Bytes(pri)
-	assert.NoError(t, err)
+	if err != nil {
+		panic(err)
+	}
 	ioutil.WriteFile("./private.key", b, 0600)
 	b, err = secret.RSAPublicKey2Bytes(pub)
 	err = ioutil.WriteFile("./rbac.pub", b, 0600)
-	assert.NoError(t, err)
+	if err != nil {
+		panic(err)
+	}
 
 	archaius.Set(rbac.InitPassword, "Complicated_password1")
-
 	dao.DeleteAccount(context.Background(), "root")
 	dao.DeleteAccount(context.Background(), "a")
 	dao.DeleteAccount(context.Background(), "b")
 
 	rbac.Init()
+}
+
+func TestInitRBAC(t *testing.T) {
 	a, err := dao.GetAccount(context.Background(), "root")
 	assert.NoError(t, err)
 	assert.Equal(t, "root", a.Name)
@@ -180,4 +188,25 @@ func TestInitRBAC(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, true, r)
 	})
+}
+func BenchmarkAuthResource_Login(b *testing.B) {
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			_, err := authr.Login(context.TODO(), "root", "Complicated_password1")
+			if err != nil {
+				panic(err)
+			}
+		}
+	})
+	b.ReportAllocs()
+}
+func BenchmarkAuthResource_Login2(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_, err := authr.Login(context.TODO(), "root", "Complicated_password1")
+		if err != nil {
+			panic(err)
+		}
+
+	}
+	b.ReportAllocs()
 }
