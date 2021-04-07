@@ -51,6 +51,10 @@ func Add2WhiteAPIList(path ...string) {
 	whiteAPIList.Insert(path...)
 }
 
+func DeleteFromWhiteAPIList(path ...string) {
+	whiteAPIList.Delete(path...)
+}
+
 func MustAuth(pattern string) bool {
 	if util.IsVersionOrHealthPattern(pattern) {
 		return false

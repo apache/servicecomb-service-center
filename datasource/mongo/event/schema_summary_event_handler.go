@@ -18,20 +18,32 @@
 package event
 
 import (
+	pb "github.com/go-chassis/cari/discovery"
+
+	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
-	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/server/metrics"
 )
 
-const (
-	increaseOne = 1
-	decreaseOne = -1
-)
+type SchemaSummaryEventHandler struct {
+}
 
-func init() {
-	log.Info("event init")
-	instanceEventHandler := NewInstanceEventHandler()
-	sd.EventProxy(instanceEventHandler.Type()).AddHandleFunc(instanceEventHandler.OnEvent)
-	sd.AddEventHandler(NewServiceEventHandler())
-	sd.AddEventHandler(NewSchemaSummaryEventHandler())
-	sd.AddEventHandler(NewDomainEventHandler())
+func NewSchemaSummaryEventHandler() *SchemaSummaryEventHandler {
+	return &SchemaSummaryEventHandler{}
+}
+
+func (h *SchemaSummaryEventHandler) Type() string {
+	return model.ColumnSchema
+}
+
+func (h *SchemaSummaryEventHandler) OnEvent(evt sd.MongoEvent) {
+	schema := evt.Value.(model.Schema)
+	action := evt.Type
+	switch action {
+	case pb.EVT_INIT, pb.EVT_CREATE:
+		metrics.ReportSchemas(schema.Domain, increaseOne)
+	case pb.EVT_DELETE:
+		metrics.ReportSchemas(schema.Domain, decreaseOne)
+	default:
+	}
 }

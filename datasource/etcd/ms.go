@@ -25,6 +25,9 @@ import (
 	"strconv"
 	"time"
 
+	pb "github.com/go-chassis/cari/discovery"
+	"github.com/jinzhu/copier"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/cache"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
@@ -39,7 +42,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
-	pb "github.com/go-chassis/cari/discovery"
 )
 
 // RegisterService() implement:
@@ -61,19 +63,6 @@ func (ds *DataSource) RegisterService(ctx context.Context, request *pb.CreateSer
 		ServiceName: service.ServiceName,
 		Alias:       service.Alias,
 		Version:     service.Version,
-	}
-
-	Err := checkQuota(ctx, domainProject)
-	if Err != nil {
-		log.Error(fmt.Sprintf("create micro-service[%s] failed, operator: %s",
-			serviceFlag, remoteIP), Err)
-		resp := &pb.CreateServiceResponse{
-			Response: pb.CreateResponseWithSCErr(Err),
-		}
-		if Err.InternalError() {
-			return resp, Err
-		}
-		return resp, nil
 	}
 
 	index := path.GenerateServiceIndexKey(serviceKey)
@@ -209,7 +198,6 @@ func (ds *DataSource) GetService(ctx context.Context, request *pb.GetServiceRequ
 	}, nil
 }
 
-// GetServiceDetail is only for govern API
 func (ds *DataSource) GetServiceDetail(ctx context.Context, request *pb.GetServiceRequest) (
 	*pb.GetServiceDetailResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
@@ -262,7 +250,6 @@ func (ds *DataSource) GetServiceDetail(ctx context.Context, request *pb.GetServi
 	}, nil
 }
 
-// GetServicesInfo is only for govern API
 func (ds *DataSource) GetServicesInfo(ctx context.Context, request *pb.GetServicesInfoRequest) (
 	*pb.GetServicesInfoResponse, error) {
 	ctx = util.WithCacheOnly(ctx)
@@ -322,8 +309,7 @@ func (ds *DataSource) GetServicesInfo(ctx context.Context, request *pb.GetServic
 				continue
 			}
 		}
-		service.Properties = nil
-		service.Schemas = nil
+
 		serviceDetail, err := getServiceDetailUtil(ctx, ServiceDetailOpt{
 			domainProject: domainProject,
 			service:       service,
@@ -336,7 +322,20 @@ func (ds *DataSource) GetServicesInfo(ctx context.Context, request *pb.GetServic
 			}, err
 		}
 		serviceDetail.MicroService = service
-		allServiceDetails = append(allServiceDetails, serviceDetail)
+		tmpServiceDetail := &pb.ServiceDetail{}
+		err = copier.CopyWithOption(tmpServiceDetail, serviceDetail, copier.Option{DeepCopy: true})
+		if err != nil {
+			return &pb.GetServicesInfoResponse{
+				Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
+			}, err
+		}
+		tmpServiceDetail.MicroService.Properties = nil
+		tmpServiceDetail.MicroService.Schemas = nil
+		instances := tmpServiceDetail.Instances
+		for _, instance := range instances {
+			instance.Properties = nil
+		}
+		allServiceDetails = append(allServiceDetails, tmpServiceDetail)
 	}
 
 	return &pb.GetServicesInfoResponse{
@@ -593,24 +592,6 @@ func (ds *DataSource) RegisterInstance(ctx context.Context, request *pb.Register
 
 	//先以domain/project的方式组装
 	domainProject := util.ParseDomainProject(ctx)
-
-	if !core.IsSCInstance(ctx) {
-		res := quota.NewApplyQuotaResource(quota.TypeInstance,
-			domainProject, request.Instance.ServiceId, 1)
-		applyErr := quota.Apply(ctx, res)
-
-		if applyErr != nil {
-			log.Error(fmt.Sprintf("register instance failed, %s, operator %s",
-				instanceFlag, remoteIP), applyErr)
-			response := &pb.RegisterInstanceResponse{
-				Response: pb.CreateResponseWithSCErr(applyErr),
-			}
-			if applyErr.InternalError() {
-				return response, applyErr
-			}
-			return response, nil
-		}
-	}
 
 	instanceID := instance.InstanceId
 	data, err := json.Marshal(instance)

@@ -4,6 +4,7 @@ replace google.golang.org/grpc => google.golang.org/grpc v1.19.0
 
 require (
 	bou.ke/monkey v1.0.2
+	github.com/jinzhu/copier v0.2.9-0.20210317033127-fc3adf52acab
 	github.com/NYTimes/gziphandler v1.0.2-0.20180820182813-253f1acb9d9f
 	github.com/Shopify/sarama v1.27.2 // indirect
 	github.com/apache/thrift v0.0.0-20180125231006-3d556248a8b9 // indirect

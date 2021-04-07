@@ -31,6 +31,8 @@ const (
 	CollectionInstance = "instance"
 	CollectionDep      = "dependency"
 	CollectionRole     = "role"
+	CollectionDomain   = "domain"
+	CollectionProject  = "project"
 )
 
 const (
@@ -124,4 +126,13 @@ type DependencyRule struct {
 type DelDepCacheKey struct {
 	Key  *pb.MicroServiceKey
 	Type string
+}
+
+type Domain struct {
+	Domain string `json:"domain,omitempty"`
+}
+
+type Project struct {
+	Domain  string `json:"domain,omitempty"`
+	Project string `json:"project,omitempty"`
 }

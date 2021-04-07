@@ -42,40 +42,50 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var pwd = "Complicated_password1"
+
 func init() {
 	beego.AppConfig.Set("rbac_enabled", "true")
 	beego.AppConfig.Set("rbac_rsa_public_key_file", "./rbac.pub")
 	beego.AppConfig.Set("rbac_rsa_private_key_file", "./private.key")
 	config.Init()
-}
-func TestAuthResource_Login(t *testing.T) {
+
 	err := archaius.Init(archaius.WithMemorySource(), archaius.WithENVSource())
-	assert.NoError(t, err)
+	if err != nil {
+		panic(err)
+	}
 
 	pri, pub, err := secret.GenRSAKeyPair(4096)
-	assert.NoError(t, err)
+	if err != nil {
+		panic(err)
+	}
 
 	b, err := secret.RSAPrivate2Bytes(pri)
-	assert.NoError(t, err)
+	if err != nil {
+		panic(err)
+	}
 	ioutil.WriteFile("./private.key", b, 0600)
 	b, err = secret.RSAPublicKey2Bytes(pub)
 	err = ioutil.WriteFile("./rbac.pub", b, 0600)
-	assert.NoError(t, err)
+	if err != nil {
+		panic(err)
+	}
 
-	archaius.Set(rbac.InitPassword, "Complicated_password1")
-
+	archaius.Set(rbac.InitPassword, pwd)
 	ctx := context.TODO()
 	dao.DeleteAccount(ctx, "root")
-	archaius.Init(archaius.WithMemorySource())
 
 	rbac.Init()
 	rest.RegisterServant(&v4.AuthResource{})
 	rest.RegisterServant(&v4.RoleResource{})
+}
+func TestAuthResource_Login(t *testing.T) {
+	ctx := context.TODO()
 
 	dao.DeleteAccount(ctx, "dev_account")
 
 	t.Run("invalid user login", func(t *testing.T) {
-		b, _ := json.Marshal(&rbacmodel.Account{Name: "dev_account", Password: "Complicated_password1"})
+		b, _ := json.Marshal(&rbacmodel.Account{Name: "dev_account", Password: pwd})
 
 		r, _ := http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(b))
 		w := httptest.NewRecorder()
@@ -86,7 +96,7 @@ func TestAuthResource_Login(t *testing.T) {
 	// root account token
 	var to = &rbacmodel.Token{}
 	t.Run("root login", func(t *testing.T) {
-		b, _ := json.Marshal(&rbacmodel.Account{Name: "root", Password: "Complicated_password1", Roles: []string{"admin"}})
+		b, _ := json.Marshal(&rbacmodel.Account{Name: "root", Password: pwd, Roles: []string{"admin"}})
 
 		r, _ := http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(b))
 		w := httptest.NewRecorder()
@@ -464,4 +474,35 @@ func TestAuthResource_Login2(t *testing.T) {
 		rest.GetRouter().ServeHTTP(w, r)
 		assert.Equal(t, http.StatusForbidden, w.Code)
 	})
+}
+
+func BenchmarkAuthResource_LoginP(b *testing.B) {
+	body, _ := json.Marshal(&rbacmodel.Account{Name: "root", Password: pwd})
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			r, _ := http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(body))
+			w := httptest.NewRecorder()
+			rest.GetRouter().ServeHTTP(w, r)
+			if w.Code != http.StatusOK {
+				panic(w.Code)
+			}
+		}
+	})
+	b.ReportAllocs()
+}
+
+//
+func BenchmarkAuthResource_Login(b *testing.B) {
+	body, _ := json.Marshal(&rbacmodel.Account{Name: "root", Password: pwd})
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		r, _ := http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(body))
+		w := httptest.NewRecorder()
+		rest.GetRouter().ServeHTTP(w, r)
+		if w.Code != http.StatusOK {
+			panic(w.Code)
+		}
+
+	}
+	b.ReportAllocs()
 }

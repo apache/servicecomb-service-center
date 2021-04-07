@@ -20,6 +20,8 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
+	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -32,14 +34,29 @@ import (
 type InstanceService struct {
 }
 
-func (s *InstanceService) Register(ctx context.Context,
-	in *pb.RegisterInstanceRequest) (*pb.RegisterInstanceResponse, error) {
+func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceRequest) (*pb.RegisterInstanceResponse, error) {
 	if err := Validate(in); err != nil {
 		remoteIP := util.GetIPFromContext(ctx)
 		log.Errorf(err, "register instance failed, invalid parameters, operator %s", remoteIP)
 		return &pb.RegisterInstanceResponse{
 			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
 		}, nil
+	}
+	remoteIP := util.GetIPFromContext(ctx)
+	instanceFlag := fmt.Sprintf("endpoints %v, host '%s', serviceID %s",
+		in.Instance.Endpoints, in.Instance.HostName, in.Instance.ServiceId)
+	domainProject := util.ParseDomainProject(ctx)
+	quotaErr := checkInstanceQuota(ctx, domainProject, in.Instance.ServiceId)
+	if quotaErr != nil {
+		log.Error(fmt.Sprintf("register instance failed, %s, operator %s",
+			instanceFlag, remoteIP), quotaErr)
+		response := &pb.RegisterInstanceResponse{
+			Response: pb.CreateResponseWithSCErr(quotaErr),
+		}
+		if quotaErr.InternalError() {
+			return response, quotaErr
+		}
+		return response, nil
 	}
 
 	return datasource.Instance().RegisterInstance(ctx, in)
@@ -206,4 +223,14 @@ func (s *InstanceService) ClusterHealth(ctx context.Context) (*pb.GetInstancesRe
 		Response:  pb.CreateResponse(pb.ResponseSuccess, "Health check successfully."),
 		Instances: instResp.Instances,
 	}, nil
+}
+
+func checkInstanceQuota(ctx context.Context, domainProject string, serviceID string) *pb.Error {
+	if !apt.IsSCInstance(ctx) {
+		res := quota.NewApplyQuotaResource(quota.TypeInstance,
+			domainProject, serviceID, 1)
+		err := quota.Apply(ctx, res)
+		return err
+	}
+	return nil
 }
