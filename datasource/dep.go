@@ -29,4 +29,5 @@ type DependencyManager interface {
 	SearchConsumerDependency(ctx context.Context, request *pb.GetDependenciesRequest) (*pb.GetConDependenciesResponse, error)
 	AddOrUpdateDependencies(ctx context.Context, dependencyInfos []*pb.ConsumerDependency, override bool) (*pb.Response, error)
 	DeleteDependency()
+	DependencyHandle(ctx context.Context) (error)
 }

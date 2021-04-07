@@ -174,6 +174,10 @@ func (ds *DataSource) DeleteDependency() {
 	panic("implement me")
 }
 
+func (ds *DataSource) DependencyHandle(ctx context.Context) (err error) {
+	return nil
+}
+
 func syncDependencyRule(ctx context.Context, domainProject string, r *discovery.ConsumerDependency) error {
 
 	consumerInfo := discovery.DependenciesToKeys([]*discovery.MicroServiceKey{r.Consumer}, domainProject)[0]
