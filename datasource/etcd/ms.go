@@ -662,7 +662,7 @@ func (ds *DataSource) GetInstance(ctx context.Context, request *pb.GetOneInstanc
 		service, err = serviceUtil.GetService(ctx, domainProject, request.ConsumerServiceId)
 		if err != nil {
 			if errors.Is(err, datasource.ErrNoData) {
-				log.Debug(fmt.Sprintf("consumer does not exist in db, consumer[%s] find provider instance[%s/%s]",
+				log.Debug(fmt.Sprintf("consumer doe not exist in db, consumer[%s] find provider instance[%s/%s]",
 					request.ConsumerServiceId, request.ProviderServiceId, request.ProviderInstanceId))
 				return &pb.GetOneInstanceResponse{
 					Response: pb.CreateResponse(pb.ErrServiceNotExists,
