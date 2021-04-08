@@ -14,25 +14,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package auth
+package plugin
 
 import (
-	"net/http"
-
-	"github.com/apache/servicecomb-service-center/pkg/plugin"
+	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
-const AUTH plugin.Kind = "auth"
-
-type Authenticate interface {
-	Identify(r *http.Request) error
+type testPluginConfigurator struct {
 }
 
-func Auth() Authenticate {
-	return plugin.Plugins().Instance(AUTH).(Authenticate)
+func (c *testPluginConfigurator) GetImplName(_ Kind) string {
+	return "test"
+}
+func (c *testPluginConfigurator) GetPluginDir() string {
+	return "dir"
 }
 
-func Identify(r *http.Request) error {
-	return Auth().Identify(r)
+func TestRegisterConfigurator(t *testing.T) {
+	t.Run("default configurator should not be nil", func(t *testing.T) {
+		assert.NotNil(t, GetConfigurator())
+	})
+	t.Run("register a customize configurator", func(t *testing.T) {
+		RegisterConfigurator(&testPluginConfigurator{})
+		assert.Equal(t, "test", GetConfigurator().GetImplName(""))
+		assert.Equal(t, "dir", GetConfigurator().GetPluginDir())
+	})
 }

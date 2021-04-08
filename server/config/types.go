@@ -17,6 +17,8 @@
 
 package config
 
+import "github.com/apache/servicecomb-service-center/pkg/plugin"
+
 //Config is yaml file struct
 type Config struct {
 	Gov    *Gov               `yaml:"gov"`
@@ -29,4 +31,12 @@ type DistributorOptions struct {
 	Name     string `yaml:"name"`
 	Type     string `yaml:"type"`
 	Endpoint string `yaml:"endpoint"`
+}
+
+// GetImplName return the impl name
+func (c *Config) GetImplName(kind plugin.Kind) string {
+	return GetString(kind.String()+".kind", plugin.Buildin, WithStandby(kind.String()+"_plugin"))
+}
+func (c *Config) GetPluginDir() string {
+	return c.Server.Config.PluginsDir
 }

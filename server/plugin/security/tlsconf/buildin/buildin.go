@@ -19,16 +19,16 @@ package buildin
 
 import (
 	"crypto/tls"
+	"github.com/apache/servicecomb-service-center/pkg/plugin"
 
-	mgr "github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf"
 )
 
 func init() {
-	mgr.RegisterPlugin(mgr.Plugin{Kind: tlsconf.TLS, Name: "buildin", New: New})
+	plugin.RegisterPlugin(plugin.Plugin{Kind: tlsconf.TLS, Name: "buildin", New: New})
 }
 
-func New() mgr.Instance {
+func New() plugin.Instance {
 	return &DefaultTLS{}
 }
 
@@ -37,7 +37,7 @@ type DefaultTLS struct {
 }
 
 func (c *DefaultTLS) ClientConfig() (*tls.Config, error) {
-	df, ok := mgr.DynamicPluginFunc(tlsconf.TLS, "ClientConfig").(func() (*tls.Config, error))
+	df, ok := plugin.DynamicPluginFunc(tlsconf.TLS, "ClientConfig").(func() (*tls.Config, error))
 	if ok {
 		return df()
 	}
@@ -45,7 +45,7 @@ func (c *DefaultTLS) ClientConfig() (*tls.Config, error) {
 }
 
 func (c *DefaultTLS) ServerConfig() (*tls.Config, error) {
-	df, ok := mgr.DynamicPluginFunc(tlsconf.TLS, "ServerConfig").(func() (*tls.Config, error))
+	df, ok := plugin.DynamicPluginFunc(tlsconf.TLS, "ServerConfig").(func() (*tls.Config, error))
 	if ok {
 		return df()
 	}

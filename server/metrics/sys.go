@@ -19,6 +19,7 @@ package metrics
 
 import (
 	"context"
+	"fmt"
 	"runtime"
 	"time"
 
@@ -58,6 +59,11 @@ func AutoReportCPUUsage(ctx context.Context) {
 			return
 		case <-time.After(durationReportCPUUsage):
 			pt, ct := util.GetProcCPUUsage()
+			if pt <= 0 && ct <= 0 {
+				log.Warn(fmt.Sprintf("can not get proc cpu usage of current os %s/%s", runtime.GOOS, runtime.GOARCH))
+				return
+			}
+
 			diff := ct - cpuTotal
 			if diff <= 0 {
 				log.Warnf("the current cpu usage is the same as the previous period")

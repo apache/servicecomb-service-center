@@ -21,18 +21,18 @@ import (
 	"context"
 	"crypto/sha1"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/pkg/plugin"
 
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	mgr "github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
 	"github.com/apache/servicecomb-service-center/server/plugin/uuid/buildin"
 )
 
 func init() {
-	mgr.RegisterPlugin(mgr.Plugin{Kind: uuid.UUID, Name: "context", New: New})
+	plugin.RegisterPlugin(plugin.Plugin{Kind: uuid.UUID, Name: "context", New: New})
 }
 
-func New() mgr.Instance {
+func New() plugin.Instance {
 	return &UUID{}
 }
 

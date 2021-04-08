@@ -18,7 +18,7 @@
 package cipher
 
 import (
-	"github.com/apache/servicecomb-service-center/server/plugin"
+	"github.com/apache/servicecomb-service-center/pkg/plugin"
 	"github.com/go-chassis/foundation/security"
 )
 

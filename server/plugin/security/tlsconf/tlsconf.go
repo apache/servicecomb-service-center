@@ -20,7 +20,7 @@ package tlsconf
 import (
 	"crypto/tls"
 
-	"github.com/apache/servicecomb-service-center/server/plugin"
+	"github.com/apache/servicecomb-service-center/pkg/plugin"
 )
 
 const TLS plugin.Kind = "ssl"

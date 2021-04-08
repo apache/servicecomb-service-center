@@ -18,15 +18,15 @@
 package plain
 
 import (
-	mgr "github.com/apache/servicecomb-service-center/server/plugin"
+	"github.com/apache/servicecomb-service-center/pkg/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/security/cipher"
 )
 
 func init() {
-	mgr.RegisterPlugin(mgr.Plugin{Kind: cipher.CIPHER, Name: "buildin", New: New})
+	plugin.RegisterPlugin(plugin.Plugin{Kind: cipher.CIPHER, Name: "buildin", New: New})
 }
 
-func New() mgr.Instance {
+func New() plugin.Instance {
 	return &DefaultCipher{}
 }
 
@@ -34,7 +34,7 @@ type DefaultCipher struct {
 }
 
 func (c *DefaultCipher) Encrypt(src string) (string, error) {
-	df, ok := mgr.DynamicPluginFunc(cipher.CIPHER, "Encrypt").(func(src string) (string, error))
+	df, ok := plugin.DynamicPluginFunc(cipher.CIPHER, "Encrypt").(func(src string) (string, error))
 	if ok {
 		return df(src)
 	}
@@ -42,7 +42,7 @@ func (c *DefaultCipher) Encrypt(src string) (string, error) {
 }
 
 func (c *DefaultCipher) Decrypt(src string) (string, error) {
-	df, ok := mgr.DynamicPluginFunc(cipher.CIPHER, "Decrypt").(func(src string) (string, error))
+	df, ok := plugin.DynamicPluginFunc(cipher.CIPHER, "Decrypt").(func(src string) (string, error))
 	if ok {
 		return df(src)
 	}

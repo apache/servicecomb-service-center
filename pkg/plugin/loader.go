@@ -41,7 +41,6 @@ type wrapPlugin struct {
 }
 
 type Loader struct {
-	Dir     string
 	Plugins map[string]*wrapPlugin
 	mux     sync.RWMutex
 }
@@ -56,7 +55,7 @@ func (pm *Loader) Init() {
 }
 
 func (pm *Loader) ReloadPlugins() error {
-	dir := os.ExpandEnv(pm.Dir)
+	dir := os.ExpandEnv(GetConfigurator().GetPluginDir())
 	if len(dir) == 0 {
 		dir, _ = os.Getwd()
 	}
@@ -126,10 +125,6 @@ func (pm *Loader) Exist(pluginName string) bool {
 	_, ok := pm.Plugins[pluginName]
 	pm.mux.RUnlock()
 	return ok
-}
-
-func SetPluginDir(dir string) {
-	loader.Dir = dir
 }
 
 func GetLoader() *Loader {

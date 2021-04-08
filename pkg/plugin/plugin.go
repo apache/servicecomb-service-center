@@ -20,10 +20,7 @@ package plugin
 import (
 	"sync"
 
-	"github.com/apache/servicecomb-service-center/server/config"
-
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/plugin"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
@@ -32,7 +29,10 @@ const (
 	defaultPluginImplSize = 5
 )
 
-var pluginMgr = &Manager{}
+var (
+	globalConfigurator Configurator = &DefaultConfigurator{}
+	pluginMgr                       = &Manager{}
+)
 
 func init() {
 	pluginMgr.Initialize()
@@ -145,7 +145,10 @@ func (pm *Manager) New(pn Kind) {
 			return
 		}
 
-		name := config.GetString(pn.String()+".kind", Buildin, config.WithStandby(pn.String()+"_plugin"))
+		name := GetConfigurator().GetImplName(pn)
+		if len(name) == 0 {
+			log.Warn("configurator return plugin implement name is empty")
+		}
 		p, ok = m[ImplName(name)]
 		if !ok {
 			return
@@ -173,7 +176,7 @@ func (pm *Manager) existDynamicPlugin(pn Kind) *Plugin {
 		return nil
 	}
 	// 'buildin' implement of all plugins should call DynamicPluginFunc()
-	if plugin.GetLoader().Exist(pn.String()) {
+	if GetLoader().Exist(pn.String()) {
 		return m[Buildin]
 	}
 	return nil
@@ -199,4 +202,13 @@ func LoadPlugins() {
 	for p := range pluginMgr.plugins {
 		pluginMgr.Instance(p)
 	}
+}
+
+func GetConfigurator() Configurator {
+	return globalConfigurator
+}
+
+// RegisterConfigurator registers the customize Configurator impl
+func RegisterConfigurator(cfg Configurator) {
+	globalConfigurator = cfg
 }

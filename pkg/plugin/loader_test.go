@@ -31,6 +31,16 @@ func TestLoader_Init(t *testing.T) {
 	loader.Init()
 }
 
+type testLoaderConfigurator struct {
+}
+
+func (c *testLoaderConfigurator) GetImplName(_ Kind) string {
+	return "test"
+}
+func (c *testLoaderConfigurator) GetPluginDir() string {
+	return "dir"
+}
+
 func TestLoader_ReloadPlugins(t *testing.T) {
 	loader := Loader{}
 	loader.Init()
@@ -39,11 +49,15 @@ func TestLoader_ReloadPlugins(t *testing.T) {
 		t.Fatalf(`TestLoader_ReloadPlugins failed, %s`, err.Error())
 	}
 
-	loader.Dir = "xxx"
+	old := GetConfigurator()
+	RegisterConfigurator(&testLoaderConfigurator{})
+
 	err = loader.ReloadPlugins()
 	if err == nil {
 		t.Fatalf(`TestLoader_ReloadPlugins failed`)
 	}
+
+	RegisterConfigurator(old)
 }
 
 func TestLoader_Exist(t *testing.T) {
@@ -68,10 +82,6 @@ func TestLoader_Find(t *testing.T) {
 	if err == nil || f != nil {
 		t.Fatalf(`TestLoader_Find failed`)
 	}
-}
-
-func TestSetPluginDir(t *testing.T) {
-	SetPluginDir("")
 }
 
 func TestPluginLoader(t *testing.T) {
