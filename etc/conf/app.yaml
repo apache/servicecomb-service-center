@@ -114,17 +114,6 @@ registry:
     request:
       timeout: 30s
   mongo:
-    heartbeat:
-      # Mongo's heartbeat plugin
-      # heartbeat.kind="checker or cache"
-      # if heartbeat.kind equals to 'cache', should set cacheCapacity,workerNum and taskTimeout
-      # capacity = 10000
-      # workerNum = 10
-      # timeout = 10
-      kind: cache
-      cacheCapacity: 10000
-      workerNum: 10
-      timeout: 10
     cluster:
       uri: mongodb://127.0.0.1:27017
       sslEnabled: false
@@ -209,3 +198,18 @@ auditlog:
 
 syncer:
   enabled: false
+
+heartbeat:
+  # configuration of websocket long connection
+  websocket:
+    pingInterval: 30s
+  # heartbeat.kind="checker or cache"
+  # if heartbeat.kind equals to 'cache', should set cacheCapacity,workerNum and taskTimeout
+  # capacity = 10000
+  # workerNum = 10
+  # timeout = 10
+  kind: cache
+  cacheCapacity: 10000
+  workerNum: 10
+  timeout: 10
+

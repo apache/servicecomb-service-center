@@ -65,6 +65,19 @@ func GetInstance(ctx context.Context, domainProject string, serviceID string, in
 	return resp.Kvs[0].Value.(*pb.MicroServiceInstance), nil
 }
 
+func InstanceExist(ctx context.Context, domainProject string, serviceID string, instanceID string) (bool, error) {
+	key := path.GenerateInstanceKey(domainProject, serviceID, instanceID)
+	opts := append(FromContext(ctx), client.WithStrKey(key))
+	resp, err := kv.Store().Instance().Search(ctx, opts...)
+	if err != nil {
+		return false, err
+	}
+	if resp.Count == 0 {
+		return false, nil
+	}
+	return true, nil
+}
+
 func FormatRevision(revs, counts []int64) (s string) {
 	for i, rev := range revs {
 		s += fmt.Sprintf("%d.%d,", rev, counts[i])

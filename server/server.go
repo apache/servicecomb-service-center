@@ -19,11 +19,12 @@ package server
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/server/event"
 	"net"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/apache/servicecomb-service-center/server/event"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	nf "github.com/apache/servicecomb-service-center/pkg/event"

@@ -34,6 +34,7 @@ type WatchService struct {
 func (s *WatchService) URLPatterns() []rest.Route {
 	return []rest.Route{
 		{Method: rest.HTTPMethodGet, Path: "/v4/:project/registry/microservices/:serviceId/watcher", Func: s.Watch},
+		{Method: rest.HTTPMethodGet, Path: "/v4/:project/registry/microservices/:serviceId/instances/:instanceId/heartbeat", Func: s.Heartbeat},
 	}
 }
 
@@ -60,5 +61,18 @@ func (s *WatchService) Watch(w http.ResponseWriter, r *http.Request) {
 	r.Method = "WATCH"
 	core.InstanceAPI.WebSocketWatch(r.Context(), &pb.WatchInstanceRequest{
 		SelfServiceId: r.URL.Query().Get(":serviceId"),
+	}, conn)
+}
+
+func (s *WatchService) Heartbeat(w http.ResponseWriter, r *http.Request) {
+	conn, err := upgrade(w, r)
+	if err != nil {
+		log.Error("failed to establish connection", err)
+		return
+	}
+	defer conn.Close()
+	core.InstanceAPI.WatchHeartbeat(r.Context(), &pb.HeartbeatRequest{
+		ServiceId:  r.URL.Query().Get(":serviceId"),
+		InstanceId: r.URL.Query().Get(":instanceId"),
 	}, conn)
 }

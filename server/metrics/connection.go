@@ -18,8 +18,9 @@
 package metrics
 
 import (
-	"github.com/apache/servicecomb-service-center/pkg/event"
 	"time"
+
+	"github.com/apache/servicecomb-service-center/pkg/event"
 
 	"github.com/apache/servicecomb-service-center/pkg/metrics"
 	helper "github.com/apache/servicecomb-service-center/pkg/prometheus"

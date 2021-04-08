@@ -17,6 +17,7 @@ package alarm
 
 import (
 	"fmt"
+
 	"github.com/apache/servicecomb-service-center/pkg/event"
 	"github.com/apache/servicecomb-service-center/server/alarm/model"
 )

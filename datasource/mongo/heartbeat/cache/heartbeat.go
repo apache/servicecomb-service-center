@@ -62,12 +62,12 @@ type cacheConfig struct {
 func configuration() *cacheConfig {
 	once.Do(func() {
 		cfg.workerNum = runtime.NumCPU()
-		num := config.GetInt("registry.mongo.heartbeat.workerNum", defaultWorkNum)
+		num := config.GetInt("heartbeat.workerNum", defaultWorkNum)
 		if num != 0 {
 			cfg.workerNum = num
 		}
-		cfg.heartbeatTaskTimeout = config.GetInt("registry.mongo.heartbeat.timeout", defaultTimeout)
-		cfg.cacheChan = make(chan *instanceHeartbeatInfo, config.GetInt("registry.mongo.heartbeat.cacheCapacity", defaultCacheCapacity))
+		cfg.heartbeatTaskTimeout = config.GetInt("heartbeat.timeout", defaultTimeout)
+		cfg.cacheChan = make(chan *instanceHeartbeatInfo, config.GetInt("heartbeat.cacheCapacity", defaultCacheCapacity))
 		cfg.instanceHeartbeatStore = cache.New(0, instanceCheckerInternal)
 		cfg.instanceHeartbeatStore.OnEvicted(func(k string, v interface{}) {
 			instanceInfo, ok := v.(*instanceHeartbeatInfo)

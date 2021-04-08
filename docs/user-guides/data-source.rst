@@ -121,17 +121,6 @@ Configure app.yaml according to your needs.
 ::
 
      mongo:
-       heartbeat:
-         # Mongo's heartbeat plugin
-         # heartbeat.kind="checker or cache"
-         # if heartbeat.kind equals to 'cache', should set cacheCapacity,workerNum and taskTimeout
-         # capacity = 10000
-         # workerNum = 10
-         # timeout = 10
-         kind: cache
-         cacheCapacity: 10000
-         workerNum: 10
-         timeout: 10
        cluster:
          uri: mongodb://localhost:27017
          sslEnabled: false
@@ -148,22 +137,6 @@ Configure app.yaml according to your needs.
     - description
     - required
     - value
-  * - registry.mongo.heartbeat.kind
-    - there are two types of heartbeat plug-ins. With cache and without cache.
-    - yes
-    - cache/checker
-  * - registry.mongo.heartbeat.cacheCapacity
-    - cache capacity
-    - yes
-    - a integer, like 10000
-  * - registry.mongo.heartbeat.workerNum
-    - the number of working cooperations
-    - yes
-    - a integer, like 10
-  * - registry.mongo.heartbeat.timeout
-    - processing task timeout (default unit: s)
-    - yes
-    - a integer, like 10
   * - registry.mongo.cluster.uri
     - mongodb server address
     - yes

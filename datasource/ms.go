@@ -25,6 +25,7 @@ import (
 )
 
 var ErrServiceNotExists = errors.New("service does not exist")
+var ErrInstanceNotExists = errors.New("instance does not exist")
 
 // Attention: request validation must be finished before the following interface being invoked!!!
 // MetadataManager contains the CRUD of cache metadata
@@ -50,6 +51,7 @@ type MetadataManager interface {
 
 	// Instance management
 	RegisterInstance(ctx context.Context, request *pb.RegisterInstanceRequest) (*pb.RegisterInstanceResponse, error)
+	ExistInstanceByID(ctx context.Context, request *pb.MicroServiceInstanceKey) (*pb.GetExistenceByIDResponse, error)
 	// GetInstances returns instances under the specified service
 	GetInstance(ctx context.Context, request *pb.GetOneInstanceRequest) (*pb.GetOneInstanceResponse, error)
 	GetInstances(ctx context.Context, request *pb.GetInstancesRequest) (*pb.GetInstancesResponse, error)
