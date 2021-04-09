@@ -25,6 +25,8 @@ import (
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/event"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -99,6 +101,28 @@ func (ds *DataSource) SearchConsumerDependency(ctx context.Context, request *pb.
 
 func (ds *DataSource) DeleteDependency() {
 	panic("implement me")
+}
+
+func (ds *DataSource) DependencyHandle(ctx context.Context) error {
+	var dep *event.DependencyEventHandler
+	var err error
+	err = dep.Handle()
+	if err != nil {
+		return err
+	}
+	for {
+		key := path.GetServiceDependencyQueueRootKey("")
+		resp, err := kv.Store().DependencyQueue().Search(ctx,
+			client.WithStrKey(key), client.WithPrefix(), client.WithCountOnly())
+		if err != nil {
+			return err
+		}
+		// maintain dependency rules.
+		if resp.Count == 0 {
+			break
+		}
+	}
+	return nil
 }
 
 func (ds *DataSource) AddOrUpdateDependencies(ctx context.Context, dependencyInfos []*pb.ConsumerDependency, override bool) (*pb.Response, error) {
