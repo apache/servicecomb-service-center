@@ -20,8 +20,6 @@
 package event
 
 import (
-	"bou.ke/monkey"
-	"reflect"
 	"testing"
 
 	"github.com/go-chassis/cari/discovery"
@@ -62,11 +60,7 @@ func TestInstanceEventHandler_OnEvent(t *testing.T) {
 		assert.Error(t, assert.AnError)
 	})
 	t.Run("OnEvent test when syncer notify center open", func(t *testing.T) {
-		defer monkey.UnpatchAll()
-		monkey.PatchInstanceMethod(reflect.TypeOf((*syncernotify.Service)(nil)), "Closed",
-			func(service *syncernotify.Service) bool {
-				return false
-			})
+		syncernotify.GetSyncerNotifyCenter().Start()
 		h := InstanceEventHandler{}
 		h.OnEvent(mongoAssign())
 		assert.Equal(t, false, t.Failed(), "add event succeed")
