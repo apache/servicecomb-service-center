@@ -20,7 +20,7 @@ package auditlog
 import (
 	"net/http"
 
-	"github.com/apache/servicecomb-service-center/server/plugin"
+	"github.com/apache/servicecomb-service-center/pkg/plugin"
 )
 
 const AUDITLOG plugin.Kind = "auditlog"

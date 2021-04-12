@@ -15,24 +15,15 @@
  * limitations under the License.
  */
 
-package auth
+package plugin
 
-import (
-	"net/http"
-
-	"github.com/apache/servicecomb-service-center/pkg/plugin"
-)
-
-const AUTH plugin.Kind = "auth"
-
-type Authenticate interface {
-	Identify(r *http.Request) error
+// DefaultConfigurator is the default impl of Configurator
+type DefaultConfigurator struct {
 }
 
-func Auth() Authenticate {
-	return plugin.Plugins().Instance(AUTH).(Authenticate)
+func (c *DefaultConfigurator) GetImplName(_ Kind) string {
+	return Buildin
 }
-
-func Identify(r *http.Request) error {
-	return Auth().Identify(r)
+func (c *DefaultConfigurator) GetPluginDir() string {
+	return ""
 }

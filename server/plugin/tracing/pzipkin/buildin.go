@@ -19,13 +19,13 @@ package pzipkin
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/pkg/plugin"
 	"net/http"
 	"net/url"
 	"sync"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	mgr "github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/tracing"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -35,10 +35,10 @@ import (
 var once sync.Once
 
 func init() {
-	mgr.RegisterPlugin(mgr.Plugin{Kind: tracing.TRACING, Name: "buildin", New: New})
+	plugin.RegisterPlugin(plugin.Plugin{Kind: tracing.TRACING, Name: "buildin", New: New})
 }
 
-func New() mgr.Instance {
+func New() plugin.Instance {
 	return &Zipkin{}
 }
 

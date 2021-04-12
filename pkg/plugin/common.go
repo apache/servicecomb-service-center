@@ -15,24 +15,29 @@
  * limitations under the License.
  */
 
-package auth
+package plugin
 
 import (
-	"net/http"
+	pg "plugin"
 
-	"github.com/apache/servicecomb-service-center/pkg/plugin"
+	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
-const AUTH plugin.Kind = "auth"
+const (
+	Buildin = "buildin"
+	Static  = "static"
+	Dynamic = "dynamic"
+)
 
-type Authenticate interface {
-	Identify(r *http.Request) error
-}
+// DynamicPluginFunc should be called in buildin implement
+func DynamicPluginFunc(pn Kind, funcName string) pg.Symbol {
+	if !Plugins().IsDynamicPlugin(pn) {
+		return nil
+	}
 
-func Auth() Authenticate {
-	return plugin.Plugins().Instance(AUTH).(Authenticate)
-}
-
-func Identify(r *http.Request) error {
-	return Auth().Identify(r)
+	f, err := FindFunc(pn.String(), funcName)
+	if err != nil {
+		log.Errorf(err, "plugin '%s': not implemented function '%s'", pn, funcName)
+	}
+	return f
 }

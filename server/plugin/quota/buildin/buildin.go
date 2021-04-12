@@ -20,15 +20,15 @@ package buildin
 import (
 	"context"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	mgr "github.com/apache/servicecomb-service-center/server/plugin"
+	"github.com/apache/servicecomb-service-center/pkg/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 )
 
 func init() {
-	mgr.RegisterPlugin(mgr.Plugin{Kind: quota.QUOTA, Name: "buildin", New: New})
+	plugin.RegisterPlugin(plugin.Plugin{Kind: quota.QUOTA, Name: "buildin", New: New})
 }
 
-func New() mgr.Instance {
+func New() plugin.Instance {
 	quota.Init()
 	log.Infof("quota init, service: %d, instance: %d, schema: %d/service, tag: %d/service, rule: %d/service",
 		quota.DefaultServiceQuota, quota.DefaultInstanceQuota,
@@ -58,7 +58,7 @@ func (q *Quota) GetQuota(ctx context.Context, t quota.ResourceType) int64 {
 
 //向配额中心上报配额使用量
 func (q *Quota) RemandQuotas(ctx context.Context, quotaType quota.ResourceType) {
-	df, ok := mgr.DynamicPluginFunc(quota.QUOTA, "RemandQuotas").(func(context.Context, quota.ResourceType))
+	df, ok := plugin.DynamicPluginFunc(quota.QUOTA, "RemandQuotas").(func(context.Context, quota.ResourceType))
 	if ok {
 		df(ctx, quotaType)
 		return

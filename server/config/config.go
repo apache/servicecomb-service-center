@@ -104,7 +104,7 @@ func Init() {
 	Configurations.Server = ServerInfo
 	*ServerInfo = newInfo()
 
-	plugin.SetPluginDir(GetPlugin().PluginsDir)
+	plugin.RegisterConfigurator(Configurations)
 
 	version.Ver().Log()
 }

@@ -14,14 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package plugin_test
+package plugin
 
 import (
+	"github.com/apache/servicecomb-service-center/pkg/plugin"
 	"net/http"
 	"testing"
 
 	"github.com/apache/servicecomb-service-center/server/config"
-	. "github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/auth"
 )
 
@@ -38,7 +38,7 @@ func (*mockAuthPlugin) Identify(r *http.Request) error {
 }
 
 func TestPluginManager_New(t *testing.T) {
-	pm := &Manager{}
+	pm := &plugin.Manager{}
 	pm.Initialize()
 
 	p := pm.Get(auth.AUTH, "buildin")
@@ -47,11 +47,11 @@ func TestPluginManager_New(t *testing.T) {
 	}
 
 	times := 0
-	fn := func() Instance {
+	fn := func() plugin.Instance {
 		times++
 		return &mockAuthPlugin{times}
 	}
-	pm.Register(Plugin{auth.AUTH, "buildin", fn})
+	pm.Register(plugin.Plugin{auth.AUTH, "buildin", fn})
 
 	i := pm.Instance(auth.AUTH)
 	if i != pm.Instance(auth.AUTH) {
@@ -69,8 +69,8 @@ func TestPluginManager_New(t *testing.T) {
 			t.Fatalf("TestPluginManager_New failed")
 		}
 	}()
-	RegisterPlugin(Plugin{Kind(999), "999", nil})
-	DynamicPluginFunc(Kind(999), "999")
+	plugin.RegisterPlugin(plugin.Plugin{plugin.Kind(999), "999", nil})
+	plugin.DynamicPluginFunc(plugin.Kind(999), "999")
 
-	LoadPlugins()
+	plugin.LoadPlugins()
 }

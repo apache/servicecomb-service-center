@@ -19,6 +19,8 @@ package mongo
 
 import (
 	"context"
+	"fmt"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 
 	"github.com/go-chassis/go-chassis/v2/storage"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -91,7 +93,7 @@ func (ds *DataSource) initPlugins() error {
 }
 
 func (ds *DataSource) initClient() error {
-	uri := config.GetString("registry.mongo.cluster.uri", "mongodb://localhost:27017")
+	uri := config.GetString("registry.mongo.cluster.uri", "mongodb://localhost:27017", config.WithStandby("manager_cluster"))
 	sslEnable := config.GetBool("registry.mongo.cluster.sslEnabled", false)
 	rootCA := config.GetString("registry.mongo.cluster.rootCAFile", "/opt/ssl/ca.crt")
 	verifyPeer := config.GetBool("registry.mongo.cluster.verifyPeer", false)
@@ -213,7 +215,7 @@ func wrapCreateCollectionError(err error) {
 		if ok && cmdErr.Code == client.CollectionsExists {
 			return
 		}
-		log.Fatal("failed to create collection with validation", err)
+		log.Fatal(fmt.Sprintf("failed to create collection with validation, err type: %s", util.Reflect(err).FullName), err)
 	}
 }
 
@@ -224,7 +226,7 @@ func wrapCreateIndexesError(err error) {
 		if ok && cmdErr.Code == client.DuplicateKey {
 			return
 		}
-		log.Fatal("failed to create indexes ", err)
+		log.Fatal(fmt.Sprintf("failed to create indexes, err type: %s", util.Reflect(err).FullName), err)
 	}
 }
 
