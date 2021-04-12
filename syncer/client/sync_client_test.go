@@ -22,10 +22,8 @@ package client
 import (
 	"context"
 	"crypto/tls"
-	"reflect"
 	"testing"
 
-	"bou.ke/monkey"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
 	"github.com/stretchr/testify/assert"
 )
@@ -37,36 +35,12 @@ func TestClient_IncrementPull(t *testing.T) {
 		_, err := c.IncrementPull(context.Background(), &pb.IncrementPullRequest{Addr: "http://127.0.0.1", Length: 3})
 		assert.Error(t, err, "IncrementPull fail without grpc")
 	})
-	t.Run("Test IncrementPull", func(t *testing.T) {
-		defer monkey.UnpatchAll()
-
-		monkey.PatchInstanceMethod(reflect.TypeOf((*Client)(nil)),
-			"IncrementPull", func(client *Client, ctx context.Context, req *pb.IncrementPullRequest) (*pb.SyncData, error) {
-				return syncDataCreate(), nil
-			})
-
-		syncData, err := c.IncrementPull(context.Background(), &pb.IncrementPullRequest{Addr: "http://127.0.0.1", Length: 3})
-		assert.NoError(t, err, "IncrementPull no err when client exist")
-		assert.NotNil(t, syncData, "syncData not nil when client exist")
-	})
 }
 
 func TestClient_DeclareDataLength(t *testing.T) {
 	t.Run("DeclareDataLength test", func(t *testing.T) {
 		_, err := c.DeclareDataLength(context.Background(), "http://127.0.0.1")
 		assert.Error(t, err, "DeclareDataLength fail without grpc")
-	})
-	t.Run("DeclareDataLength test", func(t *testing.T) {
-		defer monkey.UnpatchAll()
-
-		monkey.PatchInstanceMethod(reflect.TypeOf((*Client)(nil)),
-			"DeclareDataLength", func(client *Client, ctx context.Context, string2 string) (*pb.DeclareResponse, error) {
-				return declareRespCreate(), nil
-			})
-
-		declareResp, err := c.DeclareDataLength(context.Background(), "http://127.0.0.1")
-		assert.NoError(t, err, "DeclareDataLength no err when client exist")
-		assert.NotNil(t, declareResp, "DeclareDataLength not nil when client exist")
 	})
 }
 
