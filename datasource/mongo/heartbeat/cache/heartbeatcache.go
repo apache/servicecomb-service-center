@@ -40,17 +40,17 @@ const (
 var ErrHeartbeatConversionFailed = errors.New("instanceHeartbeatInfo type conversion failed. ")
 
 func init() {
-	heartbeat.Install("cache", NewHeartBeatCheck)
+	heartbeat.Install("cache", NewHeartBeatCache)
 }
 
-type HeartBeatCheck struct {
+type HeartBeatCache struct {
 }
 
-func NewHeartBeatCheck(opts heartbeat.Options) (heartbeat.HealthCheck, error) {
-	return &HeartBeatCheck{}, nil
+func NewHeartBeatCache(opts heartbeat.Options) (heartbeat.HealthCheck, error) {
+	return &HeartBeatCache{}, nil
 }
 
-func (h *HeartBeatCheck) Heartbeat(ctx context.Context, request *pb.HeartbeatRequest) (*pb.HeartbeatResponse, error) {
+func (h *HeartBeatCache) Heartbeat(ctx context.Context, request *pb.HeartbeatRequest) (*pb.HeartbeatResponse, error) {
 	if ins, ok := instanceHeartbeatStore.Get(request.InstanceId); ok {
 		return inCacheStrategy(ctx, request, ins)
 	}
