@@ -635,7 +635,7 @@ func GenerateRuleKeyWithSameServiceNameAndAppID(serviceType string, domainProjec
 		util.ServiceType(serviceType),
 		util.ServiceKeyTenant(domainProject),
 		util.ServiceKeyAppID(in.AppId),
-		util.ServiceServiceName(in.ServiceName),
+		util.ServiceKeyServiceName(in.ServiceName),
 	)
 }
 
@@ -660,6 +660,6 @@ func GenerateServiceDependencyRuleKey(serviceType string, domainProject string, 
 		util.ServiceKeyServiceEnv(in.Environment),
 		util.ServiceKeyAppID(in.AppId),
 		util.ServiceKeyServiceVersion(in.Version),
-		util.ServiceServiceName(in.ServiceName),
+		util.ServiceKeyServiceName(in.ServiceName),
 	)
 }

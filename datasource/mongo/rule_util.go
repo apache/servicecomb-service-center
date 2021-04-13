@@ -19,7 +19,7 @@ package mongo
 
 import (
 	"context"
-
+	"github.com/apache/servicecomb-service-center/datasource/cache"
 	"github.com/go-chassis/cari/discovery"
 
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client/dao"
@@ -29,9 +29,13 @@ import (
 )
 
 func Filter(ctx context.Context, rules []*model.Rule, consumerID string) (bool, error) {
-	consumer, err := GetServiceByID(ctx, consumerID)
-	if consumer == nil {
-		return false, err
+	consumer, ok := cache.GetServiceByID(consumerID)
+	if !ok {
+		var err error
+		consumer, err = dao.GetServiceByID(ctx, consumerID)
+		if err != nil {
+			return false, err
+		}
 	}
 
 	if len(rules) == 0 {

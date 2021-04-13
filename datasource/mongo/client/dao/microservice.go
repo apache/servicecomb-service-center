@@ -19,13 +19,21 @@ package dao
 
 import (
 	"context"
+	"errors"
+
+	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"github.com/go-chassis/cari/discovery"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
 )
+
+func GetServiceByID(ctx context.Context, serviceID string) (*model.Service, error) {
+	return GetService(ctx, mutil.NewBasicFilter(ctx, mutil.ServiceServiceID(serviceID)))
+}
 
 func GetService(ctx context.Context, filter interface{}, opts ...*options.FindOneOptions) (*model.Service, error) {
 	result, err := client.GetMongoClient().FindOne(ctx, model.CollectionService, filter, opts...)
@@ -34,7 +42,6 @@ func GetService(ctx context.Context, filter interface{}, opts ...*options.FindOn
 	}
 	var svc *model.Service
 	if result.Err() != nil {
-		//not get any service,not db err
 		return nil, datasource.ErrNoData
 	}
 	err = result.Decode(&svc)
@@ -42,6 +49,43 @@ func GetService(ctx context.Context, filter interface{}, opts ...*options.FindOn
 		return nil, err
 	}
 	return svc, nil
+}
+
+func GetServiceID(ctx context.Context, key *discovery.MicroServiceKey) (string, error) {
+	filter := mutil.NewBasicFilter(
+		ctx,
+		mutil.ServiceEnv(key.Environment),
+		mutil.ServiceAppID(key.AppId),
+		mutil.ServiceServiceName(key.ServiceName),
+		mutil.ServiceVersion(key.Version),
+	)
+	id, err := getServiceID(ctx, filter)
+	if err != nil && !errors.Is(err, datasource.ErrNoData) {
+		return "", err
+	}
+	if len(id) == 0 && len(key.Alias) != 0 {
+		filter = mutil.NewBasicFilter(
+			ctx,
+			mutil.ServiceEnv(key.Environment),
+			mutil.ServiceAppID(key.AppId),
+			mutil.ServiceAlias(key.Alias),
+			mutil.ServiceVersion(key.Version),
+		)
+		return getServiceID(ctx, filter)
+	}
+	return id, nil
+}
+
+func getServiceID(ctx context.Context, filter bson.M) (serviceID string, err error) {
+	svc, err := GetService(ctx, filter)
+	if err != nil {
+		return
+	}
+	if svc != nil {
+		serviceID = svc.Service.ServiceId
+		return
+	}
+	return
 }
 
 func GetServices(ctx context.Context, filter interface{}, opts ...*options.FindOptions) ([]*model.Service, error) {

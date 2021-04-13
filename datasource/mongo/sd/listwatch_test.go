@@ -61,23 +61,35 @@ func TestDoParseWatchRspToMongoInfo(t *testing.T) {
 	}
 	ilw := mongoListWatch{
 		Key: instance,
+		parseFunc: func(doc bson.Raw) (resource sdcommon.Resource) {
+			docID := MongoDocument{}
+			err := bson.Unmarshal(doc, &docID)
+			if err != nil {
+				return
+			}
+			service := model.Instance{}
+			err = bson.Unmarshal(doc, &service)
+			if err != nil {
+				return
+			}
+			resource.Value = service
+			resource.Key = docID.ID.Hex()
+			return
+		},
 	}
 	info := ilw.doParseWatchRspToResource(mockWatchRsp)
-	assert.Equal(t, documentID.Hex(), info.DocumentID)
-	assert.Equal(t, "8064a600438511eb8584fa163e8a81c9", info.Key)
+	assert.Equal(t, documentID.Hex(), info.Key)
 
 	// case updateOp
 	mockWatchRsp.OperationType = updateOp
 	info = ilw.doParseWatchRspToResource(mockWatchRsp)
-	assert.Equal(t, documentID.Hex(), info.DocumentID)
-	assert.Equal(t, "8064a600438511eb8584fa163e8a81c9", info.Key)
+	assert.Equal(t, documentID.Hex(), info.Key)
 	assert.Equal(t, "1608552622", info.Value.(model.Instance).Instance.ModTimestamp)
 
 	// case delete
 	mockWatchRsp.OperationType = deleteOp
 	info = ilw.doParseWatchRspToResource(mockWatchRsp)
-	assert.Equal(t, documentID.Hex(), info.DocumentID)
-	assert.Equal(t, "", info.Key)
+	assert.Equal(t, documentID.Hex(), info.Key)
 
 	// case service insertOp
 	mockWatchRsp = &MongoWatchResponse{OperationType: insertOp,
@@ -86,8 +98,7 @@ func TestDoParseWatchRspToMongoInfo(t *testing.T) {
 	}
 	ilw.Key = service
 	info = ilw.doParseWatchRspToResource(mockWatchRsp)
-	assert.Equal(t, documentID.Hex(), info.DocumentID)
-	assert.Equal(t, "91afbe0faa9dc1594689139f099eb293b0cd048d", info.Key)
+	assert.Equal(t, documentID.Hex(), info.Key)
 }
 
 func TestInnerListWatch_ResumeToken(t *testing.T) {

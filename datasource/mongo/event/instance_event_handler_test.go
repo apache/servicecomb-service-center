@@ -92,7 +92,6 @@ func mongoAssign() sd.MongoEvent {
 	mongoEvent.DocumentID = "5fdc483b4a885f69317e3505"
 	mongoEvent.Value = mongoInstance
 	mongoEvent.Type = discovery.EVT_CREATE
-	mongoEvent.ResourceID = "f73dceb440f711eba63ffa163e7cdcb8"
 	return mongoEvent
 }
 
@@ -112,7 +111,6 @@ func mongoEventWronServiceId() sd.MongoEvent {
 	mongoEvent.DocumentID = "5fdc483b4a885f69317e3505"
 	mongoEvent.Value = mongoInstance
 	mongoEvent.Type = discovery.EVT_CREATE
-	mongoEvent.ResourceID = "f73dceb440f711eba63ffa163e7cdcb8"
 	return mongoEvent
 }
 

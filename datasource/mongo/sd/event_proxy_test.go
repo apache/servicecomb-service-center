@@ -34,7 +34,6 @@ func TestAddHandleFuncAndOnEvent(t *testing.T) {
 	}
 	mongoEvent := MongoEvent{
 		DocumentID: "",
-		ResourceID: "",
 		Type:       discovery.EVT_CREATE,
 		Value:      1,
 	}

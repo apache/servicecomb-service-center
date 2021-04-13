@@ -26,7 +26,6 @@ import (
 
 	rmodel "github.com/go-chassis/cari/discovery"
 
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
 	"github.com/apache/servicecomb-service-center/datasource/sdcommon"
 	"github.com/apache/servicecomb-service-center/pkg/backoff"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
@@ -43,7 +42,7 @@ type MongoCacher struct {
 	Options     *Options
 	reListCount int
 	isFirstTime bool
-	cache       *MongoCache
+	cache       MongoCache
 	ready       chan struct{}
 	lw          sdcommon.ListWatch
 	mux         sync.Mutex
@@ -51,7 +50,7 @@ type MongoCacher struct {
 	goroutine   *gopool.Pool
 }
 
-func (c *MongoCacher) Cache() *MongoCache {
+func (c *MongoCacher) Cache() MongoCache {
 	return c.cache
 }
 
@@ -202,7 +201,6 @@ func (c *MongoCacher) handleEventBus(eventbus *sdcommon.EventBus) error {
 			case sdcommon.ActionUpdate:
 				event = NewMongoEventByResource(resource, rmodel.EVT_UPDATE)
 			case sdcommon.ActionDelete:
-				resource.Key = c.cache.GetKeyByDocumentID(resource.DocumentID)
 				resource.Value = c.cache.Get(resource.Key)
 				event = NewMongoEventByResource(resource, rmodel.EVT_DELETE)
 			}
@@ -247,28 +245,21 @@ func (c *MongoCacher) sync(evts []MongoEvent) {
 		return
 	}
 
-	c.onEvents(evts)
+	go c.onEvents(evts)
 }
 
 func (c *MongoCacher) filter(infos []*sdcommon.Resource) []MongoEvent {
 	nc := len(infos)
 	newStore := make(map[string]interface{}, nc)
-	documentIDRecord := make(map[string]string, nc)
-	indexRecord := make(map[string]string, nc)
-
 	for _, info := range infos {
-		event := NewMongoEventByResource(info, rmodel.EVT_CREATE)
-		newStore[event.ResourceID] = info.Value
-		documentIDRecord[event.ResourceID] = info.DocumentID
-		indexRecord[event.ResourceID] = info.Index
+		newStore[info.Key] = info.Value
 	}
 
 	filterStopCh := make(chan struct{})
 	eventsCh := make(chan [sdcommon.EventBlockSize]MongoEvent, 2)
-
 	go c.filterDelete(newStore, eventsCh, filterStopCh)
 
-	go c.filterCreateOrUpdate(newStore, documentIDRecord, indexRecord, eventsCh, filterStopCh)
+	go c.filterCreateOrUpdate(newStore, eventsCh, filterStopCh)
 
 	events := make([]MongoEvent, 0, nc)
 	for block := range eventsCh {
@@ -303,9 +294,7 @@ func (c *MongoCacher) filterDelete(newStore map[string]interface{},
 			i = 0
 		}
 
-		documentID := c.cache.GetDocumentIDByBussinessID(k)
-		index := c.cache.GetIndexByBussinessID(k)
-		block[i] = NewMongoEvent(k, documentID, index, rmodel.EVT_DELETE, v)
+		block[i] = NewMongoEvent(k, rmodel.EVT_DELETE, v)
 		i++
 		return
 	})
@@ -317,8 +306,7 @@ func (c *MongoCacher) filterDelete(newStore map[string]interface{},
 	close(filterStopCh)
 }
 
-func (c *MongoCacher) filterCreateOrUpdate(newStore map[string]interface{}, newDocumentStore map[string]string, indexRecord map[string]string,
-	eventsCh chan [sdcommon.EventBlockSize]MongoEvent, filterStopCh chan struct{}) {
+func (c *MongoCacher) filterCreateOrUpdate(newStore map[string]interface{}, eventsCh chan [sdcommon.EventBlockSize]MongoEvent, filterStopCh chan struct{}) {
 	var block [sdcommon.EventBlockSize]MongoEvent
 	i := 0
 
@@ -331,13 +319,13 @@ func (c *MongoCacher) filterCreateOrUpdate(newStore map[string]interface{}, newD
 				i = 0
 			}
 
-			block[i] = NewMongoEvent(k, newDocumentStore[k], indexRecord[k], rmodel.EVT_CREATE, v)
+			block[i] = NewMongoEvent(k, rmodel.EVT_CREATE, v)
 			i++
 
 			continue
 		}
 
-		if c.isValueNotUpdated(v, ov) {
+		if c.cache.isValueNotUpdated(v, ov) {
 			continue
 		}
 
@@ -348,8 +336,7 @@ func (c *MongoCacher) filterCreateOrUpdate(newStore map[string]interface{}, newD
 			block = [sdcommon.EventBlockSize]MongoEvent{}
 			i = 0
 		}
-
-		block[i] = NewMongoEvent(k, newDocumentStore[k], indexRecord[k], rmodel.EVT_UPDATE, v)
+		block[i] = NewMongoEvent(k, rmodel.EVT_UPDATE, v)
 		i++
 	}
 
@@ -362,36 +349,6 @@ func (c *MongoCacher) filterCreateOrUpdate(newStore map[string]interface{}, newD
 	close(eventsCh)
 }
 
-func (c *MongoCacher) isValueNotUpdated(value interface{}, newValue interface{}) bool {
-	var modTime string
-	var newModTime string
-
-	switch c.Options.Key {
-	case instance:
-		instance := value.(model.Instance)
-		newInstance := newValue.(model.Instance)
-		if instance.Instance == nil || newInstance.Instance == nil {
-			return true
-		}
-		modTime = instance.Instance.ModTimestamp
-		newModTime = newInstance.Instance.ModTimestamp
-	case service:
-		service := value.(model.Service)
-		newService := newValue.(model.Service)
-		if service.Service == nil || newService.Service == nil {
-			return true
-		}
-		modTime = service.Service.ModTimestamp
-		newModTime = newService.Service.ModTimestamp
-	}
-
-	if newModTime == "" || modTime == newModTime {
-		return true
-	}
-
-	return false
-}
-
 func (c *MongoCacher) onEvents(events []MongoEvent) {
 	c.buildCache(events)
 
@@ -400,7 +357,7 @@ func (c *MongoCacher) onEvents(events []MongoEvent) {
 
 func (c *MongoCacher) buildCache(events []MongoEvent) {
 	for i, evt := range events {
-		key := evt.ResourceID
+		key := evt.DocumentID
 		value := c.cache.Get(key)
 		ok := value != nil
 
@@ -418,11 +375,7 @@ func (c *MongoCacher) buildCache(events []MongoEvent) {
 					evt.Type, rmodel.EVT_UPDATE, key))
 				evt.Type = rmodel.EVT_UPDATE
 			}
-
-			c.cache.Put(key, evt.Value)
-			c.cache.PutDocumentID(key, evt.DocumentID)
-			c.cache.PutIndex(evt.Index, evt.ResourceID)
-
+			c.cache.ProcessUpdate(evt)
 			events[i] = evt
 		case rmodel.EVT_DELETE:
 			if !ok {
@@ -430,10 +383,7 @@ func (c *MongoCacher) buildCache(events []MongoEvent) {
 					evt.Type, key))
 			} else {
 				evt.Value = value
-
-				c.cache.Remove(key)
-				c.cache.RemoveDocumentID(evt.DocumentID)
-				c.cache.RemoveIndex(evt.Index, evt.ResourceID)
+				c.cache.ProcessDelete(evt)
 			}
 			events[i] = evt
 		}
@@ -451,21 +401,22 @@ func (c *MongoCacher) notify(evts []MongoEvent) {
 
 	for _, evt := range evts {
 		if evt.Type == rmodel.EVT_DELETE && evt.Value == nil {
-			log.Warn(fmt.Sprintf("caught delete event:%s, but value can't get from caches, it may be deleted by last list", evt.ResourceID))
+			log.Warn(fmt.Sprintf("caught delete event:%s, but value can't get from caches, it may be deleted by last list", evt.DocumentID))
 			continue
 		}
 		eventProxy.OnEvent(evt)
 	}
 }
 
-func NewMongoCacher(options *Options, cache *MongoCache) *MongoCacher {
+func NewMongoCacher(options *Options, cache MongoCache, pf parsefunc) *MongoCacher {
 	return &MongoCacher{
 		Options:     options,
 		isFirstTime: true,
 		cache:       cache,
 		ready:       make(chan struct{}),
 		lw: &mongoListWatch{
-			Key: options.Key,
+			Key:       options.Key,
+			parseFunc: pf,
 		},
 		goroutine: gopool.New(context.Background()),
 	}

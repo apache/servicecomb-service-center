@@ -21,6 +21,7 @@ import (
 	"github.com/go-chassis/cari/discovery"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"sync"
 
 	"github.com/apache/servicecomb-service-center/datasource/sdcommon"
 )
@@ -28,20 +29,26 @@ import (
 const (
 	service  = "service"
 	instance = "instance"
+	rule     = "rule"
+	dep      = "dependency"
 )
 
-var (
-	Types []string
-)
+type cacherRegisterInitiallizer func() (cacher *MongoCacher)
 
-func RegisterType(name string) {
-	Types = append(Types, name)
+var cacherRegisterMutex sync.Mutex
+var CacherRegister = make(map[string]cacherRegisterInitiallizer)
+
+func RegisterCacher(t string, f cacherRegisterInitiallizer) {
+	cacherRegisterMutex.Lock()
+	defer cacherRegisterMutex.Unlock()
+	if _, exist := CacherRegister[t]; exist {
+		return
+	}
+	CacherRegister[t] = f
 }
 
 type MongoEvent struct {
 	DocumentID string
-	ResourceID string
-	Index      string
 	Value      interface{}
 	Type       discovery.EventType
 }
@@ -56,18 +63,14 @@ type MongoEventHandler interface {
 func NewMongoEventByResource(resource *sdcommon.Resource, action discovery.EventType) MongoEvent {
 	return MongoEvent{
 		Type:       action,
-		Index:      resource.Index,
 		Value:      resource.Value,
-		ResourceID: resource.Key,
-		DocumentID: resource.DocumentID,
+		DocumentID: resource.Key,
 	}
 }
 
-func NewMongoEvent(id string, documentID string, index string, action discovery.EventType, v interface{}) MongoEvent {
+func NewMongoEvent(documentID string, action discovery.EventType, v interface{}) MongoEvent {
 	event := MongoEvent{}
-	event.ResourceID = id
 	event.DocumentID = documentID
-	event.Index = index
 	event.Type = action
 	event.Value = v
 	return event
