@@ -210,9 +210,7 @@ func EnsureDep() {
 
 func wrapCreateCollectionError(err error) {
 	if err != nil {
-		// commandError can be returned by any operation
-		cmdErr, ok := err.(mongo.CommandError)
-		if ok && cmdErr.Code == client.CollectionsExists {
+		if client.IsCollectionsExist(err) {
 			return
 		}
 		log.Fatal(fmt.Sprintf("failed to create collection with validation, err type: %s", util.Reflect(err).FullName), err)
@@ -221,9 +219,7 @@ func wrapCreateCollectionError(err error) {
 
 func wrapCreateIndexesError(err error) {
 	if err != nil {
-		// commandError can be returned by any operation
-		cmdErr, ok := err.(mongo.CommandError)
-		if ok && cmdErr.Code == client.DuplicateKey {
+		if client.IsDuplicateKey(err) {
 			return
 		}
 		log.Fatal(fmt.Sprintf("failed to create indexes, err type: %s", util.Reflect(err).FullName), err)

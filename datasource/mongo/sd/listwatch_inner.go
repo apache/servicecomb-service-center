@@ -132,6 +132,10 @@ func (lw *mongoListWatch) doParseDocumentToResource(fullDocument bson.Raw) (reso
 			log.Error("error to parse bson raw to documentInfo", err)
 			return
 		}
+		if instance.Instance == nil {
+			log.Error(fmt.Sprintf("unexpect instance value,the documentID is %s", resource.DocumentID), nil)
+			return
+		}
 		resource.Key = instance.Instance.InstanceId
 		resource.Value = instance
 		resource.Index = instance.Instance.ServiceId
@@ -140,6 +144,10 @@ func (lw *mongoListWatch) doParseDocumentToResource(fullDocument bson.Raw) (reso
 		err := bson.Unmarshal(fullDocument, &service)
 		if err != nil {
 			log.Error("error to parse bson raw to documentInfo", err)
+			return
+		}
+		if service.Service == nil {
+			log.Error(fmt.Sprintf("unexpect service value,the documentID is %s", resource.DocumentID), nil)
 			return
 		}
 		resource.Key = service.Service.ServiceId
