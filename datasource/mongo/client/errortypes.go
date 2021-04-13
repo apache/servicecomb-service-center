@@ -17,22 +17,23 @@ package client
 
 import (
 	"go.mongodb.org/mongo-driver/mongo"
+	"strings"
 )
 
 const (
-	DuplicateKey      = 11000
+	DuplicateKey      = "E11000"
 	CollectionsExists = 48
 )
 
 func IsDuplicateKey(err error) bool {
+	return strings.Contains(err.Error(), DuplicateKey)
+}
+
+func IsCollectionsExist(err error) bool {
 	if err != nil {
-		we, ok := err.(mongo.WriteException)
-		if ok {
-			for _, wr := range we.WriteErrors {
-				if wr.Code == DuplicateKey {
-					return true
-				}
-			}
+		cmdErr, ok := err.(mongo.CommandError)
+		if ok && cmdErr.Code == CollectionsExists {
+			return true
 		}
 	}
 	return false

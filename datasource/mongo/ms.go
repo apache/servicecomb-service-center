@@ -535,15 +535,15 @@ func (ds *DataSource) GetServicesStatistics(ctx context.Context, request *discov
 	ctx = util.WithCacheOnly(ctx)
 	var st *discovery.Statistics
 	var err error
-	st, err  = statistics(ctx, true)
+	st, err = statistics(ctx, true)
 	if err != nil {
 		return &discovery.GetServicesInfoStatisticsResponse{
 			Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
 		}, err
 	}
 	return &discovery.GetServicesInfoStatisticsResponse{
-		Response:          discovery.CreateResponse(discovery.ResponseSuccess, "Get services statistics successfully."),
-		Statistics:        st,
+		Response:   discovery.CreateResponse(discovery.ResponseSuccess, "Get services statistics successfully."),
+		Statistics: st,
 	}, nil
 }
 
@@ -1948,6 +1948,12 @@ func registryInstance(ctx context.Context, request *discovery.RegisterInstanceRe
 
 	insertRes, err := client.GetMongoClient().Insert(ctx, model.CollectionInstance, data)
 	if err != nil {
+		if client.IsDuplicateKey(err) {
+			return &discovery.RegisterInstanceResponse{
+				Response:   discovery.CreateResponse(discovery.ResponseSuccess, "Register service instance successfully."),
+				InstanceId: instanceID,
+			}, nil
+		}
 		log.Error(fmt.Sprintf("register instance failed %s instanceID %s operator %s", instanceFlag, instanceID, remoteIP), err)
 		return &discovery.RegisterInstanceResponse{
 			Response: discovery.CreateResponse(discovery.ErrUnavailableBackend, err.Error()),
