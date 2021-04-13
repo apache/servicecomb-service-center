@@ -1367,7 +1367,7 @@ func getServiceDetailUtil(ctx context.Context, mgs *model.Service, countOnly boo
 			}
 			serviceDetail.Instances = instances
 		case "schemas":
-			filter := mutil.NewDomainProjectFilter(domain, project, mutil.ServiceServiceID(serviceID))
+			filter := mutil.NewDomainProjectFilter(domain, project, mutil.ServiceID(serviceID))
 			schemas, err := dao.GetSchemas(ctx, filter)
 			if err != nil {
 				log.Error(fmt.Sprintf("get service %s's all schemas failed", mgs.Service.ServiceId), err)
