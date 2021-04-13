@@ -42,6 +42,8 @@ func init() {
 	client.NewMongoClient(config)
 }
 
+var c = configuration()
+
 func TestAddCacheInstance(t *testing.T) {
 	t.Run("add cache instance: set the ttl to 2 seconds", func(t *testing.T) {
 		instance1 := model.Instance{
@@ -55,11 +57,11 @@ func TestAddCacheInstance(t *testing.T) {
 				},
 			},
 		}
-		err := addHeartbeatTask(instance1.Instance.ServiceId, instance1.Instance.InstanceId, instance1.Instance.HealthCheck.Interval*(instance1.Instance.HealthCheck.Times+1))
+		err := c.AddHeartbeatTask(instance1.Instance.ServiceId, instance1.Instance.InstanceId, instance1.Instance.HealthCheck.Interval*(instance1.Instance.HealthCheck.Times+1))
 		assert.Equal(t, nil, err)
 		_, err = client.GetMongoClient().Insert(context.Background(), model.CollectionInstance, instance1)
 		assert.Equal(t, nil, err)
-		info, ok := instanceHeartbeatStore.Get(instance1.Instance.InstanceId)
+		info, ok := c.instanceHeartbeatStore.Get(instance1.Instance.InstanceId)
 		assert.Equal(t, true, ok)
 		if ok {
 			heartBeatInfo := info.(*instanceHeartbeatInfo)
@@ -67,7 +69,7 @@ func TestAddCacheInstance(t *testing.T) {
 			assert.Equal(t, instance1.Instance.HealthCheck.Interval*(instance1.Instance.HealthCheck.Times+1), heartBeatInfo.ttl)
 		}
 		time.Sleep(2 * time.Second)
-		_, ok = instanceHeartbeatStore.Get(instance1.Instance.InstanceId)
+		_, ok = c.instanceHeartbeatStore.Get(instance1.Instance.InstanceId)
 		assert.Equal(t, false, ok)
 		_, err = client.GetMongoClient().Delete(context.Background(), model.CollectionInstance, instance1)
 		assert.Equal(t, nil, err)
@@ -85,11 +87,11 @@ func TestAddCacheInstance(t *testing.T) {
 				},
 			},
 		}
-		err := addHeartbeatTask(instance1.Instance.ServiceId, instance1.Instance.InstanceId, instance1.Instance.HealthCheck.Interval*(instance1.Instance.HealthCheck.Times+1))
+		err := c.AddHeartbeatTask(instance1.Instance.ServiceId, instance1.Instance.InstanceId, instance1.Instance.HealthCheck.Interval*(instance1.Instance.HealthCheck.Times+1))
 		assert.Equal(t, nil, err)
 		_, err = client.GetMongoClient().Insert(context.Background(), model.CollectionInstance, instance1)
 		assert.Equal(t, nil, err)
-		info, ok := instanceHeartbeatStore.Get(instance1.Instance.InstanceId)
+		info, ok := c.instanceHeartbeatStore.Get(instance1.Instance.InstanceId)
 		assert.Equal(t, true, ok)
 		if ok {
 			heartBeatInfo := info.(*instanceHeartbeatInfo)
@@ -97,7 +99,7 @@ func TestAddCacheInstance(t *testing.T) {
 			assert.Equal(t, int32(defaultTTL), heartBeatInfo.ttl)
 		}
 		time.Sleep(defaultTTL * time.Second)
-		_, ok = instanceHeartbeatStore.Get(instance1.Instance.InstanceId)
+		_, ok = c.instanceHeartbeatStore.Get(instance1.Instance.InstanceId)
 		assert.Equal(t, false, ok)
 		_, err = client.GetMongoClient().Delete(context.Background(), model.CollectionInstance, instance1)
 		assert.Equal(t, nil, err)
@@ -117,11 +119,11 @@ func TestRemoveCacheInstance(t *testing.T) {
 				},
 			},
 		}
-		err := addHeartbeatTask(instance1.Instance.ServiceId, instance1.Instance.InstanceId, instance1.Instance.HealthCheck.Interval*(instance1.Instance.HealthCheck.Times+1))
+		err := c.AddHeartbeatTask(instance1.Instance.ServiceId, instance1.Instance.InstanceId, instance1.Instance.HealthCheck.Interval*(instance1.Instance.HealthCheck.Times+1))
 		assert.Equal(t, nil, err)
 		_, err = client.GetMongoClient().Insert(context.Background(), model.CollectionInstance, instance1)
 		assert.Equal(t, nil, err)
-		info, ok := instanceHeartbeatStore.Get(instance1.Instance.InstanceId)
+		info, ok := c.instanceHeartbeatStore.Get(instance1.Instance.InstanceId)
 		assert.Equal(t, true, ok)
 		if ok {
 			heartBeatInfo := info.(*instanceHeartbeatInfo)
@@ -129,8 +131,8 @@ func TestRemoveCacheInstance(t *testing.T) {
 			assert.Equal(t, instance1.Instance.HealthCheck.Interval*(instance1.Instance.HealthCheck.Times+1), heartBeatInfo.ttl)
 		}
 		time.Sleep(4 * time.Second)
-		RemoveCacheInstance(instance1.Instance.InstanceId)
-		_, ok = instanceHeartbeatStore.Get(instance1.Instance.InstanceId)
+		c.RemoveCacheInstance(instance1.Instance.InstanceId)
+		_, ok = c.instanceHeartbeatStore.Get(instance1.Instance.InstanceId)
 		assert.Equal(t, false, ok)
 		_, err = client.GetMongoClient().Delete(context.Background(), model.CollectionInstance, instance1)
 		assert.Equal(t, nil, err)

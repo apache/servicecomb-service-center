@@ -1933,7 +1933,7 @@ func registryInstance(ctx context.Context, request *discovery.RegisterInstanceRe
 	project := util.ParseProject(ctx)
 	remoteIP := util.GetIPFromContext(ctx)
 	instance := request.Instance
-	ttl := int64(instance.HealthCheck.Interval * (instance.HealthCheck.Times + 1))
+	ttl := instance.HealthCheck.Interval * (instance.HealthCheck.Times + 1)
 
 	instanceFlag := fmt.Sprintf("ttl %ds, endpoints %v, host '%s', serviceID %s",
 		ttl, instance.Endpoints, instance.HostName, instance.ServiceId)
@@ -1958,6 +1958,12 @@ func registryInstance(ctx context.Context, request *discovery.RegisterInstanceRe
 		return &discovery.RegisterInstanceResponse{
 			Response: discovery.CreateResponse(discovery.ErrUnavailableBackend, err.Error()),
 		}, err
+	}
+
+	// need to complete the instance offline function in time, so you need to check the heartbeat after registering the instance
+	err = heartbeat.Instance().CheckInstance(ctx, instance)
+	if err != nil {
+		log.Error(fmt.Sprintf("fail to check instance, instance[%s]. operator %s", instance.InstanceId, remoteIP), err)
 	}
 
 	log.Info(fmt.Sprintf("register instance %s, instanceID %s, operator %s",

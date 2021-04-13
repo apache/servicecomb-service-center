@@ -31,9 +31,10 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/mongo/util"
 )
 
+var heartBeatCheck = &HeartBeatCache{cfg: configuration()}
+
 func TestHeartBeatCheck(t *testing.T) {
 	t.Run("heartbeat check: instance does not exist,it should be failed", func(t *testing.T) {
-		heartBeatCheck := &HeartBeatCache{}
 		resp, err := heartBeatCheck.Heartbeat(context.Background(), &pb.HeartbeatRequest{
 			ServiceId:  "serviceId1",
 			InstanceId: "not-exist-ins",
@@ -43,9 +44,8 @@ func TestHeartBeatCheck(t *testing.T) {
 	})
 
 	t.Run("heartbeat check: data exists in the cache,but not in db,it should be failed", func(t *testing.T) {
-		err := addHeartbeatTask("not-exist-svc", "not-exist-ins", 30)
+		err := heartBeatCheck.cfg.AddHeartbeatTask("not-exist-svc", "not-exist-ins", 30)
 		assert.Nil(t, err)
-		heartBeatCheck := &HeartBeatCache{}
 		resp, err := heartBeatCheck.Heartbeat(context.Background(), &pb.HeartbeatRequest{
 			ServiceId:  "serviceId1",
 			InstanceId: "not-exist-ins",
@@ -55,7 +55,6 @@ func TestHeartBeatCheck(t *testing.T) {
 	})
 
 	t.Run("heartbeat check: data exists in the cache and db,it can be update successfully", func(t *testing.T) {
-		heartBeatCheck := &HeartBeatCache{}
 		instanceDB := model.Instance{
 			RefreshTime: time.Now(),
 			Instance: &pb.MicroServiceInstance{
@@ -73,7 +72,7 @@ func TestHeartBeatCheck(t *testing.T) {
 		_, _ = client.GetMongoClient().Delete(context.Background(), model.CollectionInstance, filter)
 		_, err := client.GetMongoClient().Insert(context.Background(), model.CollectionInstance, instanceDB)
 		assert.Equal(t, nil, err)
-		err = addHeartbeatTask(instanceDB.Instance.ServiceId, instanceDB.Instance.InstanceId, instanceDB.Instance.HealthCheck.Interval*(instanceDB.Instance.HealthCheck.Times+1))
+		err = heartBeatCheck.cfg.AddHeartbeatTask(instanceDB.Instance.ServiceId, instanceDB.Instance.InstanceId, instanceDB.Instance.HealthCheck.Interval*(instanceDB.Instance.HealthCheck.Times+1))
 		assert.Equal(t, nil, err)
 		resp, err := heartBeatCheck.Heartbeat(context.Background(), &pb.HeartbeatRequest{
 			ServiceId:  "serviceIdDB",
