@@ -33,7 +33,7 @@ import (
 
 func TestHeartBeatCheck(t *testing.T) {
 	t.Run("heartbeat check: instance does not exist,it should be failed", func(t *testing.T) {
-		heartBeatCheck := &HeartBeatCheck{}
+		heartBeatCheck := &HeartBeatCache{}
 		resp, err := heartBeatCheck.Heartbeat(context.Background(), &pb.HeartbeatRequest{
 			ServiceId:  "serviceId1",
 			InstanceId: "not-exist-ins",
@@ -45,7 +45,7 @@ func TestHeartBeatCheck(t *testing.T) {
 	t.Run("heartbeat check: data exists in the cache,but not in db,it should be failed", func(t *testing.T) {
 		err := addHeartbeatTask("not-exist-svc", "not-exist-ins", 30)
 		assert.Nil(t, err)
-		heartBeatCheck := &HeartBeatCheck{}
+		heartBeatCheck := &HeartBeatCache{}
 		resp, err := heartBeatCheck.Heartbeat(context.Background(), &pb.HeartbeatRequest{
 			ServiceId:  "serviceId1",
 			InstanceId: "not-exist-ins",
@@ -55,7 +55,7 @@ func TestHeartBeatCheck(t *testing.T) {
 	})
 
 	t.Run("heartbeat check: data exists in the cache and db,it can be update successfully", func(t *testing.T) {
-		heartBeatCheck := &HeartBeatCheck{}
+		heartBeatCheck := &HeartBeatCache{}
 		instanceDB := model.Instance{
 			RefreshTime: time.Now(),
 			Instance: &pb.MicroServiceInstance{
