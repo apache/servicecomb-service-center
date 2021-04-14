@@ -71,8 +71,13 @@ func (lw *mongoListWatch) DoWatch(ctx context.Context, f func(*sdcommon.ListWatc
 	if resumeToken != nil {
 		csOptions.SetResumeAfter(resumeToken)
 	}
-
-	resp, err := client.GetMongoClient().Watch(ctx, lw.Key, md.Pipeline{}, csOptions)
+	pipline := md.Pipeline{}
+	if lw.Key == instance {
+		// ignore instance refresh_time change event for avoid meaningless instance push.
+		match := bson.D{{"updateDescription.updatedFields.refresh_time", bson.D{{"$exists", false}}}}
+		pipline = md.Pipeline{{{"$match", match}}}
+	}
+	resp, err := client.GetMongoClient().Watch(ctx, lw.Key, pipline, csOptions)
 
 	if err != nil {
 		log.Error(fmt.Sprintf("watch table %s failed", lw.Key), err)
