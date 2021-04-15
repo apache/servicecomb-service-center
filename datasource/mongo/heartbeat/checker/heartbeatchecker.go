@@ -54,3 +54,8 @@ func (h *HeartBeatChecker) Heartbeat(ctx context.Context, request *pb.HeartbeatR
 			"Update service instance heartbeat successfully."),
 	}, nil
 }
+
+func (h *HeartBeatChecker) CheckInstance(ctx context.Context, instance *pb.MicroServiceInstance) error {
+	// do nothing
+	return nil
+}
