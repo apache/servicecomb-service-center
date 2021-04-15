@@ -39,7 +39,7 @@ import (
 )
 
 func init() {
-	config.Configurations.Gov = &config.Gov{
+	config.App.Gov = &config.Gov{
 		DistOptions: []config.DistributorOptions{
 			{
 				Name: "mock",

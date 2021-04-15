@@ -37,7 +37,7 @@ const MockApp = ""
 var id = ""
 
 func init() {
-	config.Configurations = &config.Config{
+	config.App = &config.AppConfig{
 		Gov: &config.Gov{
 			DistOptions: []config.DistributorOptions{
 				{

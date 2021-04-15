@@ -18,6 +18,8 @@
 package config
 
 import (
+	"encoding/json"
+	"fmt"
 	"path/filepath"
 	"runtime"
 	"time"
@@ -44,49 +46,55 @@ const (
 	maxServiceTTL           = 24 * 365 * time.Hour //1 year
 )
 
-//Configurations is kie config items
-var Configurations = &Config{}
+var (
+	Server = NewServerConfig()
+	//App is application root config
+	App = &AppConfig{Server: Server}
+)
 
-var ServerInfo = NewServerInformation()
+//GetProfile return active profile
+func GetProfile() *ServerConfig {
+	return App.Server
+}
 
 //GetGov return governance configs
 func GetGov() *Gov {
-	return Configurations.Gov
+	return App.Gov
 }
 
 //GetServer return the http server configs
-func GetServer() ServerConfig {
-	return Configurations.Server.Config
+func GetServer() serverConfig {
+	return App.Server.Config
 }
 
 //GetSSL return the ssl configs
-func GetSSL() ServerConfig {
-	return Configurations.Server.Config
+func GetSSL() serverConfig {
+	return App.Server.Config
 }
 
 //GetLog return the log configs
-func GetLog() ServerConfig {
-	return Configurations.Server.Config
+func GetLog() serverConfig {
+	return App.Server.Config
 }
 
 //GetRegistry return the registry configs
-func GetRegistry() ServerConfig {
-	return Configurations.Server.Config
+func GetRegistry() serverConfig {
+	return App.Server.Config
 }
 
 //GetPlugin return the plugin configs
-func GetPlugin() ServerConfig {
-	return Configurations.Server.Config
+func GetPlugin() serverConfig {
+	return App.Server.Config
 }
 
 //GetRBAC return the rbac configs
-func GetRBAC() ServerConfig {
-	return Configurations.Server.Config
+func GetRBAC() serverConfig {
+	return App.Server.Config
 }
 
 //GetMetrics return the metrics configs
-func GetMetrics() ServerConfig {
-	return Configurations.Server.Config
+func GetMetrics() serverConfig {
+	return App.Server.Config
 }
 
 func Init() {
@@ -97,19 +105,30 @@ func Init() {
 	if err != nil {
 		log.Fatal("can not init archaius", err)
 	}
-	err = archaius.UnmarshalConfig(Configurations)
-	if err != nil {
-		log.Fatal("archaius unmarshal config failed", err)
-	}
-	Configurations.Server = ServerInfo
-	*ServerInfo = newInfo()
 
-	plugin.RegisterConfigurator(Configurations)
+	err = Reload()
+	if err != nil {
+		log.Fatal("reload configs failed", err)
+	}
+
+	plugin.RegisterConfigurator(App)
 
 	version.Ver().Log()
 }
 
-func newInfo() ServerInformation {
+//Reload reload the all configurations
+func Reload() error {
+	err := archaius.UnmarshalConfig(App)
+	if err != nil {
+		return err
+	}
+	*Server = loadServerConfig()
+	body, _ := json.MarshalIndent(archaius.GetConfigs(), "", "  ")
+	log.Info(fmt.Sprintf("finish to reload configurations\n%s", body))
+	return nil
+}
+
+func loadServerConfig() ServerConfig {
 	serviceClearInterval := GetDuration("registry.service.clearInterval", defaultServiceClearInterval, WithENV("SERVICE_CLEAR_INTERVAL"))
 	if serviceClearInterval < minServiceClearInterval || serviceClearInterval > maxServiceClearInterval {
 		serviceClearInterval = defaultServiceClearInterval
@@ -133,9 +152,11 @@ func newInfo() ServerInformation {
 	}
 	accessLogFile := GetString("log.accessFile", "./access.log", WithENV("SC_ACCESS_LOG_FILE"), WithStandby("access_log_file"))
 
-	return ServerInformation{
+	return ServerConfig{
 		Version: InitVersion,
-		Config: ServerConfig{
+		// compatible with beego config's runmode
+		Environment: GetString("environment", "dev", WithStandby("runmode")),
+		Config: serverConfig{
 			MaxHeaderBytes:    GetInt64("server.request.maxHeaderBytes", 16384, WithStandby("max_header_bytes")),
 			MaxBodyBytes:      GetInt64("server.request.maxBodyBytes", 2097152, WithStandby("max_body_bytes")),
 			ReadHeaderTimeout: GetString("server.request.headerTimeout", "60s", WithStandby("read_header_timeout")),

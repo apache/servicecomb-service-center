@@ -25,7 +25,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/version"
-	"github.com/astaxie/beego"
 	"github.com/go-chassis/cari/discovery"
 )
 
@@ -73,7 +72,7 @@ func prepareSelfRegistration() {
 			discovery.PropAllowCrossApp: "true",
 		},
 	}
-	if beego.BConfig.RunMode == "dev" {
+	if config.GetProfile().IsDev() {
 		Service.Environment = discovery.ENV_DEV
 	}
 

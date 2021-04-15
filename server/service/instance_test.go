@@ -1624,7 +1624,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(len(respFind.Instances)).To(Equal(0))
 
 				By("shared service discovery")
-				config.ServerInfo.Config.GlobalVisible = "query_instance_shared_provider"
+				config.Server.Config.GlobalVisible = "query_instance_shared_provider"
 				core.RegisterGlobalServices()
 				core.Service.Environment = pb.ENV_PROD
 
@@ -1866,7 +1866,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(len(respFind.Services.Updated[0].Instances)).To(Equal(0))
 
 				By("shared service discovery")
-				config.ServerInfo.Config.GlobalVisible = "query_instance_shared_provider"
+				config.Server.Config.GlobalVisible = "query_instance_shared_provider"
 				core.RegisterGlobalServices()
 				core.Service.Environment = pb.ENV_PROD
 

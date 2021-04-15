@@ -25,7 +25,7 @@ services:
     volumes:
       - ./data/db:/data/db
     healthcheck:
-      test: ["CMD-SHELL", "echo 'db.runCommand({serverStatus: 1}).ok | mongo mongo:27017/test --quiet'"]
+      test: [ "CMD-SHELL", "echo 'db.runCommand({serverStatus: 1}).ok | mongo mongo:27017 --quiet'" ]
       interval: 5s
       timeout: 5s
       retries: 3
@@ -33,7 +33,7 @@ services:
     image: mongo:4.0
     container_name: mongo_cfg
     command: |
-      bash -c "echo 'rs.initiate({_id: \"rs\", members: [{_id: 0, host: \"mongo:27017\"}]})' | mongo mongo:27017/test --quiet"
+      bash -c "echo 'rs.initiate({_id: \"rs\", members: [{_id: 0, host: \"mongo:27017\"}]})' | mongo mongo:27017 --quiet"
     depends_on:
       mongo:
         condition: service_healthy
@@ -50,5 +50,7 @@ services:
   kie:
     image: servicecomb/kie:0.2
     container_name: kie
+    environment:
+      MONGODB_ADDR: mongo:27017
     ports:
       - 30110:30110

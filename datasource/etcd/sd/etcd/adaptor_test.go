@@ -29,12 +29,12 @@ import (
 )
 
 func TestNewKvEntity(t *testing.T) {
-	config.ServerInfo.Config.EnableCache = false
+	config.Server.Config.EnableCache = false
 	i := NewEtcdAdaptor("a", sd.Configure().WithInitSize(1))
 	if _, ok := i.Indexer.(*Indexer); !ok {
 		t.Fatalf("TestNewIndexer failed")
 	}
-	config.ServerInfo.Config.EnableCache = true
+	config.Server.Config.EnableCache = true
 
 	i.Run()
 	<-i.Ready()

@@ -20,7 +20,6 @@ import (
 	"testing"
 
 	"github.com/apache/servicecomb-service-center/server/config"
-	"github.com/astaxie/beego"
 	"github.com/go-chassis/cari/discovery"
 )
 
@@ -29,13 +28,13 @@ func init() {
 }
 
 func TestPrepareSelfRegistration(t *testing.T) {
-	beego.BConfig.RunMode = "dev"
+	config.Server.Environment = "dev"
 	prepareSelfRegistration()
 	if Service == nil || Service.Environment != "development" {
 		t.Fatalf("TestPrepareSelfRegistration faild, %v", Service)
 	}
 
-	beego.BConfig.RunMode = "prod"
+	config.Server.Environment = "prod"
 	prepareSelfRegistration()
 	if Service == nil || Service.AppId != "default" || Service.ServiceName != "SERVICECENTER" ||
 		Service.Environment != "production" || Service.Properties["allowCrossApp"] != "true" {
@@ -72,7 +71,7 @@ func TestSetSharedMode(t *testing.T) {
 		t.Fatalf("TestSetSharedMode failed")
 	}
 
-	config.ServerInfo.Config.GlobalVisible = "shared"
+	config.Server.Config.GlobalVisible = "shared"
 	RegisterGlobalServices()
 	if IsGlobal(&discovery.MicroServiceKey{Tenant: "default/default", AppId: "default", ServiceName: "no-shared"}) {
 		t.Fatalf("TestSetSharedMode failed")
