@@ -23,20 +23,20 @@ glide install
 
 ```
 # bash -x scripts/release/make_release.sh OS_NAME VERSION_NUMBER PACKAGE_NUMBER
-bash -x scripts/release/make_release.sh linux 1.1.0 1.1.0
+bash -x scripts/release/make_release.sh linux 1.1.0
 ```
 
 #### Windows Release
 
 ```
 # bash -x scripts/release/make_release.sh OS_NAME VERSION_NUMBER PACKAGE_NUMBER
-bash -x scripts/release/make_release.sh windows 1.1.0 1.1.0
+bash -x scripts/release/make_release.sh windows 1.1.0
 ```
 
 #### Mac OS Release
 
 ```
 # bash -x scripts/release/make_release.sh OS_NAME VERSION_NUMBER PACKAGE_NUMBER
-bash -x scripts/release/make_release.sh mac 1.1.0 1.1.0
+bash -x scripts/release/make_release.sh mac 1.1.0
 ```
 

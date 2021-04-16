@@ -22,10 +22,10 @@ services:
     command: mongod --replSet rs/mongo:27017
     ports:
       - 27017:27017
-    volumes:
-      - ./data/db:/data/db
+    #volumes:
+    #  - ./data/db:/data/db
     healthcheck:
-      test: ["CMD-SHELL", "echo 'db.runCommand({serverStatus: 1}).ok | mongo mongo:27017/test --quiet'"]
+      test: [ "CMD-SHELL", "echo 'db.runCommand({serverStatus: 1}).ok | mongo mongo:27017 --quiet'" ]
       interval: 5s
       timeout: 5s
       retries: 3
@@ -33,22 +33,33 @@ services:
     image: mongo:4.0
     container_name: mongo_cfg
     command: |
-      bash -c "echo 'rs.initiate({_id: \"rs\", members: [{_id: 0, host: \"mongo:27017\"}]})' | mongo mongo:27017/test --quiet"
+      bash -c "echo 'rs.initiate({_id: \"rs\", members: [{_id: 0, host: \"mongo:27017\"}]})' | mongo mongo:27017 --quiet"
     depends_on:
       mongo:
         condition: service_healthy
 
   service-center:
-    image: servicecomb/service-center:2.0
+    image: servicecomb/service-center:2.0.0
     container_name: sc
     ports:
       - 30100:30100
     environment:
+      SERVER_HOST: 0.0.0.0
       LOG_LEVEL: DEBUG
+      LOG_FILE: ''
       REGISTRY_KIND: mongo
       REGISTRY_MONGO_CLUSTER_URI: mongodb://mongo:27017
+    depends_on:
+      mongo_cfg:
+        condition: service_completed_successfully
   kie:
-    image: servicecomb/kie:0.2
+    image: servicecomb/kie:0.2.1
     container_name: kie
+    environment:
+      MONGODB_ADDR: mongo:27017
     ports:
       - 30110:30110
+    depends_on:
+      mongo_cfg:
+        condition: service_completed_successfully
+  # TODO give me UI here!!!

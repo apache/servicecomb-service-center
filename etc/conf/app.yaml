@@ -13,6 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# environment can specify the sc running env, like dev or prod
+environment: dev
+
 server:
   host: 127.0.0.1
   port: 30100
@@ -43,15 +46,15 @@ gov:
 
 log:
   # DEBUG, INFO, WARN, ERROR, FATAL
-  level: DEBUG
+  level: INFO
   file: ./service-center.log
-  accessEnable: false
   # access log format: remoteIp requestReceiveTime "method requestUri proto" statusCode requestBodySize delay(ms)
   # example: 127.0.0.1 2006-01-02T15:04:05.000Z07:00 "GET /v4/default/registry/microservices HTTP/1.1" 200 0 0
   # access log inherits log's rotate and backup configuration
   # whether enable access log
-  # enable_access_log = true
+  # accessEnable = true
   # access log file
+  accessEnable: false
   accessFile: ./access.log
   # log format(text or json type)
   format: text
@@ -61,6 +64,9 @@ log:
   rotateSize: 20
   # Max counts to keep of a log's backup files.
   backupCount: 50
+
+cipher:
+  kind:
 
 ssl:
   dir:
@@ -74,7 +80,7 @@ ssl:
 
 plugin:
   # plugin.dir is the directory of the *.so files
-  dir:
+  dir: ./plugins
 
 registry:
   # buildin, etcd, embeded_etcd, mongo
@@ -120,7 +126,7 @@ registry:
       workerNum: 10
       timeout: 10
     cluster:
-      uri: mongodb://localhost:27017
+      uri: mongodb://127.0.0.1:27017
       sslEnabled: false
       rootCAFile: /opt/ssl/ca.pem
       verifyPeer: false
@@ -185,6 +191,14 @@ quota:
     tag:
       limit: 100
 
+uuid:
+  kind: context
+
+auth:
+  kind:
+
+auditlog:
+  kind:
 
 syncer:
   enabled: false

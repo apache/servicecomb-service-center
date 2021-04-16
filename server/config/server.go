@@ -24,6 +24,11 @@ import (
 )
 
 type ServerConfig struct {
+	Version     string       `json:"version"`
+	Environment string       `json:"environment"`
+	Config      serverConfig `json:"-"`
+}
+type serverConfig struct {
 	MaxHeaderBytes int64 `json:"maxHeaderBytes"`
 	MaxBodyBytes   int64 `json:"maxBodyBytes"`
 
@@ -79,11 +84,10 @@ type ServerConfig struct {
 	MetricsInterval time.Duration `json:"-"`
 }
 
-type ServerInformation struct {
-	Version string       `json:"version"`
-	Config  ServerConfig `json:"-"`
+func (si *ServerConfig) IsDev() bool {
+	return si.Environment == EnvironmentDev
 }
 
-func NewServerInformation() *ServerInformation {
-	return &ServerInformation{Config: ServerConfig{Plugins: make(util.JSONObject)}}
+func NewServerConfig() *ServerConfig {
+	return &ServerConfig{Config: serverConfig{Plugins: make(util.JSONObject)}}
 }

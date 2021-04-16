@@ -24,14 +24,12 @@ SCRIPT_DIR=$(cd $(dirname $0); pwd)
 BASE_DIR=${SCRIPT_DIR}/../../../
 
 # build all
-PACKAGE=${1:-"latest"}
-
-PACKAGE_PREFIX=apache-servicecomb-service-center
-
-PACKAGE_DIR=$SCRIPT_DIR/../$PACKAGE_PREFIX-$PACKAGE-linux-amd64
+export RELEASE=${1:-"latest"}
+export BUILD="ALL"
 
 source ${SCRIPT_DIR}/../../build/tools.sh
 
+PACKAGE_DIR=$SCRIPT_DIR/../$PACKAGE_PREFIX-$RELEASE-linux-amd64
 if [ ! -d $PACKAGE_DIR ]; then
     docker_builder_pattern $BASE_DIR $SCRIPT_DIR/../
 fi
@@ -57,8 +55,8 @@ cp Dockerfile.tmpl Dockerfile
 sed -i "s|{{.BASE_IMAGE}}|${BASE_IMAGE}|g" Dockerfile
 sed -i "s|{{.BASE_IMAGE_VERSION}}|${BASE_IMAGE_VERSION}|g" Dockerfile
 
-docker build --no-cache -t servicecomb/scfrontend:$PACKAGE .
-docker save servicecomb/scfrontend:$PACKAGE |gzip >scfrontend-dev.tgz
+docker build --no-cache -t servicecomb/scfrontend:$RELEASE .
+docker save servicecomb/scfrontend:$RELEASE |gzip >scfrontend-dev.tgz
 
 # remove the frontend directory from the build-frontend-image path
 rm -rf frontend Dockerfile

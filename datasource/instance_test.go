@@ -703,7 +703,7 @@ func TestInstance_Query(t *testing.T) {
 		assert.Equal(t, 0, len(respFind.Instances))
 
 		log.Info("shared service discovery")
-		config.ServerInfo.Config.GlobalVisible = "query_instance_shared_provider_ms"
+		config.Server.Config.GlobalVisible = "query_instance_shared_provider_ms"
 		core.RegisterGlobalServices()
 		core.Service.Environment = pb.ENV_PROD
 		respFind, err = datasource.Instance().FindInstances(
@@ -917,7 +917,7 @@ func TestInstance_Query(t *testing.T) {
 		assert.Equal(t, 0, len(respFind.Services.Updated[0].Instances))
 
 		log.Info("shared service discovery")
-		config.ServerInfo.Config.GlobalVisible = "query_instance_shared_provider_ms"
+		config.Server.Config.GlobalVisible = "query_instance_shared_provider_ms"
 		core.RegisterGlobalServices()
 		core.Service.Environment = pb.ENV_PROD
 		respFind, err = datasource.Instance().BatchFind(

@@ -41,13 +41,11 @@ func newOptions(key string, opts []Option) *Options {
 // GetString return the string type value by specified key
 func GetString(key, def string, opts ...Option) string {
 	options := newOptions(key, opts)
-	val := strings.TrimSpace(archaius.GetString(options.ENV, ""))
-	if val != "" {
-		return val
+	if archaius.Exist(options.ENV) {
+		return strings.TrimSpace(archaius.GetString(options.ENV, def))
 	}
-	val = strings.TrimSpace(archaius.GetString(key, ""))
-	if val != "" {
-		return val
+	if archaius.Exist(key) {
+		return strings.TrimSpace(archaius.GetString(key, def))
 	}
 	return strings.TrimSpace(beego.AppConfig.DefaultString(options.Standby, def))
 }
@@ -93,7 +91,7 @@ func GetInt64(key string, def int64, opts ...Option) int64 {
 
 // GetDuration return the time.Duration type value by specified key
 func GetDuration(key string, def time.Duration, opts ...Option) time.Duration {
-	str := GetString(key, "", opts...)
+	str := strings.TrimSpace(GetString(key, "", opts...))
 	if str == "" {
 		return def
 	}

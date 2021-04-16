@@ -42,7 +42,7 @@ func (ds *DataSource) LoadServerVersion(ctx context.Context) error {
 		return nil
 	}
 
-	err = json.Unmarshal(resp.Kvs[0].Value, &config.ServerInfo)
+	err = json.Unmarshal(resp.Kvs[0].Value, &config.Server)
 	if err != nil {
 		log.Errorf(err, "load server version failed, maybe incompatible")
 		return nil
@@ -51,7 +51,7 @@ func (ds *DataSource) LoadServerVersion(ctx context.Context) error {
 }
 
 func (ds *DataSource) UpgradeServerVersion(ctx context.Context) error {
-	bytes, err := json.Marshal(config.ServerInfo)
+	bytes, err := json.Marshal(config.Server)
 	if err != nil {
 		return err
 	}
@@ -71,7 +71,7 @@ func (ds *DataSource) UpgradeVersion(ctx context.Context) error {
 		return err
 	}
 	if ds.needUpgrade(ctx) {
-		config.ServerInfo.Version = version.Ver().Version
+		config.Server.Version = version.Ver().Version
 
 		if err := ds.UpgradeServerVersion(ctx); err != nil {
 			log.Errorf(err, "upgrade server version failed")
@@ -92,12 +92,12 @@ func (ds *DataSource) needUpgrade(ctx context.Context) bool {
 		return false
 	}
 
-	update := !serviceUtil.VersionMatchRule(config.ServerInfo.Version,
+	update := !serviceUtil.VersionMatchRule(config.Server.Version,
 		fmt.Sprintf("%s+", version.Ver().Version))
-	if !update && version.Ver().Version != config.ServerInfo.Version {
+	if !update && version.Ver().Version != config.Server.Version {
 		log.Warnf(
 			"there is a higher version '%s' in cluster, now running '%s' version may be incompatible",
-			config.ServerInfo.Version, version.Ver().Version)
+			config.Server.Version, version.Ver().Version)
 	}
 
 	return update

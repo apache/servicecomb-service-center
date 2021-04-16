@@ -23,7 +23,7 @@ services:
     ports:
       - 27017:27017
     healthcheck:
-      test: ["CMD-SHELL", "echo 'db.runCommand({serverStatus: 1}).ok | mongo mongo:27017/test --quiet'"]
+      test: ["CMD-SHELL", "echo 'db.runCommand({serverStatus: 1}).ok | mongo mongo:27017 --quiet'"]
       interval: 5s
       timeout: 5s
       retries: 3
@@ -31,7 +31,7 @@ services:
     image: mongo:4.0
     container_name: mongo_cfg
     command: |
-      bash -c "echo 'rs.initiate({_id: \"rs\", members: [{_id: 0, host: \"127.0.0.1:27017\"}]})' | mongo mongo:27017/test --quiet"
+      bash -c "echo 'rs.initiate({_id: \"rs\", members: [{_id: 0, host: \"127.0.0.1:27017\"}]})' | mongo mongo:27017 --quiet"
     depends_on:
       mongo:
         condition: service_healthy

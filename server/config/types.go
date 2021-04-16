@@ -17,12 +17,19 @@
 
 package config
 
-import "github.com/apache/servicecomb-service-center/pkg/plugin"
+import (
+	"github.com/apache/servicecomb-service-center/pkg/plugin"
+)
 
-//Config is yaml file struct
-type Config struct {
-	Gov    *Gov               `yaml:"gov"`
-	Server *ServerInformation `yaml:"server"`
+const (
+	EnvironmentDev  = "dev"
+	EnvironmentProd = "prod"
+)
+
+//AppConfig is yaml file struct
+type AppConfig struct {
+	Gov    *Gov          `yaml:"gov"`
+	Server *ServerConfig `yaml:"server"`
 }
 type Gov struct {
 	DistOptions []DistributorOptions `yaml:"plugins"`
@@ -34,9 +41,9 @@ type DistributorOptions struct {
 }
 
 // GetImplName return the impl name
-func (c *Config) GetImplName(kind plugin.Kind) string {
+func (c *AppConfig) GetImplName(kind plugin.Kind) string {
 	return GetString(kind.String()+".kind", plugin.Buildin, WithStandby(kind.String()+"_plugin"))
 }
-func (c *Config) GetPluginDir() string {
+func (c *AppConfig) GetPluginDir() string {
 	return c.Server.Config.PluginsDir
 }
