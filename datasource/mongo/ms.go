@@ -539,7 +539,7 @@ func (ds *DataSource) GetServicesStatistics(ctx context.Context, request *discov
 	ctx = util.WithCacheOnly(ctx)
 	var st *discovery.Statistics
 	var err error
-	st, err = statistics(ctx, true)
+	st, err = statistics(ctx, false)
 	if err != nil {
 		return &discovery.GetServicesInfoStatisticsResponse{
 			Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),

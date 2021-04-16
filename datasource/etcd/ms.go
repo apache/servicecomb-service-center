@@ -350,18 +350,17 @@ func (ds *DataSource) GetServicesStatistics(ctx context.Context, request *pb.Get
 	ctx = util.WithCacheOnly(ctx)
 	var st *pb.Statistics
 	var err error
-	st, err = statistics(ctx, true)
+	st, err = statistics(ctx, false)
 	if err != nil {
 		return &pb.GetServicesInfoStatisticsResponse{
 			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
 	}
 	return &pb.GetServicesInfoStatisticsResponse{
-		Response:          pb.CreateResponse(pb.ResponseSuccess, "Get services statistics successfully."),
-		Statistics:        st,
+		Response:   pb.CreateResponse(pb.ResponseSuccess, "Get services statistics successfully."),
+		Statistics: st,
 	}, nil
 }
-
 
 func (ds *DataSource) GetApplications(ctx context.Context, request *pb.GetAppsRequest) (*pb.GetAppsResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
