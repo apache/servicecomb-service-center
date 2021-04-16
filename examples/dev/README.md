@@ -22,6 +22,5 @@ go build github.com/apache/servicecomb-service-center/cmd/scserver
 
 ```bash
 docker-compose up -d
-docker-compose -f docker-compose.yaml exec mongo bash -c "echo 'rs.initiate({_id: \"rs\",members: [{ _id : 0, host : \"127.0.0.1:27017\" }]})' | mongo -u sc -p 123 --port 27017"
 ./scserver 
 ```

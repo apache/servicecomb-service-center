@@ -1,1 +1,0 @@
-{  "/v4/*": {    "target": "http://servicecenter:30100",    "secure": false,    "pathRewrite": {"^/v4" : "/v4"}  }}
