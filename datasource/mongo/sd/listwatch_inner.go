@@ -26,15 +26,16 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
 	"github.com/apache/servicecomb-service-center/datasource/sdcommon"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/util"
 )
+
+type parsefunc func(doc bson.Raw) (resource sdcommon.Resource)
 
 type mongoListWatch struct {
 	Key         string
 	resumeToken bson.Raw
+	parseFunc   parsefunc
 }
 
 func (lw *mongoListWatch) List(op sdcommon.ListWatchConfig) (*sdcommon.ListWatchResp, error) {
@@ -52,7 +53,7 @@ func (lw *mongoListWatch) List(op sdcommon.ListWatchConfig) (*sdcommon.ListWatch
 	lwRsp.Resources = make([]*sdcommon.Resource, 0)
 
 	for resp.Next(context.Background()) {
-		info := lw.doParseDocumentToResource(resp.Current)
+		info := lw.parseFunc(resp.Current)
 		lwRsp.Resources = append(lwRsp.Resources, &info)
 	}
 
@@ -118,53 +119,6 @@ func (lw *mongoListWatch) DoWatch(ctx context.Context, f func(*sdcommon.ListWatc
 	return err
 }
 
-func (lw *mongoListWatch) doParseDocumentToResource(fullDocument bson.Raw) (resource sdcommon.Resource) {
-	var err error
-
-	documentID := MongoDocument{}
-	err = bson.Unmarshal(fullDocument, &documentID)
-	if err != nil {
-		return
-	}
-
-	resource.DocumentID = documentID.ID.Hex()
-
-	switch lw.Key {
-	case instance:
-		instance := model.Instance{}
-		err = bson.Unmarshal(fullDocument, &instance)
-		if err != nil {
-			log.Error("error to parse bson raw to documentInfo", err)
-			return
-		}
-		if instance.Instance == nil {
-			log.Error(fmt.Sprintf("unexpect instance value,the documentID is %s", resource.DocumentID), nil)
-			return
-		}
-		resource.Key = instance.Instance.InstanceId
-		resource.Value = instance
-		resource.Index = instance.Instance.ServiceId
-	case service:
-		service := model.Service{}
-		err := bson.Unmarshal(fullDocument, &service)
-		if err != nil {
-			log.Error("error to parse bson raw to documentInfo", err)
-			return
-		}
-		if service.Service == nil {
-			log.Error(fmt.Sprintf("unexpect service value,the documentID is %s", resource.DocumentID), nil)
-			return
-		}
-		resource.Key = service.Service.ServiceId
-		resource.Value = service
-		resource.Index = util.StringJoin([]string{service.Domain, service.Project, service.Service.ServiceName, service.Service.Version, service.Service.AppId, service.Service.Environment}, "/")
-	default:
-		return
-	}
-
-	return
-}
-
 func (lw *mongoListWatch) ResumeToken() bson.Raw {
 	return lw.resumeToken
 }
@@ -177,10 +131,10 @@ func (lw *mongoListWatch) doParseWatchRspToResource(wRsp *MongoWatchResponse) (r
 	switch wRsp.OperationType {
 	case deleteOp:
 		//delete operation has no fullDocumentValue
-		resource.DocumentID = wRsp.DocumentKey.ID.Hex()
+		resource.Key = wRsp.DocumentKey.ID.Hex()
 		return
 	case insertOp, updateOp, replaceOp:
-		return lw.doParseDocumentToResource(wRsp.FullDocument)
+		return lw.parseFunc(wRsp.FullDocument)
 	default:
 		log.Warn(fmt.Sprintf("unrecognized operation:%s", wRsp.OperationType))
 	}

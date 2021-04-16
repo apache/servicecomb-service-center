@@ -33,7 +33,6 @@ var store = &TypeStore{}
 
 func init() {
 	store.Initialize()
-	registerInnerTypes()
 }
 
 type TypeStore struct {
@@ -48,11 +47,6 @@ func (s *TypeStore) Initialize() {
 	s.goroutine = gopool.New(context.Background())
 }
 
-func registerInnerTypes() {
-	RegisterType(service)
-	RegisterType(instance)
-}
-
 func (s *TypeStore) Run() {
 	s.goroutine.Do(s.store)
 	s.goroutine.Do(s.autoClearCache)
@@ -60,7 +54,7 @@ func (s *TypeStore) Run() {
 
 func (s *TypeStore) store(ctx context.Context) {
 	// new all types
-	for _, t := range Types {
+	for t, _ := range CacherRegister {
 		select {
 		case <-ctx.Done():
 			return
@@ -84,7 +78,7 @@ func (s *TypeStore) autoClearCache(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-time.After(ttl):
-			for _, t := range Types {
+			for t, _ := range CacherRegister {
 				cache := s.getOrCreateCache(t).Cache()
 				cache.MarkDirty()
 			}
@@ -98,12 +92,15 @@ func (s *TypeStore) getOrCreateCache(t string) *MongoCacher {
 	if ok {
 		return cache.(*MongoCacher)
 	}
-
-	options := DefaultOptions().SetTable(t)
-
-	cache = NewMongoCache(t, options)
-	cacher := NewMongoCacher(options, cache.(*MongoCache))
+	f, ok := CacherRegister[t]
+	if !ok {
+		log.Fatal(fmt.Sprintf("unexpected type store "+t), nil)
+	}
+	cacher := f()
 	cacher.Run()
+
+	s.caches.Put(t, cacher)
+	return cacher
 
 	s.caches.Put(t, cacher)
 	return cacher
@@ -129,6 +126,8 @@ func (s *TypeStore) Ready() <-chan struct{} {
 func (s *TypeStore) TypeCacher(id string) *MongoCacher { return s.getOrCreateCache(id) }
 func (s *TypeStore) Service() *MongoCacher             { return s.TypeCacher(service) }
 func (s *TypeStore) Instance() *MongoCacher            { return s.TypeCacher(instance) }
+func (s *TypeStore) Rule() *MongoCacher                { return s.TypeCacher(rule) }
+func (s *TypeStore) Dep() *MongoCacher                 { return s.TypeCacher(dep) }
 
 func Store() *TypeStore {
 	return store

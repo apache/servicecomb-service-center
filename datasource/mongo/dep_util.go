@@ -20,28 +20,25 @@ package mongo
 import (
 	"context"
 	"fmt"
-
+	"github.com/apache/servicecomb-service-center/datasource/cache"
 	pb "github.com/go-chassis/cari/discovery"
 
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client/dao"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
-	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
-	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
-func GetAllConsumerIds(ctx context.Context, provider *pb.MicroService) (allow []string, deny []string, _ error) {
+func GetAllConsumerIds(ctx context.Context, provider *pb.MicroService) (allow []string, deny []string, err error) {
 	if provider == nil || len(provider.ServiceId) == 0 {
 		return nil, nil, fmt.Errorf("invalid provider")
 	}
 
 	//todo 删除服务，最后实例推送有误差
-	domain := util.ParseDomainProject(ctx)
-	project := util.ParseProject(ctx)
-	filter := mutil.NewDomainProjectFilter(domain, project, mutil.ServiceID(provider.ServiceId))
-	providerRules, err := dao.GetRules(ctx, filter)
-	if err != nil {
-		return nil, nil, err
+	providerRules, ok := cache.GetRulesByServiceID(provider.ServiceId)
+	if !ok {
+		providerRules, err = dao.GetRulesByServiceID(ctx, provider.ServiceId)
+		if err != nil {
+			return nil, nil, err
+		}
 	}
 
 	allow, deny, err = GetConsumerIDsWithFilter(ctx, provider, providerRules)
@@ -52,12 +49,23 @@ func GetAllConsumerIds(ctx context.Context, provider *pb.MicroService) (allow []
 }
 
 func GetConsumerIDsWithFilter(ctx context.Context, provider *pb.MicroService, rules []*model.Rule) (allow []string, deny []string, err error) {
-	domainProject := util.ParseDomainProject(ctx)
-	dr := NewProviderDependencyRelation(ctx, domainProject, provider)
-	consumerIDs, err := dr.GetDependencyConsumerIds()
-	if err != nil {
-		log.Error(fmt.Sprintf("get service[%s]'s consumerIds failed", provider.ServiceId), err)
-		return nil, nil, err
+	serviceDeps, ok := cache.GetProviderServiceOfDeps(provider)
+	if !ok {
+		serviceDeps, err = dao.GetProviderDeps(ctx, provider)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+	consumerIDs := make([]string, len(serviceDeps.Dependency))
+	for _, serviceKeys := range serviceDeps.Dependency {
+		id, ok := cache.GetServiceID(ctx, serviceKeys)
+		if !ok {
+			id, err = dao.GetServiceID(ctx, serviceKeys)
+			if err != nil {
+				return nil, nil, err
+			}
+		}
+		consumerIDs = append(consumerIDs, id)
 	}
 	return FilterAll(ctx, consumerIDs, rules)
 }

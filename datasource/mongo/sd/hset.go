@@ -17,30 +17,54 @@
 
 package sd
 
-// Cache stores db data.
-type Cache interface {
-	CacheReader
+import (
+	"sync"
+)
 
-	Put(id string, v interface{})
-
-	Remove(id string)
-
-	MarkDirty()
-
-	Dirty() bool
-
-	Clear()
+type Hset struct {
+	m map[string]struct{}
+	l sync.RWMutex
 }
 
-// CacheReader reads k-v data.
-type CacheReader interface {
-	Name() string // The name of implementation
+func Newhset(key string) *Hset {
+	mt := make(map[string]struct{})
+	mt[key] = struct{}{}
+	return &Hset{
+		m: mt,
+		l: sync.RWMutex{},
+	}
+}
 
-	Size() int // the bytes size of the cache
+func (h *Hset) Insert(key string) {
+	h.l.Lock()
+	defer h.l.Unlock()
+	_, exist := h.m[key]
+	if exist {
+		return
+	}
+	h.m[key] = struct{}{}
+}
 
-	// Get gets a value by id
-	Get(id string) interface{}
+func (h *Hset) Del(key string) {
+	h.l.Lock()
+	defer h.l.Unlock()
+	_, exist := h.m[key]
+	if !exist {
+		return
+	}
+	delete(h.m, key)
+}
 
-	// ForEach executes the given function for each of the k-v
-	ForEach(iter func(k string, v interface{}) (next bool))
+func (h *Hset) Len() int {
+	return len(h.m)
+}
+
+func (h *Hset) Iter() []string {
+	h.l.RLock()
+	defer h.l.RUnlock()
+	res := make([]string, 0, h.Len())
+	for k, _ := range h.m {
+		res = append(res, k)
+	}
+	return res
 }

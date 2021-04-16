@@ -20,6 +20,9 @@ package dao
 import (
 	"context"
 
+	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
+	"go.mongodb.org/mongo-driver/bson"
+
 	"github.com/go-chassis/cari/discovery"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
@@ -59,6 +62,12 @@ func GetInstances(ctx context.Context, filter interface{}) ([]*model.Instance, e
 		instances = append(instances, tmp)
 	}
 	return instances, nil
+}
+
+func GetMicroServiceInstancesByID(ctx context.Context, serviceID string) ([]*discovery.MicroServiceInstance, error) {
+	filter := mutil.NewFilter(mutil.InstanceServiceID(serviceID))
+	option := &options.FindOptions{Sort: bson.M{mutil.ConnectWithDot([]string{model.ColumnInstance, model.ColumnVersion}): -1}}
+	return GetMicroServiceInstances(ctx, filter, option)
 }
 
 func GetMicroServiceInstances(ctx context.Context, filter interface{}, opts ...*options.FindOptions) ([]*discovery.MicroServiceInstance, error) {

@@ -19,12 +19,9 @@ package event
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/datasource/cache"
 	"time"
-
-	"github.com/go-chassis/cari/discovery"
-	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/mongo"
@@ -38,6 +35,7 @@ import (
 	"github.com/apache/servicecomb-service-center/server/metrics"
 	"github.com/apache/servicecomb-service-center/server/notify"
 	"github.com/apache/servicecomb-service-center/server/syncernotify"
+	"github.com/go-chassis/cari/discovery"
 )
 
 // InstanceEventHandler is the handler to handle events
@@ -51,15 +49,27 @@ func (h InstanceEventHandler) Type() string {
 
 func (h InstanceEventHandler) OnEvent(evt sd.MongoEvent) {
 	action := evt.Type
+	if evt.Type == discovery.EVT_UPDATE {
+		return
+	}
 	instance := evt.Value.(model.Instance)
 	providerID := instance.Instance.ServiceId
 	providerInstanceID := instance.Instance.InstanceId
 	domainProject := instance.Domain + "/" + instance.Project
-	cacheService := sd.Store().Service().Cache().Get(providerID)
-	var microService *discovery.MicroService
-	if cacheService != nil {
-		microService = cacheService.(model.Service).Service
+	ctx := util.SetDomainProject(context.Background(), instance.Domain, instance.Project)
+	res, ok := cache.GetServiceByID(providerID)
+	var err error
+	if !ok {
+		res, err = dao.GetServiceByID(ctx, providerID)
+		if err != nil {
+			log.Error(fmt.Sprintf("caught [%s] instance[%s/%s] event, endpoints %v, get provider's file failed from db\n",
+				action, providerID, providerInstanceID, instance.Instance.Endpoints), err)
+		}
 	}
+	if res == nil {
+		return
+	}
+	microService := res.Service
 	switch action {
 	case discovery.EVT_INIT:
 		metrics.ReportInstances(instance.Domain, increaseOne)
@@ -69,30 +79,10 @@ func (h InstanceEventHandler) OnEvent(evt sd.MongoEvent) {
 		metrics.ReportInstances(instance.Domain, increaseOne)
 	case discovery.EVT_DELETE:
 		metrics.ReportInstances(instance.Domain, decreaseOne)
-		// to report quota
-	}
-	if microService == nil {
-		log.Info("get cached service failed, then get from database")
-		service, err := dao.GetService(context.Background(), bson.M{"serviceinfo.serviceid": providerID})
-		if err != nil {
-			if errors.Is(err, datasource.ErrNoData) {
-				log.Warn(fmt.Sprintf("there is no service with id [%s] in the database", providerID))
-			} else {
-				log.Error("query database error", err)
-			}
-			return
-		}
-		microService = service.Service // service in the cache may not ready, query from db once
-		if microService == nil {
-			log.Warn(fmt.Sprintf("caught [%s] instance[%s/%s] event, endpoints %v, get provider's file failed from db\n",
-				action, providerID, providerInstanceID, instance.Instance.Endpoints))
-			return
-		}
 	}
 	if !syncernotify.GetSyncerNotifyCenter().Closed() {
 		NotifySyncerInstanceEvent(evt, microService)
 	}
-	ctx := util.SetDomainProject(context.Background(), instance.Domain, instance.Project)
 	consumerIDS, _, err := mongo.GetAllConsumerIds(ctx, microService)
 	if err != nil {
 		log.Error(fmt.Sprintf("get service[%s][%s/%s/%s/%s]'s consumerIDs failed",

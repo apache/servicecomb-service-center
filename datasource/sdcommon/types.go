@@ -57,8 +57,6 @@ type ListWatchResp struct {
 type Resource struct {
 	// Key in etcd is prefix, in mongo is resourceId
 	Key string
-	// DocumentID is only for mongo
-	DocumentID string
 
 	// Index is the index of the resource
 	Index string
