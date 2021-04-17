@@ -136,13 +136,13 @@ func cleanInstance(ctx context.Context, serviceID string, instanceID string) err
 	filter := util.NewFilter(util.InstanceServiceID(serviceID), util.InstanceInstanceID(instanceID))
 	result, err := client.GetMongoClient().FindOne(ctx, model.CollectionInstance, filter)
 	if err != nil {
-		log.Error("failed to query instance: %v", err)
+		log.Error("failed to query instance", err)
 		return err
 	}
 	var ins model.Instance
 	err = result.Decode(&ins)
 	if err != nil {
-		log.Error("decode instance failed: %v", err)
+		log.Error("decode instance failed", err)
 		return err
 	}
 	ttl := ins.Instance.HealthCheck.Interval * (ins.Instance.HealthCheck.Times + 1)
@@ -154,7 +154,7 @@ func cleanInstance(ctx context.Context, serviceID string, instanceID string) err
 	}
 	err = removeDBInstance(ctx, ins.Instance.ServiceId, ins.Instance.InstanceId)
 	if err != nil {
-		log.Error("fail to remote instance in db: %v", err)
+		log.Error("fail to remote instance in db", err)
 		errAbort := session.AbortTransaction(ctx)
 		if errAbort != nil {
 			return errAbort
@@ -185,7 +185,7 @@ func findInstance(ctx context.Context, serviceID string, instanceID string) (*mo
 	var ins model.Instance
 	err = result.Decode(&ins)
 	if err != nil {
-		log.Error("decode instance failed: ", err)
+		log.Error("decode instance failed", err)
 		return nil, err
 	}
 	return &ins, nil
@@ -198,7 +198,7 @@ func updateInstance(ctx context.Context, serviceID string, instanceID string) er
 	}
 	result, err := client.GetMongoClient().FindOneAndUpdate(ctx, model.CollectionInstance, filter, update)
 	if err != nil {
-		log.Error("failed to update refresh time of instance: ", err)
+		log.Error("failed to update refresh time of instance", err)
 		return err
 	}
 	return result.Err()

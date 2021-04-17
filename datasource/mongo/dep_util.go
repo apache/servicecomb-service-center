@@ -19,10 +19,13 @@ package mongo
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"github.com/apache/servicecomb-service-center/datasource/cache"
+
 	pb "github.com/go-chassis/cari/discovery"
 
+	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/datasource/cache"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client/dao"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
 )
@@ -42,7 +45,7 @@ func GetAllConsumerIds(ctx context.Context, provider *pb.MicroService) (allow []
 	}
 
 	allow, deny, err = GetConsumerIDsWithFilter(ctx, provider, providerRules)
-	if err != nil {
+	if err != nil && !errors.Is(err, datasource.ErrNoData) {
 		return nil, nil, err
 	}
 	return allow, deny, nil
