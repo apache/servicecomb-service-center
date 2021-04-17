@@ -36,7 +36,7 @@ func updateInstanceRefreshTime(ctx context.Context, serviceID string, instanceID
 	}
 	result, err := client.GetMongoClient().FindOneAndUpdate(ctx, model.CollectionInstance, filter, update)
 	if err != nil {
-		log.Error("failed to update refresh time of instance: ", err)
+		log.Error("failed to update refresh time of instance", err)
 		return err
 	}
 	if result.Err() != nil {
