@@ -18,6 +18,8 @@
 package v1
 
 import (
+	"encoding/json"
+	gov2 "github.com/apache/servicecomb-service-center/pkg/gov"
 	"io/ioutil"
 	"net/http"
 
@@ -62,12 +64,15 @@ func (t *Governance) Create(w http.ResponseWriter, req *http.Request) {
 		processError(w, err, "create gov data err")
 		return
 	}
-	_, err = w.Write(id)
+
+	var policy gov2.Policy
+	policy.ID = string(id)
+	b, err := json.Marshal(policy)
 	if err != nil {
-		processError(w, err, "")
+		processError(w, err, "marshal policy id response failed")
 		return
 	}
-	w.WriteHeader(http.StatusOK)
+	controller.WriteJSON(w, b)
 }
 
 //Put gov config
