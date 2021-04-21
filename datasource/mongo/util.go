@@ -69,7 +69,7 @@ func statistics(ctx context.Context, withShared bool) (*pb.Statistics, error) {
 	svcIDToNonVerKey := datasource.SetStaticServices(result, svcKeys, svcIDs, withShared)
 	respGetInstanceCountByDomain := make(chan datasource.GetInstanceCountByDomainResponse, 1)
 	gopool.Go(func(_ context.Context) {
-		getInstanceCountByDomain(ctx, svcIDs, respGetInstanceCountByDomain)
+		getInstanceCountByDomain(ctx, svcIDToNonVerKey, respGetInstanceCountByDomain)
 	})
 
 	instances, err := dao.GetInstances(ctx, filter)
@@ -90,11 +90,11 @@ func statistics(ctx context.Context, withShared bool) (*pb.Statistics, error) {
 	return result, nil
 }
 
-func getInstanceCountByDomain(ctx context.Context, svcIDToNonVerKey []string, resp chan datasource.GetInstanceCountByDomainResponse) {
+func getInstanceCountByDomain(ctx context.Context, svcIDToNonVerKey map[string]string, resp chan datasource.GetInstanceCountByDomainResponse) {
 	ret := datasource.GetInstanceCountByDomainResponse{}
 	domain := util.ParseDomain(ctx)
 	project := util.ParseProject(ctx)
-	for _, sid := range svcIDToNonVerKey {
+	for sid := range svcIDToNonVerKey {
 		filter := mutil.NewDomainProjectFilter(domain, project, mutil.InstanceServiceID(sid))
 		num, err := dao.CountInstance(ctx, filter)
 		if err != nil {
