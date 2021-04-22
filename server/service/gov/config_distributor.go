@@ -39,8 +39,8 @@ var distributorPlugins = map[string]NewDistributors{}
 //ConfigDistributor will convert standard servicecomb gov config to concrete spec, that data plane can recognize.
 type ConfigDistributor interface {
 	Create(kind, project string, spec []byte) ([]byte, error)
-	Update(id, kind, project string, spec []byte) error
-	Delete(id, project string) error
+	Update(kind, id, project string, spec []byte) error
+	Delete(kind, id, project string) error
 	Display(project, app, env string) ([]byte, error)
 	List(kind, project, app, env string) ([]byte, error)
 	Get(kind, id, project string) ([]byte, error)
@@ -103,16 +103,16 @@ func Get(kind, id, project string) ([]byte, error) {
 	return nil, nil
 }
 
-func Delete(id, project string) error {
+func Delete(kind, id, project string) error {
 	for _, cd := range distributors {
-		return cd.Delete(id, project)
+		return cd.Delete(kind, id, project)
 	}
 	return nil
 }
 
-func Update(id, kind, project string, spec []byte) error {
+func Update(kind, id, project string, spec []byte) error {
 	for _, cd := range distributors {
-		return cd.Update(id, kind, project, spec)
+		return cd.Update(kind, id, project, spec)
 	}
 	return nil
 }

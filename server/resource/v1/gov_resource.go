@@ -18,15 +18,16 @@
 package v1
 
 import (
+	"encoding/json"
 	"io/ioutil"
 	"net/http"
 
-	"github.com/apache/servicecomb-service-center/server/service/gov/kie"
-
+	model "github.com/apache/servicecomb-service-center/pkg/gov"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/rest/controller"
 	"github.com/apache/servicecomb-service-center/server/service/gov"
+	"github.com/apache/servicecomb-service-center/server/service/gov/kie"
 	"github.com/go-chassis/cari/discovery"
 )
 
@@ -62,12 +63,14 @@ func (t *Governance) Create(w http.ResponseWriter, req *http.Request) {
 		processError(w, err, "create gov data err")
 		return
 	}
-	_, err = w.Write(id)
+
+	policy := &model.Policy{GovernancePolicy: &model.GovernancePolicy{ID: string(id)}}
+	b, err := json.Marshal(policy)
 	if err != nil {
-		processError(w, err, "")
+		processError(w, err, "marshal policy id response failed")
 		return
 	}
-	w.WriteHeader(http.StatusOK)
+	controller.WriteJSON(w, b)
 }
 
 //Put gov config
@@ -81,7 +84,7 @@ func (t *Governance) Put(w http.ResponseWriter, req *http.Request) {
 		controller.WriteError(w, discovery.ErrInternal, err.Error())
 		return
 	}
-	err = gov.Update(id, kind, project, body)
+	err = gov.Update(kind, id, project, body)
 	if err != nil {
 		if _, ok := err.(*kie.ErrIllegalItem); ok {
 			log.Error("", err)
@@ -143,9 +146,10 @@ func (t *Governance) Get(w http.ResponseWriter, req *http.Request) {
 
 //Delete delete gov config
 func (t *Governance) Delete(w http.ResponseWriter, req *http.Request) {
+	kind := req.URL.Query().Get(KindKey)
 	id := req.URL.Query().Get(IDKey)
 	project := req.URL.Query().Get(ProjectKey)
-	err := gov.Delete(id, project)
+	err := gov.Delete(kind, id, project)
 	if err != nil {
 		processError(w, err, "delete gov err")
 		return

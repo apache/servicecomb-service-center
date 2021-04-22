@@ -57,22 +57,31 @@ func TestCreate(t *testing.T) {
 	b, _ := json.MarshalIndent(&gov.Policy{
 		GovernancePolicy: &gov.GovernancePolicy{
 			Name: "Traffic2adminAPI",
+			Selector: &gov.Selector{
+				App:         MockApp,
+				Environment: MockEnv,
+			},
 		},
 		Spec: &gov.LBSpec{RetryNext: 3, MarkerName: "traffic2adminAPI"},
 	}, "", "  ")
 	res, err := svc.Create(MockKind, Project, b)
 	id = string(res)
 	assert.NoError(t, err)
+	assert.NotEmpty(t, id)
 }
 
 func TestUpdate(t *testing.T) {
 	b, _ := json.MarshalIndent(&gov.Policy{
 		GovernancePolicy: &gov.GovernancePolicy{
 			Name: "Traffic2adminAPI",
+			Selector: &gov.Selector{
+				App:         MockApp,
+				Environment: MockEnv,
+			},
 		},
 		Spec: &gov.LBSpec{RetryNext: 3, MarkerName: "traffic2adminAPI"},
 	}, "", "  ")
-	err := svc.Update(id, MockKind, Project, b)
+	err := svc.Update(MockKind, id, Project, b)
 	assert.NoError(t, err)
 }
 
@@ -80,6 +89,10 @@ func TestDisplay(t *testing.T) {
 	b, _ := json.MarshalIndent(&gov.Policy{
 		GovernancePolicy: &gov.GovernancePolicy{
 			Name: "Traffic2adminAPI",
+			Selector: &gov.Selector{
+				App:         MockApp,
+				Environment: MockEnv,
+			},
 		},
 	}, "", "  ")
 	res, err := svc.Create(MatchGroup, Project, b)
@@ -112,7 +125,7 @@ func TestGet(t *testing.T) {
 }
 
 func TestDelete(t *testing.T) {
-	err := svc.Delete(id, Project)
+	err := svc.Delete(MockKind, id, Project)
 	assert.NoError(t, err)
 	res, _ := svc.Get(MockKind, id, Project)
 	assert.Nil(t, res)

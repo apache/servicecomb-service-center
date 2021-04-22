@@ -22,12 +22,12 @@ package gov
 //Name is the policy name, for example: "rate-limit-payment-api"
 //MD is metadata.
 type GovernancePolicy struct {
-	Name       string   `json:"name,omitempty"`
-	ID         string   `json:"id,omitempty"`
-	Status     string   `json:"status,omitempty"`
-	CreatTime  int64    `json:"creatTime,omitempty"`
-	UpdateTime int64    `json:"updateTime,omitempty"`
-	Selector   Selector `json:"selector,omitempty"`
+	Name       string    `json:"name,omitempty"`
+	ID         string    `json:"id,omitempty"`
+	Status     string    `json:"status,omitempty"`
+	CreatTime  int64     `json:"creatTime,omitempty"`
+	UpdateTime int64     `json:"updateTime,omitempty"`
+	Selector   *Selector `json:"selector,omitempty"`
 }
 
 //DisplayData define display data
