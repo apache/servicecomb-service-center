@@ -48,7 +48,7 @@ func (d *Distributor) Create(kind, project string, spec []byte) ([]byte, error) 
 	return []byte(p.ID), err
 }
 
-func (d *Distributor) Update(id, kind, project string, spec []byte) error {
+func (d *Distributor) Update(kind, id, project string, spec []byte) error {
 	if d.lbPolicies[id] == nil {
 		return fmt.Errorf("id not exsit")
 	}
@@ -61,7 +61,7 @@ func (d *Distributor) Update(id, kind, project string, spec []byte) error {
 	return err
 }
 
-func (d *Distributor) Delete(id, project string) error {
+func (d *Distributor) Delete(kind, id, project string) error {
 	delete(d.lbPolicies, id)
 	return nil
 }
@@ -107,7 +107,7 @@ func (d *Distributor) List(kind, project, app, env string) ([]byte, error) {
 }
 
 func checkPolicy(g *gov.Policy, kind, app, env string) bool {
-	return g.Kind == kind && g.Selector.App == app && g.Selector.Environment == env
+	return g.Kind == kind && g.Selector != nil && g.Selector.App == app && g.Selector.Environment == env
 }
 
 func (d *Distributor) Get(kind, id, project string) ([]byte, error) {

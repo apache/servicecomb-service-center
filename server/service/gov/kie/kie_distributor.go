@@ -38,20 +38,19 @@ import (
 )
 
 type Distributor struct {
-	lbPolicies map[string]*gov.Policy
-	name       string
-	client     *kie.Client
+	name   string
+	client *kie.Client
 }
 
 const (
-	PREFIX         = "servicecomb."
-	MatchGroup     = "match-group"
-	EnableStatus   = "enabled"
-	ValueType      = "text"
-	AppKey         = "app"
-	EnvironmentKey = "environment"
-	EnvAll         = "all"
-	BusinessPrefix = "scene-"
+	KeyPrefix       = "servicecomb."
+	KindMatchGroup  = "match-group"
+	GroupNamePrefix = "scene-"
+	StatusEnabled   = "enabled"
+	TypeText        = "text"
+	KeyApp          = "app"
+	KeyEnvironment  = "environment"
+	EnvAll          = "all"
 )
 
 var PolicyNames = []string{"retry", "rateLimiting", "circuitBreaker", "bulkhead"}
@@ -64,13 +63,13 @@ func (d *Distributor) Create(kind, project string, spec []byte) ([]byte, error) 
 	if err != nil {
 		return nil, err
 	}
-	if kind == MatchGroup {
+	if kind == KindMatchGroup {
 		err = d.generateID(project, p)
 		if err != nil {
 			return nil, err
 		}
 	}
-	log.Info(fmt.Sprintf("create %v", &p))
+	log.Info(fmt.Sprintf("create %+v", p))
 	err = rule.Validate(kind, p.Spec)
 	if err != nil {
 		return nil, err
@@ -80,23 +79,21 @@ func (d *Distributor) Create(kind, project string, spec []byte) ([]byte, error) 
 		return nil, err
 	}
 	kv := kie.KVRequest{
-		Key:       PREFIX + toSnake(kind) + "." + p.Name,
+		Key:       toGovKeyPrefix(kind) + p.Name,
 		Value:     string(yamlByte),
-		Status:    EnableStatus,
-		ValueType: ValueType,
-		Labels:    map[string]string{AppKey: p.Selector.App, EnvironmentKey: p.Selector.Environment},
+		Status:    StatusEnabled,
+		ValueType: TypeText,
+		Labels:    map[string]string{KeyApp: p.Selector.App, KeyEnvironment: p.Selector.Environment},
 	}
 	res, err := d.client.Create(context.TODO(), kv, kie.WithProject(project))
 	if err != nil {
 		log.Error("kie create failed", err)
 		return nil, err
 	}
-	d.lbPolicies[p.GovernancePolicy.Name] = p
-	b, _ := json.MarshalIndent(res.ID, "", "  ")
-	return b, nil
+	return []byte(res.ID), nil
 }
 
-func (d *Distributor) Update(id, kind, project string, spec []byte) error {
+func (d *Distributor) Update(kind, id, project string, spec []byte) error {
 	p := &gov.Policy{}
 	err := json.Unmarshal(spec, p)
 	if err != nil {
@@ -121,11 +118,15 @@ func (d *Distributor) Update(id, kind, project string, spec []byte) error {
 		log.Error("kie update failed", err)
 		return err
 	}
-	d.lbPolicies[p.GovernancePolicy.Name] = p
 	return nil
 }
 
-func (d *Distributor) Delete(id, project string) error {
+func (d *Distributor) Delete(kind, id, project string) error {
+	if kind == KindMatchGroup {
+		// should remove all policies of this group
+		return d.DeleteMatchGroup(id, project)
+	}
+
 	err := d.client.Delete(context.TODO(), id, kie.WithProject(project))
 	if err != nil {
 		log.Error("kie delete failed", err)
@@ -134,8 +135,41 @@ func (d *Distributor) Delete(id, project string) error {
 	return nil
 }
 
+func (d *Distributor) DeleteMatchGroup(id string, project string) error {
+	policy, err := d.getPolicy(KindMatchGroup, id, project)
+	if err != nil {
+		log.Error("kie get failed", err)
+		return err
+	}
+
+	ops := []kie.GetOption{
+		kie.WithKey("wildcard(" + KeyPrefix + "*." + policy.Name + ")"),
+		kie.WithRevision(0),
+		kie.WithGetProject(project),
+	}
+	idList, _, err := d.client.List(context.TODO(), ops...)
+	if err != nil {
+		log.Error("kie list failed", err)
+		return err
+	}
+	var ids string
+	for _, res := range idList.Data {
+		ids += res.ID + ","
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+
+	err = d.client.Delete(context.TODO(), ids[:len(ids)-1])
+	if err != nil {
+		log.Error("kie list failed", err)
+		return err
+	}
+	return nil
+}
+
 func (d *Distributor) Display(project, app, env string) ([]byte, error) {
-	list, _, err := d.listDataByKind(MatchGroup, project, app, env)
+	list, _, err := d.listDataByKind(KindMatchGroup, project, app, env)
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +189,7 @@ func (d *Distributor) Display(project, app, env string) ([]byte, error) {
 	}
 	r := make([]*gov.DisplayData, 0, list.Total)
 	for _, item := range list.Data {
-		match, err := d.transform(item, MatchGroup)
+		match, err := d.transform(item, KindMatchGroup)
 		if err != nil {
 			return nil, err
 		}
@@ -193,6 +227,15 @@ func (d *Distributor) List(kind, project, app, env string) ([]byte, error) {
 }
 
 func (d *Distributor) Get(kind, id, project string) ([]byte, error) {
+	policy, err := d.getPolicy(kind, id, project)
+	if err != nil {
+		return nil, err
+	}
+	b, _ := json.MarshalIndent(policy, "", "  ")
+	return b, nil
+}
+
+func (d *Distributor) getPolicy(kind string, id string, project string) (*gov.Policy, error) {
 	kv, err := d.client.Get(context.TODO(), id, kie.WithGetProject(project))
 	if err != nil {
 		return nil, err
@@ -201,8 +244,7 @@ func (d *Distributor) Get(kind, id, project string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	b, _ := json.MarshalIndent(policy, "", "  ")
-	return b, nil
+	return policy, nil
 }
 
 func (d *Distributor) Type() string {
@@ -224,7 +266,7 @@ func initClient(endpoint string) *kie.Client {
 }
 
 func new(opts config.DistributorOptions) (svc.ConfigDistributor, error) {
-	return &Distributor{name: opts.Name, lbPolicies: map[string]*gov.Policy{}, client: initClient(opts.Endpoint)}, nil
+	return &Distributor{name: opts.Name, client: initClient(opts.Endpoint)}, nil
 }
 
 func toSnake(name string) string {
@@ -251,16 +293,16 @@ func toSnake(name string) string {
 
 func (d *Distributor) listDataByKind(kind, project, app, env string) (*kie.KVResponse, int, error) {
 	ops := []kie.GetOption{
-		kie.WithKey("beginWith(" + PREFIX + toSnake(kind) + ")"),
+		kie.WithKey("beginWith(" + toGovKeyPrefix(kind) + ")"),
 		kie.WithRevision(0),
 		kie.WithGetProject(project),
 	}
 	labels := map[string]string{}
 	if env != EnvAll {
-		labels[EnvironmentKey] = env
+		labels[KeyEnvironment] = env
 	}
 	if app != "" {
-		labels[AppKey] = app
+		labels[KeyApp] = app
 	}
 	if len(labels) > 0 {
 		ops = append(ops, kie.WithLabels(labels))
@@ -272,7 +314,8 @@ func (d *Distributor) generateID(project string, p *gov.Policy) error {
 	if p.Name != "" {
 		return nil
 	}
-	list, _, err := d.listDataByKind(MatchGroup, project, p.Selector.App, p.Selector.Environment)
+	kind := KindMatchGroup
+	list, _, err := d.listDataByKind(kind, project, p.Selector.App, p.Selector.Environment)
 	if err != nil {
 		return err
 	}
@@ -280,8 +323,9 @@ func (d *Distributor) generateID(project string, p *gov.Policy) error {
 	for {
 		var repeat bool
 		id = getID()
+		govKey := toGovKeyPrefix(kind) + id
 		for _, datum := range list.Data {
-			if id == MatchGroup+datum.Key {
+			if govKey == datum.Key {
 				repeat = true
 				break
 			}
@@ -302,12 +346,14 @@ func getID() string {
 	for i := 0; i < 4; i++ {
 		result = append(result, b[r.Intn(len(b))])
 	}
-	return BusinessPrefix + string(result)
+	return GroupNamePrefix + string(result)
 }
 
 func (d *Distributor) transform(kv *kie.KVDoc, kind string) (*gov.Policy, error) {
 	goc := &gov.Policy{
-		GovernancePolicy: &gov.GovernancePolicy{},
+		GovernancePolicy: &gov.GovernancePolicy{
+			Selector: &gov.Selector{},
+		},
 	}
 	spec := make(map[string]interface{})
 	specJSON, _ := yaml.YAMLToJSON([]byte(kv.Value))
@@ -321,11 +367,15 @@ func (d *Distributor) transform(kv *kie.KVDoc, kind string) (*gov.Policy, error)
 	goc.Status = kv.Status
 	goc.Name = kv.Key[strings.LastIndex(kv.Key, ".")+1 : len(kv.Key)]
 	goc.Spec = spec
-	goc.Selector.App = kv.Labels[AppKey]
-	goc.Selector.Environment = kv.Labels[EnvironmentKey]
+	goc.Selector.App = kv.Labels[KeyApp]
+	goc.Selector.Environment = kv.Labels[KeyEnvironment]
 	goc.CreatTime = kv.CreatTime
 	goc.UpdateTime = kv.UpdateTime
 	return goc, nil
+}
+
+func toGovKeyPrefix(kind string) string {
+	return KeyPrefix + toSnake(kind) + "."
 }
 
 func init() {
