@@ -42,9 +42,17 @@ type InstanceEvent struct {
 	Response *pb.WatchInstanceResponse
 }
 
+type InstanceEvents struct {
+	notify.Event
+	Revision int64
+	Response []*pb.WatchInstanceResponse
+}
+
 type InstanceEventListWatcher struct {
 	notify.Subscriber
+	needMerge    bool
 	Job          chan *InstanceEvent
+	MergedJob    chan *InstanceEvents
 	ListRevision int64
 	ListFunc     func() (results []*pb.WatchInstanceResponse, rev int64)
 	listCh       chan struct{}
@@ -85,11 +93,6 @@ func (w *InstanceEventListWatcher) OnMessage(job notify.Event) {
 		return
 	}
 
-	wJob, ok := job.(*InstanceEvent)
-	if !ok {
-		return
-	}
-
 	select {
 	case <-w.listCh:
 	default:
@@ -104,23 +107,60 @@ func (w *InstanceEventListWatcher) OnMessage(job notify.Event) {
 		}
 	}
 
-	// the negative revision is specially for mongo scene,should be removed after mongo support revison.
-	if wJob.Revision >= 0 && wJob.Revision <= w.ListRevision {
+	w.sendMessage(job)
+}
+
+func (w *InstanceEventListWatcher) sendMessage(j interface{}) {
+	if w.needMerge {
+		w.sendMergedMessages(j)
+		return
+	}
+	w.sendSingleMessage(j)
+}
+
+func (w *InstanceEventListWatcher) sendSingleMessage(j interface{}) {
+	defer log.Recover()
+	job, ok := j.(*InstanceEvent)
+	if !ok {
+		return
+	}
+	if job.Revision >= 0 && job.Revision <= w.ListRevision {
 		log.Warnf("unexpected notify %s job is coming in, watcher %s %s, job is %v, current revision is %v",
 			w.Type(), w.Group(), w.Subject(), job, w.ListRevision)
 		return
 	}
-	w.sendMessage(wJob)
-}
-
-func (w *InstanceEventListWatcher) sendMessage(job *InstanceEvent) {
-	defer log.Recover()
 	select {
 	case w.Job <- job:
 	default:
 		timer := time.NewTimer(w.Timeout())
 		select {
 		case w.Job <- job:
+			timer.Stop()
+		case <-timer.C:
+			log.Errorf(nil,
+				"the %s watcher %s %s event queue is full[over %s], drop the event %v",
+				w.Type(), w.Group(), w.Subject(), w.Timeout(), job)
+		}
+	}
+}
+
+func (w *InstanceEventListWatcher) sendMergedMessages(j interface{}) {
+	defer log.Recover()
+	job, ok := j.(*InstanceEvents)
+	if !ok {
+		return
+	}
+	if job.Revision >= 0 && job.Revision <= w.ListRevision {
+		log.Warnf("unexpected notify %s merge ob is coming in, watcher %s %s, job is %v, current revision is %v",
+			w.Type(), w.Group(), w.Subject(), job, w.ListRevision)
+		return
+	}
+	select {
+	case w.MergedJob <- job:
+	default:
+		timer := time.NewTimer(w.Timeout())
+		select {
+		case w.MergedJob <- job:
 			timer.Stop()
 		case <-timer.C:
 			log.Errorf(nil,
@@ -146,6 +186,14 @@ func NewInstanceEvent(serviceID, domainProject string, rev int64, response *pb.W
 	}
 }
 
+func NewInstanceEvents(serviceID, domainProject string, rev int64, response []*pb.WatchInstanceResponse) *InstanceEvents {
+	return &InstanceEvents{
+		Event:    notify.NewEvent(INSTANCE, domainProject, serviceID),
+		Revision: rev,
+		Response: response,
+	}
+}
+
 func NewInstanceEventWithTime(serviceID, domainProject string, rev int64, createAt simple.Time, response *pb.WatchInstanceResponse) *InstanceEvent {
 	return &InstanceEvent{
 		Event:    notify.NewEventWithTime(INSTANCE, domainProject, serviceID, createAt),
@@ -159,6 +207,7 @@ func NewInstanceEventListWatcher(serviceID, domainProject string,
 	watcher := &InstanceEventListWatcher{
 		Subscriber: notify.NewSubscriber(INSTANCE, domainProject, serviceID),
 		Job:        make(chan *InstanceEvent, INSTANCE.QueueSize()),
+		MergedJob:  make(chan *InstanceEvents, INSTANCE.QueueSize()),
 		ListFunc:   listFunc,
 		listCh:     make(chan struct{}),
 	}

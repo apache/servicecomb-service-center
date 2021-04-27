@@ -182,6 +182,11 @@ func (wh *WebSocket) Pick() interface{} {
 				return fmt.Errorf("server shutdown")
 			}
 			return j
+		case j:= <-wh.watcher.MergedJob:
+			if j==nil {
+				return fmt.Errorf("merged server shudown")
+			}
+			return j
 		default:
 			// reset if idle
 			wh.SetReady()

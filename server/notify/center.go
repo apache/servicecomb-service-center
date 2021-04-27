@@ -20,11 +20,17 @@ import (
 )
 
 var notifyService *notify.Service
+var pushTaskEngine *PushTaskEngine
 
 func init() {
 	notifyService = notify.NewNotifyService()
+	pushTaskEngine = NewPushTaskEngine()
 }
 
 func Center() *notify.Service {
 	return notifyService
+}
+
+func TaskEngine() *PushTaskEngine {
+	return pushTaskEngine
 }
