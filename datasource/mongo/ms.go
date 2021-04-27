@@ -23,7 +23,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/apache/servicecomb-service-center/datasource/cache"
 	"reflect"
 	"regexp"
 	"sort"
@@ -38,6 +37,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/datasource/cache"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client/dao"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
@@ -1404,13 +1404,80 @@ func getServiceDetailUtil(ctx context.Context, mgs *model.Service, countOnly boo
 }
 
 // Instance management
-func (ds *DataSource) RegisterInstance(ctx context.Context, request *discovery.RegisterInstanceRequest) (*discovery.RegisterInstanceResponse, error) {
+func (ds *DataSource) RegisterInstance(ctx context.Context,
+	request *discovery.RegisterInstanceRequest) (*discovery.RegisterInstanceResponse, error) {
+
+	isCustomID := true
+
+	if len(request.Instance.InstanceId) == 0 {
+		isCustomID = false
+		request.Instance.InstanceId = uuid.Generator().GetInstanceID(ctx)
+	}
+
+	// if queueSize is more than 0 and channel is not full, then do fast register instance
+	if fastRegConfig.QueueSize > 0 && len(GetFastRegisterInstanceService().InstEventCh) < fastRegConfig.QueueSize {
+		// fast register, just add instance to channel and batch register them later
+		event := &InstanceRegisterEvent{ctx, request, isCustomID, 0}
+		GetFastRegisterInstanceService().AddEvent(event)
+
+		return &discovery.RegisterInstanceResponse{
+			Response:   discovery.CreateResponse(discovery.ResponseSuccess, "Register service instance successfully."),
+			InstanceId: request.Instance.InstanceId,
+		}, nil
+	}
+
+	return RegisterInstanceSingle(ctx, request, isCustomID)
+}
+
+func RegisterInstanceSingle(ctx context.Context, request *discovery.RegisterInstanceRequest,
+	isUserDefinedID bool) (*discovery.RegisterInstanceResponse, error) {
+
+	resp, needRegister, err := preProcessRegister(ctx, request.Instance, isUserDefinedID)
+
+	if err != nil || !needRegister {
+		log.Error("pre process instance err, or instance already existed", err)
+		return resp, err
+	}
+
+	return registryInstance(ctx, request)
+}
+
+func RegisterInstanceBatch(ctx context.Context, events []*InstanceRegisterEvent) (*discovery.RegisterInstanceResponse, error) {
+	instances := make([]interface{}, len(events))
+
+	for i, event := range events {
+		eventCtx := event.Ctx
+		instance := event.Request.Instance
+
+		resp, needRegister, err := preProcessRegister(eventCtx, instance, event.isCustomID)
+
+		if err != nil || !needRegister {
+			log.Error("pre process instance err, or instance existed", err)
+			return resp, err
+		}
+
+		domain := util.ParseDomain(eventCtx)
+		project := util.ParseProject(eventCtx)
+
+		data := model.Instance{
+			Domain:      domain,
+			Project:     project,
+			RefreshTime: time.Now(),
+			Instance:    instance,
+		}
+		instances[i] = data
+	}
+
+	return registryInstances(ctx, instances)
+}
+
+func preProcessRegister(ctx context.Context, instance *discovery.MicroServiceInstance,
+	isUserDefinedID bool) (*discovery.RegisterInstanceResponse, bool, error) {
 	remoteIP := util.GetIPFromContext(ctx)
-	instance := request.Instance
 
 	// 允许自定义 id
-	if len(instance.InstanceId) > 0 {
-		resp, err := ds.Heartbeat(ctx, &discovery.HeartbeatRequest{
+	if isUserDefinedID {
+		resp, err := datasource.Instance().Heartbeat(ctx, &discovery.HeartbeatRequest{
 			InstanceId: instance.InstanceId,
 			ServiceId:  instance.ServiceId,
 		})
@@ -1419,7 +1486,7 @@ func (ds *DataSource) RegisterInstance(ctx context.Context, request *discovery.R
 				instance.ServiceId, instance.Endpoints, instance.HostName, remoteIP), err)
 			return &discovery.RegisterInstanceResponse{
 				Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
-			}, nil
+			}, false, nil
 		}
 		switch resp.Response.GetCode() {
 		case discovery.ResponseSuccess:
@@ -1428,24 +1495,17 @@ func (ds *DataSource) RegisterInstance(ctx context.Context, request *discovery.R
 			return &discovery.RegisterInstanceResponse{
 				Response:   resp.Response,
 				InstanceId: instance.InstanceId,
-			}, nil
+			}, false, nil
 		case discovery.ErrInstanceNotExists:
-			// register a new one
-			if request.Instance.HealthCheck == nil {
-				request.Instance.HealthCheck = &discovery.HealthCheck{
-					Mode:     discovery.CHECK_BY_HEARTBEAT,
-					Interval: apt.RegistryDefaultLeaseRenewalinterval,
-					Times:    apt.RegistryDefaultLeaseRetrytimes,
-				}
-			}
-			return registryInstance(ctx, request)
+			//register a new one
 		default:
 			log.Error(fmt.Sprintf("register instance failed, reuse instance %s %s, operator %s",
 				instance.ServiceId, instance.InstanceId, remoteIP), err)
 			return &discovery.RegisterInstanceResponse{
 				Response: resp.Response,
-			}, err
+			}, false, err
 		}
+
 	}
 
 	if err := preProcessRegisterInstance(ctx, instance); err != nil {
@@ -1453,9 +1513,13 @@ func (ds *DataSource) RegisterInstance(ctx context.Context, request *discovery.R
 			instance.ServiceId, instance.Endpoints, instance.HostName, remoteIP), err)
 		return &discovery.RegisterInstanceResponse{
 			Response: discovery.CreateResponseWithSCErr(err),
-		}, nil
+		}, false, nil
 	}
-	return registryInstance(ctx, request)
+
+	return &discovery.RegisterInstanceResponse{
+		Response:   discovery.CreateResponse(discovery.ResponseSuccess, "process success"),
+		InstanceId: instance.InstanceId,
+	}, true, nil
 }
 
 // GetInstance returns instance under the current domain
@@ -1992,6 +2056,24 @@ func registryInstance(ctx context.Context, request *discovery.RegisterInstanceRe
 	}, nil
 }
 
+func registryInstances(ctx context.Context, instances []interface{}) (*discovery.RegisterInstanceResponse, error) {
+	opts := options.InsertManyOptions{}
+	opts.SetOrdered(false)
+	opts.SetBypassDocumentValidation(true)
+	_, err := client.GetMongoClient().BatchInsert(ctx, model.CollectionInstance, instances, &opts)
+
+	if err != nil {
+		log.Error("Batch register instance failed", err)
+		return &discovery.RegisterInstanceResponse{
+			Response: discovery.CreateResponse(discovery.ErrUnavailableBackend, err.Error()),
+		}, err
+	}
+
+	return &discovery.RegisterInstanceResponse{
+		Response: discovery.CreateResponse(discovery.ResponseSuccess, "Register service instance successfully."),
+	}, nil
+}
+
 func (ds *DataSource) findSharedServiceInstance(ctx context.Context, request *discovery.FindInstancesRequest, provider *discovery.MicroServiceKey, rev string) (*discovery.FindInstancesResponse, error) {
 	var err error
 	// it means the shared micro-services must be the same env with SC.
@@ -2367,12 +2449,23 @@ func preProcessRegisterInstance(ctx context.Context, instance *discovery.MicroSe
 			instance.HealthCheck.Times = retryTimes
 		}
 	}
-	filter := mutil.NewBasicFilter(ctx, mutil.ServiceServiceID(instance.ServiceId))
-	microservice, err := dao.GetService(ctx, filter)
-	if err != nil {
-		return discovery.NewError(discovery.ErrServiceNotExists, "invalid 'serviceID' in request body.")
+
+	cacheService, ok := cache.GetServiceByID(instance.ServiceId)
+
+	var microService *discovery.MicroService
+	if ok {
+		microService = cacheService.Service
+		instance.Version = microService.Version
+	} else {
+		filter := mutil.NewBasicFilter(ctx, mutil.ServiceServiceID(instance.ServiceId))
+		microservice, err := dao.GetService(ctx, filter)
+		if err != nil {
+			log.Error("Get service failed", err)
+			return discovery.NewError(discovery.ErrServiceNotExists, "invalid 'serviceID' in request body.")
+		}
+		instance.Version = microservice.Service.Version
 	}
-	instance.Version = microservice.Service.Version
+
 	return nil
 }
 

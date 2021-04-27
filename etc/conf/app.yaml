@@ -132,6 +132,12 @@ registry:
       verifyPeer: false
       certFile: /opt/ssl/client.crt
       keyFile: /opt/ssl/client.key
+  fastRegistration:
+    # this config is only support in mongo case now
+    # if fastRegister.queueSize is > 0, enable to fast register instance, else register instance in normal case
+    # if fastRegister is enabled, instance will be registered asynchronously,
+    # just put instance in the queue and return instanceID, and then register through the timing task
+    queueSize: 0
 
   service:
     # enable the job clear the microservices which deploy no instance

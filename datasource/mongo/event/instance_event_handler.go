@@ -75,6 +75,7 @@ func (h InstanceEventHandler) OnEvent(evt sd.MongoEvent) {
 		metrics.ReportInstances(instance.Domain, increaseOne)
 		frameworkName, frameworkVersion := getFramework(microService)
 		metrics.ReportFramework(instance.Domain, instance.Project, frameworkName, frameworkVersion, increaseOne)
+		return
 	case discovery.EVT_CREATE:
 		metrics.ReportInstances(instance.Domain, increaseOne)
 	case discovery.EVT_DELETE:
