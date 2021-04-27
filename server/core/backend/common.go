@@ -90,7 +90,7 @@ func registerInnerTypes() {
 			WithInitSize(100).WithParser(proto.DependencyRuleParser)))
 	DependencyQueue = Store().MustInstall(NewAddOn("DEPENDENCY_QUEUE",
 		discovery.Configure().WithPrefix(core.GetServiceDependencyQueueRootKey("")).
-			WithInitSize(100).WithParser(proto.DependencyQueueParser)))
+			WithInitSize(100).WithPageSize(1500).WithParser(proto.DependencyQueueParser)))
 	PROJECT = Store().MustInstall(NewAddOn("PROJECT",
 		discovery.Configure().WithPrefix(core.GetProjectRootKey("")).
 			WithInitSize(100).WithParser(proto.StringParser)))

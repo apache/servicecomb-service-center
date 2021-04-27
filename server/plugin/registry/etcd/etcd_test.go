@@ -357,7 +357,7 @@ func TestEtcdClient(t *testing.T) {
 
 	// large data
 	var wg sync.WaitGroup
-	for i := 0; i < registry.DefaultPageCount+1; i++ {
+	for i := 0; i < registry.DefaultLimit+1; i++ {
 		wg.Add(1)
 		v := strconv.Itoa(i)
 		go func() {
@@ -373,14 +373,14 @@ func TestEtcdClient(t *testing.T) {
 	resp, err = etcdc.Do(context.Background(), registry.GET,
 		registry.WithStrKey("/test_page/"),
 		registry.WithStrEndKey("/test_page/9999"))
-	if err != nil || !resp.Succeeded || resp.Count != registry.DefaultPageCount+1 ||
-		len(resp.Kvs) != registry.DefaultPageCount+1 {
+	if err != nil || !resp.Succeeded || resp.Count != registry.DefaultLimit+1 ||
+		len(resp.Kvs) != registry.DefaultLimit+1 {
 		t.Fatalf("TestEtcdClient_Do failed, %#v", err)
 	}
 	resp, err = etcdc.Do(context.Background(), registry.GET,
 		registry.WithStrKey("/test_page/"), registry.WithPrefix(), registry.WithDescendOrder())
-	if err != nil || !resp.Succeeded || resp.Count != registry.DefaultPageCount+1 ||
-		len(resp.Kvs) != registry.DefaultPageCount+1 ||
+	if err != nil || !resp.Succeeded || resp.Count != registry.DefaultLimit+1 ||
+		len(resp.Kvs) != registry.DefaultLimit+1 ||
 		string(resp.Kvs[0].Key) != "/test_page/999" {
 		t.Fatalf("TestEtcdClient_Do failed, %#v", err)
 	}
@@ -826,7 +826,7 @@ func TestEtcdClient_paging(t *testing.T) {
 
 	op := registry.PluginOp{
 		Offset: -1,
-		Limit:  registry.DefaultPageCount,
+		Limit:  registry.DefaultLimit,
 	}
 	r, err := c.paging(context2.Background(), op)
 	if err != nil {

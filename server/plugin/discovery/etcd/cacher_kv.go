@@ -129,7 +129,7 @@ func (c *KvCacher) ListAndWatch(ctx context.Context) error {
 	defer log.Recover() // ensure ListAndWatch never raise panic
 
 	cfg := ListWatchConfig{
-		Timeout: c.Cfg.Timeout,
+		Config:  c.Cfg,
 		Context: ctx,
 	}
 

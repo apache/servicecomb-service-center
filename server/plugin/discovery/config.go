@@ -24,8 +24,11 @@ import (
 
 type Config struct {
 	// Key is the prefix to unique specify resource type
-	Key          string
-	InitSize     int
+	Key string
+	// InitSize the init cache size, disable cache when InitSize = 0
+	InitSize int
+	// PageSize try to batch query backend to get all KVs
+	PageSize     int64
 	Timeout      time.Duration
 	Period       time.Duration
 	DeferHandler DeferHandler
@@ -35,8 +38,8 @@ type Config struct {
 }
 
 func (cfg *Config) String() string {
-	return fmt.Sprintf("{key: %s, timeout: %s, period: %s, lease: %v}",
-		cfg.Key, cfg.Timeout, cfg.Period, cfg.Lease)
+	return fmt.Sprintf("{key: %s, timeout: %s, period: %s, lease: %v, initSize: %v, pageSize: %v}",
+		cfg.Key, cfg.Timeout, cfg.Period, cfg.Lease, cfg.InitSize, cfg.PageSize)
 }
 
 func (cfg *Config) WithPrefix(key string) *Config {
@@ -46,6 +49,11 @@ func (cfg *Config) WithPrefix(key string) *Config {
 
 func (cfg *Config) WithInitSize(size int) *Config {
 	cfg.InitSize = size
+	return cfg
+}
+
+func (cfg *Config) WithPageSize(size int64) *Config {
+	cfg.PageSize = size
 	return cfg
 }
 
@@ -94,9 +102,10 @@ func (cfg *Config) WithLease() *Config {
 func Configure() *Config {
 	return &Config{
 		Key:      "/",
+		InitSize: DefaultCacheInitSize,
+		PageSize: DefaultPageSize,
 		Timeout:  DefaultTimeout,
 		Period:   time.Second,
-		InitSize: DefaultCacheInitSize,
 		Parser:   proto.BytesParser,
 	}
 }

@@ -18,7 +18,6 @@ package etcd
 
 import (
 	"fmt"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"strings"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -33,20 +32,19 @@ import (
 // Indexer implements discovery.Indexer.
 // Indexer searches data from etcd server.
 type Indexer struct {
+	Cfg    *discovery.Config
 	Client registry.Registry
-	Parser proto.Parser
-	Root   string
 }
 
 func (i *Indexer) CheckPrefix(key string) error {
-	if strings.Index(key, i.Root) != 0 {
-		return fmt.Errorf("search '%s' mismatch pattern %s", key, i.Root)
+	if strings.Index(key, i.Cfg.Key) != 0 {
+		return fmt.Errorf("search '%s' mismatch pattern %s", key, i.Cfg.Key)
 	}
 	return nil
 }
 
 func (i *Indexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (r *discovery.Response, err error) {
-	op := registry.OpGet(opts...)
+	op := i.toGetOpts(opts)
 	key := util.BytesToStringWithNoCopy(op.Key)
 
 	log.Debugf("search '%s' match special options, request etcd server, opts: %s", key, op)
@@ -66,7 +64,7 @@ func (i *Indexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (
 		return
 	}
 
-	p := i.Parser
+	p := i.Cfg.Parser
 	if op.KeyOnly {
 		p = nil
 	}
@@ -83,11 +81,16 @@ func (i *Indexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (
 	return
 }
 
+func (i *Indexer) toGetOpts(opts []registry.PluginOpOption) registry.PluginOp {
+	op := registry.OpGet(append([]registry.PluginOpOption{registry.WithLimit(i.Cfg.PageSize)}, opts...)...)
+	return op
+}
+
 // Creditable implements discovery.Indexer.Creditable.
 func (i *Indexer) Creditable() bool {
 	return true
 }
 
-func NewEtcdIndexer(root string, p proto.Parser) (indexer *Indexer) {
-	return &Indexer{Client: backend.Registry(), Parser: p, Root: root}
+func NewEtcdIndexer(cfg *discovery.Config) (indexer *Indexer) {
+	return &Indexer{Cfg: cfg, Client: backend.Registry()}
 }

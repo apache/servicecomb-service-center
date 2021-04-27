@@ -28,7 +28,10 @@ import (
 func TestEtcdIndexer_Search(t *testing.T) {
 	data := &registry.PluginResponse{Revision: 1}
 	c := &mockRegistry{}
-	i := &Indexer{Client: c, Root: "/", Parser: proto.BytesParser}
+	cfg := &discovery.Config{
+		Key: "/", Parser: proto.BytesParser,
+	}
+	i := &Indexer{Cfg: cfg, Client: c}
 
 	// case: key does not contain prefix
 	resp, err := i.Search(context.Background(), registry.WithStrKey("a"))
@@ -52,14 +55,14 @@ func TestEtcdIndexer_Search(t *testing.T) {
 	// case: parse error
 	data.Count = 2
 	data.Kvs = []*mvccpb.KeyValue{{Key: []byte("/a/b"), Value: []byte("abc")}, {Key: []byte("/a/c"), Value: []byte("{}")}}
-	old := i.Parser
-	i.Parser = proto.MapParser
+	old := i.Cfg.Parser
+	i.Cfg.Parser = proto.MapParser
 	c.Response = data
 	resp, err = i.Search(context.Background(), registry.WithStrKey("/a"))
 	if err != nil || resp == nil || resp.Count != 2 || len(resp.Kvs) != 1 {
 		t.Fatalf("TestEtcdIndexer_Search failed, %v, %v", err, resp)
 	}
-	i.Parser = old
+	i.Cfg.Parser = old
 
 	// case: normal
 	data.Count = 2
@@ -81,6 +84,9 @@ func TestEtcdIndexer_Search(t *testing.T) {
 
 func TestCacheIndexer_Search(t *testing.T) {
 	c := &mockCache{}
+	cfg := &discovery.Config{
+		Key: "/",
+	}
 	cli := &mockRegistry{Response: &registry.PluginResponse{
 		Revision: 1,
 		Kvs:      []*mvccpb.KeyValue{{Key: []byte("/a/b"), Value: []byte("abc")}},
@@ -88,7 +94,7 @@ func TestCacheIndexer_Search(t *testing.T) {
 	}}
 	i := &CacheIndexer{
 		Indexer: &Indexer{
-			Root:   "/",
+			Cfg:    cfg,
 			Client: cli,
 		},
 		CacheIndexer: discovery.NewCacheIndexer(c),

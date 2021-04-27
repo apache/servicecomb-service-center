@@ -60,7 +60,7 @@ func NewEtcdAdaptor(name string, cfg *discovery.Config) *Adaptor {
 			"core will not cache '%s' and ignore all events of it, cache enabled: %v, init size: %d",
 			name, core.ServerInfo.Config.EnableCache, cfg.InitSize)
 		adaptor.Cacher = discovery.NullCacher
-		adaptor.Indexer = NewEtcdIndexer(cfg.Key, cfg.Parser)
+		adaptor.Indexer = NewEtcdIndexer(cfg)
 	}
 	return &adaptor
 }

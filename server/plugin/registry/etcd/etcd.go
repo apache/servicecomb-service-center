@@ -420,7 +420,7 @@ func (c *Client) paging(ctx context.Context, op registry.PluginOp) (*clientv3.Ge
 			limit++
 			start = 1
 		}
-		ops := append(baseOps, clientv3.WithLimit(int64(limit)))
+		ops := append(baseOps, clientv3.WithLimit(limit))
 		recordResp, err := c.Client.Get(ctx, nextKey, ops...)
 		if err != nil {
 			return nil, err

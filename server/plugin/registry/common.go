@@ -53,8 +53,7 @@ const (
 )
 
 const (
-	// grpc does not allow to transport a large body more then 4MB in a request
-	DefaultPageCount = 4096
+	DefaultLimit = 4096
 	// the timeout dial to etcd
 	defaultDialTimeout    = 10 * time.Second
 	defaultRequestTimeout = 30 * time.Second

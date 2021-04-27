@@ -19,23 +19,23 @@ package etcd
 import (
 	"context"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
-	"time"
 )
 
 type ListWatchConfig struct {
-	Timeout time.Duration
+	*discovery.Config
 	Context context.Context
 }
 
 func (lo *ListWatchConfig) String() string {
-	return fmt.Sprintf("{timeout: %s}", lo.Timeout)
+	return fmt.Sprintf("{Config: %v, timeout: %s}", lo.Config, lo.Timeout)
 }
 
 type ListWatch interface {
-	List(op ListWatchConfig) (*registry.PluginResponse, error)
+	List(cfg ListWatchConfig) (*registry.PluginResponse, error)
 	// not support new multiple watchers
-	Watch(op ListWatchConfig) Watcher
+	Watch(cfg ListWatchConfig) Watcher
 	//
 	DoWatch(ctx context.Context, f func(*registry.PluginResponse)) error
 	Revision() int64
