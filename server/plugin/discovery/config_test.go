@@ -17,6 +17,7 @@ package discovery
 
 import (
 	"github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/stretchr/testify/assert"
 	"strings"
 	"testing"
 	"time"
@@ -75,7 +76,5 @@ func TestConfigure(t *testing.T) {
 	if cfg.Parser != proto.MapParser {
 		t.Fatalf("TestConfigure failed")
 	}
-	if !strings.HasPrefix(cfg.String(), "{key:") {
-		t.Fatalf("TestConfigure failed")
-	}
+	assert.True(t, strings.HasPrefix(cfg.String(), "{key:"), "TestConfigure_String failed")
 }

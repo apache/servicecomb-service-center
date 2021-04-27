@@ -82,7 +82,7 @@ func (i *Indexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (
 }
 
 func (i *Indexer) toGetOpts(opts []registry.PluginOpOption) registry.PluginOp {
-	op := registry.OpGet(append([]registry.PluginOpOption{registry.WithLimit(i.Cfg.PageSize)}, opts...)...)
+	op := registry.OpGet(append([]registry.PluginOpOption{registry.WithLimit(i.Cfg.MaxPageSize)}, opts...)...)
 	return op
 }
 

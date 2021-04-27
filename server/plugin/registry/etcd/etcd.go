@@ -524,6 +524,7 @@ func (c *Client) Do(ctx context.Context, opts ...registry.PluginOpOption) (*regi
 	}
 
 	if err != nil {
+		log.Errorf(err, "registry client do %s", op)
 		return nil, err
 	}
 
@@ -578,6 +579,7 @@ func (c *Client) TxnWithCmp(ctx context.Context, success []registry.PluginOp, cm
 	}
 	resp, err := txn.Commit()
 	if err != nil {
+		log.Errorf(err, "registry client txn {if: %v, then: %v, else: %v}", cmps, success, fail)
 		if err.Error() == rpctypes.ErrKeyNotFound.Error() {
 			// etcd return ErrKeyNotFound if key does not exist and
 			// the PUT options contain WithIgnoreLease
@@ -585,8 +587,8 @@ func (c *Client) TxnWithCmp(ctx context.Context, success []registry.PluginOp, cm
 		}
 		return nil, err
 	}
-	log.NilOrWarnf(start, "registry client txn {if(%v): %s, then: %d, else: %d}, rev: %d",
-		resp.Succeeded, cmps, len(success), len(fail), resp.Header.Revision)
+	log.NilOrWarnf(start, "registry client txn {if(%v): %v, then: %v, else: %v}, rev: %d",
+		resp.Succeeded, cmps, success, fail, resp.Header.Revision)
 
 	var rangeResponse etcdserverpb.RangeResponse
 	for _, itf := range resp.Responses {

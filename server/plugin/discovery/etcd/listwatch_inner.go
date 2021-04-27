@@ -30,10 +30,10 @@ type innerListWatch struct {
 	rev int64
 }
 
-func (lw *innerListWatch) List(cfg ListWatchConfig) (*registry.PluginResponse, error) {
-	otCtx, cancel := context.WithTimeout(cfg.Context, cfg.Timeout)
+func (lw *innerListWatch) List(opts ListWatchOptions) (*registry.PluginResponse, error) {
+	otCtx, cancel := context.WithTimeout(opts.Context, opts.Timeout)
 	defer cancel()
-	resp, err := lw.Client.Do(otCtx, lw.toGetOpts(cfg)...)
+	resp, err := lw.Client.Do(otCtx, lw.toGetOpts(opts)...)
 	if err != nil {
 		log.Errorf(err, "list prefix %s failed, current rev: %d", lw.Prefix, lw.Revision())
 		return nil, err
@@ -42,8 +42,8 @@ func (lw *innerListWatch) List(cfg ListWatchConfig) (*registry.PluginResponse, e
 	return resp, nil
 }
 
-func (lw *innerListWatch) toGetOpts(cfg ListWatchConfig) []registry.PluginOpOption {
-	return append([]registry.PluginOpOption{registry.WithLimit(cfg.PageSize)}, registry.WatchPrefixOpOptions(lw.Prefix)...)
+func (lw *innerListWatch) toGetOpts(opts ListWatchOptions) []registry.PluginOpOption {
+	return append([]registry.PluginOpOption{registry.WithLimit(opts.MaxPageSize)}, registry.WatchPrefixOpOptions(lw.Prefix)...)
 }
 
 func (lw *innerListWatch) Revision() int64 {
@@ -54,8 +54,8 @@ func (lw *innerListWatch) setRevision(rev int64) {
 	lw.rev = rev
 }
 
-func (lw *innerListWatch) Watch(op ListWatchConfig) Watcher {
-	return newInnerWatcher(lw, op)
+func (lw *innerListWatch) Watch(opts ListWatchOptions) Watcher {
+	return newInnerWatcher(lw, opts)
 }
 
 func (lw *innerListWatch) DoWatch(ctx context.Context, f func(*registry.PluginResponse)) error {

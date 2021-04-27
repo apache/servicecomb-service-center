@@ -244,6 +244,9 @@ func parseAddOrUpdateRules(ctx context.Context, dep *Dependency) (createDependen
 	createDependencyRuleList = make([]*pb.MicroServiceKey, 0, len(dep.ProvidersRule))
 	existDependencyRuleList = make([]*pb.MicroServiceKey, 0, len(oldProviderRules.Dependency))
 	for _, tmpProviderRule := range dep.ProvidersRule {
+		if apt.IsShared(tmpProviderRule) {
+			continue
+		}
 		if ok, _ := containServiceDependency(oldProviderRules.Dependency, tmpProviderRule); ok {
 			continue
 		}
@@ -296,6 +299,9 @@ func parseOverrideRules(ctx context.Context, dep *Dependency) (createDependencyR
 		}
 	}
 	for _, tmpProviderRule := range dep.ProvidersRule {
+		if apt.IsShared(tmpProviderRule) {
+			continue
+		}
 		if ok, _ := containServiceDependency(existDependencyRuleList, tmpProviderRule); !ok {
 			createDependencyRuleList = append(createDependencyRuleList, tmpProviderRule)
 		}
@@ -306,19 +312,24 @@ func parseOverrideRules(ctx context.Context, dep *Dependency) (createDependencyR
 func syncDependencyRule(ctx context.Context, dep *Dependency, filter func(context.Context, *Dependency) (_, _, _ []*pb.MicroServiceKey)) error {
 	//更新consumer的providers的值,consumer的版本是确定的
 	consumerFlag := strings.Join([]string{dep.Consumer.Environment, dep.Consumer.AppId, dep.Consumer.ServiceName, dep.Consumer.Version}, "/")
-
 	createDependencyRuleList, existDependencyRuleList, deleteDependencyRuleList := filter(ctx, dep)
-	if len(createDependencyRuleList) == 0 && len(existDependencyRuleList) == 0 && len(deleteDependencyRuleList) == 0 {
+	createCount := len(createDependencyRuleList)
+	existCount := len(existDependencyRuleList)
+	deleteCount := len(deleteDependencyRuleList)
+
+	if createCount == 0 && existCount == 0 && deleteCount == 0 {
 		return nil
 	}
 
-	if len(deleteDependencyRuleList) != 0 {
-		log.Infof("delete consumer[%s]'s dependency rule %v", consumerFlag, deleteDependencyRuleList)
+	if deleteCount != 0 {
+		body, _ := json.Marshal(deleteDependencyRuleList)
+		log.Infof("delete consumer[%s]'s dependency rules[%d] %s", consumerFlag, deleteCount, body)
 		dep.DeleteDependencyRuleList = deleteDependencyRuleList
 	}
 
-	if len(createDependencyRuleList) != 0 {
-		log.Infof("create consumer[%s]'s dependency rule %v", consumerFlag, createDependencyRuleList)
+	if createCount != 0 {
+		body, _ := json.Marshal(createDependencyRuleList)
+		log.Infof("create consumer[%s]'s dependency rules[%d] %s", consumerFlag, createCount, body)
 		dep.CreateDependencyRuleList = createDependencyRuleList
 	}
 

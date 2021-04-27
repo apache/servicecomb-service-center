@@ -23,19 +23,19 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 )
 
-type ListWatchConfig struct {
+type ListWatchOptions struct {
 	*discovery.Config
 	Context context.Context
 }
 
-func (lo *ListWatchConfig) String() string {
+func (lo *ListWatchOptions) String() string {
 	return fmt.Sprintf("{Config: %v, timeout: %s}", lo.Config, lo.Timeout)
 }
 
 type ListWatch interface {
-	List(cfg ListWatchConfig) (*registry.PluginResponse, error)
+	List(opts ListWatchOptions) (*registry.PluginResponse, error)
 	// not support new multiple watchers
-	Watch(cfg ListWatchConfig) Watcher
+	Watch(opts ListWatchOptions) Watcher
 	//
 	DoWatch(ctx context.Context, f func(*registry.PluginResponse)) error
 	Revision() int64

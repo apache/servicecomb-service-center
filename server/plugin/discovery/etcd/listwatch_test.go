@@ -23,6 +23,7 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry/buildin"
 	"github.com/coreos/etcd/mvcc/mvccpb"
+	"github.com/stretchr/testify/assert"
 	"strings"
 	"testing"
 	"time"
@@ -64,11 +65,11 @@ func TestPrefixListWatch(t *testing.T) {
 		rev:    1,
 	}
 	cfg := &discovery.Config{Timeout: time.Second}
-	resp, err := lw.List(ListWatchConfig{Config: cfg, Context: context.Background()})
+	resp, err := lw.List(ListWatchOptions{Config: cfg, Context: context.Background()})
 	if resp != nil || err == nil || lw.Revision() != 1 {
 		t.Fatalf("TestPrefixListWatch failed")
 	}
-	w := lw.Watch(ListWatchConfig{Config: cfg, Context: context.Background()})
+	w := lw.Watch(ListWatchOptions{Config: cfg, Context: context.Background()})
 	resp = <-w.EventBus()
 	if resp != nil || lw.Revision() != 0 {
 		t.Fatalf("TestPrefixListWatch failed")
@@ -83,11 +84,11 @@ func TestPrefixListWatch(t *testing.T) {
 		Prefix: "a",
 		rev:    1,
 	}
-	resp, err = lw.List(ListWatchConfig{Config: cfg, Context: context.Background()})
+	resp, err = lw.List(ListWatchOptions{Config: cfg, Context: context.Background()})
 	if resp == nil || err != nil || lw.Revision() != 2 {
 		t.Fatalf("TestPrefixListWatch failed")
 	}
-	w = lw.Watch(ListWatchConfig{Config: cfg, Context: context.Background()})
+	w = lw.Watch(ListWatchOptions{Config: cfg, Context: context.Background()})
 	resp = <-w.EventBus()
 	if resp != nil || lw.Revision() != 0 {
 		t.Fatalf("TestPrefixListWatch failed")
@@ -103,11 +104,11 @@ func TestPrefixListWatch(t *testing.T) {
 		Prefix: "a",
 		rev:    1,
 	}
-	resp, err = lw.List(ListWatchConfig{Config: cfg, Context: context.Background()})
+	resp, err = lw.List(ListWatchOptions{Config: cfg, Context: context.Background()})
 	if resp == nil || err != nil || lw.Revision() != 4 {
 		t.Fatalf("TestPrefixListWatch failed")
 	}
-	w = lw.Watch(ListWatchConfig{Config: cfg, Context: context.Background()})
+	w = lw.Watch(ListWatchOptions{Config: cfg, Context: context.Background()})
 	resp = <-w.EventBus()
 	if resp == nil || lw.Revision() != 3 {
 		t.Fatalf("TestPrefixListWatch failed")
@@ -116,8 +117,6 @@ func TestPrefixListWatch(t *testing.T) {
 }
 
 func TestListWatchConfig_String(t *testing.T) {
-	lw := ListWatchConfig{Config: &discovery.Config{Timeout: time.Second}, Context: context.Background()}
-	if strings.Contains(lw.String(), "timeout: 1s") {
-		t.Fatalf("TestListWatchConfig_String failed")
-	}
+	lw := ListWatchOptions{Config: &discovery.Config{Timeout: time.Second}, Context: context.Background()}
+	assert.True(t, strings.Contains(lw.String(), "timeout: 1s"), "TestListWatchConfig_String failed")
 }

@@ -42,7 +42,7 @@ type mockListWatch struct {
 	Rev          int64
 }
 
-func (lw *mockListWatch) List(_ ListWatchConfig) (*registry.PluginResponse, error) {
+func (lw *mockListWatch) List(_ ListWatchOptions) (*registry.PluginResponse, error) {
 	if lw.ListResponse == nil {
 		return nil, fmt.Errorf("error")
 	}
@@ -60,7 +60,7 @@ func (lw *mockListWatch) DoWatch(ctx context.Context, f func(*registry.PluginRes
 	<-ctx.Done()
 	return nil
 }
-func (lw *mockListWatch) Watch(_ ListWatchConfig) Watcher {
+func (lw *mockListWatch) Watch(_ ListWatchOptions) Watcher {
 	return lw.Watcher
 }
 func (lw *mockListWatch) Revision() int64 {
@@ -68,7 +68,7 @@ func (lw *mockListWatch) Revision() int64 {
 }
 
 func TestInnerWatcher_EventBus(t *testing.T) {
-	w := newInnerWatcher(&mockListWatch{}, ListWatchConfig{
+	w := newInnerWatcher(&mockListWatch{}, ListWatchOptions{
 		Config: &discovery.Config{Timeout: time.Second}, Context: context.Background()})
 	resp := <-w.EventBus()
 	if resp != nil {
@@ -79,7 +79,7 @@ func TestInnerWatcher_EventBus(t *testing.T) {
 	test := &registry.PluginResponse{
 		Action: registry.Put,
 	}
-	w = newInnerWatcher(&mockListWatch{ListResponse: test}, ListWatchConfig{
+	w = newInnerWatcher(&mockListWatch{ListResponse: test}, ListWatchOptions{
 		Config: &discovery.Config{Timeout: time.Second}, Context: context.Background()})
 	resp = <-w.EventBus()
 	if resp == nil || resp.Action != registry.Put {

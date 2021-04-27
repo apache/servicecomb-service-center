@@ -53,45 +53,45 @@ func registerInnerTypes() {
 
 	SERVICE = Store().MustInstall(NewAddOn("SERVICE",
 		discovery.Configure().WithPrefix(core.GetServiceRootKey("")).
-			WithInitSize(500).WithParser(proto.ServiceParser)))
+			WithParser(proto.ServiceParser)))
 	INSTANCE = Store().MustInstall(NewAddOn("INSTANCE",
 		discovery.Configure().WithPrefix(core.GetInstanceRootKey("")).
-			WithInitSize(1000).WithParser(proto.InstanceParser).WithLease().
+			WithParser(proto.InstanceParser).WithLease().
 			WithDeferHandler(leaseEventDeferHandler)))
 	DOMAIN = Store().MustInstall(NewAddOn("DOMAIN",
 		discovery.Configure().WithPrefix(core.GetDomainRootKey()+core.SPLIT).
-			WithInitSize(100).WithParser(proto.StringParser)))
+			WithParser(proto.StringParser)))
 	SCHEMA = Store().MustInstall(NewAddOn("SCHEMA",
 		discovery.Configure().WithPrefix(core.GetServiceSchemaRootKey("")).
-			WithInitSize(0)))
+			WithoutCache()))
 	SchemaSummary = Store().MustInstall(NewAddOn("SCHEMA_SUMMARY",
 		discovery.Configure().WithPrefix(core.GetServiceSchemaSummaryRootKey("")).
-			WithInitSize(100).WithParser(proto.StringParser)))
+			WithParser(proto.StringParser)))
 	RULE = Store().MustInstall(NewAddOn("RULE",
 		discovery.Configure().WithPrefix(core.GetServiceRuleRootKey("")).
-			WithInitSize(100).WithParser(proto.RuleParser)))
+			WithParser(proto.RuleParser)))
 	LEASE = Store().MustInstall(NewAddOn("LEASE",
 		discovery.Configure().WithPrefix(core.GetInstanceLeaseRootKey("")).
-			WithInitSize(1000).WithParser(proto.StringParser).WithLease()))
+			WithParser(proto.StringParser).WithLease()))
 	ServiceIndex = Store().MustInstall(NewAddOn("SERVICE_INDEX",
 		discovery.Configure().WithPrefix(core.GetServiceIndexRootKey("")).
-			WithInitSize(500).WithParser(proto.StringParser)))
+			WithParser(proto.StringParser)))
 	ServiceAlias = Store().MustInstall(NewAddOn("SERVICE_ALIAS",
 		discovery.Configure().WithPrefix(core.GetServiceAliasRootKey("")).
-			WithInitSize(100).WithParser(proto.StringParser)))
+			WithParser(proto.StringParser)))
 	ServiceTag = Store().MustInstall(NewAddOn("SERVICE_TAG",
 		discovery.Configure().WithPrefix(core.GetServiceTagRootKey("")).
-			WithInitSize(100).WithParser(proto.MapParser)))
+			WithParser(proto.MapParser)))
 	RuleIndex = Store().MustInstall(NewAddOn("RULE_INDEX",
 		discovery.Configure().WithPrefix(core.GetServiceRuleIndexRootKey("")).
-			WithInitSize(100).WithParser(proto.StringParser)))
+			WithParser(proto.StringParser)))
 	DependencyRule = Store().MustInstall(NewAddOn("DEPENDENCY_RULE",
 		discovery.Configure().WithPrefix(core.GetServiceDependencyRuleRootKey("")).
-			WithInitSize(100).WithParser(proto.DependencyRuleParser)))
+			WithParser(proto.DependencyRuleParser)))
 	DependencyQueue = Store().MustInstall(NewAddOn("DEPENDENCY_QUEUE",
 		discovery.Configure().WithPrefix(core.GetServiceDependencyQueueRootKey("")).
-			WithInitSize(100).WithPageSize(1500).WithParser(proto.DependencyQueueParser)))
+			WithParser(proto.DependencyQueueParser)))
 	PROJECT = Store().MustInstall(NewAddOn("PROJECT",
 		discovery.Configure().WithPrefix(core.GetProjectRootKey("")).
-			WithInitSize(100).WithParser(proto.StringParser)))
+			WithParser(proto.StringParser)))
 }

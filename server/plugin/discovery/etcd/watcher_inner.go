@@ -25,7 +25,7 @@ import (
 )
 
 type innerWatcher struct {
-	Cfg    ListWatchConfig
+	Opts   ListWatchOptions
 	lw     ListWatch
 	bus    chan *registry.PluginResponse
 	stopCh chan struct{}
@@ -39,7 +39,7 @@ func (w *innerWatcher) EventBus() <-chan *registry.PluginResponse {
 
 func (w *innerWatcher) process(_ context.Context) {
 	stopCh := make(chan struct{})
-	ctx, cancel := context.WithTimeout(w.Cfg.Context, w.Cfg.Timeout)
+	ctx, cancel := context.WithTimeout(w.Opts.Context, w.Opts.Timeout)
 	gopool.Go(func(_ context.Context) {
 		defer close(stopCh)
 		w.lw.DoWatch(ctx, w.sendEvent)
@@ -73,9 +73,9 @@ func (w *innerWatcher) Stop() {
 	w.mux.Unlock()
 }
 
-func newInnerWatcher(lw ListWatch, cfg ListWatchConfig) *innerWatcher {
+func newInnerWatcher(lw ListWatch, opts ListWatchOptions) *innerWatcher {
 	w := &innerWatcher{
-		Cfg:    cfg,
+		Opts:   opts,
 		lw:     lw,
 		bus:    make(chan *registry.PluginResponse, eventBusSize),
 		stopCh: make(chan struct{}),

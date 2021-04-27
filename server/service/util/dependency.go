@@ -40,7 +40,6 @@ func (dep *Dependency) removeConsumerOfProviderRule(ctx context.Context) ([]regi
 	opts := make([]registry.PluginOp, 0, len(dep.DeleteDependencyRuleList))
 	for _, providerRule := range dep.DeleteDependencyRuleList {
 		proProkey := apt.GenerateProviderDependencyRuleKey(providerRule.Tenant, providerRule)
-		log.Debugf("This proProkey is %s", proProkey)
 		consumerValue, err := TransferToMicroServiceDependency(ctx, proProkey)
 		if err != nil {
 			return nil, err
