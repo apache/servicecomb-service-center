@@ -26,7 +26,7 @@ import (
 )
 
 type EventBus struct {
-	Cfg    ListWatchConfig
+	Opts   ListWatchOptions
 	Lw     ListWatch
 	Bus    chan *ListWatchResp
 	stopCh chan struct{}
@@ -40,7 +40,7 @@ func (w *EventBus) ResourceEventBus() <-chan *ListWatchResp {
 
 func (w *EventBus) process(_ context.Context) {
 	stopCh := make(chan struct{})
-	ctx, cancel := context.WithTimeout(w.Cfg.Context, w.Cfg.Timeout)
+	ctx, cancel := context.WithTimeout(w.Opts.Context, w.Opts.Timeout)
 	gopool.Go(func(_ context.Context) {
 		defer close(stopCh)
 		_ = w.Lw.DoWatch(ctx, w.sendEvent)
@@ -74,9 +74,9 @@ func (w *EventBus) Stop() {
 	w.mux.Unlock()
 }
 
-func NewEventBus(lw ListWatch, cfg ListWatchConfig) *EventBus {
+func NewEventBus(lw ListWatch, opts ListWatchOptions) *EventBus {
 	w := &EventBus{
-		Cfg:    cfg,
+		Opts:   opts,
 		Lw:     lw,
 		Bus:    make(chan *ListWatchResp, EventBusSize),
 		stopCh: make(chan struct{}),

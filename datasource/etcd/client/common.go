@@ -59,8 +59,13 @@ const (
 )
 
 const (
-	// grpc does not allow to transport a large body more then 4MB in a request
-	DefaultPageCount = 4096
+	// DefaultMaxPageSize is the max record count of one request,
+	// We assume the common Key/Value body size less then 384B.
+	// 1. grpc does not allow to transport a large body more then 4MB in a request
+	// See: google.golang.org/grpc/server.go
+	// 2. etcdserver set the default size is 1.5MB
+	// See: github.com/coreos/etcd/embed/config.go
+	DefaultMaxPageSize = 4096
 	// the timeout dial to etcd
 	DefaultDialTimeout    = 10 * time.Second
 	DefaultRequestTimeout = 30 * time.Second

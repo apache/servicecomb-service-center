@@ -56,42 +56,42 @@ func registerInnerTypes() {
 			WithInitSize(500).WithParser(value.ServiceParser)))
 	INSTANCE = Store().MustInstall(NewAddOn("INSTANCE",
 		sd.Configure().WithPrefix(path.GetInstanceRootKey("")).
-			WithInitSize(1000).WithParser(value.InstanceParser).
+			WithParser(value.InstanceParser).
 			WithDeferHandler(NewInstanceEventDeferHandler())))
 	DOMAIN = Store().MustInstall(NewAddOn("DOMAIN",
 		sd.Configure().WithPrefix(path.GetDomainRootKey()+path.SPLIT).
-			WithInitSize(100).WithParser(value.StringParser)))
+			WithParser(value.StringParser)))
 	SCHEMA = Store().MustInstall(NewAddOn("SCHEMA",
 		sd.Configure().WithPrefix(path.GetServiceSchemaRootKey("")).
-			WithInitSize(0)))
+			WithoutCache()))
 	SchemaSummary = Store().MustInstall(NewAddOn("SCHEMA_SUMMARY",
 		sd.Configure().WithPrefix(path.GetServiceSchemaSummaryRootKey("")).
-			WithInitSize(100).WithParser(value.StringParser)))
+			WithParser(value.StringParser)))
 	RULE = Store().MustInstall(NewAddOn("RULE",
 		sd.Configure().WithPrefix(path.GetServiceRuleRootKey("")).
-			WithInitSize(100).WithParser(value.RuleParser)))
+			WithParser(value.RuleParser)))
 	LEASE = Store().MustInstall(NewAddOn("LEASE",
 		sd.Configure().WithPrefix(path.GetInstanceLeaseRootKey("")).
-			WithInitSize(1000).WithParser(value.StringParser)))
+			WithParser(value.StringParser)))
 	ServiceIndex = Store().MustInstall(NewAddOn("SERVICE_INDEX",
 		sd.Configure().WithPrefix(path.GetServiceIndexRootKey("")).
-			WithInitSize(500).WithParser(value.StringParser)))
+			WithParser(value.StringParser)))
 	ServiceAlias = Store().MustInstall(NewAddOn("SERVICE_ALIAS",
 		sd.Configure().WithPrefix(path.GetServiceAliasRootKey("")).
-			WithInitSize(100).WithParser(value.StringParser)))
+			WithParser(value.StringParser)))
 	ServiceTag = Store().MustInstall(NewAddOn("SERVICE_TAG",
 		sd.Configure().WithPrefix(path.GetServiceTagRootKey("")).
-			WithInitSize(100).WithParser(value.MapParser)))
+			WithParser(value.MapParser)))
 	RuleIndex = Store().MustInstall(NewAddOn("RULE_INDEX",
 		sd.Configure().WithPrefix(path.GetServiceRuleIndexRootKey("")).
-			WithInitSize(100).WithParser(value.StringParser)))
+			WithParser(value.StringParser)))
 	DependencyRule = Store().MustInstall(NewAddOn("DEPENDENCY_RULE",
 		sd.Configure().WithPrefix(path.GetServiceDependencyRuleRootKey("")).
-			WithInitSize(100).WithParser(value.DependencyRuleParser)))
+			WithParser(value.DependencyRuleParser)))
 	DependencyQueue = Store().MustInstall(NewAddOn("DEPENDENCY_QUEUE",
 		sd.Configure().WithPrefix(path.GetServiceDependencyQueueRootKey("")).
-			WithInitSize(100).WithParser(value.DependencyQueueParser)))
+			WithParser(value.DependencyQueueParser)))
 	PROJECT = Store().MustInstall(NewAddOn("PROJECT",
 		sd.Configure().WithPrefix(path.GetProjectRootKey("")).
-			WithInitSize(100).WithParser(value.StringParser)))
+			WithParser(value.StringParser)))
 }

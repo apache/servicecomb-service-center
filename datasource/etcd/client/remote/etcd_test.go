@@ -356,7 +356,7 @@ func TestEtcdClient(t *testing.T) {
 
 	// large data
 	var wg sync.WaitGroup
-	for i := 0; i < client.DefaultPageCount+1; i++ {
+	for i := 0; i < client.DefaultMaxPageSize+1; i++ {
 		wg.Add(1)
 		v := strconv.Itoa(i)
 		go func() {
@@ -372,14 +372,14 @@ func TestEtcdClient(t *testing.T) {
 	resp, err = etcdc.Do(context.Background(), client.GET,
 		client.WithStrKey("/test_page/"),
 		client.WithStrEndKey("/test_page/9999"))
-	if err != nil || !resp.Succeeded || resp.Count != client.DefaultPageCount+1 ||
-		len(resp.Kvs) != client.DefaultPageCount+1 {
+	if err != nil || !resp.Succeeded || resp.Count != client.DefaultMaxPageSize+1 ||
+		len(resp.Kvs) != client.DefaultMaxPageSize+1 {
 		t.Fatalf("TestEtcdClient_Do failed, %#v", err)
 	}
 	resp, err = etcdc.Do(context.Background(), client.GET,
 		client.WithStrKey("/test_page/"), client.WithPrefix(), client.WithDescendOrder())
-	if err != nil || !resp.Succeeded || resp.Count != client.DefaultPageCount+1 ||
-		len(resp.Kvs) != client.DefaultPageCount+1 ||
+	if err != nil || !resp.Succeeded || resp.Count != client.DefaultMaxPageSize+1 ||
+		len(resp.Kvs) != client.DefaultMaxPageSize+1 ||
 		string(resp.Kvs[0].Key) != "/test_page/999" {
 		t.Fatalf("TestEtcdClient_Do failed, %#v", err)
 	}
@@ -825,7 +825,7 @@ func TestEtcdClient_paging(t *testing.T) {
 
 	op := client.PluginOp{
 		Offset: -1,
-		Limit:  client.DefaultPageCount,
+		Limit:  client.DefaultMaxPageSize,
 	}
 	r, err := c.Paging(context.Background(), op)
 	if err != nil {

@@ -73,8 +73,8 @@ func (c *KvCacher) needList() bool {
 	return true
 }
 
-func (c *KvCacher) doList(cfg sdcommon.ListWatchConfig) error {
-	resp, err := c.lw.List(cfg)
+func (c *KvCacher) doList(opts sdcommon.ListWatchOptions) error {
+	resp, err := c.lw.List(opts)
 	if err != nil {
 		return err
 	}
@@ -118,7 +118,7 @@ func (c *KvCacher) reset(rev int64, kvs []*sdcommon.Resource) {
 	c.buildCache(c.filter(rev, kvs))
 }
 
-func (c *KvCacher) doWatch(cfg sdcommon.ListWatchConfig) error {
+func (c *KvCacher) doWatch(cfg sdcommon.ListWatchOptions) error {
 	if eventBus := c.lw.EventBus(cfg); eventBus != nil {
 		return c.handleEventBus(eventBus)
 	}
@@ -130,8 +130,8 @@ func (c *KvCacher) ListAndWatch(ctx context.Context) error {
 	defer c.mux.Unlock()
 	defer log.Recover() // ensure ListAndWatch never raise panic
 
-	cfg := sdcommon.ListWatchConfig{
-		Timeout: c.Cfg.Timeout,
+	opts := sdcommon.ListWatchOptions{
+		Config:  c.Cfg,
 		Context: ctx,
 	}
 
@@ -140,7 +140,7 @@ func (c *KvCacher) ListAndWatch(ctx context.Context) error {
 	// 2. Runtime: error occurs in previous watch operation, the lister's revision is set to 0.
 	// 3. Runtime: watch operation timed out over DEFAULT_FORCE_LIST_INTERVAL times.
 	if c.needList() {
-		if err := c.doList(cfg); err != nil && (!c.IsReady() || c.getRevision() == 0) {
+		if err := c.doList(opts); err != nil && (!c.IsReady() || c.getRevision() == 0) {
 			return err // do retry to list etcd
 		}
 		// keep going to next step:
@@ -151,7 +151,7 @@ func (c *KvCacher) ListAndWatch(ctx context.Context) error {
 
 	util.SafeCloseChan(c.ready)
 
-	return c.doWatch(cfg)
+	return c.doWatch(opts)
 }
 
 func (c *KvCacher) handleEventBus(eventBus *sdcommon.EventBus) error {

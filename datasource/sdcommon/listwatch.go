@@ -20,22 +20,22 @@ package sdcommon
 import (
 	"context"
 	"fmt"
-	"time"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 )
 
-type ListWatchConfig struct {
-	Timeout time.Duration
+type ListWatchOptions struct {
+	*sd.Config
 	Context context.Context
 }
 
-func (lo *ListWatchConfig) String() string {
-	return fmt.Sprintf("{timeout: %s}", lo.Timeout)
+func (lo *ListWatchOptions) String() string {
+	return fmt.Sprintf("{Config: %v, timeout: %s}", lo.Config, lo.Timeout)
 }
 
 type ListWatch interface {
-	List(op ListWatchConfig) (*ListWatchResp, error)
+	List(opts ListWatchOptions) (*ListWatchResp, error)
 	// not support new multiple watchers
-	EventBus(op ListWatchConfig) *EventBus
+	EventBus(opts ListWatchOptions) *EventBus
 
 	DoWatch(ctx context.Context, f func(*ListWatchResp)) error
 }

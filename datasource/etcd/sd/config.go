@@ -26,7 +26,8 @@ import (
 
 type Config struct {
 	// Key is the prefix to unique specify resource type
-	Key          string
+	Key string
+	// InitSize the init cache size, disable cache when InitSize = 0
 	InitSize     int
 	Timeout      time.Duration
 	Period       time.Duration
@@ -47,6 +48,11 @@ func (cfg *Config) WithPrefix(key string) *Config {
 
 func (cfg *Config) WithInitSize(size int) *Config {
 	cfg.InitSize = size
+	return cfg
+}
+
+func (cfg *Config) WithoutCache() *Config {
+	cfg.InitSize = 0
 	return cfg
 }
 

@@ -20,6 +20,7 @@
 package sd
 
 import (
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -32,14 +33,14 @@ import (
 
 func TestListWatchConfig_String(t *testing.T) {
 	t.Run("TestListWatchConfig_String", func(t *testing.T) {
-		config := sdcommon.ListWatchConfig{
-			Timeout: 666,
+		config := sdcommon.ListWatchOptions{
+			Config: &sd.Config{Timeout: 666},
 		}
 		ret := config.String()
 		assert.Equal(t, "{timeout: 666ns}", ret)
 	})
 	t.Run("when time is nil", func(t *testing.T) {
-		config := sdcommon.ListWatchConfig{}
+		config := sdcommon.ListWatchOptions{}
 		ret := config.String()
 		assert.Equal(t, "{timeout: 0s}", ret)
 	})

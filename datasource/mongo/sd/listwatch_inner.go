@@ -38,8 +38,8 @@ type mongoListWatch struct {
 	parseFunc   parsefunc
 }
 
-func (lw *mongoListWatch) List(op sdcommon.ListWatchConfig) (*sdcommon.ListWatchResp, error) {
-	otCtx, cancel := context.WithTimeout(op.Context, op.Timeout)
+func (lw *mongoListWatch) List(opts sdcommon.ListWatchOptions) (*sdcommon.ListWatchResp, error) {
+	otCtx, cancel := context.WithTimeout(opts.Context, opts.Timeout)
 	defer cancel()
 
 	resp, err := client.GetMongoClient().Find(otCtx, lw.Key, bson.M{})
@@ -60,8 +60,8 @@ func (lw *mongoListWatch) List(op sdcommon.ListWatchConfig) (*sdcommon.ListWatch
 	return lwRsp, nil
 }
 
-func (lw *mongoListWatch) EventBus(op sdcommon.ListWatchConfig) *sdcommon.EventBus {
-	return sdcommon.NewEventBus(lw, op)
+func (lw *mongoListWatch) EventBus(opts sdcommon.ListWatchOptions) *sdcommon.EventBus {
+	return sdcommon.NewEventBus(lw, opts)
 }
 
 func (lw *mongoListWatch) DoWatch(ctx context.Context, f func(*sdcommon.ListWatchResp)) error {

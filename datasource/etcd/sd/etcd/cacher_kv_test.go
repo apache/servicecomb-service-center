@@ -79,7 +79,7 @@ type mockListWatch struct {
 	Rev           int64
 }
 
-func (lw *mockListWatch) List(sdcommon.ListWatchConfig) (*sdcommon.ListWatchResp, error) {
+func (lw *mockListWatch) List(sdcommon.ListWatchOptions) (*sdcommon.ListWatchResp, error) {
 	if lw.ListResponse == nil {
 		return nil, fmt.Errorf("list error")
 	}
@@ -99,7 +99,7 @@ func (lw *mockListWatch) DoWatch(ctx context.Context, f func(*sdcommon.ListWatch
 	return nil
 }
 
-func (lw *mockListWatch) EventBus(op sdcommon.ListWatchConfig) *sdcommon.EventBus {
+func (lw *mockListWatch) EventBus(op sdcommon.ListWatchOptions) *sdcommon.EventBus {
 	return sdcommon.NewEventBus(lw, op)
 }
 

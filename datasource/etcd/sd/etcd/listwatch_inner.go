@@ -34,8 +34,8 @@ type innerListWatch struct {
 	rev int64
 }
 
-func (lw *innerListWatch) List(op sdcommon.ListWatchConfig) (*sdcommon.ListWatchResp, error) {
-	otCtx, cancel := context.WithTimeout(op.Context, op.Timeout)
+func (lw *innerListWatch) List(opts sdcommon.ListWatchOptions) (*sdcommon.ListWatchResp, error) {
+	otCtx, cancel := context.WithTimeout(opts.Context, opts.Timeout)
 	defer cancel()
 	resp, err := lw.Client.Do(otCtx, client.WatchPrefixOpOptions(lw.Prefix)...)
 	if err != nil {
@@ -57,8 +57,8 @@ func (lw *innerListWatch) setRevision(rev int64) {
 	lw.rev = rev
 }
 
-func (lw *innerListWatch) EventBus(op sdcommon.ListWatchConfig) *sdcommon.EventBus {
-	return sdcommon.NewEventBus(lw, op)
+func (lw *innerListWatch) EventBus(opts sdcommon.ListWatchOptions) *sdcommon.EventBus {
+	return sdcommon.NewEventBus(lw, opts)
 }
 
 func (lw *innerListWatch) DoWatch(ctx context.Context, f func(*sdcommon.ListWatchResp)) error {

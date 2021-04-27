@@ -21,6 +21,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"sync"
 	"time"
 
@@ -92,8 +93,8 @@ func (c *MongoCacher) needList() bool {
 	return true
 }
 
-func (c *MongoCacher) doList(cfg sdcommon.ListWatchConfig) error {
-	resp, err := c.lw.List(cfg)
+func (c *MongoCacher) doList(opts sdcommon.ListWatchOptions) error {
+	resp, err := c.lw.List(opts)
 	if err != nil {
 		return err
 	}
@@ -127,8 +128,8 @@ func (c *MongoCacher) reset(infos []*sdcommon.Resource) {
 	c.buildCache(c.filter(infos))
 }
 
-func (c *MongoCacher) doWatch(cfg sdcommon.ListWatchConfig) error {
-	if eventbus := c.lw.EventBus(cfg); eventbus != nil {
+func (c *MongoCacher) doWatch(opts sdcommon.ListWatchOptions) error {
+	if eventbus := c.lw.EventBus(opts); eventbus != nil {
 		return c.handleEventBus(eventbus)
 	}
 	return fmt.Errorf("handle a nil watcher")
@@ -139,17 +140,22 @@ func (c *MongoCacher) ListAndWatch(ctx context.Context) error {
 	defer c.mux.Unlock()
 	defer log.Recover() // ensure ListAndWatch never raise panic
 
-	cfg := sdcommon.ListWatchConfig{
-		Timeout: c.Options.Timeout,
+	opts := sdcommon.ListWatchOptions{
+		Config: &sd.Config{
+			Key:      c.Options.Key,
+			InitSize: c.Options.InitSize,
+			Timeout:  c.Options.Timeout,
+			Period:   c.Options.Period,
+		},
 		Context: ctx,
 	}
 
 	// first time should initial cache, set watch timeout less
 	if c.isFirstTime {
-		cfg.Timeout = FirstTimeout
+		opts.Timeout = FirstTimeout
 	}
 
-	err := c.doWatch(cfg)
+	err := c.doWatch(opts)
 	if err != nil {
 		log.Error("doWatch err", err)
 	}
@@ -161,10 +167,10 @@ func (c *MongoCacher) ListAndWatch(ctx context.Context) error {
 	if c.needList() {
 		// recover timeout for list
 		if c.isFirstTime {
-			cfg.Timeout = c.Options.Timeout
+			opts.Timeout = c.Options.Timeout
 		}
 
-		if err := c.doList(cfg); err != nil && (!c.IsReady()) {
+		if err := c.doList(opts); err != nil && (!c.IsReady()) {
 			log.Error("doList error", err)
 			return err // do retry to list mongo
 		}

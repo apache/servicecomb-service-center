@@ -38,9 +38,11 @@ type PluginOp struct {
 	IgnoreLease   bool
 	Mode          CacheMode
 	WatchCallback WatchCallback
-	Offset        int64
-	Limit         int64
-	Global        bool
+	// Offset >= 0 will paging the results, -1 will return all results.
+	Offset int64
+	// Limit is page size. not work if Offset = -1
+	Limit  int64
+	Global bool
 }
 
 func (op PluginOp) String() string {
@@ -168,7 +170,7 @@ func OptionsToOp(opts ...PluginOpOption) (op PluginOp) {
 	}
 	if op.Limit == 0 {
 		op.Offset = -1
-		op.Limit = DefaultPageCount
+		op.Limit = DefaultMaxPageSize
 	}
 	return
 }

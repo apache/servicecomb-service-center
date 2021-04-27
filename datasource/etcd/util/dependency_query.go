@@ -344,7 +344,6 @@ func (dr *DependencyRelation) GetConsumerOfSameServiceNameAndAppID(provider *pb.
 			}
 		}
 
-		log.Debugf("providerETCD is %s", providerVersionRuleArr)
 		allConsumers = append(allConsumers, kv.Value.(*pb.MicroServiceDependency).Dependency...)
 	}
 	return allConsumers, nil
