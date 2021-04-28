@@ -31,6 +31,7 @@ It provides out of box support for metrics and tracing. It has a web portal to m
  - **[`Datacenters`](https://service-center.readthedocs.io/en/latest/dev-guides/multidcs.html)**: Additional layer of abstraction to clusters deployed in multiple datacenters
  - **[`Aggregation`](https://service-center.readthedocs.io/en/latest/design-guides/design.html)**: Able to aggregate microservices from multiple registry platforms and
     support platform registry and client side registry at the same time
+ - **[`FastRegister`](https://service-center.readthedocs.io/en/latest/user-guides/fast-registration.html)**: Fast register instance to service center
 
 ## Documentation
 

@@ -20,11 +20,6 @@ package mongo
 import (
 	"context"
 	"fmt"
-	"github.com/apache/servicecomb-service-center/pkg/util"
-
-	"github.com/go-chassis/go-chassis/v2/storage"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
@@ -33,7 +28,11 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
 	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/config"
+	"github.com/go-chassis/go-chassis/v2/storage"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 const defaultExpireTime = 300
@@ -77,6 +76,10 @@ func (ds *DataSource) initialize() error {
 	}
 	// create db index and validator
 	EnsureDB()
+
+	// if fast register enabled, init fast register service
+	initFastRegister()
+
 	// init cache
 	ds.initStore()
 	return nil
@@ -233,4 +236,15 @@ func (ds *DataSource) initStore() {
 	}
 	sd.Store().Run()
 	<-sd.Store().Ready()
+}
+
+func initFastRegister() {
+	fastRegConfig := FastRegConfiguration()
+
+	if fastRegConfig.QueueSize > 0 {
+		fastRegisterService := NewFastRegisterInstanceService()
+		SetFastRegisterInstanceService(fastRegisterService)
+
+		NewRegisterTimeTask().Start()
+	}
 }

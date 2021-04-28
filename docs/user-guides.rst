@@ -11,3 +11,4 @@ User Guides
    user-guides/sc-cluster.rst
    user-guides/integration-grafana.rst
    user-guides/rbac.md
+   user-guides/fast-registration.md
