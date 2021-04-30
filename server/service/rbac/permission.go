@@ -34,8 +34,9 @@ var (
 
 // AdminPerms allocate all resource permissions
 func AdminPerms() []*rbac.Permission {
-	resources := rbacframe.BuildResourceList(ResourceAccount, ResourceRole, ResourceService, ResourceInstance,
-		ResourceDep, ResourceTag, ResourceRule, ResourceGovern, ResourceAdminister, ResourceSchema)
+	resources := rbacframe.BuildResourceList(
+		ResourceAccount, ResourceRole,
+		ResourceService, ResourceGovern, ResourceOps, ResourceSchema)
 	perm := []*rbac.Permission{
 		{
 			Resources: resources,
@@ -47,8 +48,8 @@ func AdminPerms() []*rbac.Permission {
 
 // DevPerms allocate all resource permissions except account and role resources
 func DevPerms() []*rbac.Permission {
-	resources := rbacframe.BuildResourceList(ResourceService, ResourceInstance,
-		ResourceDep, ResourceTag, ResourceRule, ResourceGovern, ResourceAdminister, ResourceSchema)
+	resources := rbacframe.BuildResourceList(
+		ResourceService, ResourceGovern, ResourceOps, ResourceSchema)
 	perm := []*rbac.Permission{
 		{
 			Resources: resources,

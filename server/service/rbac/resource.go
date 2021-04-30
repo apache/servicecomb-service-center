@@ -17,32 +17,31 @@
 
 package rbac
 
-import "github.com/apache/servicecomb-service-center/pkg/rbacframe"
+import (
+	"github.com/go-chassis/cari/rbac"
+)
 
 const (
-	ResourceAccount    = "account"
-	ResourceRole       = "role"
-	ResourceService    = "service"
-	ResourceInstance   = "instance"
-	ResourceDep        = "dependencies"
-	ResourceRule       = "rule"
-	ResourceTag        = "tag"
-	ResourceGovern     = "governance"
-	ResourceSchema     = "schema"
-	ResourceAdminister = "administer"
+	ResourceAccount = "account"
+	ResourceRole    = "role"
+	ResourceService = "service"
+	ResourceGovern  = "governance"
+	ResourceSchema  = "schema"
+	ResourceOps     = "ops"
 )
 
 var (
-	APIHealth       = "/v4/:project/registry/health"
-	APIVersion      = "/v4/:project/registry/version"
 	APITokenGranter = "/v4/token"
 
-	APIAccountList  = "/v4/account"
-	APIUserAccount  = "/v4/account/:name"
-	APIUserPassword = "/v4/account/:name/password"
+	APIAccountList = "/v4/account"
 
 	APIRoleList = "/v4/role"
-	APIRoleInfo = "/v4/role/:roleName"
+
+	APIOps = "/v4/:project/admin"
+
+	APIGov = "/v1/:project/gov/"
+
+	APILegacyGov = "/v4/:project/govern"
 
 	APIServiceInfo       = "/v4/:project/registry/microservices/:serviceId"
 	APIServicesList      = "/v4/:project/registry/microservices"
@@ -52,14 +51,7 @@ var (
 	APIProConDependency = "/v4/:project/registry/microservices/:providerId/consumers"
 	APIConProDependency = "/v4/:project/registry/microservices/:consumerId/providers"
 
-	APIInstancesList       = "/v4/:project/registry/microservices/:serviceId/instances"
-	APIInstanceInfo        = "/v4/:project/registry/microservices/:serviceId/instances/:instanceId"
-	APIInstanceProperties  = "/v4/:project/registry/microservices/:serviceId/instances/:instanceId/properties"
-	APIInstanceStatus      = "/v4/:project/registry/microservices/:serviceId/instances/:instanceId/status"
-	APIInstanceHeartbeats  = "/v4/:project/registry/microservices/:serviceId/instances/:instanceId/heartbeat"
 	APIHeartbeats          = "/v4/:project/registry/heartbeats"
-	APIFindInstances       = "/v4/:project/registry/instances"
-	APIInstanceAction      = "/v4/:project/registry/instances/action"
 	APIInstanceWatcher     = "/v4/:project/registry/microservices/:serviceId/watcher"
 	APIInstanceListWatcher = "/v4/:project/registry/microservices/:serviceId/listwatcher"
 
@@ -69,61 +61,35 @@ var (
 	APIServiceRule     = "/v4/:project/registry/microservices/:serviceId/rules"
 	APIServiceRuleList = "/v4/:project/registry/microservices/:serviceId/rules/rule_id"
 
-	APIServiceSchemaInfo = "/v4/:project/registry/microservices/:serviceId/schemas/:schemaId"
-	APIServiceSchema     = "/v4/:project/registry/microservices/:serviceId/schemas"
-
-	APIGovernService         = "/v4/:project/govern/microservices/:serviceId"
-	APIGovernServiceInfo     = "/v4/:project/govern/microservices"
-	APIGovernServiceRelation = "/v4/:project/govern/relations"
-	APIGovernApps            = "/v4/:project/govern/relations"
-
-	APIDump     = "/v4/:project/admin/dump"
-	APIClusters = "/v4/:project/admin/clusters"
-	APIAlarms   = "/v4/:project/admin/alarms"
+	APIServiceSchema = "/v4/:project/registry/microservices/:serviceId/schemas"
 )
 
 func initResourceMap() {
-	rbacframe.MapResource(APIAccountList, ResourceAccount)
-	rbacframe.MapResource(APIUserAccount, ResourceAccount)
-	rbacframe.MapResource(APIUserPassword, ResourceAccount)
+	rbac.PartialMapResource(APIAccountList, ResourceAccount)
 
-	rbacframe.MapResource(APIRoleList, ResourceRole)
-	rbacframe.MapResource(APIRoleInfo, ResourceRole)
+	rbac.PartialMapResource(APIRoleList, ResourceRole)
 
-	rbacframe.MapResource(APIServiceInfo, ResourceService)
-	rbacframe.MapResource(APIServicesList, ResourceService)
-	rbacframe.MapResource(APIServiceProperties, ResourceService)
-	rbacframe.MapResource(APIServiceExistence, ResourceService)
+	rbac.PartialMapResource(APIGov, ResourceGovern)
 
-	rbacframe.MapResource(APIServiceSchemaInfo, ResourceSchema)
-	rbacframe.MapResource(APIServiceSchema, ResourceSchema)
+	rbac.PartialMapResource(APIServiceSchema, ResourceSchema)
 
-	rbacframe.MapResource(APIProConDependency, ResourceDep)
-	rbacframe.MapResource(APIConProDependency, ResourceDep)
+	rbac.PartialMapResource(APIOps, ResourceOps)
 
-	rbacframe.MapResource(APIInstancesList, ResourceInstance)
-	rbacframe.MapResource(APIInstanceInfo, ResourceInstance)
-	rbacframe.MapResource(APIInstanceProperties, ResourceInstance)
-	rbacframe.MapResource(APIInstanceStatus, ResourceInstance)
-	rbacframe.MapResource(APIInstanceHeartbeats, ResourceInstance)
-	rbacframe.MapResource(APIHeartbeats, ResourceInstance)
-	rbacframe.MapResource(APIFindInstances, ResourceInstance)
-	rbacframe.MapResource(APIInstanceAction, ResourceInstance)
-	rbacframe.MapResource(APIInstanceWatcher, ResourceInstance)
-	rbacframe.MapResource(APIInstanceListWatcher, ResourceInstance)
+	rbac.PartialMapResource("instances", ResourceService)
+	rbac.PartialMapResource(APILegacyGov, ResourceService)
 
-	rbacframe.MapResource(APIServiceRuleList, ResourceRule)
-	rbacframe.MapResource(APIServiceRule, ResourceRule)
+	rbac.MapResource(APIServiceInfo, ResourceService)
+	rbac.MapResource(APIServicesList, ResourceService)
+	rbac.MapResource(APIServiceProperties, ResourceService)
+	rbac.MapResource(APIServiceExistence, ResourceService)
+	rbac.MapResource(APIProConDependency, ResourceService)
+	rbac.MapResource(APIConProDependency, ResourceService)
+	rbac.MapResource(APIHeartbeats, ResourceService)
+	rbac.MapResource(APIInstanceWatcher, ResourceService)
+	rbac.MapResource(APIInstanceListWatcher, ResourceService)
+	rbac.MapResource(APIServiceRuleList, ResourceService)
+	rbac.MapResource(APIServiceRule, ResourceService)
+	rbac.MapResource(APIServiceTag, ResourceService)
+	rbac.MapResource(APIServiceTagKey, ResourceService)
 
-	rbacframe.MapResource(APIServiceTag, ResourceTag)
-	rbacframe.MapResource(APIServiceTagKey, ResourceTag)
-
-	rbacframe.MapResource(APIGovernService, ResourceGovern)
-	rbacframe.MapResource(APIGovernServiceInfo, ResourceGovern)
-	rbacframe.MapResource(APIGovernServiceRelation, ResourceGovern)
-	rbacframe.MapResource(APIGovernApps, ResourceGovern)
-
-	rbacframe.MapResource(APIDump, ResourceAdminister)
-	rbacframe.MapResource(APIClusters, ResourceAdminister)
-	rbacframe.MapResource(APIAlarms, ResourceAdminister)
 }

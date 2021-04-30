@@ -19,53 +19,30 @@
 package rbacframe
 
 import (
-	"context"
 	"crypto/rsa"
-	"github.com/go-chassis/cari/rbac"
-
-	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/go-chassis/go-chassis/v2/security/token"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 const (
 	ClaimsUser  = "account"
 	ClaimsRoles = "roles"
+
+	RoleAdmin = "admin"
 )
 
-func AccountFromContext(ctx context.Context) (*rbac.Account, error) {
-	claims := FromContext(ctx)
-	m, ok := claims.(map[string]interface{})
-	if !ok {
-		return nil, ErrInvalidCtx
-	}
-	accountNameI := m[ClaimsUser]
-	a, ok := accountNameI.(string)
-	if !ok {
-		return nil, ErrConvertErr
-	}
-	roles := m[ClaimsRoles]
-	roleList, err := GetRolesList(roles)
-	if err != nil {
-		log.Error("role convert failed ", err)
-		return nil, ErrConvertErr
-	}
-	account := &rbac.Account{Name: a, Roles: roleList}
-	return account, nil
+var whiteAPIList = sets.NewString()
+
+func Add2WhiteAPIList(path ...string) {
+	whiteAPIList.Insert(path...)
 }
 
-//RoleFromContext only return role name
-func RoleFromContext(ctx context.Context) (string, error) {
-	claims := FromContext(ctx)
-	m, ok := claims.(map[string]interface{})
-	if !ok {
-		return "", ErrInvalidCtx
+func MustAuth(pattern string) bool {
+	if util.IsVersionOrHealthPattern(pattern) {
+		return false
 	}
-	roleI := m[ClaimsRoles]
-	role, ok := roleI.(string)
-	if !ok {
-		return "", ErrConvertErr
-	}
-	return role, nil
+	return !whiteAPIList.Has(pattern)
 }
 
 //Authenticate parse a token to claims
@@ -94,4 +71,13 @@ func GetRolesList(v interface{}) ([]string, error) {
 		rolesList = append(rolesList, role)
 	}
 	return rolesList, nil
+}
+
+//BuildResourceList join the resource to an array
+func BuildResourceList(resourceType ...string) []string {
+	rt := make([]string, len(resourceType))
+	for i := 0; i < len(resourceType); i++ {
+		rt[i] = resourceType[i]
+	}
+	return rt
 }

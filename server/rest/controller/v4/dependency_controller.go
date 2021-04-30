@@ -66,6 +66,7 @@ func (s *DependencyService) AddDependenciesForMicroServices(w http.ResponseWrite
 	controller.WriteResponse(w, r, resp.Response, nil)
 }
 
+//Deprecated
 func (s *DependencyService) CreateDependenciesForMicroServices(w http.ResponseWriter, r *http.Request) {
 	requestBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
