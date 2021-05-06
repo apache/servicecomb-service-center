@@ -63,7 +63,7 @@ func (h *Hset) Iter() []string {
 	h.l.RLock()
 	defer h.l.RUnlock()
 	res := make([]string, 0, h.Len())
-	for k, _ := range h.m {
+	for k := range h.m {
 		res = append(res, k)
 	}
 	return res

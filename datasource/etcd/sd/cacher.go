@@ -18,9 +18,10 @@
 package sd
 
 import (
+	"github.com/go-chassis/cari/discovery"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/go-chassis/cari/discovery"
 )
 
 // CommonCacher implements sd.Cacher.

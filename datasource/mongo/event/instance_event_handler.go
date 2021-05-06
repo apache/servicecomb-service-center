@@ -20,10 +20,12 @@ package event
 import (
 	"context"
 	"fmt"
-	"github.com/apache/servicecomb-service-center/datasource/cache"
 	"time"
 
+	"github.com/go-chassis/cari/discovery"
+
 	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/datasource/cache"
 	"github.com/apache/servicecomb-service-center/datasource/mongo"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client/dao"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
@@ -35,7 +37,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/metrics"
 	"github.com/apache/servicecomb-service-center/server/notify"
 	"github.com/apache/servicecomb-service-center/server/syncernotify"
-	"github.com/go-chassis/cari/discovery"
 )
 
 // InstanceEventHandler is the handler to handle events

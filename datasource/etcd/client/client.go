@@ -21,9 +21,10 @@ import (
 	"context"
 	"errors"
 
+	"github.com/coreos/etcd/mvcc/mvccpb"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/task"
-	"github.com/coreos/etcd/mvcc/mvccpb"
 )
 
 const (

@@ -16,7 +16,10 @@
 package servicecenter
 
 import (
+	"context"
 	"strings"
+
+	"github.com/go-chassis/cari/discovery"
 
 	"github.com/apache/servicecomb-service-center/client"
 	etcdclient "github.com/apache/servicecomb-service-center/datasource/etcd/client"
@@ -25,9 +28,6 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/go-chassis/cari/discovery"
-
-	"context"
 )
 
 // ClusterIndexer implements sd.Indexer.

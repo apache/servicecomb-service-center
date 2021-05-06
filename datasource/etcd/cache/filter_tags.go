@@ -23,11 +23,12 @@ import (
 	"sort"
 	"strings"
 
+	pb "github.com/go-chassis/cari/discovery"
+
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/cache"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	pb "github.com/go-chassis/cari/discovery"
 )
 
 type TagsFilter struct {

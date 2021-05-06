@@ -21,10 +21,11 @@ import (
 	"context"
 	"testing"
 
+	"github.com/coreos/etcd/mvcc/mvccpb"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/value"
-	"github.com/coreos/etcd/mvcc/mvccpb"
 )
 
 func TestEtcdIndexer_Search(t *testing.T) {

@@ -23,8 +23,6 @@ import (
 	_ "github.com/apache/servicecomb-service-center/test"
 
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/pkg/util"
-
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
 
@@ -41,14 +39,6 @@ var _ = BeforeSuite(func() {
 	time.Sleep(timeLimit)
 	_ = datasource.Instance().ClearNoInstanceServices(context.Background(), timeLimit)
 })
-
-func getContext() context.Context {
-	return util.WithNoCache(util.SetDomainProject(context.Background(), "default", "default"))
-}
-
-func depGetContext() context.Context {
-	return util.WithNoCache(util.SetDomainProject(context.Background(), "new_default", "new_default"))
-}
 
 func TestEtcd(t *testing.T) {
 	RegisterFailHandler(Fail)

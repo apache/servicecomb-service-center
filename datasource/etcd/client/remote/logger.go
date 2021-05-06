@@ -21,9 +21,10 @@ import (
 	"fmt"
 	"runtime"
 
+	"github.com/coreos/pkg/capnslog"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/coreos/pkg/capnslog"
 )
 
 const grpcCallerSkip = 2

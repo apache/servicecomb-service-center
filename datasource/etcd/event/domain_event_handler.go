@@ -18,10 +18,11 @@
 package event
 
 import (
+	"github.com/go-chassis/cari/discovery"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/server/metrics"
-	"github.com/go-chassis/cari/discovery"
 )
 
 // DomainEventHandler report domain & project total number

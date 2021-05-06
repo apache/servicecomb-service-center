@@ -18,11 +18,13 @@
 package privacy
 
 import (
-	"github.com/apache/servicecomb-service-center/pkg/log"
+	"strings"
+
 	"github.com/elithrar/simple-scrypt"
 	"github.com/go-chassis/foundation/stringutil"
 	"golang.org/x/crypto/bcrypt"
-	"strings"
+
+	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
 const (

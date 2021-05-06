@@ -22,9 +22,9 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/apache/servicecomb-service-center/pkg/util"
-
 	"github.com/gorilla/websocket"
+
+	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
 func (c *LBClient) WebsocketDial(ctx context.Context, api string, headers http.Header) (conn *websocket.Conn, err error) {

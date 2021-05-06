@@ -54,7 +54,7 @@ func (s *TypeStore) Run() {
 
 func (s *TypeStore) store(ctx context.Context) {
 	// new all types
-	for t, _ := range CacherRegister {
+	for t := range CacherRegister {
 		select {
 		case <-ctx.Done():
 			return
@@ -78,7 +78,7 @@ func (s *TypeStore) autoClearCache(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-time.After(ttl):
-			for t, _ := range CacherRegister {
+			for t := range CacherRegister {
 				cache := s.getOrCreateCache(t).Cache()
 				cache.MarkDirty()
 			}
@@ -98,9 +98,6 @@ func (s *TypeStore) getOrCreateCache(t string) *MongoCacher {
 	}
 	cacher := f()
 	cacher.Run()
-
-	s.caches.Put(t, cacher)
-	return cacher
 
 	s.caches.Put(t, cacher)
 	return cacher

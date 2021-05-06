@@ -18,17 +18,15 @@
 package etcd
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/value"
-
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-
-	"context"
 )
 
 // Indexer implements sd.Indexer.

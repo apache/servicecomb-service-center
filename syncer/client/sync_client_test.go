@@ -43,26 +43,3 @@ func TestClient_DeclareDataLength(t *testing.T) {
 		assert.Error(t, err, "DeclareDataLength fail without grpc")
 	})
 }
-
-func syncDataCreate() *pb.SyncData {
-	syncService := pb.SyncService{
-		ServiceId: "a59f99611a6945677a21f28c0aeb05abb",
-	}
-	services := []*pb.SyncService{&syncService}
-	syncInstance := pb.SyncInstance{
-		InstanceId: "5e1140fc232111eb9bb600acc8c56b5b",
-	}
-	instances := []*pb.SyncInstance{&syncInstance}
-	syncData := pb.SyncData{
-		Services:  services,
-		Instances: instances,
-	}
-	return &syncData
-}
-
-func declareRespCreate() *pb.DeclareResponse {
-	declareResp := pb.DeclareResponse{
-		SyncDataLength: 3,
-	}
-	return &declareResp
-}

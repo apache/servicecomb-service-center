@@ -19,11 +19,13 @@ package cache
 
 import (
 	"context"
+	"strings"
+
+	"github.com/go-chassis/cari/discovery"
+
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/go-chassis/cari/discovery"
-	"strings"
 )
 
 const (
@@ -82,7 +84,7 @@ func transCacheToInsts(cache []interface{}) ([]*discovery.MicroServiceInstance, 
 	return res, true
 }
 
-func GetRulesByServiceID(serviceID string) ([]*model.Rule, bool){
+func GetRulesByServiceID(serviceID string) ([]*model.Rule, bool) {
 	cacheRes := sd.Store().Rule().Cache().GetValue(serviceID)
 	return transCacheToRules(cacheRes)
 }
@@ -101,8 +103,8 @@ func transCacheToRules(cacheRules []interface{}) ([]*model.Rule, bool) {
 			Rule:      t.Rule,
 		})
 	}
-	if len(res)==0{
-		return nil,false
+	if len(res) == 0 {
+		return nil, false
 	}
 	return res, true
 }
@@ -111,12 +113,12 @@ func GetServiceByID(serviceID string) (*model.Service, bool) {
 	cacheRes := sd.Store().Service().Cache().GetValue(serviceID)
 	res, ok := transCacheToService(cacheRes)
 	if !ok {
-		return nil ,false
+		return nil, false
 	}
 	return res[0], true
 }
 
-func GetServiceID(ctx context.Context,key *discovery.MicroServiceKey) (serviceID string, exist bool) {
+func GetServiceID(ctx context.Context, key *discovery.MicroServiceKey) (serviceID string, exist bool) {
 	cacheIndex := strings.Join([]string{util.ParseDomain(ctx), util.ParseProject(ctx), key.AppId, key.ServiceName, key.Version}, "/")
 	res := sd.Store().Service().Cache().GetValue(cacheIndex)
 	cacheService, ok := transCacheToService(res)
@@ -140,8 +142,8 @@ func transCacheToService(services []interface{}) ([]*model.Service, bool) {
 			Service: t.Service,
 		})
 	}
-	if len(res)==0{
-		return nil,false
+	if len(res) == 0 {
+		return nil, false
 	}
 	return res, true
 }

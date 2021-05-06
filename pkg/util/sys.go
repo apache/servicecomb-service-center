@@ -78,8 +78,9 @@ func GetEnvString(name string, def string) string {
 
 func GetProcCPUUsage() (pt float64, ct float64) {
 	p, _ := procfs.NewProc(os.Getpid())
-	stat, _ := procfs.NewStat()
-	pstat, _ := p.NewStat()
+	fs, _ := procfs.NewDefaultFS()
+	stat, _ := fs.Stat()
+	pstat, _ := p.Stat()
 	ct = stat.CPUTotal.User + stat.CPUTotal.Nice + stat.CPUTotal.System +
 		stat.CPUTotal.Idle + stat.CPUTotal.Iowait + stat.CPUTotal.IRQ +
 		stat.CPUTotal.SoftIRQ + stat.CPUTotal.Steal + stat.CPUTotal.Guest

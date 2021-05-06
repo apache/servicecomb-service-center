@@ -19,9 +19,10 @@ import (
 	"context"
 	"reflect"
 
-	"github.com/apache/servicecomb-service-center/pkg/queue"
 	pb "github.com/go-chassis/cari/discovery"
 	"k8s.io/client-go/tools/cache"
+
+	"github.com/apache/servicecomb-service-center/pkg/queue"
 )
 
 type K8sEvent struct {

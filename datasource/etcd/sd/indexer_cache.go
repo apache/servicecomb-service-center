@@ -18,13 +18,12 @@
 package sd
 
 import (
+	"context"
 	"time"
 
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-
-	"context"
 )
 
 // CacheIndexer implements sd.Indexer.

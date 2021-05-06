@@ -19,9 +19,9 @@ package client
 
 import (
 	"fmt"
-	"github.com/apache/servicecomb-service-center/datasource"
 	"time"
 
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/backoff"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 )
