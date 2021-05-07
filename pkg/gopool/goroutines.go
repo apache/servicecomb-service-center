@@ -81,10 +81,14 @@ func (g *Pool) execute(f func(ctx context.Context)) {
 func (g *Pool) Do(f func(context.Context)) *Pool {
 	defer log.Recover()
 	select {
-	case g.pending <- f: // block if workers are busy
-	case g.workers <- struct{}{}:
-		g.wg.Add(1)
-		go g.loop(f)
+	case g.pending <- f: // try to reuse worker first
+	default:
+		select {
+		case g.pending <- f: // block if workers are busy
+		case g.workers <- struct{}{}:
+			g.wg.Add(1)
+			go g.loop(f)
+		}
 	}
 	return g
 }
