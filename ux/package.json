@@ -1,10 +1,11 @@
 {
-  "name": "local-cse",
-  "version": "0.0.0",
+  "name": "ux",
+  "version": "0.0.1",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
+    "build:prod": "ng build --prod ",
     "lint": "ng lint"
   },
   "private": true,
