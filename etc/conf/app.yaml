@@ -170,6 +170,7 @@ rbac:
   publicKeyFile:
 
 metrics:
+  enable: true
   interval: 30s
 
 tracing:

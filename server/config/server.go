@@ -80,8 +80,6 @@ type serverConfig struct {
 
 	// instance ttl in seconds
 	InstanceTTL int64 `json:"-"`
-
-	MetricsInterval time.Duration `json:"-"`
 }
 
 func (si *ServerConfig) IsDev() bool {

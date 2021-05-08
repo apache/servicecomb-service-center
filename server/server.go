@@ -21,6 +21,7 @@ import (
 	"context"
 	"net"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/apache/servicecomb-service-center/datasource"
@@ -120,7 +121,13 @@ func (s *ServiceCenterServer) initDatasource() {
 }
 
 func (s *ServiceCenterServer) initMetrics() {
-	interval := config.GetDuration("metrics.interval", defaultCollectPeriod, config.WithENV("METRICS_INTERVAL"))
+	if !config.GetMetrics().Enable {
+		return
+	}
+	interval, err := time.ParseDuration(strings.TrimSpace(config.GetMetrics().Interval))
+	if err != nil {
+		log.Errorf(err, "invalid metrics config[interval], set default %s", defaultCollectPeriod)
+	}
 	if interval <= time.Second {
 		interval = defaultCollectPeriod
 	}

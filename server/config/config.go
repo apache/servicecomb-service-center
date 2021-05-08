@@ -93,8 +93,8 @@ func GetRBAC() serverConfig {
 }
 
 //GetMetrics return the metrics configs
-func GetMetrics() serverConfig {
-	return App.Server.Config
+func GetMetrics() Metrics {
+	return *App.Metrics
 }
 
 func Init() {
@@ -198,8 +198,6 @@ func loadServerConfig() ServerConfig {
 			SchemaEditable: GetBool("registry.schema.editable", false, WithENV("SCHEMA_EDITABLE")),
 
 			EnableRBAC: GetBool("rbac.enable", false, WithStandby("rbac_enabled")),
-
-			MetricsInterval: GetDuration("metrics.interval", 30*time.Second, WithENV("METRICS_INTERVAL")),
 		},
 	}
 }

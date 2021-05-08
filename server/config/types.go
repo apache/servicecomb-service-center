@@ -28,8 +28,9 @@ const (
 
 //AppConfig is yaml file struct
 type AppConfig struct {
-	Gov    *Gov          `yaml:"gov"`
-	Server *ServerConfig `yaml:"server"`
+	Gov     *Gov          `yaml:"gov"`
+	Server  *ServerConfig `yaml:"server"`
+	Metrics *Metrics      `yaml:"metrics"`
 }
 type Gov struct {
 	DistOptions []DistributorOptions `yaml:"plugins"`
@@ -46,4 +47,10 @@ func (c *AppConfig) GetImplName(kind plugin.Kind) string {
 }
 func (c *AppConfig) GetPluginDir() string {
 	return c.Server.Config.PluginsDir
+}
+
+// Metrics is the configurations of metrics
+type Metrics struct {
+	Enable   bool   `yaml:"enable"`
+	Interval string `yaml:"interval"`
 }

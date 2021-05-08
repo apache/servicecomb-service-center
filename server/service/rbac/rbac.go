@@ -73,7 +73,6 @@ func Init() {
 	initAdminRole()
 	initDevRole()
 	rbacframe.Add2WhiteAPIList(APITokenGranter)
-	config.Server.Config.EnableRBAC = true
 	log.Info("rbac is enabled")
 }
 
