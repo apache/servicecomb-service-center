@@ -48,3 +48,7 @@ go.sum
 __debug_bin
 private.key
 rbac.pub
+
+# ux
+ux/node_modules
+ux/dist

@@ -1,0 +1,77 @@
+<!--
+Licensed to the Apache Software Foundation (ASF) under one or more
+contributor license agreements.  See the NOTICE file distributed with
+this work for additional information regarding copyright ownership.
+The ASF licenses this file to You under the Apache License, Version 2.0
+(the "License"); you may not use this file except in compliance with
+the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<div class="modal-component">
+  <h2>选择应用</h2>
+
+  <div class="container">
+    <d-data-table
+      [dataSource]="dataSource"
+      [scrollable]="true"
+      [type]="'striped'"
+      [tableWidthConfig]="tableWidthConfig"
+      [headerBg]="true"
+    >
+      <thead dTableHead>
+        <tr dTableRow>
+          <th dHeadCell></th>
+          <th dHeadCell *ngFor="let colOption of columns">
+            {{ colOption.header }}
+          </th>
+        </tr>
+      </thead>
+      <tbody dTableBody>
+        <ng-template let-rowItem="rowItem" let-rowIndex="rowIndex">
+          <tr dTableRow style="line-height: 100%">
+            <td dTableCell field="radio">
+              <d-radio
+                style="vertical-align: middle; padding-right: 0; width: 50px"
+                [name]="'radio'"
+                [(ngModel)]="selectId"
+                [value]="rowItem.appId"
+              ></d-radio>
+            </td>
+            <td>{{ rowItem.appId }}</td>
+            <td>{{ rowItem.environment | EnvironmentPipe }}</td>
+          </tr>
+        </ng-template>
+      </tbody>
+    </d-data-table>
+    <d-pagination
+      class="cse-mg-top-xs"
+      *ngIf="pager.total > pager.pageSizeOptions[0]"
+      [size]="'sm'"
+      [total]="pager.total"
+      [(pageSize)]="pager.pageSize"
+      [(pageIndex)]="pager.pageIndex"
+      [canViewTotal]="true"
+      [canChangePageSize]="true"
+      [pageSizeOptions]="pager.pageSizeOptions"
+      [maxItems]="5"
+      (pageIndexChange)="onPaginationChange($event, pager.pageSize)"
+      (pageSizeChange)="onPaginationChange(pager.pageIndex, $event)"
+    >
+    </d-pagination>
+  </div>
+  <div class="footer">
+    <d-button bsStyle="danger" [disabled]="!selectId" (click)="onConfirm()"
+      >确定</d-button
+    >
+    <d-button bsStyle="common" class="cse-mg-left-lg" (click)="onCancel()"
+      >取消</d-button
+    >
+  </div>
+</div>
