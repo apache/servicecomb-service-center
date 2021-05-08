@@ -1,0 +1,109 @@
+<!--
+Licensed to the Apache Software Foundation (ASF) under one or more
+contributor license agreements.  See the NOTICE file distributed with
+this work for additional information regarding copyright ownership.
+The ASF licenses this file to You under the Apache License, Version 2.0
+(the "License"); you may not use this file except in compliance with
+the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<div class="modal-component">
+  <h2>选择微服务</h2>
+
+  <div class="container">
+    <form dForm ngForm>
+      <d-form-item>
+        <d-form-label [required]="true">选择微服务</d-form-label>
+        <d-form-control>
+          <d-data-table
+            [dataSource]="dataSource"
+            [scrollable]="true"
+            [type]="'striped'"
+            [tableWidthConfig]="tableWidthConfig"
+            [headerBg]="true"
+          >
+            <thead dTableHead>
+              <tr dTableRow>
+                <th dHeadCell></th>
+                <th dHeadCell *ngFor="let colOption of columns">
+                  {{ colOption.header }}
+                </th>
+              </tr>
+            </thead>
+            <tbody dTableBody>
+              <ng-template let-rowItem="rowItem" let-rowIndex="rowIndex">
+                <tr dTableRow style="line-height: 100%">
+                  <td dTableCell field="radio">
+                    <d-radio
+                      style="vertical-align: middle; padding-right: 0"
+                      [name]="'radio'"
+                      [(ngModel)]="selectService"
+                      (ngModelChange)="onChangeService(rowItem)"
+                      [value]="rowItem"
+                    ></d-radio>
+                  </td>
+                  <td dTableCell field="serviceName">
+                    {{ rowItem.serviceName }}
+                  </td>
+                  <td dTableCell field="appId">
+                    {{ rowItem.appId }}
+                  </td>
+                  <td dTableCell field="enviroment">
+                    {{ rowItem.enviroment | EnvironmentPipe }}
+                  </td>
+                </tr>
+              </ng-template>
+            </tbody>
+          </d-data-table>
+          <d-pagination
+            class="cse-mg-top-xs"
+            [autoHide]="true"
+            [size]="'sm'"
+            [total]="pager.total"
+            [(pageSize)]="pager.pageSize"
+            [(pageIndex)]="pager.pageIndex"
+            [canViewTotal]="true"
+            [canChangePageSize]="true"
+            [pageSizeOptions]="pager.pageSizeOptions"
+            [maxItems]="5"
+            (pageIndexChange)="onPaginationChange($event, pager.pageSize)"
+            (pageSizeChange)="onPaginationChange(pager.pageIndex, $event)"
+          >
+          </d-pagination>
+        </d-form-control>
+      </d-form-item>
+      <d-form-item>
+        <d-form-label [required]="true">选择版本</d-form-label>
+        <d-form-control>
+          <d-select
+            class="w-200"
+            [placeholder]="'选择版本'"
+            [options]="options"
+            [filterKey]="'version'"
+            [readonly]="true"
+            [(ngModel)]="selectVersion"
+            [ngModelOptions]="{ standalone: true }"
+          ></d-select>
+        </d-form-control>
+      </d-form-item>
+    </form>
+  </div>
+  <div class="footer">
+    <d-button
+      bsStyle="danger"
+      [disabled]="!selectService || !selectVersion"
+      (click)="onConfirm()"
+      >确定</d-button
+    >
+    <d-button bsStyle="common" class="cse-mg-left-lg" (click)="onCancel()"
+      >取消</d-button
+    >
+  </div>
+</div>

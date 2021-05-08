@@ -1,0 +1,66 @@
+<!--
+Licensed to the Apache Software Foundation (ASF) under one or more
+contributor license agreements.  See the NOTICE file distributed with
+this work for additional information regarding copyright ownership.
+The ASF licenses this file to You under the Apache License, Version 2.0
+(the "License"); you may not use this file except in compliance with
+the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<div class="title">{{ title }}</div>
+
+<d-data-table
+  #datatable
+  [dataSource]="dataSource"
+  [scrollable]="true"
+  [type]="'striped'"
+  [headerBg]="true"
+  [tableWidthConfig]="columns"
+>
+  <thead dTableHead>
+    <tr dTableRow>
+      <th dHeadCell *ngFor="let colOption of columns">
+        {{ colOption.header }}
+      </th>
+      <th dHeadCell [width]="'200px'">操作</th>
+    </tr>
+  </thead>
+  <tbody dTableBody>
+    <ng-template
+      let-rowItem="rowItem"
+      let-rowIndex="rowIndex"
+      let-nestedIndex="nestedIndex"
+    >
+      <tr dTableRow>
+        <td dTableCell>{{ rowItem.hostName }}</td>
+        <td dTableCell>{{ rowItem.status | InstanceStatus }}</td>
+        <td dTableCell>{{ rowItem.environment | EnvironmentPipe }}</td>
+        <td dTableCell>{{ rowItem.serviceName }}</td>
+        <td dTableCell>{{ rowItem.endpoints }}</td>
+        <td dTableCell>{{ rowItem.version }}</td>
+        <td dTableCell>
+          {{ rowItem.modTimestamp * 1000 | date: "yyyy/MM/dd HH:mm:ss zzzz" }}
+        </td>
+        <td dTableCell>
+          <app-action-menu
+            [actions]="actionFn(rowItem)"
+            [maxShowNum]="2"
+            [menuText]="'更多'"
+            (menuClick)="actionClick($event, rowItem)"
+          ></app-action-menu>
+        </td>
+      </tr>
+    </ng-template>
+
+    <ng-template #noResultTemplateRef>
+      <div style="text-align: center; margin-top: 20px">No Data</div>
+    </ng-template>
+  </tbody>
+</d-data-table>

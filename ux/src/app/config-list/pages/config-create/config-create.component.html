@@ -1,0 +1,210 @@
+<!--
+Licensed to the Apache Software Foundation (ASF) under one or more
+contributor license agreements.  See the NOTICE file distributed with
+this work for additional information regarding copyright ownership.
+The ASF licenses this file to You under the Apache License, Version 2.0
+(the "License"); you may not use this file except in compliance with
+the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<div class="container">
+  <d-breadcrumb>
+    <d-breadcrumb-item>
+      <a routerLink="/kie">配置管理</a>
+    </d-breadcrumb-item>
+    <d-breadcrumb-item>
+      <span>{{ title }}</span>
+    </d-breadcrumb-item>
+  </d-breadcrumb>
+
+  <form
+    class="cse-mg-top-md"
+    dForm
+    ngForm
+    [formGroup]="formGroup"
+    #form="dValidateRules"
+    [dValidateRules]="formRules.rule"
+    [layout]="FormLayout.Horizontal"
+    [labelSize]="'sm'"
+  >
+    <d-form-item *ngIf="configType">
+      <d-form-label [required]="false">配置类型</d-form-label>
+      <d-form-control>{{ configType }}</d-form-control>
+    </d-form-item>
+    <d-form-item *ngIf="configType === 'app' && type === 'create'">
+      <d-form-label [required]="true">应用</d-form-label>
+      <d-form-control>
+        <span *ngIf="appId">{{ appId }}</span>
+        <i
+          *ngIf="appId"
+          class="icon icon-delete app-delete"
+          (click)="onDeleteApp()"
+        ></i>
+        <d-button *ngIf="!appId" bsStyle="common" (click)="onSelectApp()"
+          >选择应用</d-button
+        >
+      </d-form-control>
+    </d-form-item>
+
+    <d-form-item *ngIf="configType === 'service' && type === 'create'">
+      <d-form-label [required]="true">微服务</d-form-label>
+      <d-form-control>
+        <span *ngIf="serviceId">{{ serviceId }}</span>
+        <i
+          *ngIf="serviceId"
+          class="icon icon-delete app-delete"
+          (click)="onDeleteService()"
+        ></i>
+        <d-button
+          *ngIf="!serviceId"
+          bsStyle="common"
+          (click)="onSelectService()"
+          >选择微服务</d-button
+        >
+      </d-form-control>
+    </d-form-item>
+    <d-form-item>
+      <d-form-label [required]="true" [hasHelp]="true" helpTips="xxxxx">
+        配置项
+      </d-form-label>
+      <d-form-control>
+        <ng-container *ngIf="type === 'create'; else elseTemplate">
+          <input
+            type="text"
+            dTextInput
+            class="w-300"
+            placeholder="请输入配置项"
+            name="configName"
+            formControlName="configName"
+            [dValidateRules]="[
+              { required: true },
+              { whitespace: true },
+              { minlength: 1 },
+              { maxlength: 128 },
+              {
+                pattern: isAlphabetPattern,
+                message: {
+                  default:
+                    '请输入由数字/字母/下划线/中划线或小数点组成对1-128位字符'
+                }
+              }
+            ]"
+          />
+        </ng-container>
+        <ng-template #elseTemplate>
+          <span>{{ formGroup.controls.configName.value }}</span>
+        </ng-template>
+      </d-form-control>
+    </d-form-item>
+    <d-form-item>
+      <d-form-label [required]="false">标签</d-form-label>
+      <d-form-control>
+        <div class="cse-mg-bottom-sm">
+          <d-tag
+            class="cse-mg-right-xs"
+            *ngFor="let tag of tags; let i = index"
+            [tag]="tag"
+            [customViewTemplate]="customTag"
+          ></d-tag>
+          <ng-template #customTag let-tag="tag">
+            <span title="{{ tag }}">{{ tag }}</span>
+          </ng-template>
+        </div>
+        <div *ngIf="configType === 'custom' && type === 'create'">
+          <input
+            type="text"
+            dTextInput
+            class="w-300"
+            placeholder="请输入标签键"
+            [(ngModel)]="configTageKey"
+            [ngModelOptions]="{ standalone: true }"
+            [dValidateRules]="[
+            { required: true },
+            { whitespace: true },
+          ]"
+          />
+          <input
+            type="text"
+            dTextInput
+            class="w-300 cse-mg-left-xs"
+            placeholder="请输入标签值"
+            [(ngModel)]="configTageValue"
+            [ngModelOptions]="{ standalone: true }"
+            [dValidateRules]="[
+            { required: true },
+            { whitespace: true },
+          ]"
+          />
+          <d-button
+            icon="icon-add"
+            [bsStyle]="'text-dark'"
+            [bordered]="true"
+            style="vertical-align: middle"
+            (click)="onAddTage()"
+          ></d-button>
+        </div>
+      </d-form-control>
+    </d-form-item>
+    <d-form-item>
+      <d-form-label [required]="false">配置格式</d-form-label>
+      <d-form-control>
+        <d-button-group size="md">
+          <d-button
+            *ngFor="let item of configFormatItems"
+            (click)="onConfigFormat(item.id)"
+            [bsStyle]="configFormatId === item.id ? 'primary' : 'common'"
+          >
+            {{ item.text }}
+          </d-button>
+        </d-button-group>
+      </d-form-control>
+    </d-form-item>
+    <d-form-item *ngIf="type === 'eidt'">
+      <d-form-label [required]="false">是否启用</d-form-label>
+      <d-form-control>
+        <d-toggle [checked]="status === 'enabled'"></d-toggle>
+      </d-form-control>
+    </d-form-item>
+
+    <d-form-item>
+      <d-form-label [required]="true">配置内容</d-form-label>
+      <d-form-control>
+        <ngx-monaco-editor
+          #monacoEditor
+          [options]="editorOptions"
+          style="height: 400px; width: 80%"
+          name="code"
+          formControlName="code"
+          [dValidateRules]="formRules.codeRules"
+        ></ngx-monaco-editor>
+      </d-form-control>
+    </d-form-item>
+
+    <d-form-operation class="form-operation">
+      <d-button
+        bsStyle="danger"
+        circled="true"
+        style="margin-right: 4px"
+        (click)="onSubmit()"
+        [disabled]="
+          !!form.errorMessage ||
+          (type === 'create' && configType !== 'custom' && !serviceId && !appId)
+        "
+        dTooltip
+        [content]="form.errorMessage"
+      >
+        Submit
+      </d-button>
+      <d-button bsStyle="common" circled="true" (click)="cancel()">
+        Cancel
+      </d-button>
+    </d-form-operation>
+  </form>
+</div>

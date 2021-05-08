@@ -1,0 +1,59 @@
+<!--
+Licensed to the Apache Software Foundation (ASF) under one or more
+contributor license agreements.  See the NOTICE file distributed with
+this work for additional information regarding copyright ownership.
+The ASF licenses this file to You under the Apache License, Version 2.0
+(the "License"); you may not use this file except in compliance with
+the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<ng-container *ngFor="let item of buttonActions">
+  <d-button
+    [disabled]="item.disabled || false"
+    bsStyle="text"
+    style="margin-right: 5px"
+    (click)="onClick(item)"
+    >{{ item.label }}</d-button
+  >
+</ng-container>
+
+<div
+  class="btn-group"
+  dDropDown
+  [trigger]="'hover'"
+  (toggleEvent)="toggle($event)"
+  appendToBody
+  *ngIf="moreActions?.length"
+>
+  <ng-container *ngIf="moreBtnRef; then thenTemplate; else elseTemplate">
+  </ng-container>
+  <ng-template #thenTemplate>
+    <ng-content #moreBtnRef></ng-content>
+  </ng-template>
+  <ng-template #elseTemplate>
+    <a dDropDownToggle class="devui-dropdown-no-border devui-dropdown-origin">
+      {{ menuText || "More" }}
+      <span class="icon-chevron-down"></span>
+    </a>
+  </ng-template>
+
+  <ul dDropDownMenu class="devui-dropdown-menu devui-scrollbar" role="menu">
+    <li
+      [ngClass]="{ disabled: item.disabled }"
+      role="menuitem"
+      *ngFor="let item of moreActions"
+      (click)="onClick(item)"
+    >
+      <a class="devui-dropdown-item disabled">
+        {{ item.label }}
+      </a>
+    </li>
+  </ul>
+</div>

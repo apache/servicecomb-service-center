@@ -1,0 +1,18 @@
+{
+  "/api/v1/": {
+    "target": "http://127.0.0.1:30110",
+    "changeOrigin": true,
+    "logLevel": "debug",
+    "pathRewrite": {
+      "^/api": ""
+    }
+  },
+  "/api/v4/": {
+    "target": "http://127.0.0.1:30100",
+    "changeOrigin": true,
+    "logLevel": "debug",
+    "pathRewrite": {
+      "^/api/": ""
+    }
+  }
+}

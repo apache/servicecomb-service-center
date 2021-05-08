@@ -1,0 +1,101 @@
+<!--
+Licensed to the Apache Software Foundation (ASF) under one or more
+contributor license agreements.  See the NOTICE file distributed with
+this work for additional information regarding copyright ownership.
+The ASF licenses this file to You under the Apache License, Version 2.0
+(the "License"); you may not use this file except in compliance with
+the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<div class="title">
+  <div class="label">服务列表</div>
+  <div class="btn-group">
+    <d-button icon="icon-add" bsStyle="danger" (click)="onCreateService()">
+      创建微服务
+    </d-button>
+  </div>
+</div>
+<div>
+  <app-filter-refresh
+    [category]="category"
+    (selectedTagsChange)="onSelectedTagsChange($event)"
+    (refresh)="onRefresh()"
+  >
+  </app-filter-refresh>
+  <d-data-table
+    [dataSource]="dataSource"
+    [tableWidthConfig]="tableWidthConfig"
+    [headerBg]="true"
+  >
+    <thead dTableHead [checkable]="false">
+      <tr dTableRow>
+        <th dHeadCell width="150px">服务名称</th>
+        <th dHeadCell *ngFor="let colOption of columns">
+          {{ colOption.header }}
+        </th>
+        <th dHeadCell width="150px">操作</th>
+      </tr>
+    </thead>
+    <tbody dTableBody>
+      <ng-template
+        let-rowItem="rowItem"
+        let-rowIndex="rowIndex"
+        let-nestedIndex="nestedIndex"
+      >
+        <tr dTableRow [ngClass]="{ 'table-row-selected': rowItem.$checked }">
+          <td dTableCell>
+            <a [routerLink]="['/servicedetail', rowItem.serviceId]">
+              {{ rowItem.serviceName }}
+            </a>
+          </td>
+          <td dTableCall>
+            {{ rowItem.environment | EnvironmentPipe }}
+          </td>
+          <td dTableCall>
+            {{ rowItem.version }}
+          </td>
+          <td dTableCall>
+            {{ rowItem.appId }}
+          </td>
+          <td dTableCall>
+            {{ rowItem.timestamp * 1000 | date: "yyyy/MM/dd HH:mm:ss zzzz" }}
+          </td>
+          <td dTableCell>
+            <d-button
+              bsStyle="text"
+              class="cse-mg-left-sm"
+              (click)="deleteItem(rowItem)"
+              >删除</d-button
+            >
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template #noResultTemplateRef>
+        <div style="text-align: center; margin-top: 20px">No Data</div>
+      </ng-template>
+    </tbody>
+  </d-data-table>
+  <d-pagination
+    class="cse-mg-top-xs"
+    [autoHide]="true"
+    [size]="'sm'"
+    [total]="pager.total"
+    [(pageSize)]="pager.pageSize"
+    [(pageIndex)]="pager.pageIndex"
+    [canViewTotal]="true"
+    [canChangePageSize]="true"
+    [pageSizeOptions]="pager.pageSizeOptions"
+    [maxItems]="5"
+    (pageIndexChange)="onPaginationChange($event, pager.pageSize)"
+    (pageSizeChange)="onPaginationChange(pager.pageIndex, $event)"
+  >
+  </d-pagination>
+</div>

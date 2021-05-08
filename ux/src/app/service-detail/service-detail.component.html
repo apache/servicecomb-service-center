@@ -1,0 +1,153 @@
+<!--
+Licensed to the Apache Software Foundation (ASF) under one or more
+contributor license agreements.  See the NOTICE file distributed with
+this work for additional information regarding copyright ownership.
+The ASF licenses this file to You under the Apache License, Version 2.0
+(the "License"); you may not use this file except in compliance with
+the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<div class="container">
+  <d-breadcrumb style="margin-bottom: 20px">
+    <d-breadcrumb-item>
+      <a routerLink="/servicelist">微服务目录</a>
+    </d-breadcrumb-item>
+    <d-breadcrumb-item>
+      <span>{{ title }}</span>
+    </d-breadcrumb-item>
+  </d-breadcrumb>
+
+  <section style="margin-left: 40px">
+    <form dForm [layout]="formLayout.Horizontal">
+      <div class="grid">
+        <div class="u-1-2">
+          <d-form-item>
+            <d-form-label> 微服务名称 </d-form-label>
+            <d-form-control class="form-control-width">
+              {{ serviceData?.serviceName }}
+            </d-form-control>
+          </d-form-item>
+        </div>
+        <div class="u-1-2">
+          <d-form-item>
+            <d-form-label> 实例数 </d-form-label>
+            <d-form-control class="form-control-width">
+              {{ serviceData?.instances?.length || 0 }}
+            </d-form-control>
+          </d-form-item>
+        </div>
+        <div class="u-1-2">
+          <d-form-item>
+            <d-form-label> 所属环境 </d-form-label>
+            <d-form-control class="form-control-width">
+              {{ serviceData?.environment | EnvironmentPipe }}
+            </d-form-control>
+          </d-form-item>
+        </div>
+        <div class="u-1-2">
+          <d-form-item>
+            <d-form-label> 所属应用 </d-form-label>
+            <d-form-control class="form-control-width">
+              {{ serviceData?.appId }}
+            </d-form-control>
+          </d-form-item>
+        </div>
+        <div class="u-1-2">
+          <d-form-item>
+            <d-form-label> 微服务版本 </d-form-label>
+            <d-form-control class="form-control-width">
+              {{ serviceData?.version }}
+            </d-form-control>
+          </d-form-item>
+        </div>
+        <div class="u-1-2">
+          <d-form-item>
+            <d-form-label> 框架 </d-form-label>
+            <d-form-control class="form-control-width">
+              {{ serviceData?.framework?.version }}
+            </d-form-control>
+          </d-form-item>
+        </div>
+        <div class="u-1-2">
+          <d-form-item>
+            <d-form-label> 上线时间 </d-form-label>
+            <d-form-control class="form-control-width">
+              {{
+                serviceData?.modTimestamp * 1000
+                  | date: "yyyy/MM/dd HH:mm:ss zzzz"
+              }}
+            </d-form-control>
+          </d-form-item>
+        </div>
+        <div class="u-1-2">
+          <d-form-item>
+            <d-form-label> 创建时间 </d-form-label>
+            <d-form-control class="form-control-width">
+              {{
+                serviceData?.timestamp * 1000 | date: "yyyy/MM/dd HH:mm:ss zzzz"
+              }}
+            </d-form-control>
+          </d-form-item>
+        </div>
+        <div class="u-1-2">
+          <d-form-item>
+            <d-form-label> 描述 </d-form-label>
+            <d-form-control class="form-control-width">
+              {{ serviceData?.description || "--" }}
+            </d-form-control>
+          </d-form-item>
+        </div>
+      </div>
+    </form>
+  </section>
+  <div>
+    <d-tabs
+      [(activeTab)]="acticeTabId"
+      [showContent]="true"
+      [reactivable]="true"
+      (activeTabChange)="activeTabChange($event)"
+    >
+      <d-tab title="实例列表" tabId="instance" id="instance">
+        <ng-template dTabContent>
+          <app-instance-list></app-instance-list>
+        </ng-template>
+      </d-tab>
+
+      <d-tab title="被调用服务" tabId="invoked" id="invoked">
+        <ng-template dTabContent>
+          <app-invoked-service
+            [appId]="serviceData.appId"
+            [serviceName]="serviceData.serviceName"
+          ></app-invoked-service>
+        </ng-template>
+      </d-tab>
+
+      <d-tab title="调用服务" tabId="invoking" id="invoking">
+        <ng-template dTabContent>
+          <app-invoked-service
+            [appId]="serviceData.appId"
+            [serviceName]="serviceData.serviceName"
+            [type]="'providers'"
+          ></app-invoked-service>
+        </ng-template>
+      </d-tab>
+      <d-tab title="服务契约" tabId="contract" id="contract">
+        <ng-template dTabContent>
+          <app-service-contract></app-service-contract>
+        </ng-template>
+      </d-tab>
+      <d-tab title="元数据" tabId="originalData" id="configuration">
+        <ng-template dTabContent>
+          <app-original-data></app-original-data>
+        </ng-template>
+      </d-tab>
+    </d-tabs>
+  </div>
+</div>
