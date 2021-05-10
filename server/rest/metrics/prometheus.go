@@ -15,13 +15,17 @@
  * limitations under the License.
  */
 
-package prometheus
+package metrics
 
 import (
+	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/rest"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func init() {
+	if !config.GetMetrics().Enable {
+		return
+	}
 	rest.RegisterServerHandler("/metrics", promhttp.Handler())
 }

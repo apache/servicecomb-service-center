@@ -64,7 +64,7 @@ import (
 	_ "github.com/apache/servicecomb-service-center/server/service/gov/kie"
 
 	//metrics
-	_ "github.com/apache/servicecomb-service-center/server/rest/prometheus"
+	_ "github.com/apache/servicecomb-service-center/server/rest/metrics"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/broker"
