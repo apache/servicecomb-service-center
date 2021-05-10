@@ -9,8 +9,8 @@
 ### With docker:
 
 Require:
-1. docker-compose v1.29.0+
-1. docker v18.02+
+1. docker-compose v1.29.0+, installation guide refer [here](https://docs.docker.com/compose/install/#install-compose)
+1. docker v18.02+, installation guide refer [here](https://docs.docker.com/desktop/#download-and-install)
 
 Run this command:
 ```bash

@@ -62,4 +62,13 @@ services:
     depends_on:
       mongo_cfg:
         condition: service_completed_successfully
-  # TODO give me UI here!!!
+  ux:
+    image: servicecomb/ux:latest
+    container_name: ux
+    ports:
+      - 4200:4200
+    depends_on:
+      service-center:
+        condition: service_started
+      kie:
+        condition: service_started
