@@ -22,6 +22,8 @@ import (
 	"fmt"
 	"strings"
 
+	pb "github.com/go-chassis/cari/discovery"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd/cache"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
@@ -34,7 +36,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/metrics"
 	"github.com/apache/servicecomb-service-center/server/notify"
 	"github.com/apache/servicecomb-service-center/server/syncernotify"
-	pb "github.com/go-chassis/cari/discovery"
 )
 
 const (

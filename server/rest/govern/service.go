@@ -20,11 +20,12 @@ package govern
 import (
 	"context"
 
+	pb "github.com/go-chassis/cari/discovery"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/proto"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/service"
-	pb "github.com/go-chassis/cari/discovery"
 )
 
 var ServiceAPI proto.GovernServiceCtrlServer = &Service{}
@@ -64,4 +65,3 @@ func (governService *Service) GetServicesStatistics(ctx context.Context, in *pb.
 	ctx = util.WithCacheOnly(ctx)
 	return datasource.Instance().GetServicesStatistics(ctx, in)
 }
-

@@ -103,7 +103,6 @@ func (s *ruleStore) ProcessUpdate(event MongoEvent) {
 	}
 	s.d.Put(event.DocumentID, event.Value)
 	s.indexCache.Put(genRuleServiceID(rule), event.DocumentID)
-	return
 }
 
 func (s *ruleStore) ProcessDelete(event MongoEvent) {

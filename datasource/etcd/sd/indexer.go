@@ -18,9 +18,9 @@
 package sd
 
 import (
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
-
 	"context"
+
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 )
 
 // Indexer searches k-v data.

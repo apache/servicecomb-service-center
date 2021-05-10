@@ -22,13 +22,10 @@ import (
 	"testing"
 
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/event"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/stretchr/testify/assert"
 )
-
-var deh event.DependencyEventHandler
 
 func Test_Create(t *testing.T) {
 	var (

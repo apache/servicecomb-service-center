@@ -18,13 +18,12 @@
 package etcd_test
 
 import (
+	. "github.com/apache/servicecomb-service-center/datasource/etcd/sd/etcd"
 	_ "github.com/apache/servicecomb-service-center/test"
-
-	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 
 	"testing"
 
-	. "github.com/apache/servicecomb-service-center/datasource/etcd/sd/etcd"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/server/config"
 )
 

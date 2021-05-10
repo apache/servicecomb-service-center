@@ -108,7 +108,6 @@ func (s *depStore) ProcessUpdate(event MongoEvent) {
 	}
 	s.d.Put(event.DocumentID, event.Value)
 	s.indexCache.Put(genDepServiceKey(dep), event.DocumentID)
-	return
 }
 
 func (s *depStore) ProcessDelete(event MongoEvent) {

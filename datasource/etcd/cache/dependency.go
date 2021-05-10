@@ -20,9 +20,10 @@ package cache
 import (
 	"context"
 
+	pb "github.com/go-chassis/cari/discovery"
+
 	"github.com/apache/servicecomb-service-center/pkg/cache"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	pb "github.com/go-chassis/cari/discovery"
 )
 
 var DependencyRule = &DependencyRuleCache{

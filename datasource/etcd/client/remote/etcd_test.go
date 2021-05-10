@@ -17,25 +17,25 @@
 package remote_test
 
 import (
+	. "github.com/apache/servicecomb-service-center/datasource/etcd/client/remote"
+	_ "github.com/apache/servicecomb-service-center/test"
+
 	"context"
 	"fmt"
-	"github.com/apache/servicecomb-service-center/datasource"
 	"strconv"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
-	_ "github.com/apache/servicecomb-service-center/test"
-
-	"github.com/apache/servicecomb-service-center/datasource/etcd"
-
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
-	. "github.com/apache/servicecomb-service-center/datasource/etcd/client/remote"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/etcdserver/etcdserverpb"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/datasource/etcd"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 )
 
 const (

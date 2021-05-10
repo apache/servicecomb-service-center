@@ -26,13 +26,13 @@ import (
 )
 
 func GetDomainProject(resource interface{}) (domainProject string) {
-	switch resource.(type) {
+	switch r := resource.(type) {
 	case *dump.Microservice:
 		_, domainProject = path.GetInfoFromSvcKV(
-			util.StringToBytesWithNoCopy(resource.(*dump.Microservice).Key))
+			util.StringToBytesWithNoCopy(r.Key))
 	case *dump.Instance:
 		_, _, domainProject = path.GetInfoFromInstKV(
-			util.StringToBytesWithNoCopy(resource.(*dump.Instance).Key))
+			util.StringToBytesWithNoCopy(r.Key))
 	}
 	return
 }
@@ -105,7 +105,6 @@ func (s *Instance) SetLease(hc *discovery.HealthCheck) {
 		return
 	}
 	s.Lease = int64(hc.Interval * (hc.Times + 1))
-	return
 }
 
 func (s *Instance) UpdateTimestamp(t string) {

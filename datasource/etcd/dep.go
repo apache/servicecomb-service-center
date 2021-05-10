@@ -105,8 +105,7 @@ func (ds *DataSource) DeleteDependency() {
 
 func (ds *DataSource) DependencyHandle(ctx context.Context) error {
 	var dep *event.DependencyEventHandler
-	var err error
-	err = dep.Handle()
+	err := dep.Handle()
 	if err != nil {
 		return err
 	}

@@ -20,14 +20,15 @@ package rbac
 import (
 	"context"
 	"errors"
-	"github.com/apache/servicecomb-service-center/pkg/privacy"
 
-	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
-	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/go-chassis/go-chassis/v2/security/authr"
 	"github.com/go-chassis/go-chassis/v2/security/token"
+
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/privacy"
+	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
+	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
 )
 
 var ErrUnauthorized = errors.New("wrong user name or password")

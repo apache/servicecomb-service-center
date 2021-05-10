@@ -31,7 +31,6 @@ import (
 
 const (
 	maxInterval     = 60
-	minInterval     = 0
 	defaultInterval = 30
 	maxTimes        = 3
 	minTimes        = 0

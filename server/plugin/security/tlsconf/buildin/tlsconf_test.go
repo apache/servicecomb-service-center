@@ -20,11 +20,12 @@ import (
 	"crypto/tls"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/apache/servicecomb-service-center/server/config"
 	_ "github.com/apache/servicecomb-service-center/server/plugin/security/cipher/buildin"
 	"github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf"
 	"github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf/buildin"
-	"github.com/stretchr/testify/assert"
 )
 
 func init() {

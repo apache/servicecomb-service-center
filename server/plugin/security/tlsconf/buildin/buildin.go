@@ -19,8 +19,8 @@ package buildin
 
 import (
 	"crypto/tls"
-	"github.com/apache/servicecomb-service-center/pkg/plugin"
 
+	"github.com/apache/servicecomb-service-center/pkg/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf"
 )
 

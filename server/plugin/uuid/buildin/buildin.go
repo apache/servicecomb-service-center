@@ -19,8 +19,8 @@ package buildin
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/pkg/plugin"
 
+	"github.com/apache/servicecomb-service-center/pkg/plugin"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
 )

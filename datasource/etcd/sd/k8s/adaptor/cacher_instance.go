@@ -19,11 +19,12 @@ import (
 	"reflect"
 	"strconv"
 
+	pb "github.com/go-chassis/cari/discovery"
+	v1 "k8s.io/api/core/v1"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	pb "github.com/go-chassis/cari/discovery"
-	v1 "k8s.io/api/core/v1"
 )
 
 type InstanceCacher struct {

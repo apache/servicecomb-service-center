@@ -23,10 +23,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/coreos/etcd/mvcc/mvccpb"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client/buildin"
 	"github.com/apache/servicecomb-service-center/datasource/sdcommon"
-	"github.com/coreos/etcd/mvcc/mvccpb"
 )
 
 type mockRegistry struct {

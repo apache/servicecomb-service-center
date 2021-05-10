@@ -21,14 +21,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/apache/servicecomb-service-center/server/plugin/quota"
+
+	pb "github.com/go-chassis/cari/discovery"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/health"
-	pb "github.com/go-chassis/cari/discovery"
+	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 )
 
 type InstanceService struct {

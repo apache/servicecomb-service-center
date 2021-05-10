@@ -77,8 +77,7 @@ func (s *serviceStore) ForEach(iter func(k string, v interface{}) (next bool)) {
 }
 
 func (s *serviceStore) GetValue(index string) []interface{} {
-	var docs []string
-	docs = s.indexCache.Get(index)
+	docs := s.indexCache.Get(index)
 	res := make([]interface{}, 0, len(docs))
 	for _, v := range docs {
 		res = append(res, s.docCache.Get(v))
@@ -107,7 +106,6 @@ func (s *serviceStore) ProcessUpdate(event MongoEvent) {
 	s.docCache.Put(event.DocumentID, event.Value)
 	s.indexCache.Put(genServiceID(service), event.DocumentID)
 	s.indexCache.Put(getServiceInfo(service), event.DocumentID)
-	return
 }
 
 func (s *serviceStore) ProcessDelete(event MongoEvent) {

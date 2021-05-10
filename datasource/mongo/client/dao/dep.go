@@ -19,8 +19,6 @@ package dao
 
 import (
 	"context"
-	"strings"
-
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
@@ -51,10 +49,6 @@ func getServiceofDeps(ctx context.Context, ruleType string, provider *discovery.
 		return nil, err
 	}
 	return depRule.Dep, nil
-}
-
-func genDepserivceKey(ruleType string, service *discovery.MicroService) string {
-	return strings.Join([]string{ruleType, service.AppId, service.ServiceName, service.Version}, "/")
 }
 
 func getDeps(ctx context.Context, filter interface{}) (*model.DependencyRule, error) {

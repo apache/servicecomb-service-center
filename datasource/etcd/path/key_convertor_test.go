@@ -19,9 +19,10 @@ package path_test
 import (
 	"testing"
 
-	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/go-chassis/cari/discovery"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 )
 
 func TestGetInfoFromKV(t *testing.T) {

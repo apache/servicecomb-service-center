@@ -18,11 +18,10 @@ package client
 import (
 	"context"
 	"encoding/json"
-
-	"github.com/go-chassis/cari/discovery"
-
 	"io/ioutil"
 	"net/http"
+
+	"github.com/go-chassis/cari/discovery"
 
 	"github.com/apache/servicecomb-service-center/pkg/cluster"
 	"github.com/apache/servicecomb-service-center/pkg/dump"

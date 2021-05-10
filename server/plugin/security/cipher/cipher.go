@@ -18,8 +18,9 @@
 package cipher
 
 import (
+	"github.com/go-chassis/cari/security"
+
 	"github.com/apache/servicecomb-service-center/pkg/plugin"
-	"github.com/go-chassis/foundation/security"
 )
 
 const CIPHER plugin.Kind = "cipher"

@@ -46,10 +46,6 @@ func getContext() context.Context {
 	return util.WithNoCache(util.SetDomainProject(context.Background(), "default", "default"))
 }
 
-func depGetContext() context.Context {
-	return util.WithNoCache(util.SetDomainProject(context.Background(), "new_default", "new_default"))
-}
-
 func TestMongo(t *testing.T) {
 	RegisterFailHandler(Fail)
 	junitReporter := reporters.NewJUnitReporter("mongo.junit.xml")

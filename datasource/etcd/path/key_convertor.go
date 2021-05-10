@@ -21,8 +21,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/go-chassis/cari/discovery"
+
+	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
 func ToResponse(key []byte) (keys []string) {
