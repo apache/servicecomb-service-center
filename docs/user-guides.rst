@@ -12,3 +12,4 @@ User Guides
    user-guides/integration-grafana.rst
    user-guides/rbac.md
    user-guides/fast-registration.md
+   user-guides/ux.md
