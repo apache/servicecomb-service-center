@@ -18,7 +18,6 @@
 package rbacframe_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
@@ -26,25 +25,6 @@ import (
 	"github.com/go-chassis/go-chassis/v2/security/token"
 	"github.com/stretchr/testify/assert"
 )
-
-func TestFromContext(t *testing.T) {
-	ctx := rbacframe.NewContext(context.TODO(), map[string]interface{}{
-		rbacframe.ClaimsUser:  "root",
-		rbacframe.ClaimsRoles: []interface{}{},
-	})
-
-	c := rbacframe.FromContext(ctx)
-	claims := c.(map[string]interface{})
-	u := claims[rbacframe.ClaimsUser]
-	r := claims[rbacframe.ClaimsRoles]
-	assert.Equal(t, "root", u)
-	assert.Equal(t, []interface{}{}, r)
-
-	a, err := rbacframe.AccountFromContext(ctx)
-	assert.NoError(t, err)
-	assert.Equal(t, "root", a.Name)
-	assert.Equal(t, []string{}, a.Roles)
-}
 
 func TestMustAuth(t *testing.T) {
 	rbacframe.Add2WhiteAPIList("/test")

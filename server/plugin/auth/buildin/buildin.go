@@ -21,15 +21,16 @@ import (
 	"context"
 	"errors"
 	"github.com/apache/servicecomb-service-center/pkg/plugin"
+	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
+	"github.com/go-chassis/cari/rbac"
 	"net/http"
 	"strings"
 
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/plugin/auth"
-	"github.com/apache/servicecomb-service-center/server/service/rbac"
+	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 	"github.com/go-chassis/go-chassis/v2/security/authr"
 	"github.com/go-chassis/go-chassis/v2/server/restful"
 )
@@ -46,7 +47,7 @@ type TokenAuthenticator struct {
 }
 
 func (ba *TokenAuthenticator) Identify(req *http.Request) error {
-	if !rbac.Enabled() {
+	if !rbacsvc.Enabled() {
 		return nil
 	}
 	pattern, ok := req.Context().Value(rest.CtxMatchPattern).(string)
@@ -90,25 +91,25 @@ func (ba *TokenAuthenticator) Identify(req *http.Request) error {
 	}
 
 	project := req.URL.Query().Get(":project")
-	verbs := rbac.MethodToVerbs[req.Method]
+	verbs := rbacsvc.MethodToVerbs[req.Method]
 	err = checkPerm(roleList, project, apiPattern, verbs)
 	if err != nil {
 		return err
 	}
-	req2 := req.WithContext(rbacframe.NewContext(req.Context(), claims))
+	req2 := req.WithContext(rbac.NewContext(req.Context(), claims.(map[string]interface{})))
 	*req = *req2
 	return nil
 }
 
 //this method decouple business code and perm checks
 func checkPerm(roleList []string, project, apiPattern, verbs string) error {
-	resource := rbacframe.GetResource(apiPattern)
+	resource := rbac.GetResource(apiPattern)
 	if resource == "" {
 		//fast fail, no need to access role storage
 		return errors.New(errorsEx.MsgNoPerm)
 	}
 	//TODO add verbs,project
-	allow, err := rbac.Allow(context.TODO(), roleList, project, resource, verbs)
+	allow, err := rbacsvc.Allow(context.TODO(), roleList, project, resource, verbs)
 	if err != nil {
 		log.Error("", err)
 		return errors.New(errorsEx.MsgRolePerm)

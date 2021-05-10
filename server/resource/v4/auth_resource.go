@@ -23,7 +23,6 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 
 	"github.com/apache/servicecomb-service-center/datasource"
@@ -154,7 +153,7 @@ func (r *AuthResource) ChangePassword(w http.ResponseWriter, req *http.Request) 
 		controller.WriteError(w, discovery.ErrInvalidParams, err.Error())
 		return
 	}
-	changer, err := rbacframe.AccountFromContext(req.Context())
+	changer, err := rbac.AccountFromContext(req.Context())
 	if err != nil {
 		controller.WriteError(w, discovery.ErrInternal, "can not parse account info")
 		return
