@@ -15,15 +15,15 @@
  * limitations under the License.
  */
 
-package notify
+package event
 
 import (
 	"context"
 	"time"
 
+	"github.com/apache/servicecomb-service-center/pkg/event"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/notify"
 	simple "github.com/apache/servicecomb-service-center/pkg/time"
 	pb "github.com/go-chassis/cari/discovery"
 )
@@ -33,17 +33,17 @@ const (
 	EventQueueSize = 5000
 )
 
-var INSTANCE = notify.RegisterType("INSTANCE", EventQueueSize)
+var INSTANCE = event.RegisterType("INSTANCE", EventQueueSize)
 
 // 状态变化推送
 type InstanceEvent struct {
-	notify.Event
+	event.Event
 	Revision int64
 	Response *pb.WatchInstanceResponse
 }
 
 type InstanceEventListWatcher struct {
-	notify.Subscriber
+	event.Subscriber
 	Job          chan *InstanceEvent
 	ListRevision int64
 	ListFunc     func() (results []*pb.WatchInstanceResponse, rev int64)
@@ -53,7 +53,7 @@ type InstanceEventListWatcher struct {
 func (w *InstanceEventListWatcher) SetError(err error) {
 	w.Subscriber.SetError(err)
 	// 触发清理job
-	e := w.Service().Publish(notify.NewErrEvent(w))
+	e := w.Bus().Fire(event.NewUnhealthyEvent(w))
 	if e != nil {
 		log.Error("", e)
 	}
@@ -63,7 +63,7 @@ func (w *InstanceEventListWatcher) OnAccept() {
 	if w.Err() != nil {
 		return
 	}
-	log.Debugf("accepted by notify service, %s watcher %s %s", w.Type(), w.Group(), w.Subject())
+	log.Debugf("accepted by event service, %s watcher %s %s", w.Type(), w.Group(), w.Subject())
 	gopool.Go(w.listAndPublishJobs)
 }
 
@@ -80,7 +80,7 @@ func (w *InstanceEventListWatcher) listAndPublishJobs(_ context.Context) {
 }
 
 //被通知
-func (w *InstanceEventListWatcher) OnMessage(job notify.Event) {
+func (w *InstanceEventListWatcher) OnMessage(job event.Event) {
 	if w.Err() != nil {
 		return
 	}
@@ -106,7 +106,7 @@ func (w *InstanceEventListWatcher) OnMessage(job notify.Event) {
 
 	// the negative revision is specially for mongo scene,should be removed after mongo support revison.
 	if wJob.Revision >= 0 && wJob.Revision <= w.ListRevision {
-		log.Warnf("unexpected notify %s job is coming in, watcher %s %s, job is %v, current revision is %v",
+		log.Warnf("unexpected event %s job is coming in, watcher %s %s, job is %v, current revision is %v",
 			w.Type(), w.Group(), w.Subject(), job, w.ListRevision)
 		return
 	}
@@ -140,7 +140,7 @@ func (w *InstanceEventListWatcher) Close() {
 
 func NewInstanceEvent(serviceID, domainProject string, rev int64, response *pb.WatchInstanceResponse) *InstanceEvent {
 	return &InstanceEvent{
-		Event:    notify.NewEvent(INSTANCE, domainProject, serviceID),
+		Event:    event.NewEvent(INSTANCE, domainProject, serviceID),
 		Revision: rev,
 		Response: response,
 	}
@@ -148,7 +148,7 @@ func NewInstanceEvent(serviceID, domainProject string, rev int64, response *pb.W
 
 func NewInstanceEventWithTime(serviceID, domainProject string, rev int64, createAt simple.Time, response *pb.WatchInstanceResponse) *InstanceEvent {
 	return &InstanceEvent{
-		Event:    notify.NewEventWithTime(INSTANCE, domainProject, serviceID, createAt),
+		Event:    event.NewEventWithTime(INSTANCE, domainProject, serviceID, createAt),
 		Revision: rev,
 		Response: response,
 	}
@@ -157,7 +157,7 @@ func NewInstanceEventWithTime(serviceID, domainProject string, rev int64, create
 func NewInstanceEventListWatcher(serviceID, domainProject string,
 	listFunc func() (results []*pb.WatchInstanceResponse, rev int64)) *InstanceEventListWatcher {
 	watcher := &InstanceEventListWatcher{
-		Subscriber: notify.NewSubscriber(INSTANCE, domainProject, serviceID),
+		Subscriber: event.NewSubscriber(INSTANCE, domainProject, serviceID),
 		Job:        make(chan *InstanceEvent, INSTANCE.QueueSize()),
 		ListFunc:   listFunc,
 		listCh:     make(chan struct{}),

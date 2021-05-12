@@ -27,8 +27,8 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/connection"
+	"github.com/apache/servicecomb-service-center/server/event"
 	"github.com/apache/servicecomb-service-center/server/metrics"
-	"github.com/apache/servicecomb-service-center/server/notify"
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/gorilla/websocket"
 )
@@ -40,7 +40,7 @@ type WebSocket struct {
 	ticker *time.Ticker
 	conn   *websocket.Conn
 	// watcher subscribe the notification service event
-	watcher         *notify.InstanceEventListWatcher
+	watcher         *event.InstanceEventListWatcher
 	needPingWatcher bool
 	free            chan struct{}
 	closed          chan struct{}
@@ -57,7 +57,7 @@ func (wh *WebSocket) Init() error {
 	remoteAddr := wh.conn.RemoteAddr().String()
 
 	// put in notification service queue
-	if err := notify.Center().AddSubscriber(wh.watcher); err != nil {
+	if err := event.Center().AddSubscriber(wh.watcher); err != nil {
 		err = fmt.Errorf("establish[%s] websocket watch failed: notify service error, %s",
 			remoteAddr, err.Error())
 		log.Errorf(nil, err.Error())
@@ -228,7 +228,7 @@ func (wh *WebSocket) HandleEvent(o interface{}) {
 		log.Debugf("send 'Ping' message to watcher[%s], subject: %s, group: %s",
 			remoteAddr, wh.watcher.Subject(), wh.watcher.Group())
 		return
-	case *notify.InstanceEvent:
+	case *event.InstanceEvent:
 		resp := o.Response
 
 		providerFlag := fmt.Sprintf("%s/%s/%s", resp.Key.AppId, resp.Key.ServiceName, resp.Key.Version)
@@ -260,7 +260,7 @@ func (wh *WebSocket) HandleEvent(o interface{}) {
 	}
 
 	err := wh.WriteMessage(message)
-	if evt, ok := o.(*notify.InstanceEvent); ok {
+	if evt, ok := o.(*event.InstanceEvent); ok {
 		metrics.ReportPublishCompleted(evt, err)
 	}
 	if err != nil {
@@ -295,7 +295,7 @@ func (wh *WebSocket) Stop() {
 func ListAndWatch(ctx context.Context, serviceID string, f func() ([]*pb.WatchInstanceResponse, int64), conn *websocket.Conn) {
 	domainProject := util.ParseDomainProject(ctx)
 	domain := util.ParseDomain(ctx)
-	socket := New(ctx, conn, notify.NewInstanceEventListWatcher(serviceID, domainProject, f))
+	socket := New(ctx, conn, event.NewInstanceEventListWatcher(serviceID, domainProject, f))
 
 	metrics.ReportSubscriber(domain, Websocket, 1)
 	process(socket)
@@ -320,7 +320,7 @@ func SendEstablishError(conn *websocket.Conn, err error) {
 	}
 }
 
-func New(ctx context.Context, conn *websocket.Conn, watcher *notify.InstanceEventListWatcher) *WebSocket {
+func New(ctx context.Context, conn *websocket.Conn, watcher *event.InstanceEventListWatcher) *WebSocket {
 	return &WebSocket{
 		ctx:     ctx,
 		conn:    conn,

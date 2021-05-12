@@ -18,10 +18,10 @@
 package metrics
 
 import (
+	"github.com/apache/servicecomb-service-center/pkg/event"
 	"time"
 
 	"github.com/apache/servicecomb-service-center/pkg/metrics"
-	"github.com/apache/servicecomb-service-center/pkg/notify"
 	helper "github.com/apache/servicecomb-service-center/pkg/prometheus"
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -53,7 +53,7 @@ var (
 		}, []string{"instance", "domain", "scheme"})
 )
 
-func ReportPublishCompleted(evt notify.Event, err error) {
+func ReportPublishCompleted(evt event.Event, err error) {
 	instance := metrics.InstanceName()
 	elapsed := float64(time.Since(evt.CreateAt()).Nanoseconds()) / float64(time.Microsecond)
 	status := success

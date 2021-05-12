@@ -32,7 +32,6 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/apache/servicecomb-service-center/server/notify"
 	"github.com/go-chassis/cari/discovery"
 	"github.com/gorilla/websocket"
 )
@@ -87,7 +86,7 @@ func TestDoWebSocketListAndWatch(t *testing.T) {
 		t.Fatalf("TestPublisher_Run")
 	}
 
-	Center().Start()
+	event.Center().Start()
 
 	go func() {
 		wss.ListAndWatch(context.Background(), "", nil, conn)
@@ -105,7 +104,7 @@ func TestDoWebSocketListAndWatch(t *testing.T) {
 	go ws.HandleControlMessage()
 
 	w.OnMessage(nil)
-	w.OnMessage(&InstanceEvent{})
+	w.OnMessage(&event.InstanceEvent{})
 
 	Center().Publish(NewInstanceEvent("g", "s", 1, &discovery.WatchInstanceResponse{
 		Response: discovery.CreateResponse(discovery.ResponseSuccess, "ok"),

@@ -17,8 +17,7 @@ package alarm
 
 import (
 	"fmt"
-
-	"github.com/apache/servicecomb-service-center/pkg/notify"
+	"github.com/apache/servicecomb-service-center/pkg/event"
 	"github.com/apache/servicecomb-service-center/server/alarm/model"
 )
 
@@ -43,7 +42,7 @@ const (
 	Group   = "__ALARM_GROUP__"
 )
 
-var ALARM = notify.RegisterType("ALARM", notify.DefaultQueueSize)
+var ALARM = event.RegisterType("ALARM", 0)
 
 func FieldBool(key string, v bool) model.Field {
 	return model.Field{Key: key, Value: v}

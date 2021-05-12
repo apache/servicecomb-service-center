@@ -34,8 +34,8 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	simple "github.com/apache/servicecomb-service-center/pkg/time"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/event"
 	"github.com/apache/servicecomb-service-center/server/metrics"
-	"github.com/apache/servicecomb-service-center/server/notify"
 	"github.com/apache/servicecomb-service-center/server/syncernotify"
 )
 
@@ -109,8 +109,8 @@ func PublishInstanceEvent(evt sd.MongoEvent, domainProject string, serviceKey *d
 		Instance: evt.Value.(model.Instance).Instance,
 	}
 	for _, consumerID := range subscribers {
-		evt := notify.NewInstanceEventWithTime(consumerID, domainProject, -1, simple.FromTime(time.Now()), response)
-		err := notify.Center().Publish(evt)
+		evt := event.NewInstanceEventWithTime(consumerID, domainProject, -1, simple.FromTime(time.Now()), response)
+		err := event.Center().Fire(evt)
 		if err != nil {
 			log.Error(fmt.Sprintf("publish event[%v] into channel failed", evt), err)
 		}

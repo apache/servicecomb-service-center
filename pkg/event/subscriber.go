@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package notify
+package event
 
 import (
 	"errors"
@@ -28,8 +28,8 @@ type Subscriber interface {
 	Subject() string
 	Group() string
 	Type() Type
-	Service() *Service
-	SetService(*Service)
+	Bus() *BusService
+	SetBus(*BusService)
 
 	Err() error
 	SetError(err error)
@@ -45,20 +45,20 @@ type baseSubscriber struct {
 	id      string
 	subject string
 	group   string
-	service *Service
+	service *BusService
 	err     error
 }
 
-func (s *baseSubscriber) ID() string              { return s.id }
-func (s *baseSubscriber) Subject() string         { return s.subject }
-func (s *baseSubscriber) Group() string           { return s.group }
-func (s *baseSubscriber) Type() Type              { return s.nType }
-func (s *baseSubscriber) Service() *Service       { return s.service }
-func (s *baseSubscriber) SetService(svc *Service) { s.service = svc }
-func (s *baseSubscriber) Err() error              { return s.err }
-func (s *baseSubscriber) SetError(err error)      { s.err = err }
-func (s *baseSubscriber) Close()                  {}
-func (s *baseSubscriber) OnAccept()               {}
+func (s *baseSubscriber) ID() string             { return s.id }
+func (s *baseSubscriber) Subject() string        { return s.subject }
+func (s *baseSubscriber) Group() string          { return s.group }
+func (s *baseSubscriber) Type() Type             { return s.nType }
+func (s *baseSubscriber) Bus() *BusService       { return s.service }
+func (s *baseSubscriber) SetBus(svc *BusService) { s.service = svc }
+func (s *baseSubscriber) Err() error             { return s.err }
+func (s *baseSubscriber) SetError(err error)     { s.err = err }
+func (s *baseSubscriber) Close()                 {}
+func (s *baseSubscriber) OnAccept()              {}
 func (s *baseSubscriber) OnMessage(job Event) {
 	s.SetError(errors.New("do not call base notifier OnMessage method"))
 }

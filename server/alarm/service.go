@@ -18,11 +18,11 @@ package alarm
 import (
 	"sync"
 
+	nf "github.com/apache/servicecomb-service-center/pkg/event"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	nf "github.com/apache/servicecomb-service-center/pkg/notify"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/alarm/model"
-	"github.com/apache/servicecomb-service-center/server/notify"
+	"github.com/apache/servicecomb-service-center/server/event"
 )
 
 var (
@@ -45,7 +45,7 @@ func (ac *Service) Raise(id model.ID, fields ...model.Field) error {
 	for _, f := range fields {
 		ae.Fields[f.Key] = f.Value
 	}
-	return notify.Center().Publish(ae)
+	return event.Center().Fire(ae)
 }
 
 func (ac *Service) Clear(id model.ID) error {
@@ -54,7 +54,7 @@ func (ac *Service) Clear(id model.ID) error {
 		Status: Cleared,
 		ID:     id,
 	}
-	return notify.Center().Publish(ae)
+	return event.Center().Fire(ae)
 }
 
 func (ac *Service) ListAll() (ls []*model.AlarmEvent) {
@@ -89,16 +89,9 @@ func NewAlarmService() *Service {
 	c := &Service{
 		Subscriber: nf.NewSubscriber(ALARM, Subject, Group),
 	}
-	err := notify.Center().AddSubscriber(c)
+	err := event.Center().AddSubscriber(c)
 	if err != nil {
 		log.Error("", err)
 	}
 	return c
-}
-
-func Center() *Service {
-	once.Do(func() {
-		service = NewAlarmService()
-	})
-	return service
 }

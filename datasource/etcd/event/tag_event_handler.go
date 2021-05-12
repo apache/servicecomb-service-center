@@ -33,7 +33,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/task"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/notify"
+	"github.com/apache/servicecomb-service-center/server/event"
 )
 
 type TagsChangedTask struct {
@@ -114,7 +114,7 @@ func (h *TagEventHandler) OnEvent(evt sd.KvEvent) {
 
 	consumerID, domainProject := path.GetInfoFromTagKV(evt.KV.Key)
 
-	if notify.Center().Closed() {
+	if event.Center().Closed() {
 		log.Warnf("caught [%s] service tags[%s/%s] event, but notify service is closed",
 			action, consumerID, evt.KV.Value)
 		return

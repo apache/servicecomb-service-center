@@ -15,8 +15,12 @@
  * limitations under the License.
  */
 
-package notify
+package event
 
 const (
 	DefaultQueueSize = 1000
+)
+
+const (
+	INNER Type = iota
 )
