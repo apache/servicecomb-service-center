@@ -63,32 +63,32 @@ func GetGov() *Gov {
 }
 
 //GetServer return the http server configs
-func GetServer() serverConfig {
+func GetServer() ServerConfigDetail {
 	return App.Server.Config
 }
 
 //GetSSL return the ssl configs
-func GetSSL() serverConfig {
+func GetSSL() ServerConfigDetail {
 	return App.Server.Config
 }
 
 //GetLog return the log configs
-func GetLog() serverConfig {
+func GetLog() ServerConfigDetail {
 	return App.Server.Config
 }
 
 //GetRegistry return the registry configs
-func GetRegistry() serverConfig {
+func GetRegistry() ServerConfigDetail {
 	return App.Server.Config
 }
 
 //GetPlugin return the plugin configs
-func GetPlugin() serverConfig {
+func GetPlugin() ServerConfigDetail {
 	return App.Server.Config
 }
 
 //GetRBAC return the rbac configs
-func GetRBAC() serverConfig {
+func GetRBAC() ServerConfigDetail {
 	return App.Server.Config
 }
 
@@ -156,7 +156,7 @@ func loadServerConfig() ServerConfig {
 		Version: InitVersion,
 		// compatible with beego config's runmode
 		Environment: GetString("environment", "dev", WithStandby("runmode")),
-		Config: serverConfig{
+		Config: ServerConfigDetail{
 			MaxHeaderBytes:    GetInt64("server.request.maxHeaderBytes", 16384, WithStandby("max_header_bytes")),
 			MaxBodyBytes:      GetInt64("server.request.maxBodyBytes", 2097152, WithStandby("max_body_bytes")),
 			ReadHeaderTimeout: GetString("server.request.headerTimeout", "60s", WithStandby("read_header_timeout")),

@@ -19,10 +19,11 @@ package pzipkin
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/pkg/plugin"
 	"net/http"
 	"net/url"
 	"sync"
+
+	"github.com/apache/servicecomb-service-center/pkg/plugin"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"

@@ -16,8 +16,9 @@
 package client
 
 import (
-	"go.mongodb.org/mongo-driver/mongo"
 	"strings"
+
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 const (

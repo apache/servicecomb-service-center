@@ -2,6 +2,7 @@ package mongo
 
 import (
 	"context"
+
 	"github.com/go-chassis/cari/discovery"
 )
 

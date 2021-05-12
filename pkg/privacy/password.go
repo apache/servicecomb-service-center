@@ -20,7 +20,7 @@ package privacy
 import (
 	"strings"
 
-	"github.com/elithrar/simple-scrypt"
+	scrypt "github.com/elithrar/simple-scrypt"
 	"github.com/go-chassis/foundation/stringutil"
 	"golang.org/x/crypto/bcrypt"
 

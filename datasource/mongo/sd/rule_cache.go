@@ -26,7 +26,7 @@ import (
 type ruleStore struct {
 	dirty      bool
 	d          *DocStore
-	indexCache *indexCache
+	indexCache *IndexCache
 }
 
 func init() {
