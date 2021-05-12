@@ -19,7 +19,7 @@ require (
 	github.com/fatih/color v1.10.0 // indirect
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-chassis/cari v0.3.1-0.20210508100214-a13e083de04e
-	github.com/go-chassis/foundation v0.3.0
+	github.com/go-chassis/foundation v0.3.1-0.20210513015331-b54416b66bcd
 	github.com/go-chassis/go-archaius v1.5.1
 	github.com/go-chassis/go-chassis/v2 v2.1.2-0.20210310004133-c9bc42149a18
 	github.com/go-chassis/kie-client v0.1.0
@@ -74,7 +74,6 @@ require (
 	go.uber.org/zap v1.13.0
 	golang.org/x/crypto v0.0.0-20210314154223-e6e6c4f2bb5b
 	golang.org/x/lint v0.0.0-20200302205851-738671d3881b // indirect
-	golang.org/x/mod v0.4.2 // indirect
 	golang.org/x/sys v0.0.0-20210507014357-30e306a8bba5 // indirect
 	golang.org/x/text v0.3.6 // indirect
 	golang.org/x/time v0.0.0-20200416051211-89c76fbcd5d1

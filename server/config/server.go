@@ -24,11 +24,11 @@ import (
 )
 
 type ServerConfig struct {
-	Version     string       `json:"version"`
-	Environment string       `json:"environment"`
-	Config      serverConfig `json:"-"`
+	Version     string             `json:"version"`
+	Environment string             `json:"environment"`
+	Config      ServerConfigDetail `json:"-"`
 }
-type serverConfig struct {
+type ServerConfigDetail struct {
 	MaxHeaderBytes int64 `json:"maxHeaderBytes"`
 	MaxBodyBytes   int64 `json:"maxBodyBytes"`
 
@@ -87,5 +87,5 @@ func (si *ServerConfig) IsDev() bool {
 }
 
 func NewServerConfig() *ServerConfig {
-	return &ServerConfig{Config: serverConfig{Plugins: make(util.JSONObject)}}
+	return &ServerConfig{Config: ServerConfigDetail{Plugins: make(util.JSONObject)}}
 }
