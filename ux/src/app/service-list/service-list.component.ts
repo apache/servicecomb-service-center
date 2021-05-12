@@ -123,7 +123,7 @@ export class ServiceListComponent implements OnInit {
       options: [],
     },
     {
-      field: 'instances',
+      field: 'appId',
       label: '应用',
       type: 'textInput',
     },

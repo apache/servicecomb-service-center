@@ -84,6 +84,7 @@ export class InvokedServiceComponent implements OnInit {
       this.service.getDependencies(params).subscribe(
         (res) => {
           this.basicDataSource = res[this.type];
+          this.pager.total = this.basicDataSource.length;
         },
         (err) => {
           // todo 提示
