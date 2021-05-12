@@ -18,19 +18,20 @@ package ws_test
 
 // initialize
 import (
-	_ "github.com/apache/servicecomb-service-center/test"
-
 	"context"
 	"errors"
+
+	_ "github.com/apache/servicecomb-service-center/test"
+
+	wss "github.com/apache/servicecomb-service-center/server/connection/ws"
+	"github.com/apache/servicecomb-service-center/server/core"
+
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
 
-	wss "github.com/apache/servicecomb-service-center/server/connection/ws"
-	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/event"
 	"github.com/go-chassis/cari/discovery"
 	"github.com/gorilla/websocket"
 )
@@ -69,7 +70,7 @@ func TestDoWebSocketListAndWatch(t *testing.T) {
 
 	wss.SendEstablishError(conn, errors.New("error"))
 
-	w := event.NewInstanceEventListWatcher("g", "s", func() (results []*discovery.WatchInstanceResponse, rev int64) {
+	w := NewInstanceEventListWatcher("g", "s", func() (results []*discovery.WatchInstanceResponse, rev int64) {
 		results = append(results, &discovery.WatchInstanceResponse{
 			Response: discovery.CreateResponse(discovery.ResponseSuccess, "ok"),
 			Action:   string(discovery.EVT_CREATE),
@@ -90,7 +91,7 @@ func TestDoWebSocketListAndWatch(t *testing.T) {
 	go func() {
 		wss.ListAndWatch(context.Background(), "", nil, conn)
 
-		w2 := event.NewInstanceEventListWatcher("g", "s", func() (results []*discovery.WatchInstanceResponse, rev int64) {
+		w2 := NewInstanceEventListWatcher("g", "s", func() (results []*discovery.WatchInstanceResponse, rev int64) {
 			return
 		})
 		ws2 := wss.New(context.Background(), conn, w2)
@@ -105,7 +106,7 @@ func TestDoWebSocketListAndWatch(t *testing.T) {
 	w.OnMessage(nil)
 	w.OnMessage(&event.InstanceEvent{})
 
-	event.Center().Fire(event.NewInstanceEvent("g", "s", 1, &discovery.WatchInstanceResponse{
+	Center().Publish(NewInstanceEvent("g", "s", 1, &discovery.WatchInstanceResponse{
 		Response: discovery.CreateResponse(discovery.ResponseSuccess, "ok"),
 		Action:   string(discovery.EVT_CREATE),
 		Key:      &discovery.MicroServiceKey{},
