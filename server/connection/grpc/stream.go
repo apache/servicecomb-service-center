@@ -21,17 +21,17 @@ import (
 	"context"
 	"errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/proto"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/connection"
+	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/notify"
 	"time"
 )
 
 const GRPC = "gRPC"
 
-func Handle(watcher *notify.InstanceEventListWatcher, stream proto.ServiceInstanceCtrlWatchServer) (err error) {
+func Handle(watcher *notify.InstanceEventListWatcher, stream proto.ServiceInstanceCtrl_WatchServer) (err error) {
 	timer := time.NewTimer(connection.HeartbeatInterval)
 	defer timer.Stop()
 	for {
@@ -67,7 +67,7 @@ func Handle(watcher *notify.InstanceEventListWatcher, stream proto.ServiceInstan
 	}
 }
 
-func ListAndWatch(ctx context.Context, serviceID string, f func() ([]*pb.WatchInstanceResponse, int64), stream proto.ServiceInstanceCtrlWatchServer) (err error) {
+func ListAndWatch(ctx context.Context, serviceID string, f func() ([]*pb.WatchInstanceResponse, int64), stream proto.ServiceInstanceCtrl_WatchServer) (err error) {
 	domainProject := util.ParseDomainProject(ctx)
 	domain := util.ParseDomain(ctx)
 	watcher := notify.NewInstanceEventListWatcher(serviceID, domainProject, f)

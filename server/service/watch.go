@@ -20,13 +20,13 @@ package service
 import (
 	"context"
 	"errors"
-	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/proto"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/connection/grpc"
 	"github.com/apache/servicecomb-service-center/server/connection/ws"
+	"github.com/apache/servicecomb-service-center/server/core/proto"
+	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"github.com/gorilla/websocket"
 )
 
@@ -41,7 +41,7 @@ func (s *InstanceService) WatchPreOpera(ctx context.Context, in *pb.WatchInstanc
 	return nil
 }
 
-func (s *InstanceService) Watch(in *pb.WatchInstanceRequest, stream proto.ServiceInstanceCtrlWatchServer) error {
+func (s *InstanceService) Watch(in *pb.WatchInstanceRequest, stream proto.ServiceInstanceCtrl_WatchServer) error {
 	log.Infof("new a stream list and watch with service[%s]", in.SelfServiceId)
 	if err := s.WatchPreOpera(stream.Context(), in); err != nil {
 		log.Errorf(err, "service[%s] establish watch failed: invalid params", in.SelfServiceId)

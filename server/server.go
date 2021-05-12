@@ -187,7 +187,7 @@ func (s *ServiceCenterServer) clearNoInstanceServices() {
 func (s *ServiceCenterServer) initialize() {
 	s.cacheService = backend.Store()
 	s.apiService = GetAPIServer()
-	s.notifyService = notify.GetNotifyCenter()
+	s.notifyService = notify.Center()
 	s.goroutine = gopool.New(context.Background())
 }
 
