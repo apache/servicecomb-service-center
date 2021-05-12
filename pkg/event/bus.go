@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package notify
+package event
 
 import (
 	"context"
@@ -23,74 +23,76 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
-type Processor struct {
+// Bus can fire the event aync and dispatch events to subscriber according to subject
+type Bus struct {
 	*queue.TaskQueue
 
 	name     string
 	subjects *util.ConcurrentMap
 }
 
-func (p *Processor) Name() string {
-	return p.name
+func (bus *Bus) Name() string {
+	return bus.name
 }
 
-func (p *Processor) Accept(evt Event) {
-	p.Add(queue.Task{Object: evt})
+func (bus *Bus) Fire(evt Event) {
+	// TODO add option if queue is full
+	bus.Add(queue.Task{Payload: evt})
 }
 
-func (p *Processor) Handle(ctx context.Context, obj interface{}) {
-	p.Notify(obj.(Event))
+func (bus *Bus) Handle(ctx context.Context, evt interface{}) {
+	bus.fireAtOnce(evt.(Event))
 }
 
-func (p *Processor) Notify(evt Event) {
-	if itf, ok := p.subjects.Get(evt.Subject()); ok {
-		itf.(*Subject).Notify(evt)
+func (bus *Bus) fireAtOnce(evt Event) {
+	if itf, ok := bus.subjects.Get(evt.Subject()); ok {
+		itf.(*Poster).Post(evt)
 	}
 }
 
-func (p *Processor) Subjects(name string) *Subject {
-	itf, ok := p.subjects.Get(name)
+func (bus *Bus) Subjects(name string) *Poster {
+	itf, ok := bus.subjects.Get(name)
 	if !ok {
 		return nil
 	}
-	return itf.(*Subject)
+	return itf.(*Poster)
 }
 
-func (p *Processor) AddSubscriber(n Subscriber) {
-	item, _ := p.subjects.Fetch(n.Subject(), func() (interface{}, error) {
-		return NewSubject(n.Subject()), nil
+func (bus *Bus) AddSubscriber(n Subscriber) {
+	item, _ := bus.subjects.Fetch(n.Subject(), func() (interface{}, error) {
+		return NewPoster(n.Subject()), nil
 	})
-	item.(*Subject).GetOrNewGroup(n.Group()).AddSubscriber(n)
+	item.(*Poster).GetOrNewGroup(n.Group()).AddMember(n)
 }
 
-func (p *Processor) Remove(n Subscriber) {
-	itf, ok := p.subjects.Get(n.Subject())
+func (bus *Bus) RemoveSubscriber(n Subscriber) {
+	itf, ok := bus.subjects.Get(n.Subject())
 	if !ok {
 		return
 	}
 
-	s := itf.(*Subject)
+	s := itf.(*Poster)
 	g := s.Groups(n.Group())
 	if g == nil {
 		return
 	}
 
-	g.Remove(n.ID())
+	g.RemoveMember(n.ID())
 
 	if g.Size() == 0 {
-		s.Remove(g.Name())
+		s.RemoveGroup(g.Name())
 	}
 	if s.Size() == 0 {
-		p.subjects.Remove(s.Name())
+		bus.subjects.Remove(s.Subject())
 	}
 }
 
-func (p *Processor) Clear() {
-	p.subjects.Clear()
+func (bus *Bus) Clear() {
+	bus.subjects.Clear()
 }
 
-func NewProcessor(name string, queueSize int) *Processor {
-	p := &Processor{
+func NewBus(name string, queueSize int) *Bus {
+	p := &Bus{
 		TaskQueue: queue.NewTaskQueue(queueSize),
 		name:      name,
 		subjects:  util.NewConcurrentMap(0),

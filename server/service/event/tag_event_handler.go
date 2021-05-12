@@ -26,7 +26,7 @@ import (
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
-	"github.com/apache/servicecomb-service-center/server/notify"
+	"github.com/apache/servicecomb-service-center/server/event"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"github.com/apache/servicecomb-service-center/server/service/cache"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
@@ -112,7 +112,7 @@ func (h *TagEventHandler) OnEvent(evt discovery.KvEvent) {
 
 	consumerID, domainProject := core.GetInfoFromTagKV(evt.KV.Key)
 
-	if notify.Center().Closed() {
+	if event.Center().Closed() {
 		log.Warnf("caught [%s] service tags[%s/%s] event, but notify service is closed",
 			action, consumerID, evt.KV.Value)
 		return

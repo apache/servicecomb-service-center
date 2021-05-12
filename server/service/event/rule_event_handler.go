@@ -26,7 +26,7 @@ import (
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
-	"github.com/apache/servicecomb-service-center/server/notify"
+	"github.com/apache/servicecomb-service-center/server/event"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 )
@@ -98,7 +98,7 @@ func (h *RuleEventHandler) OnEvent(evt discovery.KvEvent) {
 	}
 
 	providerID, ruleID, domainProject := core.GetInfoFromRuleKV(evt.KV.Key)
-	if notify.Center().Closed() {
+	if event.Center().Closed() {
 		log.Warnf("caught [%s] service rule[%s/%s] event, but notify service is closed",
 			action, providerID, ruleID)
 		return

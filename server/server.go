@@ -28,13 +28,13 @@ import (
 	"time"
 
 	"context"
+	nf "github.com/apache/servicecomb-service-center/pkg/event"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	nf "github.com/apache/servicecomb-service-center/pkg/notify"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
+	"github.com/apache/servicecomb-service-center/server/event"
 	"github.com/apache/servicecomb-service-center/server/mux"
-	"github.com/apache/servicecomb-service-center/server/notify"
 	"github.com/apache/servicecomb-service-center/server/plugin"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"github.com/apache/servicecomb-service-center/server/task"
@@ -51,10 +51,10 @@ func Run() {
 }
 
 type ServiceCenterServer struct {
-	apiService    *APIServer
-	notifyService *nf.Service
-	cacheService  *backend.KvStore
-	goroutine     *gopool.Pool
+	apiService   *APIServer
+	eventCenter  *nf.BusService
+	cacheService *backend.KvStore
+	goroutine    *gopool.Pool
 }
 
 func (s *ServiceCenterServer) Run() {
@@ -187,13 +187,13 @@ func (s *ServiceCenterServer) clearNoInstanceServices() {
 func (s *ServiceCenterServer) initialize() {
 	s.cacheService = backend.Store()
 	s.apiService = GetAPIServer()
-	s.notifyService = notify.Center()
+	s.eventCenter = event.Center()
 	s.goroutine = gopool.New(context.Background())
 }
 
 func (s *ServiceCenterServer) startServices() {
 	// notifications
-	s.notifyService.Start()
+	s.eventCenter.Start()
 
 	// load server plugins
 	plugin.LoadPlugins()
@@ -240,8 +240,8 @@ func (s *ServiceCenterServer) Stop() {
 		s.apiService.Stop()
 	}
 
-	if s.notifyService != nil {
-		s.notifyService.Stop()
+	if s.eventCenter != nil {
+		s.eventCenter.Stop()
 	}
 
 	if s.cacheService != nil {

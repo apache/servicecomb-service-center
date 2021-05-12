@@ -13,22 +13,51 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package notify
+package event
 
-import (
-	"fmt"
-	"testing"
-)
+import "strconv"
 
-func TestNewEventWithTime(t *testing.T) {
-	regT := RegisterType("N", 1)
-	evt := NewEvent(regT, "a", "b")
-	if evt.CreateAt().UnixNano() == 0 {
-		t.Fatal("TestNewEventWithTime")
+type Type int
+
+func (nt Type) String() string {
+	if nt.IsValid() {
+		return typeNames[nt]
 	}
-	fmt.Println(evt.CreateAt())
+	return "Type" + strconv.Itoa(int(nt))
+}
 
-	if evt.Type() != regT || evt.Subject() != "a" || evt.Group() != "b" {
-		t.Fatal("TestNewEventWithTime")
+func (nt Type) QueueSize() (s int) {
+	if nt.IsValid() {
+		s = typeQueues[nt]
 	}
+	if s <= 0 {
+		s = DefaultQueueSize
+	}
+	return
+}
+
+func (nt Type) IsValid() bool {
+	return nt >= 0 && int(nt) < len(typeQueues)
+}
+
+var typeNames = []string{
+	INNER: "INNER",
+}
+
+var typeQueues = []int{
+	INNER: 0,
+}
+
+func Types() (ts []Type) {
+	for i := range typeNames {
+		ts = append(ts, Type(i))
+	}
+	return
+}
+
+func RegisterType(name string, size int) Type {
+	l := len(typeNames)
+	typeNames = append(typeNames, name)
+	typeQueues = append(typeQueues, size)
+	return Type(l)
 }

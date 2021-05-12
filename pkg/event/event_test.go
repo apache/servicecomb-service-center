@@ -13,23 +13,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package notify
+package event
 
 import (
+	"fmt"
 	"testing"
 )
 
-func TestRegisterType(t *testing.T) {
-	id := RegisterType("a", 0)
-	if id.String() != "a" || id.QueueSize() != DefaultQueueSize {
-		t.Fatal("TestRegisterType failed", id.String(), id.QueueSize())
+func TestNewEventWithTime(t *testing.T) {
+	evt := NewEvent(INNER, "a", "b")
+	if evt.CreateAt().UnixNano() == 0 {
+		t.Fatal("TestNewEventWithTime")
 	}
-	id = RegisterType("b", 1)
-	if id.String() != "b" || id.QueueSize() != 1 {
-		t.Fatal("TestRegisterType failed", id.String(), id.QueueSize())
-	}
-	id = Type(999)
-	if id.String() != "Type999" || id.QueueSize() != DefaultQueueSize {
-		t.Fatal("TestRegisterType failed", id.String(), id.QueueSize())
+	fmt.Println(evt.CreateAt())
+
+	if evt.Type() != INNER || evt.Subject() != "a" || evt.Group() != "b" {
+		t.Fatal("TestNewEventWithTime")
 	}
 }

@@ -17,13 +17,13 @@ package health
 
 import (
 	"github.com/apache/servicecomb-service-center/server/alarm"
-	"github.com/apache/servicecomb-service-center/server/notify"
+	"github.com/apache/servicecomb-service-center/server/event"
 	"testing"
 	"time"
 )
 
 func TestDefaultHealthChecker_Healthy(t *testing.T) {
-	notify.Center().Start()
+	event.Center().Start()
 
 	// normal case
 	var hc DefaultHealthChecker

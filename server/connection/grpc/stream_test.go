@@ -22,7 +22,7 @@ import (
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	simple "github.com/apache/servicecomb-service-center/pkg/time"
 	stream "github.com/apache/servicecomb-service-center/server/connection/grpc"
-	"github.com/apache/servicecomb-service-center/server/notify"
+	"github.com/apache/servicecomb-service-center/server/event"
 	"google.golang.org/grpc"
 	"testing"
 	"time"
@@ -41,13 +41,13 @@ func (x *grpcWatchServer) Context() context.Context {
 }
 
 func TestHandleWatchJob(t *testing.T) {
-	w := notify.NewInstanceEventListWatcher("g", "s", nil)
+	w := event.NewInstanceEventListWatcher("g", "s", nil)
 	w.Job <- nil
 	err := stream.Handle(w, &grpcWatchServer{})
 	if err == nil {
 		t.Fatalf("TestHandleWatchJob failed")
 	}
-	w.Job <- notify.NewInstanceEventWithTime("g", "s", 1, simple.FromTime(time.Now()), nil)
+	w.Job <- event.NewInstanceEventWithTime("g", "s", 1, simple.FromTime(time.Now()), nil)
 	w.Job <- nil
 	stream.Handle(w, &grpcWatchServer{})
 }

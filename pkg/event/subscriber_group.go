@@ -15,63 +15,51 @@
  * limitations under the License.
  */
 
-package notify
+package event
 
 import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
-type Subject struct {
-	name   string
-	groups *util.ConcurrentMap
+type Group struct {
+	name    string
+	members *util.ConcurrentMap
 }
 
-func (s *Subject) Name() string {
-	return s.name
+func (g *Group) Name() string {
+	return g.name
 }
 
-func (s *Subject) Notify(job Event) {
-	if len(job.Group()) == 0 {
-		s.groups.ForEach(func(item util.MapItem) (next bool) {
-			item.Value.(*Group).Notify(job)
-			return true
-		})
-		return
-	}
-
-	itf, ok := s.groups.Get(job.Group())
-	if !ok {
-		return
-	}
-	itf.(*Group).Notify(job)
-}
-
-func (s *Subject) Groups(name string) *Group {
-	g, ok := s.groups.Get(name)
+func (g *Group) Member(name string) Subscriber {
+	s, ok := g.members.Get(name)
 	if !ok {
 		return nil
 	}
-	return g.(*Group)
+	return s.(Subscriber)
 }
 
-func (s *Subject) GetOrNewGroup(name string) *Group {
-	item, _ := s.groups.Fetch(name, func() (interface{}, error) {
-		return NewGroup(name), nil
+func (g *Group) ForEach(iter func(m Subscriber)) {
+	g.members.ForEach(func(item util.MapItem) (next bool) {
+		iter(item.Value.(Subscriber))
+		return true
 	})
-	return item.(*Group)
 }
 
-func (s *Subject) Remove(name string) {
-	s.groups.Remove(name)
+func (g *Group) AddMember(subscriber Subscriber) Subscriber {
+	return g.members.PutIfAbsent(subscriber.ID(), subscriber).(Subscriber)
 }
 
-func (s *Subject) Size() int {
-	return s.groups.Size()
+func (g *Group) RemoveMember(name string) {
+	g.members.Remove(name)
 }
 
-func NewSubject(name string) *Subject {
-	return &Subject{
-		name:   name,
-		groups: util.NewConcurrentMap(0),
+func (g *Group) Size() int {
+	return g.members.Size()
+}
+
+func NewGroup(name string) *Group {
+	return &Group{
+		name:    name,
+		members: util.NewConcurrentMap(0),
 	}
 }
