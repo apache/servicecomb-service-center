@@ -69,18 +69,10 @@ func TestDoWebSocketListAndWatch(t *testing.T) {
 
 	wss.SendEstablishError(conn, errors.New("error"))
 
-	w := event.NewInstanceSubscriber("g", "s", func() (results []*discovery.WatchInstanceResponse, rev int64) {
-		results = append(results, &discovery.WatchInstanceResponse{
-			Response: discovery.CreateResponse(discovery.ResponseSuccess, "ok"),
-			Action:   string(discovery.EVT_CREATE),
-			Key:      &discovery.MicroServiceKey{},
-			Instance: &discovery.MicroServiceInstance{},
-		})
-		return
-	})
+	w := event.NewInstanceSubscriber("g", "s")
 
-	ws := wss.New(context.Background(), conn, w)
-	err := ws.Init()
+	ws := wss.NewWebSocket("", "", conn)
+	err := ws.init()
 	if err != nil {
 		t.Fatalf("TestPublisher_Run")
 	}
@@ -88,19 +80,17 @@ func TestDoWebSocketListAndWatch(t *testing.T) {
 	event.Center().Start()
 
 	go func() {
-		wss.ListAndWatch(context.Background(), "", nil, conn)
+		wss.Watch(context.Background(), "", conn)
 
-		w2 := event.NewInstanceSubscriber("g", "s", func() (results []*discovery.WatchInstanceResponse, rev int64) {
-			return
-		})
-		ws2 := wss.New(context.Background(), conn, w2)
-		err := ws2.Init()
+		w2 := event.NewInstanceSubscriber("g", "s")
+		ws2 := wss.NewWebSocket("", "", conn)
+		err := ws2.init()
 		if err != nil {
 			t.Fatalf("TestPublisher_Run")
 		}
 	}()
 
-	go ws.HandleControlMessage()
+	go ws.RegisterMessageHandler()
 
 	w.OnMessage(nil)
 	w.OnMessage(&event.InstanceEvent{})
@@ -114,12 +104,12 @@ func TestDoWebSocketListAndWatch(t *testing.T) {
 
 	<-time.After(time.Second)
 
-	ws.HandleEvent(nil)
+	ws.CheckHealth(nil)
 
 	ws.WritePingPong(websocket.PingMessage)
 	ws.WritePingPong(websocket.PongMessage)
 
-	ws.HandleEvent(time.Now())
+	ws.CheckHealth(time.Now())
 
 	closeCh <- struct{}{}
 
@@ -130,5 +120,5 @@ func TestDoWebSocketListAndWatch(t *testing.T) {
 
 	w.OnMessage(nil)
 
-	wss.Runner().Stop()
+	wss.HealthChecker().Stop()
 }

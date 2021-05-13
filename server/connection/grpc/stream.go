@@ -28,7 +28,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/connection"
 	"github.com/apache/servicecomb-service-center/server/event"
 	"github.com/apache/servicecomb-service-center/server/metrics"
-	pb "github.com/go-chassis/cari/discovery"
 )
 
 const GRPC = "gRPC"
@@ -69,10 +68,10 @@ func Handle(watcher *event.InstanceSubscriber, stream proto.ServiceInstanceCtrlW
 	}
 }
 
-func ListAndWatch(ctx context.Context, serviceID string, f func() ([]*pb.WatchInstanceResponse, int64), stream proto.ServiceInstanceCtrlWatchServer) (err error) {
+func Watch(ctx context.Context, serviceID string, stream proto.ServiceInstanceCtrlWatchServer) (err error) {
 	domainProject := util.ParseDomainProject(ctx)
 	domain := util.ParseDomain(ctx)
-	watcher := event.NewInstanceSubscriber(serviceID, domainProject, f)
+	watcher := event.NewInstanceSubscriber(serviceID, domainProject)
 	err = event.Center().AddSubscriber(watcher)
 	if err != nil {
 		return

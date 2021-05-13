@@ -19,40 +19,36 @@ package ws
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
+	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
-var runner *KeepaliveRunner
+var checker *HealthCheck
 
 func init() {
-	runner = NewRunner()
-	runner.Run()
+	checker = NewHealthCheck()
+	checker.Run()
 }
 
-type KeepaliveRunner struct {
+type HealthCheck struct {
 	wss       []*WebSocket
 	lock      sync.Mutex
 	goroutine *gopool.Pool
 }
 
-func (wh *KeepaliveRunner) Run() {
-	gopool.Go(runner.loop)
+func (wh *HealthCheck) Run() {
+	gopool.Go(checker.loop)
 }
 
-func (wh *KeepaliveRunner) Stop() {
+func (wh *HealthCheck) Stop() {
 	wh.goroutine.Close(true)
 }
 
-func (wh *KeepaliveRunner) dispatch(ws *WebSocket, payload interface{}) {
-	wh.goroutine.Do(func(ctx context.Context) {
-		ws.HandleEvent(payload)
-	})
-}
-
-func (wh *KeepaliveRunner) loop(ctx context.Context) {
+func (wh *HealthCheck) loop(ctx context.Context) {
 	defer wh.Stop()
 	ticker := time.NewTicker(500 * time.Millisecond)
 	for {
@@ -61,49 +57,48 @@ func (wh *KeepaliveRunner) loop(ctx context.Context) {
 			// server shutdown
 			return
 		case <-ticker.C:
-			var removes []int
-			for i, ws := range wh.wss {
-				if payload := ws.Pick(); payload != nil {
-					if _, ok := payload.(error); ok {
-						removes = append(removes, i)
-					}
-					wh.dispatch(ws, payload)
+			for _, ws := range wh.wss {
+				if t := ws.NeedCheck(); t == nil {
+					continue
 				}
+				wh.check(ws)
 			}
-			if len(removes) == 0 {
-				continue
-			}
-
-			wh.lock.Lock()
-			var (
-				news []*WebSocket
-				s    int
-			)
-			for _, e := range removes {
-				news = append(news, wh.wss[s:e]...)
-				s = e + 1
-			}
-			if s < len(wh.wss) {
-				news = append(news, wh.wss[s:]...)
-			}
-			wh.wss = news
-			wh.lock.Unlock()
 		}
 	}
 }
 
-func (wh *KeepaliveRunner) Accept(ws *WebSocket) {
+func (wh *HealthCheck) check(ws *WebSocket) {
+	wh.goroutine.Do(func(ctx context.Context) {
+		if err := ws.CheckHealth(ctx); err != nil {
+			wh.Remove(ws)
+			log.Error(fmt.Sprintf("checker removed unhealth websocket[%s]", ws.RemoteAddr), err)
+		}
+	})
+}
+
+func (wh *HealthCheck) Accept(ws *WebSocket) {
 	wh.lock.Lock()
 	wh.wss = append(wh.wss, ws)
 	wh.lock.Unlock()
 }
 
-func NewRunner() *KeepaliveRunner {
-	return &KeepaliveRunner{
+func (wh *HealthCheck) Remove(ws *WebSocket) {
+	wh.lock.Lock()
+	for i, t := range wh.wss {
+		if t == ws {
+			wh.wss = append(wh.wss[0:i], wh.wss[i+1:]...)
+			break
+		}
+	}
+	wh.lock.Unlock()
+}
+
+func NewHealthCheck() *HealthCheck {
+	return &HealthCheck{
 		goroutine: gopool.New(context.Background()),
 	}
 }
 
-func Runner() *KeepaliveRunner {
-	return runner
+func HealthChecker() *HealthCheck {
+	return checker
 }

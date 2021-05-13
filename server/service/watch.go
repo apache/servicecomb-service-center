@@ -54,7 +54,7 @@ func (s *InstanceService) Watch(in *pb.WatchInstanceRequest, stream proto.Servic
 		return err
 	}
 
-	return grpc.ListAndWatch(stream.Context(), in.SelfServiceId, nil, stream)
+	return grpc.Watch(stream.Context(), in.SelfServiceId, stream)
 }
 
 func (s *InstanceService) WebSocketWatch(ctx context.Context, in *pb.WatchInstanceRequest, conn *websocket.Conn) {
@@ -63,18 +63,7 @@ func (s *InstanceService) WebSocketWatch(ctx context.Context, in *pb.WatchInstan
 		ws.SendEstablishError(conn, err)
 		return
 	}
-	ws.ListAndWatch(ctx, in.SelfServiceId, nil, conn)
-}
-
-func (s *InstanceService) WebSocketListAndWatch(ctx context.Context, in *pb.WatchInstanceRequest, conn *websocket.Conn) {
-	log.Infof("new a web socket list and watch with service[%s]", in.SelfServiceId)
-	if err := s.WatchPreOpera(ctx, in); err != nil {
-		ws.SendEstablishError(conn, err)
-		return
-	}
-	ws.ListAndWatch(ctx, in.SelfServiceId, func() ([]*pb.WatchInstanceResponse, int64) {
-		return s.QueryAllProvidersInstances(ctx, in)
-	}, conn)
+	ws.Watch(ctx, in.SelfServiceId, conn)
 }
 
 func (s *InstanceService) QueryAllProvidersInstances(ctx context.Context, in *pb.WatchInstanceRequest) ([]*pb.WatchInstanceResponse, int64) {
