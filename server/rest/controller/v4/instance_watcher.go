@@ -33,7 +33,6 @@ type WatchService struct {
 func (s *WatchService) URLPatterns() []rest.Route {
 	return []rest.Route{
 		{Method: rest.HTTPMethodGet, Path: "/v4/:project/registry/microservices/:serviceId/watcher", Func: s.Watch},
-		{Method: rest.HTTPMethodGet, Path: "/v4/:project/registry/microservices/:serviceId/listwatcher", Func: s.ListAndWatch},
 	}
 }
 
@@ -59,19 +58,6 @@ func (s *WatchService) Watch(w http.ResponseWriter, r *http.Request) {
 
 	r.Method = "WATCH"
 	core.InstanceAPI.WebSocketWatch(r.Context(), &pb.WatchInstanceRequest{
-		SelfServiceId: r.URL.Query().Get(":serviceId"),
-	}, conn)
-}
-
-func (s *WatchService) ListAndWatch(w http.ResponseWriter, r *http.Request) {
-	conn, err := upgrade(w, r)
-	if err != nil {
-		return
-	}
-	defer conn.Close()
-
-	r.Method = "WATCHLIST"
-	core.InstanceAPI.WebSocketListAndWatch(r.Context(), &pb.WatchInstanceRequest{
 		SelfServiceId: r.URL.Query().Get(":serviceId"),
 	}, conn)
 }

@@ -19,32 +19,45 @@ package ws
 
 import (
 	"context"
+	"fmt"
+	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/connection"
 	"github.com/apache/servicecomb-service-center/server/event"
 	"github.com/gorilla/websocket"
 )
 
-func ListAndWatch(ctx context.Context, serviceID string, f func() ([]*registry.WatchInstanceResponse, int64), conn *websocket.Conn) {
+func Watch(ctx context.Context, serviceID string, conn *websocket.Conn) {
 	domainProject := util.ParseDomainProject(ctx)
 	domain := util.ParseDomain(ctx)
-	socket := New(ctx, conn, event.NewInstanceSubscriber(serviceID, domainProject, f))
 
-	connection.ReportSubscriber(domain, Websocket, 1)
-	process(socket)
-	connection.ReportSubscriber(domain, Websocket, -1)
-}
+	ws := NewWebSocket(domainProject, serviceID, conn)
+	HealthChecker().Accept(ws)
 
-func process(socket *WebSocket) {
-	if err := socket.Init(); err != nil {
+	subscriber := event.NewInstanceSubscriber(serviceID, domainProject)
+	err := event.Center().AddSubscriber(subscriber)
+	if err != nil {
+		SendEstablishError(conn, err)
 		return
 	}
 
-	socket.HandleControlMessage()
-
-	socket.Stop()
+	gopool.New(ctx).
+		Do(func(ctx context.Context) {
+			connection.ReportSubscriber(domain, Websocket, 1)
+			if err := ws.ReadMessage(); err != nil {
+				log.Error(fmt.Sprintf("[%s] handle service[%s] control message failed", conn.RemoteAddr(), serviceID), err)
+				subscriber.SetError(err)
+			}
+			connection.ReportSubscriber(domain, Websocket, -1)
+		}).
+		Do(func(ctx context.Context) {
+			if err := NewBroker(ws, subscriber).Listen(ctx); err != nil {
+				log.Error(fmt.Sprintf("[%s] listen service[%s] failed", conn.RemoteAddr(), serviceID), err)
+			}
+		}).
+		Done() // wait all
+	return
 }
 
 func SendEstablishError(conn *websocket.Conn, err error) {
