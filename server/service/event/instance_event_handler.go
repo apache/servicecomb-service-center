@@ -24,7 +24,7 @@ import (
 	apt "github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
-	"github.com/apache/servicecomb-service-center/server/notify"
+	"github.com/apache/servicecomb-service-center/server/event"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"github.com/apache/servicecomb-service-center/server/service/cache"
 	"github.com/apache/servicecomb-service-center/server/service/metrics"
@@ -82,7 +82,7 @@ func (h *InstanceEventHandler) OnEvent(evt discovery.KvEvent) {
 		}
 	}
 
-	if notify.GetNotifyCenter().Closed() {
+	if event.Center().Closed() {
 		log.Warnf("caught [%s] instance[%s/%s] event, endpoints %v, but notify service is closed",
 			action, providerID, providerInstanceID, instance.Endpoints)
 		return
@@ -136,10 +136,10 @@ func PublishInstanceEvent(evt discovery.KvEvent, domainProject string, serviceKe
 	}
 	for _, consumerID := range subscribers {
 		// TODO add超时怎么处理？
-		job := notify.NewInstanceEventWithTime(consumerID, domainProject, evt.Revision, evt.CreateAt, response)
-		err := notify.GetNotifyCenter().Publish(job)
+		evt := event.NewInstanceEventWithTime(consumerID, domainProject, evt.Revision, evt.CreateAt, response)
+		err := event.Center().Fire(evt)
 		if err != nil {
-			log.Errorf(err, "publish job failed")
+			log.Errorf(err, "publish event[%v] into channel failed", evt)
 		}
 	}
 }

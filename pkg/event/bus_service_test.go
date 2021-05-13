@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package notify
+package event
 
 import (
 	simple "github.com/apache/servicecomb-service-center/pkg/time"
@@ -26,7 +26,7 @@ import (
 func TestGetNotifyService(t *testing.T) {
 	INSTANCE := RegisterType("INSTANCE", 1)
 
-	notifyService := NewNotifyService()
+	notifyService := NewBusService()
 	if notifyService == nil {
 		t.Fatalf("TestGetNotifyService failed")
 	}
@@ -38,7 +38,7 @@ func TestGetNotifyService(t *testing.T) {
 	if err == nil {
 		t.Fatalf("TestGetNotifyService failed")
 	}
-	err = notifyService.Publish(nil)
+	err = notifyService.Fire(nil)
 	if err == nil {
 		t.Fatalf("TestGetNotifyService failed")
 	}
@@ -62,15 +62,15 @@ func TestGetNotifyService(t *testing.T) {
 		t.Fatalf("TestGetNotifyService failed, %v", err)
 	}
 	j := &baseEvent{INSTANCE, "s", "g", simple.FromTime(time.Now())}
-	err = notifyService.Publish(j)
+	err = notifyService.Fire(j)
 	if err != nil {
 		t.Fatalf("TestGetNotifyService failed")
 	}
-	err = notifyService.Publish(NewNotifyServiceHealthCheckJob(NewNotifyServiceHealthChecker()))
+	err = notifyService.Fire(NewUnhealthyEvent(NewSubscriberHealthChecker()))
 	if err != nil {
 		t.Fatalf("TestGetNotifyService failed")
 	}
-	err = notifyService.Publish(NewNotifyServiceHealthCheckJob(s))
+	err = notifyService.Fire(NewUnhealthyEvent(s))
 	if err != nil {
 		t.Fatalf("TestGetNotifyService failed")
 	}

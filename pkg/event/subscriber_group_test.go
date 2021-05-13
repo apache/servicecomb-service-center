@@ -14,9 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package notify
+package event
 
-import "testing"
+import (
+	"testing"
+)
 
 type mockSubscriber struct {
 	Subscriber
@@ -34,37 +36,32 @@ func TestGroup_Add(t *testing.T) {
 	if g.Name() != "g1" {
 		t.Fatalf("TestGroup_Add failed")
 	}
-	if g.AddSubscriber(m) != m {
+	if g.AddMember(m) != m {
 		t.Fatalf("TestGroup_Add failed")
 	}
-	if g.AddSubscriber(NewSubscriber(INSTANCE, "s1", "g1")) == m {
+	if g.AddMember(NewSubscriber(INSTANCE, "s1", "g1")) == m {
 		t.Fatalf("TestGroup_Add failed")
 	}
 	same := *(m.(*baseSubscriber))
-	if g.AddSubscriber(&same) != m {
+	if g.AddMember(&same) != m {
 		t.Fatalf("TestGroup_Add failed")
 	}
 	if g.Size() != 2 {
 		t.Fatalf("TestGroup_Add failed")
 	}
-	g.Remove(m.ID())
+	g.RemoveMember(m.ID())
 	if g.Size() != 1 {
 		t.Fatalf("TestGroup_Add failed")
 	}
-	if g.Subscribers(m.ID()) == m {
+	if g.Member(m.ID()) == m {
 		t.Fatalf("TestGroup_Add failed")
 	}
 
 	mock := &mockSubscriber{Subscriber: NewSubscriber(INSTANCE, "s1", "g1")}
-	if g.AddSubscriber(mock) != mock {
+	if g.AddMember(mock) != mock {
 		t.Fatalf("TestGroup_Add failed")
 	}
-	if g.Subscribers(mock.ID()) != mock {
-		t.Fatalf("TestGroup_Add failed")
-	}
-	job := &baseEvent{nType: INSTANCE}
-	g.Notify(job)
-	if mock.job != job {
+	if g.Member(mock.ID()) != mock {
 		t.Fatalf("TestGroup_Add failed")
 	}
 }

@@ -14,13 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package notify
+package event
 
 import "testing"
 
 func TestSubject_Fetch(t *testing.T) {
-	s := NewSubject("s1")
-	if s.Name() != "s1" {
+	s := NewPoster("s1")
+	if s.Subject() != "s1" {
 		t.Fatalf("TestSubject_Fetch failed")
 	}
 	g := s.GetOrNewGroup("g1")
@@ -37,7 +37,7 @@ func TestSubject_Fetch(t *testing.T) {
 	if s.Size() != 2 {
 		t.Fatalf("TestSubject_Fetch failed")
 	}
-	s.Remove(o.Name())
+	s.RemoveGroup(o.Name())
 	if s.Groups("g2") != nil {
 		t.Fatalf("TestSubject_Fetch failed")
 	}
@@ -47,19 +47,19 @@ func TestSubject_Fetch(t *testing.T) {
 	INSTANCE := RegisterType("INSTANCE", 1)
 	mock1 := &mockSubscriber{Subscriber: NewSubscriber(INSTANCE, "s1", "g1")}
 	mock2 := &mockSubscriber{Subscriber: NewSubscriber(INSTANCE, "s1", "g2")}
-	g.AddSubscriber(mock1)
+	g.AddMember(mock1)
 	job := &baseEvent{group: "g3"}
-	s.Notify(job)
+	s.Post(job)
 	if mock1.job != nil || mock2.job != nil {
 		t.Fatalf("TestSubject_Fetch failed")
 	}
 	job.group = "g1"
-	s.Notify(job)
+	s.Post(job)
 	if mock1.job != job || mock2.job != nil {
 		t.Fatalf("TestSubject_Fetch failed")
 	}
 	job.group = ""
-	s.Notify(job)
+	s.Post(job)
 	if mock1.job != job && mock2.job != job {
 		t.Fatalf("TestSubject_Fetch failed")
 	}

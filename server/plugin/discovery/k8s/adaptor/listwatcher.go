@@ -59,16 +59,16 @@ func NewListWatcher(t K8sType, lister cache.SharedIndexInformer, f OnEventFunc) 
 	lw.AddEventHandler(
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				Queue(t).Add(queue.Task{Object: K8sEvent{EventType: pb.EVT_CREATE, Object: obj}})
+				Queue(t).Add(queue.Task{Payload: K8sEvent{EventType: pb.EVT_CREATE, Object: obj}})
 			},
 			UpdateFunc: func(old, new interface{}) {
 				if !reflect.DeepEqual(old, new) {
-					Queue(t).Add(queue.Task{Object: K8sEvent{EventType: pb.EVT_UPDATE, Object: new,
+					Queue(t).Add(queue.Task{Payload: K8sEvent{EventType: pb.EVT_UPDATE, Object: new,
 						PrevObject: old}})
 				}
 			},
 			DeleteFunc: func(obj interface{}) {
-				Queue(t).Add(queue.Task{Object: K8sEvent{EventType: pb.EVT_DELETE, Object: obj}})
+				Queue(t).Add(queue.Task{Payload: K8sEvent{EventType: pb.EVT_DELETE, Object: obj}})
 			},
 		})
 	Queue(t).AddWorker(lw)

@@ -34,26 +34,26 @@ func TestNewEventQueue(t *testing.T) {
 	q := NewTaskQueue(0)
 	q.AddWorker(h)
 
-	q.Do(context.Background(), Task{Object: 1})
+	q.Do(context.Background(), Task{Payload: 1})
 	if <-h.Object != 1 {
 		t.Fatalf("TestNewEventQueue failed")
 	}
 
-	q.Do(context.Background(), Task{Object: 11, Async: true})
+	q.Do(context.Background(), Task{Payload: 11, Async: true})
 	if <-h.Object != 11 {
 		t.Fatalf("TestNewEventQueue failed")
 	}
 
 	q.Run()
-	q.Add(Task{Object: 2})
+	q.Add(Task{Payload: 2})
 	if <-h.Object != 2 {
 		t.Fatalf("TestNewEventQueue failed")
 	}
 
-	q.Add(Task{Object: 22, Async: true})
+	q.Add(Task{Payload: 22, Async: true})
 	if <-h.Object != 22 {
 		t.Fatalf("TestNewEventQueue failed")
 	}
 	q.Stop()
-	q.Add(Task{Object: 3})
+	q.Add(Task{Payload: 3})
 }

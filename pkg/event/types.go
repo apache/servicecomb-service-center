@@ -13,24 +13,51 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package notify
+package event
 
-import "testing"
+import "strconv"
 
-func TestRegisterType(t *testing.T) {
-	id := RegisterType("a", 0)
-	if id.String() != "a" || id.QueueSize() != DefaultQueueSize {
-		t.Fatal("TestRegisterType failed", id.String(), id.QueueSize())
+type Type int
+
+func (nt Type) String() string {
+	if nt.IsValid() {
+		return typeNames[nt]
 	}
-	id = RegisterType("b", 1)
-	if id.String() != "b" || id.QueueSize() != 1 {
-		t.Fatal("TestRegisterType failed", id.String(), id.QueueSize())
+	return "Type" + strconv.Itoa(int(nt))
+}
+
+func (nt Type) QueueSize() (s int) {
+	if nt.IsValid() {
+		s = typeQueues[nt]
 	}
-	id = Type(999)
-	if id.String() != "Type999" || id.QueueSize() != DefaultQueueSize {
-		t.Fatal("TestRegisterType failed", id.String(), id.QueueSize())
+	if s <= 0 {
+		s = DefaultQueueSize
 	}
-	if NOTIFTY.String() != "NOTIFTY" || NOTIFTY.QueueSize() != DefaultQueueSize {
-		t.Fatal("TestRegisterType failed", id.String(), id.QueueSize())
+	return
+}
+
+func (nt Type) IsValid() bool {
+	return nt >= 0 && int(nt) < len(typeQueues)
+}
+
+var typeNames = []string{
+	INNER: "INNER",
+}
+
+var typeQueues = []int{
+	INNER: 0,
+}
+
+func Types() (ts []Type) {
+	for i := range typeNames {
+		ts = append(ts, Type(i))
 	}
+	return
+}
+
+func RegisterType(name string, size int) Type {
+	l := len(typeNames)
+	typeNames = append(typeNames, name)
+	typeQueues = append(typeQueues, size)
+	return Type(l)
 }

@@ -13,17 +13,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package notify
+package event
 
-import "time"
-
-const (
-	AddJobTimeout          = 1 * time.Second
-	HeartbeatInterval      = 30 * time.Second
-	ReadTimeout            = HeartbeatInterval * 4
-	SendTimeout            = 5 * time.Second
-	InstanceEventQueueSize = 5000
-	ReadMaxBody            = 64
-	Websocket              = "Websocket"
-	GRPC                   = "gRPC"
+import (
+	"fmt"
+	"testing"
 )
+
+func TestNewEventWithTime(t *testing.T) {
+	evt := NewEvent(INNER, "a", "b")
+	if evt.CreateAt().UnixNano() == 0 {
+		t.Fatal("TestNewEventWithTime")
+	}
+	fmt.Println(evt.CreateAt())
+
+	if evt.Type() != INNER || evt.Subject() != "a" || evt.Group() != "b" {
+		t.Fatal("TestNewEventWithTime")
+	}
+}

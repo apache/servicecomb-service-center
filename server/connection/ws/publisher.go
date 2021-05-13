@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package notify
+package ws
 
 import (
 	"context"
@@ -47,7 +47,7 @@ func (wh *Publisher) Stop() {
 
 func (wh *Publisher) dispatch(ws *WebSocket, payload interface{}) {
 	wh.goroutine.Do(func(ctx context.Context) {
-		ws.HandleWatchWebSocketJob(payload)
+		ws.HandleEvent(payload)
 	})
 }
 
@@ -101,4 +101,8 @@ func NewPublisher() *Publisher {
 	return &Publisher{
 		goroutine: gopool.New(context.Background()),
 	}
+}
+
+func Instance() *Publisher {
+	return publisher
 }

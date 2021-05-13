@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package notify
+package event
 
 import (
 	simple "github.com/apache/servicecomb-service-center/pkg/time"

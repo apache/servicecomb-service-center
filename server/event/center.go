@@ -13,21 +13,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package notify
+package event
 
 import (
-	"fmt"
-	"testing"
+	"github.com/apache/servicecomb-service-center/pkg/event"
 )
 
-func TestNewEventWithTime(t *testing.T) {
-	evt := NewEvent(NOTIFTY, "a", "b")
-	if evt.CreateAt().UnixNano() == 0 {
-		t.Fatal("TestNewEventWithTime")
-	}
-	fmt.Println(evt.CreateAt())
+var busService *event.BusService
 
-	if evt.Type() != NOTIFTY || evt.Subject() != "a" || evt.Group() != "b" {
-		t.Fatal("TestNewEventWithTime")
-	}
+func init() {
+	busService = event.NewBusService()
+}
+
+// Center handle diff types of events
+// event type can be 'ALARM'(biz alarms), 'RESOURCE'(resource changes, like INSTANCE) or
+// inner type 'NOTIFY'(subscriber health check)
+func Center() *event.BusService {
+	return busService
 }

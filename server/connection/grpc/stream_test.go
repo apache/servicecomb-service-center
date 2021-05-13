@@ -14,13 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package notify
+package grpc_test
 
 import (
 	"context"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	simple "github.com/apache/servicecomb-service-center/pkg/time"
+	stream "github.com/apache/servicecomb-service-center/server/connection/grpc"
+	"github.com/apache/servicecomb-service-center/server/event"
 	"google.golang.org/grpc"
 	"testing"
 	"time"
@@ -39,19 +41,19 @@ func (x *grpcWatchServer) Context() context.Context {
 }
 
 func TestHandleWatchJob(t *testing.T) {
-	w := NewInstanceEventListWatcher("g", "s", nil)
+	w := event.NewInstanceEventListWatcher("g", "s", nil)
 	w.Job <- nil
-	err := HandleWatchJob(w, &grpcWatchServer{})
+	err := stream.Handle(w, &grpcWatchServer{})
 	if err == nil {
 		t.Fatalf("TestHandleWatchJob failed")
 	}
-	w.Job <- NewInstanceEventWithTime("g", "s", 1, simple.FromTime(time.Now()), nil)
+	w.Job <- event.NewInstanceEventWithTime("g", "s", 1, simple.FromTime(time.Now()), nil)
 	w.Job <- nil
-	HandleWatchJob(w, &grpcWatchServer{})
+	stream.Handle(w, &grpcWatchServer{})
 }
 
 func TestDoStreamListAndWatch(t *testing.T) {
 	defer log.Recover()
-	err := DoStreamListAndWatch(context.Background(), "s", nil, nil)
+	err := stream.ListAndWatch(context.Background(), "s", nil, nil)
 	t.Fatal("TestDoStreamListAndWatch failed", err)
 }

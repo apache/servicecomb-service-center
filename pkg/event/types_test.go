@@ -13,19 +13,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package notify
+package event
 
-import (
-	"github.com/apache/servicecomb-service-center/pkg/notify"
-)
+import "testing"
 
-var INSTANCE = notify.RegisterType("INSTANCE", InstanceEventQueueSize)
-var notifyService *notify.Service
-
-func init() {
-	notifyService = notify.NewNotifyService()
-}
-
-func GetNotifyCenter() *notify.Service {
-	return notifyService
+func TestRegisterType(t *testing.T) {
+	id := RegisterType("a", 0)
+	if id.String() != "a" || id.QueueSize() != DefaultQueueSize {
+		t.Fatal("TestRegisterType failed", id.String(), id.QueueSize())
+	}
+	id = RegisterType("b", 1)
+	if id.String() != "b" || id.QueueSize() != 1 {
+		t.Fatal("TestRegisterType failed", id.String(), id.QueueSize())
+	}
+	id = Type(999)
+	if id.String() != "Type999" || id.QueueSize() != DefaultQueueSize {
+		t.Fatal("TestRegisterType failed", id.String(), id.QueueSize())
+	}
+	if INNER.String() != "INNER" || INNER.QueueSize() != DefaultQueueSize {
+		t.Fatal("TestRegisterType failed", id.String(), id.QueueSize())
+	}
 }
