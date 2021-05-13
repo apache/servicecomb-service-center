@@ -15,12 +15,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import { Pipe, PipeTransform } from '@angular/core';
+import { TranslateService } from '@ngx-translate/core';
 
 @Pipe({ name: 'EnvironmentPipe' })
 export class EnvironmentPipe implements PipeTransform {
+  constructor(private translate: TranslateService) {
+    this.translate.get('common.empty').subscribe((empty) => {
+      this.empty = empty;
+    });
+  }
+  empty!: string;
   transform(value: string): string {
     if (!value) {
-      return '<空>';
+      return this.empty;
     }
     return value;
   }

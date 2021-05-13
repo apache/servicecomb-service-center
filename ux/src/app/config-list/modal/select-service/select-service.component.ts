@@ -66,27 +66,6 @@ export class SelectServiceComponent implements OnInit {
     },
   ];
 
-  columns = [
-    {
-      field: 'serviceName',
-      header: '服务名称',
-      fieldType: 'text',
-      order: 1,
-    },
-    {
-      field: 'appId',
-      header: '应用',
-      fieldType: 'text',
-      order: 2,
-    },
-    {
-      field: 'enviroment',
-      header: '环境',
-      fieldType: 'text',
-      order: 3,
-    },
-  ];
-
   ngOnInit(): void {
     this.serviceService.getServiceByGovern().subscribe(
       (res) => {

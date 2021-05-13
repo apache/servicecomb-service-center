@@ -15,8 +15,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import { Component, Input, OnInit } from '@angular/core';
-import { FormControl, FormGroup, Validators } from '@angular/forms';
-import { DValidateRules } from 'ng-devui';
+import { FormControl, FormGroup } from '@angular/forms';
+import { TranslateService } from '@ngx-translate/core';
 import { envOptions } from 'src/config/global.config';
 import { ServiceService } from '../../../../common/service.service';
 
@@ -30,7 +30,25 @@ export class CreateComponent implements OnInit {
     onClose: (data?: any) => void;
   };
 
-  constructor(private service: ServiceService) {}
+  constructor(
+    private service: ServiceService,
+    private translate: TranslateService
+  ) {
+    this.translate.get('service.create').subscribe((i18n) => {
+      this.formRules.versionRules.validators[4].message = i18n.versionMessage;
+    });
+
+    this.translate.get('common.empty').subscribe((empty) => {
+      this.envOpetions = JSON.parse(
+        JSON.stringify(
+          envOptions.map((item) => {
+            item.label = item.label || empty;
+            return item;
+          })
+        )
+      );
+    });
+  }
 
   formGroup = new FormGroup({
     serviceName: new FormControl(''),
@@ -39,7 +57,7 @@ export class CreateComponent implements OnInit {
     environment: new FormControl(''),
     description: new FormControl(''),
   });
-  formRules: { [key: string]: DValidateRules } = {
+  formRules = {
     rule: { message: 'The form verification failed, please check.' },
     usernameRules: {
       validators: [
@@ -65,14 +83,7 @@ export class CreateComponent implements OnInit {
         { maxlength: 46 },
         {
           pattern: /^\d{1,}\.(\d{1,}\.){1,2}\d{1,}$/,
-          message: {
-            'zh-cn':
-              'X.Y.Z, X.Y.Z.B 型版本号, X、Y、Z 为数字且范围在0-32767, 长度为3-46个字符',
-            'en-us':
-              'The value cannot contain characters except uppercase and lowercase letters.',
-            default:
-              'X.Y.Z, X.Y.Z.B 型版本号, X、Y、Z 为数字且范围在0-32767, 长度为3-46个字符',
-          },
+          message: '',
         },
       ],
     },
@@ -84,21 +95,12 @@ export class CreateComponent implements OnInit {
     },
   };
 
-  items = [
-    {
-      title: 'aaa',
-      content: 'content',
-      type: 'ddd',
-    },
-  ];
-
   envOpetions!: {
     id: string;
     label: string;
   }[];
 
   ngOnInit(): void {
-    this.envOpetions = JSON.parse(JSON.stringify(envOptions));
     this.formGroup.controls.environment.setValue(this.envOpetions[0]);
   }
 

@@ -15,7 +15,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 <div class="modal-component">
-  <h2>选择应用</h2>
+  <h2>{{ "kie.create.appSelect" | translate }}</h2>
 
   <div class="container">
     <d-data-table
@@ -28,9 +28,8 @@ limitations under the License.
       <thead dTableHead>
         <tr dTableRow>
           <th dHeadCell></th>
-          <th dHeadCell *ngFor="let colOption of columns">
-            {{ colOption.header }}
-          </th>
+          <th dHeadCell>{{ "kie.modal.appName" | translate }}</th>
+          <th dHeadCell>{{ "kie.modal.enviroment" | translate }}</th>
         </tr>
       </thead>
       <tbody dTableBody>
@@ -67,11 +66,11 @@ limitations under the License.
     </d-pagination>
   </div>
   <div class="footer">
-    <d-button bsStyle="danger" [disabled]="!selectId" (click)="onConfirm()"
-      >确定</d-button
-    >
-    <d-button bsStyle="common" class="cse-mg-left-lg" (click)="onCancel()"
-      >取消</d-button
-    >
+    <d-button bsStyle="danger" [disabled]="!selectId" (click)="onConfirm()">
+      {{ "common.confirm" | translate }}
+    </d-button>
+    <d-button bsStyle="common" class="cse-mg-left-lg" (click)="onCancel()">
+      {{ "common.cancel" | translate }}
+    </d-button>
   </div>
 </div>

@@ -15,14 +15,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 <div class="title">
-  <span>配置管理</span>
+  <span>{{ "kie.list.title" | translate }}</span>
   <d-button
     icon="icon-add"
+    type="button"
     bsStyle="danger"
     style="float: right"
     (click)="onCreate()"
   >
-    新建配置
+    {{ "kie.list.create" | translate }}
+    <span class="opacity-placeholder">_</span>
   </d-button>
 </div>
 <div class="header">
@@ -70,14 +72,16 @@ limitations under the License.
             *ngIf="rowItem.status === 'enabled'"
             bsStyle="text"
             (click)="onForbidden(rowItem)"
-            >禁用</d-button
           >
+            {{ "kie.list.operator.forbidden" | translate }}
+          </d-button>
           <d-button
             *ngIf="rowItem.status === 'disabled'"
             bsStyle="text"
             (click)="onEnable(rowItem)"
-            >启用</d-button
           >
+            {{ "kie.list.operator.enabled" | translate }}
+          </d-button>
           <d-button
             bsStyle="text"
             class="cse-mg-left-xs"
@@ -85,19 +89,23 @@ limitations under the License.
             [queryParams]="{
               kvId: rowItem.id
             }"
-            >更新</d-button
           >
+            {{ "kie.list.operator.update" | translate }}
+          </d-button>
           <d-button
             bsStyle="text"
             class="cse-mg-left-xs"
             (click)="onDeleteItem(rowItem)"
-            >删除</d-button
           >
+            {{ "kie.list.operator.delete" | translate }}
+          </d-button>
         </td>
       </tr>
     </ng-template>
     <ng-template #noResultTemplateRef>
-      <div style="text-align: center; margin-top: 20px">No Data</div>
+      <div style="text-align: center; margin-top: 20px">
+        {{ "common.noData" | translate }}
+      </div>
     </ng-template>
   </tbody>
 </d-data-table>

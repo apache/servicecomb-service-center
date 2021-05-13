@@ -16,4 +16,5 @@ limitations under the License.
 */
 export const environment = {
   production: true,
+  supportedLocale: [],
 };

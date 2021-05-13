@@ -15,23 +15,29 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import { Pipe, PipeTransform } from '@angular/core';
+import { TranslateService } from '@ngx-translate/core';
 
 @Pipe({ name: 'InstanceStatus' })
 export class InstanceStatusPipe implements PipeTransform {
+  statusMap!: StatusMap;
+  constructor(private translate: TranslateService) {
+    // UP在线,OUTOFSERVICE摘机,STARTING正在启动,DOWN下线,TESTING拨测状态。
+    this.translate
+      .get('instanceStatus')
+      .subscribe(({ UP, DOWN, STARTING, TESTING, OUTOFSERVICE }) => {
+        this.statusMap = {
+          UP,
+          DOWN,
+          STARTING,
+          TESTING,
+          OUTOFSERVICE,
+        };
+      });
+  }
   transform(value: State): string {
-    return statusMap[value] || value;
+    return this.statusMap[value] || value;
   }
 }
-
-export const statusMap = {
-  // UP在线,OUTOFSERVICE摘机,STARTING正在启动,DOWN下线,TESTING拨测状态。
-  UP: '在线',
-  DOWN: '下线',
-  STARTING: '启动中',
-  TESTING: '拨测',
-  OUTOFSERVICE: '摘机',
-};
-
 export interface StatusMap {
   UP: string;
   DOWN: string;

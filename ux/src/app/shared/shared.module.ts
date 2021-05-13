@@ -15,8 +15,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import { CommonModule } from '@angular/common';
-import { HttpClientXsrfModule } from '@angular/common/http';
-import { NgModule } from '@angular/core';
+import { HttpClient, HttpClientXsrfModule } from '@angular/common/http';
+import { Inject, LOCALE_ID, NgModule } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import {
   CategorySearchModule,
@@ -39,6 +39,19 @@ import { AutoHidePaginationDirective } from './derective/auto-hide-pagination.de
 import { FilterRefreshModule } from './filter-refresh/filter-refresh.module';
 import { EnvironmentPipe } from './pipe/environment.pipe';
 import { InstanceStatusPipe } from './pipe/instance-status.pipe';
+
+import { environment } from 'src/environments/environment';
+
+import {
+  TranslateModule,
+  TranslateLoader,
+  TranslateService,
+} from '@ngx-translate/core';
+import { TranslateHttpLoader } from '@ngx-translate/http-loader';
+
+export function createTranslateLoader(http: HttpClient): TranslateHttpLoader {
+  return new TranslateHttpLoader(http, './assets/i18n/', '.json');
+}
 
 const devUIModules = [
   CategorySearchModule,
@@ -75,6 +88,13 @@ const derective = [AutoHidePaginationDirective];
     ...angularModule,
     ...cusModule,
     MonacoEditorModule.forRoot(),
+    TranslateModule.forRoot({
+      loader: {
+        provide: TranslateLoader,
+        useFactory: createTranslateLoader,
+        deps: [HttpClient],
+      },
+    }),
   ],
   exports: [
     ...devUIModules,
@@ -83,6 +103,18 @@ const derective = [AutoHidePaginationDirective];
     ...pipes,
     ...derective,
     MonacoEditorModule,
+    TranslateModule,
   ],
 })
-export class SharedModule {}
+export class SharedModule {
+  constructor(
+    private i18n: TranslateService,
+    @Inject(LOCALE_ID) locale: string
+  ) {
+    if (environment.supportedLocale.indexOf(locale as never) === -1) {
+      locale = 'zh_CN';
+    }
+
+    this.i18n.use(locale);
+  }
+}

@@ -57,26 +57,11 @@ export class SelectAppComponent implements OnInit {
     },
   ];
 
-  columns = [
-    {
-      field: 'appId',
-      header: '应用名称',
-      fieldType: 'text',
-      order: 1,
-    },
-    {
-      field: 'enviroment',
-      header: '环境',
-      fieldType: 'text',
-      order: 2,
-    },
-  ];
-
   ngOnInit(): void {
     this.service.getApps().subscribe(
       (res) => {
         this.basicDataSource = res;
-        this.pager.total = res.length;
+        this.pager.total = res?.length || 0;
         this.dataSource = getTabelData(res, this.pager);
       },
       (err) => {

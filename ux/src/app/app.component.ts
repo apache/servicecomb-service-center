@@ -14,8 +14,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
+import { TranslateService } from '@ngx-translate/core';
 import { filter, map } from 'rxjs/operators';
 
 @Component({
@@ -24,7 +25,11 @@ import { filter, map } from 'rxjs/operators';
   styleUrls: ['./app.component.less'],
 })
 export class AppComponent {
-  constructor(private router: Router, private route: ActivatedRoute) {
+  constructor(
+    private router: Router,
+    private route: ActivatedRoute,
+    private translate: TranslateService
+  ) {
     this.router.events
       .pipe(
         filter((event) => event instanceof NavigationEnd),
@@ -42,22 +47,38 @@ export class AppComponent {
             ? true
             : res.snapshot.data.showLeftMenu;
       });
+
+    this.translate.get('leftMenu').subscribe((i18n) => {
+      this.menu = [
+        {
+          title: i18n.service.title,
+          children: [
+            {
+              title: i18n.service.serviceList,
+              link: '/servicelist',
+              linkType: 'routerLink',
+            },
+            {
+              title: i18n.service.instanceList,
+              link: '/instancelist',
+              linkType: 'routerLink',
+            },
+          ],
+        },
+        {
+          title: i18n.config.title,
+          children: [
+            {
+              title: i18n.config.configList,
+              link: '/kie',
+              linkType: 'routerLink',
+            },
+          ],
+        },
+      ];
+    });
   }
 
-  title = 'local-cse';
   showLeftMenu!: boolean;
-
-  menu = [
-    {
-      title: '服务管理',
-      children: [
-        { title: '服务列表', link: '/servicelist', linkType: 'routerLink' },
-        { title: '实例列表', link: '/instancelist', linkType: 'routerLink' },
-      ],
-    },
-    {
-      title: '配置管理',
-      children: [{ title: '服务配置', link: '/kie', linkType: 'routerLink' }],
-    },
-  ];
+  menu: any;
 }

@@ -17,10 +17,17 @@ limitations under the License.
 <div class="container">
   <d-breadcrumb>
     <d-breadcrumb-item>
-      <a routerLink="/kie">配置管理</a>
+      <a routerLink="/kie">{{ "kie.create.title" | translate }}</a>
     </d-breadcrumb-item>
     <d-breadcrumb-item>
-      <span>{{ title }}</span>
+      <span>
+        {{
+          (type === "eidt"
+            ? "kie.create.eidteConfig"
+            : "kie.create.createConfig"
+          ) | translate
+        }}
+      </span>
     </d-breadcrumb-item>
   </d-breadcrumb>
 
@@ -35,11 +42,15 @@ limitations under the License.
     [labelSize]="'sm'"
   >
     <d-form-item *ngIf="configType">
-      <d-form-label [required]="false">配置类型</d-form-label>
+      <d-form-label [required]="false">
+        {{ "kie.create.type" | translate }}
+      </d-form-label>
       <d-form-control>{{ configType }}</d-form-control>
     </d-form-item>
     <d-form-item *ngIf="configType === 'app' && type === 'create'">
-      <d-form-label [required]="true">应用</d-form-label>
+      <d-form-label [required]="true">
+        {{ "kie.create.app" | translate }}
+      </d-form-label>
       <d-form-control>
         <span *ngIf="appId">{{ appId }}</span>
         <i
@@ -47,14 +58,16 @@ limitations under the License.
           class="icon icon-delete app-delete"
           (click)="onDeleteApp()"
         ></i>
-        <d-button *ngIf="!appId" bsStyle="common" (click)="onSelectApp()"
-          >选择应用</d-button
-        >
+        <d-button *ngIf="!appId" bsStyle="common" (click)="onSelectApp()">
+          {{ "kie.create.appSelect" | translate }}
+        </d-button>
       </d-form-control>
     </d-form-item>
 
     <d-form-item *ngIf="configType === 'service' && type === 'create'">
-      <d-form-label [required]="true">微服务</d-form-label>
+      <d-form-label [required]="true">
+        {{ "kie.create.service" | translate }}
+      </d-form-label>
       <d-form-control>
         <span *ngIf="serviceId">{{ serviceId }}</span>
         <i
@@ -66,36 +79,27 @@ limitations under the License.
           *ngIf="!serviceId"
           bsStyle="common"
           (click)="onSelectService()"
-          >选择微服务</d-button
         >
+          {{ "kie.create.serviceSelect" | translate }}
+        </d-button>
       </d-form-control>
     </d-form-item>
     <d-form-item>
-      <d-form-label [required]="true" [hasHelp]="true" helpTips="xxxxx">
-        配置项
+      <d-form-label [required]="true">
+        {{ "kie.create.configName" | translate }}
       </d-form-label>
       <d-form-control>
+        {{ configMessage }}
         <ng-container *ngIf="type === 'create'; else elseTemplate">
           <input
             type="text"
             dTextInput
             class="w-300"
-            placeholder="请输入配置项"
+            [placeholder]="'kie.create.configPlaceholder' | translate"
+            autocomplete="off"
             name="configName"
             formControlName="configName"
-            [dValidateRules]="[
-              { required: true },
-              { whitespace: true },
-              { minlength: 1 },
-              { maxlength: 128 },
-              {
-                pattern: isAlphabetPattern,
-                message: {
-                  default:
-                    '请输入由数字/字母/下划线/中划线或小数点组成对1-128位字符'
-                }
-              }
-            ]"
+            [dValidateRules]="configNameRules"
           />
         </ng-container>
         <ng-template #elseTemplate>
@@ -104,7 +108,9 @@ limitations under the License.
       </d-form-control>
     </d-form-item>
     <d-form-item>
-      <d-form-label [required]="false">标签</d-form-label>
+      <d-form-label [required]="false">
+        {{ "kie.create.tag" | translate }}
+      </d-form-label>
       <d-form-control>
         <div class="cse-mg-bottom-sm">
           <d-tag
@@ -122,7 +128,7 @@ limitations under the License.
             type="text"
             dTextInput
             class="w-300"
-            placeholder="请输入标签键"
+            [placeholder]="'kie.create.tagKeyPlaceholder' | translate"
             [(ngModel)]="configTageKey"
             [ngModelOptions]="{ standalone: true }"
             [dValidateRules]="[
@@ -134,7 +140,7 @@ limitations under the License.
             type="text"
             dTextInput
             class="w-300 cse-mg-left-xs"
-            placeholder="请输入标签值"
+            [placeholder]="'kie.create.tagValuePlaceholder' | translate"
             [(ngModel)]="configTageValue"
             [ngModelOptions]="{ standalone: true }"
             [dValidateRules]="[
@@ -153,7 +159,9 @@ limitations under the License.
       </d-form-control>
     </d-form-item>
     <d-form-item>
-      <d-form-label [required]="false">配置格式</d-form-label>
+      <d-form-label [required]="false">
+        {{ "kie.create.size" | translate }}
+      </d-form-label>
       <d-form-control>
         <d-button-group size="md">
           <d-button
@@ -167,14 +175,18 @@ limitations under the License.
       </d-form-control>
     </d-form-item>
     <d-form-item *ngIf="type === 'eidt'">
-      <d-form-label [required]="false">是否启用</d-form-label>
+      <d-form-label [required]="false">
+        {{ "kie.create.isAvailable" | translate }}
+      </d-form-label>
       <d-form-control>
-        <d-toggle [checked]="status === 'enabled'"></d-toggle>
+        <d-toggle formControlName="isAvailable"></d-toggle>
       </d-form-control>
     </d-form-item>
 
     <d-form-item>
-      <d-form-label [required]="true">配置内容</d-form-label>
+      <d-form-label [required]="true">
+        {{ "kie.create.configContent" | translate }}
+      </d-form-label>
       <d-form-control>
         <ngx-monaco-editor
           #monacoEditor
@@ -200,10 +212,10 @@ limitations under the License.
         dTooltip
         [content]="form.errorMessage"
       >
-        Submit
+        {{ "common.confirm" | translate }}
       </d-button>
       <d-button bsStyle="common" circled="true" (click)="cancel()">
-        Cancel
+        {{ "common.cancel" | translate }}
       </d-button>
     </d-form-operation>
   </form>

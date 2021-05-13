@@ -14,7 +14,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-<div class="title">{{ title }}</div>
+<div class="title">{{ "instance.title" | translate }}</div>
 
 <d-data-table
   #datatable
@@ -26,10 +26,14 @@ limitations under the License.
 >
   <thead dTableHead>
     <tr dTableRow>
-      <th dHeadCell *ngFor="let colOption of columns">
-        {{ colOption.header }}
-      </th>
-      <th dHeadCell [width]="'200px'">操作</th>
+      <th dHeadCell>{{ "instance.columns.hostName" | translate }}</th>
+      <th dHeadCell>{{ "instance.columns.status" | translate }}</th>
+      <th dHeadCell>{{ "instance.columns.environment" | translate }}</th>
+      <th dHeadCell>{{ "instance.columns.serviceName" | translate }}</th>
+      <th dHeadCell>{{ "instance.columns.endpoints" | translate }}</th>
+      <th dHeadCell>{{ "instance.columns.version" | translate }}</th>
+      <th dHeadCell>{{ "instance.columns.modTimestamp" | translate }}</th>
+      <th dHeadCell [width]="'200px'">{{ "common.operator" | translate }}</th>
     </tr>
   </thead>
   <tbody dTableBody>
@@ -52,7 +56,7 @@ limitations under the License.
           <app-action-menu
             [actions]="actionFn(rowItem)"
             [maxShowNum]="2"
-            [menuText]="'更多'"
+            [menuText]="'common.more' | translate"
             (menuClick)="actionClick($event, rowItem)"
           ></app-action-menu>
         </td>
@@ -60,7 +64,9 @@ limitations under the License.
     </ng-template>
 
     <ng-template #noResultTemplateRef>
-      <div style="text-align: center; margin-top: 20px">No Data</div>
+      <div style="text-align: center; margin-top: 20px">
+        {{ "common.noData" | translate }}
+      </div>
     </ng-template>
   </tbody>
 </d-data-table>

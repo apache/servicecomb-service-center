@@ -24,8 +24,20 @@ limitations under the License.
 >
   <thead dTableHead>
     <tr dTableRow>
-      <th dHeadCell *ngFor="let colOption of columns">
-        {{ colOption.header }}
+      <th dHeadCell>
+        {{ "serviceDetail.instance.hostName" | translate }}
+      </th>
+      <th dHeadCell>
+        {{ "serviceDetail.instance.status" | translate }}
+      </th>
+      <th dHeadCell>
+        {{ "serviceDetail.instance.endpoints" | translate }}
+      </th>
+      <th dHeadCell>
+        {{ "serviceDetail.instance.modTimestamp" | translate }}
+      </th>
+      <th dHeadCell>
+        {{ "common.operator" | translate }}
       </th>
     </tr>
   </thead>
@@ -46,7 +58,7 @@ limitations under the License.
           <app-action-menu
             [actions]="actionFn(rowItem)"
             [maxShowNum]="2"
-            [menuText]="'更多'"
+            [menuText]="'common.more' | translate"
             (menuClick)="actionClick($event, rowItem)"
           >
           </app-action-menu>

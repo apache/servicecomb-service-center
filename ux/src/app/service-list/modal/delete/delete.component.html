@@ -15,23 +15,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 <div class="modal-component">
-  <h2>删除微服务</h2>
+  <h2>{{ "service.delete.title" | translate }}</h2>
 
   <div class="container">
     <div>
-      <div>确定要对微服务及其版本进行删除操作吗？</div>
+      <div>{{ "service.delete.content1" | translate }}</div>
       <p>
-        删除后将无法恢复。
+        {{ "service.delete.content2" | translate }}
         <span style="color: red">
-          如果删除的服务有实例，需要先将对应实例卸载，否则服务会再次注册。
+          {{ "service.delete.content3" | translate }}
         </span>
       </p>
     </div>
   </div>
   <div class="footer">
-    <d-button bsStyle="danger" (click)="onConfirm()">确定</d-button>
-    <d-button bsStyle="common" (click)="onCancel()" class="cse-mg-left-lg"
-      >取消</d-button
-    >
+    <d-button bsStyle="danger" (click)="onConfirm()">
+      {{ "common.confirm" | translate }}
+    </d-button>
+    <d-button bsStyle="common" (click)="onCancel()" class="cse-mg-left-lg">
+      {{ "common.cancel" | translate }}
+    </d-button>
   </div>
 </div>

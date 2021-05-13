@@ -24,9 +24,10 @@ limitations under the License.
 >
   <thead dTableHead>
     <tr dTableRow>
-      <th dHeadCell *ngFor="let colOption of columns">
-        {{ colOption.header }}
-      </th>
+      <th dHeadCell>{{ "serviceDetail.invoked.serviceName" | translate }}</th>
+      <th dHeadCell>{{ "serviceDetail.invoked.app" | translate }}</th>
+      <th dHeadCell>{{ "serviceDetail.invoked.version" | translate }}</th>
+      <th dHeadCell>{{ "serviceDetail.invoked.timestamp" | translate }}</th>
     </tr>
   </thead>
   <tbody dTableBody>
@@ -48,7 +49,9 @@ limitations under the License.
     </ng-template>
 
     <ng-template #noResultTemplateRef>
-      <div style="text-align: center; margin-top: 20px">No Data</div>
+      <div style="text-align: center; margin-top: 20px">
+        {{ "common.noData" | translate }}
+      </div>
     </ng-template>
   </tbody>
 </d-data-table>
