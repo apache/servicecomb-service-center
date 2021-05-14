@@ -28,7 +28,7 @@ import (
 type depStore struct {
 	dirty      bool
 	d          *DocStore
-	indexCache *indexCache
+	indexCache *IndexCache
 }
 
 func init() {

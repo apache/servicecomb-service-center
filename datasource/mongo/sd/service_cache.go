@@ -28,7 +28,7 @@ import (
 type serviceStore struct {
 	dirty      bool
 	docCache   *DocStore
-	indexCache *indexCache
+	indexCache *IndexCache
 }
 
 func init() {

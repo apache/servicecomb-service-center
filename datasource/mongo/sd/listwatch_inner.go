@@ -75,8 +75,8 @@ func (lw *mongoListWatch) DoWatch(ctx context.Context, f func(*sdcommon.ListWatc
 	pipline := md.Pipeline{}
 	if lw.Key == instance {
 		// ignore instance refresh_time change event for avoid meaningless instance push.
-		match := bson.D{{"updateDescription.updatedFields.refresh_time", bson.D{{"$exists", false}}}}
-		pipline = md.Pipeline{{{"$match", match}}}
+		match := bson.D{{Key: "updateDescription.updatedFields.refresh_time", Value: bson.D{{Key: "$exists", Value: false}}}}
+		pipline = md.Pipeline{{{Key: "$match", Value: match}}}
 	}
 	resp, err := client.GetMongoClient().Watch(ctx, lw.Key, pipline, csOptions)
 

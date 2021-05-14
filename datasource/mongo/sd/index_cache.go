@@ -21,17 +21,17 @@ import (
 	"github.com/patrickmn/go-cache"
 )
 
-type indexCache struct {
+type IndexCache struct {
 	store *cache.Cache
 }
 
-func NewIndexCache() *indexCache {
-	return &indexCache{
+func NewIndexCache() *IndexCache {
+	return &IndexCache{
 		store: cache.New(cache.NoExpiration, 0),
 	}
 }
 
-func (i *indexCache) Get(key string) []string {
+func (i *IndexCache) Get(key string) []string {
 	if v, found := i.store.Get(key); found {
 		hset, ok := v.(*Hset)
 		if ok {
@@ -41,7 +41,7 @@ func (i *indexCache) Get(key string) []string {
 	return nil
 }
 
-func (i *indexCache) Put(key string, value string) {
+func (i *IndexCache) Put(key string, value string) {
 	//todo this should be atomic
 	v, found := i.store.Get(key)
 	if !found {
@@ -55,7 +55,7 @@ func (i *indexCache) Put(key string, value string) {
 	set.Insert(value)
 }
 
-func (i *indexCache) Delete(key string, value string) {
+func (i *IndexCache) Delete(key string, value string) {
 	v, found := i.store.Get(key)
 	if !found {
 		return

@@ -18,12 +18,12 @@ package tlsutil
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"encoding/pem"
 	"io/ioutil"
 	"strings"
 
+	"github.com/go-chassis/foundation/tlsutil"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
 func ParseSSLCipherSuites(ciphers string, permitTLSCipherSuiteMap map[string]uint16) []uint16 {
@@ -77,54 +77,6 @@ func GetX509CACertPool(caCertFile string) (caCertPool *x509.CertPool, err error)
 	return pool, nil
 }
 
-func LoadTLSCertificate(certFile, keyFile, plainPassphase string) (tlsCert []tls.Certificate, err error) {
-	certContent, err := ioutil.ReadFile(certFile)
-	if err != nil {
-		log.Errorf(err, "read cert file %s failed.", certFile)
-		return nil, err
-	}
-
-	keyContent, err := ioutil.ReadFile(keyFile)
-	if err != nil {
-		log.Errorf(err, "read key file %s failed.", keyFile)
-		return nil, err
-	}
-
-	keyBlock, _ := pem.Decode(keyContent)
-	if keyBlock == nil {
-		log.Errorf(err, "decode key file %s failed.", keyFile)
-		return nil, err
-	}
-
-	if x509.IsEncryptedPEMBlock(keyBlock) {
-		plainPassphaseBytes := util.StringToBytesWithNoCopy(plainPassphase)
-		keyData, err := x509.DecryptPEMBlock(keyBlock, plainPassphaseBytes)
-		if err != nil {
-			log.Errorf(err, "decrypt key file %s failed.", keyFile)
-			return nil, err
-		}
-
-		// 解密成功，重新编码为PEM格式的文件
-		plainKeyBlock := &pem.Block{
-			Type:  "RSA PRIVATE KEY",
-			Bytes: keyData,
-		}
-
-		keyContent = pem.EncodeToMemory(plainKeyBlock)
-	}
-
-	cert, err := tls.X509KeyPair(certContent, keyContent)
-	if err != nil {
-		log.Errorf(err, "load X509 key pair from cert file %s with key file %s failed.", certFile, keyFile)
-		return nil, err
-	}
-
-	var certs []tls.Certificate
-	certs = append(certs, cert)
-
-	return certs, nil
-}
-
 /**
   verifyPeer    Whether verify client
   supplyCert    Whether send certificate
@@ -142,7 +94,7 @@ func GetClientTLSConfig(opts ...SSLConfigOption) (tlsConfig *tls.Config, err err
 	}
 
 	if len(cfg.CertFile) > 0 {
-		certs, err = LoadTLSCertificate(cfg.CertFile, cfg.KeyFile, cfg.KeyPassphase)
+		certs, err = tlsutil.LoadTLSCertificate(cfg.CertFile, cfg.KeyFile, cfg.KeyPassphase, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -175,7 +127,7 @@ func GetServerTLSConfig(opts ...SSLConfigOption) (tlsConfig *tls.Config, err err
 
 	var certs []tls.Certificate
 	if len(cfg.CertFile) > 0 {
-		certs, err = LoadTLSCertificate(cfg.CertFile, cfg.KeyFile, cfg.KeyPassphase)
+		certs, err = tlsutil.LoadTLSCertificate(cfg.CertFile, cfg.KeyFile, cfg.KeyPassphase, nil)
 		if err != nil {
 			return nil, err
 		}

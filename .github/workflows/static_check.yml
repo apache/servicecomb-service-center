@@ -15,24 +15,6 @@ jobs:
       - name: build
         run: |
           bash -x scripts/build/local.sh
-  format-check:
-    name: format-check
-    runs-on: ubuntu-latest
-    steps:
-      - name: Set up Go 1.13
-        uses: actions/setup-go@v1
-        with:
-          go-version: 1.13
-        id: go
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v1
-      - name: Fmt
-        run: |
-          bash scripts/ci/formatChecker.sh
-      - name: Misspell
-        run: |
-          go get -u github.com/client9/misspell/cmd/misspell
-          bash scripts/ci/formatChecker.sh
   ut4etcd:
     runs-on: ubuntu-latest
     steps:

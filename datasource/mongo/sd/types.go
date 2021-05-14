@@ -18,10 +18,11 @@
 package sd
 
 import (
+	"sync"
+
 	"github.com/go-chassis/cari/discovery"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"sync"
 
 	"github.com/apache/servicecomb-service-center/datasource/sdcommon"
 )
