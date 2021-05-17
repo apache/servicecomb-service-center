@@ -1,6 +1,6 @@
 {
   "name": "ux",
-  "version": "0.0.1",
+  "version": "0.0.0",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
@@ -19,6 +19,8 @@
     "@angular/platform-browser-dynamic": "~11.2.10",
     "@angular/router": "~11.2.10",
     "@devui-design/icons": "^1.2.0",
+    "@ngx-translate/core": "^13.0.0",
+    "@ngx-translate/http-loader": "^6.0.0",
     "js-yaml": "^4.1.0",
     "lodash": "^4.17.21",
     "ng-devui": "^11.1.0",

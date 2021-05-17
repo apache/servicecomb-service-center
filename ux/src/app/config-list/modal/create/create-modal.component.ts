@@ -16,6 +16,7 @@ limitations under the License.
 */
 import { Component, Input, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-create-modal',
@@ -26,28 +27,39 @@ export class CreateModalComponent implements OnInit {
   @Input() data!: {
     onClose: () => void;
   };
-  constructor(private router: Router) {}
+  constructor(private router: Router, private translate: TranslateService) {
+    this.i18nInit();
+  }
 
-  items = [
-    {
-      title: '应用级配置',
-      content: '将新建到配置关联到某一应用，并添加应用名称和所在环境到标签。',
-      type: 'app',
-    },
-    {
-      title: '微服务级配置',
-      content:
-        '将新建到配置关联到某一微服务，并添加微服务名称和所在环境到标签。',
-      type: 'service',
-    },
-    {
-      title: '自定义配置',
-      content: '自定义一个新到配置文件。',
-      type: 'custom',
-    },
-  ];
+  items!: {
+    title: string;
+    content: string;
+    type: string;
+  }[];
 
   ngOnInit(): void {}
+
+  async i18nInit(): Promise<void> {
+    const common = await this.translate.get('common').toPromise();
+    const i18n = await this.translate.get('kie.modal').toPromise();
+    this.items = [
+      {
+        title: common.appConfig,
+        content: i18n.appConfigContent,
+        type: 'app',
+      },
+      {
+        title: common.serviceConfig,
+        content: i18n.serviceConfigContent,
+        type: 'service',
+      },
+      {
+        title: common.customConfig,
+        content: i18n.customConfigContent,
+        type: 'custom',
+      },
+    ];
+  }
 
   onCreateBtn(type: string): void {
     this.data.onClose();

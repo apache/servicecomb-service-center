@@ -15,7 +15,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 <div class="modal-component">
-  <h2>创建微服务</h2>
+  <h2>{{ "service.create.title" | translate }}</h2>
 
   <div class="form">
     <form
@@ -26,11 +26,13 @@ limitations under the License.
       [dValidateRules]="formRules.rule"
     >
       <d-form-item>
-        <d-form-label [required]="true">微服名称</d-form-label>
+        <d-form-label [required]="true">
+          {{ "service.create.serviceName" | translate }}
+        </d-form-label>
         <d-form-control>
           <input
             dTextInput
-            placeholder="数字字母开头结尾，例如：myServiceName"
+            [placeholder]="'service.create.serviceNamePlaceholder' | translate"
             autocomplete="off"
             name="serviceName"
             formControlName="serviceName"
@@ -39,11 +41,13 @@ limitations under the License.
         </d-form-control>
       </d-form-item>
       <d-form-item>
-        <d-form-label [required]="true">微服务应用</d-form-label>
+        <d-form-label [required]="true">
+          {{ "service.create.app" | translate }}
+        </d-form-label>
         <d-form-control>
           <input
             dTextInput
-            placeholder="数字字母开头结尾，例如：myAppId"
+            [placeholder]="'service.create.appPlaceholder' | translate"
             autocomplete="off"
             name="appId"
             formControlName="appId"
@@ -52,7 +56,9 @@ limitations under the License.
         </d-form-control>
       </d-form-item>
       <d-form-item>
-        <d-form-label [required]="true">版本</d-form-label>
+        <d-form-label [required]="true">
+          {{ "service.create.version" | translate }}
+        </d-form-label>
         <d-form-control>
           <input
             dTextInput
@@ -65,7 +71,9 @@ limitations under the License.
         </d-form-control>
       </d-form-item>
       <d-form-item>
-        <d-form-label [required]="true">微服务环境</d-form-label>
+        <d-form-label [required]="true">
+          {{ "service.create.environment" | translate }}
+        </d-form-label>
         <d-form-control>
           <d-select
             class="w-150"
@@ -80,11 +88,12 @@ limitations under the License.
         </d-form-control>
       </d-form-item>
       <d-form-item>
-        <d-form-label [required]="false">描述</d-form-label>
+        <d-form-label [required]="false">
+          {{ "service.create.description" | translate }}
+        </d-form-label>
         <d-form-control>
           <textarea
             dTextarea
-            placeholder="Please Enter"
             autocomplete="off"
             name="description"
             formControlName="description"
@@ -102,10 +111,10 @@ limitations under the License.
       dTooltip
       [content]="form.errorMessage"
     >
-      确定
+      {{ "common.confirm" | translate }}
     </d-button>
     <d-button bsStyle="common" (click)="onCancel()" class="cse-mg-left-lg">
-      取消
+      {{ "common.cancel" | translate }}
     </d-button>
   </div>
 </div>

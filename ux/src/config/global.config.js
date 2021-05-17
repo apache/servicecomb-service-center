@@ -26,7 +26,7 @@ export const REGISTRY_PREFIX = `/api/v4/${PROJECT_ID}/registry`;
 export const envOptions = [
   {
     id: "",
-    label: "<空>",
+    label: "",
   },
   {
     id: "production",

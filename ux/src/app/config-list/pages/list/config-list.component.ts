@@ -15,6 +15,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import { Component, OnInit } from '@angular/core';
+import { TranslateService } from '@ngx-translate/core';
 import { cloneDeep, flatten, map, uniq, uniqBy } from 'lodash';
 import { DialogService, ICategorySearchTagItem, ModalService } from 'ng-devui';
 import {
@@ -34,74 +35,19 @@ export class ConfigListComponent implements OnInit {
   constructor(
     private service: ConfigService,
     private modalService: ModalService,
-    private dialogService: DialogService
+    private dialogService: DialogService,
+    private translate: TranslateService
   ) {}
   private basicDataSource: any;
   dataSource: any;
-  category: Array<ICategorySearchTagItem> | any = [
-    {
-      field: 'key',
-      label: '配置项',
-      type: 'textInput',
-    },
-    {
-      field: 'status',
-      label: '状态',
-      options: [],
-      type: 'label',
-    },
-    {
-      field: 'labels_format',
-      label: '标签',
-      options: [],
-      type: 'label',
-    },
-  ];
+  category: Array<ICategorySearchTagItem> | any = [];
 
-  columns = [
-    {
-      field: 'key',
-      header: '配置项',
-      fieldType: 'text',
-      width: '100px',
-    },
-    {
-      field: 'status',
-      header: '状态',
-      fieldType: 'text',
-      width: '50px',
-    },
-    {
-      field: 'lables',
-      header: '标签',
-      fieldType: 'text',
-      width: '200px',
-    },
-    {
-      field: 'type',
-      header: '配置项类型',
-      fieldType: 'text',
-      width: '100px',
-    },
-    {
-      field: 'value_type',
-      header: '配置格式',
-      fieldType: 'text',
-      width: '100px',
-    },
-    {
-      field: 'update_time',
-      header: '更新时间',
-      fieldType: 'date',
-      width: '200px',
-    },
-    {
-      field: '',
-      header: '操作项',
-      fieldType: 'date',
-      width: '100px',
-    },
-  ];
+  columns!: {
+    field: string;
+    header: string;
+    fieldType: string;
+    width: string;
+  }[];
 
   pager = {
     total: 0,
@@ -112,9 +58,76 @@ export class ConfigListComponent implements OnInit {
 
   ngOnInit(): void {
     this.onRefresh();
+    this.translate.get('kie.list').subscribe((i18n) => {
+      this.columns = [
+        {
+          field: 'key',
+          header: i18n.columns.key,
+          fieldType: 'text',
+          width: '100px',
+        },
+        {
+          field: 'status',
+          header: i18n.columns.status,
+          fieldType: 'text',
+          width: '50px',
+        },
+        {
+          field: 'lables',
+          header: i18n.columns.lables,
+          fieldType: 'text',
+          width: '200px',
+        },
+        {
+          field: 'type',
+          header: i18n.columns.type,
+          fieldType: 'text',
+          width: '100px',
+        },
+        {
+          field: 'value_type',
+          header: i18n.columns.value_type,
+          fieldType: 'text',
+          width: '100px',
+        },
+        {
+          field: 'update_time',
+          header: i18n.columns.update_time,
+          fieldType: 'date',
+          width: '200px',
+        },
+        {
+          field: 'operator',
+          header: i18n.columns.operator,
+          fieldType: 'text',
+          width: '100px',
+        },
+      ];
+
+      this.category = [
+        {
+          field: 'key',
+          label: i18n.columns.key,
+          type: 'textInput',
+        },
+        {
+          field: 'status',
+          label: i18n.columns.status,
+          options: [],
+          type: 'label',
+        },
+        {
+          field: 'labels_format',
+          label: i18n.columns.lables,
+          options: [],
+          type: 'label',
+        },
+      ];
+    });
   }
 
-  onRefresh(): void {
+  async onRefresh(): Promise<void> {
+    const operator = await this.getI18n('kie.list.operator');
     this.service.getAllKies().subscribe(
       (data) => {
         this.basicDataSource = data.data
@@ -128,7 +141,8 @@ export class ConfigListComponent implements OnInit {
         this.category[1].options = uniqBy(
           map(this.basicDataSource, (item: any) => ({
             id: item.status,
-            label: item.status === 'enabled' ? '启用' : '禁用',
+            label:
+              item.status === 'enabled' ? operator.enabled : operator.forbidden,
           })),
           'label'
         );
@@ -164,15 +178,20 @@ export class ConfigListComponent implements OnInit {
     });
   }
 
-  onForbidden(rowItem: { id: string; key: string }): void {
+  async onForbidden(rowItem: { id: string; key: string }): Promise<void> {
+    const common = await this.getI18n('common');
+    const title = await this.getI18n('kie.list.tip');
+    const content = await this.getI18n('kie.list.forbiddenContent', {
+      key: rowItem.key,
+    });
     const results = this.dialogService.open({
       id: 'forbidden',
-      title: '提示',
-      content: `确认禁用配置项 ${rowItem.key}`,
+      title,
+      content,
       width: '400px',
       buttons: [
         {
-          text: '确定',
+          text: common.confirm,
           cssClass: 'danger',
           handler: async () => {
             await forbiddenFn(rowItem.id, rowItem.key);
@@ -181,7 +200,7 @@ export class ConfigListComponent implements OnInit {
           },
         },
         {
-          text: '取消',
+          text: common.cancel,
           cssClass: 'common',
           handler: () => {
             results.modalInstance.hide();
@@ -199,15 +218,20 @@ export class ConfigListComponent implements OnInit {
     };
   }
 
-  onEnable(rowItem: { id: string; key: string }): void {
+  async onEnable(rowItem: { id: string; key: string }): Promise<void> {
+    const common = await this.getI18n('common');
+    const title = await this.getI18n('kie.list.tip');
+    const content = await this.getI18n('kie.list.enableContent', {
+      key: rowItem.key,
+    });
     const results = this.dialogService.open({
       id: 'forbidden',
-      title: '提示',
-      content: `确认启用配置项 ${rowItem.key} `,
+      title,
+      content,
       width: '400px',
       buttons: [
         {
-          text: '确定',
+          text: common.confirm,
           cssClass: 'danger',
           handler: async () => {
             await enableFn(rowItem.id, rowItem.key);
@@ -216,7 +240,7 @@ export class ConfigListComponent implements OnInit {
           },
         },
         {
-          text: '取消',
+          text: common.cancel,
           cssClass: 'common',
           handler: () => {
             results.modalInstance.hide();
@@ -234,16 +258,21 @@ export class ConfigListComponent implements OnInit {
     };
   }
 
-  onDeleteItem(rowItem: { id: string; key: string }): void {
+  async onDeleteItem(rowItem: { id: string; key: string }): Promise<void> {
+    const common = await this.getI18n('common');
+    const title = await this.getI18n('kie.list.tip');
+    const content = await this.getI18n('kie.list.deleteContent', {
+      key: rowItem.key,
+    });
     const results = this.dialogService.open({
       id: 'deleteKie',
       width: '400px',
       showAnimate: true,
-      title: '提示',
-      content: `你确定要删除配置项 ${rowItem.key}`,
+      title,
+      content,
       buttons: [
         {
-          text: '确认',
+          text: common.confirm,
           cssClass: 'danger',
           handler: async () => {
             // todo
@@ -253,7 +282,7 @@ export class ConfigListComponent implements OnInit {
           },
         },
         {
-          text: '取消',
+          text: common.cancel,
           cssClass: 'common',
           handler: () => {
             // todo
@@ -280,5 +309,9 @@ export class ConfigListComponent implements OnInit {
     );
     this.pager = pageination;
     this.dataSource = tableData;
+  }
+
+  private async getI18n(key: string, param?: any): Promise<any> {
+    return await this.translate.get(key, param).toPromise();
   }
 }

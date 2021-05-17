@@ -15,7 +15,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import { Component, OnInit } from '@angular/core';
-import { DialogService, ModalService, TableWidthConfig } from 'ng-devui';
+import { TranslateService } from '@ngx-translate/core';
+import { DialogService } from 'ng-devui';
 import { ServiceService } from 'src/common/service.service';
 import { ActionItem } from '../shared/action-menu/action-menu.module';
 import { getTabelData } from '../shared/toolFunction/tabel.pagination';
@@ -29,10 +30,8 @@ export class InstanceListComponent implements OnInit {
   constructor(
     private service: ServiceService,
     private dialog: DialogService,
-    private module: ModalService
+    private translate: TranslateService
   ) {}
-  title = '实例列表';
-
   private basicDataSource = [];
   dataSource: any[] = [];
   pager = {
@@ -44,43 +43,36 @@ export class InstanceListComponent implements OnInit {
   columns = [
     {
       field: 'hostName',
-      header: '实例名称',
       fieldType: 'text',
       width: '300px',
     },
     {
       field: 'status',
-      header: '状态',
       fieldType: 'text',
       width: '100px',
     },
     {
       field: 'environment',
-      header: '环境',
       fieldType: 'text',
       width: '100px',
     },
     {
       field: 'serviceName',
-      header: '所属服务',
       fieldType: 'text',
       width: '100px',
     },
     {
       field: 'endpoints',
-      header: 'Endpoints',
       fieldType: 'text',
       width: '200px',
     },
     {
       field: 'version',
-      header: '所属版本',
       fieldType: 'text',
       width: '150px',
     },
     {
       field: 'modTimestamp',
-      header: '更新时间',
       fieldType: 'text',
       width: '250px',
     },
@@ -95,7 +87,7 @@ export class InstanceListComponent implements OnInit {
     this.service.getInstances().subscribe(
       (res) => {
         this.basicDataSource = res;
-        this.pager.total = res.length;
+        this.pager.total = res?.length || 0;
         this.dataSource = getTabelData(this.basicDataSource, this.pager);
       },
       (err) => {
@@ -105,41 +97,50 @@ export class InstanceListComponent implements OnInit {
   }
 
   actionFn(rowItem: any): ActionItem[] {
-    // UP在线,OUTOFSERVICE摘机,STARTING正在启动,DOWN下线,TESTING拨测状态。
-    const actions: ActionItem[] = [
-      {
-        id: 'DOWN',
-        label: '下线',
-        disabled: rowItem.status === 'DOWN',
-      },
-      {
-        id: 'UP',
-        label: '上线',
-        disabled: rowItem.status === 'UP',
-      },
-      {
-        id: 'OUTOFSERVICE',
-        label: '摘机',
-        disabled: rowItem.status === 'OUTOFSERVICE',
-      },
-      {
-        id: 'TESTING',
-        label: '拨测',
-        disabled: rowItem.status === 'TESTING',
-      },
-    ];
-
+    let actions: ActionItem[] = [];
+    this.translate.get('instanceStatus').subscribe((status) => {
+      // UP在线,OUTOFSERVICE摘机,STARTING正在启动,DOWN下线,TESTING拨测状态。
+      actions = [
+        {
+          id: 'DOWN',
+          label: status.DOWN,
+          disabled: rowItem.status === 'DOWN',
+        },
+        {
+          id: 'UP',
+          label: status.UP,
+          disabled: rowItem.status === 'UP',
+        },
+        {
+          id: 'OUTOFSERVICE',
+          label: status.OUTOFSERVICE,
+          disabled: rowItem.status === 'OUTOFSERVICE',
+        },
+        {
+          id: 'TESTING',
+          label: status.TESTING,
+          disabled: rowItem.status === 'TESTING',
+        },
+      ];
+    });
     return actions;
   }
 
-  actionClick(e: ActionItem, rowItem: any): void {
+  async actionClick(e: ActionItem, rowItem: any): Promise<void> {
+    const common = await this.translate.get('common').toPromise();
+    const content = await this.translate
+      .get('instance.changeContent', {
+        hostName: rowItem.hostName,
+        status: e.label,
+      })
+      .toPromise();
     const results = this.dialog.open({
       id: 'action-modal',
-      title: '提示',
-      content: `确认改变实例 "${rowItem.hostName}" 的状态为${e.label}?`,
+      title: common.tips,
+      content,
       buttons: [
         {
-          text: '确定',
+          text: common.confirm,
           cssClass: 'danger',
           handler: () => {
             this.service
@@ -156,7 +157,7 @@ export class InstanceListComponent implements OnInit {
           },
         },
         {
-          text: '取消',
+          text: common.cancel,
           cssClass: 'common',
           handler: () => {
             results.modalInstance.hide();

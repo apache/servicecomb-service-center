@@ -86,7 +86,7 @@ export class ServiceService {
     };
     this.getServiceByGovern(query).subscribe(
       (res) => {
-        const result = res.allServicesDetail.reduce(
+        const result = res.allServicesDetail?.reduce(
           (list: any[], item: any) => {
             if (item.instances?.length) {
               item.instances.forEach((instance: any) => {
@@ -100,7 +100,7 @@ export class ServiceService {
           },
           []
         );
-        instances$.next(result);
+        instances$.next(result || []);
       },
       (err) => {
         instances$.next([]);

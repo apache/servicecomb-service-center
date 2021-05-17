@@ -15,13 +15,32 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import { Pipe, PipeTransform } from '@angular/core';
+import { TranslateService } from '@ngx-translate/core';
 
 @Pipe({
   name: 'ConfigTypePipe',
 })
 export class ConfigTypePipe implements PipeTransform {
+  constructor(private translate: TranslateService) {
+    this.translate
+      .get('common')
+      .subscribe(({ appConfig, customConfig, serviceConfig }) => {
+        this.types = {
+          app: appConfig,
+          custom: customConfig,
+          service: serviceConfig,
+        };
+      });
+  }
+
+  types = {
+    app: '',
+    custom: '',
+    service: '',
+  };
+
   transform(value: Lables): string {
-    return types[configTypeFn(value)];
+    return this.types[configTypeFn(value)];
   }
 }
 
@@ -41,12 +60,6 @@ export const configTypeFn = (value: Lables): type => {
     return 'app';
   }
   return 'custom';
-};
-
-const types = {
-  app: '应用级配置',
-  custom: '自定义配置',
-  service: '微服务级配置',
 };
 
 interface Lables {

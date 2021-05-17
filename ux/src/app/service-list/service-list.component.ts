@@ -15,6 +15,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import { Component, OnInit, ViewChild } from '@angular/core';
+import { TranslateService } from '@ngx-translate/core';
 import { cloneDeep, map, uniqBy } from 'lodash';
 import { ICategorySearchTagItem } from 'ng-devui';
 import { DataTableComponent, TableWidthConfig } from 'ng-devui/data-table';
@@ -37,41 +38,14 @@ import { DeleteComponent } from './modal/delete/delete.component';
 export class ServiceListComponent implements OnInit {
   constructor(
     private modalService: ModalService,
-    private service: ServiceService
+    private service: ServiceService,
+    private translate: TranslateService
   ) {}
   @ViewChild(DataTableComponent, { static: true })
   datatable!: DataTableComponent;
 
-  title = '服务列表';
-
   private basicDataSource: any;
   dataSource: any; // 展示的数据
-  columns = [
-    {
-      field: 'environment',
-      header: '环境',
-      fieldType: 'text',
-      order: 2,
-    },
-    {
-      field: 'version',
-      header: '版本',
-      fieldType: 'text',
-      order: 3,
-    },
-    {
-      field: 'appId',
-      header: '应用',
-      fieldType: 'text',
-      order: 4,
-    },
-    {
-      field: 'timestamp',
-      header: '创建时间',
-      fieldType: 'date',
-      order: 5,
-    },
-  ];
 
   tableWidthConfig: TableWidthConfig[] = [
     {
@@ -104,43 +78,52 @@ export class ServiceListComponent implements OnInit {
   };
 
   // todo ui框架问题设置为any解决
-  category: Array<ICategorySearchTagItem> | any = [
-    {
-      field: 'serviceName',
-      label: '名称',
-      type: 'textInput',
-    },
-    {
-      field: 'environment',
-      label: '环境',
-      type: 'label',
-      options: cloneDeep(envOptions),
-    },
-    {
-      field: 'version',
-      label: '版本',
-      type: 'label',
-      options: [],
-    },
-    {
-      field: 'appId',
-      label: '应用',
-      type: 'textInput',
-    },
-  ];
+  category: Array<ICategorySearchTagItem> | any;
 
   ngOnInit(): void {
     this.initData();
   }
 
-  initData(): void {
+  async initData(): Promise<void> {
     this.dataSource = [];
+    this.category = [];
+    const common = await this.translate.get('common').toPromise();
+    const columns = await this.translate.get('service.columns').toPromise();
+    this.category = [
+      {
+        field: 'serviceName',
+        label: columns.serviceName,
+        type: 'textInput',
+      },
+      {
+        field: 'environment',
+        label: columns.environment,
+        type: 'label',
+        options: cloneDeep(
+          envOptions.map((item) => {
+            item.label = item.label || common.empty;
+            return item;
+          })
+        ),
+      },
+      {
+        field: 'version',
+        label: columns.version,
+        type: 'label',
+        options: [],
+      },
+      {
+        field: 'appId',
+        label: columns.app,
+        type: 'textInput',
+      },
+    ];
     this.service.getServiceByGovern().subscribe(
       (data) => {
         this.basicDataSource = (data?.allServicesDetail || [])
           .map((item: any) => {
             if (!item.microService?.environment) {
-              item.microService.environment = '<空>';
+              item.microService.environment = common.empty;
             }
             return item.microService;
           })

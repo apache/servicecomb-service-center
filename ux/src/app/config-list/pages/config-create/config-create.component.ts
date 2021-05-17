@@ -17,6 +17,7 @@ limitations under the License.
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { TranslateService } from '@ngx-translate/core';
 import { DValidateRules, FormLayout, ModalService } from 'ng-devui';
 import { EditorComponent } from 'ngx-monaco-editor';
 import { ConfigService, getTagsByObj } from '../../../../common/config.service';
@@ -39,7 +40,8 @@ export class ConfigCreateComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private service: ConfigService,
-    private modalService: ModalService
+    private modalService: ModalService,
+    private translate: TranslateService
   ) {
     this.route.queryParams.subscribe((res) => {
       if (res.configType) {
@@ -49,13 +51,16 @@ export class ConfigCreateComponent implements OnInit {
     });
     this.route.data.subscribe((res) => {
       this.type = res.type;
-      this.title = res.type === 'eidt' ? '编辑配置' : '新建配置';
+    });
+    this.translate.get('kie.create.configMessage').subscribe((res) => {
+      this.configNameRules[4].message = res;
     });
   }
 
   formGroup = new FormGroup({
     code: new FormControl(''),
     configName: new FormControl(''),
+    isAvailable: new FormControl(false),
   });
 
   formRules: { [key: string]: DValidateRules } = {
@@ -71,7 +76,17 @@ export class ConfigCreateComponent implements OnInit {
   type!: 'create' | 'eidt'; // 编辑 创建
   configType!: 'app' | 'service' | 'custom'; // custom app service
   kvId!: string;
-  title!: string;
+  configNameRules = [
+    { required: true },
+    { whitespace: true },
+    { minlength: 1 },
+    { maxlength: 128 },
+    {
+      pattern: /^[a-zA-Z0-9-_.]+$/,
+      message: '',
+    },
+  ];
+  configMessage!: string;
   FormLayout = FormLayout;
   configFormatItems = [
     {
@@ -107,8 +122,6 @@ export class ConfigCreateComponent implements OnInit {
   appId = ''; // 应用名称
   serviceId = ''; // 微服务id
 
-  isAlphabetPattern = /^[a-zA-Z0-9-_.]+$/;
-
   configTageKey!: string;
   configTageValue!: string;
 
@@ -119,7 +132,9 @@ export class ConfigCreateComponent implements OnInit {
           this.tags = getTagsByObj(res.labels || {});
           this.formGroup.controls.configName.setValue(res.key);
           this.formGroup.controls.code.setValue(res.value);
-          this.status = res.status;
+          this.formGroup.controls.isAvailable.setValue(
+            res.status === 'enabled'
+          );
           this.configFormatItems = JSON.parse(
             JSON.stringify(this.configFormatItems)
           ).filter((item: any) => item.id === res.value_type);
@@ -215,7 +230,9 @@ export class ConfigCreateComponent implements OnInit {
       labels,
       value: this.formGroup.controls.code.value,
       value_type: this.editorOptions.language,
-      status: this.status,
+      status: this.formGroup.controls.isAvailable.value
+        ? 'enabled'
+        : 'disabled',
     };
     if (this.kvId) {
       this.service.putKie(this.kvId, param).subscribe(

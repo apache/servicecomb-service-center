@@ -15,15 +15,24 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 import { Pipe, PipeTransform } from '@angular/core';
+import { TranslateService } from '@ngx-translate/core';
 
 @Pipe({ name: 'configStatusPipe' })
 export class ConfigStatusPipe implements PipeTransform {
+  constructor(private translate: TranslateService) {
+    this.translate.get('kie.list.operator').subscribe((i18n) => {
+      this.statusMap = {
+        enabled: i18n.enabled,
+        disabled: i18n.forbidden,
+      };
+    });
+  }
+
+  statusMap = {
+    enabled: '',
+    disabled: '',
+  };
   transform(value: 'enabled' | 'disabled'): string {
-    return statusMap[value];
+    return this.statusMap[value];
   }
 }
-
-const statusMap = {
-  enabled: '启用',
-  disabled: '禁用',
-};

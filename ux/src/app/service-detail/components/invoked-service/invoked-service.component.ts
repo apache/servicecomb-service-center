@@ -47,25 +47,21 @@ export class InvokedServiceComponent implements OnInit {
   columns = [
     {
       field: 'serviceName',
-      header: '服务名称',
       fieldType: 'text',
       width: '300px',
     },
     {
       field: 'appId',
-      header: '所属应用',
       fieldType: 'text',
       width: '150px',
     },
     {
       field: 'version',
-      header: '版本',
       fieldType: 'text',
       width: '150px',
     },
     {
       field: 'timestamp',
-      header: '创建时间',
       fieldType: 'date',
       width: '300px',
     },

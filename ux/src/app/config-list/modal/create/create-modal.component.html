@@ -15,7 +15,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 <div class="modal-component">
-  <h2>选择配置类型</h2>
+  <h2>{{ "kie.modal.title" | translate }}</h2>
 
   <div class="container" *ngFor="let item of items">
     <div class="left">
@@ -23,9 +23,9 @@ limitations under the License.
       <div>{{ item.content }}</div>
     </div>
     <div class="right">
-      <d-button bsStyle="danger" (click)="onCreateBtn(item.type)"
-        >立即配置</d-button
-      >
+      <d-button bsStyle="danger" (click)="onCreateBtn(item.type)">
+        {{ "kie.modal.createBtn" | translate }}
+      </d-button>
     </div>
   </div>
 </div>

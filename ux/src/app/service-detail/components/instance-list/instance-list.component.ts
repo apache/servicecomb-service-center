@@ -16,6 +16,7 @@ limitations under the License.
 */
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+import { TranslateService } from '@ngx-translate/core';
 import { cloneDeep } from 'lodash';
 import { DialogService } from 'ng-devui';
 import { ActionItem } from 'src/app/shared/action-menu/action-menu.module';
@@ -31,7 +32,8 @@ export class InstanceListComponent implements OnInit {
   constructor(
     private service: ServiceService,
     private route: ActivatedRoute,
-    private dialog: DialogService
+    private dialog: DialogService,
+    private translate: TranslateService
   ) {
     this.serviceId = this.route.snapshot.paramMap.get('id') as string;
   }
@@ -49,31 +51,26 @@ export class InstanceListComponent implements OnInit {
   columns = [
     {
       field: 'hostName',
-      header: '实例名称',
       fieldType: 'text',
       width: '300px',
     },
     {
       field: 'status',
-      header: '实例状态',
       fieldType: 'text',
       width: '150px',
     },
     {
       field: 'endpoints',
-      header: 'Endpoints',
       fieldType: 'text',
       width: '300px',
     },
     {
       field: 'modTimestamp',
-      header: '更新时间',
       fieldType: 'date',
       width: '300px',
     },
     {
       field: 'operation',
-      header: '操作',
       fieldType: 'text',
       width: '200px',
     },
@@ -89,7 +86,7 @@ export class InstanceListComponent implements OnInit {
       this.service.getInstancesbyServiceId(serviceId).subscribe(
         (res) => {
           this.basicDataSource = res.instances;
-          this.pager.total = res.instances?.length;
+          this.pager.total = res.instances?.length || 0;
           this.dataSource = getTabelData(this.basicDataSource, this.pager);
         },
         (err) => {
@@ -102,41 +99,50 @@ export class InstanceListComponent implements OnInit {
   onToggle(e?: any): void {}
 
   actionFn(rowItem: any): ActionItem[] {
+    let actions: ActionItem[] = [];
+    this.translate.get('instanceStatus').subscribe((i18n) => {
+      actions = [
+        {
+          id: 'DOWN',
+          label: i18n.DOWN,
+          disabled: rowItem.status === 'DOWN',
+        },
+        {
+          id: 'UP',
+          label: i18n.UP,
+          disabled: rowItem.status === 'UP',
+        },
+        {
+          id: 'OUTOFSERVICE',
+          label: i18n.OUTOFSERVICE,
+          disabled: rowItem.status === 'OUTOFSERVICE',
+        },
+        {
+          id: 'TESTING',
+          label: i18n.TESTING,
+          disabled: rowItem.status === 'TESTING',
+        },
+      ];
+    });
     // UP在线,OUTOFSERVICE摘机,STARTING正在启动,DOWN下线,TESTING拨测状态。
-    const actions: ActionItem[] = [
-      {
-        id: 'DOWN',
-        label: '下线',
-        disabled: rowItem.status === 'DOWN',
-      },
-      {
-        id: 'UP',
-        label: '上线',
-        disabled: rowItem.status === 'UP',
-      },
-      {
-        id: 'OUTOFSERVICE',
-        label: '摘机',
-        disabled: rowItem.status === 'OUTOFSERVICE',
-      },
-      {
-        id: 'TESTING',
-        label: '拨测',
-        disabled: rowItem.status === 'TESTING',
-      },
-    ];
-
     return actions;
   }
 
-  actionClick(e: ActionItem, rowItem: any): void {
+  async actionClick(e: ActionItem, rowItem: any): Promise<void> {
+    const common = await this.translate.get('common').toPromise();
+    const content = await this.translate
+      .get('instance.changeContent', {
+        hostName: rowItem.hostName,
+        status: e.label,
+      })
+      .toPromise();
     const results = this.dialog.open({
       id: 'action-modal',
-      title: '提示',
-      content: `确认改变实例 "${rowItem.hostName}" 的状态为${e.label}?`,
+      title: common.tips,
+      content,
       buttons: [
         {
-          text: '确定',
+          text: common.confirm,
           cssClass: 'danger',
           handler: () => {
             this.service
@@ -153,7 +159,7 @@ export class InstanceListComponent implements OnInit {
           },
         },
         {
-          text: '取消',
+          text: common.cancel,
           cssClass: 'common',
           handler: () => {
             results.modalInstance.hide();

@@ -15,10 +15,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 <div class="title">
-  <div class="label">服务列表</div>
+  <div class="label">{{ "service.title" | translate }}</div>
   <div class="btn-group">
     <d-button icon="icon-add" bsStyle="danger" (click)="onCreateService()">
-      创建微服务
+      {{ "service.createService" | translate }}
     </d-button>
   </div>
 </div>
@@ -36,11 +36,22 @@ limitations under the License.
   >
     <thead dTableHead [checkable]="false">
       <tr dTableRow>
-        <th dHeadCell width="150px">服务名称</th>
-        <th dHeadCell *ngFor="let colOption of columns">
-          {{ colOption.header }}
+        <th dHeadCell width="150px">
+          {{ "service.columns.serviceName" | translate }}
         </th>
-        <th dHeadCell width="150px">操作</th>
+        <th dHeadCell width="150px">
+          {{ "service.columns.environment" | translate }}
+        </th>
+        <th dHeadCell width="150px">
+          {{ "service.columns.version" | translate }}
+        </th>
+        <th dHeadCell width="150px">
+          {{ "service.columns.app" | translate }}
+        </th>
+        <th dHeadCell width="150px">
+          {{ "service.columns.timestamp" | translate }}
+        </th>
+        <th dHeadCell width="150px">{{ "common.operator" | translate }}</th>
       </tr>
     </thead>
     <tbody dTableBody>
@@ -72,14 +83,17 @@ limitations under the License.
               bsStyle="text"
               class="cse-mg-left-sm"
               (click)="deleteItem(rowItem)"
-              >删除</d-button
             >
+              {{ "common.delete" | translate }}
+            </d-button>
           </td>
         </tr>
       </ng-template>
 
       <ng-template #noResultTemplateRef>
-        <div style="text-align: center; margin-top: 20px">No Data</div>
+        <div style="text-align: center; margin-top: 20px">
+          {{ "common.noData" | translate }}
+        </div>
       </ng-template>
     </tbody>
   </d-data-table>
