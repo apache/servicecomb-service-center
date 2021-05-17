@@ -18,11 +18,8 @@
 package event
 
 import (
-	"context"
 	"github.com/apache/servicecomb-service-center/pkg/event"
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"time"
 )
 
@@ -30,10 +27,7 @@ const AddJobTimeout = 1 * time.Second
 
 type InstanceSubscriber struct {
 	event.Subscriber
-	Job          chan *InstanceEvent
-	ListRevision int64
-	ListFunc     func() (results []*pb.WatchInstanceResponse, rev int64)
-	listCh       chan struct{}
+	Job chan *InstanceEvent
 }
 
 func (w *InstanceSubscriber) SetError(err error) {
@@ -50,19 +44,6 @@ func (w *InstanceSubscriber) OnAccept() {
 		return
 	}
 	log.Debugf("accepted by event service, %s watcher %s %s", w.Type(), w.Group(), w.Subject())
-	gopool.Go(w.listAndPublishJobs)
-}
-
-func (w *InstanceSubscriber) listAndPublishJobs(_ context.Context) {
-	defer close(w.listCh)
-	if w.ListFunc == nil {
-		return
-	}
-	results, rev := w.ListFunc()
-	w.ListRevision = rev
-	for _, response := range results {
-		w.sendMessage(NewInstanceEvent(w.Group(), w.Subject(), w.ListRevision, response))
-	}
 }
 
 //被通知
@@ -73,26 +54,6 @@ func (w *InstanceSubscriber) OnMessage(job event.Event) {
 
 	wJob, ok := job.(*InstanceEvent)
 	if !ok {
-		return
-	}
-
-	select {
-	case <-w.listCh:
-	default:
-		timer := time.NewTimer(w.Timeout())
-		select {
-		case <-w.listCh:
-			timer.Stop()
-		case <-timer.C:
-			log.Errorf(nil,
-				"the %s listwatcher %s %s is not ready[over %s], send the event %v",
-				w.Type(), w.Group(), w.Subject(), w.Timeout(), job)
-		}
-	}
-
-	if wJob.Revision <= w.ListRevision {
-		log.Warnf("unexpected event %s job is coming in, watcher %s %s, job is %v, current revision is %v",
-			w.Type(), w.Group(), w.Subject(), job, w.ListRevision)
 		return
 	}
 	w.sendMessage(wJob)
@@ -123,13 +84,10 @@ func (w *InstanceSubscriber) Close() {
 	close(w.Job)
 }
 
-func NewInstanceSubscriber(serviceID, domainProject string,
-	listFunc func() (results []*pb.WatchInstanceResponse, rev int64)) *InstanceSubscriber {
+func NewInstanceSubscriber(serviceID, domainProject string) *InstanceSubscriber {
 	watcher := &InstanceSubscriber{
 		Subscriber: event.NewSubscriber(INSTANCE, domainProject, serviceID),
 		Job:        make(chan *InstanceEvent, INSTANCE.QueueSize()),
-		ListFunc:   listFunc,
-		listCh:     make(chan struct{}),
 	}
 	return watcher
 }

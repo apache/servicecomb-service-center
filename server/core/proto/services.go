@@ -28,7 +28,6 @@ type ServiceInstanceCtrlServerEx interface {
 	BatchFind(ctx context.Context, in *registry.BatchFindInstancesRequest) (*registry.BatchFindInstancesResponse, error)
 
 	WebSocketWatch(ctx context.Context, in *registry.WatchInstanceRequest, conn *websocket.Conn)
-	WebSocketListAndWatch(ctx context.Context, in *registry.WatchInstanceRequest, conn *websocket.Conn)
 
 	ClusterHealth(ctx context.Context) (*registry.GetInstancesResponse, error)
 }
