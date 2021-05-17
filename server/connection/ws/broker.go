@@ -21,11 +21,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/connection"
 	"github.com/apache/servicecomb-service-center/server/event"
+	"github.com/apache/servicecomb-service-center/server/metrics"
+	pb "github.com/go-chassis/cari/discovery"
 )
 
 type Broker struct {
@@ -69,7 +70,7 @@ func (b *Broker) write(evt *event.InstanceEvent) error {
 		data = util.StringToBytesWithNoCopy(fmt.Sprintf("marshal output file error, %s", err.Error()))
 	}
 	err = b.consumer.WriteTextMessage(data)
-	connection.ReportPublishCompleted(evt, err)
+	metrics.ReportPublishCompleted(evt, err)
 	return err
 }
 

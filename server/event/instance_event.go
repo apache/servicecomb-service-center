@@ -19,8 +19,8 @@ package event
 
 import (
 	"github.com/apache/servicecomb-service-center/pkg/event"
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	simple "github.com/apache/servicecomb-service-center/pkg/time"
+	pb "github.com/go-chassis/cari/discovery"
 )
 
 const QueueSize = 5000
