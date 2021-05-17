@@ -25,34 +25,34 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 )
 
-var publisher *Publisher
+var runner *KeepaliveRunner
 
 func init() {
-	publisher = NewPublisher()
-	publisher.Run()
+	runner = NewRunner()
+	runner.Run()
 }
 
-type Publisher struct {
+type KeepaliveRunner struct {
 	wss       []*WebSocket
 	lock      sync.Mutex
 	goroutine *gopool.Pool
 }
 
-func (wh *Publisher) Run() {
-	gopool.Go(publisher.loop)
+func (wh *KeepaliveRunner) Run() {
+	gopool.Go(runner.loop)
 }
 
-func (wh *Publisher) Stop() {
+func (wh *KeepaliveRunner) Stop() {
 	wh.goroutine.Close(true)
 }
 
-func (wh *Publisher) dispatch(ws *WebSocket, payload interface{}) {
+func (wh *KeepaliveRunner) dispatch(ws *WebSocket, payload interface{}) {
 	wh.goroutine.Do(func(ctx context.Context) {
 		ws.HandleEvent(payload)
 	})
 }
 
-func (wh *Publisher) loop(ctx context.Context) {
+func (wh *KeepaliveRunner) loop(ctx context.Context) {
 	defer wh.Stop()
 	ticker := time.NewTicker(500 * time.Millisecond)
 	for {
@@ -92,18 +92,18 @@ func (wh *Publisher) loop(ctx context.Context) {
 	}
 }
 
-func (wh *Publisher) Accept(ws *WebSocket) {
+func (wh *KeepaliveRunner) Accept(ws *WebSocket) {
 	wh.lock.Lock()
 	wh.wss = append(wh.wss, ws)
 	wh.lock.Unlock()
 }
 
-func NewPublisher() *Publisher {
-	return &Publisher{
+func NewRunner() *KeepaliveRunner {
+	return &KeepaliveRunner{
 		goroutine: gopool.New(context.Background()),
 	}
 }
 
-func Instance() *Publisher {
-	return publisher
+func Runner() *KeepaliveRunner {
+	return runner
 }

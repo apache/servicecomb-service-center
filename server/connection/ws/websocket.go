@@ -28,7 +28,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/connection"
 	"github.com/apache/servicecomb-service-center/server/event"
-	"github.com/apache/servicecomb-service-center/server/metrics"
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/gorilla/websocket"
 )
@@ -36,11 +35,13 @@ import (
 const Websocket = "Websocket"
 
 type WebSocket struct {
+	Options
+
 	ctx    context.Context
 	ticker *time.Ticker
 	conn   *websocket.Conn
 	// watcher subscribe the notification service event
-	watcher         *event.InstanceEventListWatcher
+	watcher         *event.InstanceSubscriber
 	needPingWatcher bool
 	free            chan struct{}
 	closed          chan struct{}
@@ -69,34 +70,11 @@ func (wh *WebSocket) Init() error {
 		return err
 	}
 
-	// put in publisher queue
-	Instance().Accept(wh)
+	// put in runner queue
+	Runner().Accept(wh)
 
 	log.Debugf("start watching instance status, watcher[%s], subject: %s, group: %s",
 		remoteAddr, wh.watcher.Subject(), wh.watcher.Group())
-	return nil
-}
-
-func (wh *WebSocket) ReadTimeout() time.Duration {
-	return connection.ReadTimeout
-}
-
-func (wh *WebSocket) SendTimeout() time.Duration {
-	return connection.SendTimeout
-}
-
-func (wh *WebSocket) Heartbeat(messageType int) error {
-	err := wh.conn.WriteControl(messageType, []byte{}, time.Now().Add(wh.SendTimeout()))
-	if err != nil {
-		messageTypeName := "Ping"
-		if messageType == websocket.PongMessage {
-			messageTypeName = "Pong"
-		}
-		log.Errorf(err, "fail to send '%s' to watcher[%s], subject: %s, group: %s",
-			messageTypeName, wh.conn.RemoteAddr(), wh.watcher.Subject(), wh.watcher.Group())
-		//wh.watcher.SetError(err)
-		return err
-	}
 	return nil
 }
 
@@ -105,7 +83,7 @@ func (wh *WebSocket) HandleControlMessage() {
 	// PING
 	wh.conn.SetPingHandler(func(message string) error {
 		defer func() {
-			err := wh.conn.SetReadDeadline(time.Now().Add(wh.ReadTimeout()))
+			err := wh.conn.SetReadDeadline(time.Now().Add(wh.ReadTimeout))
 			if err != nil {
 				log.Error("", err)
 			}
@@ -115,12 +93,12 @@ func (wh *WebSocket) HandleControlMessage() {
 				message, remoteAddr, wh.watcher.Subject(), wh.watcher.Group())
 		}
 		wh.needPingWatcher = false
-		return wh.Heartbeat(websocket.PongMessage)
+		return wh.WritePingPong(websocket.PongMessage)
 	})
 	// PONG
 	wh.conn.SetPongHandler(func(message string) error {
 		defer func() {
-			err := wh.conn.SetReadDeadline(time.Now().Add(wh.ReadTimeout()))
+			err := wh.conn.SetReadDeadline(time.Now().Add(wh.ReadTimeout))
 			if err != nil {
 				log.Error("", err)
 			}
@@ -137,7 +115,7 @@ func (wh *WebSocket) HandleControlMessage() {
 	})
 
 	wh.conn.SetReadLimit(connection.ReadMaxBody)
-	err := wh.conn.SetReadDeadline(time.Now().Add(wh.ReadTimeout()))
+	err := wh.conn.SetReadDeadline(time.Now().Add(wh.ReadTimeout))
 	if err != nil {
 		log.Error("", err)
 	}
@@ -157,7 +135,7 @@ func (wh *WebSocket) sendClose(code int, text string) error {
 	if code != websocket.CloseNoStatusReceived {
 		message = websocket.FormatCloseMessage(code, text)
 	}
-	err := wh.conn.WriteControl(websocket.CloseMessage, message, time.Now().Add(wh.SendTimeout()))
+	err := wh.conn.WriteControl(websocket.CloseMessage, message, time.Now().Add(wh.SendTimeout))
 	if err != nil {
 		log.Errorf(err, "watcher[%s] catch an err, subject: %s, group: %s",
 			remoteAddr, wh.watcher.Subject(), wh.watcher.Group())
@@ -166,7 +144,7 @@ func (wh *WebSocket) sendClose(code int, text string) error {
 	return nil
 }
 
-// Pick will be called by publisher
+// Pick will be called by runner
 func (wh *WebSocket) Pick() interface{} {
 	select {
 	case <-wh.Ready():
@@ -196,85 +174,99 @@ func (wh *WebSocket) Pick() interface{} {
 func (wh *WebSocket) HandleEvent(o interface{}) {
 	defer wh.SetReady()
 
-	var (
-		message    []byte
-		remoteAddr = wh.conn.RemoteAddr().String()
-	)
-
+	var remoteAddr = wh.conn.RemoteAddr().String()
 	switch o := o.(type) {
 	case error:
 		log.Errorf(o, "watcher[%s] catch an err, subject: %s, group: %s",
 			remoteAddr, wh.watcher.Subject(), wh.watcher.Group())
-
-		message = util.StringToBytesWithNoCopy(fmt.Sprintf("watcher catch an err: %s", o.Error()))
+		_ = wh.write(util.StringToBytesWithNoCopy(fmt.Sprintf("watcher catch an err: %s", o.Error())))
 	case time.Time:
-		if exist, err := datasource.Instance().ExistServiceByID(wh.ctx, &pb.GetExistenceByIDRequest{
-			ServiceId: wh.watcher.Group(),
-		}); err != nil || !exist.Exist {
-			message = util.StringToBytesWithNoCopy("Service does not exit.")
-			break
-		}
-
-		if !wh.needPingWatcher {
-			return
-		}
-
-		if err := wh.Heartbeat(websocket.PingMessage); err != nil {
-			log.Errorf(err, "send 'Ping' message to watcher[%s] failed, subject: %s, group: %s",
-				remoteAddr, wh.watcher.Subject(), wh.watcher.Group())
-			return
-		}
-
-		log.Debugf("send 'Ping' message to watcher[%s], subject: %s, group: %s",
-			remoteAddr, wh.watcher.Subject(), wh.watcher.Group())
-		return
+		wh.Keepalive()
 	case *event.InstanceEvent:
-		resp := o.Response
-
-		providerFlag := fmt.Sprintf("%s/%s/%s", resp.Key.AppId, resp.Key.ServiceName, resp.Key.Version)
-		if resp.Action != string(pb.EVT_EXPIRE) {
-			providerFlag = fmt.Sprintf("%s/%s(%s)", resp.Instance.ServiceId, resp.Instance.InstanceId, providerFlag)
-		}
-		log.Infof("event[%s] is coming in, watcher[%s] watch %s, subject: %s, group: %s",
-			resp.Action, remoteAddr, providerFlag, wh.watcher.Subject(), wh.watcher.Group())
-
-		resp.Response = nil
-		data, err := json.Marshal(resp)
-		if err != nil {
-			log.Errorf(err, "watcher[%s] watch %s, subject: %s, group: %s",
-				remoteAddr, providerFlag, o, wh.watcher.Subject(), wh.watcher.Group())
-			message = util.StringToBytesWithNoCopy(fmt.Sprintf("marshal output file error, %s", err.Error()))
-			break
-		}
-		message = data
+		wh.WriteInstanceEvent(o)
 	default:
 		log.Errorf(nil, "watcher[%s] unknown input %v, subject: %s, group: %s",
 			remoteAddr, o, wh.watcher.Subject(), wh.watcher.Group())
-		return
-	}
-
-	select {
-	case <-wh.closed:
-		return
-	default:
-	}
-
-	err := wh.WriteMessage(message)
-	if evt, ok := o.(*event.InstanceEvent); ok {
-		metrics.ReportPublishCompleted(evt, err)
-	}
-	if err != nil {
-		log.Errorf(err, "watcher[%s] catch an err, subject: %s, group: %s",
-			remoteAddr, wh.watcher.Subject(), wh.watcher.Group())
 	}
 }
 
-func (wh *WebSocket) WriteMessage(message []byte) error {
-	err := wh.conn.SetWriteDeadline(time.Now().Add(wh.SendTimeout()))
+func (wh *WebSocket) Keepalive() {
+	if exist, err := datasource.Instance().ExistServiceByID(wh.ctx, &pb.GetExistenceByIDRequest{
+		ServiceId: wh.watcher.Group(),
+	}); err != nil || !exist.Exist {
+		_ = wh.write(util.StringToBytesWithNoCopy("Service does not exit."))
+		return
+	}
+
+	if !wh.needPingWatcher {
+		return
+	}
+
+	remoteAddr := wh.conn.RemoteAddr().String()
+	if err := wh.WritePingPong(websocket.PingMessage); err != nil {
+		log.Errorf(err, "send 'Ping' message to watcher[%s] failed, subject: %s, group: %s",
+			remoteAddr, wh.watcher.Subject(), wh.watcher.Group())
+		return
+	}
+
+	log.Debugf("send 'Ping' message to watcher[%s], subject: %s, group: %s",
+		remoteAddr, wh.watcher.Subject(), wh.watcher.Group())
+	return
+}
+
+func (wh *WebSocket) WritePingPong(messageType int) error {
+	err := wh.conn.WriteControl(messageType, []byte{}, time.Now().Add(wh.SendTimeout))
+	if err != nil {
+		messageTypeName := "Ping"
+		if messageType == websocket.PongMessage {
+			messageTypeName = "Pong"
+		}
+		log.Errorf(err, "fail to send '%s' to watcher[%s], subject: %s, group: %s",
+			messageTypeName, wh.conn.RemoteAddr(), wh.watcher.Subject(), wh.watcher.Group())
+		//wh.watcher.SetError(err)
+		return err
+	}
+	return nil
+}
+
+func (wh *WebSocket) WriteInstanceEvent(evt *event.InstanceEvent) {
+	resp := evt.Response
+	providerFlag := fmt.Sprintf("%s/%s/%s", resp.Key.AppId, resp.Key.ServiceName, resp.Key.Version)
+	if resp.Action != string(pb.EVT_EXPIRE) {
+		providerFlag = fmt.Sprintf("%s/%s(%s)", resp.Instance.ServiceId, resp.Instance.InstanceId, providerFlag)
+	}
+	remoteAddr := wh.conn.RemoteAddr().String()
+	log.Infof("event[%s] is coming in, watcher[%s] watch %s, subject: %s, group: %s",
+		resp.Action, remoteAddr, providerFlag, wh.watcher.Subject(), wh.watcher.Group())
+
+	resp.Response = nil
+	data, err := json.Marshal(resp)
+	if err != nil {
+		log.Errorf(err, "watcher[%s] watch %s, subject: %s, group: %s",
+			remoteAddr, providerFlag, evt, wh.watcher.Subject(), wh.watcher.Group())
+		data = util.StringToBytesWithNoCopy(fmt.Sprintf("marshal output file error, %s", err.Error()))
+	}
+	err = wh.write(data)
+	connection.ReportPublishCompleted(evt, err)
+}
+
+func (wh *WebSocket) write(message []byte) error {
+	select {
+	case <-wh.closed:
+		return nil
+	default:
+	}
+
+	err := wh.conn.SetWriteDeadline(time.Now().Add(wh.SendTimeout))
 	if err != nil {
 		return err
 	}
-	return wh.conn.WriteMessage(websocket.TextMessage, message)
+	err = wh.conn.WriteMessage(websocket.TextMessage, message)
+	if err != nil {
+		log.Errorf(err, "watcher[%s] catch an err, subject: %s, group: %s",
+			wh.conn.RemoteAddr().String(), wh.watcher.Subject(), wh.watcher.Group())
+	}
+	return err
 }
 
 func (wh *WebSocket) Ready() <-chan struct{} {
@@ -292,36 +284,9 @@ func (wh *WebSocket) Stop() {
 	close(wh.closed)
 }
 
-func ListAndWatch(ctx context.Context, serviceID string, f func() ([]*pb.WatchInstanceResponse, int64), conn *websocket.Conn) {
-	domainProject := util.ParseDomainProject(ctx)
-	domain := util.ParseDomain(ctx)
-	socket := New(ctx, conn, event.NewInstanceEventListWatcher(serviceID, domainProject, f))
-
-	metrics.ReportSubscriber(domain, Websocket, 1)
-	process(socket)
-	metrics.ReportSubscriber(domain, Websocket, -1)
-}
-
-func process(socket *WebSocket) {
-	if err := socket.Init(); err != nil {
-		return
-	}
-
-	socket.HandleControlMessage()
-
-	socket.Stop()
-}
-
-func SendEstablishError(conn *websocket.Conn, err error) {
-	remoteAddr := conn.RemoteAddr().String()
-	log.Errorf(err, "establish[%s] websocket watch failed.", remoteAddr)
-	if err := conn.WriteMessage(websocket.TextMessage, util.StringToBytesWithNoCopy(err.Error())); err != nil {
-		log.Errorf(err, "establish[%s] websocket watch failed: write message failed.", remoteAddr)
-	}
-}
-
-func New(ctx context.Context, conn *websocket.Conn, watcher *event.InstanceEventListWatcher) *WebSocket {
+func New(ctx context.Context, conn *websocket.Conn, watcher *event.InstanceSubscriber) *WebSocket {
 	return &WebSocket{
+		Options: ToOptions(),
 		ctx:     ctx,
 		conn:    conn,
 		watcher: watcher,
