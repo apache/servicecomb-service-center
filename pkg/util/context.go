@@ -20,6 +20,7 @@ package util
 import (
 	"context"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -28,6 +29,7 @@ const (
 	CtxProject       CtxKey = "project"
 	CtxTargetDomain  CtxKey = "target-domain"
 	CtxTargetProject CtxKey = "target-project"
+	SPLIT                   = "/"
 )
 
 type StringContext struct {
@@ -119,11 +121,11 @@ func SetRequestContext(r *http.Request, key CtxKey, val interface{}) *http.Reque
 }
 
 func ParseDomainProject(ctx context.Context) string {
-	return ParseDomain(ctx) + "/" + ParseProject(ctx)
+	return ParseDomain(ctx) + SPLIT + ParseProject(ctx)
 }
 
 func ParseTargetDomainProject(ctx context.Context) string {
-	return ParseTargetDomain(ctx) + "/" + ParseTargetProject(ctx)
+	return ParseTargetDomain(ctx) + SPLIT + ParseTargetProject(ctx)
 }
 
 func ParseDomain(ctx context.Context) string {
@@ -176,6 +178,14 @@ func SetTargetProject(ctx context.Context, project string) context.Context {
 
 func SetDomainProject(ctx context.Context, domain string, project string) context.Context {
 	return SetProject(SetDomain(ctx, domain), project)
+}
+
+func SetDomainProjectString(ctx context.Context, domainProject string) context.Context {
+	arr := strings.Split(domainProject, SPLIT)
+	if len(arr) != 2 {
+		return ctx
+	}
+	return SetProject(SetDomain(ctx, arr[0]), arr[1])
 }
 
 func SetTargetDomainProject(ctx context.Context, domain string, project string) context.Context {

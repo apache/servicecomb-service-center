@@ -20,6 +20,7 @@ package ws
 import (
 	"context"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	"time"
 
 	"github.com/apache/servicecomb-service-center/datasource"
@@ -146,6 +147,8 @@ func (wh *WebSocket) CheckHealth(ctx context.Context) error {
 	if !wh.needPing {
 		return nil
 	}
+
+	ctx = util.SetDomainProjectString(ctx, wh.DomainProject)
 
 	if exist, err := datasource.Instance().ExistServiceByID(ctx, &pb.GetExistenceByIDRequest{
 		ServiceId: wh.ConsumerID,
