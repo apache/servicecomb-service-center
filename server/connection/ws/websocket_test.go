@@ -16,12 +16,10 @@
  */
 package ws_test
 
-// initialize
 import (
 	_ "github.com/apache/servicecomb-service-center/test"
 
 	"context"
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -31,94 +29,136 @@ import (
 	wss "github.com/apache/servicecomb-service-center/server/connection/ws"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/event"
-	"github.com/go-chassis/cari/discovery"
 	"github.com/gorilla/websocket"
+	"github.com/stretchr/testify/assert"
 )
 
 var closeCh = make(chan struct{})
-
-type watcherConn struct {
-}
 
 func init() {
 	testing.Init()
 	core.Initialize()
 }
+
+type watcherConn struct {
+	ClientConn *websocket.Conn
+	ServerConn *websocket.Conn
+}
+
+func (h *watcherConn) Test() {
+	s := httptest.NewServer(h)
+	h.ClientConn, _, _ = websocket.DefaultDialer.Dial(
+		strings.Replace(s.URL, "http://", "ws://", 1), nil)
+}
+
 func (h *watcherConn) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var upgrader = websocket.Upgrader{}
-	conn, _ := upgrader.Upgrade(w, r, nil)
+	h.ServerConn, _ = upgrader.Upgrade(w, r, nil)
 	for {
-		conn.WriteControl(websocket.PingMessage, []byte{}, time.Now().Add(time.Second))
-		conn.WriteControl(websocket.PongMessage, []byte{}, time.Now().Add(time.Second))
-		_, _, err := conn.ReadMessage()
+		//h.ServerConn.WriteControl(websocket.PingMessage, []byte{}, time.Now().Add(time.Second))
+		//h.ServerConn.WriteControl(websocket.PongMessage, []byte{}, time.Now().Add(time.Second))
+		_, _, err := h.ServerConn.ReadMessage()
 		if err != nil {
 			return
 		}
 		<-closeCh
-		conn.WriteControl(websocket.CloseMessage, []byte{}, time.Now().Add(time.Second))
-		conn.Close()
+		h.ServerConn.WriteControl(websocket.CloseMessage, []byte{}, time.Now().Add(time.Second))
+		h.ServerConn.Close()
 		return
 	}
 }
 
-func TestDoWebSocketListAndWatch(t *testing.T) {
-	s := httptest.NewServer(&watcherConn{})
+func NewTest() *watcherConn {
+	ts := &watcherConn{}
+	ts.Test()
+	return ts
+}
 
-	conn, _, _ := websocket.DefaultDialer.Dial(
-		strings.Replace(s.URL, "http://", "ws://", 1), nil)
+func TestNewWebSocket(t *testing.T) {
+	mock := NewTest()
+	t.Run("should return not nil when new", func(t *testing.T) {
+		assert.NotNil(t, wss.NewWebSocket("", "", mock.ServerConn))
+	})
+}
 
-	wss.SendEstablishError(conn, errors.New("error"))
-
-	w := event.NewInstanceSubscriber("g", "s")
-
-	ws := wss.NewWebSocket("", "", conn)
-	err := ws.init()
-	if err != nil {
-		t.Fatalf("TestPublisher_Run")
+func TestWebSocket_NeedCheck(t *testing.T) {
+	mock := NewTest()
+	conn := mock.ServerConn
+	options := wss.ToOptions()
+	webSocket := &wss.WebSocket{
+		Options:       options,
+		DomainProject: "default",
+		ConsumerID:    "",
+		Conn:          conn,
 	}
 
+	t.Run("should not check when new", func(t *testing.T) {
+		webSocket.HealthInterval = time.Second
+		webSocket.Init()
+		assert.Nil(t, webSocket.NeedCheck())
+	})
+
+	t.Run("should check when check time up", func(t *testing.T) {
+		webSocket.HealthInterval = time.Microsecond
+		webSocket.Init()
+		<-time.After(time.Microsecond)
+		assert.NotNil(t, webSocket.NeedCheck())
+	})
+	t.Run("should not check when busy", func(t *testing.T) {
+		webSocket.HealthInterval = time.Microsecond
+		webSocket.Init()
+		<-time.After(time.Microsecond)
+		assert.NotNil(t, webSocket.NeedCheck())
+		assert.Nil(t, webSocket.NeedCheck())
+	})
+}
+
+func TestWebSocket_Idle(t *testing.T) {
+	mock := NewTest()
+	webSocket := wss.NewWebSocket("", "", mock.ServerConn)
+
+	t.Run("should idle when new", func(t *testing.T) {
+		select {
+		case <-webSocket.Idle():
+		default:
+			assert.Fail(t, "not idle")
+		}
+	})
+	t.Run("should idle when setIdle", func(t *testing.T) {
+		select {
+		case <-webSocket.Idle():
+			assert.Fail(t, "idle")
+		default:
+			webSocket.SetIdle()
+			select {
+			case <-webSocket.Idle():
+			default:
+				assert.Fail(t, "not idle")
+			}
+		}
+	})
+	t.Run("should idle when checkHealth", func(t *testing.T) {
+		_ = webSocket.CheckHealth(context.Background())
+		select {
+		case <-webSocket.Idle():
+		default:
+			assert.Fail(t, "not idle")
+		}
+	})
+}
+
+func TestWebSocket_CheckHealth(t *testing.T) {
+	mock := NewTest()
 	event.Center().Start()
 
-	go func() {
-		wss.Watch(context.Background(), "", conn)
-
-		w2 := event.NewInstanceSubscriber("g", "s")
-		ws2 := wss.NewWebSocket("", "", conn)
-		err := ws2.init()
-		if err != nil {
-			t.Fatalf("TestPublisher_Run")
-		}
-	}()
-
-	go ws.RegisterMessageHandler()
-
-	w.OnMessage(nil)
-	w.OnMessage(&event.InstanceEvent{})
-
-	event.Center().Fire(event.NewInstanceEvent("g", "s", 1, &discovery.WatchInstanceResponse{
-		Response: discovery.CreateResponse(discovery.ResponseSuccess, "ok"),
-		Action:   string(discovery.EVT_CREATE),
-		Key:      &discovery.MicroServiceKey{},
-		Instance: &discovery.MicroServiceInstance{},
-	}))
-
-	<-time.After(time.Second)
-
-	ws.CheckHealth(nil)
-
-	ws.WritePingPong(websocket.PingMessage)
-	ws.WritePingPong(websocket.PongMessage)
-
-	ws.CheckHealth(time.Now())
-
-	closeCh <- struct{}{}
-
-	<-time.After(time.Second)
-
-	ws.WritePingPong(websocket.PingMessage)
-	ws.WritePingPong(websocket.PongMessage)
-
-	w.OnMessage(nil)
-
-	wss.HealthChecker().Stop()
+	t.Run("should do nothing when recv PING", func(t *testing.T) {
+		ws := wss.NewWebSocket("", "", mock.ServerConn)
+		mock.ClientConn.WriteControl(websocket.PingMessage, []byte{}, time.Now().Add(time.Second))
+		<-time.After(time.Second)
+		assert.Nil(t, ws.CheckHealth(context.Background()))
+	})
+	t.Run("should return err when consumer not exist", func(t *testing.T) {
+		ws := wss.NewWebSocket("", "", mock.ServerConn)
+		assert.Equal(t, "Service does not exist.", ws.CheckHealth(context.Background()).Error())
+	})
 }

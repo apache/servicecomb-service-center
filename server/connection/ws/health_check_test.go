@@ -15,24 +15,27 @@
  * limitations under the License.
  */
 
-package ws
+package ws_test
 
 import (
-	"time"
-
-	"github.com/apache/servicecomb-service-center/server/connection"
+	"github.com/apache/servicecomb-service-center/server/connection/ws"
+	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
-type Options struct {
-	ReadTimeout    time.Duration
-	SendTimeout    time.Duration
-	HealthInterval time.Duration
+func TestNewHealthCheck(t *testing.T) {
+	t.Run("should not return nil when new", func(t *testing.T) {
+		assert.NotNil(t, ws.NewHealthCheck())
+	})
 }
 
-func ToOptions() Options {
-	return Options{
-		ReadTimeout:    connection.ReadTimeout,
-		SendTimeout:    connection.SendTimeout,
-		HealthInterval: connection.HeartbeatInterval,
-	}
+func TestHealthCheck_Run(t *testing.T) {
+	mock := NewTest()
+
+	t.Run("should return 1 when accept one ws", func(t *testing.T) {
+		check := ws.NewHealthCheck()
+		webSocket := ws.NewWebSocket("", "", mock.ServerConn)
+		assert.Equal(t, 1, check.Accept(webSocket))
+		assert.Equal(t, 0, check.Remove(webSocket))
+	})
 }

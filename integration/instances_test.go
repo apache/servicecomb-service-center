@@ -601,18 +601,6 @@ var _ = Describe("MicroService Api Test", func() {
 
 				Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
 			})
-			It("Call the listwatcher API ", func() {
-				//This api gives 400 bad request for the integration test
-				// as integration test is not able to make ws connection
-				url := strings.Replace(INSTANCELISTWATCHER, ":serviceId", serviceId, 1)
-				req, _ := http.NewRequest(GET, SCURL+url, nil)
-				req.Header.Set("X-Domain-Name", "default")
-				resp, err := scclient.Do(req)
-				Expect(err).To(BeNil())
-				defer resp.Body.Close()
-
-				Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
-			})
 		})
 	})
 

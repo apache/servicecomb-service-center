@@ -15,24 +15,33 @@
  * limitations under the License.
  */
 
-package ws
+package ws_test
 
 import (
-	"time"
+	"context"
+	"errors"
+	"testing"
 
-	"github.com/apache/servicecomb-service-center/server/connection"
+	wss "github.com/apache/servicecomb-service-center/server/connection/ws"
+	"github.com/stretchr/testify/assert"
 )
 
-type Options struct {
-	ReadTimeout    time.Duration
-	SendTimeout    time.Duration
-	HealthInterval time.Duration
+func TestSendEstablishError(t *testing.T) {
+	mock := NewTest()
+	t.Run("should read the err when call", func(t *testing.T) {
+		wss.SendEstablishError(mock.ServerConn, errors.New("error"))
+		_, message, err := mock.ClientConn.ReadMessage()
+		assert.Nil(t, err)
+		assert.Equal(t, "error", string(message))
+	})
 }
 
-func ToOptions() Options {
-	return Options{
-		ReadTimeout:    connection.ReadTimeout,
-		SendTimeout:    connection.SendTimeout,
-		HealthInterval: connection.HeartbeatInterval,
-	}
+func TestWatch(t *testing.T) {
+	t.Run("should return when ctx cancelled", func(t *testing.T) {
+		mock := NewTest()
+		mock.ServerConn.Close()
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+		wss.Watch(ctx, "", mock.ServerConn)
+	})
 }
