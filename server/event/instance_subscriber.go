@@ -23,25 +23,12 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
-	simple "github.com/apache/servicecomb-service-center/pkg/time"
 	"time"
 )
 
-const (
-	AddJobTimeout  = 1 * time.Second
-	EventQueueSize = 5000
-)
+const AddJobTimeout = 1 * time.Second
 
-var INSTANCE = event.RegisterType("INSTANCE", EventQueueSize)
-
-// 状态变化推送
-type InstanceEvent struct {
-	event.Event
-	Revision int64
-	Response *pb.WatchInstanceResponse
-}
-
-type InstanceEventListWatcher struct {
+type InstanceSubscriber struct {
 	event.Subscriber
 	Job          chan *InstanceEvent
 	ListRevision int64
@@ -49,7 +36,7 @@ type InstanceEventListWatcher struct {
 	listCh       chan struct{}
 }
 
-func (w *InstanceEventListWatcher) SetError(err error) {
+func (w *InstanceSubscriber) SetError(err error) {
 	w.Subscriber.SetError(err)
 	// 触发清理job
 	e := w.Bus().Fire(event.NewUnhealthyEvent(w))
@@ -58,7 +45,7 @@ func (w *InstanceEventListWatcher) SetError(err error) {
 	}
 }
 
-func (w *InstanceEventListWatcher) OnAccept() {
+func (w *InstanceSubscriber) OnAccept() {
 	if w.Err() != nil {
 		return
 	}
@@ -66,7 +53,7 @@ func (w *InstanceEventListWatcher) OnAccept() {
 	gopool.Go(w.listAndPublishJobs)
 }
 
-func (w *InstanceEventListWatcher) listAndPublishJobs(_ context.Context) {
+func (w *InstanceSubscriber) listAndPublishJobs(_ context.Context) {
 	defer close(w.listCh)
 	if w.ListFunc == nil {
 		return
@@ -79,7 +66,7 @@ func (w *InstanceEventListWatcher) listAndPublishJobs(_ context.Context) {
 }
 
 //被通知
-func (w *InstanceEventListWatcher) OnMessage(job event.Event) {
+func (w *InstanceSubscriber) OnMessage(job event.Event) {
 	if w.Err() != nil {
 		return
 	}
@@ -111,7 +98,7 @@ func (w *InstanceEventListWatcher) OnMessage(job event.Event) {
 	w.sendMessage(wJob)
 }
 
-func (w *InstanceEventListWatcher) sendMessage(job *InstanceEvent) {
+func (w *InstanceSubscriber) sendMessage(job *InstanceEvent) {
 	defer log.Recover()
 	select {
 	case w.Job <- job:
@@ -128,33 +115,17 @@ func (w *InstanceEventListWatcher) sendMessage(job *InstanceEvent) {
 	}
 }
 
-func (w *InstanceEventListWatcher) Timeout() time.Duration {
+func (w *InstanceSubscriber) Timeout() time.Duration {
 	return AddJobTimeout
 }
 
-func (w *InstanceEventListWatcher) Close() {
+func (w *InstanceSubscriber) Close() {
 	close(w.Job)
 }
 
-func NewInstanceEvent(serviceID, domainProject string, rev int64, response *pb.WatchInstanceResponse) *InstanceEvent {
-	return &InstanceEvent{
-		Event:    event.NewEvent(INSTANCE, domainProject, serviceID),
-		Revision: rev,
-		Response: response,
-	}
-}
-
-func NewInstanceEventWithTime(serviceID, domainProject string, rev int64, createAt simple.Time, response *pb.WatchInstanceResponse) *InstanceEvent {
-	return &InstanceEvent{
-		Event:    event.NewEventWithTime(INSTANCE, domainProject, serviceID, createAt),
-		Revision: rev,
-		Response: response,
-	}
-}
-
-func NewInstanceEventListWatcher(serviceID, domainProject string,
-	listFunc func() (results []*pb.WatchInstanceResponse, rev int64)) *InstanceEventListWatcher {
-	watcher := &InstanceEventListWatcher{
+func NewInstanceSubscriber(serviceID, domainProject string,
+	listFunc func() (results []*pb.WatchInstanceResponse, rev int64)) *InstanceSubscriber {
+	watcher := &InstanceSubscriber{
 		Subscriber: event.NewSubscriber(INSTANCE, domainProject, serviceID),
 		Job:        make(chan *InstanceEvent, INSTANCE.QueueSize()),
 		ListFunc:   listFunc,

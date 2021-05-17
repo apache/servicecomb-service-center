@@ -31,7 +31,7 @@ import (
 
 const GRPC = "gRPC"
 
-func Handle(watcher *event.InstanceEventListWatcher, stream proto.ServiceInstanceCtrl_WatchServer) (err error) {
+func Handle(watcher *event.InstanceSubscriber, stream proto.ServiceInstanceCtrl_WatchServer) (err error) {
 	timer := time.NewTimer(connection.HeartbeatInterval)
 	defer timer.Stop()
 	for {
@@ -70,7 +70,7 @@ func Handle(watcher *event.InstanceEventListWatcher, stream proto.ServiceInstanc
 func ListAndWatch(ctx context.Context, serviceID string, f func() ([]*pb.WatchInstanceResponse, int64), stream proto.ServiceInstanceCtrl_WatchServer) (err error) {
 	domainProject := util.ParseDomainProject(ctx)
 	domain := util.ParseDomain(ctx)
-	watcher := event.NewInstanceEventListWatcher(serviceID, domainProject, f)
+	watcher := event.NewInstanceSubscriber(serviceID, domainProject, f)
 	err = event.Center().AddSubscriber(watcher)
 	if err != nil {
 		return
