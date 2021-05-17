@@ -41,13 +41,13 @@ type WebSocket struct {
 	idleCh   chan struct{}
 }
 
-func (wh *WebSocket) init() {
+func (wh *WebSocket) Init() {
 	wh.RemoteAddr = wh.Conn.RemoteAddr().String()
-	wh.ticker = time.NewTicker(connection.HeartbeatInterval)
+	wh.ticker = time.NewTicker(wh.HealthInterval)
 	wh.needPing = true
 	wh.idleCh = make(chan struct{}, 1)
 
-	wh.RegisterMessageHandler()
+	wh.registerMessageHandler()
 
 	wh.SetIdle()
 
@@ -55,7 +55,7 @@ func (wh *WebSocket) init() {
 		wh.RemoteAddr, wh.ConsumerID)
 }
 
-func (wh *WebSocket) RegisterMessageHandler() {
+func (wh *WebSocket) registerMessageHandler() {
 	remoteAddr := wh.RemoteAddr
 	// PING
 	wh.Conn.SetPingHandler(func(message string) error {
@@ -141,12 +141,12 @@ func (wh *WebSocket) NeedCheck() interface{} {
 func (wh *WebSocket) CheckHealth(ctx context.Context) error {
 	defer wh.SetIdle()
 
-	if !serviceUtil.ServiceExist(ctx, wh.DomainProject, wh.ConsumerID) {
-		return fmt.Errorf("Service does not exit.")
-	}
-
 	if !wh.needPing {
 		return nil
+	}
+
+	if !serviceUtil.ServiceExist(ctx, wh.DomainProject, wh.ConsumerID) {
+		return fmt.Errorf("Service does not exist.")
 	}
 
 	remoteAddr := wh.Conn.RemoteAddr().String()
@@ -207,6 +207,6 @@ func NewWebSocket(domainProject, serviceID string, conn *websocket.Conn) *WebSoc
 		ConsumerID:    serviceID,
 		Conn:          conn,
 	}
-	ws.init()
+	ws.Init()
 	return ws
 }

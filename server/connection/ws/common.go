@@ -42,22 +42,20 @@ func Watch(ctx context.Context, serviceID string, conn *websocket.Conn) {
 		return
 	}
 
-	gopool.New(ctx).
-		Do(func(ctx context.Context) {
-			connection.ReportSubscriber(domain, Websocket, 1)
-			if err := ws.ReadMessage(); err != nil {
-				log.Error(fmt.Sprintf("[%s] handle service[%s] control message failed", conn.RemoteAddr(), serviceID), err)
-				subscriber.SetError(err)
-			}
-			connection.ReportSubscriber(domain, Websocket, -1)
-		}).
-		Do(func(ctx context.Context) {
-			if err := NewBroker(ws, subscriber).Listen(ctx); err != nil {
-				log.Error(fmt.Sprintf("[%s] listen service[%s] failed", conn.RemoteAddr(), serviceID), err)
-			}
-		}).
-		Done() // wait all
-	return
+	connection.ReportSubscriber(domain, Websocket, 1)
+	defer connection.ReportSubscriber(domain, Websocket, -1)
+
+	pool := gopool.New(ctx).Do(func(ctx context.Context) {
+		if err := NewBroker(ws, subscriber).Listen(ctx); err != nil {
+			log.Error(fmt.Sprintf("[%s] listen service[%s] failed", conn.RemoteAddr(), serviceID), err)
+		}
+	})
+	defer pool.Done()
+
+	if err := ws.ReadMessage(); err != nil {
+		log.Error(fmt.Sprintf("[%s] handle service[%s] control message failed", conn.RemoteAddr(), serviceID), err)
+		subscriber.SetError(err)
+	}
 }
 
 func SendEstablishError(conn *websocket.Conn, err error) {

@@ -46,13 +46,6 @@ func TestInstanceService_WebSocketWatch(t *testing.T) {
 	instanceResource.WebSocketWatch(context.Background(), &pb.WatchInstanceRequest{}, nil)
 }
 
-func TestInstanceService_WebSocketListAndWatch(t *testing.T) {
-	defer func() {
-		recover()
-	}()
-	instanceResource.WebSocketListAndWatch(context.Background(), &pb.WatchInstanceRequest{}, nil)
-}
-
 var _ = Describe("'Instance' service", func() {
 	Describe("execute 'watch' operartion", func() {
 		var (

@@ -15,24 +15,28 @@
  * limitations under the License.
  */
 
-package ws
+package ws_test
 
 import (
-	"time"
-
-	"github.com/apache/servicecomb-service-center/server/connection"
+	"context"
+	"github.com/apache/servicecomb-service-center/server/connection/ws"
+	"github.com/apache/servicecomb-service-center/server/event"
+	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
-type Options struct {
-	ReadTimeout    time.Duration
-	SendTimeout    time.Duration
-	HealthInterval time.Duration
+func TestNewBroker(t *testing.T) {
+	t.Run("should not return nil when new broker", func(t *testing.T) {
+		assert.NotNil(t, ws.NewBroker(nil, nil))
+
+	})
 }
 
-func ToOptions() Options {
-	return Options{
-		ReadTimeout:    connection.ReadTimeout,
-		SendTimeout:    connection.SendTimeout,
-		HealthInterval: connection.HeartbeatInterval,
-	}
+func TestBroker_Listen(t *testing.T) {
+	t.Run("should return err when listen context cancelled", func(t *testing.T) {
+		broker := ws.NewBroker(nil, event.NewInstanceSubscriber("", ""))
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+		assert.Equal(t, context.Canceled, broker.Listen(ctx))
+	})
 }

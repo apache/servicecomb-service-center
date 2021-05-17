@@ -76,13 +76,15 @@ func (wh *HealthCheck) check(ws *WebSocket) {
 	})
 }
 
-func (wh *HealthCheck) Accept(ws *WebSocket) {
+func (wh *HealthCheck) Accept(ws *WebSocket) int {
 	wh.lock.Lock()
 	wh.wss = append(wh.wss, ws)
+	n := len(wh.wss)
 	wh.lock.Unlock()
+	return n
 }
 
-func (wh *HealthCheck) Remove(ws *WebSocket) {
+func (wh *HealthCheck) Remove(ws *WebSocket) int {
 	wh.lock.Lock()
 	for i, t := range wh.wss {
 		if t == ws {
@@ -90,7 +92,9 @@ func (wh *HealthCheck) Remove(ws *WebSocket) {
 			break
 		}
 	}
+	n := len(wh.wss)
 	wh.lock.Unlock()
+	return n
 }
 
 func NewHealthCheck() *HealthCheck {
