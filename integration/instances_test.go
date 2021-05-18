@@ -18,11 +18,13 @@ package integrationtest_test
 
 import (
 	"encoding/json"
-	"github.com/apache/servicecomb-service-center/pkg/log"
+	"fmt"
+	"github.com/go-chassis/cari/discovery"
 	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"strings"
+	"sync"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -699,107 +701,116 @@ func BenchmarkRegisterMicroServiceInstance(b *testing.B) {
 
 func TestInstanceWatch(t *testing.T) {
 	scclient = insecurityConnection
-	// service
-	serviceName := "testInstance" + strconv.Itoa(rand.Int())
-	servicemap := map[string]interface{}{
-		"serviceName": serviceName,
-		"appId":       "testApp",
-		"version":     "1.0",
-	}
-	bodyParams := map[string]interface{}{
-		"service": servicemap,
-	}
-	body, _ := json.Marshal(bodyParams)
-	bodyBuf := bytes.NewReader(body)
-	req, _ := http.NewRequest(POST, SCURL+REGISTERMICROSERVICE, bodyBuf)
-	req.Header.Set("X-Domain-Name", "default")
-	resp, err := scclient.Do(req)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	respbody, _ := ioutil.ReadAll(resp.Body)
-	serviceId := gojson.Json(string(respbody)).Get("serviceId").Tostring()
-	resp.Body.Close()
+	var serviceId, instanceId string
 
-	// instance
-	healthcheck := map[string]interface{}{
-		"mode":     "push",
-		"interval": 10,
-		"times":    2,
-	}
-	instance := map[string]interface{}{
-		"hostName":    "cse",
-		"healthCheck": healthcheck,
-	}
-	bodyParams = map[string]interface{}{
-		"instance": instance,
-	}
-	body, _ = json.Marshal(bodyParams)
-	bodyBuf = bytes.NewReader(body)
-	req, _ = http.NewRequest(POST, SCURL+strings.Replace(REGISTERINSTANCE, ":serviceId", serviceId, 1), bodyBuf)
-	req.Header.Set("X-Domain-Name", "default")
-	resp, err = scclient.Do(req)
-	assert.NoError(t, err)
-	respbody, _ = ioutil.ReadAll(resp.Body)
-	instanceId := gojson.Json(string(respbody)).Get("instanceId").Tostring()
-	resp.Body.Close()
+	t.Run("prepare data", func(t *testing.T) {
+		// service
+		serviceName := "testInstance" + strconv.Itoa(rand.Int())
+		servicemap := map[string]interface{}{
+			"serviceName": serviceName,
+			"appId":       "testApp",
+			"version":     "1.0",
+		}
+		bodyParams := map[string]interface{}{
+			"service": servicemap,
+		}
+		body, _ := json.Marshal(bodyParams)
+		bodyBuf := bytes.NewReader(body)
+		req, _ := http.NewRequest(POST, SCURL+REGISTERMICROSERVICE, bodyBuf)
+		req.Header.Set("X-Domain-Name", "default")
+		resp, err := scclient.Do(req)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		respbody, _ := ioutil.ReadAll(resp.Body)
+		serviceId = gojson.Json(string(respbody)).Get("serviceId").Tostring()
+		resp.Body.Close()
 
-	t.Run("test 10K connection", func(t *testing.T) {
-		req, _ := http.NewRequest(GET, SCURL+FINDINSTANCE+"?appId=testApp&serviceName="+serviceName+"&version=1.0", nil)
+		// instance
+		healthcheck := map[string]interface{}{
+			"mode":     "push",
+			"interval": 30000,
+			"times":    20000,
+		}
+		instance := map[string]interface{}{
+			"hostName":    "cse",
+			"healthCheck": healthcheck,
+		}
+		bodyParams = map[string]interface{}{
+			"instance": instance,
+		}
+		body, _ = json.Marshal(bodyParams)
+		bodyBuf = bytes.NewReader(body)
+		req, _ = http.NewRequest(POST, SCURL+strings.Replace(REGISTERINSTANCE, ":serviceId", serviceId, 1), bodyBuf)
+		req.Header.Set("X-Domain-Name", "default")
+		resp, err = scclient.Do(req)
+		assert.NoError(t, err)
+		respbody, _ = ioutil.ReadAll(resp.Body)
+		instanceId = gojson.Json(string(respbody)).Get("instanceId").Tostring()
+		resp.Body.Close()
+
+		req, _ = http.NewRequest(GET, SCURL+FINDINSTANCE+"?appId=testApp&serviceName="+serviceName+"&version=1.0", nil)
 		req.Header.Set("X-Domain-Name", "default")
 		req.Header.Set("X-ConsumerId", serviceId)
-		resp, err := scclient.Do(req)
+		resp, err = scclient.Do(req)
 		assert.NoError(t, err)
 		resp.Body.Close()
 
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
-
-		url := strings.ReplaceAll(strings.ReplaceAll(SCURL, "http://", "ws://")+INSTANCEWATCHER, ":serviceId", serviceId)
-		const N = 100
-		ch := make(chan time.Time, N)
-		for i := 0; i < N; i++ {
-			go watch(t, url, ch)
-		}
-		for {
-			<-time.After(5 * time.Second)
-
-			propertiesInstance := map[string]interface{}{
-				"_TAGS": strconv.Itoa(rand.Int()),
-			}
-			bodyParams = map[string]interface{}{
-				"properties": propertiesInstance,
-			}
-			url := strings.Replace(UPDATEINSTANCEMETADATA, ":serviceId", serviceId, 1)
-			url = strings.Replace(url, ":instanceId", instanceId, 1)
-			body, _ = json.Marshal(bodyParams)
-			bodyBuf = bytes.NewReader(body)
-			req, _ = http.NewRequest(UPDATE, SCURL+url, bodyBuf)
-			req.Header.Set("X-Domain-Name", "default")
-			resp, err = scclient.Do(req)
-			assert.NoError(t, err)
-			resp.Body.Close()
-			if resp.StatusCode != http.StatusOK {
-				return
-			}
-			now := time.Now()
-			for i := 0; i < N; i++ {
-				ch <- now
-			}
-		}
 	})
-}
 
-func watch(t *testing.T, url string, ch chan time.Time) {
-	conn, _, err := websocket.DefaultDialer.Dial(url, nil)
-	assert.NoError(t, err)
-	for {
-		_ = conn.SetReadDeadline(time.Now().Add(30 * time.Second))
-		_, data, err := conn.ReadMessage()
-		if err == nil {
-			assert.NotEmpty(t, data)
-			begin := <-ch
-			log.Infof("%v", time.Now().Sub(begin))
-		} else {
-			return
-		}
-	}
+	t.Run("test 10K connection", func(t *testing.T) {
+
+		const N, E = 2500, 2500
+		var okWg sync.WaitGroup
+		okWg.Add(N)
+
+		t.Run("new 10K connection", func(t *testing.T) {
+			url := strings.ReplaceAll(strings.ReplaceAll(SCURL, "http://", "ws://")+INSTANCEWATCHER, ":serviceId", serviceId)
+			for i := 0; i < N; i++ {
+				go func() {
+					conn, _, err := websocket.DefaultDialer.Dial(url, nil)
+					assert.NoError(t, err)
+					for {
+						_ = conn.SetReadDeadline(time.Now().Add(30 * time.Second))
+						_, data, err := conn.ReadMessage()
+						if err != nil {
+							okWg.Done()
+							return
+						}
+
+						var response discovery.WatchInstanceResponse
+						_ = json.Unmarshal(data, &response)
+						instance := response.Instance
+						timestamp, _ := strconv.ParseInt(instance.ModTimestamp, 10, 64)
+						sub := time.Now().Sub(time.Unix(timestamp, 0))
+						fmt.Println(instance.Properties["tag"], sub)
+					}
+				}()
+			}
+			<-time.After(10 * time.Second)
+		})
+
+		t.Run("fire 10K event", func(t *testing.T) {
+			for i := 0; i < E; i++ {
+				propertiesInstance := map[string]interface{}{
+					"tag": strconv.Itoa(i),
+				}
+				bodyParams := map[string]interface{}{
+					"properties": propertiesInstance,
+				}
+				url := strings.Replace(UPDATEINSTANCEMETADATA, ":serviceId", serviceId, 1)
+				url = strings.Replace(url, ":instanceId", instanceId, 1)
+				body, _ := json.Marshal(bodyParams)
+				bodyBuf := bytes.NewReader(body)
+				req, _ := http.NewRequest(UPDATE, SCURL+url, bodyBuf)
+				req.Header.Set("X-Domain-Name", "default")
+				resp, _ := scclient.Do(req)
+				resp.Body.Close()
+			}
+		})
+
+		t.Run("wait", func(t *testing.T) {
+			okWg.Wait()
+		})
+	})
 }
