@@ -13,49 +13,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package notify
+package event
 
 import (
-	"strconv"
+	"github.com/apache/servicecomb-service-center/pkg/event"
 )
 
-type Type int
+var busService *event.BusService
 
-func (nt Type) String() string {
-	if nt.IsValid() {
-		return typeNames[nt]
-	}
-	return "Type" + strconv.Itoa(int(nt))
+func init() {
+	busService = event.NewBusService()
 }
 
-func (nt Type) QueueSize() (s int) {
-	if nt.IsValid() {
-		s = typeQueues[nt]
-	}
-	if s <= 0 {
-		s = DefaultQueueSize
-	}
-	return
-}
-
-func (nt Type) IsValid() bool {
-	return nt >= 0 && int(nt) < len(typeQueues)
-}
-
-var typeNames []string
-
-var typeQueues []int
-
-func Types() (ts []Type) {
-	for i := range typeNames {
-		ts = append(ts, Type(i))
-	}
-	return
-}
-
-func RegisterType(name string, size int) Type {
-	l := len(typeNames)
-	typeNames = append(typeNames, name)
-	typeQueues = append(typeQueues, size)
-	return Type(l)
+// Center handle diff types of events
+// event type can be 'ALARM'(biz alarms), 'RESOURCE'(resource changes, like INSTANCE) or
+// inner type 'NOTIFY'(subscriber health check)
+func Center() *event.BusService {
+	return busService
 }

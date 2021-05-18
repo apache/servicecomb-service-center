@@ -33,8 +33,8 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/event"
 	"github.com/apache/servicecomb-service-center/server/metrics"
-	"github.com/apache/servicecomb-service-center/server/notify"
 	"github.com/apache/servicecomb-service-center/server/syncernotify"
 )
 
@@ -104,7 +104,7 @@ func (h *InstanceEventHandler) OnEvent(evt sd.KvEvent) {
 		NotifySyncerInstanceEvent(evt, domainProject, ms)
 	}
 
-	if notify.Center().Closed() {
+	if event.Center().Closed() {
 		log.Warn(fmt.Sprintf("caught [%s] instance[%s/%s] event, endpoints %v, but notify service is closed",
 			action, providerID, providerInstanceID, instance.Endpoints))
 		return
@@ -147,8 +147,8 @@ func PublishInstanceEvent(evt sd.KvEvent, domainProject string, serviceKey *pb.M
 	}
 	for _, consumerID := range subscribers {
 		// TODO add超时怎么处理？
-		evt := notify.NewInstanceEventWithTime(consumerID, domainProject, evt.Revision, evt.CreateAt, response)
-		err := notify.Center().Publish(evt)
+		evt := event.NewInstanceEventWithTime(consumerID, domainProject, evt.Revision, evt.CreateAt, response)
+		err := event.Center().Fire(evt)
 		if err != nil {
 			log.Errorf(err, "publish event[%v] into channel failed", evt)
 		}

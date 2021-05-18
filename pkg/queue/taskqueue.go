@@ -30,7 +30,7 @@ type Worker interface {
 }
 
 type Task struct {
-	Object interface{}
+	Payload interface{}
 	// Async can let workers handle this task concurrently, but
 	// it will make this task unordered
 	Async bool
@@ -62,13 +62,13 @@ func (q *TaskQueue) Do(ctx context.Context, task Task) {
 	if task.Async {
 		for _, w := range q.Workers {
 			q.goroutine.Do(func(ctx context.Context) {
-				q.dispatch(ctx, w, task.Object)
+				q.dispatch(ctx, w, task.Payload)
 			})
 		}
 		return
 	}
 	for _, w := range q.Workers {
-		q.dispatch(ctx, w, task.Object)
+		q.dispatch(ctx, w, task.Payload)
 	}
 }
 

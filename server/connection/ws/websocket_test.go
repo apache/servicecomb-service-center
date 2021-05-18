@@ -18,21 +18,19 @@ package ws_test
 
 // initialize
 import (
-	"context"
-	"errors"
-
 	_ "github.com/apache/servicecomb-service-center/test"
 
-	wss "github.com/apache/servicecomb-service-center/server/connection/ws"
-	"github.com/apache/servicecomb-service-center/server/core"
-
+	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
 
-	. "github.com/apache/servicecomb-service-center/server/notify"
+	wss "github.com/apache/servicecomb-service-center/server/connection/ws"
+	"github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/event"
 	"github.com/go-chassis/cari/discovery"
 	"github.com/gorilla/websocket"
 )
@@ -71,7 +69,7 @@ func TestDoWebSocketListAndWatch(t *testing.T) {
 
 	wss.SendEstablishError(conn, errors.New("error"))
 
-	w := NewInstanceEventListWatcher("g", "s", func() (results []*discovery.WatchInstanceResponse, rev int64) {
+	w := event.NewInstanceEventListWatcher("g", "s", func() (results []*discovery.WatchInstanceResponse, rev int64) {
 		results = append(results, &discovery.WatchInstanceResponse{
 			Response: discovery.CreateResponse(discovery.ResponseSuccess, "ok"),
 			Action:   string(discovery.EVT_CREATE),
@@ -87,12 +85,12 @@ func TestDoWebSocketListAndWatch(t *testing.T) {
 		t.Fatalf("TestPublisher_Run")
 	}
 
-	Center().Start()
+	event.Center().Start()
 
 	go func() {
 		wss.ListAndWatch(context.Background(), "", nil, conn)
 
-		w2 := NewInstanceEventListWatcher("g", "s", func() (results []*discovery.WatchInstanceResponse, rev int64) {
+		w2 := event.NewInstanceEventListWatcher("g", "s", func() (results []*discovery.WatchInstanceResponse, rev int64) {
 			return
 		})
 		ws2 := wss.New(context.Background(), conn, w2)
@@ -105,9 +103,9 @@ func TestDoWebSocketListAndWatch(t *testing.T) {
 	go ws.HandleControlMessage()
 
 	w.OnMessage(nil)
-	w.OnMessage(&InstanceEvent{})
+	w.OnMessage(&event.InstanceEvent{})
 
-	Center().Publish(NewInstanceEvent("g", "s", 1, &discovery.WatchInstanceResponse{
+	event.Center().Fire(event.NewInstanceEvent("g", "s", 1, &discovery.WatchInstanceResponse{
 		Response: discovery.CreateResponse(discovery.ResponseSuccess, "ok"),
 		Action:   string(discovery.EVT_CREATE),
 		Key:      &discovery.MicroServiceKey{},

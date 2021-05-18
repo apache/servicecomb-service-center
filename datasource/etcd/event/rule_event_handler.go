@@ -32,7 +32,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/task"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/notify"
+	"github.com/apache/servicecomb-service-center/server/event"
 )
 
 type RulesChangedTask struct {
@@ -100,7 +100,7 @@ func (h *RuleEventHandler) OnEvent(evt sd.KvEvent) {
 	}
 
 	providerID, ruleID, domainProject := path.GetInfoFromRuleKV(evt.KV.Key)
-	if notify.Center().Closed() {
+	if event.Center().Closed() {
 		log.Warnf("caught [%s] service rule[%s/%s] event, but notify service is closed",
 			action, providerID, ruleID)
 		return

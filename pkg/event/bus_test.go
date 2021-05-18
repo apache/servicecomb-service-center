@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package notify
+package event
 
 import (
 	"testing"
@@ -37,7 +37,7 @@ func TestProcessor_Do(t *testing.T) {
 		job: make(chan Event, 1)}
 	mock2 := &mockSubscriberChan{Subscriber: NewSubscriber(INSTANCE, "s1", "g2"),
 		job: make(chan Event, 1)}
-	p := NewProcessor("p1", 0)
+	p := NewBus("p1", 0)
 	if p.Name() != "p1" {
 		t.Fatalf("TestProcessor_Do")
 	}
@@ -45,12 +45,12 @@ func TestProcessor_Do(t *testing.T) {
 		t.Fatalf("TestProcessor_Do")
 	}
 	p.AddSubscriber(mock1)
-	if p.Subjects(mock1.Subject()).Groups(mock1.Group()).Subscribers(mock1.ID()) != mock1 {
+	if p.Subjects(mock1.Subject()).Groups(mock1.Group()).Member(mock1.ID()) != mock1 {
 		t.Fatalf("TestProcessor_Do")
 	}
-	p.Remove(NewSubscriber(INSTANCE, "s2", "g1"))
-	p.Remove(NewSubscriber(INSTANCE, "s1", "g2"))
-	p.Remove(mock1)
+	p.RemoveSubscriber(NewSubscriber(INSTANCE, "s2", "g1"))
+	p.RemoveSubscriber(NewSubscriber(INSTANCE, "s1", "g2"))
+	p.RemoveSubscriber(mock1)
 	if p.Subjects(mock1.Subject()) != nil {
 		t.Fatalf("TestProcessor_Do")
 	}

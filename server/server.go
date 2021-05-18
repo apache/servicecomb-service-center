@@ -19,23 +19,23 @@ package server
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/server/event"
 	"net"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/apache/servicecomb-service-center/datasource"
+	nf "github.com/apache/servicecomb-service-center/pkg/event"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/metrics"
-	nf "github.com/apache/servicecomb-service-center/pkg/notify"
 	"github.com/apache/servicecomb-service-center/pkg/plugin"
 	"github.com/apache/servicecomb-service-center/pkg/signal"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/command"
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/notify"
 	"github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf"
 	"github.com/apache/servicecomb-service-center/server/service/gov"
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
@@ -64,7 +64,7 @@ type ServiceCenterServer struct {
 	GRPC endpoint
 
 	apiService          *APIServer
-	notifyService       *nf.Service
+	eventCenter         *nf.BusService
 	syncerNotifyService *snf.Service
 }
 
@@ -96,7 +96,7 @@ func (s *ServiceCenterServer) initialize() {
 	// Datasource
 	s.initDatasource()
 	s.apiService = GetAPIServer()
-	s.notifyService = notify.Center()
+	s.eventCenter = event.Center()
 	s.syncerNotifyService = snf.GetSyncerNotifyCenter()
 }
 
@@ -181,7 +181,7 @@ func (s *ServiceCenterServer) initSSL() {
 
 func (s *ServiceCenterServer) startServices() {
 	// notifications
-	s.notifyService.Start()
+	s.eventCenter.Start()
 
 	// notify syncer
 	syncerEnabled := config.GetBool("syncer.enabled", false)
@@ -217,8 +217,8 @@ func (s *ServiceCenterServer) Stop() {
 		s.apiService.Stop()
 	}
 
-	if s.notifyService != nil {
-		s.notifyService.Stop()
+	if s.eventCenter != nil {
+		s.eventCenter.Stop()
 	}
 
 	if s.syncerNotifyService != nil {

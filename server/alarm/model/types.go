@@ -16,7 +16,7 @@
 package model
 
 import (
-	nf "github.com/apache/servicecomb-service-center/pkg/notify"
+	nf "github.com/apache/servicecomb-service-center/pkg/event"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
