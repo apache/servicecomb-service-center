@@ -28,7 +28,7 @@ import (
 
 func Allow(ctx context.Context, roleList []string, project, resource, verbs string) (bool, error) {
 	//TODO check project
-	if ableToAccessResource(roleList, "admin") {
+	if ableToOperateResource(roleList, "admin") {
 		return true, nil
 	}
 	// allPerms combines the roleList permission
@@ -61,15 +61,17 @@ func Allow(ctx context.Context, roleList []string, project, resource, verbs stri
 }
 
 func ableToOperateResource(haystack []string, needle string) bool {
-	if ableToAccessResource(haystack, "*") || ableToAccessResource(haystack, needle) {
-		return true
+	for _, e := range haystack {
+		if e == "*" || e == needle {
+			return true
+		}
 	}
 	return false
 }
 
-func ableToAccessResource(haystack []string, needle string) bool {
+func ableToAccessResource(haystack []*rbac.Resource, needle string) bool {
 	for _, e := range haystack {
-		if e == needle {
+		if e.Type == needle {
 			return true
 		}
 	}

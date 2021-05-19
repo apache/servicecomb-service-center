@@ -124,6 +124,8 @@ github.com/gin-gonic/gin v1.4.0/go.mod h1:OW2EZn3DO8Ln9oIKOvM++LBO+5UPHJJDH72/q/
 github.com/go-chassis/cari v0.0.0-20201210041921-7b6fbef2df11/go.mod h1:MgtsEI0AM4Ush6Lyw27z9Gk4nQ/8GWTSXrFzupawWDM=
 github.com/go-chassis/cari v0.3.1-0.20210508100214-a13e083de04e h1:YLXfK7pSRsYK7EzUnv7WDgJNOHQSXz+UIEbOF86XI6Q=
 github.com/go-chassis/cari v0.3.1-0.20210508100214-a13e083de04e/go.mod h1:Ie2lW11Y5ZFClY9z7bhAwK6BoNxqGSf3fYGs4mPFs74=
+github.com/go-chassis/cari v0.3.1-0.20210519092219-69f9f0fc3452 h1:G2Qlpg17t0oULhz0Eu3NQgkxKDcNbpGpmgtMR6RZvwk=
+github.com/go-chassis/cari v0.3.1-0.20210519092219-69f9f0fc3452/go.mod h1:av/19fqwEP4eOC8unL/z67AAbFDwXUCko6SKa4Avrd8=
 github.com/go-chassis/foundation v0.2.2-0.20201210043510-9f6d3de40234/go.mod h1:2PjwqpVwYEVaAldl5A58a08viH8p27pNeYaiE3ZxOBA=
 github.com/go-chassis/foundation v0.2.2/go.mod h1:2PjwqpVwYEVaAldl5A58a08viH8p27pNeYaiE3ZxOBA=
 github.com/go-chassis/foundation v0.3.0/go.mod h1:2PjwqpVwYEVaAldl5A58a08viH8p27pNeYaiE3ZxOBA=
@@ -320,6 +322,9 @@ github.com/jtolds/gls v4.20.0+incompatible/go.mod h1:QJZ7F/aHp+rZTRtaJ1ow/lLfFfV
 github.com/julienschmidt/httprouter v1.2.0/go.mod h1:SYymIcj16QtmaHHD7aYtjjsJG7VTCxuUUipMqKk8s4w=
 github.com/karlseguin/ccache v2.0.3-0.20170217060820-3ba9789cfd2c+incompatible h1:Yvcw4N+1TaDTNkIuHn3gn8D1KP7Wxn4LP5GngDPWcPQ=
 github.com/karlseguin/ccache v2.0.3-0.20170217060820-3ba9789cfd2c+incompatible/go.mod h1:CM9tNPzT6EdRh14+jiW8mEF9mkNZuuE51qmgGYUB93w=
+github.com/karlseguin/ccache/v2 v2.0.8 h1:lT38cE//uyf6KcFok0rlgXtGFBWxkI6h/qg4tbFyDnA=
+github.com/karlseguin/ccache/v2 v2.0.8/go.mod h1:2BDThcfQMf/c0jnZowt16eW405XIqZPavt+HoYEtcxQ=
+github.com/karlseguin/expect v1.0.2-0.20190806010014-778a5f0c6003/go.mod h1:zNBxMY8P21owkeogJELCLeHIt+voOSduHYTFUbwRAV8=
 github.com/karlseguin/expect v1.0.7 h1:OF4mqjblc450v8nKARBS5Q0AweBNR0A+O3VjjpxwBrg=
 github.com/karlseguin/expect v1.0.7/go.mod h1:lXdI8iGiQhmzpnnmU/EGA60vqKs8NbRNFnhhrJGoD5g=
 github.com/karrick/godirwalk v1.8.0/go.mod h1:H5KPZjojv4lE+QYImBI8xVtrBRgYrIVsaRPx4tDPEn4=

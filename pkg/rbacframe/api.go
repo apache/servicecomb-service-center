@@ -20,6 +20,7 @@ package rbacframe
 
 import (
 	"crypto/rsa"
+	"github.com/go-chassis/cari/rbac"
 
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/go-chassis/go-chassis/v2/security/token"
@@ -75,10 +76,12 @@ func GetRolesList(v interface{}) ([]string, error) {
 }
 
 //BuildResourceList join the resource to an array
-func BuildResourceList(resourceType ...string) []string {
-	rt := make([]string, len(resourceType))
+func BuildResourceList(resourceType ...string) []*rbac.Resource {
+	rt := make([]*rbac.Resource, len(resourceType))
 	for i := 0; i < len(resourceType); i++ {
-		rt[i] = resourceType[i]
+		rt[i] = &rbac.Resource{
+			Type: resourceType[i],
+		}
 	}
 	return rt
 }

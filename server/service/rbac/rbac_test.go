@@ -151,11 +151,11 @@ func TestInitRBAC(t *testing.T) {
 		Name: "tester",
 		Perms: []*rbacmodel.Permission{
 			{
-				Resources: []string{"service", "instance"},
+				Resources: []*rbacmodel.Resource{{Type: "service"}, {Type: "instance"}},
 				Verbs:     []string{"get", "create", "update"},
 			},
 			{
-				Resources: []string{"rule"},
+				Resources: []*rbacmodel.Resource{{Type: "rule"}},
 				Verbs:     []string{"*"},
 			},
 		},
