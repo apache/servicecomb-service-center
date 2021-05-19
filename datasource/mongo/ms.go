@@ -482,7 +482,8 @@ func (ds *DataSource) GetServicesInfo(ctx context.Context, request *discovery.Ge
 			}, nil
 		}
 	}
-	services, err := dao.GetServices(ctx, bson.M{})
+	filters := ds.filterServices(ctx, request)
+	services, err := dao.GetServices(ctx, filters)
 	if err != nil {
 		log.Error("get all services by domain failed", err)
 		return &discovery.GetServicesInfoResponse{
@@ -494,14 +495,6 @@ func (ds *DataSource) GetServicesInfo(ctx context.Context, request *discovery.Ge
 	for _, mgSvc := range services {
 		if !request.WithShared && apt.IsGlobal(discovery.MicroServiceToKey(domainProject, mgSvc.Service)) {
 			continue
-		}
-		if len(request.AppId) > 0 {
-			if request.AppId != mgSvc.Service.AppId {
-				continue
-			}
-			if len(request.ServiceName) > 0 && request.ServiceName != mgSvc.Service.ServiceName {
-				continue
-			}
 		}
 
 		serviceDetail, err := getServiceDetailUtil(ctx, mgSvc, request.CountOnly, options)
@@ -532,6 +525,21 @@ func (ds *DataSource) GetServicesInfo(ctx context.Context, request *discovery.Ge
 		AllServicesDetail: allServiceDetails,
 		Statistics:        nil,
 	}, nil
+}
+
+func (ds *DataSource) filterServices(ctx context.Context, request *discovery.GetServicesInfoRequest) bson.M {
+	var opts []func(filter bson.M)
+
+	if len(request.Environment) > 0 {
+		opts = append(opts, mutil.ServiceEnv(request.Environment))
+	}
+	if len(request.AppId) > 0 {
+		opts = append(opts, mutil.ServiceAppID(request.AppId))
+	}
+	if len(request.ServiceName) > 0 {
+		opts = append(opts, mutil.ServiceAppID(request.ServiceName))
+	}
+	return mutil.NewBasicFilter(ctx, opts...)
 }
 
 func (ds *DataSource) GetServicesStatistics(ctx context.Context, request *discovery.GetServicesRequest) (

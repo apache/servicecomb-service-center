@@ -20,15 +20,12 @@ package mongo
 import (
 	"context"
 
-	pb "github.com/go-chassis/cari/discovery"
-	"go.mongodb.org/mongo-driver/bson"
-
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client/dao"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
 	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	pb "github.com/go-chassis/cari/discovery"
 )
 
 type InstanceSlice []*pb.MicroServiceInstance
@@ -51,10 +48,8 @@ func statistics(ctx context.Context, withShared bool) (*pb.Statistics, error) {
 		Instances: &pb.StInstance{},
 		Apps:      &pb.StApp{},
 	}
-	domain := util.ParseDomain(ctx)
-	project := util.ParseProject(ctx)
 
-	filter := bson.M{model.ColumnDomain: domain, model.ColumnProject: project}
+	filter := mutil.NewBasicFilter(ctx)
 
 	services, err := dao.GetMicroServices(ctx, filter)
 	if err != nil {
