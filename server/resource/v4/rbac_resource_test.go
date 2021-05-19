@@ -298,7 +298,7 @@ func TestRoleResource_CreateOrUpdateRole(t *testing.T) {
 			Name: "tester",
 			Perms: []*rbacmodel.Permission{
 				{
-					Resources: []string{"service", "instance"},
+					Resources: []*rbacmodel.Resource{{Type: "service"}, {Type: "instance"}},
 					Verbs:     []string{"get", "create", "update"},
 				},
 			},
@@ -320,7 +320,7 @@ func TestRoleResource_CreateOrUpdateRole(t *testing.T) {
 			Name: "tester",
 			Perms: []*rbacmodel.Permission{
 				{
-					Resources: []string{"service"},
+					Resources: []*rbacmodel.Resource{{Type: "service"}},
 					Verbs:     []string{"get", "create", "update"},
 				},
 			},
@@ -381,7 +381,7 @@ func TestRoleResource_MoreRoles(t *testing.T) {
 			Name: "tester",
 			Perms: []*rbacmodel.Permission{
 				{
-					Resources: []string{"service"},
+					Resources: []*rbacmodel.Resource{{Type: "service"}},
 					Verbs:     []string{"get", "create", "update"},
 				},
 			},
@@ -399,7 +399,7 @@ func TestRoleResource_MoreRoles(t *testing.T) {
 			Name: "tester2",
 			Perms: []*rbacmodel.Permission{
 				{
-					Resources: []string{"rule"},
+					Resources: []*rbacmodel.Resource{{Type: "rule"}},
 					Verbs:     []string{"*"},
 				},
 			},
