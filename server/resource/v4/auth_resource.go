@@ -45,11 +45,11 @@ type AuthResource struct {
 func (r *AuthResource) URLPatterns() []rest.Route {
 	return []rest.Route{
 		{Method: http.MethodPost, Path: "/v4/token", Func: r.Login},
-		{Method: http.MethodPost, Path: "/v4/account", Func: r.CreateAccount},
-		{Method: http.MethodGet, Path: "/v4/account", Func: r.ListAccount},
-		{Method: http.MethodGet, Path: "/v4/account/:name", Func: r.GetAccount},
-		{Method: http.MethodDelete, Path: "/v4/account/:name", Func: r.DeleteAccount},
-		{Method: http.MethodPost, Path: "/v4/account/:name/password", Func: r.ChangePassword},
+		{Method: http.MethodPost, Path: "/v4/accounts", Func: r.CreateAccount},
+		{Method: http.MethodGet, Path: "/v4/accounts", Func: r.ListAccount},
+		{Method: http.MethodGet, Path: "/v4/accounts/:name", Func: r.GetAccount},
+		{Method: http.MethodDelete, Path: "/v4/accounts/:name", Func: r.DeleteAccount},
+		{Method: http.MethodPost, Path: "/v4/accounts/:name/password", Func: r.ChangePassword},
 	}
 }
 func (r *AuthResource) CreateAccount(w http.ResponseWriter, req *http.Request) {

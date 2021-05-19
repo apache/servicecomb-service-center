@@ -33,9 +33,9 @@ const (
 var (
 	APITokenGranter = "/v4/token"
 
-	APIAccountList = "/v4/account"
+	APIAccountList = "/v4/accounts"
 
-	APIRoleList = "/v4/role"
+	APIRoleList = "/v4/roles"
 
 	APIOps = "/v4/:project/admin"
 
