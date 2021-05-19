@@ -44,6 +44,23 @@ var (
 			Objectives: metrics.Pxx,
 		}, []string{"instance", "source", "status"})
 
+	pendingGauge = helper.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace: metrics.FamilyName,
+			Subsystem: "notify",
+			Name:      "pending_total",
+			Help:      "Counter of pending instance events",
+		}, []string{"instance", "source"})
+
+	pendingLatency = helper.NewSummaryVec(
+		prometheus.SummaryOpts{
+			Namespace:  metrics.FamilyName,
+			Subsystem:  "notify",
+			Name:       "pending_durations_microseconds",
+			Help:       "Latency of pending instance events",
+			Objectives: metrics.Pxx,
+		}, []string{"instance", "source"})
+
 	subscriberGauge = helper.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace: metrics.FamilyName,
@@ -62,10 +79,17 @@ func ReportPublishCompleted(evt event.Event, err error) {
 	}
 	notifyLatency.WithLabelValues(instance, evt.Type().String(), status).Observe(elapsed)
 	notifyCounter.WithLabelValues(instance, evt.Type().String(), status).Inc()
+	pendingGauge.WithLabelValues(instance, evt.Type().String()).Dec()
+}
+
+func ReportPendingCompleted(evt event.Event) {
+	instance := metrics.InstanceName()
+	elapsed := float64(time.Since(evt.CreateAt()).Nanoseconds()) / float64(time.Microsecond)
+	pendingLatency.WithLabelValues(instance, evt.Type().String()).Observe(elapsed)
+	pendingGauge.WithLabelValues(instance, evt.Type().String()).Inc()
 }
 
 func ReportSubscriber(domain, scheme string, n float64) {
 	instance := metrics.InstanceName()
-
 	subscriberGauge.WithLabelValues(instance, domain, scheme).Add(n)
 }

@@ -54,7 +54,7 @@ func Watch(ctx context.Context, serviceID string, conn *websocket.Conn) {
 	defer pool.Done()
 
 	if err := ws.ReadMessage(); err != nil {
-		log.Error(fmt.Sprintf("[%s] handle service[%s] control message failed", conn.RemoteAddr(), serviceID), err)
+		log.Error(fmt.Sprintf("read subscriber[%s][%s] message failed", serviceID, conn.RemoteAddr()), err)
 		subscriber.SetError(err)
 	}
 }

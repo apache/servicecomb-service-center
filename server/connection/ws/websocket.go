@@ -32,6 +32,8 @@ import (
 
 const Websocket = "Websocket"
 
+var errServiceNotExist = fmt.Errorf("Service does not exist.")
+
 type WebSocket struct {
 	Options
 	Conn          *websocket.Conn
@@ -153,13 +155,11 @@ func (wh *WebSocket) CheckHealth(ctx context.Context) error {
 	if exist, err := datasource.Instance().ExistServiceByID(ctx, &pb.GetExistenceByIDRequest{
 		ServiceId: wh.ConsumerID,
 	}); err != nil || !exist.Exist {
-		return fmt.Errorf("Service does not exist.")
+		return errServiceNotExist
 	}
 
 	remoteAddr := wh.Conn.RemoteAddr().String()
 	if err := wh.WritePingPong(websocket.PingMessage); err != nil {
-		log.Errorf(err, "send 'Ping' message to subscriber[%s] failed, consumer: %s",
-			remoteAddr, wh.ConsumerID)
 		return err
 	}
 
@@ -169,18 +169,7 @@ func (wh *WebSocket) CheckHealth(ctx context.Context) error {
 }
 
 func (wh *WebSocket) WritePingPong(messageType int) error {
-	err := wh.Conn.WriteControl(messageType, []byte{}, time.Now().Add(wh.SendTimeout))
-	if err != nil {
-		messageTypeName := "Ping"
-		if messageType == websocket.PongMessage {
-			messageTypeName = "Pong"
-		}
-		log.Errorf(err, "fail to send '%s' to subscriber[%s], consumer: %s",
-			messageTypeName, wh.Conn.RemoteAddr(), wh.ConsumerID)
-		//wh.subscriber.SetError(err)
-		return err
-	}
-	return nil
+	return wh.Conn.WriteControl(messageType, []byte{}, time.Now().Add(wh.SendTimeout))
 }
 
 func (wh *WebSocket) WriteTextMessage(message []byte) error {

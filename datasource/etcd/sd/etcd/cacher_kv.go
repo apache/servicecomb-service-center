@@ -454,6 +454,7 @@ func (c *KvCacher) notify(evts []sd.KvEvent) {
 	for _, evt := range evts {
 		c.Cfg.OnEvent(evt)
 	}
+	sd.ReportDispatchEventCompleted(c.Cfg.Key, evts)
 }
 
 func (c *KvCacher) doParse(src *sdcommon.Resource) (kv *sd.KeyValue) {

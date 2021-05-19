@@ -699,11 +699,11 @@ func BenchmarkRegisterMicroServiceInstance(b *testing.B) {
 	}
 }
 
-func TestInstanceWatch(t *testing.T) {
+func BenchmarkInstanceWatch(t *testing.B) {
 	scclient = insecurityConnection
 	var serviceId, instanceId string
 
-	t.Run("prepare data", func(t *testing.T) {
+	t.Run("prepare data", func(t *testing.B) {
 		// service
 		serviceName := "testInstance" + strconv.Itoa(rand.Int())
 		servicemap := map[string]interface{}{
@@ -758,13 +758,13 @@ func TestInstanceWatch(t *testing.T) {
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 	})
 
-	t.Run("test 10K connection", func(t *testing.T) {
+	t.Run("test 10K connection", func(t *testing.B) {
 
 		const N, E = 2500, 2500
 		var okWg sync.WaitGroup
 		okWg.Add(N)
 
-		t.Run("new 10K connection", func(t *testing.T) {
+		t.Run("new 10K connection", func(t *testing.B) {
 			url := strings.ReplaceAll(strings.ReplaceAll(SCURL, "http://", "ws://")+INSTANCEWATCHER, ":serviceId", serviceId)
 			for i := 0; i < N; i++ {
 				go func() {
@@ -790,7 +790,7 @@ func TestInstanceWatch(t *testing.T) {
 			<-time.After(10 * time.Second)
 		})
 
-		t.Run("fire 10K event", func(t *testing.T) {
+		t.Run("fire 10K event", func(t *testing.B) {
 			for i := 0; i < E; i++ {
 				propertiesInstance := map[string]interface{}{
 					"tag": strconv.Itoa(i),
@@ -809,7 +809,7 @@ func TestInstanceWatch(t *testing.T) {
 			}
 		})
 
-		t.Run("wait", func(t *testing.T) {
+		t.Run("wait", func(t *testing.B) {
 			okWg.Wait()
 		})
 	})

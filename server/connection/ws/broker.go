@@ -29,6 +29,8 @@ import (
 	pb "github.com/go-chassis/cari/discovery"
 )
 
+var errChanClosed = fmt.Errorf("chan closed")
+
 type Broker struct {
 	consumer *WebSocket
 	producer *event.InstanceSubscriber
@@ -41,12 +43,10 @@ func (b *Broker) Listen(ctx context.Context) error {
 			return ctx.Err()
 		case instanceEvent, ok := <-b.producer.Job:
 			if !ok {
-				return fmt.Errorf("read producer[%v] event failed", b.producer.Group())
+				return errChanClosed
 			}
 			err := b.write(instanceEvent)
 			if err != nil {
-				log.Errorf(err, "write instance event to subscriber[%s] failed, group: %s",
-					b.consumer.RemoteAddr, b.producer.Group())
 				return err
 			}
 		}
@@ -65,8 +65,7 @@ func (b *Broker) write(evt *event.InstanceEvent) error {
 	resp.Response = nil
 	data, err := json.Marshal(resp)
 	if err != nil {
-		log.Errorf(err, "subscriber[%s] watch %s, group: %s",
-			remoteAddr, providerFlag, b.producer.Group())
+		log.Errorf(err, "subscriber[%s] watch %s, group: %s", remoteAddr, providerFlag, b.producer.Group())
 		data = util.StringToBytesWithNoCopy(fmt.Sprintf("marshal output file error, %s", err.Error()))
 	}
 	err = b.consumer.WriteTextMessage(data)
