@@ -61,7 +61,7 @@ export class SelectServiceComponent implements OnInit {
       width: '120px',
     },
     {
-      field: 'enviroment',
+      field: 'environment',
       width: '120px',
     },
   ];

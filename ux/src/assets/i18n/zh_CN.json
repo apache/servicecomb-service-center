@@ -73,7 +73,7 @@
       "serviceConfigContent": "将新建到配置关联到某一微服务，并添加微服务名称和所在环境到标签。",
       "customConfigContent": "自定义一个新到配置文件。",
       "appName": "应用名称",
-      "enviroment": "环境",
+      "environment": "环境",
       "vision": "选择版本",
       "visionPlaceholder": "选择版本",
       "serviceName": "服务名称",

@@ -36,7 +36,7 @@ limitations under the License.
                 <th dHeadCell></th>
                 <th dHeadCell>{{ "kie.modal.serviceName" | translate }}</th>
                 <th dHeadCell>{{ "kie.modal.app" | translate }}</th>
-                <th dHeadCell>{{ "kie.modal.enviroment" | translate }}</th>
+                <th dHeadCell>{{ "kie.modal.environment" | translate }}</th>
               </tr>
             </thead>
             <tbody dTableBody>
@@ -57,8 +57,8 @@ limitations under the License.
                   <td dTableCell field="appId">
                     {{ rowItem.appId }}
                   </td>
-                  <td dTableCell field="enviroment">
-                    {{ rowItem.enviroment | EnvironmentPipe }}
+                  <td dTableCell field="environment">
+                    {{ rowItem.environment | EnvironmentPipe }}
                   </td>
                 </tr>
               </ng-template>

@@ -52,7 +52,7 @@ export class SelectAppComponent implements OnInit {
       width: '200px',
     },
     {
-      field: 'enviroment',
+      field: 'environment',
       width: '200px',
     },
   ];

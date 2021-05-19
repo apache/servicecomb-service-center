@@ -52,11 +52,11 @@ export const configTypeFn = (value: Lables): type => {
     value.app &&
     value.service &&
     value.version &&
-    value.enviroment !== undefined
+    value.environment !== undefined
   ) {
     return 'service';
   }
-  if (value.app && value.enviroment !== undefined) {
+  if (value.app && value.environment !== undefined) {
     return 'app';
   }
   return 'custom';
