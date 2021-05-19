@@ -42,11 +42,11 @@ type RoleResource struct {
 //URLPatterns define http pattern
 func (r *RoleResource) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{Method: http.MethodGet, Path: "/v4/role", Func: r.GetRolePermission},
-		{Method: http.MethodPost, Path: "/v4/role", Func: r.CreateRolePermission},
-		{Method: http.MethodPut, Path: "/v4/role/:roleName", Func: r.UpdateRolePermission},
-		{Method: http.MethodGet, Path: "/v4/role/:roleName", Func: r.GetRole},
-		{Method: http.MethodDelete, Path: "/v4/role/:roleName", Func: r.DeleteRole},
+		{Method: http.MethodGet, Path: "/v4/roles", Func: r.GetRolePermission},
+		{Method: http.MethodPost, Path: "/v4/roles", Func: r.CreateRolePermission},
+		{Method: http.MethodPut, Path: "/v4/roles/:roleName", Func: r.UpdateRolePermission},
+		{Method: http.MethodGet, Path: "/v4/roles/:roleName", Func: r.GetRole},
+		{Method: http.MethodDelete, Path: "/v4/roles/:roleName", Func: r.DeleteRole},
 	}
 }
 

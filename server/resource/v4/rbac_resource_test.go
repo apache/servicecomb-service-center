@@ -117,7 +117,7 @@ func TestAuthResource_Login(t *testing.T) {
 	t.Run("create dev_account", func(t *testing.T) {
 		b, _ := json.Marshal(&rbacmodel.Account{Name: "dev_account", Password: "Complicated_password1", Roles: []string{"developer"}})
 
-		r, _ := http.NewRequest(http.MethodPost, "/v4/account", bytes.NewBuffer(b))
+		r, _ := http.NewRequest(http.MethodPost, "/v4/accounts", bytes.NewBuffer(b))
 		r.Header.Set(restful.HeaderAuth, "Bearer "+to.TokenStr)
 		w := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w, r)
@@ -133,7 +133,7 @@ func TestAuthResource_Login(t *testing.T) {
 		assert.Equal(t, http.StatusOK, w.Code)
 
 		b2, _ := json.Marshal(&rbacmodel.Account{Name: "dev_account", CurrentPassword: "Complicated_password1", Password: "Complicated_password2"})
-		r2, _ := http.NewRequest(http.MethodPost, "/v4/account/dev_account/password", bytes.NewBuffer(b2))
+		r2, _ := http.NewRequest(http.MethodPost, "/v4/accounts/dev_account/password", bytes.NewBuffer(b2))
 		r2.Header.Set(restful.HeaderAuth, "Bearer "+to.TokenStr)
 		w2 := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w2, r2)
@@ -158,7 +158,7 @@ func TestAuthResource_DeleteAccount(t *testing.T) {
 		devTo := &rbacmodel.Token{}
 		json.Unmarshal(w.Body.Bytes(), devTo)
 
-		r2, _ := http.NewRequest(http.MethodDelete, "/v4/account/dev_account", nil)
+		r2, _ := http.NewRequest(http.MethodDelete, "/v4/accounts/dev_account", nil)
 		r2.Header.Set(restful.HeaderAuth, "Bearer "+devTo.TokenStr)
 		w2 := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w2, r2)
@@ -174,13 +174,13 @@ func TestAuthResource_DeleteAccount(t *testing.T) {
 		json.Unmarshal(w.Body.Bytes(), to)
 
 		b, _ = json.Marshal(&rbacmodel.Account{Name: "delete_account", Password: "Complicated_password1"})
-		r2, _ := http.NewRequest(http.MethodPost, "/v4/account", bytes.NewBuffer(b))
+		r2, _ := http.NewRequest(http.MethodPost, "/v4/accounts", bytes.NewBuffer(b))
 		r2.Header.Set(restful.HeaderAuth, "Bearer "+to.TokenStr)
 		w2 := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w2, r2)
 		assert.Equal(t, http.StatusOK, w2.Code)
 
-		r3, _ := http.NewRequest(http.MethodDelete, "/v4/account/delete_account", nil)
+		r3, _ := http.NewRequest(http.MethodDelete, "/v4/accounts/delete_account", nil)
 		r3.Header.Set(restful.HeaderAuth, "Bearer "+to.TokenStr)
 		w3 := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w3, r3)
@@ -197,7 +197,7 @@ func TestAuthResource_GetAccount(t *testing.T) {
 		to := &rbacmodel.Token{}
 		json.Unmarshal(w.Body.Bytes(), to)
 
-		r3, _ := http.NewRequest(http.MethodGet, "/v4/account/dev_account", nil)
+		r3, _ := http.NewRequest(http.MethodGet, "/v4/accounts/dev_account", nil)
 		r3.Header.Set(restful.HeaderAuth, "Bearer "+to.TokenStr)
 		w3 := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w3, r3)
@@ -218,7 +218,7 @@ func TestAuthResource_GetAccount(t *testing.T) {
 		to := &rbacmodel.Token{}
 		json.Unmarshal(w.Body.Bytes(), to)
 
-		r3, _ := http.NewRequest(http.MethodGet, "/v4/account", nil)
+		r3, _ := http.NewRequest(http.MethodGet, "/v4/accounts", nil)
 		r3.Header.Set(restful.HeaderAuth, "Bearer "+to.TokenStr)
 		w3 := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w3, r3)
@@ -248,7 +248,7 @@ func TestAuthResource_GetAccount(t *testing.T) {
 		json.Unmarshal(w.Body.Bytes(), to)
 
 		time.Sleep(11 * time.Second)
-		r3, _ := http.NewRequest(http.MethodGet, "/v4/account", nil)
+		r3, _ := http.NewRequest(http.MethodGet, "/v4/accounts", nil)
 		r3.Header.Set(restful.HeaderAuth, "Bearer "+to.TokenStr)
 		w3 := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w3, r3)
@@ -277,7 +277,7 @@ func TestRoleResource_CreateOrUpdateRole(t *testing.T) {
 	t.Run("create account dev_test and add a role", func(t *testing.T) {
 		b, _ := json.Marshal(&rbacmodel.Account{Name: "dev_test", Password: "Complicated_password3", Roles: []string{"tester"}})
 
-		r, _ := http.NewRequest(http.MethodPost, "/v4/account", bytes.NewBuffer(b))
+		r, _ := http.NewRequest(http.MethodPost, "/v4/accounts", bytes.NewBuffer(b))
 		r.Header.Set(restful.HeaderAuth, "Bearer "+to.TokenStr)
 		w := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w, r)
@@ -304,13 +304,13 @@ func TestRoleResource_CreateOrUpdateRole(t *testing.T) {
 			},
 		})
 
-		r2, _ := http.NewRequest(http.MethodPost, "/v4/role", bytes.NewReader(b2))
+		r2, _ := http.NewRequest(http.MethodPost, "/v4/roles", bytes.NewReader(b2))
 		r2.Header.Set(restful.HeaderAuth, "Bearer "+to.TokenStr)
 		w2 := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w2, r2)
 		assert.Equal(t, http.StatusOK, w2.Code)
 
-		r3, _ := http.NewRequest(http.MethodGet, "/v4/role", nil)
+		r3, _ := http.NewRequest(http.MethodGet, "/v4/roles", nil)
 		r3.Header.Set(restful.HeaderAuth, "Bearer "+to.TokenStr)
 		w3 := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w3, r3)
@@ -325,7 +325,7 @@ func TestRoleResource_CreateOrUpdateRole(t *testing.T) {
 				},
 			},
 		})
-		r4, _ := http.NewRequest(http.MethodPut, "/v4/role/tester", bytes.NewReader(b4))
+		r4, _ := http.NewRequest(http.MethodPut, "/v4/roles/tester", bytes.NewReader(b4))
 		r4.Header.Set(restful.HeaderAuth, "Bearer "+to.TokenStr)
 		w4 := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w4, r4)
@@ -342,13 +342,13 @@ func TestRoleResource_CreateOrUpdateRole(t *testing.T) {
 		to := &rbacmodel.Token{}
 		json.Unmarshal(w.Body.Bytes(), to)
 
-		r2, _ := http.NewRequest(http.MethodGet, "/v4/role/admin", nil)
+		r2, _ := http.NewRequest(http.MethodGet, "/v4/roles/admin", nil)
 		r2.Header.Set(restful.HeaderAuth, "Bearer "+to.TokenStr)
 		w2 := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w2, r2)
 		assert.Equal(t, http.StatusOK, w2.Code)
 
-		r3, _ := http.NewRequest(http.MethodDelete, "/v4/role/admin", nil)
+		r3, _ := http.NewRequest(http.MethodDelete, "/v4/roles/admin", nil)
 		r3.Header.Set(restful.HeaderAuth, "Bearer "+to.TokenStr)
 		w3 := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w3, r3)
@@ -387,7 +387,7 @@ func TestRoleResource_MoreRoles(t *testing.T) {
 			},
 		})
 
-		r, _ := http.NewRequest(http.MethodPost, "/v4/role", bytes.NewReader(b))
+		r, _ := http.NewRequest(http.MethodPost, "/v4/roles", bytes.NewReader(b))
 		r.Header.Set(restful.HeaderAuth, "Bearer "+to.TokenStr)
 		w := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w, r)
@@ -405,13 +405,13 @@ func TestRoleResource_MoreRoles(t *testing.T) {
 			},
 		})
 
-		r, _ := http.NewRequest(http.MethodPost, "/v4/role", bytes.NewReader(b))
+		r, _ := http.NewRequest(http.MethodPost, "/v4/roles", bytes.NewReader(b))
 		r.Header.Set(restful.HeaderAuth, "Bearer "+to.TokenStr)
 		w := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code)
 
-		r2, _ := http.NewRequest(http.MethodGet, "/v4/role", nil)
+		r2, _ := http.NewRequest(http.MethodGet, "/v4/roles", nil)
 		r2.Header.Set(restful.HeaderAuth, "Bearer "+to.TokenStr)
 		w2 := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w2, r2)
@@ -421,7 +421,7 @@ func TestRoleResource_MoreRoles(t *testing.T) {
 	t.Run("account dev_test2 support more than 1 role ", func(t *testing.T) {
 		b, _ := json.Marshal(&rbacmodel.Account{Name: "dev_test2", Password: "Complicated_password3", Roles: []string{"tester", "tester2"}})
 
-		r, _ := http.NewRequest(http.MethodPost, "/v4/account", bytes.NewBuffer(b))
+		r, _ := http.NewRequest(http.MethodPost, "/v4/accounts", bytes.NewBuffer(b))
 		r.Header.Set(restful.HeaderAuth, "Bearer "+to.TokenStr)
 		w := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w, r)
