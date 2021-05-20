@@ -147,6 +147,7 @@ func (governService *ResourceV4) GetAllServicesInfo(w http.ResponseWriter, r *ht
 	request.Options = strings.Split(optsStr, ",")
 	request.AppId = query.Get("appId")
 	request.ServiceName = query.Get("serviceName")
+	request.Environment = query.Get("env")
 	request.WithShared = util.StringTRUE(query.Get("withShared"))
 	countOnly := query.Get("countOnly")
 	if countOnly != "0" && countOnly != "1" && strings.TrimSpace(countOnly) != "" {

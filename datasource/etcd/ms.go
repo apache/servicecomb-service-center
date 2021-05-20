@@ -298,16 +298,8 @@ func (ds *DataSource) GetServicesInfo(ctx context.Context, request *pb.GetServic
 	allServiceDetails := make([]*pb.ServiceDetail, 0, len(services))
 	domainProject := util.ParseDomainProject(ctx)
 	for _, service := range services {
-		if !request.WithShared && core.IsGlobal(pb.MicroServiceToKey(domainProject, service)) {
+		if !ds.filterServices(domainProject, request, service) {
 			continue
-		}
-		if len(request.AppId) > 0 {
-			if request.AppId != service.AppId {
-				continue
-			}
-			if len(request.ServiceName) > 0 && request.ServiceName != service.ServiceName {
-				continue
-			}
 		}
 
 		serviceDetail, err := getServiceDetailUtil(ctx, ServiceDetailOpt{
@@ -343,6 +335,22 @@ func (ds *DataSource) GetServicesInfo(ctx context.Context, request *pb.GetServic
 		AllServicesDetail: allServiceDetails,
 		Statistics:        st,
 	}, nil
+}
+
+func (ds *DataSource) filterServices(domainProject string, request *pb.GetServicesInfoRequest, service *pb.MicroService) bool {
+	if !request.WithShared && core.IsGlobal(pb.MicroServiceToKey(domainProject, service)) {
+		return false
+	}
+	if len(request.Environment) > 0 && request.Environment != service.Environment {
+		return false
+	}
+	if len(request.AppId) > 0 && request.AppId != service.AppId {
+		return false
+	}
+	if len(request.ServiceName) > 0 && request.ServiceName != service.ServiceName {
+		return false
+	}
+	return true
 }
 
 func (ds *DataSource) GetServicesStatistics(ctx context.Context, request *pb.GetServicesRequest) (
