@@ -56,6 +56,9 @@ export class ConfigCreateComponent implements OnInit {
     this.translate.get('kie.create.configMessage').subscribe((res) => {
       this.configNameRules[4].message = res;
     });
+    this.translate.get('kie.create.tagKeyRulesMsg').subscribe((res) => {
+      this.tagRules[3].message = res;
+    });
   }
 
   formGroup = new FormGroup({
@@ -126,6 +129,16 @@ export class ConfigCreateComponent implements OnInit {
   configTageKey!: string;
   configTageValue!: string;
 
+  tagRules = [
+    { required: false },
+    { whitespace: true },
+    { maxlength: 32 },
+    {
+      pattern: /^[a-zA-Z0-9]([a-zA-Z0-9_\-.]*[a-zA-Z0-9])*$/,
+      message: '',
+    },
+  ];
+
   ngOnInit(): void {
     if (this.kvId) {
       this.service.getKie(this.kvId).subscribe(
@@ -191,14 +204,13 @@ export class ConfigCreateComponent implements OnInit {
       backdropCloseable: false,
       component: SelectServiceComponent,
       data: {
-        onClose: (rowItem?: any, version?: string) => {
+        onClose: (rowItem?: any) => {
           if (rowItem?.appId) {
             this.serviceId = rowItem.serviceName;
             this.tags = [
               `service=${rowItem.serviceName}`,
               `app=${rowItem.appId}`,
               `environment=${rowItem.environment}`,
-              `version=${version}`,
             ];
           }
           results.modalInstance.hide();

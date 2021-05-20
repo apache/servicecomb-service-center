@@ -60,11 +60,13 @@
       "configPlaceholder": "请输入配置项",
       "configMessage": "请输入由数字/字母/下划线/中划线或小数点组成对1-128位字符",
       "tag": "标签",
+      "tagKeyRulesMsg": "不满足正则 ^[a-zA-Z0-9]([a-zA-Z0-9_\\-.]*[a-zA-Z0-9])*$",
       "tagKeyPlaceholder": "请输入标签键",
       "tagValuePlaceholder": "请输入标签值",
       "size": "配置格式",
       "isAvailable": "是否启用",
       "configContent": "配置内容"
+      
     },
     "modal": {
       "title": "选择配置类型",
@@ -74,8 +76,6 @@
       "customConfigContent": "自定义一个新到配置文件。",
       "appName": "应用名称",
       "environment": "环境",
-      "vision": "选择版本",
-      "visionPlaceholder": "选择版本",
       "serviceName": "服务名称",
       "app": "应用"
     }
