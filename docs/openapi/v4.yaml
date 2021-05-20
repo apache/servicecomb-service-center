@@ -1803,7 +1803,7 @@ paths:
           description: 内部错误
           schema:
             $ref: '#/definitions/Error'
-  /v4/account:
+  /v4/accounts:
     get:
       description: list all user accounts
       operationId: listAccount
@@ -1855,7 +1855,7 @@ paths:
           description: 内部错误
           schema:
             $ref: '#/definitions/Error'
-  /v4/account/{name}:
+  /v4/accounts/{name}:
     get:
       description: get account information by username
       operationId: getAccount
@@ -1912,7 +1912,7 @@ paths:
           description: 内部错误
           schema:
             $ref: '#/definitions/Error'
-  /v4/account/{name}/password:
+  /v4/accounts/{name}/password:
     post:
       description: Change user password, you must supply current password and token to update to new password
       operationId: changePassword
@@ -1945,10 +1945,10 @@ paths:
           description: 内部错误
           schema:
             $ref: '#/definitions/Error'
-  /v4/role:
+  /v4/roles:
     get:
       description: list all role
-      operationId: listRole
+      operationId: listAllRole
       parameters:
         - name: authorization
           in: header
@@ -1994,7 +1994,7 @@ paths:
           description: 内部错误
           schema:
             $ref: '#/definitions/Error'
-  /v4/role/{roleName}:
+  /v4/roles/{roleName}:
       get:
         description: list role permission
         operationId: listRole
@@ -2964,6 +2964,7 @@ definitions:
     description: user accout information
     required:
       - password
+      - name
     properties:
       id:
         type: string
@@ -2986,7 +2987,13 @@ definitions:
         description: current password
       status:
         type: string
-        description: status
+        description: status, effective value is active|inactive
+      createTime:
+        type: string
+        description: create time
+      updateTime:
+        type: string
+        description: update time
   RoleResponse:
     type: object
     description: role infomation
@@ -3003,6 +3010,7 @@ definitions:
     description: role permission
     required:
       - name
+      - perms
     properties:
       id:
         type: string
@@ -3010,25 +3018,46 @@ definitions:
         type: string
         description: provided default role is "admin" and "developer"
       perms:
-        type: object
+        type: array
         description: role permissions
-        additionalProperties:
-          type: array
-          items:
-            $ref: '#/definitions/Perms'
-  Perms:
+        items:
+          $ref: '#/definitions/Perm'
+      createTime:
+        type: string
+        description: create time
+      updateTime:
+        type: string
+        description: update time
+  Perm:
     type: object
-    description: role resources
+    description: role perms
+    required:
+      - resources
+      - verbs
     properties:
       resources:
         type: array
         description: role own's resources
         items:
-          type: string
+          $ref: '#/definitions/RoleResource'
       verbs:
         type: array
-        description: resource verbs
+        description: resource verbs, effective value is get|create|update|delete|*
         items:
+          type: string
+  RoleResource:
+    type: object
+    description: role resource
+    required:
+      - type
+    properties:
+      type:
+        type: string
+        description: resource type, effective value is account|role|service|governance|service/schema|ops
+      labels:
+        type: object
+        description: resource labels
+        additionalProperties:
           type: string
   Token:
     type: object
