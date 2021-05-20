@@ -15,21 +15,24 @@
  * limitations under the License.
  */
 
-package proto
+package ws
 
 import (
-	"context"
+	"time"
 
-	"github.com/go-chassis/cari/discovery"
-	"github.com/gorilla/websocket"
+	"github.com/apache/servicecomb-service-center/server/connection"
 )
 
-type ServiceInstanceCtrlServerEx interface {
-	ServiceInstanceCtrlServer
+type Options struct {
+	ReadTimeout    time.Duration
+	SendTimeout    time.Duration
+	HealthInterval time.Duration
+}
 
-	BatchFind(ctx context.Context, in *discovery.BatchFindInstancesRequest) (*discovery.BatchFindInstancesResponse, error)
-
-	WebSocketWatch(ctx context.Context, in *discovery.WatchInstanceRequest, conn *websocket.Conn)
-
-	ClusterHealth(ctx context.Context) (*discovery.GetInstancesResponse, error)
+func ToOptions() Options {
+	return Options{
+		ReadTimeout:    connection.ReadTimeout,
+		SendTimeout:    connection.SendTimeout,
+		HealthInterval: connection.HeartbeatInterval,
+	}
 }

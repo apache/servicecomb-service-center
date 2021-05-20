@@ -15,21 +15,33 @@
  * limitations under the License.
  */
 
-package proto
+package ws_test
 
 import (
 	"context"
+	"errors"
+	"testing"
 
-	"github.com/go-chassis/cari/discovery"
-	"github.com/gorilla/websocket"
+	wss "github.com/apache/servicecomb-service-center/server/connection/ws"
+	"github.com/stretchr/testify/assert"
 )
 
-type ServiceInstanceCtrlServerEx interface {
-	ServiceInstanceCtrlServer
+func TestSendEstablishError(t *testing.T) {
+	mock := NewTest()
+	t.Run("should read the err when call", func(t *testing.T) {
+		wss.SendEstablishError(mock.ServerConn, errors.New("error"))
+		_, message, err := mock.ClientConn.ReadMessage()
+		assert.Nil(t, err)
+		assert.Equal(t, "error", string(message))
+	})
+}
 
-	BatchFind(ctx context.Context, in *discovery.BatchFindInstancesRequest) (*discovery.BatchFindInstancesResponse, error)
-
-	WebSocketWatch(ctx context.Context, in *discovery.WatchInstanceRequest, conn *websocket.Conn)
-
-	ClusterHealth(ctx context.Context) (*discovery.GetInstancesResponse, error)
+func TestWatch(t *testing.T) {
+	t.Run("should return when ctx cancelled", func(t *testing.T) {
+		mock := NewTest()
+		mock.ServerConn.Close()
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+		wss.Watch(ctx, "", mock.ServerConn)
+	})
 }

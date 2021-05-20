@@ -41,14 +41,14 @@ func (bus *Bus) Fire(evt Event) {
 	bus.Add(queue.Task{Payload: evt})
 }
 
-func (bus *Bus) Handle(ctx context.Context, evt interface{}) {
-	bus.fireAtOnce(evt.(Event))
+func (bus *Bus) Handle(ctx context.Context, payload interface{}) {
+	bus.fireAtOnce(payload.(Event))
 }
 
 func (bus *Bus) fireAtOnce(evt Event) {
 	if itf, ok := bus.subjects.Get(evt.Subject()); ok {
 		itf.(*Poster).Post(evt)
-	}
+	} // else the evt will be discard
 }
 
 func (bus *Bus) Subjects(name string) *Poster {

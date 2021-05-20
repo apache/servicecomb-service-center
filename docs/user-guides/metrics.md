@@ -11,6 +11,8 @@
 ### Pub/Sub
 1. notify_publish_total
 1. notify_publish_durations_microseconds
+1. notify_pending_total
+1. notify_pending_durations_microseconds
 1. notify_subscriber_total
 
 ### Meta
@@ -25,6 +27,8 @@
 ### Backend
 1. db_backend_event_total
 1. db_backend_event_durations_microseconds
+1. db_dispatch_event_total
+1. db_dispatch_event_durations_microseconds
 1. db_backend_operation_total
 1. db_backend_operation_durations_microseconds
 1. db_backend_total

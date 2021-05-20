@@ -18,39 +18,20 @@
 package event
 
 import (
-	"context"
-	"time"
-
+	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/event"
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	simple "github.com/apache/servicecomb-service-center/pkg/time"
-	pb "github.com/go-chassis/cari/discovery"
+	"github.com/apache/servicecomb-service-center/server/metrics"
 )
 
-const (
-	AddJobTimeout  = 1 * time.Second
-	EventQueueSize = 5000
-)
+var errBusy = fmt.Errorf("too busy")
 
-var INSTANCE = event.RegisterType("INSTANCE", EventQueueSize)
-
-// 状态变化推送
-type InstanceEvent struct {
-	event.Event
-	Revision int64
-	Response *pb.WatchInstanceResponse
-}
-
-type InstanceEventListWatcher struct {
+type InstanceSubscriber struct {
 	event.Subscriber
-	Job          chan *InstanceEvent
-	ListRevision int64
-	ListFunc     func() (results []*pb.WatchInstanceResponse, rev int64)
-	listCh       chan struct{}
+	Job chan *InstanceEvent
 }
 
-func (w *InstanceEventListWatcher) SetError(err error) {
+func (w *InstanceSubscriber) SetError(err error) {
 	w.Subscriber.SetError(err)
 	// 触发清理job
 	e := w.Bus().Fire(event.NewUnhealthyEvent(w))
@@ -59,108 +40,64 @@ func (w *InstanceEventListWatcher) SetError(err error) {
 	}
 }
 
-func (w *InstanceEventListWatcher) OnAccept() {
+func (w *InstanceSubscriber) OnAccept() {
 	if w.Err() != nil {
 		return
 	}
 	log.Debugf("accepted by event service, %s watcher %s %s", w.Type(), w.Group(), w.Subject())
-	gopool.Go(w.listAndPublishJobs)
-}
-
-func (w *InstanceEventListWatcher) listAndPublishJobs(_ context.Context) {
-	defer close(w.listCh)
-	if w.ListFunc == nil {
-		return
-	}
-	results, rev := w.ListFunc()
-	w.ListRevision = rev
-	for _, response := range results {
-		w.sendMessage(NewInstanceEvent(w.Group(), w.Subject(), w.ListRevision, response))
-	}
 }
 
 //被通知
-func (w *InstanceEventListWatcher) OnMessage(job event.Event) {
+func (w *InstanceSubscriber) OnMessage(evt event.Event) {
 	if w.Err() != nil {
 		return
 	}
 
-	wJob, ok := job.(*InstanceEvent)
+	wJob, ok := evt.(*InstanceEvent)
 	if !ok {
-		return
-	}
-
-	select {
-	case <-w.listCh:
-	default:
-		timer := time.NewTimer(w.Timeout())
-		select {
-		case <-w.listCh:
-			timer.Stop()
-		case <-timer.C:
-			log.Errorf(nil,
-				"the %s listwatcher %s %s is not ready[over %s], send the event %v",
-				w.Type(), w.Group(), w.Subject(), w.Timeout(), job)
-		}
-	}
-
-	// the negative revision is specially for mongo scene,should be removed after mongo support revison.
-	if wJob.Revision >= 0 && wJob.Revision <= w.ListRevision {
-		log.Warnf("unexpected event %s job is coming in, watcher %s %s, job is %v, current revision is %v",
-			w.Type(), w.Group(), w.Subject(), job, w.ListRevision)
 		return
 	}
 	w.sendMessage(wJob)
 }
 
-func (w *InstanceEventListWatcher) sendMessage(job *InstanceEvent) {
+func (w *InstanceSubscriber) sendMessage(evt *InstanceEvent) {
 	defer log.Recover()
+
+	metrics.ReportPendingCompleted(evt)
+
 	select {
-	case w.Job <- job:
+	case w.Job <- evt:
 	default:
-		timer := time.NewTimer(w.Timeout())
+		log.Errorf(nil, "the %s watcher %s %s event queue is full, drop the blocked events",
+			w.Type(), w.Group(), w.Subject())
+		w.cleanup()
+		w.Job <- evt
+	}
+}
+
+func (w *InstanceSubscriber) cleanup() {
+	for {
 		select {
-		case w.Job <- job:
-			timer.Stop()
-		case <-timer.C:
-			log.Errorf(nil,
-				"the %s watcher %s %s event queue is full[over %s], drop the event %v",
-				w.Type(), w.Group(), w.Subject(), w.Timeout(), job)
+		case evt, ok := <-w.Job:
+			if !ok {
+				return
+			}
+			metrics.ReportPublishCompleted(evt, errBusy)
+		default:
+			return
 		}
 	}
 }
 
-func (w *InstanceEventListWatcher) Timeout() time.Duration {
-	return AddJobTimeout
-}
-
-func (w *InstanceEventListWatcher) Close() {
+func (w *InstanceSubscriber) Close() {
+	w.cleanup()
 	close(w.Job)
 }
 
-func NewInstanceEvent(serviceID, domainProject string, rev int64, response *pb.WatchInstanceResponse) *InstanceEvent {
-	return &InstanceEvent{
-		Event:    event.NewEvent(INSTANCE, domainProject, serviceID),
-		Revision: rev,
-		Response: response,
-	}
-}
-
-func NewInstanceEventWithTime(serviceID, domainProject string, rev int64, createAt simple.Time, response *pb.WatchInstanceResponse) *InstanceEvent {
-	return &InstanceEvent{
-		Event:    event.NewEventWithTime(INSTANCE, domainProject, serviceID, createAt),
-		Revision: rev,
-		Response: response,
-	}
-}
-
-func NewInstanceEventListWatcher(serviceID, domainProject string,
-	listFunc func() (results []*pb.WatchInstanceResponse, rev int64)) *InstanceEventListWatcher {
-	watcher := &InstanceEventListWatcher{
+func NewInstanceSubscriber(serviceID, domainProject string) *InstanceSubscriber {
+	watcher := &InstanceSubscriber{
 		Subscriber: event.NewSubscriber(INSTANCE, domainProject, serviceID),
 		Job:        make(chan *InstanceEvent, INSTANCE.QueueSize()),
-		ListFunc:   listFunc,
-		listCh:     make(chan struct{}),
 	}
 	return watcher
 }

@@ -47,7 +47,6 @@ var UPDATEINSTANCEMETADATA = "/v4/default/registry/microservices/:serviceId/inst
 var UPDATEINSTANCESTATUS = "/v4/default/registry/microservices/:serviceId/instances/:instanceId/status"
 var INSTANCEHEARTBEAT = "/v4/default/registry/microservices/:serviceId/instances/:instanceId/heartbeat"
 var INSTANCEWATCHER = "/v4/default/registry/microservices/:serviceId/watcher"
-var INSTANCELISTWATCHER = "/v4/default/registry/microservices/:serviceId/listwatcher"
 
 //Governance API's
 var GETGOVERNANCESERVICEDETAILS = "/v4/default/govern/microservices/:serviceId"

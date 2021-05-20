@@ -31,12 +31,15 @@ type Subscriber interface {
 	Bus() *BusService
 	SetBus(*BusService)
 
+	// Err event bus remove subscriber automatically, if return not nil.
+	// Implement of OnMessage should call SetError when run exception
 	Err() error
 	SetError(err error)
 
 	Close()
+	// OnAccept call when subscriber appended in event bus successfully
 	OnAccept()
-	// The event bus will callback this function, so it must be non-blocked.
+	// OnMessage call when event bus fire a msg, it must be non-blocked
 	OnMessage(Event)
 }
 

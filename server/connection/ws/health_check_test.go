@@ -15,21 +15,27 @@
  * limitations under the License.
  */
 
-package proto
+package ws_test
 
 import (
-	"context"
-
-	"github.com/go-chassis/cari/discovery"
-	"github.com/gorilla/websocket"
+	"github.com/apache/servicecomb-service-center/server/connection/ws"
+	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
-type ServiceInstanceCtrlServerEx interface {
-	ServiceInstanceCtrlServer
+func TestNewHealthCheck(t *testing.T) {
+	t.Run("should not return nil when new", func(t *testing.T) {
+		assert.NotNil(t, ws.NewHealthCheck())
+	})
+}
 
-	BatchFind(ctx context.Context, in *discovery.BatchFindInstancesRequest) (*discovery.BatchFindInstancesResponse, error)
+func TestHealthCheck_Run(t *testing.T) {
+	mock := NewTest()
 
-	WebSocketWatch(ctx context.Context, in *discovery.WatchInstanceRequest, conn *websocket.Conn)
-
-	ClusterHealth(ctx context.Context) (*discovery.GetInstancesResponse, error)
+	t.Run("should return 1 when accept one ws", func(t *testing.T) {
+		check := ws.NewHealthCheck()
+		webSocket := ws.NewWebSocket("", "", mock.ServerConn)
+		assert.Equal(t, 1, check.Accept(webSocket))
+		assert.Equal(t, 0, check.Remove(webSocket))
+	})
 }

@@ -15,21 +15,28 @@
  * limitations under the License.
  */
 
-package proto
+package ws_test
 
 import (
 	"context"
-
-	"github.com/go-chassis/cari/discovery"
-	"github.com/gorilla/websocket"
+	"github.com/apache/servicecomb-service-center/server/connection/ws"
+	"github.com/apache/servicecomb-service-center/server/event"
+	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
-type ServiceInstanceCtrlServerEx interface {
-	ServiceInstanceCtrlServer
+func TestNewBroker(t *testing.T) {
+	t.Run("should not return nil when new broker", func(t *testing.T) {
+		assert.NotNil(t, ws.NewBroker(nil, nil))
 
-	BatchFind(ctx context.Context, in *discovery.BatchFindInstancesRequest) (*discovery.BatchFindInstancesResponse, error)
+	})
+}
 
-	WebSocketWatch(ctx context.Context, in *discovery.WatchInstanceRequest, conn *websocket.Conn)
-
-	ClusterHealth(ctx context.Context) (*discovery.GetInstancesResponse, error)
+func TestBroker_Listen(t *testing.T) {
+	t.Run("should return err when listen context cancelled", func(t *testing.T) {
+		broker := ws.NewBroker(nil, event.NewInstanceSubscriber("", ""))
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+		assert.Equal(t, context.Canceled, broker.Listen(ctx))
+	})
 }

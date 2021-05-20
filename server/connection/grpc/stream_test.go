@@ -42,7 +42,7 @@ func (x *grpcWatchServer) Context() context.Context {
 }
 
 func TestHandleWatchJob(t *testing.T) {
-	w := event.NewInstanceEventListWatcher("g", "s", nil)
+	w := event.NewInstanceSubscriber("g", "s")
 	w.Job <- nil
 	err := stream.Handle(w, &grpcWatchServer{})
 	if err == nil {
@@ -55,6 +55,6 @@ func TestHandleWatchJob(t *testing.T) {
 
 func TestDoStreamListAndWatch(t *testing.T) {
 	defer log.Recover()
-	err := stream.ListAndWatch(context.Background(), "s", nil, nil)
+	err := stream.Watch(context.Background(), "s", nil)
 	t.Fatal("TestDoStreamListAndWatch failed", err)
 }
