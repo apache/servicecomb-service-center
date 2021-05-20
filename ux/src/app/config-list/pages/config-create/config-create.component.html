@@ -117,7 +117,9 @@ limitations under the License.
             class="cse-mg-right-xs"
             *ngFor="let tag of tags; let i = index"
             [tag]="tag"
+            [deletable]="configType === 'custom' && type === 'create'"
             [customViewTemplate]="customTag"
+            (tagDelete)="onDeleteTag(i)"
           ></d-tag>
           <ng-template #customTag let-tag="tag">
             <span title="{{ tag }}">{{ tag }}</span>
