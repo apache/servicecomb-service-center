@@ -59,7 +59,7 @@ var (
 )
 
 func init() {
-	prometheus.MustRegister(eventsCounter, eventsLatency)
+	prometheus.MustRegister(eventsCounter, eventsLatency, dispatchCounter, dispatchLatency)
 }
 
 func ReportProcessEventCompleted(prefix string, evts []KvEvent) {

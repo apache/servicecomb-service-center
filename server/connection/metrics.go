@@ -74,7 +74,7 @@ var (
 )
 
 func init() {
-	prometheus.MustRegister(notifyCounter, notifyLatency, subscriberGauge)
+	prometheus.MustRegister(notifyCounter, notifyLatency, subscriberGauge, pendingLatency, pendingGauge)
 }
 
 func ReportPublishCompleted(evt event.Event, err error) {
