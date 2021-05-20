@@ -18,6 +18,7 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
+import { uniqBy } from 'lodash';
 import { DValidateRules, FormLayout, ModalService } from 'ng-devui';
 import { EditorComponent } from 'ngx-monaco-editor';
 import { ConfigService, getTagsByObj } from '../../../../common/config.service';
@@ -144,6 +145,8 @@ export class ConfigCreateComponent implements OnInit {
           // todo 提示
         }
       );
+    } else {
+      this.formGroup.controls.isAvailable.setValue(true);
     }
   }
 
@@ -210,9 +213,19 @@ export class ConfigCreateComponent implements OnInit {
   }
 
   onAddTage(): void {
-    this.tags.push(`${this.configTageKey}=${this.configTageValue}`);
+    if (!this.configTageKey) {
+      return;
+    }
+    this.tags.push(`${this.configTageKey}=${this.configTageValue || ''}`);
+    // key需要 唯一
+    this.tags = uniqBy(this.tags, (tag) => {
+      return tag.split('=')[0];
+    });
     this.configTageKey = '';
     this.configTageValue = '';
+  }
+  onDeleteTag(index: number): void {
+    this.tags.splice(index, 1);
   }
 
   onSubmit(): void {
@@ -222,7 +235,7 @@ export class ConfigCreateComponent implements OnInit {
       pre[key] = value;
       return pre;
     }, {});
-    if (this.configTageKey) {
+    if (this.configTageKey && labels[this.configTageKey] === undefined) {
       labels[this.configTageKey] = this.configTageValue || '';
     }
     const param = {
