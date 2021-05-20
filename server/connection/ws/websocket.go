@@ -19,17 +19,18 @@ package ws
 
 import (
 	"context"
-	"fmt"
+	"errors"
+	"time"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/connection"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"github.com/gorilla/websocket"
-	"time"
 )
 
 const Websocket = "Websocket"
 
-var errServiceNotExist = fmt.Errorf("Service does not exist.")
+var errServiceNotExist = errors.New("service does not exist")
 
 type WebSocket struct {
 	Options
