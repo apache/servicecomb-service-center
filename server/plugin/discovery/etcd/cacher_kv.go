@@ -451,6 +451,7 @@ func (c *KvCacher) notify(evts []discovery.KvEvent) {
 	for _, evt := range evts {
 		c.Cfg.OnEvent(evt)
 	}
+	discovery.ReportDispatchEventCompleted(c.Cfg.Key, evts)
 }
 
 func (c *KvCacher) doParse(src *mvccpb.KeyValue) (kv *discovery.KeyValue) {
