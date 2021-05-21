@@ -31,5 +31,7 @@ type ServiceInstanceCtrlServerEx interface {
 
 	WebSocketWatch(ctx context.Context, in *discovery.WatchInstanceRequest, conn *websocket.Conn)
 
+	WatchHeartbeat(ctx context.Context, in *discovery.HeartbeatRequest, conn *websocket.Conn)
+
 	ClusterHealth(ctx context.Context) (*discovery.GetInstancesResponse, error)
 }

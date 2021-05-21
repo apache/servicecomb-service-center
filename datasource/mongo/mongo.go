@@ -86,7 +86,7 @@ func (ds *DataSource) initialize() error {
 }
 
 func (ds *DataSource) initPlugins() error {
-	kind := config.GetString("registry.mongo.heartbeat.kind", "cache")
+	kind := config.GetString("heartbeat.kind", "cache")
 	err := heartbeat.Init(heartbeat.Options{PluginImplName: heartbeat.ImplName(kind)})
 	if err != nil {
 		log.Fatal("heartbeat init failed", err)

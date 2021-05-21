@@ -1391,3 +1391,77 @@ func TestInstance_Unregister(t *testing.T) {
 		assert.NotEqual(t, pb.ResponseSuccess, resp.Response.GetCode())
 	})
 }
+
+func TestInstance_Exist(t *testing.T) {
+	var (
+		serviceId  string
+		instanceId string
+	)
+
+	t.Run("register service and instance", func(t *testing.T) {
+		respCreateService, err := datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				AppId:       "check_exist_instance_ms",
+				ServiceName: "check_exist_instance_service_ms",
+				Version:     "1.0.5",
+				Level:       "FRONT",
+				Status:      pb.MS_UP,
+			},
+			Tags: map[string]string{
+				"test": "test",
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
+		serviceId = respCreateService.ServiceId
+
+		respCreateInstance, err := datasource.Instance().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
+			Instance: &pb.MicroServiceInstance{
+				ServiceId: serviceId,
+				HostName:  "UT-HOST-MS",
+				Endpoints: []string{
+					"checkExist:127.0.0.2:8080",
+				},
+				Status: pb.MSI_UP,
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, respCreateInstance.Response.GetCode())
+		instanceId = respCreateInstance.InstanceId
+	})
+
+	t.Run("the check instance should exist", func(t *testing.T) {
+		respCheckInstance, err := datasource.Instance().ExistInstanceByID(getContext(), &pb.MicroServiceInstanceKey{
+			ServiceId:  serviceId,
+			InstanceId: instanceId,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, respCheckInstance.Response.GetCode())
+	})
+
+	t.Run("unregister instance", func(t *testing.T) {
+		resp, err := datasource.Instance().UnregisterInstance(getContext(), &pb.UnregisterInstanceRequest{
+			ServiceId:  serviceId,
+			InstanceId: instanceId,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
+	})
+
+	t.Run("The check instance should not exist", func(t *testing.T) {
+		resp, err := datasource.Instance().ExistInstanceByID(getContext(), &pb.MicroServiceInstanceKey{
+			ServiceId:  serviceId,
+			InstanceId: instanceId,
+		})
+		assert.NotNil(t, err)
+		assert.Equal(t, pb.ErrInstanceNotExists, resp.Response.GetCode())
+	})
+
+	t.Run("unregister service", func(t *testing.T) {
+		resp, err := datasource.Instance().UnregisterService(getContext(), &pb.DeleteServiceRequest{
+			ServiceId: serviceId,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
+	})
+}

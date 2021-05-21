@@ -659,6 +659,21 @@ func (ds *DataSource) RegisterInstance(ctx context.Context, request *pb.Register
 	}, nil
 }
 
+func (ds *DataSource) ExistInstanceByID(ctx context.Context, request *pb.MicroServiceInstanceKey) (*pb.GetExistenceByIDResponse, error) {
+	domainProject := util.ParseDomainProject(ctx)
+	exist, _ := serviceUtil.InstanceExist(ctx, domainProject, request.ServiceId, request.InstanceId)
+	if !exist {
+		return &pb.GetExistenceByIDResponse{
+			Response: pb.CreateResponse(pb.ErrInstanceNotExists, "Check instance exist failed."),
+			Exist:    false,
+		}, datasource.ErrInstanceNotExists
+	}
+	return &pb.GetExistenceByIDResponse{
+		Response: pb.CreateResponse(pb.ResponseSuccess, "Check service exists successfully."),
+		Exist:    exist,
+	}, nil
+}
+
 func (ds *DataSource) GetInstance(ctx context.Context, request *pb.GetOneInstanceRequest) (
 	*pb.GetOneInstanceResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)

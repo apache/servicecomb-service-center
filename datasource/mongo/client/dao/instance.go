@@ -102,3 +102,8 @@ func UpdateInstance(ctx context.Context, filter interface{}, update interface{},
 	}
 	return nil
 }
+
+func ExistInstance(ctx context.Context, serviceID string, instanceID string) (bool, error) {
+	filter := mutil.NewBasicFilter(ctx, mutil.InstanceServiceID(serviceID), mutil.InstanceInstanceID(instanceID))
+	return client.GetMongoClient().DocExist(ctx, model.CollectionInstance, filter)
+}

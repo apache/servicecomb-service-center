@@ -1530,6 +1530,21 @@ func preProcessRegister(ctx context.Context, instance *discovery.MicroServiceIns
 	}, true, nil
 }
 
+func (ds *DataSource) ExistInstanceByID(ctx context.Context, request *discovery.MicroServiceInstanceKey) (*discovery.GetExistenceByIDResponse, error) {
+	exist, _ := dao.ExistInstance(ctx, request.ServiceId, request.InstanceId)
+	if !exist {
+		return &discovery.GetExistenceByIDResponse{
+			Response: discovery.CreateResponse(discovery.ErrInstanceNotExists, "Check instance exist failed."),
+			Exist:    false,
+		}, datasource.ErrInstanceNotExists
+	}
+
+	return &discovery.GetExistenceByIDResponse{
+		Response: discovery.CreateResponse(discovery.ResponseSuccess, "Check service exists successfully."),
+		Exist:    exist,
+	}, nil
+}
+
 // GetInstance returns instance under the current domain
 func (ds *DataSource) GetInstance(ctx context.Context, request *discovery.GetOneInstanceRequest) (*discovery.GetOneInstanceResponse, error) {
 	var service *model.Service

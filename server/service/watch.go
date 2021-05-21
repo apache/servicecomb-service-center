@@ -22,13 +22,15 @@ import (
 	"errors"
 	"fmt"
 
+	pb "github.com/go-chassis/cari/discovery"
+	"github.com/gorilla/websocket"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/proto"
 	"github.com/apache/servicecomb-service-center/server/connection/grpc"
+	"github.com/apache/servicecomb-service-center/server/connection/hbws"
 	"github.com/apache/servicecomb-service-center/server/connection/ws"
-	pb "github.com/go-chassis/cari/discovery"
-	"github.com/gorilla/websocket"
 )
 
 func (s *InstanceService) WatchPreOpera(ctx context.Context, in *pb.WatchInstanceRequest) error {
@@ -39,10 +41,28 @@ func (s *InstanceService) WatchPreOpera(ctx context.Context, in *pb.WatchInstanc
 		ServiceId: in.SelfServiceId,
 	})
 	if err != nil {
+		log.Error("", err)
 		return err
 	}
 	if !resp.Exist {
 		return datasource.ErrServiceNotExists
+	}
+	return nil
+}
+
+func (s *InstanceService) HeartBeatPreOpera(ctx context.Context, in *pb.HeartbeatRequest) error {
+	if in == nil || len(in.ServiceId) == 0 || len(in.InstanceId) == 0 {
+		return errors.New("request format invalid")
+	}
+	resp, err := datasource.Instance().ExistInstanceByID(ctx, &pb.MicroServiceInstanceKey{
+		ServiceId:  in.ServiceId,
+		InstanceId: in.InstanceId,
+	})
+	if err != nil {
+		return err
+	}
+	if !resp.Exist {
+		return datasource.ErrInstanceNotExists
 	}
 	return nil
 }
@@ -64,6 +84,15 @@ func (s *InstanceService) WebSocketWatch(ctx context.Context, in *pb.WatchInstan
 		return
 	}
 	ws.Watch(ctx, in.SelfServiceId, conn)
+}
+
+func (s *InstanceService) WatchHeartbeat(ctx context.Context, in *pb.HeartbeatRequest, conn *websocket.Conn) {
+	log.Info(fmt.Sprintf("new a web socket with service[%s] ,instance[%s]", in.ServiceId, in.InstanceId))
+	if err := s.HeartBeatPreOpera(ctx, in); err != nil {
+		hbws.SendEstablishError(conn, err)
+		return
+	}
+	hbws.Heartbeat(ctx, conn, in.ServiceId, in.InstanceId)
 }
 
 func (s *InstanceService) QueryAllProvidersInstances(ctx context.Context, in *pb.WatchInstanceRequest) ([]*pb.WatchInstanceResponse, int64) {
