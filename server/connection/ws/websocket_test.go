@@ -41,14 +41,17 @@ func init() {
 }
 
 type watcherConn struct {
+	MockServer *httptest.Server
 	ClientConn *websocket.Conn
 	ServerConn *websocket.Conn
 }
 
 func (h *watcherConn) Test() {
-	s := httptest.NewServer(h)
+	h.MockServer = httptest.NewServer(h)
 	h.ClientConn, _, _ = websocket.DefaultDialer.Dial(
-		strings.Replace(s.URL, "http://", "ws://", 1), nil)
+		strings.Replace(h.MockServer.URL, "http://", "ws://", 1), nil)
+	// wait server is ready
+	<-time.After(time.Second)
 }
 
 func (h *watcherConn) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -66,6 +69,7 @@ func (h *watcherConn) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.ServerConn.Close()
 		return
 	}
+	h.MockServer.Close()
 }
 
 func NewTest() *watcherConn {
