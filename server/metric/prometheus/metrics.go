@@ -18,16 +18,18 @@
 package prometheus
 
 import (
-	"github.com/apache/servicecomb-service-center/pkg/rest"
-	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/metric"
-	api "github.com/apache/servicecomb-service-center/server/rest"
-	"github.com/prometheus/client_golang/prometheus"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/apache/servicecomb-service-center/pkg/rest"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/metric"
+	api "github.com/apache/servicecomb-service-center/server/rest"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 var (
@@ -68,7 +70,7 @@ var (
 func init() {
 	prometheus.MustRegister(incomingRequests, successfulRequests, reqDurations, queryPerSeconds)
 	if "true" == os.Getenv("METRICS_ENABLE") {
-		api.RegisterServerHandler("/metrics", prometheus.Handler())
+		api.RegisterServerHandler("/metrics", promhttp.Handler())
 	}
 }
 
