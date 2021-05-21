@@ -18,14 +18,14 @@
 package event
 
 import (
-	"fmt"
+	"errors"
 
 	"github.com/apache/servicecomb-service-center/pkg/event"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/metrics"
 )
 
-var errBusy = fmt.Errorf("too busy")
+var errBusy = errors.New("too busy")
 
 type InstanceSubscriber struct {
 	event.Subscriber
