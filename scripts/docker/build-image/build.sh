@@ -24,7 +24,7 @@ SCRIPT_DIR=$(cd $(dirname $0); pwd)
 BASE_DIR=${SCRIPT_DIR}/../../../
 
 # build all
-export RELEASE=${1:-"latest"}
+export RELEASE=${1:-"2.0.0"}
 
 source ${SCRIPT_DIR}/../../build/tools.sh
 

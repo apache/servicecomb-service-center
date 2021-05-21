@@ -120,7 +120,7 @@ registry:
       workerNum: 10
       timeout: 10
     cluster:
-      uri: mongodb://sc:123@localhost:27017
+      uri: mongodb://localhost:27017
       sslEnabled: false
       rootCAFile: /opt/ssl/ca.pem
       verifyPeer: false

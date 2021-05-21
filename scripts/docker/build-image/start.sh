@@ -21,12 +21,17 @@ umask 027
 
 cd /opt/service-center
 
-set +e
-sed -i "s/^httpaddr.*=.*$/httpaddr = $(hostname)/g" conf/app.conf
-if [ ! -z "${BACKEND_ADDRESS}" ]; then
-    sed -i "s|^registry_plugin.*=.*$|registry_plugin = etcd|g" conf/app.conf
-    sed -i "s|^manager_cluster.*=.*$|manager_cluster = ${BACKEND_ADDRESS}|g" conf/app.conf
+export SERVER_HOST="$(hostname)"
+export LOG_FILE=${LOG_FILE:-''}
+export LOG_LEVEL=${LOG_LEVEL:-'DEBUG'}
+if [ -z "${BACKEND_ADDRESS}" ]; then
+  export REGISTRY_KIND=${REGISTRY_KIND:-'embeded_etcd'}
+  export REGISTRY_ETCD_CLUSTER_NAME=${REGISTRY_ETCD_CLUSTER_NAME:-'sc-0'}
+  export REGISTRY_ETCD_CLUSTER_MANAGER_ENDPOINTS=${REGISTRY_ETCD_CLUSTER_MANAGER_ENDPOINTS:-'http://127.0.0.1:2380'}
+  export REGISTRY_ETCD_CLUSTER_ENDPOINTS=${REGISTRY_ETCD_CLUSTER_ENDPOINTS:-'sc-0=http://127.0.0.1:2380'}
+else
+  export REGISTRY_KIND=${REGISTRY_KIND:-'etcd'}
+  export REGISTRY_ETCD_CLUSTER_ENDPOINTS=${BACKEND_ADDRESS}
 fi
-set -e
 
 ./service-center

@@ -51,8 +51,6 @@ services:
     # restart: always
     ports:
       - "30100:30100"
-  #  environment:
-  #    BACKEND_ADDRESS: etcd:2379
 
   scfrontend:
     depends_on:
