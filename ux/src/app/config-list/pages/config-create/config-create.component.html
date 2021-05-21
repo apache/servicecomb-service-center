@@ -133,10 +133,7 @@ limitations under the License.
             [placeholder]="'kie.create.tagKeyPlaceholder' | translate"
             [(ngModel)]="configTageKey"
             [ngModelOptions]="{ standalone: true }"
-            [dValidateRules]="[
-            { required: true },
-            { whitespace: true },
-          ]"
+            [dValidateRules]="tagRules"
           />
           <input
             type="text"
@@ -145,10 +142,7 @@ limitations under the License.
             [placeholder]="'kie.create.tagValuePlaceholder' | translate"
             [(ngModel)]="configTageValue"
             [ngModelOptions]="{ standalone: true }"
-            [dValidateRules]="[
-            { required: true },
-            { whitespace: true },
-          ]"
+            [dValidateRules]="tagRules"
           />
           <d-button
             icon="icon-add"

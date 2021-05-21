@@ -18,91 +18,65 @@ limitations under the License.
   <h2>{{ "kie.create.serviceSelect" | translate }}</h2>
 
   <div class="container">
-    <form dForm ngForm>
-      <d-form-item>
-        <d-form-label [required]="true">
-          {{ "kie.create.serviceSelect" | translate }}
-        </d-form-label>
-        <d-form-control>
-          <d-data-table
-            [dataSource]="dataSource"
-            [scrollable]="true"
-            [type]="'striped'"
-            [tableWidthConfig]="tableWidthConfig"
-            [headerBg]="true"
-          >
-            <thead dTableHead>
-              <tr dTableRow>
-                <th dHeadCell></th>
-                <th dHeadCell>{{ "kie.modal.serviceName" | translate }}</th>
-                <th dHeadCell>{{ "kie.modal.app" | translate }}</th>
-                <th dHeadCell>{{ "kie.modal.environment" | translate }}</th>
-              </tr>
-            </thead>
-            <tbody dTableBody>
-              <ng-template let-rowItem="rowItem" let-rowIndex="rowIndex">
-                <tr dTableRow style="line-height: 100%">
-                  <td dTableCell field="radio">
-                    <d-radio
-                      style="vertical-align: middle; padding-right: 0"
-                      [name]="'radio'"
-                      [(ngModel)]="selectService"
-                      (ngModelChange)="onChangeService(rowItem)"
-                      [value]="rowItem"
-                    ></d-radio>
-                  </td>
-                  <td dTableCell field="serviceName">
-                    {{ rowItem.serviceName }}
-                  </td>
-                  <td dTableCell field="appId">
-                    {{ rowItem.appId }}
-                  </td>
-                  <td dTableCell field="environment">
-                    {{ rowItem.environment | EnvironmentPipe }}
-                  </td>
-                </tr>
-              </ng-template>
-            </tbody>
-          </d-data-table>
-          <d-pagination
-            class="cse-mg-top-xs"
-            [autoHide]="true"
-            [size]="'sm'"
-            [total]="pager.total"
-            [(pageSize)]="pager.pageSize"
-            [(pageIndex)]="pager.pageIndex"
-            [canViewTotal]="true"
-            [canChangePageSize]="true"
-            [pageSizeOptions]="pager.pageSizeOptions"
-            [maxItems]="5"
-            (pageIndexChange)="onPaginationChange($event, pager.pageSize)"
-            (pageSizeChange)="onPaginationChange(pager.pageIndex, $event)"
-          >
-          </d-pagination>
-        </d-form-control>
-      </d-form-item>
-      <d-form-item>
-        <d-form-label [required]="true">
-          {{ "kie.modal.vision" | translate }}
-        </d-form-label>
-        <d-form-control>
-          <d-select
-            class="w-200"
-            [placeholder]="'kie.modal.visionPlaceholder' | translate"
-            [options]="options"
-            [filterKey]="'version'"
-            [readonly]="true"
-            [(ngModel)]="selectVersion"
-            [ngModelOptions]="{ standalone: true }"
-          ></d-select>
-        </d-form-control>
-      </d-form-item>
-    </form>
+    <d-data-table
+      [dataSource]="dataSource"
+      [scrollable]="true"
+      [type]="'striped'"
+      [tableWidthConfig]="tableWidthConfig"
+      [headerBg]="true"
+    >
+      <thead dTableHead>
+        <tr dTableRow>
+          <th dHeadCell></th>
+          <th dHeadCell>{{ "kie.modal.serviceName" | translate }}</th>
+          <th dHeadCell>{{ "kie.modal.app" | translate }}</th>
+          <th dHeadCell>{{ "kie.modal.environment" | translate }}</th>
+        </tr>
+      </thead>
+      <tbody dTableBody>
+        <ng-template let-rowItem="rowItem" let-rowIndex="rowIndex">
+          <tr dTableRow style="line-height: 100%">
+            <td dTableCell field="radio">
+              <d-radio
+                style="vertical-align: middle; padding-right: 0"
+                [name]="'radio'"
+                [(ngModel)]="selectService"
+                [value]="rowItem"
+              ></d-radio>
+            </td>
+            <td dTableCell field="serviceName">
+              {{ rowItem.serviceName }}
+            </td>
+            <td dTableCell field="appId">
+              {{ rowItem.appId }}
+            </td>
+            <td dTableCell field="environment">
+              {{ rowItem.environment | EnvironmentPipe }}
+            </td>
+          </tr>
+        </ng-template>
+      </tbody>
+    </d-data-table>
+    <d-pagination
+      class="cse-mg-top-xs"
+      [autoHide]="true"
+      [size]="'sm'"
+      [total]="pager.total"
+      [(pageSize)]="pager.pageSize"
+      [(pageIndex)]="pager.pageIndex"
+      [canViewTotal]="true"
+      [canChangePageSize]="true"
+      [pageSizeOptions]="pager.pageSizeOptions"
+      [maxItems]="5"
+      (pageIndexChange)="onPaginationChange($event, pager.pageSize)"
+      (pageSizeChange)="onPaginationChange(pager.pageIndex, $event)"
+    >
+    </d-pagination>
   </div>
   <div class="footer">
     <d-button
       bsStyle="danger"
-      [disabled]="!selectService || !selectVersion"
+      [disabled]="!selectService"
       (click)="onConfirm()"
     >
       {{ "common.confirm" | translate }}

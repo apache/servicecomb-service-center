@@ -44,8 +44,6 @@ export class SelectServiceComponent implements OnInit {
     pageSize: 10,
     pageSizeOptions: [5, 10],
   };
-  options!: any[];
-  selectVersion!: any;
 
   tableWidthConfig: TableWidthConfig[] = [
     {
@@ -75,7 +73,6 @@ export class SelectServiceComponent implements OnInit {
         this.selectService = this.dataSource.find(
           (item: any, index: number) => index === 0
         );
-        this.onChangeService(this.selectService);
       },
       (err) => {
         // todo 提示
@@ -108,15 +105,8 @@ export class SelectServiceComponent implements OnInit {
     }
   }
 
-  onChangeService(rowItem: any): void {
-    this.options = rowItem.versions || [];
-    this.selectVersion = this.options.find(
-      (item: any, index: number) => index === 0
-    );
-  }
-
   onConfirm(): void {
-    this.data.onClose(this.selectService, this.selectVersion.version);
+    this.data.onClose(this.selectService);
   }
 
   onCancel(): void {

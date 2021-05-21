@@ -51,7 +51,6 @@ export const configTypeFn = (value: Lables): type => {
   if (
     value.app &&
     value.service &&
-    value.version &&
     value.environment !== undefined
   ) {
     return 'service';
