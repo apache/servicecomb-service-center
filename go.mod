@@ -10,6 +10,7 @@ require (
 	github.com/coreos/pkg v0.0.0-20180108230652-97fdf19511ea // v4
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/elithrar/simple-scrypt v1.3.0
+	github.com/go-chassis/cari v0.3.0
 	github.com/go-chassis/foundation v0.3.0
 	github.com/go-chassis/go-archaius v1.3.2
 	github.com/go-chassis/go-chassis v0.0.0-20200826064053-d90be848aa10

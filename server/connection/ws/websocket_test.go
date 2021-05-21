@@ -159,6 +159,6 @@ func TestWebSocket_CheckHealth(t *testing.T) {
 	})
 	t.Run("should return err when consumer not exist", func(t *testing.T) {
 		ws := wss.NewWebSocket("", "", mock.ServerConn)
-		assert.Equal(t, "Service does not exist.", ws.CheckHealth(context.Background()).Error())
+		assert.Equal(t, "service does not exist", ws.CheckHealth(context.Background()).Error())
 	})
 }

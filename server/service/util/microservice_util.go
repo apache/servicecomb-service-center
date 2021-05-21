@@ -64,15 +64,6 @@ func GetService(ctx context.Context, domainProject string, serviceID string) (*p
 	return serviceResp.Kvs[0].Value.(*pb.MicroService), nil
 }
 
-// GetServiceFromCache gets service from cache
-func GetServiceFromCache(domainProject string, serviceID string) *pb.MicroService {
-	ctx := context.WithValue(context.WithValue(context.Background(),
-		util.CtxCacheOnly, "1"),
-		util.CtxGlobal, "1")
-	svc, _ := GetService(ctx, domainProject, serviceID)
-	return svc
-}
-
 func getServicesRawData(ctx context.Context, domainProject string) ([]*discovery.KeyValue, error) {
 	key := apt.GenerateServiceKey(domainProject, "")
 	opts := append(FromContext(ctx),

@@ -18,7 +18,6 @@ package prometheus
 import (
 	"github.com/apache/servicecomb-service-center/server/metric"
 	dto "github.com/prometheus/client_model/go"
-	"os"
 )
 
 const (
@@ -65,9 +64,7 @@ func (r *APIReporter) toLabels(pairs []*dto.LabelPair) (labels []string) {
 }
 
 func init() {
-	if "true" == os.Getenv("METRICS_ENABLE") {
-		metric.RegisterReporter("rest", NewAPIReporter())
-	}
+	metric.RegisterReporter("rest", NewAPIReporter())
 }
 
 func NewAPIReporter() *APIReporter {

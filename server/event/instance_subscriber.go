@@ -18,12 +18,13 @@
 package event
 
 import (
+	"errors"
 	"github.com/apache/servicecomb-service-center/pkg/event"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"time"
+	"github.com/apache/servicecomb-service-center/server/connection"
 )
 
-const AddJobTimeout = 1 * time.Second
+var errBusy = errors.New("too busy")
 
 type InstanceSubscriber struct {
 	event.Subscriber
@@ -47,40 +48,49 @@ func (w *InstanceSubscriber) OnAccept() {
 }
 
 //被通知
-func (w *InstanceSubscriber) OnMessage(job event.Event) {
+func (w *InstanceSubscriber) OnMessage(evt event.Event) {
 	if w.Err() != nil {
 		return
 	}
 
-	wJob, ok := job.(*InstanceEvent)
+	wJob, ok := evt.(*InstanceEvent)
 	if !ok {
 		return
 	}
 	w.sendMessage(wJob)
 }
 
-func (w *InstanceSubscriber) sendMessage(job *InstanceEvent) {
+func (w *InstanceSubscriber) sendMessage(evt *InstanceEvent) {
 	defer log.Recover()
+
+	connection.ReportPendingCompleted(evt)
+
 	select {
-	case w.Job <- job:
+	case w.Job <- evt:
 	default:
-		timer := time.NewTimer(w.Timeout())
+		log.Errorf(nil, "the %s watcher %s %s event queue is full, drop the blocked events",
+			w.Type(), w.Group(), w.Subject())
+		w.cleanup()
+		w.Job <- evt
+	}
+}
+
+func (w *InstanceSubscriber) cleanup() {
+	for {
 		select {
-		case w.Job <- job:
-			timer.Stop()
-		case <-timer.C:
-			log.Errorf(nil,
-				"the %s watcher %s %s event queue is full[over %s], drop the event %v",
-				w.Type(), w.Group(), w.Subject(), w.Timeout(), job)
+		case evt, ok := <-w.Job:
+			if !ok {
+				return
+			}
+			connection.ReportPublishCompleted(evt, errBusy)
+		default:
+			return
 		}
 	}
 }
 
-func (w *InstanceSubscriber) Timeout() time.Duration {
-	return AddJobTimeout
-}
-
 func (w *InstanceSubscriber) Close() {
+	w.cleanup()
 	close(w.Job)
 }
 

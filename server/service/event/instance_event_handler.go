@@ -18,6 +18,9 @@ package event
 
 import (
 	"context"
+	"fmt"
+	"strings"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -29,7 +32,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/service/cache"
 	"github.com/apache/servicecomb-service-center/server/service/metrics"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
-	"strings"
 )
 
 const (
@@ -57,12 +59,15 @@ func (h *InstanceEventHandler) OnEvent(evt discovery.KvEvent) {
 	domainName := domainProject[:idx]
 	projectName := domainProject[idx+1:]
 
+	ctx := context.WithValue(context.WithValue(context.Background(),
+		util.CtxCacheOnly, "1"),
+		util.CtxGlobal, "1")
+
 	var count float64 = increaseOne
-	switch action {
-	case pb.EVT_INIT:
+	if action == pb.EVT_INIT {
 		metrics.ReportInstances(domainName, count)
-		ms := serviceUtil.GetServiceFromCache(domainProject, providerID)
-		if ms == nil {
+		ms, err := serviceUtil.GetService(ctx, domainProject, providerID)
+		if err != nil {
 			log.Warnf("caught [%s] instance[%s/%s] event, endpoints %v, get cached provider's file failed",
 				action, providerID, providerInstanceID, instance.Endpoints)
 			return
@@ -70,16 +75,23 @@ func (h *InstanceEventHandler) OnEvent(evt discovery.KvEvent) {
 		frameworkName, frameworkVersion := getFramework(ms)
 		metrics.ReportFramework(domainName, projectName, frameworkName, frameworkVersion, count)
 		return
-	case pb.EVT_CREATE:
-		metrics.ReportInstances(domainName, count)
-	case pb.EVT_DELETE:
+	}
+
+	if action == pb.EVT_DELETE {
 		count = decreaseOne
-		metrics.ReportInstances(domainName, count)
 		if !apt.IsDefaultDomainProject(domainProject) {
 			projectName := domainProject[idx+1:]
 			serviceUtil.RemandInstanceQuota(
 				util.SetDomainProject(context.Background(), domainName, projectName))
 		}
+	}
+
+	// 查询服务版本信息
+	ms, err := serviceUtil.GetService(ctx, domainProject, providerID)
+	if err != nil {
+		log.Error(fmt.Sprintf("caught [%s] instance[%s/%s] event, endpoints %v, get cached provider's file failed",
+			action, providerID, providerInstanceID, instance.Endpoints), err)
+		return
 	}
 
 	if event.Center().Closed() {
@@ -88,19 +100,11 @@ func (h *InstanceEventHandler) OnEvent(evt discovery.KvEvent) {
 		return
 	}
 
-	// 查询服务版本信息
-	ctx := context.WithValue(context.WithValue(context.Background(),
-		util.CtxCacheOnly, "1"),
-		util.CtxGlobal, "1")
-	ms, err := serviceUtil.GetService(ctx, domainProject, providerID)
-	if ms == nil {
-		log.Errorf(err, "caught [%s] instance[%s/%s] event, endpoints %v, get cached provider's file failed",
-			action, providerID, providerInstanceID, instance.Endpoints)
-		return
+	if action != pb.EVT_UPDATE {
+		frameworkName, frameworkVersion := getFramework(ms)
+		metrics.ReportInstances(domainName, count)
+		metrics.ReportFramework(domainName, projectName, frameworkName, frameworkVersion, count)
 	}
-
-	frameworkName, frameworkVersion := getFramework(ms)
-	metrics.ReportFramework(domainName, projectName, frameworkName, frameworkVersion, count)
 
 	log.Infof("caught [%s] service[%s][%s/%s/%s/%s] instance[%s] event, endpoints %v",
 		action, providerID, ms.Environment, ms.AppId, ms.ServiceName, ms.Version,
@@ -135,7 +139,6 @@ func PublishInstanceEvent(evt discovery.KvEvent, domainProject string, serviceKe
 		Instance: evt.KV.Value.(*pb.MicroServiceInstance),
 	}
 	for _, consumerID := range subscribers {
-		// TODO add超时怎么处理？
 		evt := event.NewInstanceEventWithTime(consumerID, domainProject, evt.Revision, evt.CreateAt, response)
 		err := event.Center().Fire(evt)
 		if err != nil {
