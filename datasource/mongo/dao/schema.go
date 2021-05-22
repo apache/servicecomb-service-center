@@ -19,15 +19,15 @@ package dao
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/dao/util"
+
+	"github.com/go-chassis/cari/discovery"
 
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
-	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
-	"github.com/go-chassis/cari/discovery"
 )
 
-func GetSchema(ctx context.Context, filter interface{}) (*model.Schema, error) {
-	findRes, err := client.GetMongoClient().FindOne(ctx, model.CollectionSchema, filter)
+func GetSchema(ctx context.Context, filter interface{}) (*Schema, error) {
+	findRes, err := client.GetMongoClient().FindOne(ctx, CollectionSchema, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +35,7 @@ func GetSchema(ctx context.Context, filter interface{}) (*model.Schema, error) {
 		//not get any service,not db err
 		return nil, nil
 	}
-	var schema *model.Schema
+	var schema *Schema
 	err = findRes.Decode(&schema)
 	if err != nil {
 		return nil, err
@@ -44,13 +44,13 @@ func GetSchema(ctx context.Context, filter interface{}) (*model.Schema, error) {
 }
 
 func GetSchemas(ctx context.Context, filter interface{}) ([]*discovery.Schema, error) {
-	getRes, err := client.GetMongoClient().Find(ctx, model.CollectionSchema, filter)
+	getRes, err := client.GetMongoClient().Find(ctx, CollectionSchema, filter)
 	if err != nil {
 		return nil, err
 	}
 	var schemas []*discovery.Schema
 	for getRes.Next(ctx) {
-		var tmp *model.Schema
+		var tmp *Schema
 		err = getRes.Decode(&tmp)
 		if err != nil {
 			return nil, err
@@ -65,15 +65,15 @@ func GetSchemas(ctx context.Context, filter interface{}) ([]*discovery.Schema, e
 }
 
 func SchemaSummaryExist(ctx context.Context, serviceID, schemaID string) (bool, error) {
-	filter := mutil.NewBasicFilter(ctx, mutil.ServiceID(serviceID), mutil.SchemaID(schemaID))
-	res, err := client.GetMongoClient().FindOne(ctx, model.CollectionSchema, filter)
+	filter := util.NewBasicFilter(ctx, util.ServiceID(serviceID), util.SchemaID(schemaID))
+	res, err := client.GetMongoClient().FindOne(ctx, CollectionSchema, filter)
 	if err != nil {
 		return false, err
 	}
 	if res.Err() != nil {
 		return false, nil
 	}
-	var s model.Schema
+	var s Schema
 	err = res.Decode(&s)
 	if err != nil {
 		return false, err

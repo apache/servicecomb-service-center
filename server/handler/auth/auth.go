@@ -18,16 +18,17 @@
 package auth
 
 import (
-	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/response"
-	"github.com/apache/servicecomb-service-center/server/rest/controller"
 	"net/http"
+
+	"github.com/go-chassis/cari/discovery"
 
 	"github.com/apache/servicecomb-service-center/pkg/chain"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/plugin/auth"
-	"github.com/go-chassis/cari/discovery"
+	"github.com/apache/servicecomb-service-center/server/response"
+	"github.com/apache/servicecomb-service-center/server/rest/controller"
 )
 
 const CtxResourceLabels util.CtxKey = "_resource_labels"

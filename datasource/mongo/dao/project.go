@@ -15,34 +15,24 @@
  * limitations under the License.
  */
 
-package event
+package dao
 
 import (
-	"github.com/apache/servicecomb-service-center/datasource/mongo/dao"
-	"github.com/go-chassis/cari/discovery"
+	"context"
+	"fmt"
 
-	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
-	"github.com/apache/servicecomb-service-center/server/metrics"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
+	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
-// DomainEventHandler report domain & project total number
-type DomainEventHandler struct {
-}
-
-func NewDomainEventHandler() *DomainEventHandler {
-	return &DomainEventHandler{}
-}
-
-func (h *DomainEventHandler) Type() string {
-	return dao.ColumnDomain
-}
-
-func (h *DomainEventHandler) OnEvent(evt sd.MongoEvent) {
-	action := evt.Type
-	switch action {
-	case discovery.EVT_INIT, discovery.EVT_CREATE:
-		metrics.ReportDomains(increaseOne)
-	case discovery.EVT_DELETE:
-		metrics.ReportDomains(decreaseOne)
+func AddProject(ctx context.Context, project Project) error {
+	result, err := client.GetMongoClient().Insert(ctx, CollectionProject, project)
+	if err == nil {
+		log.Info(fmt.Sprintf("insert project to mongodb success %s", result.InsertedID))
 	}
+	return err
+}
+
+func ExistProject(ctx context.Context, filter interface{}) (bool, error) {
+	return client.GetMongoClient().DocExist(ctx, CollectionProject, filter)
 }

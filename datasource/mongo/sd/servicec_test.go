@@ -20,16 +20,16 @@
 package sd
 
 import (
+	"github.com/apache/servicecomb-service-center/datasource/mongo/dao"
 	"testing"
 
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
 	"github.com/go-chassis/cari/discovery"
 	"github.com/stretchr/testify/assert"
 )
 
 var serviceCache *MongoCacher
 
-var svc1 = model.Service{
+var svc1 = dao.Service{
 	Domain:  "default",
 	Project: "default",
 	Tags:    nil,
@@ -41,7 +41,7 @@ var svc1 = model.Service{
 	},
 }
 
-var svc2 = model.Service{
+var svc2 = dao.Service{
 	Domain:  "default",
 	Project: "default",
 	Tags:    nil,
@@ -75,7 +75,7 @@ func TestServiceCacheBasicFunc(t *testing.T) {
 		serviceCache.cache.ProcessUpdate(event1)
 		assert.Equal(t, serviceCache.cache.Size(), 1)
 		assert.Nil(t, serviceCache.cache.Get("id_not_exist"))
-		assert.Equal(t, svc1.Service.ServiceName, serviceCache.cache.Get("id1").(model.Service).Service.ServiceName)
+		assert.Equal(t, svc1.Service.ServiceName, serviceCache.cache.Get("id1").(dao.Service).Service.ServiceName)
 		assert.Len(t, serviceCache.cache.GetValue("default/default/appid1/svc1/1.0"), 1)
 		serviceCache.cache.ProcessUpdate(event2)
 		assert.Equal(t, serviceCache.cache.Size(), 2)

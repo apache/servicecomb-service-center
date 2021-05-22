@@ -15,34 +15,23 @@
  * limitations under the License.
  */
 
-package event
+package util
 
 import (
-	"github.com/apache/servicecomb-service-center/datasource/mongo/dao"
-	"github.com/go-chassis/cari/discovery"
+	"context"
+	"go.mongodb.org/mongo-driver/bson"
 
-	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
-	"github.com/apache/servicecomb-service-center/server/metrics"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/dao"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
-// DomainEventHandler report domain & project total number
-type DomainEventHandler struct {
-}
-
-func NewDomainEventHandler() *DomainEventHandler {
-	return &DomainEventHandler{}
-}
-
-func (h *DomainEventHandler) Type() string {
-	return dao.ColumnDomain
-}
-
-func (h *DomainEventHandler) OnEvent(evt sd.MongoEvent) {
-	action := evt.Type
-	switch action {
-	case discovery.EVT_INIT, discovery.EVT_CREATE:
-		metrics.ReportDomains(increaseOne)
-	case discovery.EVT_DELETE:
-		metrics.ReportDomains(decreaseOne)
+func NewBasicServiceIDFilter(ctx context.Context, serviceID string) bson.D {
+	domain := util.ParseDomain(ctx)
+	project := util.ParseProject(ctx)
+	filter := bson.D{
+		{dao.ColumnDomain, domain},
+		{dao.ColumnProject, project},
+		{ConnectWithDot([]string{dao.ColumnInstance, dao.ColumnServiceID}), serviceID},
 	}
+	return filter
 }

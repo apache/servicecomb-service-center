@@ -20,6 +20,7 @@
 package event
 
 import (
+	"github.com/apache/servicecomb-service-center/datasource/mongo/dao"
 	"testing"
 
 	"github.com/go-chassis/cari/discovery"
@@ -27,7 +28,6 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
 	"github.com/apache/servicecomb-service-center/server/syncernotify"
 
@@ -84,7 +84,7 @@ func mongoAssign() sd.MongoEvent {
 		ServiceId:  "2a20507274fc71c925d138341517dce14b600744",
 		Endpoints:  endPoints,
 	}
-	mongoInstance := model.Instance{}
+	mongoInstance := dao.Instance{}
 	mongoInstance.Instance = &instance
 	mongoInstance.Domain = "default"
 	mongoInstance.Project = "default"
@@ -103,7 +103,7 @@ func mongoEventWronServiceId() sd.MongoEvent {
 		ServiceId:  "2a20507274fc71c925d138341517dce14b6007443333",
 		Endpoints:  endPoints,
 	}
-	mongoInstance := model.Instance{}
+	mongoInstance := dao.Instance{}
 	mongoInstance.Instance = &instance
 	mongoInstance.Domain = "default"
 	mongoInstance.Project = "default"

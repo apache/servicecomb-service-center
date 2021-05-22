@@ -19,6 +19,8 @@ package checker
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/dao"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/heartbeat"
 	"testing"
 	"time"
 
@@ -26,8 +28,6 @@ import (
 	_ "github.com/apache/servicecomb-service-center/server/plugin/security/cipher/buildin"
 
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/go-chassis/v2/storage"
@@ -49,26 +49,26 @@ func TestUpdateInstanceRefreshTime(t *testing.T) {
 	})
 
 	t.Run("update instance refresh time: if the instance does exist,the update should succeed", func(t *testing.T) {
-		instance1 := model.Instance{
+		instance1 := dao.Instance{
 			RefreshTime: time.Now(),
 			Instance: &pb.MicroServiceInstance{
 				InstanceId: "instanceId1",
 				ServiceId:  "serviceId1",
 			},
 		}
-		_, err := client.GetMongoClient().Insert(context.Background(), model.CollectionInstance, instance1)
+		_, err := client.GetMongoClient().Insert(context.Background(), dao.CollectionInstance, instance1)
 		assert.Equal(t, nil, err)
 		err = updateInstanceRefreshTime(context.Background(), instance1.Instance.ServiceId, instance1.Instance.InstanceId)
 		assert.Equal(t, nil, err)
-		filter := util.NewFilter(util.InstanceServiceID(instance1.Instance.ServiceId), util.InstanceInstanceID(instance1.Instance.InstanceId))
-		result, err := client.GetMongoClient().FindOne(context.Background(), model.CollectionInstance, filter)
+		filter := heartbeat.NewServiceIDInstanceIDFilter(instance1.Instance.ServiceId, instance1.Instance.InstanceId)
+		result, err := client.GetMongoClient().FindOne(context.Background(), dao.CollectionInstance, filter)
 		assert.Nil(t, err)
-		var ins model.Instance
+		var ins dao.Instance
 		err = result.Decode(&ins)
 		assert.Nil(t, err)
 		assert.NotEqual(t, instance1.RefreshTime, ins.RefreshTime)
-		filter = util.NewFilter(util.InstanceServiceID(instance1.Instance.ServiceId), util.InstanceInstanceID(instance1.Instance.InstanceId))
-		_, err = client.GetMongoClient().Delete(context.Background(), model.CollectionInstance, filter)
+		filter = heartbeat.NewServiceIDInstanceIDFilter(instance1.Instance.ServiceId, instance1.Instance.InstanceId)
+		_, err = client.GetMongoClient().Delete(context.Background(), dao.CollectionInstance, filter)
 		assert.Nil(t, err)
 	})
 }

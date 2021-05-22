@@ -18,7 +18,7 @@
 package sd
 
 import (
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/dao"
 	"github.com/apache/servicecomb-service-center/datasource/sdcommon"
 	rmodel "github.com/go-chassis/cari/discovery"
 	"go.mongodb.org/mongo-driver/bson"
@@ -47,7 +47,7 @@ func newInstanceStore() *MongoCacher {
 		if err != nil {
 			return
 		}
-		inst := model.Instance{}
+		inst := dao.Instance{}
 		err = bson.Unmarshal(doc, &inst)
 		if err != nil {
 			return
@@ -102,7 +102,7 @@ func (s *instanceStore) ProcessUpdate(event MongoEvent) {
 	if event.Type == rmodel.EVT_UPDATE {
 		return
 	}
-	inst, ok := event.Value.(model.Instance)
+	inst, ok := event.Value.(dao.Instance)
 	if !ok {
 		return
 	}
@@ -111,7 +111,7 @@ func (s *instanceStore) ProcessUpdate(event MongoEvent) {
 }
 
 func (s *instanceStore) ProcessDelete(event MongoEvent) {
-	inst, ok := s.d.Get(event.DocumentID).(model.Instance)
+	inst, ok := s.d.Get(event.DocumentID).(dao.Instance)
 	if !ok {
 		return
 	}
@@ -123,6 +123,6 @@ func (s *instanceStore) isValueNotUpdated(value interface{}, newValue interface{
 	return true
 }
 
-func genInstServiceID(inst model.Instance) string {
+func genInstServiceID(inst dao.Instance) string {
 	return inst.Instance.ServiceId
 }

@@ -26,8 +26,7 @@ import (
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/cache"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/dao"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/dao"
 )
 
 func GetAllConsumerIds(ctx context.Context, provider *pb.MicroService) (allow []string, deny []string, err error) {
@@ -51,16 +50,13 @@ func GetAllConsumerIds(ctx context.Context, provider *pb.MicroService) (allow []
 	return allow, deny, nil
 }
 
-func GetConsumerIDsWithFilter(ctx context.Context, provider *pb.MicroService, rules []*model.Rule) (allow []string, deny []string, err error) {
-	serviceDeps, ok := cache.GetProviderServiceOfDeps(provider)
-	if !ok {
-		serviceDeps, err = dao.GetProviderDeps(ctx, provider)
-		if err != nil {
-			return nil, nil, err
-		}
+func GetConsumerIDsWithFilter(ctx context.Context, provider *pb.MicroService, rules []*dao.Rule) (allow []string, deny []string, err error) {
+	providerServiceKey, err := dao.GetProviderDeps(ctx, provider)
+	if err != nil {
+		return nil, nil, err
 	}
-	consumerIDs := make([]string, len(serviceDeps.Dependency))
-	for _, serviceKeys := range serviceDeps.Dependency {
+	consumerIDs := make([]string, len(providerServiceKey))
+	for _, serviceKeys := range providerServiceKey {
 		id, ok := cache.GetServiceID(ctx, serviceKeys)
 		if !ok {
 			id, err = dao.GetServiceID(ctx, serviceKeys)

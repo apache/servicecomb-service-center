@@ -27,8 +27,7 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/cache"
 	"github.com/apache/servicecomb-service-center/datasource/mongo"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/dao"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/dao"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
 	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -45,7 +44,7 @@ type InstanceEventHandler struct {
 }
 
 func (h InstanceEventHandler) Type() string {
-	return model.CollectionInstance
+	return dao.CollectionInstance
 }
 
 func (h InstanceEventHandler) OnEvent(evt sd.MongoEvent) {
@@ -53,7 +52,7 @@ func (h InstanceEventHandler) OnEvent(evt sd.MongoEvent) {
 	if evt.Type == discovery.EVT_UPDATE {
 		return
 	}
-	instance := evt.Value.(model.Instance)
+	instance := evt.Value.(dao.Instance)
 	providerID := instance.Instance.ServiceId
 	providerInstanceID := instance.Instance.InstanceId
 	domainProject := instance.Domain + "/" + instance.Project
@@ -106,7 +105,7 @@ func PublishInstanceEvent(evt sd.MongoEvent, domainProject string, serviceKey *d
 		Response: discovery.CreateResponse(discovery.ResponseSuccess, "Watch instance successfully."),
 		Action:   string(evt.Type),
 		Key:      serviceKey,
-		Instance: evt.Value.(model.Instance).Instance,
+		Instance: evt.Value.(dao.Instance).Instance,
 	}
 	for _, consumerID := range subscribers {
 		evt := event.NewInstanceEventWithTime(consumerID, domainProject, -1, simple.FromTime(time.Now()), response)
@@ -118,10 +117,10 @@ func PublishInstanceEvent(evt sd.MongoEvent, domainProject string, serviceKey *d
 }
 
 func NotifySyncerInstanceEvent(event sd.MongoEvent, microService *discovery.MicroService) {
-	instance := event.Value.(model.Instance).Instance
+	instance := event.Value.(dao.Instance).Instance
 	log.Info(fmt.Sprintf("instanceId : %s and serviceId : %s in NotifySyncerInstanceEvent", instance.InstanceId, instance.ServiceId))
-	instanceKey := util.StringJoin([]string{datasource.InstanceKeyPrefix, event.Value.(model.Instance).Domain,
-		event.Value.(model.Instance).Project, instance.ServiceId, instance.InstanceId}, datasource.SPLIT)
+	instanceKey := util.StringJoin([]string{datasource.InstanceKeyPrefix, event.Value.(dao.Instance).Domain,
+		event.Value.(dao.Instance).Project, instance.ServiceId, instance.InstanceId}, datasource.SPLIT)
 
 	instanceKv := dump.KV{
 		Key:   instanceKey,
@@ -132,8 +131,8 @@ func NotifySyncerInstanceEvent(event sd.MongoEvent, microService *discovery.Micr
 		KV:    &instanceKv,
 		Value: instance,
 	}
-	serviceKey := util.StringJoin([]string{datasource.ServiceKeyPrefix, event.Value.(model.Instance).Domain,
-		event.Value.(model.Instance).Project, instance.ServiceId}, datasource.SPLIT)
+	serviceKey := util.StringJoin([]string{datasource.ServiceKeyPrefix, event.Value.(dao.Instance).Domain,
+		event.Value.(dao.Instance).Project, instance.ServiceId}, datasource.SPLIT)
 	serviceKv := dump.KV{
 		Key:   serviceKey,
 		Value: microService,

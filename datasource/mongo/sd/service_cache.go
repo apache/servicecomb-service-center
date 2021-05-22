@@ -18,9 +18,9 @@
 package sd
 
 import (
+	"github.com/apache/servicecomb-service-center/datasource/mongo/dao"
 	"strings"
 
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
 	"github.com/apache/servicecomb-service-center/datasource/sdcommon"
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -48,7 +48,7 @@ func newServiceStore() *MongoCacher {
 		if err != nil {
 			return
 		}
-		service := model.Service{}
+		service := dao.Service{}
 		err = bson.Unmarshal(doc, &service)
 		if err != nil {
 			return
@@ -99,7 +99,7 @@ func (s *serviceStore) Clear() {
 }
 
 func (s *serviceStore) ProcessUpdate(event MongoEvent) {
-	service, ok := event.Value.(model.Service)
+	service, ok := event.Value.(dao.Service)
 	if !ok {
 		return
 	}
@@ -109,7 +109,7 @@ func (s *serviceStore) ProcessUpdate(event MongoEvent) {
 }
 
 func (s *serviceStore) ProcessDelete(event MongoEvent) {
-	service, ok := s.docCache.Get(event.DocumentID).(model.Service)
+	service, ok := s.docCache.Get(event.DocumentID).(dao.Service)
 	if !ok {
 		return
 	}
@@ -122,10 +122,10 @@ func (s *serviceStore) isValueNotUpdated(value interface{}, newValue interface{}
 	return false
 }
 
-func genServiceID(svc model.Service) string {
+func genServiceID(svc dao.Service) string {
 	return svc.Service.ServiceId
 }
 
-func getServiceInfo(svc model.Service) string {
+func getServiceInfo(svc dao.Service) string {
 	return strings.Join([]string{svc.Domain, svc.Project, svc.Service.AppId, svc.Service.ServiceName, svc.Service.Version}, "/")
 }

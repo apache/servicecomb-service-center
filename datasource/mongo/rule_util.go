@@ -19,17 +19,16 @@ package mongo
 
 import (
 	"context"
+	util2 "github.com/apache/servicecomb-service-center/datasource/mongo/dao/util"
 
-	"github.com/apache/servicecomb-service-center/datasource/cache"
 	"github.com/go-chassis/cari/discovery"
 
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/dao"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
-	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
+	"github.com/apache/servicecomb-service-center/datasource/cache"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/dao"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
-func Filter(ctx context.Context, rules []*model.Rule, consumerID string) (bool, error) {
+func Filter(ctx context.Context, rules []*dao.Rule, consumerID string) (bool, error) {
 	consumer, ok := cache.GetServiceByID(consumerID)
 	if !ok {
 		var err error
@@ -44,7 +43,7 @@ func Filter(ctx context.Context, rules []*model.Rule, consumerID string) (bool, 
 	}
 	domain := util.ParseDomainProject(ctx)
 	project := util.ParseProject(ctx)
-	filter := mutil.NewDomainProjectFilter(domain, project, mutil.ServiceServiceID(consumerID))
+	filter := util2.NewDomainProjectFilter(domain, project, util2.ServiceServiceID(consumerID))
 	tags, err := dao.GetTags(ctx, filter)
 	if err != nil {
 		return false, err
@@ -59,7 +58,7 @@ func Filter(ctx context.Context, rules []*model.Rule, consumerID string) (bool, 
 	return true, nil
 }
 
-func FilterAll(ctx context.Context, consumerIDs []string, rules []*model.Rule) (allow []string, deny []string, err error) {
+func FilterAll(ctx context.Context, consumerIDs []string, rules []*dao.Rule) (allow []string, deny []string, err error) {
 	l := len(consumerIDs)
 	if l == 0 || len(rules) == 0 {
 		return consumerIDs, nil, nil

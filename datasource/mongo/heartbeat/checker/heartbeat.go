@@ -19,28 +19,23 @@ package checker
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/dao"
+	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
-
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/util"
-	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
 func updateInstanceRefreshTime(ctx context.Context, serviceID string, instanceID string) error {
-	filter := util.NewFilter(util.InstanceServiceID(serviceID), util.InstanceInstanceID(instanceID))
-	update := bson.M{
-		"$set": bson.M{model.ColumnRefreshTime: time.Now()},
+	filter := bson.D{
+		{mutil.ConnectWithDot([]string{dao.ColumnInstance, dao.ColumnServiceID}), serviceID},
+		{mutil.ConnectWithDot([]string{dao.ColumnInstance, dao.ColumnInstanceID}), instanceID},
 	}
-	result, err := client.GetMongoClient().FindOneAndUpdate(ctx, model.CollectionInstance, filter, update)
-	if err != nil {
-		log.Error("failed to update refresh time of instance", err)
-		return err
+	setValue := bson.D{
+		{dao.ColumnRefreshTime, time.Now()},
 	}
-	if result.Err() != nil {
-		return result.Err()
+	updateFilter := bson.D{
+		{"$set", setValue},
 	}
-	return nil
+	return dao.UpdateInstance(ctx, filter, updateFilter)
 }

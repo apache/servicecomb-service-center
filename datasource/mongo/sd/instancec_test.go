@@ -20,16 +20,16 @@
 package sd
 
 import (
+	"github.com/apache/servicecomb-service-center/datasource/mongo/dao"
 	"testing"
 
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
 	"github.com/go-chassis/cari/discovery"
 	"github.com/stretchr/testify/assert"
 )
 
 var instanceCache *MongoCacher
 
-var inst1 = model.Instance{
+var inst1 = dao.Instance{
 	Domain:  "default",
 	Project: "default",
 	Instance: &discovery.MicroServiceInstance{
@@ -38,7 +38,7 @@ var inst1 = model.Instance{
 	},
 }
 
-var inst2 = model.Instance{
+var inst2 = dao.Instance{
 	Domain:  "default",
 	Project: "default",
 	Instance: &discovery.MicroServiceInstance{
@@ -69,7 +69,7 @@ func TestInstCacheBasicFunc(t *testing.T) {
 		instanceCache.cache.ProcessUpdate(event1)
 		assert.Equal(t, instanceCache.cache.Size(), 1)
 		assert.Nil(t, instanceCache.cache.Get("id_not_exist"))
-		assert.Equal(t, inst1.Instance.InstanceId, instanceCache.cache.Get("id1").(model.Instance).Instance.InstanceId)
+		assert.Equal(t, inst1.Instance.InstanceId, instanceCache.cache.Get("id1").(dao.Instance).Instance.InstanceId)
 		assert.Len(t, instanceCache.cache.GetValue("svcid"), 1)
 		instanceCache.cache.ProcessUpdate(event2)
 		assert.Equal(t, instanceCache.cache.Size(), 2)

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package model
+package dao
 
 import (
 	"time"

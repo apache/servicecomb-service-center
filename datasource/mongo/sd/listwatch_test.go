@@ -20,13 +20,13 @@
 package sd
 
 import (
+	"github.com/apache/servicecomb-service-center/datasource/mongo/dao"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
 	"github.com/apache/servicecomb-service-center/datasource/sdcommon"
 )
 
@@ -67,7 +67,7 @@ func TestDoParseWatchRspToMongoInfo(t *testing.T) {
 			if err != nil {
 				return
 			}
-			service := model.Instance{}
+			service := dao.Instance{}
 			err = bson.Unmarshal(doc, &service)
 			if err != nil {
 				return
@@ -84,7 +84,7 @@ func TestDoParseWatchRspToMongoInfo(t *testing.T) {
 	mockWatchRsp.OperationType = updateOp
 	info = ilw.doParseWatchRspToResource(mockWatchRsp)
 	assert.Equal(t, documentID.Hex(), info.Key)
-	assert.Equal(t, "1608552622", info.Value.(model.Instance).Instance.ModTimestamp)
+	assert.Equal(t, "1608552622", info.Value.(dao.Instance).Instance.ModTimestamp)
 
 	// case delete
 	mockWatchRsp.OperationType = deleteOp

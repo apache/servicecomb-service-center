@@ -18,9 +18,9 @@
 package sd
 
 import (
+	"github.com/apache/servicecomb-service-center/datasource/mongo/dao"
 	"strings"
 
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
 	"github.com/apache/servicecomb-service-center/datasource/sdcommon"
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -48,7 +48,7 @@ func newDepStore() *MongoCacher {
 		if err != nil {
 			return
 		}
-		dep := model.DependencyRule{}
+		dep := dao.DependencyRule{}
 		err = bson.Unmarshal(doc, &dep)
 		if err != nil {
 			return
@@ -99,7 +99,7 @@ func (s *depStore) Clear() {
 }
 
 func (s *depStore) ProcessUpdate(event MongoEvent) {
-	dep, ok := event.Value.(model.DependencyRule)
+	dep, ok := event.Value.(dao.DependencyRule)
 	if !ok {
 		return
 	}
@@ -111,7 +111,7 @@ func (s *depStore) ProcessUpdate(event MongoEvent) {
 }
 
 func (s *depStore) ProcessDelete(event MongoEvent) {
-	dep, ok := s.d.Get(event.DocumentID).(model.DependencyRule)
+	dep, ok := s.d.Get(event.DocumentID).(dao.DependencyRule)
 	if !ok {
 		return
 	}
@@ -126,6 +126,6 @@ func (s *depStore) isValueNotUpdated(value interface{}, newValue interface{}) bo
 	return false
 }
 
-func genDepServiceKey(dep model.DependencyRule) string {
+func genDepServiceKey(dep dao.DependencyRule) string {
 	return strings.Join([]string{dep.Type, dep.ServiceKey.AppId, dep.ServiceKey.ServiceName, dep.ServiceKey.Version}, "/")
 }

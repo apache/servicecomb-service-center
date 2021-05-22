@@ -20,7 +20,6 @@ package heartbeatcache
 import (
 	"context"
 	"errors"
-	"fmt"
 	"runtime"
 	"sync"
 	"time"
@@ -29,8 +28,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/util"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/dao"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/heartbeat"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
@@ -133,16 +132,10 @@ func cleanInstance(ctx context.Context, serviceID string, instanceID string) err
 	}
 	defer session.EndSession(ctx)
 
-	filter := util.NewFilter(util.InstanceServiceID(serviceID), util.InstanceInstanceID(instanceID))
-	result, err := client.GetMongoClient().FindOne(ctx, model.CollectionInstance, filter)
+	filter := heartbeat.NewServiceIDInstanceIDFilter(serviceID, instanceID)
+	ins, err := dao.GetInstance(ctx, filter)
 	if err != nil {
 		log.Error("failed to query instance", err)
-		return err
-	}
-	var ins model.Instance
-	err = result.Decode(&ins)
-	if err != nil {
-		log.Error("decode instance failed", err)
 		return err
 	}
 	ttl := ins.Instance.HealthCheck.Interval * (ins.Instance.HealthCheck.Times + 1)
@@ -166,37 +159,24 @@ func cleanInstance(ctx context.Context, serviceID string, instanceID string) err
 }
 
 func removeDBInstance(ctx context.Context, serviceID string, instanceID string) error {
-	filter := util.NewFilter(util.InstanceServiceID(serviceID), util.InstanceInstanceID(instanceID))
-	res, err := client.GetMongoClient().DeleteOne(ctx, model.CollectionInstance, filter)
-	if err != nil {
-		log.Error("failed to clean instance", err)
-		return err
-	}
-	log.Info(fmt.Sprintf("delete from mongodb:%+v", res))
-	return nil
+	filter := heartbeat.NewServiceIDInstanceIDFilter(serviceID, instanceID)
+	return dao.DeleteInstance(ctx, filter)
 }
 
-func findInstance(ctx context.Context, serviceID string, instanceID string) (*model.Instance, error) {
-	filter := util.NewFilter(util.InstanceServiceID(serviceID), util.InstanceInstanceID(instanceID))
-	result, err := client.GetMongoClient().FindOne(ctx, model.CollectionInstance, filter)
-	if err != nil {
-		return nil, err
-	}
-	var ins model.Instance
-	err = result.Decode(&ins)
-	if err != nil {
-		log.Error("decode instance failed", err)
-		return nil, err
-	}
-	return &ins, nil
+func findInstance(ctx context.Context, serviceID string, instanceID string) (*dao.Instance, error) {
+	filter := heartbeat.NewServiceIDInstanceIDFilter(serviceID, instanceID)
+	return dao.GetInstance(ctx, filter)
 }
 
 func updateInstance(ctx context.Context, serviceID string, instanceID string) error {
-	filter := util.NewFilter(util.InstanceServiceID(serviceID), util.InstanceInstanceID(instanceID))
-	update := bson.M{
-		"$set": bson.M{model.ColumnRefreshTime: time.Now()},
+	filter := heartbeat.NewServiceIDInstanceIDFilter(serviceID, instanceID)
+	setValue := bson.D{
+		{dao.ColumnRefreshTime, time.Now()},
 	}
-	result, err := client.GetMongoClient().FindOneAndUpdate(ctx, model.CollectionInstance, filter, update)
+	updateFilter := bson.D{
+		{"$set", setValue},
+	}
+	result, err := client.GetMongoClient().FindOneAndUpdate(ctx, dao.CollectionInstance, filter, updateFilter)
 	if err != nil {
 		log.Error("failed to update refresh time of instance", err)
 		return err

@@ -29,9 +29,8 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/dao"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
-	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/dao"
+	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/dao/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
@@ -148,14 +147,14 @@ func (ds *DataSource) AddOrUpdateDependencies(ctx context.Context, dependencys [
 
 			domain := util.ParseDomain(ctx)
 			project := util.ParseProject(ctx)
-			data := &model.ConsumerDep{
+			data := &dao.ConsumerDep{
 				Domain:      domain,
 				Project:     project,
 				ConsumerID:  consumerID,
 				UUID:        id,
 				ConsumerDep: dependency,
 			}
-			insertRes, err := client.GetMongoClient().Insert(ctx, model.CollectionDep, data)
+			insertRes, err := client.GetMongoClient().Insert(ctx, dao.CollectionDep, data)
 			if err != nil {
 				log.Error("failed to insert dep to mongodb", err)
 				return discovery.CreateResponse(discovery.ErrInternal, err.Error()), err
@@ -208,7 +207,7 @@ func GetOldProviderRules(dep *datasource.Dependency) (*discovery.MicroServiceDep
 		Dependency: []*discovery.MicroServiceKey{},
 	}
 	filter := GenerateConsumerDependencyRuleKey(dep.DomainProject, dep.Consumer)
-	findRes, err := client.GetMongoClient().FindOne(context.TODO(), model.CollectionDep, filter)
+	findRes, err := client.GetMongoClient().FindOne(context.TODO(), dao.CollectionDep, filter)
 	if err != nil {
 		log.Error(fmt.Sprintf("get dependency rule [%v] failed", filter), err)
 		return nil, err
@@ -218,7 +217,7 @@ func GetOldProviderRules(dep *datasource.Dependency) (*discovery.MicroServiceDep
 		return microServiceDependency, nil
 	}
 
-	var depRule *model.DependencyRule
+	var depRule *dao.DependencyRule
 	err = findRes.Decode(&depRule)
 	if err != nil {
 		return nil, err
@@ -230,7 +229,7 @@ func updateDeps(domainProject string, dep *datasource.Dependency) error {
 	var upsert = true
 	for _, r := range dep.DeleteDependencyRuleList {
 		filter := GenerateProviderDependencyRuleKey(domainProject, r)
-		_, err := client.GetMongoClient().Update(context.TODO(), model.CollectionDep, filter, bson.M{"$pull": bson.M{mutil.ConnectWithDot([]string{model.ColumnDep, model.ColumnDependency}): dep.Consumer}})
+		_, err := client.GetMongoClient().Update(context.TODO(), dao.CollectionDep, filter, bson.M{"$pull": bson.M{mutil.ConnectWithDot([]string{dao.ColumnDep, dao.ColumnDependency}): dep.Consumer}})
 		if err != nil {
 			return err
 		}
@@ -241,9 +240,9 @@ func updateDeps(domainProject string, dep *datasource.Dependency) error {
 	for _, r := range dep.CreateDependencyRuleList {
 		filter := GenerateProviderDependencyRuleKey(domainProject, r)
 		data := bson.M{
-			"$addToSet": bson.M{mutil.ConnectWithDot([]string{model.ColumnDep, model.ColumnDependency}): dep.Consumer},
+			"$addToSet": bson.M{mutil.ConnectWithDot([]string{dao.ColumnDep, dao.ColumnDependency}): dep.Consumer},
 		}
-		_, err := client.GetMongoClient().Update(context.TODO(), model.CollectionDep, filter, data, &options.UpdateOptions{Upsert: &upsert})
+		_, err := client.GetMongoClient().Update(context.TODO(), dao.CollectionDep, filter, data, &options.UpdateOptions{Upsert: &upsert})
 		if err != nil {
 			return err
 		}
@@ -253,15 +252,15 @@ func updateDeps(domainProject string, dep *datasource.Dependency) error {
 	}
 	filter := GenerateConsumerDependencyRuleKey(domainProject, dep.Consumer)
 	if len(dep.ProvidersRule) == 0 {
-		_, err := client.GetMongoClient().Delete(context.TODO(), model.CollectionDep, filter)
+		_, err := client.GetMongoClient().Delete(context.TODO(), dao.CollectionDep, filter)
 		if err != nil {
 			return err
 		}
 	} else {
 		updateData := bson.M{
-			"$set": bson.M{mutil.ConnectWithDot([]string{model.ColumnDep, model.ColumnDependency}): dep.ProvidersRule},
+			"$set": bson.M{mutil.ConnectWithDot([]string{dao.ColumnDep, dao.ColumnDependency}): dep.ProvidersRule},
 		}
-		_, err := client.GetMongoClient().Update(context.TODO(), model.CollectionDep, filter, updateData, &options.UpdateOptions{Upsert: &upsert})
+		_, err := client.GetMongoClient().Update(context.TODO(), dao.CollectionDep, filter, updateData, &options.UpdateOptions{Upsert: &upsert})
 		if err != nil {
 			return err
 		}
@@ -280,7 +279,7 @@ func CleanUpDepRules(ctx context.Context, domainProject string) error {
 		return mutil.ErrInvalidDomainProject
 	}
 
-	cache := make(map[*model.DelDepCacheKey]bool)
+	cache := make(map[*dao.DelDepCacheKey]bool)
 	err := removeProviderRuleOfConsumer(ctx, domainProject, cache)
 
 	if err != nil {
@@ -290,7 +289,7 @@ func CleanUpDepRules(ctx context.Context, domainProject string) error {
 	return removeProviderRuleKeys(ctx, domainProject, cache)
 }
 
-func removeProviderRuleOfConsumer(ctx context.Context, domainProject string, cache map[*model.DelDepCacheKey]bool) error {
+func removeProviderRuleOfConsumer(ctx context.Context, domainProject string, cache map[*dao.DelDepCacheKey]bool) error {
 	filter := GenerateConsumerDependencyRuleKey(domainProject, nil)
 	depRules, err := GetDepRules(ctx, filter)
 	if err != nil {
@@ -305,7 +304,7 @@ func removeProviderRuleOfConsumer(ctx context.Context, domainProject string, cac
 	return nil
 }
 
-func removeProviderRuleKeys(ctx context.Context, domainProject string, cache map[*model.DelDepCacheKey]bool) error {
+func removeProviderRuleKeys(ctx context.Context, domainProject string, cache map[*dao.DelDepCacheKey]bool) error {
 	filter := GenerateProviderDependencyRuleKey(domainProject, nil)
 	depRules, err := GetDepRules(ctx, filter)
 	if err != nil {
@@ -320,15 +319,15 @@ func removeProviderRuleKeys(ctx context.Context, domainProject string, cache map
 	return nil
 }
 
-func GetDepRules(ctx context.Context, filter bson.M) ([]*model.DependencyRule, error) {
-	findRes, err := client.GetMongoClient().Find(ctx, model.CollectionDep, filter)
+func GetDepRules(ctx context.Context, filter bson.M) ([]*dao.DependencyRule, error) {
+	findRes, err := client.GetMongoClient().Find(ctx, dao.CollectionDep, filter)
 	if err != nil {
 		return nil, err
 	}
 
-	var depRules []*model.DependencyRule
+	var depRules []*dao.DependencyRule
 	for findRes.Next(ctx) {
-		var depRule *model.DependencyRule
+		var depRule *dao.DependencyRule
 		err := findRes.Decode(&depRule)
 		if err != nil {
 			return nil, err
@@ -338,8 +337,8 @@ func GetDepRules(ctx context.Context, filter bson.M) ([]*model.DependencyRule, e
 	return depRules, nil
 }
 
-func removeProviderDeps(ctx context.Context, depRule *model.DependencyRule, cache map[*model.DelDepCacheKey]bool) (err error) {
-	id := &model.DelDepCacheKey{
+func removeProviderDeps(ctx context.Context, depRule *dao.DependencyRule, cache map[*dao.DelDepCacheKey]bool) (err error) {
+	id := &dao.DelDepCacheKey{
 		Key:  depRule.ServiceKey,
 		Type: path.DepsConsumer,
 	}
@@ -358,10 +357,10 @@ func removeProviderDeps(ctx context.Context, depRule *model.DependencyRule, cach
 	}
 
 	filter := bson.M{
-		model.ColumnServiceKey: depRule.ServiceKey,
+		dao.ColumnServiceKey: depRule.ServiceKey,
 	}
 	if !exist {
-		_, err = client.GetMongoClient().DocDelete(ctx, model.CollectionDep, filter)
+		_, err = client.GetMongoClient().DocDelete(ctx, dao.CollectionDep, filter)
 		if err != nil {
 			return err
 		}
@@ -369,7 +368,7 @@ func removeProviderDeps(ctx context.Context, depRule *model.DependencyRule, cach
 	return nil
 }
 
-func removeConsumerDeps(ctx context.Context, depRule *model.DependencyRule, cache map[*model.DelDepCacheKey]bool) (err error) {
+func removeConsumerDeps(ctx context.Context, depRule *dao.DependencyRule, cache map[*dao.DelDepCacheKey]bool) (err error) {
 	var left []*discovery.MicroServiceKey
 	for _, key := range depRule.Dep.Dependency {
 		if key.ServiceName == "*" {
@@ -377,7 +376,7 @@ func removeConsumerDeps(ctx context.Context, depRule *model.DependencyRule, cach
 			continue
 		}
 
-		id := &model.DelDepCacheKey{
+		id := &dao.DelDepCacheKey{
 			Key:  key,
 			Type: path.DepsProvider,
 		}
@@ -399,15 +398,15 @@ func removeConsumerDeps(ctx context.Context, depRule *model.DependencyRule, cach
 	}
 
 	filter := bson.M{
-		model.ColumnServiceKey: depRule.ServiceKey,
+		dao.ColumnServiceKey: depRule.ServiceKey,
 	}
 	if len(left) == 0 {
-		_, err = client.GetMongoClient().DocDelete(ctx, model.CollectionDep, filter)
+		_, err = client.GetMongoClient().DocDelete(ctx, dao.CollectionDep, filter)
 	} else {
 		updateData := bson.M{
-			"$set": bson.M{mutil.ConnectWithDot([]string{model.ColumnDep, model.ColumnDependency}): left},
+			"$set": bson.M{mutil.ConnectWithDot([]string{dao.ColumnDep, dao.ColumnDependency}): left},
 		}
-		_, err = client.GetMongoClient().Update(ctx, model.CollectionDep, filter, updateData)
+		_, err = client.GetMongoClient().Update(ctx, dao.CollectionDep, filter, updateData)
 	}
 	if err != nil {
 		return err
@@ -419,12 +418,12 @@ func TransferToMicroServiceDependency(ctx context.Context, filter bson.M) (*disc
 	microServiceDependency := &discovery.MicroServiceDependency{
 		Dependency: []*discovery.MicroServiceKey{},
 	}
-	findRes, err := client.GetMongoClient().FindOne(context.TODO(), model.CollectionDep, filter)
+	findRes, err := client.GetMongoClient().FindOne(context.TODO(), dao.CollectionDep, filter)
 	if err != nil {
 		return nil, err
 	}
 	if findRes.Err() == nil {
-		var depRule *model.DependencyRule
+		var depRule *dao.DependencyRule
 		err := findRes.Decode(&depRule)
 		if err != nil {
 			return nil, err
@@ -438,13 +437,13 @@ func TransferToMicroServiceDependency(ctx context.Context, filter bson.M) (*disc
 func GetConsumerDepInfo(ctx context.Context, filter bson.M) ([]*discovery.ConsumerDependency, error) {
 	var ConsumerDeps []*discovery.ConsumerDependency
 
-	findRes, err := client.GetMongoClient().Find(context.TODO(), model.CollectionDep, filter)
+	findRes, err := client.GetMongoClient().Find(context.TODO(), dao.CollectionDep, filter)
 	if err != nil {
 		return nil, err
 	}
 
 	for findRes.Next(ctx) {
-		var dep *model.ConsumerDep
+		var dep *dao.ConsumerDep
 		err = findRes.Decode(&dep)
 		if err != nil {
 			return nil, err

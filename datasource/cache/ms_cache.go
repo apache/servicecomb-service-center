@@ -19,11 +19,11 @@ package cache
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/dao"
 	"strings"
 
 	"github.com/go-chassis/cari/discovery"
 
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
@@ -44,7 +44,7 @@ func GetProviderServiceOfDeps(provider *discovery.MicroService) (*discovery.Micr
 func transCacheToDep(cache []interface{}) ([]*discovery.MicroServiceDependency, bool) {
 	res := make([]*discovery.MicroServiceDependency, 0, len(cache))
 	for _, v := range cache {
-		t, ok := v.(model.DependencyRule)
+		t, ok := v.(dao.DependencyRule)
 		if !ok {
 			return nil, false
 		}
@@ -72,7 +72,7 @@ func GetMicroServiceInstancesByID(serviceID string) ([]*discovery.MicroServiceIn
 func transCacheToInsts(cache []interface{}) ([]*discovery.MicroServiceInstance, bool) {
 	res := make([]*discovery.MicroServiceInstance, 0, len(cache))
 	for _, iter := range cache {
-		inst, ok := iter.(model.Instance)
+		inst, ok := iter.(dao.Instance)
 		if !ok {
 			return nil, false
 		}
@@ -84,19 +84,19 @@ func transCacheToInsts(cache []interface{}) ([]*discovery.MicroServiceInstance, 
 	return res, true
 }
 
-func GetRulesByServiceID(serviceID string) ([]*model.Rule, bool) {
+func GetRulesByServiceID(serviceID string) ([]*dao.Rule, bool) {
 	cacheRes := sd.Store().Rule().Cache().GetValue(serviceID)
 	return transCacheToRules(cacheRes)
 }
 
-func transCacheToRules(cacheRules []interface{}) ([]*model.Rule, bool) {
-	res := make([]*model.Rule, 0, len(cacheRules))
+func transCacheToRules(cacheRules []interface{}) ([]*dao.Rule, bool) {
+	res := make([]*dao.Rule, 0, len(cacheRules))
 	for _, v := range cacheRules {
-		t, ok := v.(model.Rule)
+		t, ok := v.(dao.Rule)
 		if !ok {
 			return nil, false
 		}
-		res = append(res, &model.Rule{
+		res = append(res, &dao.Rule{
 			Domain:    t.Domain,
 			Project:   t.Project,
 			ServiceID: t.ServiceID,
@@ -109,7 +109,7 @@ func transCacheToRules(cacheRules []interface{}) ([]*model.Rule, bool) {
 	return res, true
 }
 
-func GetServiceByID(serviceID string) (*model.Service, bool) {
+func GetServiceByID(serviceID string) (*dao.Service, bool) {
 	cacheRes := sd.Store().Service().Cache().GetValue(serviceID)
 	res, ok := transCacheToService(cacheRes)
 	if !ok {
@@ -128,14 +128,14 @@ func GetServiceID(ctx context.Context, key *discovery.MicroServiceKey) (serviceI
 	return cacheService[0].Service.ServiceId, true
 }
 
-func transCacheToService(services []interface{}) ([]*model.Service, bool) {
-	res := make([]*model.Service, 0, len(services))
+func transCacheToService(services []interface{}) ([]*dao.Service, bool) {
+	res := make([]*dao.Service, 0, len(services))
 	for _, v := range services {
-		t, ok := v.(model.Service)
+		t, ok := v.(dao.Service)
 		if !ok {
 			return nil, false
 		}
-		res = append(res, &model.Service{
+		res = append(res, &dao.Service{
 			Domain:  t.Domain,
 			Project: t.Project,
 			Tags:    t.Tags,

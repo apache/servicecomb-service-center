@@ -20,16 +20,16 @@
 package sd
 
 import (
+	"github.com/apache/servicecomb-service-center/datasource/mongo/dao"
 	"testing"
 
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
 	"github.com/go-chassis/cari/discovery"
 	"github.com/stretchr/testify/assert"
 )
 
 var depCache *MongoCacher
 
-var depRule1 = model.DependencyRule{
+var depRule1 = dao.DependencyRule{
 	Type:    "p",
 	Domain:  "default",
 	Project: "default",
@@ -43,7 +43,7 @@ var depRule1 = model.DependencyRule{
 	},
 }
 
-var depRule2 = model.DependencyRule{
+var depRule2 = dao.DependencyRule{
 	Type:    "p",
 	Domain:  "default",
 	Project: "default",
@@ -79,7 +79,7 @@ func TestDepCacheBasicFunc(t *testing.T) {
 		depCache.cache.ProcessUpdate(event1)
 		assert.Equal(t, depCache.cache.Size(), 1)
 		assert.Nil(t, depCache.cache.Get("id_not_exist"))
-		assert.Equal(t, depRule1.ServiceKey.ServiceName, depCache.cache.Get("id1").(model.DependencyRule).ServiceKey.ServiceName)
+		assert.Equal(t, depRule1.ServiceKey.ServiceName, depCache.cache.Get("id1").(dao.DependencyRule).ServiceKey.ServiceName)
 		assert.Len(t, depCache.cache.GetValue("p/appid1/svc1/1.0"), 1)
 		depCache.cache.ProcessUpdate(event2)
 		assert.Len(t, depCache.cache.GetValue("p/appid1/svc1/1.0"), 2)

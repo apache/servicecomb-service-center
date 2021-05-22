@@ -15,25 +15,18 @@
  * limitations under the License.
  */
 
-package dao
+package util
 
-import (
-	"context"
-	"fmt"
+import "strings"
 
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
-	"github.com/apache/servicecomb-service-center/pkg/log"
-)
-
-func AddProject(ctx context.Context, project model.Project) error {
-	result, err := client.GetMongoClient().Insert(ctx, model.CollectionProject, project)
-	if err == nil {
-		log.Info(fmt.Sprintf("insert project to mongodb success %s", result.InsertedID))
+func ConnectWithDot(data []string) string {
+	var str strings.Builder
+	for index, value := range data {
+		if index == 0 {
+			str.WriteString(value)
+		} else {
+			str.WriteString("." + value)
+		}
 	}
-	return err
-}
-
-func ExistProject(ctx context.Context, filter interface{}) (bool, error) {
-	return client.GetMongoClient().DocExist(ctx, model.CollectionProject, filter)
+	return str.String()
 }

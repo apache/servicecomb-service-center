@@ -17,9 +17,24 @@
 
 package heartbeat
 
-import "errors"
+import (
+	"errors"
+
+	"go.mongodb.org/mongo-driver/bson"
+
+	"github.com/apache/servicecomb-service-center/datasource/mongo/dao"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/util"
+)
 
 var (
 	ErrPluginNameNil    = errors.New("plugin implement name is nil")
 	ErrPluginNotSupport = errors.New("plugin implement not supported [#{opts.Kind}]")
 )
+
+func NewServiceIDInstanceIDFilter(serviceID string, instanceID string) bson.D {
+	filter := bson.D{
+		{util.ConnectWithDot([]string{dao.ColumnInstance, dao.ColumnServiceID}), serviceID},
+		{util.ConnectWithDot([]string{dao.ColumnInstance, dao.ColumnInstanceID}), instanceID},
+	}
+	return filter
+}

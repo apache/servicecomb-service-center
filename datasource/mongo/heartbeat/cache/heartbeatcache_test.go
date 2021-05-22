@@ -27,8 +27,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/util"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/dao"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/dao/util"
 )
 
 var heartBeatCheck = &HeartBeatCache{cfg: configuration()}
@@ -55,7 +55,7 @@ func TestHeartBeatCheck(t *testing.T) {
 	})
 
 	t.Run("heartbeat check: data exists in the cache and db,it can be update successfully", func(t *testing.T) {
-		instanceDB := model.Instance{
+		instanceDB := dao.Instance{
 			RefreshTime: time.Now(),
 			Instance: &pb.MicroServiceInstance{
 				InstanceId: "instanceIdDB",
@@ -67,10 +67,10 @@ func TestHeartBeatCheck(t *testing.T) {
 			},
 		}
 		filter := bson.M{
-			util.ConnectWithDot([]string{model.ColumnInstance, model.ColumnInstanceID}): instanceDB.Instance.InstanceId,
+			util.ConnectWithDot([]string{dao.ColumnInstance, dao.ColumnInstanceID}): instanceDB.Instance.InstanceId,
 		}
-		_, _ = client.GetMongoClient().Delete(context.Background(), model.CollectionInstance, filter)
-		_, err := client.GetMongoClient().Insert(context.Background(), model.CollectionInstance, instanceDB)
+		_, _ = client.GetMongoClient().Delete(context.Background(), dao.CollectionInstance, filter)
+		_, err := client.GetMongoClient().Insert(context.Background(), dao.CollectionInstance, instanceDB)
 		assert.Equal(t, nil, err)
 		err = heartBeatCheck.cfg.AddHeartbeatTask(instanceDB.Instance.ServiceId, instanceDB.Instance.InstanceId, instanceDB.Instance.HealthCheck.Interval*(instanceDB.Instance.HealthCheck.Times+1))
 		assert.Equal(t, nil, err)
@@ -80,7 +80,7 @@ func TestHeartBeatCheck(t *testing.T) {
 		})
 		assert.Nil(t, err)
 		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
-		_, err = client.GetMongoClient().Delete(context.Background(), model.CollectionInstance, filter)
+		_, err = client.GetMongoClient().Delete(context.Background(), dao.CollectionInstance, filter)
 		assert.Nil(t, err)
 	})
 }

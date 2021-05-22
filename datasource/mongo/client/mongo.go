@@ -13,14 +13,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package client implements functions to manage db link and database operation API.
 package client
 
 import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"fmt"
 	"io/ioutil"
+	"sync"
 	"time"
 
 	"github.com/go-chassis/go-chassis/v2/storage"
@@ -30,6 +33,7 @@ import (
 
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/plugin/security/cipher"
 )
 
@@ -40,7 +44,14 @@ const (
 )
 
 var (
-	mc *MongoClient
+	ErrRootCAMissing = errors.New("rootCAFile is empty in config file")
+	ErrNoDocuments   = errors.New("no doc found")
+	ErrOpenDbFailed  = errors.New("open db failed")
+)
+
+var (
+	mc   *MongoClient
+	once sync.Once
 )
 
 type MongoClient struct {
@@ -59,16 +70,31 @@ type MongoOperation struct {
 }
 
 func GetMongoClient() *MongoClient {
+	if mc == nil {
+		cfg := GetConfig()
+		NewMongoClient(cfg)
+	}
 	return mc
 }
 
 func NewMongoClient(config storage.Options) {
-	inst := &MongoClient{}
-	if err := inst.Initialize(config); err != nil {
-		log.Error("failed to init mongodb", err)
-		inst.err <- err
-	}
-	mc = inst
+	once.Do(func() {
+		inst := &MongoClient{}
+		if err := inst.Initialize(config); err != nil {
+			log.Error("failed to init mongodb", err)
+			inst.err <- err
+		}
+		mc = inst
+	})
+}
+func GetConfig() storage.Options {
+	uri := config.GetString("registry.mongo.cluster.uri", "mongodb://localhost:27017", config.WithStandby("manager_cluster"))
+	sslEnable := config.GetBool("registry.mongo.cluster.sslEnabled", false)
+	rootCA := config.GetString("registry.mongo.cluster.rootCAFile", "/opt/ssl/ca.crt")
+	verifyPeer := config.GetBool("registry.mongo.cluster.verifyPeer", false)
+	certFile := config.GetString("registry.mongo.cluster.certFile", "")
+	keyFile := config.GetString("registry.mongo.cluster.keyFile", "")
+	return storage.NewConfig(uri, storage.SSLEnabled(sslEnable), storage.RootCA(rootCA), storage.VerifyPeer(verifyPeer), storage.CertFile(certFile), storage.KeyFile(keyFile))
 }
 
 func (mc *MongoClient) Initialize(config storage.Options) (err error) {

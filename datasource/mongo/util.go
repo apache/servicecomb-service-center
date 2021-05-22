@@ -19,10 +19,10 @@ package mongo
 
 import (
 	"context"
+	util2 "github.com/apache/servicecomb-service-center/datasource/mongo/dao/util"
 
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/dao"
-	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/dao"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	pb "github.com/go-chassis/cari/discovery"
@@ -49,7 +49,7 @@ func statistics(ctx context.Context, withShared bool) (*pb.Statistics, error) {
 		Apps:      &pb.StApp{},
 	}
 
-	filter := mutil.NewBasicFilter(ctx)
+	filter := util2.NewBasicFilter(ctx)
 
 	services, err := dao.GetMicroServices(ctx, filter)
 	if err != nil {
@@ -91,7 +91,7 @@ func getInstanceCountByDomain(ctx context.Context, svcIDToNonVerKey map[string]s
 	domain := util.ParseDomain(ctx)
 	project := util.ParseProject(ctx)
 	for sid := range svcIDToNonVerKey {
-		filter := mutil.NewDomainProjectFilter(domain, project, mutil.InstanceServiceID(sid))
+		filter := util2.NewDomainProjectFilter(domain, project, util2.InstanceServiceID(sid))
 		num, err := dao.CountInstance(ctx, filter)
 		if err != nil {
 			ret.Err = err

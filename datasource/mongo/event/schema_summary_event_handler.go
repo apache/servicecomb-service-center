@@ -18,9 +18,9 @@
 package event
 
 import (
+	"github.com/apache/servicecomb-service-center/datasource/mongo/dao"
 	pb "github.com/go-chassis/cari/discovery"
 
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
 	"github.com/apache/servicecomb-service-center/server/metrics"
 )
@@ -33,11 +33,11 @@ func NewSchemaSummaryEventHandler() *SchemaSummaryEventHandler {
 }
 
 func (h *SchemaSummaryEventHandler) Type() string {
-	return model.ColumnSchema
+	return dao.ColumnSchema
 }
 
 func (h *SchemaSummaryEventHandler) OnEvent(evt sd.MongoEvent) {
-	schema := evt.Value.(model.Schema)
+	schema := evt.Value.(dao.Schema)
 	action := evt.Type
 	switch action {
 	case pb.EVT_INIT, pb.EVT_CREATE:

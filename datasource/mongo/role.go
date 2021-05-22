@@ -19,13 +19,13 @@ package mongo
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/dao"
 
 	"github.com/go-chassis/cari/rbac"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
-	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
+	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/dao/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
@@ -40,9 +40,9 @@ func (ds *DataSource) CreateRole(ctx context.Context, r *rbac.Role) error {
 		return datasource.ErrRoleDuplicated
 	}
 	r.ID = util.GenerateUUID()
-	_, err = client.GetMongoClient().Insert(ctx, model.CollectionRole, r)
+	_, err = client.GetMongoClient().Insert(ctx, dao.CollectionRole, r)
 	if err != nil {
-		if client.IsDuplicateKey(err) {
+		if mutil.IsDuplicateKey(err) {
 			return datasource.ErrRoleDuplicated
 		}
 		return err
@@ -53,7 +53,7 @@ func (ds *DataSource) CreateRole(ctx context.Context, r *rbac.Role) error {
 
 func (ds *DataSource) RoleExist(ctx context.Context, name string) (bool, error) {
 	filter := mutil.NewFilter(mutil.RoleName(name))
-	count, err := client.GetMongoClient().Count(ctx, model.CollectionRole, filter)
+	count, err := client.GetMongoClient().Count(ctx, dao.CollectionRole, filter)
 	if err != nil {
 		return false, err
 	}
@@ -65,12 +65,12 @@ func (ds *DataSource) RoleExist(ctx context.Context, name string) (bool, error) 
 
 func (ds *DataSource) GetRole(ctx context.Context, name string) (*rbac.Role, error) {
 	filter := mutil.NewFilter(mutil.RoleName(name))
-	result, err := client.GetMongoClient().FindOne(ctx, model.CollectionRole, filter)
+	result, err := client.GetMongoClient().FindOne(ctx, dao.CollectionRole, filter)
 	if err != nil {
 		return nil, err
 	}
 	if result.Err() != nil {
-		return nil, client.ErrNoDocuments
+		return nil, mutil.ErrNoDocuments
 	}
 	var role rbac.Role
 	err = result.Decode(&role)
@@ -83,7 +83,7 @@ func (ds *DataSource) GetRole(ctx context.Context, name string) (*rbac.Role, err
 
 func (ds *DataSource) ListRole(ctx context.Context) ([]*rbac.Role, int64, error) {
 	filter := mutil.NewFilter()
-	cursor, err := client.GetMongoClient().Find(ctx, model.CollectionRole, filter)
+	cursor, err := client.GetMongoClient().Find(ctx, dao.CollectionRole, filter)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -103,7 +103,7 @@ func (ds *DataSource) ListRole(ctx context.Context) ([]*rbac.Role, int64, error)
 
 func (ds *DataSource) DeleteRole(ctx context.Context, name string) (bool, error) {
 	filter := mutil.NewFilter(mutil.RoleName(name))
-	result, err := client.GetMongoClient().Delete(ctx, model.CollectionRole, filter)
+	result, err := client.GetMongoClient().Delete(ctx, dao.CollectionRole, filter)
 	if err != nil {
 		return false, err
 	}
@@ -121,7 +121,7 @@ func (ds *DataSource) UpdateRole(ctx context.Context, name string, role *rbac.Ro
 		mutil.Perms(role.Perms),
 	)
 	updateFilter := mutil.NewFilter(mutil.Set(setFilter))
-	_, err := client.GetMongoClient().Update(ctx, model.CollectionRole, filter, updateFilter)
+	_, err := client.GetMongoClient().Update(ctx, dao.CollectionRole, filter, updateFilter)
 	if err != nil {
 		return err
 	}

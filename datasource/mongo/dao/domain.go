@@ -22,15 +22,14 @@ import (
 	"fmt"
 
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
 func AddDomain(ctx context.Context, domain string) error {
-	d := model.Domain{
+	d := Domain{
 		Domain: domain,
 	}
-	result, err := client.GetMongoClient().Insert(ctx, model.CollectionDomain, d)
+	result, err := client.GetMongoClient().Insert(ctx, CollectionDomain, d)
 	if err == nil {
 		log.Info(fmt.Sprintf("insert domain to mongodb success %s", result.InsertedID))
 	}
@@ -38,5 +37,5 @@ func AddDomain(ctx context.Context, domain string) error {
 }
 
 func ExistDomain(ctx context.Context, filter interface{}) (bool, error) {
-	return client.GetMongoClient().DocExist(ctx, model.CollectionDomain, filter)
+	return client.GetMongoClient().DocExist(ctx, CollectionDomain, filter)
 }

@@ -19,13 +19,12 @@ package util
 
 import (
 	"context"
-
+	"github.com/apache/servicecomb-service-center/datasource/mongo/dao"
 	"github.com/go-chassis/cari/rbac"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/x/bsonx"
 
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
@@ -33,67 +32,43 @@ type Option func(filter bson.M)
 
 func Domain(domain string) Option {
 	return func(filter bson.M) {
-		filter[model.ColumnDomain] = domain
+		filter[dao.ColumnDomain] = domain
 	}
 }
 
 func Project(project string) Option {
 	return func(filter bson.M) {
-		filter[model.ColumnProject] = project
+		filter[dao.ColumnProject] = project
 	}
 }
 
-func AccountName(name interface{}) Option {
-	return func(filter bson.M) {
-		filter[model.ColumnAccountName] = name
-	}
-}
 
-func Password(password string) Option {
-	return func(filter bson.M) {
-		filter[model.ColumnPassword] = password
-	}
-}
 
-func Roles(roles []string) Option {
-	return func(filter bson.M) {
-		filter[model.ColumnRoles] = roles
-	}
-}
 
-func TokenExpirationTime(tokenExpirationTime string) Option {
-	return func(filter bson.M) {
-		filter[model.ColumnTokenExpirationTime] = tokenExpirationTime
-	}
-}
 
-func CurrentPassword(password string) Option {
-	return func(filter bson.M) {
-		filter[model.ColumnCurrentPassword] = password
-	}
-}
+
 
 func Status(status string) Option {
 	return func(filter bson.M) {
-		filter[model.ColumnStatus] = status
+		filter[dao.ColumnStatus] = status
 	}
 }
 
 func ID(id string) Option {
 	return func(filter bson.M) {
-		filter[model.ColumnID] = id
+		filter[dao.ColumnID] = id
 	}
 }
 
 func RoleName(name string) Option {
 	return func(filter bson.M) {
-		filter[model.ColumnRoleName] = name
+		filter[dao.ColumnRoleName] = name
 	}
 }
 
 func Perms(perms []*rbac.Permission) Option {
 	return func(filter bson.M) {
-		filter[model.ColumnPerms] = perms
+		filter[dao.ColumnPerms] = perms
 	}
 }
 
@@ -119,8 +94,8 @@ func NewFilter(options ...func(filter bson.M)) bson.M {
 
 func NewDomainProjectFilter(domain string, project string, options ...func(filter bson.M)) bson.M {
 	filter := bson.M{
-		model.ColumnDomain:  domain,
-		model.ColumnProject: project,
+		dao.ColumnDomain:  domain,
+		dao.ColumnProject: project,
 	}
 	for _, option := range options {
 		option(filter)
@@ -133,8 +108,8 @@ func NewBasicFilter(ctx context.Context, options ...func(filter bson.M)) bson.M 
 	project := util.ParseProject(ctx)
 
 	filter := bson.M{
-		model.ColumnDomain:  domain,
-		model.ColumnProject: project,
+		dao.ColumnDomain:  domain,
+		dao.ColumnProject: project,
 	}
 	for _, option := range options {
 		option(filter)
@@ -144,187 +119,187 @@ func NewBasicFilter(ctx context.Context, options ...func(filter bson.M)) bson.M 
 
 func InstanceServiceID(serviceID interface{}) Option {
 	return func(filter bson.M) {
-		filter[ConnectWithDot([]string{model.ColumnInstance, model.ColumnServiceID})] = serviceID
+		filter[util2.ConnectWithDot([]string{dao.ColumnInstance, dao.ColumnServiceID})] = serviceID
 	}
 }
 
 func InstanceInstanceID(instanceID string) Option {
 	return func(filter bson.M) {
-		filter[ConnectWithDot([]string{model.ColumnInstance, model.ColumnInstanceID})] = instanceID
+		filter[util2.ConnectWithDot([]string{dao.ColumnInstance, dao.ColumnInstanceID})] = instanceID
 	}
 }
 
 func ServiceServiceID(serviceID string) Option {
 	return func(filter bson.M) {
-		filter[ConnectWithDot([]string{model.ColumnService, model.ColumnServiceID})] = serviceID
+		filter[util2.ConnectWithDot([]string{dao.ColumnService, dao.ColumnServiceID})] = serviceID
 	}
 }
 
 func ServiceEnv(env string) Option {
 	return func(filter bson.M) {
-		filter[ConnectWithDot([]string{model.ColumnService, model.ColumnEnv})] = env
+		filter[util2.ConnectWithDot([]string{dao.ColumnService, dao.ColumnEnv})] = env
 	}
 }
 
 func ServiceAppID(appID string) Option {
 	return func(filter bson.M) {
-		filter[ConnectWithDot([]string{model.ColumnService, model.ColumnAppID})] = appID
+		filter[util2.ConnectWithDot([]string{dao.ColumnService, dao.ColumnAppID})] = appID
 	}
 }
 
 func ServiceModTime(modTime string) Option {
 	return func(filter bson.M) {
-		filter[ConnectWithDot([]string{model.ColumnService, model.ColumnModTime})] = modTime
+		filter[util2.ConnectWithDot([]string{dao.ColumnService, dao.ColumnModTime})] = modTime
 	}
 }
 
 func ServiceProperty(property map[string]string) Option {
 	return func(filter bson.M) {
-		filter[ConnectWithDot([]string{model.ColumnService, model.ColumnProperty})] = property
+		filter[util2.ConnectWithDot([]string{dao.ColumnService, dao.ColumnProperty})] = property
 	}
 }
 
 func ServiceServiceName(serviceName string) Option {
 	return func(filter bson.M) {
-		filter[ConnectWithDot([]string{model.ColumnService, model.ColumnServiceName})] = serviceName
+		filter[util2.ConnectWithDot([]string{dao.ColumnService, dao.ColumnServiceName})] = serviceName
 	}
 }
 
 func ServiceID(serviceID string) Option {
 	return func(filter bson.M) {
-		filter[model.ColumnServiceID] = serviceID
+		filter[dao.ColumnServiceID] = serviceID
 	}
 }
 
 func ServiceAlias(alias string) Option {
 	return func(filter bson.M) {
-		filter[ConnectWithDot([]string{model.ColumnService, model.ColumnAlias})] = alias
+		filter[util2.ConnectWithDot([]string{dao.ColumnService, dao.ColumnAlias})] = alias
 	}
 }
 
 func ServiceSchemas(schemas []string) Option {
 	return func(filter bson.M) {
-		filter[ConnectWithDot([]string{model.ColumnService, model.ColumnSchemas})] = schemas
+		filter[util2.ConnectWithDot([]string{dao.ColumnService, dao.ColumnSchemas})] = schemas
 	}
 }
 
 func ServiceVersion(version interface{}) Option {
 	return func(filter bson.M) {
-		filter[ConnectWithDot([]string{model.ColumnService, model.ColumnVersion})] = version
+		filter[util2.ConnectWithDot([]string{dao.ColumnService, dao.ColumnVersion})] = version
 	}
 }
 
 func ServiceType(serviceType string) Option {
 	return func(filter bson.M) {
-		filter[model.ColumnServiceType] = serviceType
+		filter[dao.ColumnServiceType] = serviceType
 	}
 }
 
 func ServiceKeyTenant(tenant string) Option {
 	return func(filter bson.M) {
-		filter[ConnectWithDot([]string{model.ColumnServiceKey, model.ColumnTenant})] = tenant
+		filter[util2.ConnectWithDot([]string{dao.ColumnServiceKey, dao.ColumnTenant})] = tenant
 	}
 }
 
 func ServiceKeyAppID(appID string) Option {
 	return func(filter bson.M) {
-		filter[ConnectWithDot([]string{model.ColumnServiceKey, model.ColumnAppID})] = appID
+		filter[util2.ConnectWithDot([]string{dao.ColumnServiceKey, dao.ColumnAppID})] = appID
 	}
 }
 
 func ServiceKeyServiceName(serviceName string) Option {
 	return func(filter bson.M) {
-		filter[ConnectWithDot([]string{model.ColumnServiceKey, model.ColumnServiceName})] = serviceName
+		filter[util2.ConnectWithDot([]string{dao.ColumnServiceKey, dao.ColumnServiceName})] = serviceName
 	}
 }
 
 func ServiceKeyServiceEnv(env string) Option {
 	return func(filter bson.M) {
-		filter[ConnectWithDot([]string{model.ColumnServiceKey, model.ColumnEnv})] = env
+		filter[util2.ConnectWithDot([]string{dao.ColumnServiceKey, dao.ColumnEnv})] = env
 	}
 }
 
 func ServiceKeyServiceVersion(version string) Option {
 	return func(filter bson.M) {
-		filter[ConnectWithDot([]string{model.ColumnServiceKey, model.ColumnVersion})] = version
+		filter[util2.ConnectWithDot([]string{dao.ColumnServiceKey, dao.ColumnVersion})] = version
 	}
 }
 
 func Schema(schema string) Option {
 	return func(filter bson.M) {
-		filter[model.ColumnSchema] = schema
+		filter[dao.ColumnSchema] = schema
 	}
 }
 
 func SchemaID(schemaID string) Option {
 	return func(filter bson.M) {
-		filter[model.ColumnSchemaID] = schemaID
+		filter[dao.ColumnSchemaID] = schemaID
 	}
 }
 
 func RuleAttribute(attribute string) Option {
 	return func(filter bson.M) {
-		filter[ConnectWithDot([]string{model.ColumnRule, model.ColumnAttribute})] = attribute
+		filter[util2.ConnectWithDot([]string{dao.ColumnRule, dao.ColumnAttribute})] = attribute
 	}
 }
 
 func RuleRuleID(ruleID string) Option {
 	return func(filter bson.M) {
-		filter[ConnectWithDot([]string{model.ColumnRule, model.ColumnRuleID})] = ruleID
+		filter[util2.ConnectWithDot([]string{dao.ColumnRule, dao.ColumnRuleID})] = ruleID
 	}
 }
 
 func RuleRuleType(ruleType string) Option {
 	return func(filter bson.M) {
-		filter[ConnectWithDot([]string{model.ColumnRule, model.ColumnRuleType})] = ruleType
+		filter[util2.ConnectWithDot([]string{dao.ColumnRule, dao.ColumnRuleType})] = ruleType
 	}
 }
 
 func RulePattern(pattern string) Option {
 	return func(filter bson.M) {
-		filter[ConnectWithDot([]string{model.ColumnRule, model.ColumnPattern})] = pattern
+		filter[util2.ConnectWithDot([]string{dao.ColumnRule, dao.ColumnPattern})] = pattern
 	}
 }
 
 func RuleDescription(description string) Option {
 	return func(filter bson.M) {
-		filter[ConnectWithDot([]string{model.ColumnRule, model.ColumnDescription})] = description
+		filter[util2.ConnectWithDot([]string{dao.ColumnRule, dao.ColumnDescription})] = description
 	}
 }
 
 func RuleModTime(modTime string) Option {
 	return func(filter bson.M) {
-		filter[ConnectWithDot([]string{model.ColumnRule, model.ColumnModTime})] = modTime
+		filter[util2.ConnectWithDot([]string{dao.ColumnRule, dao.ColumnModTime})] = modTime
 	}
 }
 
 func SchemaSummary(schemaSummary string) Option {
 	return func(filter bson.M) {
-		filter[model.ColumnSchemaSummary] = schemaSummary
+		filter[dao.ColumnSchemaSummary] = schemaSummary
 	}
 }
 
 func Tags(tags map[string]string) Option {
 	return func(filter bson.M) {
-		filter[model.ColumnTag] = tags
+		filter[dao.ColumnTag] = tags
 	}
 }
 
 func InstanceModTime(modTime string) Option {
 	return func(filter bson.M) {
-		filter[ConnectWithDot([]string{model.ColumnService, model.ColumnModTime})] = modTime
+		filter[util2.ConnectWithDot([]string{dao.ColumnService, dao.ColumnModTime})] = modTime
 	}
 }
 
 func InstanceStatus(status string) Option {
 	return func(filter bson.M) {
-		filter[ConnectWithDot([]string{model.ColumnInstance, model.ColumnStatus})] = status
+		filter[util2.ConnectWithDot([]string{dao.ColumnInstance, dao.ColumnStatus})] = status
 	}
 }
 
 func InstanceProperties(properties map[string]string) Option {
 	return func(filter bson.M) {
-		filter[ConnectWithDot([]string{model.ColumnInstance, model.ColumnProperty})] = properties
+		filter[util2.ConnectWithDot([]string{dao.ColumnInstance, dao.ColumnProperty})] = properties
 	}
 }
 

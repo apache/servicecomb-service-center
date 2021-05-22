@@ -20,6 +20,7 @@ package mongo
 import (
 	"context"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/dao"
 	"strconv"
 	"strings"
 	"time"
@@ -29,8 +30,7 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
-	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
+	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/dao/util"
 	"github.com/apache/servicecomb-service-center/pkg/cluster"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -236,7 +236,7 @@ func (ds *DataSource) autoSelfHeartBeat() {
 func GetAllServicesAcrossDomainProject(ctx context.Context) (map[string][]*pb.MicroService, error) {
 	filter := mutil.NewBasicFilter(ctx)
 
-	findRes, err := client.GetMongoClient().Find(ctx, model.CollectionService, filter)
+	findRes, err := client.GetMongoClient().Find(ctx, dao.CollectionService, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -244,7 +244,7 @@ func GetAllServicesAcrossDomainProject(ctx context.Context) (map[string][]*pb.Mi
 	services := make(map[string][]*pb.MicroService)
 
 	for findRes.Next(ctx) {
-		var mongoService model.Service
+		var mongoService dao.Service
 		err := findRes.Decode(&mongoService)
 		if err != nil {
 			return nil, err

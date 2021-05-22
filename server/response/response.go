@@ -28,7 +28,7 @@ func init() {
 	RegisterFilter("/v4/:project/registry/microservices/:consumerId/providers", ConsumersListFilter)
 	// control panel apis
 	RegisterFilter("/v4/:project/govern/microservices", MicroServiceInfoListFilter)
-	RegisterFilter("/v4/:project/govern/apps", AppIdListFilter)
+	RegisterFilter("/v4/:project/govern/apps", AppIDListFilter)
 }
 
 func MicroserviceListFilter(obj interface{}, labels []map[string]string) interface{} {
@@ -103,18 +103,18 @@ func MicroServiceInfoListFilter(obj interface{}, labelsList []map[string]string)
 	return servicesResponse
 }
 
-func AppIdListFilter(obj interface{}, labelsList []map[string]string) interface{} {
+func AppIDListFilter(obj interface{}, labelsList []map[string]string) interface{} {
 	appsResponse, ok := obj.(*discovery.GetAppsResponse)
 	if !ok {
 		return obj
 	}
 	var apps []string
-	for _, appId := range appsResponse.AppIds {
+	for _, appID := range appsResponse.AppIds {
 		for _, labels := range labelsList {
-			if app, ok := labels["appId"]; ok && appId != app {
+			if app, ok := labels["appId"]; ok && appID != app {
 				continue
 			}
-			apps = append(apps, appId)
+			apps = append(apps, appID)
 			break
 		}
 	}

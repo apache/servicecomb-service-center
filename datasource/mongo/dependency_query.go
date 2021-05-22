@@ -30,9 +30,8 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/dao"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/util"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/dao"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/dao/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/validate"
 )
@@ -233,7 +232,7 @@ func (dr *DependencyRelation) GetServiceByMicroServiceKey(service *pb.MicroServi
 		log.Error("get serivce failed", err)
 		return nil, err
 	}
-	findRes, err := client.GetMongoClient().Find(dr.ctx, model.CollectionService, filter)
+	findRes, err := client.GetMongoClient().Find(dr.ctx, dao.CollectionService, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -242,7 +241,7 @@ func (dr *DependencyRelation) GetServiceByMicroServiceKey(service *pb.MicroServi
 	}
 
 	for findRes.Next(dr.ctx) {
-		var service model.Service
+		var service dao.Service
 		err = findRes.Decode(&service)
 		if err != nil {
 			return nil, err
@@ -258,7 +257,7 @@ func (dr *DependencyRelation) getConsumerOfDependAllServices() ([]*pb.MicroServi
 	providerService := pb.MicroServiceToKey(dr.domainProject, dr.provider)
 	providerService.ServiceName = "*"
 	filter := GenerateProviderDependencyRuleKey(dr.domainProject, providerService)
-	findRes, err := client.GetMongoClient().Find(dr.ctx, model.CollectionDep, filter)
+	findRes, err := client.GetMongoClient().Find(dr.ctx, dao.CollectionDep, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -268,7 +267,7 @@ func (dr *DependencyRelation) getConsumerOfDependAllServices() ([]*pb.MicroServi
 
 	var msKeys []*pb.MicroServiceKey
 	for findRes.Next(dr.ctx) {
-		var depRule *model.DependencyRule
+		var depRule *dao.DependencyRule
 		err = findRes.Decode(&depRule)
 		if err != nil {
 			return nil, err
@@ -278,15 +277,15 @@ func (dr *DependencyRelation) getConsumerOfDependAllServices() ([]*pb.MicroServi
 	return msKeys, nil
 }
 
-func getServiceKeysInDep(ctx context.Context, filter interface{}) ([]*model.DependencyRule, error) {
-	findRes, err := client.GetMongoClient().Find(ctx, model.CollectionDep, filter)
+func getServiceKeysInDep(ctx context.Context, filter interface{}) ([]*dao.DependencyRule, error) {
+	findRes, err := client.GetMongoClient().Find(ctx, dao.CollectionDep, filter)
 	if err != nil {
 		return nil, err
 	}
 	defer findRes.Close(ctx)
-	var depRules []*model.DependencyRule
+	var depRules []*dao.DependencyRule
 	for findRes.Next(ctx) {
-		var tmp *model.DependencyRule
+		var tmp *dao.DependencyRule
 		err := findRes.Decode(&tmp)
 		if err != nil {
 			return nil, err
@@ -320,12 +319,12 @@ func (dr *DependencyRelation) parseDependencyRule(dependencyRule *pb.MicroServic
 			log.Error("get serivce failed", err)
 			return nil, err
 		}
-		findRes, err := client.GetMongoClient().Find(dr.ctx, model.CollectionService, filter)
+		findRes, err := client.GetMongoClient().Find(dr.ctx, dao.CollectionService, filter)
 		if err != nil {
 			return nil, err
 		}
 		for findRes.Next(dr.ctx) {
-			var service model.Service
+			var service dao.Service
 			err = findRes.Decode(&service)
 			if err != nil {
 				return nil, err
@@ -395,10 +394,10 @@ func FindServiceIds(ctx context.Context, versionRule string, key *pb.MicroServic
 	}
 
 	baseFilter := bson.D{
-		{Key: model.ColumnDomain, Value: tenant[0]},
-		{Key: model.ColumnProject, Value: tenant[1]},
-		{Key: util.ConnectWithDot([]string{model.ColumnService, model.ColumnEnv}), Value: key.Environment},
-		{Key: util.ConnectWithDot([]string{model.ColumnService, model.ColumnAppID}), Value: key.AppId}}
+		{Key: dao.ColumnDomain, Value: tenant[0]},
+		{Key: dao.ColumnProject, Value: tenant[1]},
+		{Key: util.ConnectWithDot([]string{dao.ColumnService, dao.ColumnEnv}), Value: key.Environment},
+		{Key: util.ConnectWithDot([]string{dao.ColumnService, dao.ColumnAppID}), Value: key.AppId}}
 
 	serviceIds, exist, err := findServiceKeysByServiceName(ctx, versionRule, key, baseFilter)
 	if err != nil {
@@ -422,7 +421,7 @@ func FindServiceIds(ctx context.Context, versionRule string, key *pb.MicroServic
 }
 
 func serviceVersionFilter(ctx context.Context, versionRule string, filter bson.D) ([]string, bool, error) {
-	baseExist, err := client.GetMongoClient().DocExist(ctx, model.CollectionService, filter)
+	baseExist, err := client.GetMongoClient().DocExist(ctx, dao.CollectionService, filter)
 	if err != nil || !baseExist {
 		return nil, false, err
 	}
@@ -445,13 +444,13 @@ func serviceVersionFilter(ctx context.Context, versionRule string, filter bson.D
 
 func findServiceKeysByServiceName(ctx context.Context, versionRule string, key *pb.MicroServiceKey, baseFilter bson.D) ([]string, bool, error) {
 	filter := append(baseFilter,
-		bson.E{Key: util.ConnectWithDot([]string{model.ColumnService, model.ColumnServiceName}), Value: key.ServiceName})
+		bson.E{Key: util.ConnectWithDot([]string{dao.ColumnService, dao.ColumnServiceName}), Value: key.ServiceName})
 	return serviceVersionFilter(ctx, versionRule, filter)
 }
 
 func findServiceKeysByAlias(ctx context.Context, versionRule string, key *pb.MicroServiceKey, baseFilter bson.D) ([]string, bool, error) {
 	filter := append(baseFilter,
-		bson.E{Key: util.ConnectWithDot([]string{model.ColumnService, model.ColumnAlias}), Value: key.Alias})
+		bson.E{Key: util.ConnectWithDot([]string{dao.ColumnService, dao.ColumnAlias}), Value: key.Alias})
 	return serviceVersionFilter(ctx, versionRule, filter)
 }
 
@@ -464,23 +463,23 @@ func findServiceKeys(ctx context.Context, versionRule string, filter bson.D) (fi
 		return GetVersionServiceLatest, filter
 	case versionRule[len(versionRule)-1:] == "+":
 		start := versionRule[:len(versionRule)-1]
-		filter = append(filter, bson.E{Key: util.ConnectWithDot([]string{model.ColumnService, model.ColumnVersion}), Value: bson.M{"$gte": start}})
+		filter = append(filter, bson.E{Key: util.ConnectWithDot([]string{dao.ColumnService, dao.ColumnVersion}), Value: bson.M{"$gte": start}})
 		return GetVersionService, filter
 	case rangeIdx > 0:
 		start := versionRule[:rangeIdx]
 		end := versionRule[rangeIdx+1:]
-		filter = append(filter, bson.E{Key: util.ConnectWithDot([]string{model.ColumnService, model.ColumnVersion}), Value: bson.M{"$gte": start, "$lt": end}})
+		filter = append(filter, bson.E{Key: util.ConnectWithDot([]string{dao.ColumnService, dao.ColumnVersion}), Value: bson.M{"$gte": start, "$lt": end}})
 		return GetVersionService, filter
 	default:
-		filter = append(filter, bson.E{Key: util.ConnectWithDot([]string{model.ColumnService, model.ColumnVersion}), Value: versionRule})
+		filter = append(filter, bson.E{Key: util.ConnectWithDot([]string{dao.ColumnService, dao.ColumnVersion}), Value: versionRule})
 		return nil, filter
 	}
 }
 
 func GetVersionServiceLatest(ctx context.Context, m bson.D) (serviceIds []string, err error) {
-	findRes, err := client.GetMongoClient().Find(ctx, model.CollectionService, m,
+	findRes, err := client.GetMongoClient().Find(ctx, dao.CollectionService, m,
 		&options.FindOptions{
-			Sort: bson.M{util.ConnectWithDot([]string{model.ColumnService, model.ColumnVersion}): -1}})
+			Sort: bson.M{util.ConnectWithDot([]string{dao.ColumnService, dao.ColumnVersion}): -1}})
 	if err != nil {
 		return nil, err
 	}
@@ -488,7 +487,7 @@ func GetVersionServiceLatest(ctx context.Context, m bson.D) (serviceIds []string
 		return nil, findRes.Err()
 	}
 	for findRes.Next(ctx) {
-		var service *model.Service
+		var service *dao.Service
 		err = findRes.Decode(&service)
 		if err != nil {
 			return
@@ -502,8 +501,8 @@ func GetVersionServiceLatest(ctx context.Context, m bson.D) (serviceIds []string
 }
 
 func GetVersionService(ctx context.Context, m bson.D) (serviceIds []string, err error) {
-	findRes, err := client.GetMongoClient().Find(ctx, model.CollectionService, m, &options.FindOptions{
-		Sort: bson.M{util.ConnectWithDot([]string{model.ColumnService, model.ColumnVersion}): -1}})
+	findRes, err := client.GetMongoClient().Find(ctx, dao.CollectionService, m, &options.FindOptions{
+		Sort: bson.M{util.ConnectWithDot([]string{dao.ColumnService, dao.ColumnVersion}): -1}})
 	if err != nil {
 		return
 	}
@@ -511,7 +510,7 @@ func GetVersionService(ctx context.Context, m bson.D) (serviceIds []string, err 
 		return nil, findRes.Err()
 	}
 	for findRes.Next(ctx) {
-		var service *model.Service
+		var service *dao.Service
 		err = findRes.Decode(&service)
 		if err != nil {
 			return
@@ -550,7 +549,7 @@ func ParseVersionRule(ctx context.Context, versionRule string, key *pb.MicroServ
 }
 
 func GetFilterVersionService(ctx context.Context, m bson.M) (serviceIDs []string, err error) {
-	findRes, err := client.GetMongoClient().Find(ctx, model.CollectionService, m)
+	findRes, err := client.GetMongoClient().Find(ctx, dao.CollectionService, m)
 	if err != nil {
 		return nil, err
 	}
@@ -558,7 +557,7 @@ func GetFilterVersionService(ctx context.Context, m bson.M) (serviceIDs []string
 		return nil, findRes.Err()
 	}
 	for findRes.Next(ctx) {
-		var service model.Service
+		var service dao.Service
 		err = findRes.Decode(&service)
 		if err != nil {
 			return nil, err
@@ -569,9 +568,9 @@ func GetFilterVersionService(ctx context.Context, m bson.M) (serviceIDs []string
 }
 
 func GetFilterVersionServiceLatest(ctx context.Context, m bson.M) (serviceIDs []string, err error) {
-	findRes, err := client.GetMongoClient().Find(ctx, model.CollectionService, m,
+	findRes, err := client.GetMongoClient().Find(ctx, dao.CollectionService, m,
 		&options.FindOptions{
-			Sort: bson.M{util.ConnectWithDot([]string{model.ColumnService, model.ColumnVersion}): -1}})
+			Sort: bson.M{util.ConnectWithDot([]string{dao.ColumnService, dao.ColumnVersion}): -1}})
 	if err != nil {
 		return nil, err
 	}
@@ -579,7 +578,7 @@ func GetFilterVersionServiceLatest(ctx context.Context, m bson.M) (serviceIDs []
 		return nil, findRes.Err()
 	}
 	for findRes.Next(ctx) {
-		var service model.Service
+		var service dao.Service
 		err = findRes.Decode(&service)
 		if err != nil {
 			return nil, err

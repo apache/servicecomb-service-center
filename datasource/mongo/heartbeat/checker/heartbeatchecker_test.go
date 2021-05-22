@@ -22,11 +22,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/dao"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/heartbeat"
 )
 
 func TestHeartbeat(t *testing.T) {
@@ -41,14 +42,14 @@ func TestHeartbeat(t *testing.T) {
 	})
 
 	t.Run("heartbeat: if the instance does exist,the heartbeat should succeed", func(t *testing.T) {
-		instance1 := model.Instance{
+		instance1 := dao.Instance{
 			RefreshTime: time.Now(),
 			Instance: &pb.MicroServiceInstance{
 				InstanceId: "instanceId1",
 				ServiceId:  "serviceId1",
 			},
 		}
-		_, err := client.GetMongoClient().Insert(context.Background(), model.CollectionInstance, instance1)
+		_, err := client.GetMongoClient().Insert(context.Background(), dao.CollectionInstance, instance1)
 		assert.Equal(t, nil, err)
 		heartBeatChecker := &HeartBeatChecker{}
 		resp, err := heartBeatChecker.Heartbeat(context.Background(), &pb.HeartbeatRequest{
@@ -57,8 +58,8 @@ func TestHeartbeat(t *testing.T) {
 		})
 		assert.Nil(t, err)
 		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
-		filter := util.NewFilter(util.InstanceInstanceID(instance1.Instance.InstanceId))
-		_, err = client.GetMongoClient().Delete(context.Background(), model.CollectionInstance, filter)
+		filter := heartbeat.NewServiceIDInstanceIDFilter(instance1.Instance.ServiceId, instance1.Instance.InstanceId)
+		_, err = client.GetMongoClient().Delete(context.Background(), dao.CollectionInstance, filter)
 		assert.Nil(t, err)
 	})
 }

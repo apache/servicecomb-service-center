@@ -19,42 +19,53 @@ package dao
 
 import (
 	"context"
-
-	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
-	"go.mongodb.org/mongo-driver/bson"
-
+	"fmt"
+	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/go-chassis/cari/discovery"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
+	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/dao/util"
 )
 
-func GetInstance(ctx context.Context, filter interface{}) (*model.Instance, error) {
-	findRes, err := client.GetMongoClient().FindOne(ctx, model.CollectionInstance, filter)
+func UpdateInstance(ctx context.Context, filter interface{}, updateFilter interface{}) error {
+	result, err := client.GetMongoClient().FindOneAndUpdate(ctx, CollectionInstance, filter, updateFilter)
+	if err != nil {
+		return err
+	}
+	if result.Err() != nil {
+		return result.Err()
+	}
+	return nil
+}
+
+func GetInstance(ctx context.Context, filter interface{}) (*Instance, error) {
+	findRes, err := client.GetMongoClient().FindOne(ctx, CollectionInstance, filter)
 	if err != nil {
 		return nil, err
 	}
-	var instance *model.Instance
+	var instance *Instance
 	if findRes.Err() != nil {
 		//not get any service,not db err
 		return nil, nil
 	}
 	err = findRes.Decode(&instance)
 	if err != nil {
+		log.Error("decode instance failed", err)
 		return nil, err
 	}
 	return instance, nil
 }
 
-func GetInstances(ctx context.Context, filter interface{}) ([]*model.Instance, error) {
-	res, err := client.GetMongoClient().Find(ctx, model.CollectionInstance, filter)
+func GetInstances(ctx context.Context, filter interface{}) ([]*Instance, error) {
+	res, err := client.GetMongoClient().Find(ctx, CollectionInstance, filter)
 	if err != nil {
 		return nil, err
 	}
-	var instances []*model.Instance
+	var instances []*Instance
 	for res.Next(ctx) {
-		var tmp *model.Instance
+		var tmp *Instance
 		err := res.Decode(&tmp)
 		if err != nil {
 			return nil, err
@@ -64,20 +75,32 @@ func GetInstances(ctx context.Context, filter interface{}) ([]*model.Instance, e
 	return instances, nil
 }
 
+func DeleteInstance(ctx context.Context, filter interface{}) error {
+	res, err := client.GetMongoClient().DeleteOne(ctx, CollectionInstance, filter)
+	if err != nil {
+		log.Error("failed to delete instance", err)
+		return err
+	}
+	log.Info(fmt.Sprintf("delete from mongodb:%+v", res))
+	return nil
+}
+
 func GetMicroServiceInstancesByID(ctx context.Context, serviceID string) ([]*discovery.MicroServiceInstance, error) {
-	filter := mutil.NewFilter(mutil.InstanceServiceID(serviceID))
-	option := &options.FindOptions{Sort: bson.M{mutil.ConnectWithDot([]string{model.ColumnInstance, model.ColumnVersion}): -1}}
+	filter := bson.D{
+		{mutil.ConnectWithDot([]string{ColumnInstance, ColumnServiceID}), serviceID},
+	}
+	option := &options.FindOptions{Sort: bson.D{{mutil.ConnectWithDot([]string{ColumnInstance, ColumnVersion}), -1}}}
 	return GetMicroServiceInstances(ctx, filter, option)
 }
 
 func GetMicroServiceInstances(ctx context.Context, filter interface{}, opts ...*options.FindOptions) ([]*discovery.MicroServiceInstance, error) {
-	res, err := client.GetMongoClient().Find(ctx, model.CollectionInstance, filter, opts...)
+	res, err := client.GetMongoClient().Find(ctx, CollectionInstance, filter, opts...)
 	if err != nil {
 		return nil, err
 	}
 	var instances []*discovery.MicroServiceInstance
 	for res.Next(ctx) {
-		var tmp model.Instance
+		var tmp Instance
 		err := res.Decode(&tmp)
 		if err != nil {
 			return nil, err
@@ -88,22 +111,14 @@ func GetMicroServiceInstances(ctx context.Context, filter interface{}, opts ...*
 }
 
 func CountInstance(ctx context.Context, filter interface{}) (int64, error) {
-	count, err := client.GetMongoClient().Count(ctx, model.CollectionInstance, filter)
+	count, err := client.GetMongoClient().Count(ctx, CollectionInstance, filter)
 	if err != nil {
 		return 0, err
 	}
 	return count, nil
 }
 
-func UpdateInstance(ctx context.Context, filter interface{}, update interface{}, opts ...*options.UpdateOptions) *discovery.Error {
-	_, err := client.GetMongoClient().Update(ctx, model.CollectionInstance, filter, update, opts...)
-	if err != nil {
-		return discovery.NewError(discovery.ErrUnavailableBackend, err.Error())
-	}
-	return nil
-}
-
 func ExistInstance(ctx context.Context, serviceID string, instanceID string) (bool, error) {
 	filter := mutil.NewBasicFilter(ctx, mutil.InstanceServiceID(serviceID), mutil.InstanceInstanceID(instanceID))
-	return client.GetMongoClient().DocExist(ctx, model.CollectionInstance, filter)
+	return client.GetMongoClient().DocExist(ctx, CollectionInstance, filter)
 }

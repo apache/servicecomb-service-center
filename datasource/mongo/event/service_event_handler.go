@@ -20,13 +20,13 @@ package event
 import (
 	"context"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/dao/util"
+	"go.mongodb.org/mongo-driver/bson"
 
 	pb "github.com/go-chassis/cari/discovery"
 
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/dao"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/dao"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/metrics"
 )
@@ -39,10 +39,10 @@ func NewServiceEventHandler() *ServiceEventHandler {
 }
 
 func (h *ServiceEventHandler) Type() string {
-	return model.ColumnService
+	return dao.ColumnService
 }
 func (h *ServiceEventHandler) OnEvent(evt sd.MongoEvent) {
-	ms := evt.Value.(model.Service)
+	ms := evt.Value.(dao.Service)
 	fn, fv := getFramework(ms.Service)
 	switch evt.Type {
 	case pb.EVT_INIT, pb.EVT_CREATE:
@@ -80,7 +80,9 @@ func getFramework(ms *pb.MicroService) (string, string) {
 }
 
 func newDomain(ctx context.Context, domain string) error {
-	filter := util.NewFilter(util.Domain(domain))
+	filter := bson.D{
+		{dao.ColumnDomain, domain},
+	}
 	exist, err := dao.ExistDomain(ctx, filter)
 	if !exist && err == nil {
 		err = dao.AddDomain(ctx, domain)
@@ -92,7 +94,7 @@ func newProject(ctx context.Context, domain string, project string) error {
 	filter := util.NewDomainProjectFilter(domain, project)
 	exist, err := dao.ExistProject(ctx, filter)
 	if !exist && err == nil {
-		p := model.Project{
+		p := dao.Project{
 			Domain:  domain,
 			Project: project,
 		}

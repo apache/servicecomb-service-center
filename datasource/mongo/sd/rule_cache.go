@@ -18,7 +18,7 @@
 package sd
 
 import (
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/dao"
 	"github.com/apache/servicecomb-service-center/datasource/sdcommon"
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -46,7 +46,7 @@ func newRuleStore() *MongoCacher {
 		if err != nil {
 			return
 		}
-		rule := model.Rule{}
+		rule := dao.Rule{}
 		err = bson.Unmarshal(doc, &rule)
 		if err != nil {
 			return
@@ -97,7 +97,7 @@ func (s *ruleStore) Clear() {
 }
 
 func (s *ruleStore) ProcessUpdate(event MongoEvent) {
-	rule, ok := event.Value.(model.Rule)
+	rule, ok := event.Value.(dao.Rule)
 	if !ok {
 		return
 	}
@@ -106,7 +106,7 @@ func (s *ruleStore) ProcessUpdate(event MongoEvent) {
 }
 
 func (s *ruleStore) ProcessDelete(event MongoEvent) {
-	rule, ok := s.d.Get(event.DocumentID).(model.Rule)
+	rule, ok := s.d.Get(event.DocumentID).(dao.Rule)
 	if !ok {
 		return
 	}
@@ -118,6 +118,6 @@ func (s *ruleStore) isValueNotUpdated(value interface{}, newValue interface{}) b
 	return false
 }
 
-func genRuleServiceID(rule model.Rule) string {
+func genRuleServiceID(rule dao.Rule) string {
 	return rule.ServiceID
 }

@@ -20,19 +20,20 @@ package mongo
 import (
 	"context"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/dao"
 
-	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/heartbeat"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
-	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
-	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/go-chassis/go-chassis/v2/storage"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+
+	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
+	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/dao/util"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/heartbeat"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/config"
 )
 
 const defaultExpireTime = 300
@@ -121,90 +122,90 @@ func EnsureDB() {
 }
 
 func EnsureService() {
-	err := client.GetMongoClient().GetDB().CreateCollection(context.Background(), model.CollectionService, options.CreateCollection().SetValidator(nil))
+	err := client.GetMongoClient().GetDB().CreateCollection(context.Background(), dao.CollectionService, options.CreateCollection().SetValidator(nil))
 	wrapCreateCollectionError(err)
 
 	serviceIDIndex := mutil.BuildIndexDoc(
-		mutil.ConnectWithDot([]string{model.ColumnService, model.ColumnServiceID}))
+		mutil.ConnectWithDot([]string{dao.ColumnService, dao.ColumnServiceID}))
 	serviceIDIndex.Options = options.Index().SetUnique(true)
 
 	serviceIndex := mutil.BuildIndexDoc(
-		mutil.ConnectWithDot([]string{model.ColumnService, model.ColumnAppID}),
-		mutil.ConnectWithDot([]string{model.ColumnService, model.ColumnServiceName}),
-		mutil.ConnectWithDot([]string{model.ColumnService, model.ColumnEnv}),
-		mutil.ConnectWithDot([]string{model.ColumnService, model.ColumnVersion}),
-		model.ColumnDomain,
-		model.ColumnProject)
+		mutil.ConnectWithDot([]string{dao.ColumnService, dao.ColumnAppID}),
+		mutil.ConnectWithDot([]string{dao.ColumnService, dao.ColumnServiceName}),
+		mutil.ConnectWithDot([]string{dao.ColumnService, dao.ColumnEnv}),
+		mutil.ConnectWithDot([]string{dao.ColumnService, dao.ColumnVersion}),
+		dao.ColumnDomain,
+		dao.ColumnProject)
 	serviceIndex.Options = options.Index().SetUnique(true)
 
 	var serviceIndexs []mongo.IndexModel
 	serviceIndexs = append(serviceIndexs, serviceIDIndex, serviceIndex)
 
-	err = client.GetMongoClient().CreateIndexes(context.Background(), model.CollectionService, serviceIndexs)
+	err = client.GetMongoClient().CreateIndexes(context.Background(), dao.CollectionService, serviceIndexs)
 	wrapCreateIndexesError(err)
 }
 
 func EnsureInstance() {
-	err := client.GetMongoClient().GetDB().CreateCollection(context.Background(), model.CollectionInstance, options.CreateCollection().SetValidator(nil))
+	err := client.GetMongoClient().GetDB().CreateCollection(context.Background(), dao.CollectionInstance, options.CreateCollection().SetValidator(nil))
 	wrapCreateCollectionError(err)
 
-	instanceIndex := mutil.BuildIndexDoc(model.ColumnRefreshTime)
+	instanceIndex := mutil.BuildIndexDoc(dao.ColumnRefreshTime)
 	instanceIndex.Options = options.Index().SetExpireAfterSeconds(defaultExpireTime)
 
-	instanceServiceIndex := mutil.BuildIndexDoc(mutil.ConnectWithDot([]string{model.ColumnInstance, model.ColumnServiceID}))
+	instanceServiceIndex := mutil.BuildIndexDoc(mutil.ConnectWithDot([]string{dao.ColumnInstance, dao.ColumnServiceID}))
 
 	var instanceIndexs []mongo.IndexModel
 	instanceIndexs = append(instanceIndexs, instanceIndex, instanceServiceIndex)
 
-	err = client.GetMongoClient().CreateIndexes(context.Background(), model.CollectionInstance, instanceIndexs)
+	err = client.GetMongoClient().CreateIndexes(context.Background(), dao.CollectionInstance, instanceIndexs)
 	wrapCreateIndexesError(err)
 }
 
 func EnsureSchema() {
-	err := client.GetMongoClient().GetDB().CreateCollection(context.Background(), model.CollectionSchema, options.CreateCollection().SetValidator(nil))
+	err := client.GetMongoClient().GetDB().CreateCollection(context.Background(), dao.CollectionSchema, options.CreateCollection().SetValidator(nil))
 	wrapCreateCollectionError(err)
 
 	schemaServiceIndex := mutil.BuildIndexDoc(
-		model.ColumnDomain,
-		model.ColumnProject,
-		model.ColumnServiceID)
+		dao.ColumnDomain,
+		dao.ColumnProject,
+		dao.ColumnServiceID)
 
 	var schemaIndexs []mongo.IndexModel
 	schemaIndexs = append(schemaIndexs, schemaServiceIndex)
 
-	err = client.GetMongoClient().CreateIndexes(context.Background(), model.CollectionSchema, schemaIndexs)
+	err = client.GetMongoClient().CreateIndexes(context.Background(), dao.CollectionSchema, schemaIndexs)
 	wrapCreateIndexesError(err)
 }
 
 func EnsureRule() {
-	err := client.GetMongoClient().GetDB().CreateCollection(context.Background(), model.CollectionRule, options.CreateCollection().SetValidator(nil))
+	err := client.GetMongoClient().GetDB().CreateCollection(context.Background(), dao.CollectionRule, options.CreateCollection().SetValidator(nil))
 	wrapCreateCollectionError(err)
 
 	ruleServiceIndex := mutil.BuildIndexDoc(
-		model.ColumnDomain,
-		model.ColumnProject,
-		model.ColumnServiceID)
+		dao.ColumnDomain,
+		dao.ColumnProject,
+		dao.ColumnServiceID)
 
 	var ruleIndexs []mongo.IndexModel
 	ruleIndexs = append(ruleIndexs, ruleServiceIndex)
 
-	err = client.GetMongoClient().CreateIndexes(context.Background(), model.CollectionRule, ruleIndexs)
+	err = client.GetMongoClient().CreateIndexes(context.Background(), dao.CollectionRule, ruleIndexs)
 	wrapCreateIndexesError(err)
 }
 
 func EnsureDep() {
-	err := client.GetMongoClient().GetDB().CreateCollection(context.Background(), model.CollectionDep, options.CreateCollection().SetValidator(nil))
+	err := client.GetMongoClient().GetDB().CreateCollection(context.Background(), dao.CollectionDep, options.CreateCollection().SetValidator(nil))
 	wrapCreateCollectionError(err)
 
 	depServiceIndex := mutil.BuildIndexDoc(
-		model.ColumnDomain,
-		model.ColumnProject,
-		model.ColumnServiceKey)
+		dao.ColumnDomain,
+		dao.ColumnProject,
+		dao.ColumnServiceKey)
 
 	var depIndexs []mongo.IndexModel
 	depIndexs = append(depIndexs, depServiceIndex)
 
-	err = client.GetMongoClient().CreateIndexes(context.Background(), model.CollectionDep, depIndexs)
+	err = client.GetMongoClient().CreateIndexes(context.Background(), dao.CollectionDep, depIndexs)
 	if err != nil {
 		log.Fatal("failed to create dep collection indexs", err)
 		return
@@ -213,7 +214,7 @@ func EnsureDep() {
 
 func wrapCreateCollectionError(err error) {
 	if err != nil {
-		if client.IsCollectionsExist(err) {
+		if mutil.IsCollectionsExist(err) {
 			return
 		}
 		log.Fatal(fmt.Sprintf("failed to create collection with validation, err type: %s", util.Reflect(err).FullName), err)
@@ -222,7 +223,7 @@ func wrapCreateCollectionError(err error) {
 
 func wrapCreateIndexesError(err error) {
 	if err != nil {
-		if client.IsDuplicateKey(err) {
+		if mutil.IsDuplicateKey(err) {
 			return
 		}
 		log.Fatal(fmt.Sprintf("failed to create indexes, err type: %s", util.Reflect(err).FullName), err)
