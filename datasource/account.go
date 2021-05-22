@@ -30,6 +30,7 @@ var (
 	ErrDLockNotFound       = errors.New("dlock not found")
 	ErrDeleteAccountFailed = errors.New("failed to delete account")
 	ErrQueryAccountFailed  = errors.New("failed to query account")
+	ErrAccountNotExist     = errors.New("account not exist")
 )
 
 // AccountManager contains the RBAC CRUD
