@@ -21,4 +21,4 @@ ENV GOPROXY https://goproxy.io
 
 COPY . .
 
-RUN bash -x scripts/build/local.sh linux 2.0.0 amd64 {{BUILD}}
+RUN bash -x scripts/build/local.sh linux {{RELEASE}} amd64 {{BUILD}}
