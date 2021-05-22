@@ -84,6 +84,7 @@ func (r *AuthResource) CreateAccount(w http.ResponseWriter, req *http.Request) {
 		controller.WriteError(w, discovery.ErrInternal, errorsEx.MsgOperateAccountFailed)
 		return
 	}
+	controller.WriteSuccess(w, req)
 }
 func (r *AuthResource) DeleteAccount(w http.ResponseWriter, req *http.Request) {
 	_, err := dao.DeleteAccount(context.TODO(), req.URL.Query().Get(":name"))
@@ -92,7 +93,7 @@ func (r *AuthResource) DeleteAccount(w http.ResponseWriter, req *http.Request) {
 		controller.WriteError(w, discovery.ErrInternal, errorsEx.MsgOperateAccountFailed)
 		return
 	}
-	w.WriteHeader(http.StatusNoContent)
+	controller.WriteSuccess(w, req)
 }
 func (r *AuthResource) UpdateAccount(w http.ResponseWriter, req *http.Request) {
 	body, err := ioutil.ReadAll(req.Body)
@@ -114,6 +115,7 @@ func (r *AuthResource) UpdateAccount(w http.ResponseWriter, req *http.Request) {
 		controller.WriteError(w, discovery.ErrInternal, errorsEx.MsgOperateAccountFailed)
 		return
 	}
+	controller.WriteSuccess(w, req)
 }
 func (r *AuthResource) ListAccount(w http.ResponseWriter, req *http.Request) {
 	as, n, err := dao.ListAccount(context.TODO())
@@ -198,6 +200,7 @@ func (r *AuthResource) ChangePassword(w http.ResponseWriter, req *http.Request) 
 		controller.WriteError(w, discovery.ErrInternal, err.Error())
 		return
 	}
+	controller.WriteSuccess(w, req)
 }
 func (r *AuthResource) Login(w http.ResponseWriter, req *http.Request) {
 	ip := util.GetRealIP(req)

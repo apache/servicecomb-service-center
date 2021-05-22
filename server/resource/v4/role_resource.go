@@ -105,6 +105,7 @@ func (r *RoleResource) CreateRolePermission(w http.ResponseWriter, req *http.Req
 		controller.WriteError(w, discovery.ErrInternal, errorsEx.MsgOperateRoleFailed)
 		return
 	}
+	controller.WriteSuccess(w, req)
 }
 
 //UpdateRolePermission update role permissions
@@ -127,6 +128,7 @@ func (r *RoleResource) UpdateRolePermission(w http.ResponseWriter, req *http.Req
 		controller.WriteError(w, discovery.ErrInternal, errorsEx.MsgOperateRoleFailed)
 		return
 	}
+	controller.WriteSuccess(w, req)
 }
 
 //GetRole get the role info according to role name
@@ -153,4 +155,5 @@ func (r *RoleResource) DeleteRole(w http.ResponseWriter, req *http.Request) {
 		controller.WriteError(w, discovery.ErrInternal, errorsEx.MsgJSON)
 		return
 	}
+	controller.WriteSuccess(w, req)
 }

@@ -2965,6 +2965,7 @@ definitions:
     required:
       - password
       - name
+      - roles
     properties:
       id:
         type: string

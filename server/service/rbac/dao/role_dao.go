@@ -71,6 +71,6 @@ func EditRole(ctx context.Context, name string, a *rbac.Role) error {
 		log.Errorf(err, "can not edit role info")
 		return err
 	}
-	log.Info("role is edit")
+	log.Infof("role [%s] is edit", oldRole.ID)
 	return nil
 }
