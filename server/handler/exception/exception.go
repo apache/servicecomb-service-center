@@ -15,48 +15,69 @@
  * limitations under the License.
  */
 
-package response
+package exception
 
 import (
 	"github.com/apache/servicecomb-service-center/pkg/chain"
 	"github.com/apache/servicecomb-service-center/pkg/errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/go-chassis/cari/discovery"
 	"net/http"
+	"strconv"
 )
 
+// Handler provide a common response writer to handle exceptions
 type Handler struct {
 }
 
 func (l *Handler) Handle(i *chain.Invocation) {
 	w, r := i.Context().Value(rest.CtxResponse).(http.ResponseWriter),
 		i.Context().Value(rest.CtxRequest).(*http.Request)
-	ph := i.Context().Value(rest.CtxRouteHandler).(http.Handler)
+
+	asyncWriter := NewWriter(w)
+	util.SetRequestContext(r, rest.CtxResponse, asyncWriter)
 
 	i.Next(chain.WithFunc(func(ret chain.Result) {
-		defer func() {
-			err := ret.Err
-			itf := recover()
-			if itf != nil {
-				log.Panic(itf)
-				err = errors.Internal(itf)
-			}
-			if _, ok := err.(errors.InternalError); ok {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusBadRequest)
-				return
-			}
-		}()
-
 		if !ret.OK {
+			l.responseError(w, ret.Err)
 			return
 		}
 
-		ph.ServeHTTP(w, r)
+		if err := asyncWriter.Flush(); err != nil {
+			log.Error("response writer flush failed", err)
+		}
 	}))
+}
+
+func (l *Handler) responseError(w http.ResponseWriter, e error) {
+	statusCode := http.StatusBadRequest
+	contentType := rest.ContentTypeText
+	body := []byte("Unknown error")
+	defer func() {
+		w.Header().Set(rest.HeaderContentType, contentType)
+		w.Header().Set(rest.HeaderResponseStatus, strconv.Itoa(statusCode))
+		w.WriteHeader(statusCode)
+		if _, writeErr := w.Write(body); writeErr != nil {
+			log.Error("write response failed", writeErr)
+		}
+	}()
+
+	if e == nil {
+		log.Warn("callback result is failure but no error")
+		return
+	}
+
+	body = util.StringToBytesWithNoCopy(e.Error())
+	switch err := e.(type) {
+	case errors.InternalError:
+		statusCode = http.StatusInternalServerError
+	case *discovery.Error:
+		statusCode = err.StatusCode()
+		contentType = rest.ContentTypeJSON
+		body = err.Marshal()
+	}
 }
 
 func RegisterHandlers() {

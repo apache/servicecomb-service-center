@@ -18,13 +18,14 @@
 package auth
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/apache/servicecomb-service-center/pkg/chain"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/plugin/auth"
-	"github.com/apache/servicecomb-service-center/server/rest/controller"
 	"github.com/go-chassis/cari/discovery"
 )
 
@@ -33,18 +34,30 @@ type Handler struct {
 
 func (h *Handler) Handle(i *chain.Invocation) {
 	r := i.Context().Value(rest.CtxRequest).(*http.Request)
-	err := auth.Identify(r)
-	if err == nil {
-		i.Next()
+
+	if err := auth.Identify(r); err != nil {
+		log.Errorf(err, "authenticate request failed, %s %s", r.Method, r.RequestURI)
+		i.Fail(discovery.NewError(discovery.ErrUnauthorized, err.Error()))
 		return
 	}
 
-	log.Errorf(err, "authenticate request failed, %s %s", r.Method, r.RequestURI)
+	i.Next(chain.WithFunc(func(ret chain.Result) {
+		if !ret.OK {
+			return
+		}
 
-	w := i.Context().Value(rest.CtxResponse).(http.ResponseWriter)
-	controller.WriteError(w, discovery.ErrUnauthorized, err.Error())
+		obj := i.Context().Value(rest.CtxResponseObject)
+		if obj == nil {
+			return
+		}
 
-	i.Fail(nil)
+		data, _ := json.Marshal(obj)
+		log.Info(fmt.Sprintf("response object: %s", data))
+
+		// TODO filter and rewrite here!
+		// w := i.Context().Value(rest.CtxResponse).(http.ResponseWriter)
+		// w.Write(data)
+	}))
 }
 
 func RegisterHandlers() {

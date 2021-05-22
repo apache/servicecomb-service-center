@@ -21,8 +21,14 @@ import (
 	"net/http"
 
 	"github.com/apache/servicecomb-service-center/pkg/chain"
-	roa "github.com/apache/servicecomb-service-center/pkg/rest"
+	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+)
+
+const (
+	queryGlobal    = "global"
+	queryNoCache   = "noCache"
+	queryCacheOnly = "cacheOnly"
 )
 
 type Handler struct {
@@ -30,31 +36,53 @@ type Handler struct {
 
 func (c *Handler) Handle(i *chain.Invocation) {
 	var (
-		err     error
-		v3      v3Context
-		v4      v4Context
-		r       = i.Context().Value(roa.CtxRequest).(*http.Request)
-		pattern = i.Context().Value(roa.CtxMatchPattern).(string)
+		v3 v3Context
+		v4 v4Context
+		r  = i.Context().Value(rest.CtxRequest).(*http.Request)
 	)
 
 	switch {
-	case util.IsVersionOrHealthPattern(pattern):
 	case v3.IsMatch(r):
-		err = v3.Do(r)
+		v3.Write(r)
 	case v4.IsMatch(r):
-		err = v4.Do(r)
+		v4.Write(r)
 	}
 
-	if err != nil {
-		i.Fail(err)
-		return
-	}
-
-	i.WithContext(util.CtxRemoteIP, util.GetRealIP(r))
+	c.commonQueryToContext(i)
 
 	i.Next()
 }
 
+func (c *Handler) commonQueryToContext(i *chain.Invocation) {
+	r := i.Context().Value(rest.CtxRequest).(*http.Request)
+	query := r.URL.Query()
+
+	i.WithContext(util.CtxRemoteIP, util.GetRealIP(r))
+
+	global := util.StringTRUE(query.Get(queryGlobal))
+	if global && r.Method == http.MethodGet {
+		i.WithContext(util.CtxGlobal, "1")
+	}
+
+	noCache := util.StringTRUE(query.Get(queryNoCache))
+	if noCache {
+		i.WithContext(util.CtxNocache, "1")
+		return
+	}
+
+	cacheOnly := util.StringTRUE(query.Get(queryCacheOnly))
+	if cacheOnly {
+		i.WithContext(util.CtxCacheOnly, "1")
+		return
+	}
+
+	rev := query.Get("rev")
+	if len(rev) > 0 {
+		i.WithContext(util.CtxRequestRevision, rev)
+		return
+	}
+}
+
 func RegisterHandlers() {
-	chain.RegisterHandler(roa.ServerChainName, &Handler{})
+	chain.RegisterHandler(rest.ServerChainName, &Handler{})
 }

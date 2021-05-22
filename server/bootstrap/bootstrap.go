@@ -19,7 +19,8 @@ package bootstrap
 import (
 	//etcd
 	_ "github.com/apache/servicecomb-service-center/datasource/etcd/bootstrap"
-	"github.com/apache/servicecomb-service-center/server/handler/response"
+	"github.com/apache/servicecomb-service-center/server/handler/exception"
+	"github.com/apache/servicecomb-service-center/server/handler/route"
 
 	//mongo
 	_ "github.com/apache/servicecomb-service-center/datasource/mongo/bootstrap"
@@ -71,7 +72,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/broker"
 	"github.com/apache/servicecomb-service-center/server/handler/accesslog"
 	"github.com/apache/servicecomb-service-center/server/handler/auth"
-	"github.com/apache/servicecomb-service-center/server/handler/cache"
 	"github.com/apache/servicecomb-service-center/server/handler/context"
 	"github.com/apache/servicecomb-service-center/server/handler/maxbody"
 	"github.com/apache/servicecomb-service-center/server/handler/metrics"
@@ -89,14 +89,14 @@ func init() {
 	interceptor.RegisterInterceptFunc(cors.Intercept)
 
 	// handle requests after routing.
+	exception.RegisterHandlers()
 	accesslog.RegisterHandlers()
+	auth.RegisterHandlers()
 	maxbody.RegisterHandlers()
 	metrics.RegisterHandlers()
 	tracing.RegisterHandlers()
-	auth.RegisterHandlers()
 	context.RegisterHandlers()
-	cache.RegisterHandlers()
-	response.RegisterHandlers()
+	route.RegisterHandlers()
 
 	// init broker
 	broker.Init()

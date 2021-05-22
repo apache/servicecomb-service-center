@@ -32,7 +32,7 @@ func (v *v4Context) IsMatch(r *http.Request) bool {
 	return strings.Index(r.RequestURI, "/v4/") == 0
 }
 
-func (v *v4Context) Do(r *http.Request) error {
+func (v *v4Context) Write(r *http.Request) {
 	ctx := r.Context()
 
 	domain, project := util.ParseDomain(ctx), util.ParseProject(ctx)
@@ -52,6 +52,4 @@ func (v *v4Context) Do(r *http.Request) error {
 		}
 		util.SetRequestContext(r, util.CtxProject, project)
 	}
-
-	return nil
 }

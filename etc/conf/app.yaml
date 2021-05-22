@@ -155,8 +155,8 @@ discovery:
 
 rbac:
   enable: false
-  privateKeyFile:
-  publicKeyFile:
+  privateKeyFile: ./private.key
+  publicKeyFile: ./public.key
 
 metrics:
   enable: true

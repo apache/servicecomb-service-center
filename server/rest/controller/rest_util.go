@@ -19,7 +19,6 @@ package controller
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -35,7 +34,7 @@ func WriteError(w http.ResponseWriter, code int32, detail string) {
 	w.Header().Set(rest.HeaderResponseStatus, strconv.Itoa(err.StatusCode()))
 	w.Header().Set(rest.HeaderContentType, rest.ContentTypeJSON)
 	w.WriteHeader(err.StatusCode())
-	fmt.Fprintln(w, util.BytesToStringWithNoCopy(err.Marshal()))
+	_, _ = w.Write(err.Marshal())
 
 	if err.InternalError() {
 		err := alarm.Raise(alarm.IDInternalError, alarm.AdditionalContext(detail))
@@ -82,7 +81,7 @@ func WriteResponse(w http.ResponseWriter, r *http.Request, resp *discovery.Respo
 	w.Header().Set(rest.HeaderResponseStatus, strconv.Itoa(http.StatusOK))
 	w.Header().Set(rest.HeaderContentType, rest.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
-	_, err = fmt.Fprintln(w, util.BytesToStringWithNoCopy(data))
+	_, err = w.Write(data)
 	if err != nil {
 		log.Error("write response failed", err)
 	}

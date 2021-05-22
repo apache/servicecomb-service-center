@@ -35,7 +35,7 @@ const (
 	CtxMatchFunc      util.CtxKey = "_server_match_func"
 	CtxStartTimestamp util.CtxKey = "x-start-timestamp"
 	CtxResponseObject util.CtxKey = "_server_response_object"
-	CtxRouteHandler   util.CtxKey = "_route_handler"
+	CtxRouteHandler   util.CtxKey = "_server_route_handler"
 
 	ServerChainName = "_server_chain"
 
