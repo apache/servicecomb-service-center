@@ -25,7 +25,7 @@ type AlarmListRequest struct {
 }
 
 type AlarmListResponse struct {
-	Response *discovery.Response `json:"response,omitempty"`
+	Response *discovery.Response `json:"-"`
 	Alarms   []*model.AlarmEvent `json:"alarms,omitempty"`
 }
 
@@ -33,7 +33,7 @@ type ClustersRequest struct {
 }
 
 type ClustersResponse struct {
-	Response *discovery.Response `json:"response,omitempty"`
+	Response *discovery.Response `json:"-"`
 	Clusters cluster.Clusters    `json:"clusters,omitempty"`
 }
 
@@ -41,5 +41,5 @@ type ClearAlarmRequest struct {
 }
 
 type ClearAlarmResponse struct {
-	Response *discovery.Response `json:"response,omitempty"`
+	Response *discovery.Response `json:"-"`
 }

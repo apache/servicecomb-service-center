@@ -15,13 +15,29 @@
  * limitations under the License.
  */
 
-package response
+package route
 
-import "github.com/apache/servicecomb-service-center/pkg/chain"
+import (
+	"net/http"
 
+	"github.com/apache/servicecomb-service-center/pkg/chain"
+	"github.com/apache/servicecomb-service-center/pkg/rest"
+)
+
+// Handler call the func of matched route
 type Handler struct {
 }
 
 func (l *Handler) Handle(i *chain.Invocation) {
+	w, r := i.Context().Value(rest.CtxResponse).(http.ResponseWriter),
+		i.Context().Value(rest.CtxRequest).(*http.Request)
+	ph := i.Context().Value(rest.CtxRouteHandler).(http.Handler)
 
+	ph.ServeHTTP(w, r)
+
+	i.Next()
+}
+
+func RegisterHandlers() {
+	chain.RegisterHandler(rest.ServerChainName, &Handler{})
 }

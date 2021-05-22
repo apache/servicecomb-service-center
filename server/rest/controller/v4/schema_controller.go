@@ -19,6 +19,7 @@ package v4
 
 import (
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -31,6 +32,8 @@ import (
 	"github.com/apache/servicecomb-service-center/server/rest/controller"
 	pb "github.com/go-chassis/cari/discovery"
 )
+
+var errModifySchemaDisabled = errors.New("schema modify is disabled")
 
 type SchemaService struct {
 	//
@@ -54,8 +57,7 @@ func (s *SchemaService) URLPatterns() []rest.Route {
 }
 
 func (s *SchemaService) DisableSchema(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusForbidden)
-	_, _ = w.Write([]byte("schema modify is disabled"))
+	controller.WriteError(w, pb.ErrForbidden, errModifySchemaDisabled.Error())
 }
 
 func (s *SchemaService) GetSchemas(w http.ResponseWriter, r *http.Request) {
@@ -67,9 +69,7 @@ func (s *SchemaService) GetSchemas(w http.ResponseWriter, r *http.Request) {
 	resp, _ := core.ServiceAPI.GetSchemaInfo(r.Context(), request)
 	w.Header().Add("X-Schema-Summary", resp.SchemaSummary)
 	resp.SchemaSummary = ""
-	respInternal := resp.Response
-	resp.Response = nil
-	controller.WriteResponse(w, r, respInternal, resp)
+	controller.WriteResponse(w, r, resp.Response, resp)
 }
 
 func (s *SchemaService) ModifySchema(w http.ResponseWriter, r *http.Request) {
@@ -147,7 +147,5 @@ func (s *SchemaService) GetAllSchemas(w http.ResponseWriter, r *http.Request) {
 		WithSchema: withSchema == "1",
 	}
 	resp, _ := core.ServiceAPI.GetAllSchemaInfo(r.Context(), request)
-	respInternal := resp.Response
-	resp.Response = nil
-	controller.WriteResponse(w, r, respInternal, resp)
+	controller.WriteResponse(w, r, resp.Response, resp)
 }

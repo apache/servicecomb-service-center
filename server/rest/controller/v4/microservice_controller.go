@@ -68,9 +68,7 @@ func (s *MicroServiceService) Register(w http.ResponseWriter, r *http.Request) {
 		controller.WriteError(w, pb.ErrInternal, err.Error())
 		return
 	}
-	respInternal := resp.Response
-	resp.Response = nil
-	controller.WriteResponse(w, r, respInternal, resp)
+	controller.WriteResponse(w, r, resp.Response, resp)
 }
 
 func (s *MicroServiceService) Update(w http.ResponseWriter, r *http.Request) {
@@ -130,9 +128,7 @@ func (s *MicroServiceService) GetServices(w http.ResponseWriter, r *http.Request
 		controller.WriteError(w, pb.ErrInternal, err.Error())
 		return
 	}
-	respInternal := resp.Response
-	resp.Response = nil
-	controller.WriteResponse(w, r, respInternal, resp)
+	controller.WriteResponse(w, r, resp.Response, resp)
 }
 
 func (s *MicroServiceService) GetExistence(w http.ResponseWriter, r *http.Request) {
@@ -153,10 +149,8 @@ func (s *MicroServiceService) GetExistence(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	w.Header().Add("X-Schema-Summary", resp.Summary)
-	respInternal := resp.Response
-	resp.Response = nil
 	resp.Summary = ""
-	controller.WriteResponse(w, r, respInternal, resp)
+	controller.WriteResponse(w, r, resp.Response, resp)
 }
 
 func (s *MicroServiceService) GetServiceOne(w http.ResponseWriter, r *http.Request) {
@@ -169,9 +163,7 @@ func (s *MicroServiceService) GetServiceOne(w http.ResponseWriter, r *http.Reque
 		controller.WriteError(w, pb.ErrInternal, "get service failed")
 		return
 	}
-	respInternal := resp.Response
-	resp.Response = nil
-	controller.WriteResponse(w, r, respInternal, resp)
+	controller.WriteResponse(w, r, resp.Response, resp)
 }
 
 func (s *MicroServiceService) UnregisterServices(w http.ResponseWriter, r *http.Request) {
@@ -197,7 +189,5 @@ func (s *MicroServiceService) UnregisterServices(w http.ResponseWriter, r *http.
 		controller.WriteError(w, pb.ErrInternal, "delete services failed")
 		return
 	}
-	respInternal := resp.Response
-	resp.Response = nil
-	controller.WriteResponse(w, r, respInternal, resp)
+	controller.WriteResponse(w, r, resp.Response, resp)
 }

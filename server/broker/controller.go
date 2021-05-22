@@ -69,10 +69,7 @@ func (brokerService *Controller) GetHome(w http.ResponseWriter, r *http.Request)
 		Scheme:      getScheme(r),
 	}
 	resp, _ := ServiceAPI.GetBrokerHome(r.Context(), request)
-
-	respInternal := resp.Response
-	resp.Response = nil
-	controller.WriteResponse(w, r, respInternal, resp)
+	controller.WriteResponse(w, r, resp.Response, resp)
 }
 
 func (*Controller) PublishPact(w http.ResponseWriter, r *http.Request) {
@@ -97,9 +94,7 @@ func (*Controller) PublishPact(w http.ResponseWriter, r *http.Request) {
 		controller.WriteError(w, pb.ErrInternal, "can not push pact")
 		return
 	}
-	respInternal := resp.Response
-	resp.Response = nil
-	controller.WriteResponse(w, r, respInternal, resp)
+	controller.WriteResponse(w, r, resp.Response, resp)
 }
 
 func (*Controller) GetAllProviderPacts(w http.ResponseWriter, r *http.Request) {
@@ -123,9 +118,7 @@ func (*Controller) GetAllProviderPacts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	PactLogger.Infof("Pact info: %s\n", string(linksObj))
-	respInternal := resp.Response
-	resp.Response = nil
-	controller.WriteResponse(w, r, respInternal, resp)
+	controller.WriteResponse(w, r, resp.Response, resp)
 }
 
 func (*Controller) GetPactsOfProvider(w http.ResponseWriter, r *http.Request) {
@@ -141,10 +134,7 @@ func (*Controller) GetPactsOfProvider(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp, _ := ServiceAPI.GetPactsOfProvider(r.Context(), request)
-	respInternal := resp.Response
-	resp.Response = nil
-	//controller.WriteResponse(w, respInternal, resp.Pact)
-	controller.WriteJSONIfSuccess(w, respInternal, resp.Pact)
+	controller.WriteResponse(w, r, resp.Response, resp.Pact)
 }
 
 func (*Controller) DeletePacts(w http.ResponseWriter, r *http.Request) {
@@ -189,9 +179,7 @@ func (*Controller) PublishVerificationResults(w http.ResponseWriter, r *http.Req
 		controller.WriteError(w, pb.ErrInternal, "publish failed")
 		return
 	}
-	respInternal := resp.Response
-	resp.Response = nil
-	controller.WriteResponse(w, r, respInternal, resp)
+	controller.WriteResponse(w, r, resp.Response, resp)
 }
 
 func (*Controller) RetrieveVerificationResults(w http.ResponseWriter, r *http.Request) {
@@ -202,9 +190,7 @@ func (*Controller) RetrieveVerificationResults(w http.ResponseWriter, r *http.Re
 	PactLogger.Infof("Retrieve verification results for: %s, %s\n",
 		request.ConsumerId, request.ConsumerVersion)
 	resp, _ := ServiceAPI.RetrieveVerificationResults(r.Context(), request)
-	respInternal := resp.Response
-	resp.Response = nil
-	controller.WriteResponse(w, r, respInternal, resp)
+	controller.WriteResponse(w, r, resp.Response, resp)
 }
 
 func getScheme(r *http.Request) string {

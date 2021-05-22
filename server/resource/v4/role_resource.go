@@ -40,18 +40,18 @@ type RoleResource struct {
 }
 
 //URLPatterns define http pattern
-func (r *RoleResource) URLPatterns() []rest.Route {
+func (rr *RoleResource) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{Method: http.MethodGet, Path: "/v4/roles", Func: r.GetRolePermission},
-		{Method: http.MethodPost, Path: "/v4/roles", Func: r.CreateRolePermission},
-		{Method: http.MethodPut, Path: "/v4/roles/:roleName", Func: r.UpdateRolePermission},
-		{Method: http.MethodGet, Path: "/v4/roles/:roleName", Func: r.GetRole},
-		{Method: http.MethodDelete, Path: "/v4/roles/:roleName", Func: r.DeleteRole},
+		{Method: http.MethodGet, Path: "/v4/roles", Func: rr.GetRolePermission},
+		{Method: http.MethodPost, Path: "/v4/roles", Func: rr.CreateRolePermission},
+		{Method: http.MethodPut, Path: "/v4/roles/:roleName", Func: rr.UpdateRolePermission},
+		{Method: http.MethodGet, Path: "/v4/roles/:roleName", Func: rr.GetRole},
+		{Method: http.MethodDelete, Path: "/v4/roles/:roleName", Func: rr.DeleteRole},
 	}
 }
 
 //GetRolePermission list all roles and there's permissions
-func (r *RoleResource) GetRolePermission(w http.ResponseWriter, req *http.Request) {
+func (rr *RoleResource) GetRolePermission(w http.ResponseWriter, req *http.Request) {
 	rs, _, err := dao.ListRole(context.TODO())
 	if err != nil {
 		log.Error(errorsEx.MsgGetRoleFailed, err)
@@ -61,17 +61,11 @@ func (r *RoleResource) GetRolePermission(w http.ResponseWriter, req *http.Reques
 	resp := &rbac.RoleResponse{
 		Roles: rs,
 	}
-	b, err := json.Marshal(resp)
-	if err != nil {
-		log.Error(errorsEx.MsgJSON, err)
-		controller.WriteError(w, discovery.ErrInternal, errorsEx.MsgJSON)
-		return
-	}
-	controller.WriteJSON(w, b)
+	controller.WriteResponse(w, req, nil, resp)
 }
 
 //roleParse parse the role info from the request body
-func (r *RoleResource) roleParse(body []byte) (*rbac.Role, error) {
+func (rr *RoleResource) roleParse(body []byte) (*rbac.Role, error) {
 	role := &rbac.Role{}
 	err := json.Unmarshal(body, role)
 	if err != nil {
@@ -83,14 +77,14 @@ func (r *RoleResource) roleParse(body []byte) (*rbac.Role, error) {
 }
 
 //CreateRolePermission create new role and assign permissions
-func (r *RoleResource) CreateRolePermission(w http.ResponseWriter, req *http.Request) {
+func (rr *RoleResource) CreateRolePermission(w http.ResponseWriter, req *http.Request) {
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		log.Error("read body err", err)
 		controller.WriteError(w, discovery.ErrInternal, err.Error())
 		return
 	}
-	role, err := r.roleParse(body)
+	role, err := rr.roleParse(body)
 	if err != nil {
 		controller.WriteError(w, discovery.ErrInvalidParams, errorsEx.MsgJSON)
 		return
@@ -109,14 +103,14 @@ func (r *RoleResource) CreateRolePermission(w http.ResponseWriter, req *http.Req
 }
 
 //UpdateRolePermission update role permissions
-func (r *RoleResource) UpdateRolePermission(w http.ResponseWriter, req *http.Request) {
+func (rr *RoleResource) UpdateRolePermission(w http.ResponseWriter, req *http.Request) {
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		log.Error("read body err", err)
 		controller.WriteError(w, discovery.ErrInternal, err.Error())
 		return
 	}
-	role, err := r.roleParse(body)
+	role, err := rr.roleParse(body)
 	if err != nil {
 		controller.WriteError(w, discovery.ErrInvalidParams, errorsEx.MsgJSON)
 		return
@@ -132,23 +126,17 @@ func (r *RoleResource) UpdateRolePermission(w http.ResponseWriter, req *http.Req
 }
 
 //GetRole get the role info according to role name
-func (r *RoleResource) GetRole(w http.ResponseWriter, req *http.Request) {
-	role, err := dao.GetRole(context.TODO(), req.URL.Query().Get(":roleName"))
+func (rr *RoleResource) GetRole(w http.ResponseWriter, r *http.Request) {
+	role, err := dao.GetRole(context.TODO(), r.URL.Query().Get(":roleName"))
 	if err != nil {
 		log.Error(errorsEx.MsgGetRoleFailed, err)
 		controller.WriteError(w, discovery.ErrInternal, errorsEx.MsgGetRoleFailed)
 	}
-	v, err := json.Marshal(role)
-	if err != nil {
-		log.Error(errorsEx.MsgJSON, err)
-		controller.WriteError(w, discovery.ErrInternal, errorsEx.MsgJSON)
-		return
-	}
-	controller.WriteJSON(w, v)
+	controller.WriteResponse(w, r, nil, role)
 }
 
 //DeleteRole delete the role info by role name
-func (r *RoleResource) DeleteRole(w http.ResponseWriter, req *http.Request) {
+func (rr *RoleResource) DeleteRole(w http.ResponseWriter, req *http.Request) {
 	_, err := dao.DeleteRole(context.TODO(), req.URL.Query().Get(":roleName"))
 	if err != nil {
 		log.Error(errorsEx.MsgJSON, err)

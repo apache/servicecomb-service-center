@@ -98,9 +98,7 @@ func (s *DependencyService) GetConProDependencies(w http.ResponseWriter, r *http
 		NoSelf:     query.Get("noSelf") == "1",
 	}
 	resp, _ := core.ServiceAPI.GetConsumerDependencies(r.Context(), request)
-	respInternal := resp.Response
-	resp.Response = nil
-	controller.WriteResponse(w, r, respInternal, resp)
+	controller.WriteResponse(w, r, resp.Response, resp)
 }
 
 func (s *DependencyService) GetProConDependencies(w http.ResponseWriter, r *http.Request) {
@@ -111,7 +109,5 @@ func (s *DependencyService) GetProConDependencies(w http.ResponseWriter, r *http
 		NoSelf:     query.Get("noSelf") == "1",
 	}
 	resp, _ := core.ServiceAPI.GetProviderDependencies(r.Context(), request)
-	respInternal := resp.Response
-	resp.Response = nil
-	controller.WriteResponse(w, r, respInternal, resp)
+	controller.WriteResponse(w, r, resp.Response, resp)
 }

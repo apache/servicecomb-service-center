@@ -55,9 +55,7 @@ func (s *MainService) URLPatterns() []rest.Route {
 
 func (s *MainService) ClusterHealth(w http.ResponseWriter, r *http.Request) {
 	resp, _ := core.InstanceAPI.ClusterHealth(r.Context())
-	respInternal := resp.Response
-	resp.Response = nil
-	controller.WriteResponse(w, r, respInternal, resp)
+	controller.WriteResponse(w, r, resp.Response, resp)
 }
 
 func (s *MainService) GetVersion(w http.ResponseWriter, r *http.Request) {
@@ -69,5 +67,5 @@ func (s *MainService) GetVersion(w http.ResponseWriter, r *http.Request) {
 		versionJSONCache, _ = json.Marshal(result)
 		versionResp = pb.CreateResponse(pb.ResponseSuccess, "get version successfully")
 	})
-	controller.WriteJSONIfSuccess(w, versionResp, versionJSONCache)
+	controller.WriteResponse(w, r, versionResp, versionJSONCache)
 }

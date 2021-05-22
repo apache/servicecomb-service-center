@@ -67,16 +67,15 @@ func (h *Handler) Handle(i *chain.Invocation) {
 		startTimeStr = start.Format("2006-01-02T15:04:05.000Z07:00")
 	}
 	r := i.Context().Value(rest.CtxRequest).(*http.Request)
-	w := i.Context().Value(rest.CtxResponse).(http.ResponseWriter)
 	i.Next(chain.WithAsyncFunc(func(_ chain.Result) {
 		delayByMillisecond := "unknown"
 		if ok {
 			delayByMillisecond = fmt.Sprintf("%d", time.Since(start)/time.Millisecond)
 		}
-		statusCode := w.Header().Get(rest.HeaderResponseStatus)
+		statusCode := i.Context().Value(rest.CtxResponseStatus).(int)
 		// format:  remoteIp requestReceiveTime "method requestUri proto" statusCode requestBodySize delay(ms)
 		// example: 127.0.0.1 2006-01-02T15:04:05.000Z07:00 "GET /v4/default/registry/microservices HTTP/1.1" 200 0 0
-		h.logger.Infof("%s %s \"%s %s %s\" %s %d %s",
+		h.logger.Infof("%s %s \"%s %s %s\" %d %d %s",
 			util.GetIPFromContext(i.Context()),
 			startTimeStr,
 			r.Method,

@@ -32,7 +32,7 @@ func (v *v3Context) IsMatch(r *http.Request) bool {
 	return strings.Index(r.RequestURI, "/registry/v3/") == 0
 }
 
-func (v *v3Context) Do(r *http.Request) error {
+func (v *v3Context) Write(r *http.Request) {
 	ctx := r.Context()
 
 	domain, project := util.ParseDomain(ctx), util.ParseProject(ctx)
@@ -52,6 +52,4 @@ func (v *v3Context) Do(r *http.Request) error {
 	if len(project) == 0 {
 		util.SetRequestContext(r, util.CtxProject, core.RegistryProject)
 	}
-
-	return nil
 }

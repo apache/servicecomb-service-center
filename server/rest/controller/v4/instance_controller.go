@@ -75,9 +75,7 @@ func (s *MicroServiceInstanceService) RegisterInstance(w http.ResponseWriter, r 
 		controller.WriteError(w, pb.ErrInternal, "register instance failed")
 		return
 	}
-	respInternal := resp.Response
-	resp.Response = nil
-	controller.WriteResponse(w, r, respInternal, resp)
+	controller.WriteResponse(w, r, resp.Response, resp)
 }
 
 //TODO 什么样的服务允许更新服务心跳，只能是本服务才可以更新自己，如何屏蔽其他服务伪造的心跳更新？
@@ -107,14 +105,7 @@ func (s *MicroServiceInstanceService) HeartbeatSet(w http.ResponseWriter, r *htt
 		return
 	}
 	resp, _ := core.InstanceAPI.HeartbeatSet(r.Context(), request)
-
-	if resp.Response.GetCode() == pb.ResponseSuccess {
-		controller.WriteResponse(w, r, nil, nil)
-		return
-	}
-	respInternal := resp.Response
-	resp.Response = nil
-	controller.WriteResponse(w, r, respInternal, resp)
+	controller.WriteResponse(w, r, resp.Response, nil)
 }
 
 func (s *MicroServiceInstanceService) UnregisterInstance(w http.ResponseWriter, r *http.Request) {
@@ -156,7 +147,6 @@ func (s *MicroServiceInstanceService) FindInstances(w http.ResponseWriter, r *ht
 		w.WriteHeader(http.StatusNotModified)
 		return
 	}
-
 	controller.WriteResponse(w, r, respInternal, resp)
 }
 
@@ -181,9 +171,7 @@ func (s *MicroServiceInstanceService) InstancesAction(w http.ResponseWriter, r *
 		request.ConsumerServiceId = r.Header.Get("X-ConsumerId")
 		ctx := util.SetTargetDomainProject(r.Context(), r.Header.Get("X-Domain-Name"), r.URL.Query().Get(":project"))
 		resp, _ := core.InstanceAPI.BatchFind(ctx, request)
-		respInternal := resp.Response
-		resp.Response = nil
-		controller.WriteResponse(w, r, respInternal, resp)
+		controller.WriteResponse(w, r, resp.Response, resp)
 	default:
 		err = fmt.Errorf("Invalid action: %s", action)
 		log.Errorf(err, "invalid request")

@@ -19,9 +19,7 @@ package controller
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
@@ -32,10 +30,9 @@ import (
 
 func WriteError(w http.ResponseWriter, code int32, detail string) {
 	err := discovery.NewError(code, detail)
-	w.Header().Set(rest.HeaderResponseStatus, strconv.Itoa(err.StatusCode()))
 	w.Header().Set(rest.HeaderContentType, rest.ContentTypeJSON)
 	w.WriteHeader(err.StatusCode())
-	fmt.Fprintln(w, util.BytesToStringWithNoCopy(err.Marshal()))
+	_, _ = w.Write(err.Marshal())
 
 	if err.InternalError() {
 		err := alarm.Raise(alarm.IDInternalError, alarm.AdditionalContext(detail))
@@ -57,42 +54,32 @@ func WriteResponse(w http.ResponseWriter, r *http.Request, resp *discovery.Respo
 	}
 
 	if obj == nil {
-		w.Header().Set(rest.HeaderResponseStatus, strconv.Itoa(http.StatusOK))
 		w.Header().Set(rest.HeaderContentType, rest.ContentTypeText)
 		w.WriteHeader(http.StatusOK)
 		return
 	}
 
-	// async handler maybe need this obj
 	util.SetRequestContext(r, rest.CtxResponseObject, obj)
 
-	b, err := json.Marshal(obj)
-	if err != nil {
-		WriteError(w, discovery.ErrInternal, err.Error())
-		return
+	var (
+		data []byte
+		err  error
+	)
+	switch body := obj.(type) {
+	case []byte:
+		data = body
+	default:
+		data, err = json.Marshal(body)
+		if err != nil {
+			WriteError(w, discovery.ErrInternal, err.Error())
+			return
+		}
 	}
-	w.Header().Set(rest.HeaderResponseStatus, strconv.Itoa(http.StatusOK))
 	w.Header().Set(rest.HeaderContentType, rest.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintln(w, util.BytesToStringWithNoCopy(b))
-}
-
-func WriteJSONIfSuccess(w http.ResponseWriter, resp *discovery.Response, json []byte) {
-	if resp.GetCode() == discovery.ResponseSuccess {
-		WriteJSON(w, json)
-		return
-	}
-	WriteError(w, resp.GetCode(), resp.GetMessage())
-}
-
-//WriteJSON simply write json
-func WriteJSON(w http.ResponseWriter, json []byte) {
-	w.Header().Set(rest.HeaderResponseStatus, strconv.Itoa(http.StatusOK))
-	w.Header().Set(rest.HeaderContentType, rest.ContentTypeJSON)
-	w.WriteHeader(http.StatusOK)
-	_, err := w.Write(json)
+	_, err = w.Write(data)
 	if err != nil {
-		log.Error("", err)
+		log.Error("write response failed", err)
 	}
 }
 

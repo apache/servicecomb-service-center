@@ -59,7 +59,7 @@ func InvokeInterceptors(w http.ResponseWriter, req *http.Request) (err error) {
 		if itf := recover(); itf != nil {
 			log.Panic(itf)
 
-			err = errorsEx.RaiseError(itf)
+			err = errorsEx.Internal(itf)
 
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}

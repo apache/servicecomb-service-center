@@ -77,7 +77,7 @@ func ReportRequestCompleted(w http.ResponseWriter, r *http.Request, start time.T
 		reqDurations.WithLabelValues(r.Method, instance, route, domain).Observe(elapsed)
 	}
 
-	success, code := codeOf(w.Header())
+	success, code := codeOf(r.Context().Value(rest.CtxResponseStatus).(int))
 
 	incomingRequests.WithLabelValues(r.Method, code, instance, route, domain).Inc()
 
@@ -86,15 +86,10 @@ func ReportRequestCompleted(w http.ResponseWriter, r *http.Request, start time.T
 	}
 }
 
-func codeOf(h http.Header) (bool, string) {
-	statusCode := h.Get(rest.HeaderResponseStatus)
-	if statusCode == "" {
-		return true, "200"
+func codeOf(code int) (bool, string) {
+	sz := strconv.Itoa(code)
+	if code >= http.StatusOK && code <= http.StatusAccepted {
+		return true, sz
 	}
-
-	if code, _ := strconv.Atoi(statusCode); code >= http.StatusOK && code <= http.StatusAccepted {
-		return true, statusCode
-	}
-
-	return false, statusCode
+	return false, sz
 }

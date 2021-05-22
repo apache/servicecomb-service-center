@@ -32,9 +32,12 @@ type InvocationOp struct {
 	Async bool
 }
 
+// WithFunc append a func to the begin of invocation callback list
 func WithFunc(f func(r Result)) InvocationOption {
 	return func(op InvocationOp) InvocationOp { op.Func = f; return op }
 }
+
+// WithAsyncFunc called concurrently after all WithFunc finish
 func WithAsyncFunc(f func(r Result)) InvocationOption {
 	return func(op InvocationOp) InvocationOp { op.Func = f; op.Async = true; return op }
 }
@@ -61,10 +64,10 @@ func (i *Invocation) WithContext(key util.CtxKey, val interface{}) *Invocation {
 
 // Next is the method to go next step in handler chain
 // WithFunc and WithAsyncFunc options can add customize callbacks in chain
-// and the callbacks seq like below
-// i.Success/Fail() -> CB1 ---> CB3 ----------> END           goroutine 0
-//                          \-> CB2(async) \                  goroutine 1
-//                                          \-> CB4(async)    goroutine 1 or 2
+// and the callbacks seq like below:
+// when i.Next(WithFunc(CB1)).Next(WithAsyncFunc(CB2)).Next(WithFunc(CB3)).Invoke(CB0)
+// then i.Success/Fail() -> CB3 -> CB1 -> CB0(invoke)             goroutine 0
+//                                              \-> CB2(async)    goroutine 1
 func (i *Invocation) Next(opts ...InvocationOption) {
 	var op InvocationOp
 	for _, opt := range opts {
@@ -87,17 +90,25 @@ func (i *Invocation) setCallback(f CallbackFunc, async bool) {
 	}
 	cb := i.Func
 	i.Func = func(r Result) {
-		cb(r)
-		callback(f, async, r)
+		callback(cb, f, async, r)
 	}
 }
 
-func callback(f CallbackFunc, async bool, r Result) {
-	c := Callback{Func: f, Async: async}
+func callback(prev, next CallbackFunc, async bool, r Result) {
+	// we make sure the all sync funcs called before the async funcs
+	if async {
+		prev(r)
+	}
+
+	c := Callback{Func: next, Async: async}
 	c.Invoke(r)
+
+	if !async {
+		prev(r)
+	}
 }
 
-func (i *Invocation) Invoke(f CallbackFunc) {
+func (i *Invocation) Invoke(last CallbackFunc) {
 	defer func() {
 		itf := recover()
 		if itf == nil {
@@ -105,9 +116,12 @@ func (i *Invocation) Invoke(f CallbackFunc) {
 		}
 		log.Panic(itf)
 
-		i.Fail(errorsEx.RaiseError(itf))
+		// this recover only catch the exceptions raised in sync invocations.
+		// The async invocations will be catch by gopool pkg then it never
+		// change the callback results.
+		i.Fail(errorsEx.Internal(itf))
 	}()
-	i.Func = f
+	i.Func = last
 	i.chain.Next(i)
 }
 
