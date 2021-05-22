@@ -133,10 +133,7 @@ func (governService *ResourceV4) GetServiceDetail(w http.ResponseWriter, r *http
 	}
 	ctx := r.Context()
 	resp, _ := ServiceAPI.GetServiceDetail(ctx, request)
-
-	respInternal := resp.Response
-	resp.Response = nil
-	controller.WriteResponse(w, r, respInternal, resp)
+	controller.WriteResponse(w, r, resp.Response, resp)
 }
 
 func (governService *ResourceV4) GetAllServicesInfo(w http.ResponseWriter, r *http.Request) {
@@ -158,19 +155,14 @@ func (governService *ResourceV4) GetAllServicesInfo(w http.ResponseWriter, r *ht
 		request.CountOnly = true
 	}
 	resp, _ := ServiceAPI.GetServicesInfo(ctx, request)
-
-	respInternal := resp.Response
-	resp.Response = nil
-	controller.WriteResponse(w, r, respInternal, resp)
+	controller.WriteResponse(w, r, resp.Response, resp)
 }
 
 func (governService *ResourceV4) GetAllServicesStatistics(w http.ResponseWriter, r *http.Request) {
 	request := &pb.GetServicesRequest{}
 	ctx := r.Context()
 	resp, _ := ServiceAPI.GetServicesStatistics(ctx, request)
-	respInternal := resp.Response
-	resp.Response = nil
-	controller.WriteResponse(w, r, respInternal, resp)
+	controller.WriteResponse(w, r, resp.Response, resp)
 }
 
 func (governService *ResourceV4) GetAllApplications(w http.ResponseWriter, r *http.Request) {
@@ -180,8 +172,5 @@ func (governService *ResourceV4) GetAllApplications(w http.ResponseWriter, r *ht
 	request.Environment = query.Get("env")
 	request.WithShared = util.StringTRUE(query.Get("withShared"))
 	resp, _ := ServiceAPI.GetApplications(ctx, request)
-
-	respInternal := resp.Response
-	resp.Response = nil
-	controller.WriteResponse(w, r, respInternal, resp)
+	controller.WriteResponse(w, r, resp.Response, resp)
 }

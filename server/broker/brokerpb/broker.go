@@ -221,7 +221,7 @@ func (m *PublishPactRequest) GetPact() []byte {
 }
 
 type PublishPactResponse struct {
-	Response *discovery.Response `protobuf:"bytes,1,opt,name=response" json:"response,omitempty"`
+	Response *discovery.Response `protobuf:"bytes,1,opt,name=response" json:"-"`
 }
 
 func (m *PublishPactResponse) Reset() { *m = PublishPactResponse{} }
@@ -280,7 +280,7 @@ func (m *Links) GetPacts() []*ConsumerInfo {
 }
 
 type GetAllProviderPactsResponse struct {
-	Response *discovery.Response `protobuf:"bytes,1,opt,name=response" json:"response,omitempty"`
+	Response *discovery.Response `protobuf:"bytes,1,opt,name=response" json:"-"`
 	XLinks   *Links              `protobuf:"bytes,2,opt,name=_links,json=Links" json:"_links,omitempty"`
 }
 
@@ -324,7 +324,7 @@ func (m *GetProviderConsumerVersionPactRequest) GetBaseUrl() *BaseBrokerRequest 
 }
 
 type GetProviderConsumerVersionPactResponse struct {
-	Response *discovery.Response `protobuf:"bytes,1,opt,name=response" json:"response,omitempty"`
+	Response *discovery.Response `protobuf:"bytes,1,opt,name=response" json:"-"`
 	Pact     []byte              `protobuf:"bytes,2,opt,name=pact,proto3" json:"pact,omitempty"`
 }
 
@@ -552,7 +552,7 @@ func (m *PublishVerificationRequest) GetProviderApplicationVersion() string {
 }
 
 type PublishVerificationResponse struct {
-	Response     *discovery.Response `protobuf:"bytes,1,opt,name=response" json:"response,omitempty"`
+	Response     *discovery.Response `protobuf:"bytes,1,opt,name=response" json:"-"`
 	Confirmation *VerificationDetail `protobuf:"bytes,2,opt,name=confirmation" json:"confirmation,omitempty"`
 }
 
@@ -585,7 +585,7 @@ func (m *RetrieveVerificationRequest) GetConsumerVersion() string {
 }
 
 type RetrieveVerificationResponse struct {
-	Response *discovery.Response `protobuf:"bytes,1,opt,name=response" json:"response,omitempty"`
+	Response *discovery.Response `protobuf:"bytes,1,opt,name=response" json:"-"`
 	Result   *VerificationResult `protobuf:"bytes,2,opt,name=result" json:"result,omitempty"`
 }
 
@@ -655,7 +655,7 @@ func (m *BrokerAPIInfoEntry) GetTemplated() bool {
 }
 
 type BrokerHomeResponse struct {
-	Response *discovery.Response            `protobuf:"bytes,1,opt,name=response" json:"response,omitempty"`
+	Response *discovery.Response            `protobuf:"bytes,1,opt,name=response" json:"-"`
 	XLinks   map[string]*BrokerAPIInfoEntry `protobuf:"bytes,2,rep,name=_links,json=Links" json:"_links,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	Curies   []*BrokerAPIInfoEntry          `protobuf:"bytes,3,rep,name=curies" json:"curies,omitempty"`
 }

@@ -85,9 +85,7 @@ func (s *TagService) GetTags(w http.ResponseWriter, r *http.Request) {
 	resp, _ := core.ServiceAPI.GetTags(r.Context(), &pb.GetServiceTagsRequest{
 		ServiceId: r.URL.Query().Get(":serviceId"),
 	})
-	respInternal := resp.Response
-	resp.Response = nil
-	controller.WriteResponse(w, r, respInternal, resp)
+	controller.WriteResponse(w, r, resp.Response, resp)
 }
 
 func (s *TagService) DeleteTags(w http.ResponseWriter, r *http.Request) {

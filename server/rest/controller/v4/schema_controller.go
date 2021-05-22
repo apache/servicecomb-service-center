@@ -69,9 +69,7 @@ func (s *SchemaService) GetSchemas(w http.ResponseWriter, r *http.Request) {
 	resp, _ := core.ServiceAPI.GetSchemaInfo(r.Context(), request)
 	w.Header().Add("X-Schema-Summary", resp.SchemaSummary)
 	resp.SchemaSummary = ""
-	respInternal := resp.Response
-	resp.Response = nil
-	controller.WriteResponse(w, r, respInternal, resp)
+	controller.WriteResponse(w, r, resp.Response, resp)
 }
 
 func (s *SchemaService) ModifySchema(w http.ResponseWriter, r *http.Request) {
@@ -149,7 +147,5 @@ func (s *SchemaService) GetAllSchemas(w http.ResponseWriter, r *http.Request) {
 		WithSchema: withSchema == "1",
 	}
 	resp, _ := core.ServiceAPI.GetAllSchemaInfo(r.Context(), request)
-	respInternal := resp.Response
-	resp.Response = nil
-	controller.WriteResponse(w, r, respInternal, resp)
+	controller.WriteResponse(w, r, resp.Response, resp)
 }

@@ -28,6 +28,8 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
+var doNothingFunc = func(_ chain.Result) {}
+
 // Router is a HTTP request multiplexer
 // Attention:
 //   1. not thread-safe, must be initialized completely before serve http request
@@ -116,8 +118,7 @@ func (router *Router) serve(ph *urlPatternHandler, w http.ResponseWriter, r *htt
 		WithContext(CtxMatchPattern, ph.Path).
 		WithContext(CtxMatchFunc, ph.Name).
 		WithContext(CtxRouteHandler, ph).
-		WithContext(CtxInvocation, &inv).
-		Invoke(func(_ chain.Result) {})
+		Invoke(doNothingFunc)
 }
 
 // NewRouter news an Router
