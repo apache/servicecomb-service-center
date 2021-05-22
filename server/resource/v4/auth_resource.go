@@ -42,18 +42,18 @@ type AuthResource struct {
 }
 
 //URLPatterns define htp pattern
-func (r *AuthResource) URLPatterns() []rest.Route {
+func (ar *AuthResource) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{Method: http.MethodPost, Path: "/v4/token", Func: r.Login},
-		{Method: http.MethodPost, Path: "/v4/accounts", Func: r.CreateAccount},
-		{Method: http.MethodGet, Path: "/v4/accounts", Func: r.ListAccount},
-		{Method: http.MethodGet, Path: "/v4/accounts/:name", Func: r.GetAccount},
-		{Method: http.MethodDelete, Path: "/v4/accounts/:name", Func: r.DeleteAccount},
-		{Method: http.MethodPut, Path: "/v4/accounts/:name", Func: r.UpdateAccount},
-		{Method: http.MethodPost, Path: "/v4/accounts/:name/password", Func: r.ChangePassword},
+		{Method: http.MethodPost, Path: "/v4/token", Func: ar.Login},
+		{Method: http.MethodPost, Path: "/v4/accounts", Func: ar.CreateAccount},
+		{Method: http.MethodGet, Path: "/v4/accounts", Func: ar.ListAccount},
+		{Method: http.MethodGet, Path: "/v4/accounts/:name", Func: ar.GetAccount},
+		{Method: http.MethodDelete, Path: "/v4/accounts/:name", Func: ar.DeleteAccount},
+		{Method: http.MethodPut, Path: "/v4/accounts/:name", Func: ar.UpdateAccount},
+		{Method: http.MethodPost, Path: "/v4/accounts/:name/password", Func: ar.ChangePassword},
 	}
 }
-func (r *AuthResource) CreateAccount(w http.ResponseWriter, req *http.Request) {
+func (ar *AuthResource) CreateAccount(w http.ResponseWriter, req *http.Request) {
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		log.Error("read body err", err)
@@ -86,7 +86,7 @@ func (r *AuthResource) CreateAccount(w http.ResponseWriter, req *http.Request) {
 	}
 	controller.WriteSuccess(w, req)
 }
-func (r *AuthResource) DeleteAccount(w http.ResponseWriter, req *http.Request) {
+func (ar *AuthResource) DeleteAccount(w http.ResponseWriter, req *http.Request) {
 	_, err := dao.DeleteAccount(context.TODO(), req.URL.Query().Get(":name"))
 	if err != nil {
 		log.Error(errorsEx.MsgOperateAccountFailed, err)
@@ -95,7 +95,7 @@ func (r *AuthResource) DeleteAccount(w http.ResponseWriter, req *http.Request) {
 	}
 	controller.WriteSuccess(w, req)
 }
-func (r *AuthResource) UpdateAccount(w http.ResponseWriter, req *http.Request) {
+func (ar *AuthResource) UpdateAccount(w http.ResponseWriter, req *http.Request) {
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		log.Error("read body err", err)
@@ -117,7 +117,7 @@ func (r *AuthResource) UpdateAccount(w http.ResponseWriter, req *http.Request) {
 	}
 	controller.WriteSuccess(w, req)
 }
-func (r *AuthResource) ListAccount(w http.ResponseWriter, req *http.Request) {
+func (ar *AuthResource) ListAccount(w http.ResponseWriter, r *http.Request) {
 	as, n, err := dao.ListAccount(context.TODO())
 	if err != nil {
 		log.Error(errorsEx.MsgGetAccountFailed, err)
@@ -128,32 +128,20 @@ func (r *AuthResource) ListAccount(w http.ResponseWriter, req *http.Request) {
 		Total:    n,
 		Accounts: as,
 	}
-	b, err := json.Marshal(resp)
-	if err != nil {
-		log.Error(errorsEx.MsgJSON, err)
-		controller.WriteError(w, discovery.ErrInternal, errorsEx.MsgJSON)
-		return
-	}
-	controller.WriteJSON(w, b)
+	controller.WriteResponse(w, r, nil, resp)
 }
-func (r *AuthResource) GetAccount(w http.ResponseWriter, req *http.Request) {
-	a, err := dao.GetAccount(context.TODO(), req.URL.Query().Get(":name"))
+func (ar *AuthResource) GetAccount(w http.ResponseWriter, r *http.Request) {
+	a, err := dao.GetAccount(context.TODO(), r.URL.Query().Get(":name"))
 	if err != nil {
 		log.Error(errorsEx.MsgGetAccountFailed, err)
 		controller.WriteError(w, discovery.ErrInternal, errorsEx.MsgGetAccountFailed)
 		return
 	}
 	a.Password = ""
-	b, err := json.Marshal(a)
-	if err != nil {
-		log.Error(errorsEx.MsgJSON, err)
-		controller.WriteError(w, discovery.ErrInternal, errorsEx.MsgJSON)
-		return
-	}
-	controller.WriteJSON(w, b)
+	controller.WriteResponse(w, r, nil, a)
 }
 
-func (r *AuthResource) ChangePassword(w http.ResponseWriter, req *http.Request) {
+func (ar *AuthResource) ChangePassword(w http.ResponseWriter, req *http.Request) {
 	ip := util.GetRealIP(req)
 	if rbacsvc.IsBanned(ip) {
 		log.Warn("ip is banned:" + ip)
@@ -202,14 +190,14 @@ func (r *AuthResource) ChangePassword(w http.ResponseWriter, req *http.Request) 
 	}
 	controller.WriteSuccess(w, req)
 }
-func (r *AuthResource) Login(w http.ResponseWriter, req *http.Request) {
-	ip := util.GetRealIP(req)
+func (ar *AuthResource) Login(w http.ResponseWriter, r *http.Request) {
+	ip := util.GetRealIP(r)
 	if rbacsvc.IsBanned(ip) {
 		log.Warn("ip is banned:" + ip)
 		controller.WriteError(w, discovery.ErrForbidden, "")
 		return
 	}
-	body, err := ioutil.ReadAll(req.Body)
+	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body err", err)
 		controller.WriteError(w, discovery.ErrInternal, err.Error())
@@ -242,12 +230,5 @@ func (r *AuthResource) Login(w http.ResponseWriter, req *http.Request) {
 		controller.WriteError(w, discovery.ErrInternal, err.Error())
 		return
 	}
-	to := &rbac.Token{TokenStr: t}
-	b, err := json.Marshal(to)
-	if err != nil {
-		log.Error("json err", err)
-		controller.WriteError(w, discovery.ErrInvalidParams, err.Error())
-		return
-	}
-	controller.WriteJSON(w, b)
+	controller.WriteResponse(w, r, nil, &rbac.Token{TokenStr: t})
 }

@@ -58,7 +58,9 @@ var PolicyNames = []string{"retry", "rateLimiting", "circuitBreaker", "bulkhead"
 var rule = Validator{}
 
 func (d *Distributor) Create(kind, project string, spec []byte) ([]byte, error) {
-	p := &gov.Policy{}
+	p := &gov.Policy{
+		GovernancePolicy: &gov.GovernancePolicy{Selector: &gov.Selector{}},
+	}
 	err := json.Unmarshal(spec, p)
 	if err != nil {
 		return nil, err

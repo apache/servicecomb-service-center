@@ -83,16 +83,6 @@ func WriteResponse(w http.ResponseWriter, r *http.Request, resp *discovery.Respo
 	}
 }
 
-//WriteJSON simply write json
-func WriteJSON(w http.ResponseWriter, json []byte) {
-	w.Header().Set(rest.HeaderContentType, rest.ContentTypeJSON)
-	w.WriteHeader(http.StatusOK)
-	_, err := w.Write(json)
-	if err != nil {
-		log.Error("", err)
-	}
-}
-
 func WriteSuccess(w http.ResponseWriter, r *http.Request) {
 	WriteResponse(w, r, nil, nil)
 }
