@@ -34,12 +34,11 @@ const (
 	CtxMatchPattern   util.CtxKey = "_server_match_pattern"
 	CtxMatchFunc      util.CtxKey = "_server_match_func"
 	CtxStartTimestamp util.CtxKey = "x-start-timestamp"
+	CtxResponseStatus util.CtxKey = "_server_response_status"
 	CtxResponseObject util.CtxKey = "_server_response_object"
 	CtxRouteHandler   util.CtxKey = "_server_route_handler"
 
 	ServerChainName = "_server_chain"
-
-	HeaderResponseStatus = "X-Response-Status"
 
 	HeaderAllow           = "Allow"
 	HeaderHost            = "Host"

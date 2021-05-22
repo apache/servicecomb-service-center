@@ -19,8 +19,6 @@ package bootstrap
 import (
 	//etcd
 	_ "github.com/apache/servicecomb-service-center/datasource/etcd/bootstrap"
-	"github.com/apache/servicecomb-service-center/server/handler/exception"
-	"github.com/apache/servicecomb-service-center/server/handler/route"
 
 	//mongo
 	_ "github.com/apache/servicecomb-service-center/datasource/mongo/bootstrap"
@@ -29,9 +27,8 @@ import (
 	_ "github.com/apache/servicecomb-service-center/server/rest/controller/v3"
 
 	//rest v4 api
-	_ "github.com/apache/servicecomb-service-center/server/rest/controller/v4"
-
 	_ "github.com/apache/servicecomb-service-center/server/resource"
+	_ "github.com/apache/servicecomb-service-center/server/rest/controller/v4"
 
 	//cipher
 	_ "github.com/apache/servicecomb-service-center/server/plugin/security/cipher/buildin"
@@ -44,7 +41,6 @@ import (
 
 	//uuid
 	_ "github.com/apache/servicecomb-service-center/server/plugin/uuid/buildin"
-
 	_ "github.com/apache/servicecomb-service-center/server/plugin/uuid/context"
 
 	//tracing
@@ -73,8 +69,10 @@ import (
 	"github.com/apache/servicecomb-service-center/server/handler/accesslog"
 	"github.com/apache/servicecomb-service-center/server/handler/auth"
 	"github.com/apache/servicecomb-service-center/server/handler/context"
+	"github.com/apache/servicecomb-service-center/server/handler/exception"
 	"github.com/apache/servicecomb-service-center/server/handler/maxbody"
 	"github.com/apache/servicecomb-service-center/server/handler/metrics"
+	"github.com/apache/servicecomb-service-center/server/handler/route"
 	"github.com/apache/servicecomb-service-center/server/handler/tracing"
 	"github.com/apache/servicecomb-service-center/server/interceptor"
 	"github.com/apache/servicecomb-service-center/server/interceptor/access"

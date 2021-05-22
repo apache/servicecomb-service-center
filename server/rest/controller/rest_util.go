@@ -20,7 +20,6 @@ package controller
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
@@ -31,7 +30,6 @@ import (
 
 func WriteError(w http.ResponseWriter, code int32, detail string) {
 	err := discovery.NewError(code, detail)
-	w.Header().Set(rest.HeaderResponseStatus, strconv.Itoa(err.StatusCode()))
 	w.Header().Set(rest.HeaderContentType, rest.ContentTypeJSON)
 	w.WriteHeader(err.StatusCode())
 	_, _ = w.Write(err.Marshal())
@@ -56,7 +54,6 @@ func WriteResponse(w http.ResponseWriter, r *http.Request, resp *discovery.Respo
 	}
 
 	if obj == nil {
-		w.Header().Set(rest.HeaderResponseStatus, strconv.Itoa(http.StatusOK))
 		w.Header().Set(rest.HeaderContentType, rest.ContentTypeText)
 		w.WriteHeader(http.StatusOK)
 		return
@@ -78,7 +75,6 @@ func WriteResponse(w http.ResponseWriter, r *http.Request, resp *discovery.Respo
 			return
 		}
 	}
-	w.Header().Set(rest.HeaderResponseStatus, strconv.Itoa(http.StatusOK))
 	w.Header().Set(rest.HeaderContentType, rest.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	_, err = w.Write(data)
@@ -89,7 +85,6 @@ func WriteResponse(w http.ResponseWriter, r *http.Request, resp *discovery.Respo
 
 //WriteJSON simply write json
 func WriteJSON(w http.ResponseWriter, json []byte) {
-	w.Header().Set(rest.HeaderResponseStatus, strconv.Itoa(http.StatusOK))
 	w.Header().Set(rest.HeaderContentType, rest.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	_, err := w.Write(json)

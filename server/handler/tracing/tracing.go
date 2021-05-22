@@ -30,19 +30,14 @@ type Handler struct {
 }
 
 func (h *Handler) Handle(i *chain.Invocation) {
-	w, r, op := i.Context().Value(rest.CtxResponse).(http.ResponseWriter),
-		i.Context().Value(rest.CtxRequest).(*http.Request),
+	r, op := i.Context().Value(rest.CtxRequest).(*http.Request),
 		i.Context().Value(rest.CtxMatchFunc).(string)
 
 	span := tracing.ServerBegin(op, r)
 
 	i.Next(chain.WithAsyncFunc(func(ret chain.Result) {
-		statusCode := w.Header().Get(rest.HeaderResponseStatus)
-		code, _ := strconv.ParseInt(statusCode, 10, 64)
-		if code == 0 {
-			code = 200
-		}
-		tracing.ServerEnd(span, int(code), statusCode)
+		statusCode := i.Context().Value(rest.CtxResponseStatus).(int)
+		tracing.ServerEnd(span, statusCode, strconv.Itoa(statusCode))
 	}))
 }
 

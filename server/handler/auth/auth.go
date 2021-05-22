@@ -18,8 +18,6 @@
 package auth
 
 import (
-	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/apache/servicecomb-service-center/pkg/chain"
@@ -51,10 +49,8 @@ func (h *Handler) Handle(i *chain.Invocation) {
 			return
 		}
 
-		data, _ := json.Marshal(obj)
-		log.Info(fmt.Sprintf("response object: %s", data))
-
 		// TODO filter and rewrite here!
+		// data, _ := json.Marshal(obj)
 		// w := i.Context().Value(rest.CtxResponse).(http.ResponseWriter)
 		// w.Write(data)
 	}))

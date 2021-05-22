@@ -25,7 +25,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/go-chassis/cari/discovery"
 	"net/http"
-	"strconv"
 )
 
 // Handler provide a common response writer to handle exceptions
@@ -41,23 +40,23 @@ func (l *Handler) Handle(i *chain.Invocation) {
 
 	i.Next(chain.WithFunc(func(ret chain.Result) {
 		if !ret.OK {
-			l.responseError(w, ret.Err)
+			i.WithContext(rest.CtxResponseStatus, l.responseError(w, ret.Err))
 			return
 		}
 
+		i.WithContext(rest.CtxResponseStatus, asyncWriter.StatusCode)
 		if err := asyncWriter.Flush(); err != nil {
 			log.Error("response writer flush failed", err)
 		}
 	}))
 }
 
-func (l *Handler) responseError(w http.ResponseWriter, e error) {
-	statusCode := http.StatusBadRequest
+func (l *Handler) responseError(w http.ResponseWriter, e error) (statusCode int) {
+	statusCode = http.StatusBadRequest
 	contentType := rest.ContentTypeText
 	body := []byte("Unknown error")
 	defer func() {
 		w.Header().Set(rest.HeaderContentType, contentType)
-		w.Header().Set(rest.HeaderResponseStatus, strconv.Itoa(statusCode))
 		w.WriteHeader(statusCode)
 		if _, writeErr := w.Write(body); writeErr != nil {
 			log.Error("write response failed", writeErr)
@@ -78,6 +77,7 @@ func (l *Handler) responseError(w http.ResponseWriter, e error) {
 		contentType = rest.ContentTypeJSON
 		body = err.Marshal()
 	}
+	return
 }
 
 func RegisterHandlers() {
