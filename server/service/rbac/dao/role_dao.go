@@ -20,10 +20,10 @@ package dao
 import (
 	"context"
 
-	"github.com/go-chassis/cari/rbac"
-
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+
+	"github.com/go-chassis/cari/rbac"
 )
 
 func CreateRole(ctx context.Context, r *rbac.Role) error {
@@ -50,21 +50,27 @@ func DeleteRole(ctx context.Context, name string) (bool, error) {
 	return datasource.Instance().DeleteRole(ctx, name)
 }
 
-func EditRole(ctx context.Context, a *rbac.Role) error {
-	exist, err := datasource.Instance().RoleExist(ctx, a.Name)
+func EditRole(ctx context.Context, name string, a *rbac.Role) error {
+	exist, err := datasource.Instance().RoleExist(ctx, name)
 	if err != nil {
-		log.Errorf(err, "can not edit account info")
+		log.Errorf(err, "check role [%s] exist failed", name)
 		return err
 	}
 	if !exist {
 		return datasource.ErrRoleCanNotEdit
 	}
+	oldRole, err := GetRole(ctx, name)
+	if err != nil {
+		log.Errorf(err, "get role [%s] failed", name)
+		return err
+	}
+	oldRole.Perms = a.Perms
 
-	err = datasource.Instance().UpdateRole(ctx, a.Name, a)
+	err = datasource.Instance().UpdateRole(ctx, name, oldRole)
 	if err != nil {
 		log.Errorf(err, "can not edit role info")
 		return err
 	}
-	log.Info("role is edit")
+	log.Infof("role [%s] is edit", oldRole.ID)
 	return nil
 }

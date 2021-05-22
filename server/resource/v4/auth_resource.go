@@ -23,8 +23,6 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
-
 	"github.com/apache/servicecomb-service-center/datasource"
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -32,7 +30,9 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/rest/controller"
 	"github.com/apache/servicecomb-service-center/server/service"
+	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
+
 	"github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/cari/rbac"
 	"github.com/go-chassis/go-chassis/v2/security/authr"
@@ -49,6 +49,7 @@ func (r *AuthResource) URLPatterns() []rest.Route {
 		{Method: http.MethodGet, Path: "/v4/accounts", Func: r.ListAccount},
 		{Method: http.MethodGet, Path: "/v4/accounts/:name", Func: r.GetAccount},
 		{Method: http.MethodDelete, Path: "/v4/accounts/:name", Func: r.DeleteAccount},
+		{Method: http.MethodPut, Path: "/v4/accounts/:name", Func: r.UpdateAccount},
 		{Method: http.MethodPost, Path: "/v4/accounts/:name/password", Func: r.ChangePassword},
 	}
 }
@@ -83,6 +84,7 @@ func (r *AuthResource) CreateAccount(w http.ResponseWriter, req *http.Request) {
 		controller.WriteError(w, discovery.ErrInternal, errorsEx.MsgOperateAccountFailed)
 		return
 	}
+	controller.WriteSuccess(w, req)
 }
 func (r *AuthResource) DeleteAccount(w http.ResponseWriter, req *http.Request) {
 	_, err := dao.DeleteAccount(context.TODO(), req.URL.Query().Get(":name"))
@@ -91,7 +93,29 @@ func (r *AuthResource) DeleteAccount(w http.ResponseWriter, req *http.Request) {
 		controller.WriteError(w, discovery.ErrInternal, errorsEx.MsgOperateAccountFailed)
 		return
 	}
-	w.WriteHeader(http.StatusNoContent)
+	controller.WriteSuccess(w, req)
+}
+func (r *AuthResource) UpdateAccount(w http.ResponseWriter, req *http.Request) {
+	body, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		log.Error("read body err", err)
+		controller.WriteError(w, discovery.ErrInternal, err.Error())
+		return
+	}
+	a := &rbac.Account{}
+	if err = json.Unmarshal(body, a); err != nil {
+		log.Error("json err", err)
+		controller.WriteError(w, discovery.ErrInvalidParams, err.Error())
+		return
+	}
+	name := req.URL.Query().Get(":name")
+	err = dao.UpdateAccount(context.TODO(), name, a)
+	if err != nil {
+		log.Error(errorsEx.MsgOperateAccountFailed, err)
+		controller.WriteError(w, discovery.ErrInternal, errorsEx.MsgOperateAccountFailed)
+		return
+	}
+	controller.WriteSuccess(w, req)
 }
 func (r *AuthResource) ListAccount(w http.ResponseWriter, req *http.Request) {
 	as, n, err := dao.ListAccount(context.TODO())
@@ -128,6 +152,7 @@ func (r *AuthResource) GetAccount(w http.ResponseWriter, req *http.Request) {
 	}
 	controller.WriteJSON(w, b)
 }
+
 func (r *AuthResource) ChangePassword(w http.ResponseWriter, req *http.Request) {
 	ip := util.GetRealIP(req)
 	if rbacsvc.IsBanned(ip) {
@@ -175,6 +200,7 @@ func (r *AuthResource) ChangePassword(w http.ResponseWriter, req *http.Request) 
 		controller.WriteError(w, discovery.ErrInternal, err.Error())
 		return
 	}
+	controller.WriteSuccess(w, req)
 }
 func (r *AuthResource) Login(w http.ResponseWriter, req *http.Request) {
 	ip := util.GetRealIP(req)

@@ -32,7 +32,8 @@ const (
 	ClaimsUser  = "account"
 	ClaimsRoles = "roles"
 
-	RoleAdmin = "admin"
+	RoleAdmin     = "admin"
+	RoleDeveloper = "developer"
 )
 
 var whiteAPIList = sets.NewString()

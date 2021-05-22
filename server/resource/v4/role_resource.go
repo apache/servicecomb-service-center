@@ -23,15 +23,15 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/go-chassis/cari/rbac"
-
 	"github.com/apache/servicecomb-service-center/datasource"
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/rest/controller"
 	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
+
 	"github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/cari/rbac"
 )
 
 var ErrConflictRole int32 = 409002
@@ -105,6 +105,7 @@ func (r *RoleResource) CreateRolePermission(w http.ResponseWriter, req *http.Req
 		controller.WriteError(w, discovery.ErrInternal, errorsEx.MsgOperateRoleFailed)
 		return
 	}
+	controller.WriteSuccess(w, req)
 }
 
 //UpdateRolePermission update role permissions
@@ -120,12 +121,14 @@ func (r *RoleResource) UpdateRolePermission(w http.ResponseWriter, req *http.Req
 		controller.WriteError(w, discovery.ErrInvalidParams, errorsEx.MsgJSON)
 		return
 	}
-	err = dao.EditRole(context.TODO(), role)
+	name := req.URL.Query().Get(":roleName")
+	err = dao.EditRole(context.TODO(), name, role)
 	if err != nil {
 		log.Error(errorsEx.MsgOperateRoleFailed, err)
 		controller.WriteError(w, discovery.ErrInternal, errorsEx.MsgOperateRoleFailed)
 		return
 	}
+	controller.WriteSuccess(w, req)
 }
 
 //GetRole get the role info according to role name
@@ -152,4 +155,5 @@ func (r *RoleResource) DeleteRole(w http.ResponseWriter, req *http.Request) {
 		controller.WriteError(w, discovery.ErrInternal, errorsEx.MsgJSON)
 		return
 	}
+	controller.WriteSuccess(w, req)
 }

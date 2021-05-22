@@ -77,7 +77,7 @@ func Init() {
 	log.Info("rbac is enabled")
 }
 
-//readPublicKey read key to memory
+//read key to memory
 func readPrivateKey() {
 	pf := config.GetString("rbac.privateKeyFile", "", config.WithStandby("rbac_rsa_private_key_file"))
 	// 打开文件
@@ -94,7 +94,7 @@ func readPrivateKey() {
 	log.Info("read private key success")
 }
 
-//readPublicKey read key to memory
+//read key to memory
 func readPublicKey() {
 	pf := config.GetString("rbac.publicKeyFile", "", config.WithStandby("rbac_rsa_public_key_file"))
 	// 打开文件

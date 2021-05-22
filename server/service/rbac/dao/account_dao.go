@@ -20,17 +20,52 @@ package dao
 
 import (
 	"context"
-
-	rbacmodel "github.com/go-chassis/cari/rbac"
+	"errors"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+
+	rbacmodel "github.com/go-chassis/cari/rbac"
 )
 
 //CreateAccount save 2 kv
 //1. account info
 func CreateAccount(ctx context.Context, a *rbacmodel.Account) error {
 	return datasource.Instance().CreateAccount(ctx, a)
+}
+
+// UpdateAccount updates an account's info, except the password
+func UpdateAccount(ctx context.Context, name string, a *rbacmodel.Account) error {
+	// todo params validation
+	if len(a.Status) == 0 && len(a.Roles) == 0 {
+		return errors.New("status and roles cannot be empty both")
+	}
+	exist, err := datasource.Instance().AccountExist(ctx, name)
+	if err != nil {
+		log.Errorf(err, "check account [%s] exit failed", name)
+		return err
+	}
+	if !exist {
+		return datasource.ErrAccountNotExist
+	}
+	oldAccount, err := GetAccount(ctx, name)
+	if err != nil {
+		log.Errorf(err, "get account [%s] failed", name)
+		return err
+	}
+	if len(a.Status) != 0 {
+		oldAccount.Status = a.Status
+	}
+	if len(a.Roles) != 0 {
+		oldAccount.Roles = a.Roles
+	}
+	err = datasource.Instance().UpdateAccount(ctx, name, oldAccount)
+	if err != nil {
+		log.Errorf(err, "can not edit account info")
+		return err
+	}
+	log.Infof("account [%s] is edit", oldAccount.ID)
+	return nil
 }
 
 func GetAccount(ctx context.Context, name string) (*rbacmodel.Account, error) {
@@ -63,6 +98,6 @@ func EditAccount(ctx context.Context, a *rbacmodel.Account) error {
 		log.Errorf(err, "can not edit account info")
 		return err
 	}
-	log.Info("account is edit")
+	log.Infof("account [%s] is edit", a.ID)
 	return nil
 }

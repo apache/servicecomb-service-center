@@ -175,7 +175,7 @@ func TestInitRBAC(t *testing.T) {
 	})
 
 	t.Run("edit new role success", func(t *testing.T) {
-		err := dao.EditRole(context.Background(), tester)
+		err := dao.EditRole(context.Background(), tester.Name, tester)
 		assert.NoError(t, err)
 
 		r, err := dao.GetRole(context.Background(), "tester")

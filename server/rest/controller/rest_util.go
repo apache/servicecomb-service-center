@@ -45,6 +45,11 @@ func WriteError(w http.ResponseWriter, code int32, detail string) {
 	}
 }
 
+// WriteResponse writes http response
+// If the resp is nil or represents success, response status is http.StatusOK,
+// response content is obj.
+// If the resp represents fail, response status is from the code in the
+// resp, response content is from the message in the resp.
 func WriteResponse(w http.ResponseWriter, r *http.Request, resp *discovery.Response, obj interface{}) {
 	if resp != nil && resp.GetCode() != discovery.ResponseSuccess {
 		WriteError(w, resp.GetCode(), resp.GetMessage())
@@ -89,4 +94,8 @@ func WriteJSON(w http.ResponseWriter, json []byte) {
 	if err != nil {
 		log.Error("", err)
 	}
+}
+
+func WriteSuccess(w http.ResponseWriter, r *http.Request) {
+	WriteResponse(w, r, nil, nil)
 }
