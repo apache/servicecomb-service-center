@@ -393,7 +393,7 @@ func (s *EtcdEmbed) LeaseRenew(ctx context.Context, leaseID int64) (int64, error
 		if err.Error() == rpctypes.ErrLeaseNotFound.Error() {
 			return 0, err
 		}
-		return 0, errorsEx.RaiseError(err)
+		return 0, errorsEx.Internal(err)
 	}
 	return ttl, nil
 }
@@ -408,7 +408,7 @@ func (s *EtcdEmbed) LeaseRevoke(ctx context.Context, leaseID int64) error {
 		if err.Error() == rpctypes.ErrLeaseNotFound.Error() {
 			return err
 		}
-		return errorsEx.RaiseError(err)
+		return errorsEx.Internal(err)
 	}
 	return nil
 }

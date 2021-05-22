@@ -74,14 +74,13 @@ func (t *Governance) Create(w http.ResponseWriter, req *http.Request) {
 }
 
 //Put gov config
-func (t *Governance) Put(w http.ResponseWriter, req *http.Request) {
-	kind := req.URL.Query().Get(KindKey)
-	id := req.URL.Query().Get(IDKey)
-	project := req.URL.Query().Get(ProjectKey)
-	body, err := ioutil.ReadAll(req.Body)
+func (t *Governance) Put(w http.ResponseWriter, r *http.Request) {
+	kind := r.URL.Query().Get(KindKey)
+	id := r.URL.Query().Get(IDKey)
+	project := r.URL.Query().Get(ProjectKey)
+	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Error("read body err", err)
-		controller.WriteError(w, discovery.ErrInternal, err.Error())
+		processError(w, err, "read body err")
 		return
 	}
 	err = gov.Update(kind, id, project, body)
@@ -94,7 +93,7 @@ func (t *Governance) Put(w http.ResponseWriter, req *http.Request) {
 		processError(w, err, "put gov err")
 		return
 	}
-	w.WriteHeader(http.StatusOK)
+	controller.WriteResponse(w, r, nil, nil)
 }
 
 //ListOrDisPlay return all gov config
@@ -114,13 +113,7 @@ func (t *Governance) ListOrDisPlay(w http.ResponseWriter, req *http.Request) {
 		processError(w, err, "list gov err")
 		return
 	}
-	_, err = w.Write(body)
-	if err != nil {
-		processError(w, err, "")
-		return
-	}
-	w.WriteHeader(http.StatusOK)
-	w.Header().Set(rest.HeaderContentType, rest.ContentTypeJSON)
+	controller.WriteJSON(w, body)
 }
 
 //Get gov config
@@ -130,35 +123,26 @@ func (t *Governance) Get(w http.ResponseWriter, req *http.Request) {
 	project := req.URL.Query().Get(ProjectKey)
 	body, err := gov.Get(kind, id, project)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		log.Error("get gov err", err)
-		controller.WriteError(w, discovery.ErrInternal, err.Error())
+		processError(w, err, "get gov err")
 		return
 	}
-	_, err = w.Write(body)
-	if err != nil {
-		processError(w, err, "")
-		return
-	}
-	w.WriteHeader(http.StatusOK)
-	w.Header().Set(rest.HeaderContentType, rest.ContentTypeJSON)
+	controller.WriteJSON(w, body)
 }
 
 //Delete delete gov config
-func (t *Governance) Delete(w http.ResponseWriter, req *http.Request) {
-	kind := req.URL.Query().Get(KindKey)
-	id := req.URL.Query().Get(IDKey)
-	project := req.URL.Query().Get(ProjectKey)
+func (t *Governance) Delete(w http.ResponseWriter, r *http.Request) {
+	kind := r.URL.Query().Get(KindKey)
+	id := r.URL.Query().Get(IDKey)
+	project := r.URL.Query().Get(ProjectKey)
 	err := gov.Delete(kind, id, project)
 	if err != nil {
 		processError(w, err, "delete gov err")
 		return
 	}
-	w.WriteHeader(http.StatusOK)
+	controller.WriteResponse(w, r, nil, nil)
 }
 
 func processError(w http.ResponseWriter, err error, msg string) {
-	w.WriteHeader(http.StatusBadRequest)
 	log.Error(msg, err)
 	controller.WriteError(w, discovery.ErrInternal, err.Error())
 }

@@ -656,7 +656,7 @@ func (c *Client) LeaseRenew(ctx context.Context, leaseID int64) (int64, error) {
 		if err.Error() == rpctypes.ErrLeaseNotFound.Error() {
 			return 0, err
 		}
-		return 0, errorsEx.RaiseError(err)
+		return 0, errorsEx.Internal(err)
 	}
 	log.NilOrWarnf(start, "registry client renew lease %d", leaseID)
 	return etcdResp.TTL, nil
@@ -680,7 +680,7 @@ func (c *Client) LeaseRevoke(ctx context.Context, leaseID int64) error {
 		if err.Error() == rpctypes.ErrLeaseNotFound.Error() {
 			return err
 		}
-		return errorsEx.RaiseError(err)
+		return errorsEx.Internal(err)
 	}
 	log.NilOrWarnf(start, "registry client revoke lease %d", leaseID)
 	return nil

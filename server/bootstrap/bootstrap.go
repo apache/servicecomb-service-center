@@ -19,6 +19,7 @@ package bootstrap
 import (
 	//etcd
 	_ "github.com/apache/servicecomb-service-center/datasource/etcd/bootstrap"
+	"github.com/apache/servicecomb-service-center/server/handler/response"
 
 	//mongo
 	_ "github.com/apache/servicecomb-service-center/datasource/mongo/bootstrap"
@@ -95,6 +96,7 @@ func init() {
 	auth.RegisterHandlers()
 	context.RegisterHandlers()
 	cache.RegisterHandlers()
+	response.RegisterHandlers()
 
 	// init broker
 	broker.Init()

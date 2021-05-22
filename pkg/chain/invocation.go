@@ -105,7 +105,7 @@ func (i *Invocation) Invoke(f CallbackFunc) {
 		}
 		log.Panic(itf)
 
-		i.Fail(errorsEx.RaiseError(itf))
+		i.Fail(errorsEx.Internal(itf))
 	}()
 	i.Func = f
 	i.chain.Next(i)

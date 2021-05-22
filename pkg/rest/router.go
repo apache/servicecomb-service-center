@@ -24,7 +24,6 @@ import (
 	"strings"
 
 	"github.com/apache/servicecomb-service-center/pkg/chain"
-	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
@@ -116,29 +115,9 @@ func (router *Router) serve(ph *urlPatternHandler, w http.ResponseWriter, r *htt
 		WithContext(CtxRequest, r).
 		WithContext(CtxMatchPattern, ph.Path).
 		WithContext(CtxMatchFunc, ph.Name).
-		Invoke(
-			func(ret chain.Result) {
-				defer func() {
-					err := ret.Err
-					itf := recover()
-					if itf != nil {
-						log.Panic(itf)
-
-						err = errorsEx.RaiseError(itf)
-					}
-					if _, ok := err.(errorsEx.InternalError); ok {
-						http.Error(w, err.Error(), http.StatusInternalServerError)
-						return
-					}
-					if err != nil {
-						http.Error(w, err.Error(), http.StatusBadRequest)
-						return
-					}
-				}()
-				if ret.OK {
-					ph.ServeHTTP(w, r)
-				}
-			})
+		WithContext(CtxRouteHandler, ph).
+		WithContext(CtxInvocation, &inv).
+		Invoke(func(_ chain.Result) {})
 }
 
 // NewRouter news an Router

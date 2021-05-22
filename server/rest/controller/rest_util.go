@@ -63,26 +63,29 @@ func WriteResponse(w http.ResponseWriter, r *http.Request, resp *discovery.Respo
 		return
 	}
 
-	// async handler maybe need this obj
 	util.SetRequestContext(r, rest.CtxResponseObject, obj)
 
-	b, err := json.Marshal(obj)
-	if err != nil {
-		WriteError(w, discovery.ErrInternal, err.Error())
-		return
+	var (
+		data []byte
+		err  error
+	)
+	switch body := obj.(type) {
+	case []byte:
+		data = body
+	default:
+		data, err = json.Marshal(body)
+		if err != nil {
+			WriteError(w, discovery.ErrInternal, err.Error())
+			return
+		}
 	}
 	w.Header().Set(rest.HeaderResponseStatus, strconv.Itoa(http.StatusOK))
 	w.Header().Set(rest.HeaderContentType, rest.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintln(w, util.BytesToStringWithNoCopy(b))
-}
-
-func WriteJSONIfSuccess(w http.ResponseWriter, resp *discovery.Response, json []byte) {
-	if resp.GetCode() == discovery.ResponseSuccess {
-		WriteJSON(w, json)
-		return
+	_, err = fmt.Fprintln(w, util.BytesToStringWithNoCopy(data))
+	if err != nil {
+		log.Error("write response failed", err)
 	}
-	WriteError(w, resp.GetCode(), resp.GetMessage())
 }
 
 //WriteJSON simply write json

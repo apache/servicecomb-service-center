@@ -27,7 +27,7 @@ func (e InternalError) Error() string {
 	return string(e)
 }
 
-func RaiseError(itf interface{}) InternalError {
+func Internal(itf interface{}) InternalError {
 	if itf == nil {
 		return InternalError("panic: unknown")
 	}

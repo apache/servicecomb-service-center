@@ -141,10 +141,7 @@ func (*Controller) GetPactsOfProvider(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp, _ := ServiceAPI.GetPactsOfProvider(r.Context(), request)
-	respInternal := resp.Response
-	resp.Response = nil
-	//controller.WriteResponse(w, respInternal, resp.Pact)
-	controller.WriteJSONIfSuccess(w, respInternal, resp.Pact)
+	controller.WriteResponse(w, r, resp.Response, resp.Pact)
 }
 
 func (*Controller) DeletePacts(w http.ResponseWriter, r *http.Request) {
