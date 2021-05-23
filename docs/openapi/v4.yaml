@@ -2955,10 +2955,10 @@ definitions:
       total:
         type: integer
         description: total accounts
-    additionalProperties:
-      type: array
-      items:
-        $ref: '#/definitions/Account'
+      data:
+        type: array
+        items:
+          $ref: '#/definitions/Account'
   Account:
     type: object
     description: user accout information
@@ -3002,10 +3002,10 @@ definitions:
       total:
         type: integer
         description: total roles
-    additionalProperties:
-      type: array
-      items:
-        $ref: '#/definitions/Role'
+      data:
+        type: array
+        items:
+          $ref: '#/definitions/Role'
   Role:
     type: object
     description: role permission

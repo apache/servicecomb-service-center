@@ -97,7 +97,7 @@ func (ba *TokenAuthenticator) Identify(req *http.Request) error {
 	if err != nil {
 		return err
 	}
-	req2 := req.WithContext(rbac.NewContext(req.Context(), claims.(map[string]interface{})))
+	req2 := req.WithContext(rbac.NewContext(req.Context(), m))
 	*req = *req2
 	return nil
 }
