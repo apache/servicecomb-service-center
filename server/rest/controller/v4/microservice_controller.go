@@ -19,6 +19,7 @@ package v4
 
 import (
 	"encoding/json"
+	"github.com/apache/servicecomb-service-center/server/constant"
 	"io/ioutil"
 	"net/http"
 
@@ -39,12 +40,12 @@ type MicroServiceService struct {
 func (s *MicroServiceService) URLPatterns() []rest.Route {
 	return []rest.Route{
 		{Method: rest.HTTPMethodGet, Path: "/v4/:project/registry/existence", Func: s.GetExistence},
-		{Method: rest.HTTPMethodGet, Path: "/v4/:project/registry/microservices", Func: s.GetServices},
+		{Method: rest.HTTPMethodGet, Path: constant.APIMicroservice, Func: s.GetServices},
 		{Method: rest.HTTPMethodGet, Path: "/v4/:project/registry/microservices/:serviceId", Func: s.GetServiceOne},
-		{Method: rest.HTTPMethodPost, Path: "/v4/:project/registry/microservices", Func: s.Register},
+		{Method: rest.HTTPMethodPost, Path: constant.APIMicroservice, Func: s.Register},
 		{Method: rest.HTTPMethodPut, Path: "/v4/:project/registry/microservices/:serviceId/properties", Func: s.Update},
 		{Method: rest.HTTPMethodDelete, Path: "/v4/:project/registry/microservices/:serviceId", Func: s.Unregister},
-		{Method: rest.HTTPMethodDelete, Path: "/v4/:project/registry/microservices", Func: s.UnregisterServices},
+		{Method: rest.HTTPMethodDelete, Path: constant.APIMicroservice, Func: s.UnregisterServices},
 	}
 }
 

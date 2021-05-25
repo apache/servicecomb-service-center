@@ -15,23 +15,19 @@
  * limitations under the License.
  */
 
-package resource
+package response
 
-import (
-	roa "github.com/apache/servicecomb-service-center/pkg/rest"
-	v1 "github.com/apache/servicecomb-service-center/server/resource/v1"
-	v4 "github.com/apache/servicecomb-service-center/server/resource/v4"
-	"github.com/apache/servicecomb-service-center/server/service/rbac"
-)
+var filters = map[string]Func{}
 
-func init() {
-	initRouter()
+type Func func(obj interface{}, filters []map[string]string) interface{}
+
+func RegisterApiFilter(apiPath string, f Func) {
+	filters[apiPath] = f
 }
 
-func initRouter() {
-	if rbac.Enabled() {
-		roa.RegisterServant(&v4.AuthResource{})
-		roa.RegisterServant(&v4.RoleResource{})
+func Filter(apiPath string, obj interface{}, labels []map[string]string) interface{} {
+	if f, ok := filters[apiPath]; ok {
+		return f(obj, labels)
 	}
-	roa.RegisterServant(&v1.Governance{})
+	return obj
 }

@@ -15,23 +15,14 @@
  * limitations under the License.
  */
 
-package resource
+package constant
 
-import (
-	roa "github.com/apache/servicecomb-service-center/pkg/rest"
-	v1 "github.com/apache/servicecomb-service-center/server/resource/v1"
-	v4 "github.com/apache/servicecomb-service-center/server/resource/v4"
-	"github.com/apache/servicecomb-service-center/server/service/rbac"
+const (
+	APIMicroservice = "/v4/:project/registry/microservices"
+
+	APIConsumerList = "/v4/:project/registry/microservices/:consumerId/providers"
+	APIProviderList = "/v4/:project/registry/microservices/:providerId/consumers"
+
+	APIGovernMicroserviceList = "/v4/:project/govern/microservices"
+	APIGovernAppList          = "/v4/:project/govern/apps"
 )
-
-func init() {
-	initRouter()
-}
-
-func initRouter() {
-	if rbac.Enabled() {
-		roa.RegisterServant(&v4.AuthResource{})
-		roa.RegisterServant(&v4.RoleResource{})
-	}
-	roa.RegisterServant(&v1.Governance{})
-}
