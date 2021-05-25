@@ -19,7 +19,9 @@ package rbac
 
 import (
 	"context"
+	"crypto/rsa"
 	"errors"
+	"github.com/go-chassis/cari/rbac"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/go-chassis/go-chassis/v2/security/authr"
@@ -27,7 +29,6 @@ import (
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/privacy"
-	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
 )
 
@@ -59,8 +60,8 @@ func (a *EmbeddedAuthenticator) Login(ctx context.Context, user string, password
 			return "", err
 		}
 		tokenStr, err := token.Sign(map[string]interface{}{
-			rbacframe.ClaimsUser:  user,
-			rbacframe.ClaimsRoles: account.Roles,
+			rbac.ClaimsUser:  user,
+			rbac.ClaimsRoles: account.Roles,
 		},
 			secret,
 			token.WithExpTime(opt.ExpireAfter),
@@ -73,13 +74,21 @@ func (a *EmbeddedAuthenticator) Login(ctx context.Context, user string, password
 	}
 	return "", ErrUnauthorized
 }
+
+//Authenticate parse a token to claims
 func (a *EmbeddedAuthenticator) Authenticate(ctx context.Context, tokenStr string) (interface{}, error) {
 	p, err := jwt.ParseRSAPublicKeyFromPEM([]byte(PublicKey()))
 	if err != nil {
 		log.Error("can not parse public key", err)
 		return nil, err
 	}
-	return rbacframe.Authenticate(tokenStr, p)
+	return a.autheToken(tokenStr, p)
+}
+
+func (a *EmbeddedAuthenticator) autheToken(tokenStr string, pub *rsa.PublicKey) (interface{}, error) {
+	return token.Verify(tokenStr, func(claims interface{}, method token.SigningMethod) (interface{}, error) {
+		return pub, nil
+	})
 }
 
 func init() {

@@ -20,7 +20,6 @@ package rbac_test
 import (
 	"context"
 	"github.com/apache/servicecomb-service-center/pkg/privacy"
-	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
 	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
@@ -80,7 +79,7 @@ func TestInitRBAC(t *testing.T) {
 		assert.NoError(t, err)
 		claims, err := authr.Authenticate(context.Background(), token)
 		assert.NoError(t, err)
-		assert.Equal(t, "root", claims.(map[string]interface{})[rbacframe.ClaimsUser])
+		assert.Equal(t, "root", claims.(map[string]interface{})[rbacmodel.ClaimsUser])
 	})
 
 	t.Run("second time init", func(t *testing.T) {
@@ -91,7 +90,7 @@ func TestInitRBAC(t *testing.T) {
 		persisted := &rbacmodel.Account{Name: "a", Password: "Complicated_password1"}
 		err := dao.CreateAccount(context.Background(), persisted)
 		assert.NoError(t, err)
-		err = rbac.ChangePassword(context.Background(), []string{rbacframe.RoleAdmin}, "admin", &rbacmodel.Account{Name: "a", Password: "Complicated_password2"})
+		err = rbac.ChangePassword(context.Background(), []string{rbacmodel.RoleAdmin}, "admin", &rbacmodel.Account{Name: "a", Password: "Complicated_password2"})
 		assert.NoError(t, err)
 		a, err := dao.GetAccount(context.Background(), "a")
 		assert.NoError(t, err)

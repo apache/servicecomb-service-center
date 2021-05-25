@@ -66,9 +66,6 @@ func (ar *AuthResource) CreateAccount(w http.ResponseWriter, req *http.Request) 
 		controller.WriteError(w, discovery.ErrInvalidParams, errorsEx.MsgJSON)
 		return
 	}
-	if a.Role != "" {
-		a.Roles = []string{a.Role}
-	}
 	err = service.ValidateCreateAccount(a)
 	if err != nil {
 		controller.WriteError(w, discovery.ErrInvalidParams, err.Error())

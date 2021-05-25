@@ -21,7 +21,6 @@ import (
 	"context"
 
 	"github.com/apache/servicecomb-service-center/pkg/privacy"
-	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	rbacmodel "github.com/go-chassis/cari/rbac"
 
 	"github.com/go-chassis/foundation/stringutil"
@@ -41,7 +40,7 @@ func ChangePassword(ctx context.Context, changerRole []string, changerName strin
 	}
 	for i := 0; i < len(changerRole); i++ {
 		//need to check password mismatch. but admin role can change any user password without supply current password
-		if changerRole[i] == rbacframe.RoleAdmin {
+		if changerRole[i] == rbacmodel.RoleAdmin {
 			return changePasswordForcibly(ctx, a.Name, a.Password)
 		}
 	}
