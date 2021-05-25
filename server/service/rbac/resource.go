@@ -18,6 +18,7 @@
 package rbac
 
 import (
+	"github.com/apache/servicecomb-service-center/server/constant"
 	"github.com/go-chassis/cari/rbac"
 )
 
@@ -44,12 +45,8 @@ var (
 	APILegacyGov = "/v4/:project/govern"
 
 	APIServiceInfo       = "/v4/:project/registry/microservices/:serviceId"
-	APIServicesList      = "/v4/:project/registry/microservices"
 	APIServiceProperties = "/v4/:project/registry/microservices/:serviceId/properties"
 	APIServiceExistence  = "/v4/:project/registry/existence"
-
-	APIProConDependency = "/v4/:project/registry/microservices/:providerId/consumers"
-	APIConProDependency = "/v4/:project/registry/microservices/:consumerId/providers"
 
 	APIHeartbeats          = "/v4/:project/registry/heartbeats"
 	APIInstanceWatcher     = "/v4/:project/registry/microservices/:serviceId/watcher"
@@ -79,11 +76,11 @@ func initResourceMap() {
 	rbac.PartialMapResource(APILegacyGov, ResourceService)
 
 	rbac.MapResource(APIServiceInfo, ResourceService)
-	rbac.MapResource(APIServicesList, ResourceService)
+	rbac.MapResource(constant.APIMicroservice, ResourceService)
 	rbac.MapResource(APIServiceProperties, ResourceService)
 	rbac.MapResource(APIServiceExistence, ResourceService)
-	rbac.MapResource(APIProConDependency, ResourceService)
-	rbac.MapResource(APIConProDependency, ResourceService)
+	rbac.MapResource(constant.APIProviderList, ResourceService)
+	rbac.MapResource(constant.APIConsumerList, ResourceService)
 	rbac.MapResource(APIHeartbeats, ResourceService)
 	rbac.MapResource(APIInstanceWatcher, ResourceService)
 	rbac.MapResource(APIInstanceListWatcher, ResourceService)
