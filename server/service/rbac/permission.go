@@ -18,7 +18,6 @@
 package rbac
 
 import (
-	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	"github.com/go-chassis/cari/rbac"
 )
 
@@ -34,7 +33,7 @@ var (
 
 // AdminPerms allocate all resource permissions
 func AdminPerms() []*rbac.Permission {
-	resources := rbacframe.BuildResourceList(
+	resources := rbac.BuildResourceList(
 		ResourceAccount, ResourceRole,
 		ResourceService, ResourceGovern, ResourceOps, ResourceSchema)
 	perm := []*rbac.Permission{
@@ -48,7 +47,7 @@ func AdminPerms() []*rbac.Permission {
 
 // DevPerms allocate all resource permissions except account and role resources
 func DevPerms() []*rbac.Permission {
-	resources := rbacframe.BuildResourceList(
+	resources := rbac.BuildResourceList(
 		ResourceService, ResourceGovern, ResourceOps, ResourceSchema)
 	perm := []*rbac.Permission{
 		{

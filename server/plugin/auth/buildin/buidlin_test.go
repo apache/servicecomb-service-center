@@ -26,13 +26,13 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/plugin/auth/buildin"
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
 	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
 	_ "github.com/apache/servicecomb-service-center/test"
 	"github.com/astaxie/beego"
+	carirbac "github.com/go-chassis/cari/rbac"
 	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-chassis/v2/security/authr"
 	"github.com/go-chassis/go-chassis/v2/security/secret"
@@ -76,7 +76,7 @@ func TestTokenAuthenticator_Identify(t *testing.T) {
 		r := httptest.NewRequest(http.MethodGet, "/any", nil)
 		err := ta.Identify(r)
 		t.Log(err)
-		assert.Equal(t, rbacframe.ErrNoHeader, err)
+		assert.Equal(t, carirbac.ErrNoHeader, err)
 	})
 
 	t.Run("with wrong auth header should failed", func(t *testing.T) {
@@ -84,7 +84,7 @@ func TestTokenAuthenticator_Identify(t *testing.T) {
 		r.Header.Set(restful.HeaderAuth, "Bear")
 		err := ta.Identify(r)
 		t.Log(err)
-		assert.Equal(t, rbacframe.ErrInvalidHeader, err)
+		assert.Equal(t, carirbac.ErrInvalidHeader, err)
 	})
 
 	t.Run("with valid header and invalid token, should failed", func(t *testing.T) {

@@ -27,7 +27,6 @@ import (
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/plugin/security/cipher"
 	"github.com/apache/servicecomb-service-center/server/service"
@@ -73,7 +72,7 @@ func Init() {
 	readPublicKey()
 	initAdminRole()
 	initDevRole()
-	rbacframe.Add2WhiteAPIList(APITokenGranter)
+	rbac.Add2WhiteAPIList(APITokenGranter)
 	log.Info("rbac is enabled")
 }
 
@@ -118,7 +117,7 @@ func initFirstTime(admin string) {
 	a := &rbac.Account{
 		Name:     admin,
 		Password: pwd,
-		Roles:    []string{rbacframe.RoleAdmin},
+		Roles:    []string{rbac.RoleAdmin},
 	}
 	err = service.ValidateCreateAccount(a)
 	if err != nil {

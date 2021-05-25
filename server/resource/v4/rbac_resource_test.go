@@ -29,7 +29,6 @@ import (
 
 	rbacmodel "github.com/go-chassis/cari/rbac"
 
-	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/config"
 	v4 "github.com/apache/servicecomb-service-center/server/resource/v4"
@@ -177,7 +176,7 @@ func TestAuthResource_DeleteAccount(t *testing.T) {
 		to := &rbacmodel.Token{}
 		json.Unmarshal(w.Body.Bytes(), to)
 
-		b, _ = json.Marshal(&rbacmodel.Account{Name: "delete_account", Password: "Complicated_password1", Roles: []string{rbacframe.RoleDeveloper}})
+		b, _ = json.Marshal(&rbacmodel.Account{Name: "delete_account", Password: "Complicated_password1", Roles: []string{rbacmodel.RoleDeveloper}})
 		r2, _ := http.NewRequest(http.MethodPost, "/v4/accounts", bytes.NewBuffer(b))
 		r2.Header.Set(restful.HeaderAuth, "Bearer "+to.TokenStr)
 		w2 := httptest.NewRecorder()

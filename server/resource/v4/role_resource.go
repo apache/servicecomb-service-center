@@ -52,13 +52,14 @@ func (rr *RoleResource) URLPatterns() []rest.Route {
 
 //GetRolePermission list all roles and there's permissions
 func (rr *RoleResource) GetRolePermission(w http.ResponseWriter, req *http.Request) {
-	rs, _, err := dao.ListRole(context.TODO())
+	rs, num, err := dao.ListRole(context.TODO())
 	if err != nil {
 		log.Error(errorsEx.MsgGetRoleFailed, err)
 		controller.WriteError(w, discovery.ErrInternal, errorsEx.MsgGetRoleFailed)
 		return
 	}
 	resp := &rbac.RoleResponse{
+		Total: num,
 		Roles: rs,
 	}
 	controller.WriteResponse(w, req, nil, resp)

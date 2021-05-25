@@ -19,6 +19,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"time"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
@@ -27,6 +29,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/privacy"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+
 	"github.com/go-chassis/cari/rbac"
 )
 
@@ -55,7 +58,11 @@ func (ds *DataSource) CreateAccount(ctx context.Context, a *rbac.Account) error 
 		log.Error("pwd hash failed", err)
 		return err
 	}
+	a.Role = ""
+	a.CurrentPassword = ""
 	a.ID = util.GenerateUUID()
+	a.CreateTime = strconv.FormatInt(time.Now().Unix(), 10)
+	a.UpdateTime = a.CreateTime
 	value, err := json.Marshal(a)
 	if err != nil {
 		log.Errorf(err, "account info is invalid")
@@ -96,8 +103,20 @@ func (ds *DataSource) GetAccount(ctx context.Context, name string) (*rbac.Accoun
 		log.Errorf(err, "account info format invalid")
 		return nil, err
 	}
+	ds.compatibleOldVersionAccount(account)
 	return account, nil
 }
+
+func (ds *DataSource) compatibleOldVersionAccount(a *rbac.Account) {
+	// old version use Role, now use Roles
+	// Role/Roles will not exist at the same time
+	if len(a.Role) == 0 {
+		return
+	}
+	a.Roles = []string{a.Role}
+	a.Role = ""
+}
+
 func (ds *DataSource) ListAccount(ctx context.Context) ([]*rbac.Account, int64, error) {
 	resp, err := client.Instance().Do(ctx, client.GET,
 		client.WithStrKey(path.GenerateRBACAccountKey("")), client.WithPrefix())
@@ -113,6 +132,7 @@ func (ds *DataSource) ListAccount(ctx context.Context) ([]*rbac.Account, int64, 
 			continue //do not fail if some account is invalid
 		}
 		a.Password = ""
+		ds.compatibleOldVersionAccount(a)
 		accounts = append(accounts, a)
 	}
 	return accounts, resp.Count, nil
@@ -132,6 +152,7 @@ func (ds *DataSource) DeleteAccount(ctx context.Context, names []string) (bool, 
 	return true, nil
 }
 func (ds *DataSource) UpdateAccount(ctx context.Context, name string, account *rbac.Account) error {
+	account.UpdateTime = strconv.FormatInt(time.Now().Unix(), 10)
 	value, err := json.Marshal(account)
 	if err != nil {
 		log.Errorf(err, "account info is invalid")

@@ -20,11 +20,11 @@ package buildin
 import (
 	"context"
 	"errors"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	"net/http"
 	"strings"
 
 	"github.com/apache/servicecomb-service-center/pkg/plugin"
-	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	"github.com/go-chassis/cari/rbac"
 
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
@@ -52,16 +52,16 @@ func (ba *TokenAuthenticator) Identify(req *http.Request) error {
 		return nil
 	}
 	pattern, ok := req.Context().Value(rest.CtxMatchPattern).(string)
-	if ok && !rbacframe.MustAuth(pattern) {
+	if ok && !mustAuth(pattern) {
 		return nil
 	}
 	v := req.Header.Get(restful.HeaderAuth)
 	if v == "" {
-		return rbacframe.ErrNoHeader
+		return rbac.ErrNoHeader
 	}
 	s := strings.Split(v, " ")
 	if len(s) != 2 {
-		return rbacframe.ErrInvalidHeader
+		return rbac.ErrInvalidHeader
 	}
 	to := s[1]
 
@@ -72,14 +72,14 @@ func (ba *TokenAuthenticator) Identify(req *http.Request) error {
 	}
 	m, ok := claims.(map[string]interface{})
 	if !ok {
-		log.Error("claims convert failed", rbacframe.ErrConvertErr)
-		return rbacframe.ErrConvertErr
+		log.Error("claims convert failed", rbac.ErrConvertErr)
+		return rbac.ErrConvertErr
 	}
-	roles := m[rbacframe.ClaimsRoles]
-	roleList, err := rbacframe.GetRolesList(roles)
+
+	roleList, err := rbac.GetRolesList(m)
 	if err != nil {
-		log.Error("role convert failed ", err)
-		return rbacframe.ErrConvertErr
+		log.Error("get role list failed", err)
+		return err
 	}
 
 	var apiPattern string
@@ -97,7 +97,7 @@ func (ba *TokenAuthenticator) Identify(req *http.Request) error {
 	if err != nil {
 		return err
 	}
-	req2 := req.WithContext(rbac.NewContext(req.Context(), claims.(map[string]interface{})))
+	req2 := req.WithContext(rbac.NewContext(req.Context(), m))
 	*req = *req2
 	return nil
 }
@@ -119,4 +119,11 @@ func checkPerm(roleList []string, project, apiPattern, verbs string) error {
 		return errors.New(errorsEx.MsgNoPerm)
 	}
 	return nil
+}
+
+func mustAuth(pattern string) bool {
+	if util.IsVersionOrHealthPattern(pattern) {
+		return false
+	}
+	return rbac.MustAuth(pattern)
 }

@@ -21,6 +21,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"time"
 
 	"github.com/go-chassis/cari/rbac"
 
@@ -53,6 +55,8 @@ func (ds *DataSource) CreateRole(ctx context.Context, r *rbac.Role) error {
 		return datasource.ErrRoleDuplicated
 	}
 	r.ID = util.GenerateUUID()
+	r.CreateTime = strconv.FormatInt(time.Now().Unix(), 10)
+	r.UpdateTime = r.CreateTime
 	value, err := json.Marshal(r)
 	if err != nil {
 		log.Error("role info is invalid", err)
@@ -123,6 +127,7 @@ func (ds *DataSource) DeleteRole(ctx context.Context, name string) (bool, error)
 	return resp.Succeeded, nil
 }
 func (ds *DataSource) UpdateRole(ctx context.Context, name string, role *rbac.Role) error {
+	role.UpdateTime = strconv.FormatInt(time.Now().Unix(), 10)
 	value, err := json.Marshal(role)
 	if err != nil {
 		log.Errorf(err, "role info is invalid")
