@@ -21,6 +21,7 @@ import (
 	"context"
 	"crypto/rsa"
 	"errors"
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/go-chassis/cari/rbac"
 
 	"github.com/dgrijalva/jwt-go"
@@ -82,10 +83,26 @@ func (a *EmbeddedAuthenticator) Authenticate(ctx context.Context, tokenStr strin
 		log.Error("can not parse public key", err)
 		return nil, err
 	}
-	return a.autheToken(tokenStr, p)
+	claims, err := a.authToken(tokenStr, p)
+	if err != nil {
+		return nil, err
+	}
+	accountNameI := claims[rbac.ClaimsUser]
+	n, ok := accountNameI.(string)
+	if !ok {
+		return nil, rbac.ErrConvert
+	}
+	exist, err := datasource.Instance().AccountExist(context.TODO(), n)
+	if err != nil {
+		return nil, err
+	}
+	if !exist {
+		return nil, datasource.ErrAccountNotExist
+	}
+	return a.authToken(tokenStr, p)
 }
 
-func (a *EmbeddedAuthenticator) autheToken(tokenStr string, pub *rsa.PublicKey) (interface{}, error) {
+func (a *EmbeddedAuthenticator) authToken(tokenStr string, pub *rsa.PublicKey) (map[string]interface{}, error) {
 	return token.Verify(tokenStr, func(claims interface{}, method token.SigningMethod) (interface{}, error) {
 		return pub, nil
 	})

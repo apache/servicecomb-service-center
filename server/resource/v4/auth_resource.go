@@ -20,6 +20,7 @@ package v4
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -84,7 +85,12 @@ func (ar *AuthResource) CreateAccount(w http.ResponseWriter, req *http.Request) 
 	controller.WriteSuccess(w, req)
 }
 func (ar *AuthResource) DeleteAccount(w http.ResponseWriter, req *http.Request) {
-	_, err := dao.DeleteAccount(context.TODO(), req.URL.Query().Get(":name"))
+	name := req.URL.Query().Get(":name")
+	if name == rbacsvc.RootName {
+		controller.WriteError(w, discovery.ErrInvalidParams, errorsEx.MsgCantOperateRoot)
+		return
+	}
+	_, err := dao.DeleteAccount(context.TODO(), name)
 	if err != nil {
 		log.Error(errorsEx.MsgOperateAccountFailed, err)
 		controller.WriteError(w, discovery.ErrInternal, errorsEx.MsgOperateAccountFailed)
@@ -93,6 +99,11 @@ func (ar *AuthResource) DeleteAccount(w http.ResponseWriter, req *http.Request) 
 	controller.WriteSuccess(w, req)
 }
 func (ar *AuthResource) UpdateAccount(w http.ResponseWriter, req *http.Request) {
+	name := req.URL.Query().Get(":name")
+	if name == rbacsvc.RootName {
+		controller.WriteError(w, discovery.ErrInvalidParams, errorsEx.MsgCantOperateRoot)
+		return
+	}
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		log.Error("read body err", err)
@@ -105,7 +116,7 @@ func (ar *AuthResource) UpdateAccount(w http.ResponseWriter, req *http.Request) 
 		controller.WriteError(w, discovery.ErrInvalidParams, err.Error())
 		return
 	}
-	name := req.URL.Query().Get(":name")
+
 	err = dao.UpdateAccount(context.TODO(), name, a)
 	if err != nil {
 		log.Error(errorsEx.MsgOperateAccountFailed, err)
@@ -141,7 +152,7 @@ func (ar *AuthResource) GetAccount(w http.ResponseWriter, r *http.Request) {
 func (ar *AuthResource) ChangePassword(w http.ResponseWriter, req *http.Request) {
 	ip := util.GetRealIP(req)
 	if rbacsvc.IsBanned(ip) {
-		log.Warn("ip is banned:" + ip)
+		log.Warn(fmt.Sprintf("ip is banned:%s, account: %s", ip, req.URL.Query().Get(":name")))
 		controller.WriteError(w, discovery.ErrForbidden, "")
 		return
 	}
@@ -190,7 +201,7 @@ func (ar *AuthResource) ChangePassword(w http.ResponseWriter, req *http.Request)
 func (ar *AuthResource) Login(w http.ResponseWriter, r *http.Request) {
 	ip := util.GetRealIP(r)
 	if rbacsvc.IsBanned(ip) {
-		log.Warn("ip is banned:" + ip)
+		log.Warn(fmt.Sprintf("ip is banned:%s, account: %s", ip, r.URL.Query().Get(":name")))
 		controller.WriteError(w, discovery.ErrForbidden, "")
 		return
 	}
