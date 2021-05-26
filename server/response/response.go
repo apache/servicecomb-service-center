@@ -22,13 +22,13 @@ import (
 )
 
 func init() {
-	RegisterApiFilter("/v4/:project/registry/microservices", MicroserviceListFilter)
-	//response.RegisterApiFilter("/v4/:project/registry/instances", )
-	RegisterApiFilter("/v4/:project/registry/microservices/:providerId/consumers", ProvidersListFilter)
-	RegisterApiFilter("/v4/:project/registry/microservices/:consumerId/providers", ConsumersListFilter)
+	RegisterFilter("/v4/:project/registry/microservices", MicroserviceListFilter)
+	//response.RegisterFilter("/v4/:project/registry/instances", )
+	RegisterFilter("/v4/:project/registry/microservices/:providerId/consumers", ProvidersListFilter)
+	RegisterFilter("/v4/:project/registry/microservices/:consumerId/providers", ConsumersListFilter)
 	// control panel apis
-	RegisterApiFilter("/v4/:project/govern/microservices", MicroServiceInfoListFilter)
-	RegisterApiFilter("/v4/:project/govern/apps", AppIdListFilter)
+	RegisterFilter("/v4/:project/govern/microservices", MicroServiceInfoListFilter)
+	RegisterFilter("/v4/:project/govern/apps", AppIdListFilter)
 }
 
 func MicroserviceListFilter(obj interface{}, labels []map[string]string) interface{} {

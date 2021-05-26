@@ -17,11 +17,11 @@
 
 package response
 
-var filters = map[string]Func{}
+var filters = map[string]FilterFunc{}
 
-type Func func(obj interface{}, filters []map[string]string) interface{}
+type FilterFunc func(obj interface{}, filters []map[string]string) interface{}
 
-func RegisterApiFilter(apiPath string, f Func) {
+func RegisterFilter(apiPath string, f FilterFunc) {
 	filters[apiPath] = f
 }
 
