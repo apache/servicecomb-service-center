@@ -18,6 +18,8 @@
 package maxbody
 
 import (
+	"bytes"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/apache/servicecomb-service-center/pkg/chain"
@@ -59,6 +61,13 @@ func (c *Handler) Handle(i *chain.Invocation) {
 	}
 
 	r.Body = http.MaxBytesReader(w, r.Body, v)
+
+	data, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		i.Fail(err)
+		return
+	}
+	r.Body = ioutil.NopCloser(bytes.NewReader(data))
 
 	i.Next()
 }
