@@ -30,8 +30,7 @@ import (
 	"github.com/go-chassis/cari/discovery"
 )
 
-// TODO write context key
-const CtxLabels util.CtxKey = "no name"
+const CtxResourceLabels util.CtxKey = "_resource_labels"
 
 type Handler struct {
 }
@@ -55,7 +54,7 @@ func (h *Handler) Handle(i *chain.Invocation) {
 			return
 		}
 
-		labels, ok := i.Context().Value(CtxLabels).([]map[string]string)
+		labels, ok := i.Context().Value(CtxResourceLabels).([]map[string]string)
 		if !ok {
 			return
 		}
