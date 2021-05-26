@@ -88,12 +88,12 @@ func init() {
 
 	// handle requests after routing.
 	exception.RegisterHandlers()
+	context.RegisterHandlers()
 	accesslog.RegisterHandlers()
 	maxbody.RegisterHandlers()
 	auth.RegisterHandlers()
 	metrics.RegisterHandlers()
 	tracing.RegisterHandlers()
-	context.RegisterHandlers()
 	route.RegisterHandlers()
 
 	// init broker

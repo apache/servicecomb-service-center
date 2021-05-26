@@ -129,5 +129,8 @@ func mustAuth(pattern string) bool {
 }
 
 func (ba *TokenAuthenticator) ResourceScopes(r *http.Request) *auth.ResourceScope {
+	if !rbacsvc.Enabled() {
+		return nil
+	}
 	return FromRequest(r)
 }
