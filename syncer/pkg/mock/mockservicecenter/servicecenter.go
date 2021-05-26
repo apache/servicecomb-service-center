@@ -44,14 +44,14 @@ type mockServer struct{}
 
 func (m *mockServer) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{Method: rest.HTTPMethodGet, Path: "/v4/:project/admin/dump", Func: m.GetAll},
-		{Method: rest.HTTPMethodGet, Path: "/v4/:project/registry/existence", Func: m.ServiceExistence},
-		{Method: rest.HTTPMethodPost, Path: "/v4/:project/registry/microservices", Func: m.CreateService},
-		{Method: rest.HTTPMethodDelete, Path: "/v4/:project/registry/microservices/:serviceId", Func: m.DeleteService},
-		{Method: rest.HTTPMethodGet, Path: "/v4/:project/registry/instances", Func: m.DiscoveryInstances},
-		{Method: rest.HTTPMethodPost, Path: "/v4/:project/registry/microservices/:serviceId/instances", Func: m.RegisterInstance},
-		{Method: rest.HTTPMethodDelete, Path: "/v4/:project/registry/microservices/:serviceId/instances/:instanceId", Func: m.UnregisterInstance},
-		{Method: rest.HTTPMethodPut, Path: "/v4/:project/registry/microservices/:serviceId/instances/:instanceId/heartbeat", Func: m.Heartbeat},
+		{Method: http.MethodGet, Path: "/v4/:project/admin/dump", Func: m.GetAll},
+		{Method: http.MethodGet, Path: "/v4/:project/registry/existence", Func: m.ServiceExistence},
+		{Method: http.MethodPost, Path: "/v4/:project/registry/microservices", Func: m.CreateService},
+		{Method: http.MethodDelete, Path: "/v4/:project/registry/microservices/:serviceId", Func: m.DeleteService},
+		{Method: http.MethodGet, Path: "/v4/:project/registry/instances", Func: m.DiscoveryInstances},
+		{Method: http.MethodPost, Path: "/v4/:project/registry/microservices/:serviceId/instances", Func: m.RegisterInstance},
+		{Method: http.MethodDelete, Path: "/v4/:project/registry/microservices/:serviceId/instances/:instanceId", Func: m.UnregisterInstance},
+		{Method: http.MethodPut, Path: "/v4/:project/registry/microservices/:serviceId/instances/:instanceId/heartbeat", Func: m.Heartbeat},
 	}
 }
 

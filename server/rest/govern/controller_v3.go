@@ -18,6 +18,8 @@
 package govern
 
 import (
+	"net/http"
+
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 )
 
@@ -29,8 +31,8 @@ type ResourceV3 struct {
 // URLPatterns 路由
 func (governService *ResourceV3) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{Method: rest.HTTPMethodGet, Path: "/registry/v3/govern/service/:serviceId", Func: governService.GetServiceDetail},
-		{Method: rest.HTTPMethodGet, Path: "/registry/v3/govern/relation", Func: governService.GetGraph},
-		{Method: rest.HTTPMethodGet, Path: "/registry/v3/govern/services", Func: governService.GetAllServicesInfo},
+		{Method: http.MethodGet, Path: "/registry/v3/govern/service/:serviceId", Func: governService.GetServiceDetail},
+		{Method: http.MethodGet, Path: "/registry/v3/govern/relation", Func: governService.GetGraph},
+		{Method: http.MethodGet, Path: "/registry/v3/govern/services", Func: governService.GetAllServicesInfo},
 	}
 }

@@ -17,6 +17,8 @@
 package v3
 
 import (
+	"net/http"
+
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/rest/controller/v4"
 )
@@ -27,14 +29,14 @@ type MicroServiceInstanceService struct {
 
 func (this *MicroServiceInstanceService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{rest.HTTPMethodGet, "/registry/v3/instances", this.FindInstances},
-		{rest.HTTPMethodGet, "/registry/v3/microservices/:serviceId/instances", this.GetInstances},
-		{rest.HTTPMethodGet, "/registry/v3/microservices/:serviceId/instances/:instanceId", this.GetOneInstance},
-		{rest.HTTPMethodPost, "/registry/v3/microservices/:serviceId/instances", this.RegisterInstance},
-		{rest.HTTPMethodDelete, "/registry/v3/microservices/:serviceId/instances/:instanceId", this.UnregisterInstance},
-		{rest.HTTPMethodPut, "/registry/v3/microservices/:serviceId/instances/:instanceId/properties", this.UpdateMetadata},
-		{rest.HTTPMethodPut, "/registry/v3/microservices/:serviceId/instances/:instanceId/status", this.UpdateStatus},
-		{rest.HTTPMethodPut, "/registry/v3/microservices/:serviceId/instances/:instanceId/heartbeat", this.Heartbeat},
-		{rest.HTTPMethodPut, "/registry/v3/heartbeats", this.HeartbeatSet},
+		{http.MethodGet, "/registry/v3/instances", this.FindInstances},
+		{http.MethodGet, "/registry/v3/microservices/:serviceId/instances", this.GetInstances},
+		{http.MethodGet, "/registry/v3/microservices/:serviceId/instances/:instanceId", this.GetOneInstance},
+		{http.MethodPost, "/registry/v3/microservices/:serviceId/instances", this.RegisterInstance},
+		{http.MethodDelete, "/registry/v3/microservices/:serviceId/instances/:instanceId", this.UnregisterInstance},
+		{http.MethodPut, "/registry/v3/microservices/:serviceId/instances/:instanceId/properties", this.UpdateMetadata},
+		{http.MethodPut, "/registry/v3/microservices/:serviceId/instances/:instanceId/status", this.UpdateStatus},
+		{http.MethodPut, "/registry/v3/microservices/:serviceId/instances/:instanceId/heartbeat", this.Heartbeat},
+		{http.MethodPut, "/registry/v3/heartbeats", this.HeartbeatSet},
 	}
 }

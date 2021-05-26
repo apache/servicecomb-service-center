@@ -17,6 +17,8 @@
 package v3
 
 import (
+	"net/http"
+
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/rest/controller/v4"
 )
@@ -27,12 +29,12 @@ type MicroServiceService struct {
 
 func (this *MicroServiceService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{rest.HTTPMethodGet, "/registry/v3/existence", this.GetExistence},
-		{rest.HTTPMethodGet, "/registry/v3/microservices", this.GetServices},
-		{rest.HTTPMethodGet, "/registry/v3/microservices/:serviceId", this.GetServiceOne},
-		{rest.HTTPMethodPost, "/registry/v3/microservices", this.Register},
-		{rest.HTTPMethodPut, "/registry/v3/microservices/:serviceId/properties", this.Update},
-		{rest.HTTPMethodDelete, "/registry/v3/microservices/:serviceId", this.Unregister},
-		{rest.HTTPMethodDelete, "/registry/v3/microservices", this.UnregisterServices},
+		{http.MethodGet, "/registry/v3/existence", this.GetExistence},
+		{http.MethodGet, "/registry/v3/microservices", this.GetServices},
+		{http.MethodGet, "/registry/v3/microservices/:serviceId", this.GetServiceOne},
+		{http.MethodPost, "/registry/v3/microservices", this.Register},
+		{http.MethodPut, "/registry/v3/microservices/:serviceId/properties", this.Update},
+		{http.MethodDelete, "/registry/v3/microservices/:serviceId", this.Unregister},
+		{http.MethodDelete, "/registry/v3/microservices", this.UnregisterServices},
 	}
 }
