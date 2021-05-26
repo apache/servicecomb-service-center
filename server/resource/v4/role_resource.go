@@ -20,6 +20,7 @@ package v4
 import (
 	"context"
 	"encoding/json"
+	"github.com/apache/servicecomb-service-center/server/service/validator"
 	"io/ioutil"
 	"net/http"
 
@@ -87,6 +88,11 @@ func (rr *RoleResource) CreateRolePermission(w http.ResponseWriter, req *http.Re
 	role, err := rr.roleParse(body)
 	if err != nil {
 		rest.WriteError(w, discovery.ErrInvalidParams, errorsEx.MsgJSON)
+		return
+	}
+	err = validator.ValidateCreateRole(role)
+	if err != nil {
+		rest.WriteError(w, discovery.ErrInvalidParams, err.Error())
 		return
 	}
 	err = dao.CreateRole(context.TODO(), role)

@@ -18,9 +18,9 @@
 package validator_test
 
 import (
-	"github.com/apache/servicecomb-service-center/server/service/validator"
 	"testing"
 
+	"github.com/apache/servicecomb-service-center/server/service/validator"
 	"github.com/go-chassis/cari/rbac"
 )
 
@@ -69,6 +69,35 @@ func TestValidateCreateAccount(t *testing.T) {
 	for _, tt := range tests {
 		if err := validator.ValidateCreateAccount(tt.args.a); (err != nil) != tt.wantErr {
 			t.Errorf("%q. ValidateCreateAccount() error = %v, wantErr %v", tt.name, err, tt.wantErr)
+		}
+	}
+}
+
+func TestValidateCreateRole(t *testing.T) {
+	type args struct {
+		a *rbac.Role
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{name: "given invalid role name",
+			args: args{a: &rbac.Role{
+				Name: "tester*a",
+			}},
+			wantErr: true,
+		},
+		{name: "given valid role name",
+			args: args{a: &rbac.Role{
+				Name: "tester-a",
+			}},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		if err := validator.ValidateCreateRole(tt.args.a); (err != nil) != tt.wantErr {
+			t.Errorf("%q. ValidateCreateRole() error = %v, wantErr %v", tt.name, err, tt.wantErr)
 		}
 	}
 }

@@ -22,11 +22,12 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/validate"
 	pb "github.com/go-chassis/cari/discovery"
-	"github.com/go-chassis/cari/rbac"
 	"reflect"
 )
 
 var createAccountValidator = &validate.Validator{}
+var createRoleValidator = &validate.Validator{}
+
 var changePWDValidator = &validate.Validator{}
 var accountLoginValidator = &validate.Validator{}
 
@@ -34,6 +35,8 @@ func init() {
 	createAccountValidator.AddRule("Name", &validate.Rule{Max: 64, Regexp: nameRegex})
 	createAccountValidator.AddRule("Roles", &validate.Rule{Min: 1, Regexp: nameRegex})
 	createAccountValidator.AddRule("Password", &validate.Rule{Regexp: &validate.PasswordChecker{}})
+
+	createRoleValidator.AddRule("Name", &validate.Rule{Max: 64, Regexp: nameRegex})
 
 	changePWDValidator.AddRule("Password", &validate.Rule{Regexp: &validate.PasswordChecker{}})
 	changePWDValidator.AddRule("Name", &validate.Rule{Regexp: nameRegex})
@@ -116,25 +119,4 @@ func baseCheck(v interface{}) error {
 		return errors.New("pointer is nil")
 	}
 	return nil
-}
-func ValidateCreateAccount(a *rbac.Account) error {
-	err := baseCheck(a)
-	if err != nil {
-		return err
-	}
-	return createAccountValidator.Validate(a)
-}
-func ValidateAccountLogin(a *rbac.Account) error {
-	err := baseCheck(a)
-	if err != nil {
-		return err
-	}
-	return accountLoginValidator.Validate(a)
-}
-func ValidateChangePWD(a *rbac.Account) error {
-	err := baseCheck(a)
-	if err != nil {
-		return err
-	}
-	return changePWDValidator.Validate(a)
 }
