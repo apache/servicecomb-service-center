@@ -44,7 +44,7 @@ func ApplyAll(_ *http.Request) ([]map[string]string, error) {
 	return nil, nil
 }
 
-func FromRequest(r *http.Request) []*auth.ResourceScope {
+func FromRequest(r *http.Request) *auth.ResourceScope {
 	apiPath := r.Context().Value(rest.CtxMatchPattern).(string)
 
 	resource := rbacmodel.GetResource(apiPath)
@@ -53,11 +53,11 @@ func FromRequest(r *http.Request) []*auth.ResourceScope {
 		log.Error(fmt.Sprintf("parse from request failed"), err)
 		return nil
 	}
-	return []*auth.ResourceScope{{
+	return &auth.ResourceScope{
 		Type:   resource,
 		Labels: labels,
 		Verb:   rbac.MethodToVerbs[r.Method],
-	}}
+	}
 }
 
 func GetAPIParseFunc(apiPattern string) ParseFunc {
