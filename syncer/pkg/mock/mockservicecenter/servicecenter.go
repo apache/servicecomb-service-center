@@ -19,7 +19,6 @@ package mockservicecenter
 
 import (
 	"errors"
-	"github.com/apache/servicecomb-service-center/server/constant"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -47,7 +46,7 @@ func (m *mockServer) URLPatterns() []rest.Route {
 	return []rest.Route{
 		{Method: rest.HTTPMethodGet, Path: "/v4/:project/admin/dump", Func: m.GetAll},
 		{Method: rest.HTTPMethodGet, Path: "/v4/:project/registry/existence", Func: m.ServiceExistence},
-		{Method: rest.HTTPMethodPost, Path: constant.APIMicroservice, Func: m.CreateService},
+		{Method: rest.HTTPMethodPost, Path: "/v4/:project/registry/microservices", Func: m.CreateService},
 		{Method: rest.HTTPMethodDelete, Path: "/v4/:project/registry/microservices/:serviceId", Func: m.DeleteService},
 		{Method: rest.HTTPMethodGet, Path: "/v4/:project/registry/instances", Func: m.DiscoveryInstances},
 		{Method: rest.HTTPMethodPost, Path: "/v4/:project/registry/microservices/:serviceId/instances", Func: m.RegisterInstance},

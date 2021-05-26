@@ -18,18 +18,17 @@
 package response
 
 import (
-	"github.com/apache/servicecomb-service-center/server/constant"
 	"github.com/go-chassis/cari/discovery"
 )
 
 func init() {
-	RegisterApiFilter(constant.APIMicroservice, MicroserviceListFilter)
+	RegisterApiFilter("/v4/:project/registry/microservices", MicroserviceListFilter)
 	//response.RegisterApiFilter("/v4/:project/registry/instances", )
-	RegisterApiFilter(constant.APIProviderList, ProvidersListFilter)
-	RegisterApiFilter(constant.APIConsumerList, ConsumersListFilter)
+	RegisterApiFilter("/v4/:project/registry/microservices/:providerId/consumers", ProvidersListFilter)
+	RegisterApiFilter("/v4/:project/registry/microservices/:consumerId/providers", ConsumersListFilter)
 	// control panel apis
-	RegisterApiFilter(constant.APIGovernMicroserviceList, MicroServiceInfoListFilter)
-	RegisterApiFilter(constant.APIGovernAppList, AppIdListFilter)
+	RegisterApiFilter("/v4/:project/govern/microservices", MicroServiceInfoListFilter)
+	RegisterApiFilter("/v4/:project/govern/apps", AppIdListFilter)
 }
 
 func MicroserviceListFilter(obj interface{}, labels []map[string]string) interface{} {
