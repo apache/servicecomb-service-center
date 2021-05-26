@@ -28,7 +28,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/rest/controller"
 	pb "github.com/go-chassis/cari/discovery"
 )
 
@@ -54,7 +53,7 @@ func (s *MicroServiceInstanceService) RegisterInstance(w http.ResponseWriter, r 
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
-		controller.WriteError(w, pb.ErrInvalidParams, err.Error())
+		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
 
@@ -62,7 +61,7 @@ func (s *MicroServiceInstanceService) RegisterInstance(w http.ResponseWriter, r 
 	err = json.Unmarshal(message, request)
 	if err != nil {
 		log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(message))
-		controller.WriteError(w, pb.ErrInvalidParams, "Unmarshal error")
+		rest.WriteError(w, pb.ErrInvalidParams, "Unmarshal error")
 		return
 	}
 	if request.Instance != nil {
@@ -72,10 +71,10 @@ func (s *MicroServiceInstanceService) RegisterInstance(w http.ResponseWriter, r 
 	resp, err := core.InstanceAPI.Register(r.Context(), request)
 	if err != nil {
 		log.Errorf(err, "register instance failed")
-		controller.WriteError(w, pb.ErrInternal, "register instance failed")
+		rest.WriteError(w, pb.ErrInternal, "register instance failed")
 		return
 	}
-	controller.WriteResponse(w, r, resp.Response, resp)
+	rest.WriteResponse(w, r, resp.Response, resp)
 }
 
 //TODO 什么样的服务允许更新服务心跳，只能是本服务才可以更新自己，如何屏蔽其他服务伪造的心跳更新？
@@ -86,14 +85,14 @@ func (s *MicroServiceInstanceService) Heartbeat(w http.ResponseWriter, r *http.R
 		InstanceId: query.Get(":instanceId"),
 	}
 	resp, _ := core.InstanceAPI.Heartbeat(r.Context(), request)
-	controller.WriteResponse(w, r, resp.Response, nil)
+	rest.WriteResponse(w, r, resp.Response, nil)
 }
 
 func (s *MicroServiceInstanceService) HeartbeatSet(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
-		controller.WriteError(w, pb.ErrInvalidParams, err.Error())
+		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
 
@@ -101,11 +100,11 @@ func (s *MicroServiceInstanceService) HeartbeatSet(w http.ResponseWriter, r *htt
 	err = json.Unmarshal(message, request)
 	if err != nil {
 		log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(message))
-		controller.WriteError(w, pb.ErrInvalidParams, "Unmarshal error")
+		rest.WriteError(w, pb.ErrInvalidParams, "Unmarshal error")
 		return
 	}
 	resp, _ := core.InstanceAPI.HeartbeatSet(r.Context(), request)
-	controller.WriteResponse(w, r, resp.Response, nil)
+	rest.WriteResponse(w, r, resp.Response, nil)
 }
 
 func (s *MicroServiceInstanceService) UnregisterInstance(w http.ResponseWriter, r *http.Request) {
@@ -115,7 +114,7 @@ func (s *MicroServiceInstanceService) UnregisterInstance(w http.ResponseWriter, 
 		InstanceId: query.Get(":instanceId"),
 	}
 	resp, _ := core.InstanceAPI.Unregister(r.Context(), request)
-	controller.WriteResponse(w, r, resp.Response, nil)
+	rest.WriteResponse(w, r, resp.Response, nil)
 }
 
 func (s *MicroServiceInstanceService) FindInstances(w http.ResponseWriter, r *http.Request) {
@@ -147,14 +146,14 @@ func (s *MicroServiceInstanceService) FindInstances(w http.ResponseWriter, r *ht
 		w.WriteHeader(http.StatusNotModified)
 		return
 	}
-	controller.WriteResponse(w, r, respInternal, resp)
+	rest.WriteResponse(w, r, respInternal, resp)
 }
 
 func (s *MicroServiceInstanceService) InstancesAction(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
-		controller.WriteError(w, pb.ErrInvalidParams, err.Error())
+		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
 	query := r.URL.Query()
@@ -165,17 +164,17 @@ func (s *MicroServiceInstanceService) InstancesAction(w http.ResponseWriter, r *
 		err = json.Unmarshal(message, request)
 		if err != nil {
 			log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(message))
-			controller.WriteError(w, pb.ErrInvalidParams, "Unmarshal error")
+			rest.WriteError(w, pb.ErrInvalidParams, "Unmarshal error")
 			return
 		}
 		request.ConsumerServiceId = r.Header.Get("X-ConsumerId")
 		ctx := util.SetTargetDomainProject(r.Context(), r.Header.Get("X-Domain-Name"), r.URL.Query().Get(":project"))
 		resp, _ := core.InstanceAPI.BatchFind(ctx, request)
-		controller.WriteResponse(w, r, resp.Response, resp)
+		rest.WriteResponse(w, r, resp.Response, resp)
 	default:
 		err = fmt.Errorf("Invalid action: %s", action)
 		log.Errorf(err, "invalid request")
-		controller.WriteError(w, pb.ErrInvalidParams, err.Error())
+		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
 	}
 }
 
@@ -204,7 +203,7 @@ func (s *MicroServiceInstanceService) GetOneInstance(w http.ResponseWriter, r *h
 		w.WriteHeader(http.StatusNotModified)
 		return
 	}
-	controller.WriteResponse(w, r, respInternal, resp)
+	rest.WriteResponse(w, r, respInternal, resp)
 }
 
 func (s *MicroServiceInstanceService) GetInstances(w http.ResponseWriter, r *http.Request) {
@@ -230,7 +229,7 @@ func (s *MicroServiceInstanceService) GetInstances(w http.ResponseWriter, r *htt
 		w.WriteHeader(http.StatusNotModified)
 		return
 	}
-	controller.WriteResponse(w, r, respInternal, resp)
+	rest.WriteResponse(w, r, respInternal, resp)
 }
 
 func (s *MicroServiceInstanceService) UpdateStatus(w http.ResponseWriter, r *http.Request) {
@@ -242,7 +241,7 @@ func (s *MicroServiceInstanceService) UpdateStatus(w http.ResponseWriter, r *htt
 		Status:     status,
 	}
 	resp, _ := core.InstanceAPI.UpdateStatus(r.Context(), request)
-	controller.WriteResponse(w, r, resp.Response, nil)
+	rest.WriteResponse(w, r, resp.Response, nil)
 }
 
 func (s *MicroServiceInstanceService) UpdateMetadata(w http.ResponseWriter, r *http.Request) {
@@ -250,7 +249,7 @@ func (s *MicroServiceInstanceService) UpdateMetadata(w http.ResponseWriter, r *h
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
-		controller.WriteError(w, pb.ErrInvalidParams, err.Error())
+		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
 	request := &pb.UpdateInstancePropsRequest{
@@ -260,13 +259,13 @@ func (s *MicroServiceInstanceService) UpdateMetadata(w http.ResponseWriter, r *h
 	err = json.Unmarshal(message, request)
 	if err != nil {
 		log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(message))
-		controller.WriteError(w, pb.ErrInvalidParams, "Unmarshal error")
+		rest.WriteError(w, pb.ErrInvalidParams, "Unmarshal error")
 		return
 	}
 	resp, err := core.InstanceAPI.UpdateInstanceProperties(r.Context(), request)
 	if err != nil {
 		log.Errorf(err, "can not update instance")
-		controller.WriteError(w, pb.ErrInternal, "can not update instance")
+		rest.WriteError(w, pb.ErrInternal, "can not update instance")
 	}
-	controller.WriteResponse(w, r, resp.Response, nil)
+	rest.WriteResponse(w, r, resp.Response, nil)
 }

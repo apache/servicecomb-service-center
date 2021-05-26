@@ -18,15 +18,14 @@
 package auth
 
 import (
-	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/response"
-	"github.com/apache/servicecomb-service-center/server/rest/controller"
 	"net/http"
 
 	"github.com/apache/servicecomb-service-center/pkg/chain"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/plugin/auth"
+	"github.com/apache/servicecomb-service-center/server/response"
 	"github.com/go-chassis/cari/discovery"
 )
 
@@ -65,7 +64,7 @@ func (h *Handler) Handle(i *chain.Invocation) {
 		obj = response.Filter(apiPath, obj, labels)
 
 		w := i.Context().Value(rest.CtxResponse).(http.ResponseWriter)
-		controller.WriteResponse(w, r, nil, obj)
+		rest.WriteResponse(w, r, nil, obj)
 	}))
 }
 

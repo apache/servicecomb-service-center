@@ -21,7 +21,6 @@ import (
 	"net/http"
 
 	"github.com/apache/servicecomb-service-center/pkg/rest"
-	"github.com/apache/servicecomb-service-center/server/rest/controller"
 	"github.com/apache/servicecomb-service-center/server/rest/controller/v4"
 	"github.com/apache/servicecomb-service-center/version"
 	pb "github.com/go-chassis/cari/discovery"
@@ -55,5 +54,5 @@ func (s *MainService) URLPatterns() []rest.Route {
 }
 
 func (s *MainService) GetVersion(w http.ResponseWriter, r *http.Request) {
-	controller.WriteResponse(w, r, versionResp, versionJsonCache)
+	rest.WriteResponse(w, r, versionResp, versionJsonCache)
 }

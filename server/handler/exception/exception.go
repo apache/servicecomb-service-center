@@ -26,6 +26,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/alarm"
 	"github.com/go-chassis/cari/discovery"
 )
 
@@ -35,7 +36,7 @@ var whitelists = make(map[string]struct{})
 type Handler struct {
 }
 
-func (l *Handler) Handle(i *chain.Invocation) {
+func (h *Handler) Handle(i *chain.Invocation) {
 	w, r, apiPath := i.Context().Value(rest.CtxResponse).(http.ResponseWriter),
 		i.Context().Value(rest.CtxRequest).(*http.Request),
 		i.Context().Value(rest.CtxMatchPattern).(string)
@@ -51,7 +52,7 @@ func (l *Handler) Handle(i *chain.Invocation) {
 	i.WithContext(rest.CtxResponse, asyncWriter)
 	i.Next(chain.WithFunc(func(ret chain.Result) {
 		if !ret.OK {
-			i.WithContext(rest.CtxResponseStatus, l.responseError(w, ret.Err))
+			i.WithContext(rest.CtxResponseStatus, h.responseError(w, ret.Err))
 			return
 		}
 
@@ -59,10 +60,11 @@ func (l *Handler) Handle(i *chain.Invocation) {
 		if err := asyncWriter.Flush(); err != nil {
 			log.Error("response writer flush failed", err)
 		}
+		h.alarmIfInternalError(asyncWriter.StatusCode, util.BytesToStringWithNoCopy(asyncWriter.Body))
 	}))
 }
 
-func (l *Handler) responseError(w http.ResponseWriter, e error) (statusCode int) {
+func (h *Handler) responseError(w http.ResponseWriter, e error) (statusCode int) {
 	statusCode = http.StatusBadRequest
 	contentType := rest.ContentTypeText
 	body := []byte("Unknown error")
@@ -72,6 +74,7 @@ func (l *Handler) responseError(w http.ResponseWriter, e error) (statusCode int)
 		if _, writeErr := w.Write(body); writeErr != nil {
 			log.Error("write response failed", writeErr)
 		}
+		h.alarmIfInternalError(statusCode, util.BytesToStringWithNoCopy(body))
 	}()
 
 	if e == nil {
@@ -89,6 +92,16 @@ func (l *Handler) responseError(w http.ResponseWriter, e error) (statusCode int)
 		body = err.Marshal()
 	}
 	return
+}
+
+func (h *Handler) alarmIfInternalError(statusCode int, errMsg string) {
+	if statusCode < http.StatusInternalServerError {
+		return
+	}
+	err := alarm.Raise(alarm.IDInternalError, alarm.AdditionalContext(errMsg))
+	if err != nil {
+		log.Error("raise alarm failed", err)
+	}
 }
 
 func RegisterHandlers() {

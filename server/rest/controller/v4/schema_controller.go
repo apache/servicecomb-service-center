@@ -29,7 +29,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/rest/controller"
 	pb "github.com/go-chassis/cari/discovery"
 )
 
@@ -57,7 +56,7 @@ func (s *SchemaService) URLPatterns() []rest.Route {
 }
 
 func (s *SchemaService) DisableSchema(w http.ResponseWriter, r *http.Request) {
-	controller.WriteError(w, pb.ErrForbidden, errModifySchemaDisabled.Error())
+	rest.WriteError(w, pb.ErrForbidden, errModifySchemaDisabled.Error())
 }
 
 func (s *SchemaService) GetSchemas(w http.ResponseWriter, r *http.Request) {
@@ -69,14 +68,14 @@ func (s *SchemaService) GetSchemas(w http.ResponseWriter, r *http.Request) {
 	resp, _ := core.ServiceAPI.GetSchemaInfo(r.Context(), request)
 	w.Header().Add("X-Schema-Summary", resp.SchemaSummary)
 	resp.SchemaSummary = ""
-	controller.WriteResponse(w, r, resp.Response, resp)
+	rest.WriteResponse(w, r, resp.Response, resp)
 }
 
 func (s *SchemaService) ModifySchema(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
-		controller.WriteError(w, pb.ErrInvalidParams, err.Error())
+		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
 
@@ -84,7 +83,7 @@ func (s *SchemaService) ModifySchema(w http.ResponseWriter, r *http.Request) {
 	err = json.Unmarshal(message, request)
 	if err != nil {
 		log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(message))
-		controller.WriteError(w, pb.ErrInvalidParams, err.Error())
+		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
 	query := r.URL.Query()
@@ -93,17 +92,17 @@ func (s *SchemaService) ModifySchema(w http.ResponseWriter, r *http.Request) {
 	resp, err := core.ServiceAPI.ModifySchema(r.Context(), request)
 	if err != nil {
 		log.Errorf(err, "can not update schema")
-		controller.WriteError(w, pb.ErrInternal, "can not update schema")
+		rest.WriteError(w, pb.ErrInternal, "can not update schema")
 		return
 	}
-	controller.WriteResponse(w, r, resp.Response, nil)
+	rest.WriteResponse(w, r, resp.Response, nil)
 }
 
 func (s *SchemaService) ModifySchemas(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
-		controller.WriteError(w, pb.ErrInvalidParams, err.Error())
+		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
 	serviceID := r.URL.Query().Get(":serviceId")
@@ -111,17 +110,17 @@ func (s *SchemaService) ModifySchemas(w http.ResponseWriter, r *http.Request) {
 	err = json.Unmarshal(message, request)
 	if err != nil {
 		log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(message))
-		controller.WriteError(w, pb.ErrInvalidParams, err.Error())
+		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
 	request.ServiceId = serviceID
 	resp, err := core.ServiceAPI.ModifySchemas(r.Context(), request)
 	if err != nil {
 		log.Errorf(err, "can not update schema")
-		controller.WriteError(w, pb.ErrInternal, "can not update schema")
+		rest.WriteError(w, pb.ErrInternal, "can not update schema")
 		return
 	}
-	controller.WriteResponse(w, r, resp.Response, nil)
+	rest.WriteResponse(w, r, resp.Response, nil)
 }
 
 func (s *SchemaService) DeleteSchemas(w http.ResponseWriter, r *http.Request) {
@@ -131,7 +130,7 @@ func (s *SchemaService) DeleteSchemas(w http.ResponseWriter, r *http.Request) {
 		SchemaId:  query.Get(":schemaId"),
 	}
 	resp, _ := core.ServiceAPI.DeleteSchema(r.Context(), request)
-	controller.WriteResponse(w, r, resp.Response, nil)
+	rest.WriteResponse(w, r, resp.Response, nil)
 }
 
 func (s *SchemaService) GetAllSchemas(w http.ResponseWriter, r *http.Request) {
@@ -139,7 +138,7 @@ func (s *SchemaService) GetAllSchemas(w http.ResponseWriter, r *http.Request) {
 	withSchema := query.Get("withSchema")
 	serviceID := query.Get(":serviceId")
 	if withSchema != "0" && withSchema != "1" && strings.TrimSpace(withSchema) != "" {
-		controller.WriteError(w, pb.ErrInvalidParams, "parameter withSchema must be 1 or 0")
+		rest.WriteError(w, pb.ErrInvalidParams, "parameter withSchema must be 1 or 0")
 		return
 	}
 	request := &pb.GetAllSchemaRequest{
@@ -147,5 +146,5 @@ func (s *SchemaService) GetAllSchemas(w http.ResponseWriter, r *http.Request) {
 		WithSchema: withSchema == "1",
 	}
 	resp, _ := core.ServiceAPI.GetAllSchemaInfo(r.Context(), request)
-	controller.WriteResponse(w, r, resp.Response, resp)
+	rest.WriteResponse(w, r, resp.Response, resp)
 }

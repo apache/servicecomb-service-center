@@ -26,7 +26,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/rest/controller"
 	pb "github.com/go-chassis/cari/discovery"
 )
 
@@ -58,7 +57,7 @@ func (governService *ResourceV4) GetGraph(w http.ResponseWriter, r *http.Request
 
 	resp, err := core.ServiceAPI.GetServices(ctx, request)
 	if err != nil {
-		controller.WriteError(w, pb.ErrInternal, err.Error())
+		rest.WriteError(w, pb.ErrInternal, err.Error())
 		return
 	}
 	services := resp.Services
@@ -87,7 +86,7 @@ func (governService *ResourceV4) GetGraph(w http.ResponseWriter, r *http.Request
 		if err != nil {
 			log.Errorf(err, "get service[%s/%s/%s/%s]'s providers failed",
 				service.Environment, service.AppId, service.ServiceName, service.Version)
-			controller.WriteResponse(w, r, proResp.Response, nil)
+			rest.WriteResponse(w, r, proResp.Response, nil)
 			return
 		}
 
@@ -96,7 +95,7 @@ func (governService *ResourceV4) GetGraph(w http.ResponseWriter, r *http.Request
 		graph.Lines = append(graph.Lines, lines...)
 	}
 	graph.Nodes = nodes
-	controller.WriteResponse(w, r, nil, graph)
+	rest.WriteResponse(w, r, nil, graph)
 }
 
 func (governService *ResourceV4) genLinesFromNode(withShared bool, domainProject string, node Node, providers []*pb.MicroService) []Line {
@@ -133,7 +132,7 @@ func (governService *ResourceV4) GetServiceDetail(w http.ResponseWriter, r *http
 	}
 	ctx := r.Context()
 	resp, _ := ServiceAPI.GetServiceDetail(ctx, request)
-	controller.WriteResponse(w, r, resp.Response, resp)
+	rest.WriteResponse(w, r, resp.Response, resp)
 }
 
 func (governService *ResourceV4) GetAllServicesInfo(w http.ResponseWriter, r *http.Request) {
@@ -148,21 +147,21 @@ func (governService *ResourceV4) GetAllServicesInfo(w http.ResponseWriter, r *ht
 	request.WithShared = util.StringTRUE(query.Get("withShared"))
 	countOnly := query.Get("countOnly")
 	if countOnly != "0" && countOnly != "1" && strings.TrimSpace(countOnly) != "" {
-		controller.WriteError(w, pb.ErrInvalidParams, "parameter countOnly must be 1 or 0")
+		rest.WriteError(w, pb.ErrInvalidParams, "parameter countOnly must be 1 or 0")
 		return
 	}
 	if countOnly == "1" {
 		request.CountOnly = true
 	}
 	resp, _ := ServiceAPI.GetServicesInfo(ctx, request)
-	controller.WriteResponse(w, r, resp.Response, resp)
+	rest.WriteResponse(w, r, resp.Response, resp)
 }
 
 func (governService *ResourceV4) GetAllServicesStatistics(w http.ResponseWriter, r *http.Request) {
 	request := &pb.GetServicesRequest{}
 	ctx := r.Context()
 	resp, _ := ServiceAPI.GetServicesStatistics(ctx, request)
-	controller.WriteResponse(w, r, resp.Response, resp)
+	rest.WriteResponse(w, r, resp.Response, resp)
 }
 
 func (governService *ResourceV4) GetAllApplications(w http.ResponseWriter, r *http.Request) {
@@ -172,5 +171,5 @@ func (governService *ResourceV4) GetAllApplications(w http.ResponseWriter, r *ht
 	request.Environment = query.Get("env")
 	request.WithShared = util.StringTRUE(query.Get("withShared"))
 	resp, _ := ServiceAPI.GetApplications(ctx, request)
-	controller.WriteResponse(w, r, resp.Response, resp)
+	rest.WriteResponse(w, r, resp.Response, resp)
 }

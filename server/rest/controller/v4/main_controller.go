@@ -24,7 +24,6 @@ import (
 
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/rest/controller"
 	"github.com/apache/servicecomb-service-center/version"
 	pb "github.com/go-chassis/cari/discovery"
 )
@@ -55,7 +54,7 @@ func (s *MainService) URLPatterns() []rest.Route {
 
 func (s *MainService) ClusterHealth(w http.ResponseWriter, r *http.Request) {
 	resp, _ := core.InstanceAPI.ClusterHealth(r.Context())
-	controller.WriteResponse(w, r, resp.Response, resp)
+	rest.WriteResponse(w, r, resp.Response, resp)
 }
 
 func (s *MainService) GetVersion(w http.ResponseWriter, r *http.Request) {
@@ -67,5 +66,5 @@ func (s *MainService) GetVersion(w http.ResponseWriter, r *http.Request) {
 		versionJSONCache, _ = json.Marshal(result)
 		versionResp = pb.CreateResponse(pb.ResponseSuccess, "get version successfully")
 	})
-	controller.WriteResponse(w, r, versionResp, versionJSONCache)
+	rest.WriteResponse(w, r, versionResp, versionJSONCache)
 }

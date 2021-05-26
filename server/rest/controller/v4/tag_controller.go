@@ -27,7 +27,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/rest/controller"
 	pb "github.com/go-chassis/cari/discovery"
 )
 
@@ -48,14 +47,14 @@ func (s *TagService) AddTags(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
-		controller.WriteError(w, pb.ErrInvalidParams, err.Error())
+		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
 	var tags map[string]map[string]string
 	err = json.Unmarshal(message, &tags)
 	if err != nil {
 		log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(message))
-		controller.WriteError(w, pb.ErrInvalidParams, err.Error())
+		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
 
@@ -65,10 +64,10 @@ func (s *TagService) AddTags(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		log.Errorf(err, "can not add tag")
-		controller.WriteError(w, pb.ErrInternal, "can not add tag")
+		rest.WriteError(w, pb.ErrInternal, "can not add tag")
 		return
 	}
-	controller.WriteResponse(w, r, resp.Response, nil)
+	rest.WriteResponse(w, r, resp.Response, nil)
 }
 
 func (s *TagService) UpdateTag(w http.ResponseWriter, r *http.Request) {
@@ -78,14 +77,14 @@ func (s *TagService) UpdateTag(w http.ResponseWriter, r *http.Request) {
 		Key:       query.Get(":key"),
 		Value:     query.Get("value"),
 	})
-	controller.WriteResponse(w, r, resp.Response, nil)
+	rest.WriteResponse(w, r, resp.Response, nil)
 }
 
 func (s *TagService) GetTags(w http.ResponseWriter, r *http.Request) {
 	resp, _ := core.ServiceAPI.GetTags(r.Context(), &pb.GetServiceTagsRequest{
 		ServiceId: r.URL.Query().Get(":serviceId"),
 	})
-	controller.WriteResponse(w, r, resp.Response, resp)
+	rest.WriteResponse(w, r, resp.Response, resp)
 }
 
 func (s *TagService) DeleteTags(w http.ResponseWriter, r *http.Request) {
@@ -97,5 +96,5 @@ func (s *TagService) DeleteTags(w http.ResponseWriter, r *http.Request) {
 		ServiceId: query.Get(":serviceId"),
 		Keys:      ids,
 	})
-	controller.WriteResponse(w, r, resp.Response, nil)
+	rest.WriteResponse(w, r, resp.Response, nil)
 }

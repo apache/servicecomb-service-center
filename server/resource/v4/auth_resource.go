@@ -29,7 +29,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/rest/controller"
 	"github.com/apache/servicecomb-service-center/server/service"
 	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
@@ -58,125 +57,125 @@ func (ar *AuthResource) CreateAccount(w http.ResponseWriter, req *http.Request) 
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		log.Error("read body err", err)
-		controller.WriteError(w, discovery.ErrInternal, err.Error())
+		rest.WriteError(w, discovery.ErrInternal, err.Error())
 		return
 	}
 	a := &rbac.Account{}
 	if err = json.Unmarshal(body, a); err != nil {
 		log.Error("json err", err)
-		controller.WriteError(w, discovery.ErrInvalidParams, errorsEx.MsgJSON)
+		rest.WriteError(w, discovery.ErrInvalidParams, errorsEx.MsgJSON)
 		return
 	}
 	err = service.ValidateCreateAccount(a)
 	if err != nil {
-		controller.WriteError(w, discovery.ErrInvalidParams, err.Error())
+		rest.WriteError(w, discovery.ErrInvalidParams, err.Error())
 		return
 	}
 	err = dao.CreateAccount(context.TODO(), a)
 	if err != nil {
 		if err == datasource.ErrAccountDuplicated {
-			controller.WriteError(w, discovery.ErrConflictAccount, "")
+			rest.WriteError(w, discovery.ErrConflictAccount, "")
 			return
 		}
 		log.Error(errorsEx.MsgOperateAccountFailed, err)
-		controller.WriteError(w, discovery.ErrInternal, errorsEx.MsgOperateAccountFailed)
+		rest.WriteError(w, discovery.ErrInternal, errorsEx.MsgOperateAccountFailed)
 		return
 	}
-	controller.WriteSuccess(w, req)
+	rest.WriteSuccess(w, req)
 }
 func (ar *AuthResource) DeleteAccount(w http.ResponseWriter, req *http.Request) {
 	name := req.URL.Query().Get(":name")
 	if name == rbacsvc.RootName {
-		controller.WriteError(w, discovery.ErrInvalidParams, errorsEx.MsgCantOperateRoot)
+		rest.WriteError(w, discovery.ErrInvalidParams, errorsEx.MsgCantOperateRoot)
 		return
 	}
 	_, err := dao.DeleteAccount(context.TODO(), name)
 	if err != nil {
 		log.Error(errorsEx.MsgOperateAccountFailed, err)
-		controller.WriteError(w, discovery.ErrInternal, errorsEx.MsgOperateAccountFailed)
+		rest.WriteError(w, discovery.ErrInternal, errorsEx.MsgOperateAccountFailed)
 		return
 	}
-	controller.WriteSuccess(w, req)
+	rest.WriteSuccess(w, req)
 }
 func (ar *AuthResource) UpdateAccount(w http.ResponseWriter, req *http.Request) {
 	name := req.URL.Query().Get(":name")
 	if name == rbacsvc.RootName {
-		controller.WriteError(w, discovery.ErrInvalidParams, errorsEx.MsgCantOperateRoot)
+		rest.WriteError(w, discovery.ErrInvalidParams, errorsEx.MsgCantOperateRoot)
 		return
 	}
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		log.Error("read body err", err)
-		controller.WriteError(w, discovery.ErrInternal, err.Error())
+		rest.WriteError(w, discovery.ErrInternal, err.Error())
 		return
 	}
 	a := &rbac.Account{}
 	if err = json.Unmarshal(body, a); err != nil {
 		log.Error("json err", err)
-		controller.WriteError(w, discovery.ErrInvalidParams, err.Error())
+		rest.WriteError(w, discovery.ErrInvalidParams, err.Error())
 		return
 	}
 
 	err = dao.UpdateAccount(context.TODO(), name, a)
 	if err != nil {
 		log.Error(errorsEx.MsgOperateAccountFailed, err)
-		controller.WriteError(w, discovery.ErrInternal, errorsEx.MsgOperateAccountFailed)
+		rest.WriteError(w, discovery.ErrInternal, errorsEx.MsgOperateAccountFailed)
 		return
 	}
-	controller.WriteSuccess(w, req)
+	rest.WriteSuccess(w, req)
 }
 func (ar *AuthResource) ListAccount(w http.ResponseWriter, r *http.Request) {
 	as, n, err := dao.ListAccount(context.TODO())
 	if err != nil {
 		log.Error(errorsEx.MsgGetAccountFailed, err)
-		controller.WriteError(w, discovery.ErrInternal, errorsEx.MsgGetAccountFailed)
+		rest.WriteError(w, discovery.ErrInternal, errorsEx.MsgGetAccountFailed)
 		return
 	}
 	resp := &rbac.AccountResponse{
 		Total:    n,
 		Accounts: as,
 	}
-	controller.WriteResponse(w, r, nil, resp)
+	rest.WriteResponse(w, r, nil, resp)
 }
 func (ar *AuthResource) GetAccount(w http.ResponseWriter, r *http.Request) {
 	a, err := dao.GetAccount(context.TODO(), r.URL.Query().Get(":name"))
 	if err != nil {
 		log.Error(errorsEx.MsgGetAccountFailed, err)
-		controller.WriteError(w, discovery.ErrInternal, errorsEx.MsgGetAccountFailed)
+		rest.WriteError(w, discovery.ErrInternal, errorsEx.MsgGetAccountFailed)
 		return
 	}
 	a.Password = ""
-	controller.WriteResponse(w, r, nil, a)
+	rest.WriteResponse(w, r, nil, a)
 }
 
 func (ar *AuthResource) ChangePassword(w http.ResponseWriter, req *http.Request) {
 	ip := util.GetRealIP(req)
 	if rbacsvc.IsBanned(ip) {
 		log.Warn(fmt.Sprintf("ip is banned:%s, account: %s", ip, req.URL.Query().Get(":name")))
-		controller.WriteError(w, discovery.ErrForbidden, "")
+		rest.WriteError(w, discovery.ErrForbidden, "")
 		return
 	}
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		log.Error("read body err", err)
-		controller.WriteError(w, discovery.ErrInternal, err.Error())
+		rest.WriteError(w, discovery.ErrInternal, err.Error())
 		return
 	}
 	a := &rbac.Account{}
 	if err = json.Unmarshal(body, a); err != nil {
 		log.Error("json err", err)
-		controller.WriteError(w, discovery.ErrInvalidParams, errorsEx.MsgJSON)
+		rest.WriteError(w, discovery.ErrInvalidParams, errorsEx.MsgJSON)
 		return
 	}
 	a.Name = req.URL.Query().Get(":name")
 	err = service.ValidateChangePWD(a)
 	if err != nil {
-		controller.WriteError(w, discovery.ErrInvalidParams, err.Error())
+		rest.WriteError(w, discovery.ErrInvalidParams, err.Error())
 		return
 	}
 	changer, err := rbac.AccountFromContext(req.Context())
 	if err != nil {
-		controller.WriteError(w, discovery.ErrInternal, "can not parse account info")
+		rest.WriteError(w, discovery.ErrInternal, "can not parse account info")
 		return
 	}
 	err = rbacsvc.ChangePassword(context.TODO(), changer.Roles, changer.Name, a)
@@ -184,37 +183,37 @@ func (ar *AuthResource) ChangePassword(w http.ResponseWriter, req *http.Request)
 		if err == rbacsvc.ErrSamePassword ||
 			err == rbacsvc.ErrEmptyCurrentPassword ||
 			err == rbacsvc.ErrNoPermChangeAccount {
-			controller.WriteError(w, discovery.ErrInvalidParams, err.Error())
+			rest.WriteError(w, discovery.ErrInvalidParams, err.Error())
 			return
 		}
 		if err == rbacsvc.ErrWrongPassword {
 			rbacsvc.CountFailure(ip)
-			controller.WriteError(w, discovery.ErrInvalidParams, err.Error())
+			rest.WriteError(w, discovery.ErrInvalidParams, err.Error())
 			return
 		}
 		log.Error("change password failed", err)
-		controller.WriteError(w, discovery.ErrInternal, err.Error())
+		rest.WriteError(w, discovery.ErrInternal, err.Error())
 		return
 	}
-	controller.WriteSuccess(w, req)
+	rest.WriteSuccess(w, req)
 }
 func (ar *AuthResource) Login(w http.ResponseWriter, r *http.Request) {
 	ip := util.GetRealIP(r)
 	if rbacsvc.IsBanned(ip) {
 		log.Warn(fmt.Sprintf("ip is banned:%s, account: %s", ip, r.URL.Query().Get(":name")))
-		controller.WriteError(w, discovery.ErrForbidden, "")
+		rest.WriteError(w, discovery.ErrForbidden, "")
 		return
 	}
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body err", err)
-		controller.WriteError(w, discovery.ErrInternal, err.Error())
+		rest.WriteError(w, discovery.ErrInternal, err.Error())
 		return
 	}
 	a := &rbac.Account{}
 	if err = json.Unmarshal(body, a); err != nil {
 		log.Error("json err", err)
-		controller.WriteError(w, discovery.ErrInvalidParams, err.Error())
+		rest.WriteError(w, discovery.ErrInvalidParams, err.Error())
 		return
 	}
 	if a.TokenExpirationTime == "" {
@@ -222,7 +221,7 @@ func (ar *AuthResource) Login(w http.ResponseWriter, r *http.Request) {
 	}
 	err = service.ValidateAccountLogin(a)
 	if err != nil {
-		controller.WriteError(w, discovery.ErrInvalidParams, err.Error())
+		rest.WriteError(w, discovery.ErrInvalidParams, err.Error())
 		return
 	}
 	t, err := authr.Login(context.TODO(), a.Name, a.Password,
@@ -231,12 +230,12 @@ func (ar *AuthResource) Login(w http.ResponseWriter, r *http.Request) {
 		if err == rbacsvc.ErrUnauthorized {
 			log.Error("not authorized", err)
 			rbacsvc.CountFailure(ip)
-			controller.WriteError(w, discovery.ErrUnauthorized, err.Error())
+			rest.WriteError(w, discovery.ErrUnauthorized, err.Error())
 			return
 		}
 		log.Error("can not sign token", err)
-		controller.WriteError(w, discovery.ErrInternal, err.Error())
+		rest.WriteError(w, discovery.ErrInternal, err.Error())
 		return
 	}
-	controller.WriteResponse(w, r, nil, &rbac.Token{TokenStr: t})
+	rest.WriteResponse(w, r, nil, &rbac.Token{TokenStr: t})
 }
