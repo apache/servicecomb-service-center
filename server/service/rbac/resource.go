@@ -26,7 +26,7 @@ const (
 	ResourceRole    = "role"
 	ResourceService = "service"
 	ResourceGovern  = "governance"
-	ResourceSchema  = "schema"
+	ResourceSchema  = "service/schema"
 	ResourceOps     = "ops"
 )
 
@@ -36,6 +36,8 @@ var (
 	APIAccountList = "/v4/accounts"
 
 	APIRoleList = "/v4/roles"
+
+	APIAccountPassword = "/v4/accounts/:name/password"
 
 	APIOps = "/v4/:project/admin"
 
