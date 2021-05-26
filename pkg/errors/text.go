@@ -21,6 +21,8 @@ const (
 	MsgJSON = "json is invalid"
 
 	MsgOperateAccountFailed = "operate account failed"
+	MsgCantOperateRoot      = "root can not be operated"
+	MsgCantOperateRole      = "build-in role can not be operated"
 	MsgOperateRoleFailed    = "operate role failed"
 	MsgGetAccountFailed     = "get account failed"
 	MsgGetRoleFailed        = "get role failed"
