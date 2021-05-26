@@ -22,13 +22,14 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
+	"github.com/apache/servicecomb-service-center/server/service/validator"
 	pb "github.com/go-chassis/cari/discovery"
 
 	"context"
 )
 
 func (s *MicroServiceService) GetSchemaInfo(ctx context.Context, in *pb.GetSchemaRequest) (*pb.GetSchemaResponse, error) {
-	err := Validate(in)
+	err := validator.Validate(in)
 	if err != nil {
 		log.Errorf(nil, "get schema[%s/%s] failed", in.ServiceId, in.SchemaId)
 		return &pb.GetSchemaResponse{
@@ -40,7 +41,7 @@ func (s *MicroServiceService) GetSchemaInfo(ctx context.Context, in *pb.GetSchem
 }
 
 func (s *MicroServiceService) GetAllSchemaInfo(ctx context.Context, in *pb.GetAllSchemaRequest) (*pb.GetAllSchemaResponse, error) {
-	err := Validate(in)
+	err := validator.Validate(in)
 	if err != nil {
 		log.Errorf(nil, "get service[%s] all schemas failed", in.ServiceId)
 		return &pb.GetAllSchemaResponse{
@@ -52,7 +53,7 @@ func (s *MicroServiceService) GetAllSchemaInfo(ctx context.Context, in *pb.GetAl
 }
 
 func (s *MicroServiceService) DeleteSchema(ctx context.Context, in *pb.DeleteSchemaRequest) (*pb.DeleteSchemaResponse, error) {
-	err := Validate(in)
+	err := validator.Validate(in)
 	if err != nil {
 		remoteIP := util.GetIPFromContext(ctx)
 		log.Errorf(err, "delete schema[%s/%s] failed, operator: %s", in.ServiceId, in.SchemaId, remoteIP)
@@ -77,7 +78,7 @@ func (s *MicroServiceService) DeleteSchema(ctx context.Context, in *pb.DeleteSch
 // the new schemaID will be automatically added to the service information.
 // Schema is allowed to add/delete/modify.
 func (s *MicroServiceService) ModifySchemas(ctx context.Context, in *pb.ModifySchemasRequest) (*pb.ModifySchemasResponse, error) {
-	err := Validate(in)
+	err := validator.Validate(in)
 	if err != nil {
 		remoteIP := util.GetIPFromContext(ctx)
 		log.Errorf(err, "modify service[%s] schemas failed, operator: %s", in.ServiceId, remoteIP)
@@ -123,7 +124,7 @@ func (s *MicroServiceService) canModifySchema(ctx context.Context, domainProject
 			serviceID, schemaID, remoteIP)
 		return pb.NewError(pb.ErrInvalidParams, "serviceID or schemaID is nil")
 	}
-	err := Validate(in)
+	err := validator.Validate(in)
 	if err != nil {
 		log.Errorf(err, "update schema[%s/%s] failed, operator: %s", serviceID, schemaID, remoteIP)
 		return pb.NewError(pb.ErrInvalidParams, err.Error())

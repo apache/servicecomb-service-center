@@ -20,6 +20,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/server/service/validator"
 
 	pb "github.com/go-chassis/cari/discovery"
 
@@ -71,7 +72,7 @@ func (s *MicroServiceService) CreateServicePri(ctx context.Context, in *pb.Creat
 	domainProject := util.ParseDomainProject(ctx)
 
 	datasource.SetServiceDefaultValue(service)
-	err := Validate(in)
+	err := validator.Validate(in)
 	if err != nil {
 		log.Errorf(err, "create micro-service[%s] failed, operator: %s",
 			serviceFlag, remoteIP)
@@ -97,7 +98,7 @@ func (s *MicroServiceService) CreateServicePri(ctx context.Context, in *pb.Creat
 
 func (s *MicroServiceService) Delete(ctx context.Context, in *pb.DeleteServiceRequest) (*pb.DeleteServiceResponse, error) {
 	remoteIP := util.GetIPFromContext(ctx)
-	err := Validate(in)
+	err := validator.Validate(in)
 	if err != nil {
 		log.Errorf(err, "delete micro-service[%s] failed, operator: %s", in.ServiceId, remoteIP)
 		return &pb.DeleteServiceResponse{
@@ -138,7 +139,7 @@ func (s *MicroServiceService) DeleteServices(ctx context.Context, request *pb.De
 			ServiceId: serviceID,
 			Force:     request.Force,
 		}
-		err := Validate(in)
+		err := validator.Validate(in)
 		if err != nil {
 			log.Errorf(err, "delete micro-service[%s] failed, operator: %s", in.ServiceId, remoteIP)
 			serviceRespChan <- &pb.DelServicesRspInfo{
@@ -203,7 +204,7 @@ func (s *MicroServiceService) getDeleteServiceFunc(ctx context.Context, serviceI
 }
 
 func (s *MicroServiceService) GetOne(ctx context.Context, in *pb.GetServiceRequest) (*pb.GetServiceResponse, error) {
-	err := Validate(in)
+	err := validator.Validate(in)
 	if err != nil {
 		log.Errorf(err, "get micro-service[%s] failed", in.ServiceId)
 		return &pb.GetServiceResponse{
@@ -219,7 +220,7 @@ func (s *MicroServiceService) GetServices(ctx context.Context, in *pb.GetService
 }
 
 func (s *MicroServiceService) UpdateProperties(ctx context.Context, in *pb.UpdateServicePropsRequest) (*pb.UpdateServicePropsResponse, error) {
-	err := Validate(in)
+	err := validator.Validate(in)
 	if err != nil {
 		remoteIP := util.GetIPFromContext(ctx)
 		log.Errorf(err, "update service[%s] properties failed, operator: %s", in.ServiceId, remoteIP)
@@ -234,7 +235,7 @@ func (s *MicroServiceService) UpdateProperties(ctx context.Context, in *pb.Updat
 func (s *MicroServiceService) Exist(ctx context.Context, in *pb.GetExistenceRequest) (*pb.GetExistenceResponse, error) {
 	switch in.Type {
 	case ExistTypeMicroservice:
-		err := ExistenceReqValidator().Validate(in)
+		err := validator.ExistenceReqValidator().Validate(in)
 		if err != nil {
 			serviceFlag := util.StringJoin([]string{in.Environment, in.AppId, in.ServiceName, in.Version}, "/")
 			log.Errorf(err, "micro-service[%s] exist failed", serviceFlag)
@@ -245,7 +246,7 @@ func (s *MicroServiceService) Exist(ctx context.Context, in *pb.GetExistenceRequ
 
 		return datasource.Instance().ExistService(ctx, in)
 	case ExistTypeSchema:
-		err := GetSchemaReqValidator().Validate(in)
+		err := validator.GetSchemaReqValidator().Validate(in)
 		if err != nil {
 			log.Errorf(err, "schema[%s/%s] exist failed", in.ServiceId, in.SchemaId)
 			return &pb.GetExistenceResponse{

@@ -19,6 +19,7 @@ package service
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/server/service/validator"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -27,7 +28,7 @@ import (
 )
 
 func (s *MicroServiceService) AddRule(ctx context.Context, in *pb.AddServiceRulesRequest) (*pb.AddServiceRulesResponse, error) {
-	err := Validate(in)
+	err := validator.Validate(in)
 	if err != nil {
 		remoteIP := util.GetIPFromContext(ctx)
 		log.Errorf(err, "add service[%s] rule failed, operator: %s", in.ServiceId, remoteIP)
@@ -40,7 +41,7 @@ func (s *MicroServiceService) AddRule(ctx context.Context, in *pb.AddServiceRule
 }
 
 func (s *MicroServiceService) UpdateRule(ctx context.Context, in *pb.UpdateServiceRuleRequest) (*pb.UpdateServiceRuleResponse, error) {
-	err := Validate(in)
+	err := validator.Validate(in)
 	if err != nil {
 		remoteIP := util.GetIPFromContext(ctx)
 		log.Errorf(err, "update service rule[%s/%s] failed, operator: %s", in.ServiceId, in.RuleId, remoteIP)
@@ -53,7 +54,7 @@ func (s *MicroServiceService) UpdateRule(ctx context.Context, in *pb.UpdateServi
 }
 
 func (s *MicroServiceService) GetRule(ctx context.Context, in *pb.GetServiceRulesRequest) (*pb.GetServiceRulesResponse, error) {
-	err := Validate(in)
+	err := validator.Validate(in)
 	if err != nil {
 		log.Errorf(err, "get service[%s] rule failed", in.ServiceId)
 		return &pb.GetServiceRulesResponse{
@@ -65,7 +66,7 @@ func (s *MicroServiceService) GetRule(ctx context.Context, in *pb.GetServiceRule
 }
 
 func (s *MicroServiceService) DeleteRule(ctx context.Context, in *pb.DeleteServiceRulesRequest) (*pb.DeleteServiceRulesResponse, error) {
-	err := Validate(in)
+	err := validator.Validate(in)
 	if err != nil {
 		remoteIP := util.GetIPFromContext(ctx)
 		log.Errorf(err, "delete service[%s] rules %v failed, operator: %s", in.ServiceId, in.RuleIds, remoteIP)

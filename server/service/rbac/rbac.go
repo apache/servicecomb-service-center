@@ -21,6 +21,7 @@ import (
 	"context"
 	"crypto/rsa"
 	"errors"
+	"github.com/apache/servicecomb-service-center/server/service/validator"
 	"io/ioutil"
 
 	"github.com/go-chassis/cari/rbac"
@@ -29,7 +30,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/plugin/security/cipher"
-	"github.com/apache/servicecomb-service-center/server/service"
 	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
 	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-chassis/v2/security/authr"
@@ -119,7 +119,7 @@ func initFirstTime(admin string) {
 		Password: pwd,
 		Roles:    []string{rbac.RoleAdmin},
 	}
-	err = service.ValidateCreateAccount(a)
+	err = validator.ValidateCreateAccount(a)
 	if err != nil {
 		log.Fatal("invalid pwd", err)
 		return

@@ -19,13 +19,13 @@ package govern
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/server/service/validator"
 
 	pb "github.com/go-chassis/cari/discovery"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/proto"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/service"
 )
 
 var ServiceAPI proto.GovernServiceCtrlServer = &Service{}
@@ -51,7 +51,7 @@ func (governService *Service) GetServiceDetail(ctx context.Context, in *pb.GetSe
 }
 
 func (governService *Service) GetApplications(ctx context.Context, in *pb.GetAppsRequest) (*pb.GetAppsResponse, error) {
-	err := service.Validate(in)
+	err := validator.Validate(in)
 	if err != nil {
 		return &pb.GetAppsResponse{
 			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
