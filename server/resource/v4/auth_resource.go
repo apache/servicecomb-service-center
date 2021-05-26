@@ -29,6 +29,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/plugin/auth/buildin"
 	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
 	"github.com/apache/servicecomb-service-center/server/service/validator"
@@ -173,7 +174,8 @@ func (ar *AuthResource) ChangePassword(w http.ResponseWriter, req *http.Request)
 		rest.WriteError(w, discovery.ErrInvalidParams, err.Error())
 		return
 	}
-	changer, err := rbac.AccountFromContext(req.Context())
+
+	changer, err := buildin.AccountFromContext(req.Context())
 	if err != nil {
 		rest.WriteError(w, discovery.ErrInternal, "can not parse account info")
 		return

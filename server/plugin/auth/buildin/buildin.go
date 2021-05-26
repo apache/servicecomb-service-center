@@ -30,6 +30,7 @@ import (
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
+	authHandler "github.com/apache/servicecomb-service-center/server/handler/auth"
 	"github.com/apache/servicecomb-service-center/server/plugin/auth"
 	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 	"github.com/go-chassis/go-chassis/v2/security/authr"
@@ -52,73 +53,102 @@ func (ba *TokenAuthenticator) Identify(req *http.Request) error {
 		return nil
 	}
 	pattern, ok := req.Context().Value(rest.CtxMatchPattern).(string)
-	if ok && !mustAuth(pattern) {
+	if !ok {
+		pattern = req.URL.Path
+		log.Warn("can not find api pattern")
+	}
+
+	if !mustAuth(pattern) {
 		return nil
 	}
-	v := req.Header.Get(restful.HeaderAuth)
-	if v == "" {
-		return rbac.ErrNoHeader
-	}
-	s := strings.Split(v, " ")
-	if len(s) != 2 {
-		return rbac.ErrInvalidHeader
-	}
-	to := s[1]
 
-	claims, err := authr.Authenticate(req.Context(), to)
+	claims, err := ba.VerifyToken(req)
 	if err != nil {
-		log.Errorf(err, "authenticate request failed, %s %s", req.Method, req.RequestURI)
+		log.Errorf(err, "verify request token failed, %s %s", req.Method, req.RequestURI)
 		return err
 	}
+
 	m, ok := claims.(map[string]interface{})
 	if !ok {
 		log.Error("claims convert failed", rbac.ErrConvertErr)
 		return rbac.ErrConvertErr
 	}
-
-	roleList, err := rbac.GetRolesList(m)
+	account, err := rbac.GetAccount(m)
 	if err != nil {
-		log.Error("get role list failed", err)
+		log.Error("get account  failed", err)
 		return err
 	}
+	util.SetRequestContext(req, authHandler.CtxRequestClaims, m)
+	// user can change self password
+	if isChangeSelfPassword(pattern, account, req) {
+		return nil
+	}
 
-	var apiPattern string
-	a := req.Context().Value(rest.CtxMatchPattern)
-	if a == nil { //handle exception
-		apiPattern = req.URL.Path
-		log.Warn("can not find api pattern")
-	} else {
-		apiPattern = a.(string)
+	if len(account.Roles) == 0 {
+		log.Error("no role found in token", nil)
+		return errors.New(errorsEx.MsgNoPerm)
 	}
 
 	project := req.URL.Query().Get(":project")
-	verbs := rbacsvc.MethodToVerbs[req.Method]
-	err = checkPerm(roleList, project, apiPattern, verbs)
+	allow, matchedLabels, err := checkPerm(account.Roles, project, req, pattern, req.Method)
 	if err != nil {
 		return err
-	}
-	req2 := req.WithContext(rbac.NewContext(req.Context(), m))
-	*req = *req2
-	return nil
-}
-
-//this method decouple business code and perm checks
-func checkPerm(roleList []string, project, apiPattern, verbs string) error {
-	resource := rbac.GetResource(apiPattern)
-	if resource == "" {
-		//fast fail, no need to access role storage
-		return errors.New(errorsEx.MsgNoPerm)
-	}
-	//TODO add verbs,project
-	allow, err := rbacsvc.Allow(context.TODO(), roleList, project, resource, verbs)
-	if err != nil {
-		log.Error("", err)
-		return errors.New(errorsEx.MsgRolePerm)
 	}
 	if !allow {
 		return errors.New(errorsEx.MsgNoPerm)
 	}
+
+	util.SetRequestContext(req, authHandler.CtxResourceLabels, matchedLabels)
 	return nil
+}
+
+func isChangeSelfPassword(pattern string, a *rbac.Account, req *http.Request) bool {
+	if pattern != rbacsvc.APIAccountPassword {
+		return false
+	}
+	changerName := a.Name
+	targetName := req.URL.Query().Get(":name")
+	return changerName == targetName
+}
+
+func filterRoles(roleList []string) (hasAdmin bool, normalRoles []string) {
+	for _, r := range roleList {
+		if r == rbac.RoleAdmin {
+			hasAdmin = true
+			return
+		}
+		normalRoles = append(normalRoles, r)
+	}
+	return
+}
+
+func (ba *TokenAuthenticator) VerifyToken(req *http.Request) (interface{}, error) {
+	v := req.Header.Get(restful.HeaderAuth)
+	if v == "" {
+		return nil, rbac.ErrNoHeader
+	}
+	s := strings.Split(v, " ")
+	if len(s) != 2 {
+		return nil, rbac.ErrInvalidHeader
+	}
+	to := s[1]
+
+	return authr.Authenticate(req.Context(), to)
+}
+
+//this method decouple business code and perm checks
+func checkPerm(roleList []string, project string, req *http.Request, apiPattern, method string) (bool, []map[string]string, error) {
+	hasAdmin, normalRoles := filterRoles(roleList)
+	if hasAdmin {
+		return true, nil, nil
+	}
+	//todo fast check for dev role
+	targetResource, ok := req.Context().Value(authHandler.CtxResourceScopes).(*auth.ResourceScope)
+	if !ok || targetResource == nil {
+		return false, nil, errors.New("no valid resouce scope")
+	}
+	//TODO add project
+	return rbacsvc.Allow(context.TODO(), project, normalRoles, targetResource)
 }
 
 func mustAuth(pattern string) bool {
@@ -130,4 +160,11 @@ func mustAuth(pattern string) bool {
 
 func (ba *TokenAuthenticator) ResourceScopes(r *http.Request) *auth.ResourceScope {
 	return FromRequest(r)
+}
+func AccountFromContext(ctx context.Context) (*rbac.Account, error) {
+	m, ok := ctx.Value(authHandler.CtxRequestClaims).(map[string]interface{})
+	if !ok {
+		return nil, errors.New("no claims from request context")
+	}
+	return rbac.GetAccount(m)
 }
