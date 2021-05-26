@@ -901,7 +901,7 @@ var _ = Describe("'Schema' service", func() {
 					},
 				}
 				By("schema edit not allowed, add a schema with new schemaId should fail")
-				localServiceResource := service.NewMicroServiceService(false, instanceResource)
+				localServiceResource := service.NewMicroServiceService(instanceResource)
 				respModifySchemas, err = localServiceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
 					ServiceId: serviceIdPro1,
 					Schemas:   schemas,
@@ -956,7 +956,7 @@ var _ = Describe("'Schema' service", func() {
 				Expect(respGetOne.Service.Schemas).To(Equal([]string{"first_schemaId"}))
 
 				By("schema edit not allowed, modify a schema should fail")
-				localServiceResource := service.NewMicroServiceService(false, instanceResource)
+				localServiceResource := service.NewMicroServiceService(instanceResource)
 				respModifySchema, err := localServiceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
 					ServiceId: serviceIdPro1,
 					SchemaId:  schemas[0].SchemaId,

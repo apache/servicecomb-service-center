@@ -15,25 +15,12 @@
  * limitations under the License.
  */
 
-package service
+package auth
 
-import (
-	"github.com/apache/servicecomb-service-center/pkg/proto"
-)
-
-var (
-	serviceService  proto.ServiceCtrlServer
-	instanceService proto.ServiceInstanceCtrlServerEx
-)
-
-func AssembleResources() (proto.ServiceCtrlServer, proto.ServiceInstanceCtrlServerEx) {
-	instanceService = &InstanceService{}
-	serviceService = NewMicroServiceService(instanceService)
-	return serviceService, instanceService
-}
-
-func NewMicroServiceService(instCtrlServer proto.ServiceInstanceCtrlServerEx) *MicroServiceService {
-	return &MicroServiceService{
-		instanceService: instCtrlServer,
-	}
+// ResourceScope is the resource scope parsed from request
+type ResourceScope struct {
+	Type   string
+	Labels []map[string]string
+	// Verb is the apply resource action, e.g. "get", "create"
+	Verb string
 }

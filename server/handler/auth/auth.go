@@ -29,13 +29,18 @@ import (
 	"github.com/go-chassis/cari/discovery"
 )
 
-const CtxResourceLabels util.CtxKey = "_resource_labels"
+const (
+	CtxResourceLabels util.CtxKey = "_resource_labels"
+	CtxResourceScopes util.CtxKey = "_resource_scopes"
+)
 
 type Handler struct {
 }
 
 func (h *Handler) Handle(i *chain.Invocation) {
 	r := i.Context().Value(rest.CtxRequest).(*http.Request)
+
+	i.WithContext(CtxResourceScopes, auth.ResourceScopes(r))
 
 	if err := auth.Identify(r); err != nil {
 		log.Errorf(err, "authenticate request failed, %s %s", r.Method, r.RequestURI)

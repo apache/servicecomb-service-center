@@ -127,3 +127,7 @@ func mustAuth(pattern string) bool {
 	}
 	return rbac.MustAuth(pattern)
 }
+
+func (ba *TokenAuthenticator) ResourceScopes(r *http.Request) []*auth.ResourceScope {
+	return FromRequest(r)
+}
