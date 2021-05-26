@@ -17,6 +17,8 @@
 package v3
 
 import (
+	"net/http"
+
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/rest/controller/v4"
 )
@@ -27,9 +29,9 @@ type DependencyService struct {
 
 func (this *DependencyService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{rest.HTTPMethodPost, "/registry/v3/dependencies", this.AddDependenciesForMicroServices},
-		{rest.HTTPMethodPut, "/registry/v3/dependencies", this.CreateDependenciesForMicroServices},
-		{rest.HTTPMethodGet, "/registry/v3/microservices/:consumerId/providers", this.GetConProDependencies},
-		{rest.HTTPMethodGet, "/registry/v3/microservices/:providerId/consumers", this.GetProConDependencies},
+		{http.MethodPost, "/registry/v3/dependencies", this.AddDependenciesForMicroServices},
+		{http.MethodPut, "/registry/v3/dependencies", this.CreateDependenciesForMicroServices},
+		{http.MethodGet, "/registry/v3/microservices/:consumerId/providers", this.GetConProDependencies},
+		{http.MethodGet, "/registry/v3/microservices/:providerId/consumers", this.GetProConDependencies},
 	}
 }

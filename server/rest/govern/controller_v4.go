@@ -38,11 +38,11 @@ type ResourceV4 struct {
 // URLPatterns 路由
 func (governService *ResourceV4) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{Method: rest.HTTPMethodGet, Path: "/v4/:project/govern/microservices/:serviceId", Func: governService.GetServiceDetail},
-		{Method: rest.HTTPMethodGet, Path: "/v4/:project/govern/relations", Func: governService.GetGraph},
-		{Method: rest.HTTPMethodGet, Path: "/v4/:project/govern/microservices", Func: governService.GetAllServicesInfo},
-		{Method: rest.HTTPMethodGet, Path: "/v4/:project/govern/apps", Func: governService.GetAllApplications},
-		{Method: rest.HTTPMethodGet, Path: "/v4/:project/govern/statistics", Func: governService.GetAllServicesStatistics},
+		{Method: http.MethodGet, Path: "/v4/:project/govern/microservices/:serviceId", Func: governService.GetServiceDetail},
+		{Method: http.MethodGet, Path: "/v4/:project/govern/relations", Func: governService.GetGraph},
+		{Method: http.MethodGet, Path: "/v4/:project/govern/microservices", Func: governService.GetAllServicesInfo},
+		{Method: http.MethodGet, Path: "/v4/:project/govern/apps", Func: governService.GetAllApplications},
+		{Method: http.MethodGet, Path: "/v4/:project/govern/statistics", Func: governService.GetAllServicesStatistics},
 	}
 }
 

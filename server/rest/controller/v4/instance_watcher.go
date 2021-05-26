@@ -23,9 +23,20 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/handler/exception"
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/gorilla/websocket"
 )
+
+const (
+	APIWatch     = "/v4/:project/registry/microservices/:serviceId/watcher"
+	APIHeartbeat = "/v4/:project/registry/microservices/:serviceId/instances/:instanceId/heartbeat"
+)
+
+func init() {
+	exception.RegisterWhitelist(http.MethodGet, APIWatch)
+	exception.RegisterWhitelist(http.MethodGet, APIHeartbeat)
+}
 
 type WatchService struct {
 	//
@@ -33,8 +44,8 @@ type WatchService struct {
 
 func (s *WatchService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{Method: rest.HTTPMethodGet, Path: "/v4/:project/registry/microservices/:serviceId/watcher", Func: s.Watch},
-		{Method: rest.HTTPMethodGet, Path: "/v4/:project/registry/microservices/:serviceId/instances/:instanceId/heartbeat", Func: s.Heartbeat},
+		{Method: http.MethodGet, Path: APIWatch, Func: s.Watch},
+		{Method: http.MethodGet, Path: APIHeartbeat, Func: s.Heartbeat},
 	}
 }
 

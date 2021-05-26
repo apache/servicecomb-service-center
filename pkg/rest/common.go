@@ -24,11 +24,6 @@ import (
 )
 
 const (
-	HTTPMethodGet    = http.MethodGet
-	HTTPMethodPut    = http.MethodPut
-	HTTPMethodPost   = http.MethodPost
-	HTTPMethodDelete = http.MethodDelete
-
 	CtxResponse       util.CtxKey = "_server_response"
 	CtxRequest        util.CtxKey = "_server_request"
 	CtxMatchPattern   util.CtxKey = "_server_match_pattern"

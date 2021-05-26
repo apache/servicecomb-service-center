@@ -49,8 +49,8 @@ type MainService struct {
 
 func (s *MainService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{rest.HTTPMethodGet, "/version", s.GetVersion},
-		{rest.HTTPMethodGet, "/health", s.ClusterHealth},
+		{http.MethodGet, "/version", s.GetVersion},
+		{http.MethodGet, "/health", s.ClusterHealth},
 	}
 }
 

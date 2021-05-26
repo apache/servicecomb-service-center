@@ -37,10 +37,10 @@ type RuleService struct {
 
 func (s *RuleService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{Method: rest.HTTPMethodPost, Path: "/v4/:project/registry/microservices/:serviceId/rules", Func: s.AddRule},
-		{Method: rest.HTTPMethodGet, Path: "/v4/:project/registry/microservices/:serviceId/rules", Func: s.GetRules},
-		{Method: rest.HTTPMethodPut, Path: "/v4/:project/registry/microservices/:serviceId/rules/:rule_id", Func: s.UpdateRule},
-		{Method: rest.HTTPMethodDelete, Path: "/v4/:project/registry/microservices/:serviceId/rules/:rule_id", Func: s.DeleteRule},
+		{Method: http.MethodPost, Path: "/v4/:project/registry/microservices/:serviceId/rules", Func: s.AddRule},
+		{Method: http.MethodGet, Path: "/v4/:project/registry/microservices/:serviceId/rules", Func: s.GetRules},
+		{Method: http.MethodPut, Path: "/v4/:project/registry/microservices/:serviceId/rules/:rule_id", Func: s.UpdateRule},
+		{Method: http.MethodDelete, Path: "/v4/:project/registry/microservices/:serviceId/rules/:rule_id", Func: s.DeleteRule},
 	}
 }
 func (s *RuleService) AddRule(w http.ResponseWriter, r *http.Request) {

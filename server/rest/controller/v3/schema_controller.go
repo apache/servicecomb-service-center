@@ -17,6 +17,8 @@
 package v3
 
 import (
+	"net/http"
+
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/rest/controller/v4"
 )
@@ -27,10 +29,10 @@ type SchemaService struct {
 
 func (this *SchemaService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{rest.HTTPMethodGet, "/registry/v3/microservices/:serviceId/schemas/:schemaId", this.GetSchemas},
-		{rest.HTTPMethodPut, "/registry/v3/microservices/:serviceId/schemas/:schemaId", this.ModifySchema},
-		{rest.HTTPMethodDelete, "/registry/v3/microservices/:serviceId/schemas/:schemaId", this.DeleteSchemas},
-		{rest.HTTPMethodPost, "/registry/v3/microservices/:serviceId/schemas", this.ModifySchemas},
-		{rest.HTTPMethodGet, "/registry/v3/microservices/:serviceId/schemas", this.GetAllSchemas},
+		{http.MethodGet, "/registry/v3/microservices/:serviceId/schemas/:schemaId", this.GetSchemas},
+		{http.MethodPut, "/registry/v3/microservices/:serviceId/schemas/:schemaId", this.ModifySchema},
+		{http.MethodDelete, "/registry/v3/microservices/:serviceId/schemas/:schemaId", this.DeleteSchemas},
+		{http.MethodPost, "/registry/v3/microservices/:serviceId/schemas", this.ModifySchemas},
+		{http.MethodGet, "/registry/v3/microservices/:serviceId/schemas", this.GetAllSchemas},
 	}
 }

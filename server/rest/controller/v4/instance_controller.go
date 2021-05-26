@@ -38,16 +38,16 @@ type MicroServiceInstanceService struct {
 
 func (s *MicroServiceInstanceService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{Method: rest.HTTPMethodGet, Path: "/v4/:project/registry/instances", Func: s.FindInstances},
-		{Method: rest.HTTPMethodPost, Path: "/v4/:project/registry/instances/action", Func: s.InstancesAction},
-		{Method: rest.HTTPMethodGet, Path: "/v4/:project/registry/microservices/:serviceId/instances", Func: s.GetInstances},
-		{Method: rest.HTTPMethodGet, Path: "/v4/:project/registry/microservices/:serviceId/instances/:instanceId", Func: s.GetOneInstance},
-		{Method: rest.HTTPMethodPost, Path: "/v4/:project/registry/microservices/:serviceId/instances", Func: s.RegisterInstance},
-		{Method: rest.HTTPMethodDelete, Path: "/v4/:project/registry/microservices/:serviceId/instances/:instanceId", Func: s.UnregisterInstance},
-		{Method: rest.HTTPMethodPut, Path: "/v4/:project/registry/microservices/:serviceId/instances/:instanceId/properties", Func: s.UpdateMetadata},
-		{Method: rest.HTTPMethodPut, Path: "/v4/:project/registry/microservices/:serviceId/instances/:instanceId/status", Func: s.UpdateStatus},
-		{Method: rest.HTTPMethodPut, Path: "/v4/:project/registry/microservices/:serviceId/instances/:instanceId/heartbeat", Func: s.Heartbeat},
-		{Method: rest.HTTPMethodPut, Path: "/v4/:project/registry/heartbeats", Func: s.HeartbeatSet},
+		{Method: http.MethodGet, Path: "/v4/:project/registry/instances", Func: s.FindInstances},
+		{Method: http.MethodPost, Path: "/v4/:project/registry/instances/action", Func: s.InstancesAction},
+		{Method: http.MethodGet, Path: "/v4/:project/registry/microservices/:serviceId/instances", Func: s.GetInstances},
+		{Method: http.MethodGet, Path: "/v4/:project/registry/microservices/:serviceId/instances/:instanceId", Func: s.GetOneInstance},
+		{Method: http.MethodPost, Path: "/v4/:project/registry/microservices/:serviceId/instances", Func: s.RegisterInstance},
+		{Method: http.MethodDelete, Path: "/v4/:project/registry/microservices/:serviceId/instances/:instanceId", Func: s.UnregisterInstance},
+		{Method: http.MethodPut, Path: "/v4/:project/registry/microservices/:serviceId/instances/:instanceId/properties", Func: s.UpdateMetadata},
+		{Method: http.MethodPut, Path: "/v4/:project/registry/microservices/:serviceId/instances/:instanceId/status", Func: s.UpdateStatus},
+		{Method: http.MethodPut, Path: "/v4/:project/registry/microservices/:serviceId/instances/:instanceId/heartbeat", Func: s.Heartbeat},
+		{Method: http.MethodPut, Path: "/v4/:project/registry/heartbeats", Func: s.HeartbeatSet},
 	}
 }
 func (s *MicroServiceInstanceService) RegisterInstance(w http.ResponseWriter, r *http.Request) {

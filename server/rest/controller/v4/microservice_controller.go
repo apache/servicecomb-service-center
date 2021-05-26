@@ -38,13 +38,13 @@ type MicroServiceService struct {
 
 func (s *MicroServiceService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{Method: rest.HTTPMethodGet, Path: "/v4/:project/registry/existence", Func: s.GetExistence},
-		{Method: rest.HTTPMethodGet, Path: "/v4/:project/registry/microservices", Func: s.GetServices},
-		{Method: rest.HTTPMethodGet, Path: "/v4/:project/registry/microservices/:serviceId", Func: s.GetServiceOne},
-		{Method: rest.HTTPMethodPost, Path: "/v4/:project/registry/microservices", Func: s.Register},
-		{Method: rest.HTTPMethodPut, Path: "/v4/:project/registry/microservices/:serviceId/properties", Func: s.Update},
-		{Method: rest.HTTPMethodDelete, Path: "/v4/:project/registry/microservices/:serviceId", Func: s.Unregister},
-		{Method: rest.HTTPMethodDelete, Path: "/v4/:project/registry/microservices", Func: s.UnregisterServices},
+		{Method: http.MethodGet, Path: "/v4/:project/registry/existence", Func: s.GetExistence},
+		{Method: http.MethodGet, Path: "/v4/:project/registry/microservices", Func: s.GetServices},
+		{Method: http.MethodGet, Path: "/v4/:project/registry/microservices/:serviceId", Func: s.GetServiceOne},
+		{Method: http.MethodPost, Path: "/v4/:project/registry/microservices", Func: s.Register},
+		{Method: http.MethodPut, Path: "/v4/:project/registry/microservices/:serviceId/properties", Func: s.Update},
+		{Method: http.MethodDelete, Path: "/v4/:project/registry/microservices/:serviceId", Func: s.Unregister},
+		{Method: http.MethodDelete, Path: "/v4/:project/registry/microservices", Func: s.UnregisterServices},
 	}
 }
 

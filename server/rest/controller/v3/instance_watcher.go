@@ -17,6 +17,8 @@
 package v3
 
 import (
+	"net/http"
+
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/rest/controller/v4"
 )
@@ -27,6 +29,6 @@ type WatchService struct {
 
 func (this *WatchService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{rest.HTTPMethodGet, "/registry/v3/microservices/:serviceId/watcher", this.Watch},
+		{http.MethodGet, "/registry/v3/microservices/:serviceId/watcher", this.Watch},
 	}
 }

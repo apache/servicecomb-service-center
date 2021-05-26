@@ -35,10 +35,10 @@ type DependencyService struct {
 
 func (s *DependencyService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{Method: rest.HTTPMethodPost, Path: "/v4/:project/registry/dependencies", Func: s.AddDependenciesForMicroServices},
-		{Method: rest.HTTPMethodPut, Path: "/v4/:project/registry/dependencies", Func: s.CreateDependenciesForMicroServices},
-		{Method: rest.HTTPMethodGet, Path: "/v4/:project/registry/microservices/:consumerId/providers", Func: s.GetConProDependencies},
-		{Method: rest.HTTPMethodGet, Path: "/v4/:project/registry/microservices/:providerId/consumers", Func: s.GetProConDependencies},
+		{Method: http.MethodPost, Path: "/v4/:project/registry/dependencies", Func: s.AddDependenciesForMicroServices},
+		{Method: http.MethodPut, Path: "/v4/:project/registry/dependencies", Func: s.CreateDependenciesForMicroServices},
+		{Method: http.MethodGet, Path: "/v4/:project/registry/microservices/:consumerId/providers", Func: s.GetConProDependencies},
+		{Method: http.MethodGet, Path: "/v4/:project/registry/microservices/:providerId/consumers", Func: s.GetProConDependencies},
 	}
 }
 

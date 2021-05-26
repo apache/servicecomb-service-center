@@ -36,9 +36,9 @@ type ControllerV4 struct {
 func (ctrl *ControllerV4) URLPatterns() []rest.Route {
 	return []rest.Route{
 		{Method: http.MethodGet, Path: "/v4/:project/admin/alarms", Func: ctrl.AlarmList},
-		{Method: rest.HTTPMethodDelete, Path: "/v4/:project/admin/alarms", Func: ctrl.ClearAlarm},
-		{Method: rest.HTTPMethodGet, Path: "/v4/:project/admin/dump", Func: ctrl.Dump},
-		{Method: rest.HTTPMethodGet, Path: "/v4/:project/admin/clusters", Func: ctrl.Clusters},
+		{Method: http.MethodDelete, Path: "/v4/:project/admin/alarms", Func: ctrl.ClearAlarm},
+		{Method: http.MethodGet, Path: "/v4/:project/admin/dump", Func: ctrl.Dump},
+		{Method: http.MethodGet, Path: "/v4/:project/admin/clusters", Func: ctrl.Clusters},
 	}
 }
 

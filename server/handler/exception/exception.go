@@ -18,26 +18,37 @@
 package exception
 
 import (
+	"fmt"
+	"net/http"
+
 	"github.com/apache/servicecomb-service-center/pkg/chain"
 	"github.com/apache/servicecomb-service-center/pkg/errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/go-chassis/cari/discovery"
-	"net/http"
 )
+
+var whitelists = make(map[string]struct{})
 
 // Handler provide a common response writer to handle exceptions
 type Handler struct {
 }
 
 func (l *Handler) Handle(i *chain.Invocation) {
-	w, r := i.Context().Value(rest.CtxResponse).(http.ResponseWriter),
-		i.Context().Value(rest.CtxRequest).(*http.Request)
+	w, r, apiPath := i.Context().Value(rest.CtxResponse).(http.ResponseWriter),
+		i.Context().Value(rest.CtxRequest).(*http.Request),
+		i.Context().Value(rest.CtxMatchPattern).(string)
+
+	i.WithContext(rest.CtxResponseStatus, http.StatusOK)
+
+	if InWhitelist(r.Method, apiPath) {
+		i.Next()
+		return
+	}
 
 	asyncWriter := NewWriter(w)
-	util.SetRequestContext(r, rest.CtxResponse, asyncWriter)
-
+	i.WithContext(rest.CtxResponse, asyncWriter)
 	i.Next(chain.WithFunc(func(ret chain.Result) {
 		if !ret.OK {
 			i.WithContext(rest.CtxResponseStatus, l.responseError(w, ret.Err))
@@ -82,4 +93,14 @@ func (l *Handler) responseError(w http.ResponseWriter, e error) (statusCode int)
 
 func RegisterHandlers() {
 	chain.RegisterHandler(rest.ServerChainName, &Handler{})
+}
+
+func RegisterWhitelist(method, apiPath string) {
+	whitelists[method+" "+apiPath] = struct{}{}
+	log.Debug(fmt.Sprintf("skip handle api [%s]%s exceptions", method, apiPath))
+}
+
+func InWhitelist(method, apiPath string) bool {
+	_, ok := whitelists[method+" "+apiPath]
+	return ok
 }
