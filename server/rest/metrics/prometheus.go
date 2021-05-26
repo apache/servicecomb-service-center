@@ -23,8 +23,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
+const exporterPrometheus = "prometheus"
+
 func init() {
-	if !config.GetMetrics().Enable {
+	if config.GetMetrics().Exporter != exporterPrometheus {
 		return
 	}
 	rest.RegisterServerHandler("/metrics", promhttp.Handler())
