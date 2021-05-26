@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package service
+package validator
 
 import (
 	"math"

@@ -15,17 +15,15 @@
  * limitations under the License.
  */
 
-package service
+package validator
 
 import (
 	"errors"
-	"reflect"
-	"regexp"
-
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/validate"
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/cari/rbac"
+	"reflect"
 )
 
 var createAccountValidator = &validate.Validator{}
@@ -33,14 +31,12 @@ var changePWDValidator = &validate.Validator{}
 var accountLoginValidator = &validate.Validator{}
 
 func init() {
-	var roleRegex, _ = regexp.Compile(`^$|^(admin|developer|[a-zA-Z]\w{2,15})$`)
-	var accountRegex, _ = regexp.Compile(`^[a-zA-Z]\w{3,15}$`)
-	createAccountValidator.AddRule("Name", &validate.Rule{Regexp: accountRegex})
-	createAccountValidator.AddRule("Roles", &validate.Rule{Min: 1, Regexp: roleRegex})
+	createAccountValidator.AddRule("Name", &validate.Rule{Max: 64, Regexp: nameRegex})
+	createAccountValidator.AddRule("Roles", &validate.Rule{Min: 1, Regexp: nameRegex})
 	createAccountValidator.AddRule("Password", &validate.Rule{Regexp: &validate.PasswordChecker{}})
 
 	changePWDValidator.AddRule("Password", &validate.Rule{Regexp: &validate.PasswordChecker{}})
-	changePWDValidator.AddRule("Name", &validate.Rule{Regexp: accountRegex})
+	changePWDValidator.AddRule("Name", &validate.Rule{Regexp: nameRegex})
 
 	accountLoginValidator.AddRule("TokenExpirationTime", &validate.Rule{Regexp: &validate.TokenExpirationTimeChecker{}})
 }

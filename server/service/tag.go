@@ -19,6 +19,7 @@ package service
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/server/service/validator"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -27,7 +28,7 @@ import (
 )
 
 func (s *MicroServiceService) AddTags(ctx context.Context, in *pb.AddServiceTagsRequest) (*pb.AddServiceTagsResponse, error) {
-	err := Validate(in)
+	err := validator.Validate(in)
 	if err != nil {
 		remoteIP := util.GetIPFromContext(ctx)
 		log.Errorf(err, "add service[%s]'s tags %v failed, operator: %s", in.ServiceId, in.Tags, remoteIP)
@@ -40,7 +41,7 @@ func (s *MicroServiceService) AddTags(ctx context.Context, in *pb.AddServiceTags
 }
 
 func (s *MicroServiceService) UpdateTag(ctx context.Context, in *pb.UpdateServiceTagRequest) (*pb.UpdateServiceTagResponse, error) {
-	err := Validate(in)
+	err := validator.Validate(in)
 	if err != nil {
 		remoteIP := util.GetIPFromContext(ctx)
 		tagFlag := util.StringJoin([]string{in.Key, in.Value}, "/")
@@ -54,7 +55,7 @@ func (s *MicroServiceService) UpdateTag(ctx context.Context, in *pb.UpdateServic
 }
 
 func (s *MicroServiceService) DeleteTags(ctx context.Context, in *pb.DeleteServiceTagsRequest) (*pb.DeleteServiceTagsResponse, error) {
-	err := Validate(in)
+	err := validator.Validate(in)
 	if err != nil {
 		remoteIP := util.GetIPFromContext(ctx)
 		log.Errorf(err, "delete service[%s]'s tags %v failed, operator: %s", in.ServiceId, in.Keys, remoteIP)
@@ -67,7 +68,7 @@ func (s *MicroServiceService) DeleteTags(ctx context.Context, in *pb.DeleteServi
 }
 
 func (s *MicroServiceService) GetTags(ctx context.Context, in *pb.GetServiceTagsRequest) (*pb.GetServiceTagsResponse, error) {
-	err := Validate(in)
+	err := validator.Validate(in)
 	if err != nil {
 		log.Errorf(err, "get service[%s]'s tags failed", in.ServiceId)
 		return &pb.GetServiceTagsResponse{

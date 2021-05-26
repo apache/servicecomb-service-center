@@ -21,6 +21,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/server/service/validator"
 
 	pb "github.com/go-chassis/cari/discovery"
 
@@ -36,7 +37,7 @@ type InstanceService struct {
 }
 
 func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceRequest) (*pb.RegisterInstanceResponse, error) {
-	if err := Validate(in); err != nil {
+	if err := validator.Validate(in); err != nil {
 		remoteIP := util.GetIPFromContext(ctx)
 		log.Errorf(err, "register instance failed, invalid parameters, operator %s", remoteIP)
 		return &pb.RegisterInstanceResponse{
@@ -65,7 +66,7 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 
 func (s *InstanceService) Unregister(ctx context.Context,
 	in *pb.UnregisterInstanceRequest) (*pb.UnregisterInstanceResponse, error) {
-	if err := Validate(in); err != nil {
+	if err := validator.Validate(in); err != nil {
 		remoteIP := util.GetIPFromContext(ctx)
 		log.Errorf(err, "unregister instance failed, invalid parameters, operator %s", remoteIP)
 		return &pb.UnregisterInstanceResponse{
@@ -77,7 +78,7 @@ func (s *InstanceService) Unregister(ctx context.Context,
 }
 
 func (s *InstanceService) Heartbeat(ctx context.Context, in *pb.HeartbeatRequest) (*pb.HeartbeatResponse, error) {
-	if err := Validate(in); err != nil {
+	if err := validator.Validate(in); err != nil {
 		remoteIP := util.GetIPFromContext(ctx)
 		log.Errorf(err, "heartbeat failed, invalid parameters, operator %s", remoteIP)
 		return &pb.HeartbeatResponse{
@@ -101,7 +102,7 @@ func (s *InstanceService) HeartbeatSet(ctx context.Context,
 
 func (s *InstanceService) GetOneInstance(ctx context.Context,
 	in *pb.GetOneInstanceRequest) (*pb.GetOneInstanceResponse, error) {
-	err := Validate(in)
+	err := validator.Validate(in)
 	if err != nil {
 		log.Errorf(err, "get instance failed: invalid parameters")
 		return &pb.GetOneInstanceResponse{
@@ -113,7 +114,7 @@ func (s *InstanceService) GetOneInstance(ctx context.Context,
 }
 
 func (s *InstanceService) GetInstances(ctx context.Context, in *pb.GetInstancesRequest) (*pb.GetInstancesResponse, error) {
-	err := Validate(in)
+	err := validator.Validate(in)
 	if err != nil {
 		log.Errorf(err, "get instances failed: invalid parameters")
 		return &pb.GetInstancesResponse{
@@ -125,7 +126,7 @@ func (s *InstanceService) GetInstances(ctx context.Context, in *pb.GetInstancesR
 }
 
 func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest) (*pb.FindInstancesResponse, error) {
-	err := Validate(in)
+	err := validator.Validate(in)
 	if err != nil {
 		log.Errorf(err, "find instance failed: invalid parameters")
 		return &pb.FindInstancesResponse{
@@ -145,7 +146,7 @@ func (s *InstanceService) BatchFind(ctx context.Context, in *pb.BatchFindInstanc
 		}, nil
 	}
 
-	err := Validate(in)
+	err := validator.Validate(in)
 	if err != nil {
 		log.Errorf(err, "batch find instance failed: invalid parameters")
 		return &pb.BatchFindInstancesResponse{
@@ -157,7 +158,7 @@ func (s *InstanceService) BatchFind(ctx context.Context, in *pb.BatchFindInstanc
 }
 
 func (s *InstanceService) UpdateStatus(ctx context.Context, in *pb.UpdateInstanceStatusRequest) (*pb.UpdateInstanceStatusResponse, error) {
-	if err := Validate(in); err != nil {
+	if err := validator.Validate(in); err != nil {
 		updateStatusFlag := util.StringJoin([]string{in.ServiceId, in.InstanceId, in.Status}, "/")
 		log.Errorf(nil, "update instance[%s] status failed", updateStatusFlag)
 		return &pb.UpdateInstanceStatusResponse{
@@ -169,7 +170,7 @@ func (s *InstanceService) UpdateStatus(ctx context.Context, in *pb.UpdateInstanc
 }
 
 func (s *InstanceService) UpdateInstanceProperties(ctx context.Context, in *pb.UpdateInstancePropsRequest) (*pb.UpdateInstancePropsResponse, error) {
-	if err := Validate(in); err != nil {
+	if err := validator.Validate(in); err != nil {
 		instanceFlag := util.StringJoin([]string{in.ServiceId, in.InstanceId}, "/")
 		log.Errorf(nil, "update instance[%s] properties failed", instanceFlag)
 		return &pb.UpdateInstancePropsResponse{

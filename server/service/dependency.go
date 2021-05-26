@@ -19,6 +19,7 @@ package service
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/server/service/validator"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -27,7 +28,7 @@ import (
 
 func (s *MicroServiceService) AddDependenciesForMicroServices(ctx context.Context,
 	in *pb.AddDependenciesRequest) (*pb.AddDependenciesResponse, error) {
-	if err := Validate(in); err != nil {
+	if err := validator.Validate(in); err != nil {
 		return &pb.AddDependenciesResponse{
 			Response: datasource.BadParamsResponse(err.Error()).Response,
 		}, nil
@@ -39,7 +40,7 @@ func (s *MicroServiceService) AddDependenciesForMicroServices(ctx context.Contex
 
 func (s *MicroServiceService) CreateDependenciesForMicroServices(ctx context.Context,
 	in *pb.CreateDependenciesRequest) (*pb.CreateDependenciesResponse, error) {
-	if err := Validate(in); err != nil {
+	if err := validator.Validate(in); err != nil {
 		return &pb.CreateDependenciesResponse{
 			Response: datasource.BadParamsResponse(err.Error()).Response,
 		}, nil
@@ -51,7 +52,7 @@ func (s *MicroServiceService) CreateDependenciesForMicroServices(ctx context.Con
 
 func (s *MicroServiceService) GetProviderDependencies(ctx context.Context,
 	in *pb.GetDependenciesRequest) (*pb.GetProDependenciesResponse, error) {
-	err := Validate(in)
+	err := validator.Validate(in)
 	if err != nil {
 		log.Errorf(err, "GetProviderDependencies failed for validating parameters failed")
 		return &pb.GetProDependenciesResponse{
@@ -63,7 +64,7 @@ func (s *MicroServiceService) GetProviderDependencies(ctx context.Context,
 }
 
 func (s *MicroServiceService) GetConsumerDependencies(ctx context.Context, in *pb.GetDependenciesRequest) (*pb.GetConDependenciesResponse, error) {
-	err := Validate(in)
+	err := validator.Validate(in)
 	if err != nil {
 		log.Errorf(err, "GetConsumerDependencies failed for validating parameters failed")
 		return &pb.GetConDependenciesResponse{

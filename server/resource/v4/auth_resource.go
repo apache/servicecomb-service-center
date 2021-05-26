@@ -29,9 +29,9 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/service"
 	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
+	"github.com/apache/servicecomb-service-center/server/service/validator"
 
 	"github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/cari/rbac"
@@ -66,7 +66,7 @@ func (ar *AuthResource) CreateAccount(w http.ResponseWriter, req *http.Request) 
 		rest.WriteError(w, discovery.ErrInvalidParams, errorsEx.MsgJSON)
 		return
 	}
-	err = service.ValidateCreateAccount(a)
+	err = validator.ValidateCreateAccount(a)
 	if err != nil {
 		rest.WriteError(w, discovery.ErrInvalidParams, err.Error())
 		return
@@ -168,7 +168,7 @@ func (ar *AuthResource) ChangePassword(w http.ResponseWriter, req *http.Request)
 		return
 	}
 	a.Name = req.URL.Query().Get(":name")
-	err = service.ValidateChangePWD(a)
+	err = validator.ValidateChangePWD(a)
 	if err != nil {
 		rest.WriteError(w, discovery.ErrInvalidParams, err.Error())
 		return
@@ -219,7 +219,7 @@ func (ar *AuthResource) Login(w http.ResponseWriter, r *http.Request) {
 	if a.TokenExpirationTime == "" {
 		a.TokenExpirationTime = "30m"
 	}
-	err = service.ValidateAccountLogin(a)
+	err = validator.ValidateAccountLogin(a)
 	if err != nil {
 		rest.WriteError(w, discovery.ErrInvalidParams, err.Error())
 		return
