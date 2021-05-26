@@ -29,7 +29,7 @@ type Authenticate interface {
 	Identify(r *http.Request) error
 	// ResourceScopes return the scope parsed from request
 	// return nil mean apply all resources
-	ResourceScopes(r *http.Request) []*ResourceScope
+	ResourceScopes(r *http.Request) *ResourceScope
 }
 
 func Auth() Authenticate {
@@ -40,6 +40,6 @@ func Identify(r *http.Request) error {
 	return Auth().Identify(r)
 }
 
-func ResourceScopes(r *http.Request) []*ResourceScope {
+func ResourceScopes(r *http.Request) *ResourceScope {
 	return Auth().ResourceScopes(r)
 }
