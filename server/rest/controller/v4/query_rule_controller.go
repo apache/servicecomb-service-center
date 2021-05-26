@@ -27,7 +27,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/rest/controller"
 	pb "github.com/go-chassis/cari/discovery"
 )
 
@@ -47,14 +46,14 @@ func (s *RuleService) AddRule(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
-		controller.WriteError(w, pb.ErrInvalidParams, err.Error())
+		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
 	rule := map[string][]*pb.AddOrUpdateServiceRule{}
 	err = json.Unmarshal(message, &rule)
 	if err != nil {
 		log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(message))
-		controller.WriteError(w, pb.ErrInvalidParams, err.Error())
+		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
 
@@ -64,10 +63,10 @@ func (s *RuleService) AddRule(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		log.Errorf(err, "add rule failed")
-		controller.WriteError(w, pb.ErrInternal, "add rule failed")
+		rest.WriteError(w, pb.ErrInternal, "add rule failed")
 		return
 	}
-	controller.WriteResponse(w, r, resp.Response, resp)
+	rest.WriteResponse(w, r, resp.Response, resp)
 }
 
 func (s *RuleService) DeleteRule(w http.ResponseWriter, r *http.Request) {
@@ -79,14 +78,14 @@ func (s *RuleService) DeleteRule(w http.ResponseWriter, r *http.Request) {
 		ServiceId: query.Get(":serviceId"),
 		RuleIds:   ids,
 	})
-	controller.WriteResponse(w, r, resp.Response, nil)
+	rest.WriteResponse(w, r, resp.Response, nil)
 }
 
 func (s *RuleService) UpdateRule(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
-		controller.WriteError(w, pb.ErrInvalidParams, err.Error())
+		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
 
@@ -94,7 +93,7 @@ func (s *RuleService) UpdateRule(w http.ResponseWriter, r *http.Request) {
 	err = json.Unmarshal(message, &rule)
 	if err != nil {
 		log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(message))
-		controller.WriteError(w, pb.ErrInvalidParams, err.Error())
+		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
 	query := r.URL.Query()
@@ -105,15 +104,15 @@ func (s *RuleService) UpdateRule(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		log.Errorf(err, "update rule failed")
-		controller.WriteError(w, pb.ErrInternal, "update rule failed")
+		rest.WriteError(w, pb.ErrInternal, "update rule failed")
 		return
 	}
-	controller.WriteResponse(w, r, resp.Response, nil)
+	rest.WriteResponse(w, r, resp.Response, nil)
 }
 
 func (s *RuleService) GetRules(w http.ResponseWriter, r *http.Request) {
 	resp, _ := core.ServiceAPI.GetRule(r.Context(), &pb.GetServiceRulesRequest{
 		ServiceId: r.URL.Query().Get(":serviceId"),
 	})
-	controller.WriteResponse(w, r, resp.Response, resp)
+	rest.WriteResponse(w, r, resp.Response, resp)
 }

@@ -26,7 +26,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/rest/controller"
 	pb "github.com/go-chassis/cari/discovery"
 )
 
@@ -47,23 +46,23 @@ func (s *DependencyService) AddDependenciesForMicroServices(w http.ResponseWrite
 	requestBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
-		controller.WriteError(w, pb.ErrInvalidParams, err.Error())
+		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
 	request := &pb.AddDependenciesRequest{}
 	err = json.Unmarshal(requestBody, request)
 	if err != nil {
 		log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(requestBody))
-		controller.WriteError(w, pb.ErrInvalidParams, err.Error())
+		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
 
 	resp, err := core.ServiceAPI.AddDependenciesForMicroServices(r.Context(), request)
 	if err != nil {
-		controller.WriteError(w, pb.ErrInternal, err.Error())
+		rest.WriteError(w, pb.ErrInternal, err.Error())
 	}
 	w.Header().Add("Deprecation", "version=\"v4\"")
-	controller.WriteResponse(w, r, resp.Response, nil)
+	rest.WriteResponse(w, r, resp.Response, nil)
 }
 
 //Deprecated
@@ -71,23 +70,23 @@ func (s *DependencyService) CreateDependenciesForMicroServices(w http.ResponseWr
 	requestBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
-		controller.WriteError(w, pb.ErrInvalidParams, err.Error())
+		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
 	request := &pb.CreateDependenciesRequest{}
 	err = json.Unmarshal(requestBody, request)
 	if err != nil {
 		log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(requestBody))
-		controller.WriteError(w, pb.ErrInvalidParams, err.Error())
+		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
 
 	resp, err := core.ServiceAPI.CreateDependenciesForMicroServices(r.Context(), request)
 	if err != nil {
-		controller.WriteError(w, pb.ErrInternal, err.Error())
+		rest.WriteError(w, pb.ErrInternal, err.Error())
 	}
 	w.Header().Add("Deprecation", "version=\"v4\"")
-	controller.WriteResponse(w, r, resp.Response, nil)
+	rest.WriteResponse(w, r, resp.Response, nil)
 }
 
 func (s *DependencyService) GetConProDependencies(w http.ResponseWriter, r *http.Request) {
@@ -98,7 +97,7 @@ func (s *DependencyService) GetConProDependencies(w http.ResponseWriter, r *http
 		NoSelf:     query.Get("noSelf") == "1",
 	}
 	resp, _ := core.ServiceAPI.GetConsumerDependencies(r.Context(), request)
-	controller.WriteResponse(w, r, resp.Response, resp)
+	rest.WriteResponse(w, r, resp.Response, resp)
 }
 
 func (s *DependencyService) GetProConDependencies(w http.ResponseWriter, r *http.Request) {
@@ -109,5 +108,5 @@ func (s *DependencyService) GetProConDependencies(w http.ResponseWriter, r *http
 		NoSelf:     query.Get("noSelf") == "1",
 	}
 	resp, _ := core.ServiceAPI.GetProviderDependencies(r.Context(), request)
-	controller.WriteResponse(w, r, resp.Response, resp)
+	rest.WriteResponse(w, r, resp.Response, resp)
 }

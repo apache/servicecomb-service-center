@@ -27,7 +27,6 @@ import (
 
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/broker/brokerpb"
-	"github.com/apache/servicecomb-service-center/server/rest/controller"
 	pb "github.com/go-chassis/cari/discovery"
 )
 
@@ -69,14 +68,14 @@ func (brokerService *Controller) GetHome(w http.ResponseWriter, r *http.Request)
 		Scheme:      getScheme(r),
 	}
 	resp, _ := ServiceAPI.GetBrokerHome(r.Context(), request)
-	controller.WriteResponse(w, r, resp.Response, resp)
+	rest.WriteResponse(w, r, resp.Response, resp)
 }
 
 func (*Controller) PublishPact(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		PactLogger.Error("body err\n", err)
-		controller.WriteError(w, pb.ErrInvalidParams, err.Error())
+		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
 	query := r.URL.Query()
@@ -91,10 +90,10 @@ func (*Controller) PublishPact(w http.ResponseWriter, r *http.Request) {
 	resp, err := ServiceAPI.PublishPact(r.Context(), request)
 	if err != nil {
 		log.Errorf(err, "can not push pact")
-		controller.WriteError(w, pb.ErrInternal, "can not push pact")
+		rest.WriteError(w, pb.ErrInternal, "can not push pact")
 		return
 	}
-	controller.WriteResponse(w, r, resp.Response, resp)
+	rest.WriteResponse(w, r, resp.Response, resp)
 }
 
 func (*Controller) GetAllProviderPacts(w http.ResponseWriter, r *http.Request) {
@@ -108,17 +107,17 @@ func (*Controller) GetAllProviderPacts(w http.ResponseWriter, r *http.Request) {
 	resp, err := ServiceAPI.GetAllProviderPacts(r.Context(), request /*, href*/)
 	if err != nil {
 		PactLogger.Errorf(err, "can not get pacts")
-		controller.WriteError(w, pb.ErrInternal, "can not get pacts")
+		rest.WriteError(w, pb.ErrInternal, "can not get pacts")
 		return
 	}
 	linksObj, err := json.Marshal(resp)
 	if err != nil {
 		PactLogger.Errorf(err, "invalid ProviderPacts")
-		controller.WriteError(w, pb.ErrInternal, "Marshal error")
+		rest.WriteError(w, pb.ErrInternal, "Marshal error")
 		return
 	}
 	PactLogger.Infof("Pact info: %s\n", string(linksObj))
-	controller.WriteResponse(w, r, resp.Response, resp)
+	rest.WriteResponse(w, r, resp.Response, resp)
 }
 
 func (*Controller) GetPactsOfProvider(w http.ResponseWriter, r *http.Request) {
@@ -134,7 +133,7 @@ func (*Controller) GetPactsOfProvider(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp, _ := ServiceAPI.GetPactsOfProvider(r.Context(), request)
-	controller.WriteResponse(w, r, resp.Response, resp.Pact)
+	rest.WriteResponse(w, r, resp.Response, resp.Pact)
 }
 
 func (*Controller) DeletePacts(w http.ResponseWriter, r *http.Request) {
@@ -142,21 +141,21 @@ func (*Controller) DeletePacts(w http.ResponseWriter, r *http.Request) {
 		HostAddress: r.Host,
 		Scheme:      getScheme(r),
 	})
-	controller.WriteResponse(w, r, resp, nil)
+	rest.WriteResponse(w, r, resp, nil)
 }
 
 func (*Controller) PublishVerificationResults(w http.ResponseWriter, r *http.Request) {
 	requestBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		PactLogger.Error("body err", err)
-		controller.WriteError(w, pb.ErrInvalidParams, err.Error())
+		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
 	request := &brokerpb.PublishVerificationRequest{}
 	err = json.Unmarshal(requestBody, request)
 	if err != nil {
 		PactLogger.Error("Unmarshal error", err)
-		controller.WriteError(w, pb.ErrInvalidParams, err.Error())
+		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
 	query := r.URL.Query()
@@ -165,7 +164,7 @@ func (*Controller) PublishVerificationResults(w http.ResponseWriter, r *http.Req
 	i, err := strconv.ParseInt(query.Get(":sha"), 10, 32)
 	if err != nil {
 		PactLogger.Error("Invalid pactId", err)
-		controller.WriteError(w, pb.ErrInvalidParams, err.Error())
+		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
 	request.PactId = int32(i)
@@ -176,10 +175,10 @@ func (*Controller) PublishVerificationResults(w http.ResponseWriter, r *http.Req
 		request)
 	if err != nil {
 		PactLogger.Error("publish failed", err)
-		controller.WriteError(w, pb.ErrInternal, "publish failed")
+		rest.WriteError(w, pb.ErrInternal, "publish failed")
 		return
 	}
-	controller.WriteResponse(w, r, resp.Response, resp)
+	rest.WriteResponse(w, r, resp.Response, resp)
 }
 
 func (*Controller) RetrieveVerificationResults(w http.ResponseWriter, r *http.Request) {
@@ -190,7 +189,7 @@ func (*Controller) RetrieveVerificationResults(w http.ResponseWriter, r *http.Re
 	PactLogger.Infof("Retrieve verification results for: %s, %s\n",
 		request.ConsumerId, request.ConsumerVersion)
 	resp, _ := ServiceAPI.RetrieveVerificationResults(r.Context(), request)
-	controller.WriteResponse(w, r, resp.Response, resp)
+	rest.WriteResponse(w, r, resp.Response, resp)
 }
 
 func getScheme(r *http.Request) string {

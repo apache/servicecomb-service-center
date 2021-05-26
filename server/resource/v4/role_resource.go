@@ -27,7 +27,6 @@ import (
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
-	"github.com/apache/servicecomb-service-center/server/rest/controller"
 	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
 
 	"github.com/go-chassis/cari/discovery"
@@ -55,14 +54,14 @@ func (rr *RoleResource) GetRolePermission(w http.ResponseWriter, req *http.Reque
 	rs, num, err := dao.ListRole(context.TODO())
 	if err != nil {
 		log.Error(errorsEx.MsgGetRoleFailed, err)
-		controller.WriteError(w, discovery.ErrInternal, errorsEx.MsgGetRoleFailed)
+		rest.WriteError(w, discovery.ErrInternal, errorsEx.MsgGetRoleFailed)
 		return
 	}
 	resp := &rbac.RoleResponse{
 		Total: num,
 		Roles: rs,
 	}
-	controller.WriteResponse(w, req, nil, resp)
+	rest.WriteResponse(w, req, nil, resp)
 }
 
 //roleParse parse the role info from the request body
@@ -82,52 +81,52 @@ func (rr *RoleResource) CreateRolePermission(w http.ResponseWriter, req *http.Re
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		log.Error("read body err", err)
-		controller.WriteError(w, discovery.ErrInternal, err.Error())
+		rest.WriteError(w, discovery.ErrInternal, err.Error())
 		return
 	}
 	role, err := rr.roleParse(body)
 	if err != nil {
-		controller.WriteError(w, discovery.ErrInvalidParams, errorsEx.MsgJSON)
+		rest.WriteError(w, discovery.ErrInvalidParams, errorsEx.MsgJSON)
 		return
 	}
 	err = dao.CreateRole(context.TODO(), role)
 	if err != nil {
 		if err == datasource.ErrRoleDuplicated {
-			controller.WriteError(w, ErrConflictRole, "")
+			rest.WriteError(w, ErrConflictRole, "")
 			return
 		}
 		log.Error(errorsEx.MsgOperateRoleFailed, err)
-		controller.WriteError(w, discovery.ErrInternal, errorsEx.MsgOperateRoleFailed)
+		rest.WriteError(w, discovery.ErrInternal, errorsEx.MsgOperateRoleFailed)
 		return
 	}
-	controller.WriteSuccess(w, req)
+	rest.WriteSuccess(w, req)
 }
 
 //UpdateRolePermission update role permissions
 func (rr *RoleResource) UpdateRolePermission(w http.ResponseWriter, req *http.Request) {
 	name := req.URL.Query().Get(":roleName")
 	if isBuildInRole(name) {
-		controller.WriteError(w, discovery.ErrInvalidParams, errorsEx.MsgCantOperateRole)
+		rest.WriteError(w, discovery.ErrInvalidParams, errorsEx.MsgCantOperateRole)
 		return
 	}
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		log.Error("read body err", err)
-		controller.WriteError(w, discovery.ErrInternal, err.Error())
+		rest.WriteError(w, discovery.ErrInternal, err.Error())
 		return
 	}
 	role, err := rr.roleParse(body)
 	if err != nil {
-		controller.WriteError(w, discovery.ErrInvalidParams, errorsEx.MsgJSON)
+		rest.WriteError(w, discovery.ErrInvalidParams, errorsEx.MsgJSON)
 		return
 	}
 	err = dao.EditRole(context.TODO(), name, role)
 	if err != nil {
 		log.Error(errorsEx.MsgOperateRoleFailed, err)
-		controller.WriteError(w, discovery.ErrInternal, errorsEx.MsgOperateRoleFailed)
+		rest.WriteError(w, discovery.ErrInternal, errorsEx.MsgOperateRoleFailed)
 		return
 	}
-	controller.WriteSuccess(w, req)
+	rest.WriteSuccess(w, req)
 }
 
 //GetRole get the role info according to role name
@@ -135,25 +134,25 @@ func (rr *RoleResource) GetRole(w http.ResponseWriter, r *http.Request) {
 	role, err := dao.GetRole(context.TODO(), r.URL.Query().Get(":roleName"))
 	if err != nil {
 		log.Error(errorsEx.MsgGetRoleFailed, err)
-		controller.WriteError(w, discovery.ErrInternal, errorsEx.MsgGetRoleFailed)
+		rest.WriteError(w, discovery.ErrInternal, errorsEx.MsgGetRoleFailed)
 	}
-	controller.WriteResponse(w, r, nil, role)
+	rest.WriteResponse(w, r, nil, role)
 }
 
 //DeleteRole delete the role info by role name
 func (rr *RoleResource) DeleteRole(w http.ResponseWriter, req *http.Request) {
 	n := req.URL.Query().Get(":roleName")
 	if isBuildInRole(n) {
-		controller.WriteError(w, discovery.ErrInvalidParams, errorsEx.MsgCantOperateRole)
+		rest.WriteError(w, discovery.ErrInvalidParams, errorsEx.MsgCantOperateRole)
 		return
 	}
 	_, err := dao.DeleteRole(context.TODO(), n)
 	if err != nil {
 		log.Error(errorsEx.MsgJSON, err)
-		controller.WriteError(w, discovery.ErrInternal, errorsEx.MsgJSON)
+		rest.WriteError(w, discovery.ErrInternal, errorsEx.MsgJSON)
 		return
 	}
-	controller.WriteSuccess(w, req)
+	rest.WriteSuccess(w, req)
 }
 func isBuildInRole(role string) bool {
 	if role == rbac.RoleAdmin || role == rbac.RoleDeveloper {

@@ -26,7 +26,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/rest/controller"
 	pb "github.com/go-chassis/cari/discovery"
 )
 
@@ -52,30 +51,30 @@ func (s *MicroServiceService) Register(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
-		controller.WriteError(w, pb.ErrInvalidParams, err.Error())
+		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
 	var request pb.CreateServiceRequest
 	err = json.Unmarshal(message, &request)
 	if err != nil {
 		log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(message))
-		controller.WriteError(w, pb.ErrInvalidParams, err.Error())
+		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
 	resp, err := core.ServiceAPI.Create(r.Context(), &request)
 	if err != nil {
 		log.Errorf(err, "create service failed")
-		controller.WriteError(w, pb.ErrInternal, err.Error())
+		rest.WriteError(w, pb.ErrInternal, err.Error())
 		return
 	}
-	controller.WriteResponse(w, r, resp.Response, resp)
+	rest.WriteResponse(w, r, resp.Response, resp)
 }
 
 func (s *MicroServiceService) Update(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
-		controller.WriteError(w, pb.ErrInvalidParams, err.Error())
+		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
 	request := &pb.UpdateServicePropsRequest{
@@ -84,16 +83,16 @@ func (s *MicroServiceService) Update(w http.ResponseWriter, r *http.Request) {
 	err = json.Unmarshal(message, request)
 	if err != nil {
 		log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(message))
-		controller.WriteError(w, pb.ErrInvalidParams, err.Error())
+		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
 	resp, err := core.ServiceAPI.UpdateProperties(r.Context(), request)
 	if err != nil {
 		log.Errorf(err, "can not update service")
-		controller.WriteError(w, pb.ErrInternal, "can not update service")
+		rest.WriteError(w, pb.ErrInternal, "can not update service")
 		return
 	}
-	controller.WriteResponse(w, r, resp.Response, nil)
+	rest.WriteResponse(w, r, resp.Response, nil)
 }
 
 func (s *MicroServiceService) Unregister(w http.ResponseWriter, r *http.Request) {
@@ -103,7 +102,7 @@ func (s *MicroServiceService) Unregister(w http.ResponseWriter, r *http.Request)
 
 	b, ok := trueOrFalse[force]
 	if force != "" && !ok {
-		controller.WriteError(w, pb.ErrInvalidParams, "parameter force must be false or true")
+		rest.WriteError(w, pb.ErrInvalidParams, "parameter force must be false or true")
 		return
 	}
 
@@ -114,10 +113,10 @@ func (s *MicroServiceService) Unregister(w http.ResponseWriter, r *http.Request)
 	resp, err := core.ServiceAPI.Delete(r.Context(), request)
 	if err != nil {
 		log.Errorf(err, "delete service[%s] failed", serviceID)
-		controller.WriteError(w, pb.ErrInternal, "delete service failed")
+		rest.WriteError(w, pb.ErrInternal, "delete service failed")
 		return
 	}
-	controller.WriteResponse(w, r, resp.Response, nil)
+	rest.WriteResponse(w, r, resp.Response, nil)
 }
 
 func (s *MicroServiceService) GetServices(w http.ResponseWriter, r *http.Request) {
@@ -125,10 +124,10 @@ func (s *MicroServiceService) GetServices(w http.ResponseWriter, r *http.Request
 	resp, err := core.ServiceAPI.GetServices(r.Context(), request)
 	if err != nil {
 		log.Errorf(err, "get services failed")
-		controller.WriteError(w, pb.ErrInternal, err.Error())
+		rest.WriteError(w, pb.ErrInternal, err.Error())
 		return
 	}
-	controller.WriteResponse(w, r, resp.Response, resp)
+	rest.WriteResponse(w, r, resp.Response, resp)
 }
 
 func (s *MicroServiceService) GetExistence(w http.ResponseWriter, r *http.Request) {
@@ -145,12 +144,12 @@ func (s *MicroServiceService) GetExistence(w http.ResponseWriter, r *http.Reques
 	resp, err := core.ServiceAPI.Exist(r.Context(), request)
 	if err != nil {
 		log.Errorf(err, "check service existence failed")
-		controller.WriteError(w, pb.ErrInternal, "check service existence failed")
+		rest.WriteError(w, pb.ErrInternal, "check service existence failed")
 		return
 	}
 	w.Header().Add("X-Schema-Summary", resp.Summary)
 	resp.Summary = ""
-	controller.WriteResponse(w, r, resp.Response, resp)
+	rest.WriteResponse(w, r, resp.Response, resp)
 }
 
 func (s *MicroServiceService) GetServiceOne(w http.ResponseWriter, r *http.Request) {
@@ -160,17 +159,17 @@ func (s *MicroServiceService) GetServiceOne(w http.ResponseWriter, r *http.Reque
 	resp, err := core.ServiceAPI.GetOne(r.Context(), request)
 	if err != nil {
 		log.Errorf(err, "get service[%s] failed", request.ServiceId)
-		controller.WriteError(w, pb.ErrInternal, "get service failed")
+		rest.WriteError(w, pb.ErrInternal, "get service failed")
 		return
 	}
-	controller.WriteResponse(w, r, resp.Response, resp)
+	rest.WriteResponse(w, r, resp.Response, resp)
 }
 
 func (s *MicroServiceService) UnregisterServices(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
-		controller.WriteError(w, pb.ErrInvalidParams, err.Error())
+		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
 
@@ -179,15 +178,15 @@ func (s *MicroServiceService) UnregisterServices(w http.ResponseWriter, r *http.
 	err = json.Unmarshal(message, request)
 	if err != nil {
 		log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(message))
-		controller.WriteError(w, pb.ErrInvalidParams, err.Error())
+		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
 
 	resp, err := core.ServiceAPI.DeleteServices(r.Context(), request)
 	if err != nil {
 		log.Errorf(err, "delete services failed")
-		controller.WriteError(w, pb.ErrInternal, "delete services failed")
+		rest.WriteError(w, pb.ErrInternal, "delete services failed")
 		return
 	}
-	controller.WriteResponse(w, r, resp.Response, resp)
+	rest.WriteResponse(w, r, resp.Response, resp)
 }

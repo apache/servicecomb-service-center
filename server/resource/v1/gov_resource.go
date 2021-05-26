@@ -24,7 +24,6 @@ import (
 	model "github.com/apache/servicecomb-service-center/pkg/gov"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
-	"github.com/apache/servicecomb-service-center/server/rest/controller"
 	"github.com/apache/servicecomb-service-center/server/service/gov"
 	"github.com/apache/servicecomb-service-center/server/service/gov/kie"
 	"github.com/go-chassis/cari/discovery"
@@ -50,21 +49,21 @@ func (t *Governance) Create(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body err", err)
-		controller.WriteError(w, discovery.ErrInternal, err.Error())
+		rest.WriteError(w, discovery.ErrInternal, err.Error())
 		return
 	}
 	id, err := gov.Create(kind, project, body)
 	if err != nil {
 		if _, ok := err.(*kie.ErrIllegalItem); ok {
 			log.Error("", err)
-			controller.WriteError(w, discovery.ErrInvalidParams, err.Error())
+			rest.WriteError(w, discovery.ErrInvalidParams, err.Error())
 			return
 		}
 		processError(w, err, "create gov data err")
 		return
 	}
 
-	controller.WriteResponse(w, r, nil, &model.Policy{GovernancePolicy: &model.GovernancePolicy{ID: string(id)}})
+	rest.WriteResponse(w, r, nil, &model.Policy{GovernancePolicy: &model.GovernancePolicy{ID: string(id)}})
 }
 
 //Put gov config
@@ -82,13 +81,13 @@ func (t *Governance) Put(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if _, ok := err.(*kie.ErrIllegalItem); ok {
 			log.Error("", err)
-			controller.WriteError(w, discovery.ErrInvalidParams, err.Error())
+			rest.WriteError(w, discovery.ErrInvalidParams, err.Error())
 			return
 		}
 		processError(w, err, "put gov err")
 		return
 	}
-	controller.WriteResponse(w, r, nil, nil)
+	rest.WriteResponse(w, r, nil, nil)
 }
 
 //ListOrDisPlay return all gov config
@@ -109,7 +108,7 @@ func (t *Governance) ListOrDisPlay(w http.ResponseWriter, r *http.Request) {
 		processError(w, err, "list gov err")
 		return
 	}
-	controller.WriteResponse(w, r, nil, body)
+	rest.WriteResponse(w, r, nil, body)
 }
 
 //Get gov config
@@ -123,7 +122,7 @@ func (t *Governance) Get(w http.ResponseWriter, r *http.Request) {
 		processError(w, err, "get gov err")
 		return
 	}
-	controller.WriteResponse(w, r, nil, body)
+	rest.WriteResponse(w, r, nil, body)
 }
 
 //Delete delete gov config
@@ -137,12 +136,12 @@ func (t *Governance) Delete(w http.ResponseWriter, r *http.Request) {
 		processError(w, err, "delete gov err")
 		return
 	}
-	controller.WriteResponse(w, r, nil, nil)
+	rest.WriteResponse(w, r, nil, nil)
 }
 
 func processError(w http.ResponseWriter, err error, msg string) {
 	log.Error(msg, err)
-	controller.WriteError(w, discovery.ErrInternal, err.Error())
+	rest.WriteError(w, discovery.ErrInternal, err.Error())
 }
 
 func (t *Governance) URLPatterns() []rest.Route {

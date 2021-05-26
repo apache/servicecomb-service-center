@@ -15,31 +15,22 @@
  * limitations under the License.
  */
 
-package controller
+package rest
 
 import (
 	"encoding/json"
 	"net/http"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/alarm"
 	"github.com/go-chassis/cari/discovery"
 )
 
 func WriteError(w http.ResponseWriter, code int32, detail string) {
 	err := discovery.NewError(code, detail)
-	w.Header().Set(rest.HeaderContentType, rest.ContentTypeJSON)
+	w.Header().Set(HeaderContentType, ContentTypeJSON)
 	w.WriteHeader(err.StatusCode())
 	_, _ = w.Write(err.Marshal())
-
-	if err.InternalError() {
-		err := alarm.Raise(alarm.IDInternalError, alarm.AdditionalContext(detail))
-		if err != nil {
-			log.Error("", err)
-		}
-	}
 }
 
 // WriteResponse writes http response
@@ -54,12 +45,12 @@ func WriteResponse(w http.ResponseWriter, r *http.Request, resp *discovery.Respo
 	}
 
 	if obj == nil {
-		w.Header().Set(rest.HeaderContentType, rest.ContentTypeText)
+		w.Header().Set(HeaderContentType, ContentTypeText)
 		w.WriteHeader(http.StatusOK)
 		return
 	}
 
-	util.SetRequestContext(r, rest.CtxResponseObject, obj)
+	util.SetRequestContext(r, CtxResponseObject, obj)
 
 	var (
 		data []byte
@@ -75,7 +66,7 @@ func WriteResponse(w http.ResponseWriter, r *http.Request, resp *discovery.Respo
 			return
 		}
 	}
-	w.Header().Set(rest.HeaderContentType, rest.ContentTypeJSON)
+	w.Header().Set(HeaderContentType, ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
 	_, err = w.Write(data)
 	if err != nil {
