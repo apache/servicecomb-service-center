@@ -18,6 +18,9 @@
 package auth
 
 import (
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/response"
+	"github.com/apache/servicecomb-service-center/server/rest/controller"
 	"net/http"
 
 	"github.com/apache/servicecomb-service-center/pkg/chain"
@@ -26,6 +29,8 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/auth"
 	"github.com/go-chassis/cari/discovery"
 )
+
+const CtxResourceLabels util.CtxKey = "_resource_labels"
 
 type Handler struct {
 }
@@ -43,16 +48,24 @@ func (h *Handler) Handle(i *chain.Invocation) {
 		if !ret.OK {
 			return
 		}
-
-		obj := i.Context().Value(rest.CtxResponseObject)
+		apiPath, obj := i.Context().Value(rest.CtxMatchPattern).(string),
+			i.Context().Value(rest.CtxResponseObject)
 		if obj == nil {
 			return
 		}
 
-		// TODO filter and rewrite here!
-		// data, _ := json.Marshal(obj)
-		// w := i.Context().Value(rest.CtxResponse).(http.ResponseWriter)
-		// w.Write(data)
+		labels, ok := i.Context().Value(CtxResourceLabels).([]map[string]string)
+		if !ok {
+			return
+		}
+		if len(labels) == 0 {
+			// all allowed
+			return
+		}
+		obj = response.Filter(apiPath, obj, labels)
+
+		w := i.Context().Value(rest.CtxResponse).(http.ResponseWriter)
+		controller.WriteResponse(w, r, nil, obj)
 	}))
 }
 
