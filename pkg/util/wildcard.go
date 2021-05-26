@@ -23,7 +23,7 @@ import (
 )
 
 func WildcardMatch(pattern, dist string) bool {
-	regx := strings.ReplaceAll(regexp.QuoteMeta(pattern), "\\*", ".*")
+	regx := "^" + strings.ReplaceAll(regexp.QuoteMeta(pattern), "\\*", ".*") + "$"
 	matched, _ := regexp.MatchString(regx, dist)
 	return matched
 }

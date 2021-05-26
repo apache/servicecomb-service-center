@@ -26,6 +26,8 @@ import (
 func TestWildcardMatch(t *testing.T) {
 	t.Run("not regexp should match exactly", func(t *testing.T) {
 		assert.True(t, util.WildcardMatch("TestA", "TestA"))
+		assert.False(t, util.WildcardMatch("TestA", "TestAB"))
+		assert.False(t, util.WildcardMatch("TestA", "BTestA"))
 	})
 
 	t.Run("start with * should match true", func(t *testing.T) {
