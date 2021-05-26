@@ -18,6 +18,7 @@
 package response
 
 import (
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/go-chassis/cari/discovery"
 )
 
@@ -40,17 +41,24 @@ func MicroserviceListFilter(obj interface{}, labels []map[string]string) interfa
 	return servicesResponse
 }
 
+func matchOne(service *discovery.MicroService, labels map[string]string) bool {
+	if env, ok := labels["environment"]; ok && service.Environment != env {
+		return false
+	}
+	if app, ok := labels["appId"]; ok && service.AppId != app {
+		return false
+	}
+	if name, ok := labels["serviceName"]; ok && !util.WildcardMatch(name, service.ServiceName) {
+		return false
+	}
+	return true
+}
+
 func filterMicroservices(sources []*discovery.MicroService, labelsList []map[string]string) []*discovery.MicroService {
 	var services []*discovery.MicroService
 	for _, service := range sources {
 		for _, labels := range labelsList {
-			if env, ok := labels["environment"]; ok && service.Environment != env {
-				continue
-			}
-			if app, ok := labels["appId"]; ok && service.AppId != app {
-				continue
-			}
-			if name, ok := labels["serviceName"]; ok && service.ServiceName != name {
+			if !matchOne(service, labels) {
 				continue
 			}
 			services = append(services, service)
@@ -86,13 +94,7 @@ func MicroServiceInfoListFilter(obj interface{}, labelsList []map[string]string)
 	var services []*discovery.ServiceDetail
 	for _, service := range servicesResponse.AllServicesDetail {
 		for _, labels := range labelsList {
-			if env, ok := labels["environment"]; ok && service.MicroService.Environment != env {
-				continue
-			}
-			if app, ok := labels["appId"]; ok && service.MicroService.AppId != app {
-				continue
-			}
-			if name, ok := labels["serviceName"]; ok && service.MicroService.ServiceName != name {
+			if !matchOne(service.MicroService, labels) {
 				continue
 			}
 			services = append(services, service)
