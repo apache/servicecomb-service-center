@@ -125,7 +125,7 @@ func TestMicroserviceListFilter(t *testing.T) {
 		assert.Equal(t, 0, len(mss))
 	})
 
-	t.Run("match name & appId, should return empty resources", func(t *testing.T) {
+	t.Run("match name & appId, should return A", func(t *testing.T) {
 		rs := response.MicroserviceListFilter(&discovery.GetServicesResponse{
 			Services: []*discovery.MicroService{
 				{AppId: "A", ServiceName: "A"}, {ServiceName: "B"},
@@ -133,5 +133,17 @@ func TestMicroserviceListFilter(t *testing.T) {
 		}, []map[string]string{{"serviceName": "A", "appId": "A"}})
 		mss := rs.(*discovery.GetServicesResponse).Services
 		assert.Equal(t, 1, len(mss))
+		assert.Equal(t, "A", mss[0].ServiceName)
+	})
+
+	t.Run("wildcard match name, should return empty resources", func(t *testing.T) {
+		rs := response.MicroserviceListFilter(&discovery.GetServicesResponse{
+			Services: []*discovery.MicroService{
+				{ServiceName: "TestA"}, {ServiceName: "DevB"},
+			},
+		}, []map[string]string{{"serviceName": "Test*"}})
+		mss := rs.(*discovery.GetServicesResponse).Services
+		assert.Equal(t, 1, len(mss))
+		assert.Equal(t, "TestA", mss[0].ServiceName)
 	})
 }
