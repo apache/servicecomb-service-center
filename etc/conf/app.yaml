@@ -161,6 +161,7 @@ rbac:
 metrics:
   enable: true
   interval: 30s
+  exporter: prometheus
 
 tracing:
   kind:

@@ -53,4 +53,5 @@ func (c *AppConfig) GetPluginDir() string {
 type Metrics struct {
 	Enable   bool   `yaml:"enable"`
 	Interval string `yaml:"interval"`
+	Exporter string `yaml:"exporter"`
 }
