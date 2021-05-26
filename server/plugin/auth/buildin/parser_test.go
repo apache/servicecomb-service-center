@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package auth_test
+package buildin_test
 
 import (
 	"context"
@@ -26,7 +26,7 @@ import (
 	_ "github.com/apache/servicecomb-service-center/test"
 
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/server/handler/auth"
+	"github.com/apache/servicecomb-service-center/server/plugin/auth/buildin"
 	"github.com/go-chassis/cari/discovery"
 	"github.com/stretchr/testify/assert"
 )
@@ -53,7 +53,7 @@ func TestGetAPIParseFunc(t *testing.T) {
 		request, err := http.NewRequest(http.MethodGet, "/v4/default/registry/microservices", nil)
 		assert.NoError(t, err)
 
-		labels, err := auth.GetAPIParseFunc("/v4/:project/registry/microservices")(request)
+		labels, err := buildin.GetAPIParseFunc("/v4/:project/registry/microservices")(request)
 		assert.NoError(t, err)
 		assert.Nil(t, labels)
 	})
@@ -64,7 +64,7 @@ func TestGetAPIParseFunc(t *testing.T) {
 		request, err := http.NewRequest(http.MethodPost, "/v4/default/registry/microservices", reader)
 		assert.NoError(t, err)
 
-		_, err = auth.GetAPIParseFunc("/v4/:project/registry/microservices")(request)
+		_, err = buildin.GetAPIParseFunc("/v4/:project/registry/microservices")(request)
 		assert.Error(t, err)
 	})
 
@@ -74,7 +74,7 @@ func TestGetAPIParseFunc(t *testing.T) {
 		request, err := http.NewRequest(http.MethodPost, "/v4/default/registry/microservices", reader)
 		assert.NoError(t, err)
 
-		labels, err := auth.GetAPIParseFunc("/v4/:project/registry/microservices")(request)
+		labels, err := buildin.GetAPIParseFunc("/v4/:project/registry/microservices")(request)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(labels))
 		assert.Equal(t, "A", labels[0]["serviceName"])
@@ -86,7 +86,7 @@ func TestGetAPIParseFunc(t *testing.T) {
 		request, err := http.NewRequest(http.MethodDelete, "/v4/default/registry/microservices", reader)
 		assert.NoError(t, err)
 
-		labels, err := auth.GetAPIParseFunc("/v4/:project/registry/microservices")(request)
+		labels, err := buildin.GetAPIParseFunc("/v4/:project/registry/microservices")(request)
 		assert.NoError(t, err)
 		assert.Equal(t, 2, len(labels))
 		assert.Equal(t, "A", labels[0]["serviceName"])
@@ -96,7 +96,7 @@ func TestGetAPIParseFunc(t *testing.T) {
 		request, err := http.NewRequest(http.MethodGet, "/v4/default/registry/microservices/"+serviceIDA+"/instances?:serviceId="+serviceIDA, nil)
 		assert.NoError(t, err)
 
-		labels, err := auth.GetAPIParseFunc("/v4/:project/registry/microservices/:serviceId/instances")(request)
+		labels, err := buildin.GetAPIParseFunc("/v4/:project/registry/microservices/:serviceId/instances")(request)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(labels))
 		assert.Equal(t, "A", labels[0]["serviceName"])
@@ -106,7 +106,7 @@ func TestGetAPIParseFunc(t *testing.T) {
 		request, err := http.NewRequest(http.MethodGet, "/v4/default/registry/instances?serviceName=A", nil)
 		assert.NoError(t, err)
 
-		labels, err := auth.GetAPIParseFunc("/v4/:project/registry/instances")(request)
+		labels, err := buildin.GetAPIParseFunc("/v4/:project/registry/instances")(request)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(labels))
 		assert.Equal(t, "A", labels[0]["serviceName"])
@@ -116,7 +116,7 @@ func TestGetAPIParseFunc(t *testing.T) {
 		request, err := http.NewRequest(http.MethodGet, "/v4/default/govern/microservices?serviceName=A", nil)
 		assert.NoError(t, err)
 
-		labels, err := auth.GetAPIParseFunc("/v4/:project/govern/microservices")(request)
+		labels, err := buildin.GetAPIParseFunc("/v4/:project/govern/microservices")(request)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(labels))
 		assert.Equal(t, "A", labels[0]["serviceName"])
@@ -126,7 +126,7 @@ func TestGetAPIParseFunc(t *testing.T) {
 		request, err := http.NewRequest(http.MethodGet, "/v4/default/govern/microservices", nil)
 		assert.NoError(t, err)
 
-		labels, err := auth.GetAPIParseFunc("/v4/:project/govern/microservices")(request)
+		labels, err := buildin.GetAPIParseFunc("/v4/:project/govern/microservices")(request)
 		assert.NoError(t, err)
 		assert.Nil(t, labels)
 	})

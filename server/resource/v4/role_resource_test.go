@@ -2,6 +2,7 @@ package v4_test
 
 import (
 	_ "github.com/apache/servicecomb-service-center/test"
+	"strings"
 
 	"bytes"
 	"context"
@@ -208,7 +209,8 @@ func TestRoleResource_MoreRoles(t *testing.T) {
 		rest.GetRouter().ServeHTTP(w3, r3)
 		assert.Equal(t, http.StatusOK, w3.Code)
 
-		r4, _ := http.NewRequest(http.MethodDelete, "/v4/default/registry/microservices", nil)
+		reader := strings.NewReader("{\n  \"serviceIds\": [\n    \"MOCK\"\n  ]\n}")
+		r4, _ := http.NewRequest(http.MethodDelete, "/v4/default/registry/microservices", reader)
 		r4.Header.Set(restful.HeaderAuth, "Bearer "+devToken.TokenStr)
 		w4 := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w4, r4)

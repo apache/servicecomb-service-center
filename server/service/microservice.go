@@ -33,9 +33,6 @@ import (
 )
 
 type MicroServiceService struct {
-	// schemaEditable determines whether schema modification is allowed for
-	// services in production environment
-	schemaEditable  bool
 	instanceService proto.ServiceInstanceCtrlServerEx
 }
 

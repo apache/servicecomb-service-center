@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 
-package auth
+package buildin
 
 import (
 	"fmt"
-	"github.com/apache/servicecomb-service-center/pkg/chain"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
+	"github.com/apache/servicecomb-service-center/server/plugin/auth"
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
 	rbacmodel "github.com/go-chassis/cari/rbac"
 	"net/http"
@@ -44,9 +44,8 @@ func ApplyAll(_ *http.Request) ([]map[string]string, error) {
 	return nil, nil
 }
 
-func FromInvocation(i *chain.Invocation) []*ResourceScope {
-	r, apiPath := i.Context().Value(rest.CtxRequest).(*http.Request),
-		i.Context().Value(rest.CtxMatchPattern).(string)
+func FromRequest(r *http.Request) []*auth.ResourceScope {
+	apiPath := r.Context().Value(rest.CtxMatchPattern).(string)
 
 	resource := rbacmodel.GetResource(apiPath)
 	labels, err := GetAPIParseFunc(apiPath)(r)
@@ -54,7 +53,7 @@ func FromInvocation(i *chain.Invocation) []*ResourceScope {
 		log.Error(fmt.Sprintf("parse from request failed"), err)
 		return nil
 	}
-	return []*ResourceScope{{
+	return []*auth.ResourceScope{{
 		Type:   resource,
 		Labels: labels,
 		Verb:   rbac.MethodToVerbs[r.Method],

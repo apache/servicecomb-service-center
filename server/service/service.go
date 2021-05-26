@@ -19,7 +19,6 @@ package service
 
 import (
 	"github.com/apache/servicecomb-service-center/pkg/proto"
-	"github.com/apache/servicecomb-service-center/server/config"
 )
 
 var (
@@ -29,13 +28,12 @@ var (
 
 func AssembleResources() (proto.ServiceCtrlServer, proto.ServiceInstanceCtrlServerEx) {
 	instanceService = &InstanceService{}
-	serviceService = NewMicroServiceService(config.GetRegistry().SchemaEditable, instanceService)
+	serviceService = NewMicroServiceService(instanceService)
 	return serviceService, instanceService
 }
 
-func NewMicroServiceService(schemaEditable bool, instCtrlServer proto.ServiceInstanceCtrlServerEx) *MicroServiceService {
+func NewMicroServiceService(instCtrlServer proto.ServiceInstanceCtrlServerEx) *MicroServiceService {
 	return &MicroServiceService{
-		schemaEditable:  schemaEditable,
 		instanceService: instCtrlServer,
 	}
 }

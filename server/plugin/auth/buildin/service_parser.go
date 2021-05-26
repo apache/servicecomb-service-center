@@ -15,18 +15,23 @@
  * limitations under the License.
  */
 
-package auth
+package buildin
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/go-chassis/cari/discovery"
+)
+
+var (
+	errNilRequestBody = errors.New("request body is nil")
 )
 
 var (
@@ -122,7 +127,7 @@ func serviceInfoFunc(r *http.Request) ([]map[string]string, error) {
 func createServiceToLabels(r *http.Request) ([]map[string]string, error) {
 	message, err := ReadBody(r)
 	if err != nil {
-		return nil, fmt.Errorf("read request body failed")
+		return nil, err
 	}
 
 	request := &discovery.CreateServiceRequest{}
@@ -169,6 +174,10 @@ func deleteServicesToLabels(r *http.Request) ([]map[string]string, error) {
 }
 
 func ReadBody(r *http.Request) ([]byte, error) {
+	if r.Body == nil {
+		return nil, errNilRequestBody
+	}
+
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		return nil, err

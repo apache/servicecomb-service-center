@@ -41,7 +41,7 @@ type Handler struct {
 func (h *Handler) Handle(i *chain.Invocation) {
 	r := i.Context().Value(rest.CtxRequest).(*http.Request)
 
-	i.WithContext(CtxResourceScopes, FromInvocation(i))
+	i.WithContext(CtxResourceScopes, auth.ResourceScopes(r))
 
 	if err := auth.Identify(r); err != nil {
 		log.Errorf(err, "authenticate request failed, %s %s", r.Method, r.RequestURI)
