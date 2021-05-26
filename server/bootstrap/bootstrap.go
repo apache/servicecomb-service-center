@@ -89,8 +89,8 @@ func init() {
 	// handle requests after routing.
 	exception.RegisterHandlers()
 	accesslog.RegisterHandlers()
-	auth.RegisterHandlers()
 	maxbody.RegisterHandlers()
+	auth.RegisterHandlers()
 	metrics.RegisterHandlers()
 	tracing.RegisterHandlers()
 	context.RegisterHandlers()

@@ -18,13 +18,15 @@
 package auth
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/go-chassis/cari/discovery"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/go-chassis/cari/discovery"
 )
 
 var (
@@ -92,10 +94,18 @@ func serviceKeyFunc(r *http.Request) ([]map[string]string, error) {
 		return serviceIdToLabels(r.Context(), serviceId)
 	}
 
+	env := query.Get("env")
+	appID := query.Get("appId")
+	serviceName := query.Get("serviceName")
+
+	if len(env) == 0 && len(appID) == 0 && len(serviceName) == 0 {
+		return ApplyAll(r)
+	}
+
 	return []map[string]string{{
-		"environment": query.Get("env"),
-		"appId":       query.Get("appId"),
-		"serviceName": query.Get("serviceName"),
+		"environment": env,
+		"appId":       appID,
+		"serviceName": serviceName,
 	}}, nil
 }
 
@@ -110,7 +120,7 @@ func serviceInfoFunc(r *http.Request) ([]map[string]string, error) {
 }
 
 func createServiceToLabels(r *http.Request) ([]map[string]string, error) {
-	message, err := ioutil.ReadAll(r.Body)
+	message, err := ReadBody(r)
 	if err != nil {
 		return nil, fmt.Errorf("read request body failed")
 	}
@@ -134,7 +144,7 @@ func createServiceToLabels(r *http.Request) ([]map[string]string, error) {
 }
 
 func deleteServicesToLabels(r *http.Request) ([]map[string]string, error) {
-	message, err := ioutil.ReadAll(r.Body)
+	message, err := ReadBody(r)
 	if err != nil {
 		return nil, fmt.Errorf("read request body failed")
 	}
@@ -156,4 +166,13 @@ func deleteServicesToLabels(r *http.Request) ([]map[string]string, error) {
 		labels = append(labels, ls...)
 	}
 	return labels, nil
+}
+
+func ReadBody(r *http.Request) ([]byte, error) {
+	data, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return nil, err
+	}
+	r.Body = ioutil.NopCloser(bytes.NewReader(data))
+	return data, nil
 }

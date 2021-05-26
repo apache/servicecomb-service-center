@@ -31,8 +31,8 @@ import (
 )
 
 const (
-	CtxResourceLabels       util.CtxKey = "_resource_labels"
-	CtxResourceApplications util.CtxKey = "_resource_applications"
+	CtxResourceLabels util.CtxKey = "_resource_labels"
+	CtxResourceScopes util.CtxKey = "_resource_scopes"
 )
 
 type Handler struct {
@@ -41,7 +41,7 @@ type Handler struct {
 func (h *Handler) Handle(i *chain.Invocation) {
 	r := i.Context().Value(rest.CtxRequest).(*http.Request)
 
-	i.WithContext(CtxResourceApplications, FromInvocation(i))
+	i.WithContext(CtxResourceScopes, FromInvocation(i))
 
 	if err := auth.Identify(r); err != nil {
 		log.Errorf(err, "authenticate request failed, %s %s", r.Method, r.RequestURI)

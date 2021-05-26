@@ -17,8 +17,8 @@
 
 package auth
 
-// Application is the resource application parsed from request
-type Application struct {
+// ResourceScope is the resource scope parsed from request
+type ResourceScope struct {
 	Type   string
 	Labels []map[string]string
 	// Verb is the apply resource action, e.g. "get", "create"

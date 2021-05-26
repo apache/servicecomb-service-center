@@ -29,13 +29,11 @@ import (
 )
 
 var (
+	//TODO ...
 	APIAccountList = "/v4/accounts"
-
-	APIRoleList = "/v4/roles"
-
-	APIOps = "/v4/:project/admin"
-
-	APIGov = "/v1/:project/gov/"
+	APIRoleList    = "/v4/roles"
+	APIOps         = "/v4/:project/admin"
+	APIGov         = "/v1/:project/gov"
 )
 
 var APIMapping = map[string]ParseFunc{}
@@ -46,16 +44,17 @@ func ApplyAll(_ *http.Request) ([]map[string]string, error) {
 	return nil, nil
 }
 
-func FromInvocation(i *chain.Invocation) []*Application {
+func FromInvocation(i *chain.Invocation) []*ResourceScope {
 	r, apiPath := i.Context().Value(rest.CtxRequest).(*http.Request),
 		i.Context().Value(rest.CtxMatchPattern).(string)
+
 	resource := rbacmodel.GetResource(apiPath)
 	labels, err := GetAPIParseFunc(apiPath)(r)
 	if err != nil {
 		log.Error(fmt.Sprintf("parse from request failed"), err)
 		return nil
 	}
-	return []*Application{{
+	return []*ResourceScope{{
 		Type:   resource,
 		Labels: labels,
 		Verb:   rbac.MethodToVerbs[r.Method],
