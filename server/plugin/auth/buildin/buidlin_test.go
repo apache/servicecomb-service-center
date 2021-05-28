@@ -20,6 +20,8 @@ package buildin_test
 // initialize
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/pkg/rest"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	rbacmodel "github.com/go-chassis/cari/rbac"
 	"io/ioutil"
 	"net/http"
@@ -133,5 +135,37 @@ func TestTokenAuthenticator_Identify(t *testing.T) {
 		r.Header.Set(restful.HeaderAuth, "Bear "+to)
 		err = ta.Identify(r)
 		assert.NoError(t, err)
+	})
+
+	t.Run("TestTokenAuthenticator_ResourceScopes", func(t *testing.T) {
+		url := "/v4/accounts/:name"
+		a := buildin.New()
+		ta := a.(*buildin.TokenAuthenticator)
+
+		tests := []struct {
+			name     string
+			request  *http.Request
+			wantType string
+			wantVerb string
+		}{
+			{"method GET should return verb=get",
+				httptest.NewRequest(http.MethodPut, url, nil), "account", "update"},
+			{"method POST should return verb=create",
+				httptest.NewRequest(http.MethodPost, url, nil), "account", "create"},
+			{"method PUT should return verb=update",
+				httptest.NewRequest(http.MethodPut, url, nil), "account", "update"},
+			{"method DELETE should return verb=delete",
+				httptest.NewRequest(http.MethodDelete, url, nil), "account", "delete"},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				util.SetRequestContext(tt.request, rest.CtxMatchPattern, url)
+				scopes := ta.ResourceScopes(tt.request)
+				assert.NotNil(t, scopes)
+				assert.Equal(t, tt.wantType, scopes.Type)
+				assert.Equal(t, tt.wantVerb, scopes.Verb)
+			})
+		}
 	})
 }

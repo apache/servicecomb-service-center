@@ -99,7 +99,7 @@ func (a *EmbeddedAuthenticator) Authenticate(ctx context.Context, tokenStr strin
 	if !exist {
 		return nil, datasource.ErrAccountNotExist
 	}
-	return a.authToken(tokenStr, p)
+	return claims, nil
 }
 
 func (a *EmbeddedAuthenticator) authToken(tokenStr string, pub *rsa.PublicKey) (map[string]interface{}, error) {

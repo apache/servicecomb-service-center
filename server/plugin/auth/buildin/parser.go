@@ -45,7 +45,11 @@ func ApplyAll(_ *http.Request) ([]map[string]string, error) {
 }
 
 func FromRequest(r *http.Request) *auth.ResourceScope {
-	apiPath := r.Context().Value(rest.CtxMatchPattern).(string)
+	apiPath, ok := r.Context().Value(rest.CtxMatchPattern).(string)
+	if !ok {
+		log.Error("CtxMatchPattern not found", nil)
+		return nil
+	}
 
 	resource := rbacmodel.GetResource(apiPath)
 	labels, err := GetAPIParseFunc(apiPath)(r)
