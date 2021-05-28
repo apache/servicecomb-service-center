@@ -56,7 +56,7 @@ func Init() {
 		log.Info("rbac is disabled")
 		return
 	}
-	initResourceMap()
+	InitResourceMap()
 	err := authr.Init()
 	if err != nil {
 		log.Fatal("can not enable auth module", err)

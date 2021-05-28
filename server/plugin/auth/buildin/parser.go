@@ -18,6 +18,7 @@
 package buildin
 
 import (
+	"errors"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
@@ -28,20 +29,23 @@ import (
 	"strings"
 )
 
-var (
-	//TODO ...
-	APIAccountList = "/v4/accounts"
-	APIRoleList    = "/v4/roles"
-	APIOps         = "/v4/:project/admin"
-	APIGov         = "/v1/:project/gov"
-)
+var ErrCtxMatchPatternNotFound = errors.New("CtxMatchPattern not found")
 
 var APIMapping = map[string]ParseFunc{}
 
-type ParseFunc func(r *http.Request) ([]map[string]string, error)
+type ParseFunc func(r *http.Request) (*auth.ResourceScope, error)
 
-func ApplyAll(_ *http.Request) ([]map[string]string, error) {
-	return nil, nil
+// ApplyAll work when no api registered by RegisterParseFunc matched
+func ApplyAll(r *http.Request) (*auth.ResourceScope, error) {
+	apiPath, ok := r.Context().Value(rest.CtxMatchPattern).(string)
+	if !ok {
+		log.Error("CtxMatchPattern not found", nil)
+		return nil, ErrCtxMatchPatternNotFound
+	}
+	return &auth.ResourceScope{
+		Type: rbacmodel.GetResource(apiPath),
+		Verb: rbac.MethodToVerbs[r.Method],
+	}, nil
 }
 
 func FromRequest(r *http.Request) *auth.ResourceScope {
@@ -51,17 +55,11 @@ func FromRequest(r *http.Request) *auth.ResourceScope {
 		return nil
 	}
 
-	resource := rbacmodel.GetResource(apiPath)
-	labels, err := GetAPIParseFunc(apiPath)(r)
+	resource, err := GetAPIParseFunc(apiPath)(r)
 	if err != nil {
 		log.Error(fmt.Sprintf("parse from request failed"), err)
-		return nil
 	}
-	return &auth.ResourceScope{
-		Type:   resource,
-		Labels: labels,
-		Verb:   rbac.MethodToVerbs[r.Method],
-	}
+	return resource
 }
 
 func GetAPIParseFunc(apiPattern string) ParseFunc {

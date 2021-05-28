@@ -24,7 +24,6 @@ import (
 
 func init() {
 	RegisterFilter("/v4/:project/registry/microservices", MicroserviceListFilter)
-	//response.RegisterFilter("/v4/:project/registry/instances", )
 	RegisterFilter("/v4/:project/registry/microservices/:providerId/consumers", ProvidersListFilter)
 	RegisterFilter("/v4/:project/registry/microservices/:consumerId/providers", ConsumersListFilter)
 	// control panel apis

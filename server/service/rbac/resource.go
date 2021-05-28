@@ -66,7 +66,7 @@ var (
 	APIServiceSchema = "/v4/:project/registry/microservices/:serviceId/schemas"
 )
 
-func initResourceMap() {
+func InitResourceMap() {
 	rbac.PartialMapResource(APIAccountList, ResourceAccount)
 
 	rbac.PartialMapResource(APIRoleList, ResourceRole)

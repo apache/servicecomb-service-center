@@ -18,13 +18,18 @@
 package rest
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/go-chassis/cari/discovery"
 )
+
+var errNilRequestBody = errors.New("request body is nil")
 
 func WriteError(w http.ResponseWriter, code int32, detail string) {
 	err := discovery.NewError(code, detail)
@@ -76,4 +81,18 @@ func WriteResponse(w http.ResponseWriter, r *http.Request, resp *discovery.Respo
 
 func WriteSuccess(w http.ResponseWriter, r *http.Request) {
 	WriteResponse(w, r, nil, nil)
+}
+
+// ReadBody can re-read the request body
+func ReadBody(r *http.Request) ([]byte, error) {
+	if r.Body == nil {
+		return nil, errNilRequestBody
+	}
+
+	data, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return nil, err
+	}
+	r.Body = ioutil.NopCloser(bytes.NewReader(data))
+	return data, nil
 }
