@@ -19,15 +19,16 @@ package rbac
 
 import (
 	"github.com/go-chassis/cari/rbac"
+	"net/http"
 )
 
 // method to verbs
 var (
 	MethodToVerbs = map[string]string{
-		"GET":    "get",
-		"POST":   "create",
-		"UPDATE": "update",
-		"DELETE": "delete",
+		http.MethodGet:    "get",
+		http.MethodPost:   "create",
+		http.MethodPut:    "update",
+		http.MethodDelete: "delete",
 	}
 )
 
