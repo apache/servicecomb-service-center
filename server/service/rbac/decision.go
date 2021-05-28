@@ -74,7 +74,7 @@ func FilterLabel(targetResourceLabel []map[string]string, permLabelList []map[st
 
 func LabelMatched(targetResourceLabel map[string]string, permLabel map[string]string) bool {
 	for k, v := range permLabel {
-		if vv := targetResourceLabel[k]; vv != v {
+		if vv, ok := targetResourceLabel[k]; ok && vv != v {
 			return false
 		}
 	}
