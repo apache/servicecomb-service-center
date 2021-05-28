@@ -15,7 +15,7 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/elithrar/simple-scrypt v1.3.0
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-chassis/cari v0.4.1-0.20210526130437-0685eaf85b3a
+	github.com/go-chassis/cari v0.4.1-0.20210528090900-ebd6bed3bd52
 	github.com/go-chassis/foundation v0.3.1-0.20210513015331-b54416b66bcd
 	github.com/go-chassis/go-archaius v1.5.1
 	github.com/go-chassis/go-chassis/v2 v2.1.2-0.20210310004133-c9bc42149a18

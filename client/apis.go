@@ -18,6 +18,7 @@ package client
 import (
 	"context"
 	"encoding/json"
+	"github.com/go-chassis/cari/pkg/errsvc"
 	"io/ioutil"
 	"net/http"
 
@@ -38,8 +39,8 @@ const (
 	QueryGlobal util.CtxKey = "global"
 )
 
-func (c *Client) toError(body []byte) *discovery.Error {
-	message := new(discovery.Error)
+func (c *Client) toError(body []byte) *errsvc.Error {
+	message := new(errsvc.Error)
 	err := json.Unmarshal(body, message)
 	if err != nil {
 		return discovery.NewError(discovery.ErrInternal, util.BytesToStringWithNoCopy(body))
@@ -57,7 +58,7 @@ func (c *Client) parseQuery(ctx context.Context) (q string) {
 	return
 }
 
-func (c *Client) GetScVersion(ctx context.Context) (*version.Set, *discovery.Error) {
+func (c *Client) GetScVersion(ctx context.Context) (*version.Set, *errsvc.Error) {
 	resp, err := c.RestDoWithContext(ctx, http.MethodGet, apiVersionURL, c.CommonHeaders(ctx), nil)
 	if err != nil {
 		return nil, discovery.NewError(discovery.ErrInternal, err.Error())
@@ -82,7 +83,7 @@ func (c *Client) GetScVersion(ctx context.Context) (*version.Set, *discovery.Err
 	return v, nil
 }
 
-func (c *Client) GetScCache(ctx context.Context) (*dump.Cache, *discovery.Error) {
+func (c *Client) GetScCache(ctx context.Context) (*dump.Cache, *errsvc.Error) {
 	headers := c.CommonHeaders(ctx)
 	// only default domain has admin permission
 	headers.Set("X-Domain-Name", "default")
@@ -110,7 +111,7 @@ func (c *Client) GetScCache(ctx context.Context) (*dump.Cache, *discovery.Error)
 	return dump.Cache, nil
 }
 
-func (c *Client) GetClusters(ctx context.Context) (cluster.Clusters, *discovery.Error) {
+func (c *Client) GetClusters(ctx context.Context) (cluster.Clusters, *errsvc.Error) {
 	headers := c.CommonHeaders(ctx)
 	// only default domain has admin permission
 	headers.Set("X-Domain-Name", "default")
@@ -138,7 +139,7 @@ func (c *Client) GetClusters(ctx context.Context) (cluster.Clusters, *discovery.
 	return clusters.Clusters, nil
 }
 
-func (c *Client) HealthCheck(ctx context.Context) *discovery.Error {
+func (c *Client) HealthCheck(ctx context.Context) *errsvc.Error {
 	headers := c.CommonHeaders(ctx)
 	// only default domain has admin permission
 	headers.Set("X-Domain-Name", "default")

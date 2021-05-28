@@ -274,6 +274,10 @@ github.com/go-chassis/cari v0.4.1-0.20210525100133-33b23132d6f0 h1:cxI44jhmc1yzy
 github.com/go-chassis/cari v0.4.1-0.20210525100133-33b23132d6f0/go.mod h1:av/19fqwEP4eOC8unL/z67AAbFDwXUCko6SKa4Avrd8=
 github.com/go-chassis/cari v0.4.1-0.20210526130437-0685eaf85b3a h1:YQH/VGLB9eveB39JH818nTD9HObV5tU7C+ALieupaX0=
 github.com/go-chassis/cari v0.4.1-0.20210526130437-0685eaf85b3a/go.mod h1:av/19fqwEP4eOC8unL/z67AAbFDwXUCko6SKa4Avrd8=
+github.com/go-chassis/cari v0.4.1-0.20210528090900-ebd6bed3bd52 h1:ItPO3FBqT6yyWEJStIpC1hgiaCd1AdJV7AdR8mNkfX8=
+github.com/go-chassis/cari v0.4.1-0.20210528090900-ebd6bed3bd52/go.mod h1:av/19fqwEP4eOC8unL/z67AAbFDwXUCko6SKa4Avrd8=
+github.com/go-chassis/cari v0.4.1-0.20210528093055-1c7737622daf h1:g0Q9IJr+jrmPOzUM6sVNFybenM9xB3psOEgk7MXElTc=
+github.com/go-chassis/cari v0.4.1-0.20210528093055-1c7737622daf/go.mod h1:av/19fqwEP4eOC8unL/z67AAbFDwXUCko6SKa4Avrd8=
 github.com/go-chassis/foundation v0.2.2-0.20201210043510-9f6d3de40234/go.mod h1:2PjwqpVwYEVaAldl5A58a08viH8p27pNeYaiE3ZxOBA=
 github.com/go-chassis/foundation v0.2.2/go.mod h1:2PjwqpVwYEVaAldl5A58a08viH8p27pNeYaiE3ZxOBA=
 github.com/go-chassis/foundation v0.3.0/go.mod h1:2PjwqpVwYEVaAldl5A58a08viH8p27pNeYaiE3ZxOBA=

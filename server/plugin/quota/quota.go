@@ -21,6 +21,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/go-chassis/cari/pkg/errsvc"
 	"strconv"
 
 	"github.com/apache/servicecomb-service-center/datasource"
@@ -107,7 +108,7 @@ func (r ResourceType) String() string {
 }
 
 //申请配额sourceType serviceinstance servicetype
-func Apply(ctx context.Context, res *ApplyQuotaResource) *pb.Error {
+func Apply(ctx context.Context, res *ApplyQuotaResource) *errsvc.Error {
 	if res == nil {
 		err := errors.New("invalid parameters")
 		log.Errorf(err, "quota check failed")

@@ -22,6 +22,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"github.com/go-chassis/cari/pkg/errsvc"
 	"io/ioutil"
 	"net/http"
 
@@ -33,7 +34,7 @@ const (
 	apiSchemaURL  = "/v4/%s/registry/microservices/%s/schemas/%s"
 )
 
-func (c *Client) CreateSchemas(ctx context.Context, domain, project, serviceID string, schemas []*pb.Schema) *pb.Error {
+func (c *Client) CreateSchemas(ctx context.Context, domain, project, serviceID string, schemas []*pb.Schema) *errsvc.Error {
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 
@@ -67,7 +68,7 @@ func (c *Client) CreateSchemas(ctx context.Context, domain, project, serviceID s
 	return nil
 }
 
-func (c *Client) UpdateSchema(ctx context.Context, domain, project, serviceID string, schemaID string, schema string) *pb.Error {
+func (c *Client) UpdateSchema(ctx context.Context, domain, project, serviceID string, schemaID string, schema string) *errsvc.Error {
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 
@@ -100,7 +101,7 @@ func (c *Client) UpdateSchema(ctx context.Context, domain, project, serviceID st
 	return nil
 }
 
-func (c *Client) DeleteSchema(ctx context.Context, domain, project, serviceID string, schemaID string) *pb.Error {
+func (c *Client) DeleteSchema(ctx context.Context, domain, project, serviceID string, schemaID string) *errsvc.Error {
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 
@@ -128,7 +129,7 @@ func (c *Client) DeleteSchema(ctx context.Context, domain, project, serviceID st
 	return nil
 }
 
-func (c *Client) GetSchemasByServiceID(ctx context.Context, domain, project, serviceID string) ([]*pb.Schema, *pb.Error) {
+func (c *Client) GetSchemasByServiceID(ctx context.Context, domain, project, serviceID string) ([]*pb.Schema, *errsvc.Error) {
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 	resp, err := c.RestDoWithContext(ctx, http.MethodGet,
@@ -157,7 +158,7 @@ func (c *Client) GetSchemasByServiceID(ctx context.Context, domain, project, ser
 	return schemas.Schemas, nil
 }
 
-func (c *Client) GetSchemaBySchemaID(ctx context.Context, domain, project, serviceID, schemaID string) (*pb.Schema, *pb.Error) {
+func (c *Client) GetSchemaBySchemaID(ctx context.Context, domain, project, serviceID, schemaID string) (*pb.Schema, *errsvc.Error) {
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 	resp, err := c.RestDoWithContext(ctx, http.MethodGet,

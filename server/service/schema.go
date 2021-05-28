@@ -24,6 +24,7 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	"github.com/apache/servicecomb-service-center/server/service/validator"
 	pb "github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/cari/pkg/errsvc"
 
 	"context"
 )
@@ -115,7 +116,7 @@ func (s *MicroServiceService) ModifySchema(ctx context.Context, request *pb.Modi
 	return datasource.Instance().ModifySchema(ctx, request)
 }
 
-func (s *MicroServiceService) canModifySchema(ctx context.Context, domainProject string, in *pb.ModifySchemaRequest) *pb.Error {
+func (s *MicroServiceService) canModifySchema(ctx context.Context, domainProject string, in *pb.ModifySchemaRequest) *errsvc.Error {
 	remoteIP := util.GetIPFromContext(ctx)
 	serviceID := in.ServiceId
 	schemaID := in.SchemaId

@@ -17,9 +17,8 @@ package servicecenter
 
 import (
 	"context"
+	"github.com/go-chassis/cari/pkg/errsvc"
 	"strings"
-
-	"github.com/go-chassis/cari/discovery"
 
 	"github.com/apache/servicecomb-service-center/client"
 	etcdclient "github.com/apache/servicecomb-service-center/datasource/etcd/client"
@@ -78,7 +77,7 @@ func (i *ClusterIndexer) search(ctx context.Context, opts ...etcdclient.PluginOp
 func (i *ClusterIndexer) searchSchemas(ctx context.Context, op etcdclient.PluginOp) (*sd.Response, error) {
 	var (
 		resp  *sd.Response
-		scErr *discovery.Error
+		scErr *errsvc.Error
 	)
 	domainProject, serviceID, schemaID := path.GetInfoFromSchemaKV(op.Key)
 	if op.Prefix && len(schemaID) == 0 {
@@ -95,7 +94,7 @@ func (i *ClusterIndexer) searchSchemas(ctx context.Context, op etcdclient.Plugin
 func (i *ClusterIndexer) searchInstances(ctx context.Context, op etcdclient.PluginOp) (r *sd.Response, err error) {
 	var (
 		resp  *sd.Response
-		scErr *discovery.Error
+		scErr *errsvc.Error
 	)
 	serviceID, instanceID, domainProject := path.GetInfoFromInstKV(op.Key)
 	dp := strings.Split(domainProject, "/")

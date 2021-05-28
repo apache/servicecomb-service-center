@@ -21,6 +21,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/go-chassis/cari/pkg/errsvc"
 	"reflect"
 	"regexp"
 	"strings"
@@ -170,7 +171,7 @@ func AllowAcrossDimension(ctx context.Context, providerService *discovery.MicroS
 	return nil
 }
 
-func MatchRules(rulesOfProvider []*discovery.ServiceRule, consumer *discovery.MicroService, tagsOfConsumer map[string]string) *discovery.Error {
+func MatchRules(rulesOfProvider []*discovery.ServiceRule, consumer *discovery.MicroService, tagsOfConsumer map[string]string) *errsvc.Error {
 	if consumer == nil {
 		return discovery.NewError(discovery.ErrInvalidParams, "consumer is nil")
 	}
@@ -184,7 +185,7 @@ func MatchRules(rulesOfProvider []*discovery.ServiceRule, consumer *discovery.Mi
 	return patternBlackList(rulesOfProvider, tagsOfConsumer, consumer)
 }
 
-func patternWhiteList(rulesOfProvider []*discovery.ServiceRule, tagsOfConsumer map[string]string, consumer *discovery.MicroService) *discovery.Error {
+func patternWhiteList(rulesOfProvider []*discovery.ServiceRule, tagsOfConsumer map[string]string, consumer *discovery.MicroService) *errsvc.Error {
 	v := reflect.Indirect(reflect.ValueOf(consumer))
 	consumerID := consumer.ServiceId
 	for _, rule := range rulesOfProvider {
@@ -207,7 +208,7 @@ func patternWhiteList(rulesOfProvider []*discovery.ServiceRule, tagsOfConsumer m
 	return discovery.NewError(discovery.ErrPermissionDeny, "Not found in white list")
 }
 
-func parsePattern(v reflect.Value, rule *discovery.ServiceRule, tagsOfConsumer map[string]string, consumerID string) (string, *discovery.Error) {
+func parsePattern(v reflect.Value, rule *discovery.ServiceRule, tagsOfConsumer map[string]string, consumerID string) (string, *errsvc.Error) {
 	if strings.HasPrefix(rule.Attribute, "tag_") {
 		key := rule.Attribute[4:]
 		value := tagsOfConsumer[key]
@@ -220,13 +221,13 @@ func parsePattern(v reflect.Value, rule *discovery.ServiceRule, tagsOfConsumer m
 	if !key.IsValid() {
 		log.Errorf(nil, "can not find service[%] field[%s], ruleID is %s",
 			consumerID, rule.Attribute, rule.RuleId)
-		return "", discovery.NewErrorf(discovery.ErrInternal, "Can not find field '%s'", rule.Attribute)
+		return "", discovery.NewError(discovery.ErrInternal, fmt.Sprintf("Can not find field '%s'", rule.Attribute))
 	}
 	return key.String(), nil
 
 }
 
-func patternBlackList(rulesOfProvider []*discovery.ServiceRule, tagsOfConsumer map[string]string, consumer *discovery.MicroService) *discovery.Error {
+func patternBlackList(rulesOfProvider []*discovery.ServiceRule, tagsOfConsumer map[string]string, consumer *discovery.MicroService) *errsvc.Error {
 	v := reflect.Indirect(reflect.ValueOf(consumer))
 	consumerID := consumer.ServiceId
 	for _, rule := range rulesOfProvider {
@@ -250,7 +251,7 @@ func patternBlackList(rulesOfProvider []*discovery.ServiceRule, tagsOfConsumer m
 	return nil
 }
 
-func Accessible(ctx context.Context, consumerID string, providerID string) *discovery.Error {
+func Accessible(ctx context.Context, consumerID string, providerID string) *errsvc.Error {
 	if len(consumerID) == 0 {
 		return nil
 	}
@@ -263,7 +264,7 @@ func Accessible(ctx context.Context, consumerID string, providerID string) *disc
 		if errors.Is(err, datasource.ErrNoData) {
 			return discovery.NewError(discovery.ErrServiceNotExists, "consumer serviceID is invalid")
 		}
-		return discovery.NewErrorf(discovery.ErrInternal, "An error occurred in query consumer(%s)", err.Error())
+		return discovery.NewError(discovery.ErrInternal, fmt.Sprintf("An error occurred in query consumer(%s)", err.Error()))
 	}
 
 	// 跨应用权限
@@ -272,7 +273,7 @@ func Accessible(ctx context.Context, consumerID string, providerID string) *disc
 		if errors.Is(err, datasource.ErrNoData) {
 			return discovery.NewError(discovery.ErrServiceNotExists, "provider serviceID is invalid")
 		}
-		return discovery.NewErrorf(discovery.ErrInternal, "An error occurred in query provider(%s)", err.Error())
+		return discovery.NewError(discovery.ErrInternal, fmt.Sprintf("An error occurred in query provider(%s)", err.Error()))
 	}
 
 	err = AllowAcrossDimension(ctx, providerService, consumerService)
@@ -285,7 +286,7 @@ func Accessible(ctx context.Context, consumerID string, providerID string) *disc
 	// 黑白名单
 	rules, err := GetRulesUtil(ctx, targetDomainProject, providerID)
 	if err != nil {
-		return discovery.NewErrorf(discovery.ErrInternal, "An error occurred in query provider rules(%s)", err.Error())
+		return discovery.NewError(discovery.ErrInternal, fmt.Sprintf("An error occurred in query provider rules(%s)", err.Error()))
 	}
 
 	if len(rules) == 0 {
@@ -294,7 +295,7 @@ func Accessible(ctx context.Context, consumerID string, providerID string) *disc
 
 	validateTags, err := GetTagsUtils(ctx, domainProject, consumerService.ServiceId)
 	if err != nil {
-		return discovery.NewErrorf(discovery.ErrInternal, "An error occurred in query consumer tags(%s)", err.Error())
+		return discovery.NewError(discovery.ErrInternal, fmt.Sprintf("An error occurred in query consumer tags(%s)", err.Error()))
 	}
 
 	return MatchRules(rules, consumerService, validateTags)

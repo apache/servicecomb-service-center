@@ -18,10 +18,9 @@ package servicecenter
 import (
 	"context"
 	"crypto/tls"
+	"github.com/go-chassis/cari/pkg/errsvc"
 	"strings"
 	"sync"
-
-	"github.com/go-chassis/cari/discovery"
 
 	"github.com/apache/servicecomb-service-center/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd"
@@ -87,7 +86,7 @@ func (c *SCClientAggregate) cacheAppend(name string, setter dump.Setter, getter 
 	})
 }
 
-func (c *SCClientAggregate) GetSchemasByServiceID(ctx context.Context, domainProject, serviceID string) (*sd.Response, *discovery.Error) {
+func (c *SCClientAggregate) GetSchemasByServiceID(ctx context.Context, domainProject, serviceID string) (*sd.Response, *errsvc.Error) {
 	dp := strings.Split(domainProject, "/")
 	var response sd.Response
 	for _, client := range *c {
@@ -113,7 +112,7 @@ func (c *SCClientAggregate) GetSchemasByServiceID(ctx context.Context, domainPro
 	return &response, nil
 }
 
-func (c *SCClientAggregate) GetSchemaBySchemaID(ctx context.Context, domainProject, serviceID, schemaID string) (*sd.Response, *discovery.Error) {
+func (c *SCClientAggregate) GetSchemaBySchemaID(ctx context.Context, domainProject, serviceID, schemaID string) (*sd.Response, *errsvc.Error) {
 	dp := strings.Split(domainProject, "/")
 	var response sd.Response
 	for _, client := range *c {
@@ -137,7 +136,7 @@ func (c *SCClientAggregate) GetSchemaBySchemaID(ctx context.Context, domainProje
 	return &response, nil
 }
 
-func (c *SCClientAggregate) GetInstancesByServiceID(ctx context.Context, domain, project, providerID, consumerID string) (*sd.Response, *discovery.Error) {
+func (c *SCClientAggregate) GetInstancesByServiceID(ctx context.Context, domain, project, providerID, consumerID string) (*sd.Response, *errsvc.Error) {
 	var response sd.Response
 	for _, client := range *c {
 		insts, err := client.GetInstancesByServiceID(ctx, domain, project, providerID, consumerID)
@@ -161,7 +160,7 @@ func (c *SCClientAggregate) GetInstancesByServiceID(ctx context.Context, domain,
 	return &response, nil
 }
 
-func (c *SCClientAggregate) GetInstanceByInstanceID(ctx context.Context, domain, project, providerID, instanceID, consumerID string) (*sd.Response, *discovery.Error) {
+func (c *SCClientAggregate) GetInstanceByInstanceID(ctx context.Context, domain, project, providerID, instanceID, consumerID string) (*sd.Response, *errsvc.Error) {
 	var response sd.Response
 	for _, client := range *c {
 		instance, err := client.GetInstanceByInstanceID(ctx, domain, project, providerID, instanceID, consumerID)

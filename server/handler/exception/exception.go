@@ -18,7 +18,9 @@
 package exception
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/go-chassis/cari/pkg/errsvc"
 	"net/http"
 
 	"github.com/apache/servicecomb-service-center/pkg/chain"
@@ -27,7 +29,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/alarm"
-	"github.com/go-chassis/cari/discovery"
 )
 
 var whitelists = make(map[string]struct{})
@@ -86,10 +87,10 @@ func (h *Handler) responseError(w http.ResponseWriter, e error) (statusCode int)
 	switch err := e.(type) {
 	case errors.InternalError:
 		statusCode = http.StatusInternalServerError
-	case *discovery.Error:
+	case *errsvc.Error:
 		statusCode = err.StatusCode()
 		contentType = rest.ContentTypeJSON
-		body = err.Marshal()
+		body, _ = json.Marshal(err)
 	}
 	return
 }

@@ -21,6 +21,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/server/service/validator"
+	"github.com/go-chassis/cari/pkg/errsvc"
 
 	pb "github.com/go-chassis/cari/discovery"
 
@@ -364,7 +365,7 @@ func (s *MicroServiceService) isCreateServiceEx(in *pb.CreateServiceRequest) boo
 	return true
 }
 
-func checkServiceQuota(ctx context.Context, domainProject string) *pb.Error {
+func checkServiceQuota(ctx context.Context, domainProject string) *errsvc.Error {
 	if core.IsSCInstance(ctx) {
 		log.Debugf("skip quota check")
 		return nil

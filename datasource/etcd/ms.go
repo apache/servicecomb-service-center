@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/go-chassis/cari/pkg/errsvc"
 	"strconv"
 	"time"
 
@@ -2153,7 +2154,7 @@ func (ds *DataSource) DeleteRule(ctx context.Context, request *pb.DeleteServiceR
 }
 
 func (ds *DataSource) modifySchemas(ctx context.Context, domainProject string, service *pb.MicroService,
-	schemas []*pb.Schema) *pb.Error {
+	schemas []*pb.Schema) *errsvc.Error {
 	remoteIP := util.GetIPFromContext(ctx)
 	serviceID := service.ServiceId
 	schemasFromDatabase, err := getSchemasFromDatabase(ctx, domainProject, serviceID)
@@ -2272,7 +2273,7 @@ func (ds *DataSource) isSchemaEditable(service *pb.MicroService) bool {
 	return (len(service.Environment) != 0 && service.Environment != pb.ENV_PROD) || ds.SchemaEditable
 }
 
-func (ds *DataSource) modifySchema(ctx context.Context, serviceID string, schema *pb.Schema) *pb.Error {
+func (ds *DataSource) modifySchema(ctx context.Context, serviceID string, schema *pb.Schema) *errsvc.Error {
 	remoteIP := util.GetIPFromContext(ctx)
 	domainProject := util.ParseDomainProject(ctx)
 	schemaID := schema.SchemaId

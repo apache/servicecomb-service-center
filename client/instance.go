@@ -19,6 +19,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/go-chassis/cari/pkg/errsvc"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -34,7 +35,7 @@ const (
 	apiInstanceHeartbeatURL  = "/v4/%s/registry/microservices/%s/instances/%s/heartbeat"
 )
 
-func (c *Client) RegisterInstance(ctx context.Context, domain, project, serviceID string, instance *discovery.MicroServiceInstance) (string, *discovery.Error) {
+func (c *Client) RegisterInstance(ctx context.Context, domain, project, serviceID string, instance *discovery.MicroServiceInstance) (string, *errsvc.Error) {
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 
@@ -68,7 +69,7 @@ func (c *Client) RegisterInstance(ctx context.Context, domain, project, serviceI
 	return instancesResp.InstanceId, nil
 }
 
-func (c *Client) UnregisterInstance(ctx context.Context, domain, project, serviceID, instanceID string) *discovery.Error {
+func (c *Client) UnregisterInstance(ctx context.Context, domain, project, serviceID, instanceID string) *errsvc.Error {
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 
@@ -92,7 +93,7 @@ func (c *Client) UnregisterInstance(ctx context.Context, domain, project, servic
 	return nil
 }
 
-func (c *Client) DiscoveryInstances(ctx context.Context, domain, project, consumerID, providerAppID, providerServiceName, providerVersionRule string) ([]*discovery.MicroServiceInstance, *discovery.Error) {
+func (c *Client) DiscoveryInstances(ctx context.Context, domain, project, consumerID, providerAppID, providerServiceName, providerVersionRule string) ([]*discovery.MicroServiceInstance, *errsvc.Error) {
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 	headers.Set("X-ConsumerId", consumerID)
@@ -128,7 +129,7 @@ func (c *Client) DiscoveryInstances(ctx context.Context, domain, project, consum
 	return instancesResp.Instances, nil
 }
 
-func (c *Client) Heartbeat(ctx context.Context, domain, project, serviceID, instanceID string) *discovery.Error {
+func (c *Client) Heartbeat(ctx context.Context, domain, project, serviceID, instanceID string) *errsvc.Error {
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 
@@ -152,7 +153,7 @@ func (c *Client) Heartbeat(ctx context.Context, domain, project, serviceID, inst
 	return nil
 }
 
-func (c *Client) HeartbeatSet(ctx context.Context, domain, project string, instances ...*discovery.HeartbeatSetElement) ([]*discovery.InstanceHbRst, *discovery.Error) {
+func (c *Client) HeartbeatSet(ctx context.Context, domain, project string, instances ...*discovery.HeartbeatSetElement) ([]*discovery.InstanceHbRst, *errsvc.Error) {
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 
@@ -187,7 +188,7 @@ func (c *Client) HeartbeatSet(ctx context.Context, domain, project string, insta
 	return instancesResp.Instances, nil
 }
 
-func (c *Client) GetInstancesByServiceID(ctx context.Context, domain, project, providerID, consumerID string) ([]*discovery.MicroServiceInstance, *discovery.Error) {
+func (c *Client) GetInstancesByServiceID(ctx context.Context, domain, project, providerID, consumerID string) ([]*discovery.MicroServiceInstance, *errsvc.Error) {
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 	headers.Set("X-ConsumerId", consumerID)
@@ -217,7 +218,7 @@ func (c *Client) GetInstancesByServiceID(ctx context.Context, domain, project, p
 	return instancesResp.Instances, nil
 }
 
-func (c *Client) GetInstanceByInstanceID(ctx context.Context, domain, project, providerID, instanceID, consumerID string) (*discovery.MicroServiceInstance, *discovery.Error) {
+func (c *Client) GetInstanceByInstanceID(ctx context.Context, domain, project, providerID, instanceID, consumerID string) (*discovery.MicroServiceInstance, *errsvc.Error) {
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 	headers.Set("X-ConsumerId", consumerID)

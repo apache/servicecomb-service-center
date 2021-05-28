@@ -22,6 +22,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/server/service/validator"
+	"github.com/go-chassis/cari/pkg/errsvc"
 
 	pb "github.com/go-chassis/cari/discovery"
 
@@ -227,7 +228,7 @@ func (s *InstanceService) ClusterHealth(ctx context.Context) (*pb.GetInstancesRe
 	}, nil
 }
 
-func checkInstanceQuota(ctx context.Context, domainProject string, serviceID string) *pb.Error {
+func checkInstanceQuota(ctx context.Context, domainProject string, serviceID string) *errsvc.Error {
 	if !apt.IsSCInstance(ctx) {
 		res := quota.NewApplyQuotaResource(quota.TypeInstance,
 			domainProject, serviceID, 1)
