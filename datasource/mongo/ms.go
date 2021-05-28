@@ -23,6 +23,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/go-chassis/cari/pkg/errsvc"
 	"reflect"
 	"regexp"
 	"sort"
@@ -893,7 +894,7 @@ func (ds *DataSource) ModifySchemas(ctx context.Context, request *discovery.Modi
 
 }
 
-func (ds *DataSource) modifySchemas(ctx context.Context, service *discovery.MicroService, schemas []*discovery.Schema) *discovery.Error {
+func (ds *DataSource) modifySchemas(ctx context.Context, service *discovery.MicroService, schemas []*discovery.Schema) *errsvc.Error {
 	domain := util.ParseDomain(ctx)
 	project := util.ParseProject(ctx)
 	remoteIP := util.GetIPFromContext(ctx)
@@ -1029,7 +1030,7 @@ func (ds *DataSource) modifySchemas(ctx context.Context, service *discovery.Micr
 // 2.service is editable && service have relation with the schema --> update the shema
 // 3.service is editable && service have no relation with the schema --> update the schema && update the service
 // 4.service can't edit && service have relation with the schema && schema summary not exist --> update the schema
-func (ds *DataSource) modifySchema(ctx context.Context, serviceID string, schema *discovery.Schema) *discovery.Error {
+func (ds *DataSource) modifySchema(ctx context.Context, serviceID string, schema *discovery.Schema) *errsvc.Error {
 	domain := util.ParseDomain(ctx)
 	project := util.ParseProject(ctx)
 	filter := mutil.NewDomainProjectFilter(domain, project, mutil.ServiceServiceID(serviceID))
@@ -2317,7 +2318,7 @@ func DependencyRuleExistUtil(ctx context.Context, key bson.M, target *discovery.
 	return false, nil
 }
 
-func KeepAliveLease(ctx context.Context, request *discovery.HeartbeatRequest) *discovery.Error {
+func KeepAliveLease(ctx context.Context, request *discovery.HeartbeatRequest) *errsvc.Error {
 	_, err := heartbeat.Instance().Heartbeat(ctx, request)
 	if err != nil {
 		return discovery.NewError(discovery.ErrInstanceNotExists, err.Error())
@@ -2437,7 +2438,7 @@ func AppendFindResponse(ctx context.Context, index int64, resp *discovery.Respon
 	})
 }
 
-func preProcessRegisterInstance(ctx context.Context, instance *discovery.MicroServiceInstance) *discovery.Error {
+func preProcessRegisterInstance(ctx context.Context, instance *discovery.MicroServiceInstance) *errsvc.Error {
 	if len(instance.Status) == 0 {
 		instance.Status = discovery.MSI_UP
 	}
@@ -2597,7 +2598,7 @@ func filterAccess(ctx context.Context, consumerID string, services []*model.Serv
 	return newServices
 }
 
-func accessible(ctx context.Context, consumerID string, providerID string) *discovery.Error {
+func accessible(ctx context.Context, consumerID string, providerID string) *errsvc.Error {
 	if len(consumerID) == 0 {
 		return nil
 	}
@@ -2641,7 +2642,7 @@ func accessible(ctx context.Context, consumerID string, providerID string) *disc
 	return MatchRules(rules, consumerService.Service, consumerService.Tags)
 }
 
-func MatchRules(rulesOfProvider []*model.Rule, consumer *discovery.MicroService, tagsOfConsumer map[string]string) *discovery.Error {
+func MatchRules(rulesOfProvider []*model.Rule, consumer *discovery.MicroService, tagsOfConsumer map[string]string) *errsvc.Error {
 	if consumer == nil {
 		return discovery.NewError(discovery.ErrInvalidParams, "consumer is nil")
 	}
@@ -2655,7 +2656,7 @@ func MatchRules(rulesOfProvider []*model.Rule, consumer *discovery.MicroService,
 	return patternBlackList(rulesOfProvider, tagsOfConsumer, consumer)
 }
 
-func parsePattern(v reflect.Value, rule *discovery.ServiceRule, tagsOfConsumer map[string]string, consumerID string) (string, *discovery.Error) {
+func parsePattern(v reflect.Value, rule *discovery.ServiceRule, tagsOfConsumer map[string]string, consumerID string) (string, *errsvc.Error) {
 	if strings.HasPrefix(rule.Attribute, "tag_") {
 		key := rule.Attribute[4:]
 		value := tagsOfConsumer[key]
@@ -2674,7 +2675,7 @@ func parsePattern(v reflect.Value, rule *discovery.ServiceRule, tagsOfConsumer m
 
 }
 
-func patternWhiteList(rulesOfProvider []*model.Rule, tagsOfConsumer map[string]string, consumer *discovery.MicroService) *discovery.Error {
+func patternWhiteList(rulesOfProvider []*model.Rule, tagsOfConsumer map[string]string, consumer *discovery.MicroService) *errsvc.Error {
 	v := reflect.Indirect(reflect.ValueOf(consumer))
 	consumerID := consumer.ServiceId
 	for _, rule := range rulesOfProvider {
@@ -2697,7 +2698,7 @@ func patternWhiteList(rulesOfProvider []*model.Rule, tagsOfConsumer map[string]s
 	return discovery.NewError(discovery.ErrPermissionDeny, "not found in white list")
 }
 
-func patternBlackList(rulesOfProvider []*model.Rule, tagsOfConsumer map[string]string, consumer *discovery.MicroService) *discovery.Error {
+func patternBlackList(rulesOfProvider []*model.Rule, tagsOfConsumer map[string]string, consumer *discovery.MicroService) *errsvc.Error {
 	v := reflect.Indirect(reflect.ValueOf(consumer))
 	consumerID := consumer.ServiceId
 	for _, rule := range rulesOfProvider {

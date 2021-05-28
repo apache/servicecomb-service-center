@@ -19,6 +19,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/go-chassis/cari/pkg/errsvc"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -32,7 +33,7 @@ const (
 	apiMicroServiceURL  = "/v4/%s/registry/microservices/%s"
 )
 
-func (c *Client) CreateService(ctx context.Context, domain, project string, service *pb.MicroService) (string, *pb.Error) {
+func (c *Client) CreateService(ctx context.Context, domain, project string, service *pb.MicroService) (string, *errsvc.Error) {
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 
@@ -66,7 +67,7 @@ func (c *Client) CreateService(ctx context.Context, domain, project string, serv
 	return serviceResp.ServiceId, nil
 }
 
-func (c *Client) DeleteService(ctx context.Context, domain, project, serviceID string) *pb.Error {
+func (c *Client) DeleteService(ctx context.Context, domain, project, serviceID string) *errsvc.Error {
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 
@@ -90,7 +91,7 @@ func (c *Client) DeleteService(ctx context.Context, domain, project, serviceID s
 	return nil
 }
 
-func (c *Client) ServiceExistence(ctx context.Context, domain, project string, appID, serviceName, versionRule, env string) (string, *pb.Error) {
+func (c *Client) ServiceExistence(ctx context.Context, domain, project string, appID, serviceName, versionRule, env string) (string, *errsvc.Error) {
 	query := url.Values{}
 	query.Set("type", "microservice")
 	query.Set("env", env)
@@ -106,7 +107,7 @@ func (c *Client) ServiceExistence(ctx context.Context, domain, project string, a
 	return resp.ServiceId, nil
 }
 
-func (c *Client) existence(ctx context.Context, domain, project string, query url.Values) (*pb.GetExistenceResponse, *pb.Error) {
+func (c *Client) existence(ctx context.Context, domain, project string, query url.Values) (*pb.GetExistenceResponse, *errsvc.Error) {
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 

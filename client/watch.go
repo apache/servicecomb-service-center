@@ -19,6 +19,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/go-chassis/cari/pkg/errsvc"
 	"log"
 
 	pb "github.com/go-chassis/cari/discovery"
@@ -29,7 +30,7 @@ const (
 	apiWatcherURL = "/v4/%s/registry/microservices/%s/watcher"
 )
 
-func (c *Client) Watch(ctx context.Context, domain, project, selfServiceID string, callback func(*pb.WatchInstanceResponse)) *pb.Error {
+func (c *Client) Watch(ctx context.Context, domain, project, selfServiceID string, callback func(*pb.WatchInstanceResponse)) *errsvc.Error {
 	headers := c.CommonHeaders(ctx)
 	headers.Set("X-Domain-Name", domain)
 

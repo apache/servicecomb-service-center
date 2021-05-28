@@ -20,6 +20,7 @@ package util
 import (
 	"context"
 	"encoding/json"
+	"github.com/go-chassis/cari/pkg/errsvc"
 
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/go-chassis/cari/discovery"
@@ -30,7 +31,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
-func AddTagIntoETCD(ctx context.Context, domainProject string, serviceID string, dataTags map[string]string) *discovery.Error {
+func AddTagIntoETCD(ctx context.Context, domainProject string, serviceID string, dataTags map[string]string) *errsvc.Error {
 	key := path.GenerateServiceTagKey(domainProject, serviceID)
 	data, err := json.Marshal(dataTags)
 	if err != nil {

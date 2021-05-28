@@ -22,6 +22,7 @@ import (
 	"crypto/sha1"
 	"encoding/json"
 	"fmt"
+	"github.com/go-chassis/cari/pkg/errsvc"
 	"strconv"
 	"strings"
 	"time"
@@ -170,7 +171,7 @@ func QueryServiceInstancesKvs(ctx context.Context, serviceID string, rev int64) 
 	return resp.Kvs, nil
 }
 
-func UpdateInstance(ctx context.Context, domainProject string, instance *pb.MicroServiceInstance) *pb.Error {
+func UpdateInstance(ctx context.Context, domainProject string, instance *pb.MicroServiceInstance) *errsvc.Error {
 	leaseID, err := GetLeaseID(ctx, domainProject, instance.ServiceId, instance.InstanceId)
 	if err != nil {
 		return pb.NewError(pb.ErrInternal, err.Error())

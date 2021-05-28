@@ -30,7 +30,8 @@ func WriteError(w http.ResponseWriter, code int32, detail string) {
 	err := discovery.NewError(code, detail)
 	w.Header().Set(HeaderContentType, ContentTypeJSON)
 	w.WriteHeader(err.StatusCode())
-	_, _ = w.Write(err.Marshal())
+	b, _ := json.Marshal(err)
+	_, _ = w.Write(b)
 }
 
 // WriteResponse writes http response

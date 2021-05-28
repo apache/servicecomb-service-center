@@ -19,6 +19,7 @@ package etcd
 
 import (
 	"context"
+	"github.com/go-chassis/cari/pkg/errsvc"
 	"strconv"
 	"strings"
 	"time"
@@ -153,7 +154,7 @@ func commitSchemaInfo(domainProject string, serviceID string, schema *pb.Schema)
 }
 
 // instance util
-func preProcessRegisterInstance(ctx context.Context, instance *pb.MicroServiceInstance) *pb.Error {
+func preProcessRegisterInstance(ctx context.Context, instance *pb.MicroServiceInstance) *errsvc.Error {
 	if len(instance.Status) == 0 {
 		instance.Status = pb.MSI_UP
 	}
@@ -214,7 +215,7 @@ func getHeartbeatFunc(ctx context.Context, domainProject string, instancesHbRst 
 	}
 }
 
-func revokeInstance(ctx context.Context, domainProject string, serviceID string, instanceID string) *pb.Error {
+func revokeInstance(ctx context.Context, domainProject string, serviceID string, instanceID string) *errsvc.Error {
 	leaseID, err := serviceUtil.GetLeaseID(ctx, domainProject, serviceID, instanceID)
 	if err != nil {
 		return pb.NewError(pb.ErrUnavailableBackend, err.Error())

@@ -19,6 +19,7 @@ package dao
 
 import (
 	"context"
+	"github.com/go-chassis/cari/pkg/errsvc"
 
 	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"go.mongodb.org/mongo-driver/bson"
@@ -95,7 +96,7 @@ func CountInstance(ctx context.Context, filter interface{}) (int64, error) {
 	return count, nil
 }
 
-func UpdateInstance(ctx context.Context, filter interface{}, update interface{}, opts ...*options.UpdateOptions) *discovery.Error {
+func UpdateInstance(ctx context.Context, filter interface{}, update interface{}, opts ...*options.UpdateOptions) *errsvc.Error {
 	_, err := client.GetMongoClient().Update(ctx, model.CollectionInstance, filter, update, opts...)
 	if err != nil {
 		return discovery.NewError(discovery.ErrUnavailableBackend, err.Error())
