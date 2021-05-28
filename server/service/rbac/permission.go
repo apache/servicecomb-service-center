@@ -26,7 +26,7 @@ var (
 	MethodToVerbs = map[string]string{
 		"GET":    "get",
 		"POST":   "create",
-		"UPDATE": "update",
+		"PUT": "update",
 		"DELETE": "delete",
 	}
 )
