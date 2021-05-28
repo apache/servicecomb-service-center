@@ -65,8 +65,9 @@ func matchValidate(val interface{}) error {
 	if spec["matches"] == nil {
 		return nil
 	}
-	if spec["alias"] == nil || spec["alias"] == "" {
-		return &ErrIllegalItem{"alias can not be null", spec}
+	alias, ok := spec["alias"].(string)
+	if !ok {
+		return &ErrIllegalItem{"alias must be string", alias}
 	}
 	matches, ok := spec["matches"].([]interface{})
 	if !ok {
@@ -80,7 +81,7 @@ func matchValidate(val interface{}) error {
 		if match["name"] == nil {
 			return &ErrIllegalItem{"match's name can not be null", match}
 		}
-		if match["apiPath"] == nil && match["headers"] == nil && match["methods"] == nil {
+		if match["apiPath"] == nil && match["headers"] == nil && match["method"] == nil {
 			return &ErrIllegalItem{"match must have a match item [apiPath/headers/methods]", match}
 		}
 		//apiPath & headers do not check
