@@ -103,6 +103,7 @@ func CloneContext(ctx context.Context) context.Context {
 	return strCtx
 }
 
+// FromContext return the value from ctx, return empty STRING if not found
 func FromContext(ctx context.Context, key CtxKey) interface{} {
 	if v := ctx.Value(key); v != nil {
 		return v
