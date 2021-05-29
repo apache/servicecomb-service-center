@@ -74,7 +74,7 @@ func (d *Distributor) Create(kind, project string, spec []byte) ([]byte, error) 
 	if err != nil {
 		return nil, err
 	}
-	setAlias(p.Spec, p.Name)
+	setAliasIfEmpty(p.Spec, p.Name)
 	yamlByte, err := yaml.Marshal(p.Spec)
 	if err != nil {
 		return nil, err
@@ -105,7 +105,7 @@ func (d *Distributor) Update(kind, id, project string, spec []byte) error {
 	if err != nil {
 		return err
 	}
-	setAlias(p.Spec, p.Name)
+	setAliasIfEmpty(p.Spec, p.Name)
 	yamlByte, err := yaml.Marshal(p.Spec)
 	if err != nil {
 		return err
@@ -211,7 +211,7 @@ func (d *Distributor) Display(project, app, env string) ([]byte, error) {
 	return b, nil
 }
 
-func setAlias(val interface{}, name string) {
+func setAliasIfEmpty(val interface{}, name string) {
 	spec := val.(map[string]interface{})
 	alias := spec["alias"].(string)
 	if alias == "" {
