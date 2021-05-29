@@ -18,8 +18,6 @@
 package auth
 
 import (
-	"net/http"
-
 	"github.com/apache/servicecomb-service-center/pkg/chain"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
@@ -27,6 +25,7 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/auth"
 	"github.com/apache/servicecomb-service-center/server/response"
 	"github.com/go-chassis/cari/discovery"
+	"net/http"
 )
 
 const (
@@ -55,7 +54,8 @@ func (h *Handler) Handle(i *chain.Invocation) {
 		}
 		apiPath, obj := i.Context().Value(rest.CtxMatchPattern).(string),
 			i.Context().Value(rest.CtxResponseObject)
-		if obj == nil {
+		// obj set empty string if CtxResponseObject not exist
+		if _, ok := obj.(string); ok || obj == nil {
 			return
 		}
 
