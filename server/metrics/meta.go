@@ -110,7 +110,7 @@ var (
 			Namespace: metrics.FamilyName,
 			Subsystem: metrics.SubSystem,
 			Name:      "account_total",
-			Help:      "Counter of accounts",
+			Help:      "Gauge of accounts",
 		}, []string{"instance", "domain"})
 
 	roleCounter = helper.NewGaugeVec(

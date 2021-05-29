@@ -20,6 +20,7 @@ package rbac_test
 import (
 	"context"
 	"github.com/apache/servicecomb-service-center/pkg/privacy"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/config"
 	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 	_ "github.com/apache/servicecomb-service-center/test"
@@ -34,6 +35,10 @@ import (
 	"io/ioutil"
 	"testing"
 )
+
+func TestingContext() context.Context {
+	return context.WithValue(context.Background(), util.CtxNocache, "1")
+}
 
 func init() {
 	beego.AppConfig.Set("rbac_enabled", "true")
@@ -92,7 +97,7 @@ func TestInitRBAC(t *testing.T) {
 		ctx := context.WithValue(context.Background(), rbacsvc.CtxRequestClaims, claims)
 		err = rbacsvc.ChangePassword(ctx, &rbac.Account{Name: persisted.Name, Password: "Complicated_password2"})
 		assert.NoError(t, err)
-		a, err := rbacsvc.GetAccount(context.Background(), persisted.Name)
+		a, err := rbacsvc.GetAccount(TestingContext(), persisted.Name)
 		assert.NoError(t, err)
 		assert.True(t, privacy.SamePassword(a.Password, "Complicated_password2"))
 	})
@@ -125,7 +130,7 @@ func TestInitRBAC(t *testing.T) {
 		ctx := context.WithValue(context.Background(), rbacsvc.CtxRequestClaims, claims)
 		err = rbacsvc.ChangePassword(ctx, &rbac.Account{Name: a.Name, CurrentPassword: testPwd0, Password: testPwd1})
 		assert.NoError(t, err)
-		resp, err := rbacsvc.GetAccount(context.Background(), a.Name)
+		resp, err := rbacsvc.GetAccount(TestingContext(), a.Name)
 		assert.NoError(t, err)
 		assert.True(t, privacy.SamePassword(resp.Password, testPwd1))
 	})
