@@ -21,16 +21,25 @@ package dao
 import (
 	"context"
 	"errors"
-
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 
 	rbacmodel "github.com/go-chassis/cari/rbac"
 )
 
+func quotaCheck() {
+}
+
 //CreateAccount save 2 kv
 //1. account info
 func CreateAccount(ctx context.Context, a *rbacmodel.Account) error {
+	err := quota.Apply(ctx, quota.NewApplyQuotaResource(quota.TypeAccount,
+		util.ParseDomainProject(ctx), "", 1))
+	if err != nil {
+		return err
+	}
 	return datasource.Instance().CreateAccount(ctx, a)
 }
 

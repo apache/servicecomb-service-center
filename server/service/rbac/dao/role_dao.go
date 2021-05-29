@@ -21,6 +21,8 @@ import (
 	"context"
 	"errors"
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	"github.com/apache/servicecomb-service-center/server/service/validator"
 	"github.com/go-chassis/cari/discovery"
 
@@ -35,6 +37,11 @@ func CreateRole(ctx context.Context, r *rbac.Role) (*discovery.Response, error) 
 	if err != nil {
 		log.Errorf(err, "create role [%s] failed", r.Name)
 		return discovery.CreateResponse(discovery.ErrInvalidParams, err.Error()), nil
+	}
+	quotaErr := quota.Apply(ctx, quota.NewApplyQuotaResource(quota.TypeRole,
+		util.ParseDomainProject(ctx), "", 1))
+	if quotaErr != nil {
+		return discovery.CreateResponse(discovery.ErrNotEnoughQuota, quotaErr.Error()), nil
 	}
 	err = datasource.Instance().CreateRole(ctx, r)
 	if err == nil {

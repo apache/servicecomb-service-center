@@ -123,7 +123,7 @@ func (rr *RoleResource) UpdateRole(w http.ResponseWriter, req *http.Request) {
 
 //GetRole get the role info according to role name
 func (rr *RoleResource) GetRole(w http.ResponseWriter, r *http.Request) {
-	resp, status, err := dao.GetRole(req.Context(), r.URL.Query().Get(":roleName"))
+	resp, status, err := dao.GetRole(r.Context(), r.URL.Query().Get(":roleName"))
 	if err != nil {
 		log.Error(errorsEx.MsgGetRoleFailed, err)
 		rest.WriteError(w, discovery.ErrInternal, errorsEx.MsgGetRoleFailed)
