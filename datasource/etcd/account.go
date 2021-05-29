@@ -25,12 +25,13 @@ import (
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
+	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/etcdsync"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/privacy"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-
 	"github.com/go-chassis/cari/rbac"
 )
 
@@ -99,8 +100,10 @@ func GenAccountOpts(a *rbac.Account, action client.ActionType) ([]client.PluginO
 	return opts, nil
 }
 func (ds *DataSource) AccountExist(ctx context.Context, name string) (bool, error) {
-	resp, err := client.Instance().Do(ctx, client.GET,
-		client.WithStrKey(path.GenerateRBACAccountKey(name)))
+	opts := append(serviceUtil.FromContext(ctx),
+		client.WithStrKey(path.GenerateRBACAccountKey(name)),
+		client.WithCountOnly())
+	resp, err := kv.Account().Search(ctx, opts...)
 	if err != nil {
 		return false, err
 	}
@@ -109,9 +112,11 @@ func (ds *DataSource) AccountExist(ctx context.Context, name string) (bool, erro
 	}
 	return true, nil
 }
+
 func (ds *DataSource) GetAccount(ctx context.Context, name string) (*rbac.Account, error) {
-	resp, err := client.Instance().Do(ctx, client.GET,
+	opts := append(serviceUtil.FromContext(ctx),
 		client.WithStrKey(path.GenerateRBACAccountKey(name)))
+	resp, err := kv.Account().Search(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -121,14 +126,9 @@ func (ds *DataSource) GetAccount(ctx context.Context, name string) (*rbac.Accoun
 	if resp.Count != 1 {
 		return nil, client.ErrNotUnique
 	}
-	account := &rbac.Account{}
-	err = json.Unmarshal(resp.Kvs[0].Value, account)
-	if err != nil {
-		log.Errorf(err, "account info format invalid")
-		return nil, err
-	}
-	ds.compatibleOldVersionAccount(account)
-	return account, nil
+	account := *resp.Kvs[0].Value.(*rbac.Account)
+	ds.compatibleOldVersionAccount(&account)
+	return &account, nil
 }
 
 func (ds *DataSource) compatibleOldVersionAccount(a *rbac.Account) {
@@ -142,25 +142,23 @@ func (ds *DataSource) compatibleOldVersionAccount(a *rbac.Account) {
 }
 
 func (ds *DataSource) ListAccount(ctx context.Context) ([]*rbac.Account, int64, error) {
-	resp, err := client.Instance().Do(ctx, client.GET,
-		client.WithStrKey(path.GenerateRBACAccountKey("")), client.WithPrefix())
+	opts := append(serviceUtil.FromContext(ctx),
+		client.WithStrKey(path.GenerateRBACAccountKey("")),
+		client.WithPrefix())
+	resp, err := kv.Account().Search(ctx, opts...)
 	if err != nil {
 		return nil, 0, err
 	}
 	accounts := make([]*rbac.Account, 0, resp.Count)
 	for _, v := range resp.Kvs {
-		a := &rbac.Account{}
-		err = json.Unmarshal(v.Value, a)
-		if err != nil {
-			log.Error("account info format invalid:", err)
-			continue //do not fail if some account is invalid
-		}
+		a := *v.Value.(*rbac.Account)
 		a.Password = ""
-		ds.compatibleOldVersionAccount(a)
-		accounts = append(accounts, a)
+		ds.compatibleOldVersionAccount(&a)
+		accounts = append(accounts, &a)
 	}
 	return accounts, resp.Count, nil
 }
+
 func (ds *DataSource) DeleteAccount(ctx context.Context, names []string) (bool, error) {
 	if len(names) == 0 {
 		return false, nil
@@ -190,6 +188,7 @@ func (ds *DataSource) DeleteAccount(ctx context.Context, names []string) (bool, 
 	}
 	return true, nil
 }
+
 func (ds *DataSource) UpdateAccount(ctx context.Context, name string, account *rbac.Account) error {
 	account.UpdateTime = strconv.FormatInt(time.Now().Unix(), 10)
 	value, err := json.Marshal(account)
@@ -197,8 +196,5 @@ func (ds *DataSource) UpdateAccount(ctx context.Context, name string, account *r
 		log.Errorf(err, "account info is invalid")
 		return err
 	}
-	_, err = client.Instance().Do(ctx, client.PUT,
-		client.WithStrKey(path.GenerateRBACAccountKey(name)),
-		client.WithValue(value))
-	return err
+	return client.PutBytes(ctx, path.GenerateRBACAccountKey(name), value)
 }

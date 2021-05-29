@@ -24,14 +24,15 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/go-chassis/cari/rbac"
-
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
+	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/etcdsync"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/go-chassis/cari/rbac"
 )
 
 func (ds *DataSource) CreateRole(ctx context.Context, r *rbac.Role) error {
@@ -45,8 +46,7 @@ func (ds *DataSource) CreateRole(ctx context.Context, r *rbac.Role) error {
 			log.Error("can not release role lock", err)
 		}
 	}()
-	key := path.GenerateRBACRoleKey(r.Name)
-	exist, err := datasource.Instance().RoleExist(ctx, r.Name)
+	exist, err := ds.RoleExist(ctx, r.Name)
 	if err != nil {
 		log.Error("can not save role info", err)
 		return err
@@ -62,7 +62,7 @@ func (ds *DataSource) CreateRole(ctx context.Context, r *rbac.Role) error {
 		log.Error("role info is invalid", err)
 		return err
 	}
-	err = client.PutBytes(ctx, key, value)
+	err = client.PutBytes(ctx, path.GenerateRBACRoleKey(r.Name), value)
 	if err != nil {
 		log.Error("can not save account info", err)
 		return err
@@ -72,8 +72,10 @@ func (ds *DataSource) CreateRole(ctx context.Context, r *rbac.Role) error {
 }
 
 func (ds *DataSource) RoleExist(ctx context.Context, name string) (bool, error) {
-	resp, err := client.Instance().Do(ctx, client.GET,
-		client.WithStrKey(path.GenerateRBACRoleKey(name)))
+	opts := append(serviceUtil.FromContext(ctx),
+		client.WithStrKey(path.GenerateRBACRoleKey(name)),
+		client.WithCountOnly())
+	resp, err := kv.Role().Search(ctx, opts...)
 	if err != nil {
 		return false, err
 	}
@@ -82,9 +84,11 @@ func (ds *DataSource) RoleExist(ctx context.Context, name string) (bool, error) 
 	}
 	return true, nil
 }
+
 func (ds *DataSource) GetRole(ctx context.Context, name string) (*rbac.Role, error) {
-	resp, err := client.Instance().Do(ctx, client.GET,
+	opts := append(serviceUtil.FromContext(ctx),
 		client.WithStrKey(path.GenerateRBACRoleKey(name)))
+	resp, err := kv.Role().Search(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -94,33 +98,26 @@ func (ds *DataSource) GetRole(ctx context.Context, name string) (*rbac.Role, err
 	if resp.Count != 1 {
 		return nil, client.ErrNotUnique
 	}
-	role := &rbac.Role{}
-	err = json.Unmarshal(resp.Kvs[0].Value, role)
-	if err != nil {
-		log.Errorf(err, "role info format invalid")
-		return nil, err
-	}
-	return role, nil
+	role := *resp.Kvs[0].Value.(*rbac.Role)
+	return &role, nil
 }
+
 func (ds *DataSource) ListRole(ctx context.Context) ([]*rbac.Role, int64, error) {
-	resp, err := client.Instance().Do(ctx, client.GET,
-		client.WithStrKey(path.GenerateRBACRoleKey("")), client.WithPrefix())
+	opts := append(serviceUtil.FromContext(ctx),
+		client.WithStrKey(path.GenerateRBACRoleKey("")),
+		client.WithPrefix())
+	resp, err := kv.Role().Search(ctx, opts...)
 	if err != nil {
 		return nil, 0, err
 	}
 	roles := make([]*rbac.Role, 0, resp.Count)
 	for _, v := range resp.Kvs {
-		r := &rbac.Role{}
-		err = json.Unmarshal(v.Value, r)
-		if err != nil {
-			log.Error("role info format invalid:", err)
-			continue //do not fail if some role is invalid
-		}
-
-		roles = append(roles, r)
+		r := *v.Value.(*rbac.Role)
+		roles = append(roles, &r)
 	}
 	return roles, resp.Count, nil
 }
+
 func (ds *DataSource) DeleteRole(ctx context.Context, name string) (bool, error) {
 	exists, err := RoleBindingExists(ctx, name)
 	if err != nil {
@@ -152,8 +149,5 @@ func (ds *DataSource) UpdateRole(ctx context.Context, name string, role *rbac.Ro
 		log.Errorf(err, "role info is invalid")
 		return err
 	}
-	_, err = client.Instance().Do(ctx, client.PUT,
-		client.WithStrKey(path.GenerateRBACRoleKey(name)),
-		client.WithValue(value))
-	return err
+	return client.PutBytes(ctx, path.GenerateRBACRoleKey(name), value)
 }

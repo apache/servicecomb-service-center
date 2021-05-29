@@ -30,12 +30,7 @@ import (
 	"github.com/apache/servicecomb-service-center/server/config"
 )
 
-var store = &TypeStore{}
-
-func init() {
-	store.Initialize()
-	registerInnerTypes()
-}
+var store = NewStore()
 
 type TypeStore struct {
 	AddOns    map[sd.Type]AddOn
@@ -44,12 +39,6 @@ type TypeStore struct {
 	goroutine *gopool.Pool
 	isClose   bool
 	rev       int64
-}
-
-func (s *TypeStore) Initialize() {
-	s.AddOns = make(map[sd.Type]AddOn)
-	s.ready = make(chan struct{})
-	s.goroutine = gopool.New(context.Background())
 }
 
 func (s *TypeStore) OnCacheEvent(evt sd.KvEvent) {
@@ -175,21 +164,23 @@ func (s *TypeStore) MustInstall(addOn AddOn) sd.Type {
 	return id
 }
 
+// Deprecated use Adaptor instead
 func (s *TypeStore) Adaptors(id sd.Type) sd.Adaptor { return s.getOrCreateAdaptor(id) }
-func (s *TypeStore) Service() sd.Adaptor            { return s.Adaptors(SERVICE) }
-func (s *TypeStore) SchemaSummary() sd.Adaptor      { return s.Adaptors(SchemaSummary) }
-func (s *TypeStore) Instance() sd.Adaptor           { return s.Adaptors(INSTANCE) }
-func (s *TypeStore) Lease() sd.Adaptor              { return s.Adaptors(LEASE) }
-func (s *TypeStore) ServiceIndex() sd.Adaptor       { return s.Adaptors(ServiceIndex) }
-func (s *TypeStore) ServiceAlias() sd.Adaptor       { return s.Adaptors(ServiceAlias) }
-func (s *TypeStore) ServiceTag() sd.Adaptor         { return s.Adaptors(ServiceTag) }
-func (s *TypeStore) Rule() sd.Adaptor               { return s.Adaptors(RULE) }
-func (s *TypeStore) RuleIndex() sd.Adaptor          { return s.Adaptors(RuleIndex) }
-func (s *TypeStore) Schema() sd.Adaptor             { return s.Adaptors(SCHEMA) }
-func (s *TypeStore) DependencyRule() sd.Adaptor     { return s.Adaptors(DependencyRule) }
-func (s *TypeStore) DependencyQueue() sd.Adaptor    { return s.Adaptors(DependencyQueue) }
-func (s *TypeStore) Domain() sd.Adaptor             { return s.Adaptors(DOMAIN) }
-func (s *TypeStore) Project() sd.Adaptor            { return s.Adaptors(PROJECT) }
+func (s *TypeStore) Adaptor(name string) sd.Adaptor { return s.getOrCreateAdaptor(sd.Type(name)) }
+func (s *TypeStore) Service() sd.Adaptor            { return s.Adaptor("SERVICE") }
+func (s *TypeStore) SchemaSummary() sd.Adaptor      { return s.Adaptor("SCHEMA_SUMMARY") }
+func (s *TypeStore) Instance() sd.Adaptor           { return s.Adaptor("INSTANCE") }
+func (s *TypeStore) Lease() sd.Adaptor              { return s.Adaptor("LEASE") }
+func (s *TypeStore) ServiceIndex() sd.Adaptor       { return s.Adaptor("SERVICE_INDEX") }
+func (s *TypeStore) ServiceAlias() sd.Adaptor       { return s.Adaptor("SERVICE_ALIAS") }
+func (s *TypeStore) ServiceTag() sd.Adaptor         { return s.Adaptor("SERVICE_TAG") }
+func (s *TypeStore) Rule() sd.Adaptor               { return s.Adaptor("RULE") }
+func (s *TypeStore) RuleIndex() sd.Adaptor          { return s.Adaptor("RULE_INDEX") }
+func (s *TypeStore) Schema() sd.Adaptor             { return s.Adaptor("SCHEMA") }
+func (s *TypeStore) DependencyRule() sd.Adaptor     { return s.Adaptor("DEPENDENCY_RULE") }
+func (s *TypeStore) DependencyQueue() sd.Adaptor    { return s.Adaptor("DEPENDENCY_QUEUE") }
+func (s *TypeStore) Domain() sd.Adaptor             { return s.Adaptor("DOMAIN") }
+func (s *TypeStore) Project() sd.Adaptor            { return s.Adaptor("PROJECT") }
 
 func Store() *TypeStore {
 	return store
@@ -197,4 +188,12 @@ func Store() *TypeStore {
 
 func Revision() int64 {
 	return store.rev
+}
+
+func NewStore() *TypeStore {
+	return &TypeStore{
+		AddOns:    make(map[sd.Type]AddOn),
+		ready:     make(chan struct{}),
+		goroutine: gopool.New(context.Background()),
+	}
 }

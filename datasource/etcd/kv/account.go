@@ -15,21 +15,30 @@
  * limitations under the License.
  */
 
-package event
+package kv
 
 import (
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/value"
+	"github.com/go-chassis/cari/rbac"
 )
 
-func Initialize() {
-	sd.AddEventHandler(NewDomainEventHandler())
-	sd.AddEventHandler(NewServiceEventHandler())
-	sd.AddEventHandler(NewInstanceEventHandler())
-	sd.AddEventHandler(NewRuleEventHandler())
-	sd.AddEventHandler(NewTagEventHandler())
-	sd.AddEventHandler(NewDependencyEventHandler())
-	sd.AddEventHandler(NewDependencyRuleEventHandler())
-	sd.AddEventHandler(NewSchemaSummaryEventHandler())
-	sd.AddEventHandler(NewAccountEventHandler())
-	sd.AddEventHandler(NewRoleEventHandler())
+const NameAccount = "ACCOUNT"
+
+func init() {
+	Store().MustInstall(NewAddOn(NameAccount,
+		sd.Configure().
+			WithPrefix(path.GenerateRBACAccountKey("")).
+			WithInitSize(1000).
+			WithParser(
+				&value.CommonParser{
+					NewFunc:  func() interface{} { return new(rbac.Account) },
+					FromFunc: value.JSONUnmarshal,
+				}),
+	))
+}
+
+func Account() sd.Adaptor {
+	return Store().Adaptor(NameAccount)
 }

@@ -36,8 +36,7 @@ func (e *extend) Config() *sd.Config {
 }
 
 func TestInstallType(t *testing.T) {
-	s := &TypeStore{}
-	s.Initialize()
+	s := NewStore()
 
 	// case: normal
 	e := &extend{cfg: sd.Configure()}
@@ -76,8 +75,7 @@ func TestInstallType(t *testing.T) {
 }
 
 func TestNewAddOn(t *testing.T) {
-	s := &TypeStore{}
-	s.Initialize()
+	s := NewStore()
 
 	id, err := s.Install(NewAddOn("TestNewAddOn", nil))
 	if id != sd.TypeError || err == nil {

@@ -33,6 +33,7 @@ const (
 	selfPreservationInitCount  = 5
 )
 
+// Deprecated no uses
 var (
 	DOMAIN          sd.Type
 	PROJECT         sd.Type
@@ -49,6 +50,10 @@ var (
 	INSTANCE        sd.Type
 	LEASE           sd.Type
 )
+
+func init() {
+	registerInnerTypes()
+}
 
 func registerInnerTypes() {
 	SERVICE = Store().MustInstall(NewAddOn("SERVICE",

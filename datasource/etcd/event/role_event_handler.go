@@ -19,17 +19,33 @@ package event
 
 import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	"github.com/apache/servicecomb-service-center/server/metrics"
+	pb "github.com/go-chassis/cari/discovery"
 )
 
-func Initialize() {
-	sd.AddEventHandler(NewDomainEventHandler())
-	sd.AddEventHandler(NewServiceEventHandler())
-	sd.AddEventHandler(NewInstanceEventHandler())
-	sd.AddEventHandler(NewRuleEventHandler())
-	sd.AddEventHandler(NewTagEventHandler())
-	sd.AddEventHandler(NewDependencyEventHandler())
-	sd.AddEventHandler(NewDependencyRuleEventHandler())
-	sd.AddEventHandler(NewSchemaSummaryEventHandler())
-	sd.AddEventHandler(NewAccountEventHandler())
-	sd.AddEventHandler(NewRoleEventHandler())
+// RoleEventHandler is the handler to handle:
+type RoleEventHandler struct {
+}
+
+func (h *RoleEventHandler) Type() sd.Type {
+	return "ROLE"
+}
+
+func (h *RoleEventHandler) OnEvent(evt sd.KvEvent) {
+	action := evt.Type
+	domainName := "default" //TODO ...
+
+	if action == pb.EVT_INIT || action == pb.EVT_CREATE {
+		metrics.ReportRoles(domainName, 1)
+		return
+	}
+
+	if action == pb.EVT_DELETE {
+		metrics.ReportRoles(domainName, -1)
+		return
+	}
+}
+
+func NewRoleEventHandler() *RoleEventHandler {
+	return &RoleEventHandler{}
 }
