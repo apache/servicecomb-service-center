@@ -25,22 +25,22 @@ import (
 
 func TestFromMetadata(t *testing.T) {
 	v := FromMetadata(context.Background(), "a")
-	if v != "" {
+	if v != nil {
 		t.Fatalf("TestFromMetadata failed")
 	}
 	ctx := context.WithValue(context.Background(), "a", "b")
 	v = FromMetadata(ctx, "a")
-	if v != "" {
+	if v != nil {
 		t.Fatalf("TestFromMetadata failed")
 	}
 	ctx = metadata.NewIncomingContext(ctx, metadata.MD{})
 	v = FromMetadata(ctx, "a")
-	if v != "" {
+	if v != nil {
 		t.Fatalf("TestFromMetadata failed")
 	}
 	ctx = metadata.NewIncomingContext(ctx, metadata.MD{"a": []string{}})
 	v = FromMetadata(ctx, "a")
-	if v != "" {
+	if v != nil {
 		t.Fatalf("TestFromMetadata failed")
 	}
 	ctx = metadata.NewIncomingContext(ctx, metadata.MD{"a": []string{"b", "c"}})

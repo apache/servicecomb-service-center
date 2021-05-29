@@ -18,11 +18,17 @@ package util
 
 import (
 	"context"
+	"github.com/stretchr/testify/assert"
 	"net/http"
 	"testing"
 )
 
 func TestSetContext(t *testing.T) {
+	t.Run("not set context should return empty", func(t *testing.T) {
+		assert.Equal(t, "", ParseTargetProject(context.Background()))
+		assert.Equal(t, "", ParseTargetDomain(context.Background()))
+	})
+
 	ctx := context.WithValue(context.Background(), "z", "z")
 	ctx = context.WithValue(ctx, 1, 1)
 	ctx = SetDomainProject(ctx, "x", "y")

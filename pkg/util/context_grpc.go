@@ -21,13 +21,13 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-func FromMetadata(ctx context.Context, key CtxKey) string {
+func FromMetadata(ctx context.Context, key CtxKey) interface{} {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
-		return ""
+		return nil
 	}
 	if values, ok := md[string(key)]; ok && len(values) > 0 {
 		return values[0]
 	}
-	return ""
+	return nil
 }
