@@ -264,19 +264,26 @@ func TestGetAPIParseFunc(t *testing.T) {
 			assert.Equal(t, tt.wantResource.Verb, resource.Verb)
 			assert.Equal(t, tt.wantResource.Labels == nil, resource.Labels == nil)
 			for _, labels := range tt.wantResource.Labels {
-				var targetLabelsLength int
-			LOOP:
-				for k, v := range labels {
-					for _, targetLabels := range resource.Labels {
-						targetLabelsLength = len(targetLabels)
-						if v == targetLabels[k] {
-							continue LOOP
-						}
-					}
-					assert.Fail(t, "label key value not matched", "%s=%s", k, v)
-				}
-				assert.Equal(t, len(labels), targetLabelsLength)
+				checkLabels(t, labels, resource)
 			}
 		})
 	}
+}
+
+func checkLabels(t *testing.T, labels map[string]string, resource *auth.ResourceScope) {
+	var (
+		targetLabelsLength int
+		found              bool
+	)
+	for k, v := range labels {
+		for _, targetLabels := range resource.Labels {
+			targetLabelsLength = len(targetLabels)
+			found = v == targetLabels[k]
+			if found {
+				break
+			}
+		}
+		assert.True(t, found, "target label key value not matched %s=%s", k, v)
+	}
+	assert.Equal(t, len(labels), targetLabelsLength)
 }
