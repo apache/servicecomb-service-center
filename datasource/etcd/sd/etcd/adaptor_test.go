@@ -55,7 +55,7 @@ func TestNewKvEntity(t *testing.T) {
 
 func TestNewRepository(t *testing.T) {
 	repo := NewRepository(sd.Options{})
-	i := repo.(*Repository).New(0, sd.Configure())
+	i := repo.(*Repository).New("", sd.Configure())
 	if _, ok := i.(*Adaptor); !ok {
 		t.Fatalf("TestNewIndexer failed")
 	}

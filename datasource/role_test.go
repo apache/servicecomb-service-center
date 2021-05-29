@@ -68,7 +68,7 @@ func TestRole(t *testing.T) {
 	t.Run("add new role should success", func(t *testing.T) {
 		err := datasource.Instance().CreateRole(context.Background(), &r2)
 		assert.NoError(t, err)
-		_, n, err := datasource.Instance().ListRole(context.Background())
+		_, n, err := datasource.Instance().ListRole(TestingContext())
 		assert.NoError(t, err)
 		assert.Equal(t, int64(2), n)
 	})
@@ -78,8 +78,8 @@ func TestRole(t *testing.T) {
 		assert.NoError(t, err)
 		_, err = datasource.Instance().DeleteRole(context.Background(), "test-role2")
 		assert.NoError(t, err)
-		_, n, err := datasource.Instance().ListRole(context.Background())
+		roles, n, err := datasource.Instance().ListRole(TestingContext())
 		assert.NoError(t, err)
-		assert.Equal(t, int64(0), n)
+		assert.Equal(t, int64(0), n, "roles %+v", roles)
 	})
 }

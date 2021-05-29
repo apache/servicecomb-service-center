@@ -21,7 +21,7 @@ import (
 	"testing"
 )
 
-const MOCK = 999
+const MOCK = "MOCK"
 
 type mockEventHandler struct {
 	MockType Type
