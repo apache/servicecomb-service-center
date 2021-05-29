@@ -148,7 +148,7 @@ func checkPerm(roleList []string, project string, req *http.Request, apiPattern,
 		return false, nil, errors.New("no valid resouce scope")
 	}
 	//TODO add project
-	return rbacsvc.Allow(context.TODO(), project, normalRoles, targetResource)
+	return rbacsvc.Allow(req.Context(), project, normalRoles, targetResource)
 }
 
 func mustAuth(pattern string) bool {

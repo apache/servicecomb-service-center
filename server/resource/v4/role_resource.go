@@ -18,7 +18,6 @@
 package v4
 
 import (
-	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -50,7 +49,7 @@ func (rr *RoleResource) URLPatterns() []rest.Route {
 
 //ListRoles list all roles and there's permissions
 func (rr *RoleResource) ListRoles(w http.ResponseWriter, req *http.Request) {
-	rs, num, err := dao.ListRole(context.TODO())
+	rs, num, err := dao.ListRole(req.Context())
 	if err != nil {
 		log.Error(errorsEx.MsgGetRoleFailed, err)
 		rest.WriteError(w, discovery.ErrInternal, errorsEx.MsgGetRoleFailed)
@@ -89,7 +88,7 @@ func (rr *RoleResource) CreateRole(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	status, err := dao.CreateRole(context.TODO(), role)
+	status, err := dao.CreateRole(req.Context(), role)
 	if err != nil {
 		log.Error(errorsEx.MsgOperateRoleFailed, err)
 		rest.WriteError(w, discovery.ErrInternal, err.Error())
@@ -112,7 +111,7 @@ func (rr *RoleResource) UpdateRole(w http.ResponseWriter, req *http.Request) {
 		rest.WriteError(w, discovery.ErrInvalidParams, errorsEx.MsgJSON)
 		return
 	}
-	status, err := dao.EditRole(context.TODO(), name, role)
+	status, err := dao.EditRole(req.Context(), name, role)
 	if err != nil {
 		log.Error(errorsEx.MsgOperateRoleFailed, err)
 		rest.WriteError(w, discovery.ErrInternal, errorsEx.MsgOperateRoleFailed)
@@ -124,7 +123,7 @@ func (rr *RoleResource) UpdateRole(w http.ResponseWriter, req *http.Request) {
 
 //GetRole get the role info according to role name
 func (rr *RoleResource) GetRole(w http.ResponseWriter, r *http.Request) {
-	resp, status, err := dao.GetRole(context.TODO(), r.URL.Query().Get(":roleName"))
+	resp, status, err := dao.GetRole(req.Context(), r.URL.Query().Get(":roleName"))
 	if err != nil {
 		log.Error(errorsEx.MsgGetRoleFailed, err)
 		rest.WriteError(w, discovery.ErrInternal, errorsEx.MsgGetRoleFailed)
@@ -138,7 +137,7 @@ func (rr *RoleResource) GetRole(w http.ResponseWriter, r *http.Request) {
 func (rr *RoleResource) DeleteRole(w http.ResponseWriter, req *http.Request) {
 	n := req.URL.Query().Get(":roleName")
 
-	status, err := dao.DeleteRole(context.TODO(), n)
+	status, err := dao.DeleteRole(req.Context(), n)
 	if err != nil {
 		log.Error(errorsEx.MsgJSON, err)
 		rest.WriteError(w, discovery.ErrInternal, errorsEx.MsgJSON)
