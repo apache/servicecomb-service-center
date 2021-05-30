@@ -76,7 +76,7 @@ func (ar *AuthResource) CreateAccount(w http.ResponseWriter, req *http.Request) 
 		rest.WriteError(w, discovery.ErrInvalidParams, err.Error())
 		return
 	}
-	err = dao.CreateAccount(context.TODO(), a)
+	err = dao.CreateAccount(req.Context(), a)
 	if err != nil {
 		if err == datasource.ErrAccountDuplicated {
 			rest.WriteError(w, rbac.ErrAccountConflict, "")

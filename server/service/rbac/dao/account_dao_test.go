@@ -20,7 +20,6 @@ package dao_test
 // initialize
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/pkg/util"
 	"testing"
 
 	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
@@ -42,10 +41,6 @@ func newAccount(name string) *rbac.Account {
 		Password: "Ab@11111",
 		Roles:    []string{rbac.RoleAdmin},
 	}
-}
-
-func TestingContext() context.Context {
-	return context.WithValue(context.Background(), util.CtxNocache, "1")
 }
 
 func TestAccountDao_CreateAccount(t *testing.T) {
@@ -79,7 +74,7 @@ func TestAccountDao_UpdateAccount(t *testing.T) {
 		}
 		err = dao.UpdateAccount(context.Background(), account.Name, newAccount)
 		assert.NoError(t, err)
-		a, err := dao.GetAccount(TestingContext(), account.Name)
+		a, err := dao.GetAccount(context.Background(), account.Name)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(a.Roles))
 		assert.Equal(t, rbac.RoleDeveloper, a.Roles[0])

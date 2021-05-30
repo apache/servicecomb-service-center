@@ -20,7 +20,6 @@ package rbac_test
 import (
 	"context"
 	"github.com/apache/servicecomb-service-center/pkg/privacy"
-	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/config"
 	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
@@ -34,10 +33,6 @@ import (
 	"io/ioutil"
 	"testing"
 )
-
-func TestingContext() context.Context {
-	return context.WithValue(context.Background(), util.CtxNocache, "1")
-}
 
 func init() {
 	beego.AppConfig.Set("rbac_enabled", "true")
@@ -97,7 +92,7 @@ func TestInitRBAC(t *testing.T) {
 		assert.NoError(t, err)
 		err = rbacsvc.ChangePassword(context.Background(), []string{rbac.RoleAdmin}, "admin", &rbac.Account{Name: "a", Password: "Complicated_password2"})
 		assert.NoError(t, err)
-		a, err := dao.GetAccount(TestingContext(), "a")
+		a, err := dao.GetAccount(context.Background(), "a")
 		assert.NoError(t, err)
 		assert.True(t, privacy.SamePassword(a.Password, "Complicated_password2"))
 	})
@@ -106,13 +101,13 @@ func TestInitRBAC(t *testing.T) {
 		assert.NoError(t, err)
 		err = rbacsvc.ChangePassword(context.Background(), nil, "b", &rbac.Account{Name: "b", CurrentPassword: "Complicated_password1", Password: "Complicated_password2"})
 		assert.NoError(t, err)
-		a, err := dao.GetAccount(TestingContext(), "b")
+		a, err := dao.GetAccount(context.Background(), "b")
 		assert.NoError(t, err)
 		assert.True(t, privacy.SamePassword(a.Password, "Complicated_password2"))
 
 	})
 	t.Run("list kv", func(t *testing.T) {
-		_, n, err := dao.ListAccount(TestingContext())
+		_, n, err := dao.ListAccount(context.TODO())
 		assert.NoError(t, err)
 		assert.Greater(t, n, int64(2))
 	})

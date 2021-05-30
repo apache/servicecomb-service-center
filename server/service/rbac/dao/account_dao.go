@@ -29,9 +29,6 @@ import (
 	rbacmodel "github.com/go-chassis/cari/rbac"
 )
 
-func quotaCheck() {
-}
-
 //CreateAccount save 2 kv
 //1. account info
 func CreateAccount(ctx context.Context, a *rbacmodel.Account) error {
