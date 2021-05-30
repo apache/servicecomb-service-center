@@ -78,7 +78,7 @@ func (ba *TokenAuthenticator) Identify(req *http.Request) error {
 		log.Error("get account  failed", err)
 		return err
 	}
-	util.SetRequestContext(req, authHandler.CtxRequestClaims, m)
+	util.SetRequestContext(req, rbacsvc.CtxRequestClaims, m)
 	// user can change self password
 	if isChangeSelfPassword(pattern, account, req) {
 		return nil
@@ -163,11 +163,4 @@ func (ba *TokenAuthenticator) ResourceScopes(r *http.Request) *auth.ResourceScop
 		return nil
 	}
 	return FromRequest(r)
-}
-func AccountFromContext(ctx context.Context) (*rbac.Account, error) {
-	m, ok := ctx.Value(authHandler.CtxRequestClaims).(map[string]interface{})
-	if !ok {
-		return nil, errors.New("no claims from request context")
-	}
-	return rbac.GetAccount(m)
 }

@@ -94,7 +94,7 @@ func TestAuthResource_Login(t *testing.T) {
 	})
 
 	// root account token
-	var to = &rbacmodel.Token{}
+	var rootToken = &rbacmodel.Token{}
 	t.Run("root login", func(t *testing.T) {
 		b, _ := json.Marshal(&rbacmodel.Account{Name: "root", Password: pwd, Roles: []string{"admin"}})
 
@@ -102,7 +102,7 @@ func TestAuthResource_Login(t *testing.T) {
 		w := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code)
-		json.Unmarshal(w.Body.Bytes(), to)
+		json.Unmarshal(w.Body.Bytes(), rootToken)
 	})
 
 	t.Run("invalid password", func(t *testing.T) {
@@ -118,7 +118,7 @@ func TestAuthResource_Login(t *testing.T) {
 		b, _ := json.Marshal(&rbacmodel.Account{Name: "dev_account", Password: "Complicated_password1", Roles: []string{"developer"}})
 
 		r, _ := http.NewRequest(http.MethodPost, "/v4/accounts", bytes.NewBuffer(b))
-		r.Header.Set(restful.HeaderAuth, "Bearer "+to.TokenStr)
+		r.Header.Set(restful.HeaderAuth, "Bearer "+rootToken.TokenStr)
 		w := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code)
@@ -126,7 +126,7 @@ func TestAuthResource_Login(t *testing.T) {
 	t.Run("given a valid token and deleted account, auth should fail", func(t *testing.T) {
 		b, _ := json.Marshal(&rbacmodel.Account{Name: "admin_account", Password: "Complicated_password1", Roles: []string{"admin"}})
 		r, _ := http.NewRequest(http.MethodPost, "/v4/accounts", bytes.NewBuffer(b))
-		r.Header.Set(restful.HeaderAuth, "Bearer "+to.TokenStr)
+		r.Header.Set(restful.HeaderAuth, "Bearer "+rootToken.TokenStr)
 		w := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code)
@@ -140,7 +140,7 @@ func TestAuthResource_Login(t *testing.T) {
 		json.Unmarshal(w2.Body.Bytes(), deletedToken)
 
 		r3, _ := http.NewRequest(http.MethodDelete, "/v4/accounts/admin_account", nil)
-		r3.Header.Set(restful.HeaderAuth, "Bearer "+deletedToken.TokenStr)
+		r3.Header.Set(restful.HeaderAuth, "Bearer "+rootToken.TokenStr)
 		w3 := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w3, r3)
 		assert.Equal(t, http.StatusOK, w3.Code)
@@ -161,7 +161,7 @@ func TestAuthResource_Login(t *testing.T) {
 
 		b2, _ := json.Marshal(&rbacmodel.Account{Name: "dev_account", CurrentPassword: "Complicated_password1", Password: "Complicated_password2"})
 		r2, _ := http.NewRequest(http.MethodPost, "/v4/accounts/dev_account/password", bytes.NewBuffer(b2))
-		r2.Header.Set(restful.HeaderAuth, "Bearer "+to.TokenStr)
+		r2.Header.Set(restful.HeaderAuth, "Bearer "+rootToken.TokenStr)
 		w2 := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w2, r2)
 		assert.Equal(t, http.StatusOK, w2.Code)
@@ -175,6 +175,8 @@ func TestAuthResource_Login(t *testing.T) {
 
 }
 func TestAuthResource_DeleteAccount(t *testing.T) {
+	rootToken := &rbacmodel.Token{}
+
 	t.Run("given root, try to delete it, should fail ", func(t *testing.T) {
 		b, _ := json.Marshal(&rbacmodel.Account{Name: "root", Password: "Complicated_password1"})
 
@@ -182,11 +184,10 @@ func TestAuthResource_DeleteAccount(t *testing.T) {
 		w := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code)
-		rt := &rbacmodel.Token{}
-		json.Unmarshal(w.Body.Bytes(), rt)
+		json.Unmarshal(w.Body.Bytes(), rootToken)
 
 		r2, _ := http.NewRequest(http.MethodDelete, "/v4/accounts/root", nil)
-		r2.Header.Set(restful.HeaderAuth, "Bearer "+rt.TokenStr)
+		r2.Header.Set(restful.HeaderAuth, "Bearer "+rootToken.TokenStr)
 		w2 := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w2, r2)
 		assert.Equal(t, http.StatusBadRequest, w2.Code)
@@ -206,6 +207,38 @@ func TestAuthResource_DeleteAccount(t *testing.T) {
 		w2 := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w2, r2)
 		assert.Equal(t, http.StatusUnauthorized, w2.Code)
+	})
+
+	t.Run("create your_account with admin role should be pass", func(t *testing.T) {
+		b, _ := json.Marshal(&rbacmodel.Account{Name: "your_account", Password: "Complicated_password3", Roles: []string{"admin"}})
+
+		r, _ := http.NewRequest(http.MethodPost, "/v4/accounts", bytes.NewBuffer(b))
+		r.Header.Set(restful.HeaderAuth, "Bearer "+rootToken.TokenStr)
+		w := httptest.NewRecorder()
+		rest.GetRouter().ServeHTTP(w, r)
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+	t.Run("account can not even delete him self", func(t *testing.T) {
+		b, _ := json.Marshal(&rbacmodel.Account{Name: "your_account", Password: "Complicated_password3", Roles: []string{"admin"}})
+
+		r, _ := http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(b))
+		w := httptest.NewRecorder()
+		rest.GetRouter().ServeHTTP(w, r)
+		assert.Equal(t, http.StatusOK, w.Code)
+		yourToken := &rbacmodel.Token{}
+		json.Unmarshal(w.Body.Bytes(), yourToken)
+
+		r2, _ := http.NewRequest(http.MethodDelete, "/v4/accounts/your_account", nil)
+		r2.Header.Set(restful.HeaderAuth, "Bearer "+yourToken.TokenStr)
+		w2 := httptest.NewRecorder()
+		rest.GetRouter().ServeHTTP(w2, r2)
+		assert.Equal(t, http.StatusBadRequest, w2.Code)
+
+		r3, _ := http.NewRequest(http.MethodDelete, "/v4/accounts/your_account", nil)
+		r3.Header.Set(restful.HeaderAuth, "Bearer "+rootToken.TokenStr)
+		w3 := httptest.NewRecorder()
+		rest.GetRouter().ServeHTTP(w3, r3)
+		assert.Equal(t, http.StatusOK, w3.Code)
 	})
 	t.Run("root can delete account", func(t *testing.T) {
 		var err error

@@ -15,18 +15,33 @@
  * limitations under the License.
  */
 
-package errors
+package rbac
 
-const (
-	MsgJSON = "json is invalid"
-
-	MsgOperateAccountFailed = "operate account failed"
-	MsgCantOperateRoot      = "root can not be operated"
-	MsgCantOperateRole      = "build-in role can not be operated"
-	MsgCantOperateYour      = "your account can not be operated"
-	MsgOperateRoleFailed    = "operate role failed"
-	MsgGetAccountFailed     = "get account failed"
-	MsgGetRoleFailed        = "get role failed"
-	MsgRolePerm             = "check role permissions failed"
-	MsgNoPerm               = "no permission to operate"
+import (
+	"context"
+	"errors"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	rbacmodel "github.com/go-chassis/cari/rbac"
 )
+
+const CtxRequestClaims util.CtxKey = "_request_claims"
+
+func UserFromContext(ctx context.Context) string {
+	m, ok := ctx.Value(CtxRequestClaims).(map[string]interface{})
+	if !ok {
+		return ""
+	}
+	user, ok := m[rbacmodel.ClaimsUser].(string)
+	if !ok {
+		return ""
+	}
+	return user
+}
+
+func AccountFromContext(ctx context.Context) (*rbacmodel.Account, error) {
+	m, ok := ctx.Value(CtxRequestClaims).(map[string]interface{})
+	if !ok {
+		return nil, errors.New("no claims from request context")
+	}
+	return rbacmodel.GetAccount(m)
+}
