@@ -84,6 +84,7 @@ func CountFailure(key string) {
 
 //IsBanned check if a client is banned, and if client ban time expire,
 //it will release the client from banned status
+//use account name plus ip as key will maximum reduce the client conflicts
 func IsBanned(key string) bool {
 	var c interface{}
 	var client *Client

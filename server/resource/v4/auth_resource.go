@@ -155,8 +155,9 @@ func (ar *AuthResource) GetAccount(w http.ResponseWriter, r *http.Request) {
 }
 
 func (ar *AuthResource) ChangePassword(w http.ResponseWriter, req *http.Request) {
+	name := req.URL.Query().Get(":name")
 	ip := util.GetRealIP(req)
-	if rbacsvc.IsBanned(ip) {
+	if rbacsvc.IsBanned(MakeBanKey(name, ip)) {
 		log.Warn(fmt.Sprintf("ip is banned:%s, account: %s", ip, req.URL.Query().Get(":name")))
 		rest.WriteError(w, discovery.ErrForbidden, "")
 		return
@@ -194,7 +195,7 @@ func (ar *AuthResource) ChangePassword(w http.ResponseWriter, req *http.Request)
 			return
 		}
 		if err == rbacsvc.ErrWrongPassword {
-			rbacsvc.CountFailure(ip)
+			rbacsvc.CountFailure(MakeBanKey(a.Name, ip))
 			rest.WriteError(w, discovery.ErrInvalidParams, err.Error())
 			return
 		}
@@ -204,13 +205,8 @@ func (ar *AuthResource) ChangePassword(w http.ResponseWriter, req *http.Request)
 	}
 	rest.WriteSuccess(w, req)
 }
+
 func (ar *AuthResource) Login(w http.ResponseWriter, r *http.Request) {
-	ip := util.GetRealIP(r)
-	if rbacsvc.IsBanned(ip) {
-		log.Warn(fmt.Sprintf("ip is banned:%s, account: %s", ip, r.URL.Query().Get(":name")))
-		rest.WriteError(w, discovery.ErrForbidden, "")
-		return
-	}
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body err", err)
@@ -231,12 +227,18 @@ func (ar *AuthResource) Login(w http.ResponseWriter, r *http.Request) {
 		rest.WriteError(w, discovery.ErrInvalidParams, err.Error())
 		return
 	}
+	ip := util.GetRealIP(r)
+	if rbacsvc.IsBanned(MakeBanKey(a.Name, ip)) {
+		log.Warn(fmt.Sprintf("ip is banned:%s, account: %s", ip, a.Name))
+		rest.WriteError(w, discovery.ErrForbidden, "")
+		return
+	}
 	t, err := authr.Login(context.TODO(), a.Name, a.Password,
 		authr.ExpireAfter(a.TokenExpirationTime))
 	if err != nil {
 		if err == rbacsvc.ErrUnauthorized {
 			log.Error("not authorized", err)
-			rbacsvc.CountFailure(ip)
+			rbacsvc.CountFailure(MakeBanKey(a.Name, ip))
 			rest.WriteError(w, discovery.ErrUnauthorized, err.Error())
 			return
 		}
@@ -245,4 +247,8 @@ func (ar *AuthResource) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	rest.WriteResponse(w, r, nil, &rbac.Token{TokenStr: t})
+}
+
+func MakeBanKey(name, ip string) string {
+	return name + "::" + ip
 }
