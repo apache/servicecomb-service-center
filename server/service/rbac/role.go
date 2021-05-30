@@ -19,7 +19,6 @@ package rbac
 
 import (
 	"context"
-
 	"github.com/go-chassis/cari/rbac"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -28,26 +27,37 @@ import (
 
 var roleMap = map[string]*rbac.Role{}
 
-// Assign resources to admin role, admin role own all permissions
-func initAdminRole() {
-	roleMap["admin"] = &rbac.Role{
-		Name:  "admin",
+func init() {
+	// Assign resources to admin role, admin role own all permissions
+	roleMap[rbac.RoleAdmin] = &rbac.Role{
+		Name:  rbac.RoleAdmin,
 		Perms: AdminPerms(),
 	}
-	err := dao.CreateRole(context.Background(), roleMap["admin"])
-	if err != nil {
-		log.Errorf(err, "create admin role failed")
+	roleMap[rbac.RoleDeveloper] = &rbac.Role{
+		Name:  rbac.RoleDeveloper,
+		Perms: DevPerms(),
 	}
 }
 
-// Assign resources to developer role
-func initDevRole() {
-	roleMap["developer"] = &rbac.Role{
-		Name:  "developer",
-		Perms: DevPerms(),
+func initBuildInRole() {
+	for _, r := range roleMap {
+		createBuildInRole(r)
 	}
-	err := dao.CreateRole(context.Background(), roleMap["developer"])
+}
+
+func createBuildInRole(r *rbac.Role) {
+	status, err := dao.CreateRole(context.Background(), r)
 	if err != nil {
-		log.Errorf(err, "create developer role failed")
+		log.Fatalf(err, "create role [%s] failed", r.Name)
+		return
 	}
+	if status.IsSucceed() {
+		log.Infof("create role [%s] success", r.Name)
+		return
+	}
+	if status.Code == rbac.ErrRoleConflict {
+		log.Infof("role [%s] already exists", r.Name)
+		return
+	}
+	log.Fatalf(nil, "create role [%s] failed: %s", r.Name, status.GetMessage())
 }

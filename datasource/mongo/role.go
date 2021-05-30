@@ -70,7 +70,7 @@ func (ds *DataSource) GetRole(ctx context.Context, name string) (*rbac.Role, err
 		return nil, err
 	}
 	if result.Err() != nil {
-		return nil, client.ErrNoDocuments
+		return nil, datasource.ErrRoleNotExist
 	}
 	var role rbac.Role
 	err = result.Decode(&role)

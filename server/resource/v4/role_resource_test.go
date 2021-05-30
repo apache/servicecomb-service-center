@@ -122,7 +122,7 @@ func TestRoleResource_CreateOrUpdateRole(t *testing.T) {
 		r3.Header.Set(restful.HeaderAuth, "Bearer "+to.TokenStr)
 		w3 := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w3, r3)
-		assert.Equal(t, http.StatusBadRequest, w3.Code)
+		assert.Equal(t, http.StatusForbidden, w3.Code)
 	})
 }
 func TestRoleResource_MoreRoles(t *testing.T) {
