@@ -80,7 +80,7 @@ func (ar *AuthResource) CreateAccount(w http.ResponseWriter, req *http.Request) 
 	err = dao.CreateAccount(context.TODO(), a)
 	if err != nil {
 		if err == datasource.ErrAccountDuplicated {
-			rest.WriteError(w, discovery.ErrConflictAccount, "")
+			rest.WriteError(w, rbac.ErrAccountConflict, "")
 			return
 		}
 		log.Error(errorsEx.MsgOperateAccountFailed, err)
@@ -254,7 +254,7 @@ func (ar *AuthResource) Login(w http.ResponseWriter, r *http.Request) {
 		if err == rbacsvc.ErrUnauthorized {
 			log.Error("not authorized", err)
 			rbacsvc.CountFailure(MakeBanKey(a.Name, ip))
-			rest.WriteError(w, discovery.ErrUnauthorized, err.Error())
+			rest.WriteError(w, rbac.ErrUnauthorized, err.Error())
 			return
 		}
 		log.Error("can not sign token", err)

@@ -27,6 +27,7 @@ import (
 var (
 	ErrRoleDuplicated = errors.New("role is duplicated")
 	ErrRoleCanNotEdit = errors.New("role can not be edited")
+	ErrRoleNotExist   = errors.New("role not exist")
 )
 
 // RoleManager contains the RBAC CRUD

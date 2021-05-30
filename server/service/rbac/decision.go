@@ -83,16 +83,18 @@ func LabelMatched(targetResourceLabel map[string]string, permLabel map[string]st
 
 func getPermsByRoles(ctx context.Context, roleList []string) ([]*rbac.Permission, error) {
 	var allPerms = make([]*rbac.Permission, 0)
-	for i := 0; i < len(roleList); i++ {
-		r, err := datasource.Instance().GetRole(ctx, roleList[i])
-		if err != nil {
-			return nil, err
-		}
-		if r == nil {
-			log.Warnf("role [%s] has no any permissions", roleList[i])
+	for _, name := range roleList {
+		r, err := datasource.Instance().GetRole(ctx, name)
+		if err == nil {
+			allPerms = append(allPerms, r.Perms...)
 			continue
 		}
-		allPerms = append(allPerms, r.Perms...)
+		if err == datasource.ErrRoleNotExist {
+			log.Warnf("role [%s] not exist", name)
+			continue
+		}
+		log.Errorf(err, "get role [%s] failed", name)
+		return nil, err
 	}
 	return allPerms, nil
 }

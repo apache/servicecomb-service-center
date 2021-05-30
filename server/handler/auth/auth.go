@@ -18,6 +18,8 @@
 package auth
 
 import (
+	"net/http"
+
 	"github.com/apache/servicecomb-service-center/pkg/chain"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
@@ -25,7 +27,7 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/auth"
 	"github.com/apache/servicecomb-service-center/server/response"
 	"github.com/go-chassis/cari/discovery"
-	"net/http"
+	"github.com/go-chassis/cari/rbac"
 )
 
 const (
@@ -43,7 +45,7 @@ func (h *Handler) Handle(i *chain.Invocation) {
 
 	if err := auth.Identify(r); err != nil {
 		log.Errorf(err, "authenticate request failed, %s %s", r.Method, r.RequestURI)
-		i.Fail(discovery.NewError(discovery.ErrUnauthorized, err.Error()))
+		i.Fail(discovery.NewError(rbac.ErrUnauthorized, err.Error()))
 		return
 	}
 

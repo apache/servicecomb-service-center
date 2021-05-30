@@ -88,6 +88,9 @@ func (ds *DataSource) GetRole(ctx context.Context, name string) (*rbac.Role, err
 	if err != nil {
 		return nil, err
 	}
+	if resp.Count == 0 {
+		return nil, datasource.ErrRoleNotExist
+	}
 	if resp.Count != 1 {
 		return nil, client.ErrNotUnique
 	}

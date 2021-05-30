@@ -21,12 +21,12 @@ import (
 	"context"
 	"crypto/rsa"
 	"errors"
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/server/service/validator"
 	"io/ioutil"
 
 	"github.com/go-chassis/cari/rbac"
 
-	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/plugin/security/cipher"
@@ -70,8 +70,7 @@ func Init() {
 	}
 	readPrivateKey()
 	readPublicKey()
-	initAdminRole()
-	initDevRole()
+	initBuildInRole()
 	rbac.Add2WhiteAPIList(APITokenGranter)
 	log.Info("rbac is enabled")
 }

@@ -20,11 +20,9 @@ package v4
 import (
 	"context"
 	"encoding/json"
-	"github.com/apache/servicecomb-service-center/server/service/validator"
 	"io/ioutil"
 	"net/http"
 
-	"github.com/apache/servicecomb-service-center/datasource"
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
@@ -42,16 +40,16 @@ type RoleResource struct {
 //URLPatterns define http pattern
 func (rr *RoleResource) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{Method: http.MethodGet, Path: "/v4/roles", Func: rr.GetRolePermission},
-		{Method: http.MethodPost, Path: "/v4/roles", Func: rr.CreateRolePermission},
-		{Method: http.MethodPut, Path: "/v4/roles/:roleName", Func: rr.UpdateRolePermission},
+		{Method: http.MethodGet, Path: "/v4/roles", Func: rr.ListRoles},
+		{Method: http.MethodPost, Path: "/v4/roles", Func: rr.CreateRole},
+		{Method: http.MethodPut, Path: "/v4/roles/:roleName", Func: rr.UpdateRole},
 		{Method: http.MethodGet, Path: "/v4/roles/:roleName", Func: rr.GetRole},
 		{Method: http.MethodDelete, Path: "/v4/roles/:roleName", Func: rr.DeleteRole},
 	}
 }
 
-//GetRolePermission list all roles and there's permissions
-func (rr *RoleResource) GetRolePermission(w http.ResponseWriter, req *http.Request) {
+//ListRoles list all roles and there's permissions
+func (rr *RoleResource) ListRoles(w http.ResponseWriter, req *http.Request) {
 	rs, num, err := dao.ListRole(context.TODO())
 	if err != nil {
 		log.Error(errorsEx.MsgGetRoleFailed, err)
@@ -77,8 +75,8 @@ func (rr *RoleResource) roleParse(body []byte) (*rbac.Role, error) {
 	return role, nil
 }
 
-//CreateRolePermission create new role and assign permissions
-func (rr *RoleResource) CreateRolePermission(w http.ResponseWriter, req *http.Request) {
+//CreateRole create new role and assign permissions
+func (rr *RoleResource) CreateRole(w http.ResponseWriter, req *http.Request) {
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		log.Error("read body err", err)
@@ -90,31 +88,19 @@ func (rr *RoleResource) CreateRolePermission(w http.ResponseWriter, req *http.Re
 		rest.WriteError(w, discovery.ErrInvalidParams, errorsEx.MsgJSON)
 		return
 	}
-	err = validator.ValidateCreateRole(role)
+
+	status, err := dao.CreateRole(context.TODO(), role)
 	if err != nil {
-		rest.WriteError(w, discovery.ErrInvalidParams, err.Error())
-		return
-	}
-	err = dao.CreateRole(context.TODO(), role)
-	if err != nil {
-		if err == datasource.ErrRoleDuplicated {
-			rest.WriteError(w, ErrConflictRole, "")
-			return
-		}
 		log.Error(errorsEx.MsgOperateRoleFailed, err)
-		rest.WriteError(w, discovery.ErrInternal, errorsEx.MsgOperateRoleFailed)
+		rest.WriteError(w, discovery.ErrInternal, err.Error())
 		return
 	}
-	rest.WriteSuccess(w, req)
+	rest.WriteResponse(w, req, status, nil)
 }
 
-//UpdateRolePermission update role permissions
-func (rr *RoleResource) UpdateRolePermission(w http.ResponseWriter, req *http.Request) {
+//UpdateRole update role permissions
+func (rr *RoleResource) UpdateRole(w http.ResponseWriter, req *http.Request) {
 	name := req.URL.Query().Get(":roleName")
-	if isBuildInRole(name) {
-		rest.WriteError(w, discovery.ErrInvalidParams, errorsEx.MsgCantOperateRole)
-		return
-	}
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		log.Error("read body err", err)
@@ -126,43 +112,38 @@ func (rr *RoleResource) UpdateRolePermission(w http.ResponseWriter, req *http.Re
 		rest.WriteError(w, discovery.ErrInvalidParams, errorsEx.MsgJSON)
 		return
 	}
-	err = dao.EditRole(context.TODO(), name, role)
+	status, err := dao.EditRole(context.TODO(), name, role)
 	if err != nil {
 		log.Error(errorsEx.MsgOperateRoleFailed, err)
 		rest.WriteError(w, discovery.ErrInternal, errorsEx.MsgOperateRoleFailed)
 		return
 	}
-	rest.WriteSuccess(w, req)
+
+	rest.WriteResponse(w, req, status, nil)
 }
 
 //GetRole get the role info according to role name
 func (rr *RoleResource) GetRole(w http.ResponseWriter, r *http.Request) {
-	role, err := dao.GetRole(context.TODO(), r.URL.Query().Get(":roleName"))
+	resp, status, err := dao.GetRole(context.TODO(), r.URL.Query().Get(":roleName"))
 	if err != nil {
 		log.Error(errorsEx.MsgGetRoleFailed, err)
 		rest.WriteError(w, discovery.ErrInternal, errorsEx.MsgGetRoleFailed)
+		return
 	}
-	rest.WriteResponse(w, r, nil, role)
+
+	rest.WriteResponse(w, r, status, resp)
 }
 
 //DeleteRole delete the role info by role name
 func (rr *RoleResource) DeleteRole(w http.ResponseWriter, req *http.Request) {
 	n := req.URL.Query().Get(":roleName")
-	if isBuildInRole(n) {
-		rest.WriteError(w, discovery.ErrInvalidParams, errorsEx.MsgCantOperateRole)
-		return
-	}
-	_, err := dao.DeleteRole(context.TODO(), n)
+
+	status, err := dao.DeleteRole(context.TODO(), n)
 	if err != nil {
 		log.Error(errorsEx.MsgJSON, err)
 		rest.WriteError(w, discovery.ErrInternal, errorsEx.MsgJSON)
 		return
 	}
-	rest.WriteSuccess(w, req)
-}
-func isBuildInRole(role string) bool {
-	if role == rbac.RoleAdmin || role == rbac.RoleDeveloper {
-		return true
-	}
-	return false
+
+	rest.WriteResponse(w, req, status, nil)
 }
