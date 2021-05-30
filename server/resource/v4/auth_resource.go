@@ -29,7 +29,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/plugin/auth/buildin"
 	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
 	"github.com/apache/servicecomb-service-center/server/service/validator"
@@ -54,6 +53,7 @@ func (ar *AuthResource) URLPatterns() []rest.Route {
 		{Method: http.MethodPost, Path: "/v4/accounts/:name/password", Func: ar.ChangePassword},
 	}
 }
+
 func (ar *AuthResource) CreateAccount(w http.ResponseWriter, req *http.Request) {
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
@@ -89,10 +89,10 @@ func (ar *AuthResource) CreateAccount(w http.ResponseWriter, req *http.Request) 
 	}
 	rest.WriteSuccess(w, req)
 }
+
 func (ar *AuthResource) DeleteAccount(w http.ResponseWriter, req *http.Request) {
 	name := req.URL.Query().Get(":name")
-	if name == rbacsvc.RootName {
-		rest.WriteError(w, discovery.ErrInvalidParams, errorsEx.MsgCantOperateRoot)
+	if ar.illegalCheck(w, req, name) {
 		return
 	}
 	_, err := dao.DeleteAccount(context.TODO(), name)
@@ -103,10 +103,10 @@ func (ar *AuthResource) DeleteAccount(w http.ResponseWriter, req *http.Request) 
 	}
 	rest.WriteSuccess(w, req)
 }
+
 func (ar *AuthResource) UpdateAccount(w http.ResponseWriter, req *http.Request) {
 	name := req.URL.Query().Get(":name")
-	if name == rbacsvc.RootName {
-		rest.WriteError(w, discovery.ErrInvalidParams, errorsEx.MsgCantOperateRoot)
+	if ar.illegalCheck(w, req, name) {
 		return
 	}
 	body, err := ioutil.ReadAll(req.Body)
@@ -130,6 +130,7 @@ func (ar *AuthResource) UpdateAccount(w http.ResponseWriter, req *http.Request) 
 	}
 	rest.WriteSuccess(w, req)
 }
+
 func (ar *AuthResource) ListAccount(w http.ResponseWriter, r *http.Request) {
 	as, n, err := dao.ListAccount(context.TODO())
 	if err != nil {
@@ -143,6 +144,7 @@ func (ar *AuthResource) ListAccount(w http.ResponseWriter, r *http.Request) {
 	}
 	rest.WriteResponse(w, r, nil, resp)
 }
+
 func (ar *AuthResource) GetAccount(w http.ResponseWriter, r *http.Request) {
 	a, err := dao.GetAccount(context.TODO(), r.URL.Query().Get(":name"))
 	if err != nil {
@@ -152,6 +154,19 @@ func (ar *AuthResource) GetAccount(w http.ResponseWriter, r *http.Request) {
 	}
 	a.Password = ""
 	rest.WriteResponse(w, r, nil, a)
+}
+
+func (ar *AuthResource) illegalCheck(w http.ResponseWriter, req *http.Request, name string) bool {
+	if name == rbacsvc.RootName {
+		rest.WriteError(w, discovery.ErrInvalidParams, errorsEx.MsgCantOperateRoot)
+		return true
+	}
+	user := rbacsvc.UserFromContext(req.Context())
+	if name == user {
+		rest.WriteError(w, discovery.ErrInvalidParams, errorsEx.MsgCantOperateYour)
+		return true
+	}
+	return false
 }
 
 func (ar *AuthResource) ChangePassword(w http.ResponseWriter, req *http.Request) {
@@ -181,7 +196,7 @@ func (ar *AuthResource) ChangePassword(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	changer, err := buildin.AccountFromContext(req.Context())
+	changer, err := rbacsvc.AccountFromContext(req.Context())
 	if err != nil {
 		rest.WriteError(w, discovery.ErrInternal, "can not parse account info")
 		return

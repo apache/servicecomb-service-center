@@ -31,7 +31,6 @@ import (
 const (
 	CtxResourceLabels util.CtxKey = "_resource_labels"
 	CtxResourceScopes util.CtxKey = "_resource_scopes"
-	CtxRequestClaims  util.CtxKey = "_request_claims"
 )
 
 type Handler struct {
