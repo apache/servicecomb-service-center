@@ -61,7 +61,15 @@ type MongoOperation struct {
 func GetMongoClient() *MongoClient {
 	return mc
 }
-
+func DeleteDoc(ctx context.Context, Table string, filter interface{}, opts ...*options.DeleteOptions) (*mongo.DeleteResult, error) {
+	return mc.Delete(ctx, Table, filter, opts...)
+}
+func Find(ctx context.Context, Table string, filter interface{}, opts ...*options.FindOptions) (*mongo.Cursor, error) {
+	return mc.Find(ctx, Table, filter, opts...)
+}
+func Count(ctx context.Context, Table string, filter interface{}, opts ...*options.CountOptions) (int64, error) {
+	return mc.db.Collection(Table).CountDocuments(ctx, filter, opts...)
+}
 func NewMongoClient(config storage.Options) {
 	inst := &MongoClient{}
 	if err := inst.Initialize(config); err != nil {
@@ -85,6 +93,34 @@ func (mc *MongoClient) Initialize(config storage.Options) (err error) {
 	return nil
 }
 
+// ExecTxn execute a transaction command
+// want to abort transaction, return error in cmd fn impl, otherwise it will commit transaction
+func (mc *MongoClient) ExecTxn(ctx context.Context, cmd func(sessionContext mongo.SessionContext) error) error {
+	session, err := mc.client.StartSession()
+	if err != nil {
+		return err
+	}
+	if err = session.StartTransaction(); err != nil {
+		return err
+	}
+	defer session.EndSession(ctx)
+	if err = mongo.WithSession(ctx, session, func(sc mongo.SessionContext) error {
+		if err = cmd(sc); err != nil {
+			if err = session.AbortTransaction(sc); err != nil {
+				return err
+			}
+			return nil
+		} else {
+			if err = session.CommitTransaction(sc); err != nil {
+				return err
+			}
+			return nil
+		}
+	}); err != nil {
+		return err
+	}
+	return nil
+}
 func (mc *MongoClient) Err() <-chan error {
 	return mc.err
 }

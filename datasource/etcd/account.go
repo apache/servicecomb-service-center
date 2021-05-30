@@ -19,6 +19,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/go-chassis/foundation/stringutil"
 	"strconv"
 	"time"
 
@@ -44,7 +45,6 @@ func (ds *DataSource) CreateAccount(ctx context.Context, a *rbac.Account) error 
 			log.Errorf(err, "can not release account lock")
 		}
 	}()
-	name := path.GenerateRBACAccountKey(a.Name)
 	exist, err := datasource.Instance().AccountExist(ctx, a.Name)
 	if err != nil {
 		log.Errorf(err, "can not save account info")
@@ -63,12 +63,12 @@ func (ds *DataSource) CreateAccount(ctx context.Context, a *rbac.Account) error 
 	a.ID = util.GenerateUUID()
 	a.CreateTime = strconv.FormatInt(time.Now().Unix(), 10)
 	a.UpdateTime = a.CreateTime
-	value, err := json.Marshal(a)
+	opts, err := GenAccountOpts(a, client.ActionPut)
 	if err != nil {
-		log.Errorf(err, "account info is invalid")
+		log.Error("", err)
 		return err
 	}
-	err = client.PutBytes(ctx, name, value)
+	err = client.BatchCommit(ctx, opts)
 	if err != nil {
 		log.Errorf(err, "can not save account info")
 		return err
@@ -76,7 +76,28 @@ func (ds *DataSource) CreateAccount(ctx context.Context, a *rbac.Account) error 
 	log.Info("create new account: " + a.ID)
 	return nil
 }
+func GenAccountOpts(a *rbac.Account, action client.ActionType) ([]client.PluginOp, error) {
+	opts := make([]client.PluginOp, 0)
+	value, err := json.Marshal(a)
+	if err != nil {
+		log.Errorf(err, "account info is invalid")
+		return nil, err
+	}
+	opts = append(opts, client.PluginOp{
+		Key:    stringutil.Str2bytes(path.GenerateAccountKey(a.Name)),
+		Value:  value,
+		Action: action,
+	})
+	for _, r := range a.Roles {
+		opt := client.PluginOp{
+			Key:    stringutil.Str2bytes(path.GenRoleAccountIdxKey(r, a.Name)),
+			Action: action,
+		}
+		opts = append(opts, opt)
+	}
 
+	return opts, nil
+}
 func (ds *DataSource) AccountExist(ctx context.Context, name string) (bool, error) {
 	resp, err := client.Instance().Do(ctx, client.GET,
 		client.WithStrKey(path.GenerateRBACAccountKey(name)))
@@ -142,8 +163,23 @@ func (ds *DataSource) DeleteAccount(ctx context.Context, names []string) (bool, 
 		return false, nil
 	}
 	for _, name := range names {
-		_, err := client.Instance().Do(ctx, client.DEL,
-			client.WithStrKey(path.GenerateRBACAccountKey(name)))
+		a, err := ds.GetAccount(ctx, name)
+		if err != nil {
+			log.Error("", err)
+			continue //do not fail if some account is invalid
+
+		}
+		if a == nil {
+			log.Warn("can not find account")
+			continue
+		}
+		opts, err := GenAccountOpts(a, client.ActionDelete)
+		if err != nil {
+			log.Error("", err)
+			continue //do not fail if some account is invalid
+
+		}
+		err = client.BatchCommit(ctx, opts)
 		if err != nil {
 			log.Error(datasource.ErrDeleteAccountFailed.Error(), err)
 			return false, err

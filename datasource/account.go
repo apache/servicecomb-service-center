@@ -31,6 +31,7 @@ var (
 	ErrDeleteAccountFailed = errors.New("failed to delete account")
 	ErrQueryAccountFailed  = errors.New("failed to query account")
 	ErrAccountNotExist     = errors.New("account not exist")
+	ErrRoleBindingExist    = errors.New("role is bind to account")
 )
 
 // AccountManager contains the RBAC CRUD

@@ -122,12 +122,28 @@ func (ds *DataSource) ListRole(ctx context.Context) ([]*rbac.Role, int64, error)
 	return roles, resp.Count, nil
 }
 func (ds *DataSource) DeleteRole(ctx context.Context, name string) (bool, error) {
+	exists, err := RoleBindingExists(ctx, name)
+	if err != nil {
+		log.Error("", err)
+		return false, err
+	}
+	if exists {
+		return false, datasource.ErrRoleBindingExist
+	}
 	resp, err := client.Instance().Do(ctx, client.DEL,
 		client.WithStrKey(path.GenerateRBACRoleKey(name)))
 	if err != nil {
 		return false, err
 	}
 	return resp.Succeeded, nil
+}
+func RoleBindingExists(ctx context.Context, role string) (bool, error) {
+	_, total, err := client.List(ctx, path.GenRoleAccountPrefixIdxKey(role))
+	if err != nil {
+		log.Error("", err)
+		return false, err
+	}
+	return total > 0, nil
 }
 func (ds *DataSource) UpdateRole(ctx context.Context, name string, role *rbac.Role) error {
 	role.UpdateTime = strconv.FormatInt(time.Now().Unix(), 10)
