@@ -83,9 +83,9 @@ func TestAccount(t *testing.T) {
 		a2.Password = "new-password"
 		err = datasource.Instance().UpdateAccount(context.Background(), a2.Name, &a2)
 		assert.NoError(t, err)
-		_, n, err := datasource.Instance().ListAccount(context.Background())
+		accounts, _, err := datasource.Instance().ListAccount(context.Background())
 		assert.NoError(t, err)
-		assert.Equal(t, int64(2), n)
+		assert.GreaterOrEqual(t, len(accounts), 2)
 		_, err = datasource.Instance().DeleteAccount(context.Background(), []string{a1.Name})
 		assert.NoError(t, err)
 		_, err = datasource.Instance().DeleteAccount(context.Background(), []string{a2.Name})

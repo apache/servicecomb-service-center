@@ -130,7 +130,9 @@
     "currentPassword": "password",
     "status": "normal"
   }
-
+# record role binding to account
+/cse-sr/idx-role-account/{role}/{account}:
+  {no value}
 # domain
 # /cse-sr/domains/{domain}
 /cse-sr/domains/default:

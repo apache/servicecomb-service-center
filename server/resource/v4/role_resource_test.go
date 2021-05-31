@@ -18,11 +18,12 @@ import (
 )
 
 func TestRoleResource_CreateOrUpdateRole(t *testing.T) {
-	var to = &rbacmodel.Token{}
+	var superToken = &rbacmodel.Token{}
 	ctx := context.TODO()
 	dao.DeleteAccount(ctx, "dev_test")
+	dao.DeleteAccount(ctx, "dev_test2")
 	dao.DeleteRole(ctx, "tester")
-	t.Run("root login", func(t *testing.T) {
+	t.Run("root login,to get super token", func(t *testing.T) {
 		b, _ := json.Marshal(&rbacmodel.Account{Name: "root", Password: "Complicated_password1"})
 
 		r, err := http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(b))
@@ -30,14 +31,14 @@ func TestRoleResource_CreateOrUpdateRole(t *testing.T) {
 		w := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code)
-		json.Unmarshal(w.Body.Bytes(), to)
+		json.Unmarshal(w.Body.Bytes(), superToken)
 	})
 
 	t.Run("create account dev_test and add a role", func(t *testing.T) {
 		b, _ := json.Marshal(&rbacmodel.Account{Name: "dev_test", Password: "Complicated_password3", Roles: []string{"tester"}})
 
 		r, _ := http.NewRequest(http.MethodPost, "/v4/accounts", bytes.NewBuffer(b))
-		r.Header.Set(restful.HeaderAuth, "Bearer "+to.TokenStr)
+		r.Header.Set(restful.HeaderAuth, "Bearer "+superToken.TokenStr)
 		w := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code)
@@ -64,13 +65,13 @@ func TestRoleResource_CreateOrUpdateRole(t *testing.T) {
 		})
 
 		r2, _ := http.NewRequest(http.MethodPost, "/v4/roles", bytes.NewReader(b2))
-		r2.Header.Set(restful.HeaderAuth, "Bearer "+to.TokenStr)
+		r2.Header.Set(restful.HeaderAuth, "Bearer "+superToken.TokenStr)
 		w2 := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w2, r2)
 		assert.Equal(t, http.StatusOK, w2.Code)
 
 		r3, _ := http.NewRequest(http.MethodGet, "/v4/roles", nil)
-		r3.Header.Set(restful.HeaderAuth, "Bearer "+to.TokenStr)
+		r3.Header.Set(restful.HeaderAuth, "Bearer "+superToken.TokenStr)
 		w3 := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w3, r3)
 		assert.Equal(t, http.StatusOK, w3.Code)
@@ -85,13 +86,13 @@ func TestRoleResource_CreateOrUpdateRole(t *testing.T) {
 			},
 		})
 		r4, _ := http.NewRequest(http.MethodPut, "/v4/roles/tester", bytes.NewReader(b4))
-		r4.Header.Set(restful.HeaderAuth, "Bearer "+to.TokenStr)
+		r4.Header.Set(restful.HeaderAuth, "Bearer "+superToken.TokenStr)
 		w4 := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w4, r4)
 		assert.Equal(t, http.StatusOK, w4.Code)
 	})
 
-	t.Run("Inquire role", func(t *testing.T) {
+	t.Run("get role", func(t *testing.T) {
 		b, _ := json.Marshal(&rbacmodel.Account{Name: "root", Password: "Complicated_password1"})
 
 		r, _ := http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(b))
@@ -123,6 +124,27 @@ func TestRoleResource_CreateOrUpdateRole(t *testing.T) {
 		w3 := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w3, r3)
 		assert.Equal(t, http.StatusForbidden, w3.Code)
+	})
+
+	t.Run("delete tester role, it is bind to account, should fail", func(t *testing.T) {
+		r3, _ := http.NewRequest(http.MethodDelete, "/v4/roles/tester", nil)
+		r3.Header.Set(restful.HeaderAuth, "Bearer "+superToken.TokenStr)
+		w3 := httptest.NewRecorder()
+		rest.GetRouter().ServeHTTP(w3, r3)
+		assert.Equal(t, http.StatusBadRequest, w3.Code)
+	})
+	t.Run("delete account, then delete role should success", func(t *testing.T) {
+		r3, _ := http.NewRequest(http.MethodDelete, "/v4/accounts/dev_test", nil)
+		r3.Header.Set(restful.HeaderAuth, "Bearer "+superToken.TokenStr)
+		w3 := httptest.NewRecorder()
+		rest.GetRouter().ServeHTTP(w3, r3)
+		assert.Equal(t, http.StatusOK, w3.Code)
+
+		r4, _ := http.NewRequest(http.MethodDelete, "/v4/roles/tester", nil)
+		r4.Header.Set(restful.HeaderAuth, "Bearer "+superToken.TokenStr)
+		w4 := httptest.NewRecorder()
+		rest.GetRouter().ServeHTTP(w4, r4)
+		assert.Equal(t, http.StatusOK, w4.Code)
 	})
 }
 func TestRoleResource_MoreRoles(t *testing.T) {

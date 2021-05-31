@@ -19,6 +19,8 @@ package v4
 
 import (
 	"encoding/json"
+	"errors"
+	"github.com/apache/servicecomb-service-center/datasource"
 	"io/ioutil"
 	"net/http"
 
@@ -138,6 +140,10 @@ func (rr *RoleResource) DeleteRole(w http.ResponseWriter, req *http.Request) {
 	n := req.URL.Query().Get(":roleName")
 
 	status, err := dao.DeleteRole(req.Context(), n)
+	if errors.Is(err, datasource.ErrRoleBindingExist) {
+		rest.WriteError(w, discovery.ErrInvalidParams, errorsEx.MsgJSON)
+		return
+	}
 	if err != nil {
 		log.Error(errorsEx.MsgJSON, err)
 		rest.WriteError(w, discovery.ErrInternal, errorsEx.MsgJSON)

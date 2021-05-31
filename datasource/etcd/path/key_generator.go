@@ -76,7 +76,20 @@ func GenerateRBACRoleKey(name string) string {
 		name,
 	}, SPLIT)
 }
-
+func GenRoleAccountIdxKey(role, account string) string {
+	return util.StringJoin([]string{
+		GetRootKey(),
+		"idx-role-account",
+		role, account,
+	}, SPLIT)
+}
+func GenRoleAccountPrefixIdxKey(role string) string {
+	return util.StringJoin([]string{
+		GetRootKey(),
+		"idx-role-account",
+		role,
+	}, SPLIT)
+}
 func GenerateETCDProjectKey(domain, project string) string {
 	return util.StringJoin([]string{
 		GetProjectRootKey(domain),

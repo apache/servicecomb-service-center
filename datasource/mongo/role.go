@@ -19,8 +19,8 @@ package mongo
 
 import (
 	"context"
-
 	"github.com/go-chassis/cari/rbac"
+	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
@@ -102,8 +102,12 @@ func (ds *DataSource) ListRole(ctx context.Context) ([]*rbac.Role, int64, error)
 }
 
 func (ds *DataSource) DeleteRole(ctx context.Context, name string) (bool, error) {
+	n, err := client.Count(ctx, model.CollectionAccount, bson.M{"roles": bson.M{"$in": []string{name}}})
+	if n > 0 {
+		return false, datasource.ErrRoleBindingExist
+	}
 	filter := mutil.NewFilter(mutil.RoleName(name))
-	result, err := client.GetMongoClient().Delete(ctx, model.CollectionRole, filter)
+	result, err := client.DeleteDoc(ctx, model.CollectionRole, filter)
 	if err != nil {
 		return false, err
 	}
