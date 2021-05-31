@@ -62,14 +62,14 @@ func matchValidate(val interface{}) error {
 	if !ok {
 		return &ErrIllegalItem{"can not cast to map", val}
 	}
-	if spec["matches"] == nil {
+	if spec[Matches] == nil {
 		return nil
 	}
-	alias, ok := spec["alias"].(string)
+	alias, ok := spec[Alias].(string)
 	if !ok {
 		return &ErrIllegalItem{"alias must be string", alias}
 	}
-	matches, ok := spec["matches"].([]interface{})
+	matches, ok := spec[Matches].([]interface{})
 	if !ok {
 		return &ErrIllegalItem{"don't have matches", spec}
 	}
@@ -81,12 +81,12 @@ func matchValidate(val interface{}) error {
 		if match["name"] == nil {
 			return &ErrIllegalItem{"match's name can not be null", match}
 		}
-		if match["apiPath"] == nil && match["headers"] == nil && match["method"] == nil {
+		if match["apiPath"] == nil && match["headers"] == nil && match[Method] == nil {
 			return &ErrIllegalItem{"match must have a match item [apiPath/headers/methods]", match}
 		}
 		//apiPath & headers do not check
-		if match["method"] != nil {
-			methods, ok := match["method"].([]interface{})
+		if match[Method] != nil {
+			methods, ok := match[Method].([]interface{})
 			if !ok {
 				return &ErrIllegalItem{"methods must be a list", match}
 			}
@@ -125,8 +125,8 @@ func policyValidate(val interface{}) error {
 	if !ok {
 		return &ErrIllegalItem{"policy can not cast to map", val}
 	}
-	if spec["rules"] != nil {
-		rules, ok := spec["rules"].(map[string]interface{})
+	if spec[Rules] != nil {
+		rules, ok := spec[Rules].(map[string]interface{})
 		if !ok {
 			return &ErrIllegalItem{"policy's rules can not cast to map", spec}
 		}

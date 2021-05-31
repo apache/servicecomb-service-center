@@ -51,6 +51,10 @@ const (
 	KeyApp          = "app"
 	KeyEnvironment  = "environment"
 	EnvAll          = "all"
+	Alias           = "alias"
+	Method          = "method"
+	Matches         = "matches"
+	Rules           = "rules"
 )
 
 var PolicyNames = []string{"retry", "rateLimiting", "circuitBreaker", "bulkhead"}
