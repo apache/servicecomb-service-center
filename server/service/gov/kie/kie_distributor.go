@@ -51,6 +51,10 @@ const (
 	KeyApp          = "app"
 	KeyEnvironment  = "environment"
 	EnvAll          = "all"
+	Alias           = "alias"
+	Method          = "method"
+	Matches         = "matches"
+	Rules           = "rules"
 )
 
 var PolicyNames = []string{"retry", "rateLimiting", "circuitBreaker", "bulkhead"}
@@ -76,6 +80,7 @@ func (d *Distributor) Create(kind, project string, spec []byte) ([]byte, error) 
 	if err != nil {
 		return nil, err
 	}
+	setAliasIfEmpty(p.Spec, p.Name)
 	yamlByte, err := yaml.Marshal(p.Spec)
 	if err != nil {
 		return nil, err
@@ -106,6 +111,7 @@ func (d *Distributor) Update(kind, id, project string, spec []byte) error {
 	if err != nil {
 		return err
 	}
+	setAliasIfEmpty(p.Spec, p.Name)
 	yamlByte, err := yaml.Marshal(p.Spec)
 	if err != nil {
 		return err
@@ -209,6 +215,14 @@ func (d *Distributor) Display(project, app, env string) ([]byte, error) {
 	}
 	b, _ := json.MarshalIndent(r, "", "  ")
 	return b, nil
+}
+
+func setAliasIfEmpty(val interface{}, name string) {
+	spec := val.(map[string]interface{})
+	alias := spec["alias"].(string)
+	if alias == "" {
+		spec["alias"] = name
+	}
 }
 
 func (d *Distributor) List(kind, project, app, env string) ([]byte, error) {
