@@ -59,6 +59,8 @@ func Init() {
 	if err != nil {
 		log.Fatal("can not enable auth module", err)
 	}
+	// role init before account
+	initBuildInRole()
 	accountExist, err := AccountExist(context.Background(), RootName)
 	if err != nil {
 		log.Fatal("can not enable auth module", err)
@@ -68,7 +70,6 @@ func Init() {
 	}
 	readPrivateKey()
 	readPublicKey()
-	initBuildInRole()
 	rbac.Add2WhiteAPIList(APITokenGranter)
 	log.Info("rbac is enabled")
 }

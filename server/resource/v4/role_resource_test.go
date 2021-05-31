@@ -51,17 +51,15 @@ func newAccount(name string) *rbac.Account {
 func TestRoleResource_CreateOrUpdateRole(t *testing.T) {
 	var superToken = &rbacmodel.Token{}
 	ctx := context.TODO()
-	dao.DeleteAccount(ctx, "dev_test")
-	dao.DeleteAccount(ctx, "dev_test2")
-	dao.DeleteRole(ctx, "tester")
-	t.Run("root login,to get super token", func(t *testing.T) {
-		b, _ := json.Marshal(&rbacmodel.Account{Name: "root", Password: "Complicated_password1"})
+	rbacsvc.DeleteAccount(ctx, "dev_test")
+	rbacsvc.DeleteAccount(ctx, "dev_test2")
+	rbacsvc.DeleteRole(ctx, "tester")
 	devAccount := newAccount("dev_test")
 	testRole := newRole("tester")
 	rbacsvc.DeleteAccount(ctx, devAccount.Name)
 	rbacsvc.DeleteRole(ctx, testRole.Name)
-	t.Run("root login", func(t *testing.T) {
-		b, _ := json.Marshal(&rbacmodel.Account{Name: rbacsvc.RootName, Password: "Complicated_password1"})
+	t.Run("root login,to get super token", func(t *testing.T) {
+		b, _ := json.Marshal(&rbacmodel.Account{Name: "root", Password: "Complicated_password1"})
 
 		r, err := http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(b))
 		assert.NoError(t, err)
@@ -69,16 +67,6 @@ func TestRoleResource_CreateOrUpdateRole(t *testing.T) {
 		rest.GetRouter().ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code)
 		json.Unmarshal(w.Body.Bytes(), superToken)
-	})
-
-	t.Run("create account dev_test and add a role", func(t *testing.T) {
-		b, _ := json.Marshal(&rbacmodel.Account{Name: "dev_test", Password: "Complicated_password3", Roles: []string{"tester"}})
-
-		r, _ := http.NewRequest(http.MethodPost, "/v4/accounts", bytes.NewBuffer(b))
-		r.Header.Set(restful.HeaderAuth, "Bearer "+superToken.TokenStr)
-		w := httptest.NewRecorder()
-		rest.GetRouter().ServeHTTP(w, r)
-		assert.Equal(t, http.StatusOK, w.Code)
 	})
 
 	t.Run("create a role name tester ", func(t *testing.T) {
@@ -124,7 +112,7 @@ func TestRoleResource_CreateOrUpdateRole(t *testing.T) {
 		b, _ := json.Marshal(devAccount)
 
 		r, _ := http.NewRequest(http.MethodPost, "/v4/accounts", bytes.NewBuffer(b))
-		r.Header.Set(restful.HeaderAuth, "Bearer "+to.TokenStr)
+		r.Header.Set(restful.HeaderAuth, "Bearer "+superToken.TokenStr)
 		w := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code)

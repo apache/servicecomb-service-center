@@ -19,9 +19,9 @@ package v4
 
 import (
 	"encoding/json"
-	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 	"errors"
 	"github.com/apache/servicecomb-service-center/datasource"
+	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 	"io/ioutil"
 	"net/http"
 
@@ -139,7 +139,7 @@ func (rr *RoleResource) GetRole(w http.ResponseWriter, r *http.Request) {
 func (rr *RoleResource) DeleteRole(w http.ResponseWriter, req *http.Request) {
 	n := req.URL.Query().Get(":roleName")
 
-	status, err := dao.DeleteRole(req.Context(), n)
+	status, err := rbacsvc.DeleteRole(req.Context(), n)
 	if errors.Is(err, datasource.ErrRoleBindingExist) {
 		rest.WriteError(w, discovery.ErrInvalidParams, errorsEx.MsgJSON)
 		return
