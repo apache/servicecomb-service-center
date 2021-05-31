@@ -41,7 +41,7 @@ func CreateRole(ctx context.Context, r *rbac.Role) (*discovery.Response, error) 
 	quotaErr := quota.Apply(ctx, quota.NewApplyQuotaResource(quota.TypeRole,
 		util.ParseDomainProject(ctx), "", 1))
 	if quotaErr != nil {
-		return discovery.CreateResponse(discovery.ErrNotEnoughQuota, quotaErr.Error()), nil
+		return discovery.CreateResponse(rbac.ErrRoleNoQuota, quotaErr.Error()), nil
 	}
 	err = datasource.Instance().CreateRole(ctx, r)
 	if err == nil {
