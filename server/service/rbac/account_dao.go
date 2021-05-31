@@ -34,10 +34,10 @@ import (
 //CreateAccount save 2 kv
 //1. account info
 func CreateAccount(ctx context.Context, a *rbac.Account) error {
-	quotaCheckErr := quota.Apply(ctx, quota.NewApplyQuotaResource(quota.TypeAccount,
+	quotaErr := quota.Apply(ctx, quota.NewApplyQuotaResource(quota.TypeAccount,
 		util.ParseDomainProject(ctx), "", 1))
-	if quotaCheckErr != nil {
-		return quotaCheckErr
+	if quotaErr != nil {
+		return rbac.NewError(rbac.ErrAccountNoQuota, quotaErr.Error())
 	}
 	err := validator.ValidateCreateAccount(a)
 	if err != nil {
