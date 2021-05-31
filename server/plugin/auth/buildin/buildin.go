@@ -22,7 +22,6 @@ import (
 	"net/http"
 	"strings"
 
-	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/plugin"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
@@ -73,7 +72,7 @@ func (ba *TokenAuthenticator) Identify(req *http.Request) error {
 	}
 	account, err := rbac.GetAccount(m)
 	if err != nil {
-		log.Error("get account  failed", err)
+		log.Error("get account from token failed", err)
 		return err
 	}
 	util.SetRequestContext(req, rbacsvc.CtxRequestClaims, m)
@@ -84,7 +83,7 @@ func (ba *TokenAuthenticator) Identify(req *http.Request) error {
 
 	if len(account.Roles) == 0 {
 		log.Error("no role found in token", nil)
-		return errors.New(errorsEx.MsgNoPerm)
+		return errors.New("no role found in token")
 	}
 
 	project := req.URL.Query().Get(":project")
@@ -93,7 +92,7 @@ func (ba *TokenAuthenticator) Identify(req *http.Request) error {
 		return err
 	}
 	if !allow {
-		return errors.New(errorsEx.MsgNoPerm)
+		return rbac.NewError(rbac.ErrNoPermission, "")
 	}
 
 	util.SetRequestContext(req, authHandler.CtxResourceLabels, matchedLabels)
@@ -123,7 +122,7 @@ func filterRoles(roleList []string) (hasAdmin bool, normalRoles []string) {
 func (ba *TokenAuthenticator) VerifyToken(req *http.Request) (interface{}, error) {
 	v := req.Header.Get(restful.HeaderAuth)
 	if v == "" {
-		return nil, rbac.ErrNoHeader
+		return nil, rbac.NewError(rbac.ErrNoAuthHeader, "")
 	}
 	s := strings.Split(v, " ")
 	if len(s) != 2 {

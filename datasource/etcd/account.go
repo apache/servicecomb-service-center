@@ -115,6 +115,9 @@ func (ds *DataSource) GetAccount(ctx context.Context, name string) (*rbac.Accoun
 	if err != nil {
 		return nil, err
 	}
+	if resp.Count == 0 {
+		return nil, datasource.ErrAccountNotExist
+	}
 	if resp.Count != 1 {
 		return nil, client.ErrNotUnique
 	}

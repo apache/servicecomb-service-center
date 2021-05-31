@@ -20,16 +20,15 @@ package v4
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/go-chassis/cari/pkg/errsvc"
 	"io/ioutil"
 	"net/http"
 
-	"github.com/apache/servicecomb-service-center/datasource"
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
-	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
 	"github.com/apache/servicecomb-service-center/server/service/validator"
 
 	"github.com/go-chassis/cari/discovery"
@@ -63,27 +62,13 @@ func (ar *AuthResource) CreateAccount(w http.ResponseWriter, req *http.Request) 
 	a := &rbac.Account{}
 	if err = json.Unmarshal(body, a); err != nil {
 		log.Error("json err", err)
-		rest.WriteError(w, discovery.ErrInvalidParams, errorsEx.MsgJSON)
-		return
-	}
-	err = validator.ValidateCreateAccount(a)
-	if err != nil {
 		rest.WriteError(w, discovery.ErrInvalidParams, err.Error())
 		return
 	}
-	err = a.Check()
+	err = rbacsvc.CreateAccount(req.Context(), a)
 	if err != nil {
-		rest.WriteError(w, discovery.ErrInvalidParams, err.Error())
-		return
-	}
-	err = dao.CreateAccount(req.Context(), a)
-	if err != nil {
-		if err == datasource.ErrAccountDuplicated {
-			rest.WriteError(w, rbac.ErrAccountConflict, "")
-			return
-		}
 		log.Error(errorsEx.MsgOperateAccountFailed, err)
-		rest.WriteError(w, discovery.ErrInternal, errorsEx.MsgOperateAccountFailed)
+		writeErrsvcOrInternalErr(w, err)
 		return
 	}
 	rest.WriteSuccess(w, req)
@@ -91,13 +76,10 @@ func (ar *AuthResource) CreateAccount(w http.ResponseWriter, req *http.Request) 
 
 func (ar *AuthResource) DeleteAccount(w http.ResponseWriter, req *http.Request) {
 	name := req.URL.Query().Get(":name")
-	if ar.illegalCheck(w, req, name) {
-		return
-	}
-	_, err := dao.DeleteAccount(req.Context(), name)
+	err := rbacsvc.DeleteAccount(req.Context(), name)
 	if err != nil {
 		log.Error(errorsEx.MsgOperateAccountFailed, err)
-		rest.WriteError(w, discovery.ErrInternal, errorsEx.MsgOperateAccountFailed)
+		writeErrsvcOrInternalErr(w, err)
 		return
 	}
 	rest.WriteSuccess(w, req)
@@ -105,9 +87,6 @@ func (ar *AuthResource) DeleteAccount(w http.ResponseWriter, req *http.Request) 
 
 func (ar *AuthResource) UpdateAccount(w http.ResponseWriter, req *http.Request) {
 	name := req.URL.Query().Get(":name")
-	if ar.illegalCheck(w, req, name) {
-		return
-	}
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		log.Error("read body err", err)
@@ -121,17 +100,17 @@ func (ar *AuthResource) UpdateAccount(w http.ResponseWriter, req *http.Request) 
 		return
 	}
 
-	err = dao.UpdateAccount(req.Context(), name, a)
+	err = rbacsvc.UpdateAccount(req.Context(), name, a)
 	if err != nil {
 		log.Error(errorsEx.MsgOperateAccountFailed, err)
-		rest.WriteError(w, discovery.ErrInternal, errorsEx.MsgOperateAccountFailed)
+		writeErrsvcOrInternalErr(w, err)
 		return
 	}
 	rest.WriteSuccess(w, req)
 }
 
 func (ar *AuthResource) ListAccount(w http.ResponseWriter, r *http.Request) {
-	as, n, err := dao.ListAccount(r.Context())
+	as, n, err := rbacsvc.ListAccount(r.Context())
 	if err != nil {
 		log.Error(errorsEx.MsgGetAccountFailed, err)
 		rest.WriteError(w, discovery.ErrInternal, errorsEx.MsgGetAccountFailed)
@@ -145,27 +124,14 @@ func (ar *AuthResource) ListAccount(w http.ResponseWriter, r *http.Request) {
 }
 
 func (ar *AuthResource) GetAccount(w http.ResponseWriter, r *http.Request) {
-	a, err := dao.GetAccount(r.Context(), r.URL.Query().Get(":name"))
+	a, err := rbacsvc.GetAccount(r.Context(), r.URL.Query().Get(":name"))
 	if err != nil {
 		log.Error(errorsEx.MsgGetAccountFailed, err)
-		rest.WriteError(w, discovery.ErrInternal, errorsEx.MsgGetAccountFailed)
+		writeErrsvcOrInternalErr(w, err)
 		return
 	}
 	a.Password = ""
 	rest.WriteResponse(w, r, nil, a)
-}
-
-func (ar *AuthResource) illegalCheck(w http.ResponseWriter, req *http.Request, name string) bool {
-	if name == rbacsvc.RootName {
-		rest.WriteError(w, discovery.ErrInvalidParams, errorsEx.MsgCantOperateRoot)
-		return true
-	}
-	user := rbacsvc.UserFromContext(req.Context())
-	if name == user {
-		rest.WriteError(w, discovery.ErrInvalidParams, errorsEx.MsgCantOperateYour)
-		return true
-	}
-	return false
 }
 
 func (ar *AuthResource) ChangePassword(w http.ResponseWriter, req *http.Request) {
@@ -253,7 +219,7 @@ func (ar *AuthResource) Login(w http.ResponseWriter, r *http.Request) {
 		if err == rbacsvc.ErrUnauthorized {
 			log.Error("not authorized", err)
 			rbacsvc.CountFailure(MakeBanKey(a.Name, ip))
-			rest.WriteError(w, rbac.ErrUnauthorized, err.Error())
+			rest.WriteError(w, rbac.ErrUserOrPwdWrong, err.Error())
 			return
 		}
 		log.Error("can not sign token", err)
@@ -265,4 +231,13 @@ func (ar *AuthResource) Login(w http.ResponseWriter, r *http.Request) {
 
 func MakeBanKey(name, ip string) string {
 	return name + "::" + ip
+}
+
+func writeErrsvcOrInternalErr(w http.ResponseWriter, err error) {
+	e, ok := err.(*errsvc.Error)
+	if ok {
+		rest.WriteErrsvcError(w, e)
+		return
+	}
+	rest.WriteError(w, discovery.ErrInternal, err.Error())
 }

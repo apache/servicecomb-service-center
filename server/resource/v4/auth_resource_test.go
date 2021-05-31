@@ -32,8 +32,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/config"
 	v4 "github.com/apache/servicecomb-service-center/server/resource/v4"
-	"github.com/apache/servicecomb-service-center/server/service/rbac"
-	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
+	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 	_ "github.com/apache/servicecomb-service-center/test"
 	"github.com/astaxie/beego"
 	"github.com/go-chassis/go-archaius"
@@ -71,18 +70,18 @@ func init() {
 		panic(err)
 	}
 
-	archaius.Set(rbac.InitPassword, pwd)
+	archaius.Set(rbacsvc.InitPassword, pwd)
 	ctx := context.TODO()
-	dao.DeleteAccount(ctx, "root")
+	rbacsvc.DeleteAccount(ctx, "root")
 
-	rbac.Init()
+	rbacsvc.Init()
 	rest.RegisterServant(&v4.AuthResource{})
 	rest.RegisterServant(&v4.RoleResource{})
 }
 func TestAuthResource_Login(t *testing.T) {
 	ctx := context.TODO()
 
-	dao.DeleteAccount(ctx, "dev_account")
+	rbacsvc.DeleteAccount(ctx, "dev_account")
 
 	t.Run("invalid user login", func(t *testing.T) {
 		b, _ := json.Marshal(&rbacmodel.Account{Name: "dev_account", Password: pwd})
@@ -190,7 +189,7 @@ func TestAuthResource_DeleteAccount(t *testing.T) {
 		r2.Header.Set(restful.HeaderAuth, "Bearer "+rootToken.TokenStr)
 		w2 := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w2, r2)
-		assert.Equal(t, http.StatusBadRequest, w2.Code)
+		assert.Equal(t, http.StatusForbidden, w2.Code)
 	})
 	t.Run("dev_account can not even delete him self", func(t *testing.T) {
 		b, _ := json.Marshal(&rbacmodel.Account{Name: "dev_account", Password: "Complicated_password2", Roles: []string{"developer"}})
@@ -232,7 +231,7 @@ func TestAuthResource_DeleteAccount(t *testing.T) {
 		r2.Header.Set(restful.HeaderAuth, "Bearer "+yourToken.TokenStr)
 		w2 := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w2, r2)
-		assert.Equal(t, http.StatusBadRequest, w2.Code)
+		assert.Equal(t, http.StatusForbidden, w2.Code)
 
 		r3, _ := http.NewRequest(http.MethodDelete, "/v4/accounts/your_account", nil)
 		r3.Header.Set(restful.HeaderAuth, "Bearer "+rootToken.TokenStr)

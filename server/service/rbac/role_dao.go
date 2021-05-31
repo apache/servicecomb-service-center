@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package dao
+package rbac
 
 import (
 	"context"
