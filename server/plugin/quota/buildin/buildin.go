@@ -31,9 +31,11 @@ func init() {
 
 func New() plugin.Instance {
 	quota.Init()
-	log.Infof("quota init, service: %d, instance: %d, schema: %d/service, tag: %d/service, rule: %d/service",
+	log.Infof("quota init, service: %d, instance: %d, schema: %d/service, tag: %d/service, rule: %d/service"+
+		", account: %d, role: %d",
 		quota.DefaultServiceQuota, quota.DefaultInstanceQuota,
-		quota.DefaultSchemaQuota, quota.DefaultTagQuota, quota.DefaultRuleQuota)
+		quota.DefaultSchemaQuota, quota.DefaultTagQuota, quota.DefaultRuleQuota,
+		quota.DefaultAccountQuota, quota.DefaultRoleQuota)
 	return &Quota{}
 }
 
@@ -52,6 +54,10 @@ func (q *Quota) GetQuota(ctx context.Context, t quota.ResourceType) int64 {
 		return int64(quota.DefaultSchemaQuota)
 	case quota.TypeTag:
 		return int64(quota.DefaultTagQuota)
+	case quota.TypeAccount:
+		return int64(quota.DefaultAccountQuota)
+	case quota.TypeRole:
+		return int64(quota.DefaultRoleQuota)
 	default:
 		return 0
 	}

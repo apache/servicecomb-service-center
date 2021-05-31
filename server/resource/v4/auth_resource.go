@@ -18,7 +18,6 @@
 package v4
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -77,7 +76,7 @@ func (ar *AuthResource) CreateAccount(w http.ResponseWriter, req *http.Request) 
 		rest.WriteError(w, discovery.ErrInvalidParams, err.Error())
 		return
 	}
-	err = dao.CreateAccount(context.TODO(), a)
+	err = dao.CreateAccount(req.Context(), a)
 	if err != nil {
 		if err == datasource.ErrAccountDuplicated {
 			rest.WriteError(w, rbac.ErrAccountConflict, "")
@@ -95,7 +94,7 @@ func (ar *AuthResource) DeleteAccount(w http.ResponseWriter, req *http.Request) 
 	if ar.illegalCheck(w, req, name) {
 		return
 	}
-	_, err := dao.DeleteAccount(context.TODO(), name)
+	_, err := dao.DeleteAccount(req.Context(), name)
 	if err != nil {
 		log.Error(errorsEx.MsgOperateAccountFailed, err)
 		rest.WriteError(w, discovery.ErrInternal, errorsEx.MsgOperateAccountFailed)
@@ -122,7 +121,7 @@ func (ar *AuthResource) UpdateAccount(w http.ResponseWriter, req *http.Request) 
 		return
 	}
 
-	err = dao.UpdateAccount(context.TODO(), name, a)
+	err = dao.UpdateAccount(req.Context(), name, a)
 	if err != nil {
 		log.Error(errorsEx.MsgOperateAccountFailed, err)
 		rest.WriteError(w, discovery.ErrInternal, errorsEx.MsgOperateAccountFailed)
@@ -132,7 +131,7 @@ func (ar *AuthResource) UpdateAccount(w http.ResponseWriter, req *http.Request) 
 }
 
 func (ar *AuthResource) ListAccount(w http.ResponseWriter, r *http.Request) {
-	as, n, err := dao.ListAccount(context.TODO())
+	as, n, err := dao.ListAccount(r.Context())
 	if err != nil {
 		log.Error(errorsEx.MsgGetAccountFailed, err)
 		rest.WriteError(w, discovery.ErrInternal, errorsEx.MsgGetAccountFailed)
@@ -146,7 +145,7 @@ func (ar *AuthResource) ListAccount(w http.ResponseWriter, r *http.Request) {
 }
 
 func (ar *AuthResource) GetAccount(w http.ResponseWriter, r *http.Request) {
-	a, err := dao.GetAccount(context.TODO(), r.URL.Query().Get(":name"))
+	a, err := dao.GetAccount(r.Context(), r.URL.Query().Get(":name"))
 	if err != nil {
 		log.Error(errorsEx.MsgGetAccountFailed, err)
 		rest.WriteError(w, discovery.ErrInternal, errorsEx.MsgGetAccountFailed)
@@ -201,7 +200,7 @@ func (ar *AuthResource) ChangePassword(w http.ResponseWriter, req *http.Request)
 		rest.WriteError(w, discovery.ErrInternal, "can not parse account info")
 		return
 	}
-	err = rbacsvc.ChangePassword(context.TODO(), changer.Roles, changer.Name, a)
+	err = rbacsvc.ChangePassword(req.Context(), changer.Roles, changer.Name, a)
 	if err != nil {
 		if err == rbacsvc.ErrSamePassword ||
 			err == rbacsvc.ErrEmptyCurrentPassword ||
@@ -248,7 +247,7 @@ func (ar *AuthResource) Login(w http.ResponseWriter, r *http.Request) {
 		rest.WriteError(w, discovery.ErrForbidden, "")
 		return
 	}
-	t, err := authr.Login(context.TODO(), a.Name, a.Password,
+	t, err := authr.Login(r.Context(), a.Name, a.Password,
 		authr.ExpireAfter(a.TokenExpirationTime))
 	if err != nil {
 		if err == rbacsvc.ErrUnauthorized {

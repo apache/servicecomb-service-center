@@ -41,6 +41,8 @@ const (
 	defaultSchemaLimit   = 100
 	defaultRuleLimit     = 100
 	defaultTagLimit      = 100
+	defaultAccountLimit  = 1000
+	defaultRoleLimit     = 100
 )
 
 const (
@@ -49,6 +51,8 @@ const (
 	TypeTag
 	TypeService
 	TypeInstance
+	TypeAccount
+	TypeRole
 )
 
 var (
@@ -57,14 +61,18 @@ var (
 	DefaultSchemaQuota   = defaultSchemaLimit
 	DefaultTagQuota      = defaultTagLimit
 	DefaultRuleQuota     = defaultRuleLimit
+	DefaultAccountQuota  = defaultAccountLimit
+	DefaultRoleQuota     = defaultRoleLimit
 )
 
 func Init() {
-	DefaultServiceQuota = config.GetInt("quota.cap.service.limit", defaultServiceLimit, config.WithStandby("QUOTA_SERVICE"))
-	DefaultInstanceQuota = config.GetInt("quota.cap.instance.limit", defaultInstanceLimit, config.WithStandby("QUOTA_INSTANCE"))
-	DefaultSchemaQuota = config.GetInt("quota.cap.schema.limit", defaultSchemaLimit, config.WithStandby("QUOTA_SCHEMA"))
-	DefaultTagQuota = config.GetInt("quota.cap.tag.limit", defaultTagLimit, config.WithStandby("QUOTA_TAG"))
-	DefaultRuleQuota = config.GetInt("quota.cap.rule.limit", defaultRuleLimit, config.WithStandby("QUOTA_RULE"))
+	DefaultServiceQuota = config.GetInt("quota.cap.service.limit", defaultServiceLimit, config.WithENV("QUOTA_SERVICE"))
+	DefaultInstanceQuota = config.GetInt("quota.cap.instance.limit", defaultInstanceLimit, config.WithENV("QUOTA_INSTANCE"))
+	DefaultSchemaQuota = config.GetInt("quota.cap.schema.limit", defaultSchemaLimit, config.WithENV("QUOTA_SCHEMA"))
+	DefaultTagQuota = config.GetInt("quota.cap.tag.limit", defaultTagLimit, config.WithENV("QUOTA_TAG"))
+	DefaultRuleQuota = config.GetInt("quota.cap.rule.limit", defaultRuleLimit, config.WithENV("QUOTA_RULE"))
+	DefaultAccountQuota = config.GetInt("quota.cap.account.limit", defaultAccountLimit, config.WithENV("QUOTA_ACCOUNT"))
+	DefaultRoleQuota = config.GetInt("quota.cap.role.limit", defaultRoleLimit, config.WithENV("QUOTA_ROLE"))
 }
 
 type ApplyQuotaResource struct {
@@ -102,6 +110,10 @@ func (r ResourceType) String() string {
 		return "SERVICE"
 	case TypeInstance:
 		return "INSTANCE"
+	case TypeAccount:
+		return "ACCOUNT"
+	case TypeRole:
+		return "ROLE"
 	default:
 		return "RESOURCE" + strconv.Itoa(int(r))
 	}
@@ -165,6 +177,22 @@ func GetResourceUsage(ctx context.Context, res *ApplyQuotaResource) (int64, erro
 	case TypeTag:
 		// always re-create the service old tags
 		return 0, nil
+	case TypeRole:
+		{
+			_, used, err := datasource.Instance().ListRole(ctx)
+			if err != nil {
+				return 0, err
+			}
+			return used, nil
+		}
+	case TypeAccount:
+		{
+			_, used, err := datasource.Instance().ListAccount(ctx)
+			if err != nil {
+				return 0, err
+			}
+			return used, nil
+		}
 	default:
 		return 0, fmt.Errorf("not define quota type '%s'", res.QuotaType)
 	}

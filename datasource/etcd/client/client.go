@@ -104,7 +104,7 @@ func Delete(ctx context.Context, key string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return resp.Count != 0, nil
+	return resp.Succeeded, nil
 }
 
 func BatchCommit(ctx context.Context, opts []PluginOp) error {

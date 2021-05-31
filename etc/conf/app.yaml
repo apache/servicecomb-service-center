@@ -187,6 +187,10 @@ quota:
       limit: 100
     tag:
       limit: 100
+    account:
+      limit: 1000
+    role:
+      limit: 100
 
 uuid:
   kind: context

@@ -92,7 +92,7 @@ func (a *EmbeddedAuthenticator) Authenticate(ctx context.Context, tokenStr strin
 	if !ok {
 		return nil, rbac.ErrConvert
 	}
-	exist, err := datasource.Instance().AccountExist(context.TODO(), n)
+	exist, err := datasource.Instance().AccountExist(ctx, n)
 	if err != nil {
 		return nil, err
 	}
