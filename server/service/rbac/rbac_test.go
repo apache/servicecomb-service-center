@@ -22,7 +22,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/privacy"
 	"github.com/apache/servicecomb-service-center/server/config"
 	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
-	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
 	_ "github.com/apache/servicecomb-service-center/test"
 	"github.com/astaxie/beego"
 	"github.com/go-chassis/cari/rbac"
@@ -62,18 +61,10 @@ func init() {
 	}
 
 	archaius.Set(rbacsvc.InitPassword, "Complicated_password1")
-	dao.DeleteAccount(context.Background(), "root")
-	dao.DeleteAccount(context.Background(), "a")
-	dao.DeleteAccount(context.Background(), "b")
-
 	rbacsvc.Init()
 }
 
 func TestInitRBAC(t *testing.T) {
-	a, err := dao.GetAccount(context.Background(), "root")
-	assert.NoError(t, err)
-	assert.Equal(t, "root", a.Name)
-
 	t.Run("login and authenticate", func(t *testing.T) {
 		token, err := authr.Login(context.Background(), "root", "Complicated_password1")
 		assert.NoError(t, err)
@@ -87,29 +78,24 @@ func TestInitRBAC(t *testing.T) {
 	})
 
 	t.Run("change pwd,admin can change any one password", func(t *testing.T) {
-		persisted := &rbac.Account{Name: "a", Password: "Complicated_password1"}
-		err := dao.CreateAccount(context.Background(), persisted)
+		persisted := newAccount("admin_change_other_pwd")
+		err := rbacsvc.CreateAccount(context.Background(), persisted)
 		assert.NoError(t, err)
-		err = rbacsvc.ChangePassword(context.Background(), []string{rbac.RoleAdmin}, "admin", &rbac.Account{Name: "a", Password: "Complicated_password2"})
+		err = rbacsvc.ChangePassword(context.Background(), []string{rbac.RoleAdmin}, rbac.RoleAdmin, &rbac.Account{Name: persisted.Name, Password: "Complicated_password2"})
 		assert.NoError(t, err)
-		a, err := dao.GetAccount(context.Background(), "a")
+		a, err := rbacsvc.GetAccount(context.Background(), persisted.Name)
 		assert.NoError(t, err)
 		assert.True(t, privacy.SamePassword(a.Password, "Complicated_password2"))
 	})
 	t.Run("change self password", func(t *testing.T) {
-		err := dao.CreateAccount(context.Background(), &rbac.Account{Name: "b", Password: "Complicated_password1"})
+		a := newAccount("change_self_pwd")
+		err := rbacsvc.CreateAccount(context.Background(), a)
 		assert.NoError(t, err)
-		err = rbacsvc.ChangePassword(context.Background(), nil, "b", &rbac.Account{Name: "b", CurrentPassword: "Complicated_password1", Password: "Complicated_password2"})
+		err = rbacsvc.ChangePassword(context.Background(), nil, a.Name, &rbac.Account{Name: a.Name, CurrentPassword: testPwd0, Password: testPwd1})
 		assert.NoError(t, err)
-		a, err := dao.GetAccount(context.Background(), "b")
+		resp, err := rbacsvc.GetAccount(context.Background(), a.Name)
 		assert.NoError(t, err)
-		assert.True(t, privacy.SamePassword(a.Password, "Complicated_password2"))
-
-	})
-	t.Run("list kv", func(t *testing.T) {
-		_, n, err := dao.ListAccount(context.TODO())
-		assert.NoError(t, err)
-		assert.Greater(t, n, int64(2))
+		assert.True(t, privacy.SamePassword(resp.Password, testPwd1))
 	})
 }
 func BenchmarkAuthResource_Login(b *testing.B) {

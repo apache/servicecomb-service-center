@@ -21,8 +21,7 @@ import (
 	"context"
 	"crypto/rsa"
 	"errors"
-	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/server/service/validator"
+	"github.com/go-chassis/cari/pkg/errsvc"
 	"io/ioutil"
 
 	"github.com/go-chassis/cari/rbac"
@@ -30,7 +29,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/plugin/security/cipher"
-	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
 	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-chassis/v2/security/authr"
 	"github.com/go-chassis/go-chassis/v2/security/secret"
@@ -61,7 +59,7 @@ func Init() {
 	if err != nil {
 		log.Fatal("can not enable auth module", err)
 	}
-	accountExist, err := dao.AccountExist(context.Background(), RootName)
+	accountExist, err := AccountExist(context.Background(), RootName)
 	if err != nil {
 		log.Fatal("can not enable auth module", err)
 	}
@@ -118,19 +116,17 @@ func initFirstTime(admin string) {
 		Password: pwd,
 		Roles:    []string{rbac.RoleAdmin},
 	}
-	err = validator.ValidateCreateAccount(a)
-	if err != nil {
-		log.Fatal("invalid pwd", err)
+	err = CreateAccount(context.Background(), a)
+	if err == nil {
+		log.Info("root account init success")
 		return
 	}
-	if err := dao.CreateAccount(context.Background(), a); err != nil {
-		if err == datasource.ErrAccountDuplicated {
-			log.Info("root account already exists")
-			return
-		}
-		log.Fatal("can not enable rbac, init root account failed", err)
+	svcErr, ok := err.(*errsvc.Error)
+	if ok && svcErr.Code == rbac.ErrAccountConflict {
+		log.Info("root account already exist")
+		return
 	}
-	log.Info("root account init success")
+	log.Fatal("can not enable rbac, init root account failed", err)
 }
 
 func getPassword() (string, error) {

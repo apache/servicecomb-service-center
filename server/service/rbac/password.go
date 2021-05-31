@@ -27,7 +27,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
 )
 
 func ChangePassword(ctx context.Context, changerRole []string, changerName string, a *rbacmodel.Account) error {
@@ -49,7 +48,7 @@ func ChangePassword(ctx context.Context, changerRole []string, changerName strin
 	return ErrNoPermChangeAccount
 }
 func changePasswordForcibly(ctx context.Context, name, pwd string) error {
-	old, err := dao.GetAccount(ctx, name)
+	old, err := GetAccount(ctx, name)
 	if err != nil {
 		log.Error("can not change pwd", err)
 		return err
@@ -64,7 +63,7 @@ func changePassword(ctx context.Context, name, currentPassword, pwd string) erro
 	if currentPassword == pwd {
 		return ErrSamePassword
 	}
-	old, err := dao.GetAccount(ctx, name)
+	old, err := GetAccount(ctx, name)
 	if err != nil {
 		log.Error("can not change pwd", err)
 		return err
@@ -88,7 +87,7 @@ func doChangePassword(ctx context.Context, old *rbacmodel.Account, pwd string) e
 		return err
 	}
 	old.Password = stringutil.Bytes2str(hash)
-	err = dao.EditAccount(ctx, old)
+	err = EditAccount(ctx, old)
 	if err != nil {
 		log.Error("can not change pwd", err)
 		return err

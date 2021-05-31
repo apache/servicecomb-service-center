@@ -1,14 +1,15 @@
 package v4_test
 
 import (
+	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 	_ "github.com/apache/servicecomb-service-center/test"
+	"github.com/go-chassis/cari/rbac"
 	"strings"
 
 	"bytes"
 	"context"
 	"encoding/json"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
-	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
 	rbacmodel "github.com/go-chassis/cari/rbac"
 	"github.com/go-chassis/go-chassis/v2/server/restful"
 	"github.com/stretchr/testify/assert"
@@ -16,6 +17,36 @@ import (
 	"net/http/httptest"
 	"testing"
 )
+
+func newRole(name string) *rbac.Role {
+	return &rbac.Role{
+		Name: name,
+		Perms: []*rbac.Permission{
+			{
+				Resources: []*rbac.Resource{
+					{
+						Type: rbacsvc.ResourceService,
+					},
+				},
+				Verbs: []string{"*"},
+			},
+		},
+	}
+}
+
+const (
+	testPwd0 = "Ab@00000"
+	testPwd1 = "Ab@11111"
+)
+
+func newAccount(name string) *rbac.Account {
+	return &rbac.Account{
+		Name:     name,
+		Password: testPwd0,
+		Roles:    []string{rbac.RoleAdmin},
+		Status:   "active",
+	}
+}
 
 func TestRoleResource_CreateOrUpdateRole(t *testing.T) {
 	var superToken = &rbacmodel.Token{}
@@ -25,6 +56,12 @@ func TestRoleResource_CreateOrUpdateRole(t *testing.T) {
 	dao.DeleteRole(ctx, "tester")
 	t.Run("root login,to get super token", func(t *testing.T) {
 		b, _ := json.Marshal(&rbacmodel.Account{Name: "root", Password: "Complicated_password1"})
+	devAccount := newAccount("dev_test")
+	testRole := newRole("tester")
+	rbacsvc.DeleteAccount(ctx, devAccount.Name)
+	rbacsvc.DeleteRole(ctx, testRole.Name)
+	t.Run("root login", func(t *testing.T) {
+		b, _ := json.Marshal(&rbacmodel.Account{Name: rbacsvc.RootName, Password: "Complicated_password1"})
 
 		r, err := http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(b))
 		assert.NoError(t, err)
@@ -45,7 +82,7 @@ func TestRoleResource_CreateOrUpdateRole(t *testing.T) {
 	})
 
 	t.Run("create a role name tester ", func(t *testing.T) {
-		b, _ := json.Marshal(&rbacmodel.Account{Name: "dev_test", Password: "Complicated_password3", Roles: []string{"tester"}})
+		b, _ := json.Marshal(&rbacmodel.Account{Name: rbacsvc.RootName, Password: "Complicated_password1"})
 
 		r, _ := http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(b))
 		w := httptest.NewRecorder()
@@ -54,15 +91,7 @@ func TestRoleResource_CreateOrUpdateRole(t *testing.T) {
 		devToken := &rbacmodel.Token{}
 		json.Unmarshal(w.Body.Bytes(), devToken)
 
-		b2, _ := json.Marshal(&rbacmodel.Role{
-			Name: "tester",
-			Perms: []*rbacmodel.Permission{
-				{
-					Resources: []*rbacmodel.Resource{{Type: "service"}, {Type: "instance"}},
-					Verbs:     []string{"get", "create", "update"},
-				},
-			},
-		})
+		b2, _ := json.Marshal(testRole)
 
 		r2, _ := http.NewRequest(http.MethodPost, "/v4/roles", bytes.NewReader(b2))
 		r2.Header.Set(restful.HeaderAuth, "Bearer "+superToken.TokenStr)
@@ -76,20 +105,29 @@ func TestRoleResource_CreateOrUpdateRole(t *testing.T) {
 		rest.GetRouter().ServeHTTP(w3, r3)
 		assert.Equal(t, http.StatusOK, w3.Code)
 
-		b4, _ := json.Marshal(&rbacmodel.Role{
-			Name: "tester",
-			Perms: []*rbacmodel.Permission{
-				{
-					Resources: []*rbacmodel.Resource{{Type: "service"}},
-					Verbs:     []string{"get", "create", "update"},
-				},
+		newTestRole := newRole(testRole.Name)
+		newTestRole.Perms = []*rbac.Permission{
+			{
+				Resources: []*rbacmodel.Resource{{Type: rbacsvc.ResourceAccount}},
+				Verbs:     []string{"*"},
 			},
-		})
+		}
+		b4, _ := json.Marshal(newTestRole)
 		r4, _ := http.NewRequest(http.MethodPut, "/v4/roles/tester", bytes.NewReader(b4))
 		r4.Header.Set(restful.HeaderAuth, "Bearer "+superToken.TokenStr)
 		w4 := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w4, r4)
 		assert.Equal(t, http.StatusOK, w4.Code)
+	})
+	t.Run("create account dev_test and add a role", func(t *testing.T) {
+		devAccount.Roles = []string{testRole.Name}
+		b, _ := json.Marshal(devAccount)
+
+		r, _ := http.NewRequest(http.MethodPost, "/v4/accounts", bytes.NewBuffer(b))
+		r.Header.Set(restful.HeaderAuth, "Bearer "+to.TokenStr)
+		w := httptest.NewRecorder()
+		rest.GetRouter().ServeHTTP(w, r)
+		assert.Equal(t, http.StatusOK, w.Code)
 	})
 
 	t.Run("get role", func(t *testing.T) {
@@ -150,10 +188,10 @@ func TestRoleResource_CreateOrUpdateRole(t *testing.T) {
 func TestRoleResource_MoreRoles(t *testing.T) {
 	var to = &rbacmodel.Token{}
 	ctx := context.TODO()
-	dao.DeleteAccount(ctx, "dev_test")
-	dao.DeleteAccount(ctx, "dev_test2")
-	dao.DeleteRole(ctx, "tester")
-	dao.DeleteRole(ctx, "tester2")
+	rbacsvc.DeleteAccount(ctx, "dev_test")
+	rbacsvc.DeleteAccount(ctx, "dev_test2")
+	rbacsvc.DeleteRole(ctx, "tester")
+	rbacsvc.DeleteRole(ctx, "tester2")
 	t.Run("root login", func(t *testing.T) {
 		b, _ := json.Marshal(&rbacmodel.Account{Name: "root", Password: "Complicated_password1"})
 

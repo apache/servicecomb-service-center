@@ -19,6 +19,7 @@ package v4
 
 import (
 	"encoding/json"
+	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 	"errors"
 	"github.com/apache/servicecomb-service-center/datasource"
 	"io/ioutil"
@@ -27,7 +28,6 @@ import (
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
-	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
 
 	"github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/cari/rbac"
@@ -51,7 +51,7 @@ func (rr *RoleResource) URLPatterns() []rest.Route {
 
 //ListRoles list all roles and there's permissions
 func (rr *RoleResource) ListRoles(w http.ResponseWriter, req *http.Request) {
-	rs, num, err := dao.ListRole(req.Context())
+	rs, num, err := rbacsvc.ListRole(req.Context())
 	if err != nil {
 		log.Error(errorsEx.MsgGetRoleFailed, err)
 		rest.WriteError(w, discovery.ErrInternal, errorsEx.MsgGetRoleFailed)
@@ -90,7 +90,7 @@ func (rr *RoleResource) CreateRole(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	status, err := dao.CreateRole(req.Context(), role)
+	status, err := rbacsvc.CreateRole(req.Context(), role)
 	if err != nil {
 		log.Error(errorsEx.MsgOperateRoleFailed, err)
 		rest.WriteError(w, discovery.ErrInternal, err.Error())
@@ -113,7 +113,7 @@ func (rr *RoleResource) UpdateRole(w http.ResponseWriter, req *http.Request) {
 		rest.WriteError(w, discovery.ErrInvalidParams, errorsEx.MsgJSON)
 		return
 	}
-	status, err := dao.EditRole(req.Context(), name, role)
+	status, err := rbacsvc.EditRole(req.Context(), name, role)
 	if err != nil {
 		log.Error(errorsEx.MsgOperateRoleFailed, err)
 		rest.WriteError(w, discovery.ErrInternal, errorsEx.MsgOperateRoleFailed)
@@ -125,7 +125,7 @@ func (rr *RoleResource) UpdateRole(w http.ResponseWriter, req *http.Request) {
 
 //GetRole get the role info according to role name
 func (rr *RoleResource) GetRole(w http.ResponseWriter, r *http.Request) {
-	resp, status, err := dao.GetRole(r.Context(), r.URL.Query().Get(":roleName"))
+	resp, status, err := rbacsvc.GetRole(r.Context(), r.URL.Query().Get(":roleName"))
 	if err != nil {
 		log.Error(errorsEx.MsgGetRoleFailed, err)
 		rest.WriteError(w, discovery.ErrInternal, errorsEx.MsgGetRoleFailed)

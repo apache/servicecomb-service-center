@@ -21,6 +21,7 @@ import (
 	"context"
 	"crypto/rsa"
 	"errors"
+	"fmt"
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/go-chassis/cari/rbac"
 
@@ -30,7 +31,6 @@ import (
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/privacy"
-	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
 )
 
 var ErrUnauthorized = errors.New("wrong user name or password")
@@ -49,11 +49,12 @@ func (a *EmbeddedAuthenticator) Login(ctx context.Context, user string, password
 	for _, o := range opts {
 		o(opt)
 	}
-	account, err := dao.GetAccount(ctx, user)
+	account, err := GetAccount(ctx, user)
 	if err != nil {
 		log.Error("get account err", err)
 		return "", err
 	}
+
 	same := privacy.SamePassword(account.Password, password)
 	if user == account.Name && same {
 		secret, err := GetPrivateKey()
@@ -85,6 +86,9 @@ func (a *EmbeddedAuthenticator) Authenticate(ctx context.Context, tokenStr strin
 	}
 	claims, err := a.authToken(tokenStr, p)
 	if err != nil {
+		if a.isTokenExpiredError(err) {
+			return nil, rbac.NewError(rbac.ErrTokenExpired, "")
+		}
 		return nil, err
 	}
 	accountNameI := claims[rbac.ClaimsUser]
@@ -97,9 +101,24 @@ func (a *EmbeddedAuthenticator) Authenticate(ctx context.Context, tokenStr strin
 		return nil, err
 	}
 	if !exist {
-		return nil, datasource.ErrAccountNotExist
+		msg := fmt.Sprintf("account [%s] is deleted", n)
+		return nil, rbac.NewError(rbac.ErrTokenOwnedAccountDeleted, msg)
 	}
 	return claims, nil
+}
+
+func (a *EmbeddedAuthenticator) isTokenExpiredError(err error) bool {
+	if err == nil {
+		return false
+	}
+	vErr, ok := err.(*jwt.ValidationError)
+	if !ok {
+		return false
+	}
+	if vErr.Errors&(jwt.ValidationErrorExpired|jwt.ValidationErrorNotValidYet) != 0 {
+		return true
+	}
+	return false
 }
 
 func (a *EmbeddedAuthenticator) authToken(tokenStr string, pub *rsa.PublicKey) (map[string]interface{}, error) {

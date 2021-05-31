@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io/ioutil"
+	"github.com/go-chassis/cari/pkg/errsvc"
 	"net/http"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -33,6 +34,10 @@ var errNilRequestBody = errors.New("request body is nil")
 
 func WriteError(w http.ResponseWriter, code int32, detail string) {
 	err := discovery.NewError(code, detail)
+	WriteErrsvcError(w, err)
+}
+
+func WriteErrsvcError(w http.ResponseWriter, err *errsvc.Error) {
 	w.Header().Set(HeaderContentType, ContentTypeJSON)
 	w.WriteHeader(err.StatusCode())
 	b, _ := json.Marshal(err)

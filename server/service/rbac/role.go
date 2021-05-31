@@ -22,7 +22,6 @@ import (
 	"github.com/go-chassis/cari/rbac"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
 )
 
 var roleMap = map[string]*rbac.Role{}
@@ -46,7 +45,7 @@ func initBuildInRole() {
 }
 
 func createBuildInRole(r *rbac.Role) {
-	status, err := dao.CreateRole(context.Background(), r)
+	status, err := CreateRole(context.Background(), r)
 	if err != nil {
 		log.Fatalf(err, "create role [%s] failed", r.Name)
 		return

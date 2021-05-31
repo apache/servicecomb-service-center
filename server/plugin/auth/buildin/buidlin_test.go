@@ -22,7 +22,8 @@ import (
 	"context"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	rbacmodel "github.com/go-chassis/cari/rbac"
+	"github.com/go-chassis/cari/pkg/errsvc"
+	"github.com/go-chassis/cari/rbac"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -30,8 +31,7 @@ import (
 
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/plugin/auth/buildin"
-	"github.com/apache/servicecomb-service-center/server/service/rbac"
-	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
+	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 	_ "github.com/apache/servicecomb-service-center/test"
 	"github.com/astaxie/beego"
 	carirbac "github.com/go-chassis/cari/rbac"
@@ -51,8 +51,8 @@ func init() {
 }
 
 func TestTokenAuthenticator_Identify(t *testing.T) {
-	dao.DeleteAccount(context.TODO(), "root")
-	dao.DeleteAccount(context.TODO(), "non-admin")
+	rbacsvc.DeleteAccount(context.TODO(), "root")
+	rbacsvc.DeleteAccount(context.TODO(), "non-admin")
 	t.Run("init rbac", func(t *testing.T) {
 		err := archaius.Init(archaius.WithMemorySource(), archaius.WithENVSource())
 		assert.NoError(t, err)
@@ -67,9 +67,9 @@ func TestTokenAuthenticator_Identify(t *testing.T) {
 		err = ioutil.WriteFile("./rbac.pub", b, 0600)
 		assert.NoError(t, err)
 
-		archaius.Set(rbac.InitPassword, "Complicated_password1")
+		archaius.Set(rbacsvc.InitPassword, "Complicated_password1")
 
-		rbac.Init()
+		rbacsvc.Init()
 	})
 	a := buildin.New()
 	ta := a.(*buildin.TokenAuthenticator)
@@ -77,8 +77,10 @@ func TestTokenAuthenticator_Identify(t *testing.T) {
 	t.Run("without auth header should failed", func(t *testing.T) {
 		r := httptest.NewRequest(http.MethodGet, "/any", nil)
 		err := ta.Identify(r)
+		assert.NotNil(t, err)
 		t.Log(err)
-		assert.Equal(t, carirbac.ErrNoHeader, err)
+		svcErr := err.(*errsvc.Error)
+		assert.Equal(t, carirbac.ErrNoAuthHeader, svcErr.Code)
 	})
 
 	t.Run("with wrong auth header should failed", func(t *testing.T) {
@@ -105,7 +107,12 @@ func TestTokenAuthenticator_Identify(t *testing.T) {
 		assert.NoError(t, err)
 	})
 	t.Run("valid normal token, should no be able to get account", func(t *testing.T) {
-		err := dao.CreateAccount(context.TODO(), &rbacmodel.Account{Name: "non-admin", Password: "Complicated_password1"})
+		a := &rbac.Account{
+			Name:     "non-admin",
+			Password: "Complicated_password1",
+			Roles:    []string{rbac.RoleDeveloper},
+		}
+		err := rbacsvc.CreateAccount(context.TODO(), a)
 		assert.NoError(t, err)
 		r := httptest.NewRequest(http.MethodGet, "/v4/accounts", nil)
 		to, err := authr.Login(context.TODO(), "non-admin", "Complicated_password1")

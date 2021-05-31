@@ -20,6 +20,7 @@ package mongo
 import (
 	"context"
 	"fmt"
+	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/go-chassis/cari/rbac"
 
@@ -80,7 +81,10 @@ func (ds *DataSource) GetAccount(ctx context.Context, name string) (*rbac.Accoun
 		log.Error(msg, err)
 		return nil, err
 	}
-	if result.Err() != nil {
+	if err = result.Err(); err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, datasource.ErrAccountNotExist
+		}
 		msg := fmt.Sprintf("failed to query account, account name %s", name)
 		log.Error(msg, result.Err())
 		return nil, datasource.ErrQueryAccountFailed

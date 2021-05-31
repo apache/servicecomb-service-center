@@ -18,6 +18,7 @@
 package auth
 
 import (
+	"github.com/go-chassis/cari/pkg/errsvc"
 	"net/http"
 
 	"github.com/apache/servicecomb-service-center/pkg/chain"
@@ -45,6 +46,10 @@ func (h *Handler) Handle(i *chain.Invocation) {
 
 	if err := auth.Identify(r); err != nil {
 		log.Errorf(err, "authenticate request failed, %s %s", r.Method, r.RequestURI)
+		if e, ok := err.(*errsvc.Error); ok {
+			i.Fail(e)
+			return
+		}
 		i.Fail(discovery.NewError(rbac.ErrUnauthorized, err.Error()))
 		return
 	}
