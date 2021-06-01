@@ -20,52 +20,51 @@ package rbac
 import (
 	"context"
 	"errors"
+	"github.com/apache/servicecomb-service-center/datasource"
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
+	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	"github.com/apache/servicecomb-service-center/server/service/validator"
 	"github.com/go-chassis/cari/discovery"
 
-	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/pkg/log"
-
 	"github.com/go-chassis/cari/rbac"
 )
 
-func CreateRole(ctx context.Context, r *rbac.Role) (*discovery.Response, error) {
+func CreateRole(ctx context.Context, r *rbac.Role) error {
 	err := validator.ValidateCreateRole(r)
 	if err != nil {
 		log.Errorf(err, "create role [%s] failed", r.Name)
-		return discovery.CreateResponse(discovery.ErrInvalidParams, err.Error()), nil
+		return discovery.NewError(discovery.ErrInvalidParams, err.Error())
 	}
 	quotaErr := quota.Apply(ctx, quota.NewApplyQuotaResource(quota.TypeRole,
 		util.ParseDomainProject(ctx), "", 1))
 	if quotaErr != nil {
-		return discovery.CreateResponse(rbac.ErrRoleNoQuota, quotaErr.Error()), nil
+		return rbac.NewError(rbac.ErrRoleNoQuota, quotaErr.Error())
 	}
 	err = datasource.Instance().CreateRole(ctx, r)
 	if err == nil {
 		log.Infof("create role [%s] success", r.Name)
-		return nil, nil
+		return nil
 	}
 
 	log.Errorf(err, "create role [%s] failed", r.Name)
 	if err == datasource.ErrRoleDuplicated {
-		return discovery.CreateResponse(rbac.ErrRoleConflict, err.Error()), nil
+		return rbac.NewError(rbac.ErrRoleConflict, err.Error())
 	}
 
-	return nil, err
+	return err
 }
 
-func GetRole(ctx context.Context, name string) (*rbac.Role, *discovery.Response, error) {
+func GetRole(ctx context.Context, name string) (*rbac.Role, error) {
 	resp, err := datasource.Instance().GetRole(ctx, name)
 	if err == nil {
-		return resp, nil, nil
+		return resp, nil
 	}
 	if err == datasource.ErrRoleNotExist {
-		return nil, discovery.CreateResponse(rbac.ErrRoleNotExist, ""), nil
+		return nil, rbac.NewError(rbac.ErrRoleNotExist, "")
 	}
-	return nil, nil, err
+	return nil, err
 }
 
 func ListRole(ctx context.Context) ([]*rbac.Role, int64, error) {
@@ -76,49 +75,49 @@ func RoleExist(ctx context.Context, name string) (bool, error) {
 	return datasource.Instance().RoleExist(ctx, name)
 }
 
-func DeleteRole(ctx context.Context, name string) (*discovery.Response, error) {
-	if isBuildInRole(name) {
-		return discovery.CreateResponse(discovery.ErrForbidden, errorsEx.MsgCantOperateBuildInRole), nil
+func DeleteRole(ctx context.Context, name string) error {
+	if err := illegalRoleCheck(name); err != nil {
+		return err
 	}
-	exist, err := datasource.Instance().RoleExist(ctx, name)
+	exist, err := RoleExist(ctx, name)
 	if err != nil {
 		log.Errorf(err, "check role [%s] exist failed", name)
-		return nil, err
+		return err
 	}
 	if !exist {
 		log.Errorf(err, "role [%s] not exist", name)
-		return discovery.CreateResponse(rbac.ErrRoleNotExist, ""), nil
+		return rbac.NewError(rbac.ErrRoleNotExist, "")
 	}
 	succeed, err := datasource.Instance().DeleteRole(ctx, name)
 	if err != nil {
-		return nil, err
+		if errors.Is(err, datasource.ErrRoleBindingExist) {
+			return rbac.NewError(rbac.ErrRoleIsBound, "")
+		}
+		return err
 	}
 	if !succeed {
-		return nil, errors.New("delete role failed, please retry")
+		return errors.New("delete role failed, please retry")
 	}
-	return nil, nil
+	return nil
 }
 
-func EditRole(ctx context.Context, name string, a *rbac.Role) (*discovery.Response, error) {
-	if isBuildInRole(name) {
-		return discovery.CreateResponse(discovery.ErrForbidden, errorsEx.MsgCantOperateBuildInRole), nil
+func EditRole(ctx context.Context, name string, a *rbac.Role) error {
+	if err := illegalRoleCheck(name); err != nil {
+		return err
 	}
-	exist, err := datasource.Instance().RoleExist(ctx, name)
+	exist, err := RoleExist(ctx, name)
 	if err != nil {
 		log.Errorf(err, "check role [%s] exist failed", name)
-		return nil, err
+		return err
 	}
 	if !exist {
 		log.Errorf(err, "role [%s] not exist", name)
-		return discovery.CreateResponse(rbac.ErrRoleNotExist, ""), nil
+		return rbac.NewError(rbac.ErrRoleNotExist, "")
 	}
-	oldRole, status, err := GetRole(ctx, name)
+	oldRole, err := GetRole(ctx, name)
 	if err != nil {
 		log.Errorf(err, "get role [%s] failed", name)
-		return nil, err
-	}
-	if status != nil && status.GetCode() != discovery.ResponseSuccess {
-		return status, nil
+		return err
 	}
 
 	oldRole.Perms = a.Perms
@@ -126,15 +125,15 @@ func EditRole(ctx context.Context, name string, a *rbac.Role) (*discovery.Respon
 	err = datasource.Instance().UpdateRole(ctx, name, oldRole)
 	if err != nil {
 		log.Errorf(err, "can not edit role info")
-		return nil, err
+		return err
 	}
 	log.Infof("role [%s] is edit", oldRole.ID)
-	return nil, nil
+	return nil
 }
 
-func isBuildInRole(role string) bool {
+func illegalRoleCheck(role string) error {
 	if role == rbac.RoleAdmin || role == rbac.RoleDeveloper {
-		return true
+		return rbac.NewError(rbac.ErrForbidOperateBuildInRole, errorsEx.MsgCantOperateBuildInRole)
 	}
-	return false
+	return nil
 }

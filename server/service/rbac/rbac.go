@@ -174,3 +174,8 @@ func GetPrivateKey() (*rsa.PrivateKey, error) {
 	}
 	return p, nil
 }
+
+//MakeBanKey return ban key
+func MakeBanKey(name, ip string) string {
+	return name + "::" + ip
+}

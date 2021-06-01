@@ -19,7 +19,6 @@ package v4
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/go-chassis/cari/pkg/errsvc"
 	"io/ioutil"
 	"net/http"
@@ -27,7 +26,6 @@ import (
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
-	"github.com/apache/servicecomb-service-center/pkg/util"
 	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 	"github.com/apache/servicecomb-service-center/server/service/validator"
 
@@ -135,13 +133,6 @@ func (ar *AuthResource) GetAccount(w http.ResponseWriter, r *http.Request) {
 }
 
 func (ar *AuthResource) ChangePassword(w http.ResponseWriter, req *http.Request) {
-	name := req.URL.Query().Get(":name")
-	ip := util.GetRealIP(req)
-	if rbacsvc.IsBanned(MakeBanKey(name, ip)) {
-		log.Warn(fmt.Sprintf("ip is banned:%s, account: %s", ip, req.URL.Query().Get(":name")))
-		rest.WriteError(w, discovery.ErrForbidden, "")
-		return
-	}
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		log.Error("read body err", err)
@@ -155,32 +146,10 @@ func (ar *AuthResource) ChangePassword(w http.ResponseWriter, req *http.Request)
 		return
 	}
 	a.Name = req.URL.Query().Get(":name")
-	err = validator.ValidateChangePWD(a)
-	if err != nil {
-		rest.WriteError(w, discovery.ErrInvalidParams, err.Error())
-		return
-	}
 
-	changer, err := rbacsvc.AccountFromContext(req.Context())
+	err = rbacsvc.ChangePassword(req.Context(), a)
 	if err != nil {
-		rest.WriteError(w, discovery.ErrInternal, "can not parse account info")
-		return
-	}
-	err = rbacsvc.ChangePassword(req.Context(), changer.Roles, changer.Name, a)
-	if err != nil {
-		if err == rbacsvc.ErrSamePassword ||
-			err == rbacsvc.ErrEmptyCurrentPassword ||
-			err == rbacsvc.ErrNoPermChangeAccount {
-			rest.WriteError(w, discovery.ErrInvalidParams, err.Error())
-			return
-		}
-		if err == rbacsvc.ErrWrongPassword {
-			rbacsvc.CountFailure(MakeBanKey(a.Name, ip))
-			rest.WriteError(w, discovery.ErrInvalidParams, err.Error())
-			return
-		}
-		log.Error("change password failed", err)
-		rest.WriteError(w, discovery.ErrInternal, err.Error())
+		writeErrsvcOrInternalErr(w, err)
 		return
 	}
 	rest.WriteSuccess(w, req)
@@ -207,23 +176,11 @@ func (ar *AuthResource) Login(w http.ResponseWriter, r *http.Request) {
 		rest.WriteError(w, discovery.ErrInvalidParams, err.Error())
 		return
 	}
-	ip := util.GetRealIP(r)
-	if rbacsvc.IsBanned(MakeBanKey(a.Name, ip)) {
-		log.Warn(fmt.Sprintf("ip is banned:%s, account: %s", ip, a.Name))
-		rest.WriteError(w, discovery.ErrForbidden, "")
-		return
-	}
 	t, err := authr.Login(r.Context(), a.Name, a.Password,
 		authr.ExpireAfter(a.TokenExpirationTime))
 	if err != nil {
-		if err == rbacsvc.ErrUnauthorized {
-			log.Error("not authorized", err)
-			rbacsvc.CountFailure(MakeBanKey(a.Name, ip))
-			rest.WriteError(w, rbac.ErrUserOrPwdWrong, err.Error())
-			return
-		}
-		log.Error("can not sign token", err)
-		rest.WriteError(w, discovery.ErrInternal, err.Error())
+		log.Error("not authorized", err)
+		writeErrsvcOrInternalErr(w, err)
 		return
 	}
 	rest.WriteResponse(w, r, nil, &rbac.Token{TokenStr: t})

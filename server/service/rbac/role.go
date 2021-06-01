@@ -19,9 +19,9 @@ package rbac
 
 import (
 	"context"
-	"github.com/go-chassis/cari/rbac"
-
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/go-chassis/cari/pkg/errsvc"
+	"github.com/go-chassis/cari/rbac"
 )
 
 var roleMap = map[string]*rbac.Role{}
@@ -45,18 +45,15 @@ func initBuildInRole() {
 }
 
 func createBuildInRole(r *rbac.Role) {
-	status, err := CreateRole(context.Background(), r)
-	if err != nil {
-		log.Fatalf(err, "create role [%s] failed", r.Name)
-		return
-	}
-	if status.IsSucceed() {
+	err := CreateRole(context.Background(), r)
+	if err == nil {
 		log.Infof("create role [%s] success", r.Name)
 		return
 	}
-	if status.Code == rbac.ErrRoleConflict {
+	if errsvc.IsErrEqualCode(err, rbac.ErrRoleConflict) {
 		log.Infof("role [%s] already exists", r.Name)
 		return
 	}
-	log.Fatalf(nil, "create role [%s] failed: %s", r.Name, status.GetMessage())
+	log.Fatalf(err, "create role [%s] failed", r.Name)
+	return
 }

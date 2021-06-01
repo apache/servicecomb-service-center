@@ -42,12 +42,12 @@ func CreateAccount(ctx context.Context, a *rbac.Account) error {
 	err := validator.ValidateCreateAccount(a)
 	if err != nil {
 		log.Errorf(err, "create account [%s] failed", a.Name)
-		return rbac.NewError(discovery.ErrInvalidParams, err.Error())
+		return discovery.NewError(discovery.ErrInvalidParams, err.Error())
 	}
 	err = a.Check()
 	if err != nil {
 		log.Errorf(err, "create account [%s] failed", a.Name)
-		return rbac.NewError(discovery.ErrInvalidParams, err.Error())
+		return discovery.NewError(discovery.ErrInvalidParams, err.Error())
 	}
 	if err = checkRoleNames(ctx, a.Roles); err != nil {
 		return rbac.NewError(rbac.ErrAccountHasInvalidRole, err.Error())
@@ -68,11 +68,15 @@ func CreateAccount(ctx context.Context, a *rbac.Account) error {
 // UpdateAccount updates an account's info, except the password
 func UpdateAccount(ctx context.Context, name string, a *rbac.Account) error {
 	// todo params validation
-	if err := illegalCheck(ctx, name); err != nil {
+	err := validator.ValidateUpdateAccount(a)
+	if err != nil {
+		return discovery.NewError(discovery.ErrInvalidParams, err.Error())
+	}
+	if err = illegalAccountCheck(ctx, name); err != nil {
 		return err
 	}
 	if len(a.Status) == 0 && len(a.Roles) == 0 {
-		return rbac.NewError(discovery.ErrInvalidParams, "status and roles cannot be empty both")
+		return discovery.NewError(discovery.ErrInvalidParams, "status and roles cannot be empty both")
 	}
 
 	oldAccount, err := GetAccount(ctx, name)
@@ -116,7 +120,7 @@ func AccountExist(ctx context.Context, name string) (bool, error) {
 	return datasource.Instance().AccountExist(ctx, name)
 }
 func DeleteAccount(ctx context.Context, name string) error {
-	if err := illegalCheck(ctx, name); err != nil {
+	if err := illegalAccountCheck(ctx, name); err != nil {
 		return err
 	}
 	exist, err := datasource.Instance().AccountExist(ctx, name)
@@ -167,13 +171,13 @@ func checkRoleNames(ctx context.Context, roles []string) error {
 	return nil
 }
 
-func illegalCheck(ctx context.Context, target string) error {
+func illegalAccountCheck(ctx context.Context, target string) error {
 	if target == RootName {
-		return discovery.NewError(discovery.ErrForbidden, errorsEx.MsgCantOperateRoot)
+		return rbac.NewError(rbac.ErrForbidOperateBuildInAccount, errorsEx.MsgCantOperateRoot)
 	}
 	changer := UserFromContext(ctx)
 	if target == changer {
-		return discovery.NewError(discovery.ErrForbidden, errorsEx.MsgCantOperateYour)
+		return rbac.NewError(rbac.ErrForbidOperateSelfAccount, errorsEx.MsgCantOperateYour)
 	}
 	return nil
 }

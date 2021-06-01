@@ -18,6 +18,7 @@
 package validator_test
 
 import (
+	"github.com/stretchr/testify/assert"
 	"testing"
 
 	"github.com/apache/servicecomb-service-center/server/service/validator"
@@ -71,6 +72,38 @@ func TestValidateCreateAccount(t *testing.T) {
 			t.Errorf("%q. ValidateCreateAccount() error = %v, wantErr %v", tt.name, err, tt.wantErr)
 		}
 	}
+
+	a := &rbac.Account{
+		Name:     "tester",
+		Password: "Pwd0000_1",
+		Roles:    []string{"admin", "developer"},
+	}
+	assert.NoError(t, validator.ValidateUpdateAccount(a))
+
+	a.Roles = []string{"admin", "developer", "test1", "test1", "test3", "test4"}
+	assert.Error(t, validator.ValidateUpdateAccount(a))
+
+	a.Roles = []string{}
+	assert.Error(t, validator.ValidateUpdateAccount(a))
+
+}
+
+func TestValidateUpdateAccount(t *testing.T) {
+	a := &rbac.Account{
+		Roles: []string{"admin", "developer"},
+	}
+	assert.NoError(t, validator.ValidateUpdateAccount(a))
+
+	a = &rbac.Account{
+		Roles: []string{"admin", "developer", "test1", "test1", "test3"},
+	}
+	assert.NoError(t, validator.ValidateUpdateAccount(a))
+
+	a.Roles = []string{"admin", "developer", "test1", "test1", "test3", "test4"}
+	assert.Error(t, validator.ValidateUpdateAccount(a))
+
+	a.Roles = []string{}
+	assert.Error(t, validator.ValidateUpdateAccount(a))
 }
 
 func TestValidateCreateRole(t *testing.T) {

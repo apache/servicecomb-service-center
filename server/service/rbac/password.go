@@ -19,9 +19,11 @@ package rbac
 
 import (
 	"context"
-
 	"github.com/apache/servicecomb-service-center/pkg/privacy"
-	rbacmodel "github.com/go-chassis/cari/rbac"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/service/validator"
+	"github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/cari/rbac"
 
 	"github.com/go-chassis/foundation/stringutil"
 	"golang.org/x/crypto/bcrypt"
@@ -29,23 +31,32 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
-func ChangePassword(ctx context.Context, changerRole []string, changerName string, a *rbacmodel.Account) error {
-	if changerName == a.Name {
-		if a.CurrentPassword == "" {
-			log.Error("current pwd is empty", nil)
-			return ErrEmptyCurrentPassword
-		}
-		return changePassword(ctx, changerName, a.CurrentPassword, a.Password)
+func ChangePassword(ctx context.Context, a *rbac.Account) error {
+	err := validator.ValidateChangePWD(a)
+	if err != nil {
+		return discovery.NewError(discovery.ErrInvalidParams, err.Error())
 	}
-	for i := 0; i < len(changerRole); i++ {
-		//need to check password mismatch. but admin role can change any user password without supply current password
-		if changerRole[i] == rbacmodel.RoleAdmin {
+
+	changer, err := AccountFromContext(ctx)
+	if err != nil {
+		return discovery.NewError(discovery.ErrInternal, err.Error())
+	}
+
+	// authority has been checked before
+	// admin role can change any user password without supply current password
+	for _, r := range changer.Roles {
+		if r == rbac.RoleAdmin {
 			return changePasswordForcibly(ctx, a.Name, a.Password)
 		}
 	}
-
-	log.Error("can not change other account pwd", nil)
-	return ErrNoPermChangeAccount
+	// change self password, or user with account authority(not admin role)
+	// change other one's password
+	// need to check password mismatch
+	if a.CurrentPassword == "" {
+		log.Error("current pwd is empty", nil)
+		return discovery.NewError(discovery.ErrInvalidParams, ErrEmptyCurrentPassword.Error())
+	}
+	return changePassword(ctx, a.Name, a.CurrentPassword, a.Password)
 }
 func changePasswordForcibly(ctx context.Context, name, pwd string) error {
 	old, err := GetAccount(ctx, name)
@@ -53,15 +64,16 @@ func changePasswordForcibly(ctx context.Context, name, pwd string) error {
 		log.Error("can not change pwd", err)
 		return err
 	}
-	err = doChangePassword(ctx, old, pwd)
-	if err != nil {
-		return err
-	}
-	return nil
+	return doChangePassword(ctx, old, pwd)
 }
 func changePassword(ctx context.Context, name, currentPassword, pwd string) error {
+	ip := util.GetIPFromContext(ctx)
+	if IsBanned(MakeBanKey(name, ip)) {
+		log.Warnf("ip [%s] is banned, account: %s", ip, name)
+		return rbac.NewError(rbac.ErrAccountBlocked, "")
+	}
 	if currentPassword == pwd {
-		return ErrSamePassword
+		return rbac.NewError(rbac.ErrNewPwdBad, ErrSamePassword.Error())
 	}
 	old, err := GetAccount(ctx, name)
 	if err != nil {
@@ -71,16 +83,13 @@ func changePassword(ctx context.Context, name, currentPassword, pwd string) erro
 	same := privacy.SamePassword(old.Password, currentPassword)
 	if !same {
 		log.Error("current password is wrong", nil)
-		return ErrWrongPassword
+		CountFailure(MakeBanKey(name, ip))
+		return rbac.NewError(rbac.ErrOldPwdWrong, "")
 	}
-	err = doChangePassword(ctx, old, pwd)
-	if err != nil {
-		return err
-	}
-	return nil
+	return doChangePassword(ctx, old, pwd)
 }
 
-func doChangePassword(ctx context.Context, old *rbacmodel.Account, pwd string) error {
+func doChangePassword(ctx context.Context, old *rbac.Account, pwd string) error {
 	hash, err := bcrypt.GenerateFromPassword([]byte(pwd), 14)
 	if err != nil {
 		log.Error("pwd hash failed", err)

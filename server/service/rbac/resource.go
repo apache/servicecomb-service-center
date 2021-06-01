@@ -93,5 +93,4 @@ func InitResourceMap() {
 	rbac.MapResource(APIServiceRule, ResourceService)
 	rbac.MapResource(APIServiceTag, ResourceService)
 	rbac.MapResource(APIServiceTagKey, ResourceService)
-
 }

@@ -99,3 +99,4 @@ func IsBanned(key string) bool {
 	}
 	return client.Banned
 }
+

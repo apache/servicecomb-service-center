@@ -26,6 +26,7 @@ import (
 )
 
 var createAccountValidator = &validate.Validator{}
+var updateAccountValidator = &validate.Validator{}
 var createRoleValidator = &validate.Validator{}
 
 var changePWDValidator = &validate.Validator{}
@@ -33,8 +34,10 @@ var accountLoginValidator = &validate.Validator{}
 
 func init() {
 	createAccountValidator.AddRule("Name", &validate.Rule{Max: 64, Regexp: nameRegex})
-	createAccountValidator.AddRule("Roles", &validate.Rule{Min: 1, Regexp: nameRegex})
+	createAccountValidator.AddRule("Roles", &validate.Rule{Min: 1, Max: 5, Regexp: nameRegex})
 	createAccountValidator.AddRule("Password", &validate.Rule{Regexp: &validate.PasswordChecker{}})
+
+	updateAccountValidator.AddRule("Roles", createAccountValidator.GetRule("Roles"))
 
 	createRoleValidator.AddRule("Name", &validate.Rule{Max: 64, Regexp: nameRegex})
 
