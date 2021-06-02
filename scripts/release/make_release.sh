@@ -49,6 +49,8 @@ esac
 
 ## Get the arch type
 export GOARCH=${4:-"amd64"}
+## build all components
+export BUILD="ALL"
 
 script_path=$(cd "$(dirname "$0")"; pwd)
 
