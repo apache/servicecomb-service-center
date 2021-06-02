@@ -81,7 +81,14 @@ func TestInitRBAC(t *testing.T) {
 		persisted := newAccount("admin_change_other_pwd")
 		err := rbacsvc.CreateAccount(context.Background(), persisted)
 		assert.NoError(t, err)
-		err = rbacsvc.ChangePassword(context.Background(), []string{rbac.RoleAdmin}, rbac.RoleAdmin, &rbac.Account{Name: persisted.Name, Password: "Complicated_password2"})
+		context.Background()
+
+		claims := map[string]interface{}{
+			rbac.ClaimsUser:  "test",
+			rbac.ClaimsRoles: []interface{}{rbac.RoleAdmin},
+		}
+		ctx := context.WithValue(context.Background(), rbacsvc.CtxRequestClaims, claims)
+		err = rbacsvc.ChangePassword(ctx, &rbac.Account{Name: persisted.Name, Password: "Complicated_password2"})
 		assert.NoError(t, err)
 		a, err := rbacsvc.GetAccount(context.Background(), persisted.Name)
 		assert.NoError(t, err)
@@ -91,7 +98,12 @@ func TestInitRBAC(t *testing.T) {
 		a := newAccount("change_self_pwd")
 		err := rbacsvc.CreateAccount(context.Background(), a)
 		assert.NoError(t, err)
-		err = rbacsvc.ChangePassword(context.Background(), nil, a.Name, &rbac.Account{Name: a.Name, CurrentPassword: testPwd0, Password: testPwd1})
+		claims := map[string]interface{}{
+			rbac.ClaimsUser:  "change_self_pwd",
+			rbac.ClaimsRoles: []interface{}{rbac.RoleDeveloper},
+		}
+		ctx := context.WithValue(context.Background(), rbacsvc.CtxRequestClaims, claims)
+		err = rbacsvc.ChangePassword(ctx, &rbac.Account{Name: a.Name, CurrentPassword: testPwd0, Password: testPwd1})
 		assert.NoError(t, err)
 		resp, err := rbacsvc.GetAccount(context.Background(), a.Name)
 		assert.NoError(t, err)

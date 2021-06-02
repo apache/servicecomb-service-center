@@ -9,6 +9,14 @@ func ValidateCreateAccount(a *rbac.Account) error {
 	}
 	return createAccountValidator.Validate(a)
 }
+
+func ValidateUpdateAccount(a *rbac.Account) error {
+	err := baseCheck(a)
+	if err != nil {
+		return err
+	}
+	return updateAccountValidator.Validate(a)
+}
 func ValidateCreateRole(a *rbac.Role) error {
 	err := baseCheck(a)
 	if err != nil {

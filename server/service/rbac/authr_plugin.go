@@ -23,6 +23,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/go-chassis/cari/pkg/errsvc"
 	"github.com/go-chassis/cari/rbac"
 
 	"github.com/dgrijalva/jwt-go"
@@ -45,36 +47,45 @@ func newEmbeddedAuthenticator(opts *authr.Options) (authr.Authenticator, error) 
 
 //Login check db user and password,will verify and return token for valid account
 func (a *EmbeddedAuthenticator) Login(ctx context.Context, user string, password string, opts ...authr.LoginOption) (string, error) {
+	ip := util.GetIPFromContext(ctx)
+	if IsBanned(MakeBanKey(user, ip)) {
+		log.Warnf("ip [%s] is banned, account: %s", ip, user)
+		return "", rbac.NewError(rbac.ErrAccountBlocked, "")
+	}
 	opt := &authr.LoginOptions{}
 	for _, o := range opts {
 		o(opt)
 	}
 	account, err := GetAccount(ctx, user)
 	if err != nil {
-		log.Error("get account err", err)
+		if errsvc.IsErrEqualCode(err, rbac.ErrAccountNotExist) {
+			CountFailure(MakeBanKey(user, ip))
+			return "", rbac.NewError(rbac.ErrUserOrPwdWrong, "")
+		}
 		return "", err
 	}
-
 	same := privacy.SamePassword(account.Password, password)
-	if user == account.Name && same {
-		secret, err := GetPrivateKey()
-		if err != nil {
-			return "", err
-		}
-		tokenStr, err := token.Sign(map[string]interface{}{
-			rbac.ClaimsUser:  user,
-			rbac.ClaimsRoles: account.Roles,
-		},
-			secret,
-			token.WithExpTime(opt.ExpireAfter),
-			token.WithSigningMethod(token.RS512)) //TODO config for each user
-		if err != nil {
-			log.Errorf(err, "can not sign a token")
-			return "", err
-		}
-		return tokenStr, nil
+	if !same {
+		CountFailure(MakeBanKey(user, ip))
+		return "", rbac.NewError(rbac.ErrUserOrPwdWrong, "")
 	}
-	return "", ErrUnauthorized
+
+	secret, err := GetPrivateKey()
+	if err != nil {
+		return "", err
+	}
+	tokenStr, err := token.Sign(map[string]interface{}{
+		rbac.ClaimsUser:  user,
+		rbac.ClaimsRoles: account.Roles,
+	},
+		secret,
+		token.WithExpTime(opt.ExpireAfter),
+		token.WithSigningMethod(token.RS512)) //TODO config for each user
+	if err != nil {
+		log.Errorf(err, "can not sign a token")
+		return "", err
+	}
+	return tokenStr, nil
 }
 
 //Authenticate parse a token to claims

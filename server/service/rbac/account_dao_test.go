@@ -99,13 +99,13 @@ func TestDeleteAccount(t *testing.T) {
 		svcErr := err.(*errsvc.Error)
 		assert.Equal(t, rbac.ErrAccountNotExist, svcErr.Code)
 	})
-	t.Run("delete root, should return: "+rbac.NewError(discovery.ErrForbidden, "").Error(), func(t *testing.T) {
+	t.Run("delete root, should return: "+rbac.NewError(rbac.ErrForbidOperateBuildInAccount, "").Error(), func(t *testing.T) {
 		err := rbacsvc.DeleteAccount(context.TODO(), "root")
 		assert.NotNil(t, err)
 		svcErr := err.(*errsvc.Error)
-		assert.Equal(t, discovery.ErrForbidden, svcErr.Code)
+		assert.Equal(t, rbac.ErrForbidOperateBuildInAccount, svcErr.Code)
 	})
-	t.Run("delete self, should return: "+rbac.NewError(discovery.ErrForbidden, "").Error(), func(t *testing.T) {
+	t.Run("delete self, should return: "+rbac.NewError(rbac.ErrForbidOperateSelfAccount, "").Error(), func(t *testing.T) {
 		a := newAccount("TestDeleteAccount_delete_self")
 		err := rbacsvc.CreateAccount(context.TODO(), a)
 		assert.Nil(t, err)
@@ -116,7 +116,7 @@ func TestDeleteAccount(t *testing.T) {
 		err = rbacsvc.DeleteAccount(ctx, a.Name)
 		assert.NotNil(t, err)
 		svcErr := err.(*errsvc.Error)
-		assert.Equal(t, discovery.ErrForbidden, svcErr.Code)
+		assert.Equal(t, rbac.ErrForbidOperateSelfAccount, svcErr.Code)
 	})
 }
 
@@ -143,12 +143,12 @@ func TestUpdateAccount(t *testing.T) {
 		svcErr := err.(*errsvc.Error)
 		assert.Equal(t, rbac.ErrAccountNotExist, svcErr.Code)
 	})
-	t.Run("update root, should return: "+discovery.NewError(discovery.ErrForbidden, "").Error(), func(t *testing.T) {
+	t.Run("update root, should return: "+discovery.NewError(rbac.ErrForbidOperateBuildInAccount, "").Error(), func(t *testing.T) {
 		a := newAccount("root")
 		err := rbacsvc.UpdateAccount(context.TODO(), a.Name, a)
 		assert.NotNil(t, err)
 		svcErr := err.(*errsvc.Error)
-		assert.Equal(t, discovery.ErrForbidden, svcErr.Code)
+		assert.Equal(t, rbac.ErrForbidOperateBuildInAccount, svcErr.Code)
 	})
 	t.Run("account has invalid role, should return: "+rbac.NewError(rbac.ErrAccountHasInvalidRole, "").Error(), func(t *testing.T) {
 		name := "TestUpdateAccount_account_has_invalid_role"
@@ -176,7 +176,7 @@ func TestUpdateAccount(t *testing.T) {
 		svcErr := err.(*errsvc.Error)
 		assert.Equal(t, discovery.ErrInvalidParams, svcErr.Code)
 	})
-	t.Run("update self, should return: "+rbac.NewError(discovery.ErrForbidden, "").Error(), func(t *testing.T) {
+	t.Run("update self, should return: "+rbac.NewError(rbac.ErrForbidOperateSelfAccount, "").Error(), func(t *testing.T) {
 		name := "TestDeleteAccount_update_self"
 		a := newAccount(name)
 		err := rbacsvc.CreateAccount(context.TODO(), a)
@@ -190,7 +190,7 @@ func TestUpdateAccount(t *testing.T) {
 		err = rbacsvc.UpdateAccount(ctx, a.Name, a)
 		assert.NotNil(t, err)
 		svcErr := err.(*errsvc.Error)
-		assert.Equal(t, discovery.ErrForbidden, svcErr.Code)
+		assert.Equal(t, rbac.ErrForbidOperateSelfAccount, svcErr.Code)
 	})
 }
 
