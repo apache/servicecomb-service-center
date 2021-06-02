@@ -17,7 +17,7 @@ It provides out of box support for metrics and tracing. It has a web portal to m
  - **Metadata**: Metadata management for both microservice and microservice instance
  - **Separated**: Separated microservice and microservice instance entity management
  - **Domains**: Logical multiple domains management
- - **Security**: White and black list configuration for service discovery
+ - **[`Security`](https://service-center.readthedocs.io/en/latest/user-guides/rbac.html)**: Role base access control for service discovery
  - **Discovery**: Support query instance by criteria
  - **Subscribe**: Use web socket to notify client about instance change events
  - **[`Portal`](/frontend)**: Awesome web portal
