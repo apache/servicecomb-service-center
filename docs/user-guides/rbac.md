@@ -1,10 +1,10 @@
 # RBAC
-alpha feature. now the feature is very simple in early stage. only has root account authentication
+Beta feature. 
 
 you can choose to enable RBAC feature, after enable RBAC, all request to service center must be authenticated
 
 ### Configuration file
-follow steps to enable this feature.
+Follow steps to enable this feature.
 
 1.get rsa key pairs
 ```sh
@@ -12,36 +12,42 @@ openssl genrsa -out private.key 4096
 openssl rsa -in private.key -pubout -out public.key
 ```
 
-2.edit app.conf
-```ini
-rbac_enabled = true
-rbac_rsa_public_key_file = ./public.key # rsa key pairs
-rbac_rsa_private_key_file = ./private.key # rsa key pairs
-auth_plugin = buildin # must set to buildin
+2.edit app.yaml
+```yaml
+rbac:
+  enable: true
+  privateKeyFile: ./private.key # rsa key pairs
+  publicKeyFile: ./public.key # rsa key pairs
+auth:
+  kind: buildin # must set to buildin
 ```
 3.root account
 
-before you start server, you need to set env to set your root account password. Please note that password must conform to the [following set of rules](https://github.com/apache/servicecomb-service-center/blob/63722fadd511c26285e787eb2b4be516eab10b94/pkg/validate/matcher.go#L25): have at least 8 characters, have at most 32 characters, have at least one upper alpha, have at least one lower alpha, have at least one digit and have at lease one special character.
+before you start server, you need to set env to set your root account password. 
+Please note that password must conform to the 
+[following set of rules](https://github.com/apache/servicecomb-service-center/blob/63722fadd511c26285e787eb2b4be516eab10b94/pkg/validate/matcher.go#L25): 
+have at least 8 characters, have at most 32 characters, have at least one upper alpha, have at least one lower alpha, 
+have at least one digit and have at lease one special character.
 
 ```sh
 export SC_INIT_ROOT_PASSWORD='P4$$word'
 ```
-at the first time service center cluster init, it will use this password to setup rbac module. 
-you can revoke password by rest API after cluster started. but you can not use this env to revoke password after cluster started.
+At the first time service center cluster init, it will use this password to set up rbac module. 
+you can revoke password by rest API after a cluster started. but you can not use **SC_INIT_ROOT_PASSWORD** to revoke password after a cluster started.
 
-the root account name is "root"
+the initiated account name is fixed as "root"
 
 To securely distribute your root account and private key, 
 you can use kubernetes [secret](https://kubernetes.io/zh/docs/tasks/inject-data-application/distribute-credentials-secure/)
 ### Generate a token 
-token is the only credential to access rest API, before you access any API, you need to get a token
+Token is the only credential to access rest API, before you access any API, you need to get a token from service center
 ```shell script
 curl -X POST \
   http://127.0.0.1:30100/v4/token \
   -d '{"name":"root",
 "password":"P4$$word"}'
 ```
-will return a token, token will expired after 30m
+will return a token, token will expire after 30m
 ```json
 {"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1OTI4MzIxODUsInVzZXIiOiJyb290In0.G65mgb4eQ9hmCAuftVeVogN9lT_jNg7iIOF_EAyAhBU"}
 ```
@@ -59,19 +65,20 @@ curl -X GET \
 ```
 
 ### Change password
-You must supply current password and token to update to new password
+You must supply a current password and token to update to new password
 ```shell script
 curl -X POST \
   http://127.0.0.1:30100/v4/account/root/password \
   -H 'Authorization: Bearer {your_token}' \
   -d '{
 	"currentPassword":"P4$$word",
-	"password":"123"
+	"password":"P4$$word1"
 }'
 ```
 
 ### create a new account 
-You can create new account named "peter", now peter has no any roles, also has no permission to operate resources. How to add roles and allocate resources please refer to next.
+You can create new account named "peter", and his role is developer.
+How to add roles and allocate resources please refer to next section.
 ```shell script
 curl -X POST \
   http://127.0.0.1:30100/v4/account \
@@ -80,32 +87,131 @@ curl -X POST \
   -H 'Content-Type: application/json' \
   -d '{
 	"name":"peter",
-	"password":"{strong_password}"    
+	"roles":["developer"],
+	"password":"{strong_password}"
 }'
 ```
-### Roles 
-Currently, two default roles are provided. You can also add new roles and assign resources.
 
-### API and resources
-All APIs of the system are divided according to their attributes. For example, resource account has the permission to create or update or delete user account when assign the corresponding permissions, resource service has all permission to create, get, add or delete microservices when permissions equal to "*". For more details to see [here](https://github.com/apache/servicecomb-service-center/blob/master/server/service/rbac/resource.go).  
-A new role named "tester" owns resources "service", "instance" and "rule".
- ```json
+### Resource 
+All APIs of the ServiceComb system is mapping to a **resource type**. resource is list as below:
+- service: permission to discover, register service and instance
+- governance:  permission to manage traffic control policy, such as rate limiting
+- service/schema: permission to register and discover contract
+- account: permission to manage accounts
+- role: permission to manage roles
+- ops: permission to access admin API
+
+declare a resource type that account can operate:
+```json
+ {
+  "resources": [
+    {
+      "type": "service"
+    },
+    {
+      "type": "service/schema"
+    }
+  ]
+}
+```
+### Label
+Define resource(only service resource) scope:
+- serviceName: specify service name 
+- appId: specify which app that services belongs to
+- environment: specify env of the service
+
+```json
 {
- "name": "tester",
- "perms": [
-         { 
-            "resources": ["service","instance"],
-            "verbs":     ["get", "create", "update"]
-         },
-         { 
-             "resources": ["rule"],
-             "verbs":     ["get"]
-         }
-    ]
+  "resources": [
+    {
+      "type": "service",
+      "labels": {
+        "serviceName": "order-service",
+        "environment": "production"
+      }
+    },
+    {
+      "type": "service",
+      "labels": {
+        "serviceName": "order-service",
+        "environment": "acceptance"
+      }
+    }
+  ]
+}
+```
+### Verbs
+Define what kind of action could be applied to a resource by an account, has 4 kinds:
+- get
+- delete
+- create
+- update
+
+declare resource type and action:
+```json
+{
+  "resources": [
+    {
+      "type": "service"
+    },
+    {
+      "type": "account"
+    }
+  ],
+  "verbs": [
+    "get"
+  ]
 }
 ```
 
+### Roles
+Two default roles are provided after RBAC init:
+- admin: can operate account and role resource
+- developer: can operate any resource except account and role resource
+
+each role include perms elements to indicates what kind of resource can be operated by this role, for example:
+
+A role "TeamA" can get and create any services but can only delete or update "order-service"
+```json
+{
+  "name": "TeamA",
+  "perms": [
+    {
+      "resources": [
+        {
+          "type": "service"
+        }
+      ],
+      "verbs": [
+        "get",
+        "create"
+      ]
+    },
+    {
+      "resources": [
+        {
+          "type": "service",
+          "labels": {
+            "serviceName": "order-service"
+          }
+        }
+      ],
+      "verbs": [
+        "update",
+        "delete"
+      ]
+    }
+  ]
+}
+```
+
+
+
+
 ### create new role and how to use
+
+You can also create a new role and give perms to this role.
+
 1. You can add new role and allocate resources to new role. For example, a new role named "tester" and allocate resources to "tester". 
 ```shell script
 curl -X POST \
@@ -114,17 +220,34 @@ curl -X POST \
   -H 'Authorization: Bearer {your_token}' \
   -H 'Content-Type: application/json' \
   -d '{
-	  "name": "tester",
-      "perms": [
-              { 
-                  "resources": ["service","instance"],
-                  "verbs":     ["get", "create", "update"]
-              },
-              { 
-                  "resources": ["rule"],
-                  "verbs":     ["get"]
-              }
-        ]
+  "name": "TeamA",
+  "perms": [
+    {
+      "resources": [
+        {
+          "type": "service"
+        }
+      ],
+      "verbs": [
+        "get",
+        "create"
+      ]
+    },
+    {
+      "resources": [
+        {
+          "type": "service",
+          "labels": {
+            "serviceName": "order-service"
+          }
+        }
+      ],
+      "verbs": [
+        "update",
+        "delete"
+      ]
+    }
+  ]
 }'
 ```
 2.then, assigning roles "tester" and "tester2" to user account "peter", "tester2" is a empty role has not any resources.
@@ -137,7 +260,7 @@ curl -X POST \
   -d '{
 	"name":"peter",
 	"password":"{strong_password}",
-	"roles": ["tester", "tester2"]
+	"roles": ["TeamA"]
 }'
 ```
 
@@ -151,7 +274,7 @@ curl -X POST \
   }'
 ```
 
-4.finally, user "peter" carry token to access the above allocated API resources would be permit, but access others API is not allowed.
+4.finally, user "peter" carry token to access resources.
 
 for example 
 ```shell script

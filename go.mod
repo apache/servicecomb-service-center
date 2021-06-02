@@ -18,7 +18,7 @@ require (
 	github.com/go-chassis/cari v0.4.1-0.20210601163026-bb6a506e336a
 	github.com/go-chassis/foundation v0.3.1-0.20210513015331-b54416b66bcd
 	github.com/go-chassis/go-archaius v1.5.1
-	github.com/go-chassis/go-chassis/v2 v2.1.2-0.20210310004133-c9bc42149a18
+	github.com/go-chassis/go-chassis/v2 v2.2.0
 	github.com/go-chassis/kie-client v0.1.0
 	github.com/golang/protobuf v1.4.3
 	github.com/gorilla/websocket v1.4.2
