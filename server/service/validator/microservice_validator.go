@@ -52,6 +52,8 @@ var (
 	envRegex, _        = regexp.Compile("^(" + util.StringJoin([]string{
 		discovery.ENV_DEV, discovery.ENV_TEST, discovery.ENV_ACCEPT, discovery.ENV_PROD}, "|") + ")*$")
 	schemaIDRegex, _ = regexp.Compile(`^[a-zA-Z0-9]{1,160}$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]{0,158}[a-zA-Z0-9]$`)
+
+	accountStatusRegex, _ = regexp.Compile(`^(active|inactive)$|^$`)
 )
 
 func MicroServiceKeyValidator() *validate.Validator {

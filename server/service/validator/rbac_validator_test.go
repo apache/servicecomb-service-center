@@ -78,14 +78,20 @@ func TestValidateCreateAccount(t *testing.T) {
 		Password: "Pwd0000_1",
 		Roles:    []string{"admin", "developer"},
 	}
-	assert.NoError(t, validator.ValidateUpdateAccount(a))
+	assert.NoError(t, validator.ValidateCreateAccount(a))
 
 	a.Roles = []string{"admin", "developer", "test1", "test1", "test3", "test4"}
-	assert.Error(t, validator.ValidateUpdateAccount(a))
+	assert.Error(t, validator.ValidateCreateAccount(a))
 
 	a.Roles = []string{}
-	assert.Error(t, validator.ValidateUpdateAccount(a))
+	assert.Error(t, validator.ValidateCreateAccount(a))
 
+	a.Roles = []string{"admin"}
+	a.Status = "active"
+	assert.NoError(t, validator.ValidateCreateAccount(a))
+
+	a.Status = "active1"
+	assert.Error(t, validator.ValidateCreateAccount(a))
 }
 
 func TestValidateUpdateAccount(t *testing.T) {
@@ -103,6 +109,13 @@ func TestValidateUpdateAccount(t *testing.T) {
 	assert.Error(t, validator.ValidateUpdateAccount(a))
 
 	a.Roles = []string{}
+	assert.Error(t, validator.ValidateUpdateAccount(a))
+
+	a.Roles = []string{"admin"}
+	a.Status = "active"
+	assert.NoError(t, validator.ValidateUpdateAccount(a))
+
+	a.Status = "active1"
 	assert.Error(t, validator.ValidateUpdateAccount(a))
 }
 

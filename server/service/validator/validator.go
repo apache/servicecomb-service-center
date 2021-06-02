@@ -36,8 +36,10 @@ func init() {
 	createAccountValidator.AddRule("Name", &validate.Rule{Max: 64, Regexp: nameRegex})
 	createAccountValidator.AddRule("Roles", &validate.Rule{Min: 1, Max: 5, Regexp: nameRegex})
 	createAccountValidator.AddRule("Password", &validate.Rule{Regexp: &validate.PasswordChecker{}})
+	createAccountValidator.AddRule("Status", &validate.Rule{Regexp: accountStatusRegex})
 
 	updateAccountValidator.AddRule("Roles", createAccountValidator.GetRule("Roles"))
+	updateAccountValidator.AddRule("Status", createAccountValidator.GetRule("Status"))
 
 	createRoleValidator.AddRule("Name", &validate.Rule{Max: 64, Regexp: nameRegex})
 

@@ -44,6 +44,9 @@ func CreateAccount(ctx context.Context, a *rbac.Account) error {
 		log.Errorf(err, "create account [%s] failed", a.Name)
 		return discovery.NewError(discovery.ErrInvalidParams, err.Error())
 	}
+	if len(a.Status) == 0 {
+		a.Status = "active"
+	}
 	err = a.Check()
 	if err != nil {
 		log.Errorf(err, "create account [%s] failed", a.Name)
