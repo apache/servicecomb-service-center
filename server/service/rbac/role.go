@@ -45,7 +45,16 @@ func initBuildInRole() {
 }
 
 func createBuildInRole(r *rbac.Role) {
-	err := CreateRole(context.Background(), r)
+	roleExist, err := RoleExist(context.Background(), r.Name)
+	if err != nil {
+		log.Fatalf(err, "check role [%s] exist failed", r.Name)
+		return
+	}
+	if roleExist {
+		log.Infof("role [%s] already exists", r.Name)
+		return
+	}
+	err = CreateRole(context.Background(), r)
 	if err == nil {
 		log.Infof("create role [%s] success", r.Name)
 		return
