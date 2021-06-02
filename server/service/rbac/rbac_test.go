@@ -24,6 +24,8 @@ import (
 	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 	_ "github.com/apache/servicecomb-service-center/test"
 	"github.com/astaxie/beego"
+	"github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/cari/pkg/errsvc"
 	"github.com/go-chassis/cari/rbac"
 	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-chassis/v2/security/authr"
@@ -94,6 +96,24 @@ func TestInitRBAC(t *testing.T) {
 		assert.NoError(t, err)
 		assert.True(t, privacy.SamePassword(a.Password, "Complicated_password2"))
 	})
+	t.Run("admin change self, must provide current pwd", func(t *testing.T) {
+		name := "admin_change_self"
+		a := newAccount(name)
+		a.Roles = []string{rbac.RoleAdmin}
+		err := rbacsvc.CreateAccount(context.TODO(), a)
+		assert.Nil(t, err)
+
+		claims := map[string]interface{}{
+			rbac.ClaimsUser:  name,
+			rbac.ClaimsRoles: []interface{}{rbac.RoleAdmin},
+		}
+		ctx := context.WithValue(context.Background(), rbacsvc.CtxRequestClaims, claims)
+		err = rbacsvc.ChangePassword(ctx, &rbac.Account{Name: a.Name, CurrentPassword: "", Password: testPwd1})
+		assert.True(t, errsvc.IsErrEqualCode(err, discovery.ErrInvalidParams))
+
+		err = rbacsvc.ChangePassword(ctx, &rbac.Account{Name: a.Name, CurrentPassword: testPwd0, Password: testPwd1})
+		assert.Nil(t, err)
+	})
 	t.Run("change self password", func(t *testing.T) {
 		a := newAccount("change_self_pwd")
 		err := rbacsvc.CreateAccount(context.Background(), a)
@@ -109,7 +129,18 @@ func TestInitRBAC(t *testing.T) {
 		assert.NoError(t, err)
 		assert.True(t, privacy.SamePassword(resp.Password, testPwd1))
 	})
+	t.Run("no admin account change other user password, should return: "+discovery.NewError(discovery.ErrForbidden, "").Error(), func(t *testing.T) {
+		a := newAccount("test")
+		claims := map[string]interface{}{
+			rbac.ClaimsUser:  "change_other_user_password",
+			rbac.ClaimsRoles: []interface{}{rbac.RoleDeveloper},
+		}
+		ctx := context.WithValue(context.Background(), rbacsvc.CtxRequestClaims, claims)
+		err := rbacsvc.ChangePassword(ctx, &rbac.Account{Name: a.Name, CurrentPassword: testPwd0, Password: testPwd1})
+		assert.True(t, errsvc.IsErrEqualCode(err, discovery.ErrForbidden))
+	})
 }
+
 func BenchmarkAuthResource_Login(b *testing.B) {
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {

@@ -42,22 +42,23 @@ func ChangePassword(ctx context.Context, a *rbac.Account) error {
 		return discovery.NewError(discovery.ErrInternal, err.Error())
 	}
 
-	// authority has been checked before
-	// admin role can change any user password without supply current password
+	// change self password, need to check password mismatch
+	if changer.Name == a.Name {
+		return changePassword(ctx, a.Name, a.CurrentPassword, a.Password)
+	}
+
+	// change other user's password, only admin role can do this and no need
+	// supply current password
 	for _, r := range changer.Roles {
 		if r == rbac.RoleAdmin {
 			return changePasswordForcibly(ctx, a.Name, a.Password)
 		}
 	}
-	// change self password, or user with account authority(not admin role)
-	// change other one's password
-	// need to check password mismatch
-	if a.CurrentPassword == "" {
-		log.Error("current pwd is empty", nil)
-		return discovery.NewError(discovery.ErrInvalidParams, ErrEmptyCurrentPassword.Error())
-	}
-	return changePassword(ctx, a.Name, a.CurrentPassword, a.Password)
+
+	// other cases, change password is forbidden
+	return discovery.NewError(discovery.ErrForbidden, ErrNoPermChangeAccount.Error())
 }
+
 func changePasswordForcibly(ctx context.Context, name, pwd string) error {
 	old, err := GetAccount(ctx, name)
 	if err != nil {
@@ -67,6 +68,10 @@ func changePasswordForcibly(ctx context.Context, name, pwd string) error {
 	return doChangePassword(ctx, old, pwd)
 }
 func changePassword(ctx context.Context, name, currentPassword, pwd string) error {
+	if currentPassword == "" {
+		log.Error("current pwd is empty", nil)
+		return discovery.NewError(discovery.ErrInvalidParams, ErrEmptyCurrentPassword.Error())
+	}
 	ip := util.GetIPFromContext(ctx)
 	if IsBanned(MakeBanKey(name, ip)) {
 		log.Warnf("ip [%s] is banned, account: %s", ip, name)
