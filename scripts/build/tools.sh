@@ -41,16 +41,18 @@ fail() {
 
 install_bower() {
     set +e
-    BOWER=$(which bower)
+    local NPM=$(which npm)
+    set -e
     if [ "$?" == "1" ]; then
-        set -e
-
         curl -sL https://deb.nodesource.com/setup_8.x | bash -
         sudo apt-get install -y nodejs
+    fi
 
+    set +e
+    local BOWER=$(which bower)
+    set -e
+    if [ "$?" == "1" ]; then
         npm install -g bower
-    else
-        set -e
     fi
 }
 
@@ -131,8 +133,13 @@ package() {
     local app=$PACKAGE_PREFIX-$RELEASE-$GOOS-$GOARCH
 
     cp -r ${root_path}/etc/conf $app/
-    sed -i 's/^manager_cluster.*=.*/manager_name = \"sr-0\"\nmanager_addr = \"http:\/\/127.0.0.1:2380\"\nmanager_cluster = \"sr-0=http:\/\/127.0.0.1:2380\"/g' $app/conf/app.conf
-    sed -i 's/^registry_plugin.*=.*/registry_plugin = embeded_etcd/g' $app/conf/app.conf
+    cat <<EOF >> $app/conf/app.yaml
+SERVER_HOST: 0.0.0.0
+REGISTRY_KIND: embeded_etcd
+REGISTRY_ETCD_CLUSTER_NAME: sc-0
+REGISTRY_ETCD_CLUSTER_MANAGER_ENDPOINTS: http://127.0.0.1:2380
+REGISTRY_ETCD_CLUSTER_ENDPOINTS: sc-0=http://127.0.0.1:2380
+EOF
 
     ## Copy the Service-Center Releases
     cp -r ${root_path}/scripts/release/LICENSE $app/

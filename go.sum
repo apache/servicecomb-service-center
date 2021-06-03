@@ -264,6 +264,7 @@ github.com/gin-gonic/gin v1.4.0/go.mod h1:OW2EZn3DO8Ln9oIKOvM++LBO+5UPHJJDH72/q/
 github.com/glendc/gopher-json v0.0.0-20170414221815-dc4743023d0c h1:iRTj5SRYwbvsygdwVp+y9kZT145Y1s6xOPpeOEIeGc4=
 github.com/glendc/gopher-json v0.0.0-20170414221815-dc4743023d0c/go.mod h1:Gja1A+xZ9BoviGJNA2E9vFkPjjsl+CoJxSXiQM1UXtw=
 github.com/go-chassis/cari v0.0.0-20201210041921-7b6fbef2df11/go.mod h1:MgtsEI0AM4Ush6Lyw27z9Gk4nQ/8GWTSXrFzupawWDM=
+github.com/go-chassis/cari v0.3.0/go.mod h1:Ie2lW11Y5ZFClY9z7bhAwK6BoNxqGSf3fYGs4mPFs74=
 github.com/go-chassis/cari v0.3.1-0.20210508100214-a13e083de04e h1:YLXfK7pSRsYK7EzUnv7WDgJNOHQSXz+UIEbOF86XI6Q=
 github.com/go-chassis/cari v0.3.1-0.20210508100214-a13e083de04e/go.mod h1:Ie2lW11Y5ZFClY9z7bhAwK6BoNxqGSf3fYGs4mPFs74=
 github.com/go-chassis/cari v0.3.1-0.20210519092219-69f9f0fc3452 h1:G2Qlpg17t0oULhz0Eu3NQgkxKDcNbpGpmgtMR6RZvwk=
@@ -291,8 +292,12 @@ github.com/go-chassis/go-archaius v1.5.1 h1:1FrNyzzmD6o6BIjPF8uQ4Cc+u7qYIgQTpDk8
 github.com/go-chassis/go-archaius v1.5.1/go.mod h1:QPwvvtBxvwiC48rmydoAqxopqOr93RCQ6syWsIkXPXQ=
 github.com/go-chassis/go-chassis/v2 v2.1.2-0.20210310004133-c9bc42149a18 h1:bVzPkc+t08hN3YtKBv+icjQ0x6BZInbeyRil1q6qwvY=
 github.com/go-chassis/go-chassis/v2 v2.1.2-0.20210310004133-c9bc42149a18/go.mod h1:NaewTJacOEr9P4gN7Am4x1D1cwUgNtEq9tnKMNOZ47M=
+github.com/go-chassis/go-chassis/v2 v2.2.0 h1:CNr5Z+NJG2HRc+0jLiqufGhn8VuS3GA7i6PeO0JQvwc=
+github.com/go-chassis/go-chassis/v2 v2.2.0/go.mod h1:MpPxktD43gexx3qrOZM90gnoY3/uRHMRiYEeBmcxUuc=
 github.com/go-chassis/go-restful-swagger20 v1.0.3-0.20200310030431-17d80f34264f h1:5QmmNpVcGqIc6tuKNe5EAI4PA8Yn2EL9Oee7YdcJ4PE=
 github.com/go-chassis/go-restful-swagger20 v1.0.3-0.20200310030431-17d80f34264f/go.mod h1:eW62fYuzlNFDvIacB6AV8bhUDCTy4myfTCv0bT9Gbb0=
+github.com/go-chassis/go-restful-swagger20 v1.0.3 h1:kWfeLwMwJZVkXP1zNyFpkmR41UZ55UTcOptTteXhvEs=
+github.com/go-chassis/go-restful-swagger20 v1.0.3/go.mod h1:eW62fYuzlNFDvIacB6AV8bhUDCTy4myfTCv0bT9Gbb0=
 github.com/go-chassis/kie-client v0.0.0-20201210060018-938c7680a9ab/go.mod h1:UTdbtyN5ge/v9DmQzdVRxQP7z51Q4z6hyl+W6ZpUHFM=
 github.com/go-chassis/kie-client v0.1.0 h1:7iY0jVDVn6anT2Gh8CriViRqvyQOy9tUBUflVEkFZE4=
 github.com/go-chassis/kie-client v0.1.0/go.mod h1:UTdbtyN5ge/v9DmQzdVRxQP7z51Q4z6hyl+W6ZpUHFM=
