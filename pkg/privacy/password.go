@@ -31,6 +31,8 @@ const (
 	algBcrypt = "$2a$"
 )
 
+var ScryptParams = scrypt.Params{N: 1024, R: 8, P: 1, SaltLen: 8, DKLen: 32}
+
 //HashPassword
 //Deprecated: use ScryptPassword, this is only for unit test to test compatible with old version
 func HashPassword(pwd string) (string, error) {
@@ -41,7 +43,7 @@ func HashPassword(pwd string) (string, error) {
 	return stringutil.Bytes2str(hash), nil
 }
 func ScryptPassword(pwd string) (string, error) {
-	hash, err := scrypt.GenerateFromPassword([]byte(pwd), scrypt.DefaultParams)
+	hash, err := scrypt.GenerateFromPassword([]byte(pwd), ScryptParams)
 	if err != nil {
 		return "", err
 	}
