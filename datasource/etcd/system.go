@@ -19,6 +19,7 @@ package etcd
 
 import (
 	"context"
+	"sync"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
@@ -29,7 +30,18 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 )
 
-func (ds *DataSource) DumpCache(ctx context.Context) *dump.Cache {
+type SysManager struct {
+	lockMux sync.Mutex
+	locks   map[string]*etcdsync.DLock
+}
+
+func newSysManager() datasource.SystemManager {
+	inst := &SysManager{
+		locks: make(map[string]*etcdsync.DLock),
+	}
+	return inst
+}
+func (sm *SysManager) DumpCache(ctx context.Context) *dump.Cache {
 	var cache dump.Cache
 	gopool.New(ctx, gopool.Configure().Workers(2)).
 		Do(func(_ context.Context) { setValue(kv.Store().Service(), &cache.Microservices) }).
@@ -57,12 +69,12 @@ func setValue(e sd.Adaptor, setter dump.Setter) {
 	})
 }
 
-func (ds *DataSource) DLock(ctx context.Context, request *datasource.DLockRequest) error {
+func (sm *SysManager) DLock(ctx context.Context, request *datasource.DLockRequest) error {
 	var (
 		lock *etcdsync.DLock
 		err  error
 	)
-	ds.lockMux.Lock()
+	sm.lockMux.Lock()
 
 	id := mux.Type(request.ID)
 	if request.Wait {
@@ -71,27 +83,27 @@ func (ds *DataSource) DLock(ctx context.Context, request *datasource.DLockReques
 		lock, err = mux.Try(id)
 	}
 	if err != nil {
-		ds.lockMux.Unlock()
+		sm.lockMux.Unlock()
 		return err
 	}
-	ds.locks[request.ID] = lock
+	sm.locks[request.ID] = lock
 
-	ds.lockMux.Unlock()
+	sm.lockMux.Unlock()
 	return nil
 }
 
-func (ds *DataSource) DUnlock(ctx context.Context, request *datasource.DUnlockRequest) error {
-	ds.lockMux.Lock()
+func (sm *SysManager) DUnlock(ctx context.Context, request *datasource.DUnlockRequest) error {
+	sm.lockMux.Lock()
 
-	lock, ok := ds.locks[request.ID]
+	lock, ok := sm.locks[request.ID]
 	if !ok {
-		ds.lockMux.Unlock()
+		sm.lockMux.Unlock()
 		return datasource.ErrDLockNotFound
 	}
 
 	err := lock.Unlock()
-	delete(ds.locks, request.ID)
+	delete(sm.locks, request.ID)
 
-	ds.lockMux.Unlock()
+	sm.lockMux.Unlock()
 	return err
 }

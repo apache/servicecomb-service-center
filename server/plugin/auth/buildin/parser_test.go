@@ -40,14 +40,14 @@ func TestGetAPIParseFunc(t *testing.T) {
 
 	var serviceIDA, serviceIDB string
 
-	response, _ := datasource.Instance().RegisterService(context.Background(), &discovery.CreateServiceRequest{
+	response, _ := datasource.GetMetadataManager().RegisterService(context.Background(), &discovery.CreateServiceRequest{
 		Service: &discovery.MicroService{
 			AppId:       "TestGetAPIParseFunc",
 			ServiceName: "A",
 		},
 	})
 	serviceIDA = response.ServiceId
-	response, _ = datasource.Instance().RegisterService(context.Background(), &discovery.CreateServiceRequest{
+	response, _ = datasource.GetMetadataManager().RegisterService(context.Background(), &discovery.CreateServiceRequest{
 		Service: &discovery.MicroService{
 			AppId:       "TestGetAPIParseFunc",
 			ServiceName: "B",

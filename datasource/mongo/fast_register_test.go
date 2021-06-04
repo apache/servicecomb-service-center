@@ -39,7 +39,7 @@ func TestInstance_BatchCreate(t *testing.T) {
 	fastRegisterTimeTask.Start()
 
 	t.Run("given service to register instance expect register success", func(t *testing.T) {
-		respCreateService, err := datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
+		respCreateService, err := datasource.GetMetadataManager().RegisterService(getContext(), &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
 				ServiceName: "create_instance_service_ms",
 				AppId:       "create_instance_ms",
@@ -71,7 +71,7 @@ func TestInstance_BatchCreate(t *testing.T) {
 			ProviderServiceId: serviceID,
 		}
 
-		getInstsResp, err := datasource.Instance().GetInstances(context.TODO(), getInstsReq)
+		getInstsResp, err := datasource.GetMetadataManager().GetInstances(context.TODO(), getInstsReq)
 		assert.NoError(t, err)
 		beforLen := len(getInstsResp.Instances)
 
@@ -89,7 +89,7 @@ func TestInstance_BatchCreate(t *testing.T) {
 		//if mongo is not replSet, batch register will failed, should wait failed instance register
 		time.Sleep(5 * time.Second)
 
-		getInstsResp, err = datasource.Instance().GetInstances(context.TODO(), getInstsReq)
+		getInstsResp, err = datasource.GetMetadataManager().GetInstances(context.TODO(), getInstsReq)
 		assert.NoError(t, err)
 		afterLen := len(getInstsResp.Instances)
 		assert.Equal(t, instanceBatchLen, afterLen-beforLen)

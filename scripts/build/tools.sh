@@ -135,7 +135,7 @@ package() {
     cp -r ${root_path}/etc/conf $app/
     cat <<EOF >> $app/conf/app.yaml
 SERVER_HOST: 0.0.0.0
-REGISTRY_KIND: embeded_etcd
+REGISTRY_KIND: embedded_etcd
 REGISTRY_ETCD_CLUSTER_NAME: sc-0
 REGISTRY_ETCD_CLUSTER_MANAGER_ENDPOINTS: http://127.0.0.1:2380
 REGISTRY_ETCD_CLUSTER_ENDPOINTS: sc-0=http://127.0.0.1:2380

@@ -66,7 +66,21 @@ func Init(opts Options) error {
 	return nil
 }
 
-// Instance is the instance of DataSource
-func Instance() DataSource {
-	return dataSourceInst
+func GetSCManager() SCManager {
+	return dataSourceInst.SCManager()
+}
+func GetMetadataManager() MetadataManager {
+	return dataSourceInst.MetadataManager()
+}
+func GetSystemManager() SystemManager {
+	return dataSourceInst.SystemManager()
+}
+func GetRoleManager() RoleManager {
+	return dataSourceInst.RoleManager()
+}
+func GetAccountManager() AccountManager {
+	return dataSourceInst.AccountManager()
+}
+func GetDependencyManager() DependencyManager {
+	return dataSourceInst.DependencyManager()
 }

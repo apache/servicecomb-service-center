@@ -21,10 +21,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/mux"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -32,7 +30,7 @@ import (
 	"github.com/apache/servicecomb-service-center/version"
 )
 
-func (ds *DataSource) LoadServerVersion(ctx context.Context) error {
+func loadServerVersion(ctx context.Context) error {
 	resp, err := client.Instance().Do(ctx,
 		client.GET, client.WithStrKey(path.GetServerInfoKey()))
 	if err != nil {
@@ -50,43 +48,8 @@ func (ds *DataSource) LoadServerVersion(ctx context.Context) error {
 	return nil
 }
 
-func (ds *DataSource) UpgradeServerVersion(ctx context.Context) error {
-	bytes, err := json.Marshal(config.Server)
-	if err != nil {
-		return err
-	}
-	_, err = client.Instance().Do(ctx,
-		client.PUT, client.WithStrKey(path.GetServerInfoKey()), client.WithValue(bytes))
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (ds *DataSource) UpgradeVersion(ctx context.Context) error {
-	lock, err := mux.Lock(mux.GlobalLock)
-
-	if err != nil {
-		log.Errorf(err, "wait for server ready failed")
-		return err
-	}
-	if ds.needUpgrade(ctx) {
-		config.Server.Version = version.Ver().Version
-
-		if err := ds.UpgradeServerVersion(ctx); err != nil {
-			log.Errorf(err, "upgrade server version failed")
-			os.Exit(1)
-		}
-	}
-	err = lock.Unlock()
-	if err != nil {
-		log.Error("", err)
-	}
-	return err
-}
-
-func (ds *DataSource) needUpgrade(ctx context.Context) bool {
-	err := ds.LoadServerVersion(ctx)
+func needUpgrade(ctx context.Context) bool {
+	err := loadServerVersion(ctx)
 	if err != nil {
 		log.Errorf(err, "check version failed, can not load the system config")
 		return false

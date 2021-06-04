@@ -5,7 +5,7 @@ Service-Center support multiple DB configurations. Configure app.yaml according 
 ::
 
    registry:
-     # buildin, etcd, embeded_etcd, mongo
+     # buildin, etcd, embedded_etcd, mongo
      kind: etcd
      # registry cache, if this option value set 0, service center can run
      # in lower memory but no longer push the events to client.
@@ -13,7 +13,7 @@ Service-Center support multiple DB configurations. Configure app.yaml according 
        mode: 1
        # the cache will be clear after X, if not set cache will be never clear
        ttl:
-     # enabled if registry.kind equal to etcd or embeded_etcd
+     # enabled if registry.kind equal to etcd or embedded_etcd
 
 .. list-table::
   :widths: 15 20 5 10
@@ -26,7 +26,7 @@ Service-Center support multiple DB configurations. Configure app.yaml according 
   * - registry.kind
     - database type (etcd or mongo)
     - yes
-    - etcd / embeded_etcd /mongo
+    - etcd / embedded_etcd /mongo
   * - registry.cache.mode
     - open cache (1 is on, 0 is off)
     - yes
@@ -53,7 +53,7 @@ Configure app.yaml according to your needs.
          indexDelta: 100
          interval: 12h
        cluster:
-         # if registry_plugin equals to 'embeded_etcd', then
+         # if registry_plugin equals to 'embedded_etcd', then
          # name: sc-0
          # managerEndpoints: http://127.0.0.1:2380"
          # endpoints: sc-0=http://127.0.0.1:2380

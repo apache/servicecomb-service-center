@@ -30,7 +30,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/config"
-	"github.com/apache/servicecomb-service-center/server/resource/v1"
+	v1 "github.com/apache/servicecomb-service-center/server/resource/v1"
 	svc "github.com/apache/servicecomb-service-center/server/service/gov"
 	"github.com/go-chassis/go-archaius"
 	"github.com/stretchr/testify/assert"

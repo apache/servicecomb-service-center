@@ -30,7 +30,10 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
-func (ds *DataSource) DumpCache(ctx context.Context) *dump.Cache {
+type SysManager struct {
+}
+
+func (ds *SysManager) DumpCache(ctx context.Context) *dump.Cache {
 	var cache dump.Cache
 	gopool.New(ctx, gopool.Configure().Workers(2)).
 		Do(func(_ context.Context) { setServiceValue(sd.Store().Service(), &cache.Microservices) }).
@@ -39,11 +42,11 @@ func (ds *DataSource) DumpCache(ctx context.Context) *dump.Cache {
 	return &cache
 }
 
-func (ds *DataSource) DLock(ctx context.Context, request *datasource.DLockRequest) error {
+func (ds *SysManager) DLock(ctx context.Context, request *datasource.DLockRequest) error {
 	return nil
 }
 
-func (ds *DataSource) DUnlock(ctx context.Context, request *datasource.DUnlockRequest) error {
+func (ds *SysManager) DUnlock(ctx context.Context, request *datasource.DUnlockRequest) error {
 	return nil
 }
 

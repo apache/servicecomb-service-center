@@ -18,6 +18,7 @@
 package client
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -25,6 +26,8 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/backoff"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 )
+
+var ErrNoPlugin = errors.New("etcd server plugin implement name is nil")
 
 type newClientFunc func(opts datasource.Options) Registry
 
@@ -43,6 +46,9 @@ func Install(pluginImplName string, newFunc newClientFunc) {
 func Init(opts datasource.Options) error {
 	for i := 0; ; i++ {
 		inst, err := New(opts)
+		if err == ErrNoPlugin {
+			return err
+		}
 		if err == nil {
 			pluginInst = inst
 			break
@@ -58,7 +64,7 @@ func Init(opts datasource.Options) error {
 
 func New(opts datasource.Options) (Registry, error) {
 	if opts.Kind == "" {
-		return nil, fmt.Errorf("plugin implement name is nil")
+		return nil, ErrNoPlugin
 	}
 
 	f, ok := plugins[opts.Kind]

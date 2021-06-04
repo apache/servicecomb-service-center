@@ -190,7 +190,7 @@ func (s *APIServer) Stop() {
 }
 
 func (s *APIServer) selfRegister() {
-	err := datasource.Instance().SelfRegister(context.Background())
+	err := datasource.GetSCManager().SelfRegister(context.Background())
 	if err != nil {
 		s.err <- err
 		return
@@ -202,7 +202,7 @@ func (s *APIServer) selfRegister() {
 func (s *APIServer) selfUnregister() {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-	if err := datasource.Instance().SelfUnregister(ctx); err != nil {
+	if err := datasource.GetSCManager().SelfUnregister(ctx); err != nil {
 		log.Error("stop registry engine failed", err)
 	}
 }

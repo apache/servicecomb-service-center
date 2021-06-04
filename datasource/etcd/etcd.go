@@ -19,7 +19,6 @@ import (
 	"context"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/apache/servicecomb-service-center/datasource"
@@ -29,7 +28,6 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/mux"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
-	"github.com/apache/servicecomb-service-center/pkg/etcdsync"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
@@ -39,28 +37,48 @@ var clustersIndex = make(map[string]int)
 
 func init() {
 	datasource.Install("etcd", NewDataSource)
-	datasource.Install("embeded_etcd", NewDataSource)
+	datasource.Install("embeded_etcd", NewDataSource) //TODO remove misspell in future
+	datasource.Install("embedded_etcd", NewDataSource)
 }
 
 type DataSource struct {
-	// SchemaEditable determines whether schema modification is allowed for
-	SchemaEditable bool
-	// InstanceTTL options
-	InstanceTTL int64
+	accountManager  datasource.AccountManager
+	metadataManager datasource.MetadataManager
+	roleManager     datasource.RoleManager
+	sysManager      datasource.SystemManager
+	depManager      datasource.DependencyManager
+	scManager       datasource.SCManager
+}
 
-	lockMux sync.Mutex
-	locks   map[string]*etcdsync.DLock
+func (ds *DataSource) SystemManager() datasource.SystemManager {
+	return ds.sysManager
+}
+
+func (ds *DataSource) AccountManager() datasource.AccountManager {
+	return ds.accountManager
+}
+
+func (ds *DataSource) RoleManager() datasource.RoleManager {
+	return ds.roleManager
+}
+
+func (ds *DataSource) DependencyManager() datasource.DependencyManager {
+	return ds.depManager
+}
+
+func (ds *DataSource) MetadataManager() datasource.MetadataManager {
+	return ds.metadataManager
+}
+
+func (ds *DataSource) SCManager() datasource.SCManager {
+	return ds.scManager
 }
 
 func NewDataSource(opts datasource.Options) (datasource.DataSource, error) {
 	// TODO: construct a reasonable DataSource instance
 	log.Warnf("data source enable etcd mode")
 
-	inst := &DataSource{
-		SchemaEditable: opts.SchemaEditable,
-		InstanceTTL:    opts.InstanceTTL,
-		locks:          make(map[string]*etcdsync.DLock),
-	}
+	inst := &DataSource{}
 
 	registryAddresses := strings.Join(Configuration().RegistryAddresses(), ",")
 	Configuration().SslEnabled = opts.SslEnabled && strings.Contains(strings.ToLower(registryAddresses), "https://")
@@ -68,6 +86,13 @@ func NewDataSource(opts datasource.Options) (datasource.DataSource, error) {
 	if err := inst.initialize(opts); err != nil {
 		return nil, err
 	}
+
+	inst.accountManager = &AccountManager{}
+	inst.roleManager = &RoleManager{}
+	inst.metadataManager = newMetadataManager(opts.SchemaEditable, opts.InstanceTTL)
+	inst.sysManager = newSysManager()
+	inst.depManager = &DepManager{}
+	inst.scManager = &SCManager{}
 	return inst, nil
 }
 

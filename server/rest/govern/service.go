@@ -35,7 +35,7 @@ type Service struct {
 
 func (governService *Service) GetServicesInfo(ctx context.Context, in *pb.GetServicesInfoRequest) (*pb.GetServicesInfoResponse, error) {
 	ctx = util.WithCacheOnly(ctx)
-	return datasource.Instance().GetServicesInfo(ctx, in)
+	return datasource.GetMetadataManager().GetServicesInfo(ctx, in)
 }
 
 func (governService *Service) GetServiceDetail(ctx context.Context, in *pb.GetServiceRequest) (*pb.GetServiceDetailResponse, error) {
@@ -47,7 +47,7 @@ func (governService *Service) GetServiceDetail(ctx context.Context, in *pb.GetSe
 		}, nil
 	}
 
-	return datasource.Instance().GetServiceDetail(ctx, in)
+	return datasource.GetMetadataManager().GetServiceDetail(ctx, in)
 }
 
 func (governService *Service) GetApplications(ctx context.Context, in *pb.GetAppsRequest) (*pb.GetAppsResponse, error) {
@@ -58,10 +58,10 @@ func (governService *Service) GetApplications(ctx context.Context, in *pb.GetApp
 		}, nil
 	}
 
-	return datasource.Instance().GetApplications(ctx, in)
+	return datasource.GetMetadataManager().GetApplications(ctx, in)
 }
 
 func (governService *Service) GetServicesStatistics(ctx context.Context, in *pb.GetServicesRequest) (*pb.GetServicesInfoStatisticsResponse, error) {
 	ctx = util.WithCacheOnly(ctx)
-	return datasource.Instance().GetServicesStatistics(ctx, in)
+	return datasource.GetMetadataManager().GetServicesStatistics(ctx, in)
 }

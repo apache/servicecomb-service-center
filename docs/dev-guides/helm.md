@@ -138,13 +138,13 @@ helm delete --purge servicecomb
         set to other value, its format is `{cluster name 1}=http(s)://{cluster-1-1},http(s)://{cluster-1-2},{cluster-2}=http(s)://{cluster-2-1}`
     + **registry**
         - **`enabled`** (bool: false) Register Service Center itself or not.
-        - **`type`** (string: "embeded_etcd") The class of backend storage provider, this decide how
-        Service Center store the microservices information. `embeded_etcd` let Service Center store data
+        - **`type`** (string: "embedded_etcd") The class of backend storage provider, this decide how
+        Service Center store the microservices information. `embedded_etcd` let Service Center store data
         in local file system, it means distributed file system is need if you deploy high availability
         Service Center. `etcd` let Service Center store data in existing etcd cluster, then Service Center
         could be a stateless service. `builin` disabled the storage.
         - **`name`** (string: "sc-0") The Service Center cluster name, only enabled if `type` is set to
-        `embeded_etcd` or `etcd`.
+        `embedded_etcd` or `etcd`.
         - **`addr`** (string: "http://127.0.0.1:2380") The backend storage provider address. This value
         should be a part of `sc.discovery.clusters` value.
 

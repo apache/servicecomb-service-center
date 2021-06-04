@@ -103,7 +103,7 @@ func fromQueryKey(r *http.Request, queryKey string) (*auth.ResourceScope, error)
 	}, nil
 }
 func serviceIDToLabels(ctx context.Context, serviceID string) ([]map[string]string, error) {
-	response, err := datasource.Instance().GetService(ctx, &discovery.GetServiceRequest{ServiceId: serviceID})
+	response, err := datasource.GetMetadataManager().GetService(ctx, &discovery.GetServiceRequest{ServiceId: serviceID})
 	if err != nil {
 		return nil, err
 	}

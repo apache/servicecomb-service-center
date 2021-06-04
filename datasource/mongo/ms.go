@@ -54,7 +54,14 @@ import (
 
 const baseTen = 10
 
-func (ds *DataSource) RegisterService(ctx context.Context, request *discovery.CreateServiceRequest) (*discovery.CreateServiceResponse, error) {
+type MetadataManager struct {
+	// SchemaEditable determines whether schema modification is allowed for
+	SchemaEditable bool
+	// InstanceTTL options
+	InstanceTTL int64
+}
+
+func (ds *MetadataManager) RegisterService(ctx context.Context, request *discovery.CreateServiceRequest) (*discovery.CreateServiceResponse, error) {
 	service := request.Service
 	remoteIP := util.GetIPFromContext(ctx)
 	domain := util.ParseDomain(ctx)
@@ -139,7 +146,7 @@ func (ds *DataSource) RegisterService(ctx context.Context, request *discovery.Cr
 	}, nil
 }
 
-func (ds *DataSource) GetServices(ctx context.Context, request *discovery.GetServicesRequest) (*discovery.GetServicesResponse, error) {
+func (ds *MetadataManager) GetServices(ctx context.Context, request *discovery.GetServicesRequest) (*discovery.GetServicesResponse, error) {
 	domain := util.ParseDomain(ctx)
 	project := util.ParseProject(ctx)
 
@@ -158,7 +165,7 @@ func (ds *DataSource) GetServices(ctx context.Context, request *discovery.GetSer
 	}, nil
 }
 
-func (ds *DataSource) GetApplications(ctx context.Context, request *discovery.GetAppsRequest) (*discovery.GetAppsResponse, error) {
+func (ds *MetadataManager) GetApplications(ctx context.Context, request *discovery.GetAppsRequest) (*discovery.GetAppsResponse, error) {
 	domain := util.ParseDomain(ctx)
 	project := util.ParseProject(ctx)
 
@@ -197,7 +204,7 @@ func (ds *DataSource) GetApplications(ctx context.Context, request *discovery.Ge
 	}, nil
 }
 
-func (ds *DataSource) GetService(ctx context.Context, request *discovery.GetServiceRequest) (*discovery.GetServiceResponse, error) {
+func (ds *MetadataManager) GetService(ctx context.Context, request *discovery.GetServiceRequest) (*discovery.GetServiceResponse, error) {
 	svc, ok := cache.GetServiceByID(request.ServiceId)
 	if !ok {
 		var err error
@@ -221,7 +228,7 @@ func (ds *DataSource) GetService(ctx context.Context, request *discovery.GetServ
 	}, nil
 }
 
-func (ds *DataSource) ExistServiceByID(ctx context.Context, request *discovery.GetExistenceByIDRequest) (*discovery.GetExistenceByIDResponse, error) {
+func (ds *MetadataManager) ExistServiceByID(ctx context.Context, request *discovery.GetExistenceByIDRequest) (*discovery.GetExistenceByIDResponse, error) {
 	exist, err := ServiceExistID(ctx, request.ServiceId)
 	if err != nil {
 		return &discovery.GetExistenceByIDResponse{
@@ -236,7 +243,7 @@ func (ds *DataSource) ExistServiceByID(ctx context.Context, request *discovery.G
 	}, nil
 }
 
-func (ds *DataSource) ExistService(ctx context.Context, request *discovery.GetExistenceRequest) (*discovery.GetExistenceResponse, error) {
+func (ds *MetadataManager) ExistService(ctx context.Context, request *discovery.GetExistenceRequest) (*discovery.GetExistenceResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
 	serviceFlag := util.StringJoin([]string{
 		request.Environment, request.AppId, request.ServiceName, request.Version}, "/")
@@ -273,7 +280,7 @@ func (ds *DataSource) ExistService(ctx context.Context, request *discovery.GetEx
 	}, nil
 }
 
-func (ds *DataSource) UnregisterService(ctx context.Context, request *discovery.DeleteServiceRequest) (*discovery.DeleteServiceResponse, error) {
+func (ds *MetadataManager) UnregisterService(ctx context.Context, request *discovery.DeleteServiceRequest) (*discovery.DeleteServiceResponse, error) {
 	res, err := ds.DelServicePri(ctx, request.ServiceId, request.Force)
 	if err != nil {
 		return &discovery.DeleteServiceResponse{
@@ -285,7 +292,7 @@ func (ds *DataSource) UnregisterService(ctx context.Context, request *discovery.
 	}, nil
 }
 
-func (ds *DataSource) DelServicePri(ctx context.Context, serviceID string, force bool) (*discovery.Response, error) {
+func (ds *MetadataManager) DelServicePri(ctx context.Context, serviceID string, force bool) (*discovery.Response, error) {
 	remoteIP := util.GetIPFromContext(ctx)
 	title := "delete"
 	if force {
@@ -367,7 +374,7 @@ func (ds *DataSource) DelServicePri(ctx context.Context, serviceID string, force
 	return discovery.CreateResponse(discovery.ResponseSuccess, "Unregister service successfully."), nil
 }
 
-func (ds *DataSource) UpdateService(ctx context.Context, request *discovery.UpdateServicePropsRequest) (*discovery.UpdateServicePropsResponse, error) {
+func (ds *MetadataManager) UpdateService(ctx context.Context, request *discovery.UpdateServicePropsRequest) (*discovery.UpdateServicePropsResponse, error) {
 	filter := mutil.NewBasicFilter(ctx, mutil.ServiceServiceID(request.ServiceId))
 	setFilter := mutil.NewFilter(
 		mutil.ServiceModTime(strconv.FormatInt(time.Now().Unix(), baseTen)),
@@ -388,7 +395,7 @@ func (ds *DataSource) UpdateService(ctx context.Context, request *discovery.Upda
 	}, nil
 }
 
-func (ds *DataSource) GetDeleteServiceFunc(ctx context.Context, serviceID string, force bool, serviceRespChan chan<- *discovery.DelServicesRspInfo) func(context.Context) {
+func (ds *MetadataManager) GetDeleteServiceFunc(ctx context.Context, serviceID string, force bool, serviceRespChan chan<- *discovery.DelServicesRspInfo) func(context.Context) {
 	return func(_ context.Context) {
 		serviceRst := &discovery.DelServicesRspInfo{
 			ServiceId:  serviceID,
@@ -405,7 +412,7 @@ func (ds *DataSource) GetDeleteServiceFunc(ctx context.Context, serviceID string
 	}
 }
 
-func (ds *DataSource) GetServiceDetail(ctx context.Context, request *discovery.GetServiceRequest) (*discovery.GetServiceDetailResponse, error) {
+func (ds *MetadataManager) GetServiceDetail(ctx context.Context, request *discovery.GetServiceRequest) (*discovery.GetServiceDetailResponse, error) {
 	filter := mutil.NewBasicFilter(ctx, mutil.ServiceServiceID(request.ServiceId))
 	mgSvc, err := dao.GetService(ctx, filter)
 	if err != nil {
@@ -452,7 +459,7 @@ func (ds *DataSource) GetServiceDetail(ctx context.Context, request *discovery.G
 
 }
 
-func (ds *DataSource) GetServicesInfo(ctx context.Context, request *discovery.GetServicesInfoRequest) (*discovery.GetServicesInfoResponse, error) {
+func (ds *MetadataManager) GetServicesInfo(ctx context.Context, request *discovery.GetServicesInfoRequest) (*discovery.GetServicesInfoResponse, error) {
 	optionMap := make(map[string]struct{}, len(request.Options))
 	for _, opt := range request.Options {
 		optionMap[opt] = struct{}{}
@@ -528,7 +535,7 @@ func (ds *DataSource) GetServicesInfo(ctx context.Context, request *discovery.Ge
 	}, nil
 }
 
-func (ds *DataSource) filterServices(ctx context.Context, request *discovery.GetServicesInfoRequest) bson.M {
+func (ds *MetadataManager) filterServices(ctx context.Context, request *discovery.GetServicesInfoRequest) bson.M {
 	var opts []func(filter bson.M)
 
 	if len(request.Environment) > 0 {
@@ -543,7 +550,7 @@ func (ds *DataSource) filterServices(ctx context.Context, request *discovery.Get
 	return mutil.NewBasicFilter(ctx, opts...)
 }
 
-func (ds *DataSource) GetServicesStatistics(ctx context.Context, request *discovery.GetServicesRequest) (
+func (ds *MetadataManager) GetServicesStatistics(ctx context.Context, request *discovery.GetServicesRequest) (
 	*discovery.GetServicesInfoStatisticsResponse, error) {
 	ctx = util.WithCacheOnly(ctx)
 	var st *discovery.Statistics
@@ -560,7 +567,7 @@ func (ds *DataSource) GetServicesStatistics(ctx context.Context, request *discov
 	}, nil
 }
 
-func (ds *DataSource) AddTags(ctx context.Context, request *discovery.AddServiceTagsRequest) (*discovery.AddServiceTagsResponse, error) {
+func (ds *MetadataManager) AddTags(ctx context.Context, request *discovery.AddServiceTagsRequest) (*discovery.AddServiceTagsResponse, error) {
 	filter := mutil.NewBasicFilter(ctx, mutil.ServiceServiceID(request.ServiceId))
 	setFilter := mutil.NewFilter(
 		mutil.Tags(request.Tags),
@@ -585,7 +592,7 @@ func (ds *DataSource) AddTags(ctx context.Context, request *discovery.AddService
 	}, nil
 }
 
-func (ds *DataSource) GetTags(ctx context.Context, request *discovery.GetServiceTagsRequest) (*discovery.GetServiceTagsResponse, error) {
+func (ds *MetadataManager) GetTags(ctx context.Context, request *discovery.GetServiceTagsRequest) (*discovery.GetServiceTagsResponse, error) {
 	filter := mutil.NewBasicFilter(ctx, mutil.ServiceServiceID(request.ServiceId))
 	svc, err := dao.GetService(ctx, filter)
 	if err != nil {
@@ -606,7 +613,7 @@ func (ds *DataSource) GetTags(ctx context.Context, request *discovery.GetService
 	}, nil
 }
 
-func (ds *DataSource) UpdateTag(ctx context.Context, request *discovery.UpdateServiceTagRequest) (*discovery.UpdateServiceTagResponse, error) {
+func (ds *MetadataManager) UpdateTag(ctx context.Context, request *discovery.UpdateServiceTagRequest) (*discovery.UpdateServiceTagResponse, error) {
 	filter := mutil.NewBasicFilter(ctx, mutil.ServiceServiceID(request.ServiceId))
 	svc, err := dao.GetService(ctx, filter)
 	if err != nil {
@@ -652,7 +659,7 @@ func (ds *DataSource) UpdateTag(ctx context.Context, request *discovery.UpdateSe
 	}, nil
 }
 
-func (ds *DataSource) DeleteTags(ctx context.Context, request *discovery.DeleteServiceTagsRequest) (*discovery.DeleteServiceTagsResponse, error) {
+func (ds *MetadataManager) DeleteTags(ctx context.Context, request *discovery.DeleteServiceTagsRequest) (*discovery.DeleteServiceTagsResponse, error) {
 	filter := mutil.NewBasicFilter(ctx, mutil.ServiceServiceID(request.ServiceId))
 	svc, err := dao.GetService(ctx, filter)
 	if err != nil {
@@ -700,7 +707,7 @@ func (ds *DataSource) DeleteTags(ctx context.Context, request *discovery.DeleteS
 	}, nil
 }
 
-func (ds *DataSource) GetSchema(ctx context.Context, request *discovery.GetSchemaRequest) (*discovery.GetSchemaResponse, error) {
+func (ds *MetadataManager) GetSchema(ctx context.Context, request *discovery.GetSchemaRequest) (*discovery.GetSchemaResponse, error) {
 	exist, err := ServiceExistID(ctx, request.ServiceId)
 	if err != nil {
 		return &discovery.GetSchemaResponse{
@@ -731,7 +738,7 @@ func (ds *DataSource) GetSchema(ctx context.Context, request *discovery.GetSchem
 	}, nil
 }
 
-func (ds *DataSource) GetAllSchemas(ctx context.Context, request *discovery.GetAllSchemaRequest) (*discovery.GetAllSchemaResponse, error) {
+func (ds *MetadataManager) GetAllSchemas(ctx context.Context, request *discovery.GetAllSchemaRequest) (*discovery.GetAllSchemaResponse, error) {
 	domain := util.ParseDomain(ctx)
 	project := util.ParseProject(ctx)
 	filter := mutil.NewDomainProjectFilter(domain, project, mutil.ServiceServiceID(request.ServiceId))
@@ -782,7 +789,7 @@ func (ds *DataSource) GetAllSchemas(ctx context.Context, request *discovery.GetA
 	}, nil
 }
 
-func (ds *DataSource) ExistSchema(ctx context.Context, request *discovery.GetExistenceRequest) (*discovery.GetExistenceResponse, error) {
+func (ds *MetadataManager) ExistSchema(ctx context.Context, request *discovery.GetExistenceRequest) (*discovery.GetExistenceResponse, error) {
 	exist, err := ServiceExistID(ctx, request.ServiceId)
 	if err != nil {
 		return &discovery.GetExistenceResponse{
@@ -814,7 +821,7 @@ func (ds *DataSource) ExistSchema(ctx context.Context, request *discovery.GetExi
 	}, nil
 }
 
-func (ds *DataSource) DeleteSchema(ctx context.Context, request *discovery.DeleteSchemaRequest) (*discovery.DeleteSchemaResponse, error) {
+func (ds *MetadataManager) DeleteSchema(ctx context.Context, request *discovery.DeleteSchemaRequest) (*discovery.DeleteSchemaResponse, error) {
 	exist, err := ServiceExistID(ctx, request.ServiceId)
 	if err != nil {
 		return &discovery.DeleteSchemaResponse{
@@ -843,7 +850,7 @@ func (ds *DataSource) DeleteSchema(ctx context.Context, request *discovery.Delet
 	}, nil
 }
 
-func (ds *DataSource) ModifySchema(ctx context.Context, request *discovery.ModifySchemaRequest) (*discovery.ModifySchemaResponse, error) {
+func (ds *MetadataManager) ModifySchema(ctx context.Context, request *discovery.ModifySchemaRequest) (*discovery.ModifySchemaResponse, error) {
 	remoteIP := util.GetIPFromContext(ctx)
 	serviceID := request.ServiceId
 	schemaID := request.SchemaId
@@ -869,7 +876,7 @@ func (ds *DataSource) ModifySchema(ctx context.Context, request *discovery.Modif
 	}, nil
 }
 
-func (ds *DataSource) ModifySchemas(ctx context.Context, request *discovery.ModifySchemasRequest) (*discovery.ModifySchemasResponse, error) {
+func (ds *MetadataManager) ModifySchemas(ctx context.Context, request *discovery.ModifySchemasRequest) (*discovery.ModifySchemasResponse, error) {
 	filter := mutil.NewBasicFilter(ctx, mutil.ServiceServiceID(request.ServiceId))
 	svc, err := dao.GetService(ctx, filter)
 	if err != nil {
@@ -894,7 +901,7 @@ func (ds *DataSource) ModifySchemas(ctx context.Context, request *discovery.Modi
 
 }
 
-func (ds *DataSource) modifySchemas(ctx context.Context, service *discovery.MicroService, schemas []*discovery.Schema) *errsvc.Error {
+func (ds *MetadataManager) modifySchemas(ctx context.Context, service *discovery.MicroService, schemas []*discovery.Schema) *errsvc.Error {
 	domain := util.ParseDomain(ctx)
 	project := util.ParseProject(ctx)
 	remoteIP := util.GetIPFromContext(ctx)
@@ -1030,7 +1037,7 @@ func (ds *DataSource) modifySchemas(ctx context.Context, service *discovery.Micr
 // 2.service is editable && service have relation with the schema --> update the shema
 // 3.service is editable && service have no relation with the schema --> update the schema && update the service
 // 4.service can't edit && service have relation with the schema && schema summary not exist --> update the schema
-func (ds *DataSource) modifySchema(ctx context.Context, serviceID string, schema *discovery.Schema) *errsvc.Error {
+func (ds *MetadataManager) modifySchema(ctx context.Context, serviceID string, schema *discovery.Schema) *errsvc.Error {
 	domain := util.ParseDomain(ctx)
 	project := util.ParseProject(ctx)
 	filter := mutil.NewDomainProjectFilter(domain, project, mutil.ServiceServiceID(serviceID))
@@ -1109,7 +1116,7 @@ func (ds *DataSource) modifySchema(ctx context.Context, serviceID string, schema
 	return nil
 }
 
-func (ds *DataSource) AddRule(ctx context.Context, request *discovery.AddServiceRulesRequest) (*discovery.AddServiceRulesResponse, error) {
+func (ds *MetadataManager) AddRule(ctx context.Context, request *discovery.AddServiceRulesRequest) (*discovery.AddServiceRulesResponse, error) {
 	remoteIP := util.GetIPFromContext(ctx)
 	domain := util.ParseDomain(ctx)
 	project := util.ParseProject(ctx)
@@ -1199,7 +1206,7 @@ func (ds *DataSource) AddRule(ctx context.Context, request *discovery.AddService
 	}, nil
 }
 
-func (ds *DataSource) GetRules(ctx context.Context, request *discovery.GetServiceRulesRequest) (*discovery.GetServiceRulesResponse, error) {
+func (ds *MetadataManager) GetRules(ctx context.Context, request *discovery.GetServiceRulesRequest) (*discovery.GetServiceRulesResponse, error) {
 	exist, err := ServiceExistID(ctx, request.ServiceId)
 	if err != nil {
 		return &discovery.GetServiceRulesResponse{
@@ -1224,7 +1231,7 @@ func (ds *DataSource) GetRules(ctx context.Context, request *discovery.GetServic
 	}, nil
 }
 
-func (ds *DataSource) DeleteRule(ctx context.Context, request *discovery.DeleteServiceRulesRequest) (*discovery.DeleteServiceRulesResponse, error) {
+func (ds *MetadataManager) DeleteRule(ctx context.Context, request *discovery.DeleteServiceRulesRequest) (*discovery.DeleteServiceRulesResponse, error) {
 	exist, err := ServiceExistID(ctx, request.ServiceId)
 	domain := util.ParseDomain(ctx)
 	project := util.ParseProject(ctx)
@@ -1267,7 +1274,7 @@ func (ds *DataSource) DeleteRule(ctx context.Context, request *discovery.DeleteS
 	}, nil
 }
 
-func (ds *DataSource) UpdateRule(ctx context.Context, request *discovery.UpdateServiceRuleRequest) (*discovery.UpdateServiceRuleResponse, error) {
+func (ds *MetadataManager) UpdateRule(ctx context.Context, request *discovery.UpdateServiceRuleRequest) (*discovery.UpdateServiceRuleResponse, error) {
 	domain := util.ParseDomain(ctx)
 	project := util.ParseProject(ctx)
 	exist, err := ServiceExistID(ctx, request.ServiceId)
@@ -1325,7 +1332,7 @@ func (ds *DataSource) UpdateRule(ctx context.Context, request *discovery.UpdateS
 	}, nil
 }
 
-func (ds *DataSource) isSchemaEditable(service *discovery.MicroService) bool {
+func (ds *MetadataManager) isSchemaEditable(service *discovery.MicroService) bool {
 	return (len(service.Environment) != 0 && service.Environment != discovery.ENV_PROD) || ds.SchemaEditable
 }
 
@@ -1413,7 +1420,7 @@ func getServiceDetailUtil(ctx context.Context, mgs *model.Service, countOnly boo
 }
 
 // Instance management
-func (ds *DataSource) RegisterInstance(ctx context.Context,
+func (ds *MetadataManager) RegisterInstance(ctx context.Context,
 	request *discovery.RegisterInstanceRequest) (*discovery.RegisterInstanceResponse, error) {
 
 	isCustomID := true
@@ -1486,7 +1493,7 @@ func preProcessRegister(ctx context.Context, instance *discovery.MicroServiceIns
 
 	// 允许自定义 id
 	if isUserDefinedID {
-		resp, err := datasource.Instance().Heartbeat(ctx, &discovery.HeartbeatRequest{
+		resp, err := datasource.GetMetadataManager().Heartbeat(ctx, &discovery.HeartbeatRequest{
 			InstanceId: instance.InstanceId,
 			ServiceId:  instance.ServiceId,
 		})
@@ -1531,7 +1538,7 @@ func preProcessRegister(ctx context.Context, instance *discovery.MicroServiceIns
 	}, true, nil
 }
 
-func (ds *DataSource) ExistInstanceByID(ctx context.Context, request *discovery.MicroServiceInstanceKey) (*discovery.GetExistenceByIDResponse, error) {
+func (ds *MetadataManager) ExistInstanceByID(ctx context.Context, request *discovery.MicroServiceInstanceKey) (*discovery.GetExistenceByIDResponse, error) {
 	exist, _ := dao.ExistInstance(ctx, request.ServiceId, request.InstanceId)
 	if !exist {
 		return &discovery.GetExistenceByIDResponse{
@@ -1547,7 +1554,7 @@ func (ds *DataSource) ExistInstanceByID(ctx context.Context, request *discovery.
 }
 
 // GetInstance returns instance under the current domain
-func (ds *DataSource) GetInstance(ctx context.Context, request *discovery.GetOneInstanceRequest) (*discovery.GetOneInstanceResponse, error) {
+func (ds *MetadataManager) GetInstance(ctx context.Context, request *discovery.GetOneInstanceRequest) (*discovery.GetOneInstanceResponse, error) {
 	var service *model.Service
 	var err error
 	var serviceIDs []string
@@ -1657,7 +1664,7 @@ func (ds *DataSource) GetInstance(ctx context.Context, request *discovery.GetOne
 	}, nil
 }
 
-func (ds *DataSource) GetInstances(ctx context.Context, request *discovery.GetInstancesRequest) (*discovery.GetInstancesResponse, error) {
+func (ds *MetadataManager) GetInstances(ctx context.Context, request *discovery.GetInstancesRequest) (*discovery.GetInstancesResponse, error) {
 	service := &model.Service{}
 	var err error
 
@@ -1741,7 +1748,7 @@ func (ds *DataSource) GetInstances(ctx context.Context, request *discovery.GetIn
 }
 
 // GetProviderInstances returns instances under the specified domain
-func (ds *DataSource) GetProviderInstances(ctx context.Context, request *discovery.GetProviderInstancesRequest) (instances []*discovery.MicroServiceInstance, rev string, err error) {
+func (ds *MetadataManager) GetProviderInstances(ctx context.Context, request *discovery.GetProviderInstancesRequest) (instances []*discovery.MicroServiceInstance, rev string, err error) {
 	filter := mutil.NewBasicFilter(ctx, mutil.InstanceServiceID(request.ProviderServiceId))
 	instances, err = dao.GetMicroServiceInstances(ctx, filter)
 	if err != nil {
@@ -1750,7 +1757,7 @@ func (ds *DataSource) GetProviderInstances(ctx context.Context, request *discove
 	return instances, "", nil
 }
 
-func (ds *DataSource) GetAllInstances(ctx context.Context, request *discovery.GetAllInstancesRequest) (*discovery.GetAllInstancesResponse, error) {
+func (ds *MetadataManager) GetAllInstances(ctx context.Context, request *discovery.GetAllInstancesRequest) (*discovery.GetAllInstancesResponse, error) {
 	filter := mutil.NewBasicFilter(ctx)
 	findRes, err := client.GetMongoClient().Find(ctx, model.CollectionInstance, filter)
 	if err != nil {
@@ -1774,7 +1781,7 @@ func (ds *DataSource) GetAllInstances(ctx context.Context, request *discovery.Ge
 	return resp, nil
 }
 
-func (ds *DataSource) BatchGetProviderInstances(ctx context.Context, request *discovery.BatchGetInstancesRequest) (instances []*discovery.MicroServiceInstance, rev string, err error) {
+func (ds *MetadataManager) BatchGetProviderInstances(ctx context.Context, request *discovery.BatchGetInstancesRequest) (instances []*discovery.MicroServiceInstance, rev string, err error) {
 	if request == nil || len(request.ServiceIds) == 0 {
 		return nil, "", mutil.ErrInvalidParam
 	}
@@ -1801,7 +1808,7 @@ func (ds *DataSource) BatchGetProviderInstances(ctx context.Context, request *di
 }
 
 // FindInstances returns instances under the specified domain
-func (ds *DataSource) FindInstances(ctx context.Context, request *discovery.FindInstancesRequest) (*discovery.FindInstancesResponse, error) {
+func (ds *MetadataManager) FindInstances(ctx context.Context, request *discovery.FindInstancesRequest) (*discovery.FindInstancesResponse, error) {
 	provider := &discovery.MicroServiceKey{
 		Tenant:      util.ParseTargetDomainProject(ctx),
 		Environment: request.Environment,
@@ -1826,7 +1833,7 @@ func (ds *DataSource) FindInstances(ctx context.Context, request *discovery.Find
 	return ds.findInstance(ctx, request, provider, rev)
 }
 
-func (ds *DataSource) UpdateInstanceStatus(ctx context.Context, request *discovery.UpdateInstanceStatusRequest) (*discovery.UpdateInstanceStatusResponse, error) {
+func (ds *MetadataManager) UpdateInstanceStatus(ctx context.Context, request *discovery.UpdateInstanceStatusRequest) (*discovery.UpdateInstanceStatusResponse, error) {
 	updateStatusFlag := util.StringJoin([]string{request.ServiceId, request.InstanceId, request.Status}, "/")
 
 	// todo finish get instance
@@ -1869,7 +1876,7 @@ func (ds *DataSource) UpdateInstanceStatus(ctx context.Context, request *discove
 	}, nil
 }
 
-func (ds *DataSource) UpdateInstanceProperties(ctx context.Context, request *discovery.UpdateInstancePropsRequest) (*discovery.UpdateInstancePropsResponse, error) {
+func (ds *MetadataManager) UpdateInstanceProperties(ctx context.Context, request *discovery.UpdateInstancePropsRequest) (*discovery.UpdateInstancePropsResponse, error) {
 	instanceFlag := util.StringJoin([]string{request.ServiceId, request.InstanceId}, "/")
 	domain := util.ParseDomain(ctx)
 	project := util.ParseProject(ctx)
@@ -1915,7 +1922,7 @@ func (ds *DataSource) UpdateInstanceProperties(ctx context.Context, request *dis
 	}, nil
 }
 
-func (ds *DataSource) UnregisterInstance(ctx context.Context, request *discovery.UnregisterInstanceRequest) (*discovery.UnregisterInstanceResponse, error) {
+func (ds *MetadataManager) UnregisterInstance(ctx context.Context, request *discovery.UnregisterInstanceRequest) (*discovery.UnregisterInstanceResponse, error) {
 	remoteIP := util.GetIPFromContext(ctx)
 	serviceID := request.ServiceId
 	instanceID := request.InstanceId
@@ -1937,7 +1944,7 @@ func (ds *DataSource) UnregisterInstance(ctx context.Context, request *discovery
 	}, nil
 }
 
-func (ds *DataSource) Heartbeat(ctx context.Context, request *discovery.HeartbeatRequest) (*discovery.HeartbeatResponse, error) {
+func (ds *MetadataManager) Heartbeat(ctx context.Context, request *discovery.HeartbeatRequest) (*discovery.HeartbeatResponse, error) {
 	remoteIP := util.GetIPFromContext(ctx)
 	instanceFlag := util.StringJoin([]string{request.ServiceId, request.InstanceId}, "/")
 	err := KeepAliveLease(ctx, request)
@@ -1957,7 +1964,7 @@ func (ds *DataSource) Heartbeat(ctx context.Context, request *discovery.Heartbea
 	}, nil
 }
 
-func (ds *DataSource) HeartbeatSet(ctx context.Context, request *discovery.HeartbeatSetRequest) (*discovery.HeartbeatSetResponse, error) {
+func (ds *MetadataManager) HeartbeatSet(ctx context.Context, request *discovery.HeartbeatSetRequest) (*discovery.HeartbeatSetResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
 
 	heartBeatCount := len(request.Instances)
@@ -2010,7 +2017,7 @@ func (ds *DataSource) HeartbeatSet(ctx context.Context, request *discovery.Heart
 	}, nil
 }
 
-func (ds *DataSource) BatchFind(ctx context.Context, request *discovery.BatchFindInstancesRequest) (*discovery.BatchFindInstancesResponse, error) {
+func (ds *MetadataManager) BatchFind(ctx context.Context, request *discovery.BatchFindInstancesRequest) (*discovery.BatchFindInstancesResponse, error) {
 	response := &discovery.BatchFindInstancesResponse{
 		Response: discovery.CreateResponse(discovery.ResponseSuccess, "Batch query service instances successfully."),
 	}
@@ -2098,7 +2105,7 @@ func registryInstances(ctx context.Context, instances []interface{}) (*discovery
 	}, nil
 }
 
-func (ds *DataSource) findSharedServiceInstance(ctx context.Context, request *discovery.FindInstancesRequest, provider *discovery.MicroServiceKey, rev string) (*discovery.FindInstancesResponse, error) {
+func (ds *MetadataManager) findSharedServiceInstance(ctx context.Context, request *discovery.FindInstancesRequest, provider *discovery.MicroServiceKey, rev string) (*discovery.FindInstancesResponse, error) {
 	var err error
 	// it means the shared micro-services must be the same env with SC.
 	provider.Environment = apt.Service.Environment
@@ -2149,7 +2156,7 @@ func (ds *DataSource) findSharedServiceInstance(ctx context.Context, request *di
 	}, nil
 }
 
-func (ds *DataSource) findInstance(ctx context.Context, request *discovery.FindInstancesRequest, provider *discovery.MicroServiceKey, rev string) (*discovery.FindInstancesResponse, error) {
+func (ds *MetadataManager) findInstance(ctx context.Context, request *discovery.FindInstancesRequest, provider *discovery.MicroServiceKey, rev string) (*discovery.FindInstancesResponse, error) {
 	var err error
 	domainProject := util.ParseDomainProject(ctx)
 	service := &model.Service{Service: &discovery.MicroService{Environment: request.Environment}}
@@ -2251,7 +2258,7 @@ func (ds *DataSource) findInstance(ctx context.Context, request *discovery.FindI
 	}, nil
 }
 
-func (ds *DataSource) reshapeProviderKey(ctx context.Context, provider *discovery.MicroServiceKey, providerID string) (*discovery.MicroServiceKey, error) {
+func (ds *MetadataManager) reshapeProviderKey(ctx context.Context, provider *discovery.MicroServiceKey, providerID string) (*discovery.MicroServiceKey, error) {
 	//维护version的规则,service name 可能是别名，所以重新获取
 	filter := mutil.NewBasicFilter(ctx, mutil.ServiceServiceID(providerID))
 	providerService, err := dao.GetService(ctx, filter)
@@ -2348,7 +2355,7 @@ func getHeartbeatFunc(ctx context.Context, domainProject string, instancesHbRst 
 	}
 }
 
-func (ds *DataSource) batchFindServices(ctx context.Context, request *discovery.BatchFindInstancesRequest) (*discovery.BatchFindResult, error) {
+func (ds *MetadataManager) batchFindServices(ctx context.Context, request *discovery.BatchFindInstancesRequest) (*discovery.BatchFindResult, error) {
 	if len(request.Services) == 0 {
 		return nil, nil
 	}
@@ -2381,7 +2388,7 @@ func (ds *DataSource) batchFindServices(ctx context.Context, request *discovery.
 	return services, nil
 }
 
-func (ds *DataSource) batchFindInstances(ctx context.Context, request *discovery.BatchFindInstancesRequest) (*discovery.BatchFindResult, error) {
+func (ds *MetadataManager) batchFindInstances(ctx context.Context, request *discovery.BatchFindInstancesRequest) (*discovery.BatchFindResult, error) {
 	if len(request.Instances) == 0 {
 		return nil, nil
 	}

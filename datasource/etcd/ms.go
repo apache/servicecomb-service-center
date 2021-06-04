@@ -45,11 +45,25 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
 )
 
+type MetadataManager struct {
+	// SchemaEditable determines whether schema modification is allowed for
+	SchemaEditable bool
+	// InstanceTTL options
+	InstanceTTL int64
+}
+
+func newMetadataManager(SchemaEditable bool, InstanceTTL int64) datasource.MetadataManager {
+	return &MetadataManager{
+		SchemaEditable: SchemaEditable,
+		InstanceTTL:    InstanceTTL,
+	}
+}
+
 // RegisterService() implement:
 // 1. capsule request to etcd kv format
 // 2. invoke etcd client to store data
 // 3. check etcd-client response && construct createServiceResponse
-func (ds *DataSource) RegisterService(ctx context.Context, request *pb.CreateServiceRequest) (
+func (ds *MetadataManager) RegisterService(ctx context.Context, request *pb.CreateServiceRequest) (
 	*pb.CreateServiceResponse, error) {
 	remoteIP := util.GetIPFromContext(ctx)
 	service := request.Service
@@ -160,7 +174,7 @@ func (ds *DataSource) RegisterService(ctx context.Context, request *pb.CreateSer
 
 }
 
-func (ds *DataSource) GetServices(ctx context.Context, request *pb.GetServicesRequest) (
+func (ds *MetadataManager) GetServices(ctx context.Context, request *pb.GetServicesRequest) (
 	*pb.GetServicesResponse, error) {
 	services, err := serviceUtil.GetAllServiceUtil(ctx)
 	if err != nil {
@@ -176,7 +190,7 @@ func (ds *DataSource) GetServices(ctx context.Context, request *pb.GetServicesRe
 	}, nil
 }
 
-func (ds *DataSource) GetService(ctx context.Context, request *pb.GetServiceRequest) (
+func (ds *MetadataManager) GetService(ctx context.Context, request *pb.GetServiceRequest) (
 	*pb.GetServiceResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
 	singleService, err := serviceUtil.GetService(ctx, domainProject, request.ServiceId)
@@ -199,7 +213,7 @@ func (ds *DataSource) GetService(ctx context.Context, request *pb.GetServiceRequ
 	}, nil
 }
 
-func (ds *DataSource) GetServiceDetail(ctx context.Context, request *pb.GetServiceRequest) (
+func (ds *MetadataManager) GetServiceDetail(ctx context.Context, request *pb.GetServiceRequest) (
 	*pb.GetServiceDetailResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
 
@@ -251,7 +265,7 @@ func (ds *DataSource) GetServiceDetail(ctx context.Context, request *pb.GetServi
 	}, nil
 }
 
-func (ds *DataSource) GetServicesInfo(ctx context.Context, request *pb.GetServicesInfoRequest) (
+func (ds *MetadataManager) GetServicesInfo(ctx context.Context, request *pb.GetServicesInfoRequest) (
 	*pb.GetServicesInfoResponse, error) {
 	ctx = util.WithCacheOnly(ctx)
 
@@ -338,7 +352,7 @@ func (ds *DataSource) GetServicesInfo(ctx context.Context, request *pb.GetServic
 	}, nil
 }
 
-func (ds *DataSource) filterServices(domainProject string, request *pb.GetServicesInfoRequest, service *pb.MicroService) bool {
+func (ds *MetadataManager) filterServices(domainProject string, request *pb.GetServicesInfoRequest, service *pb.MicroService) bool {
 	if !request.WithShared && core.IsGlobal(pb.MicroServiceToKey(domainProject, service)) {
 		return false
 	}
@@ -354,7 +368,7 @@ func (ds *DataSource) filterServices(domainProject string, request *pb.GetServic
 	return true
 }
 
-func (ds *DataSource) GetServicesStatistics(ctx context.Context, request *pb.GetServicesRequest) (
+func (ds *MetadataManager) GetServicesStatistics(ctx context.Context, request *pb.GetServicesRequest) (
 	*pb.GetServicesInfoStatisticsResponse, error) {
 	ctx = util.WithCacheOnly(ctx)
 	var st *pb.Statistics
@@ -371,7 +385,7 @@ func (ds *DataSource) GetServicesStatistics(ctx context.Context, request *pb.Get
 	}, nil
 }
 
-func (ds *DataSource) GetApplications(ctx context.Context, request *pb.GetAppsRequest) (*pb.GetAppsResponse, error) {
+func (ds *MetadataManager) GetApplications(ctx context.Context, request *pb.GetAppsRequest) (*pb.GetAppsResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
 	key := path.GetServiceAppKey(domainProject, request.Environment, "")
 
@@ -411,7 +425,7 @@ func (ds *DataSource) GetApplications(ctx context.Context, request *pb.GetAppsRe
 	}, nil
 }
 
-func (ds *DataSource) ExistServiceByID(ctx context.Context, request *pb.GetExistenceByIDRequest) (*pb.GetExistenceByIDResponse, error) {
+func (ds *MetadataManager) ExistServiceByID(ctx context.Context, request *pb.GetExistenceByIDRequest) (*pb.GetExistenceByIDResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
 	return &pb.GetExistenceByIDResponse{
 		Response: pb.CreateResponse(pb.ResponseSuccess, "Get all applications successfully."),
@@ -419,7 +433,7 @@ func (ds *DataSource) ExistServiceByID(ctx context.Context, request *pb.GetExist
 	}, nil
 }
 
-func (ds *DataSource) ExistService(ctx context.Context, request *pb.GetExistenceRequest) (*pb.GetExistenceResponse,
+func (ds *MetadataManager) ExistService(ctx context.Context, request *pb.GetExistenceRequest) (*pb.GetExistenceResponse,
 	error) {
 	domainProject := util.ParseDomainProject(ctx)
 	serviceFlag := util.StringJoin([]string{
@@ -457,7 +471,7 @@ func (ds *DataSource) ExistService(ctx context.Context, request *pb.GetExistence
 	}, nil
 }
 
-func (ds *DataSource) UpdateService(ctx context.Context, request *pb.UpdateServicePropsRequest) (
+func (ds *MetadataManager) UpdateService(ctx context.Context, request *pb.UpdateServicePropsRequest) (
 	*pb.UpdateServicePropsResponse, error) {
 	remoteIP := util.GetIPFromContext(ctx)
 	domainProject := util.ParseDomainProject(ctx)
@@ -519,7 +533,7 @@ func (ds *DataSource) UpdateService(ctx context.Context, request *pb.UpdateServi
 	}, nil
 }
 
-func (ds *DataSource) UnregisterService(ctx context.Context, request *pb.DeleteServiceRequest) (
+func (ds *MetadataManager) UnregisterService(ctx context.Context, request *pb.DeleteServiceRequest) (
 	*pb.DeleteServiceResponse, error) {
 	resp, err := ds.DeleteServicePri(ctx, request.ServiceId, request.Force)
 	return &pb.DeleteServiceResponse{
@@ -527,7 +541,7 @@ func (ds *DataSource) UnregisterService(ctx context.Context, request *pb.DeleteS
 	}, err
 }
 
-func (ds *DataSource) GetServiceCountByDomainProject(ctx context.Context, request *pb.GetServiceCountRequest) (*pb.GetServiceCountResponse, error) {
+func (ds *MetadataManager) GetServiceCountByDomainProject(ctx context.Context, request *pb.GetServiceCountRequest) (*pb.GetServiceCountResponse, error) {
 	domainProject := request.Domain
 	if request.Project != "" {
 		domainProject += path.SPLIT + request.Project
@@ -542,7 +556,7 @@ func (ds *DataSource) GetServiceCountByDomainProject(ctx context.Context, reques
 	}, nil
 }
 
-func (ds *DataSource) RegisterInstance(ctx context.Context, request *pb.RegisterInstanceRequest) (
+func (ds *MetadataManager) RegisterInstance(ctx context.Context, request *pb.RegisterInstanceRequest) (
 	*pb.RegisterInstanceResponse, error) {
 	remoteIP := util.GetIPFromContext(ctx)
 	instance := request.Instance
@@ -660,7 +674,7 @@ func (ds *DataSource) RegisterInstance(ctx context.Context, request *pb.Register
 	}, nil
 }
 
-func (ds *DataSource) ExistInstanceByID(ctx context.Context, request *pb.MicroServiceInstanceKey) (*pb.GetExistenceByIDResponse, error) {
+func (ds *MetadataManager) ExistInstanceByID(ctx context.Context, request *pb.MicroServiceInstanceKey) (*pb.GetExistenceByIDResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
 	exist, _ := serviceUtil.InstanceExist(ctx, domainProject, request.ServiceId, request.InstanceId)
 	if !exist {
@@ -675,7 +689,7 @@ func (ds *DataSource) ExistInstanceByID(ctx context.Context, request *pb.MicroSe
 	}, nil
 }
 
-func (ds *DataSource) GetInstance(ctx context.Context, request *pb.GetOneInstanceRequest) (
+func (ds *MetadataManager) GetInstance(ctx context.Context, request *pb.GetOneInstanceRequest) (
 	*pb.GetOneInstanceResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
 
@@ -756,7 +770,7 @@ func (ds *DataSource) GetInstance(ctx context.Context, request *pb.GetOneInstanc
 	}, nil
 }
 
-func (ds *DataSource) GetInstances(ctx context.Context, request *pb.GetInstancesRequest) (*pb.GetInstancesResponse,
+func (ds *MetadataManager) GetInstances(ctx context.Context, request *pb.GetInstancesRequest) (*pb.GetInstancesResponse,
 	error) {
 	domainProject := util.ParseDomainProject(ctx)
 
@@ -836,7 +850,7 @@ func (ds *DataSource) GetInstances(ctx context.Context, request *pb.GetInstances
 	}, nil
 }
 
-func (ds *DataSource) GetProviderInstances(ctx context.Context, request *pb.GetProviderInstancesRequest) (instances []*pb.MicroServiceInstance, rev string, err error) {
+func (ds *MetadataManager) GetProviderInstances(ctx context.Context, request *pb.GetProviderInstancesRequest) (instances []*pb.MicroServiceInstance, rev string, err error) {
 	var (
 		maxRevs       = make([]int64, len(clustersIndex))
 		counts        = make([]int64, len(clustersIndex))
@@ -849,7 +863,7 @@ func (ds *DataSource) GetProviderInstances(ctx context.Context, request *pb.GetP
 	return instances, serviceUtil.FormatRevision(maxRevs, counts), nil
 }
 
-func (ds *DataSource) BatchGetProviderInstances(ctx context.Context, request *pb.BatchGetInstancesRequest) (instances []*pb.MicroServiceInstance, rev string, err error) {
+func (ds *MetadataManager) BatchGetProviderInstances(ctx context.Context, request *pb.BatchGetInstancesRequest) (instances []*pb.MicroServiceInstance, rev string, err error) {
 	var (
 		maxRevs       = make([]int64, len(clustersIndex))
 		counts        = make([]int64, len(clustersIndex))
@@ -870,7 +884,7 @@ func (ds *DataSource) BatchGetProviderInstances(ctx context.Context, request *pb
 	return instances, serviceUtil.FormatRevision(maxRevs, counts), nil
 }
 
-func (ds *DataSource) findInstances(ctx context.Context, domainProject, serviceID string, maxRevs []int64, counts []int64) (instances []*pb.MicroServiceInstance, err error) {
+func (ds *MetadataManager) findInstances(ctx context.Context, domainProject, serviceID string, maxRevs []int64, counts []int64) (instances []*pb.MicroServiceInstance, err error) {
 	key := path.GenerateInstanceKey(domainProject, serviceID, "")
 	opts := append(serviceUtil.FromContext(ctx), client.WithStrKey(key), client.WithPrefix())
 	resp, err := kv.Store().Instance().Search(ctx, opts...)
@@ -893,7 +907,7 @@ func (ds *DataSource) findInstances(ctx context.Context, domainProject, serviceI
 	return
 }
 
-func (ds *DataSource) FindInstances(ctx context.Context, request *pb.FindInstancesRequest) (*pb.FindInstancesResponse,
+func (ds *MetadataManager) FindInstances(ctx context.Context, request *pb.FindInstancesRequest) (*pb.FindInstancesResponse,
 	error) {
 	provider := &pb.MicroServiceKey{
 		Tenant:      util.ParseTargetDomainProject(ctx),
@@ -919,7 +933,7 @@ func (ds *DataSource) FindInstances(ctx context.Context, request *pb.FindInstanc
 	return ds.findInstance(ctx, request, provider, rev)
 }
 
-func (ds *DataSource) findInstance(ctx context.Context, request *pb.FindInstancesRequest,
+func (ds *MetadataManager) findInstance(ctx context.Context, request *pb.FindInstancesRequest,
 	provider *pb.MicroServiceKey, rev string) (*pb.FindInstancesResponse, error) {
 	var err error
 	domainProject := util.ParseDomainProject(ctx)
@@ -998,7 +1012,7 @@ func (ds *DataSource) findInstance(ctx context.Context, request *pb.FindInstance
 	return ds.genFindResult(ctx, rev, item)
 }
 
-func (ds *DataSource) findSharedServiceInstance(ctx context.Context, request *pb.FindInstancesRequest,
+func (ds *MetadataManager) findSharedServiceInstance(ctx context.Context, request *pb.FindInstancesRequest,
 	provider *pb.MicroServiceKey, rev string) (*pb.FindInstancesResponse, error) {
 	var err error
 	service := &pb.MicroService{Environment: request.Environment}
@@ -1026,7 +1040,7 @@ func (ds *DataSource) findSharedServiceInstance(ctx context.Context, request *pb
 	return ds.genFindResult(ctx, rev, item)
 }
 
-func (ds *DataSource) genFindResult(ctx context.Context, oldRev string, item *cache.VersionRuleCacheItem) (
+func (ds *MetadataManager) genFindResult(ctx context.Context, oldRev string, item *cache.VersionRuleCacheItem) (
 	*pb.FindInstancesResponse, error) {
 	instances := item.Instances
 	if oldRev == item.Rev {
@@ -1040,7 +1054,7 @@ func (ds *DataSource) genFindResult(ctx context.Context, oldRev string, item *ca
 	}, nil
 }
 
-func (ds *DataSource) reshapeProviderKey(ctx context.Context, provider *pb.MicroServiceKey, providerID string) (
+func (ds *MetadataManager) reshapeProviderKey(ctx context.Context, provider *pb.MicroServiceKey, providerID string) (
 	*pb.MicroServiceKey, error) {
 	//维护version的规则,service name 可能是别名，所以重新获取
 	providerService, err := serviceUtil.GetService(ctx, provider.Tenant, providerID)
@@ -1054,7 +1068,7 @@ func (ds *DataSource) reshapeProviderKey(ctx context.Context, provider *pb.Micro
 	return provider, nil
 }
 
-func (ds *DataSource) UpdateInstanceStatus(ctx context.Context, request *pb.UpdateInstanceStatusRequest) (*pb.UpdateInstanceStatusResponse, error) {
+func (ds *MetadataManager) UpdateInstanceStatus(ctx context.Context, request *pb.UpdateInstanceStatusRequest) (*pb.UpdateInstanceStatusResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
 	updateStatusFlag := util.StringJoin([]string{request.ServiceId, request.InstanceId, request.Status}, "/")
 
@@ -1092,7 +1106,7 @@ func (ds *DataSource) UpdateInstanceStatus(ctx context.Context, request *pb.Upda
 	}, nil
 }
 
-func (ds *DataSource) UpdateInstanceProperties(ctx context.Context, request *pb.UpdateInstancePropsRequest) (
+func (ds *MetadataManager) UpdateInstanceProperties(ctx context.Context, request *pb.UpdateInstancePropsRequest) (
 	*pb.UpdateInstancePropsResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
 	instanceFlag := util.StringJoin([]string{request.ServiceId, request.InstanceId}, "/")
@@ -1131,7 +1145,7 @@ func (ds *DataSource) UpdateInstanceProperties(ctx context.Context, request *pb.
 	}, nil
 }
 
-func (ds *DataSource) HeartbeatSet(ctx context.Context, request *pb.HeartbeatSetRequest) (*pb.HeartbeatSetResponse, error) {
+func (ds *MetadataManager) HeartbeatSet(ctx context.Context, request *pb.HeartbeatSetRequest) (*pb.HeartbeatSetResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
 
 	heartBeatCount := len(request.Instances)
@@ -1179,7 +1193,7 @@ func (ds *DataSource) HeartbeatSet(ctx context.Context, request *pb.HeartbeatSet
 	}, nil
 }
 
-func (ds *DataSource) BatchFind(ctx context.Context, request *pb.BatchFindInstancesRequest) (
+func (ds *MetadataManager) BatchFind(ctx context.Context, request *pb.BatchFindInstancesRequest) (
 	*pb.BatchFindInstancesResponse, error) {
 	response := &pb.BatchFindInstancesResponse{
 		Response: pb.CreateResponse(pb.ResponseSuccess, "Batch query service instances successfully."),
@@ -1205,7 +1219,7 @@ func (ds *DataSource) BatchFind(ctx context.Context, request *pb.BatchFindInstan
 	return response, nil
 }
 
-func (ds *DataSource) batchFindServices(ctx context.Context, request *pb.BatchFindInstancesRequest) (
+func (ds *MetadataManager) batchFindServices(ctx context.Context, request *pb.BatchFindInstancesRequest) (
 	*pb.BatchFindResult, error) {
 	if len(request.Services) == 0 {
 		return nil, nil
@@ -1239,7 +1253,7 @@ func (ds *DataSource) batchFindServices(ctx context.Context, request *pb.BatchFi
 	return services, nil
 }
 
-func (ds *DataSource) batchFindInstances(ctx context.Context, request *pb.BatchFindInstancesRequest) (*pb.BatchFindResult, error) {
+func (ds *MetadataManager) batchFindInstances(ctx context.Context, request *pb.BatchFindInstancesRequest) (*pb.BatchFindResult, error) {
 	if len(request.Instances) == 0 {
 		return nil, nil
 	}
@@ -1272,7 +1286,7 @@ func (ds *DataSource) batchFindInstances(ctx context.Context, request *pb.BatchF
 	return instances, nil
 }
 
-func (ds *DataSource) UnregisterInstance(ctx context.Context, request *pb.UnregisterInstanceRequest) (
+func (ds *MetadataManager) UnregisterInstance(ctx context.Context, request *pb.UnregisterInstanceRequest) (
 	*pb.UnregisterInstanceResponse, error) {
 	remoteIP := util.GetIPFromContext(ctx)
 	domainProject := util.ParseDomainProject(ctx)
@@ -1300,7 +1314,7 @@ func (ds *DataSource) UnregisterInstance(ctx context.Context, request *pb.Unregi
 	}, nil
 }
 
-func (ds *DataSource) Heartbeat(ctx context.Context, request *pb.HeartbeatRequest) (*pb.HeartbeatResponse, error) {
+func (ds *MetadataManager) Heartbeat(ctx context.Context, request *pb.HeartbeatRequest) (*pb.HeartbeatResponse, error) {
 	remoteIP := util.GetIPFromContext(ctx)
 	domainProject := util.ParseDomainProject(ctx)
 	instanceFlag := util.StringJoin([]string{request.ServiceId, request.InstanceId}, "/")
@@ -1331,7 +1345,7 @@ func (ds *DataSource) Heartbeat(ctx context.Context, request *pb.HeartbeatReques
 	}, nil
 }
 
-func (ds *DataSource) GetAllInstances(ctx context.Context, request *pb.GetAllInstancesRequest) (*pb.GetAllInstancesResponse, error) {
+func (ds *MetadataManager) GetAllInstances(ctx context.Context, request *pb.GetAllInstancesRequest) (*pb.GetAllInstancesResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
 	key := path.GetInstanceRootKey(domainProject) + "/"
 	opts := append(serviceUtil.FromContext(ctx), client.WithStrKey(key), client.WithPrefix())
@@ -1353,7 +1367,7 @@ func (ds *DataSource) GetAllInstances(ctx context.Context, request *pb.GetAllIns
 	return resp, nil
 }
 
-func (ds *DataSource) ModifySchemas(ctx context.Context, request *pb.ModifySchemasRequest) (
+func (ds *MetadataManager) ModifySchemas(ctx context.Context, request *pb.ModifySchemasRequest) (
 	*pb.ModifySchemasResponse, error) {
 	remoteIP := util.GetIPFromContext(ctx)
 	serviceID := request.ServiceId
@@ -1392,7 +1406,7 @@ func (ds *DataSource) ModifySchemas(ctx context.Context, request *pb.ModifySchem
 	}, nil
 }
 
-func (ds *DataSource) ModifySchema(ctx context.Context, request *pb.ModifySchemaRequest) (
+func (ds *MetadataManager) ModifySchema(ctx context.Context, request *pb.ModifySchemaRequest) (
 	*pb.ModifySchemaResponse, error) {
 	remoteIP := util.GetIPFromContext(ctx)
 	serviceID := request.ServiceId
@@ -1421,7 +1435,7 @@ func (ds *DataSource) ModifySchema(ctx context.Context, request *pb.ModifySchema
 	}, nil
 }
 
-func (ds *DataSource) ExistSchema(ctx context.Context, request *pb.GetExistenceRequest) (
+func (ds *MetadataManager) ExistSchema(ctx context.Context, request *pb.GetExistenceRequest) (
 	*pb.GetExistenceResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
 
@@ -1461,7 +1475,7 @@ func (ds *DataSource) ExistSchema(ctx context.Context, request *pb.GetExistenceR
 	}, nil
 }
 
-func (ds *DataSource) GetSchema(ctx context.Context, request *pb.GetSchemaRequest) (*pb.GetSchemaResponse, error) {
+func (ds *MetadataManager) GetSchema(ctx context.Context, request *pb.GetSchemaRequest) (*pb.GetSchemaResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
 
 	if !serviceUtil.ServiceExist(ctx, domainProject, request.ServiceId) {
@@ -1505,7 +1519,7 @@ func (ds *DataSource) GetSchema(ctx context.Context, request *pb.GetSchemaReques
 	}, nil
 }
 
-func (ds *DataSource) GetAllSchemas(ctx context.Context, request *pb.GetAllSchemaRequest) (
+func (ds *MetadataManager) GetAllSchemas(ctx context.Context, request *pb.GetAllSchemaRequest) (
 	*pb.GetAllSchemaResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
 
@@ -1580,7 +1594,7 @@ func (ds *DataSource) GetAllSchemas(ctx context.Context, request *pb.GetAllSchem
 	}, nil
 }
 
-func (ds *DataSource) DeleteSchema(ctx context.Context, request *pb.DeleteSchemaRequest) (
+func (ds *MetadataManager) DeleteSchema(ctx context.Context, request *pb.DeleteSchemaRequest) (
 	*pb.DeleteSchemaResponse, error) {
 	remoteIP := util.GetIPFromContext(ctx)
 	domainProject := util.ParseDomainProject(ctx)
@@ -1642,7 +1656,7 @@ func (ds *DataSource) DeleteSchema(ctx context.Context, request *pb.DeleteSchema
 	}, nil
 }
 
-func (ds *DataSource) AddTags(ctx context.Context, request *pb.AddServiceTagsRequest) (*pb.AddServiceTagsResponse, error) {
+func (ds *MetadataManager) AddTags(ctx context.Context, request *pb.AddServiceTagsRequest) (*pb.AddServiceTagsResponse, error) {
 	remoteIP := util.GetIPFromContext(ctx)
 	domainProject := util.ParseDomainProject(ctx)
 
@@ -1673,7 +1687,7 @@ func (ds *DataSource) AddTags(ctx context.Context, request *pb.AddServiceTagsReq
 	}, nil
 }
 
-func (ds *DataSource) GetTags(ctx context.Context, request *pb.GetServiceTagsRequest) (*pb.GetServiceTagsResponse, error) {
+func (ds *MetadataManager) GetTags(ctx context.Context, request *pb.GetServiceTagsRequest) (*pb.GetServiceTagsResponse, error) {
 	var err error
 	domainProject := util.ParseDomainProject(ctx)
 	if !serviceUtil.ServiceExist(ctx, domainProject, request.ServiceId) {
@@ -1696,7 +1710,7 @@ func (ds *DataSource) GetTags(ctx context.Context, request *pb.GetServiceTagsReq
 	}, nil
 }
 
-func (ds *DataSource) UpdateTag(ctx context.Context, request *pb.UpdateServiceTagRequest) (*pb.UpdateServiceTagResponse, error) {
+func (ds *MetadataManager) UpdateTag(ctx context.Context, request *pb.UpdateServiceTagRequest) (*pb.UpdateServiceTagResponse, error) {
 	var err error
 	remoteIP := util.GetIPFromContext(ctx)
 	tagFlag := util.StringJoin([]string{request.Key, request.Value}, "/")
@@ -1752,7 +1766,7 @@ func (ds *DataSource) UpdateTag(ctx context.Context, request *pb.UpdateServiceTa
 	}, nil
 }
 
-func (ds *DataSource) DeleteTags(ctx context.Context, request *pb.DeleteServiceTagsRequest) (*pb.DeleteServiceTagsResponse, error) {
+func (ds *MetadataManager) DeleteTags(ctx context.Context, request *pb.DeleteServiceTagsRequest) (*pb.DeleteServiceTagsResponse, error) {
 	remoteIP := util.GetIPFromContext(ctx)
 	domainProject := util.ParseDomainProject(ctx)
 
@@ -1827,7 +1841,7 @@ func (ds *DataSource) DeleteTags(ctx context.Context, request *pb.DeleteServiceT
 	}, nil
 }
 
-func (ds *DataSource) AddRule(ctx context.Context, request *pb.AddServiceRulesRequest) (
+func (ds *MetadataManager) AddRule(ctx context.Context, request *pb.AddServiceRulesRequest) (
 	*pb.AddServiceRulesResponse, error) {
 	remoteIP := util.GetIPFromContext(ctx)
 	domainProject := util.ParseDomainProject(ctx)
@@ -1945,7 +1959,7 @@ func (ds *DataSource) AddRule(ctx context.Context, request *pb.AddServiceRulesRe
 	}, nil
 }
 
-func (ds *DataSource) GetRules(ctx context.Context, request *pb.GetServiceRulesRequest) (
+func (ds *MetadataManager) GetRules(ctx context.Context, request *pb.GetServiceRulesRequest) (
 	*pb.GetServiceRulesResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
 
@@ -1971,7 +1985,7 @@ func (ds *DataSource) GetRules(ctx context.Context, request *pb.GetServiceRulesR
 	}, nil
 }
 
-func (ds *DataSource) UpdateRule(ctx context.Context, request *pb.UpdateServiceRuleRequest) (
+func (ds *MetadataManager) UpdateRule(ctx context.Context, request *pb.UpdateServiceRuleRequest) (
 	*pb.UpdateServiceRuleResponse, error) {
 	remoteIP := util.GetIPFromContext(ctx)
 	domainProject := util.ParseDomainProject(ctx)
@@ -2080,7 +2094,7 @@ func (ds *DataSource) UpdateRule(ctx context.Context, request *pb.UpdateServiceR
 	}, nil
 }
 
-func (ds *DataSource) DeleteRule(ctx context.Context, request *pb.DeleteServiceRulesRequest) (
+func (ds *MetadataManager) DeleteRule(ctx context.Context, request *pb.DeleteServiceRulesRequest) (
 	*pb.DeleteServiceRulesResponse, error) {
 	remoteIP := util.GetIPFromContext(ctx)
 	domainProject := util.ParseDomainProject(ctx)
@@ -2153,7 +2167,7 @@ func (ds *DataSource) DeleteRule(ctx context.Context, request *pb.DeleteServiceR
 	}, nil
 }
 
-func (ds *DataSource) modifySchemas(ctx context.Context, domainProject string, service *pb.MicroService,
+func (ds *MetadataManager) modifySchemas(ctx context.Context, domainProject string, service *pb.MicroService,
 	schemas []*pb.Schema) *errsvc.Error {
 	remoteIP := util.GetIPFromContext(ctx)
 	serviceID := service.ServiceId
@@ -2269,11 +2283,11 @@ func (ds *DataSource) modifySchemas(ctx context.Context, domainProject string, s
 	return nil
 }
 
-func (ds *DataSource) isSchemaEditable(service *pb.MicroService) bool {
+func (ds *MetadataManager) isSchemaEditable(service *pb.MicroService) bool {
 	return (len(service.Environment) != 0 && service.Environment != pb.ENV_PROD) || ds.SchemaEditable
 }
 
-func (ds *DataSource) modifySchema(ctx context.Context, serviceID string, schema *pb.Schema) *errsvc.Error {
+func (ds *MetadataManager) modifySchema(ctx context.Context, serviceID string, schema *pb.Schema) *errsvc.Error {
 	remoteIP := util.GetIPFromContext(ctx)
 	domainProject := util.ParseDomainProject(ctx)
 	schemaID := schema.SchemaId
@@ -2367,7 +2381,7 @@ func (ds *DataSource) modifySchema(ctx context.Context, serviceID string, schema
 	return nil
 }
 
-func (ds *DataSource) DeleteServicePri(ctx context.Context, serviceID string, force bool) (*pb.Response, error) {
+func (ds *MetadataManager) DeleteServicePri(ctx context.Context, serviceID string, force bool) (*pb.Response, error) {
 	remoteIP := util.GetIPFromContext(ctx)
 	domainProject := util.ParseDomainProject(ctx)
 
@@ -2508,7 +2522,7 @@ func (ds *DataSource) DeleteServicePri(ctx context.Context, serviceID string, fo
 	return pb.CreateResponse(pb.ResponseSuccess, "Unregister service successfully."), nil
 }
 
-func (ds *DataSource) GetDeleteServiceFunc(ctx context.Context, serviceID string, force bool,
+func (ds *MetadataManager) GetDeleteServiceFunc(ctx context.Context, serviceID string, force bool,
 	serviceRespChan chan<- *pb.DelServicesRspInfo) func(context.Context) {
 	return func(_ context.Context) {
 		serviceRst := &pb.DelServicesRspInfo{

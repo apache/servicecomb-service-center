@@ -31,7 +31,10 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
-func (ds *DataSource) CreateRole(ctx context.Context, r *rbac.Role) error {
+type RoleManager struct {
+}
+
+func (ds *RoleManager) CreateRole(ctx context.Context, r *rbac.Role) error {
 	exist, err := ds.RoleExist(ctx, r.Name)
 	if err != nil {
 		log.Error("failed to query role", err)
@@ -52,7 +55,7 @@ func (ds *DataSource) CreateRole(ctx context.Context, r *rbac.Role) error {
 	return nil
 }
 
-func (ds *DataSource) RoleExist(ctx context.Context, name string) (bool, error) {
+func (ds *RoleManager) RoleExist(ctx context.Context, name string) (bool, error) {
 	filter := mutil.NewFilter(mutil.RoleName(name))
 	count, err := client.GetMongoClient().Count(ctx, model.CollectionRole, filter)
 	if err != nil {
@@ -64,7 +67,7 @@ func (ds *DataSource) RoleExist(ctx context.Context, name string) (bool, error) 
 	return true, nil
 }
 
-func (ds *DataSource) GetRole(ctx context.Context, name string) (*rbac.Role, error) {
+func (ds *RoleManager) GetRole(ctx context.Context, name string) (*rbac.Role, error) {
 	filter := mutil.NewFilter(mutil.RoleName(name))
 	result, err := client.GetMongoClient().FindOne(ctx, model.CollectionRole, filter)
 	if err != nil {
@@ -82,7 +85,7 @@ func (ds *DataSource) GetRole(ctx context.Context, name string) (*rbac.Role, err
 	return &role, nil
 }
 
-func (ds *DataSource) ListRole(ctx context.Context) ([]*rbac.Role, int64, error) {
+func (ds *RoleManager) ListRole(ctx context.Context) ([]*rbac.Role, int64, error) {
 	filter := mutil.NewFilter()
 	cursor, err := client.GetMongoClient().Find(ctx, model.CollectionRole, filter)
 	if err != nil {
@@ -102,7 +105,7 @@ func (ds *DataSource) ListRole(ctx context.Context) ([]*rbac.Role, int64, error)
 	return roles, int64(len(roles)), nil
 }
 
-func (ds *DataSource) DeleteRole(ctx context.Context, name string) (bool, error) {
+func (ds *RoleManager) DeleteRole(ctx context.Context, name string) (bool, error) {
 	n, err := client.Count(ctx, model.CollectionAccount, bson.M{"roles": bson.M{"$in": []string{name}}})
 	if err != nil {
 		return false, err
@@ -121,7 +124,7 @@ func (ds *DataSource) DeleteRole(ctx context.Context, name string) (bool, error)
 	return true, nil
 }
 
-func (ds *DataSource) UpdateRole(ctx context.Context, name string, role *rbac.Role) error {
+func (ds *RoleManager) UpdateRole(ctx context.Context, name string, role *rbac.Role) error {
 	filter := mutil.NewFilter(mutil.RoleName(name))
 	setFilter := mutil.NewFilter(
 		mutil.ID(role.ID),

@@ -19,12 +19,13 @@ package privacy_test
 
 import (
 	"crypto/sha512"
+	"testing"
+
 	"github.com/apache/servicecomb-service-center/pkg/privacy"
 	scrypt "github.com/elithrar/simple-scrypt"
 	"github.com/go-chassis/foundation/stringutil"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/pbkdf2"
-	"testing"
 )
 
 func TestHashPassword(t *testing.T) {

@@ -37,7 +37,7 @@ var timeLimit = 2 * time.Second
 var _ = BeforeSuite(func() {
 	//clear service created in last test
 	time.Sleep(timeLimit)
-	_ = datasource.Instance().ClearNoInstanceServices(context.Background(), timeLimit)
+	_ = datasource.GetSCManager().ClearNoInstanceServices(context.Background(), timeLimit)
 })
 
 func TestEtcd(t *testing.T) {

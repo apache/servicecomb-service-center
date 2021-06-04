@@ -34,7 +34,10 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
-func (ds *DataSource) CreateAccount(ctx context.Context, a *rbac.Account) error {
+type AccountManager struct {
+}
+
+func (ds *AccountManager) CreateAccount(ctx context.Context, a *rbac.Account) error {
 	lock, err := etcdsync.Lock("/account-creating/"+a.Name, -1, false)
 	if err != nil {
 		return fmt.Errorf("account %s is creating", a.Name)
@@ -45,7 +48,7 @@ func (ds *DataSource) CreateAccount(ctx context.Context, a *rbac.Account) error 
 			log.Errorf(err, "can not release account lock")
 		}
 	}()
-	exist, err := datasource.Instance().AccountExist(ctx, a.Name)
+	exist, err := ds.AccountExist(ctx, a.Name)
 	if err != nil {
 		log.Errorf(err, "can not save account info")
 		return err
@@ -98,7 +101,7 @@ func GenAccountOpts(a *rbac.Account, action client.ActionType) ([]client.PluginO
 
 	return opts, nil
 }
-func (ds *DataSource) AccountExist(ctx context.Context, name string) (bool, error) {
+func (ds *AccountManager) AccountExist(ctx context.Context, name string) (bool, error) {
 	resp, err := client.Instance().Do(ctx, client.GET,
 		client.WithStrKey(path.GenerateRBACAccountKey(name)))
 	if err != nil {
@@ -109,7 +112,7 @@ func (ds *DataSource) AccountExist(ctx context.Context, name string) (bool, erro
 	}
 	return true, nil
 }
-func (ds *DataSource) GetAccount(ctx context.Context, name string) (*rbac.Account, error) {
+func (ds *AccountManager) GetAccount(ctx context.Context, name string) (*rbac.Account, error) {
 	resp, err := client.Instance().Do(ctx, client.GET,
 		client.WithStrKey(path.GenerateRBACAccountKey(name)))
 	if err != nil {
@@ -131,7 +134,7 @@ func (ds *DataSource) GetAccount(ctx context.Context, name string) (*rbac.Accoun
 	return account, nil
 }
 
-func (ds *DataSource) compatibleOldVersionAccount(a *rbac.Account) {
+func (ds *AccountManager) compatibleOldVersionAccount(a *rbac.Account) {
 	// old version use Role, now use Roles
 	// Role/Roles will not exist at the same time
 	if len(a.Role) == 0 {
@@ -141,7 +144,7 @@ func (ds *DataSource) compatibleOldVersionAccount(a *rbac.Account) {
 	a.Role = ""
 }
 
-func (ds *DataSource) ListAccount(ctx context.Context) ([]*rbac.Account, int64, error) {
+func (ds *AccountManager) ListAccount(ctx context.Context) ([]*rbac.Account, int64, error) {
 	resp, err := client.Instance().Do(ctx, client.GET,
 		client.WithStrKey(path.GenerateRBACAccountKey("")), client.WithPrefix())
 	if err != nil {
@@ -161,7 +164,7 @@ func (ds *DataSource) ListAccount(ctx context.Context) ([]*rbac.Account, int64, 
 	}
 	return accounts, resp.Count, nil
 }
-func (ds *DataSource) DeleteAccount(ctx context.Context, names []string) (bool, error) {
+func (ds *AccountManager) DeleteAccount(ctx context.Context, names []string) (bool, error) {
 	if len(names) == 0 {
 		return false, nil
 	}
@@ -190,7 +193,7 @@ func (ds *DataSource) DeleteAccount(ctx context.Context, names []string) (bool, 
 	}
 	return true, nil
 }
-func (ds *DataSource) UpdateAccount(ctx context.Context, name string, account *rbac.Account) error {
+func (ds *AccountManager) UpdateAccount(ctx context.Context, name string, account *rbac.Account) error {
 	account.UpdateTime = strconv.FormatInt(time.Now().Unix(), 10)
 	value, err := json.Marshal(account)
 	if err != nil {

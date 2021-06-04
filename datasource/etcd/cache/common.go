@@ -49,7 +49,7 @@ var (
 func getOrCreateClustersIndex() ClustersIndex {
 	buildClustersIndexOnce.Do(func() {
 		var clusters []string
-		resp, _ := datasource.Instance().GetClusters(context.Background())
+		resp, _ := datasource.GetSCManager().GetClusters(context.Background())
 		for name := range resp {
 			clusters = append(clusters, name)
 		}

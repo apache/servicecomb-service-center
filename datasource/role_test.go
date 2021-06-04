@@ -19,8 +19,9 @@ package datasource_test
 
 import (
 	"context"
-	"github.com/go-chassis/cari/rbac"
 	"testing"
+
+	"github.com/go-chassis/cari/rbac"
 
 	"github.com/stretchr/testify/assert"
 
@@ -43,42 +44,42 @@ var (
 
 func TestRole(t *testing.T) {
 	t.Run("create role should success", func(t *testing.T) {
-		err := datasource.Instance().CreateRole(context.Background(), &r1)
+		err := datasource.GetRoleManager().CreateRole(context.Background(), &r1)
 		assert.NoError(t, err)
-		r, err := datasource.Instance().GetRole(context.Background(), "test-role1")
+		r, err := datasource.GetRoleManager().GetRole(context.Background(), "test-role1")
 		assert.NoError(t, err)
 		assert.Equal(t, r1, *r)
 	})
 	t.Run("role should exist", func(t *testing.T) {
-		exist, err := datasource.Instance().RoleExist(context.Background(), "test-role1")
+		exist, err := datasource.GetRoleManager().RoleExist(context.Background(), "test-role1")
 		assert.NoError(t, err)
 		assert.True(t, exist)
 	})
 
 	t.Run("repeated create role should failed", func(t *testing.T) {
-		err := datasource.Instance().CreateRole(context.Background(), &r1)
+		err := datasource.GetRoleManager().CreateRole(context.Background(), &r1)
 		assert.Error(t, err)
 	})
 
 	t.Run("update role should success", func(t *testing.T) {
 		r1.ID = "11111-22222-33333-4"
-		err := datasource.Instance().UpdateRole(context.Background(), "test-role1", &r1)
+		err := datasource.GetRoleManager().UpdateRole(context.Background(), "test-role1", &r1)
 		assert.NoError(t, err)
 	})
 	t.Run("add new role should success", func(t *testing.T) {
-		err := datasource.Instance().CreateRole(context.Background(), &r2)
+		err := datasource.GetRoleManager().CreateRole(context.Background(), &r2)
 		assert.NoError(t, err)
-		_, n, err := datasource.Instance().ListRole(context.Background())
+		_, n, err := datasource.GetRoleManager().ListRole(context.Background())
 		assert.NoError(t, err)
 		assert.Equal(t, int64(2), n)
 	})
 
 	t.Run("delete role should success", func(t *testing.T) {
-		_, err := datasource.Instance().DeleteRole(context.Background(), "test-role1")
+		_, err := datasource.GetRoleManager().DeleteRole(context.Background(), "test-role1")
 		assert.NoError(t, err)
-		_, err = datasource.Instance().DeleteRole(context.Background(), "test-role2")
+		_, err = datasource.GetRoleManager().DeleteRole(context.Background(), "test-role2")
 		assert.NoError(t, err)
-		_, n, err := datasource.Instance().ListRole(context.Background())
+		_, n, err := datasource.GetRoleManager().ListRole(context.Background())
 		assert.NoError(t, err)
 		assert.Equal(t, int64(0), n)
 	})

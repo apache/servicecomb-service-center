@@ -20,10 +20,11 @@ package rbac_test
 // initialize
 import (
 	"context"
+	"testing"
+
 	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 	"github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/cari/pkg/errsvc"
-	"testing"
 
 	_ "github.com/apache/servicecomb-service-center/test"
 

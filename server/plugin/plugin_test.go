@@ -17,9 +17,10 @@
 package plugin
 
 import (
-	"github.com/apache/servicecomb-service-center/pkg/plugin"
 	"net/http"
 	"testing"
+
+	"github.com/apache/servicecomb-service-center/pkg/plugin"
 
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/plugin/auth"
@@ -69,8 +70,8 @@ func TestPluginManager_New(t *testing.T) {
 			t.Fatalf("TestPluginManager_New failed")
 		}
 	}()
-	plugin.RegisterPlugin(plugin.Plugin{plugin.Kind(999), "999", nil})
-	plugin.DynamicPluginFunc(plugin.Kind(999), "999")
+	plugin.RegisterPlugin(plugin.Plugin{Kind: "999", Name: "999", New: nil})
+	plugin.DynamicPluginFunc("999", "999")
 
 	plugin.LoadPlugins()
 }

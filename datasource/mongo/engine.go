@@ -39,7 +39,10 @@ import (
 	"github.com/apache/servicecomb-service-center/server/metrics"
 )
 
-func (ds *DataSource) SelfRegister(ctx context.Context) error {
+type SCManager struct {
+}
+
+func (ds *SCManager) SelfRegister(ctx context.Context) error {
 	err := ds.registryService(ctx)
 	if err != nil {
 		return err
@@ -54,13 +57,13 @@ func (ds *DataSource) SelfRegister(ctx context.Context) error {
 	metrics.ReportScInstance()
 	return err
 }
-func (ds *DataSource) SelfUnregister(ctx context.Context) error {
+func (ds *SCManager) SelfUnregister(ctx context.Context) error {
 	if len(core.Instance.InstanceId) == 0 {
 		return nil
 	}
 
 	ctx = core.AddDefaultContextValue(ctx)
-	respI, err := datasource.Instance().UnregisterInstance(ctx, core.UnregisterInstanceRequest())
+	respI, err := datasource.GetMetadataManager().UnregisterInstance(ctx, core.UnregisterInstanceRequest())
 	if err != nil {
 		log.Error("unregister failed", err)
 		return err
@@ -77,7 +80,7 @@ func (ds *DataSource) SelfUnregister(ctx context.Context) error {
 }
 
 // OPS
-func (ds *DataSource) ClearNoInstanceServices(ctx context.Context, ttl time.Duration) error {
+func (ds *SCManager) ClearNoInstanceServices(ctx context.Context, ttl time.Duration) error {
 	services, err := GetAllServicesAcrossDomainProject(ctx)
 	if err != nil {
 		return err
@@ -119,7 +122,7 @@ func (ds *DataSource) ClearNoInstanceServices(ctx context.Context, ttl time.Dura
 				ServiceId: svc.ServiceId,
 				Force:     true, //force delete
 			}
-			delSvcResp, err := datasource.Instance().UnregisterService(ctx, delSvcReq)
+			delSvcResp, err := datasource.GetMetadataManager().UnregisterService(ctx, delSvcReq)
 			if err != nil {
 				log.Error(fmt.Sprintf("clear service failed, %s", svcCtxStr), err)
 				continue
@@ -134,24 +137,24 @@ func (ds *DataSource) ClearNoInstanceServices(ctx context.Context, ttl time.Dura
 	return nil
 }
 
-func (ds *DataSource) UpgradeVersion(ctx context.Context) error {
+func (ds *SCManager) UpgradeVersion(ctx context.Context) error {
 	return nil
 }
 
-func (ds *DataSource) GetClusters(ctx context.Context) (cluster.Clusters, error) {
+func (ds *SCManager) GetClusters(ctx context.Context) (cluster.Clusters, error) {
 	return nil, nil
 }
 
-func (ds *DataSource) registryService(pCtx context.Context) error {
+func (ds *SCManager) registryService(pCtx context.Context) error {
 	ctx := core.AddDefaultContextValue(pCtx)
-	respE, err := datasource.Instance().ExistService(ctx, core.GetExistenceRequest())
+	respE, err := datasource.GetMetadataManager().ExistService(ctx, core.GetExistenceRequest())
 	if err != nil {
 		log.Error("query service center existence failed", err)
 		return err
 	}
 	if respE.Response.GetCode() == pb.ResponseSuccess {
 		log.Warn(fmt.Sprintf("service center service[%s] already registered", respE.ServiceId))
-		respG, err := datasource.Instance().GetService(ctx, core.GetServiceRequest(respE.ServiceId))
+		respG, err := datasource.GetMetadataManager().GetService(ctx, core.GetServiceRequest(respE.ServiceId))
 		if respG.Response.GetCode() != pb.ResponseSuccess {
 			log.Error(fmt.Sprintf("query service center service[%s] info failed", respE.ServiceId), err)
 			return mutil.ErrLostServiceFile
@@ -160,7 +163,7 @@ func (ds *DataSource) registryService(pCtx context.Context) error {
 		return nil
 	}
 
-	respS, err := datasource.Instance().RegisterService(ctx, core.CreateServiceRequest())
+	respS, err := datasource.GetMetadataManager().RegisterService(ctx, core.CreateServiceRequest())
 	if err != nil {
 		log.Error("register service center failed", err)
 		return err
@@ -170,13 +173,13 @@ func (ds *DataSource) registryService(pCtx context.Context) error {
 	return nil
 }
 
-func (ds *DataSource) registryInstance(pCtx context.Context) error {
+func (ds *SCManager) registryInstance(pCtx context.Context) error {
 	core.Instance.InstanceId = ""
 	core.Instance.ServiceId = core.Service.ServiceId
 
 	ctx := core.AddDefaultContextValue(pCtx)
 
-	respI, err := datasource.Instance().RegisterInstance(ctx, core.RegisterInstanceRequest())
+	respI, err := datasource.GetMetadataManager().RegisterInstance(ctx, core.RegisterInstanceRequest())
 	if err != nil {
 		log.Error("register failed", err)
 		return err
@@ -193,7 +196,7 @@ func (ds *DataSource) registryInstance(pCtx context.Context) error {
 	return nil
 }
 
-func (ds *DataSource) selfHeartBeat(pCtx context.Context) error {
+func (ds *SCManager) selfHeartBeat(pCtx context.Context) error {
 	ctx := core.AddDefaultContextValue(pCtx)
 	respI, err := core.InstanceAPI.Heartbeat(ctx, core.HeartbeatRequest())
 	if err != nil {
@@ -211,7 +214,7 @@ func (ds *DataSource) selfHeartBeat(pCtx context.Context) error {
 	return err
 }
 
-func (ds *DataSource) autoSelfHeartBeat() {
+func (ds *SCManager) autoSelfHeartBeat() {
 	gopool.Go(func(ctx context.Context) {
 		for {
 			select {
@@ -275,7 +278,7 @@ func shouldClear(ctx context.Context, timeLimitStamp string, svc *pb.MicroServic
 		ProviderServiceId: svc.ServiceId,
 	}
 
-	getInstsResp, err := datasource.Instance().GetInstances(ctx, getInstsReq)
+	getInstsResp, err := datasource.GetMetadataManager().GetInstances(ctx, getInstsReq)
 	if err != nil {
 		return false, err
 	}

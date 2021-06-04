@@ -37,7 +37,7 @@ func (s *InstanceService) WatchPreOpera(ctx context.Context, in *pb.WatchInstanc
 	if in == nil || len(in.SelfServiceId) == 0 {
 		return errors.New("request format invalid")
 	}
-	resp, err := datasource.Instance().ExistServiceByID(ctx, &pb.GetExistenceByIDRequest{
+	resp, err := datasource.GetMetadataManager().ExistServiceByID(ctx, &pb.GetExistenceByIDRequest{
 		ServiceId: in.SelfServiceId,
 	})
 	if err != nil {
@@ -54,7 +54,7 @@ func (s *InstanceService) HeartBeatPreOpera(ctx context.Context, in *pb.Heartbea
 	if in == nil || len(in.ServiceId) == 0 || len(in.InstanceId) == 0 {
 		return errors.New("request format invalid")
 	}
-	resp, err := datasource.Instance().ExistInstanceByID(ctx, &pb.MicroServiceInstanceKey{
+	resp, err := datasource.GetMetadataManager().ExistInstanceByID(ctx, &pb.MicroServiceInstanceKey{
 		ServiceId:  in.ServiceId,
 		InstanceId: in.InstanceId,
 	})
@@ -96,7 +96,7 @@ func (s *InstanceService) WatchHeartbeat(ctx context.Context, in *pb.HeartbeatRe
 }
 
 func (s *InstanceService) QueryAllProvidersInstances(ctx context.Context, in *pb.WatchInstanceRequest) ([]*pb.WatchInstanceResponse, int64) {
-	depResp, err := datasource.Instance().SearchConsumerDependency(ctx, &pb.GetDependenciesRequest{
+	depResp, err := datasource.GetDependencyManager().SearchConsumerDependency(ctx, &pb.GetDependenciesRequest{
 		ServiceId: in.SelfServiceId,
 	})
 	if err != nil {
@@ -110,7 +110,7 @@ func (s *InstanceService) QueryAllProvidersInstances(ctx context.Context, in *pb
 	}
 	var results []*pb.WatchInstanceResponse
 	for _, provider := range depResp.Providers {
-		instResp, err := datasource.Instance().GetInstances(ctx, &pb.GetInstancesRequest{
+		instResp, err := datasource.GetMetadataManager().GetInstances(ctx, &pb.GetInstancesRequest{
 			ProviderServiceId: provider.ServiceId,
 		})
 		if err != nil {

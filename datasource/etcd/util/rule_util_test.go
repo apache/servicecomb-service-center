@@ -20,9 +20,10 @@ package util_test
 import (
 	"context"
 	"errors"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	. "github.com/apache/servicecomb-service-center/datasource/etcd/util"

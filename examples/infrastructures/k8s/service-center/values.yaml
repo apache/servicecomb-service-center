@@ -46,8 +46,8 @@ sc:
     aggregate: "k8s,etcd"
   registry:
     enabled: false
-    # support embeded_etcd, etcd, and buildin registry mode
-    type: "embeded_etcd"
+    # support embedded_etcd, etcd, and buildin registry mode
+    type: "embedded_etcd"
     name: "sc-0"
     addr: "http://127.0.0.1:2380"
   image:

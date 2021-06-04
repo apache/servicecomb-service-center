@@ -85,7 +85,7 @@ func LabelMatched(targetResourceLabel map[string]string, permLabel map[string]st
 func getPermsByRoles(ctx context.Context, roleList []string) ([]*rbac.Permission, error) {
 	var allPerms = make([]*rbac.Permission, 0)
 	for _, name := range roleList {
-		r, err := datasource.Instance().GetRole(ctx, name)
+		r, err := datasource.GetRoleManager().GetRole(ctx, name)
 		if err == nil {
 			allPerms = append(allPerms, r.Perms...)
 			continue

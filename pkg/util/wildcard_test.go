@@ -18,9 +18,10 @@
 package util_test
 
 import (
+	"testing"
+
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestWildcardMatch(t *testing.T) {

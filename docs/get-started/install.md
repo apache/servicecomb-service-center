@@ -31,7 +31,7 @@ vi conf/app.conf
 
 ## Edit this file
 # registry address
-# 1. if registry_plugin equals to 'embeded_etcd'
+# 1. if registry_plugin equals to 'embedded_etcd'
 # manager_name = "sc-0"
 # manager_addr = "http://127.0.0.1:2380"
 # manager_cluster = "sc-0=http://127.0.0.1:2380"

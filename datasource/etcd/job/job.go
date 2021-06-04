@@ -48,7 +48,7 @@ func ClearNoInstanceServices() {
 					log.Errorf(err, "can not clear no instance services by this service center instance now")
 					continue
 				}
-				err = datasource.Instance().ClearNoInstanceServices(ctx, ttl)
+				err = datasource.GetSCManager().ClearNoInstanceServices(ctx, ttl)
 				if err := lock.Unlock(); err != nil {
 					log.Error("", err)
 				}

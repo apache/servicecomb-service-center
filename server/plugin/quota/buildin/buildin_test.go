@@ -17,17 +17,19 @@ package buildin_test
 
 import (
 	"context"
+
 	"github.com/apache/servicecomb-service-center/pkg/util"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	_ "github.com/apache/servicecomb-service-center/server/init"
+
+	"testing"
 
 	_ "github.com/apache/servicecomb-service-center/server/bootstrap"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/go-archaius"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func init() {
@@ -49,7 +51,7 @@ func TestGetResourceLimit(t *testing.T) {
 		assert.Nil(t, err)
 	})
 	t.Run("create 1 instance,should success", func(t *testing.T) {
-		resp, err := datasource.Instance().RegisterService(ctx, &pb.CreateServiceRequest{
+		resp, err := datasource.GetMetadataManager().RegisterService(ctx, &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
 				ServiceName: "quota",
 			},
@@ -66,7 +68,7 @@ func TestGetResourceLimit(t *testing.T) {
 		assert.NotNil(t, err)
 	})
 	t.Run("create 150001 instance,should failed", func(t *testing.T) {
-		resp, err := datasource.Instance().RegisterService(ctx, &pb.CreateServiceRequest{
+		resp, err := datasource.GetMetadataManager().RegisterService(ctx, &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
 				ServiceName: "quota2",
 			},

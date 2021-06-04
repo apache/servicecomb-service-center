@@ -43,7 +43,8 @@ import (
 )
 
 func init() {
-	client.Install("embeded_etcd", getEmbedInstance)
+	client.Install("embeded_etcd", newEmbeddedEtcd) //TODO remove misspell in future
+	client.Install("embedded_etcd", newEmbeddedEtcd)
 }
 
 type EtcdEmbed struct {
@@ -537,7 +538,7 @@ func callback(action client.ActionType, rev int64, kvs []*mvccpb.KeyValue, cb cl
 	})
 }
 
-func getEmbedInstance(opts datasource.Options) client.Registry {
+func newEmbeddedEtcd(opts datasource.Options) client.Registry {
 	log.Warnf("enable embedded registry mode")
 
 	hostName := "sc-0"

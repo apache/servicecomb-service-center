@@ -18,9 +18,10 @@
 package rbac_test
 
 import (
-	v4 "github.com/apache/servicecomb-service-center/server/resource/v4"
 	"testing"
 	"time"
+
+	v4 "github.com/apache/servicecomb-service-center/server/resource/v4"
 
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
 	"github.com/stretchr/testify/assert"
