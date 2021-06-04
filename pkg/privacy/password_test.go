@@ -18,8 +18,12 @@
 package privacy_test
 
 import (
+	"crypto/sha512"
 	"github.com/apache/servicecomb-service-center/pkg/privacy"
+	scrypt "github.com/elithrar/simple-scrypt"
+	"github.com/go-chassis/foundation/stringutil"
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/crypto/pbkdf2"
 	"testing"
 )
 
@@ -36,6 +40,12 @@ func TestHashPassword(t *testing.T) {
 
 	sameMac := privacy.SamePassword(mac, "test")
 	assert.True(t, sameMac)
+
+	t.Run("use different params for scrypt, should be compatible", func(t *testing.T) {
+		h2, _ := scrypt.GenerateFromPassword([]byte("test"), scrypt.Params{N: 1024, R: 8, P: 1, SaltLen: 8, DKLen: 32})
+		same := privacy.SamePassword(stringutil.Bytes2str(h2), "test")
+		assert.True(t, same)
+	})
 }
 func BenchmarkBcrypt(b *testing.B) {
 	h, _ := privacy.HashPassword("test")
@@ -67,6 +77,41 @@ func BenchmarkScryptP(b *testing.B) {
 			if !same {
 				panic("")
 			}
+		}
+	})
+	b.ReportAllocs()
+}
+func BenchmarkScrypt1024(b *testing.B) {
+	p := scrypt.Params{N: 1024, R: 8, P: 1, SaltLen: 8, DKLen: 32}
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			_, _ = scrypt.GenerateFromPassword([]byte("test"), p)
+		}
+	})
+	b.ReportAllocs()
+}
+func BenchmarkScrypt4096(b *testing.B) {
+	p := scrypt.Params{N: 4096, R: 8, P: 1, SaltLen: 8, DKLen: 32}
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			_, _ = scrypt.GenerateFromPassword([]byte("test"), p)
+		}
+	})
+	b.ReportAllocs()
+}
+func BenchmarkScrypt16384(b *testing.B) {
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			_, _ = scrypt.GenerateFromPassword([]byte("test"), scrypt.DefaultParams)
+		}
+	})
+	b.ReportAllocs()
+}
+func BenchmarkPbkdf2(b *testing.B) {
+	salt := make([]byte, 8)
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			_ = pbkdf2.Key([]byte("test"), salt, 1024, 32, sha512.New)
 		}
 	})
 	b.ReportAllocs()
