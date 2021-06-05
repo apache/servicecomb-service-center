@@ -18,11 +18,11 @@
 package bootstrap
 
 import (
-	_ "github.com/apache/servicecomb-service-center/datasource/mongo"
+	_ "github.com/apache/servicecomb-service-center/datasource/mongo/service"
 
 	// heartbeat
-	_ "github.com/apache/servicecomb-service-center/datasource/mongo/heartbeat/cache"
-	_ "github.com/apache/servicecomb-service-center/datasource/mongo/heartbeat/checker"
+	_ "github.com/apache/servicecomb-service-center/datasource/mongo/service/heartbeat/cache"
+	_ "github.com/apache/servicecomb-service-center/datasource/mongo/service/heartbeat/checker"
 
 	// events
 	_ "github.com/apache/servicecomb-service-center/datasource/mongo/event"

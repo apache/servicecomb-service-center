@@ -19,17 +19,18 @@ package rbac_test
 
 // initialize
 import (
-	"context"
-	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
-	"github.com/go-chassis/cari/discovery"
-	"github.com/go-chassis/cari/pkg/errsvc"
-	"testing"
-
 	_ "github.com/apache/servicecomb-service-center/test"
 
+	"context"
+	"testing"
+
 	"github.com/astaxie/beego"
+	"github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/cari/pkg/errsvc"
 	"github.com/go-chassis/cari/rbac"
 	"github.com/stretchr/testify/assert"
+
+	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 )
 
 func init() {

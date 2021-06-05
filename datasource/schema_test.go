@@ -23,7 +23,7 @@ import (
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd"
-	"github.com/apache/servicecomb-service-center/datasource/mongo"
+	mservice "github.com/apache/servicecomb-service-center/datasource/mongo/service"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	"github.com/apache/servicecomb-service-center/server/service"
@@ -1059,5 +1059,5 @@ func genLocalDatasource(editable bool) datasource.DataSource {
 			SchemaEditable: editable,
 		}
 	}
-	return &mongo.DataSource{SchemaEditable: editable}
+	return &mservice.DataSource{SchemaEditable: editable}
 }

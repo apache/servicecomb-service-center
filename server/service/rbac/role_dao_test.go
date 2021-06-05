@@ -21,11 +21,13 @@ package rbac_test
 
 import (
 	"context"
-	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
+	"testing"
+
 	"github.com/go-chassis/cari/pkg/errsvc"
 	"github.com/go-chassis/cari/rbac"
 	"github.com/stretchr/testify/assert"
-	"testing"
+
+	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 )
 
 func newRole(name string) *rbac.Role {

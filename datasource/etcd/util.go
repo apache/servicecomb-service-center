@@ -19,12 +19,12 @@ package etcd
 
 import (
 	"context"
-	"github.com/go-chassis/cari/pkg/errsvc"
 	"strconv"
 	"strings"
 	"time"
 
 	pb "github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/cari/pkg/errsvc"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"

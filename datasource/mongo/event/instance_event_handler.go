@@ -19,6 +19,7 @@ package event
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -26,10 +27,9 @@ import (
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/cache"
-	"github.com/apache/servicecomb-service-center/datasource/mongo"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/dao"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
+	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	simple "github.com/apache/servicecomb-service-center/pkg/time"
@@ -37,6 +37,11 @@ import (
 	"github.com/apache/servicecomb-service-center/server/event"
 	"github.com/apache/servicecomb-service-center/server/metrics"
 	"github.com/apache/servicecomb-service-center/server/syncernotify"
+)
+
+const (
+	Provider = "p"
+	Consumer = "c"
 )
 
 // InstanceEventHandler is the handler to handle events
@@ -61,7 +66,8 @@ func (h InstanceEventHandler) OnEvent(evt sd.MongoEvent) {
 	res, ok := cache.GetServiceByID(providerID)
 	var err error
 	if !ok {
-		res, err = dao.GetServiceByID(ctx, providerID)
+		filter := mutil.NewBasicFilter(ctx, mutil.ServiceServiceID(providerID))
+		res, err = getService(ctx, filter)
 		if err != nil {
 			log.Error(fmt.Sprintf("caught [%s] instance[%s/%s] event, endpoints %v, get provider's file failed from db\n",
 				action, providerID, providerInstanceID, instance.Instance.Endpoints), err)
@@ -85,7 +91,7 @@ func (h InstanceEventHandler) OnEvent(evt sd.MongoEvent) {
 	if !syncernotify.GetSyncerNotifyCenter().Closed() {
 		NotifySyncerInstanceEvent(evt, microService)
 	}
-	consumerIDS, _, err := mongo.GetAllConsumerIds(ctx, microService)
+	consumerIDS, _, err := getAllConsumerIds(ctx, microService)
 	if err != nil {
 		log.Error(fmt.Sprintf("get service[%s][%s/%s/%s/%s]'s consumerIDs failed",
 			providerID, microService.Environment, microService.AppId, microService.ServiceName, microService.Version), err)
@@ -152,4 +158,147 @@ func NotifySyncerInstanceEvent(event sd.MongoEvent, microService *discovery.Micr
 	syncernotify.GetSyncerNotifyCenter().AddEvent(instEvent)
 
 	log.Debug(fmt.Sprintf("success to add instance change event action [%s], instanceKey : %s to event queue", instEvent.Action, instanceKey))
+}
+
+func getAllConsumerIds(ctx context.Context, provider *discovery.MicroService) (allow []string, deny []string, err error) {
+	if provider == nil || len(provider.ServiceId) == 0 {
+		return nil, nil, fmt.Errorf("invalid provider")
+	}
+
+	//todo 删除服务，最后实例推送有误差
+	providerRules, ok := cache.GetRulesByServiceID(provider.ServiceId)
+	if !ok {
+		filter := mutil.NewBasicFilter(ctx, mutil.ServiceID(provider.ServiceId))
+		providerRules, err = getRules(ctx, filter)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+
+	allow, deny, err = getConsumerIDsWithFilter(ctx, provider, providerRules)
+	if err != nil && !errors.Is(err, datasource.ErrNoData) {
+		return nil, nil, err
+	}
+	return allow, deny, nil
+}
+
+func getConsumerIDsWithFilter(ctx context.Context, provider *discovery.MicroService, rules []*model.Rule) (allow []string, deny []string, err error) {
+	serviceDeps, ok := cache.GetProviderServiceOfDeps(provider)
+	if !ok {
+		filter := mutil.NewFilter(
+			mutil.DependencyRuleType(Provider),
+			mutil.ServiceKeyTenant(util.ParseDomainProject(ctx)),
+			mutil.ServiceKeyAppID(provider.AppId),
+			mutil.ServiceKeyServiceName(provider.ServiceName),
+			mutil.ServiceKeyServiceVersion(provider.Version),
+		)
+		serviceDeps, err = getMicroServiceDependency(ctx, filter)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+	consumerIDs := make([]string, len(serviceDeps.Dependency))
+	for _, serviceKeys := range serviceDeps.Dependency {
+		id, ok := cache.GetServiceID(ctx, serviceKeys)
+		if !ok {
+			id, err = findServiceID(ctx, serviceKeys)
+			if err != nil {
+				return nil, nil, err
+			}
+		}
+		consumerIDs = append(consumerIDs, id)
+	}
+	return filterAllService(ctx, consumerIDs, rules)
+}
+
+func findServiceID(ctx context.Context, key *discovery.MicroServiceKey) (string, error) {
+	filter := mutil.NewBasicFilter(
+		ctx,
+		mutil.ServiceEnv(key.Environment),
+		mutil.ServiceAppID(key.AppId),
+		mutil.ServiceServiceName(key.ServiceName),
+		mutil.ServiceVersion(key.Version),
+	)
+	id, err := getServiceID(ctx, filter)
+	if err != nil && !errors.Is(err, datasource.ErrNoData) {
+		return "", err
+	}
+	if len(id) == 0 && len(key.Alias) != 0 {
+		filter = mutil.NewBasicFilter(
+			ctx,
+			mutil.ServiceEnv(key.Environment),
+			mutil.ServiceAppID(key.AppId),
+			mutil.ServiceAlias(key.Alias),
+			mutil.ServiceVersion(key.Version),
+		)
+		return getServiceID(ctx, filter)
+	}
+	return id, nil
+}
+
+func getServiceID(ctx context.Context, filter interface{}) (serviceID string, err error) {
+	svc, err := getService(ctx, filter)
+	if err != nil {
+		return
+	}
+	if svc != nil {
+		serviceID = svc.Service.ServiceId
+		return
+	}
+	return
+}
+
+func filterAllService(ctx context.Context, consumerIDs []string, rules []*model.Rule) (allow []string, deny []string, err error) {
+	l := len(consumerIDs)
+	if l == 0 || len(rules) == 0 {
+		return consumerIDs, nil, nil
+	}
+
+	allowIdx, denyIdx := 0, l
+	consumers := make([]string, l)
+	for _, consumerID := range consumerIDs {
+		ok, err := filter(ctx, rules, consumerID)
+		if err != nil {
+			return nil, nil, err
+		}
+		if ok {
+			consumers[allowIdx] = consumerID
+			allowIdx++
+		} else {
+			denyIdx--
+			consumers[denyIdx] = consumerID
+		}
+	}
+	return consumers[:allowIdx], consumers[denyIdx:], nil
+}
+
+func filter(ctx context.Context, rules []*model.Rule, consumerID string) (bool, error) {
+	consumer, ok := cache.GetServiceByID(consumerID)
+	if !ok {
+		var err error
+		filter := mutil.NewBasicFilter(ctx, mutil.ServiceServiceID(consumerID))
+		consumer, err = getService(ctx, filter)
+		if err != nil {
+			return false, err
+		}
+	}
+
+	if len(rules) == 0 {
+		return true, nil
+	}
+	domain := util.ParseDomainProject(ctx)
+	project := util.ParseProject(ctx)
+	filter := mutil.NewDomainProjectFilter(domain, project, mutil.ServiceServiceID(consumerID))
+	tags, err := getTags(ctx, filter)
+	if err != nil {
+		return false, err
+	}
+	matchErr := mutil.MatchRules(rules, consumer.Service, tags)
+	if matchErr != nil {
+		if matchErr.Code == discovery.ErrPermissionDeny {
+			return false, nil
+		}
+		return false, matchErr
+	}
+	return true, nil
 }

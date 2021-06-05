@@ -19,10 +19,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/go-chassis/cari/pkg/errsvc"
 	"log"
 
 	pb "github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/cari/pkg/errsvc"
 	"github.com/gorilla/websocket"
 )
 

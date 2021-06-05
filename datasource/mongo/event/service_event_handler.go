@@ -23,10 +23,9 @@ import (
 
 	pb "github.com/go-chassis/cari/discovery"
 
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/dao"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/util"
+	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/metrics"
 )
@@ -80,23 +79,23 @@ func getFramework(ms *pb.MicroService) (string, string) {
 }
 
 func newDomain(ctx context.Context, domain string) error {
-	filter := util.NewFilter(util.Domain(domain))
-	exist, err := dao.ExistDomain(ctx, filter)
+	filter := mutil.NewFilter(mutil.ColDomain(domain))
+	exist, err := existDomain(ctx, filter)
 	if !exist && err == nil {
-		err = dao.AddDomain(ctx, domain)
+		err = addDomain(ctx, domain)
 	}
 	return err
 }
 
 func newProject(ctx context.Context, domain string, project string) error {
-	filter := util.NewDomainProjectFilter(domain, project)
-	exist, err := dao.ExistProject(ctx, filter)
+	filter := mutil.NewDomainProjectFilter(domain, project)
+	exist, err := existProject(ctx, filter)
 	if !exist && err == nil {
 		p := model.Project{
 			Domain:  domain,
 			Project: project,
 		}
-		err = dao.AddProject(ctx, p)
+		err = addProject(ctx, p)
 	}
 	return err
 }

@@ -19,9 +19,11 @@ package rbac
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/pkg/log"
+
 	"github.com/go-chassis/cari/pkg/errsvc"
 	"github.com/go-chassis/cari/rbac"
+
+	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
 var roleMap = map[string]*rbac.Role{}
@@ -64,5 +66,4 @@ func createBuildInRole(r *rbac.Role) {
 		return
 	}
 	log.Fatalf(err, "create role [%s] failed", r.Name)
-	return
 }

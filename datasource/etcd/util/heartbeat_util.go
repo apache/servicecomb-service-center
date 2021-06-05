@@ -20,11 +20,12 @@ package util
 import (
 	"context"
 	"errors"
+
+	"github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/cari/pkg/errsvc"
 
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
-	"github.com/go-chassis/cari/discovery"
 )
 
 func HeartbeatUtil(ctx context.Context, domainProject string, serviceID string, instanceID string) (leaseID int64, ttl int64, _ *errsvc.Error) {

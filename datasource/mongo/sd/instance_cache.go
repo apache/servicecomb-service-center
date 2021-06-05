@@ -18,10 +18,11 @@
 package sd
 
 import (
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
-	"github.com/apache/servicecomb-service-center/datasource/sdcommon"
 	rmodel "github.com/go-chassis/cari/discovery"
 	"go.mongodb.org/mongo-driver/bson"
+
+	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
+	"github.com/apache/servicecomb-service-center/datasource/sdcommon"
 )
 
 type instanceStore struct {

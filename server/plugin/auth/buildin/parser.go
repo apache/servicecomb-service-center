@@ -19,14 +19,15 @@ package buildin
 
 import (
 	"errors"
-	"fmt"
+	"net/http"
+	"strings"
+
+	rbacmodel "github.com/go-chassis/cari/rbac"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/plugin/auth"
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
-	rbacmodel "github.com/go-chassis/cari/rbac"
-	"net/http"
-	"strings"
 )
 
 var ErrCtxMatchPatternNotFound = errors.New("CtxMatchPattern not found")
@@ -57,7 +58,7 @@ func FromRequest(r *http.Request) *auth.ResourceScope {
 
 	resource, err := GetAPIParseFunc(apiPath)(r)
 	if err != nil {
-		log.Error(fmt.Sprintf("parse from request failed"), err)
+		log.Error("parse from request failed", err)
 	}
 	return resource
 }

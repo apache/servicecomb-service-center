@@ -18,8 +18,9 @@
 package rbac
 
 import (
-	"github.com/go-chassis/cari/rbac"
 	"net/http"
+
+	"github.com/go-chassis/cari/rbac"
 )
 
 // method to verbs

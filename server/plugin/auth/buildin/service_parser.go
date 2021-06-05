@@ -21,40 +21,42 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
+
+	"github.com/go-chassis/cari/discovery"
+	rbacmodel "github.com/go-chassis/cari/rbac"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/plugin/auth"
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
-	"github.com/go-chassis/cari/discovery"
-	rbacmodel "github.com/go-chassis/cari/rbac"
-	"net/http"
 )
 
 const (
 	LabelEnvironment = "environment"
-	LabelAppId       = "appId"
+	LabelAppID       = "appId"
 	LabelServiceName = "serviceName"
 	QueryEnv         = "env"
 )
 
 var (
-	// Apply by service key or serviceId
+	// APIServiceExistence apply by service key or serviceId
 	// - /v4/:project/registry/existence?env=xxx&appId=xxx&serviceName=xxx
 	// - /v4/:project/registry/existence?serviceId=xxx&schemaId=xxx
 	APIServiceExistence = "/v4/:project/registry/existence"
-	// Method GET: apply all by optional service key
+	// APIServicesList method GET: apply all by optional service key
 	// Method POST or DELETE: apply by request body
 	APIServicesList     = "/v4/:project/registry/microservices"
 	APIServiceInfo      = "/v4/:project/registry/microservices/:serviceId"
 	APIProConDependency = "/v4/:project/registry/microservices/:providerId/consumers"
 	APIConProDependency = "/v4/:project/registry/microservices/:consumerId/providers"
-	// Apply by service key
+	// APIDiscovery apply by service key
 	APIDiscovery = "/v4/:project/registry/instances"
-	// Apply by request body
+	// APIBatchDiscovery apply by request body
 	APIBatchDiscovery = "/v4/:project/registry/instances/action"
-	// Apply by request body
+	// APIHeartbeats apply by request body
 	APIHeartbeats = "/v4/:project/registry/heartbeats"
-	// Apply by optional service key
+	// APIGovServicesList apply by optional service key
 	// - /v4/:project/govern/microservices?appId=xxx
 	// Apply all:
 	// - /v4/:project/govern/microservices?options=statistics
@@ -64,8 +66,8 @@ var (
 )
 
 func init() {
-	RegisterParseFunc(APIServiceInfo, ByServiceId)
-	RegisterParseFunc(APIGovServiceInfo, ByServiceId)
+	RegisterParseFunc(APIServiceInfo, ByServiceID)
+	RegisterParseFunc(APIGovServiceInfo, ByServiceID)
 	RegisterParseFunc(APIProConDependency, func(r *http.Request) (*auth.ResourceScope, error) {
 		return fromQueryKey(r, ":providerId")
 	})
@@ -80,7 +82,7 @@ func init() {
 	RegisterParseFunc(APIHeartbeats, ByHeartbeatRequestBody)
 }
 
-func ByServiceId(r *http.Request) (*auth.ResourceScope, error) {
+func ByServiceID(r *http.Request) (*auth.ResourceScope, error) {
 	return fromQueryKey(r, ":serviceId")
 }
 func fromQueryKey(r *http.Request, queryKey string) (*auth.ResourceScope, error) {
@@ -89,8 +91,8 @@ func fromQueryKey(r *http.Request, queryKey string) (*auth.ResourceScope, error)
 	if !ok {
 		return nil, ErrCtxMatchPatternNotFound
 	}
-	serviceId := r.URL.Query().Get(queryKey)
-	labels, err := serviceIdToLabels(ctx, serviceId)
+	serviceID := r.URL.Query().Get(queryKey)
+	labels, err := serviceIDToLabels(ctx, serviceID)
 	if err != nil {
 		return nil, err
 	}
@@ -100,20 +102,20 @@ func fromQueryKey(r *http.Request, queryKey string) (*auth.ResourceScope, error)
 		Verb:   rbac.MethodToVerbs[r.Method],
 	}, nil
 }
-func serviceIdToLabels(ctx context.Context, serviceId string) ([]map[string]string, error) {
-	response, err := datasource.Instance().GetService(ctx, &discovery.GetServiceRequest{ServiceId: serviceId})
+func serviceIDToLabels(ctx context.Context, serviceID string) ([]map[string]string, error) {
+	response, err := datasource.Instance().GetService(ctx, &discovery.GetServiceRequest{ServiceId: serviceID})
 	if err != nil {
 		return nil, err
 	}
 
 	service := response.Service
 	if service == nil {
-		return nil, fmt.Errorf("resource %s not found", serviceId)
+		return nil, fmt.Errorf("resource %s not found", serviceID)
 	}
 
 	return []map[string]string{{
 		LabelEnvironment: service.Environment,
-		LabelAppId:       service.AppId,
+		LabelAppID:       service.AppId,
 		LabelServiceName: service.ServiceName,
 	}}, nil
 }
@@ -134,7 +136,7 @@ func ByServiceKey(r *http.Request) (*auth.ResourceScope, error) {
 		Type: rbacmodel.GetResource(apiPath),
 		Labels: []map[string]string{{
 			LabelEnvironment: query.Get(QueryEnv),
-			LabelAppId:       query.Get(LabelAppId),
+			LabelAppID:       query.Get(LabelAppID),
 			LabelServiceName: query.Get(LabelServiceName),
 		}},
 		Verb: rbac.MethodToVerbs[r.Method],
@@ -194,7 +196,7 @@ func createServiceToLabels(r *http.Request) ([]map[string]string, error) {
 
 	return []map[string]string{{
 		LabelEnvironment: service.Environment,
-		LabelAppId:       service.AppId,
+		LabelAppID:       service.AppId,
 		LabelServiceName: service.ServiceName,
 	}}, nil
 }
@@ -213,8 +215,8 @@ func deleteServicesToLabels(r *http.Request) ([]map[string]string, error) {
 
 	ctx := r.Context()
 	var labels []map[string]string
-	for _, serviceId := range request.ServiceIds {
-		ls, err := serviceIdToLabels(ctx, serviceId)
+	for _, serviceID := range request.ServiceIds {
+		ls, err := serviceIDToLabels(ctx, serviceID)
 		if err != nil {
 			return nil, err
 		}
@@ -244,7 +246,7 @@ func ByDiscoveryRequestBody(r *http.Request) (*auth.ResourceScope, error) {
 	ctx := r.Context()
 	var labels []map[string]string
 	for _, it := range request.Instances {
-		ls, err := serviceIdToLabels(ctx, it.Instance.ServiceId)
+		ls, err := serviceIDToLabels(ctx, it.Instance.ServiceId)
 		if err != nil {
 			return nil, err
 		}
@@ -279,7 +281,7 @@ func ByHeartbeatRequestBody(r *http.Request) (*auth.ResourceScope, error) {
 	ctx := r.Context()
 	var labels []map[string]string
 	for _, instance := range request.Instances {
-		ls, err := serviceIdToLabels(ctx, instance.ServiceId)
+		ls, err := serviceIDToLabels(ctx, instance.ServiceId)
 		if err != nil {
 			return nil, err
 		}

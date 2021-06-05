@@ -22,8 +22,9 @@ package sd_test
 import (
 	"testing"
 
-	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
 )
 
 var docCache *sd.DocStore

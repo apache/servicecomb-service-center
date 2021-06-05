@@ -18,11 +18,12 @@
 package rbac_test
 
 import (
-	"context"
-	"github.com/apache/servicecomb-service-center/pkg/privacy"
-	"github.com/apache/servicecomb-service-center/server/config"
-	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 	_ "github.com/apache/servicecomb-service-center/test"
+
+	"context"
+	"io/ioutil"
+	"testing"
+
 	"github.com/astaxie/beego"
 	"github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/cari/pkg/errsvc"
@@ -31,8 +32,10 @@ import (
 	"github.com/go-chassis/go-chassis/v2/security/authr"
 	"github.com/go-chassis/go-chassis/v2/security/secret"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
-	"testing"
+
+	"github.com/apache/servicecomb-service-center/pkg/privacy"
+	"github.com/apache/servicecomb-service-center/server/config"
+	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 )
 
 func init() {

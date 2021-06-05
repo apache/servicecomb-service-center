@@ -17,7 +17,17 @@
 
 package util
 
-import "errors"
+import (
+	"errors"
+	"strings"
+
+	"go.mongodb.org/mongo-driver/mongo"
+)
+
+const (
+	DuplicateKey      = "E11000"
+	CollectionsExists = 48
+)
 
 var (
 	ErrInvalidConsumer      = errors.New("invalid consumer")
@@ -25,10 +35,28 @@ var (
 	ErrLostServiceFile      = errors.New("service center service file lost")
 	ErrInvalidDomainProject = errors.New("invalid domainProject")
 	ErrNotAllowDeleteSC     = errors.New("not allow to delete service center")
-	ErrDeleteSchemaFailed   = errors.New("delete schema failed")
 	ErrInvalidParam         = errors.New("invalid param")
+	ErrNoDocuments          = errors.New("no doc found")
 )
 
 func NewError(errInfo string, errMsg string) error {
 	return errors.New(errInfo + errMsg)
+}
+
+func IsDuplicateKey(err error) bool {
+	return strings.Contains(err.Error(), DuplicateKey)
+}
+
+func IsCollectionsExist(err error) bool {
+	if err != nil {
+		cmdErr, ok := err.(mongo.CommandError)
+		if ok && cmdErr.Code == CollectionsExists {
+			return true
+		}
+	}
+	return false
+}
+
+func IsNoneDocErr(err error) bool {
+	return err == ErrNoDocuments
 }

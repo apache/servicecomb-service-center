@@ -20,8 +20,10 @@ package rbac
 import (
 	"context"
 	"errors"
-	"github.com/apache/servicecomb-service-center/pkg/util"
+
 	rbacmodel "github.com/go-chassis/cari/rbac"
+
+	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
 const CtxRequestClaims util.CtxKey = "_request_claims"

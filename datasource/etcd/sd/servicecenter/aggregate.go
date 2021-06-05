@@ -18,9 +18,10 @@ package servicecenter
 import (
 	"context"
 	"crypto/tls"
-	"github.com/go-chassis/cari/pkg/errsvc"
 	"strings"
 	"sync"
+
+	"github.com/go-chassis/cari/pkg/errsvc"
 
 	"github.com/apache/servicecomb-service-center/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd"

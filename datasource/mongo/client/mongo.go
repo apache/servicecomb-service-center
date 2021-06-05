@@ -13,23 +13,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package client implements functions to manage db link and database operation API.
 package client
 
 import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"fmt"
 	"io/ioutil"
+	"sync"
 	"time"
 
 	"github.com/go-chassis/go-chassis/v2/storage"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/plugin/security/cipher"
 )
 
@@ -37,10 +40,18 @@ const (
 	MongoDB             = "servicecenter"
 	MongoCheckDelay     = 2 * time.Second
 	HeathChekRetryTimes = 3
+	defaultErrorChan    = 1
 )
 
 var (
-	mc *MongoClient
+	ErrRootCAMissing = errors.New("rootCAFile is empty in config file")
+	ErrNoDocuments   = errors.New("no doc found")
+	ErrOpenDbFailed  = errors.New("open db failed")
+)
+
+var (
+	mc   *MongoClient
+	once sync.Once
 )
 
 type MongoClient struct {
@@ -59,6 +70,10 @@ type MongoOperation struct {
 }
 
 func GetMongoClient() *MongoClient {
+	if mc == nil {
+		cfg := GetConfig()
+		NewMongoClient(cfg)
+	}
 	return mc
 }
 func DeleteDoc(ctx context.Context, Table string, filter interface{}, opts ...*options.DeleteOptions) (*mongo.DeleteResult, error) {
@@ -71,16 +86,27 @@ func Count(ctx context.Context, Table string, filter interface{}, opts ...*optio
 	return mc.db.Collection(Table).CountDocuments(ctx, filter, opts...)
 }
 func NewMongoClient(config storage.Options) {
-	inst := &MongoClient{}
-	if err := inst.Initialize(config); err != nil {
-		log.Error("failed to init mongodb", err)
-		inst.err <- err
-	}
-	mc = inst
+	once.Do(func() {
+		inst := &MongoClient{}
+		if err := inst.Initialize(config); err != nil {
+			log.Error("failed to init mongodb", err)
+			inst.err <- err
+		}
+		mc = inst
+	})
+}
+func GetConfig() storage.Options {
+	uri := config.GetString("registry.mongo.cluster.uri", "mongodb://localhost:27017", config.WithStandby("manager_cluster"))
+	sslEnable := config.GetBool("registry.mongo.cluster.sslEnabled", false)
+	rootCA := config.GetString("registry.mongo.cluster.rootCAFile", "/opt/ssl/ca.crt")
+	verifyPeer := config.GetBool("registry.mongo.cluster.verifyPeer", false)
+	certFile := config.GetString("registry.mongo.cluster.certFile", "")
+	keyFile := config.GetString("registry.mongo.cluster.keyFile", "")
+	return storage.NewConfig(uri, storage.SSLEnabled(sslEnable), storage.RootCA(rootCA), storage.VerifyPeer(verifyPeer), storage.CertFile(certFile), storage.KeyFile(keyFile))
 }
 
 func (mc *MongoClient) Initialize(config storage.Options) (err error) {
-	mc.err = make(chan error, 1)
+	mc.err = make(chan error, defaultErrorChan)
 	mc.ready = make(chan struct{})
 	mc.goroutine = gopool.New(context.Background())
 	mc.dbconfig = config
@@ -109,13 +135,12 @@ func (mc *MongoClient) ExecTxn(ctx context.Context, cmd func(sessionContext mong
 			if err = session.AbortTransaction(sc); err != nil {
 				return err
 			}
-			return nil
 		} else {
 			if err = session.CommitTransaction(sc); err != nil {
 				return err
 			}
-			return nil
 		}
+		return nil
 	}); err != nil {
 		return err
 	}
@@ -299,8 +324,8 @@ func (mc *MongoClient) DocExist(ctx context.Context, table string, filter interf
 	return true, nil
 }
 
-func (mc *MongoClient) DocUpdate(ctx context.Context, table string, filter interface{}, m bson.M, opts ...*options.FindOneAndUpdateOptions) error {
-	res, err := mc.FindOneAndUpdate(ctx, table, filter, m, opts...)
+func (mc *MongoClient) DocUpdate(ctx context.Context, table string, filter interface{}, updateFilter interface{}, opts ...*options.FindOneAndUpdateOptions) error {
+	res, err := mc.FindOneAndUpdate(ctx, table, filter, updateFilter, opts...)
 	if err != nil {
 		return err
 	}
