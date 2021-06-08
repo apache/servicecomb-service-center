@@ -15,52 +15,37 @@
  * limitations under the License.
  */
 
-package sd
+package event
 
 import (
-	"testing"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	"github.com/apache/servicecomb-service-center/server/metrics"
+	pb "github.com/go-chassis/cari/discovery"
 )
 
-const MOCK = "MOCK"
-
-type mockEventHandler struct {
-	MockType Type
-	Evt      KvEvent
+// RoleEventHandler is the handler to handle:
+type RoleEventHandler struct {
 }
 
-func (h *mockEventHandler) Type() Type {
-	return h.MockType
-}
-func (h *mockEventHandler) OnEvent(evt KvEvent) {
-	h.Evt = evt
+func (h *RoleEventHandler) Type() sd.Type {
+	return "ROLE"
 }
 
-func TestAddEventHandler(t *testing.T) {
+func (h *RoleEventHandler) OnEvent(evt sd.KvEvent) {
+	action := evt.Type
+	domainName := "default" //TODO ...
 
-	h := &mockEventHandler{MockType: MOCK}
-	evt := KvEvent{Revision: 1}
-
-	// case: add
-	proxy := EventProxy(MOCK)
-	if nil == proxy {
-		t.Fatalf("TestAddEventHandler failed")
-	}
-	cfg := Configure()
-	if EventProxy(MOCK).InjectConfig(cfg) != cfg {
-		t.Fatalf("TestAddEventHandler failed")
+	if action == pb.EVT_INIT || action == pb.EVT_CREATE {
+		metrics.ReportRoles(domainName, 1)
+		return
 	}
 
-	// case: normal
-	AddEventHandler(h)
-	proxy.OnEvent(evt)
-	if h.Evt != evt {
-		t.Fatalf("TestAddEventHandler failed")
+	if action == pb.EVT_DELETE {
+		metrics.ReportRoles(domainName, -1)
+		return
 	}
+}
 
-	AddEventHandleFunc(MOCK, func(e KvEvent) {
-		if e != evt {
-			t.Fatalf("TestAddEventHandler failed")
-		}
-	})
-	proxy.OnEvent(evt)
+func NewRoleEventHandler() *RoleEventHandler {
+	return &RoleEventHandler{}
 }

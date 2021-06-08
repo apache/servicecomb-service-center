@@ -296,7 +296,7 @@ func TestAuthResource_GetAccount(t *testing.T) {
 		to := &rbacmodel.Token{}
 		json.Unmarshal(w.Body.Bytes(), to)
 
-		r3, _ := http.NewRequest(http.MethodGet, "/v4/accounts", nil)
+		r3, _ := http.NewRequest(http.MethodGet, "/v4/accounts?noCache=1", nil)
 		r3.Header.Set(restful.HeaderAuth, "Bearer "+to.TokenStr)
 		w3 := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w3, r3)

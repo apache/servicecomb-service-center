@@ -30,4 +30,6 @@ func Initialize() {
 	sd.AddEventHandler(NewDependencyEventHandler())
 	sd.AddEventHandler(NewDependencyRuleEventHandler())
 	sd.AddEventHandler(NewSchemaSummaryEventHandler())
+	sd.AddEventHandler(NewAccountEventHandler())
+	sd.AddEventHandler(NewRoleEventHandler())
 }

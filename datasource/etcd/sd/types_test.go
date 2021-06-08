@@ -40,7 +40,7 @@ func TestTypes(t *testing.T) {
 	if id.String() != "TestTypes" {
 		t.Fatalf("TestTypes failed")
 	}
-	if TypeError.String() != "TypeError" {
+	if TypeError.String() != "ERROR" {
 		t.Fatalf("TestTypes failed")
 	}
 

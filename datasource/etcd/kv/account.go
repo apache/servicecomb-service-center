@@ -15,52 +15,30 @@
  * limitations under the License.
  */
 
-package sd
+package kv
 
 import (
-	"testing"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/value"
+	"github.com/go-chassis/cari/rbac"
 )
 
-const MOCK = "MOCK"
+const NameAccount = "ACCOUNT"
 
-type mockEventHandler struct {
-	MockType Type
-	Evt      KvEvent
+func init() {
+	Store().MustInstall(NewAddOn(NameAccount,
+		sd.Configure().
+			WithPrefix(path.GenerateRBACAccountKey("")).
+			WithInitSize(1000).
+			WithParser(
+				&value.CommonParser{
+					NewFunc:  func() interface{} { return new(rbac.Account) },
+					FromFunc: value.JSONUnmarshal,
+				}),
+	))
 }
 
-func (h *mockEventHandler) Type() Type {
-	return h.MockType
-}
-func (h *mockEventHandler) OnEvent(evt KvEvent) {
-	h.Evt = evt
-}
-
-func TestAddEventHandler(t *testing.T) {
-
-	h := &mockEventHandler{MockType: MOCK}
-	evt := KvEvent{Revision: 1}
-
-	// case: add
-	proxy := EventProxy(MOCK)
-	if nil == proxy {
-		t.Fatalf("TestAddEventHandler failed")
-	}
-	cfg := Configure()
-	if EventProxy(MOCK).InjectConfig(cfg) != cfg {
-		t.Fatalf("TestAddEventHandler failed")
-	}
-
-	// case: normal
-	AddEventHandler(h)
-	proxy.OnEvent(evt)
-	if h.Evt != evt {
-		t.Fatalf("TestAddEventHandler failed")
-	}
-
-	AddEventHandleFunc(MOCK, func(e KvEvent) {
-		if e != evt {
-			t.Fatalf("TestAddEventHandler failed")
-		}
-	})
-	proxy.OnEvent(evt)
+func Account() sd.Adaptor {
+	return Store().Adaptor(NameAccount)
 }

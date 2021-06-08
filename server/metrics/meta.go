@@ -104,6 +104,22 @@ var (
 			Help:       "Latency of heartbeat renew",
 			Objectives: metrics.Pxx,
 		}, []string{"instance", "status"})
+
+	accountCounter = helper.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace: metrics.FamilyName,
+			Subsystem: metrics.SubSystem,
+			Name:      "account_total",
+			Help:      "Gauge of accounts",
+		}, []string{"instance", "domain"})
+
+	roleCounter = helper.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace: metrics.FamilyName,
+			Subsystem: metrics.SubSystem,
+			Name:      "role_total",
+			Help:      "Gauge of roles",
+		}, []string{"instance", "domain"})
 )
 
 // Framework return framework info.
@@ -158,4 +174,12 @@ func ReportHeartbeatCompleted(err error, start time.Time) {
 	}
 	heartbeatLatency.WithLabelValues(instance, status).Observe(elapsed)
 	heartbeatCounter.WithLabelValues(instance, status).Inc()
+}
+
+func ReportAccounts(domain string, c float64) {
+	accountCounter.WithLabelValues(metrics.InstanceName(), domain).Add(c)
+}
+
+func ReportRoles(domain string, c float64) {
+	roleCounter.WithLabelValues(metrics.InstanceName(), domain).Add(c)
 }

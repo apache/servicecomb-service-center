@@ -17,8 +17,17 @@
 
 package datasource_test
 
-import _ "github.com/apache/servicecomb-service-center/test"
+import (
+	_ "github.com/apache/servicecomb-service-center/test"
+
+	"context"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+)
 
 // Run The UT-TEST By Set The TEST_MODE ENV
 // Mongo: TEST_MODE=mongo.
 // ETCD: TEST_MODE=etcd.
+
+func TestingContext() context.Context {
+	return context.WithValue(context.Background(), util.CtxNocache, "1")
+}

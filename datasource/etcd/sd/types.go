@@ -20,7 +20,6 @@ package sd
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/go-chassis/cari/discovery"
@@ -30,39 +29,29 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
-var (
-	Types     []Type
-	typeNames []string
-)
+var Types []Type
 
 const (
-	TypeError = Type(-1)
+	TypeError = Type("ERROR")
 )
 
-type Type int
+type Type string
 
 type Kind string
 
 func (st Type) String() string {
-	if int(st) < 0 {
-		return "TypeError"
-	}
-	if int(st) < len(typeNames) {
-		return typeNames[st]
-	}
-	return "TYPE" + strconv.Itoa(int(st))
+	return string(st)
 }
 
-func RegisterType(name string) (newID Type, err error) {
+func RegisterType(name string) (Type, error) {
 	for _, n := range Types {
-		if n.String() == name {
+		if string(n) == name {
 			return TypeError, fmt.Errorf("redeclare store type '%s'", n)
 		}
 	}
-	newID = Type(len(Types))
-	Types = append(Types, newID)
-	typeNames = append(typeNames, name)
-	return
+	t := Type(name)
+	Types = append(Types, t)
+	return t, nil
 }
 
 type KeyValue struct {

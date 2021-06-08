@@ -15,52 +15,37 @@
  * limitations under the License.
  */
 
-package sd
+package event
 
 import (
-	"testing"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	"github.com/apache/servicecomb-service-center/server/metrics"
+	pb "github.com/go-chassis/cari/discovery"
 )
 
-const MOCK = "MOCK"
-
-type mockEventHandler struct {
-	MockType Type
-	Evt      KvEvent
+// AccountEventHandler is the handler to handle:
+type AccountEventHandler struct {
 }
 
-func (h *mockEventHandler) Type() Type {
-	return h.MockType
-}
-func (h *mockEventHandler) OnEvent(evt KvEvent) {
-	h.Evt = evt
+func (h *AccountEventHandler) Type() sd.Type {
+	return "ACCOUNT"
 }
 
-func TestAddEventHandler(t *testing.T) {
+func (h *AccountEventHandler) OnEvent(evt sd.KvEvent) {
+	action := evt.Type
+	domainName := "default" //TODO ...
 
-	h := &mockEventHandler{MockType: MOCK}
-	evt := KvEvent{Revision: 1}
-
-	// case: add
-	proxy := EventProxy(MOCK)
-	if nil == proxy {
-		t.Fatalf("TestAddEventHandler failed")
-	}
-	cfg := Configure()
-	if EventProxy(MOCK).InjectConfig(cfg) != cfg {
-		t.Fatalf("TestAddEventHandler failed")
+	if action == pb.EVT_INIT || action == pb.EVT_CREATE {
+		metrics.ReportAccounts(domainName, 1)
+		return
 	}
 
-	// case: normal
-	AddEventHandler(h)
-	proxy.OnEvent(evt)
-	if h.Evt != evt {
-		t.Fatalf("TestAddEventHandler failed")
+	if action == pb.EVT_DELETE {
+		metrics.ReportAccounts(domainName, -1)
+		return
 	}
+}
 
-	AddEventHandleFunc(MOCK, func(e KvEvent) {
-		if e != evt {
-			t.Fatalf("TestAddEventHandler failed")
-		}
-	})
-	proxy.OnEvent(evt)
+func NewAccountEventHandler() *AccountEventHandler {
+	return &AccountEventHandler{}
 }
