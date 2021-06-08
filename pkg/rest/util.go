@@ -22,12 +22,13 @@ import (
 	"encoding/json"
 	"errors"
 	"io/ioutil"
-	"github.com/go-chassis/cari/pkg/errsvc"
 	"net/http"
+
+	"github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/cari/pkg/errsvc"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/go-chassis/cari/discovery"
 )
 
 var errNilRequestBody = errors.New("request body is nil")

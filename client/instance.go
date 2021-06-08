@@ -19,12 +19,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/go-chassis/cari/pkg/errsvc"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 
 	"github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/cari/pkg/errsvc"
 )
 
 const (

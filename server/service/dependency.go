@@ -19,11 +19,12 @@ package service
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/server/service/validator"
+
+	pb "github.com/go-chassis/cari/discovery"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	pb "github.com/go-chassis/cari/discovery"
+	"github.com/apache/servicecomb-service-center/server/service/validator"
 )
 
 func (s *MicroServiceService) AddDependenciesForMicroServices(ctx context.Context,

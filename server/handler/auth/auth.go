@@ -18,8 +18,11 @@
 package auth
 
 import (
-	"github.com/go-chassis/cari/pkg/errsvc"
 	"net/http"
+
+	"github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/cari/pkg/errsvc"
+	"github.com/go-chassis/cari/rbac"
 
 	"github.com/apache/servicecomb-service-center/pkg/chain"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -27,8 +30,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/plugin/auth"
 	"github.com/apache/servicecomb-service-center/server/response"
-	"github.com/go-chassis/cari/discovery"
-	"github.com/go-chassis/cari/rbac"
 )
 
 const (

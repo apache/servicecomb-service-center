@@ -53,7 +53,11 @@ func (h InstanceEventHandler) OnEvent(evt sd.MongoEvent) {
 	if evt.Type == discovery.EVT_UPDATE {
 		return
 	}
-	instance := evt.Value.(model.Instance)
+	instance, ok := evt.Value.(model.Instance)
+	if !ok {
+		log.Error("failed to assert instance", datasource.ErrAssertFail)
+		return
+	}
 	providerID := instance.Instance.ServiceId
 	providerInstanceID := instance.Instance.InstanceId
 	domainProject := instance.Domain + "/" + instance.Project

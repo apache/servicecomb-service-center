@@ -17,8 +17,9 @@ package servicecenter
 
 import (
 	"context"
-	"github.com/go-chassis/cari/pkg/errsvc"
 	"strings"
+
+	"github.com/go-chassis/cari/pkg/errsvc"
 
 	"github.com/apache/servicecomb-service-center/client"
 	etcdclient "github.com/apache/servicecomb-service-center/datasource/etcd/client"

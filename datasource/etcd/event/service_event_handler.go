@@ -23,6 +23,7 @@ import (
 
 	pb "github.com/go-chassis/cari/discovery"
 
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/cache"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
@@ -44,7 +45,11 @@ func (h *ServiceEventHandler) Type() sd.Type {
 }
 
 func (h *ServiceEventHandler) OnEvent(evt sd.KvEvent) {
-	ms := evt.KV.Value.(*pb.MicroService)
+	ms, ok := evt.KV.Value.(*pb.MicroService)
+	if !ok {
+		log.Error("failed to assert MicroService", datasource.ErrAssertFail)
+		return
+	}
 	_, domainProject := path.GetInfoFromSvcKV(evt.KV.Key)
 	fn, fv := getFramework(ms)
 

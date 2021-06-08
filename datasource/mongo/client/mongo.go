@@ -109,13 +109,12 @@ func (mc *MongoClient) ExecTxn(ctx context.Context, cmd func(sessionContext mong
 			if err = session.AbortTransaction(sc); err != nil {
 				return err
 			}
-			return nil
 		} else {
 			if err = session.CommitTransaction(sc); err != nil {
 				return err
 			}
-			return nil
 		}
+		return nil
 	}); err != nil {
 		return err
 	}
