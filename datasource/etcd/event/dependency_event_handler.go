@@ -25,6 +25,7 @@ import (
 
 	pb "github.com/go-chassis/cari/discovery"
 
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/mux"
@@ -160,7 +161,11 @@ func (h *DependencyEventHandler) Handle() error {
 	defer h.CleanUp(cleanUpDomainProjects)
 
 	for _, keyValue := range resp.Kvs {
-		r := keyValue.Value.(*pb.ConsumerDependency)
+		r, ok := keyValue.Value.(*pb.ConsumerDependency)
+		if !ok {
+			log.Error("failed to assert consumerDependency", datasource.ErrAssertFail)
+			continue
+		}
 
 		_, domainProject, uuid := path.GetInfoFromDependencyQueueKV(keyValue.Key)
 		if uuid == path.DepsQueueUUID {

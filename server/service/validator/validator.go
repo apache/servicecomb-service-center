@@ -19,10 +19,12 @@ package validator
 
 import (
 	"errors"
+	"reflect"
+
+	pb "github.com/go-chassis/cari/discovery"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/validate"
-	pb "github.com/go-chassis/cari/discovery"
-	"reflect"
 )
 
 var createAccountValidator = &validate.Validator{}

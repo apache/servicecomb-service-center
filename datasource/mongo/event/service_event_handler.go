@@ -23,6 +23,7 @@ import (
 
 	pb "github.com/go-chassis/cari/discovery"
 
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client/dao"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
@@ -42,7 +43,11 @@ func (h *ServiceEventHandler) Type() string {
 	return model.ColumnService
 }
 func (h *ServiceEventHandler) OnEvent(evt sd.MongoEvent) {
-	ms := evt.Value.(model.Service)
+	ms, ok := evt.Value.(model.Service)
+	if !ok {
+		log.Error("failed to assert service", datasource.ErrAssertFail)
+		return
+	}
 	fn, fv := getFramework(ms.Service)
 	switch evt.Type {
 	case pb.EVT_INIT, pb.EVT_CREATE:

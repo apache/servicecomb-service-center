@@ -20,8 +20,10 @@ package event
 import (
 	pb "github.com/go-chassis/cari/discovery"
 
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
+	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/metrics"
 )
 
@@ -37,7 +39,11 @@ func (h *SchemaSummaryEventHandler) Type() string {
 }
 
 func (h *SchemaSummaryEventHandler) OnEvent(evt sd.MongoEvent) {
-	schema := evt.Value.(model.Schema)
+	schema, ok := evt.Value.(model.Schema)
+	if !ok {
+		log.Error("failed to assert schema", datasource.ErrAssertFail)
+		return
+	}
 	action := evt.Type
 	switch action {
 	case pb.EVT_INIT, pb.EVT_CREATE:

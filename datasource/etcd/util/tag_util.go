@@ -20,13 +20,13 @@ package util
 import (
 	"context"
 	"encoding/json"
-	"github.com/go-chassis/cari/pkg/errsvc"
 
-	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/cari/pkg/errsvc"
 
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )

@@ -19,8 +19,9 @@ package rbac_test
 
 import (
 	"context"
-	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 	"testing"
+
+	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 )
 
 func TestUserFromContext(t *testing.T) {

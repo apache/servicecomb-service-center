@@ -20,9 +20,9 @@ package mongo
 import (
 	"context"
 	"fmt"
-	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/go-chassis/cari/rbac"
+	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"

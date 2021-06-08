@@ -19,13 +19,13 @@ package govern
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/server/service/validator"
 
 	pb "github.com/go-chassis/cari/discovery"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/proto"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/service/validator"
 )
 
 var ServiceAPI proto.GovernServiceCtrlServer = &Service{}

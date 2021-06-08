@@ -18,5 +18,6 @@ package datasource
 import "errors"
 
 var (
-	ErrNoData = errors.New("no data found")
+	ErrNoData     = errors.New("no data found")
+	ErrAssertFail = errors.New("assertion failure")
 )

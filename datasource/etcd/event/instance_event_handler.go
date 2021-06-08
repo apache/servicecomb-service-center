@@ -22,6 +22,9 @@ import (
 	"fmt"
 	"strings"
 
+	pb "github.com/go-chassis/cari/discovery"
+
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/cache"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
@@ -34,7 +37,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/event"
 	"github.com/apache/servicecomb-service-center/server/metrics"
 	"github.com/apache/servicecomb-service-center/server/syncernotify"
-	pb "github.com/go-chassis/cari/discovery"
 )
 
 const (
@@ -58,7 +60,11 @@ func (h *InstanceEventHandler) Type() sd.Type {
 
 func (h *InstanceEventHandler) OnEvent(evt sd.KvEvent) {
 	action := evt.Type
-	instance := evt.KV.Value.(*pb.MicroServiceInstance)
+	instance, ok := evt.KV.Value.(*pb.MicroServiceInstance)
+	if !ok {
+		log.Error("failed to assert microServiceInstance", datasource.ErrAssertFail)
+		return
+	}
 	providerID, providerInstanceID, domainProject := path.GetInfoFromInstKV(evt.KV.Key)
 	idx := strings.Index(domainProject, "/")
 	domainName := domainProject[:idx]

@@ -22,11 +22,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/go-chassis/cari/pkg/errsvc"
 	"strconv"
 	"time"
 
 	pb "github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/cari/pkg/errsvc"
 	"github.com/jinzhu/copier"
 
 	"github.com/apache/servicecomb-service-center/datasource"

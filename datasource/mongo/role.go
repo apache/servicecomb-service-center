@@ -19,6 +19,7 @@ package mongo
 
 import (
 	"context"
+
 	"github.com/go-chassis/cari/rbac"
 	"go.mongodb.org/mongo-driver/bson"
 
@@ -103,6 +104,9 @@ func (ds *DataSource) ListRole(ctx context.Context) ([]*rbac.Role, int64, error)
 
 func (ds *DataSource) DeleteRole(ctx context.Context, name string) (bool, error) {
 	n, err := client.Count(ctx, model.CollectionAccount, bson.M{"roles": bson.M{"$in": []string{name}}})
+	if err != nil {
+		return false, err
+	}
 	if n > 0 {
 		return false, datasource.ErrRoleBindingExist
 	}
