@@ -35,7 +35,7 @@ func (s *MicroServiceService) AddDependenciesForMicroServices(ctx context.Contex
 		}, nil
 	}
 
-	resp, err := datasource.Instance().AddOrUpdateDependencies(ctx, in.Dependencies, false)
+	resp, err := datasource.GetDependencyManager().AddOrUpdateDependencies(ctx, in.Dependencies, false)
 	return &pb.AddDependenciesResponse{Response: resp}, err
 }
 
@@ -47,7 +47,7 @@ func (s *MicroServiceService) CreateDependenciesForMicroServices(ctx context.Con
 		}, nil
 	}
 
-	resp, err := datasource.Instance().AddOrUpdateDependencies(ctx, in.Dependencies, true)
+	resp, err := datasource.GetDependencyManager().AddOrUpdateDependencies(ctx, in.Dependencies, true)
 	return &pb.CreateDependenciesResponse{Response: resp}, err
 }
 
@@ -61,7 +61,7 @@ func (s *MicroServiceService) GetProviderDependencies(ctx context.Context,
 		}, nil
 	}
 
-	return datasource.Instance().SearchProviderDependency(ctx, in)
+	return datasource.GetDependencyManager().SearchProviderDependency(ctx, in)
 }
 
 func (s *MicroServiceService) GetConsumerDependencies(ctx context.Context, in *pb.GetDependenciesRequest) (*pb.GetConDependenciesResponse, error) {
@@ -73,5 +73,5 @@ func (s *MicroServiceService) GetConsumerDependencies(ctx context.Context, in *p
 		}, nil
 	}
 
-	return datasource.Instance().SearchConsumerDependency(ctx, in)
+	return datasource.GetDependencyManager().SearchConsumerDependency(ctx, in)
 }

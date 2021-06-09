@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+//Package client is the abstraction of kv database operator
 package client
 
 import (
@@ -34,6 +35,8 @@ const (
 
 var ErrNotUnique = errors.New("kv result is not unique")
 
+// Registry is a abstraction of kv database operator
+// Support etcd by default
 type Registry interface {
 	Err() <-chan error
 	Ready() <-chan struct{}

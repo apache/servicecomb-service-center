@@ -18,10 +18,11 @@
 package response_test
 
 import (
+	"testing"
+
 	"github.com/apache/servicecomb-service-center/server/response"
 	"github.com/go-chassis/cari/discovery"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestMicroServiceInfoListFilter(t *testing.T) {

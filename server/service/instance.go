@@ -62,7 +62,7 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 		return response, nil
 	}
 
-	return datasource.Instance().RegisterInstance(ctx, in)
+	return datasource.GetMetadataManager().RegisterInstance(ctx, in)
 }
 
 func (s *InstanceService) Unregister(ctx context.Context,
@@ -75,7 +75,7 @@ func (s *InstanceService) Unregister(ctx context.Context,
 		}, nil
 	}
 
-	return datasource.Instance().UnregisterInstance(ctx, in)
+	return datasource.GetMetadataManager().UnregisterInstance(ctx, in)
 }
 
 func (s *InstanceService) Heartbeat(ctx context.Context, in *pb.HeartbeatRequest) (*pb.HeartbeatResponse, error) {
@@ -87,7 +87,7 @@ func (s *InstanceService) Heartbeat(ctx context.Context, in *pb.HeartbeatRequest
 		}, nil
 	}
 
-	return datasource.Instance().Heartbeat(ctx, in)
+	return datasource.GetMetadataManager().Heartbeat(ctx, in)
 }
 
 func (s *InstanceService) HeartbeatSet(ctx context.Context,
@@ -98,7 +98,7 @@ func (s *InstanceService) HeartbeatSet(ctx context.Context,
 			Response: pb.CreateResponse(pb.ErrInvalidParams, "Request format invalid."),
 		}, nil
 	}
-	return datasource.Instance().HeartbeatSet(ctx, in)
+	return datasource.GetMetadataManager().HeartbeatSet(ctx, in)
 }
 
 func (s *InstanceService) GetOneInstance(ctx context.Context,
@@ -111,7 +111,7 @@ func (s *InstanceService) GetOneInstance(ctx context.Context,
 		}, nil
 	}
 
-	return datasource.Instance().GetInstance(ctx, in)
+	return datasource.GetMetadataManager().GetInstance(ctx, in)
 }
 
 func (s *InstanceService) GetInstances(ctx context.Context, in *pb.GetInstancesRequest) (*pb.GetInstancesResponse, error) {
@@ -123,7 +123,7 @@ func (s *InstanceService) GetInstances(ctx context.Context, in *pb.GetInstancesR
 		}, nil
 	}
 
-	return datasource.Instance().GetInstances(ctx, in)
+	return datasource.GetMetadataManager().GetInstances(ctx, in)
 }
 
 func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest) (*pb.FindInstancesResponse, error) {
@@ -135,7 +135,7 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 		}, nil
 	}
 
-	return datasource.Instance().FindInstances(ctx, in)
+	return datasource.GetMetadataManager().FindInstances(ctx, in)
 }
 
 func (s *InstanceService) BatchFind(ctx context.Context, in *pb.BatchFindInstancesRequest) (*pb.BatchFindInstancesResponse, error) {
@@ -155,7 +155,7 @@ func (s *InstanceService) BatchFind(ctx context.Context, in *pb.BatchFindInstanc
 		}, nil
 	}
 
-	return datasource.Instance().BatchFind(ctx, in)
+	return datasource.GetMetadataManager().BatchFind(ctx, in)
 }
 
 func (s *InstanceService) UpdateStatus(ctx context.Context, in *pb.UpdateInstanceStatusRequest) (*pb.UpdateInstanceStatusResponse, error) {
@@ -167,7 +167,7 @@ func (s *InstanceService) UpdateStatus(ctx context.Context, in *pb.UpdateInstanc
 		}, nil
 	}
 
-	return datasource.Instance().UpdateInstanceStatus(ctx, in)
+	return datasource.GetMetadataManager().UpdateInstanceStatus(ctx, in)
 }
 
 func (s *InstanceService) UpdateInstanceProperties(ctx context.Context, in *pb.UpdateInstancePropsRequest) (*pb.UpdateInstancePropsResponse, error) {
@@ -179,7 +179,7 @@ func (s *InstanceService) UpdateInstanceProperties(ctx context.Context, in *pb.U
 		}, nil
 	}
 
-	return datasource.Instance().UpdateInstanceProperties(ctx, in)
+	return datasource.GetMetadataManager().UpdateInstanceProperties(ctx, in)
 }
 
 func (s *InstanceService) ClusterHealth(ctx context.Context) (*pb.GetInstancesResponse, error) {
@@ -189,7 +189,7 @@ func (s *InstanceService) ClusterHealth(ctx context.Context) (*pb.GetInstancesRe
 		}, nil
 	}
 	cloneContext := util.SetDomainProject(util.CloneContext(ctx), apt.RegistryDomain, apt.RegistryProject)
-	svcResp, err := datasource.Instance().ExistService(cloneContext, &pb.GetExistenceRequest{
+	svcResp, err := datasource.GetMetadataManager().ExistService(cloneContext, &pb.GetExistenceRequest{
 		Type:        pb.ExistenceMicroservice,
 		AppId:       apt.Service.AppId,
 		Environment: apt.Service.Environment,
@@ -212,7 +212,7 @@ func (s *InstanceService) ClusterHealth(ctx context.Context) (*pb.GetInstancesRe
 		}, nil
 	}
 
-	instResp, err := datasource.Instance().GetInstances(cloneContext, &pb.GetInstancesRequest{
+	instResp, err := datasource.GetMetadataManager().GetInstances(cloneContext, &pb.GetInstancesRequest{
 		ProviderServiceId: svcResp.ServiceId,
 	})
 	if err != nil {

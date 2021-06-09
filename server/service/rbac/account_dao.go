@@ -58,7 +58,7 @@ func CreateAccount(ctx context.Context, a *rbac.Account) error {
 		return rbac.NewError(rbac.ErrAccountHasInvalidRole, err.Error())
 	}
 
-	err = datasource.Instance().CreateAccount(ctx, a)
+	err = datasource.GetAccountManager().CreateAccount(ctx, a)
 	if err == nil {
 		log.Infof("create account [%s] success", a.Name)
 		return nil
@@ -98,7 +98,7 @@ func UpdateAccount(ctx context.Context, name string, a *rbac.Account) error {
 	if err = checkRoleNames(ctx, oldAccount.Roles); err != nil {
 		return rbac.NewError(rbac.ErrAccountHasInvalidRole, err.Error())
 	}
-	err = datasource.Instance().UpdateAccount(ctx, name, oldAccount)
+	err = datasource.GetAccountManager().UpdateAccount(ctx, name, oldAccount)
 	if err != nil {
 		log.Errorf(err, "can not edit account info")
 		return err
@@ -108,7 +108,7 @@ func UpdateAccount(ctx context.Context, name string, a *rbac.Account) error {
 }
 
 func GetAccount(ctx context.Context, name string) (*rbac.Account, error) {
-	r, err := datasource.Instance().GetAccount(ctx, name)
+	r, err := datasource.GetAccountManager().GetAccount(ctx, name)
 	if err != nil {
 		if err == datasource.ErrAccountNotExist {
 			msg := fmt.Sprintf("account [%s] not exist", name)
@@ -119,16 +119,16 @@ func GetAccount(ctx context.Context, name string) (*rbac.Account, error) {
 	return r, nil
 }
 func ListAccount(ctx context.Context) ([]*rbac.Account, int64, error) {
-	return datasource.Instance().ListAccount(ctx)
+	return datasource.GetAccountManager().ListAccount(ctx)
 }
 func AccountExist(ctx context.Context, name string) (bool, error) {
-	return datasource.Instance().AccountExist(ctx, name)
+	return datasource.GetAccountManager().AccountExist(ctx, name)
 }
 func DeleteAccount(ctx context.Context, name string) error {
 	if err := illegalAccountCheck(ctx, name); err != nil {
 		return err
 	}
-	exist, err := datasource.Instance().AccountExist(ctx, name)
+	exist, err := datasource.GetAccountManager().AccountExist(ctx, name)
 	if err != nil {
 		log.Errorf(err, "check account [%s] exit failed", name)
 		return err
@@ -137,14 +137,14 @@ func DeleteAccount(ctx context.Context, name string) error {
 		msg := fmt.Sprintf("account [%s] not exist", name)
 		return rbac.NewError(rbac.ErrAccountNotExist, msg)
 	}
-	_, err = datasource.Instance().DeleteAccount(ctx, []string{name})
+	_, err = datasource.GetAccountManager().DeleteAccount(ctx, []string{name})
 	return err
 }
 
 //CreateAccount save 2 kv
 //1. account info
 func EditAccount(ctx context.Context, a *rbac.Account) error {
-	exist, err := datasource.Instance().AccountExist(ctx, a.Name)
+	exist, err := datasource.GetAccountManager().AccountExist(ctx, a.Name)
 	if err != nil {
 		log.Errorf(err, "can not edit account info")
 		return err
@@ -153,7 +153,7 @@ func EditAccount(ctx context.Context, a *rbac.Account) error {
 		return rbac.NewError(rbac.ErrAccountNotExist, "")
 	}
 
-	err = datasource.Instance().UpdateAccount(ctx, a.Name, a)
+	err = datasource.GetAccountManager().UpdateAccount(ctx, a.Name, a)
 	if err != nil {
 		log.Errorf(err, "can not edit account info")
 		return err

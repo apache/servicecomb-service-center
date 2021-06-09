@@ -94,7 +94,7 @@ func (s *MicroServiceService) CreateServicePri(ctx context.Context, in *pb.Creat
 		return resp, nil
 	}
 
-	return datasource.Instance().RegisterService(ctx, in)
+	return datasource.GetMetadataManager().RegisterService(ctx, in)
 }
 
 func (s *MicroServiceService) Delete(ctx context.Context, in *pb.DeleteServiceRequest) (*pb.DeleteServiceResponse, error) {
@@ -107,7 +107,7 @@ func (s *MicroServiceService) Delete(ctx context.Context, in *pb.DeleteServiceRe
 		}, nil
 	}
 
-	return datasource.Instance().UnregisterService(ctx, in)
+	return datasource.GetMetadataManager().UnregisterService(ctx, in)
 }
 
 func (s *MicroServiceService) DeleteServices(ctx context.Context, request *pb.DelServicesRequest) (*pb.DelServicesResponse, error) {
@@ -190,7 +190,7 @@ func (s *MicroServiceService) getDeleteServiceFunc(ctx context.Context, serviceI
 			ServiceId:  serviceID,
 			ErrMessage: "",
 		}
-		resp, err := datasource.Instance().UnregisterService(ctx, &pb.DeleteServiceRequest{
+		resp, err := datasource.GetMetadataManager().UnregisterService(ctx, &pb.DeleteServiceRequest{
 			ServiceId: serviceID,
 			Force:     force,
 		})
@@ -213,11 +213,11 @@ func (s *MicroServiceService) GetOne(ctx context.Context, in *pb.GetServiceReque
 		}, nil
 	}
 
-	return datasource.Instance().GetService(ctx, in)
+	return datasource.GetMetadataManager().GetService(ctx, in)
 }
 
 func (s *MicroServiceService) GetServices(ctx context.Context, in *pb.GetServicesRequest) (*pb.GetServicesResponse, error) {
-	return datasource.Instance().GetServices(ctx, in)
+	return datasource.GetMetadataManager().GetServices(ctx, in)
 }
 
 func (s *MicroServiceService) UpdateProperties(ctx context.Context, in *pb.UpdateServicePropsRequest) (*pb.UpdateServicePropsResponse, error) {
@@ -230,7 +230,7 @@ func (s *MicroServiceService) UpdateProperties(ctx context.Context, in *pb.Updat
 		}, nil
 	}
 
-	return datasource.Instance().UpdateService(ctx, in)
+	return datasource.GetMetadataManager().UpdateService(ctx, in)
 }
 
 func (s *MicroServiceService) Exist(ctx context.Context, in *pb.GetExistenceRequest) (*pb.GetExistenceResponse, error) {
@@ -245,7 +245,7 @@ func (s *MicroServiceService) Exist(ctx context.Context, in *pb.GetExistenceRequ
 			}, nil
 		}
 
-		return datasource.Instance().ExistService(ctx, in)
+		return datasource.GetMetadataManager().ExistService(ctx, in)
 	case ExistTypeSchema:
 		err := validator.GetSchemaReqValidator().Validate(in)
 		if err != nil {
@@ -255,7 +255,7 @@ func (s *MicroServiceService) Exist(ctx context.Context, in *pb.GetExistenceRequ
 			}, nil
 		}
 
-		return datasource.Instance().ExistSchema(ctx, in)
+		return datasource.GetMetadataManager().ExistSchema(ctx, in)
 	default:
 		log.Warnf("unexpected type '%s' for existence query.", in.Type)
 		return &pb.GetExistenceResponse{

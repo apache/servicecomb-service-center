@@ -34,7 +34,10 @@ import (
 	pb "github.com/go-chassis/cari/discovery"
 )
 
-func (ds *DataSource) SearchProviderDependency(ctx context.Context, request *pb.GetDependenciesRequest) (*pb.GetProDependenciesResponse, error) {
+type DepManager struct {
+}
+
+func (dm *DepManager) SearchProviderDependency(ctx context.Context, request *pb.GetDependenciesRequest) (*pb.GetProDependenciesResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
 	providerServiceID := request.ServiceId
 	provider, err := serviceUtil.GetService(ctx, domainProject, providerServiceID)
@@ -67,7 +70,7 @@ func (ds *DataSource) SearchProviderDependency(ctx context.Context, request *pb.
 	}, nil
 }
 
-func (ds *DataSource) SearchConsumerDependency(ctx context.Context, request *pb.GetDependenciesRequest) (*pb.GetConDependenciesResponse, error) {
+func (dm *DepManager) SearchConsumerDependency(ctx context.Context, request *pb.GetDependenciesRequest) (*pb.GetConDependenciesResponse, error) {
 	consumerID := request.ServiceId
 	domainProject := util.ParseDomainProject(ctx)
 	consumer, err := serviceUtil.GetService(ctx, domainProject, consumerID)
@@ -99,11 +102,11 @@ func (ds *DataSource) SearchConsumerDependency(ctx context.Context, request *pb.
 	}, nil
 }
 
-func (ds *DataSource) DeleteDependency() {
+func (dm *DepManager) DeleteDependency() {
 	panic("implement me")
 }
 
-func (ds *DataSource) DependencyHandle(ctx context.Context) error {
+func (dm *DepManager) DependencyHandle(ctx context.Context) error {
 	var dep *event.DependencyEventHandler
 	err := dep.Handle()
 	if err != nil {
@@ -124,7 +127,7 @@ func (ds *DataSource) DependencyHandle(ctx context.Context) error {
 	return nil
 }
 
-func (ds *DataSource) AddOrUpdateDependencies(ctx context.Context, dependencyInfos []*pb.ConsumerDependency, override bool) (*pb.Response, error) {
+func (dm *DepManager) AddOrUpdateDependencies(ctx context.Context, dependencyInfos []*pb.ConsumerDependency, override bool) (*pb.Response, error) {
 	opts := make([]client.PluginOp, 0, len(dependencyInfos))
 	domainProject := util.ParseDomainProject(ctx)
 	for _, dependencyInfo := range dependencyInfos {

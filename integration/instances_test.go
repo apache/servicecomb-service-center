@@ -19,12 +19,13 @@ package integrationtest_test
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/go-chassis/cari/discovery"
-	"github.com/gorilla/websocket"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"strings"
 	"sync"
+
+	"github.com/go-chassis/cari/discovery"
+	"github.com/gorilla/websocket"
+	"github.com/stretchr/testify/assert"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

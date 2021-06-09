@@ -19,12 +19,13 @@ package exception_test
 
 import (
 	"bytes"
-	"github.com/apache/servicecomb-service-center/server/handler/exception"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/apache/servicecomb-service-center/server/handler/exception"
+	"github.com/stretchr/testify/assert"
 )
 
 type handler struct {

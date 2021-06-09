@@ -23,6 +23,6 @@ import (
 	pb "github.com/go-chassis/cari/discovery"
 )
 
-func (ds *DataSource) GetServiceCountByDomainProject(ctx context.Context, request *pb.GetServiceCountRequest) (*pb.GetServiceCountResponse, error) {
+func (ds *MetadataManager) GetServiceCountByDomainProject(ctx context.Context, request *pb.GetServiceCountRequest) (*pb.GetServiceCountResponse, error) {
 	panic("implement me")
 }

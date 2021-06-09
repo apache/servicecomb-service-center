@@ -18,10 +18,11 @@
 package validate_test
 
 import (
+	"testing"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/validate"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestNewVersionRegexp(t *testing.T) {

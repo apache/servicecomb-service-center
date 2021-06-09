@@ -77,7 +77,7 @@ func (service *Service) dump(ctx context.Context, option string, resp *dump.Resp
 	case "config":
 		resp.AppConfig = archaius.GetConfigs()
 	case "cache":
-		resp.Cache = datasource.Instance().DumpCache(ctx)
+		resp.Cache = datasource.GetSystemManager().DumpCache(ctx)
 	case "all":
 		service.dump(ctx, "info", resp)
 		service.dump(ctx, "config", resp)
@@ -86,7 +86,7 @@ func (service *Service) dump(ctx context.Context, option string, resp *dump.Resp
 }
 
 func (service *Service) Clusters(ctx context.Context, in *dump.ClustersRequest) (*dump.ClustersResponse, error) {
-	clusters, err := datasource.Instance().GetClusters(ctx)
+	clusters, err := datasource.GetSCManager().GetClusters(ctx)
 	if err != nil {
 		return nil, err
 	}

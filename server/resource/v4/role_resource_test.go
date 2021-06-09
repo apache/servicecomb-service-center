@@ -20,21 +20,23 @@
 package v4_test
 
 import (
+	"strings"
+
 	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 	_ "github.com/apache/servicecomb-service-center/test"
 	"github.com/go-chassis/cari/rbac"
-	"strings"
 
 	"bytes"
 	"context"
 	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	rbacmodel "github.com/go-chassis/cari/rbac"
 	"github.com/go-chassis/go-chassis/v2/server/restful"
 	"github.com/stretchr/testify/assert"
-	"net/http"
-	"net/http/httptest"
-	"testing"
 )
 
 func newRole(name string) *rbac.Role {

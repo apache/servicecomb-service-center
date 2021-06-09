@@ -19,6 +19,9 @@ package rbac_test
 
 import (
 	"context"
+	"io/ioutil"
+	"testing"
+
 	"github.com/apache/servicecomb-service-center/pkg/privacy"
 	"github.com/apache/servicecomb-service-center/server/config"
 	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
@@ -31,8 +34,6 @@ import (
 	"github.com/go-chassis/go-chassis/v2/security/authr"
 	"github.com/go-chassis/go-chassis/v2/security/secret"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
-	"testing"
 )
 
 func init() {

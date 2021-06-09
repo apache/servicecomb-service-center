@@ -156,7 +156,7 @@ func GetResourceUsage(ctx context.Context, res *ApplyQuotaResource) (int64, erro
 		return usage, nil
 	case TypeRule:
 		{
-			resp, err := datasource.Instance().GetRules(ctx, &pb.GetServiceRulesRequest{
+			resp, err := datasource.GetMetadataManager().GetRules(ctx, &pb.GetServiceRulesRequest{
 				ServiceId: serviceID,
 			})
 			if err != nil {
@@ -166,7 +166,7 @@ func GetResourceUsage(ctx context.Context, res *ApplyQuotaResource) (int64, erro
 		}
 	case TypeSchema:
 		{
-			resp, err := datasource.Instance().GetAllSchemas(ctx, &pb.GetAllSchemaRequest{
+			resp, err := datasource.GetMetadataManager().GetAllSchemas(ctx, &pb.GetAllSchemaRequest{
 				ServiceId:  serviceID,
 				WithSchema: false,
 			})
@@ -180,7 +180,7 @@ func GetResourceUsage(ctx context.Context, res *ApplyQuotaResource) (int64, erro
 		return 0, nil
 	case TypeRole:
 		{
-			_, used, err := datasource.Instance().ListRole(ctx)
+			_, used, err := datasource.GetRoleManager().ListRole(ctx)
 			if err != nil {
 				return 0, err
 			}
@@ -188,7 +188,7 @@ func GetResourceUsage(ctx context.Context, res *ApplyQuotaResource) (int64, erro
 		}
 	case TypeAccount:
 		{
-			_, used, err := datasource.Instance().ListAccount(ctx)
+			_, used, err := datasource.GetAccountManager().ListAccount(ctx)
 			if err != nil {
 				return 0, err
 			}

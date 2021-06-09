@@ -198,7 +198,7 @@ func (s *ServiceCenterServer) startServices() {
 	}
 	// check version
 	if config.GetRegistry().SelfRegister {
-		if err := datasource.Instance().UpgradeVersion(context.Background()); err != nil {
+		if err := datasource.GetSCManager().UpgradeVersion(context.Background()); err != nil {
 			os.Exit(1)
 		}
 	}

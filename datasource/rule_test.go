@@ -18,13 +18,14 @@
 package datasource_test
 
 import (
+	"strconv"
+	"testing"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/stretchr/testify/assert"
-	"strconv"
-	"testing"
 )
 
 func TestRule_Add(t *testing.T) {
@@ -34,7 +35,7 @@ func TestRule_Add(t *testing.T) {
 	)
 
 	t.Run("register service and instance", func(t *testing.T) {
-		respCreateService, err := datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
+		respCreateService, err := datasource.GetMetadataManager().RegisterService(getContext(), &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
 				AppId:       "create_rule_group_ms",
 				ServiceName: "create_rule_service_ms",
@@ -47,7 +48,7 @@ func TestRule_Add(t *testing.T) {
 		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceId1 = respCreateService.ServiceId
 
-		respCreateService, err = datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
+		respCreateService, err = datasource.GetMetadataManager().RegisterService(getContext(), &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
 				AppId:       "create_rule_group_ms",
 				ServiceName: "create_rule_service_ms",
@@ -63,7 +64,7 @@ func TestRule_Add(t *testing.T) {
 
 	t.Run("invalid request", func(t *testing.T) {
 		log.Info("service does not exist")
-		respAddRule, err := datasource.Instance().AddRule(getContext(), &pb.AddServiceRulesRequest{
+		respAddRule, err := datasource.GetMetadataManager().AddRule(getContext(), &pb.AddServiceRulesRequest{
 			ServiceId: "not_exist_service_ms",
 			Rules: []*pb.AddOrUpdateServiceRule{
 				{
@@ -80,7 +81,7 @@ func TestRule_Add(t *testing.T) {
 
 	t.Run("request is valid", func(t *testing.T) {
 		log.Info("create a new black list")
-		respAddRule, err := datasource.Instance().AddRule(getContext(), &pb.AddServiceRulesRequest{
+		respAddRule, err := datasource.GetMetadataManager().AddRule(getContext(), &pb.AddServiceRulesRequest{
 			ServiceId: serviceId1,
 			Rules: []*pb.AddOrUpdateServiceRule{
 				{
@@ -97,7 +98,7 @@ func TestRule_Add(t *testing.T) {
 		assert.NotEqual(t, "", ruleId)
 
 		log.Info("create the black list again")
-		respAddRule, err = datasource.Instance().AddRule(getContext(), &pb.AddServiceRulesRequest{
+		respAddRule, err = datasource.GetMetadataManager().AddRule(getContext(), &pb.AddServiceRulesRequest{
 			ServiceId: serviceId1,
 			Rules: []*pb.AddOrUpdateServiceRule{
 				{
@@ -113,7 +114,7 @@ func TestRule_Add(t *testing.T) {
 		assert.Equal(t, 0, len(respAddRule.RuleIds))
 
 		log.Info("create a new white list when black list already exists")
-		respAddRule, err = datasource.Instance().AddRule(getContext(), &pb.AddServiceRulesRequest{
+		respAddRule, err = datasource.GetMetadataManager().AddRule(getContext(), &pb.AddServiceRulesRequest{
 			ServiceId: serviceId1,
 			Rules: []*pb.AddOrUpdateServiceRule{
 				{
@@ -140,14 +141,14 @@ func TestRule_Add(t *testing.T) {
 			})
 		}
 
-		resp, err := datasource.Instance().AddRule(getContext(), &pb.AddServiceRulesRequest{
+		resp, err := datasource.GetMetadataManager().AddRule(getContext(), &pb.AddServiceRulesRequest{
 			ServiceId: serviceId2,
 			Rules:     rules[:size-1],
 		})
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
-		resp, err = datasource.Instance().AddRule(getContext(), &pb.AddServiceRulesRequest{
+		resp, err = datasource.GetMetadataManager().AddRule(getContext(), &pb.AddServiceRulesRequest{
 			ServiceId: serviceId2,
 			Rules:     rules[size-1:],
 		})
@@ -163,7 +164,7 @@ func TestRule_Get(t *testing.T) {
 	)
 
 	t.Run("register service and rules", func(t *testing.T) {
-		respCreateService, err := datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
+		respCreateService, err := datasource.GetMetadataManager().RegisterService(getContext(), &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
 				AppId:       "get_rule_group_ms",
 				ServiceName: "get_rule_service_ms",
@@ -176,7 +177,7 @@ func TestRule_Get(t *testing.T) {
 		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceId = respCreateService.ServiceId
 
-		respAddRule, err := datasource.Instance().AddRule(getContext(), &pb.AddServiceRulesRequest{
+		respAddRule, err := datasource.GetMetadataManager().AddRule(getContext(), &pb.AddServiceRulesRequest{
 			ServiceId: serviceId,
 			Rules: []*pb.AddOrUpdateServiceRule{
 				{
@@ -195,7 +196,7 @@ func TestRule_Get(t *testing.T) {
 
 	t.Run("get when request is invalid", func(t *testing.T) {
 		log.Info("service not exists")
-		respGetRule, err := datasource.Instance().GetRules(getContext(), &pb.GetServiceRulesRequest{
+		respGetRule, err := datasource.GetMetadataManager().GetRules(getContext(), &pb.GetServiceRulesRequest{
 			ServiceId: "not_exist_service_ms",
 		})
 		assert.NoError(t, err)
@@ -203,7 +204,7 @@ func TestRule_Get(t *testing.T) {
 	})
 
 	t.Run("get when request is valid", func(t *testing.T) {
-		respGetRule, err := datasource.Instance().GetRules(getContext(), &pb.GetServiceRulesRequest{
+		respGetRule, err := datasource.GetMetadataManager().GetRules(getContext(), &pb.GetServiceRulesRequest{
 			ServiceId: serviceId,
 		})
 		assert.NoError(t, err)
@@ -219,7 +220,7 @@ func TestRule_Update(t *testing.T) {
 	)
 
 	t.Run("create service and rules", func(t *testing.T) {
-		respCreateService, err := datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
+		respCreateService, err := datasource.GetMetadataManager().RegisterService(getContext(), &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
 				AppId:       "update_rule_group_ms",
 				ServiceName: "update_rule_service_ms",
@@ -232,7 +233,7 @@ func TestRule_Update(t *testing.T) {
 		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceId = respCreateService.ServiceId
 
-		respAddRule, err := datasource.Instance().AddRule(getContext(), &pb.AddServiceRulesRequest{
+		respAddRule, err := datasource.GetMetadataManager().AddRule(getContext(), &pb.AddServiceRulesRequest{
 			ServiceId: serviceId,
 			Rules: []*pb.AddOrUpdateServiceRule{
 				{
@@ -257,7 +258,7 @@ func TestRule_Update(t *testing.T) {
 			Description: "test BLACK update",
 		}
 		log.Info("service does not exist")
-		resp, err := datasource.Instance().UpdateRule(getContext(), &pb.UpdateServiceRuleRequest{
+		resp, err := datasource.GetMetadataManager().UpdateRule(getContext(), &pb.UpdateServiceRuleRequest{
 			ServiceId: "not_exist_service_ms",
 			RuleId:    ruleId,
 			Rule:      rule,
@@ -266,7 +267,7 @@ func TestRule_Update(t *testing.T) {
 		assert.NotEqual(t, pb.ResponseSuccess, resp.Response.GetCode())
 
 		log.Info("rule not exists")
-		resp, err = datasource.Instance().UpdateRule(getContext(), &pb.UpdateServiceRuleRequest{
+		resp, err = datasource.GetMetadataManager().UpdateRule(getContext(), &pb.UpdateServiceRuleRequest{
 			ServiceId: serviceId,
 			RuleId:    "not_exist_rule_ms",
 			Rule:      rule,
@@ -275,7 +276,7 @@ func TestRule_Update(t *testing.T) {
 		assert.NotEqual(t, pb.ResponseSuccess, resp.Response.GetCode())
 
 		log.Info("change rule type")
-		resp, err = datasource.Instance().UpdateRule(getContext(), &pb.UpdateServiceRuleRequest{
+		resp, err = datasource.GetMetadataManager().UpdateRule(getContext(), &pb.UpdateServiceRuleRequest{
 			ServiceId: serviceId,
 			RuleId:    ruleId,
 			Rule: &pb.AddOrUpdateServiceRule{
@@ -290,7 +291,7 @@ func TestRule_Update(t *testing.T) {
 	})
 
 	t.Run("update when request is valid", func(t *testing.T) {
-		resp, err := datasource.Instance().UpdateRule(getContext(), &pb.UpdateServiceRuleRequest{
+		resp, err := datasource.GetMetadataManager().UpdateRule(getContext(), &pb.UpdateServiceRuleRequest{
 			ServiceId: serviceId,
 			RuleId:    ruleId,
 			Rule: &pb.AddOrUpdateServiceRule{
@@ -311,7 +312,7 @@ func TestRule_Delete(t *testing.T) {
 		ruleId    string
 	)
 	t.Run("register service and rules", func(t *testing.T) {
-		respCreateService, err := datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
+		respCreateService, err := datasource.GetMetadataManager().RegisterService(getContext(), &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
 				AppId:       "delete_rule_group_ms",
 				ServiceName: "delete_rule_service_ms",
@@ -324,7 +325,7 @@ func TestRule_Delete(t *testing.T) {
 		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceId = respCreateService.ServiceId
 
-		respAddRule, err := datasource.Instance().AddRule(getContext(), &pb.AddServiceRulesRequest{
+		respAddRule, err := datasource.GetMetadataManager().AddRule(getContext(), &pb.AddServiceRulesRequest{
 			ServiceId: serviceId,
 			Rules: []*pb.AddOrUpdateServiceRule{
 				{
@@ -343,7 +344,7 @@ func TestRule_Delete(t *testing.T) {
 
 	t.Run("delete when request is invalid", func(t *testing.T) {
 		log.Info("service not exist")
-		resp, err := datasource.Instance().DeleteRule(getContext(), &pb.DeleteServiceRulesRequest{
+		resp, err := datasource.GetMetadataManager().DeleteRule(getContext(), &pb.DeleteServiceRulesRequest{
 			ServiceId: "not_exist_service_ms",
 			RuleIds:   []string{"1000000"},
 		})
@@ -351,7 +352,7 @@ func TestRule_Delete(t *testing.T) {
 		assert.Equal(t, pb.ErrServiceNotExists, resp.Response.GetCode())
 
 		log.Info("rule not exist")
-		resp, err = datasource.Instance().DeleteRule(getContext(), &pb.DeleteServiceRulesRequest{
+		resp, err = datasource.GetMetadataManager().DeleteRule(getContext(), &pb.DeleteServiceRulesRequest{
 			ServiceId: serviceId,
 			RuleIds:   []string{"not_exist_rule"},
 		})
@@ -360,14 +361,14 @@ func TestRule_Delete(t *testing.T) {
 	})
 
 	t.Run("delete when request is valid", func(t *testing.T) {
-		resp, err := datasource.Instance().DeleteRule(getContext(), &pb.DeleteServiceRulesRequest{
+		resp, err := datasource.GetMetadataManager().DeleteRule(getContext(), &pb.DeleteServiceRulesRequest{
 			ServiceId: serviceId,
 			RuleIds:   []string{ruleId},
 		})
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
-		respGetRule, err := datasource.Instance().GetRules(getContext(), &pb.GetServiceRulesRequest{
+		respGetRule, err := datasource.GetMetadataManager().GetRules(getContext(), &pb.GetServiceRulesRequest{
 			ServiceId: serviceId,
 		})
 		assert.NoError(t, err)
@@ -384,7 +385,7 @@ func TestRule_Permission(t *testing.T) {
 		providerWhite   string
 	)
 	t.Run("register service and rules", func(t *testing.T) {
-		respCreateService, err := datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
+		respCreateService, err := datasource.GetMetadataManager().RegisterService(getContext(), &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
 				AppId:       "query_instance_tag_ms",
 				ServiceName: "query_instance_version_consumer_ms",
@@ -397,7 +398,7 @@ func TestRule_Permission(t *testing.T) {
 		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		consumerVersion = respCreateService.ServiceId
 
-		respCreateService, err = datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
+		respCreateService, err = datasource.GetMetadataManager().RegisterService(getContext(), &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
 				AppId:       "query_instance_tag_ms",
 				ServiceName: "query_instance_tag_service_ms",
@@ -410,7 +411,7 @@ func TestRule_Permission(t *testing.T) {
 		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		providerBlack = respCreateService.ServiceId
 
-		respAddRule, err := datasource.Instance().AddRule(getContext(), &pb.AddServiceRulesRequest{
+		respAddRule, err := datasource.GetMetadataManager().AddRule(getContext(), &pb.AddServiceRulesRequest{
 			ServiceId: providerBlack,
 			Rules: []*pb.AddOrUpdateServiceRule{
 				{
@@ -428,7 +429,7 @@ func TestRule_Permission(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, respAddRule.Response.GetCode())
 
-		respCreateService, err = datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
+		respCreateService, err = datasource.GetMetadataManager().RegisterService(getContext(), &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
 				AppId:       "query_instance_tag_ms",
 				ServiceName: "query_instance_tag_service_ms",
@@ -441,7 +442,7 @@ func TestRule_Permission(t *testing.T) {
 		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		providerWhite = respCreateService.ServiceId
 
-		respAddRule, err = datasource.Instance().AddRule(getContext(), &pb.AddServiceRulesRequest{
+		respAddRule, err = datasource.GetMetadataManager().AddRule(getContext(), &pb.AddServiceRulesRequest{
 			ServiceId: providerWhite,
 			Rules: []*pb.AddOrUpdateServiceRule{
 				{
@@ -459,7 +460,7 @@ func TestRule_Permission(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, respAddRule.Response.GetCode())
 
-		respCreateService, err = datasource.Instance().RegisterService(getContext(), &pb.CreateServiceRequest{
+		respCreateService, err = datasource.GetMetadataManager().RegisterService(getContext(), &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
 				AppId:       "query_instance_tag_ms",
 				ServiceName: "query_instance_tag_consumer_ms",
@@ -472,7 +473,7 @@ func TestRule_Permission(t *testing.T) {
 		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		consumerTag = respCreateService.ServiceId
 
-		respAddTag, err := datasource.Instance().AddTags(getContext(), &pb.AddServiceTagsRequest{
+		respAddTag, err := datasource.GetMetadataManager().AddTags(getContext(), &pb.AddServiceTagsRequest{
 			ServiceId: consumerTag,
 			Tags:      map[string]string{"a": "b"},
 		})
@@ -482,7 +483,7 @@ func TestRule_Permission(t *testing.T) {
 
 	t.Run("when query instances", func(t *testing.T) {
 		log.Info("consumer version in black list")
-		resp, err := datasource.Instance().GetInstances(getContext(), &pb.GetInstancesRequest{
+		resp, err := datasource.GetMetadataManager().GetInstances(getContext(), &pb.GetInstancesRequest{
 			ConsumerServiceId: consumerVersion,
 			ProviderServiceId: providerBlack,
 		})
@@ -490,7 +491,7 @@ func TestRule_Permission(t *testing.T) {
 		assert.Equal(t, pb.ErrServiceNotExists, resp.Response.GetCode())
 
 		log.Info("consumer tag in black list")
-		resp, err = datasource.Instance().GetInstances(getContext(), &pb.GetInstancesRequest{
+		resp, err = datasource.GetMetadataManager().GetInstances(getContext(), &pb.GetInstancesRequest{
 			ConsumerServiceId: consumerTag,
 			ProviderServiceId: providerBlack,
 		})
@@ -498,7 +499,7 @@ func TestRule_Permission(t *testing.T) {
 		assert.Equal(t, pb.ErrServiceNotExists, resp.Response.GetCode())
 
 		log.Info("find should return 200 even if consumer permission deny")
-		respFind, err := datasource.Instance().FindInstances(getContext(), &pb.FindInstancesRequest{
+		respFind, err := datasource.GetMetadataManager().FindInstances(getContext(), &pb.FindInstancesRequest{
 			ConsumerServiceId: consumerVersion,
 			AppId:             "query_instance_tag_ms",
 			ServiceName:       "query_instance_tag_service_ms",
@@ -508,7 +509,7 @@ func TestRule_Permission(t *testing.T) {
 		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
 		assert.Equal(t, 0, len(respFind.Instances))
 
-		respFind, err = datasource.Instance().FindInstances(getContext(), &pb.FindInstancesRequest{
+		respFind, err = datasource.GetMetadataManager().FindInstances(getContext(), &pb.FindInstancesRequest{
 			ConsumerServiceId: consumerTag,
 			AppId:             "query_instance_tag_ms",
 			ServiceName:       "query_instance_tag_service_ms",
@@ -519,7 +520,7 @@ func TestRule_Permission(t *testing.T) {
 		assert.Equal(t, 0, len(respFind.Instances))
 
 		log.Info("consumer not in black list")
-		resp, err = datasource.Instance().GetInstances(getContext(), &pb.GetInstancesRequest{
+		resp, err = datasource.GetMetadataManager().GetInstances(getContext(), &pb.GetInstancesRequest{
 			ConsumerServiceId: providerWhite,
 			ProviderServiceId: providerBlack,
 		})
@@ -527,7 +528,7 @@ func TestRule_Permission(t *testing.T) {
 		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
 		log.Info("consumer not in white list")
-		resp, err = datasource.Instance().GetInstances(getContext(), &pb.GetInstancesRequest{
+		resp, err = datasource.GetMetadataManager().GetInstances(getContext(), &pb.GetInstancesRequest{
 			ConsumerServiceId: providerBlack,
 			ProviderServiceId: providerWhite,
 		})
@@ -535,7 +536,7 @@ func TestRule_Permission(t *testing.T) {
 		assert.Equal(t, pb.ErrServiceNotExists, resp.Response.GetCode())
 
 		log.Info("consumer version in white list")
-		resp, err = datasource.Instance().GetInstances(getContext(), &pb.GetInstancesRequest{
+		resp, err = datasource.GetMetadataManager().GetInstances(getContext(), &pb.GetInstancesRequest{
 			ConsumerServiceId: consumerVersion,
 			ProviderServiceId: providerWhite,
 		})
@@ -543,7 +544,7 @@ func TestRule_Permission(t *testing.T) {
 		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
 		log.Info("consumer tag in white list")
-		resp, err = datasource.Instance().GetInstances(getContext(), &pb.GetInstancesRequest{
+		resp, err = datasource.GetMetadataManager().GetInstances(getContext(), &pb.GetInstancesRequest{
 			ConsumerServiceId: consumerTag,
 			ProviderServiceId: providerWhite,
 		})

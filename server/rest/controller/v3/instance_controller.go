@@ -20,7 +20,7 @@ import (
 	"net/http"
 
 	"github.com/apache/servicecomb-service-center/pkg/rest"
-	"github.com/apache/servicecomb-service-center/server/rest/controller/v4"
+	v4 "github.com/apache/servicecomb-service-center/server/rest/controller/v4"
 )
 
 type MicroServiceInstanceService struct {

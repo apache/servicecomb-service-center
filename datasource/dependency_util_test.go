@@ -18,8 +18,9 @@
 package datasource_test
 
 import (
-	"github.com/apache/servicecomb-service-center/datasource"
 	"testing"
+
+	"github.com/apache/servicecomb-service-center/datasource"
 )
 
 func TestBadParamsResponse(t *testing.T) {

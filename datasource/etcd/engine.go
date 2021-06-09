@@ -19,11 +19,18 @@ package etcd
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/mux"
+	"github.com/apache/servicecomb-service-center/server/config"
+	"github.com/apache/servicecomb-service-center/version"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
@@ -36,27 +43,30 @@ import (
 	pb "github.com/go-chassis/cari/discovery"
 )
 
-func (ds *DataSource) SelfRegister(ctx context.Context) error {
-	err := ds.selfRegister(ctx)
+type SCManager struct {
+}
+
+func (sm *SCManager) SelfRegister(ctx context.Context) error {
+	err := sm.selfRegister(ctx)
 	if err != nil {
 		return err
 	}
 	// start send heart beat job
-	ds.autoSelfHeartBeat()
+	sm.autoSelfHeartBeat()
 	return nil
 }
 
-func (ds *DataSource) selfRegister(pCtx context.Context) error {
+func (sm *SCManager) selfRegister(pCtx context.Context) error {
 	ctx := core.AddDefaultContextValue(pCtx)
-	err := ds.registerService(ctx)
+	err := sm.registerService(ctx)
 	if err != nil {
 		return err
 	}
 	// 实例信息
-	return ds.registerInstance(ctx)
+	return sm.registerInstance(ctx)
 }
 
-func (ds *DataSource) registerService(ctx context.Context) error {
+func (sm *SCManager) registerService(ctx context.Context) error {
 	respE, err := core.ServiceAPI.Exist(ctx, core.GetExistenceRequest())
 	if err != nil {
 		log.Error("query service center existence failed", err)
@@ -87,7 +97,7 @@ func (ds *DataSource) registerService(ctx context.Context) error {
 	return nil
 }
 
-func (ds *DataSource) registerInstance(ctx context.Context) error {
+func (sm *SCManager) registerInstance(ctx context.Context) error {
 	core.Instance.InstanceId = ""
 	core.Instance.ServiceId = core.Service.ServiceId
 	respI, err := core.InstanceAPI.Register(ctx, core.RegisterInstanceRequest())
@@ -106,7 +116,7 @@ func (ds *DataSource) registerInstance(ctx context.Context) error {
 	return nil
 }
 
-func (ds *DataSource) selfHeartBeat(pCtx context.Context) error {
+func (sm *SCManager) selfHeartBeat(pCtx context.Context) error {
 	ctx := core.AddDefaultContextValue(pCtx)
 	respI, err := core.InstanceAPI.Heartbeat(ctx, core.HeartbeatRequest())
 	if err != nil {
@@ -124,19 +134,19 @@ func (ds *DataSource) selfHeartBeat(pCtx context.Context) error {
 	return err
 }
 
-func (ds *DataSource) autoSelfHeartBeat() {
+func (sm *SCManager) autoSelfHeartBeat() {
 	gopool.Go(func(ctx context.Context) {
 		for {
 			select {
 			case <-ctx.Done():
 				return
 			case <-time.After(time.Duration(core.Instance.HealthCheck.Interval) * time.Second):
-				err := ds.selfHeartBeat(ctx)
+				err := sm.selfHeartBeat(ctx)
 				if err == nil {
 					continue
 				}
 				//服务不存在，创建服务
-				err = ds.selfRegister(ctx)
+				err = sm.selfRegister(ctx)
 				if err != nil {
 					log.Errorf(err, "retry to register[%s/%s/%s/%s] failed",
 						core.Service.Environment, core.Service.AppId, core.Service.ServiceName, core.Service.Version)
@@ -146,7 +156,7 @@ func (ds *DataSource) autoSelfHeartBeat() {
 	})
 }
 
-func (ds *DataSource) SelfUnregister(pCtx context.Context) error {
+func (sm *SCManager) SelfUnregister(pCtx context.Context) error {
 	if len(core.Instance.InstanceId) == 0 {
 		return nil
 	}
@@ -168,7 +178,7 @@ func (ds *DataSource) SelfUnregister(pCtx context.Context) error {
 }
 
 // ClearNoInstanceService clears services which have no instance
-func (ds *DataSource) ClearNoInstanceServices(ctx context.Context, serviceTTL time.Duration) error {
+func (sm *SCManager) ClearNoInstanceServices(ctx context.Context, serviceTTL time.Duration) error {
 	services, err := serviceUtil.GetAllServicesAcrossDomainProject(ctx)
 	if err != nil {
 		return err
@@ -259,6 +269,39 @@ func shouldClear(ctx context.Context, timeLimitStamp string, svc *pb.MicroServic
 	return true, nil
 }
 
-func (ds *DataSource) GetClusters(ctx context.Context) (cluster.Clusters, error) {
+func (sm *SCManager) GetClusters(ctx context.Context) (cluster.Clusters, error) {
 	return Configuration().Clusters, nil
+}
+func (sm *SCManager) UpgradeServerVersion(ctx context.Context) error {
+	bytes, err := json.Marshal(config.Server)
+	if err != nil {
+		return err
+	}
+	_, err = client.Instance().Do(ctx,
+		client.PUT, client.WithStrKey(path.GetServerInfoKey()), client.WithValue(bytes))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+func (sm *SCManager) UpgradeVersion(ctx context.Context) error {
+	lock, err := mux.Lock(mux.GlobalLock)
+
+	if err != nil {
+		log.Errorf(err, "wait for server ready failed")
+		return err
+	}
+	if needUpgrade(ctx) {
+		config.Server.Version = version.Ver().Version
+
+		if err := sm.UpgradeServerVersion(ctx); err != nil {
+			log.Errorf(err, "upgrade server version failed")
+			os.Exit(1)
+		}
+	}
+	err = lock.Unlock()
+	if err != nil {
+		log.Error("", err)
+	}
+	return err
 }

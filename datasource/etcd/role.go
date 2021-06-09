@@ -34,7 +34,10 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
-func (ds *DataSource) CreateRole(ctx context.Context, r *rbac.Role) error {
+type RoleManager struct {
+}
+
+func (rm *RoleManager) CreateRole(ctx context.Context, r *rbac.Role) error {
 	lock, err := etcdsync.Lock("/role-creating/"+r.Name, -1, false)
 	if err != nil {
 		return fmt.Errorf("role %s is creating", r.Name)
@@ -46,7 +49,7 @@ func (ds *DataSource) CreateRole(ctx context.Context, r *rbac.Role) error {
 		}
 	}()
 	key := path.GenerateRBACRoleKey(r.Name)
-	exist, err := datasource.Instance().RoleExist(ctx, r.Name)
+	exist, err := rm.RoleExist(ctx, r.Name)
 	if err != nil {
 		log.Error("can not save role info", err)
 		return err
@@ -71,7 +74,7 @@ func (ds *DataSource) CreateRole(ctx context.Context, r *rbac.Role) error {
 	return nil
 }
 
-func (ds *DataSource) RoleExist(ctx context.Context, name string) (bool, error) {
+func (rm *RoleManager) RoleExist(ctx context.Context, name string) (bool, error) {
 	resp, err := client.Instance().Do(ctx, client.GET,
 		client.WithStrKey(path.GenerateRBACRoleKey(name)))
 	if err != nil {
@@ -82,7 +85,7 @@ func (ds *DataSource) RoleExist(ctx context.Context, name string) (bool, error) 
 	}
 	return true, nil
 }
-func (ds *DataSource) GetRole(ctx context.Context, name string) (*rbac.Role, error) {
+func (rm *RoleManager) GetRole(ctx context.Context, name string) (*rbac.Role, error) {
 	resp, err := client.Instance().Do(ctx, client.GET,
 		client.WithStrKey(path.GenerateRBACRoleKey(name)))
 	if err != nil {
@@ -102,7 +105,7 @@ func (ds *DataSource) GetRole(ctx context.Context, name string) (*rbac.Role, err
 	}
 	return role, nil
 }
-func (ds *DataSource) ListRole(ctx context.Context) ([]*rbac.Role, int64, error) {
+func (rm *RoleManager) ListRole(ctx context.Context) ([]*rbac.Role, int64, error) {
 	resp, err := client.Instance().Do(ctx, client.GET,
 		client.WithStrKey(path.GenerateRBACRoleKey("")), client.WithPrefix())
 	if err != nil {
@@ -121,7 +124,7 @@ func (ds *DataSource) ListRole(ctx context.Context) ([]*rbac.Role, int64, error)
 	}
 	return roles, resp.Count, nil
 }
-func (ds *DataSource) DeleteRole(ctx context.Context, name string) (bool, error) {
+func (rm *RoleManager) DeleteRole(ctx context.Context, name string) (bool, error) {
 	exists, err := RoleBindingExists(ctx, name)
 	if err != nil {
 		log.Error("", err)
@@ -145,7 +148,7 @@ func RoleBindingExists(ctx context.Context, role string) (bool, error) {
 	}
 	return total > 0, nil
 }
-func (ds *DataSource) UpdateRole(ctx context.Context, name string, role *rbac.Role) error {
+func (rm *RoleManager) UpdateRole(ctx context.Context, name string, role *rbac.Role) error {
 	role.UpdateTime = strconv.FormatInt(time.Now().Unix(), 10)
 	value, err := json.Marshal(role)
 	if err != nil {

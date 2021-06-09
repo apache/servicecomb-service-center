@@ -43,7 +43,7 @@ func CreateRole(ctx context.Context, r *rbac.Role) error {
 	if quotaErr != nil {
 		return rbac.NewError(rbac.ErrRoleNoQuota, quotaErr.Error())
 	}
-	err = datasource.Instance().CreateRole(ctx, r)
+	err = datasource.GetRoleManager().CreateRole(ctx, r)
 	if err == nil {
 		log.Infof("create role [%s] success", r.Name)
 		return nil
@@ -58,7 +58,7 @@ func CreateRole(ctx context.Context, r *rbac.Role) error {
 }
 
 func GetRole(ctx context.Context, name string) (*rbac.Role, error) {
-	resp, err := datasource.Instance().GetRole(ctx, name)
+	resp, err := datasource.GetRoleManager().GetRole(ctx, name)
 	if err == nil {
 		return resp, nil
 	}
@@ -69,11 +69,11 @@ func GetRole(ctx context.Context, name string) (*rbac.Role, error) {
 }
 
 func ListRole(ctx context.Context) ([]*rbac.Role, int64, error) {
-	return datasource.Instance().ListRole(ctx)
+	return datasource.GetRoleManager().ListRole(ctx)
 }
 
 func RoleExist(ctx context.Context, name string) (bool, error) {
-	return datasource.Instance().RoleExist(ctx, name)
+	return datasource.GetRoleManager().RoleExist(ctx, name)
 }
 
 func DeleteRole(ctx context.Context, name string) error {
@@ -89,7 +89,7 @@ func DeleteRole(ctx context.Context, name string) error {
 		log.Errorf(err, "role [%s] not exist", name)
 		return rbac.NewError(rbac.ErrRoleNotExist, "")
 	}
-	succeed, err := datasource.Instance().DeleteRole(ctx, name)
+	succeed, err := datasource.GetRoleManager().DeleteRole(ctx, name)
 	if err != nil {
 		if errors.Is(err, datasource.ErrRoleBindingExist) {
 			return rbac.NewError(rbac.ErrRoleIsBound, "")
@@ -123,7 +123,7 @@ func EditRole(ctx context.Context, name string, a *rbac.Role) error {
 
 	oldRole.Perms = a.Perms
 
-	err = datasource.Instance().UpdateRole(ctx, name, oldRole)
+	err = datasource.GetRoleManager().UpdateRole(ctx, name, oldRole)
 	if err != nil {
 		log.Errorf(err, "can not edit role info")
 		return err

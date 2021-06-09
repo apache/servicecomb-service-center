@@ -36,7 +36,10 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
-func (ds *DataSource) SearchProviderDependency(ctx context.Context, request *discovery.GetDependenciesRequest) (*discovery.GetProDependenciesResponse, error) {
+type DepManager struct {
+}
+
+func (ds *DepManager) SearchProviderDependency(ctx context.Context, request *discovery.GetDependenciesRequest) (*discovery.GetProDependenciesResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
 	providerServiceID := request.ServiceId
 	filter := mutil.NewBasicFilter(ctx, mutil.ServiceServiceID(providerServiceID))
@@ -74,7 +77,7 @@ func (ds *DataSource) SearchProviderDependency(ctx context.Context, request *dis
 	}, nil
 }
 
-func (ds *DataSource) SearchConsumerDependency(ctx context.Context, request *discovery.GetDependenciesRequest) (*discovery.GetConDependenciesResponse, error) {
+func (ds *DepManager) SearchConsumerDependency(ctx context.Context, request *discovery.GetDependenciesRequest) (*discovery.GetConDependenciesResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
 	consumerID := request.ServiceId
 	filter := mutil.NewBasicFilter(ctx, mutil.ServiceServiceID(consumerID))
@@ -112,7 +115,7 @@ func (ds *DataSource) SearchConsumerDependency(ctx context.Context, request *dis
 	}, nil
 }
 
-func (ds *DataSource) AddOrUpdateDependencies(ctx context.Context, dependencys []*discovery.ConsumerDependency, override bool) (*discovery.Response, error) {
+func (ds *DepManager) AddOrUpdateDependencies(ctx context.Context, dependencys []*discovery.ConsumerDependency, override bool) (*discovery.Response, error) {
 	domainProject := util.ParseDomainProject(ctx)
 	for _, dependency := range dependencys {
 		consumerFlag := util.StringJoin([]string{
@@ -170,11 +173,11 @@ func (ds *DataSource) AddOrUpdateDependencies(ctx context.Context, dependencys [
 	return discovery.CreateResponse(discovery.ResponseSuccess, "Create dependency successfully."), nil
 }
 
-func (ds *DataSource) DeleteDependency() {
+func (ds *DepManager) DeleteDependency() {
 	panic("implement me")
 }
 
-func (ds *DataSource) DependencyHandle(ctx context.Context) (err error) {
+func (ds *DepManager) DependencyHandle(ctx context.Context) (err error) {
 	return nil
 }
 

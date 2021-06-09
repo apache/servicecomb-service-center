@@ -152,7 +152,7 @@ func (wh *WebSocket) CheckHealth(ctx context.Context) error {
 
 	ctx = util.SetDomainProjectString(ctx, wh.DomainProject)
 
-	if exist, err := datasource.Instance().ExistServiceByID(ctx, &pb.GetExistenceByIDRequest{
+	if exist, err := datasource.GetMetadataManager().ExistServiceByID(ctx, &pb.GetExistenceByIDRequest{
 		ServiceId: wh.ConsumerID,
 	}); err != nil || !exist.Exist {
 		return errServiceNotExist

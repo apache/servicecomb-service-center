@@ -42,23 +42,51 @@ func init() {
 }
 
 type DataSource struct {
-	// SchemaEditable determines whether schema modification is allowed for
-	SchemaEditable bool
-	// TTL options
-	ttlFromEnv int64
+	accountManager  datasource.AccountManager
+	metadataManager datasource.MetadataManager
+	roleManager     datasource.RoleManager
+	sysManager      datasource.SystemManager
+	depManager      datasource.DependencyManager
+	scManager       datasource.SCManager
+}
+
+func (ds *DataSource) SystemManager() datasource.SystemManager {
+	return ds.sysManager
+}
+
+func (ds *DataSource) AccountManager() datasource.AccountManager {
+	return ds.accountManager
+}
+
+func (ds *DataSource) RoleManager() datasource.RoleManager {
+	return ds.roleManager
+}
+
+func (ds *DataSource) DependencyManager() datasource.DependencyManager {
+	return ds.depManager
+}
+
+func (ds *DataSource) MetadataManager() datasource.MetadataManager {
+	return ds.metadataManager
+}
+
+func (ds *DataSource) SCManager() datasource.SCManager {
+	return ds.scManager
 }
 
 func NewDataSource(opts datasource.Options) (datasource.DataSource, error) {
 	// TODO: construct a reasonable DataSource instance
-
-	inst := &DataSource{
-		SchemaEditable: opts.SchemaEditable,
-		ttlFromEnv:     opts.InstanceTTL,
-	}
+	inst := &DataSource{}
 	// TODO: deal with exception
 	if err := inst.initialize(); err != nil {
 		return nil, err
 	}
+	inst.scManager = &SCManager{}
+	inst.depManager = &DepManager{}
+	inst.sysManager = &SysManager{}
+	inst.roleManager = &RoleManager{}
+	inst.metadataManager = &MetadataManager{SchemaEditable: opts.SchemaEditable, InstanceTTL: opts.InstanceTTL}
+	inst.accountManager = &AccountManager{}
 	return inst, nil
 }
 

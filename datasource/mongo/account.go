@@ -33,7 +33,10 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
-func (ds *DataSource) CreateAccount(ctx context.Context, a *rbac.Account) error {
+type AccountManager struct {
+}
+
+func (ds *AccountManager) CreateAccount(ctx context.Context, a *rbac.Account) error {
 	exist, err := ds.AccountExist(ctx, a.Name)
 	if err != nil {
 		msg := fmt.Sprintf("failed to query account, account name %s", a.Name)
@@ -61,7 +64,7 @@ func (ds *DataSource) CreateAccount(ctx context.Context, a *rbac.Account) error 
 	return nil
 }
 
-func (ds *DataSource) AccountExist(ctx context.Context, name string) (bool, error) {
+func (ds *AccountManager) AccountExist(ctx context.Context, name string) (bool, error) {
 	filter := mutil.NewFilter(mutil.AccountName(name))
 	count, err := client.GetMongoClient().Count(ctx, model.CollectionAccount, filter)
 	if err != nil {
@@ -73,7 +76,7 @@ func (ds *DataSource) AccountExist(ctx context.Context, name string) (bool, erro
 	return true, nil
 }
 
-func (ds *DataSource) GetAccount(ctx context.Context, name string) (*rbac.Account, error) {
+func (ds *AccountManager) GetAccount(ctx context.Context, name string) (*rbac.Account, error) {
 	filter := mutil.NewFilter(mutil.AccountName(name))
 	result, err := client.GetMongoClient().FindOne(ctx, model.CollectionAccount, filter)
 	if err != nil {
@@ -98,7 +101,7 @@ func (ds *DataSource) GetAccount(ctx context.Context, name string) (*rbac.Accoun
 	return &account, nil
 }
 
-func (ds *DataSource) ListAccount(ctx context.Context) ([]*rbac.Account, int64, error) {
+func (ds *AccountManager) ListAccount(ctx context.Context) ([]*rbac.Account, int64, error) {
 	filter := mutil.NewFilter()
 	cursor, err := client.GetMongoClient().Find(ctx, model.CollectionAccount, filter)
 	if err != nil {
@@ -119,7 +122,7 @@ func (ds *DataSource) ListAccount(ctx context.Context) ([]*rbac.Account, int64, 
 	return accounts, int64(len(accounts)), nil
 }
 
-func (ds *DataSource) DeleteAccount(ctx context.Context, names []string) (bool, error) {
+func (ds *AccountManager) DeleteAccount(ctx context.Context, names []string) (bool, error) {
 	if len(names) == 0 {
 		return false, nil
 	}
@@ -135,7 +138,7 @@ func (ds *DataSource) DeleteAccount(ctx context.Context, names []string) (bool, 
 	return true, nil
 }
 
-func (ds *DataSource) UpdateAccount(ctx context.Context, name string, account *rbac.Account) error {
+func (ds *AccountManager) UpdateAccount(ctx context.Context, name string, account *rbac.Account) error {
 	filter := mutil.NewFilter(mutil.AccountName(name))
 	setFilter := mutil.NewFilter(
 		mutil.ID(account.ID),

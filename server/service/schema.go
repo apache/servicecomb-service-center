@@ -38,7 +38,7 @@ func (s *MicroServiceService) GetSchemaInfo(ctx context.Context, in *pb.GetSchem
 		}, nil
 	}
 
-	return datasource.Instance().GetSchema(ctx, in)
+	return datasource.GetMetadataManager().GetSchema(ctx, in)
 }
 
 func (s *MicroServiceService) GetAllSchemaInfo(ctx context.Context, in *pb.GetAllSchemaRequest) (*pb.GetAllSchemaResponse, error) {
@@ -50,7 +50,7 @@ func (s *MicroServiceService) GetAllSchemaInfo(ctx context.Context, in *pb.GetAl
 		}, nil
 	}
 
-	return datasource.Instance().GetAllSchemas(ctx, in)
+	return datasource.GetMetadataManager().GetAllSchemas(ctx, in)
 }
 
 func (s *MicroServiceService) DeleteSchema(ctx context.Context, in *pb.DeleteSchemaRequest) (*pb.DeleteSchemaResponse, error) {
@@ -63,7 +63,7 @@ func (s *MicroServiceService) DeleteSchema(ctx context.Context, in *pb.DeleteSch
 		}, nil
 	}
 
-	return datasource.Instance().DeleteSchema(ctx, in)
+	return datasource.GetMetadataManager().DeleteSchema(ctx, in)
 }
 
 // ModifySchemas covers all the schemas of a service.
@@ -87,7 +87,7 @@ func (s *MicroServiceService) ModifySchemas(ctx context.Context, in *pb.ModifySc
 			Response: pb.CreateResponse(pb.ErrInvalidParams, "Invalid request."),
 		}, nil
 	}
-	return datasource.Instance().ModifySchemas(ctx, in)
+	return datasource.GetMetadataManager().ModifySchemas(ctx, in)
 }
 
 // ModifySchema modifies a specific schema
@@ -113,7 +113,7 @@ func (s *MicroServiceService) ModifySchema(ctx context.Context, request *pb.Modi
 		return resp, nil
 	}
 
-	return datasource.Instance().ModifySchema(ctx, request)
+	return datasource.GetMetadataManager().ModifySchema(ctx, request)
 }
 
 func (s *MicroServiceService) canModifySchema(ctx context.Context, domainProject string, in *pb.ModifySchemaRequest) *errsvc.Error {

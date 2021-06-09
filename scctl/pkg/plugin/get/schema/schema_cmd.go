@@ -24,6 +24,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	pb "github.com/apache/servicecomb-service-center/scctl/pkg/progress-bar"
+
 	"github.com/apache/servicecomb-service-center/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/pkg/dump"
@@ -31,7 +33,6 @@ import (
 	"github.com/apache/servicecomb-service-center/scctl/pkg/cmd"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/model"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/plugin/get"
-	"github.com/apache/servicecomb-service-center/scctl/pkg/progress-bar"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/spf13/cobra"
 )

@@ -18,9 +18,10 @@
 package ws_test
 
 import (
+	"testing"
+
 	"github.com/apache/servicecomb-service-center/server/connection/ws"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestNewHealthCheck(t *testing.T) {

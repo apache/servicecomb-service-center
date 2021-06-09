@@ -38,7 +38,7 @@ func (s *MicroServiceService) AddTags(ctx context.Context, in *pb.AddServiceTags
 		}, nil
 	}
 
-	return datasource.Instance().AddTags(ctx, in)
+	return datasource.GetMetadataManager().AddTags(ctx, in)
 }
 
 func (s *MicroServiceService) UpdateTag(ctx context.Context, in *pb.UpdateServiceTagRequest) (*pb.UpdateServiceTagResponse, error) {
@@ -52,7 +52,7 @@ func (s *MicroServiceService) UpdateTag(ctx context.Context, in *pb.UpdateServic
 		}, nil
 	}
 
-	return datasource.Instance().UpdateTag(ctx, in)
+	return datasource.GetMetadataManager().UpdateTag(ctx, in)
 }
 
 func (s *MicroServiceService) DeleteTags(ctx context.Context, in *pb.DeleteServiceTagsRequest) (*pb.DeleteServiceTagsResponse, error) {
@@ -65,7 +65,7 @@ func (s *MicroServiceService) DeleteTags(ctx context.Context, in *pb.DeleteServi
 		}, nil
 	}
 
-	return datasource.Instance().DeleteTags(ctx, in)
+	return datasource.GetMetadataManager().DeleteTags(ctx, in)
 }
 
 func (s *MicroServiceService) GetTags(ctx context.Context, in *pb.GetServiceTagsRequest) (*pb.GetServiceTagsResponse, error) {
@@ -77,5 +77,5 @@ func (s *MicroServiceService) GetTags(ctx context.Context, in *pb.GetServiceTags
 		}, nil
 	}
 
-	return datasource.Instance().GetTags(ctx, in)
+	return datasource.GetMetadataManager().GetTags(ctx, in)
 }

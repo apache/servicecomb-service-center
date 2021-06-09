@@ -38,7 +38,7 @@ func (s *MicroServiceService) AddRule(ctx context.Context, in *pb.AddServiceRule
 		}, nil
 	}
 
-	return datasource.Instance().AddRule(ctx, in)
+	return datasource.GetMetadataManager().AddRule(ctx, in)
 }
 
 func (s *MicroServiceService) UpdateRule(ctx context.Context, in *pb.UpdateServiceRuleRequest) (*pb.UpdateServiceRuleResponse, error) {
@@ -51,7 +51,7 @@ func (s *MicroServiceService) UpdateRule(ctx context.Context, in *pb.UpdateServi
 		}, nil
 	}
 
-	return datasource.Instance().UpdateRule(ctx, in)
+	return datasource.GetMetadataManager().UpdateRule(ctx, in)
 }
 
 func (s *MicroServiceService) GetRule(ctx context.Context, in *pb.GetServiceRulesRequest) (*pb.GetServiceRulesResponse, error) {
@@ -63,7 +63,7 @@ func (s *MicroServiceService) GetRule(ctx context.Context, in *pb.GetServiceRule
 		}, nil
 	}
 
-	return datasource.Instance().GetRules(ctx, in)
+	return datasource.GetMetadataManager().GetRules(ctx, in)
 }
 
 func (s *MicroServiceService) DeleteRule(ctx context.Context, in *pb.DeleteServiceRulesRequest) (*pb.DeleteServiceRulesResponse, error) {
@@ -76,5 +76,5 @@ func (s *MicroServiceService) DeleteRule(ctx context.Context, in *pb.DeleteServi
 		}, nil
 	}
 
-	return datasource.Instance().DeleteRule(ctx, in)
+	return datasource.GetMetadataManager().DeleteRule(ctx, in)
 }

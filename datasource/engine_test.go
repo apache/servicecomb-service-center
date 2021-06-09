@@ -114,7 +114,7 @@ func serviceClearCheckFunc(domain string, project string) func() {
 			createService(domain, project, "svc3", withNoInstance, shouldNotClear)
 			createService(domain, project, "svc4", withInstance, shouldNotClear)
 
-			err = datasource.Instance().ClearNoInstanceServices(context.Background(), 2*time.Second)
+			err = datasource.GetSCManager().ClearNoInstanceServices(context.Background(), 2*time.Second)
 			Expect(err).To(BeNil())
 
 			checkServiceCleared(domain, project)
