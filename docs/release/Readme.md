@@ -50,3 +50,37 @@ Below is the list of the files which has been excluded from the list of RAT tool
 - glide.yaml go.mod go.sum : Skip dependency config files
 
 You can access the latest RAT report [here](rat-report)  
+
+#### Make a release
+
+See [here](https://github.com/apache/servicecomb-service-center/blob/master/scripts/release/README.md)
+
+#### Archive
+
+##### Step 1
+
+Execute script, archive source code and generate summary and signature
+```
+bash scripts/release/archive.sh apache-servicecomb-service-center 2.0.0 littlecui@apache.org
+```
+
+list current directory
+
+```
+-rw-rw-r--  1 ubuntu ubuntu 3.1M Jun  8 20:35 apache-servicecomb-service-center-2.0.0-src.tar.gz
+-rw-rw-r--  1 ubuntu ubuntu  862 Jun  8 20:35 apache-servicecomb-service-center-2.0.0-src.tar.gz.asc
+-rw-rw-r--  1 ubuntu ubuntu  181 Jun  8 20:35 apache-servicecomb-service-center-2.0.0-src.tar.gz.sha512
+```
+
+##### Step 2
+
+PUSH to apache dev repo
+
+```
+svn co https://dist.apache.org/repos/dist/dev/servicecomb/
+cd servicecomb/
+mkdir -p 2.0.0
+cp apache-servicecomb-service-center-* 2.0.0/
+svn add .
+svn ci --username xxx --password xxx -m "Add the Service-Center 2.0.0 version"
+```

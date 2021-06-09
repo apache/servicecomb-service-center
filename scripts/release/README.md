@@ -9,10 +9,6 @@ To make a release of Service-center please follow the below steps
 
 git clone https://github.com/apache/servicecomb-service-center.git $GOPATH/src/github.com/apache/servicecomb-service-center
 cd $GOPATH/src/github.com/apache/servicecomb-service-center
-
-## Download all the dependency
-curl https://glide.sh/get | sh
-glide install
 ```
 
 ##### Note: [bower](https://www.npmjs.com/package/bower) should be installed in this machine
@@ -23,20 +19,20 @@ glide install
 
 ```
 # bash -x scripts/release/make_release.sh OS_NAME VERSION_NUMBER PACKAGE_NUMBER
-bash -x scripts/release/make_release.sh linux 1.1.0
+bash -x scripts/release/make_release.sh linux 2.0.0
 ```
 
 #### Windows Release
 
 ```
 # bash -x scripts/release/make_release.sh OS_NAME VERSION_NUMBER PACKAGE_NUMBER
-bash -x scripts/release/make_release.sh windows 1.1.0
+bash -x scripts/release/make_release.sh windows 2.0.0
 ```
 
 #### Mac OS Release
 
 ```
 # bash -x scripts/release/make_release.sh OS_NAME VERSION_NUMBER PACKAGE_NUMBER
-bash -x scripts/release/make_release.sh mac 1.1.0
+bash -x scripts/release/make_release.sh mac 2.0.0
 ```
 
