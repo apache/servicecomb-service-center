@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package service
+package disco
 
 import (
 	"context"
@@ -27,7 +27,6 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/proto"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
@@ -35,13 +34,7 @@ import (
 )
 
 type MicroServiceService struct {
-	instanceService proto.ServiceInstanceCtrlServerEx
 }
-
-const (
-	ExistTypeMicroservice = "microservice"
-	ExistTypeSchema       = "schema"
-)
 
 func (s *MicroServiceService) Create(ctx context.Context, in *pb.CreateServiceRequest) (*pb.CreateServiceResponse, error) {
 	if in == nil || in.Service == nil {
@@ -94,7 +87,7 @@ func (s *MicroServiceService) CreateServicePri(ctx context.Context, in *pb.Creat
 		return resp, nil
 	}
 
-	return datasource.GetMetadataManager().RegisterService(ctx, in)
+	return RegisterService(ctx, in)
 }
 
 func (s *MicroServiceService) Delete(ctx context.Context, in *pb.DeleteServiceRequest) (*pb.DeleteServiceResponse, error) {
@@ -235,7 +228,7 @@ func (s *MicroServiceService) UpdateProperties(ctx context.Context, in *pb.Updat
 
 func (s *MicroServiceService) Exist(ctx context.Context, in *pb.GetExistenceRequest) (*pb.GetExistenceResponse, error) {
 	switch in.Type {
-	case ExistTypeMicroservice:
+	case datasource.ExistTypeMicroservice:
 		err := validator.ExistenceReqValidator().Validate(in)
 		if err != nil {
 			serviceFlag := util.StringJoin([]string{in.Environment, in.AppId, in.ServiceName, in.Version}, "/")
@@ -246,7 +239,7 @@ func (s *MicroServiceService) Exist(ctx context.Context, in *pb.GetExistenceRequ
 		}
 
 		return datasource.GetMetadataManager().ExistService(ctx, in)
-	case ExistTypeSchema:
+	case datasource.ExistTypeSchema:
 		err := validator.GetSchemaReqValidator().Validate(in)
 		if err != nil {
 			log.Errorf(err, "schema[%s/%s] exist failed", in.ServiceId, in.SchemaId)
@@ -321,7 +314,7 @@ func (s *MicroServiceService) CreateServiceEx(ctx context.Context, in *pb.Create
 					Instance: ins,
 				}
 				req.Instance.ServiceId = serviceID
-				rsp, err := s.instanceService.Register(ctx, req)
+				rsp, err := RegisterInstance(ctx, req)
 				if err != nil {
 					chanRsp.Message += fmt.Sprintf("{instance:%v,result:%s}", ins.Endpoints, err.Error())
 				}

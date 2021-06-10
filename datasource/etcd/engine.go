@@ -27,6 +27,8 @@ import (
 	"strings"
 	"time"
 
+	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/mux"
 	"github.com/apache/servicecomb-service-center/server/config"
@@ -100,7 +102,7 @@ func (sm *SCManager) registerService(ctx context.Context) error {
 func (sm *SCManager) registerInstance(ctx context.Context) error {
 	core.Instance.InstanceId = ""
 	core.Instance.ServiceId = core.Service.ServiceId
-	respI, err := core.InstanceAPI.Register(ctx, core.RegisterInstanceRequest())
+	respI, err := discosvc.RegisterInstance(ctx, core.RegisterInstanceRequest())
 	if err != nil {
 		log.Error("register failed", err)
 		return err
@@ -118,7 +120,7 @@ func (sm *SCManager) registerInstance(ctx context.Context) error {
 
 func (sm *SCManager) selfHeartBeat(pCtx context.Context) error {
 	ctx := core.AddDefaultContextValue(pCtx)
-	respI, err := core.InstanceAPI.Heartbeat(ctx, core.HeartbeatRequest())
+	respI, err := discosvc.Heartbeat(ctx, core.HeartbeatRequest())
 	if err != nil {
 		log.Error("send heartbeat failed", err)
 		return err
@@ -161,7 +163,7 @@ func (sm *SCManager) SelfUnregister(pCtx context.Context) error {
 		return nil
 	}
 	ctx := core.AddDefaultContextValue(pCtx)
-	respI, err := core.InstanceAPI.Unregister(ctx, core.UnregisterInstanceRequest())
+	respI, err := discosvc.UnregisterInstance(ctx, core.UnregisterInstanceRequest())
 	if err != nil {
 		log.Error("unregister failed", err)
 		return err
@@ -255,7 +257,7 @@ func shouldClear(ctx context.Context, timeLimitStamp string, svc *pb.MicroServic
 		ConsumerServiceId: svc.ServiceId,
 		ProviderServiceId: svc.ServiceId,
 	}
-	getInstsResp, err := core.InstanceAPI.GetInstances(ctx, getInstsReq)
+	getInstsResp, err := discosvc.GetInstances(ctx, getInstsReq)
 	if err != nil {
 		return false, err
 	}

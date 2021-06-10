@@ -20,9 +20,11 @@ package v4
 import (
 	"net/http"
 
+	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
+	"github.com/apache/servicecomb-service-center/server/service/heartbeat"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
-	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/handler/exception"
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/gorilla/websocket"
@@ -70,7 +72,7 @@ func (s *WatchService) Watch(w http.ResponseWriter, r *http.Request) {
 	defer conn.Close()
 
 	r.Method = "WATCH"
-	core.InstanceAPI.WebSocketWatch(r.Context(), &pb.WatchInstanceRequest{
+	discosvc.WebSocketWatch(r.Context(), &pb.WatchInstanceRequest{
 		SelfServiceId: r.URL.Query().Get(":serviceId"),
 	}, conn)
 }
@@ -82,7 +84,7 @@ func (s *WatchService) Heartbeat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer conn.Close()
-	core.InstanceAPI.WatchHeartbeat(r.Context(), &pb.HeartbeatRequest{
+	heartbeat.WatchHeartbeat(r.Context(), &pb.HeartbeatRequest{
 		ServiceId:  r.URL.Query().Get(":serviceId"),
 		InstanceId: r.URL.Query().Get(":instanceId"),
 	}, conn)

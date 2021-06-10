@@ -24,6 +24,8 @@ import (
 	"strings"
 	"time"
 
+	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
+
 	pb "github.com/go-chassis/cari/discovery"
 
 	"github.com/apache/servicecomb-service-center/datasource"
@@ -198,7 +200,7 @@ func (ds *SCManager) registryInstance(pCtx context.Context) error {
 
 func (ds *SCManager) selfHeartBeat(pCtx context.Context) error {
 	ctx := core.AddDefaultContextValue(pCtx)
-	respI, err := core.InstanceAPI.Heartbeat(ctx, core.HeartbeatRequest())
+	respI, err := discosvc.Heartbeat(ctx, core.HeartbeatRequest())
 	if err != nil {
 		log.Error("send heartbeat failed", err)
 		return err

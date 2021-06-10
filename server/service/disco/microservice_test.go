@@ -14,11 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package service_test
+package disco_test
 
 import (
 	"strconv"
 	"strings"
+
+	"github.com/apache/servicecomb-service-center/server/service/disco"
 
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
@@ -160,7 +162,7 @@ var _ = Describe("'Micro-service' service", func() {
 				Expect(respGetRules.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 				Expect(respGetRules.Rules[0].Attribute).To(Equal("ServiceName"))
 
-				respGetInsts, err := instanceResource.GetInstances(getContext(), &pb.GetInstancesRequest{
+				respGetInsts, err := disco.GetInstances(getContext(), &pb.GetInstancesRequest{
 					ConsumerServiceId: resp.ServiceId,
 					ProviderServiceId: resp.ServiceId,
 				})
@@ -1192,7 +1194,7 @@ var _ = Describe("'Micro-service' service", func() {
 			Expect(respCreate.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 			serviceConsumerId = respCreate.ServiceId
 
-			respFind, err := instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+			respFind, err := disco.FindInstances(getContext(), &pb.FindInstancesRequest{
 				ConsumerServiceId: serviceConsumerId,
 				AppId:             provider.AppId,
 				ServiceName:       provider.ServiceName,

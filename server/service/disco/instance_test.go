@@ -14,12 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package service_test
+package disco_test
 
 import (
 	"math"
 	"strconv"
 	"strings"
+
+	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
 
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/config"
@@ -57,7 +59,7 @@ var _ = Describe("'Instance' service", func() {
 
 		Context("when register a instance", func() {
 			It("should be passed", func() {
-				resp, err := instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+				resp, err := discosvc.RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
 						ServiceId: serviceId1,
 						Endpoints: []string{
@@ -71,7 +73,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 				Expect(resp.InstanceId).To(Not(Equal("")))
 
-				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+				resp, err = discosvc.RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
 						InstanceId: "customId",
 						ServiceId:  serviceId1,
@@ -87,7 +89,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(resp.InstanceId).To(Equal("customId"))
 
 				By("status is nil")
-				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+				resp, err = discosvc.RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
 						ServiceId: serviceId1,
 						Endpoints: []string{
@@ -109,7 +111,7 @@ var _ = Describe("'Instance' service", func() {
 					eps = append(eps, s)
 					properties[s] = s
 				}
-				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+				resp, err = discosvc.RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
 						ServiceId:  serviceId1,
 						Endpoints:  eps,
@@ -145,13 +147,13 @@ var _ = Describe("'Instance' service", func() {
 					HostName: "UT-HOST",
 					Status:   pb.MSI_UP,
 				}
-				resp, err := instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+				resp, err := discosvc.RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
 					Instance: instance,
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
-				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+				resp, err = discosvc.RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
 					Instance: instance,
 				})
 				Expect(err).To(BeNil())
@@ -163,7 +165,7 @@ var _ = Describe("'Instance' service", func() {
 		Context("when register invalid instance", func() {
 			It("should be failed", func() {
 				By("endpoints are empty")
-				resp, err := instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+				resp, err := discosvc.RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
 						ServiceId: serviceId1,
 						Endpoints: []string{""},
@@ -175,7 +177,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("serviceId is empty")
-				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+				resp, err = discosvc.RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
 						HostName: "UT-HOST",
 						Endpoints: []string{
@@ -188,7 +190,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(resp.Response.GetCode()).ToNot(Equal(pb.ResponseSuccess))
 
 				By("service does not exist")
-				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+				resp, err = discosvc.RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
 						ServiceId: "1000000000000000",
 						Endpoints: []string{
@@ -202,7 +204,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(resp.Response.GetCode()).ToNot(Equal(pb.ResponseSuccess))
 
 				By("hostName is empty")
-				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+				resp, err = discosvc.RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
 						ServiceId: serviceId1,
 						Endpoints: []string{
@@ -213,7 +215,7 @@ var _ = Describe("'Instance' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.GetCode()).ToNot(Equal(pb.ResponseSuccess))
-				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+				resp, err = discosvc.RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
 						ServiceId: serviceId1,
 						HostName:  " ",
@@ -225,7 +227,7 @@ var _ = Describe("'Instance' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.GetCode()).ToNot(Equal(pb.ResponseSuccess))
-				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+				resp, err = discosvc.RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
 						ServiceId: serviceId1,
 						HostName:  TOO_LONG_HOSTNAME,
@@ -239,14 +241,14 @@ var _ = Describe("'Instance' service", func() {
 				Expect(resp.Response.GetCode()).ToNot(Equal(pb.ResponseSuccess))
 
 				By("instance is nil")
-				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+				resp, err = discosvc.RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
 					Instance: nil,
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.GetCode()).ToNot(Equal(pb.ResponseSuccess))
 
 				By("check normal push healthChceck")
-				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+				resp, err = discosvc.RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
 						ServiceId: serviceId1,
 						Endpoints: []string{
@@ -264,7 +266,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(err).To(BeNil())
 				Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
-				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+				resp, err = discosvc.RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
 						ServiceId: serviceId1,
 						Endpoints: []string{
@@ -283,7 +285,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
 				By("check normal pull healthChceck")
-				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+				resp, err = discosvc.RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
 						ServiceId: serviceId1,
 						Endpoints: []string{
@@ -303,7 +305,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
 				By("check invalid push healthChceck")
-				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+				resp, err = discosvc.RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
 						ServiceId: serviceId1,
 						Endpoints: []string{
@@ -322,7 +324,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("check invalid pull healthChceck")
-				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+				resp, err = discosvc.RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
 						ServiceId: serviceId1,
 						Endpoints: []string{
@@ -340,7 +342,7 @@ var _ = Describe("'Instance' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
-				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+				resp, err = discosvc.RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
 						ServiceId: serviceId1,
 						Endpoints: []string{
@@ -357,7 +359,7 @@ var _ = Describe("'Instance' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
-				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+				resp, err = discosvc.RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
 						ServiceId: serviceId1,
 						Endpoints: []string{
@@ -377,7 +379,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("invalid status")
-				resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+				resp, err = discosvc.RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
 						ServiceId: serviceId1,
 						Endpoints: []string{
@@ -414,7 +416,7 @@ var _ = Describe("'Instance' service", func() {
 			Expect(respCreate.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 			serviceId = respCreate.ServiceId
 
-			resp, err := instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+			resp, err := discosvc.RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
 				Instance: &pb.MicroServiceInstance{
 					ServiceId: serviceId,
 					HostName:  "UT-HOST",
@@ -428,7 +430,7 @@ var _ = Describe("'Instance' service", func() {
 			Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 			instanceId1 = resp.InstanceId
 
-			resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+			resp, err = discosvc.RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
 				Instance: &pb.MicroServiceInstance{
 					ServiceId: serviceId,
 					HostName:  "UT-HOST",
@@ -446,7 +448,7 @@ var _ = Describe("'Instance' service", func() {
 		Context("when update a lease", func() {
 			It("should be passed", func() {
 				By("valid instance")
-				resp, err := instanceResource.Heartbeat(getContext(), &pb.HeartbeatRequest{
+				resp, err := discosvc.Heartbeat(getContext(), &pb.HeartbeatRequest{
 					ServiceId:  serviceId,
 					InstanceId: instanceId1,
 				})
@@ -454,31 +456,31 @@ var _ = Describe("'Instance' service", func() {
 				Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
 				By("serviceId/instanceId is invalid")
-				resp, err = instanceResource.Heartbeat(getContext(), &pb.HeartbeatRequest{
+				resp, err = discosvc.Heartbeat(getContext(), &pb.HeartbeatRequest{
 					ServiceId:  "",
 					InstanceId: instanceId1,
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
-				resp, err = instanceResource.Heartbeat(getContext(), &pb.HeartbeatRequest{
+				resp, err = discosvc.Heartbeat(getContext(), &pb.HeartbeatRequest{
 					ServiceId:  TOO_LONG_SERVICEID,
 					InstanceId: instanceId1,
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
-				resp, err = instanceResource.Heartbeat(getContext(), &pb.HeartbeatRequest{
+				resp, err = discosvc.Heartbeat(getContext(), &pb.HeartbeatRequest{
 					ServiceId:  serviceId,
 					InstanceId: "",
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
-				resp, err = instanceResource.Heartbeat(getContext(), &pb.HeartbeatRequest{
+				resp, err = discosvc.Heartbeat(getContext(), &pb.HeartbeatRequest{
 					ServiceId:  serviceId,
 					InstanceId: "@",
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
-				resp, err = instanceResource.Heartbeat(getContext(), &pb.HeartbeatRequest{
+				resp, err = discosvc.Heartbeat(getContext(), &pb.HeartbeatRequest{
 					ServiceId:  serviceId,
 					InstanceId: TOO_LONG_SERVICEID,
 				})
@@ -486,14 +488,14 @@ var _ = Describe("'Instance' service", func() {
 				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("serviceId does not exist")
-				resp, err = instanceResource.Heartbeat(getContext(), &pb.HeartbeatRequest{
+				resp, err = discosvc.Heartbeat(getContext(), &pb.HeartbeatRequest{
 					ServiceId:  "100000000000",
 					InstanceId: instanceId1,
 				})
 				Expect(resp.Response.GetCode()).ToNot(Equal(pb.ResponseSuccess))
 
 				By("instance does not exist")
-				resp, err = instanceResource.Heartbeat(getContext(), &pb.HeartbeatRequest{
+				resp, err = discosvc.Heartbeat(getContext(), &pb.HeartbeatRequest{
 					ServiceId:  serviceId,
 					InstanceId: "not-exist-ins",
 				})
@@ -504,19 +506,19 @@ var _ = Describe("'Instance' service", func() {
 		Context("when batch update lease", func() {
 			It("should be passed", func() {
 				By("instances are empty")
-				resp, err := instanceResource.HeartbeatSet(getContext(), &pb.HeartbeatSetRequest{
+				resp, err := discosvc.HeartbeatSet(getContext(), &pb.HeartbeatSetRequest{
 					Instances: []*pb.HeartbeatSetElement{},
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.GetCode()).ToNot(Equal(pb.ResponseSuccess))
 
 				By("instances are nil")
-				resp, err = instanceResource.HeartbeatSet(getContext(), &pb.HeartbeatSetRequest{})
+				resp, err = discosvc.HeartbeatSet(getContext(), &pb.HeartbeatSetRequest{})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.GetCode()).ToNot(Equal(pb.ResponseSuccess))
 
 				By("request contains > 1 instances")
-				resp, err = instanceResource.HeartbeatSet(getContext(), &pb.HeartbeatSetRequest{
+				resp, err = discosvc.HeartbeatSet(getContext(), &pb.HeartbeatSetRequest{
 					Instances: []*pb.HeartbeatSetElement{
 						{
 							ServiceId:  serviceId,
@@ -531,7 +533,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
 				By("request contains invalid instance")
-				resp, err = instanceResource.HeartbeatSet(getContext(), &pb.HeartbeatSetRequest{
+				resp, err = discosvc.HeartbeatSet(getContext(), &pb.HeartbeatSetRequest{
 					Instances: []*pb.HeartbeatSetElement{
 						{
 							ServiceId:  serviceId,
@@ -560,7 +562,7 @@ var _ = Describe("'Instance' service", func() {
 			It("should be failed", func() {
 				old := core.Service.ServiceName
 				core.Service.ServiceName = "x"
-				respCluterhealth, err := instanceResource.ClusterHealth(getContext())
+				respCluterhealth, err := discosvc.ClusterHealth(getContext())
 				Expect(err).To(BeNil())
 				Expect(respCluterhealth.Response.GetCode()).ToNot(Equal(pb.ResponseSuccess))
 				core.Service.ServiceName = old
@@ -569,7 +571,7 @@ var _ = Describe("'Instance' service", func() {
 
 		Context("when SC registered", func() {
 			It("should be passed", func() {
-				respCluterhealth, err := instanceResource.ClusterHealth(getContext())
+				respCluterhealth, err := discosvc.ClusterHealth(getContext())
 				Expect(err).To(BeNil())
 				Expect(respCluterhealth.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 			})
@@ -596,7 +598,7 @@ var _ = Describe("'Instance' service", func() {
 			Expect(respCreate.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 			serviceId = respCreate.ServiceId
 
-			resp, err := instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+			resp, err := discosvc.RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
 				Instance: &pb.MicroServiceInstance{
 					ServiceId: serviceId,
 					Endpoints: []string{
@@ -615,7 +617,7 @@ var _ = Describe("'Instance' service", func() {
 		Context("when update instance status", func() {
 			It("should be passed", func() {
 				By("update instance status")
-				respUpdateStatus, err := instanceResource.UpdateStatus(getContext(), &pb.UpdateInstanceStatusRequest{
+				respUpdateStatus, err := discosvc.UpdateInstanceStatus(getContext(), &pb.UpdateInstanceStatusRequest{
 					ServiceId:  serviceId,
 					InstanceId: instanceId,
 					Status:     pb.MSI_DOWN,
@@ -623,7 +625,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(err).To(BeNil())
 				Expect(respUpdateStatus.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
-				respUpdateStatus, err = instanceResource.UpdateStatus(getContext(), &pb.UpdateInstanceStatusRequest{
+				respUpdateStatus, err = discosvc.UpdateInstanceStatus(getContext(), &pb.UpdateInstanceStatusRequest{
 					ServiceId:  serviceId,
 					InstanceId: instanceId,
 					Status:     pb.MSI_OUTOFSERVICE,
@@ -631,7 +633,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(err).To(BeNil())
 				Expect(respUpdateStatus.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
-				respUpdateStatus, err = instanceResource.UpdateStatus(getContext(), &pb.UpdateInstanceStatusRequest{
+				respUpdateStatus, err = discosvc.UpdateInstanceStatus(getContext(), &pb.UpdateInstanceStatusRequest{
 					ServiceId:  serviceId,
 					InstanceId: instanceId,
 					Status:     pb.MSI_STARTING,
@@ -639,7 +641,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(err).To(BeNil())
 				Expect(respUpdateStatus.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
-				respUpdateStatus, err = instanceResource.UpdateStatus(getContext(), &pb.UpdateInstanceStatusRequest{
+				respUpdateStatus, err = discosvc.UpdateInstanceStatus(getContext(), &pb.UpdateInstanceStatusRequest{
 					ServiceId:  serviceId,
 					InstanceId: instanceId,
 					Status:     pb.MSI_TESTING,
@@ -648,7 +650,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(err).To(BeNil())
 				Expect(respUpdateStatus.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
-				respUpdateStatus, err = instanceResource.UpdateStatus(getContext(), &pb.UpdateInstanceStatusRequest{
+				respUpdateStatus, err = discosvc.UpdateInstanceStatus(getContext(), &pb.UpdateInstanceStatusRequest{
 					ServiceId:  serviceId,
 					InstanceId: instanceId,
 					Status:     pb.MSI_UP,
@@ -657,7 +659,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respUpdateStatus.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
 				By("update status with a empty serviceId")
-				respUpdateStatus, err = instanceResource.UpdateStatus(getContext(), &pb.UpdateInstanceStatusRequest{
+				respUpdateStatus, err = discosvc.UpdateInstanceStatus(getContext(), &pb.UpdateInstanceStatusRequest{
 					ServiceId:  "",
 					InstanceId: instanceId,
 					Status:     pb.MSI_STARTING,
@@ -667,7 +669,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respUpdateStatus.Response.GetCode()).ToNot(Equal(pb.ResponseSuccess))
 
 				By("update status with a not exist service")
-				respUpdateStatus, err = instanceResource.UpdateStatus(getContext(), &pb.UpdateInstanceStatusRequest{
+				respUpdateStatus, err = discosvc.UpdateInstanceStatus(getContext(), &pb.UpdateInstanceStatusRequest{
 					ServiceId:  "notexistservice",
 					InstanceId: instanceId,
 					Status:     pb.MSI_STARTING,
@@ -677,7 +679,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respUpdateStatus.Response.GetCode()).ToNot(Equal(pb.ResponseSuccess))
 
 				By("update status with a not exist instance")
-				respUpdateStatus, err = instanceResource.UpdateStatus(getContext(), &pb.UpdateInstanceStatusRequest{
+				respUpdateStatus, err = discosvc.UpdateInstanceStatus(getContext(), &pb.UpdateInstanceStatusRequest{
 					ServiceId:  serviceId,
 					InstanceId: "notexistins",
 					Status:     pb.MSI_STARTING,
@@ -687,7 +689,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respUpdateStatus.Response.GetCode()).ToNot(Equal(pb.ResponseSuccess))
 
 				By("update invalid status")
-				respUpdateStatus, err = instanceResource.UpdateStatus(getContext(), &pb.UpdateInstanceStatusRequest{
+				respUpdateStatus, err = discosvc.UpdateInstanceStatus(getContext(), &pb.UpdateInstanceStatusRequest{
 					ServiceId:  serviceId,
 					InstanceId: instanceId,
 					Status:     "nonestatus",
@@ -701,7 +703,7 @@ var _ = Describe("'Instance' service", func() {
 		Context("when update instance properties", func() {
 			It("should be passed", func() {
 				By("update instance properties")
-				respUpdateProperties, err := instanceResource.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{
+				respUpdateProperties, err := discosvc.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{
 					ServiceId:  serviceId,
 					InstanceId: instanceId,
 					Properties: map[string]string{
@@ -719,7 +721,7 @@ var _ = Describe("'Instance' service", func() {
 					s := strconv.Itoa(i) + strings.Repeat("x", 253)
 					properties[s] = s
 				}
-				respUpdateProperties, err = instanceResource.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{
+				respUpdateProperties, err = discosvc.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{
 					ServiceId:  serviceId,
 					InstanceId: instanceId,
 					Properties: properties,
@@ -729,7 +731,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respUpdateProperties.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
 				By("instance does not exist")
-				respUpdateProperties, err = instanceResource.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{
+				respUpdateProperties, err = discosvc.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{
 					ServiceId:  serviceId,
 					InstanceId: "notexistins",
 					Properties: map[string]string{
@@ -741,7 +743,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respUpdateProperties.Response.GetCode()).ToNot(Equal(pb.ResponseSuccess))
 
 				By("serviceId/instanceId/props is invalid")
-				respUpdateProperties, err = instanceResource.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{
+				respUpdateProperties, err = discosvc.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{
 					ServiceId:  "",
 					InstanceId: instanceId,
 					Properties: map[string]string{
@@ -751,7 +753,7 @@ var _ = Describe("'Instance' service", func() {
 
 				Expect(err).To(BeNil())
 				Expect(respUpdateProperties.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
-				respUpdateProperties, err = instanceResource.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{
+				respUpdateProperties, err = discosvc.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{
 					ServiceId:  TOO_LONG_SERVICEID,
 					InstanceId: instanceId,
 					Properties: map[string]string{
@@ -761,7 +763,7 @@ var _ = Describe("'Instance' service", func() {
 
 				Expect(err).To(BeNil())
 				Expect(respUpdateProperties.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
-				respUpdateProperties, err = instanceResource.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{
+				respUpdateProperties, err = discosvc.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{
 					ServiceId:  serviceId,
 					InstanceId: "",
 					Properties: map[string]string{
@@ -771,7 +773,7 @@ var _ = Describe("'Instance' service", func() {
 
 				Expect(err).To(BeNil())
 				Expect(respUpdateProperties.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
-				respUpdateProperties, err = instanceResource.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{
+				respUpdateProperties, err = discosvc.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{
 					ServiceId:  serviceId,
 					InstanceId: "@",
 					Properties: map[string]string{
@@ -781,7 +783,7 @@ var _ = Describe("'Instance' service", func() {
 
 				Expect(err).To(BeNil())
 				Expect(respUpdateProperties.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
-				respUpdateProperties, err = instanceResource.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{
+				respUpdateProperties, err = discosvc.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{
 					ServiceId:  serviceId,
 					InstanceId: TOO_LONG_SERVICEID,
 					Properties: map[string]string{
@@ -793,7 +795,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respUpdateProperties.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("remove the properties")
-				respUpdateProperties, err = instanceResource.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{
+				respUpdateProperties, err = discosvc.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{
 					ServiceId:  serviceId,
 					InstanceId: instanceId,
 				})
@@ -801,7 +803,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respUpdateProperties.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
 				By("service does not exist")
-				respUpdateProperties, err = instanceResource.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{
+				respUpdateProperties, err = discosvc.UpdateInstanceProperties(getContext(), &pb.UpdateInstancePropsRequest{
 					ServiceId:  "notexistservice",
 					InstanceId: instanceId,
 					Properties: map[string]string{
@@ -959,7 +961,7 @@ var _ = Describe("'Instance' service", func() {
 			Expect(respCreate.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 			serviceId9 = respCreate.ServiceId
 
-			resp, err := instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+			resp, err := discosvc.RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
 				Instance: &pb.MicroServiceInstance{
 					ServiceId: serviceId1,
 					HostName:  "UT-HOST",
@@ -973,7 +975,7 @@ var _ = Describe("'Instance' service", func() {
 			Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 			instanceId1 = resp.InstanceId
 
-			resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+			resp, err = discosvc.RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
 				Instance: &pb.MicroServiceInstance{
 					ServiceId: serviceId2,
 					HostName:  "UT-HOST",
@@ -987,7 +989,7 @@ var _ = Describe("'Instance' service", func() {
 			Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 			instanceId2 = resp.InstanceId
 
-			resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+			resp, err = discosvc.RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
 				Instance: &pb.MicroServiceInstance{
 					ServiceId: serviceId4,
 					HostName:  "UT-HOST",
@@ -1001,7 +1003,7 @@ var _ = Describe("'Instance' service", func() {
 			Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 			instanceId4 = resp.InstanceId
 
-			resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+			resp, err = discosvc.RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
 				Instance: &pb.MicroServiceInstance{
 					ServiceId: serviceId5,
 					HostName:  "UT-HOST",
@@ -1015,7 +1017,7 @@ var _ = Describe("'Instance' service", func() {
 			Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 			instanceId5 = resp.InstanceId
 
-			resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+			resp, err = discosvc.RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
 				Instance: &pb.MicroServiceInstance{
 					ServiceId: serviceId8,
 					HostName:  "UT-HOST",
@@ -1029,7 +1031,7 @@ var _ = Describe("'Instance' service", func() {
 			Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 			instanceId8 = resp.InstanceId
 
-			resp, err = instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+			resp, err = discosvc.RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
 				Instance: &pb.MicroServiceInstance{
 					ServiceId: serviceId9,
 					HostName:  "UT-HOST",
@@ -1047,7 +1049,7 @@ var _ = Describe("'Instance' service", func() {
 		Context("when query invalid parameters", func() {
 			It("should be failed", func() {
 				By("invalid appId")
-				respFind, err := instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+				respFind, err := discosvc.FindInstances(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					AppId:             TOO_LONG_APPID,
 					ServiceName:       "query_instance_service",
@@ -1055,7 +1057,7 @@ var _ = Describe("'Instance' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
-				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+				respFind, err = discosvc.FindInstances(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					AppId:             "",
 					ServiceName:       "query_instance_service",
@@ -1063,7 +1065,7 @@ var _ = Describe("'Instance' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
-				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+				respFind, err = discosvc.FindInstances(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					AppId:             " ",
 					ServiceName:       "query_instance_service",
@@ -1073,7 +1075,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("invalid serviceName")
-				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+				respFind, err = discosvc.FindInstances(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					AppId:             "query_instance",
 					ServiceName:       TOO_LONG_EXISTENCE,
@@ -1081,7 +1083,7 @@ var _ = Describe("'Instance' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
-				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+				respFind, err = discosvc.FindInstances(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					AppId:             "query_instance",
 					ServiceName:       "",
@@ -1089,7 +1091,7 @@ var _ = Describe("'Instance' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
-				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+				respFind, err = discosvc.FindInstances(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					AppId:             "query_instance",
 					ServiceName:       " ",
@@ -1099,7 +1101,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("invalid version")
-				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+				respFind, err = discosvc.FindInstances(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					AppId:             "query_instance",
 					ServiceName:       "query_instance_service",
@@ -1107,7 +1109,7 @@ var _ = Describe("'Instance' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
-				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+				respFind, err = discosvc.FindInstances(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					AppId:             "query_instance",
 					ServiceName:       "query_instance_service",
@@ -1115,7 +1117,7 @@ var _ = Describe("'Instance' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
-				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+				respFind, err = discosvc.FindInstances(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					AppId:             "query_instance",
 					ServiceName:       "query_instance_service",
@@ -1123,7 +1125,7 @@ var _ = Describe("'Instance' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
-				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+				respFind, err = discosvc.FindInstances(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					AppId:             "query_instance",
 					ServiceName:       "query_instance_service",
@@ -1133,7 +1135,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("consumerId is empty")
-				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+				respFind, err = discosvc.FindInstances(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: "",
 					AppId:             "query_instance",
 					ServiceName:       "query_instance_service",
@@ -1143,7 +1145,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
 				By("provider does not exist")
-				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+				respFind, err = discosvc.FindInstances(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					AppId:             "query_instance",
 					ServiceName:       "noneservice",
@@ -1153,7 +1155,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrServiceNotExists))
 
 				By("provider does not contain 3.0.0+ versions")
-				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+				respFind, err = discosvc.FindInstances(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					AppId:             "query_instance",
 					ServiceName:       "query_instance_service",
@@ -1164,7 +1166,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(len(respFind.Instances)).To(Equal(0))
 
 				By("provider does not contain 2.0.0-2.0.1 versions")
-				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+				respFind, err = discosvc.FindInstances(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					AppId:             "query_instance",
 					ServiceName:       "query_instance_service",
@@ -1175,7 +1177,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(len(respFind.Instances)).To(Equal(0))
 
 				By("provider does not contain 2.0.0 version")
-				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+				respFind, err = discosvc.FindInstances(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					AppId:             "query_instance",
 					ServiceName:       "query_instance_service",
@@ -1185,7 +1187,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrServiceNotExists))
 
 				By("consumer does not exist")
-				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+				respFind, err = discosvc.FindInstances(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: "notExistServiceId",
 					AppId:             "query_instance",
 					ServiceName:       "query_instance_service",
@@ -1199,27 +1201,27 @@ var _ = Describe("'Instance' service", func() {
 		Context("when batch query invalid parameters", func() {
 			It("should be failed", func() {
 				By("invalid services")
-				respFind, err := instanceResource.BatchFind(getContext(), &pb.BatchFindInstancesRequest{
+				respFind, err := discosvc.BatchFindInstances(getContext(), &pb.BatchFindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					Services:          nil,
 					Instances:         nil,
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
-				respFind, err = instanceResource.BatchFind(getContext(), &pb.BatchFindInstancesRequest{
+				respFind, err = discosvc.BatchFindInstances(getContext(), &pb.BatchFindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					Services:          []*pb.FindService{},
 					Instances:         []*pb.FindInstance{},
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
-				respFind, err = instanceResource.BatchFind(getContext(), &pb.BatchFindInstancesRequest{
+				respFind, err = discosvc.BatchFindInstances(getContext(), &pb.BatchFindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					Services:          []*pb.FindService{{}},
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
-				respFind, err = instanceResource.BatchFind(getContext(), &pb.BatchFindInstancesRequest{
+				respFind, err = discosvc.BatchFindInstances(getContext(), &pb.BatchFindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					Instances:         []*pb.FindInstance{{}},
 				})
@@ -1227,7 +1229,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("invalid appId")
-				respFind, err = instanceResource.BatchFind(getContext(), &pb.BatchFindInstancesRequest{
+				respFind, err = discosvc.BatchFindInstances(getContext(), &pb.BatchFindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					Services: []*pb.FindService{
 						{
@@ -1241,7 +1243,7 @@ var _ = Describe("'Instance' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
-				respFind, err = instanceResource.BatchFind(getContext(), &pb.BatchFindInstancesRequest{
+				respFind, err = discosvc.BatchFindInstances(getContext(), &pb.BatchFindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					Services: []*pb.FindService{
 						{
@@ -1255,7 +1257,7 @@ var _ = Describe("'Instance' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
-				respFind, err = instanceResource.BatchFind(getContext(), &pb.BatchFindInstancesRequest{
+				respFind, err = discosvc.BatchFindInstances(getContext(), &pb.BatchFindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					Services: []*pb.FindService{
 						{
@@ -1271,7 +1273,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("invalid serviceName")
-				respFind, err = instanceResource.BatchFind(getContext(), &pb.BatchFindInstancesRequest{
+				respFind, err = discosvc.BatchFindInstances(getContext(), &pb.BatchFindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					Services: []*pb.FindService{
 						{
@@ -1285,7 +1287,7 @@ var _ = Describe("'Instance' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
-				respFind, err = instanceResource.BatchFind(getContext(), &pb.BatchFindInstancesRequest{
+				respFind, err = discosvc.BatchFindInstances(getContext(), &pb.BatchFindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					Services: []*pb.FindService{
 						{
@@ -1299,7 +1301,7 @@ var _ = Describe("'Instance' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
-				respFind, err = instanceResource.BatchFind(getContext(), &pb.BatchFindInstancesRequest{
+				respFind, err = discosvc.BatchFindInstances(getContext(), &pb.BatchFindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					Services: []*pb.FindService{
 						{
@@ -1315,7 +1317,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("invalid version")
-				respFind, err = instanceResource.BatchFind(getContext(), &pb.BatchFindInstancesRequest{
+				respFind, err = discosvc.BatchFindInstances(getContext(), &pb.BatchFindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					Services: []*pb.FindService{
 						{
@@ -1329,7 +1331,7 @@ var _ = Describe("'Instance' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
-				respFind, err = instanceResource.BatchFind(getContext(), &pb.BatchFindInstancesRequest{
+				respFind, err = discosvc.BatchFindInstances(getContext(), &pb.BatchFindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					Services: []*pb.FindService{
 						{
@@ -1343,7 +1345,7 @@ var _ = Describe("'Instance' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
-				respFind, err = instanceResource.BatchFind(getContext(), &pb.BatchFindInstancesRequest{
+				respFind, err = discosvc.BatchFindInstances(getContext(), &pb.BatchFindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					Services: []*pb.FindService{
 						{
@@ -1357,7 +1359,7 @@ var _ = Describe("'Instance' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
-				respFind, err = instanceResource.BatchFind(getContext(), &pb.BatchFindInstancesRequest{
+				respFind, err = discosvc.BatchFindInstances(getContext(), &pb.BatchFindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					Services: []*pb.FindService{
 						{
@@ -1373,7 +1375,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("invalid instance")
-				respFind, err = instanceResource.BatchFind(getContext(), &pb.BatchFindInstancesRequest{
+				respFind, err = discosvc.BatchFindInstances(getContext(), &pb.BatchFindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					Instances: []*pb.FindInstance{
 						{
@@ -1385,7 +1387,7 @@ var _ = Describe("'Instance' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
-				respFind, err = instanceResource.BatchFind(getContext(), &pb.BatchFindInstancesRequest{
+				respFind, err = discosvc.BatchFindInstances(getContext(), &pb.BatchFindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					Instances: []*pb.FindInstance{
 						{
@@ -1399,7 +1401,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("consumerId is empty")
-				respFind, err = instanceResource.BatchFind(getContext(), &pb.BatchFindInstancesRequest{
+				respFind, err = discosvc.BatchFindInstances(getContext(), &pb.BatchFindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					Services: []*pb.FindService{
 						{
@@ -1415,7 +1417,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
 				By("provider does not exist")
-				respFind, err = instanceResource.BatchFind(getContext(), &pb.BatchFindInstancesRequest{
+				respFind, err = discosvc.BatchFindInstances(getContext(), &pb.BatchFindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					Services: []*pb.FindService{
 						{
@@ -1431,7 +1433,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 				Expect(respFind.Services.Failed[0].Error.Code).To(Equal(pb.ErrServiceNotExists))
 				Expect(respFind.Services.Failed[0].Indexes[0]).To(Equal(int64(0)))
-				respFind, err = instanceResource.BatchFind(getContext(), &pb.BatchFindInstancesRequest{
+				respFind, err = discosvc.BatchFindInstances(getContext(), &pb.BatchFindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					Instances: []*pb.FindInstance{
 						{
@@ -1448,7 +1450,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respFind.Instances.Failed[0].Indexes[0]).To(Equal(int64(0)))
 
 				By("provider does not contain 3.0.0+ versions")
-				respFind, err = instanceResource.BatchFind(getContext(), &pb.BatchFindInstancesRequest{
+				respFind, err = discosvc.BatchFindInstances(getContext(), &pb.BatchFindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					Services: []*pb.FindService{
 						{
@@ -1467,7 +1469,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respFind.Services.Updated[0].Rev).ToNot(Equal(""))
 
 				By("consumer does not exist")
-				respFind, err = instanceResource.BatchFind(getContext(), &pb.BatchFindInstancesRequest{
+				respFind, err = discosvc.BatchFindInstances(getContext(), &pb.BatchFindInstancesRequest{
 					ConsumerServiceId: "notExistServiceId",
 					Services: []*pb.FindService{
 						{
@@ -1489,7 +1491,7 @@ var _ = Describe("'Instance' service", func() {
 		Context("when query instances", func() {
 			It("should be passed", func() {
 				By("find with version rule")
-				respFind, err := instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+				respFind, err := discosvc.FindInstances(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					AppId:             "query_instance",
 					ServiceName:       "query_instance_service",
@@ -1499,7 +1501,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId2))
 
-				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+				respFind, err = discosvc.FindInstances(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					AppId:             "query_instance",
 					ServiceName:       "query_instance_service",
@@ -1510,7 +1512,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId2))
 
-				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+				respFind, err = discosvc.FindInstances(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					AppId:             "query_instance",
 					ServiceName:       "query_instance_service",
@@ -1520,7 +1522,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId1))
 
-				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+				respFind, err = discosvc.FindInstances(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					AppId:             "query_instance",
 					ServiceName:       "query_instance_service",
@@ -1530,7 +1532,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId1))
 
-				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+				respFind, err = discosvc.FindInstances(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					AppId:             "query_instance",
 					ServiceName:       "query_instance_service",
@@ -1540,7 +1542,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrServiceNotExists))
 
 				By("find with env")
-				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+				respFind, err = discosvc.FindInstances(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId4,
 					AppId:             "query_instance",
 					ServiceName:       "query_instance_diff_env_service",
@@ -1551,7 +1553,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(len(respFind.Instances)).To(Equal(1))
 				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId4))
 
-				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+				respFind, err = discosvc.FindInstances(getContext(), &pb.FindInstancesRequest{
 					Environment: pb.ENV_PROD,
 					AppId:       "query_instance",
 					ServiceName: "query_instance_diff_env_service",
@@ -1564,7 +1566,7 @@ var _ = Describe("'Instance' service", func() {
 
 				By("find with rev")
 				ctx := util.SetContext(getContext(), util.CtxNocache, "")
-				respFind, err = instanceResource.Find(ctx, &pb.FindInstancesRequest{
+				respFind, err = discosvc.FindInstances(ctx, &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId8,
 					AppId:             "query_instance",
 					ServiceName:       "query_instance_with_rev",
@@ -1577,7 +1579,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(len(rev)).NotTo(Equal(0))
 
 				util.WithRequestRev(ctx, "x")
-				respFind, err = instanceResource.Find(ctx, &pb.FindInstancesRequest{
+				respFind, err = discosvc.FindInstances(ctx, &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId8,
 					AppId:             "query_instance",
 					ServiceName:       "query_instance_with_rev",
@@ -1589,7 +1591,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(ctx.Value(util.CtxResponseRevision)).To(Equal(rev))
 
 				util.WithRequestRev(ctx, rev)
-				respFind, err = instanceResource.Find(ctx, &pb.FindInstancesRequest{
+				respFind, err = discosvc.FindInstances(ctx, &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId8,
 					AppId:             "query_instance",
 					ServiceName:       "query_instance_with_rev",
@@ -1601,7 +1603,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(ctx.Value(util.CtxResponseRevision)).To(Equal(rev))
 
 				By("find should return 200 even if consumer is diff apps")
-				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+				respFind, err = discosvc.FindInstances(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId3,
 					AppId:             "query_instance",
 					ServiceName:       "query_instance_service",
@@ -1612,7 +1614,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(len(respFind.Instances)).To(Equal(0))
 
 				By("provider tag does not exist")
-				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+				respFind, err = discosvc.FindInstances(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					AppId:             "query_instance",
 					ServiceName:       "query_instance_service",
@@ -1628,7 +1630,7 @@ var _ = Describe("'Instance' service", func() {
 				core.RegisterGlobalServices()
 				core.Service.Environment = pb.ENV_PROD
 
-				respFind, err = instanceResource.Find(
+				respFind, err = discosvc.FindInstances(
 					util.SetTargetDomainProject(
 						util.SetDomainProject(util.CloneContext(getContext()), "user", "user"),
 						"default", "default"),
@@ -1643,7 +1645,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(len(respFind.Instances)).To(Equal(1))
 				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId5))
 
-				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+				respFind, err = discosvc.FindInstances(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId7,
 					AppId:             "default",
 					ServiceName:       "query_instance_shared_provider",
@@ -1672,7 +1674,7 @@ var _ = Describe("'Instance' service", func() {
 		Context("when batch query instances", func() {
 			It("should be passed", func() {
 				By("find with version rule")
-				respFind, err := instanceResource.BatchFind(getContext(), &pb.BatchFindInstancesRequest{
+				respFind, err := discosvc.BatchFindInstances(getContext(), &pb.BatchFindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					Services: []*pb.FindService{
 						{
@@ -1708,7 +1710,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respFind.Services.Failed[0].Error.Code).To(Equal(pb.ErrServiceNotExists))
 
 				By("find with env")
-				respFind, err = instanceResource.BatchFind(getContext(), &pb.BatchFindInstancesRequest{
+				respFind, err = discosvc.BatchFindInstances(getContext(), &pb.BatchFindInstancesRequest{
 					ConsumerServiceId: serviceId4,
 					Services: []*pb.FindService{
 						{
@@ -1725,7 +1727,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(len(respFind.Services.Updated[0].Instances)).To(Equal(1))
 				Expect(respFind.Services.Updated[0].Instances[0].InstanceId).To(Equal(instanceId4))
 
-				respFind, err = instanceResource.BatchFind(getContext(), &pb.BatchFindInstancesRequest{
+				respFind, err = discosvc.BatchFindInstances(getContext(), &pb.BatchFindInstancesRequest{
 					Services: []*pb.FindService{
 						{
 							Service: &pb.MicroServiceKey{
@@ -1744,7 +1746,7 @@ var _ = Describe("'Instance' service", func() {
 
 				By("find with rev")
 				ctx := util.SetContext(getContext(), util.CtxNocache, "")
-				respFind, err = instanceResource.BatchFind(ctx, &pb.BatchFindInstancesRequest{
+				respFind, err = discosvc.BatchFindInstances(ctx, &pb.BatchFindInstancesRequest{
 					ConsumerServiceId: serviceId8,
 					Services: []*pb.FindService{
 						{
@@ -1792,7 +1794,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respFind.Instances.Updated[1].Instances[0].InstanceId).To(Equal(instanceId8))
 				Expect(len(instanceRev)).NotTo(Equal(0))
 
-				respFind, err = instanceResource.BatchFind(ctx, &pb.BatchFindInstancesRequest{
+				respFind, err = discosvc.BatchFindInstances(ctx, &pb.BatchFindInstancesRequest{
 					ConsumerServiceId: serviceId8,
 					Services: []*pb.FindService{
 						{
@@ -1821,7 +1823,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respFind.Instances.Updated[0].Instances[0].InstanceId).To(Equal(instanceId9))
 				Expect(respFind.Instances.Updated[0].Rev).To(Equal(instanceRev))
 
-				respFind, err = instanceResource.BatchFind(ctx, &pb.BatchFindInstancesRequest{
+				respFind, err = discosvc.BatchFindInstances(ctx, &pb.BatchFindInstancesRequest{
 					ConsumerServiceId: serviceId8,
 					Services: []*pb.FindService{
 						{
@@ -1849,7 +1851,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respFind.Instances.NotModified[0]).To(Equal(int64(0)))
 
 				By("find should return 200 even if consumer is diff apps")
-				respFind, err = instanceResource.BatchFind(getContext(), &pb.BatchFindInstancesRequest{
+				respFind, err = discosvc.BatchFindInstances(getContext(), &pb.BatchFindInstancesRequest{
 					ConsumerServiceId: serviceId3,
 					Services: []*pb.FindService{
 						{
@@ -1870,7 +1872,7 @@ var _ = Describe("'Instance' service", func() {
 				core.RegisterGlobalServices()
 				core.Service.Environment = pb.ENV_PROD
 
-				respFind, err = instanceResource.BatchFind(
+				respFind, err = discosvc.BatchFindInstances(
 					util.SetTargetDomainProject(
 						util.SetDomainProject(util.CloneContext(getContext()), "user", "user"),
 						"default", "default"),
@@ -1891,7 +1893,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(len(respFind.Services.Updated[0].Instances)).To(Equal(1))
 				Expect(respFind.Services.Updated[0].Instances[0].InstanceId).To(Equal(instanceId5))
 
-				respFind, err = instanceResource.BatchFind(getContext(), &pb.BatchFindInstancesRequest{
+				respFind, err = discosvc.BatchFindInstances(getContext(), &pb.BatchFindInstancesRequest{
 					ConsumerServiceId: serviceId7,
 					Services: []*pb.FindService{
 						{
@@ -1908,7 +1910,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(len(respFind.Services.Updated[0].Instances)).To(Equal(1))
 				Expect(respFind.Services.Updated[0].Instances[0].InstanceId).To(Equal(instanceId5))
 
-				respFind, err = instanceResource.BatchFind(
+				respFind, err = discosvc.BatchFindInstances(
 					util.SetTargetDomainProject(
 						util.SetDomainProject(util.CloneContext(getContext()), "user", "user"),
 						"default", "default"),
@@ -1927,7 +1929,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 				Expect(respFind.Instances.Failed[0].Error.Code).To(Equal(pb.ErrServiceNotExists))
 
-				respFind, err = instanceResource.BatchFind(getContext(), &pb.BatchFindInstancesRequest{
+				respFind, err = discosvc.BatchFindInstances(getContext(), &pb.BatchFindInstancesRequest{
 					ConsumerServiceId: serviceId7,
 					Instances: []*pb.FindInstance{
 						{
@@ -1951,7 +1953,7 @@ var _ = Describe("'Instance' service", func() {
 			It("should be failed", func() {
 				By("diff appId")
 				UTFunc := func(consumerId string, code int32) {
-					respFind, err := instanceResource.GetInstances(getContext(), &pb.GetInstancesRequest{
+					respFind, err := discosvc.GetInstances(getContext(), &pb.GetInstancesRequest{
 						ConsumerServiceId: consumerId,
 						ProviderServiceId: serviceId2,
 					})
@@ -1964,7 +1966,7 @@ var _ = Describe("'Instance' service", func() {
 				UTFunc(serviceId1, pb.ResponseSuccess)
 
 				By("diff env")
-				respFind, err := instanceResource.GetInstances(getContext(), &pb.GetInstancesRequest{
+				respFind, err := discosvc.GetInstances(getContext(), &pb.GetInstancesRequest{
 					ConsumerServiceId: serviceId4,
 					ProviderServiceId: serviceId2,
 				})
@@ -2012,7 +2014,7 @@ var _ = Describe("'Instance' service", func() {
 			Expect(respCreate.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 			serviceId2 = respCreate.ServiceId
 
-			resp, err := instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+			resp, err := discosvc.RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
 				Instance: &pb.MicroServiceInstance{
 					ServiceId: serviceId2,
 					HostName:  "UT-HOST",
@@ -2042,7 +2044,7 @@ var _ = Describe("'Instance' service", func() {
 		Context("when get one instance request is invalid", func() {
 			It("should be failed", func() {
 				By("find service itself")
-				resp, err := instanceResource.GetOneInstance(getContext(), &pb.GetOneInstanceRequest{
+				resp, err := discosvc.GetOneInstance(getContext(), &pb.GetOneInstanceRequest{
 					ConsumerServiceId:  serviceId2,
 					ProviderServiceId:  serviceId2,
 					ProviderInstanceId: instanceId2,
@@ -2051,7 +2053,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
 				By("provider id is empty")
-				resp, err = instanceResource.GetOneInstance(getContext(), &pb.GetOneInstanceRequest{
+				resp, err = discosvc.GetOneInstance(getContext(), &pb.GetOneInstanceRequest{
 					ConsumerServiceId:  serviceId1,
 					ProviderServiceId:  "",
 					ProviderInstanceId: instanceId2,
@@ -2060,7 +2062,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(resp.Response.GetCode()).ToNot(Equal(pb.ResponseSuccess))
 
 				By("provider instance id is empty")
-				resp, err = instanceResource.GetOneInstance(getContext(), &pb.GetOneInstanceRequest{
+				resp, err = discosvc.GetOneInstance(getContext(), &pb.GetOneInstanceRequest{
 					ConsumerServiceId:  serviceId1,
 					ProviderServiceId:  serviceId2,
 					ProviderInstanceId: "",
@@ -2069,7 +2071,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(resp.Response.GetCode()).ToNot(Equal(pb.ResponseSuccess))
 
 				By("consumer id is empty")
-				resp, err = instanceResource.GetOneInstance(getContext(), &pb.GetOneInstanceRequest{
+				resp, err = discosvc.GetOneInstance(getContext(), &pb.GetOneInstanceRequest{
 					ConsumerServiceId:  "",
 					ProviderServiceId:  serviceId2,
 					ProviderInstanceId: instanceId2,
@@ -2078,7 +2080,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
 				By("consumer does not exist")
-				resp, err = instanceResource.GetOneInstance(getContext(), &pb.GetOneInstanceRequest{
+				resp, err = discosvc.GetOneInstance(getContext(), &pb.GetOneInstanceRequest{
 					ConsumerServiceId:  "not-exist-id",
 					ProviderServiceId:  serviceId2,
 					ProviderInstanceId: instanceId2,
@@ -2087,7 +2089,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(resp.Response.GetCode()).ToNot(Equal(pb.ResponseSuccess))
 
 				By("provider tag does not exist")
-				resp, err = instanceResource.GetOneInstance(getContext(), &pb.GetOneInstanceRequest{
+				resp, err = discosvc.GetOneInstance(getContext(), &pb.GetOneInstanceRequest{
 					ConsumerServiceId:  serviceId1,
 					ProviderServiceId:  serviceId2,
 					ProviderInstanceId: instanceId2,
@@ -2097,7 +2099,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInstanceNotExists))
 
 				By("provider tag exist")
-				resp, err = instanceResource.GetOneInstance(getContext(),
+				resp, err = discosvc.GetOneInstance(getContext(),
 					&pb.GetOneInstanceRequest{
 						ConsumerServiceId:  serviceId1,
 						ProviderServiceId:  serviceId2,
@@ -2111,7 +2113,7 @@ var _ = Describe("'Instance' service", func() {
 
 		Context("when get between diff apps", func() {
 			It("should be failed", func() {
-				resp, err := instanceResource.GetOneInstance(getContext(), &pb.GetOneInstanceRequest{
+				resp, err := discosvc.GetOneInstance(getContext(), &pb.GetOneInstanceRequest{
 					ConsumerServiceId:  serviceId3,
 					ProviderServiceId:  serviceId2,
 					ProviderInstanceId: instanceId2,
@@ -2119,7 +2121,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(err).To(BeNil())
 				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInstanceNotExists))
 
-				respAll, err := instanceResource.GetInstances(getContext(), &pb.GetInstancesRequest{
+				respAll, err := discosvc.GetInstances(getContext(), &pb.GetInstancesRequest{
 					ConsumerServiceId: serviceId3,
 					ProviderServiceId: serviceId2,
 				})
@@ -2131,7 +2133,7 @@ var _ = Describe("'Instance' service", func() {
 		Context("when get instances request is invalid", func() {
 			It("should be failed", func() {
 				By("consumer id is empty")
-				resp, err := instanceResource.GetInstances(getContext(), &pb.GetInstancesRequest{
+				resp, err := discosvc.GetInstances(getContext(), &pb.GetInstancesRequest{
 					ConsumerServiceId: "",
 					ProviderServiceId: serviceId2,
 				})
@@ -2139,7 +2141,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
 				By("consumer does not exist")
-				resp, err = instanceResource.GetInstances(getContext(), &pb.GetInstancesRequest{
+				resp, err = discosvc.GetInstances(getContext(), &pb.GetInstancesRequest{
 					ConsumerServiceId: "noneservice",
 					ProviderServiceId: serviceId2,
 				})
@@ -2147,7 +2149,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(resp.Response.GetCode()).ToNot(Equal(pb.ResponseSuccess))
 
 				By("valid request")
-				resp, err = instanceResource.GetInstances(getContext(), &pb.GetInstancesRequest{
+				resp, err = discosvc.GetInstances(getContext(), &pb.GetInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					ProviderServiceId: serviceId2,
 				})
@@ -2180,7 +2182,7 @@ var _ = Describe("'Instance' service", func() {
 			Expect(respCreate.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 			serviceId = respCreate.ServiceId
 
-			resp, err := instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+			resp, err := discosvc.RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
 				Instance: &pb.MicroServiceInstance{
 					ServiceId: serviceId,
 					HostName:  "UT-HOST",
@@ -2197,7 +2199,7 @@ var _ = Describe("'Instance' service", func() {
 
 		Context("when request is valid", func() {
 			It("should be passed", func() {
-				resp, err := instanceResource.Unregister(getContext(), &pb.UnregisterInstanceRequest{
+				resp, err := discosvc.UnregisterInstance(getContext(), &pb.UnregisterInstanceRequest{
 					ServiceId:  serviceId,
 					InstanceId: instanceId,
 				})
@@ -2209,13 +2211,13 @@ var _ = Describe("'Instance' service", func() {
 		Context("when request is invalid", func() {
 			It("should be failed", func() {
 				By("service id is invalid")
-				resp, err := instanceResource.Unregister(getContext(), &pb.UnregisterInstanceRequest{
+				resp, err := discosvc.UnregisterInstance(getContext(), &pb.UnregisterInstanceRequest{
 					ServiceId:  "",
 					InstanceId: instanceId,
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
-				resp, err = instanceResource.Unregister(getContext(), &pb.UnregisterInstanceRequest{
+				resp, err = discosvc.UnregisterInstance(getContext(), &pb.UnregisterInstanceRequest{
 					ServiceId:  TOO_LONG_SERVICEID,
 					InstanceId: instanceId,
 				})
@@ -2223,7 +2225,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("service does not exist")
-				resp, err = instanceResource.Unregister(getContext(), &pb.UnregisterInstanceRequest{
+				resp, err = discosvc.UnregisterInstance(getContext(), &pb.UnregisterInstanceRequest{
 					ServiceId:  "not-exist-id",
 					InstanceId: instanceId,
 				})
@@ -2231,19 +2233,19 @@ var _ = Describe("'Instance' service", func() {
 				Expect(resp.Response.GetCode()).ToNot(Equal(pb.ResponseSuccess))
 
 				By("instance is invalid")
-				resp, err = instanceResource.Unregister(getContext(), &pb.UnregisterInstanceRequest{
+				resp, err = discosvc.UnregisterInstance(getContext(), &pb.UnregisterInstanceRequest{
 					ServiceId:  serviceId,
 					InstanceId: "",
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
-				resp, err = instanceResource.Unregister(getContext(), &pb.UnregisterInstanceRequest{
+				resp, err = discosvc.UnregisterInstance(getContext(), &pb.UnregisterInstanceRequest{
 					ServiceId:  serviceId,
 					InstanceId: "@",
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
-				resp, err = instanceResource.Unregister(getContext(), &pb.UnregisterInstanceRequest{
+				resp, err = discosvc.UnregisterInstance(getContext(), &pb.UnregisterInstanceRequest{
 					ServiceId:  serviceId,
 					InstanceId: TOO_LONG_SERVICEID,
 				})
@@ -2251,7 +2253,7 @@ var _ = Describe("'Instance' service", func() {
 				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("instance does not exist")
-				resp, err = instanceResource.Unregister(getContext(), &pb.UnregisterInstanceRequest{
+				resp, err = discosvc.UnregisterInstance(getContext(), &pb.UnregisterInstanceRequest{
 					ServiceId:  serviceId,
 					InstanceId: "not-exist-id",
 				})

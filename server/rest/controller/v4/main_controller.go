@@ -22,8 +22,9 @@ import (
 	"net/http"
 	"sync"
 
+	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
+
 	"github.com/apache/servicecomb-service-center/pkg/rest"
-	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/version"
 	pb "github.com/go-chassis/cari/discovery"
 )
@@ -53,7 +54,7 @@ func (s *MainService) URLPatterns() []rest.Route {
 }
 
 func (s *MainService) ClusterHealth(w http.ResponseWriter, r *http.Request) {
-	resp, _ := core.InstanceAPI.ClusterHealth(r.Context())
+	resp, _ := discosvc.ClusterHealth(r.Context())
 	rest.WriteResponse(w, r, resp.Response, resp)
 }
 

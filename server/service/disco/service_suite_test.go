@@ -14,15 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package service_test
+package disco_test
 
 // initialize
 import (
 	"context"
 
+	"github.com/apache/servicecomb-service-center/server/service/disco"
+
 	"github.com/apache/servicecomb-service-center/pkg/proto"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/service"
 	_ "github.com/apache/servicecomb-service-center/test"
 
 	. "github.com/onsi/ginkgo"
@@ -34,10 +35,9 @@ import (
 )
 
 var serviceResource proto.ServiceCtrlServer
-var instanceResource proto.ServiceInstanceCtrlServerEx
 
 var _ = BeforeSuite(func() {
-	serviceResource, instanceResource = service.AssembleResources()
+	serviceResource = disco.AssembleResources()
 })
 
 func getContext() context.Context {

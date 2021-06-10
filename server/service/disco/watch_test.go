@@ -14,13 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package service_test
+package disco_test
 
 import (
 	"context"
 	"testing"
 
-	"github.com/apache/servicecomb-service-center/server/service"
+	"github.com/apache/servicecomb-service-center/server/service/disco"
+
 	pb "github.com/go-chassis/cari/discovery"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -43,7 +44,7 @@ func TestInstanceService_WebSocketWatch(t *testing.T) {
 	defer func() {
 		recover()
 	}()
-	instanceResource.WebSocketWatch(context.Background(), &pb.WatchInstanceRequest{}, nil)
+	disco.WebSocketWatch(context.Background(), &pb.WatchInstanceRequest{}, nil)
 }
 
 var _ = Describe("'Instance' service", func() {
@@ -70,25 +71,24 @@ var _ = Describe("'Instance' service", func() {
 		Context("when request is invalid", func() {
 			It("should be failed", func() {
 				By("service does not exist")
-				IC := instanceResource.(*service.InstanceService)
-				err := IC.WatchPreOpera(getContext(), &pb.WatchInstanceRequest{
+				err := disco.WatchPreOpera(getContext(), &pb.WatchInstanceRequest{
 					SelfServiceId: "-1",
 				})
 				Expect(err).NotTo(BeNil())
 
-				err = IC.Watch(&pb.WatchInstanceRequest{
+				err = disco.Watch(&pb.WatchInstanceRequest{
 					SelfServiceId: "-1",
 				}, &grpcWatchServer{})
 				Expect(err).NotTo(BeNil())
 
 				By("service id is empty")
-				err = instanceResource.(*service.InstanceService).WatchPreOpera(getContext(), &pb.WatchInstanceRequest{
+				err = disco.WatchPreOpera(getContext(), &pb.WatchInstanceRequest{
 					SelfServiceId: "",
 				})
 				Expect(err).NotTo(BeNil())
 
 				By("request is valid")
-				err = instanceResource.(*service.InstanceService).WatchPreOpera(getContext(),
+				err = disco.WatchPreOpera(getContext(),
 					&pb.WatchInstanceRequest{
 						SelfServiceId: serviceId,
 					})

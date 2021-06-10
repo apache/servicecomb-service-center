@@ -14,10 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package service_test
+package disco_test
 
 import (
 	"strconv"
+
+	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
 
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	pb "github.com/go-chassis/cari/discovery"
@@ -676,7 +678,7 @@ var _ = Describe("'Rule' service", func() {
 		Context("when query instances", func() {
 			It("should be failed", func() {
 				By("consumer version in black list")
-				resp, err := instanceResource.GetInstances(getContext(), &pb.GetInstancesRequest{
+				resp, err := discosvc.GetInstances(getContext(), &pb.GetInstancesRequest{
 					ConsumerServiceId: consumerVersion,
 					ProviderServiceId: providerBlack,
 				})
@@ -684,7 +686,7 @@ var _ = Describe("'Rule' service", func() {
 				Expect(resp.Response.GetCode()).To(Equal(pb.ErrServiceNotExists))
 
 				By("consumer tag in black list")
-				resp, err = instanceResource.GetInstances(getContext(), &pb.GetInstancesRequest{
+				resp, err = discosvc.GetInstances(getContext(), &pb.GetInstancesRequest{
 					ConsumerServiceId: consumerTag,
 					ProviderServiceId: providerBlack,
 				})
@@ -692,7 +694,7 @@ var _ = Describe("'Rule' service", func() {
 				Expect(resp.Response.GetCode()).To(Equal(pb.ErrServiceNotExists))
 
 				By("find should return 200 even if consumer permission deny")
-				respFind, err := instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+				respFind, err := discosvc.FindInstances(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: consumerVersion,
 					AppId:             "query_instance_tag",
 					ServiceName:       "query_instance_tag_service",
@@ -701,7 +703,7 @@ var _ = Describe("'Rule' service", func() {
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 				Expect(len(respFind.Instances)).To(Equal(0))
-				respFind, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+				respFind, err = discosvc.FindInstances(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: consumerTag,
 					AppId:             "query_instance_tag",
 					ServiceName:       "query_instance_tag_service",
@@ -712,7 +714,7 @@ var _ = Describe("'Rule' service", func() {
 				Expect(len(respFind.Instances)).To(Equal(0))
 
 				By("consumer not in black list")
-				resp, err = instanceResource.GetInstances(getContext(), &pb.GetInstancesRequest{
+				resp, err = discosvc.GetInstances(getContext(), &pb.GetInstancesRequest{
 					ConsumerServiceId: providerWhite,
 					ProviderServiceId: providerBlack,
 				})
@@ -720,7 +722,7 @@ var _ = Describe("'Rule' service", func() {
 				Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
 				By("consumer not in white list")
-				resp, err = instanceResource.GetInstances(getContext(), &pb.GetInstancesRequest{
+				resp, err = discosvc.GetInstances(getContext(), &pb.GetInstancesRequest{
 					ConsumerServiceId: providerBlack,
 					ProviderServiceId: providerWhite,
 				})
@@ -728,7 +730,7 @@ var _ = Describe("'Rule' service", func() {
 				Expect(resp.Response.GetCode()).To(Equal(pb.ErrServiceNotExists))
 
 				By("consumer version in white list")
-				resp, err = instanceResource.GetInstances(getContext(), &pb.GetInstancesRequest{
+				resp, err = discosvc.GetInstances(getContext(), &pb.GetInstancesRequest{
 					ConsumerServiceId: consumerVersion,
 					ProviderServiceId: providerWhite,
 				})
@@ -736,7 +738,7 @@ var _ = Describe("'Rule' service", func() {
 				Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
 				By("consumer tag in white list")
-				resp, err = instanceResource.GetInstances(getContext(), &pb.GetInstancesRequest{
+				resp, err = discosvc.GetInstances(getContext(), &pb.GetInstancesRequest{
 					ConsumerServiceId: consumerTag,
 					ProviderServiceId: providerWhite,
 				})

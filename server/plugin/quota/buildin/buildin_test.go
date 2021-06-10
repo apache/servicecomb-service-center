@@ -18,6 +18,8 @@ package buildin_test
 import (
 	"context"
 
+	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
+
 	"github.com/apache/servicecomb-service-center/pkg/util"
 
 	"github.com/apache/servicecomb-service-center/datasource"
@@ -51,7 +53,7 @@ func TestGetResourceLimit(t *testing.T) {
 		assert.Nil(t, err)
 	})
 	t.Run("create 1 instance,should success", func(t *testing.T) {
-		resp, err := datasource.GetMetadataManager().RegisterService(ctx, &pb.CreateServiceRequest{
+		resp, err := discosvc.RegisterService(ctx, &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
 				ServiceName: "quota",
 			},
@@ -68,7 +70,7 @@ func TestGetResourceLimit(t *testing.T) {
 		assert.NotNil(t, err)
 	})
 	t.Run("create 150001 instance,should failed", func(t *testing.T) {
-		resp, err := datasource.GetMetadataManager().RegisterService(ctx, &pb.CreateServiceRequest{
+		resp, err := discosvc.RegisterService(ctx, &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
 				ServiceName: "quota2",
 			},

@@ -18,6 +18,7 @@
 package buildin_test
 
 import (
+	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
 	_ "github.com/apache/servicecomb-service-center/test"
 
 	"context"
@@ -25,7 +26,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/plugin/auth"
@@ -40,14 +40,14 @@ func TestGetAPIParseFunc(t *testing.T) {
 
 	var serviceIDA, serviceIDB string
 
-	response, _ := datasource.GetMetadataManager().RegisterService(context.Background(), &discovery.CreateServiceRequest{
+	response, _ := discosvc.RegisterService(context.Background(), &discovery.CreateServiceRequest{
 		Service: &discovery.MicroService{
 			AppId:       "TestGetAPIParseFunc",
 			ServiceName: "A",
 		},
 	})
 	serviceIDA = response.ServiceId
-	response, _ = datasource.GetMetadataManager().RegisterService(context.Background(), &discovery.CreateServiceRequest{
+	response, _ = discosvc.RegisterService(context.Background(), &discovery.CreateServiceRequest{
 		Service: &discovery.MicroService{
 			AppId:       "TestGetAPIParseFunc",
 			ServiceName: "B",

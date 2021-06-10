@@ -15,25 +15,21 @@
  * limitations under the License.
  */
 
-package service
+package disco
 
 import (
 	"github.com/apache/servicecomb-service-center/pkg/proto"
 )
 
 var (
-	serviceService  proto.ServiceCtrlServer
-	instanceService proto.ServiceInstanceCtrlServerEx
+	serviceService proto.ServiceCtrlServer
 )
 
-func AssembleResources() (proto.ServiceCtrlServer, proto.ServiceInstanceCtrlServerEx) {
-	instanceService = &InstanceService{}
-	serviceService = NewMicroServiceService(instanceService)
-	return serviceService, instanceService
+func AssembleResources() proto.ServiceCtrlServer {
+	serviceService = NewMicroServiceService()
+	return serviceService
 }
 
-func NewMicroServiceService(instCtrlServer proto.ServiceInstanceCtrlServerEx) *MicroServiceService {
-	return &MicroServiceService{
-		instanceService: instCtrlServer,
-	}
+func NewMicroServiceService() *MicroServiceService {
+	return &MicroServiceService{}
 }

@@ -24,10 +24,11 @@ import (
 	"net/http"
 	"strings"
 
+	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/core"
 	pb "github.com/go-chassis/cari/discovery"
 )
 
@@ -68,7 +69,7 @@ func (s *MicroServiceInstanceService) RegisterInstance(w http.ResponseWriter, r 
 		request.Instance.ServiceId = r.URL.Query().Get(":serviceId")
 	}
 
-	resp, err := core.InstanceAPI.Register(r.Context(), request)
+	resp, err := discosvc.RegisterInstance(r.Context(), request)
 	if err != nil {
 		log.Errorf(err, "register instance failed")
 		rest.WriteError(w, pb.ErrInternal, "register instance failed")
@@ -84,7 +85,7 @@ func (s *MicroServiceInstanceService) Heartbeat(w http.ResponseWriter, r *http.R
 		ServiceId:  query.Get(":serviceId"),
 		InstanceId: query.Get(":instanceId"),
 	}
-	resp, _ := core.InstanceAPI.Heartbeat(r.Context(), request)
+	resp, _ := discosvc.Heartbeat(r.Context(), request)
 	rest.WriteResponse(w, r, resp.Response, nil)
 }
 
@@ -103,7 +104,7 @@ func (s *MicroServiceInstanceService) HeartbeatSet(w http.ResponseWriter, r *htt
 		rest.WriteError(w, pb.ErrInvalidParams, "Unmarshal error")
 		return
 	}
-	resp, _ := core.InstanceAPI.HeartbeatSet(r.Context(), request)
+	resp, _ := discosvc.HeartbeatSet(r.Context(), request)
 	rest.WriteResponse(w, r, resp.Response, nil)
 }
 
@@ -113,7 +114,7 @@ func (s *MicroServiceInstanceService) UnregisterInstance(w http.ResponseWriter, 
 		ServiceId:  query.Get(":serviceId"),
 		InstanceId: query.Get(":instanceId"),
 	}
-	resp, _ := core.InstanceAPI.Unregister(r.Context(), request)
+	resp, _ := discosvc.UnregisterInstance(r.Context(), request)
 	rest.WriteResponse(w, r, resp.Response, nil)
 }
 
@@ -135,7 +136,7 @@ func (s *MicroServiceInstanceService) FindInstances(w http.ResponseWriter, r *ht
 
 	ctx := util.SetTargetDomainProject(r.Context(), r.Header.Get("X-Domain-Name"), query.Get(":project"))
 
-	resp, _ := core.InstanceAPI.Find(ctx, request)
+	resp, _ := discosvc.FindInstances(ctx, request)
 	respInternal := resp.Response
 	resp.Response = nil
 
@@ -169,7 +170,7 @@ func (s *MicroServiceInstanceService) InstancesAction(w http.ResponseWriter, r *
 		}
 		request.ConsumerServiceId = r.Header.Get("X-ConsumerId")
 		ctx := util.SetTargetDomainProject(r.Context(), r.Header.Get("X-Domain-Name"), r.URL.Query().Get(":project"))
-		resp, _ := core.InstanceAPI.BatchFind(ctx, request)
+		resp, _ := discosvc.BatchFindInstances(ctx, request)
 		rest.WriteResponse(w, r, resp.Response, resp)
 	default:
 		err = fmt.Errorf("Invalid action: %s", action)
@@ -192,7 +193,7 @@ func (s *MicroServiceInstanceService) GetOneInstance(w http.ResponseWriter, r *h
 		Tags:               ids,
 	}
 
-	resp, _ := core.InstanceAPI.GetOneInstance(r.Context(), request)
+	resp, _ := discosvc.GetOneInstance(r.Context(), request)
 	respInternal := resp.Response
 	resp.Response = nil
 
@@ -218,7 +219,7 @@ func (s *MicroServiceInstanceService) GetInstances(w http.ResponseWriter, r *htt
 		ProviderServiceId: query.Get(":serviceId"),
 		Tags:              ids,
 	}
-	resp, _ := core.InstanceAPI.GetInstances(r.Context(), request)
+	resp, _ := discosvc.GetInstances(r.Context(), request)
 	respInternal := resp.Response
 	resp.Response = nil
 
@@ -240,7 +241,7 @@ func (s *MicroServiceInstanceService) UpdateStatus(w http.ResponseWriter, r *htt
 		InstanceId: query.Get(":instanceId"),
 		Status:     status,
 	}
-	resp, _ := core.InstanceAPI.UpdateStatus(r.Context(), request)
+	resp, _ := discosvc.UpdateInstanceStatus(r.Context(), request)
 	rest.WriteResponse(w, r, resp.Response, nil)
 }
 
@@ -262,7 +263,7 @@ func (s *MicroServiceInstanceService) UpdateMetadata(w http.ResponseWriter, r *h
 		rest.WriteError(w, pb.ErrInvalidParams, "Unmarshal error")
 		return
 	}
-	resp, err := core.InstanceAPI.UpdateInstanceProperties(r.Context(), request)
+	resp, err := discosvc.UpdateInstanceProperties(r.Context(), request)
 	if err != nil {
 		log.Errorf(err, "can not update instance")
 		rest.WriteError(w, pb.ErrInternal, "can not update instance")

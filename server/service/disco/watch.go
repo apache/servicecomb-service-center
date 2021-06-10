@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package service
+package disco
 
 import (
 	"context"
@@ -29,11 +29,10 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/proto"
 	"github.com/apache/servicecomb-service-center/server/connection/grpc"
-	"github.com/apache/servicecomb-service-center/server/connection/hbws"
 	"github.com/apache/servicecomb-service-center/server/connection/ws"
 )
 
-func (s *InstanceService) WatchPreOpera(ctx context.Context, in *pb.WatchInstanceRequest) error {
+func WatchPreOpera(ctx context.Context, in *pb.WatchInstanceRequest) error {
 	if in == nil || len(in.SelfServiceId) == 0 {
 		return errors.New("request format invalid")
 	}
@@ -50,26 +49,9 @@ func (s *InstanceService) WatchPreOpera(ctx context.Context, in *pb.WatchInstanc
 	return nil
 }
 
-func (s *InstanceService) HeartBeatPreOpera(ctx context.Context, in *pb.HeartbeatRequest) error {
-	if in == nil || len(in.ServiceId) == 0 || len(in.InstanceId) == 0 {
-		return errors.New("request format invalid")
-	}
-	resp, err := datasource.GetMetadataManager().ExistInstanceByID(ctx, &pb.MicroServiceInstanceKey{
-		ServiceId:  in.ServiceId,
-		InstanceId: in.InstanceId,
-	})
-	if err != nil {
-		return err
-	}
-	if !resp.Exist {
-		return datasource.ErrInstanceNotExists
-	}
-	return nil
-}
-
-func (s *InstanceService) Watch(in *pb.WatchInstanceRequest, stream proto.ServiceInstanceCtrlWatchServer) error {
+func Watch(in *pb.WatchInstanceRequest, stream proto.ServiceInstanceCtrlWatchServer) error {
 	log.Infof("new a stream list and watch with service[%s]", in.SelfServiceId)
-	if err := s.WatchPreOpera(stream.Context(), in); err != nil {
+	if err := WatchPreOpera(stream.Context(), in); err != nil {
 		log.Errorf(err, "service[%s] establish watch failed: invalid params", in.SelfServiceId)
 		return err
 	}
@@ -77,25 +59,16 @@ func (s *InstanceService) Watch(in *pb.WatchInstanceRequest, stream proto.Servic
 	return grpc.Watch(stream.Context(), in.SelfServiceId, stream)
 }
 
-func (s *InstanceService) WebSocketWatch(ctx context.Context, in *pb.WatchInstanceRequest, conn *websocket.Conn) {
+func WebSocketWatch(ctx context.Context, in *pb.WatchInstanceRequest, conn *websocket.Conn) {
 	log.Infof("new a web socket watch with service[%s]", in.SelfServiceId)
-	if err := s.WatchPreOpera(ctx, in); err != nil {
+	if err := WatchPreOpera(ctx, in); err != nil {
 		ws.SendEstablishError(conn, err)
 		return
 	}
 	ws.Watch(ctx, in.SelfServiceId, conn)
 }
 
-func (s *InstanceService) WatchHeartbeat(ctx context.Context, in *pb.HeartbeatRequest, conn *websocket.Conn) {
-	log.Info(fmt.Sprintf("new a web socket with service[%s] ,instance[%s]", in.ServiceId, in.InstanceId))
-	if err := s.HeartBeatPreOpera(ctx, in); err != nil {
-		hbws.SendEstablishError(conn, err)
-		return
-	}
-	hbws.Heartbeat(ctx, conn, in.ServiceId, in.InstanceId)
-}
-
-func (s *InstanceService) QueryAllProvidersInstances(ctx context.Context, in *pb.WatchInstanceRequest) ([]*pb.WatchInstanceResponse, int64) {
+func QueryAllProvidersInstances(ctx context.Context, in *pb.WatchInstanceRequest) ([]*pb.WatchInstanceResponse, int64) {
 	depResp, err := datasource.GetDependencyManager().SearchConsumerDependency(ctx, &pb.GetDependenciesRequest{
 		ServiceId: in.SelfServiceId,
 	})

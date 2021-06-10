@@ -26,7 +26,6 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/mongo"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
-	"github.com/apache/servicecomb-service-center/server/service"
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/go-archaius"
 	"github.com/stretchr/testify/assert"
@@ -343,7 +342,7 @@ func TestSchema_Create(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, respModifySchemas.Response.GetCode())
 		respExist, err := datasource.GetMetadataManager().ExistSchema(getContext(), &pb.GetExistenceRequest{
-			Type:      service.ExistTypeSchema,
+			Type:      datasource.ExistTypeSchema,
 			ServiceId: serviceIdPro2,
 			SchemaId:  "first_schemaId_service_ms",
 		})
@@ -793,7 +792,7 @@ func TestSchema_Exist(t *testing.T) {
 	t.Run("check exists", func(t *testing.T) {
 		log.Info("check schema exist, should pass")
 		resp, err := datasource.GetMetadataManager().ExistSchema(getContext(), &pb.GetExistenceRequest{
-			Type:      service.ExistTypeSchema,
+			Type:      datasource.ExistTypeSchema,
 			ServiceId: serviceId,
 			SchemaId:  "com.huawei.test.ms",
 		})
@@ -802,7 +801,7 @@ func TestSchema_Exist(t *testing.T) {
 		assert.Equal(t, "summary_ms", resp.Summary)
 
 		resp, err = datasource.GetMetadataManager().ExistSchema(getContext(), &pb.GetExistenceRequest{
-			Type:        service.ExistTypeSchema,
+			Type:        datasource.ExistTypeSchema,
 			ServiceId:   serviceId,
 			SchemaId:    "com.huawei.test.ms",
 			AppId:       "()",
@@ -813,7 +812,7 @@ func TestSchema_Exist(t *testing.T) {
 		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
 		resp, err = datasource.GetMetadataManager().ExistSchema(getContext(), &pb.GetExistenceRequest{
-			Type:      service.ExistTypeSchema,
+			Type:      datasource.ExistTypeSchema,
 			ServiceId: serviceId,
 			SchemaId:  "com.huawei.test.no.summary.ms",
 		})

@@ -20,12 +20,12 @@ package test
 
 import (
 	_ "github.com/apache/servicecomb-service-center/server/init"
+	"github.com/apache/servicecomb-service-center/server/service/disco"
 
 	_ "github.com/apache/servicecomb-service-center/server/bootstrap"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/service"
 	"github.com/go-chassis/go-archaius"
 )
 
@@ -42,5 +42,5 @@ func init() {
 		archaius.Set("registry.heartbeat.kind", "checker")
 	}
 	datasource.Init(datasource.Options{Kind: datasource.Kind(t.(string))})
-	core.ServiceAPI, core.InstanceAPI = service.AssembleResources()
+	core.ServiceAPI = disco.AssembleResources()
 }
