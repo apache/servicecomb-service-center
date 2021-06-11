@@ -28,7 +28,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
-	"github.com/apache/servicecomb-service-center/server/service"
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/stretchr/testify/assert"
 )
@@ -332,7 +331,7 @@ func TestService_Exist(t *testing.T) {
 	t.Run("check exist when service does not exist", func(t *testing.T) {
 		log.Info("check by querying a not exist serviceName")
 		resp, err := datasource.GetMetadataManager().ExistService(getContext(), &pb.GetExistenceRequest{
-			Type:        service.ExistTypeMicroservice,
+			Type:        datasource.ExistTypeMicroservice,
 			AppId:       "exist_appId",
 			ServiceName: "notExistService_service_ms",
 			Version:     "1.0.0",
@@ -342,7 +341,7 @@ func TestService_Exist(t *testing.T) {
 
 		log.Info("check by querying a not exist env")
 		resp, err = datasource.GetMetadataManager().ExistService(getContext(), &pb.GetExistenceRequest{
-			Type:        service.ExistTypeMicroservice,
+			Type:        datasource.ExistTypeMicroservice,
 			Environment: pb.ENV_TEST,
 			AppId:       "exist_appId_service_ms",
 			ServiceName: "exist_service_service_ms",
@@ -353,7 +352,7 @@ func TestService_Exist(t *testing.T) {
 
 		log.Info("check by querying a not exist env with alias")
 		resp, err = datasource.GetMetadataManager().ExistService(getContext(), &pb.GetExistenceRequest{
-			Type:        service.ExistTypeMicroservice,
+			Type:        datasource.ExistTypeMicroservice,
 			Environment: pb.ENV_TEST,
 			AppId:       "exist_appId_service_ms",
 			ServiceName: "es_service_ms",
@@ -364,7 +363,7 @@ func TestService_Exist(t *testing.T) {
 
 		log.Info("check by querying with a mismatching version")
 		resp, err = datasource.GetMetadataManager().ExistService(getContext(), &pb.GetExistenceRequest{
-			Type:        service.ExistTypeMicroservice,
+			Type:        datasource.ExistTypeMicroservice,
 			AppId:       "exist_appId_service_ms",
 			ServiceName: "exist_service_service_ms",
 			Version:     "2.0.0",
@@ -372,7 +371,7 @@ func TestService_Exist(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ErrServiceNotExists, resp.Response.GetCode())
 		resp, err = datasource.GetMetadataManager().ExistService(getContext(), &pb.GetExistenceRequest{
-			Type:        service.ExistTypeMicroservice,
+			Type:        datasource.ExistTypeMicroservice,
 			AppId:       "exist_appId_service_ms",
 			ServiceName: "exist_service_service_ms",
 			Version:     "0.0.0-1.0.0",
@@ -384,7 +383,7 @@ func TestService_Exist(t *testing.T) {
 	t.Run("check exist when service exists", func(t *testing.T) {
 		log.Info("search with serviceName")
 		resp, err := datasource.GetMetadataManager().ExistService(getContext(), &pb.GetExistenceRequest{
-			Type:        service.ExistTypeMicroservice,
+			Type:        datasource.ExistTypeMicroservice,
 			AppId:       "exist_appId_service_ms",
 			ServiceName: "exist_service_service_ms",
 			Version:     "1.0.0",
@@ -394,7 +393,7 @@ func TestService_Exist(t *testing.T) {
 
 		log.Info("check with serviceName and env")
 		resp, err = datasource.GetMetadataManager().ExistService(getContext(), &pb.GetExistenceRequest{
-			Type:        service.ExistTypeMicroservice,
+			Type:        datasource.ExistTypeMicroservice,
 			Environment: pb.ENV_PROD,
 			AppId:       "exist_appId_service_ms",
 			ServiceName: "exist_service_service_ms",
@@ -405,7 +404,7 @@ func TestService_Exist(t *testing.T) {
 
 		log.Info("check with alias")
 		resp, err = datasource.GetMetadataManager().ExistService(getContext(), &pb.GetExistenceRequest{
-			Type:        service.ExistTypeMicroservice,
+			Type:        datasource.ExistTypeMicroservice,
 			AppId:       "exist_appId_service_ms",
 			ServiceName: "es_service_ms",
 			Version:     "1.0.0",
@@ -415,7 +414,7 @@ func TestService_Exist(t *testing.T) {
 
 		log.Info("check with alias and env")
 		resp, err = datasource.GetMetadataManager().ExistService(getContext(), &pb.GetExistenceRequest{
-			Type:        service.ExistTypeMicroservice,
+			Type:        datasource.ExistTypeMicroservice,
 			Environment: pb.ENV_PROD,
 			AppId:       "exist_appId_service_ms",
 			ServiceName: "es_service_ms",
@@ -426,7 +425,7 @@ func TestService_Exist(t *testing.T) {
 
 		log.Info("check with latest versionRule")
 		resp, err = datasource.GetMetadataManager().ExistService(getContext(), &pb.GetExistenceRequest{
-			Type:        service.ExistTypeMicroservice,
+			Type:        datasource.ExistTypeMicroservice,
 			AppId:       "exist_appId_service_ms",
 			ServiceName: "es_service_ms",
 			Version:     "latest",
@@ -436,7 +435,7 @@ func TestService_Exist(t *testing.T) {
 
 		log.Info("check with 1.0.0+ versionRule")
 		resp, err = datasource.GetMetadataManager().ExistService(getContext(), &pb.GetExistenceRequest{
-			Type:        service.ExistTypeMicroservice,
+			Type:        datasource.ExistTypeMicroservice,
 			AppId:       "exist_appId_service_ms",
 			ServiceName: "es_service_ms",
 			Version:     "1.0.0+",
@@ -446,7 +445,7 @@ func TestService_Exist(t *testing.T) {
 
 		log.Info("check with range versionRule")
 		resp, err = datasource.GetMetadataManager().ExistService(getContext(), &pb.GetExistenceRequest{
-			Type:        service.ExistTypeMicroservice,
+			Type:        datasource.ExistTypeMicroservice,
 			AppId:       "exist_appId_service_ms",
 			ServiceName: "es_service_ms",
 			Version:     "0.9.1-1.0.1",

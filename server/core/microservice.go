@@ -30,7 +30,6 @@ import (
 
 var (
 	ServiceAPI         proto.ServiceCtrlServer
-	InstanceAPI        proto.ServiceInstanceCtrlServerEx
 	Service            *discovery.MicroService
 	Instance           *discovery.MicroServiceInstance
 	globalServiceNames map[string]struct{}

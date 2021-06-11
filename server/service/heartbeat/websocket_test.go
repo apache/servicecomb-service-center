@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package hbws_test
+package heartbeat_test
 
 import (
 	"context"
@@ -27,10 +27,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/apache/servicecomb-service-center/server/service/heartbeat"
+
 	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/apache/servicecomb-service-center/server/connection/hbws"
 	"github.com/apache/servicecomb-service-center/server/core"
 )
 
@@ -77,7 +78,7 @@ func NewTest() *watcherConn {
 
 func TestHeartbeat(t *testing.T) {
 	mock := NewTest()
-	go hbws.Heartbeat(context.Background(), mock.serverConn, "", "")
+	go heartbeat.Heartbeat(context.Background(), mock.serverConn, "", "")
 	err := mock.serverConn.WriteMessage(websocket.TextMessage, []byte("hello"))
 	assert.Nil(t, err)
 	_, p, err := mock.clientConn.ReadMessage()

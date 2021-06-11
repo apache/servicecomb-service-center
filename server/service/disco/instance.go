@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package service
+package disco
 
 import (
 	"context"
@@ -34,10 +34,7 @@ import (
 	"github.com/apache/servicecomb-service-center/server/service/validator"
 )
 
-type InstanceService struct {
-}
-
-func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceRequest) (*pb.RegisterInstanceResponse, error) {
+func RegisterInstance(ctx context.Context, in *pb.RegisterInstanceRequest) (*pb.RegisterInstanceResponse, error) {
 	if err := validator.Validate(in); err != nil {
 		remoteIP := util.GetIPFromContext(ctx)
 		log.Errorf(err, "register instance failed, invalid parameters, operator %s", remoteIP)
@@ -65,7 +62,7 @@ func (s *InstanceService) Register(ctx context.Context, in *pb.RegisterInstanceR
 	return datasource.GetMetadataManager().RegisterInstance(ctx, in)
 }
 
-func (s *InstanceService) Unregister(ctx context.Context,
+func UnregisterInstance(ctx context.Context,
 	in *pb.UnregisterInstanceRequest) (*pb.UnregisterInstanceResponse, error) {
 	if err := validator.Validate(in); err != nil {
 		remoteIP := util.GetIPFromContext(ctx)
@@ -78,7 +75,7 @@ func (s *InstanceService) Unregister(ctx context.Context,
 	return datasource.GetMetadataManager().UnregisterInstance(ctx, in)
 }
 
-func (s *InstanceService) Heartbeat(ctx context.Context, in *pb.HeartbeatRequest) (*pb.HeartbeatResponse, error) {
+func Heartbeat(ctx context.Context, in *pb.HeartbeatRequest) (*pb.HeartbeatResponse, error) {
 	if err := validator.Validate(in); err != nil {
 		remoteIP := util.GetIPFromContext(ctx)
 		log.Errorf(err, "heartbeat failed, invalid parameters, operator %s", remoteIP)
@@ -90,7 +87,7 @@ func (s *InstanceService) Heartbeat(ctx context.Context, in *pb.HeartbeatRequest
 	return datasource.GetMetadataManager().Heartbeat(ctx, in)
 }
 
-func (s *InstanceService) HeartbeatSet(ctx context.Context,
+func HeartbeatSet(ctx context.Context,
 	in *pb.HeartbeatSetRequest) (*pb.HeartbeatSetResponse, error) {
 	if len(in.Instances) == 0 {
 		log.Errorf(nil, "heartbeats failed, invalid request. Body not contain Instances or is empty")
@@ -101,7 +98,7 @@ func (s *InstanceService) HeartbeatSet(ctx context.Context,
 	return datasource.GetMetadataManager().HeartbeatSet(ctx, in)
 }
 
-func (s *InstanceService) GetOneInstance(ctx context.Context,
+func GetOneInstance(ctx context.Context,
 	in *pb.GetOneInstanceRequest) (*pb.GetOneInstanceResponse, error) {
 	err := validator.Validate(in)
 	if err != nil {
@@ -114,7 +111,7 @@ func (s *InstanceService) GetOneInstance(ctx context.Context,
 	return datasource.GetMetadataManager().GetInstance(ctx, in)
 }
 
-func (s *InstanceService) GetInstances(ctx context.Context, in *pb.GetInstancesRequest) (*pb.GetInstancesResponse, error) {
+func GetInstances(ctx context.Context, in *pb.GetInstancesRequest) (*pb.GetInstancesResponse, error) {
 	err := validator.Validate(in)
 	if err != nil {
 		log.Errorf(err, "get instances failed: invalid parameters")
@@ -126,7 +123,7 @@ func (s *InstanceService) GetInstances(ctx context.Context, in *pb.GetInstancesR
 	return datasource.GetMetadataManager().GetInstances(ctx, in)
 }
 
-func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest) (*pb.FindInstancesResponse, error) {
+func FindInstances(ctx context.Context, in *pb.FindInstancesRequest) (*pb.FindInstancesResponse, error) {
 	err := validator.Validate(in)
 	if err != nil {
 		log.Errorf(err, "find instance failed: invalid parameters")
@@ -138,7 +135,7 @@ func (s *InstanceService) Find(ctx context.Context, in *pb.FindInstancesRequest)
 	return datasource.GetMetadataManager().FindInstances(ctx, in)
 }
 
-func (s *InstanceService) BatchFind(ctx context.Context, in *pb.BatchFindInstancesRequest) (*pb.BatchFindInstancesResponse, error) {
+func BatchFindInstances(ctx context.Context, in *pb.BatchFindInstancesRequest) (*pb.BatchFindInstancesResponse, error) {
 	if len(in.Services) == 0 && len(in.Instances) == 0 {
 		err := errors.New("Required services or instances")
 		log.Errorf(err, "batch find instance failed: invalid parameters")
@@ -158,7 +155,7 @@ func (s *InstanceService) BatchFind(ctx context.Context, in *pb.BatchFindInstanc
 	return datasource.GetMetadataManager().BatchFind(ctx, in)
 }
 
-func (s *InstanceService) UpdateStatus(ctx context.Context, in *pb.UpdateInstanceStatusRequest) (*pb.UpdateInstanceStatusResponse, error) {
+func UpdateInstanceStatus(ctx context.Context, in *pb.UpdateInstanceStatusRequest) (*pb.UpdateInstanceStatusResponse, error) {
 	if err := validator.Validate(in); err != nil {
 		updateStatusFlag := util.StringJoin([]string{in.ServiceId, in.InstanceId, in.Status}, "/")
 		log.Errorf(nil, "update instance[%s] status failed", updateStatusFlag)
@@ -170,7 +167,7 @@ func (s *InstanceService) UpdateStatus(ctx context.Context, in *pb.UpdateInstanc
 	return datasource.GetMetadataManager().UpdateInstanceStatus(ctx, in)
 }
 
-func (s *InstanceService) UpdateInstanceProperties(ctx context.Context, in *pb.UpdateInstancePropsRequest) (*pb.UpdateInstancePropsResponse, error) {
+func UpdateInstanceProperties(ctx context.Context, in *pb.UpdateInstancePropsRequest) (*pb.UpdateInstancePropsResponse, error) {
 	if err := validator.Validate(in); err != nil {
 		instanceFlag := util.StringJoin([]string{in.ServiceId, in.InstanceId}, "/")
 		log.Errorf(nil, "update instance[%s] properties failed", instanceFlag)
@@ -182,7 +179,7 @@ func (s *InstanceService) UpdateInstanceProperties(ctx context.Context, in *pb.U
 	return datasource.GetMetadataManager().UpdateInstanceProperties(ctx, in)
 }
 
-func (s *InstanceService) ClusterHealth(ctx context.Context) (*pb.GetInstancesResponse, error) {
+func ClusterHealth(ctx context.Context) (*pb.GetInstancesResponse, error) {
 	if err := health.GlobalHealthChecker().Healthy(); err != nil {
 		return &pb.GetInstancesResponse{
 			Response: pb.CreateResponse(pb.ErrUnhealthy, err.Error()),

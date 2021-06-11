@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package service
+package disco
 
 import (
 	"github.com/apache/servicecomb-service-center/datasource"

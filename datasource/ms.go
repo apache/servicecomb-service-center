@@ -27,6 +27,11 @@ import (
 var ErrServiceNotExists = errors.New("service does not exist")
 var ErrInstanceNotExists = errors.New("instance does not exist")
 
+const (
+	ExistTypeMicroservice = "microservice"
+	ExistTypeSchema       = "schema"
+)
+
 // Attention: request validation must be finished before the following interface being invoked!!!
 // MetadataManager contains the CRUD of cache metadata
 type MetadataManager interface {

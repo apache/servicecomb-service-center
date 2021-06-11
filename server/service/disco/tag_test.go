@@ -14,12 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package service_test
+package disco_test
 
 import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/apache/servicecomb-service-center/server/service/disco"
 
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	pb "github.com/go-chassis/cari/discovery"
@@ -349,7 +351,7 @@ var _ = Describe("'Tag' service", func() {
 				Expect(err).To(BeNil())
 				Expect(addTagResp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
-				instanceResp, err := instanceResource.Register(getContext(), &pb.RegisterInstanceRequest{
+				instanceResp, err := disco.RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
 					Instance: &pb.MicroServiceInstance{
 						ServiceId: providerId,
 						Endpoints: []string{
@@ -362,7 +364,7 @@ var _ = Describe("'Tag' service", func() {
 				Expect(err).To(BeNil())
 				Expect(instanceResp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
-				findResp, err := instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+				findResp, err := disco.FindInstances(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: consumerId,
 					AppId:             "find_inst_tag_group",
 					ServiceName:       "find_inst_tag_provider",
@@ -373,7 +375,7 @@ var _ = Describe("'Tag' service", func() {
 				Expect(findResp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 				Expect(len(findResp.Instances)).To(Equal(0))
 
-				findResp, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+				findResp, err = disco.FindInstances(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: consumerId,
 					AppId:             "find_inst_tag_group",
 					ServiceName:       "find_inst_tag_provider",
@@ -398,7 +400,7 @@ var _ = Describe("'Tag' service", func() {
 				Expect(err).To(BeNil())
 				Expect(respAddRule.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
-				findResp, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+				findResp, err = disco.FindInstances(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: consumerId,
 					AppId:             "find_inst_tag_group",
 					ServiceName:       "find_inst_tag_provider",
@@ -416,7 +418,7 @@ var _ = Describe("'Tag' service", func() {
 				Expect(err).To(BeNil())
 				Expect(addTagResp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
-				findResp, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+				findResp, err = disco.FindInstances(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: consumerId,
 					AppId:             "find_inst_tag_group",
 					ServiceName:       "find_inst_tag_provider",

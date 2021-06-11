@@ -24,6 +24,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/apache/servicecomb-service-center/server/service/disco"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/grace"
@@ -33,7 +35,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/metrics"
 	rs "github.com/apache/servicecomb-service-center/server/rest"
-	"github.com/apache/servicecomb-service-center/server/service"
 )
 
 var apiServer *APIServer
@@ -49,7 +50,7 @@ func init() {
 }
 
 func InitAPI() {
-	core.ServiceAPI, core.InstanceAPI = service.AssembleResources()
+	core.ServiceAPI = disco.AssembleResources()
 }
 
 type APIType int64

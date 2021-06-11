@@ -14,14 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package service_test
+package disco_test
 
 import (
 	"strconv"
 	"strings"
 
+	"github.com/apache/servicecomb-service-center/datasource"
+
+	"github.com/apache/servicecomb-service-center/server/service/disco"
+
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
-	"github.com/apache/servicecomb-service-center/server/service"
 	pb "github.com/go-chassis/cari/discovery"
 
 	. "github.com/onsi/ginkgo"
@@ -522,7 +525,7 @@ var _ = Describe("'Schema' service", func() {
 				Expect(respModifySchemas.Response.GetCode()).To(Equal(pb.ErrUndefinedSchemaID))
 
 				respExist, err := serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
-					Type:      service.ExistTypeSchema,
+					Type:      datasource.ExistTypeSchema,
 					ServiceId: serviceIdPro1,
 					SchemaId:  "first_schemaId",
 				})
@@ -558,7 +561,7 @@ var _ = Describe("'Schema' service", func() {
 				Expect(respModifySchemas.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
 				respExist, err := serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
-					Type:      service.ExistTypeSchema,
+					Type:      datasource.ExistTypeSchema,
 					ServiceId: serviceIdPro2,
 					SchemaId:  "first_schemaId",
 				})
@@ -901,7 +904,7 @@ var _ = Describe("'Schema' service", func() {
 					},
 				}
 				By("schema edit not allowed, add a schema with new schemaId should fail")
-				localServiceResource := service.NewMicroServiceService(instanceResource)
+				localServiceResource := disco.NewMicroServiceService()
 				respModifySchemas, err = localServiceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
 					ServiceId: serviceIdPro1,
 					Schemas:   schemas,
@@ -956,7 +959,7 @@ var _ = Describe("'Schema' service", func() {
 				Expect(respGetOne.Service.Schemas).To(Equal([]string{"first_schemaId"}))
 
 				By("schema edit not allowed, modify a schema should fail")
-				localServiceResource := service.NewMicroServiceService(instanceResource)
+				localServiceResource := disco.NewMicroServiceService()
 				respModifySchema, err := localServiceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
 					ServiceId: serviceIdPro1,
 					SchemaId:  schemas[0].SchemaId,

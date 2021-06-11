@@ -16,10 +16,11 @@
 package pzipkin
 
 import (
-	zipkintracer "github.com/openzipkin/zipkin-go-opentracing"
 	"os"
 	"path/filepath"
 	"testing"
+
+	zipkintracer "github.com/openzipkin/zipkin-go-opentracing"
 
 	"github.com/go-chassis/go-archaius"
 )

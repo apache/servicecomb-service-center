@@ -14,10 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package service_test
+package disco_test
 
 import (
 	"strconv"
+
+	"github.com/apache/servicecomb-service-center/server/service/disco"
 
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/go-archaius"
@@ -713,7 +715,7 @@ var _ = Describe("'Dependency' service", func() {
 		Context("when after finding instance", func() {
 			It("should created dependencies between C and P", func() {
 				By("find provider")
-				resp, err := instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+				resp, err := disco.FindInstances(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: consumerId1,
 					AppId:             "get_dep_group",
 					ServiceName:       "get_dep_provider",
@@ -742,7 +744,7 @@ var _ = Describe("'Dependency' service", func() {
 				Expect(len(respGetC.Providers)).To(Equal(2))
 
 				//重复find
-				resp, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+				resp, err = disco.FindInstances(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: consumerId1,
 					AppId:             "get_dep_group",
 					ServiceName:       "get_dep_provider",
@@ -771,7 +773,7 @@ var _ = Describe("'Dependency' service", func() {
 				Expect(respGetC.Providers[0].ServiceId).To(Equal(providerId2))
 
 				By("get self deps")
-				resp, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+				resp, err = disco.FindInstances(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: consumerId1,
 					AppId:             "get_dep_group",
 					ServiceName:       "get_dep_consumer",
@@ -791,7 +793,7 @@ var _ = Describe("'Dependency' service", func() {
 				Expect(len(respGetC.Providers)).To(Equal(1))
 
 				By("find before provider register")
-				resp, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+				resp, err = disco.FindInstances(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: providerId2,
 					AppId:             "get_dep_group",
 					ServiceName:       "get_dep_finder",
@@ -813,7 +815,7 @@ var _ = Describe("'Dependency' service", func() {
 				Expect(respCreateF.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 				finder1 := respCreateF.ServiceId
 
-				resp, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+				resp, err = disco.FindInstances(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: providerId2,
 					AppId:             "get_dep_group",
 					ServiceName:       "get_dep_finder",
@@ -861,7 +863,7 @@ var _ = Describe("'Dependency' service", func() {
 				Expect(err).To(BeNil())
 				Expect(respCreateF.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
-				resp, err = instanceResource.Find(getContext(), &pb.FindInstancesRequest{
+				resp, err = disco.FindInstances(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: providerId2,
 					AppId:             "get_dep_group",
 					ServiceName:       "get_dep_finder",

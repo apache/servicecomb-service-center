@@ -16,22 +16,3 @@
  */
 
 package proto
-
-import (
-	"context"
-
-	"github.com/go-chassis/cari/discovery"
-	"github.com/gorilla/websocket"
-)
-
-type ServiceInstanceCtrlServerEx interface {
-	ServiceInstanceCtrlServer
-
-	BatchFind(ctx context.Context, in *discovery.BatchFindInstancesRequest) (*discovery.BatchFindInstancesResponse, error)
-
-	WebSocketWatch(ctx context.Context, in *discovery.WatchInstanceRequest, conn *websocket.Conn)
-
-	WatchHeartbeat(ctx context.Context, in *discovery.HeartbeatRequest, conn *websocket.Conn)
-
-	ClusterHealth(ctx context.Context) (*discovery.GetInstancesResponse, error)
-}

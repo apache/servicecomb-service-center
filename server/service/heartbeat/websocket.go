@@ -15,13 +15,17 @@
  * limitations under the License.
  */
 
-package hbws
+package heartbeat
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
+
+	"github.com/apache/servicecomb-service-center/datasource"
+	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
 
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/gorilla/websocket"
@@ -30,7 +34,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/connection"
-	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/metrics"
 )
 
@@ -122,7 +125,7 @@ func (c *client) handleMessage() {
 			ServiceId:  c.serviceID,
 			InstanceId: c.instanceID,
 		}
-		_, err = core.InstanceAPI.Heartbeat(c.cxt, request)
+		_, err = discosvc.Heartbeat(c.cxt, request)
 		if err != nil {
 			log.Error("instance heartbeat report failed ", err)
 		}
@@ -163,4 +166,29 @@ func Heartbeat(ctx context.Context, conn *websocket.Conn, serviceID string, inst
 func process(client *client) {
 	go client.heartbeat()
 	client.handleMessage()
+}
+
+func WatchHeartbeat(ctx context.Context, in *pb.HeartbeatRequest, conn *websocket.Conn) {
+	log.Info(fmt.Sprintf("new a web socket with service[%s] ,instance[%s]", in.ServiceId, in.InstanceId))
+	if err := preOp(ctx, in); err != nil {
+		SendEstablishError(conn, err)
+		return
+	}
+	Heartbeat(ctx, conn, in.ServiceId, in.InstanceId)
+}
+func preOp(ctx context.Context, in *pb.HeartbeatRequest) error {
+	if in == nil || len(in.ServiceId) == 0 || len(in.InstanceId) == 0 {
+		return errors.New("request format invalid")
+	}
+	resp, err := datasource.GetMetadataManager().ExistInstanceByID(ctx, &pb.MicroServiceInstanceKey{
+		ServiceId:  in.ServiceId,
+		InstanceId: in.InstanceId,
+	})
+	if err != nil {
+		return err
+	}
+	if !resp.Exist {
+		return datasource.ErrInstanceNotExists
+	}
+	return nil
 }

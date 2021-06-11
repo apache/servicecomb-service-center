@@ -22,6 +22,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 
+	"github.com/apache/servicecomb-service-center/server/service/disco"
+
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/rest/govern"
 	pb "github.com/go-chassis/cari/discovery"
@@ -139,7 +141,7 @@ var _ = Describe("'Govern' service", func() {
 			Expect(err).To(BeNil())
 			Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
-			core.InstanceAPI.Register(getContext(), &pb.RegisterInstanceRequest{
+			disco.RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
 				Instance: &pb.MicroServiceInstance{
 					ServiceId: serviceId,
 					Endpoints: []string{
