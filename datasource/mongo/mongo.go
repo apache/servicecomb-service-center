@@ -36,6 +36,7 @@ import (
 )
 
 const defaultExpireTime = 300
+const defaultPoolSize = 1000
 
 func init() {
 	datasource.Install("mongo", NewDataSource)
@@ -130,7 +131,12 @@ func (ds *DataSource) initClient() error {
 	verifyPeer := config.GetBool("registry.mongo.cluster.verifyPeer", false)
 	certFile := config.GetString("registry.mongo.cluster.certFile", "")
 	keyFile := config.GetString("registry.mongo.cluster.keyFile", "")
-	cfg := storage.NewConfig(uri, storage.SSLEnabled(sslEnable), storage.RootCA(rootCA), storage.VerifyPeer(verifyPeer), storage.CertFile(certFile), storage.KeyFile(keyFile))
+	poolSize := config.GetInt("registry.mongo.cluster.poolSize", defaultPoolSize)
+	if poolSize <= 0 {
+		log.Warn(fmt.Sprintf("mongo cluster poolSize[%d] is too small, set to default size", poolSize))
+		poolSize = defaultPoolSize
+	}
+	cfg := storage.NewConfig(uri, storage.SSLEnabled(sslEnable), storage.RootCA(rootCA), storage.VerifyPeer(verifyPeer), storage.CertFile(certFile), storage.KeyFile(keyFile), storage.PoolSize(poolSize))
 	client.NewMongoClient(cfg)
 	select {
 	case err := <-client.GetMongoClient().Err():

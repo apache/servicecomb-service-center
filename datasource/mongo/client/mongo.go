@@ -172,6 +172,7 @@ func (mc *MongoClient) newClient(ctx context.Context) (err error) {
 		uri = mc.dbconfig.URI
 	}
 	clientOptions := []*options.ClientOptions{options.Client().ApplyURI(uri)}
+	clientOptions = append(clientOptions, options.Client().SetMaxPoolSize(uint64(mc.dbconfig.PoolSize)))
 	if mc.dbconfig.SSLEnabled {
 		if mc.dbconfig.RootCA == "" {
 			err = ErrRootCAMissing
