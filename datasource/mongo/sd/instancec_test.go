@@ -21,6 +21,7 @@ package sd
 
 import (
 	"testing"
+	"time"
 
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
 	"github.com/go-chassis/cari/discovery"
@@ -81,5 +82,70 @@ func TestInstCacheBasicFunc(t *testing.T) {
 		assert.Len(t, instanceCache.cache.GetValue("svcid"), 0)
 		assert.Nil(t, instanceCache.cache.Get("id2"))
 		assert.Len(t, instanceCache.cache.GetValue("svcid"), 0)
+	})
+}
+
+func TestInstValueUpdate(t *testing.T) {
+	inst1 := model.Instance{
+		Domain:      "d1",
+		Project:     "p1",
+		RefreshTime: time.Time{},
+		Instance: &discovery.MicroServiceInstance{
+			InstanceId: "123",
+			Version:    "1.0",
+		},
+	}
+	inst2 := model.Instance{
+		Domain:      "d1",
+		Project:     "p1",
+		RefreshTime: time.Time{},
+		Instance: &discovery.MicroServiceInstance{
+			InstanceId: "123",
+			Version:    "1.0",
+		},
+	}
+	inst3 := model.Instance{
+		Domain:      "d2",
+		Project:     "p2",
+		RefreshTime: time.Time{},
+		Instance: &discovery.MicroServiceInstance{
+			InstanceId: "123",
+			Version:    "1.0",
+		},
+	}
+	inst4 := model.Instance{
+		Domain:      "d2",
+		Project:     "p2",
+		RefreshTime: time.Time{},
+		Instance: &discovery.MicroServiceInstance{
+			InstanceId: "123",
+			Version:    "1.1",
+		},
+	}
+	inst5 := model.Instance{
+		Domain:      "d2",
+		Project:     "p2",
+		RefreshTime: time.Now(),
+		Instance: &discovery.MicroServiceInstance{
+			InstanceId: "123",
+			Version:    "1.1",
+		},
+	}
+
+	t.Run("given the same instances expect equal result", func(t *testing.T) {
+		res := instanceCache.cache.isValueNotUpdated(inst1, inst2)
+		assert.True(t, res)
+	})
+	t.Run("given instances with the different domain expect not equal result", func(t *testing.T) {
+		res := instanceCache.cache.isValueNotUpdated(inst2, inst3)
+		assert.False(t, res)
+	})
+	t.Run("given instances with the different version expect not equal result", func(t *testing.T) {
+		res := instanceCache.cache.isValueNotUpdated(inst3, inst4)
+		assert.False(t, res)
+	})
+	t.Run("given instances with the different refresh time expect  equal result", func(t *testing.T) {
+		res := instanceCache.cache.isValueNotUpdated(inst4, inst5)
+		assert.True(t, res)
 	})
 }

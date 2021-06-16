@@ -193,6 +193,10 @@ func (c *MongoCacher) handleEventBus(eventbus *sdcommon.EventBus) error {
 		}
 
 		for _, resource := range resp.Resources {
+			if resource.Value == nil {
+				log.Error(fmt.Sprintf("get nil value while watch for mongocache,the docID is %s", resource.Key), nil)
+				break
+			}
 			action := resp.Action
 			var event MongoEvent
 			switch action {
@@ -265,6 +269,7 @@ func (c *MongoCacher) filter(infos []*sdcommon.Resource) []MongoEvent {
 	for block := range eventsCh {
 		for _, e := range block {
 			if e.Value == nil {
+				log.Error(fmt.Sprintf("get nil value while do list, the docID is %s", e.DocumentID), nil)
 				break
 			}
 			events = append(events, e)

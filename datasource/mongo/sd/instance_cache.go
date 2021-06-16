@@ -18,6 +18,8 @@
 package sd
 
 import (
+	"reflect"
+
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
 	"github.com/apache/servicecomb-service-center/datasource/sdcommon"
 	rmodel "github.com/go-chassis/cari/discovery"
@@ -120,7 +122,16 @@ func (s *instanceStore) ProcessDelete(event MongoEvent) {
 }
 
 func (s *instanceStore) isValueNotUpdated(value interface{}, newValue interface{}) bool {
-	return true
+	newInst, ok := newValue.(model.Instance)
+	if !ok {
+		return true
+	}
+	oldInst, ok := value.(model.Instance)
+	if !ok {
+		return true
+	}
+	newInst.RefreshTime = oldInst.RefreshTime
+	return reflect.DeepEqual(newInst, oldInst)
 }
 
 func genInstServiceID(inst model.Instance) string {

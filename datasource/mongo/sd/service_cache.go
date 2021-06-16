@@ -18,6 +18,7 @@
 package sd
 
 import (
+	"reflect"
 	"strings"
 
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
@@ -119,7 +120,15 @@ func (s *serviceStore) ProcessDelete(event MongoEvent) {
 }
 
 func (s *serviceStore) isValueNotUpdated(value interface{}, newValue interface{}) bool {
-	return false
+	newService, ok := newValue.(model.Service)
+	if !ok {
+		return true
+	}
+	oldService, ok := value.(model.Service)
+	if !ok {
+		return true
+	}
+	return reflect.DeepEqual(newService, oldService)
 }
 
 func genServiceID(svc model.Service) string {
