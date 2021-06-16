@@ -122,10 +122,10 @@ func (s *ServiceCenterServer) initDatasource() {
 }
 
 func (s *ServiceCenterServer) initMetrics() {
-	if !config.GetMetrics().Enable {
+	if !config.GetBool("metrics.enable", false) {
 		return
 	}
-	interval, err := time.ParseDuration(strings.TrimSpace(config.GetMetrics().Interval))
+	interval, err := time.ParseDuration(strings.TrimSpace(config.GetString("metrics.interval", defaultCollectPeriod.String())))
 	if err != nil {
 		log.Errorf(err, "invalid metrics config[interval], set default %s", defaultCollectPeriod)
 	}

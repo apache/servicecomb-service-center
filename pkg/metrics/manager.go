@@ -33,7 +33,7 @@ var (
 	SysMetrics util.ConcurrentMap
 	// Gatherer is the reader of sc metrics, but can not get not real time metrics
 	// Call the prometheus.Gather() if get the real time metrics
-	Gatherer *Gather
+	Gatherer = EmptyGather
 )
 
 func Init(opts Options) error {

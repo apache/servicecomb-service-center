@@ -160,6 +160,7 @@ rbac:
   publicKeyFile: ./public.key
 
 metrics:
+  # enable to start metrics gather
   enable: true
   interval: 30s
   exporter: prometheus
