@@ -43,12 +43,17 @@ func init() {
 }
 
 type DataSource struct {
-	accountManager  datasource.AccountManager
-	metadataManager datasource.MetadataManager
-	roleManager     datasource.RoleManager
-	sysManager      datasource.SystemManager
-	depManager      datasource.DependencyManager
-	scManager       datasource.SCManager
+	accountLockManager datasource.AccountLockManager
+	accountManager     datasource.AccountManager
+	metadataManager    datasource.MetadataManager
+	roleManager        datasource.RoleManager
+	sysManager         datasource.SystemManager
+	depManager         datasource.DependencyManager
+	scManager          datasource.SCManager
+}
+
+func (ds *DataSource) AccountLockManager() datasource.AccountLockManager {
+	return ds.accountLockManager
 }
 
 func (ds *DataSource) SystemManager() datasource.SystemManager {
@@ -88,6 +93,7 @@ func NewDataSource(opts datasource.Options) (datasource.DataSource, error) {
 	inst.roleManager = &RoleManager{}
 	inst.metadataManager = &MetadataManager{SchemaEditable: opts.SchemaEditable, InstanceTTL: opts.InstanceTTL}
 	inst.accountManager = &AccountManager{}
+	inst.accountLockManager = NewAccountLockManager(opts.ReleaseAccountAfter)
 	return inst, nil
 }
 

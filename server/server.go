@@ -111,11 +111,17 @@ func (s *ServiceCenterServer) initEndpoints() {
 func (s *ServiceCenterServer) initDatasource() {
 	// init datasource
 	kind := datasource.Kind(config.GetString("registry.kind", "", config.WithStandby("registry_plugin")))
+	ReleaseAccountAfter := config.GetString("rbac.releaseLockAfter", "15m")
+	d, err := time.ParseDuration(ReleaseAccountAfter)
+	if err != nil {
+		log.Warn("releaseAfter is invalid, use default config")
+	}
 	if err := datasource.Init(datasource.Options{
-		Kind:           kind,
-		SslEnabled:     config.GetSSL().SslEnabled,
-		InstanceTTL:    config.GetRegistry().InstanceTTL,
-		SchemaEditable: config.GetRegistry().SchemaEditable,
+		Kind:                kind,
+		SslEnabled:          config.GetSSL().SslEnabled,
+		InstanceTTL:         config.GetRegistry().InstanceTTL,
+		SchemaEditable:      config.GetRegistry().SchemaEditable,
+		ReleaseAccountAfter: d,
 	}); err != nil {
 		log.Fatal("init datasource failed", err)
 	}

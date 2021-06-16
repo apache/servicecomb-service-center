@@ -158,7 +158,7 @@ rbac:
   enable: false
   privateKeyFile: ./private.key
   publicKeyFile: ./public.key
-
+  releaseLockAfter: 15m # failure login attempt causes account blocking, that is block duration
 metrics:
   enable: true
   interval: 30s

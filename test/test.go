@@ -19,6 +19,8 @@
 package test
 
 import (
+	"time"
+
 	_ "github.com/apache/servicecomb-service-center/server/init"
 	"github.com/apache/servicecomb-service-center/server/service/disco"
 
@@ -34,6 +36,7 @@ func init() {
 	if t == nil {
 		t = "etcd"
 	}
+	archaius.Set("rbac.releaseLockAfter", "3s")
 	if t == "etcd" {
 		archaius.Set("registry.cache.mode", 0)
 		archaius.Set("discovery.kind", "etcd")
@@ -41,6 +44,7 @@ func init() {
 	} else {
 		archaius.Set("registry.heartbeat.kind", "checker")
 	}
-	datasource.Init(datasource.Options{Kind: datasource.Kind(t.(string))})
+	datasource.Init(datasource.Options{Kind: datasource.Kind(t.(string)),
+		ReleaseAccountAfter: 3 * time.Second})
 	core.ServiceAPI = disco.AssembleResources()
 }

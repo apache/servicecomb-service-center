@@ -33,28 +33,25 @@ func TestCountFailure(t *testing.T) {
 	key1 := v4.MakeBanKey("root", "127.0.0.1")
 	key2 := v4.MakeBanKey("root", "10.0.0.1")
 	t.Run("ban root@IP, will not affect other root@another_IP", func(t *testing.T) {
-		rbac.CountFailure(key1)
+		rbac.TryLockAccount(key1)
 		assert.False(t, rbac.IsBanned(key1))
 
-		rbac.CountFailure(key1)
+		rbac.TryLockAccount(key1)
 		assert.False(t, rbac.IsBanned(key1))
 
-		rbac.CountFailure(key1)
+		rbac.TryLockAccount(key1)
 		assert.True(t, rbac.IsBanned(key1))
 
-		rbac.CountFailure(key2)
+		rbac.TryLockAccount(key2)
 		assert.False(t, rbac.IsBanned(key2))
 
-		rbac.CountFailure(key2)
+		rbac.TryLockAccount(key2)
 		assert.False(t, rbac.IsBanned(key2))
 
-		rbac.CountFailure(key2)
+		rbac.TryLockAccount(key2)
 		assert.True(t, rbac.IsBanned(key2))
 	})
-	t.Log(rbac.BannedList()[0].ReleaseAt)
-	assert.Equal(t, 2, len(rbac.BannedList()))
 	time.Sleep(4 * time.Second)
-	assert.Equal(t, 0, len(rbac.BannedList()))
 	assert.False(t, rbac.IsBanned(key1))
 	assert.False(t, rbac.IsBanned(key2))
 
