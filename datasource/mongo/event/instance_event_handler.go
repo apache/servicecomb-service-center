@@ -50,9 +50,6 @@ func (h InstanceEventHandler) Type() string {
 
 func (h InstanceEventHandler) OnEvent(evt sd.MongoEvent) {
 	action := evt.Type
-	if evt.Type == discovery.EVT_UPDATE {
-		return
-	}
 	instance, ok := evt.Value.(model.Instance)
 	if !ok {
 		log.Error("failed to assert instance", datasource.ErrAssertFail)

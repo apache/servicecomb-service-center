@@ -18,6 +18,8 @@
 package sd
 
 import (
+	"reflect"
+
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
 	"github.com/apache/servicecomb-service-center/datasource/sdcommon"
 	"go.mongodb.org/mongo-driver/bson"
@@ -115,7 +117,15 @@ func (s *ruleStore) ProcessDelete(event MongoEvent) {
 }
 
 func (s *ruleStore) isValueNotUpdated(value interface{}, newValue interface{}) bool {
-	return false
+	newRule, ok := newValue.(model.Rule)
+	if !ok {
+		return true
+	}
+	oldRule, ok := value.(model.Rule)
+	if !ok {
+		return true
+	}
+	return reflect.DeepEqual(newRule, oldRule)
 }
 
 func genRuleServiceID(rule model.Rule) string {

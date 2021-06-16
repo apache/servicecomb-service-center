@@ -18,6 +18,7 @@
 package sd
 
 import (
+	"reflect"
 	"strings"
 
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
@@ -123,7 +124,15 @@ func (s *depStore) ProcessDelete(event MongoEvent) {
 }
 
 func (s *depStore) isValueNotUpdated(value interface{}, newValue interface{}) bool {
-	return false
+	newDep, ok := newValue.(model.DependencyRule)
+	if !ok {
+		return true
+	}
+	oldDep, ok := value.(model.DependencyRule)
+	if !ok {
+		return true
+	}
+	return reflect.DeepEqual(newDep, oldDep)
 }
 
 func genDepServiceKey(dep model.DependencyRule) string {

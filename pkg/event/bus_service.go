@@ -128,7 +128,7 @@ func (s *BusService) Fire(evt Event) error {
 	bus, ok := s.buses[evt.Type()]
 	if !ok {
 		s.mux.RUnlock()
-		return fmt.Errorf("unknown event type[%s]", evt.Type())
+		return fmt.Errorf("no %s subscriber on this service center", evt.Type())
 	}
 	s.mux.RUnlock()
 	bus.Fire(evt)

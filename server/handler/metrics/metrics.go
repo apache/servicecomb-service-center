@@ -21,6 +21,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/apache/servicecomb-service-center/server/config"
+
 	"github.com/apache/servicecomb-service-center/pkg/chain"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
@@ -44,5 +46,7 @@ func (h *Handler) Handle(i *chain.Invocation) {
 }
 
 func RegisterHandlers() {
-	chain.RegisterHandler(rest.ServerChainName, &Handler{})
+	if config.GetBool("metrics.enable", false) {
+		chain.RegisterHandler(rest.ServerChainName, &Handler{})
+	}
 }
