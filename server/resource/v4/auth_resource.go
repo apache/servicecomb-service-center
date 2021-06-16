@@ -34,6 +34,8 @@ import (
 	"github.com/apache/servicecomb-service-center/server/service/validator"
 )
 
+const DefaultTokenExpirationDuration = "12h"
+
 type AuthResource struct {
 }
 
@@ -169,7 +171,7 @@ func (ar *AuthResource) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if a.TokenExpirationTime == "" {
-		a.TokenExpirationTime = "30m"
+		a.TokenExpirationTime = DefaultTokenExpirationDuration
 	}
 	err = validator.ValidateAccountLogin(a)
 	if err != nil {
