@@ -121,6 +121,7 @@ registry:
       verifyPeer: false
       certFile: /opt/ssl/client.crt
       keyFile: /opt/ssl/client.key
+      poolSize: 1000
   fastRegistration:
     # this config is only support in mongo case now
     # if fastRegister.queueSize is > 0, enable to fast register instance, else register instance in normal case
