@@ -26,7 +26,7 @@ import (
 const exporterPrometheus = "prometheus"
 
 func init() {
-	if config.GetMetrics().Exporter != exporterPrometheus {
+	if config.GetString("metrics.exporter", "") != exporterPrometheus {
 		return
 	}
 	rest.RegisterServerHandler("/metrics", promhttp.Handler())

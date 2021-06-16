@@ -28,6 +28,12 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/prometheus"
 )
 
+// EmptyGather just active when metrics disabled
+var EmptyGather = &Gather{
+	Records: NewMetrics(),
+	closed:  false,
+}
+
 func NewGatherer(opts Options) *Gather {
 	return &Gather{
 		Interval: opts.Interval,

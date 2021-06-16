@@ -92,11 +92,6 @@ func GetRBAC() ServerConfigDetail {
 	return App.Server.Config
 }
 
-//GetMetrics return the metrics configs
-func GetMetrics() Metrics {
-	return *App.Metrics
-}
-
 func Init() {
 	setCPUs()
 
