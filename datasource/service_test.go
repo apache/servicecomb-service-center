@@ -644,6 +644,68 @@ func TestService_Delete(t *testing.T) {
 }
 
 func TestService_Info(t *testing.T) {
+	var (
+		serviceID  string
+		instanceID string
+	)
+	t.Run("register a tested service & instance, should be passed", func(t *testing.T) {
+		resp, err := datasource.GetMetadataManager().RegisterService(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				ServiceName: "TestServic1",
+				AppId:       "default",
+				Version:     "1.0.0",
+				Level:       "FRONT",
+				Status:      "UP",
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
+		serviceID = resp.ServiceId
+		instance := &pb.MicroServiceInstance{
+			ServiceId: serviceID,
+			Endpoints: []string{
+				"rest://[::]:301000/",
+			},
+			HostName: "delete-host-ms",
+			Status:   pb.MSI_UP,
+		}
+		respInstance, err := datasource.GetMetadataManager().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
+			Instance: instance,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, respInstance.Response.GetCode())
+		instanceID = respInstance.InstanceId
+	})
+
+	t.Run("get tested service info, should be passed", func(t *testing.T) {
+		resp, err := datasource.GetMetadataManager().GetServicesInfo(getContext(), &pb.GetServicesInfoRequest{
+			Options:     []string{"all"},
+			AppId:       "default",
+			ServiceName: "TestServic1",
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
+		assert.NotEqual(t, 0, len(resp.AllServicesDetail))
+		assert.NotEqual(t, 0, resp.Statistics.Services.Count)
+		assert.NotEqual(t, 0, resp.Statistics.Instances.Count)
+		assert.NotEqual(t, 0, resp.Statistics.Apps.Count)
+	})
+
+	t.Run("unregister tested service & instance, should be passed", func(t *testing.T) {
+		resp, err := datasource.GetMetadataManager().UnregisterInstance(getContext(), &pb.UnregisterInstanceRequest{
+			ServiceId:  serviceID,
+			InstanceId: instanceID,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
+		respService, err := datasource.GetMetadataManager().UnregisterService(getContext(), &pb.DeleteServiceRequest{
+			ServiceId: serviceID,
+			Force:     true,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, respService.Response.GetCode())
+	})
+
 	t.Run("get all services", func(t *testing.T) {
 		log.Info("should be passed")
 		resp, err := datasource.GetMetadataManager().GetServicesInfo(getContext(), &pb.GetServicesInfoRequest{

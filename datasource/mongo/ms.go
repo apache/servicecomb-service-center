@@ -531,7 +531,7 @@ func (ds *MetadataManager) GetServicesInfo(ctx context.Context, request *discove
 	return &discovery.GetServicesInfoResponse{
 		Response:          discovery.CreateResponse(discovery.ResponseSuccess, "Get services info successfully."),
 		AllServicesDetail: allServiceDetails,
-		Statistics:        nil,
+		Statistics:        st,
 	}, nil
 }
 
@@ -545,7 +545,7 @@ func (ds *MetadataManager) filterServices(ctx context.Context, request *discover
 		opts = append(opts, mutil.ServiceAppID(request.AppId))
 	}
 	if len(request.ServiceName) > 0 {
-		opts = append(opts, mutil.ServiceAppID(request.ServiceName))
+		opts = append(opts, mutil.ServiceServiceName(request.ServiceName))
 	}
 	return mutil.NewBasicFilter(ctx, opts...)
 }
