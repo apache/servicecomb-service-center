@@ -88,7 +88,7 @@ func changePassword(ctx context.Context, name, currentPassword, pwd string) erro
 	same := privacy.SamePassword(old.Password, currentPassword)
 	if !same {
 		log.Error("current password is wrong", nil)
-		CountFailure(MakeBanKey(name, ip))
+		TryLockAccount(MakeBanKey(name, ip))
 		return rbac.NewError(rbac.ErrOldPwdWrong, "")
 	}
 	return doChangePassword(ctx, old, pwd)

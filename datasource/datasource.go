@@ -21,6 +21,7 @@ package datasource
 type DataSource interface {
 	SystemManager() SystemManager
 	AccountManager() AccountManager
+	AccountLockManager() AccountLockManager
 	RoleManager() RoleManager
 	DependencyManager() DependencyManager
 	MetadataManager() MetadataManager

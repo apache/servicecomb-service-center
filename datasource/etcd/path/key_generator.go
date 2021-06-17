@@ -373,6 +373,13 @@ func GenerateAccountKey(name string) string {
 		name,
 	}, SPLIT)
 }
+func GenerateAccountLockKey(key string) string {
+	return util.StringJoin([]string{
+		GetRootKey(),
+		"account-locks",
+		key,
+	}, SPLIT)
+}
 func GenerateRBACSecretKey() string {
 	return util.StringJoin([]string{
 		GetRootKey(),

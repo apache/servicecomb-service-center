@@ -17,12 +17,15 @@
 
 package datasource
 
+import "time"
+
 //Options contains configuration for plugins
 type Options struct {
 	Kind           Kind
 	SslEnabled     bool
 	SchemaEditable bool
 	// InstanceTTL: the default ttl of instance lease
-	InstanceTTL int64
+	InstanceTTL         int64
+	ReleaseAccountAfter time.Duration
 	// TODO: pay attention to more net config like TLSConfig when coding
 }

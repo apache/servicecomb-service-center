@@ -28,10 +28,16 @@ var (
 	ErrAccountDuplicated   = errors.New("account is duplicated")
 	ErrAccountCanNotEdit   = errors.New("account can not be edited")
 	ErrDLockNotFound       = errors.New("dlock not found")
+	ErrCannotReleaseLock   = errors.New("can not release account")
+	ErrAccountLockNotExist = errors.New("account not exist")
 	ErrDeleteAccountFailed = errors.New("failed to delete account")
 	ErrQueryAccountFailed  = errors.New("failed to query account")
 	ErrAccountNotExist     = errors.New("account not exist")
 	ErrRoleBindingExist    = errors.New("role is bind to account")
+)
+
+const (
+	StatusBanned = "banned"
 )
 
 // AccountManager contains the RBAC CRUD
@@ -42,4 +48,16 @@ type AccountManager interface {
 	ListAccount(ctx context.Context) ([]*rbac.Account, int64, error)
 	DeleteAccount(ctx context.Context, names []string) (bool, error)
 	UpdateAccount(ctx context.Context, name string, account *rbac.Account) error
+}
+
+// AccountLockManager saves login failure status
+type AccountLockManager interface {
+	GetLock(ctx context.Context, key string) (*AccountLock, error)
+	DeleteLock(ctx context.Context, key string) error
+	Ban(ctx context.Context, key string) error
+}
+type AccountLock struct {
+	Key       string `json:"key,omitempty"`
+	Status    string `json:"status,omitempty"`
+	ReleaseAt int64  `json:"releaseAt,omitempty"`
 }

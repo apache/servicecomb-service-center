@@ -81,6 +81,9 @@ func GetRoleManager() RoleManager {
 func GetAccountManager() AccountManager {
 	return dataSourceInst.AccountManager()
 }
+func GetAccountLockManager() AccountLockManager {
+	return dataSourceInst.AccountLockManager()
+}
 func GetDependencyManager() DependencyManager {
 	return dataSourceInst.DependencyManager()
 }

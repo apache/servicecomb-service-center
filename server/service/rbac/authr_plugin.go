@@ -59,14 +59,14 @@ func (a *EmbeddedAuthenticator) Login(ctx context.Context, user string, password
 	account, err := GetAccount(ctx, user)
 	if err != nil {
 		if errsvc.IsErrEqualCode(err, rbac.ErrAccountNotExist) {
-			CountFailure(MakeBanKey(user, ip))
+			TryLockAccount(MakeBanKey(user, ip))
 			return "", rbac.NewError(rbac.ErrUserOrPwdWrong, "")
 		}
 		return "", err
 	}
 	same := privacy.SamePassword(account.Password, password)
 	if !same {
-		CountFailure(MakeBanKey(user, ip))
+		TryLockAccount(MakeBanKey(user, ip))
 		return "", rbac.NewError(rbac.ErrUserOrPwdWrong, "")
 	}
 
