@@ -20,7 +20,7 @@ It provides out of box support for metrics and tracing. It has a web portal to m
  - **[`Security`](https://service-center.readthedocs.io/en/latest/user-guides/rbac.html)**: Role base access control for service discovery
  - **Discovery**: Support query instance by criteria
  - **Subscribe**: Use web socket to notify client about instance change events
- - **[`Portal`](/frontend)**: Awesome web portal
+ - **[`Portal`](/ux)**: Awesome web portal
  - **Fault tolerance**: Multiple fault tolerance mechanism and design in the architecture
  - **Performance**: Performance/Caching design
  - **[`Metrics`](https://service-center.readthedocs.io/en/latest/user-guides/integration-grafana.html)**: Able to expose Prometheus metric API automatically, [see](/docs/user-guides/metrics.md)
