@@ -43,7 +43,7 @@ install_bower() {
     set +e
     local NPM=$(which npm)
     set -e
-    if [ "$?" == "1" ]; then
+    if [ ${NPM}"x" == "x" ]; then
         curl -sL https://deb.nodesource.com/setup_8.x | bash -
         sudo apt-get install -y nodejs
     fi
@@ -51,17 +51,18 @@ install_bower() {
     set +e
     local BOWER=$(which bower)
     set -e
-    if [ "$?" == "1" ]; then
+    if [ ${BOWER}"x" == "x" ]; then
         npm install -g bower
     fi
 }
 
 frontend_deps() {
-    install_bower
-
-    ## Download the frontend dependencies using bower
     cd ${script_path}/../../frontend/app
-    bower install --allow-root
+    if [ ! -d "bower_components" ]; then
+        ## Download the frontend dependencies using bower
+        install_bower
+        bower install --allow-root
+    fi
     cd -
 }
 
