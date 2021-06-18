@@ -168,7 +168,7 @@ export class ConfigListComponent implements OnInit {
     const results = this.modalService.open({
       id: 'modal-modal',
       width: '550px',
-      backdropCloseable: false,
+      backdropCloseable: true,
       component: CreateModalComponent,
       data: {
         onClose: () => {
@@ -194,7 +194,7 @@ export class ConfigListComponent implements OnInit {
           text: common.confirm,
           cssClass: 'danger',
           handler: async () => {
-            await forbiddenFn(rowItem.id, rowItem.key);
+            await forbiddenFn(rowItem.id);
             results.modalInstance.hide();
             this.onRefresh();
           },
@@ -209,9 +209,8 @@ export class ConfigListComponent implements OnInit {
       ],
     });
 
-    const forbiddenFn = (id: string, value: string) => {
+    const forbiddenFn = (id: string) => {
       const pamars = {
-        value,
         status: 'disabled',
       };
       return this.service.putKie(id, pamars).toPromise();
@@ -234,7 +233,7 @@ export class ConfigListComponent implements OnInit {
           text: common.confirm,
           cssClass: 'danger',
           handler: async () => {
-            await enableFn(rowItem.id, rowItem.key);
+            await enableFn(rowItem.id);
             results.modalInstance.hide();
             this.onRefresh();
           },
@@ -249,9 +248,8 @@ export class ConfigListComponent implements OnInit {
       ],
     });
 
-    const enableFn = (id: string, value: string) => {
+    const enableFn = (id: string) => {
       const pamars = {
-        value,
         status: 'enabled',
       };
       return this.service.putKie(id, pamars).toPromise();

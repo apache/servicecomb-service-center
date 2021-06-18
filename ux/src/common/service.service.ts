@@ -55,7 +55,7 @@ export class ServiceService {
   }
 
   deleteService(id: string): Observable<any> {
-    return this.http.delete(`${REGISTRY_PREFIX}/microservices/${id}`, {
+    return this.http.delete(`${REGISTRY_PREFIX}/microservices/${id}?force=true`, {
       headers: {
         'x-domain-name': DOMAON_NAME,
       },
