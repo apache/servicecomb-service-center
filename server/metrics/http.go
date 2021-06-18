@@ -77,7 +77,7 @@ func ReportRequestCompleted(w http.ResponseWriter, r *http.Request, start time.T
 		reqDurations.WithLabelValues(r.Method, instance, route, domain).Observe(elapsed)
 	}
 
-	success, code := codeOf(r.Context().Value(rest.CtxResponseStatus).(int))
+	success, code := parseStatus(r.Context().Value(rest.CtxResponseStatus).(int))
 
 	incomingRequests.WithLabelValues(r.Method, code, instance, route, domain).Inc()
 
@@ -86,9 +86,9 @@ func ReportRequestCompleted(w http.ResponseWriter, r *http.Request, start time.T
 	}
 }
 
-func codeOf(code int) (bool, string) {
+func parseStatus(code int) (bool, string) {
 	sz := strconv.Itoa(code)
-	if code >= http.StatusOK && code <= http.StatusAccepted {
+	if code < http.StatusInternalServerError {
 		return true, sz
 	}
 	return false, sz
