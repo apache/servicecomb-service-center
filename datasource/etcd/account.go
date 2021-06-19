@@ -173,7 +173,6 @@ func (ds *AccountManager) DeleteAccount(ctx context.Context, names []string) (bo
 		if err != nil {
 			log.Error("", err)
 			continue //do not fail if some account is invalid
-
 		}
 		if a == nil {
 			log.Warn("can not find account")
@@ -194,14 +193,48 @@ func (ds *AccountManager) DeleteAccount(ctx context.Context, names []string) (bo
 	return true, nil
 }
 func (ds *AccountManager) UpdateAccount(ctx context.Context, name string, account *rbac.Account) error {
+	var (
+		opts []client.PluginOp
+		err  error
+	)
+
 	account.UpdateTime = strconv.FormatInt(time.Now().Unix(), 10)
-	value, err := json.Marshal(account)
+
+	opts, err = GenAccountOpts(account, client.ActionPut)
 	if err != nil {
-		log.Errorf(err, "account info is invalid")
+		log.Error("GenAccountOpts failed", err)
 		return err
 	}
-	_, err = client.Instance().Do(ctx, client.PUT,
-		client.WithStrKey(path.GenerateRBACAccountKey(name)),
-		client.WithValue(value))
+
+	old, err := ds.GetAccount(ctx, account.Name)
+	if err != nil {
+		log.Error("GetAccount failed", err)
+		return err
+	}
+
+	for _, r := range old.Roles {
+		if hasRole(account, r) {
+			continue
+		}
+		opt := client.PluginOp{
+			Key:    stringutil.Str2bytes(path.GenRoleAccountIdxKey(r, old.Name)),
+			Action: client.ActionDelete,
+		}
+		opts = append(opts, opt)
+	}
+
+	err = client.BatchCommit(ctx, opts)
+	if err != nil {
+		log.Error("BatchCommit failed", err)
+	}
 	return err
+}
+
+func hasRole(account *rbac.Account, r string) bool {
+	for _, n := range account.Roles {
+		if r == n {
+			return true
+		}
+	}
+	return false
 }
