@@ -53,7 +53,7 @@ var depRule2 = model.DependencyRule{
 		AppId:       "appid1",
 		ServiceName: "svc1",
 		Alias:       "alias1",
-		Version:     "1.0",
+		Version:     "2.0",
 	},
 }
 
@@ -81,13 +81,14 @@ func TestDepCacheBasicFunc(t *testing.T) {
 		assert.Nil(t, depCache.cache.Get("id_not_exist"))
 		assert.Equal(t, depRule1.ServiceKey.ServiceName, depCache.cache.Get("id1").(model.DependencyRule).ServiceKey.ServiceName)
 		assert.Len(t, depCache.cache.GetValue("p/appid1/svc1/1.0"), 1)
+		assert.Equal(t, depRule1.ServiceKey.ServiceName, depCache.cache.GetValue("p/appid1/svc1/1.0")[0].(model.DependencyRule).ServiceKey.ServiceName)
 		depCache.cache.ProcessUpdate(event2)
-		assert.Len(t, depCache.cache.GetValue("p/appid1/svc1/1.0"), 2)
+		assert.Equal(t, depRule2.ServiceKey.ServiceName, depCache.cache.GetValue("p/appid1/svc1/2.0")[0].(model.DependencyRule).ServiceKey.ServiceName)
+		assert.Len(t, depCache.cache.GetValue("p/appid1/svc1/*"), 2)
 		depCache.cache.ProcessDelete(event1)
 		assert.Nil(t, depCache.cache.Get("id1"))
-		assert.Len(t, depCache.cache.GetValue("p/appid1/svc1/1.0"), 1)
-		depCache.cache.ProcessDelete(event2)
 		assert.Len(t, depCache.cache.GetValue("p/appid1/svc1/1.0"), 0)
-		assert.Nil(t, depCache.cache.Get("id2"))
+		depCache.cache.ProcessDelete(event2)
+		assert.Len(t, depCache.cache.GetValue("p/appid1/svc1/*"), 0)
 	})
 }

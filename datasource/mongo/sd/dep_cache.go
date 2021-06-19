@@ -20,6 +20,7 @@ package sd
 import (
 	"reflect"
 	"strings"
+	"sync"
 
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
 	"github.com/apache/servicecomb-service-center/datasource/sdcommon"
@@ -28,8 +29,9 @@ import (
 
 type depStore struct {
 	dirty      bool
+	l          sync.Mutex
 	d          *DocStore
-	indexCache *IndexCache
+	indexCache map[string]map[string]string
 }
 
 func init() {
@@ -41,7 +43,7 @@ func newDepStore() *MongoCacher {
 	cache := &depStore{
 		dirty:      false,
 		d:          NewDocStore(),
-		indexCache: NewIndexCache(),
+		indexCache: make(map[string]map[string]string),
 	}
 	depUnmarshal := func(doc bson.Raw) (resource sdcommon.Resource) {
 		docID := MongoDocument{}
@@ -78,7 +80,7 @@ func (s *depStore) ForEach(iter func(k string, v interface{}) (next bool)) {
 }
 
 func (s *depStore) GetValue(index string) []interface{} {
-	docs := s.indexCache.Get(index)
+	docs := s.getVersionValues(getIndexInfo(index))
 	res := make([]interface{}, 0, len(docs))
 	for _, v := range docs {
 		res = append(res, s.d.Get(v))
@@ -108,7 +110,8 @@ func (s *depStore) ProcessUpdate(event MongoEvent) {
 		return
 	}
 	s.d.Put(event.DocumentID, event.Value)
-	s.indexCache.Put(genDepServiceKey(dep), event.DocumentID)
+	index, cache := genIndexInfo(dep)
+	s.putVersion(index, cache, event.DocumentID)
 }
 
 func (s *depStore) ProcessDelete(event MongoEvent) {
@@ -120,7 +123,7 @@ func (s *depStore) ProcessDelete(event MongoEvent) {
 		return
 	}
 	s.d.DeleteDoc(event.DocumentID)
-	s.indexCache.Delete(genDepServiceKey(dep), event.DocumentID)
+	s.delVersion(genIndexInfo(dep))
 }
 
 func (s *depStore) isValueNotUpdated(value interface{}, newValue interface{}) bool {
@@ -135,6 +138,59 @@ func (s *depStore) isValueNotUpdated(value interface{}, newValue interface{}) bo
 	return reflect.DeepEqual(newDep, oldDep)
 }
 
-func genDepServiceKey(dep model.DependencyRule) string {
-	return strings.Join([]string{dep.Type, dep.ServiceKey.AppId, dep.ServiceKey.ServiceName, dep.ServiceKey.Version}, "/")
+func (s *depStore) putVersion(index, version, value string) {
+	s.l.Lock()
+	defer s.l.Unlock()
+	versionCol, exist := s.indexCache[index]
+	if !exist {
+		s.indexCache[index] = make(map[string]string)
+		versionCol = s.indexCache[index]
+	}
+	versionCol[version] = value
+}
+
+func (s *depStore) delVersion(index, version string) {
+	s.l.Lock()
+	defer s.l.Unlock()
+	versionCol, exist := s.indexCache[index]
+	if !exist {
+		return
+	}
+	delete(versionCol, version)
+	if len(versionCol) == 0 {
+		delete(s.indexCache, index)
+	}
+}
+
+func (s *depStore) getVersionValues(index, version string) []string {
+	s.l.Lock()
+	defer s.l.Unlock()
+	var res []string
+	versionCol, exist := s.indexCache[index]
+	if !exist {
+		return res
+	}
+	// version is exactly.
+	if version != "*" {
+		docID, exist := versionCol[version]
+		if !exist {
+			return res
+		}
+		return []string{docID}
+	}
+	// return all verson.
+	for _, v := range versionCol {
+		res = append(res, v)
+	}
+	return res
+}
+
+func genIndexInfo(dep model.DependencyRule) (string, string) {
+	return strings.Join([]string{dep.Type, dep.ServiceKey.AppId, dep.ServiceKey.ServiceName}, "/"), dep.ServiceKey.Version
+}
+
+func getIndexInfo(index string) (string, string) {
+	tmpRes := strings.Split(index, "/")
+	l := len(tmpRes)
+	return strings.Join(tmpRes[:l-1], "/"), tmpRes[l-1]
 }
