@@ -40,6 +40,12 @@ var (
 		Name:  "test-role2",
 		Perms: nil,
 	}
+
+	a = rbac.Account{
+		Name:     "account-role-test",
+		Password: "abc",
+		Roles:    []string{"test-role1"},
+	}
 )
 
 func TestRole(t *testing.T) {
@@ -74,9 +80,28 @@ func TestRole(t *testing.T) {
 		assert.Equal(t, int64(2), n)
 	})
 
-	t.Run("delete role should success", func(t *testing.T) {
-		_, err := datasource.GetRoleManager().DeleteRole(context.Background(), "test-role1")
+	t.Run("delete role bind to user should failed", func(t *testing.T) {
+		err := datasource.GetAccountManager().CreateAccount(context.Background(), &a)
 		assert.NoError(t, err)
+
+		_, err = datasource.GetRoleManager().DeleteRole(context.Background(), "test-role1")
+		assert.Error(t, err)
+	})
+
+	t.Run("update account role and delete old role should success", func(t *testing.T) {
+		a.Roles = []string{"test-role2"}
+		err := datasource.GetAccountManager().UpdateAccount(context.Background(), "account-role-test", &a)
+		assert.NoError(t, err)
+
+		_, err = datasource.GetRoleManager().DeleteRole(context.Background(), "test-role1")
+		assert.NoError(t, err)
+	})
+
+	t.Run("delete role should success", func(t *testing.T) {
+		b, err := datasource.GetAccountManager().DeleteAccount(context.Background(), []string{"account-role-test"})
+		assert.True(t, b)
+		assert.NoError(t, err)
+
 		_, err = datasource.GetRoleManager().DeleteRole(context.Background(), "test-role2")
 		assert.NoError(t, err)
 		_, n, err := datasource.GetRoleManager().ListRole(context.Background())
