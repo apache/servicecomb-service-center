@@ -18,9 +18,9 @@
 package metrics
 
 import (
+	promutil "github.com/apache/servicecomb-service-center/pkg/prometheus"
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/rest"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 const exporterPrometheus = "prometheus"
@@ -29,5 +29,5 @@ func init() {
 	if config.GetString("metrics.exporter", "") != exporterPrometheus {
 		return
 	}
-	rest.RegisterServerHandler("/metrics", promhttp.Handler())
+	rest.RegisterServerHandler("/metrics", promutil.HTTPHandler())
 }

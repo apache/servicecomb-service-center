@@ -35,7 +35,6 @@ import (
 	simple "github.com/apache/servicecomb-service-center/pkg/time"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/event"
-	"github.com/apache/servicecomb-service-center/server/metrics"
 	"github.com/apache/servicecomb-service-center/server/syncernotify"
 )
 
@@ -72,16 +71,8 @@ func (h InstanceEventHandler) OnEvent(evt sd.MongoEvent) {
 		return
 	}
 	microService := res.Service
-	switch action {
-	case discovery.EVT_INIT:
-		metrics.ReportInstances(instance.Domain, increaseOne)
-		frameworkName, frameworkVersion := getFramework(microService)
-		metrics.ReportFramework(instance.Domain, instance.Project, frameworkName, frameworkVersion, increaseOne)
+	if action == discovery.EVT_INIT {
 		return
-	case discovery.EVT_CREATE:
-		metrics.ReportInstances(instance.Domain, increaseOne)
-	case discovery.EVT_DELETE:
-		metrics.ReportInstances(instance.Domain, decreaseOne)
 	}
 	if !syncernotify.GetSyncerNotifyCenter().Closed() {
 		NotifySyncerInstanceEvent(evt, microService)

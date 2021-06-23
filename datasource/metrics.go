@@ -15,34 +15,25 @@
  * limitations under the License.
  */
 
-package event
+package datasource
 
-import (
-	"github.com/go-chassis/cari/discovery"
+import "context"
 
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
-	"github.com/apache/servicecomb-service-center/server/metrics"
-)
-
-// DomainEventHandler report domain & project total number
-type DomainEventHandler struct {
+type MetricsLabels struct {
+	Domain           string `json:"domain,omitempty"`
+	Project          string `json:"project,omitempty"`
+	Framework        string `json:"framework,omitempty"`
+	FrameworkVersion string `json:"frameworkVersion,omitempty"`
 }
 
-func NewDomainEventHandler() *DomainEventHandler {
-	return &DomainEventHandler{}
+type MetricsReporter interface {
+	DomainAdd(delta float64)
+	ServiceAdd(delta float64, labels MetricsLabels)
+	InstanceAdd(delta float64, labels MetricsLabels)
+	SchemaAdd(delta float64, labels MetricsLabels)
+	FrameworkSet(labels MetricsLabels)
 }
 
-func (h *DomainEventHandler) Type() string {
-	return model.ColumnDomain
-}
-
-func (h *DomainEventHandler) OnEvent(evt sd.MongoEvent) {
-	action := evt.Type
-	switch action {
-	case discovery.EVT_INIT, discovery.EVT_CREATE:
-		metrics.ReportDomains(increaseOne)
-	case discovery.EVT_DELETE:
-		metrics.ReportDomains(decreaseOne)
-	}
+type MetricsManager interface {
+	Report(ctx context.Context, r MetricsReporter) error
 }

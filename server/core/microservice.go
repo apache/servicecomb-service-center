@@ -19,6 +19,7 @@ package core
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/datasource"
 	"strings"
 
 	"github.com/apache/servicecomb-service-center/pkg/proto"
@@ -29,18 +30,12 @@ import (
 )
 
 var (
-	ServiceAPI         proto.ServiceCtrlServer
-	Service            *discovery.MicroService
-	Instance           *discovery.MicroServiceInstance
-	globalServiceNames map[string]struct{}
+	ServiceAPI proto.ServiceCtrlServer
+	Service    *discovery.MicroService
+	Instance   *discovery.MicroServiceInstance
 )
 
 const (
-	RegistryDomain        = "default"
-	RegistryProject       = "default"
-	RegistryDomainProject = "default/default"
-
-	RegistryAppID        = "default"
 	RegistryServiceName  = "SERVICECENTER"
 	RegistryServiceAlias = "SERVICECENTER"
 
@@ -57,7 +52,7 @@ func init() {
 func prepareSelfRegistration() {
 	Service = &discovery.MicroService{
 		Environment: discovery.ENV_PROD,
-		AppId:       RegistryAppID,
+		AppId:       datasource.RegistryAppID,
 		ServiceName: RegistryServiceName,
 		Alias:       RegistryServiceAlias,
 		Version:     version.Ver().Version,
@@ -87,36 +82,17 @@ func prepareSelfRegistration() {
 
 func AddDefaultContextValue(ctx context.Context) context.Context {
 	return util.WithNoCache(util.SetContext(util.SetDomainProject(ctx,
-		RegistryDomain, RegistryProject),
+		datasource.RegistryDomain, datasource.RegistryProject),
 		CtxScSelf, true))
 }
 
-func IsDefaultDomainProject(domainProject string) bool {
-	return domainProject == RegistryDomainProject
-}
-
 func RegisterGlobalServices() {
-	globalServiceNames = make(map[string]struct{})
 	for _, s := range strings.Split(config.GetRegistry().GlobalVisible, ",") {
 		if len(s) > 0 {
-			globalServiceNames[s] = struct{}{}
+			datasource.RegisterGlobalService(s)
 		}
 	}
-	globalServiceNames[Service.ServiceName] = struct{}{}
-}
-
-func IsGlobal(key *discovery.MicroServiceKey) bool {
-	if !IsDefaultDomainProject(key.Tenant) {
-		return false
-	}
-	if key.AppId != RegistryAppID {
-		return false
-	}
-	_, ok := globalServiceNames[key.ServiceName]
-	if !ok {
-		_, ok = globalServiceNames[key.Alias]
-	}
-	return ok
+	datasource.RegisterGlobalService(Service.ServiceName)
 }
 
 func IsSCInstance(ctx context.Context) bool {

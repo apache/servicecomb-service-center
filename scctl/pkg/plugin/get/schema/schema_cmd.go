@@ -18,6 +18,7 @@ package schema
 import (
 	"context"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/datasource"
 	"io"
 	"io/ioutil"
 	"os"
@@ -33,7 +34,6 @@ import (
 	"github.com/apache/servicecomb-service-center/scctl/pkg/cmd"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/model"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/plugin/get"
-	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/spf13/cobra"
 )
 
@@ -71,10 +71,10 @@ func saveDirectory(root string, ms *dump.Microservice) string {
 		return ""
 	}
 	domain, project := util.FromDomainProject(model.GetDomainProject(ms))
-	if domain == core.RegistryDomain {
+	if domain == datasource.RegistryDomain {
 		domain = ""
 	}
-	if project == core.RegistryDomain {
+	if project == datasource.RegistryDomain {
 		project = ""
 	}
 	return filepath.Join(root, "schemas", domain, project, ms.Value.Environment, ms.Value.AppId, ms.Value.ServiceName+".v"+ms.Value.Version)

@@ -18,6 +18,7 @@
 package govern
 
 import (
+	"github.com/apache/servicecomb-service-center/datasource"
 	"net/http"
 
 	"strings"
@@ -121,7 +122,7 @@ func (governService *ResourceV4) genLinesFromNode(withShared bool, domainProject
 }
 
 func (governService *ResourceV4) isSkipped(withShared bool, domainProject string, service *pb.MicroService) bool {
-	return !withShared && core.IsGlobal(pb.MicroServiceToKey(domainProject, service))
+	return !withShared && datasource.IsGlobal(pb.MicroServiceToKey(domainProject, service))
 }
 
 // GetServiceDetail 查询服务详细信息

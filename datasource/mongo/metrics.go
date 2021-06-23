@@ -15,34 +15,16 @@
  * limitations under the License.
  */
 
-package event
+package mongo
 
 import (
-	"github.com/go-chassis/cari/discovery"
-
-	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
-	"github.com/apache/servicecomb-service-center/server/metrics"
+	"context"
+	"github.com/apache/servicecomb-service-center/datasource"
 )
 
-// DomainEventHandler report domain & project total number
-type DomainEventHandler struct {
+type MetricsManager struct {
 }
 
-func (h *DomainEventHandler) Type() sd.Type {
-	return kv.DOMAIN
-}
-
-func (h *DomainEventHandler) OnEvent(evt sd.KvEvent) {
-	action := evt.Type
-	switch action {
-	case discovery.EVT_INIT, discovery.EVT_CREATE:
-		metrics.ReportDomains(1)
-	case discovery.EVT_DELETE:
-		metrics.ReportDomains(-1)
-	}
-}
-
-func NewDomainEventHandler() *DomainEventHandler {
-	return &DomainEventHandler{}
+func (m *MetricsManager) Report(ctx context.Context, r datasource.MetricsReporter) error {
+	panic("implement me")
 }

@@ -44,6 +44,7 @@ type DataSource struct {
 	sysManager         datasource.SystemManager
 	depManager         datasource.DependencyManager
 	scManager          datasource.SCManager
+	metricsManager     datasource.MetricsManager
 }
 
 func (ds *DataSource) AccountLockManager() datasource.AccountLockManager {
@@ -74,6 +75,10 @@ func (ds *DataSource) SCManager() datasource.SCManager {
 	return ds.scManager
 }
 
+func (ds *DataSource) MetricsManager() datasource.MetricsManager {
+	return ds.metricsManager
+}
+
 func NewDataSource(opts datasource.Options) (datasource.DataSource, error) {
 	// TODO: construct a reasonable DataSource instance
 	inst := &DataSource{}
@@ -88,6 +93,7 @@ func NewDataSource(opts datasource.Options) (datasource.DataSource, error) {
 	inst.metadataManager = &MetadataManager{SchemaEditable: opts.SchemaEditable, InstanceTTL: opts.InstanceTTL}
 	inst.accountManager = &AccountManager{}
 	inst.accountLockManager = NewAccountLockManager(opts.ReleaseAccountAfter)
+	inst.metricsManager = &MetricsManager{}
 	return inst, nil
 }
 

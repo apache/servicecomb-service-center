@@ -15,41 +15,27 @@
  * limitations under the License.
  */
 
-package event
+package metrics
 
 import (
-	pb "github.com/go-chassis/cari/discovery"
-
+	"context"
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/server/metrics"
+	"github.com/apache/servicecomb-service-center/pkg/metrics"
 )
 
-type SchemaSummaryEventHandler struct {
+func init() {
+	metrics.RegisterReporter("job", &Reporter{})
 }
 
-func NewSchemaSummaryEventHandler() *SchemaSummaryEventHandler {
-	return &SchemaSummaryEventHandler{}
+type Reporter struct {
 }
 
-func (h *SchemaSummaryEventHandler) Type() string {
-	return model.ColumnSchema
-}
-
-func (h *SchemaSummaryEventHandler) OnEvent(evt sd.MongoEvent) {
-	schema, ok := evt.Value.(model.Schema)
-	if !ok {
-		log.Error("failed to assert schema", datasource.ErrAssertFail)
+func (r *Reporter) Report() {
+	ResetMetaMetrics()
+	err := datasource.GetMetricsManager().Report(context.Background(), GetMetaReporter())
+	if err != nil {
+		log.Error("report metrics failed", err)
 		return
-	}
-	action := evt.Type
-	switch action {
-	case pb.EVT_INIT, pb.EVT_CREATE:
-		metrics.ReportSchemas(schema.Domain, increaseOne)
-	case pb.EVT_DELETE:
-		metrics.ReportSchemas(schema.Domain, decreaseOne)
-	default:
 	}
 }

@@ -29,7 +29,6 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/server/metrics"
 )
 
 type ServiceEventHandler struct {
@@ -48,7 +47,6 @@ func (h *ServiceEventHandler) OnEvent(evt sd.MongoEvent) {
 		log.Error("failed to assert service", datasource.ErrAssertFail)
 		return
 	}
-	fn, fv := getFramework(ms.Service)
 	switch evt.Type {
 	case pb.EVT_INIT, pb.EVT_CREATE:
 		ctx := context.Background()
@@ -60,9 +58,6 @@ func (h *ServiceEventHandler) OnEvent(evt sd.MongoEvent) {
 		if err != nil {
 			log.Error(fmt.Sprintf("new project %s failed", ms.Project), err)
 		}
-		metrics.ReportServices(ms.Domain, fn, fv, increaseOne)
-	case pb.EVT_DELETE:
-		metrics.ReportServices(ms.Domain, fn, fv, decreaseOne)
 	default:
 	}
 	if evt.Type == pb.EVT_INIT {
@@ -71,17 +66,6 @@ func (h *ServiceEventHandler) OnEvent(evt sd.MongoEvent) {
 
 	log.Infof("caught [%s] service[%s][%s/%s/%s/%s] event",
 		evt.Type, ms.Service.ServiceId, ms.Service.Environment, ms.Service.AppId, ms.Service.ServiceName, ms.Service.Version)
-}
-
-func getFramework(ms *pb.MicroService) (string, string) {
-	if ms.Framework != nil && len(ms.Framework.Name) > 0 {
-		version := ms.Framework.Version
-		if len(ms.Framework.Version) == 0 {
-			version = "UNKNOWN"
-		}
-		return ms.Framework.Name, version
-	}
-	return "UNKNOWN", "UNKNOWN"
 }
 
 func newDomain(ctx context.Context, domain string) error {

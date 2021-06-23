@@ -19,9 +19,10 @@ package datasource
 
 import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/go-chassis/cari/discovery"
 )
+
+var GlobalServiceNames = make(map[string]struct{})
 
 type GetInstanceCountByDomainResponse struct {
 	Err           error
@@ -50,7 +51,7 @@ func SetStaticServices(statistics *discovery.Statistics, svcKeys []*discovery.Mi
 	svcWithNonVersion := make(map[string]struct{}, l)
 	svcIDToNonVerKey := make(map[string]string, l)
 	for index, svc := range svcKeys {
-		if !withShared && core.IsGlobal(svc) {
+		if !withShared && IsGlobal(svc) {
 			continue
 		}
 		if _, ok := app[svc.AppId]; !ok {
@@ -101,4 +102,26 @@ func TransServiceToKey(domainProject string, service *discovery.MicroService) *d
 		ServiceName: service.ServiceName,
 		Version:     service.Version,
 	}
+}
+
+func RegisterGlobalService(serviceName string) {
+	GlobalServiceNames[serviceName] = struct{}{}
+}
+
+func IsGlobal(key *discovery.MicroServiceKey) bool {
+	if !IsDefaultDomainProject(key.Tenant) {
+		return false
+	}
+	if key.AppId != RegistryAppID {
+		return false
+	}
+	_, ok := GlobalServiceNames[key.ServiceName]
+	if !ok {
+		_, ok = GlobalServiceNames[key.Alias]
+	}
+	return ok
+}
+
+func IsDefaultDomainProject(domainProject string) bool {
+	return domainProject == RegistryDomainProject
 }

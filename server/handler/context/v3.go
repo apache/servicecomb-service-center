@@ -18,11 +18,11 @@
 package context
 
 import (
+	"github.com/apache/servicecomb-service-center/datasource"
 	"net/http"
 	"strings"
 
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/core"
 )
 
 type v3Context struct {
@@ -50,6 +50,6 @@ func (v *v3Context) Write(r *http.Request) {
 	}
 
 	if len(project) == 0 {
-		util.SetRequestContext(r, util.CtxProject, core.RegistryProject)
+		util.SetRequestContext(r, util.CtxProject, datasource.RegistryProject)
 	}
 }

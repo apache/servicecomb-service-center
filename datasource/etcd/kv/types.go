@@ -59,7 +59,7 @@ func registerInnerTypes() {
 			WithInitSize(1000).WithParser(value.InstanceParser).
 			WithDeferHandler(NewInstanceEventDeferHandler())))
 	DOMAIN = Store().MustInstall(NewAddOn("DOMAIN",
-		sd.Configure().WithPrefix(path.GetDomainRootKey()+path.SPLIT).
+		sd.Configure().WithPrefix(path.GenerateDomainKey("")).
 			WithInitSize(100).WithParser(value.StringParser)))
 	SCHEMA = Store().MustInstall(NewAddOn("SCHEMA",
 		sd.Configure().WithPrefix(path.GetServiceSchemaRootKey("")).
