@@ -80,7 +80,9 @@ func (d *Distributor) Create(kind, project string, spec []byte) ([]byte, error) 
 	if err != nil {
 		return nil, err
 	}
-	setAliasIfEmpty(p.Spec, p.Name)
+	if kind == KindMatchGroup {
+		setAliasIfEmpty(p.Spec, p.Name)
+	}
 	yamlByte, err := yaml.Marshal(p.Spec)
 	if err != nil {
 		return nil, err
