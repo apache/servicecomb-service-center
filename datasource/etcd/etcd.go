@@ -24,7 +24,6 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/event"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/job"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/mux"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
@@ -114,8 +113,6 @@ func (ds *DataSource) initialize(opts datasource.Options) error {
 	ds.initKvStore()
 	// Compact
 	ds.autoCompact()
-	// Jobs
-	job.ClearNoInstanceServices()
 	return nil
 }
 
