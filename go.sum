@@ -269,6 +269,7 @@ github.com/go-chassis/cari v0.3.1-0.20210508100214-a13e083de04e h1:YLXfK7pSRsYK7
 github.com/go-chassis/cari v0.3.1-0.20210508100214-a13e083de04e/go.mod h1:Ie2lW11Y5ZFClY9z7bhAwK6BoNxqGSf3fYGs4mPFs74=
 github.com/go-chassis/cari v0.3.1-0.20210519092219-69f9f0fc3452 h1:G2Qlpg17t0oULhz0Eu3NQgkxKDcNbpGpmgtMR6RZvwk=
 github.com/go-chassis/cari v0.3.1-0.20210519092219-69f9f0fc3452/go.mod h1:av/19fqwEP4eOC8unL/z67AAbFDwXUCko6SKa4Avrd8=
+github.com/go-chassis/cari v0.4.0/go.mod h1:av/19fqwEP4eOC8unL/z67AAbFDwXUCko6SKa4Avrd8=
 github.com/go-chassis/cari v0.4.1-0.20210522033018-d228d49d7d61 h1:gVgeg1lmX1mpra0lyKHiSlc9DImjIDT0vQiSaFHrzMs=
 github.com/go-chassis/cari v0.4.1-0.20210522033018-d228d49d7d61/go.mod h1:av/19fqwEP4eOC8unL/z67AAbFDwXUCko6SKa4Avrd8=
 github.com/go-chassis/cari v0.4.1-0.20210525100133-33b23132d6f0 h1:cxI44jhmc1yzyDm6MQ4oYutZroHlaPkpJLrmsLQJybY=
@@ -294,6 +295,8 @@ github.com/go-chassis/go-chassis/v2 v2.1.2-0.20210310004133-c9bc42149a18 h1:bVzP
 github.com/go-chassis/go-chassis/v2 v2.1.2-0.20210310004133-c9bc42149a18/go.mod h1:NaewTJacOEr9P4gN7Am4x1D1cwUgNtEq9tnKMNOZ47M=
 github.com/go-chassis/go-chassis/v2 v2.2.0 h1:CNr5Z+NJG2HRc+0jLiqufGhn8VuS3GA7i6PeO0JQvwc=
 github.com/go-chassis/go-chassis/v2 v2.2.0/go.mod h1:MpPxktD43gexx3qrOZM90gnoY3/uRHMRiYEeBmcxUuc=
+github.com/go-chassis/go-chassis/v2 v2.2.1-0.20210624120130-77f4a4157de6 h1:jya7lekMZBG/2H+PlG79Px5D7DQyITp7gjfi015nf9k=
+github.com/go-chassis/go-chassis/v2 v2.2.1-0.20210624120130-77f4a4157de6/go.mod h1:xB09l3WEWp1gncinwDMo0G7n6j826Dp0UyuJ0Tu8axI=
 github.com/go-chassis/go-restful-swagger20 v1.0.3-0.20200310030431-17d80f34264f h1:5QmmNpVcGqIc6tuKNe5EAI4PA8Yn2EL9Oee7YdcJ4PE=
 github.com/go-chassis/go-restful-swagger20 v1.0.3-0.20200310030431-17d80f34264f/go.mod h1:eW62fYuzlNFDvIacB6AV8bhUDCTy4myfTCv0bT9Gbb0=
 github.com/go-chassis/go-restful-swagger20 v1.0.3 h1:kWfeLwMwJZVkXP1zNyFpkmR41UZ55UTcOptTteXhvEs=
@@ -305,6 +308,8 @@ github.com/go-chassis/openlog v1.1.2 h1:LgGfwwOhpU8c6URV6ADpaRBPVY7Ph1C28jCQ6zzQ
 github.com/go-chassis/openlog v1.1.2/go.mod h1:+eYCADVxWyJkwsFMUBrMxyQlNqW+UUsCxvR2LrYZUaA=
 github.com/go-chassis/sc-client v0.5.1-0.20210122055720-44b8ac6a939d h1:+cu/QgoLICQIlfiPkdGhK98cjwcSHZphHEgniECTALM=
 github.com/go-chassis/sc-client v0.5.1-0.20210122055720-44b8ac6a939d/go.mod h1:+ymz6z2VWHeIMq43RCn+Q5Ca6ZXbkrwnv/bH8w8zXbI=
+github.com/go-chassis/sc-client v0.6.1-0.20210615014358-a45e9090c751 h1:hpWN/MZBMsnJqXdMkW7v0wsC+4rYulPsBFMrHCmZMQc=
+github.com/go-chassis/sc-client v0.6.1-0.20210615014358-a45e9090c751/go.mod h1:TBS9g7OaIeu1OR/9tVPJEl6BgHFcYEdbuJlgVDQczbc=
 github.com/go-chassis/seclog v1.3.0 h1:ofjF+GpDd7YFdxa6xk13brZfVSKMdZoQVPoCWjFHGUk=
 github.com/go-chassis/seclog v1.3.0/go.mod h1:a/zGvX5BRiwtq/O0fRqS6VWjrBaXYtqFJBx3EX9xzSE=
 github.com/go-gl/glfw v0.0.0-20190409004039-e6da0acd62b1 h1:QbL/5oDUmRBzO9/Z7Seo6zf912W/a6Sr4Eu0G/3Jho0=
@@ -469,6 +474,8 @@ github.com/gorilla/websocket v0.0.0-20170926233335-4201258b820c/go.mod h1:E7qHFY
 github.com/gorilla/websocket v1.4.0/go.mod h1:E7qHFY5m1UJ88s3WnNqhKjPHQ0heANvMoAMk2YaljkQ=
 github.com/gorilla/websocket v1.4.2 h1:+/TMaTYc4QFitKJxsQ7Yye35DkWvkdLcvGKqM+x0Ufc=
 github.com/gorilla/websocket v1.4.2/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
+github.com/gorilla/websocket v1.4.3-0.20210424162022-e8629af678b7 h1:L89uC9ATI61/V2eNgZYtQHyjjyjEplemB+aky4HdyzQ=
+github.com/gorilla/websocket v1.4.3-0.20210424162022-e8629af678b7/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
 github.com/gregjones/httpcache v0.0.0-20180305231024-9cad4c3443a7 h1:pdN6V1QBWetyv/0+wjACpqVH+eVULgEjkurDLq3goeM=
 github.com/gregjones/httpcache v0.0.0-20180305231024-9cad4c3443a7/go.mod h1:FecbI9+v66THATjSRHfNgh1IVFe/9kFxbXtjV0ctIMA=
 github.com/grpc-ecosystem/go-grpc-middleware v1.0.0 h1:Iju5GlWwrvL6UBg4zJJt3btmonfrMlCDdsejg4CZE7c=

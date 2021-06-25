@@ -130,12 +130,6 @@ registry:
     queueSize: 0
 
   service:
-    # enable the job clear the microservices which deploy no instance
-    clearEnable: false
-    # the interval of job
-    clearInterval: 12h
-    # the duration between current datetime and microservice created datetime
-    clearTTL: 24h
     globalVisible:
   instance:
     ttl:
