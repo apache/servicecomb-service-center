@@ -62,11 +62,6 @@ type ServerConfig struct {
 
 	SelfRegister bool `json:"selfRegister"`
 
-	//clear no-instance services
-	ServiceClearEnabled  bool          `json:"serviceClearEnabled"`
-	ServiceClearInterval time.Duration `json:"serviceClearInterval"`
-	//if a service's existence time reaches this value, it can be cleared
-	ServiceTTL time.Duration `json:"serviceTTL"`
 	//CacheTTL is the ttl of cache
 	CacheTTL time.Duration `json:"cacheTTL"`
 
