@@ -110,7 +110,7 @@ func Reload() error {
 	}
 	*Server = loadServerConfig()
 	body, _ := json.MarshalIndent(archaius.GetConfigs(), "", "  ")
-	log.Info(fmt.Sprintf("finish to reload configurations\n%s", body))
+	log.Debug(fmt.Sprintf("finish to reload configurations\n%s", body))
 	return nil
 }
 
