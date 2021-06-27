@@ -30,7 +30,7 @@ import (
 )
 
 func Filter(ctx context.Context, rules []*model.Rule, consumerID string) (bool, error) {
-	consumer, ok := cache.GetServiceByID(consumerID)
+	consumer, ok := cache.GetServiceByID(ctx, consumerID)
 	if !ok {
 		var err error
 		consumer, err = dao.GetServiceByID(ctx, consumerID)

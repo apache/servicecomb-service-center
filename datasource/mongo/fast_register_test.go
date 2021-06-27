@@ -71,13 +71,13 @@ func TestInstance_BatchCreate(t *testing.T) {
 			ProviderServiceId: serviceID,
 		}
 
-		getInstsResp, err := datasource.GetMetadataManager().GetInstances(context.TODO(), getInstsReq)
+		getInstsResp, err := datasource.GetMetadataManager().GetInstances(getContext(), getInstsReq)
 		assert.NoError(t, err)
 		beforLen := len(getInstsResp.Instances)
 
 		instanceBatchLen := 3
 		for i := 0; i < instanceBatchLen; i++ {
-			event := &mongo.InstanceRegisterEvent{Ctx: context.TODO(), Request: request}
+			event := &mongo.InstanceRegisterEvent{Ctx: getContext(), Request: request}
 			fastRegisterService.AddEvent(event)
 		}
 		assert.Equal(t, instanceBatchLen, len(mongo.GetFastRegisterInstanceService().InstEventCh))
@@ -89,7 +89,7 @@ func TestInstance_BatchCreate(t *testing.T) {
 		//if mongo is not replSet, batch register will failed, should wait failed instance register
 		time.Sleep(5 * time.Second)
 
-		getInstsResp, err = datasource.GetMetadataManager().GetInstances(context.TODO(), getInstsReq)
+		getInstsResp, err = datasource.GetMetadataManager().GetInstances(getContext(), getInstsReq)
 		assert.NoError(t, err)
 		afterLen := len(getInstsResp.Instances)
 		assert.Equal(t, instanceBatchLen, afterLen-beforLen)

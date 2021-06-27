@@ -109,8 +109,9 @@ func transCacheToRules(cacheRules []interface{}) ([]*model.Rule, bool) {
 	return res, true
 }
 
-func GetServiceByID(serviceID string) (*model.Service, bool) {
-	cacheRes := sd.Store().Service().Cache().GetValue(serviceID)
+func GetServiceByID(ctx context.Context, serviceID string) (*model.Service, bool) {
+	cacheIndex := strings.Join([]string{util.ParseDomain(ctx), util.ParseProject(ctx), serviceID}, "/")
+	cacheRes := sd.Store().Service().Cache().GetValue(cacheIndex)
 	res, ok := transCacheToService(cacheRes)
 	if !ok {
 		return nil, false

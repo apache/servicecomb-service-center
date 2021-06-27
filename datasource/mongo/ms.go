@@ -205,7 +205,7 @@ func (ds *MetadataManager) GetApplications(ctx context.Context, request *discove
 }
 
 func (ds *MetadataManager) GetService(ctx context.Context, request *discovery.GetServiceRequest) (*discovery.GetServiceResponse, error) {
-	svc, ok := cache.GetServiceByID(request.ServiceId)
+	svc, ok := cache.GetServiceByID(ctx, request.ServiceId)
 	if !ok {
 		var err error
 		svc, err = dao.GetServiceByID(ctx, request.ServiceId)
@@ -1670,7 +1670,7 @@ func (ds *MetadataManager) GetInstances(ctx context.Context, request *discovery.
 
 	if len(request.ConsumerServiceId) > 0 {
 		var exist bool
-		service, exist = cache.GetServiceByID(request.ConsumerServiceId)
+		service, exist = cache.GetServiceByID(ctx, request.ConsumerServiceId)
 		if !exist {
 			service, err = dao.GetServiceByID(ctx, request.ConsumerServiceId)
 			if err != nil {
@@ -1691,7 +1691,7 @@ func (ds *MetadataManager) GetInstances(ctx context.Context, request *discovery.
 		}
 	}
 
-	provider, ok := cache.GetServiceByID(request.ProviderServiceId)
+	provider, ok := cache.GetServiceByID(ctx, request.ProviderServiceId)
 	if !ok {
 		provider, err = dao.GetServiceByID(ctx, request.ProviderServiceId)
 		if err != nil {
@@ -2481,7 +2481,7 @@ func preProcessRegisterInstance(ctx context.Context, instance *discovery.MicroSe
 		}
 	}
 
-	cacheService, ok := cache.GetServiceByID(instance.ServiceId)
+	cacheService, ok := cache.GetServiceByID(ctx, instance.ServiceId)
 
 	var microService *discovery.MicroService
 	if ok {

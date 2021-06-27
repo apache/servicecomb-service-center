@@ -59,7 +59,7 @@ func (h InstanceEventHandler) OnEvent(evt sd.MongoEvent) {
 	providerInstanceID := instance.Instance.InstanceId
 	domainProject := instance.Domain + "/" + instance.Project
 	ctx := util.SetDomainProject(context.Background(), instance.Domain, instance.Project)
-	res, ok := cache.GetServiceByID(providerID)
+	res, ok := cache.GetServiceByID(ctx, providerID)
 	var err error
 	if !ok {
 		res, err = dao.GetServiceByID(ctx, providerID)

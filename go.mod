@@ -33,6 +33,7 @@ require (
 	github.com/onsi/gomega v1.10.5
 	github.com/opentracing/opentracing-go v1.1.0
 	github.com/openzipkin/zipkin-go-opentracing v0.3.3-0.20180123190626-6bb822a7f15f
+	github.com/orcaman/concurrent-map v0.0.0-20210501183033-44dafcb38ecc
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.8.0
