@@ -165,6 +165,8 @@ func EnsureService() {
 	wrapCreateCollectionError(err)
 
 	serviceIDIndex := mutil.BuildIndexDoc(
+		model.ColumnDomain,
+		model.ColumnProject,
 		mutil.ConnectWithDot([]string{model.ColumnService, model.ColumnServiceID}))
 	serviceIDIndex.Options = options.Index().SetUnique(true)
 
