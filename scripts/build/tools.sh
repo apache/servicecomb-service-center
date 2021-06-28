@@ -96,7 +96,10 @@ build_service_center() {
 
     ## Build the Service-Center releases
     export GIT_COMMIT=$(git log  --pretty=format:'%h' -n 1)
-    export BUILD_NUMBER=$RELEASE
+    export BUILD_NUMBER=${RELEASE}
+    if [ "${BUILD_NUMBER}" == "latest" ]; then
+        BUILD_NUMBER="0.0.1"
+    fi
     local ldflags="${GO_LDFLAGS} -X 'github.com/apache/servicecomb-service-center/version.BuildTag=$(date +%Y%m%d%H%M%S).$BUILD_NUMBER.$GIT_COMMIT'"
     ldflags="${ldflags} -X 'github.com/apache/servicecomb-service-center/version.VERSION=$BUILD_NUMBER'"
     local BINARY_NAME=$app/service-center
@@ -126,13 +129,6 @@ package() {
     local app=$PACKAGE_PREFIX-$RELEASE-$GOOS-$GOARCH
 
     cp -r ${root_path}/etc/conf $app/
-    cat <<EOF >> $app/conf/app.yaml
-SERVER_HOST: 0.0.0.0
-REGISTRY_KIND: embedded_etcd
-REGISTRY_ETCD_CLUSTER_NAME: sc-0
-REGISTRY_ETCD_CLUSTER_MANAGER_ENDPOINTS: http://127.0.0.1:2380
-REGISTRY_ETCD_CLUSTER_ENDPOINTS: sc-0=http://127.0.0.1:2379
-EOF
 
     ## Copy the Service-Center Releases
     cp -r ${root_path}/scripts/release/LICENSE $app/
@@ -178,15 +174,13 @@ docker_builder_pattern() {
 
     docker rmi $builder_name
 
-    set -e
-
     cd $dockerfile_dir
-    cp -pf Dockerfile.build Dockerfile
-    sed -i "s|{{RELEASE}}|${RELEASE}|g" Dockerfile
-    sed -i "s|{{BUILD}}|${BUILD}|g" Dockerfile
-    docker build -t $builder_name .
+    docker build --no-cache --build-arg RELEASE=${RELEASE} --build-arg BUILD=${BUILD} -t $builder_name .
     docker create --name builder $builder_name
     docker cp builder:$builder_path/$app $output
     docker rm -f builder
+    docker system prune -f
+
+    set -e
     cd -
 }

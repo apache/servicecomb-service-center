@@ -13,10 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM golang:1.16
+FROM golang:1.18
+
+ARG RELEASE=0.0.1
+ARG BUILD
 
 WORKDIR /go/src/github.com/apache/servicecomb-service-center
 
 COPY . .
 
-RUN bash -x scripts/build/local.sh linux {{RELEASE}} amd64 {{BUILD}}
+RUN bash -x scripts/build/local.sh linux $RELEASE amd64 $BUILD
