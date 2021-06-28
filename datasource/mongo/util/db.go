@@ -298,6 +298,12 @@ func RuleModTime(modTime string) Option {
 	}
 }
 
+func DependencyRuleType(dependencyRuleType string) Option {
+	return func(filter bson.M) {
+		filter[model.ColumnDependencyRuleType] = dependencyRuleType
+	}
+}
+
 func SchemaSummary(schemaSummary string) Option {
 	return func(filter bson.M) {
 		filter[model.ColumnSchemaSummary] = schemaSummary

@@ -64,6 +64,7 @@ const (
 	ColumnInstanceID          = "instance_id"
 	ColumnTenant              = "tenant"
 	ColumnServiceType         = "type"
+	ColumnDependencyRuleType  = "type"
 	ColumnServiceKey          = "service_key"
 	ColumnID                  = "id"
 	ColumnAccountName         = "name"
