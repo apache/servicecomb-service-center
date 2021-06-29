@@ -80,3 +80,8 @@ func SchemaSummaryExist(ctx context.Context, serviceID, schemaID string) (bool, 
 	}
 	return len(s.SchemaSummary) != 0, nil
 }
+
+func CountSchema(ctx context.Context, serviceID string) (int64, error) {
+	filter := mutil.NewBasicFilter(ctx, mutil.ServiceID(serviceID))
+	return client.Count(ctx, model.CollectionSchema, filter)
+}

@@ -90,7 +90,7 @@ func reportServices(ctx context.Context, r datasource.MetricsReporter) {
 			continue
 		}
 		domain, project := path.SplitDomainProject(domainProject)
-		frameworkName, frameworkVersion := getFramework(service)
+		frameworkName, frameworkVersion := discovery.ToFrameworkLabel(service)
 		labels := datasource.MetricsLabels{
 			Domain:           domain,
 			Project:          project,
@@ -101,17 +101,6 @@ func reportServices(ctx context.Context, r datasource.MetricsReporter) {
 
 		reportInstances(ctx, r, domainProject, service)
 	}
-}
-
-func getFramework(ms *discovery.MicroService) (string, string) {
-	if ms.Framework != nil && len(ms.Framework.Name) > 0 {
-		version := ms.Framework.Version
-		if len(ms.Framework.Version) == 0 {
-			version = "UNKNOWN"
-		}
-		return ms.Framework.Name, version
-	}
-	return "UNKNOWN", "UNKNOWN"
 }
 
 func reportInstances(ctx context.Context, r datasource.MetricsReporter, domainProject string, service *discovery.MicroService) {
@@ -128,7 +117,7 @@ func reportInstances(ctx context.Context, r datasource.MetricsReporter, domainPr
 	}
 	count := float64(instancesResp.Count)
 	domain, project := path.SplitDomainProject(domainProject)
-	frameworkName, frameworkVersion := getFramework(service)
+	frameworkName, frameworkVersion := discovery.ToFrameworkLabel(service)
 	labels := datasource.MetricsLabels{
 		Domain:           domain,
 		Project:          project,
