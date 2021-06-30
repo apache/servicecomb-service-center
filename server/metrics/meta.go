@@ -20,7 +20,6 @@ package metrics
 import (
 	"time"
 
-	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	metricsvc "github.com/apache/servicecomb-service-center/pkg/metrics"
 	promutil "github.com/apache/servicecomb-service-center/pkg/prometheus"
@@ -40,13 +39,14 @@ const (
 	KeySCTotal           = metricsvc.FamilyName + "_" + SubSystem + "_" + "sc_total"
 )
 
-var metaReporter = &MetaReporter{}
+var metaEnabled = false
 
-func init() {
-	var err error
+func InitMetaMetrics() (err error) {
 	defer func() {
 		if err != nil {
 			log.Error("init metadata metrics failed", err)
+		} else {
+			metaEnabled = true
 		}
 	}()
 	if err = metrics.CreateGauge(metrics.GaugeOpts{
@@ -106,69 +106,7 @@ func init() {
 	}); err != nil {
 		return
 	}
-}
-
-type MetaReporter struct {
-}
-
-func (m *MetaReporter) DomainAdd(delta float64) {
-	instance := metricsvc.InstanceName()
-	labels := map[string]string{
-		"instance": instance,
-	}
-	if err := metrics.GaugeAdd(KeyDomainTotal, delta, labels); err != nil {
-		log.Error("gauge add failed", err)
-	}
-}
-func (m *MetaReporter) ServiceAdd(delta float64, ml datasource.MetricsLabels) {
-	instance := metricsvc.InstanceName()
-	labels := map[string]string{
-		"instance":         instance,
-		"framework":        ml.Framework,
-		"frameworkVersion": ml.FrameworkVersion,
-		"domain":           ml.Domain,
-		"project":          ml.Project,
-	}
-	if err := metrics.GaugeAdd(KeyServiceTotal, delta, labels); err != nil {
-		log.Error("gauge add failed", err)
-	}
-}
-func (m *MetaReporter) InstanceAdd(delta float64, ml datasource.MetricsLabels) {
-	instance := metricsvc.InstanceName()
-	labels := map[string]string{
-		"instance":         instance,
-		"framework":        ml.Framework,
-		"frameworkVersion": ml.FrameworkVersion,
-		"domain":           ml.Domain,
-		"project":          ml.Project,
-	}
-	if err := metrics.GaugeAdd(KeyInstanceTotal, delta, labels); err != nil {
-		log.Error("gauge add failed", err)
-	}
-}
-func (m *MetaReporter) SchemaAdd(delta float64, ml datasource.MetricsLabels) {
-	instance := metricsvc.InstanceName()
-	labels := map[string]string{
-		"instance": instance,
-		"domain":   ml.Domain,
-		"project":  ml.Project,
-	}
-	if err := metrics.GaugeAdd(KeySchemaTotal, delta, labels); err != nil {
-		log.Error("gauge add failed", err)
-	}
-}
-func (m *MetaReporter) FrameworkSet(ml datasource.MetricsLabels) {
-	instance := metricsvc.InstanceName()
-	labels := map[string]string{
-		"instance":         instance,
-		"framework":        ml.Framework,
-		"frameworkVersion": ml.FrameworkVersion,
-		"domain":           ml.Domain,
-		"project":          ml.Project,
-	}
-	if err := metrics.GaugeSet(KeyFrameworkTotal, 1, labels); err != nil {
-		log.Error("gauge set failed", err)
-	}
+	return
 }
 
 func GetTotalService(domain, project string) int64 {
@@ -196,6 +134,9 @@ func ReportScInstance() {
 }
 
 func ReportHeartbeatCompleted(err error, start time.Time) {
+	if !metaEnabled {
+		return
+	}
 	instance := metricsvc.InstanceName()
 	elapsed := float64(time.Since(start).Nanoseconds()) / float64(time.Microsecond)
 	status := success
@@ -208,32 +149,5 @@ func ReportHeartbeatCompleted(err error, start time.Time) {
 	}
 	if err = metrics.CounterAdd(KeyHeartbeatTotal, 1, labels); err != nil {
 		log.Error("counter add failed", err)
-	}
-}
-
-func GetMetaReporter() *MetaReporter {
-	return metaReporter
-}
-
-func ResetMetaMetrics() {
-	err := metrics.Reset(KeyDomainTotal)
-	if err != nil {
-		log.Error("reset metrics failed", err)
-		return
-	}
-	err = metrics.Reset(KeyServiceTotal)
-	if err != nil {
-		log.Error("reset metrics failed", err)
-		return
-	}
-	err = metrics.Reset(KeyInstanceTotal)
-	if err != nil {
-		log.Error("reset metrics failed", err)
-		return
-	}
-	err = metrics.Reset(KeySchemaTotal)
-	if err != nil {
-		log.Error("reset metrics failed", err)
-		return
 	}
 }

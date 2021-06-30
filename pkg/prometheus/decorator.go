@@ -31,14 +31,6 @@ import (
 // Vectors is unsafe, so all NewXXXVec funcs should be called during the initialization phase
 var Vectors = make(map[string]prometheus.Collector)
 
-func init() {
-	err := metrics.Init()
-	if err != nil {
-		log.Error("init metrics failed", err)
-		return
-	}
-}
-
 func registerMetrics(name string, vec prometheus.Collector) {
 	if _, ok := Vectors[name]; ok {
 		log.Warnf("found duplicate metrics name[%s], override!", name)
