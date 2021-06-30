@@ -26,7 +26,7 @@ message MicroService {
   string modTimestamp = 15;
   string environment = 16;
   string registerBy = 17;
-  FrameWorkProperty framework = 18;
+  FrameWork framework = 18;
 }
 
 message MicroServiceInstance {
@@ -57,7 +57,7 @@ message MicroServiceKey {
     string version = 6;
 }
 
-message FrameWorkProperty {
+message FrameWork {
   string name = 1;
   string version = 2;
 }

@@ -319,9 +319,9 @@ func ServiceCopy(service *scpb.MicroService) *pbsc.MicroService {
 				providers[i].Version = provider.Version
 			}
 		}
-		var frameWorkProperty pbsc.FrameWorkProperty
+		var frameWorkProperty pbsc.FrameWork
 		if service.Framework != nil {
-			frameWorkProperty = pbsc.FrameWorkProperty{
+			frameWorkProperty = pbsc.FrameWork{
 				Name:    service.Framework.Name,
 				Version: service.Framework.Version,
 			}
@@ -371,9 +371,9 @@ func ServiceCopyRe(service *pbsc.MicroService) *scpb.MicroService {
 				providers[i].Version = provider.Version
 			}
 		}
-		var frameWorkProperty scpb.FrameWorkProperty
+		var frameWorkProperty scpb.FrameWork
 		if service.Framework != nil {
-			frameWorkProperty = scpb.FrameWorkProperty{
+			frameWorkProperty = scpb.FrameWork{
 				Name:    service.Framework.Name,
 				Version: service.Framework.Version,
 			}

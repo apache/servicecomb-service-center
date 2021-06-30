@@ -73,7 +73,7 @@ var _ = Describe("'Micro-service' service", func() {
 						Schemas:     []string{TOO_LONG_SCHEMAID[:len(TOO_LONG_SCHEMAID)-1]},
 						Paths:       paths,
 						Properties:  properties,
-						Framework: &pb.FrameWorkProperty{
+						Framework: &pb.FrameWork{
 							Name:    TOO_LONG_FRAMEWORK[:len(TOO_LONG_FRAMEWORK)-1],
 							Version: TOO_LONG_FRAMEWORK[:len(TOO_LONG_FRAMEWORK)-1],
 						},
@@ -592,7 +592,7 @@ var _ = Describe("'Micro-service' service", func() {
 						AppId:       "default",
 						Version:     "1.0.4",
 						Level:       "BACK",
-						Framework: &pb.FrameWorkProperty{
+						Framework: &pb.FrameWork{
 							Version: TOO_LONG_FRAMEWORK,
 						},
 						Properties: make(map[string]string),
@@ -610,7 +610,7 @@ var _ = Describe("'Micro-service' service", func() {
 						AppId:       "default",
 						Version:     "1.0.5",
 						Level:       "BACK",
-						Framework: &pb.FrameWorkProperty{
+						Framework: &pb.FrameWork{
 							Name: TOO_LONG_FRAMEWORK,
 						},
 						Properties: make(map[string]string),
@@ -628,7 +628,7 @@ var _ = Describe("'Micro-service' service", func() {
 						AppId:       "default",
 						Version:     "1.0.5",
 						Level:       "BACK",
-						Framework: &pb.FrameWorkProperty{
+						Framework: &pb.FrameWork{
 							Name: "test@$",
 						},
 						Properties: make(map[string]string),
@@ -724,7 +724,7 @@ var _ = Describe("'Micro-service' service", func() {
 						AppId:       "default",
 						Version:     "1.0.1",
 						Level:       "BACK",
-						Framework: &pb.FrameWorkProperty{
+						Framework: &pb.FrameWork{
 							Version: "1.0.0",
 						},
 						Properties: make(map[string]string),
@@ -742,7 +742,7 @@ var _ = Describe("'Micro-service' service", func() {
 						AppId:       "default",
 						Version:     "1.0.2",
 						Level:       "BACK",
-						Framework: &pb.FrameWorkProperty{
+						Framework: &pb.FrameWork{
 							Name: "framework",
 						},
 						Properties: make(map[string]string),
