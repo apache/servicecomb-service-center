@@ -18,9 +18,9 @@
 package metrics
 
 import (
-	"github.com/apache/servicecomb-service-center/datasource"
 	"time"
 
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	metricsvc "github.com/apache/servicecomb-service-center/pkg/metrics"
 	promutil "github.com/apache/servicecomb-service-center/pkg/prometheus"

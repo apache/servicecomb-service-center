@@ -18,10 +18,10 @@
 package context
 
 import (
-	"github.com/apache/servicecomb-service-center/datasource"
 	"net/http"
 	"strings"
 
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 

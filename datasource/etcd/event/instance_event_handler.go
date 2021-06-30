@@ -20,7 +20,6 @@ package event
 import (
 	"context"
 	"fmt"
-	pb "github.com/go-chassis/cari/discovery"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/cache"
@@ -33,11 +32,10 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/event"
 	"github.com/apache/servicecomb-service-center/server/syncernotify"
+	pb "github.com/go-chassis/cari/discovery"
 )
 
 const (
-	increaseOne = 1
-	decreaseOne = -1
 	msKeyPrefix = "/cse-sr/ms/files/"
 	sep         = "/"
 )

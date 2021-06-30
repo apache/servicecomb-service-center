@@ -18,13 +18,14 @@
 package prometheus
 
 import (
+	"net/http"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/go-chassis/go-chassis/v2/pkg/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	dto "github.com/prometheus/client_model/go"
-	"net/http"
 )
 
 // Vectors is unsafe, so all NewXXXVec funcs should be called during the initialization phase

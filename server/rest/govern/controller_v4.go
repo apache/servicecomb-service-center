@@ -18,11 +18,10 @@
 package govern
 
 import (
-	"github.com/apache/servicecomb-service-center/datasource"
 	"net/http"
-
 	"strings"
 
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"

@@ -19,9 +19,9 @@ package core
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/datasource"
 	"strings"
 
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/proto"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/config"

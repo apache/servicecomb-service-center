@@ -20,10 +20,10 @@ package dao
 import (
 	"context"
 	"fmt"
-	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
 
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
+	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 

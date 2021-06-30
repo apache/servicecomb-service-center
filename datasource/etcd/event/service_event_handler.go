@@ -19,7 +19,6 @@ package event
 
 import (
 	"context"
-	pb "github.com/go-chassis/cari/discovery"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/cache"
@@ -28,6 +27,7 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	pb "github.com/go-chassis/cari/discovery"
 )
 
 // ServiceEventHandler is the handler to handle:
