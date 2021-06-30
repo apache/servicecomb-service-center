@@ -43,23 +43,20 @@ func (al AccountLockManager) GetLock(ctx context.Context, key string) (*datasour
 	lock := &datasource.AccountLock{}
 	err = json.Unmarshal(resp.Kvs[0].Value, lock)
 	if err != nil {
-		log.Errorf(err, "format invalid")
+		log.Error(fmt.Sprintf("key %s format invalid", key), err)
 		return nil, err
 	}
 	return lock, nil
 }
 
 func (al AccountLockManager) DeleteLock(ctx context.Context, key string) error {
-	ok, err := client.Delete(ctx, key)
+	_, err := client.Delete(ctx, path.GenerateAccountLockKey(key))
 	if err != nil {
-		log.Errorf(err, "remove lock failed")
+		log.Error(fmt.Sprintf("remove lock %s failed", key), err)
 		return datasource.ErrCannotReleaseLock
 	}
-	if ok {
-		log.Info(fmt.Sprintf("%s is released", key))
-		return nil
-	}
-	return datasource.ErrCannotReleaseLock
+	log.Info(fmt.Sprintf("%s is released", key))
+	return nil
 }
 
 func NewAccountLockManager(ReleaseAfter time.Duration) datasource.AccountLockManager {

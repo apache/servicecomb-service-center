@@ -124,7 +124,7 @@ func (s *ruleStore) ProcessUpdate(event MongoEvent) {
 	}
 	// set the document data.
 	s.concurrentMap.Set(event.DocumentID, event.Value)
-	for _, index := range RuleIndexCols.GetIndexs(ruleData) {
+	for _, index := range RuleIndexCols.GetIndexes(ruleData) {
 		// set the index sets.
 		s.indexSets.Put(index, event.DocumentID)
 	}
@@ -140,7 +140,7 @@ func (s *ruleStore) ProcessDelete(event MongoEvent) {
 		return
 	}
 	s.concurrentMap.Remove(event.DocumentID)
-	for _, index := range RuleIndexCols.GetIndexs(ruleData) {
+	for _, index := range RuleIndexCols.GetIndexes(ruleData) {
 		s.indexSets.Delete(index, event.DocumentID)
 	}
 }

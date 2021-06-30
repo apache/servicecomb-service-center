@@ -17,26 +17,26 @@
 
 package sd
 
-type indexFunc func(interface{}) string
+type IndexFunc func(interface{}) string
 
-type indexCols struct {
-	indexFuncs []indexFunc
+type IndexCols struct {
+	indexFuncs []IndexFunc
 }
 
-var DepIndexCols *indexCols
-var InstIndexCols *indexCols
-var ServiceIndexCols *indexCols
-var RuleIndexCols *indexCols
+var DepIndexCols *IndexCols
+var InstIndexCols *IndexCols
+var ServiceIndexCols *IndexCols
+var RuleIndexCols *IndexCols
 
-func NewIndexCols() *indexCols {
-	return &indexCols{indexFuncs: make([]indexFunc, 0)}
+func NewIndexCols() *IndexCols {
+	return &IndexCols{indexFuncs: make([]IndexFunc, 0)}
 }
 
-func (i *indexCols) AddIndexFunc(f indexFunc) {
+func (i *IndexCols) AddIndexFunc(f IndexFunc) {
 	i.indexFuncs = append(i.indexFuncs, f)
 }
 
-func (i *indexCols) GetIndexs(data interface{}) (res []string) {
+func (i *IndexCols) GetIndexes(data interface{}) (res []string) {
 	for _, f := range i.indexFuncs {
 		index := f(data)
 		if len(index) != 0 {
