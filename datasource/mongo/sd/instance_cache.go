@@ -124,7 +124,7 @@ func (s *instanceStore) ProcessUpdate(event MongoEvent) {
 	}
 	// set the document data.
 	s.concurrentMap.Set(event.DocumentID, event.Value)
-	for _, index := range InstIndexCols.GetIndexs(instData) {
+	for _, index := range InstIndexCols.GetIndexes(instData) {
 		// set the index sets.
 		s.indexSets.Put(index, event.DocumentID)
 	}
@@ -140,7 +140,7 @@ func (s *instanceStore) ProcessDelete(event MongoEvent) {
 		return
 	}
 	s.concurrentMap.Remove(event.DocumentID)
-	for _, index := range InstIndexCols.GetIndexs(instanceData) {
+	for _, index := range InstIndexCols.GetIndexes(instanceData) {
 		s.indexSets.Delete(index, event.DocumentID)
 	}
 }
