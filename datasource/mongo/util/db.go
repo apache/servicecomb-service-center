@@ -97,6 +97,24 @@ func Perms(perms []*rbac.Permission) Option {
 	}
 }
 
+func AccountLockKey(key interface{}) Option {
+	return func(filter bson.M) {
+		filter[model.ColumnAccountLockKey] = key
+	}
+}
+
+func AccountLockStatus(status interface{}) Option {
+	return func(filter bson.M) {
+		filter[model.ColumnAccountLockStatus] = status
+	}
+}
+
+func AccountLockReleaseAt(releaseAt interface{}) Option {
+	return func(filter bson.M) {
+		filter[model.ColumnAccountLockReleaseAt] = releaseAt
+	}
+}
+
 func In(data interface{}) Option {
 	return func(filter bson.M) {
 		filter["$in"] = data
