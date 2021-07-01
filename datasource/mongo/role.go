@@ -19,6 +19,8 @@ package mongo
 
 import (
 	"context"
+	"strconv"
+	"time"
 
 	"github.com/go-chassis/cari/rbac"
 	"go.mongodb.org/mongo-driver/bson"
@@ -44,6 +46,8 @@ func (ds *RoleManager) CreateRole(ctx context.Context, r *rbac.Role) error {
 		return datasource.ErrRoleDuplicated
 	}
 	r.ID = util.GenerateUUID()
+	r.CreateTime = strconv.FormatInt(time.Now().Unix(), 10)
+	r.UpdateTime = r.CreateTime
 	_, err = client.GetMongoClient().Insert(ctx, model.CollectionRole, r)
 	if err != nil {
 		if client.IsDuplicateKey(err) {
@@ -130,6 +134,7 @@ func (ds *RoleManager) UpdateRole(ctx context.Context, name string, role *rbac.R
 		mutil.ID(role.ID),
 		mutil.RoleName(role.Name),
 		mutil.Perms(role.Perms),
+		mutil.RoleUpdateTime(strconv.FormatInt(time.Now().Unix(), 10)),
 	)
 	updateFilter := mutil.NewFilter(mutil.Set(setFilter))
 	_, err := client.GetMongoClient().Update(ctx, model.CollectionRole, filter, updateFilter)

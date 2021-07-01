@@ -70,6 +70,7 @@ const (
 	ColumnAccountName          = "name"
 	ColumnRoleName             = "name"
 	ColumnPerms                = "perms"
+	ColumnRoleUpdateTime       = "updatetime"
 	ColumnPassword             = "password"
 	ColumnRoles                = "roles"
 	ColumnTokenExpirationTime  = "token_expiration_time"
