@@ -25,7 +25,7 @@ import (
 	pb "github.com/go-chassis/cari/discovery"
 )
 
-func (ds *MetadataManager) GetServiceCountByDomainProject(ctx context.Context, request *pb.GetServiceCountRequest) (
+func (ds *MetadataManager) GetServiceCount(ctx context.Context, request *pb.GetServiceCountRequest) (
 	*pb.GetServiceCountResponse, error) {
 	options := []mutil.Option{mutil.NotGlobal(), mutil.Domain(request.Domain)}
 	if request.Project != "" {
@@ -41,7 +41,7 @@ func (ds *MetadataManager) GetServiceCountByDomainProject(ctx context.Context, r
 	}, nil
 }
 
-func (ds *MetadataManager) GetInstanceCountByDomainProject(ctx context.Context, request *pb.GetServiceCountRequest) (
+func (ds *MetadataManager) GetInstanceCount(ctx context.Context, request *pb.GetServiceCountRequest) (
 	*pb.GetServiceCountResponse, error) {
 	options := []mutil.Option{mutil.Domain(request.Domain)}
 	if request.Project != "" {

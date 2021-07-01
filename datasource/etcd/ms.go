@@ -541,7 +541,7 @@ func (ds *MetadataManager) UnregisterService(ctx context.Context, request *pb.De
 	}, err
 }
 
-func (ds *MetadataManager) GetServiceCountByDomainProject(ctx context.Context, request *pb.GetServiceCountRequest) (*pb.GetServiceCountResponse, error) {
+func (ds *MetadataManager) GetServiceCount(ctx context.Context, request *pb.GetServiceCountRequest) (*pb.GetServiceCountResponse, error) {
 	domainProject := request.Domain
 	if request.Project != "" {
 		domainProject += path.SPLIT + request.Project
@@ -1367,7 +1367,7 @@ func (ds *MetadataManager) GetAllInstances(ctx context.Context, request *pb.GetA
 	return resp, nil
 }
 
-func (ds *MetadataManager) GetInstanceCountByDomainProject(ctx context.Context, request *pb.GetServiceCountRequest) (*pb.GetServiceCountResponse, error) {
+func (ds *MetadataManager) GetInstanceCount(ctx context.Context, request *pb.GetServiceCountRequest) (*pb.GetServiceCountResponse, error) {
 	domainProject := request.Domain
 	if request.Project != "" {
 		domainProject += path.SPLIT + request.Project
