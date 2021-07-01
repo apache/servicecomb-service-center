@@ -23,6 +23,7 @@ import (
 
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
+	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
@@ -39,4 +40,8 @@ func AddDomain(ctx context.Context, domain string) error {
 
 func ExistDomain(ctx context.Context, filter interface{}) (bool, error) {
 	return client.GetMongoClient().DocExist(ctx, model.CollectionDomain, filter)
+}
+
+func CountDomain(ctx context.Context) (int64, error) {
+	return client.GetMongoClient().Count(ctx, model.CollectionDomain, mutil.NewFilter())
 }

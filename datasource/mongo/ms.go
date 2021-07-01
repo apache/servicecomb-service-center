@@ -189,7 +189,7 @@ func (ds *MetadataManager) GetApplications(ctx context.Context, request *discove
 	apps := make([]string, 0, l)
 	hash := make(map[string]struct{}, l)
 	for _, svc := range services {
-		if !request.WithShared && apt.IsGlobal(discovery.MicroServiceToKey(util.ParseDomainProject(ctx), svc)) {
+		if !request.WithShared && datasource.IsGlobal(discovery.MicroServiceToKey(util.ParseDomainProject(ctx), svc)) {
 			continue
 		}
 		if _, ok := hash[svc.AppId]; ok {
@@ -501,7 +501,7 @@ func (ds *MetadataManager) GetServicesInfo(ctx context.Context, request *discove
 	allServiceDetails := make([]*discovery.ServiceDetail, 0, len(services))
 	domainProject := util.ParseDomainProject(ctx)
 	for _, mgSvc := range services {
-		if !request.WithShared && apt.IsGlobal(discovery.MicroServiceToKey(domainProject, mgSvc.Service)) {
+		if !request.WithShared && datasource.IsGlobal(discovery.MicroServiceToKey(domainProject, mgSvc.Service)) {
 			continue
 		}
 
@@ -1826,7 +1826,7 @@ func (ds *MetadataManager) FindInstances(ctx context.Context, request *discovery
 		}, err
 	}
 
-	if apt.IsGlobal(provider) {
+	if datasource.IsGlobal(provider) {
 		return ds.findSharedServiceInstance(ctx, request, provider, rev)
 	}
 
@@ -2738,7 +2738,7 @@ func allowAcrossDimension(ctx context.Context, providerService *model.Service, c
 			return fmt.Errorf("not allow across app access")
 		}
 	}
-	if !apt.IsGlobal(discovery.MicroServiceToKey(util.ParseTargetDomainProject(ctx), providerService.Service)) &&
+	if !datasource.IsGlobal(discovery.MicroServiceToKey(util.ParseTargetDomainProject(ctx), providerService.Service)) &&
 		providerService.Service.Environment != consumerService.Service.Environment {
 		return fmt.Errorf("not allow across environment access")
 	}

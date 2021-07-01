@@ -53,11 +53,11 @@ func GetRootKey() string {
 	return SPLIT + RegistryRootKey
 }
 
-func GenerateRBACAccountKey(name string) string {
+func GenerateDomainKey(domain string) string {
 	return util.StringJoin([]string{
 		GetRootKey(),
-		"accounts",
-		name,
+		RegistryDomainKey,
+		domain,
 	}, SPLIT)
 }
 
@@ -69,6 +69,20 @@ func GetProjectRootKey(domain string) string {
 	}, SPLIT)
 }
 
+func GenerateProjectKey(domain, project string) string {
+	return util.StringJoin([]string{
+		GetProjectRootKey(domain),
+		project,
+	}, SPLIT)
+}
+
+func GenerateRBACAccountKey(name string) string {
+	return util.StringJoin([]string{
+		GetRootKey(),
+		"accounts",
+		name,
+	}, SPLIT)
+}
 func GenerateRBACRoleKey(name string) string {
 	return util.StringJoin([]string{
 		GetRootKey(),
@@ -88,19 +102,6 @@ func GenRoleAccountPrefixIdxKey(role string) string {
 		GetRootKey(),
 		"idx-role-account",
 		role,
-	}, SPLIT)
-}
-func GenerateETCDProjectKey(domain, project string) string {
-	return util.StringJoin([]string{
-		GetProjectRootKey(domain),
-		project,
-	}, SPLIT)
-}
-
-func GenerateETCDDomainKey(domain string) string {
-	return util.StringJoin([]string{
-		GetDomainRootKey(),
-		domain,
 	}, SPLIT)
 }
 
@@ -353,19 +354,6 @@ func GetServiceDependencyRootKey(domainProject string) string {
 	}, SPLIT)
 }
 
-func GetDomainRootKey() string {
-	return util.StringJoin([]string{
-		GetRootKey(),
-		RegistryDomainKey,
-	}, SPLIT)
-}
-
-func GenerateDomainKey(domain string) string {
-	return util.StringJoin([]string{
-		GetDomainRootKey(),
-		domain,
-	}, SPLIT)
-}
 func GenerateAccountKey(name string) string {
 	return util.StringJoin([]string{
 		GetRootKey(),
@@ -406,12 +394,5 @@ func GenerateMetricsKey(name, utc, domain string) string {
 		name,
 		utc,
 		domain,
-	}, SPLIT)
-}
-
-func GenerateProjectKey(domain, project string) string {
-	return util.StringJoin([]string{
-		GetProjectRootKey(domain),
-		project,
 	}, SPLIT)
 }

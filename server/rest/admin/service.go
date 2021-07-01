@@ -25,7 +25,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/alarm"
-	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/version"
 	"github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/go-archaius"
@@ -41,7 +40,7 @@ type Service struct {
 func (service *Service) Dump(ctx context.Context, in *dump.Request) (*dump.Response, error) {
 	domainProject := util.ParseDomainProject(ctx)
 
-	if !core.IsDefaultDomainProject(domainProject) {
+	if !datasource.IsDefaultDomainProject(domainProject) {
 		return &dump.Response{
 			Response: discovery.CreateResponse(discovery.ErrForbidden, "Required admin permission"),
 		}, nil

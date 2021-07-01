@@ -353,7 +353,7 @@ func (ds *MetadataManager) GetServicesInfo(ctx context.Context, request *pb.GetS
 }
 
 func (ds *MetadataManager) filterServices(domainProject string, request *pb.GetServicesInfoRequest, service *pb.MicroService) bool {
-	if !request.WithShared && core.IsGlobal(pb.MicroServiceToKey(domainProject, service)) {
+	if !request.WithShared && datasource.IsGlobal(pb.MicroServiceToKey(domainProject, service)) {
 		return false
 	}
 	if len(request.Environment) > 0 && request.Environment != service.Environment {
@@ -409,7 +409,7 @@ func (ds *MetadataManager) GetApplications(ctx context.Context, request *pb.GetA
 	appMap := make(map[string]struct{}, l)
 	for _, keyValue := range resp.Kvs {
 		key := path.GetInfoFromSvcIndexKV(keyValue.Key)
-		if !request.WithShared && core.IsGlobal(key) {
+		if !request.WithShared && datasource.IsGlobal(key) {
 			continue
 		}
 		if _, ok := appMap[key.AppId]; ok {
@@ -927,7 +927,7 @@ func (ds *MetadataManager) FindInstances(ctx context.Context, request *pb.FindIn
 		}, err
 	}
 
-	if core.IsGlobal(provider) {
+	if datasource.IsGlobal(provider) {
 		return ds.findSharedServiceInstance(ctx, request, provider, rev)
 	}
 	return ds.findInstance(ctx, request, provider, rev)

@@ -21,9 +21,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/go-chassis/cari/discovery"
-
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/go-chassis/cari/discovery"
 )
 
 func ToResponse(key []byte) (keys []string) {
@@ -168,4 +167,10 @@ func GetInfoFromDependencyRuleKV(key []byte) (t string, _ *discovery.MicroServic
 		ServiceName: keys[l-2],
 		Version:     keys[l-1],
 	}
+}
+
+func SplitDomainProject(domainProject string) (string, string) {
+	domain := domainProject[:strings.Index(domainProject, SPLIT)]
+	project := domainProject[strings.Index(domainProject, SPLIT)+1:]
+	return domain, project
 }

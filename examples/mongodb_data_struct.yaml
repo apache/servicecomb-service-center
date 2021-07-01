@@ -23,7 +23,7 @@
 #  ModTimestamp string             `protobuf:"bytes,15,opt,name=modTimestamp" json:"modTimestamp,omitempty" bson:"mod_timestamp"`
 #  Environment  string             `protobuf:"bytes,16,opt,name=environment" json:"environment,omitempty" bson:"env"`
 #  RegisterBy   string             `protobuf:"bytes,17,opt,name=registerBy" json:"registerBy,omitempty" bson:"register_by"`
-#  Framework    *FrameWorkProperty `protobuf:"bytes,18,opt,name=framework" json:"framework,omitempty"`
+#  Framework    *FrameWork `protobuf:"bytes,18,opt,name=framework" json:"framework,omitempty"`
 #}
 
 #collection: service

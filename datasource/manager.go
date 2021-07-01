@@ -87,3 +87,6 @@ func GetAccountLockManager() AccountLockManager {
 func GetDependencyManager() DependencyManager {
 	return dataSourceInst.DependencyManager()
 }
+func GetMetricsManager() MetricsManager {
+	return dataSourceInst.MetricsManager()
+}

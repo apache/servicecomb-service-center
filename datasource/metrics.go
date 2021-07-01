@@ -17,12 +17,23 @@
 
 package datasource
 
-const (
-	SPLIT                 = "/"
-	ServiceKeyPrefix      = "/cse-sr/ms/files"
-	InstanceKeyPrefix     = "/cse-sr/inst/files"
-	RegistryDomain        = "default"
-	RegistryProject       = "default"
-	RegistryDomainProject = "default/default"
-	RegistryAppID         = "default"
-)
+import "context"
+
+type MetricsLabels struct {
+	Domain           string `json:"domain,omitempty"`
+	Project          string `json:"project,omitempty"`
+	Framework        string `json:"framework,omitempty"`
+	FrameworkVersion string `json:"frameworkVersion,omitempty"`
+}
+
+type MetricsReporter interface {
+	DomainAdd(delta float64)
+	ServiceAdd(delta float64, labels MetricsLabels)
+	InstanceAdd(delta float64, labels MetricsLabels)
+	SchemaAdd(delta float64, labels MetricsLabels)
+	FrameworkSet(labels MetricsLabels)
+}
+
+type MetricsManager interface {
+	Report(ctx context.Context, r MetricsReporter) error
+}

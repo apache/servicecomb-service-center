@@ -165,6 +165,8 @@ github.com/go-chassis/cari v0.0.0-20201210041921-7b6fbef2df11/go.mod h1:MgtsEI0A
 github.com/go-chassis/cari v0.4.0/go.mod h1:av/19fqwEP4eOC8unL/z67AAbFDwXUCko6SKa4Avrd8=
 github.com/go-chassis/cari v0.4.1-0.20210601163026-bb6a506e336a h1:vIG+7IEYeeswrPK8/SM6rDK312M7/7N7sLlYcJ1j6AQ=
 github.com/go-chassis/cari v0.4.1-0.20210601163026-bb6a506e336a/go.mod h1:av/19fqwEP4eOC8unL/z67AAbFDwXUCko6SKa4Avrd8=
+github.com/go-chassis/cari v0.5.0 h1:KMkHtVJuFeqd9NtlcJm27ZBJYhQja909+rgR5CaCs00=
+github.com/go-chassis/cari v0.5.0/go.mod h1:av/19fqwEP4eOC8unL/z67AAbFDwXUCko6SKa4Avrd8=
 github.com/go-chassis/foundation v0.2.2-0.20201210043510-9f6d3de40234/go.mod h1:2PjwqpVwYEVaAldl5A58a08viH8p27pNeYaiE3ZxOBA=
 github.com/go-chassis/foundation v0.2.2/go.mod h1:2PjwqpVwYEVaAldl5A58a08viH8p27pNeYaiE3ZxOBA=
 github.com/go-chassis/foundation v0.3.0/go.mod h1:2PjwqpVwYEVaAldl5A58a08viH8p27pNeYaiE3ZxOBA=
@@ -174,6 +176,8 @@ github.com/go-chassis/go-archaius v1.5.1 h1:1FrNyzzmD6o6BIjPF8uQ4Cc+u7qYIgQTpDk8
 github.com/go-chassis/go-archaius v1.5.1/go.mod h1:QPwvvtBxvwiC48rmydoAqxopqOr93RCQ6syWsIkXPXQ=
 github.com/go-chassis/go-chassis/v2 v2.2.1-0.20210624120130-77f4a4157de6 h1:jya7lekMZBG/2H+PlG79Px5D7DQyITp7gjfi015nf9k=
 github.com/go-chassis/go-chassis/v2 v2.2.1-0.20210624120130-77f4a4157de6/go.mod h1:xB09l3WEWp1gncinwDMo0G7n6j826Dp0UyuJ0Tu8axI=
+github.com/go-chassis/go-chassis/v2 v2.2.1-0.20210630123055-6b4c31c5ad02 h1:biwxeKtaF7Bb9A25YsC6sUCJsYWPEy7E13EnCD87RSo=
+github.com/go-chassis/go-chassis/v2 v2.2.1-0.20210630123055-6b4c31c5ad02/go.mod h1:En6f0eHHR3IfnLjboMjsddhrt/WUqQmFKzNgwbVj7WY=
 github.com/go-chassis/go-restful-swagger20 v1.0.3 h1:kWfeLwMwJZVkXP1zNyFpkmR41UZ55UTcOptTteXhvEs=
 github.com/go-chassis/go-restful-swagger20 v1.0.3/go.mod h1:eW62fYuzlNFDvIacB6AV8bhUDCTy4myfTCv0bT9Gbb0=
 github.com/go-chassis/kie-client v0.0.0-20201210060018-938c7680a9ab/go.mod h1:UTdbtyN5ge/v9DmQzdVRxQP7z51Q4z6hyl+W6ZpUHFM=

@@ -130,7 +130,7 @@ type MicroService struct {
 	ModTimestamp string             `protobuf:"bytes,15,opt,name=modTimestamp,proto3" json:"modTimestamp,omitempty"`
 	Environment  string             `protobuf:"bytes,16,opt,name=environment,proto3" json:"environment,omitempty"`
 	RegisterBy   string             `protobuf:"bytes,17,opt,name=registerBy,proto3" json:"registerBy,omitempty"`
-	Framework    *FrameWorkProperty `protobuf:"bytes,18,opt,name=framework,proto3" json:"framework,omitempty"`
+	Framework    *FrameWork         `protobuf:"bytes,18,opt,name=framework,proto3" json:"framework,omitempty"`
 }
 
 func (x *MicroService) Reset() {
@@ -284,7 +284,7 @@ func (x *MicroService) GetRegisterBy() string {
 	return ""
 }
 
-func (x *MicroService) GetFramework() *FrameWorkProperty {
+func (x *MicroService) GetFramework() *FrameWork {
 	if x != nil {
 		return x.Framework
 	}
@@ -560,7 +560,7 @@ func (x *MicroServiceKey) GetVersion() string {
 	return ""
 }
 
-type FrameWorkProperty struct {
+type FrameWork struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -569,8 +569,8 @@ type FrameWorkProperty struct {
 	Version string `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
 }
 
-func (x *FrameWorkProperty) Reset() {
-	*x = FrameWorkProperty{}
+func (x *FrameWork) Reset() {
+	*x = FrameWork{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_servicecenter_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -578,13 +578,13 @@ func (x *FrameWorkProperty) Reset() {
 	}
 }
 
-func (x *FrameWorkProperty) String() string {
+func (x *FrameWork) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*FrameWorkProperty) ProtoMessage() {}
+func (*FrameWork) ProtoMessage() {}
 
-func (x *FrameWorkProperty) ProtoReflect() protoreflect.Message {
+func (x *FrameWork) ProtoReflect() protoreflect.Message {
 	mi := &file_servicecenter_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -596,19 +596,19 @@ func (x *FrameWorkProperty) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use FrameWorkProperty.ProtoReflect.Descriptor instead.
-func (*FrameWorkProperty) Descriptor() ([]byte, []int) {
+// Deprecated: Use FrameWork.ProtoReflect.Descriptor instead.
+func (*FrameWork) Descriptor() ([]byte, []int) {
 	return file_servicecenter_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *FrameWorkProperty) GetName() string {
+func (x *FrameWork) GetName() string {
 	if x != nil {
 		return x.Name
 	}
 	return ""
 }
 
-func (x *FrameWorkProperty) GetVersion() string {
+func (x *FrameWork) GetVersion() string {
 	if x != nil {
 		return x.Version
 	}
@@ -910,7 +910,7 @@ var file_servicecenter_proto_goTypes = []interface{}{
 	(*MicroServiceInstance)(nil), // 2: sc.MicroServiceInstance
 	(*ServicePath)(nil),          // 3: sc.ServicePath
 	(*MicroServiceKey)(nil),      // 4: sc.MicroServiceKey
-	(*FrameWorkProperty)(nil),    // 5: sc.FrameWorkProperty
+	(*FrameWork)(nil),            // 5: sc.FrameWork
 	(*HealthCheck)(nil),          // 6: sc.HealthCheck
 	(*DataCenterInfo)(nil),       // 7: sc.DataCenterInfo
 	nil,                          // 8: sc.MicroService.PropertiesEntry
@@ -923,7 +923,7 @@ var file_servicecenter_proto_depIdxs = []int32{
 	8,  // 1: sc.MicroService.properties:type_name -> sc.MicroService.PropertiesEntry
 	4,  // 2: sc.MicroService.providers:type_name -> sc.MicroServiceKey
 	9,  // 3: sc.MicroService.LBStrategy:type_name -> sc.MicroService.LBStrategyEntry
-	5,  // 4: sc.MicroService.framework:type_name -> sc.FrameWorkProperty
+	5,  // 4: sc.MicroService.framework:type_name -> sc.FrameWork
 	10, // 5: sc.MicroServiceInstance.properties:type_name -> sc.MicroServiceInstance.PropertiesEntry
 	6,  // 6: sc.MicroServiceInstance.healthCheck:type_name -> sc.HealthCheck
 	7,  // 7: sc.MicroServiceInstance.dataCenterInfo:type_name -> sc.DataCenterInfo
@@ -1002,7 +1002,7 @@ func file_servicecenter_proto_init() {
 			}
 		}
 		file_servicecenter_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*FrameWorkProperty); i {
+			switch v := v.(*FrameWork); i {
 			case 0:
 				return &v.state
 			case 1:

@@ -15,34 +15,11 @@
  * limitations under the License.
  */
 
-package event
+package metrics
 
-import (
-	"github.com/go-chassis/cari/discovery"
+import "time"
 
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
-	"github.com/apache/servicecomb-service-center/server/metrics"
-)
-
-// DomainEventHandler report domain & project total number
-type DomainEventHandler struct {
-}
-
-func NewDomainEventHandler() *DomainEventHandler {
-	return &DomainEventHandler{}
-}
-
-func (h *DomainEventHandler) Type() string {
-	return model.ColumnDomain
-}
-
-func (h *DomainEventHandler) OnEvent(evt sd.MongoEvent) {
-	action := evt.Type
-	switch action {
-	case discovery.EVT_INIT, discovery.EVT_CREATE:
-		metrics.ReportDomains(increaseOne)
-	case discovery.EVT_DELETE:
-		metrics.ReportDomains(decreaseOne)
-	}
+type Options struct {
+	Instance string
+	Interval time.Duration
 }

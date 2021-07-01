@@ -22,12 +22,10 @@ import (
 )
 
 func Initialize() {
-	sd.AddEventHandler(NewDomainEventHandler())
 	sd.AddEventHandler(NewServiceEventHandler())
 	sd.AddEventHandler(NewInstanceEventHandler())
 	sd.AddEventHandler(NewRuleEventHandler())
 	sd.AddEventHandler(NewTagEventHandler())
 	sd.AddEventHandler(NewDependencyEventHandler())
 	sd.AddEventHandler(NewDependencyRuleEventHandler())
-	sd.AddEventHandler(NewSchemaSummaryEventHandler())
 }

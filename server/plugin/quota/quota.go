@@ -150,9 +150,9 @@ func GetResourceUsage(ctx context.Context, res *ApplyQuotaResource) (int64, erro
 	serviceID := res.ServiceID
 	switch res.QuotaType {
 	case TypeService:
-		return metrics.GetTotalService(util.ParseDomain(ctx)), nil
+		return metrics.GetTotalService(util.ParseDomain(ctx), ""), nil
 	case TypeInstance:
-		usage := metrics.GetTotalInstance(util.ParseDomain(ctx))
+		usage := metrics.GetTotalInstance(util.ParseDomain(ctx), "")
 		return usage, nil
 	case TypeRule:
 		{

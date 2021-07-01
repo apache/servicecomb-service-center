@@ -127,7 +127,7 @@ func Set(data interface{}) Option {
 	}
 }
 
-func NewFilter(options ...func(filter bson.M)) bson.M {
+func NewFilter(options ...Option) bson.M {
 	filter := bson.M{}
 	for _, option := range options {
 		option(filter)
