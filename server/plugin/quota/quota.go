@@ -31,7 +31,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/plugin"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/config"
-	"github.com/apache/servicecomb-service-center/server/metrics"
 )
 
 const QUOTA plugin.Kind = "quota"
@@ -150,10 +149,29 @@ func GetResourceUsage(ctx context.Context, res *ApplyQuotaResource) (int64, erro
 	serviceID := res.ServiceID
 	switch res.QuotaType {
 	case TypeService:
-		return metrics.GetTotalService(util.ParseDomain(ctx), ""), nil
+		{
+			resp, err := datasource.GetMetadataManager().GetServiceCountByDomainProject(ctx,
+				&pb.GetServiceCountRequest{
+					Domain:  util.ParseDomain(ctx),
+					Project: util.ParseProject(ctx),
+				})
+			if err != nil {
+				return 0, err
+			}
+			return resp.Count, nil
+		}
 	case TypeInstance:
-		usage := metrics.GetTotalInstance(util.ParseDomain(ctx), "")
-		return usage, nil
+		{
+			resp, err := datasource.GetMetadataManager().GetInstanceCountByDomainProject(ctx,
+				&pb.GetServiceCountRequest{
+					Domain:  util.ParseDomain(ctx),
+					Project: util.ParseProject(ctx),
+				})
+			if err != nil {
+				return 0, err
+			}
+			return resp.Count, nil
+		}
 	case TypeRule:
 		{
 			resp, err := datasource.GetMetadataManager().GetRules(ctx, &pb.GetServiceRulesRequest{
