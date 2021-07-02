@@ -21,6 +21,7 @@ package datasource_test
 
 import (
 	"context"
+	"strconv"
 	"testing"
 	"time"
 
@@ -90,6 +91,31 @@ func TestAccount(t *testing.T) {
 		_, err = datasource.GetAccountManager().DeleteAccount(context.Background(), []string{a1.Name})
 		assert.NoError(t, err)
 		_, err = datasource.GetAccountManager().DeleteAccount(context.Background(), []string{a2.Name})
+		assert.NoError(t, err)
+	})
+	t.Run("add and update accounts, should have create/update time", func(t *testing.T) {
+		err := datasource.GetAccountManager().CreateAccount(context.Background(), &a1)
+		assert.NoError(t, err)
+
+		r, err := datasource.GetAccountManager().GetAccount(context.Background(), a1.Name)
+		assert.NoError(t, err)
+		dt, _ := strconv.Atoi(r.CreateTime)
+		assert.Less(t, 0, dt)
+		assert.Equal(t, r.CreateTime, r.UpdateTime)
+
+		time.Sleep(time.Second)
+		a1.Password = "new-password"
+		err = datasource.GetAccountManager().UpdateAccount(context.Background(), a1.Name, &a1)
+		assert.NoError(t, err)
+
+		old, _ := strconv.Atoi(r.UpdateTime)
+		r, err = datasource.GetAccountManager().GetAccount(context.Background(), a1.Name)
+		assert.NoError(t, err)
+		last, _ := strconv.Atoi(r.UpdateTime)
+		assert.Less(t, old, last)
+		assert.NotEqual(t, r.CreateTime, r.UpdateTime)
+
+		_, err = datasource.GetAccountManager().DeleteAccount(context.Background(), []string{a1.Name})
 		assert.NoError(t, err)
 	})
 }

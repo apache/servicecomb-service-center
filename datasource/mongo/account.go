@@ -20,6 +20,8 @@ package mongo
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"time"
 
 	"github.com/go-chassis/cari/rbac"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -52,7 +54,11 @@ func (ds *AccountManager) CreateAccount(ctx context.Context, a *rbac.Account) er
 		log.Error(msg, err)
 		return err
 	}
+	a.Role = ""
+	a.CurrentPassword = ""
 	a.ID = util.GenerateUUID()
+	a.CreateTime = strconv.FormatInt(time.Now().Unix(), 10)
+	a.UpdateTime = a.CreateTime
 	_, err = client.GetMongoClient().Insert(ctx, model.CollectionAccount, a)
 	if err != nil {
 		if client.IsDuplicateKey(err) {
@@ -142,10 +148,12 @@ func (ds *AccountManager) UpdateAccount(ctx context.Context, name string, accoun
 	filter := mutil.NewFilter(mutil.AccountName(name))
 	setFilter := mutil.NewFilter(
 		mutil.ID(account.ID),
-		mutil.Password(account.Password), mutil.Roles(account.Roles),
+		mutil.Password(account.Password),
+		mutil.Roles(account.Roles),
 		mutil.TokenExpirationTime(account.TokenExpirationTime),
 		mutil.CurrentPassword(account.CurrentPassword),
 		mutil.Status(account.Status),
+		mutil.AccountUpdateTime(strconv.FormatInt(time.Now().Unix(), 10)),
 	)
 	updateFilter := mutil.NewFilter(mutil.Set(setFilter))
 	res, err := client.GetMongoClient().Update(ctx, model.CollectionAccount, filter, updateFilter)

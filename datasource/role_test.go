@@ -19,7 +19,9 @@ package datasource_test
 
 import (
 	"context"
+	"strconv"
 	"testing"
+	"time"
 
 	"github.com/go-chassis/cari/rbac"
 
@@ -55,6 +57,9 @@ func TestRole(t *testing.T) {
 		r, err := datasource.GetRoleManager().GetRole(context.Background(), "test-role1")
 		assert.NoError(t, err)
 		assert.Equal(t, r1, *r)
+		dt, _ := strconv.Atoi(r.CreateTime)
+		assert.Less(t, 0, dt)
+		assert.Equal(t, r.CreateTime, r.UpdateTime)
 	})
 	t.Run("role should exist", func(t *testing.T) {
 		exist, err := datasource.GetRoleManager().RoleExist(context.Background(), "test-role1")
@@ -68,9 +73,20 @@ func TestRole(t *testing.T) {
 	})
 
 	t.Run("update role should success", func(t *testing.T) {
-		r1.ID = "11111-22222-33333-4"
-		err := datasource.GetRoleManager().UpdateRole(context.Background(), "test-role1", &r1)
+		r, err := datasource.GetRoleManager().GetRole(context.Background(), "test-role1")
 		assert.NoError(t, err)
+		old, _ := strconv.Atoi(r.UpdateTime)
+
+		time.Sleep(time.Second)
+		r1.ID = "11111-22222-33333-4"
+		err = datasource.GetRoleManager().UpdateRole(context.Background(), "test-role1", &r1)
+		assert.NoError(t, err)
+
+		r, err = datasource.GetRoleManager().GetRole(context.Background(), "test-role1")
+		assert.NoError(t, err)
+		last, _ := strconv.Atoi(r.UpdateTime)
+		assert.Less(t, old, last)
+		assert.NotEqual(t, r.CreateTime, r.UpdateTime)
 	})
 	t.Run("add new role should success", func(t *testing.T) {
 		err := datasource.GetRoleManager().CreateRole(context.Background(), &r2)
