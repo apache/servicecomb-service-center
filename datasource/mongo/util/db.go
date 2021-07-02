@@ -97,6 +97,12 @@ func Perms(perms []*rbac.Permission) Option {
 	}
 }
 
+func AccountUpdateTime(dt interface{}) Option {
+	return func(filter bson.M) {
+		filter[model.ColumnAccountUpdateTime] = dt
+	}
+}
+
 func RoleUpdateTime(dt interface{}) Option {
 	return func(filter bson.M) {
 		filter[model.ColumnRoleUpdateTime] = dt
