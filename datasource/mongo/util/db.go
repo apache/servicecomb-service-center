@@ -25,6 +25,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/x/bsonx"
 
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
@@ -127,6 +128,12 @@ func Set(data interface{}) Option {
 	}
 }
 
+func Nor(options ...Option) Option {
+	return func(filter bson.M) {
+		filter["$nor"] = bson.A{NewFilter(options...)}
+	}
+}
+
 func NewFilter(options ...Option) bson.M {
 	filter := bson.M{}
 	for _, option := range options {
@@ -202,7 +209,7 @@ func ServiceProperty(property map[string]string) Option {
 	}
 }
 
-func ServiceServiceName(serviceName string) Option {
+func ServiceServiceName(serviceName interface{}) Option {
 	return func(filter bson.M) {
 		filter[ConnectWithDot([]string{model.ColumnService, model.ColumnServiceName})] = serviceName
 	}
@@ -355,4 +362,18 @@ func BuildIndexDoc(keys ...string) mongo.IndexModel {
 		Keys: keysDoc,
 	}
 	return index
+}
+
+func NotGlobal() Option {
+	var names []string
+	for name := range datasource.GlobalServiceNames {
+		names = append(names, name)
+	}
+	inFilter := NewFilter(In(names))
+	return Nor(
+		Domain(datasource.RegistryDomain),
+		Project(datasource.RegistryProject),
+		ServiceAppID(datasource.RegistryAppID),
+		ServiceServiceName(inFilter),
+	)
 }

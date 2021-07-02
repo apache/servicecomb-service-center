@@ -57,17 +57,12 @@ func reportDomains(ctx context.Context, r datasource.MetricsReporter) {
 }
 
 func reportServices(ctx context.Context, r datasource.MetricsReporter) {
-	services, err := dao.GetServices(ctx, mutil.NewFilter())
+	services, err := dao.GetServices(ctx, mutil.NewFilter(mutil.NotGlobal()))
 	if err != nil {
 		log.Error("query all services failed", err)
 		return
 	}
 	for _, service := range services {
-		key := discovery.MicroServiceToKey(service.Domain+datasource.SPLIT+service.Project, service.Service)
-		if datasource.IsGlobal(key) {
-			continue
-		}
-
 		frameworkName, frameworkVersion := discovery.ToFrameworkLabel(service.Service)
 		labels := datasource.MetricsLabels{
 			Domain:           service.Domain,

@@ -23,15 +23,13 @@ import (
 	"fmt"
 	"strconv"
 
-	pb "github.com/go-chassis/cari/discovery"
-	"github.com/go-chassis/cari/pkg/errsvc"
-
-	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/plugin"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/config"
-	"github.com/apache/servicecomb-service-center/server/metrics"
+	"github.com/apache/servicecomb-service-center/server/service/quota"
+	pb "github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/cari/pkg/errsvc"
 )
 
 const QUOTA plugin.Kind = "quota"
@@ -150,50 +148,26 @@ func GetResourceUsage(ctx context.Context, res *ApplyQuotaResource) (int64, erro
 	serviceID := res.ServiceID
 	switch res.QuotaType {
 	case TypeService:
-		return metrics.GetTotalService(util.ParseDomain(ctx), ""), nil
+		return quota.ServiceUsage(ctx, &pb.GetServiceCountRequest{
+			Domain:  util.ParseDomain(ctx),
+			Project: util.ParseProject(ctx),
+		})
 	case TypeInstance:
-		usage := metrics.GetTotalInstance(util.ParseDomain(ctx), "")
-		return usage, nil
+		return quota.InstanceUsage(ctx, &pb.GetServiceCountRequest{
+			Domain:  util.ParseDomain(ctx),
+			Project: util.ParseProject(ctx),
+		})
 	case TypeRule:
-		{
-			resp, err := datasource.GetMetadataManager().GetRules(ctx, &pb.GetServiceRulesRequest{
-				ServiceId: serviceID,
-			})
-			if err != nil {
-				return 0, err
-			}
-			return int64(len(resp.Rules)), nil
-		}
+		return quota.RuleUsage(ctx, serviceID)
 	case TypeSchema:
-		{
-			resp, err := datasource.GetMetadataManager().GetAllSchemas(ctx, &pb.GetAllSchemaRequest{
-				ServiceId:  serviceID,
-				WithSchema: false,
-			})
-			if err != nil {
-				return 0, err
-			}
-			return int64(len(resp.Schemas)), nil
-		}
+		return quota.SchemaUsage(ctx, serviceID)
 	case TypeTag:
 		// always re-create the service old tags
 		return 0, nil
 	case TypeRole:
-		{
-			_, used, err := datasource.GetRoleManager().ListRole(ctx)
-			if err != nil {
-				return 0, err
-			}
-			return used, nil
-		}
+		return quota.RoleUsage(ctx)
 	case TypeAccount:
-		{
-			_, used, err := datasource.GetAccountManager().ListAccount(ctx)
-			if err != nil {
-				return 0, err
-			}
-			return used, nil
-		}
+		return quota.AccountUsage(ctx)
 	default:
 		return 0, fmt.Errorf("not define quota type '%s'", res.QuotaType)
 	}

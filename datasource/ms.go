@@ -51,7 +51,7 @@ type MetadataManager interface {
 	UnregisterService(ctx context.Context, request *pb.DeleteServiceRequest) (*pb.DeleteServiceResponse, error)
 	GetDeleteServiceFunc(ctx context.Context, serviceID string, force bool,
 		serviceRespChan chan<- *pb.DelServicesRspInfo) func(context.Context)
-	GetServiceCountByDomainProject(ctx context.Context,
+	GetServiceCount(ctx context.Context,
 		request *pb.GetServiceCountRequest) (*pb.GetServiceCountResponse, error)
 
 	// Instance management
@@ -79,6 +79,7 @@ type MetadataManager interface {
 	BatchFind(ctx context.Context, request *pb.BatchFindInstancesRequest) (*pb.BatchFindInstancesResponse, error)
 	// GetAllInstances returns instances under the specified domain
 	GetAllInstances(ctx context.Context, request *pb.GetAllInstancesRequest) (*pb.GetAllInstancesResponse, error)
+	GetInstanceCount(ctx context.Context, request *pb.GetServiceCountRequest) (*pb.GetServiceCountResponse, error)
 
 	// Schema management
 	ModifySchemas(ctx context.Context, request *pb.ModifySchemasRequest) (*pb.ModifySchemasResponse, error)

@@ -68,7 +68,7 @@ func (ds *MetadataManager) RegisterService(ctx context.Context, request *pb.Crea
 	remoteIP := util.GetIPFromContext(ctx)
 	service := request.Service
 	serviceFlag := util.StringJoin([]string{
-		service.Environment, service.AppId, service.ServiceName, service.Version}, "/")
+		service.Environment, service.AppId, service.ServiceName, service.Version}, path.SPLIT)
 	domainProject := util.ParseDomainProject(ctx)
 
 	serviceKey := &pb.MicroServiceKey{
@@ -437,7 +437,7 @@ func (ds *MetadataManager) ExistService(ctx context.Context, request *pb.GetExis
 	error) {
 	domainProject := util.ParseDomainProject(ctx)
 	serviceFlag := util.StringJoin([]string{
-		request.Environment, request.AppId, request.ServiceName, request.Version}, "/")
+		request.Environment, request.AppId, request.ServiceName, request.Version}, path.SPLIT)
 
 	ids, exist, err := serviceUtil.FindServiceIds(ctx, request.Version, &pb.MicroServiceKey{
 		Environment: request.Environment,
@@ -541,7 +541,7 @@ func (ds *MetadataManager) UnregisterService(ctx context.Context, request *pb.De
 	}, err
 }
 
-func (ds *MetadataManager) GetServiceCountByDomainProject(ctx context.Context, request *pb.GetServiceCountRequest) (*pb.GetServiceCountResponse, error) {
+func (ds *MetadataManager) GetServiceCount(ctx context.Context, request *pb.GetServiceCountRequest) (*pb.GetServiceCountResponse, error) {
 	domainProject := request.Domain
 	if request.Project != "" {
 		domainProject += path.SPLIT + request.Project
@@ -1070,7 +1070,7 @@ func (ds *MetadataManager) reshapeProviderKey(ctx context.Context, provider *pb.
 
 func (ds *MetadataManager) UpdateInstanceStatus(ctx context.Context, request *pb.UpdateInstanceStatusRequest) (*pb.UpdateInstanceStatusResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
-	updateStatusFlag := util.StringJoin([]string{request.ServiceId, request.InstanceId, request.Status}, "/")
+	updateStatusFlag := util.StringJoin([]string{request.ServiceId, request.InstanceId, request.Status}, path.SPLIT)
 
 	instance, err := serviceUtil.GetInstance(ctx, domainProject, request.ServiceId, request.InstanceId)
 	if err != nil {
@@ -1109,7 +1109,7 @@ func (ds *MetadataManager) UpdateInstanceStatus(ctx context.Context, request *pb
 func (ds *MetadataManager) UpdateInstanceProperties(ctx context.Context, request *pb.UpdateInstancePropsRequest) (
 	*pb.UpdateInstancePropsResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
-	instanceFlag := util.StringJoin([]string{request.ServiceId, request.InstanceId}, "/")
+	instanceFlag := util.StringJoin([]string{request.ServiceId, request.InstanceId}, path.SPLIT)
 
 	instance, err := serviceUtil.GetInstance(ctx, domainProject, request.ServiceId, request.InstanceId)
 	if err != nil {
@@ -1293,7 +1293,7 @@ func (ds *MetadataManager) UnregisterInstance(ctx context.Context, request *pb.U
 	serviceID := request.ServiceId
 	instanceID := request.InstanceId
 
-	instanceFlag := util.StringJoin([]string{serviceID, instanceID}, "/")
+	instanceFlag := util.StringJoin([]string{serviceID, instanceID}, path.SPLIT)
 
 	err := revokeInstance(ctx, domainProject, serviceID, instanceID)
 	if err != nil {
@@ -1317,7 +1317,7 @@ func (ds *MetadataManager) UnregisterInstance(ctx context.Context, request *pb.U
 func (ds *MetadataManager) Heartbeat(ctx context.Context, request *pb.HeartbeatRequest) (*pb.HeartbeatResponse, error) {
 	remoteIP := util.GetIPFromContext(ctx)
 	domainProject := util.ParseDomainProject(ctx)
-	instanceFlag := util.StringJoin([]string{request.ServiceId, request.InstanceId}, "/")
+	instanceFlag := util.StringJoin([]string{request.ServiceId, request.InstanceId}, path.SPLIT)
 
 	_, ttl, err := serviceUtil.HeartbeatUtil(ctx, domainProject, request.ServiceId, request.InstanceId)
 	if err != nil {
@@ -1347,7 +1347,7 @@ func (ds *MetadataManager) Heartbeat(ctx context.Context, request *pb.HeartbeatR
 
 func (ds *MetadataManager) GetAllInstances(ctx context.Context, request *pb.GetAllInstancesRequest) (*pb.GetAllInstancesResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
-	key := path.GetInstanceRootKey(domainProject) + "/"
+	key := path.GetInstanceRootKey(domainProject) + path.SPLIT
 	opts := append(serviceUtil.FromContext(ctx), client.WithStrKey(key), client.WithPrefix())
 	kvs, err := kv.Store().Instance().Search(ctx, opts...)
 	if err != nil {
@@ -1365,6 +1365,26 @@ func (ds *MetadataManager) GetAllInstances(ctx context.Context, request *pb.GetA
 		resp.Instances = append(resp.Instances, instance)
 	}
 	return resp, nil
+}
+
+func (ds *MetadataManager) GetInstanceCount(ctx context.Context, request *pb.GetServiceCountRequest) (*pb.GetServiceCountResponse, error) {
+	domainProject := request.Domain
+	if request.Project != "" {
+		domainProject += path.SPLIT + request.Project
+	}
+	key := path.GetInstanceRootKey(domainProject) + path.SPLIT
+	opts := append(serviceUtil.FromContext(ctx),
+		client.WithStrKey(key),
+		client.WithPrefix(),
+		client.WithCountOnly())
+	kvs, err := kv.Store().Instance().Search(ctx, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &pb.GetServiceCountResponse{
+		Response: pb.CreateResponse(pb.ResponseSuccess, "Get instance count by domain/project successfully"),
+		Count:    kvs.Count,
+	}, nil
 }
 
 func (ds *MetadataManager) ModifySchemas(ctx context.Context, request *pb.ModifySchemasRequest) (
@@ -1713,7 +1733,7 @@ func (ds *MetadataManager) GetTags(ctx context.Context, request *pb.GetServiceTa
 func (ds *MetadataManager) UpdateTag(ctx context.Context, request *pb.UpdateServiceTagRequest) (*pb.UpdateServiceTagResponse, error) {
 	var err error
 	remoteIP := util.GetIPFromContext(ctx)
-	tagFlag := util.StringJoin([]string{request.Key, request.Value}, "/")
+	tagFlag := util.StringJoin([]string{request.Key, request.Value}, path.SPLIT)
 	domainProject := util.ParseDomainProject(ctx)
 
 	if !serviceUtil.ServiceExist(ctx, domainProject, request.ServiceId) {
@@ -2470,7 +2490,7 @@ func (ds *MetadataManager) DeleteServicePri(ctx context.Context, serviceID strin
 		client.WithStrKey(path.GenerateServiceRuleKey(domainProject, serviceID, "")),
 		client.WithPrefix()))
 	opts = append(opts, client.OpDel(client.WithStrKey(
-		util.StringJoin([]string{path.GetServiceRuleIndexRootKey(domainProject), serviceID, ""}, "/")),
+		util.StringJoin([]string{path.GetServiceRuleIndexRootKey(domainProject), serviceID, ""}, path.SPLIT)),
 		client.WithPrefix()))
 
 	//删除schemas
