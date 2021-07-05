@@ -21,6 +21,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
@@ -85,9 +87,13 @@ func resourceLimitHandler(ctx context.Context, res *quota.ApplyQuotaResource) (i
 
 	switch res.QuotaType {
 	case quota.MicroServiceInstanceQuotaType:
-		return globalCounter.InstanceCount, nil
+		domain := domainProject[:strings.Index(domainProject, core.SPLIT)]
+		key = core.GetInstanceRootKey(domain) + core.SPLIT
+		indexer = backend.Store().Instance()
 	case quota.MicroServiceQuotaType:
-		return globalCounter.ServiceCount, nil
+		domain := domainProject[:strings.Index(domainProject, core.SPLIT)]
+		key = core.GetServiceRootKey(domain) + core.SPLIT
+		indexer = backend.Store().Service()
 	case quota.RuleQuotaType:
 		key = core.GenerateServiceRuleKey(domainProject, serviceID, "")
 		indexer = backend.Store().Rule()
