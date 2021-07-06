@@ -23,7 +23,16 @@ set -e
 export GOPROXY=${GOPROXY:-"https://goproxy.io"}
 export GOOS=${GOOS:-"linux"}
 export GOARCH=${GOARCH:-"amd64"}
-export CGO_ENABLED=${CGO_ENABLED:-0} # prevent to compile cgo file
+
+if [ "$GOOS" == "linux" ]; then
+    export CGO_ENABLED=${CGO_ENABLED:-1}
+    export CGO_CFLAGS="${CGO_CFLAGS} -fstack-protector-strong -D_FORTIFY_SOURCE=2 -O2"
+    export GO_LDFLAGS="${GO_LDFLAGS} -linkmode=external -extldflags \"-Wl,-z,now\""
+    export GOBUILDMODE_OPTS="-buildmode=pie"
+else
+    export CGO_ENABLED=${CGO_ENABLED:-0}
+fi
+
 export GO_EXTLINK_ENABLED=${GO_EXTLINK_ENABLED:-0} # do not use host linker
 export GO_LDFLAGS=${GO_LDFLAGS:-" -s -w"}
 # Inputs
@@ -74,7 +83,7 @@ build_frontend() {
     if [ "$GOOS" == "windows" ]; then
         BINARY_NAME=${BINARY_NAME}.exe
     fi
-    go build --ldflags "${GO_LDFLAGS}" -o $BINARY_NAME github.com/apache/servicecomb-service-center/frontend
+    go build ${GOBUILDMODE_OPTS} --ldflags "${GO_LDFLAGS}" -o $BINARY_NAME github.com/apache/servicecomb-service-center/frontend
 }
 
 build_service_center() {
@@ -96,7 +105,7 @@ build_service_center() {
     if [ "$GOOS" == "windows" ]; then
         BINARY_NAME=${BINARY_NAME}.exe
     fi
-    go build --ldflags "${ldflags}" -o $BINARY_NAME github.com/apache/servicecomb-service-center/cmd/scserver
+    go build ${GOBUILDMODE_OPTS} --ldflags "${ldflags}" -o $BINARY_NAME github.com/apache/servicecomb-service-center/cmd/scserver
 }
 
 build_scctl() {
@@ -111,7 +120,7 @@ build_scctl() {
     if [ "$GOOS" == "windows" ]; then
         BINARY_NAME=${BINARY_NAME}.exe
     fi
-    go build --ldflags "${ldflags}" -o $BINARY_NAME github.com/apache/servicecomb-service-center/cmd/scctl
+    go build ${GOBUILDMODE_OPTS} --ldflags "${ldflags}" -o $BINARY_NAME github.com/apache/servicecomb-service-center/cmd/scctl
 }
 
 build_syncer() {
@@ -126,7 +135,7 @@ build_syncer() {
     if [ "$GOOS" == "windows" ]; then
         BINARY_NAME=${BINARY_NAME}.exe
     fi
-    go build --ldflags "${ldflags}" -o $BINARY_NAME github.com/apache/servicecomb-service-center/cmd/syncer
+    go build ${GOBUILDMODE_OPTS} --ldflags "${ldflags}" -o $BINARY_NAME github.com/apache/servicecomb-service-center/cmd/syncer
 }
 
 ## Prepare the Configuration and Make package
