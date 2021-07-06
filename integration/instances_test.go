@@ -47,13 +47,16 @@ var _ = Describe("MicroService Api Test", func() {
 	var serviceAppId = "integrationtestAppIdInstance"
 	var serviceVersion = "0.0.2"
 	var serviceInstanceID = ""
+	var alias = ""
 	Context("Tesing MicroService Instances API's", func() {
 		BeforeEach(func() {
 			schema := []string{"testSchema"}
 			properties := map[string]string{"attr1": "aa"}
 			serviceName = strconv.Itoa(rand.Intn(15))
+			alias = serviceAppId + ":" + serviceName
 			servicemap := map[string]interface{}{
 				"serviceName": serviceName,
+				"alias":       alias,
 				"appId":       serviceAppId,
 				"version":     serviceVersion,
 				"description": "examples",
@@ -281,6 +284,25 @@ var _ = Describe("MicroService Api Test", func() {
 				req.Header.Set("X-ConsumerId", serviceId)
 				resp, _ := scclient.Do(req)
 				Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
+			})
+
+			It("Find Micro-service Info by alias", func() {
+				req, _ := http.NewRequest(GET, SCURL+FINDINSTANCE+"?appId="+serviceAppId+"&serviceName="+alias+"&version="+serviceVersion, nil)
+				req.Header.Set("X-Domain-Name", "default")
+				req.Header.Set("X-ConsumerId", serviceId)
+				resp, _ := scclient.Do(req)
+				respbody, _ := ioutil.ReadAll(resp.Body)
+				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				servicesStruct := map[string][]map[string]interface{}{}
+				json.Unmarshal(respbody, &servicesStruct)
+				foundMicroServiceInstance := false
+				for _, services := range servicesStruct["instances"] {
+					if services["instanceId"] == serviceInstanceID {
+						foundMicroServiceInstance = true
+						break
+					}
+				}
+				Expect(foundMicroServiceInstance).To(Equal(true))
 			})
 
 			It("Find Micro-Service Instance by ServiceID", func() {
