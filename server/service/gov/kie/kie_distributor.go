@@ -192,7 +192,7 @@ func (d *Distributor) Display(project, app, env string) ([]byte, error) {
 		for _, policy := range policies.Data {
 			item, err := d.transform(policy, kind)
 			if err != nil {
-				continue
+				return nil, err
 			}
 			policyMap[item.Name+kind] = item
 		}
@@ -377,7 +377,7 @@ func (d *Distributor) transform(kv *kie.KVDoc, kind string) (*gov.Policy, error)
 	specJSON, _ := yaml.YAMLToJSON([]byte(kv.Value))
 	err := json.Unmarshal(specJSON, &spec)
 	if err != nil {
-		log.Fatal("kie transform kv failed", err)
+		log.Error("kie transform kv failed", err)
 		return nil, err
 	}
 	goc.Kind = kind
