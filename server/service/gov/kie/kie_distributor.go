@@ -113,7 +113,9 @@ func (d *Distributor) Update(kind, id, project string, spec []byte) error {
 	if err != nil {
 		return err
 	}
-	setAliasIfEmpty(p.Spec, p.Name)
+	if kind == KindMatchGroup {
+		setAliasIfEmpty(p.Spec, p.Name)
+	}
 	yamlByte, err := yaml.Marshal(p.Spec)
 	if err != nil {
 		return err
