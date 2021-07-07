@@ -146,6 +146,16 @@ func Nor(options ...Option) Option {
 	}
 }
 
+func Or(options ...Option) Option {
+	return func(filter bson.M) {
+		var conditions bson.A
+		for _, option := range options {
+			conditions = append(conditions, NewFilter(option))
+		}
+		filter["$or"] = conditions
+	}
+}
+
 func NewFilter(options ...Option) bson.M {
 	filter := bson.M{}
 	for _, option := range options {

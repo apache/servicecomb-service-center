@@ -819,21 +819,23 @@ var _ = Describe("'Instance' service", func() {
 
 	Describe("execute 'query' operartion", func() {
 		var (
-			serviceId1  string
-			serviceId2  string
-			serviceId3  string
-			serviceId4  string
-			serviceId5  string
-			serviceId6  string
-			serviceId7  string
-			serviceId8  string
-			serviceId9  string
-			instanceId1 string
-			instanceId2 string
-			instanceId4 string
-			instanceId5 string
-			instanceId8 string
-			instanceId9 string
+			serviceId1   string
+			serviceId2   string
+			serviceId3   string
+			serviceId4   string
+			serviceId5   string
+			serviceId6   string
+			serviceId7   string
+			serviceId8   string
+			serviceId9   string
+			serviceId10  string
+			instanceId1  string
+			instanceId2  string
+			instanceId4  string
+			instanceId5  string
+			instanceId8  string
+			instanceId9  string
+			instanceId10 string
 		)
 
 		It("should be passed", func() {
@@ -961,6 +963,20 @@ var _ = Describe("'Instance' service", func() {
 			Expect(respCreate.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 			serviceId9 = respCreate.ServiceId
 
+			respCreate, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "query_instance_alias",
+					ServiceName: "query_instance_alias",
+					Alias:       "query_instance_alias:query_instance_alias",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(respCreate.Response.GetCode()).To(Equal(pb.ResponseSuccess))
+			serviceId10 = respCreate.ServiceId
+
 			resp, err := discosvc.RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
 				Instance: &pb.MicroServiceInstance{
 					ServiceId: serviceId1,
@@ -1044,6 +1060,20 @@ var _ = Describe("'Instance' service", func() {
 			Expect(err).To(BeNil())
 			Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 			instanceId9 = resp.InstanceId
+
+			resp, err = discosvc.RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
+				Instance: &pb.MicroServiceInstance{
+					ServiceId: serviceId10,
+					HostName:  "UT-HOST",
+					Endpoints: []string{
+						"find:127.0.0.9:8080",
+					},
+					Status: pb.MSI_UP,
+				},
+			})
+			Expect(err).To(BeNil())
+			Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
+			instanceId10 = resp.InstanceId
 		})
 
 		Context("when query invalid parameters", func() {
@@ -1668,6 +1698,19 @@ var _ = Describe("'Instance' service", func() {
 				Expect(len(respGetC.Providers)).To(Equal(0))
 
 				core.Service.Environment = pb.ENV_DEV
+
+				By("find with alias")
+				respFind, err = discosvc.FindInstances(getContext(), &pb.FindInstancesRequest{
+					ConsumerServiceId: serviceId10,
+					AppId:             "query_instance_alias",
+					ServiceName:       "query_instance_alias:query_instance_alias",
+					Alias:             "query_instance_alias:query_instance_alias",
+					VersionRule:       "0.0.0.0+",
+				})
+				Expect(err).To(BeNil())
+				Expect(respFind.Response.GetCode()).To(Equal(pb.ResponseSuccess))
+				Expect(len(respFind.Instances)).To(Equal(1))
+				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId10))
 			})
 		})
 

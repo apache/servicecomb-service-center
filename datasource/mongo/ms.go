@@ -2506,11 +2506,14 @@ func servicesBasicFilter(ctx context.Context, key *discovery.MicroServiceKey) ([
 	if len(tenant) != 2 {
 		return nil, errors.New("invalid 'domain' or 'project'")
 	}
+	serviceNameOption := mutil.ServiceServiceName(key.ServiceName)
+	if len(key.Alias) > 0 {
+		serviceNameOption = mutil.Or(serviceNameOption, mutil.ServiceAlias(key.Alias))
+	}
 	filter := mutil.NewDomainProjectFilter(tenant[0], tenant[1],
 		mutil.ServiceEnv(key.Environment),
 		mutil.ServiceAppID(key.AppId),
-		mutil.ServiceServiceName(key.ServiceName),
-		mutil.ServiceAlias(key.Alias),
+		serviceNameOption,
 	)
 	rangeIdx := strings.Index(key.Version, "-")
 	// if the version number is clear, need to add the version number to query
@@ -2533,11 +2536,14 @@ func filterServices(ctx context.Context, key *discovery.MicroServiceKey) ([]*mod
 		return nil, errors.New("invalid 'domain' or 'project'")
 	}
 	rangeIdx := strings.Index(key.Version, "-")
+	serviceNameOption := mutil.ServiceServiceName(key.ServiceName)
+	if len(key.Alias) > 0 {
+		serviceNameOption = mutil.Or(serviceNameOption, mutil.ServiceAlias(key.Alias))
+	}
 	filter := mutil.NewDomainProjectFilter(tenant[0], tenant[1],
 		mutil.ServiceEnv(key.Environment),
 		mutil.ServiceAppID(key.AppId),
-		mutil.ServiceServiceName(key.ServiceName),
-		mutil.ServiceAlias(key.Alias),
+		serviceNameOption,
 	)
 	switch {
 	case key.Version == "latest":
