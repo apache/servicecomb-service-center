@@ -202,6 +202,7 @@ func (d *Distributor) Display(project, app, env string) ([]byte, error) {
 		match, err := d.transform(item, KindMatchGroup)
 		if err != nil {
 			return nil, err
+
 		}
 		var policies []*gov.Policy
 		for _, kind := range PolicyNames {
