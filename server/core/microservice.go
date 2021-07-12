@@ -31,8 +31,8 @@ import (
 
 var (
 	ServiceAPI proto.ServiceCtrlServer
-	Service    *discovery.MicroService
-	Instance   *discovery.MicroServiceInstance
+	Service    = &discovery.MicroService{}
+	Instance   = &discovery.MicroServiceInstance{}
 )
 
 const (
@@ -45,11 +45,7 @@ const (
 	CtxScSelf util.CtxKey = "_sc_self"
 )
 
-func init() {
-	prepareSelfRegistration()
-}
-
-func prepareSelfRegistration() {
+func InitRegistration() {
 	Service = &discovery.MicroService{
 		Environment: discovery.ENV_PROD,
 		AppId:       datasource.RegistryAppID,

@@ -19,9 +19,9 @@ package etcd
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/datasource"
 	"strings"
 
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	pb "github.com/go-chassis/cari/discovery"
