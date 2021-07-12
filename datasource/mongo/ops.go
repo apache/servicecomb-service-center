@@ -43,10 +43,20 @@ func (ds *MetadataManager) GetServiceCount(ctx context.Context, request *pb.GetS
 
 func (ds *MetadataManager) GetInstanceCount(ctx context.Context, request *pb.GetServiceCountRequest) (
 	*pb.GetServiceCountResponse, error) {
+	var serviceIDs []string
+	services, err := dao.GetServices(ctx, mutil.NewFilter(mutil.Global()))
+	if err != nil {
+		return nil, err
+	}
+	for _, service := range services {
+		serviceIDs = append(serviceIDs, service.Service.ServiceId)
+	}
 	options := []mutil.Option{mutil.Domain(request.Domain)}
 	if request.Project != "" {
 		options = append(options, mutil.Project(request.Project))
 	}
+	inFilter := mutil.NewFilter(mutil.Nin(serviceIDs))
+	options = append(options, mutil.InstanceServiceID(inFilter))
 	count, err := dao.CountInstance(ctx, mutil.NewFilter(options...))
 	if err != nil {
 		return nil, err
