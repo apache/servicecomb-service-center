@@ -53,7 +53,7 @@ func TestService_Register(t *testing.T) {
 				Schemas:     []string{"service-ms-schema"},
 				Paths:       paths,
 				Properties:  properties,
-				Framework: &pb.FrameWorkProperty{
+				Framework: &pb.FrameWork{
 					Name:    "service-ms-frameworkName",
 					Version: "service-ms-frameworkVersion",
 				},

@@ -15,13 +15,13 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/elithrar/simple-scrypt v1.3.0
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-chassis/cari v0.4.1-0.20210601163026-bb6a506e336a
+	github.com/go-chassis/cari v0.5.0
 	github.com/go-chassis/foundation v0.3.1-0.20210513015331-b54416b66bcd
 	github.com/go-chassis/go-archaius v1.5.1
-	github.com/go-chassis/go-chassis/v2 v2.2.0
+	github.com/go-chassis/go-chassis/v2 v2.2.1-0.20210630123055-6b4c31c5ad02
 	github.com/go-chassis/kie-client v0.1.0
 	github.com/golang/protobuf v1.4.3
-	github.com/gorilla/websocket v1.4.2
+	github.com/gorilla/websocket v1.4.3-0.20210424162022-e8629af678b7
 	github.com/hashicorp/serf v0.8.3
 	github.com/iancoleman/strcase v0.1.2
 	github.com/jinzhu/copier v0.3.0
@@ -33,6 +33,7 @@ require (
 	github.com/onsi/gomega v1.10.5
 	github.com/opentracing/opentracing-go v1.1.0
 	github.com/openzipkin/zipkin-go-opentracing v0.3.3-0.20180123190626-6bb822a7f15f
+	github.com/orcaman/concurrent-map v0.0.0-20210501183033-44dafcb38ecc
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.8.0

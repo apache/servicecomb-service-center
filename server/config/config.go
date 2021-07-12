@@ -34,16 +34,7 @@ import (
 
 const (
 	InitVersion = "0"
-
-	defaultServiceClearInterval = 12 * time.Hour //0.5 day
-	defaultServiceTTL           = 24 * time.Hour //1 day
-
-	minServiceClearInterval = 30 * time.Second
-	minServiceTTL           = 30 * time.Second
-	minCacheTTL             = 5 * time.Minute
-
-	maxServiceClearInterval = 24 * time.Hour       //1 day
-	maxServiceTTL           = 24 * 365 * time.Hour //1 year
+	minCacheTTL = 5 * time.Minute
 )
 
 var (
@@ -119,19 +110,11 @@ func Reload() error {
 	}
 	*Server = loadServerConfig()
 	body, _ := json.MarshalIndent(archaius.GetConfigs(), "", "  ")
-	log.Info(fmt.Sprintf("finish to reload configurations\n%s", body))
+	log.Debug(fmt.Sprintf("finish to reload configurations\n%s", body))
 	return nil
 }
 
 func loadServerConfig() ServerConfig {
-	serviceClearInterval := GetDuration("registry.service.clearInterval", defaultServiceClearInterval, WithENV("SERVICE_CLEAR_INTERVAL"))
-	if serviceClearInterval < minServiceClearInterval || serviceClearInterval > maxServiceClearInterval {
-		serviceClearInterval = defaultServiceClearInterval
-	}
-	serviceTTL := GetDuration("registry.service.clearTTL", defaultServiceTTL, WithENV("SERVICE_TTL"))
-	if serviceTTL < minServiceTTL || serviceTTL > maxServiceTTL {
-		serviceTTL = defaultServiceTTL
-	}
 	cacheTTL := GetDuration("registry.cache.ttl", minCacheTTL, WithENV("CACHE_TTL"), WithStandby("cache_ttl"))
 	if cacheTTL < minCacheTTL {
 		cacheTTL = minCacheTTL
@@ -183,11 +166,8 @@ func loadServerConfig() ServerConfig {
 			CacheTTL:     cacheTTL,
 			SelfRegister: GetInt("registry.selfRegister", 1, WithStandby("self_register")) != 0,
 
-			ServiceClearEnabled:  GetBool("registry.service.clearEnable", false, WithENV("SERVICE_CLEAR_ENABLED")),
-			ServiceClearInterval: serviceClearInterval,
-			ServiceTTL:           serviceTTL,
-			GlobalVisible:        GetString("registry.service.globalVisible", "", WithENV("CSE_SHARED_SERVICES")),
-			InstanceTTL:          GetInt64("registry.instance.ttl", 0, WithENV("INSTANCE_TTL")),
+			GlobalVisible: GetString("registry.service.globalVisible", "", WithENV("CSE_SHARED_SERVICES")),
+			InstanceTTL:   GetInt64("registry.instance.ttl", 0, WithENV("INSTANCE_TTL")),
 
 			SchemaDisable:  GetBool("registry.schema.disable", false, WithENV("SCHEMA_DISABLE")),
 			SchemaEditable: GetBool("registry.schema.editable", false, WithENV("SCHEMA_EDITABLE")),

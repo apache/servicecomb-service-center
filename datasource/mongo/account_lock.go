@@ -18,43 +18,77 @@ package mongo
 import (
 	"context"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
+	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type AccountLockManager struct {
 	releaseAfter time.Duration
-	locks        sync.Map
 }
 
 func (al *AccountLockManager) GetLock(ctx context.Context, key string) (*datasource.AccountLock, error) {
-	l, ok := al.locks.Load(key)
-	if !ok {
-		log.Debug(fmt.Sprintf("%s is not locked", key))
-		return nil, datasource.ErrAccountLockNotExist
+	filter := mutil.NewFilter(mutil.AccountLockKey(key))
+	result, err := client.GetMongoClient().FindOne(ctx, model.CollectionAccountLock, filter)
+	if err != nil {
+		return nil, err
 	}
-	return l.(*datasource.AccountLock), nil
+	if err = result.Err(); err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, datasource.ErrAccountLockNotExist
+		}
+		msg := fmt.Sprintf("failed to query account lock, key %s", key)
+		log.Error(msg, result.Err())
+		return nil, datasource.ErrQueryAccountLockFailed
+	}
+	var lock datasource.AccountLock
+	err = result.Decode(&lock)
+	if err != nil {
+		log.Error(fmt.Sprintf("failed to decode account lock %s", key), err)
+		return nil, err
+	}
+	return &lock, nil
 }
 
 func (al *AccountLockManager) DeleteLock(ctx context.Context, key string) error {
-	al.locks.Delete(key)
-	log.Warn(fmt.Sprintf("%s is released", key))
+	filter := mutil.NewFilter(mutil.AccountLockKey(key))
+	_, err := client.GetMongoClient().Delete(ctx, model.CollectionAccountLock, filter)
+	if err != nil {
+		log.Error(fmt.Sprintf("remove lock %s failed", key), err)
+		return datasource.ErrCannotReleaseLock
+	}
+	log.Info(fmt.Sprintf("%s is released", key))
+	return nil
+}
+
+func (al *AccountLockManager) Ban(ctx context.Context, key string) error {
+	releaseAt := time.Now().Add(al.releaseAfter).Unix()
+	filter := mutil.NewFilter(mutil.AccountLockKey(key))
+	updateFilter := mutil.NewFilter(mutil.Set(mutil.NewFilter(
+		mutil.AccountLockKey(key),
+		mutil.AccountLockStatus(datasource.StatusBanned),
+		mutil.AccountLockReleaseAt(releaseAt),
+	)))
+	result, err := client.GetMongoClient().FindOneAndUpdate(ctx, model.CollectionAccountLock, filter, updateFilter,
+		options.FindOneAndUpdate().SetUpsert(true))
+	if err != nil {
+		log.Error(fmt.Sprintf("can not save account lock %s", key), err)
+		return err
+	}
+	if result.Err() != nil && result.Err() != mongo.ErrNoDocuments {
+		log.Error(fmt.Sprintf("can not save account lock %s", key), result.Err())
+		return result.Err()
+	}
+	log.Info(fmt.Sprintf("%s is locked, release at %d", key, releaseAt))
 	return nil
 }
 
 func NewAccountLockManager(ReleaseAfter time.Duration) datasource.AccountLockManager {
 	return &AccountLockManager{releaseAfter: ReleaseAfter}
-}
-
-func (al *AccountLockManager) Ban(ctx context.Context, key string) error {
-	l := &datasource.AccountLock{}
-	l.Key = key
-	l.Status = datasource.StatusBanned
-	l.ReleaseAt = time.Now().Add(al.releaseAfter).Unix()
-	al.locks.Store(key, l)
-	log.Warn(fmt.Sprintf("%s is locked, release at %d", key, l.ReleaseAt))
-	return nil
 }

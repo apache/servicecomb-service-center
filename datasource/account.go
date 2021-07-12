@@ -25,15 +25,16 @@ import (
 )
 
 var (
-	ErrAccountDuplicated   = errors.New("account is duplicated")
-	ErrAccountCanNotEdit   = errors.New("account can not be edited")
-	ErrDLockNotFound       = errors.New("dlock not found")
-	ErrCannotReleaseLock   = errors.New("can not release account")
-	ErrAccountLockNotExist = errors.New("account not exist")
-	ErrDeleteAccountFailed = errors.New("failed to delete account")
-	ErrQueryAccountFailed  = errors.New("failed to query account")
-	ErrAccountNotExist     = errors.New("account not exist")
-	ErrRoleBindingExist    = errors.New("role is bind to account")
+	ErrAccountDuplicated      = errors.New("account is duplicated")
+	ErrAccountCanNotEdit      = errors.New("account can not be edited")
+	ErrDLockNotFound          = errors.New("dlock not found")
+	ErrCannotReleaseLock      = errors.New("can not release account")
+	ErrAccountLockNotExist    = errors.New("account lock not exist")
+	ErrDeleteAccountFailed    = errors.New("failed to delete account")
+	ErrQueryAccountFailed     = errors.New("failed to query account")
+	ErrQueryAccountLockFailed = errors.New("failed to query account lock")
+	ErrAccountNotExist        = errors.New("account not exist")
+	ErrRoleBindingExist       = errors.New("role is bind to account")
 )
 
 const (
@@ -59,5 +60,5 @@ type AccountLockManager interface {
 type AccountLock struct {
 	Key       string `json:"key,omitempty"`
 	Status    string `json:"status,omitempty"`
-	ReleaseAt int64  `json:"releaseAt,omitempty"`
+	ReleaseAt int64  `json:"releaseAt,omitempty" bson:"release_at"`
 }

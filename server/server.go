@@ -24,19 +24,18 @@ import (
 	"strings"
 	"time"
 
-	"github.com/apache/servicecomb-service-center/server/event"
-
 	"github.com/apache/servicecomb-service-center/datasource"
 	nf "github.com/apache/servicecomb-service-center/pkg/event"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/metrics"
 	"github.com/apache/servicecomb-service-center/pkg/plugin"
 	"github.com/apache/servicecomb-service-center/pkg/signal"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/command"
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/event"
+	"github.com/apache/servicecomb-service-center/server/metrics"
 	"github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf"
 	"github.com/apache/servicecomb-service-center/server/service/gov"
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
@@ -150,14 +149,8 @@ func (s *ServiceCenterServer) initMetrics() {
 	}
 
 	if err := metrics.Init(metrics.Options{
-		Interval:     interval,
-		InstanceName: instance,
-		SysMetrics: []string{
-			"process_resident_memory_bytes",
-			"process_cpu_seconds_total",
-			"go_threads",
-			"go_goroutines",
-		},
+		Interval: interval,
+		Instance: instance,
 	}); err != nil {
 		log.Fatal("init metrics failed", err)
 	}

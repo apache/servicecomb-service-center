@@ -20,9 +20,6 @@ package event
 import (
 	"context"
 	"fmt"
-	"strings"
-
-	pb "github.com/go-chassis/cari/discovery"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/cache"
@@ -33,15 +30,12 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/event"
-	"github.com/apache/servicecomb-service-center/server/metrics"
 	"github.com/apache/servicecomb-service-center/server/syncernotify"
+	pb "github.com/go-chassis/cari/discovery"
 )
 
 const (
-	increaseOne = 1
-	decreaseOne = -1
 	msKeyPrefix = "/cse-sr/ms/files/"
 	sep         = "/"
 )
@@ -66,33 +60,16 @@ func (h *InstanceEventHandler) OnEvent(evt sd.KvEvent) {
 		return
 	}
 	providerID, providerInstanceID, domainProject := path.GetInfoFromInstKV(evt.KV.Key)
-	idx := strings.Index(domainProject, "/")
-	domainName := domainProject[:idx]
-	projectName := domainProject[idx+1:]
-
 	ctx := util.WithGlobal(util.WithCacheOnly(context.Background()))
 
-	var count float64 = increaseOne
 	if action == pb.EVT_INIT {
-		metrics.ReportInstances(domainName, count)
-		ms, err := serviceUtil.GetService(ctx, domainProject, providerID)
-		if err != nil {
-			log.Warnf("caught [%s] instance[%s/%s] event, endpoints %v, get cached provider's file failed",
-				action, providerID, providerInstanceID, instance.Endpoints)
-			return
-		}
-		frameworkName, frameworkVersion := getFramework(ms)
-		metrics.ReportFramework(domainName, projectName, frameworkName, frameworkVersion, count)
 		return
 	}
 
-	if action == pb.EVT_DELETE {
-		count = decreaseOne
-		if !core.IsDefaultDomainProject(domainProject) {
-			projectName := domainProject[idx+1:]
-			serviceUtil.RemandInstanceQuota(
-				util.SetDomainProject(context.Background(), domainName, projectName))
-		}
+	if action == pb.EVT_DELETE && !datasource.IsDefaultDomainProject(domainProject) {
+		domain, project := path.SplitDomainProject(domainProject)
+		serviceUtil.RemandInstanceQuota(
+			util.SetDomainProject(context.Background(), domain, project))
 	}
 
 	// 查询服务版本信息
@@ -111,12 +88,6 @@ func (h *InstanceEventHandler) OnEvent(evt sd.KvEvent) {
 		log.Warn(fmt.Sprintf("caught [%s] instance[%s/%s] event, endpoints %v, but notify service is closed",
 			action, providerID, providerInstanceID, instance.Endpoints))
 		return
-	}
-
-	if action != pb.EVT_UPDATE {
-		frameworkName, frameworkVersion := getFramework(ms)
-		metrics.ReportInstances(domainName, count)
-		metrics.ReportFramework(domainName, projectName, frameworkName, frameworkVersion, count)
 	}
 
 	log.Infof("caught [%s] service[%s][%s/%s/%s/%s] instance[%s] event, endpoints %v",

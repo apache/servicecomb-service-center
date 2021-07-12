@@ -15,14 +15,33 @@
  * limitations under the License.
  */
 
-package datasource
+package sd
 
-const (
-	SPLIT                 = "/"
-	ServiceKeyPrefix      = "/cse-sr/ms/files"
-	InstanceKeyPrefix     = "/cse-sr/inst/files"
-	RegistryDomain        = "default"
-	RegistryProject       = "default"
-	RegistryDomainProject = "default/default"
-	RegistryAppID         = "default"
-)
+type IndexFunc func(interface{}) string
+
+type IndexCols struct {
+	indexFuncs []IndexFunc
+}
+
+var DepIndexCols *IndexCols
+var InstIndexCols *IndexCols
+var ServiceIndexCols *IndexCols
+var RuleIndexCols *IndexCols
+
+func NewIndexCols() *IndexCols {
+	return &IndexCols{indexFuncs: make([]IndexFunc, 0)}
+}
+
+func (i *IndexCols) AddIndexFunc(f IndexFunc) {
+	i.indexFuncs = append(i.indexFuncs, f)
+}
+
+func (i *IndexCols) GetIndexes(data interface{}) (res []string) {
+	for _, f := range i.indexFuncs {
+		index := f(data)
+		if len(index) != 0 {
+			res = append(res, index)
+		}
+	}
+	return
+}

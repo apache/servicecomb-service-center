@@ -18,21 +18,15 @@
 package mongo
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/heartbeat"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
-	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/go-chassis/go-chassis/v2/storage"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 const defaultExpireTime = 300
@@ -50,6 +44,7 @@ type DataSource struct {
 	sysManager         datasource.SystemManager
 	depManager         datasource.DependencyManager
 	scManager          datasource.SCManager
+	metricsManager     datasource.MetricsManager
 }
 
 func (ds *DataSource) AccountLockManager() datasource.AccountLockManager {
@@ -80,6 +75,10 @@ func (ds *DataSource) SCManager() datasource.SCManager {
 	return ds.scManager
 }
 
+func (ds *DataSource) MetricsManager() datasource.MetricsManager {
+	return ds.metricsManager
+}
+
 func NewDataSource(opts datasource.Options) (datasource.DataSource, error) {
 	// TODO: construct a reasonable DataSource instance
 	inst := &DataSource{}
@@ -94,6 +93,7 @@ func NewDataSource(opts datasource.Options) (datasource.DataSource, error) {
 	inst.metadataManager = &MetadataManager{SchemaEditable: opts.SchemaEditable, InstanceTTL: opts.InstanceTTL}
 	inst.accountManager = &AccountManager{}
 	inst.accountLockManager = NewAccountLockManager(opts.ReleaseAccountAfter)
+	inst.metricsManager = &MetricsManager{}
 	return inst, nil
 }
 
@@ -149,123 +149,6 @@ func (ds *DataSource) initClient() error {
 		return err
 	case <-client.GetMongoClient().Ready():
 		return nil
-	}
-}
-
-func EnsureDB() {
-	EnsureService()
-	EnsureInstance()
-	EnsureRule()
-	EnsureSchema()
-	EnsureDep()
-}
-
-func EnsureService() {
-	err := client.GetMongoClient().GetDB().CreateCollection(context.Background(), model.CollectionService, options.CreateCollection().SetValidator(nil))
-	wrapCreateCollectionError(err)
-
-	serviceIDIndex := mutil.BuildIndexDoc(
-		mutil.ConnectWithDot([]string{model.ColumnService, model.ColumnServiceID}))
-	serviceIDIndex.Options = options.Index().SetUnique(true)
-
-	serviceIndex := mutil.BuildIndexDoc(
-		mutil.ConnectWithDot([]string{model.ColumnService, model.ColumnAppID}),
-		mutil.ConnectWithDot([]string{model.ColumnService, model.ColumnServiceName}),
-		mutil.ConnectWithDot([]string{model.ColumnService, model.ColumnEnv}),
-		mutil.ConnectWithDot([]string{model.ColumnService, model.ColumnVersion}),
-		model.ColumnDomain,
-		model.ColumnProject)
-	serviceIndex.Options = options.Index().SetUnique(true)
-
-	var serviceIndexs []mongo.IndexModel
-	serviceIndexs = append(serviceIndexs, serviceIDIndex, serviceIndex)
-
-	err = client.GetMongoClient().CreateIndexes(context.Background(), model.CollectionService, serviceIndexs)
-	wrapCreateIndexesError(err)
-}
-
-func EnsureInstance() {
-	err := client.GetMongoClient().GetDB().CreateCollection(context.Background(), model.CollectionInstance, options.CreateCollection().SetValidator(nil))
-	wrapCreateCollectionError(err)
-
-	instanceIndex := mutil.BuildIndexDoc(model.ColumnRefreshTime)
-	instanceIndex.Options = options.Index().SetExpireAfterSeconds(defaultExpireTime)
-
-	instanceServiceIndex := mutil.BuildIndexDoc(mutil.ConnectWithDot([]string{model.ColumnInstance, model.ColumnServiceID}))
-
-	var instanceIndexs []mongo.IndexModel
-	instanceIndexs = append(instanceIndexs, instanceIndex, instanceServiceIndex)
-
-	err = client.GetMongoClient().CreateIndexes(context.Background(), model.CollectionInstance, instanceIndexs)
-	wrapCreateIndexesError(err)
-}
-
-func EnsureSchema() {
-	err := client.GetMongoClient().GetDB().CreateCollection(context.Background(), model.CollectionSchema, options.CreateCollection().SetValidator(nil))
-	wrapCreateCollectionError(err)
-
-	schemaServiceIndex := mutil.BuildIndexDoc(
-		model.ColumnDomain,
-		model.ColumnProject,
-		model.ColumnServiceID)
-
-	var schemaIndexs []mongo.IndexModel
-	schemaIndexs = append(schemaIndexs, schemaServiceIndex)
-
-	err = client.GetMongoClient().CreateIndexes(context.Background(), model.CollectionSchema, schemaIndexs)
-	wrapCreateIndexesError(err)
-}
-
-func EnsureRule() {
-	err := client.GetMongoClient().GetDB().CreateCollection(context.Background(), model.CollectionRule, options.CreateCollection().SetValidator(nil))
-	wrapCreateCollectionError(err)
-
-	ruleServiceIndex := mutil.BuildIndexDoc(
-		model.ColumnDomain,
-		model.ColumnProject,
-		model.ColumnServiceID)
-
-	var ruleIndexs []mongo.IndexModel
-	ruleIndexs = append(ruleIndexs, ruleServiceIndex)
-
-	err = client.GetMongoClient().CreateIndexes(context.Background(), model.CollectionRule, ruleIndexs)
-	wrapCreateIndexesError(err)
-}
-
-func EnsureDep() {
-	err := client.GetMongoClient().GetDB().CreateCollection(context.Background(), model.CollectionDep, options.CreateCollection().SetValidator(nil))
-	wrapCreateCollectionError(err)
-
-	depServiceIndex := mutil.BuildIndexDoc(
-		model.ColumnDomain,
-		model.ColumnProject,
-		model.ColumnServiceKey)
-
-	var depIndexs []mongo.IndexModel
-	depIndexs = append(depIndexs, depServiceIndex)
-
-	err = client.GetMongoClient().CreateIndexes(context.Background(), model.CollectionDep, depIndexs)
-	if err != nil {
-		log.Fatal("failed to create dep collection indexs", err)
-		return
-	}
-}
-
-func wrapCreateCollectionError(err error) {
-	if err != nil {
-		if client.IsCollectionsExist(err) {
-			return
-		}
-		log.Fatal(fmt.Sprintf("failed to create collection with validation, err type: %s", util.Reflect(err).FullName), err)
-	}
-}
-
-func wrapCreateIndexesError(err error) {
-	if err != nil {
-		if client.IsDuplicateKey(err) {
-			return
-		}
-		log.Fatal(fmt.Sprintf("failed to create indexes, err type: %s", util.Reflect(err).FullName), err)
 	}
 }
 

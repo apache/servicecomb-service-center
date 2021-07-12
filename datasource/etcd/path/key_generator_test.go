@@ -31,11 +31,11 @@ func TestGenerateRBACAccountKey(t *testing.T) {
 }
 
 func TestGenerateETCDProjectKey(t *testing.T) {
-	assert.Equal(t, "/cse-sr/projects/domain/project", path.GenerateETCDProjectKey("domain", "project"))
+	assert.Equal(t, "/cse-sr/projects/domain/project", path.GenerateProjectKey("domain", "project"))
 }
 
 func TestGenerateETCDDomainKey(t *testing.T) {
-	assert.Equal(t, "/cse-sr/domains/domain", path.GenerateETCDDomainKey("domain"))
+	assert.Equal(t, "/cse-sr/domains/domain", path.GenerateDomainKey("domain"))
 }
 
 func TestGenerateAccountKey(t *testing.T) {

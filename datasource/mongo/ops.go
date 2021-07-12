@@ -20,9 +20,39 @@ package mongo
 import (
 	"context"
 
+	"github.com/apache/servicecomb-service-center/datasource/mongo/client/dao"
+	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	pb "github.com/go-chassis/cari/discovery"
 )
 
-func (ds *MetadataManager) GetServiceCountByDomainProject(ctx context.Context, request *pb.GetServiceCountRequest) (*pb.GetServiceCountResponse, error) {
-	panic("implement me")
+func (ds *MetadataManager) GetServiceCount(ctx context.Context, request *pb.GetServiceCountRequest) (
+	*pb.GetServiceCountResponse, error) {
+	options := []mutil.Option{mutil.NotGlobal(), mutil.Domain(request.Domain)}
+	if request.Project != "" {
+		options = append(options, mutil.Project(request.Project))
+	}
+	count, err := dao.CountService(ctx, mutil.NewFilter(options...))
+	if err != nil {
+		return nil, err
+	}
+	return &pb.GetServiceCountResponse{
+		Response: pb.CreateResponse(pb.ResponseSuccess, "Get instance count by domain/project successfully"),
+		Count:    count,
+	}, nil
+}
+
+func (ds *MetadataManager) GetInstanceCount(ctx context.Context, request *pb.GetServiceCountRequest) (
+	*pb.GetServiceCountResponse, error) {
+	options := []mutil.Option{mutil.Domain(request.Domain)}
+	if request.Project != "" {
+		options = append(options, mutil.Project(request.Project))
+	}
+	count, err := dao.CountInstance(ctx, mutil.NewFilter(options...))
+	if err != nil {
+		return nil, err
+	}
+	return &pb.GetServiceCountResponse{
+		Response: pb.CreateResponse(pb.ResponseSuccess, "Get instance count by domain/project successfully"),
+		Count:    count,
+	}, nil
 }

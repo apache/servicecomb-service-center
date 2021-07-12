@@ -25,6 +25,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/x/bsonx"
 
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
@@ -97,6 +98,36 @@ func Perms(perms []*rbac.Permission) Option {
 	}
 }
 
+func AccountUpdateTime(dt interface{}) Option {
+	return func(filter bson.M) {
+		filter[model.ColumnAccountUpdateTime] = dt
+	}
+}
+
+func RoleUpdateTime(dt interface{}) Option {
+	return func(filter bson.M) {
+		filter[model.ColumnRoleUpdateTime] = dt
+	}
+}
+
+func AccountLockKey(key interface{}) Option {
+	return func(filter bson.M) {
+		filter[model.ColumnAccountLockKey] = key
+	}
+}
+
+func AccountLockStatus(status interface{}) Option {
+	return func(filter bson.M) {
+		filter[model.ColumnAccountLockStatus] = status
+	}
+}
+
+func AccountLockReleaseAt(releaseAt interface{}) Option {
+	return func(filter bson.M) {
+		filter[model.ColumnAccountLockReleaseAt] = releaseAt
+	}
+}
+
 func In(data interface{}) Option {
 	return func(filter bson.M) {
 		filter["$in"] = data
@@ -109,7 +140,23 @@ func Set(data interface{}) Option {
 	}
 }
 
-func NewFilter(options ...func(filter bson.M)) bson.M {
+func Nor(options ...Option) Option {
+	return func(filter bson.M) {
+		filter["$nor"] = bson.A{NewFilter(options...)}
+	}
+}
+
+func Or(options ...Option) Option {
+	return func(filter bson.M) {
+		var conditions bson.A
+		for _, option := range options {
+			conditions = append(conditions, NewFilter(option))
+		}
+		filter["$or"] = conditions
+	}
+}
+
+func NewFilter(options ...Option) bson.M {
 	filter := bson.M{}
 	for _, option := range options {
 		option(filter)
@@ -184,7 +231,7 @@ func ServiceProperty(property map[string]string) Option {
 	}
 }
 
-func ServiceServiceName(serviceName string) Option {
+func ServiceServiceName(serviceName interface{}) Option {
 	return func(filter bson.M) {
 		filter[ConnectWithDot([]string{model.ColumnService, model.ColumnServiceName})] = serviceName
 	}
@@ -337,4 +384,18 @@ func BuildIndexDoc(keys ...string) mongo.IndexModel {
 		Keys: keysDoc,
 	}
 	return index
+}
+
+func NotGlobal() Option {
+	var names []string
+	for name := range datasource.GlobalServiceNames {
+		names = append(names, name)
+	}
+	inFilter := NewFilter(In(names))
+	return Nor(
+		Domain(datasource.RegistryDomain),
+		Project(datasource.RegistryProject),
+		ServiceAppID(datasource.RegistryAppID),
+		ServiceServiceName(inFilter),
+	)
 }

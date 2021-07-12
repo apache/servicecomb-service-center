@@ -43,7 +43,7 @@ type Service struct {
 	AppId         string
 	ServiceName   string
 	Versions      []string
-	Frameworks    []*discovery.FrameWorkProperty
+	Frameworks    []*discovery.FrameWork
 	Endpoints     []string
 	Timestamp     int64 // the seconds from 0 to now
 }
@@ -52,7 +52,7 @@ func (s *Service) AppendVersion(v string) {
 	s.Versions = append(s.Versions, v)
 }
 
-func (s *Service) AppendFramework(property *discovery.FrameWorkProperty) {
+func (s *Service) AppendFramework(property *discovery.FrameWork) {
 	if property == nil || property.Name == "" {
 		return
 	}
@@ -90,7 +90,7 @@ type Instance struct {
 	AppId         string
 	ServiceName   string
 	Version       string
-	Framework     *discovery.FrameWorkProperty
+	Framework     *discovery.FrameWork
 	Lease         int64 // seconds
 	Timestamp     int64 // the seconds from 0 to now
 }

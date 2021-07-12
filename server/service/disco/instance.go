@@ -185,7 +185,7 @@ func ClusterHealth(ctx context.Context) (*pb.GetInstancesResponse, error) {
 			Response: pb.CreateResponse(pb.ErrUnhealthy, err.Error()),
 		}, nil
 	}
-	cloneContext := util.SetDomainProject(util.CloneContext(ctx), apt.RegistryDomain, apt.RegistryProject)
+	cloneContext := util.SetDomainProject(util.CloneContext(ctx), datasource.RegistryDomain, datasource.RegistryProject)
 	svcResp, err := datasource.GetMetadataManager().ExistService(cloneContext, &pb.GetExistenceRequest{
 		Type:        pb.ExistenceMicroservice,
 		AppId:       apt.Service.AppId,

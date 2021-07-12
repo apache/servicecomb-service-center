@@ -24,7 +24,6 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/event"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/job"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/mux"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
@@ -49,6 +48,7 @@ type DataSource struct {
 	sysManager         datasource.SystemManager
 	depManager         datasource.DependencyManager
 	scManager          datasource.SCManager
+	metricsManager     datasource.MetricsManager
 }
 
 func (ds *DataSource) AccountLockManager() datasource.AccountLockManager {
@@ -79,6 +79,10 @@ func (ds *DataSource) SCManager() datasource.SCManager {
 	return ds.scManager
 }
 
+func (ds *DataSource) MetricsManager() datasource.MetricsManager {
+	return ds.metricsManager
+}
+
 func NewDataSource(opts datasource.Options) (datasource.DataSource, error) {
 	// TODO: construct a reasonable DataSource instance
 	log.Warnf("data source enable etcd mode")
@@ -101,6 +105,7 @@ func NewDataSource(opts datasource.Options) (datasource.DataSource, error) {
 	inst.sysManager = newSysManager()
 	inst.depManager = &DepManager{}
 	inst.scManager = &SCManager{}
+	inst.metricsManager = &MetricsManager{}
 	return inst, nil
 }
 
@@ -114,8 +119,6 @@ func (ds *DataSource) initialize(opts datasource.Options) error {
 	ds.initKvStore()
 	// Compact
 	ds.autoCompact()
-	// Jobs
-	job.ClearNoInstanceServices()
 	return nil
 }
 

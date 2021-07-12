@@ -19,9 +19,6 @@ package event
 
 import (
 	"context"
-	"strings"
-
-	pb "github.com/go-chassis/cari/discovery"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/cache"
@@ -30,11 +27,10 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/server/metrics"
+	pb "github.com/go-chassis/cari/discovery"
 )
 
 // ServiceEventHandler is the handler to handle:
-// 1. report service metrics
 // 2. save the new domain & project mapping
 // 3. reset the find instance cache
 type ServiceEventHandler struct {
@@ -51,22 +47,14 @@ func (h *ServiceEventHandler) OnEvent(evt sd.KvEvent) {
 		return
 	}
 	_, domainProject := path.GetInfoFromSvcKV(evt.KV.Key)
-	fn, fv := getFramework(ms)
 
 	switch evt.Type {
 	case pb.EVT_INIT, pb.EVT_CREATE:
-		idx := strings.Index(domainProject, "/")
-		newDomain := domainProject[:idx]
-		newProject := domainProject[idx+1:]
+		newDomain, newProject := path.SplitDomainProject(domainProject)
 		err := serviceUtil.NewDomainProject(context.Background(), newDomain, newProject)
 		if err != nil {
 			log.Errorf(err, "new domain[%s] or project[%s] failed", newDomain, newProject)
 		}
-		metrics.ReportServices(newDomain, fn, fv, 1)
-	case pb.EVT_DELETE:
-		domainName := domainProject[:strings.Index(domainProject, "/")]
-		metrics.ReportServices(domainName, fn, fv, -1)
-	default:
 	}
 
 	if evt.Type == pb.EVT_INIT {
@@ -79,17 +67,6 @@ func (h *ServiceEventHandler) OnEvent(evt sd.KvEvent) {
 	// cache
 	providerKey := pb.MicroServiceToKey(domainProject, ms)
 	cache.FindInstances.Remove(providerKey)
-}
-
-func getFramework(ms *pb.MicroService) (string, string) {
-	if ms.Framework != nil && len(ms.Framework.Name) > 0 {
-		version := ms.Framework.Version
-		if len(ms.Framework.Version) == 0 {
-			version = "UNKNOWN"
-		}
-		return ms.Framework.Name, version
-	}
-	return "UNKNOWN", "UNKNOWN"
 }
 
 func NewServiceEventHandler() *ServiceEventHandler {

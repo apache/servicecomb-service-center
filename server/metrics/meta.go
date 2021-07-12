@@ -18,144 +18,136 @@
 package metrics
 
 import (
-	"strings"
 	"time"
 
-	"github.com/apache/servicecomb-service-center/pkg/metrics"
-	helper "github.com/apache/servicecomb-service-center/pkg/prometheus"
-	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	metricsvc "github.com/apache/servicecomb-service-center/pkg/metrics"
+	promutil "github.com/apache/servicecomb-service-center/pkg/prometheus"
+	"github.com/go-chassis/go-chassis/v2/pkg/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-// keys of gauge
 const (
-	KeyDomainTotal    = "domain_total"
-	KeySchemaTotal    = "schema_total"
-	KeyFrameworkTotal = "framework_total"
+	SubSystem            = "db"
+	KeyServiceTotal      = metricsvc.FamilyName + "_" + SubSystem + "_" + "service_total"
+	KeyInstanceTotal     = metricsvc.FamilyName + "_" + SubSystem + "_" + "instance_total"
+	KeyDomainTotal       = metricsvc.FamilyName + "_" + SubSystem + "_" + "domain_total"
+	KeySchemaTotal       = metricsvc.FamilyName + "_" + SubSystem + "_" + "schema_total"
+	KeyFrameworkTotal    = metricsvc.FamilyName + "_" + SubSystem + "_" + "framework_total"
+	KeyHeartbeatTotal    = metricsvc.FamilyName + "_" + SubSystem + "_" + "heartbeat_total"
+	KeyHeartbeatDuration = metricsvc.FamilyName + "_" + SubSystem + "_" + "heartbeat_durations_microseconds"
+	KeySCTotal           = metricsvc.FamilyName + "_" + SubSystem + "_" + "sc_total"
 )
 
-// Key return metrics key
-func Key(name string) string {
-	return util.StringJoin([]string{metrics.SubSystem, name}, "_")
+var metaEnabled = false
+
+func InitMetaMetrics() (err error) {
+	defer func() {
+		if err != nil {
+			log.Error("init metadata metrics failed", err)
+		} else {
+			metaEnabled = true
+		}
+	}()
+	if err = metrics.CreateGauge(metrics.GaugeOpts{
+		Key:    KeyDomainTotal,
+		Help:   "Gauge of domain created in Service Center",
+		Labels: []string{"instance"},
+	}); err != nil {
+		return
+	}
+	if err = metrics.CreateGauge(metrics.GaugeOpts{
+		Key:    KeyServiceTotal,
+		Help:   "Gauge of microservice created in Service Center",
+		Labels: []string{"instance", "framework", "frameworkVersion", "domain", "project"},
+	}); err != nil {
+		return
+	}
+	if err = metrics.CreateGauge(metrics.GaugeOpts{
+		Key:    KeyInstanceTotal,
+		Help:   "Gauge of microservice instance created in Service Center",
+		Labels: []string{"instance", "framework", "frameworkVersion", "domain", "project"},
+	}); err != nil {
+		return
+	}
+	if err = metrics.CreateGauge(metrics.GaugeOpts{
+		Key:    KeySchemaTotal,
+		Help:   "Counter of schema created in Service Center",
+		Labels: []string{"instance", "domain", "project"},
+	}); err != nil {
+		return
+	}
+	if err = metrics.CreateGauge(metrics.GaugeOpts{
+		Key:    KeyFrameworkTotal,
+		Help:   "Gauge of client framework info in Service Center",
+		Labels: []string{"instance", "framework", "frameworkVersion", "domain", "project"},
+	}); err != nil {
+		return
+	}
+	if err = metrics.CreateGauge(metrics.GaugeOpts{
+		Key:    KeySCTotal,
+		Help:   "Counter of the Service Center instance",
+		Labels: []string{"instance"},
+	}); err != nil {
+		return
+	}
+	if err = metrics.CreateCounter(metrics.CounterOpts{
+		Key:    KeyHeartbeatTotal,
+		Help:   "Counter of heartbeat renew",
+		Labels: []string{"instance", "status"},
+	}); err != nil {
+		return
+	}
+	if err = metrics.CreateSummary(metrics.SummaryOpts{
+		Key:        KeyHeartbeatDuration,
+		Help:       "Latency of heartbeat renew",
+		Labels:     []string{"instance", "status"},
+		Objectives: metricsvc.Pxx,
+	}); err != nil {
+		return
+	}
+	return
 }
 
-var (
-	domainCounter = helper.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Namespace: metrics.FamilyName,
-			Subsystem: metrics.SubSystem,
-			Name:      KeyDomainTotal,
-			Help:      "Gauge of domain created in Service Center",
-		}, []string{"instance"})
-
-	serviceCounter = helper.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Namespace: metrics.FamilyName,
-			Subsystem: "db",
-			Name:      metrics.KeyServiceTotal,
-			Help:      "Gauge of microservice created in Service Center",
-		}, []string{"instance", "framework", "frameworkVersion", "domain"})
-
-	instanceCounter = helper.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Namespace: metrics.FamilyName,
-			Subsystem: metrics.SubSystem,
-			Name:      metrics.KeyInstanceTotal,
-			Help:      "Gauge of microservice created in Service Center",
-		}, []string{"instance", "domain"})
-
-	schemaCounter = helper.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Namespace: metrics.FamilyName,
-			Subsystem: metrics.SubSystem,
-			Name:      KeySchemaTotal,
-			Help:      "Gauge of schema created in Service Center",
-		}, []string{"instance", "domain"})
-
-	frameworkCounter = helper.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Namespace: metrics.FamilyName,
-			Subsystem: metrics.SubSystem,
-			Name:      KeyFrameworkTotal,
-			Help:      "Gauge of client framework info in Service Center",
-		}, metrics.ToLabelNames(Framework{}))
-
-	scCounter = helper.NewCounterVec(
-		prometheus.CounterOpts{
-			Namespace: metrics.FamilyName,
-			Subsystem: "db",
-			Name:      "sc_total",
-			Help:      "Counter of the Service Center instance",
-		}, []string{"instance"})
-
-	heartbeatCounter = helper.NewCounterVec(
-		prometheus.CounterOpts{
-			Namespace: metrics.FamilyName,
-			Subsystem: "db",
-			Name:      "heartbeat_total",
-			Help:      "Counter of heartbeat renew",
-		}, []string{"instance", "status"})
-
-	heartbeatLatency = helper.NewSummaryVec(
-		prometheus.SummaryOpts{
-			Namespace:  metrics.FamilyName,
-			Subsystem:  "db",
-			Name:       "heartbeat_durations_microseconds",
-			Help:       "Latency of heartbeat renew",
-			Objectives: metrics.Pxx,
-		}, []string{"instance", "status"})
-)
-
-// Framework return framework info.
-type Framework struct {
-	DomainName       string `json:"domainName"`
-	ProjectName      string `json:"projectName"`
-	FrameWork        string `json:"framework"`
-	FrameworkVersion string `json:"frameworkVersion"`
+func GetTotalService(domain, project string) int64 {
+	labels := prometheus.Labels{"domain": domain}
+	if len(project) > 0 {
+		labels["project"] = project
+	}
+	return int64(promutil.GaugeValue(KeyServiceTotal, labels))
 }
 
-func ReportDomains(c float64) {
-	instance := metrics.InstanceName()
-	domainCounter.WithLabelValues(instance).Add(c)
-}
-
-func ReportServices(domain, framework, frameworkVersion string, c float64) {
-	instance := metrics.InstanceName()
-	serviceCounter.WithLabelValues(instance, framework, frameworkVersion, domain).Add(c)
-}
-func GetTotalService(domain string) int64 {
-	return metrics.GaugeValue(strings.Join([]string{metrics.SubSystem, metrics.KeyServiceTotal}, "_"), prometheus.Labels{"domain": domain})
-}
-func ReportInstances(domain string, c float64) {
-	instance := metrics.InstanceName()
-	instanceCounter.WithLabelValues(instance, domain).Add(c)
-}
-func GetTotalInstance(domain string) int64 {
-	mn := strings.Join([]string{metrics.SubSystem, metrics.KeyInstanceTotal}, "_")
-	usage := metrics.GaugeValue(mn, prometheus.Labels{"domain": domain})
-	return usage
-}
-func ReportSchemas(domain string, c float64) {
-	instance := metrics.InstanceName()
-	schemaCounter.WithLabelValues(instance, domain).Add(c)
-}
-
-func ReportFramework(domainName, projectName string, framework, frameworkVersion string, c float64) {
-	frameworkCounter.WithLabelValues(domainName, projectName, framework, frameworkVersion).Add(c)
+func GetTotalInstance(domain, project string) int64 {
+	labels := prometheus.Labels{"domain": domain}
+	if len(project) > 0 {
+		labels["project"] = project
+	}
+	return int64(promutil.GaugeValue(KeyInstanceTotal, labels))
 }
 
 func ReportScInstance() {
-	instance := metrics.InstanceName()
-	scCounter.WithLabelValues(instance).Add(1)
+	instance := metricsvc.InstanceName()
+	labels := map[string]string{"instance": instance}
+	if err := metrics.GaugeSet(KeySCTotal, 1, labels); err != nil {
+		log.Error("gauge set failed", err)
+	}
 }
 
 func ReportHeartbeatCompleted(err error, start time.Time) {
-	instance := metrics.InstanceName()
+	if !metaEnabled {
+		return
+	}
+	instance := metricsvc.InstanceName()
 	elapsed := float64(time.Since(start).Nanoseconds()) / float64(time.Microsecond)
 	status := success
 	if err != nil {
 		status = failure
 	}
-	heartbeatLatency.WithLabelValues(instance, status).Observe(elapsed)
-	heartbeatCounter.WithLabelValues(instance, status).Inc()
+	labels := map[string]string{"instance": instance, "status": status}
+	if err := metrics.SummaryObserve(KeyHeartbeatDuration, elapsed, labels); err != nil {
+		log.Error("summary observe failed", err)
+	}
+	if err = metrics.CounterAdd(KeyHeartbeatTotal, 1, labels); err != nil {
+		log.Error("counter add failed", err)
+	}
 }

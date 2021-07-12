@@ -99,7 +99,7 @@ func FromK8sService(domainProject string, svc *v1.Service) (ms *pb.MicroService)
 		Version:     getLabel(svc.Labels, LabelVersion, pb.VERSION),
 		Level:       "BACK",
 		Status:      pb.MS_UP,
-		Framework: &pb.FrameWorkProperty{
+		Framework: &pb.FrameWork{
 			Name: Name,
 		},
 		RegisterBy: pb.REGISTERBY_PLATFORM,

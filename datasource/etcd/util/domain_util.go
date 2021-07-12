@@ -32,7 +32,7 @@ import (
 
 func GetAllDomainRawData(ctx context.Context) ([]*sd.KeyValue, error) {
 	opts := append(FromContext(ctx),
-		client.WithStrKey(path.GenerateETCDDomainKey("")),
+		client.WithStrKey(path.GenerateDomainKey("")),
 		client.WithPrefix())
 	rsp, err := kv.Store().Domain().Search(ctx, opts...)
 	if err != nil {
@@ -67,7 +67,7 @@ func GetAllDomain(ctx context.Context) ([]string, error) {
 
 func AddDomain(ctx context.Context, domain string) (bool, error) {
 	ok, err := client.Instance().PutNoOverride(ctx,
-		client.WithStrKey(path.GenerateETCDDomainKey(domain)))
+		client.WithStrKey(path.GenerateDomainKey(domain)))
 	if err != nil {
 		return false, err
 	}
@@ -76,7 +76,7 @@ func AddDomain(ctx context.Context, domain string) (bool, error) {
 
 func DomainExist(ctx context.Context, domain string) (bool, error) {
 	opts := append(FromContext(ctx),
-		client.WithStrKey(path.GenerateETCDDomainKey(domain)),
+		client.WithStrKey(path.GenerateDomainKey(domain)),
 		client.WithCountOnly())
 	rsp, err := kv.Store().Domain().Search(ctx, opts...)
 	if err != nil {
@@ -87,7 +87,7 @@ func DomainExist(ctx context.Context, domain string) (bool, error) {
 
 func AddProject(ctx context.Context, domain, project string) (bool, error) {
 	ok, err := client.Instance().PutNoOverride(ctx,
-		client.WithStrKey(path.GenerateETCDProjectKey(domain, project)))
+		client.WithStrKey(path.GenerateProjectKey(domain, project)))
 	if err != nil {
 		return ok, err
 	}
@@ -96,7 +96,7 @@ func AddProject(ctx context.Context, domain, project string) (bool, error) {
 
 func ProjectExist(ctx context.Context, domain, project string) (bool, error) {
 	opts := append(FromContext(ctx),
-		client.WithStrKey(path.GenerateETCDProjectKey(domain, project)),
+		client.WithStrKey(path.GenerateProjectKey(domain, project)),
 		client.WithCountOnly())
 	rsp, err := kv.Store().Project().Search(ctx, opts...)
 	if err != nil {

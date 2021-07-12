@@ -150,3 +150,11 @@ func GetServicesVersions(ctx context.Context, filter interface{}) ([]string, err
 	}
 	return versions, nil
 }
+
+func CountService(ctx context.Context, filter interface{}) (int64, error) {
+	count, err := client.GetMongoClient().Count(ctx, model.CollectionService, filter)
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+}

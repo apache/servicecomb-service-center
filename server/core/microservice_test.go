@@ -17,6 +17,7 @@ package core
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/datasource"
 	"testing"
 
 	"github.com/apache/servicecomb-service-center/server/config"
@@ -58,28 +59,28 @@ func TestPrepareSelfRegistration(t *testing.T) {
 
 func TestSetSharedMode(t *testing.T) {
 	RegisterGlobalServices()
-	if IsGlobal(&discovery.MicroServiceKey{}) {
+	if datasource.IsGlobal(&discovery.MicroServiceKey{}) {
 		t.Fatalf("TestSetSharedMode failed")
 	}
-	if IsGlobal(&discovery.MicroServiceKey{Tenant: "default"}) {
+	if datasource.IsGlobal(&discovery.MicroServiceKey{Tenant: "default"}) {
 		t.Fatalf("TestSetSharedMode failed")
 	}
-	if IsGlobal(&discovery.MicroServiceKey{Tenant: "default/default"}) {
+	if datasource.IsGlobal(&discovery.MicroServiceKey{Tenant: "default/default"}) {
 		t.Fatalf("TestSetSharedMode failed")
 	}
-	if IsGlobal(&discovery.MicroServiceKey{Tenant: "default/default", AppId: "default"}) {
+	if datasource.IsGlobal(&discovery.MicroServiceKey{Tenant: "default/default", AppId: "default"}) {
 		t.Fatalf("TestSetSharedMode failed")
 	}
 
 	config.Server.Config.GlobalVisible = "shared"
 	RegisterGlobalServices()
-	if IsGlobal(&discovery.MicroServiceKey{Tenant: "default/default", AppId: "default", ServiceName: "no-shared"}) {
+	if datasource.IsGlobal(&discovery.MicroServiceKey{Tenant: "default/default", AppId: "default", ServiceName: "no-shared"}) {
 		t.Fatalf("TestSetSharedMode failed")
 	}
-	if !IsGlobal(&discovery.MicroServiceKey{Tenant: "default/default", AppId: "default", ServiceName: "shared"}) {
+	if !datasource.IsGlobal(&discovery.MicroServiceKey{Tenant: "default/default", AppId: "default", ServiceName: "shared"}) {
 		t.Fatalf("TestSetSharedMode failed")
 	}
-	if !IsGlobal(&discovery.MicroServiceKey{Tenant: "default/default", AppId: "default", Alias: "shared"}) {
+	if !datasource.IsGlobal(&discovery.MicroServiceKey{Tenant: "default/default", AppId: "default", Alias: "shared"}) {
 		t.Fatalf("TestSetSharedMode failed")
 	}
 }

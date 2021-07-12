@@ -15,23 +15,13 @@
  * limitations under the License.
  */
 
-package metrics
+package prometheus
 
 import (
-	helper "github.com/apache/servicecomb-service-center/pkg/prometheus"
-	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
 )
 
-// keys of gauge
-const (
-	KeyServiceTotal  = "service_total"
-	KeyInstanceTotal = "instance_total"
-
-	SubSystem = "db"
-)
-
-func getValue(name string, labels prometheus.Labels) float64 {
+func getValue(name string, labels map[string]string, getV func(m *dto.Metric) float64) float64 {
 	f := Family(name)
 	if f == nil {
 		return 0
@@ -42,16 +32,24 @@ func getValue(name string, labels prometheus.Labels) float64 {
 		if !matchAll && !MatchLabels(m, labels) {
 			continue
 		}
-		sum += m.GetGauge().GetValue()
+		sum += getV(m)
 	}
 	return sum
 }
 
-func GaugeValue(name string, labels prometheus.Labels) int64 {
-	return int64(getValue(name, labels))
+func GaugeValue(name string, labels map[string]string) float64 {
+	return getValue(name, labels, func(m *dto.Metric) float64 {
+		return m.GetGauge().GetValue()
+	})
 }
 
-func MatchLabels(m *dto.Metric, labels prometheus.Labels) bool {
+func CounterValue(name string, labels map[string]string) float64 {
+	return getValue(name, labels, func(m *dto.Metric) float64 {
+		return m.GetCounter().GetValue()
+	})
+}
+
+func MatchLabels(m *dto.Metric, labels map[string]string) bool {
 	count := 0
 	for _, label := range m.GetLabel() {
 		v, ok := labels[label.GetName()]
@@ -66,12 +64,12 @@ func MatchLabels(m *dto.Metric, labels prometheus.Labels) bool {
 }
 
 func Family(name string) *dto.MetricFamily {
-	families, err := helper.Gather()
+	families, err := Gather()
 	if err != nil {
 		return nil
 	}
 	for _, f := range families {
-		if f.GetName() == familyNamePrefix+name {
+		if f.GetName() == name {
 			return f
 		}
 	}

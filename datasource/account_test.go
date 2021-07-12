@@ -21,7 +21,9 @@ package datasource_test
 
 import (
 	"context"
+	"strconv"
 	"testing"
+	"time"
 
 	"github.com/go-chassis/cari/rbac"
 
@@ -90,5 +92,65 @@ func TestAccount(t *testing.T) {
 		assert.NoError(t, err)
 		_, err = datasource.GetAccountManager().DeleteAccount(context.Background(), []string{a2.Name})
 		assert.NoError(t, err)
+	})
+	t.Run("add and update accounts, should have create/update time", func(t *testing.T) {
+		err := datasource.GetAccountManager().CreateAccount(context.Background(), &a1)
+		assert.NoError(t, err)
+
+		r, err := datasource.GetAccountManager().GetAccount(context.Background(), a1.Name)
+		assert.NoError(t, err)
+		dt, _ := strconv.Atoi(r.CreateTime)
+		assert.Less(t, 0, dt)
+		assert.Equal(t, r.CreateTime, r.UpdateTime)
+
+		time.Sleep(time.Second)
+		a1.Password = "new-password"
+		err = datasource.GetAccountManager().UpdateAccount(context.Background(), a1.Name, &a1)
+		assert.NoError(t, err)
+
+		old, _ := strconv.Atoi(r.UpdateTime)
+		r, err = datasource.GetAccountManager().GetAccount(context.Background(), a1.Name)
+		assert.NoError(t, err)
+		last, _ := strconv.Atoi(r.UpdateTime)
+		assert.Less(t, old, last)
+		assert.NotEqual(t, r.CreateTime, r.UpdateTime)
+
+		_, err = datasource.GetAccountManager().DeleteAccount(context.Background(), []string{a1.Name})
+		assert.NoError(t, err)
+	})
+}
+
+func TestAccountLock(t *testing.T) {
+	t.Run("ban account TestAccountLock, should return no error", func(t *testing.T) {
+		err := datasource.GetAccountLockManager().Ban(context.Background(), "TestAccountLock")
+		assert.NoError(t, err)
+
+		lock, err := datasource.GetAccountLockManager().GetLock(context.Background(), "TestAccountLock")
+		assert.NoError(t, err)
+		assert.Equal(t, datasource.StatusBanned, lock.Status)
+		assert.Less(t, time.Now().Unix(), lock.ReleaseAt)
+	})
+
+	t.Run("ban account TestAccountLock again, should refresh releaseAt", func(t *testing.T) {
+		lock1, err := datasource.GetAccountLockManager().GetLock(context.Background(), "TestAccountLock")
+		assert.NoError(t, err)
+		assert.Equal(t, datasource.StatusBanned, lock1.Status)
+
+		time.Sleep(time.Second)
+		err = datasource.GetAccountLockManager().Ban(context.Background(), "TestAccountLock")
+		assert.NoError(t, err)
+
+		lock2, err := datasource.GetAccountLockManager().GetLock(context.Background(), "TestAccountLock")
+		assert.NoError(t, err)
+		assert.Less(t, lock1.ReleaseAt, lock2.ReleaseAt)
+	})
+
+	t.Run("delete account lock, should return no error", func(t *testing.T) {
+		err := datasource.GetAccountLockManager().DeleteLock(context.Background(), "TestAccountLock")
+		assert.NoError(t, err)
+
+		lock, err := datasource.GetAccountLockManager().GetLock(context.Background(), "TestAccountLock")
+		assert.Equal(t, datasource.ErrAccountLockNotExist, err)
+		assert.Nil(t, lock)
 	})
 }

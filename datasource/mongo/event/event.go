@@ -22,16 +22,9 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
-const (
-	increaseOne = 1
-	decreaseOne = -1
-)
-
 func init() {
 	log.Info("event init")
 	instanceEventHandler := NewInstanceEventHandler()
 	sd.EventProxy(instanceEventHandler.Type()).AddHandleFunc(instanceEventHandler.OnEvent)
 	sd.AddEventHandler(NewServiceEventHandler())
-	sd.AddEventHandler(NewSchemaSummaryEventHandler())
-	sd.AddEventHandler(NewDomainEventHandler())
 }

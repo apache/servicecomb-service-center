@@ -15,34 +15,32 @@
  * limitations under the License.
  */
 
-package event
+package metrics
 
 import (
-	"github.com/go-chassis/cari/discovery"
-
-	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
-	"github.com/apache/servicecomb-service-center/server/metrics"
+	metricsvc "github.com/apache/servicecomb-service-center/pkg/metrics"
+	"github.com/go-chassis/go-chassis/v2/pkg/metrics"
 )
 
-// DomainEventHandler report domain & project total number
-type DomainEventHandler struct {
-}
-
-func (h *DomainEventHandler) Type() sd.Type {
-	return kv.DOMAIN
-}
-
-func (h *DomainEventHandler) OnEvent(evt sd.KvEvent) {
-	action := evt.Type
-	switch action {
-	case discovery.EVT_INIT, discovery.EVT_CREATE:
-		metrics.ReportDomains(1)
-	case discovery.EVT_DELETE:
-		metrics.ReportDomains(-1)
+func Init(options Options) error {
+	if err := metrics.Init(); err != nil {
+		return err
 	}
-}
+	if err := metricsvc.Init(metricsvc.Options{
+		Interval:     options.Interval,
+		InstanceName: options.Instance,
+		SysMetrics: []string{
+			"process_resident_memory_bytes",
+			"process_cpu_seconds_total",
+			"go_threads",
+			"go_goroutines",
+		},
+	}); err != nil {
+		return err
+	}
 
-func NewDomainEventHandler() *DomainEventHandler {
-	return &DomainEventHandler{}
+	if err := InitMetaMetrics(); err != nil {
+		return err
+	}
+	return nil
 }

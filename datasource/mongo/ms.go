@@ -189,7 +189,7 @@ func (ds *MetadataManager) GetApplications(ctx context.Context, request *discove
 	apps := make([]string, 0, l)
 	hash := make(map[string]struct{}, l)
 	for _, svc := range services {
-		if !request.WithShared && apt.IsGlobal(discovery.MicroServiceToKey(util.ParseDomainProject(ctx), svc)) {
+		if !request.WithShared && datasource.IsGlobal(discovery.MicroServiceToKey(util.ParseDomainProject(ctx), svc)) {
 			continue
 		}
 		if _, ok := hash[svc.AppId]; ok {
@@ -205,7 +205,7 @@ func (ds *MetadataManager) GetApplications(ctx context.Context, request *discove
 }
 
 func (ds *MetadataManager) GetService(ctx context.Context, request *discovery.GetServiceRequest) (*discovery.GetServiceResponse, error) {
-	svc, ok := cache.GetServiceByID(request.ServiceId)
+	svc, ok := cache.GetServiceByID(ctx, request.ServiceId)
 	if !ok {
 		var err error
 		svc, err = dao.GetServiceByID(ctx, request.ServiceId)
@@ -501,7 +501,7 @@ func (ds *MetadataManager) GetServicesInfo(ctx context.Context, request *discove
 	allServiceDetails := make([]*discovery.ServiceDetail, 0, len(services))
 	domainProject := util.ParseDomainProject(ctx)
 	for _, mgSvc := range services {
-		if !request.WithShared && apt.IsGlobal(discovery.MicroServiceToKey(domainProject, mgSvc.Service)) {
+		if !request.WithShared && datasource.IsGlobal(discovery.MicroServiceToKey(domainProject, mgSvc.Service)) {
 			continue
 		}
 
@@ -1670,7 +1670,7 @@ func (ds *MetadataManager) GetInstances(ctx context.Context, request *discovery.
 
 	if len(request.ConsumerServiceId) > 0 {
 		var exist bool
-		service, exist = cache.GetServiceByID(request.ConsumerServiceId)
+		service, exist = cache.GetServiceByID(ctx, request.ConsumerServiceId)
 		if !exist {
 			service, err = dao.GetServiceByID(ctx, request.ConsumerServiceId)
 			if err != nil {
@@ -1691,7 +1691,7 @@ func (ds *MetadataManager) GetInstances(ctx context.Context, request *discovery.
 		}
 	}
 
-	provider, ok := cache.GetServiceByID(request.ProviderServiceId)
+	provider, ok := cache.GetServiceByID(ctx, request.ProviderServiceId)
 	if !ok {
 		provider, err = dao.GetServiceByID(ctx, request.ProviderServiceId)
 		if err != nil {
@@ -1826,7 +1826,7 @@ func (ds *MetadataManager) FindInstances(ctx context.Context, request *discovery
 		}, err
 	}
 
-	if apt.IsGlobal(provider) {
+	if datasource.IsGlobal(provider) {
 		return ds.findSharedServiceInstance(ctx, request, provider, rev)
 	}
 
@@ -2481,7 +2481,7 @@ func preProcessRegisterInstance(ctx context.Context, instance *discovery.MicroSe
 		}
 	}
 
-	cacheService, ok := cache.GetServiceByID(instance.ServiceId)
+	cacheService, ok := cache.GetServiceByID(ctx, instance.ServiceId)
 
 	var microService *discovery.MicroService
 	if ok {
@@ -2506,11 +2506,14 @@ func servicesBasicFilter(ctx context.Context, key *discovery.MicroServiceKey) ([
 	if len(tenant) != 2 {
 		return nil, errors.New("invalid 'domain' or 'project'")
 	}
+	serviceNameOption := mutil.ServiceServiceName(key.ServiceName)
+	if len(key.Alias) > 0 {
+		serviceNameOption = mutil.Or(serviceNameOption, mutil.ServiceAlias(key.Alias))
+	}
 	filter := mutil.NewDomainProjectFilter(tenant[0], tenant[1],
 		mutil.ServiceEnv(key.Environment),
 		mutil.ServiceAppID(key.AppId),
-		mutil.ServiceServiceName(key.ServiceName),
-		mutil.ServiceAlias(key.Alias),
+		serviceNameOption,
 	)
 	rangeIdx := strings.Index(key.Version, "-")
 	// if the version number is clear, need to add the version number to query
@@ -2533,11 +2536,14 @@ func filterServices(ctx context.Context, key *discovery.MicroServiceKey) ([]*mod
 		return nil, errors.New("invalid 'domain' or 'project'")
 	}
 	rangeIdx := strings.Index(key.Version, "-")
+	serviceNameOption := mutil.ServiceServiceName(key.ServiceName)
+	if len(key.Alias) > 0 {
+		serviceNameOption = mutil.Or(serviceNameOption, mutil.ServiceAlias(key.Alias))
+	}
 	filter := mutil.NewDomainProjectFilter(tenant[0], tenant[1],
 		mutil.ServiceEnv(key.Environment),
 		mutil.ServiceAppID(key.AppId),
-		mutil.ServiceServiceName(key.ServiceName),
-		mutil.ServiceAlias(key.Alias),
+		serviceNameOption,
 	)
 	switch {
 	case key.Version == "latest":
@@ -2738,7 +2744,7 @@ func allowAcrossDimension(ctx context.Context, providerService *model.Service, c
 			return fmt.Errorf("not allow across app access")
 		}
 	}
-	if !apt.IsGlobal(discovery.MicroServiceToKey(util.ParseTargetDomainProject(ctx), providerService.Service)) &&
+	if !datasource.IsGlobal(discovery.MicroServiceToKey(util.ParseTargetDomainProject(ctx), providerService.Service)) &&
 		providerService.Service.Environment != consumerService.Service.Environment {
 		return fmt.Errorf("not allow across environment access")
 	}

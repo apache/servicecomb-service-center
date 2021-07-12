@@ -26,4 +26,5 @@ type DataSource interface {
 	DependencyManager() DependencyManager
 	MetadataManager() MetadataManager
 	SCManager() SCManager
+	MetricsManager() MetricsManager
 }

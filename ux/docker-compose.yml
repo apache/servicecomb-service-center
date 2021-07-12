@@ -39,7 +39,7 @@ services:
         condition: service_healthy
 
   service-center:
-    image: servicecomb/service-center:2.0.0
+    image: servicecomb/service-center:latest
     container_name: sc
     ports:
       - 30100:30100
