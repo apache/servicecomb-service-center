@@ -45,6 +45,11 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
 )
 
+var (
+	ErrUndefinedSchemaID    = pb.NewError(pb.ErrUndefinedSchemaID, datasource.ErrUndefinedSchemaID.Error())
+	ErrModifySchemaNotAllow = pb.NewError(pb.ErrModifySchemaNotAllow, datasource.ErrModifySchemaNotAllow.Error())
+)
+
 type MetadataManager struct {
 	// SchemaEditable determines whether schema modification is allowed for
 	SchemaEditable bool
@@ -2304,7 +2309,7 @@ func (ds *MetadataManager) modifySchemas(ctx context.Context, domainProject stri
 }
 
 func (ds *MetadataManager) isSchemaEditable(service *pb.MicroService) bool {
-	return (len(service.Environment) != 0 && service.Environment != pb.ENV_PROD) || ds.SchemaEditable
+	return ds.SchemaEditable
 }
 
 func (ds *MetadataManager) modifySchema(ctx context.Context, serviceID string, schema *pb.Schema) *errsvc.Error {
@@ -2329,7 +2334,7 @@ func (ds *MetadataManager) modifySchema(ctx context.Context, serviceID string, s
 
 	if !ds.isSchemaEditable(microService) {
 		if len(microService.Schemas) != 0 && !isExist {
-			return pb.NewError(pb.ErrUndefinedSchemaID, "Non-existent schemaID can't be added request "+pb.ENV_PROD)
+			return ErrUndefinedSchemaID
 		}
 
 		key := path.GenerateServiceSchemaKey(domainProject, serviceID, schemaID)
@@ -2342,10 +2347,9 @@ func (ds *MetadataManager) modifySchema(ctx context.Context, serviceID string, s
 
 		if respSchema.Count != 0 {
 			if len(schema.Summary) == 0 {
-				log.Errorf(err, "%s mode, schema[%s/%s] already exists, can not be changed, operator: %s",
-					pb.ENV_PROD, serviceID, schemaID, remoteIP)
-				return pb.NewError(pb.ErrModifySchemaNotAllow,
-					"schema already exist, can not be changed request "+pb.ENV_PROD)
+				log.Errorf(err, "schema readonly mode, schema[%s/%s] already exists, can not be changed, operator: %s",
+					serviceID, schemaID, remoteIP)
+				return ErrModifySchemaNotAllow
 			}
 
 			exist, err := isExistSchemaSummary(ctx, domainProject, serviceID, schemaID)
@@ -2355,9 +2359,9 @@ func (ds *MetadataManager) modifySchema(ctx context.Context, serviceID string, s
 				return pb.NewError(pb.ErrInternal, err.Error())
 			}
 			if exist {
-				log.Errorf(err, "%s mode, schema[%s/%s] already exist, can not be changed, operator: %s",
-					pb.ENV_PROD, serviceID, schemaID, remoteIP)
-				return pb.NewError(pb.ErrModifySchemaNotAllow, "schema already exist, can not be changed request "+pb.ENV_PROD)
+				log.Errorf(err, "schema readonly mode, schema[%s/%s] already exist, can not be changed, operator: %s",
+					serviceID, schemaID, remoteIP)
+				return ErrModifySchemaNotAllow
 			}
 		}
 

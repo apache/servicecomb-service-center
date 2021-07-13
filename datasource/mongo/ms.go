@@ -54,6 +54,11 @@ import (
 
 const baseTen = 10
 
+var (
+	ErrUndefinedSchemaID    = discovery.NewError(discovery.ErrUndefinedSchemaID, datasource.ErrUndefinedSchemaID.Error())
+	ErrModifySchemaNotAllow = discovery.NewError(discovery.ErrModifySchemaNotAllow, datasource.ErrModifySchemaNotAllow.Error())
+)
+
 type MetadataManager struct {
 	// SchemaEditable determines whether schema modification is allowed for
 	SchemaEditable bool
@@ -1060,7 +1065,7 @@ func (ds *MetadataManager) modifySchema(ctx context.Context, serviceID string, s
 	var newSchemas []string
 	if !ds.isSchemaEditable(microservice) {
 		if len(microservice.Schemas) != 0 && !isExist {
-			return discovery.NewError(discovery.ErrUndefinedSchemaID, "Non-existent schemaID can't be added request "+discovery.ENV_PROD)
+			return ErrUndefinedSchemaID
 		}
 		filter = mutil.NewDomainProjectFilter(domain, project, mutil.ServiceID(serviceID), mutil.SchemaID(schema.SchemaId))
 		respSchema, err := dao.GetSchema(ctx, filter)
@@ -1071,13 +1076,12 @@ func (ds *MetadataManager) modifySchema(ctx context.Context, serviceID string, s
 			if len(schema.Summary) == 0 {
 				log.Error(fmt.Sprintf("modify schema %s %s failed, get schema summary failed, operator: %s",
 					serviceID, schema.SchemaId, remoteIP), err)
-				return discovery.NewError(discovery.ErrModifySchemaNotAllow,
-					"schema already exist, can not be changed request "+discovery.ENV_PROD)
+				return ErrModifySchemaNotAllow
 			}
 			if len(respSchema.SchemaSummary) != 0 {
 				log.Error(fmt.Sprintf("mode, schema %s %s already exist, can not be changed, operator: %s",
 					serviceID, schema.SchemaId, remoteIP), err)
-				return discovery.NewError(discovery.ErrModifySchemaNotAllow, "schema already exist, can not be changed request "+discovery.ENV_PROD)
+				return ErrModifySchemaNotAllow
 			}
 		}
 		if len(microservice.Schemas) == 0 {
@@ -1333,7 +1337,7 @@ func (ds *MetadataManager) UpdateRule(ctx context.Context, request *discovery.Up
 }
 
 func (ds *MetadataManager) isSchemaEditable(service *discovery.MicroService) bool {
-	return (len(service.Environment) != 0 && service.Environment != discovery.ENV_PROD) || ds.SchemaEditable
+	return ds.SchemaEditable
 }
 
 func ServiceExistID(ctx context.Context, serviceID string) (bool, error) {
