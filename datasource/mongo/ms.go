@@ -2458,8 +2458,8 @@ func preProcessRegisterInstance(ctx context.Context, instance *discovery.MicroSe
 	instance.ModTimestamp = instance.Timestamp
 
 	// 这里应该根据租约计时
-	renewalInterval := apt.RegistryDefaultLeaseRenewalinterval
-	retryTimes := apt.RegistryDefaultLeaseRetrytimes
+	renewalInterval := apt.RegistryDefaultLeaseRenewalInterval
+	retryTimes := apt.RegistryDefaultLeaseRetryTimes
 	if instance.HealthCheck == nil {
 		instance.HealthCheck = &discovery.HealthCheck{
 			Mode:     discovery.CHECK_BY_HEARTBEAT,

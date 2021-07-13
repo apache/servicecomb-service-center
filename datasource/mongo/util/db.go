@@ -134,7 +134,7 @@ func In(data interface{}) Option {
 	}
 }
 
-func Nin(data interface{}) Option {
+func NotIn(data interface{}) Option {
 	return func(filter bson.M) {
 		filter["$nin"] = data
 	}
@@ -207,6 +207,7 @@ func InstanceInstanceID(instanceID string) Option {
 	}
 }
 
+// ServiceServiceID serviceID can be string or bson.M
 func ServiceServiceID(serviceID interface{}) Option {
 	return func(filter bson.M) {
 		filter[ConnectWithDot([]string{model.ColumnService, model.ColumnServiceID})] = serviceID

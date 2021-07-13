@@ -39,8 +39,8 @@ const (
 	RegistryServiceName  = "SERVICECENTER"
 	RegistryServiceAlias = "SERVICECENTER"
 
-	RegistryDefaultLeaseRenewalinterval int32 = 30
-	RegistryDefaultLeaseRetrytimes      int32 = 3
+	RegistryDefaultLeaseRenewalInterval int32 = 30
+	RegistryDefaultLeaseRetryTimes      int32 = 3
 
 	CtxScSelf util.CtxKey = "_sc_self"
 )
@@ -70,8 +70,8 @@ func InitRegistration() {
 		Status: discovery.MSI_UP,
 		HealthCheck: &discovery.HealthCheck{
 			Mode:     discovery.CHECK_BY_HEARTBEAT,
-			Interval: RegistryDefaultLeaseRenewalinterval,
-			Times:    RegistryDefaultLeaseRetrytimes,
+			Interval: RegistryDefaultLeaseRenewalInterval,
+			Times:    RegistryDefaultLeaseRetryTimes,
 		},
 	}
 }
