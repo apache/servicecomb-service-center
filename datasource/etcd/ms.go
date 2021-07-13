@@ -541,21 +541,6 @@ func (ds *MetadataManager) UnregisterService(ctx context.Context, request *pb.De
 	}, err
 }
 
-func (ds *MetadataManager) GetServiceCount(ctx context.Context, request *pb.GetServiceCountRequest) (*pb.GetServiceCountResponse, error) {
-	domainProject := request.Domain
-	if request.Project != "" {
-		domainProject += path.SPLIT + request.Project
-	}
-	count, err := serviceUtil.GetOneDomainProjectServiceCount(ctx, domainProject)
-	if err != nil {
-		return nil, err
-	}
-	return &pb.GetServiceCountResponse{
-		Response: pb.CreateResponse(pb.ResponseSuccess, "Get service count by domain project successfully"),
-		Count:    count,
-	}, nil
-}
-
 func (ds *MetadataManager) RegisterInstance(ctx context.Context, request *pb.RegisterInstanceRequest) (
 	*pb.RegisterInstanceResponse, error) {
 	remoteIP := util.GetIPFromContext(ctx)
@@ -1365,26 +1350,6 @@ func (ds *MetadataManager) GetAllInstances(ctx context.Context, request *pb.GetA
 		resp.Instances = append(resp.Instances, instance)
 	}
 	return resp, nil
-}
-
-func (ds *MetadataManager) GetInstanceCount(ctx context.Context, request *pb.GetServiceCountRequest) (*pb.GetServiceCountResponse, error) {
-	domainProject := request.Domain
-	if request.Project != "" {
-		domainProject += path.SPLIT + request.Project
-	}
-	key := path.GetInstanceRootKey(domainProject) + path.SPLIT
-	opts := append(serviceUtil.FromContext(ctx),
-		client.WithStrKey(key),
-		client.WithPrefix(),
-		client.WithCountOnly())
-	kvs, err := kv.Store().Instance().Search(ctx, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return &pb.GetServiceCountResponse{
-		Response: pb.CreateResponse(pb.ResponseSuccess, "Get instance count by domain/project successfully"),
-		Count:    kvs.Count,
-	}, nil
 }
 
 func (ds *MetadataManager) ModifySchemas(ctx context.Context, request *pb.ModifySchemasRequest) (
