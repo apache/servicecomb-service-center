@@ -60,8 +60,8 @@ var (
 )
 
 type MetadataManager struct {
-	// SchemaEditable determines whether schema modification is allowed for
-	SchemaEditable bool
+	// SchemaNotEditable determines whether schema modification is not allowed
+	SchemaNotEditable bool
 	// InstanceTTL options
 	InstanceTTL int64
 }
@@ -923,7 +923,7 @@ func (ds *MetadataManager) modifySchemas(ctx context.Context, service *discovery
 
 	var schemasOps []mongo.WriteModel
 	var serviceOps []mongo.WriteModel
-	if !ds.isSchemaEditable(service) {
+	if !ds.isSchemaEditable() {
 		if len(service.Schemas) == 0 {
 			res := quota.NewApplyQuotaResource(quota.TypeSchema, util.ParseDomainProject(ctx), serviceID, int64(len(nonExistSchemaIds)))
 			errQuota := quota.Apply(ctx, res)
@@ -1063,7 +1063,7 @@ func (ds *MetadataManager) modifySchema(ctx context.Context, serviceID string, s
 		}
 	}
 	var newSchemas []string
-	if !ds.isSchemaEditable(microservice) {
+	if !ds.isSchemaEditable() {
 		if len(microservice.Schemas) != 0 && !isExist {
 			return ErrUndefinedSchemaID
 		}
@@ -1336,8 +1336,8 @@ func (ds *MetadataManager) UpdateRule(ctx context.Context, request *discovery.Up
 	}, nil
 }
 
-func (ds *MetadataManager) isSchemaEditable(service *discovery.MicroService) bool {
-	return ds.SchemaEditable
+func (ds *MetadataManager) isSchemaEditable() bool {
+	return !ds.SchemaNotEditable
 }
 
 func ServiceExistID(ctx context.Context, serviceID string) (bool, error) {

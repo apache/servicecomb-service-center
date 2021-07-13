@@ -46,7 +46,6 @@ func init() {
 	}
 	datasource.Init(datasource.Options{
 		Kind:                datasource.Kind(t.(string)),
-		SchemaEditable:      true,
 		ReleaseAccountAfter: 3 * time.Second,
 	})
 	core.ServiceAPI = disco.AssembleResources()

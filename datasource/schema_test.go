@@ -815,14 +815,14 @@ func genLocalDatasource(editable bool) datasource.DataSource {
 	}
 	if t == "etcd" {
 		ds, _ := etcd.NewDataSource(datasource.Options{
-			Kind:           "etcd",
-			SchemaEditable: editable,
+			Kind:              "etcd",
+			SchemaNotEditable: !editable,
 		})
 
 		return ds
 	}
 	ds, _ := mongo.NewDataSource(datasource.Options{
-		SchemaEditable: editable,
+		SchemaNotEditable: !editable,
 	})
 	return ds
 }
