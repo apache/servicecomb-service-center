@@ -45,17 +45,22 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
 )
 
+var (
+	ErrUndefinedSchemaID    = pb.NewError(pb.ErrUndefinedSchemaID, datasource.ErrUndefinedSchemaID.Error())
+	ErrModifySchemaNotAllow = pb.NewError(pb.ErrModifySchemaNotAllow, datasource.ErrModifySchemaNotAllow.Error())
+)
+
 type MetadataManager struct {
-	// SchemaEditable determines whether schema modification is allowed for
-	SchemaEditable bool
+	// SchemaNotEditable determines whether schema modification is not allowed
+	SchemaNotEditable bool
 	// InstanceTTL options
 	InstanceTTL int64
 }
 
-func newMetadataManager(SchemaEditable bool, InstanceTTL int64) datasource.MetadataManager {
+func newMetadataManager(schemaNotEditable bool, instanceTTL int64) datasource.MetadataManager {
 	return &MetadataManager{
-		SchemaEditable: SchemaEditable,
-		InstanceTTL:    InstanceTTL,
+		SchemaNotEditable: schemaNotEditable,
+		InstanceTTL:       instanceTTL,
 	}
 }
 
@@ -2167,7 +2172,7 @@ func (ds *MetadataManager) modifySchemas(ctx context.Context, domainProject stri
 		datasource.SchemasAnalysis(schemas, schemasFromDatabase, service.Schemas)
 
 	pluginOps := make([]client.PluginOp, 0)
-	if !ds.isSchemaEditable(service) {
+	if !ds.isSchemaEditable() {
 		if len(service.Schemas) == 0 {
 			res := quota.NewApplyQuotaResource(quota.TypeSchema, domainProject, serviceID, int64(len(nonExistSchemaIds)))
 			errQuota := quota.Apply(ctx, res)
@@ -2268,8 +2273,8 @@ func (ds *MetadataManager) modifySchemas(ctx context.Context, domainProject stri
 	return nil
 }
 
-func (ds *MetadataManager) isSchemaEditable(service *pb.MicroService) bool {
-	return (len(service.Environment) != 0 && service.Environment != pb.ENV_PROD) || ds.SchemaEditable
+func (ds *MetadataManager) isSchemaEditable() bool {
+	return !ds.SchemaNotEditable
 }
 
 func (ds *MetadataManager) modifySchema(ctx context.Context, serviceID string, schema *pb.Schema) *errsvc.Error {
@@ -2292,9 +2297,9 @@ func (ds *MetadataManager) modifySchema(ctx context.Context, serviceID string, s
 	var pluginOps []client.PluginOp
 	isExist := isExistSchemaID(microService, []*pb.Schema{schema})
 
-	if !ds.isSchemaEditable(microService) {
+	if !ds.isSchemaEditable() {
 		if len(microService.Schemas) != 0 && !isExist {
-			return pb.NewError(pb.ErrUndefinedSchemaID, "Non-existent schemaID can't be added request "+pb.ENV_PROD)
+			return ErrUndefinedSchemaID
 		}
 
 		key := path.GenerateServiceSchemaKey(domainProject, serviceID, schemaID)
@@ -2307,10 +2312,9 @@ func (ds *MetadataManager) modifySchema(ctx context.Context, serviceID string, s
 
 		if respSchema.Count != 0 {
 			if len(schema.Summary) == 0 {
-				log.Errorf(err, "%s mode, schema[%s/%s] already exists, can not be changed, operator: %s",
-					pb.ENV_PROD, serviceID, schemaID, remoteIP)
-				return pb.NewError(pb.ErrModifySchemaNotAllow,
-					"schema already exist, can not be changed request "+pb.ENV_PROD)
+				log.Errorf(err, "schema readonly mode, schema[%s/%s] already exists, can not be changed, operator: %s",
+					serviceID, schemaID, remoteIP)
+				return ErrModifySchemaNotAllow
 			}
 
 			exist, err := isExistSchemaSummary(ctx, domainProject, serviceID, schemaID)
@@ -2320,9 +2324,9 @@ func (ds *MetadataManager) modifySchema(ctx context.Context, serviceID string, s
 				return pb.NewError(pb.ErrInternal, err.Error())
 			}
 			if exist {
-				log.Errorf(err, "%s mode, schema[%s/%s] already exist, can not be changed, operator: %s",
-					pb.ENV_PROD, serviceID, schemaID, remoteIP)
-				return pb.NewError(pb.ErrModifySchemaNotAllow, "schema already exist, can not be changed request "+pb.ENV_PROD)
+				log.Errorf(err, "schema readonly mode, schema[%s/%s] already exist, can not be changed, operator: %s",
+					serviceID, schemaID, remoteIP)
+				return ErrModifySchemaNotAllow
 			}
 		}
 
