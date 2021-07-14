@@ -154,8 +154,12 @@ func (d *Distributor) DeleteMatchGroup(id string, project string) error {
 		return err
 	}
 
+	labels := make(map[string]string)
+	labels[KeyApp] = policy.Selector.App
+	labels[KeyEnvironment] = policy.Selector.Environment
 	ops := []kie.GetOption{
 		kie.WithKey("wildcard(" + KeyPrefix + "*." + policy.Name + ")"),
+		kie.WithLabels(labels),
 		kie.WithRevision(0),
 		kie.WithGetProject(project),
 	}
