@@ -198,6 +198,7 @@ func (d *Distributor) Display(project, app, env string) ([]byte, error) {
 		for _, policy := range policies.Data {
 			item, err := d.transform(policy, kind)
 			if err != nil {
+				log.Warn(fmt.Sprintf("transform config failed: key is [%s], value is [%s]", policy.Key, policy.Value))
 				continue
 			}
 			policyMap[item.Name+kind] = item
@@ -207,6 +208,7 @@ func (d *Distributor) Display(project, app, env string) ([]byte, error) {
 	for _, item := range list.Data {
 		match, err := d.transform(item, KindMatchGroup)
 		if err != nil {
+			log.Warn(fmt.Sprintf("transform config failed: key is [%s], value is [%s]", item.Key, item.Value))
 			continue
 
 		}
@@ -243,6 +245,7 @@ func (d *Distributor) List(kind, project, app, env string) ([]byte, error) {
 	for _, item := range list.Data {
 		policy, err := d.transform(item, kind)
 		if err != nil {
+			log.Warn(fmt.Sprintf("transform config failed: key is [%s], value is [%s]", item.Key, item.Value))
 			continue
 		}
 		r = append(r, policy)
