@@ -27,6 +27,7 @@ require (
 	github.com/jinzhu/copier v0.3.0
 	github.com/karlseguin/ccache v2.0.3-0.20170217060820-3ba9789cfd2c+incompatible
 	github.com/labstack/echo/v4 v4.1.18-0.20201218141459-936c48a17e97
+	github.com/mitchellh/mapstructure v1.4.1
 	github.com/natefinch/lumberjack v0.0.0-20170531160350-a96e63847dc3
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/onsi/ginkgo v1.15.0
@@ -45,6 +46,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.7.0
 	github.com/urfave/cli v1.22.4
+	github.com/wasmerio/wasmer-go v1.0.3 // indirect
 	github.com/widuu/gojson v0.0.0-20170212122013-7da9d2cd949b
 	go.mongodb.org/mongo-driver v1.4.2
 	go.uber.org/zap v1.13.0
