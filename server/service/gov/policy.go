@@ -1,74 +1,48 @@
 package gov
 
 import (
+	"errors"
 	"fmt"
+	"strings"
+
+	"k8s.io/kube-openapi/pkg/validation/strfmt"
+	"k8s.io/kube-openapi/pkg/validation/validate"
+
+	"k8s.io/kube-openapi/pkg/validation/spec"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"gopkg.in/yaml.v2"
 )
 
 type ValueType string
 
-var (
-	MsgRequired    = "%s is required"
-	MsgTooSmall    = "%s should be bigger than %d"
-	MsgTooBig      = "%s should be smaller than %d"
-	MsgTypeInt     = "%s must be a number"
-	MsgTypeBool    = "%s must be a bool"
-	MsgSkip        = "skip checking %s"
-	MsgUnknownType = "%s is unknown type"
-)
-
 //policies saves kind and policy schemas
-var policies = make(map[string]*PolicySchema, 0)
-
-const (
-	ValueTypeInt    ValueType = "int"
-	ValueTypeString ValueType = "string"
-	ValueTypeMap    ValueType = "map" // TODO not supported
-	ValueTypeList   ValueType = "list"
-	ValueTypeBool   ValueType = "bool"
-)
-
-type validate func(k string, v interface{}, attribute *PolicyAttribute) error
-
-type PolicySchema struct {
-	Attributes map[string]*PolicyAttribute
-}
-type PolicyAttribute struct {
-	Type            ValueType
-	Required        bool
-	Min             int
-	Max             int
-	NestedAttribute map[string]*PolicyAttribute
-}
-
-func (schema *PolicySchema) Validate(spec []byte) error {
-	m := make(map[string]interface{})
-	if err := yaml.Unmarshal(spec, m); err != nil {
-		return err
-	}
-	for k, v := range m {
-		a, ok := schema.Attributes[k]
-		if !ok {
-			log.Debug(fmt.Sprintf(MsgSkip, k))
-			continue
-		}
-		err := validateAny(k, v, a)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
+var policies = make(map[string]*spec.Schema)
 
 //RegisterPolicy register a contract of one kind of policy
 //this API is not thread safe, only use it during sc init
-func RegisterPolicy(kind string, schema *PolicySchema) {
+func RegisterPolicy(kind string, schema *spec.Schema) {
 	policies[kind] = schema
 }
 
-//RegisterValidateFunc register a validate func for one type of value
-//this API is not thread safe, only use it during sc init
-func RegisterValidateFunc(t ValueType, f validate) {
-	validators[t] = f
+//ValidateSpec validates spec attributes
+func ValidateSpec(kind string, spec interface{}) error {
+	schema, ok := policies[kind]
+	if !ok {
+		log.Warn(fmt.Sprintf("can not recognize %s", kind))
+		return nil
+	}
+	validator := validate.NewSchemaValidator(schema, nil, "", strfmt.Default)
+	errs := validator.Validate(spec).Errors
+	if len(errs) != 0 {
+		var str []string
+		for i, err := range errs {
+			if i != 0 {
+				str = append(str, ";", err.Error())
+			} else {
+				str = append(str, err.Error())
+			}
+		}
+		return errors.New(strings.Join(str, ";"))
+	}
+	return nil
 }

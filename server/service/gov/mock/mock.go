@@ -38,27 +38,23 @@ const MatchGroup = "match-group"
 
 var PolicyNames = []string{"retry", "rateLimiting", "circuitBreaker", "bulkhead"}
 
-func (d *Distributor) Create(kind, project string, spec []byte) ([]byte, error) {
-	p := &gov.Policy{}
-	err := json.Unmarshal(spec, p)
+func (d *Distributor) Create(kind, project string, p *gov.Policy) ([]byte, error) {
 	p.ID = uuid.NewV4().String()
 	p.Kind = kind
 	log.Println(fmt.Sprintf("create %v", &p))
 	d.lbPolicies[p.GovernancePolicy.ID] = p
-	return []byte(p.ID), err
+	return []byte(p.ID), nil
 }
 
-func (d *Distributor) Update(kind, id, project string, spec []byte) error {
+func (d *Distributor) Update(kind, id, project string, p *gov.Policy) error {
 	if d.lbPolicies[id] == nil {
 		return fmt.Errorf("id not exsit")
 	}
-	p := &gov.Policy{}
-	err := json.Unmarshal(spec, p)
 	p.ID = id
 	p.Kind = kind
 	log.Println("update ", p)
 	d.lbPolicies[p.GovernancePolicy.ID] = p
-	return err
+	return nil
 }
 
 func (d *Distributor) Delete(kind, id, project string) error {

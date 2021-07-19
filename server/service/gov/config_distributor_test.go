@@ -39,9 +39,8 @@ var id = ""
 func init() {
 	config.App = &config.AppConfig{
 		Gov: &config.Gov{
-			DistOptions: []config.DistributorOptions{
-				{
-					Name: "mockServer",
+			DistMap: map[string]config.DistributorOptions{
+				"mock": {
 					Type: "mock",
 				},
 			},
@@ -54,7 +53,7 @@ func init() {
 }
 
 func TestCreate(t *testing.T) {
-	b, _ := json.MarshalIndent(&gov.Policy{
+	res, err := svc.Create(MockKind, Project, &gov.Policy{
 		GovernancePolicy: &gov.GovernancePolicy{
 			Name: "Traffic2adminAPI",
 			Selector: &gov.Selector{
@@ -62,16 +61,15 @@ func TestCreate(t *testing.T) {
 				Environment: MockEnv,
 			},
 		},
-		Spec: &gov.LBSpec{RetryNext: 3, MarkerName: "traffic2adminAPI"},
-	}, "", "  ")
-	res, err := svc.Create(MockKind, Project, b)
+		Spec: map[string]interface{}{"retryNext": 3, "match": "traffic2adminAPI"},
+	})
 	id = string(res)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, id)
 }
 
 func TestUpdate(t *testing.T) {
-	b, _ := json.MarshalIndent(&gov.Policy{
+	err := svc.Update(MockKind, id, Project, &gov.Policy{
 		GovernancePolicy: &gov.GovernancePolicy{
 			Name: "Traffic2adminAPI",
 			Selector: &gov.Selector{
@@ -79,14 +77,13 @@ func TestUpdate(t *testing.T) {
 				Environment: MockEnv,
 			},
 		},
-		Spec: &gov.LBSpec{RetryNext: 3, MarkerName: "traffic2adminAPI"},
-	}, "", "  ")
-	err := svc.Update(MockKind, id, Project, b)
+		Spec: map[string]interface{}{"retryNext": 3, "match": "traffic2adminAPI"},
+	})
 	assert.NoError(t, err)
 }
 
 func TestDisplay(t *testing.T) {
-	b, _ := json.MarshalIndent(&gov.Policy{
+	res, err := svc.Create(MatchGroup, Project, &gov.Policy{
 		GovernancePolicy: &gov.GovernancePolicy{
 			Name: "Traffic2adminAPI",
 			Selector: &gov.Selector{
@@ -94,8 +91,7 @@ func TestDisplay(t *testing.T) {
 				Environment: MockEnv,
 			},
 		},
-	}, "", "  ")
-	res, err := svc.Create(MatchGroup, Project, b)
+	})
 	id = string(res)
 	assert.NoError(t, err)
 	policies := &[]*gov.DisplayData{}
