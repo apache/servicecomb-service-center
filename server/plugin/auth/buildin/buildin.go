@@ -49,6 +49,7 @@ func (ba *TokenAuthenticator) Identify(req *http.Request) error {
 	if !rbacsvc.Enabled() {
 		return nil
 	}
+
 	pattern, ok := req.Context().Value(rest.CtxMatchPattern).(string)
 	if !ok {
 		pattern = req.URL.Path
@@ -140,8 +141,8 @@ func checkPerm(roleList []string, project string, req *http.Request, apiPattern,
 		return true, nil, nil
 	}
 	//todo fast check for dev role
-	targetResource, ok := req.Context().Value(authHandler.CtxResourceScopes).(*auth.ResourceScope)
-	if !ok || targetResource == nil {
+	targetResource := FromRequest(req)
+	if targetResource == nil {
 		return false, nil, errors.New("no valid resouce scope")
 	}
 	//TODO add project
@@ -153,11 +154,4 @@ func mustAuth(pattern string) bool {
 		return false
 	}
 	return rbac.MustAuth(pattern)
-}
-
-func (ba *TokenAuthenticator) ResourceScopes(r *http.Request) *auth.ResourceScope {
-	if !rbacsvc.Enabled() {
-		return nil
-	}
-	return FromRequest(r)
 }

@@ -23,15 +23,14 @@ import (
 	"errors"
 	"io/ioutil"
 
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/server/config"
+	"github.com/apache/servicecomb-service-center/server/plugin/security/cipher"
 	"github.com/go-chassis/cari/pkg/errsvc"
 	"github.com/go-chassis/cari/rbac"
 	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-chassis/v2/security/authr"
 	"github.com/go-chassis/go-chassis/v2/security/secret"
-
-	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/server/config"
-	"github.com/apache/servicecomb-service-center/server/plugin/security/cipher"
 )
 
 const (
@@ -45,11 +44,18 @@ var (
 	ErrWrongPassword        = errors.New("current pwd is wrong")
 	ErrSamePassword         = errors.New("the password can not be same as old one")
 	ErrEmptyPassword        = errors.New("empty password")
+
+	AccountRoot = rbac.Account{
+		Name:  RootName,
+		Roles: []string{rbac.RoleAdmin},
+	}
 )
 
-//Init decide whether enable rbac function and save root account to db
-// if db has root account, abort creating.
+//Init decide whether enable rbac function and save the build-in roles to db
 func Init() {
+	// build-in role init
+	initBuildInRole()
+
 	if !Enabled() {
 		log.Info("rbac is disabled")
 		return
@@ -59,19 +65,21 @@ func Init() {
 	if err != nil {
 		log.Fatal("can not enable auth module", err)
 	}
-	// role init before account
-	initBuildInRole()
+	initBuildInAccount()
+	readPrivateKey()
+	readPublicKey()
+	rbac.Add2WhiteAPIList(APITokenGranter)
+	log.Info("rbac is enabled")
+}
+
+func initBuildInAccount() {
 	accountExist, err := AccountExist(context.Background(), RootName)
 	if err != nil {
 		log.Fatal("can not enable auth module", err)
 	}
 	if !accountExist {
-		initFirstTime(RootName)
+		initFirstTime()
 	}
-	readPrivateKey()
-	readPublicKey()
-	rbac.Add2WhiteAPIList(APITokenGranter)
-	log.Info("rbac is enabled")
 }
 
 //read key to memory
@@ -106,18 +114,15 @@ func readPublicKey() {
 	}
 	log.Info("read public key success")
 }
-func initFirstTime(admin string) {
+func initFirstTime() {
 	//handle root account
 	pwd, err := getPassword()
 	if err != nil {
 		log.Fatal("can not enable rbac, password is empty", nil)
 	}
-	a := &rbac.Account{
-		Name:     admin,
-		Password: pwd,
-		Roles:    []string{rbac.RoleAdmin},
-	}
-	err = CreateAccount(context.Background(), a)
+	a := AccountRoot
+	a.Password = pwd
+	err = CreateAccount(context.Background(), &a)
 	if err == nil {
 		log.Info("root account init success")
 		return
