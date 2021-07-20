@@ -125,10 +125,12 @@ func (s *MicroServiceInstanceService) FindInstances(w http.ResponseWriter, r *ht
 	if len(keys) > 0 {
 		ids = strings.Split(keys, ",")
 	}
+	serviceName := query.Get("serviceName")
 	request := &pb.FindInstancesRequest{
 		ConsumerServiceId: r.Header.Get("X-ConsumerId"),
 		AppId:             query.Get("appId"),
-		ServiceName:       query.Get("serviceName"),
+		ServiceName:       serviceName,
+		Alias:             serviceName,
 		VersionRule:       query.Get("version"),
 		Environment:       query.Get("env"),
 		Tags:              ids,

@@ -194,6 +194,7 @@ func (d *Distributor) Display(project, app, env string) ([]byte, error) {
 		for _, policy := range policies.Data {
 			item, err := d.transform(policy, kind)
 			if err != nil {
+				log.Warn(fmt.Sprintf("transform config failed: key is [%s], value is [%s]", policy.Key, policy.Value))
 				continue
 			}
 			policyMap[item.Name+kind] = item
@@ -203,7 +204,9 @@ func (d *Distributor) Display(project, app, env string) ([]byte, error) {
 	for _, item := range list.Data {
 		match, err := d.transform(item, KindMatchGroup)
 		if err != nil {
-			return nil, err
+			log.Warn(fmt.Sprintf("transform config failed: key is [%s], value is [%s]", item.Key, item.Value))
+			continue
+
 		}
 		var policies []*gov.Policy
 		for _, kind := range PolicyNames {
@@ -238,7 +241,8 @@ func (d *Distributor) List(kind, project, app, env string) ([]byte, error) {
 	for _, item := range list.Data {
 		policy, err := d.transform(item, kind)
 		if err != nil {
-			return nil, err
+			log.Warn(fmt.Sprintf("transform config failed: key is [%s], value is [%s]", item.Key, item.Value))
+			continue
 		}
 		r = append(r, policy)
 	}
@@ -379,7 +383,7 @@ func (d *Distributor) transform(kv *kie.KVDoc, kind string) (*gov.Policy, error)
 	specJSON, _ := yaml.YAMLToJSON([]byte(kv.Value))
 	err := json.Unmarshal(specJSON, &spec)
 	if err != nil {
-		log.Fatal("kie transform kv failed", err)
+		log.Error("kie transform kv failed", err)
 		return nil, err
 	}
 	goc.Kind = kind
