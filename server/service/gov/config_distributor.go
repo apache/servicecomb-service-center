@@ -41,7 +41,7 @@ type ConfigDistributor interface {
 	Create(kind, project string, spec []byte) ([]byte, error)
 	Update(kind, id, project string, spec []byte) error
 	Delete(kind, id, project string) error
-	Display(project, app, env string) ([]byte, error)
+	Display(project, app, env string, authorization []string) ([]byte, error)
 	List(kind, project, app, env string) ([]byte, error)
 	Get(kind, id, project string) ([]byte, error)
 	Type() string
@@ -89,9 +89,9 @@ func List(kind, project, app, env string) ([]byte, error) {
 	return nil, nil
 }
 
-func Display(project, app, env string) ([]byte, error) {
+func Display(project, app, env string, authorization []string) ([]byte, error) {
 	for _, cd := range distributors {
-		return cd.Display(project, app, env)
+		return cd.Display(project, app, env, authorization)
 	}
 	return nil, nil
 }

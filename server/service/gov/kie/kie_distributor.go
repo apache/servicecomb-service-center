@@ -163,7 +163,7 @@ func (d *Distributor) DeleteMatchGroup(id string, project string) error {
 		kie.WithRevision(0),
 		kie.WithGetProject(project),
 	}
-	idList, _, err := d.client.List(context.TODO(), ops...)
+	idList, _, err := d.client.List(context.TODO(), nil, ops...)
 	if err != nil {
 		log.Error("kie list failed", err)
 		return err
@@ -184,14 +184,14 @@ func (d *Distributor) DeleteMatchGroup(id string, project string) error {
 	return nil
 }
 
-func (d *Distributor) Display(project, app, env string) ([]byte, error) {
-	list, _, err := d.listDataByKind(KindMatchGroup, project, app, env)
+func (d *Distributor) Display(project, app, env string, authorization []string) ([]byte, error) {
+	list, _, err := d.listDataByKind(KindMatchGroup, project, app, env, authorization)
 	if err != nil {
 		return nil, err
 	}
 	policyMap := make(map[string]*gov.Policy)
 	for _, kind := range PolicyNames {
-		policies, _, err := d.listDataByKind(kind, project, app, env)
+		policies, _, err := d.listDataByKind(kind, project, app, env, authorization)
 		if err != nil {
 			continue
 		}
@@ -237,7 +237,7 @@ func setAliasIfEmpty(val interface{}, name string) {
 }
 
 func (d *Distributor) List(kind, project, app, env string) ([]byte, error) {
-	list, _, err := d.listDataByKind(kind, project, app, env)
+	list, _, err := d.listDataByKind(kind, project, app, env, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -319,7 +319,7 @@ func toSnake(name string) string {
 	return buffer.String()
 }
 
-func (d *Distributor) listDataByKind(kind, project, app, env string) (*kie.KVResponse, int, error) {
+func (d *Distributor) listDataByKind(kind, project, app, env string, authorization []string) (*kie.KVResponse, int, error) {
 	ops := []kie.GetOption{
 		kie.WithKey("beginWith(" + toGovKeyPrefix(kind) + ")"),
 		kie.WithRevision(0),
@@ -335,7 +335,7 @@ func (d *Distributor) listDataByKind(kind, project, app, env string) (*kie.KVRes
 	if len(labels) > 0 {
 		ops = append(ops, kie.WithLabels(labels))
 	}
-	return d.client.List(context.TODO(), ops...)
+	return d.client.List(context.TODO(), authorization, ops...)
 }
 
 func (d *Distributor) generateID(project string, p *gov.Policy) error {
@@ -343,7 +343,7 @@ func (d *Distributor) generateID(project string, p *gov.Policy) error {
 		return nil
 	}
 	kind := KindMatchGroup
-	list, _, err := d.listDataByKind(kind, project, p.Selector.App, p.Selector.Environment)
+	list, _, err := d.listDataByKind(kind, project, p.Selector.App, p.Selector.Environment, nil)
 	if err != nil {
 		return err
 	}

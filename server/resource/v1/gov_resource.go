@@ -97,10 +97,11 @@ func (t *Governance) ListOrDisPlay(w http.ResponseWriter, r *http.Request) {
 	project := query.Get(ProjectKey)
 	app := query.Get(AppKey)
 	environment := query.Get(EnvironmentKey)
+	authorization := r.Header["authorization"]
 	var body []byte
 	var err error
 	if kind == DisplayKey {
-		body, err = gov.Display(project, app, environment)
+		body, err = gov.Display(project, app, environment, authorization)
 	} else {
 		body, err = gov.List(kind, project, app, environment)
 	}
