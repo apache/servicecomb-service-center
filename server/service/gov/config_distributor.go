@@ -20,6 +20,7 @@ package gov
 import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
+	"net/http"
 )
 
 const (
@@ -40,8 +41,8 @@ var distributorPlugins = map[string]NewDistributors{}
 type ConfigDistributor interface {
 	Create(kind, project string, spec []byte) ([]byte, error)
 	Update(kind, id, project string, spec []byte) error
-	Delete(kind, id, project string) error
-	Display(project, app, env string, authorization []string) ([]byte, error)
+	Delete(kind, id, project string, r *http.Request) error
+	Display(project, app, env string, r *http.Request) ([]byte, error)
 	List(kind, project, app, env string) ([]byte, error)
 	Get(kind, id, project string) ([]byte, error)
 	Type() string
@@ -89,9 +90,9 @@ func List(kind, project, app, env string) ([]byte, error) {
 	return nil, nil
 }
 
-func Display(project, app, env string, authorization []string) ([]byte, error) {
+func Display(project, app, env string, r *http.Request) ([]byte, error) {
 	for _, cd := range distributors {
-		return cd.Display(project, app, env, authorization)
+		return cd.Display(project, app, env, r)
 	}
 	return nil, nil
 }
@@ -103,9 +104,9 @@ func Get(kind, id, project string) ([]byte, error) {
 	return nil, nil
 }
 
-func Delete(kind, id, project string) error {
+func Delete(kind, id, project string, r *http.Request) error {
 	for _, cd := range distributors {
-		return cd.Delete(kind, id, project)
+		return cd.Delete(kind, id, project, r)
 	}
 	return nil
 }

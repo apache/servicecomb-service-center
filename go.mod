@@ -2,7 +2,7 @@ module github.com/apache/servicecomb-service-center
 
 replace (
 	github.com/apache/thrift => github.com/apache/thrift v0.0.0-20180125231006-3d556248a8b9
-	github.com/go-chassis/kie-client v0.1.0 => github.com/Sphairis/kie-client v0.1.1-0.20210721032823-8d8a83f4808f
+	github.com/go-chassis/kie-client v0.1.0 => github.com/Sphairis/kie-client v0.1.1-0.20210721085654-ba7651341d6f
 	google.golang.org/grpc => google.golang.org/grpc v1.26.0
 )
 

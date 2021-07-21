@@ -63,6 +63,8 @@ github.com/Sphairis/kie-client v0.1.1-0.20210721032329-c1bd7fe2af89 h1:sVM4nU9MV
 github.com/Sphairis/kie-client v0.1.1-0.20210721032329-c1bd7fe2af89/go.mod h1:UTdbtyN5ge/v9DmQzdVRxQP7z51Q4z6hyl+W6ZpUHFM=
 github.com/Sphairis/kie-client v0.1.1-0.20210721032823-8d8a83f4808f h1:5G/LxLBdHCL+W2uKbAxpVJdVf1ncJ4vkJ6hyc9qQb3c=
 github.com/Sphairis/kie-client v0.1.1-0.20210721032823-8d8a83f4808f/go.mod h1:UTdbtyN5ge/v9DmQzdVRxQP7z51Q4z6hyl+W6ZpUHFM=
+github.com/Sphairis/kie-client v0.1.1-0.20210721085654-ba7651341d6f h1:L7Czx3he3O660c7PGkzUO7VutAadTDuYhcPow/MRCaY=
+github.com/Sphairis/kie-client v0.1.1-0.20210721085654-ba7651341d6f/go.mod h1:UTdbtyN5ge/v9DmQzdVRxQP7z51Q4z6hyl+W6ZpUHFM=
 github.com/VividCortex/gohistogram v1.0.0 h1:6+hBz+qvs0JOrrNhhmR7lFxo5sINxBCGXrdtl/UvroE=
 github.com/VividCortex/gohistogram v1.0.0/go.mod h1:Pf5mBqqDxYaXu3hDrrU+w6nw50o/4+TcAqDqk/vUH7g=
 github.com/afex/hystrix-go v0.0.0-20180502004556-fa1af6a1f4f5 h1:rFw4nCn9iMW+Vajsk51NtYIcwSTkXr+JGrMd36kTDJw=
