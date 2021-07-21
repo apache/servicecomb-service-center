@@ -1,7 +1,7 @@
 # RBAC
-Beta feature. 
 
-you can choose to enable RBAC feature, after enable RBAC, all request to service center must be authenticated
+you can choose to enable RBAC feature, after enable RBAC, 
+all request to service center must be authenticated
 
 ### Configuration file
 Follow steps to enable this feature.
