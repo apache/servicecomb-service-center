@@ -21,6 +21,7 @@ import (
 	roa "github.com/apache/servicecomb-service-center/pkg/rest"
 	v1 "github.com/apache/servicecomb-service-center/server/resource/v1"
 	v4 "github.com/apache/servicecomb-service-center/server/resource/v4"
+	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 )
 
 func init() {
@@ -28,7 +29,9 @@ func init() {
 }
 
 func initRouter() {
-	roa.RegisterServant(&v4.AuthResource{})
-	roa.RegisterServant(&v4.RoleResource{})
+	if rbacsvc.Enabled() {
+		roa.RegisterServant(&v4.AuthResource{})
+		roa.RegisterServant(&v4.RoleResource{})
+	}
 	roa.RegisterServant(&v1.Governance{})
 }

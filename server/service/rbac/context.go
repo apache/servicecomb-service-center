@@ -29,9 +29,6 @@ import (
 const CtxRequestClaims util.CtxKey = "_request_claims"
 
 func UserFromContext(ctx context.Context) string {
-	if !Enabled() {
-		return AccountRoot.Name
-	}
 	m, ok := ctx.Value(CtxRequestClaims).(map[string]interface{})
 	if !ok {
 		return ""
@@ -44,10 +41,6 @@ func UserFromContext(ctx context.Context) string {
 }
 
 func AccountFromContext(ctx context.Context) (*rbacmodel.Account, error) {
-	if !Enabled() {
-		a := AccountRoot
-		return &a, nil
-	}
 	m, ok := ctx.Value(CtxRequestClaims).(map[string]interface{})
 	if !ok {
 		return nil, errors.New("no claims from request context")

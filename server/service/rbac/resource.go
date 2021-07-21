@@ -18,6 +18,11 @@
 package rbac
 
 import (
+	"fmt"
+	"strings"
+
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/go-chassis/cari/rbac"
 )
 
@@ -64,6 +69,8 @@ var (
 	APIServiceRuleList = "/v4/:project/registry/microservices/:serviceId/rules/rule_id"
 
 	APIServiceSchema = "/v4/:project/registry/microservices/:serviceId/schemas"
+
+	AuthResources = map[string]struct{}{}
 )
 
 func InitResourceMap() {
@@ -93,4 +100,30 @@ func InitResourceMap() {
 	rbac.MapResource(APIServiceRule, ResourceService)
 	rbac.MapResource(APIServiceTag, ResourceService)
 	rbac.MapResource(APIServiceTagKey, ResourceService)
+
+	initAuthResources()
+}
+
+func initAuthResources() {
+	scopes := strings.Split(config.GetString("rbac.scope", "*"), ",")
+	for _, scope := range scopes {
+		if scope == "*" {
+			AuthResources = map[string]struct{}{}
+			break
+		}
+		AuthResources[scope] = struct{}{}
+	}
+	log.Info(fmt.Sprintf("init must auth resources: %v", AuthResources))
+}
+
+func MustAuth(apiPattern string) bool {
+	found := true
+	if len(AuthResources) > 0 {
+		resource := rbac.GetResource(apiPattern)
+		_, found = AuthResources[resource]
+	}
+	if !found {
+		return false
+	}
+	return rbac.MustAuth(apiPattern)
 }

@@ -43,19 +43,10 @@ var (
 	ErrNoPermChangeAccount  = errors.New("can not change other account password")
 	ErrWrongPassword        = errors.New("current pwd is wrong")
 	ErrSamePassword         = errors.New("the password can not be same as old one")
-	ErrEmptyPassword        = errors.New("empty password")
-
-	AccountRoot = rbac.Account{
-		Name:  RootName,
-		Roles: []string{rbac.RoleAdmin},
-	}
 )
 
 //Init decide whether enable rbac function and save the build-in roles to db
 func Init() {
-	// build-in role init
-	initBuildInRole()
-
 	if !Enabled() {
 		log.Info("rbac is disabled")
 		return
@@ -65,11 +56,19 @@ func Init() {
 	if err != nil {
 		log.Fatal("can not enable auth module", err)
 	}
+	// build-in role init
+	initBuildInRole()
 	initBuildInAccount()
+	add2WhiteAPIList()
 	readPrivateKey()
 	readPublicKey()
-	rbac.Add2WhiteAPIList(APITokenGranter)
 	log.Info("rbac is enabled")
+}
+
+func add2WhiteAPIList() {
+	rbac.Add2WhiteAPIList(APITokenGranter)
+	rbac.Add2WhiteAPIList("/version")
+	rbac.Add2WhiteAPIList("/health")
 }
 
 func initBuildInAccount() {
@@ -116,13 +115,18 @@ func readPublicKey() {
 }
 func initFirstTime() {
 	//handle root account
-	pwd, err := getPassword()
-	if err != nil {
-		log.Fatal("can not enable rbac, password is empty", nil)
+	pwd := getPassword()
+	if len(pwd) == 0 {
+		log.Warn("skip init root account! Cause by " + InitPassword + " is empty. " +
+			"Please use the private key to generate a ROOT token and call " + APIAccountList + " create ROOT!")
+		return
 	}
-	a := AccountRoot
-	a.Password = pwd
-	err = CreateAccount(context.Background(), &a)
+	a := &rbac.Account{
+		Name:     RootName,
+		Roles:    []string{rbac.RoleAdmin},
+		Password: pwd,
+	}
+	err := CreateAccount(context.Background(), a)
 	if err == nil {
 		log.Info("root account init success")
 		return
@@ -135,18 +139,17 @@ func initFirstTime() {
 	log.Fatal("can not enable rbac, init root account failed", err)
 }
 
-func getPassword() (string, error) {
+func getPassword() string {
 	p := archaius.GetString(InitPassword, "")
 	if p == "" {
-		log.Fatal("can not enable rbac, password is empty", nil)
-		return "", ErrEmptyPassword
+		return ""
 	}
 	d, err := cipher.Decrypt(p)
 	if err != nil {
 		log.Warn("cipher fallback: " + err.Error())
-		return p, nil
+		return p
 	}
-	return d, nil
+	return d
 }
 
 func Enabled() bool {

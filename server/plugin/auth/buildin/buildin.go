@@ -29,7 +29,7 @@ import (
 	authHandler "github.com/apache/servicecomb-service-center/server/handler/auth"
 	"github.com/apache/servicecomb-service-center/server/plugin/auth"
 	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
-	"github.com/go-chassis/cari/rbac"
+	rbacmodel "github.com/go-chassis/cari/rbac"
 	"github.com/go-chassis/go-chassis/v2/security/authr"
 	"github.com/go-chassis/go-chassis/v2/server/restful"
 )
@@ -56,7 +56,7 @@ func (ba *TokenAuthenticator) Identify(req *http.Request) error {
 		log.Warn("can not find api pattern")
 	}
 
-	if !mustAuth(pattern) {
+	if !rbacsvc.MustAuth(pattern) {
 		return nil
 	}
 
@@ -68,10 +68,10 @@ func (ba *TokenAuthenticator) Identify(req *http.Request) error {
 
 	m, ok := claims.(map[string]interface{})
 	if !ok {
-		log.Error("claims convert failed", rbac.ErrConvertErr)
-		return rbac.ErrConvertErr
+		log.Error("claims convert failed", rbacmodel.ErrConvertErr)
+		return rbacmodel.ErrConvertErr
 	}
-	account, err := rbac.GetAccount(m)
+	account, err := rbacmodel.GetAccount(m)
 	if err != nil {
 		log.Error("get account from token failed", err)
 		return err
@@ -93,14 +93,14 @@ func (ba *TokenAuthenticator) Identify(req *http.Request) error {
 		return err
 	}
 	if !allow {
-		return rbac.NewError(rbac.ErrNoPermission, "")
+		return rbacmodel.NewError(rbacmodel.ErrNoPermission, "")
 	}
 
 	util.SetRequestContext(req, authHandler.CtxResourceLabels, matchedLabels)
 	return nil
 }
 
-func isChangeSelfPassword(pattern string, a *rbac.Account, req *http.Request) bool {
+func isChangeSelfPassword(pattern string, a *rbacmodel.Account, req *http.Request) bool {
 	if pattern != rbacsvc.APIAccountPassword {
 		return false
 	}
@@ -111,7 +111,7 @@ func isChangeSelfPassword(pattern string, a *rbac.Account, req *http.Request) bo
 
 func filterRoles(roleList []string) (hasAdmin bool, normalRoles []string) {
 	for _, r := range roleList {
-		if r == rbac.RoleAdmin {
+		if r == rbacmodel.RoleAdmin {
 			hasAdmin = true
 			return
 		}
@@ -123,11 +123,11 @@ func filterRoles(roleList []string) (hasAdmin bool, normalRoles []string) {
 func (ba *TokenAuthenticator) VerifyToken(req *http.Request) (interface{}, error) {
 	v := req.Header.Get(restful.HeaderAuth)
 	if v == "" {
-		return nil, rbac.NewError(rbac.ErrNoAuthHeader, "")
+		return nil, rbacmodel.NewError(rbacmodel.ErrNoAuthHeader, "")
 	}
 	s := strings.Split(v, " ")
 	if len(s) != 2 {
-		return nil, rbac.ErrInvalidHeader
+		return nil, rbacmodel.ErrInvalidHeader
 	}
 	to := s[1]
 
@@ -147,11 +147,4 @@ func checkPerm(roleList []string, project string, req *http.Request, apiPattern,
 	}
 	//TODO add project
 	return rbacsvc.Allow(req.Context(), project, normalRoles, targetResource)
-}
-
-func mustAuth(pattern string) bool {
-	if util.IsVersionOrHealthPattern(pattern) {
-		return false
-	}
-	return rbac.MustAuth(pattern)
 }
