@@ -32,7 +32,8 @@ type ErrIllegalItem struct {
 }
 
 var (
-	methodSet map[string]bool
+	methodSet            map[string]bool
+	slidingWindowTypeSet map[string]bool
 )
 
 func (e *ErrIllegalItem) Error() string {
@@ -48,7 +49,9 @@ func (d *Validator) Validate(kind string, spec interface{}) error {
 	case "rate-limiting":
 		return rateLimitingValidate(spec)
 	case "circuit-breaker":
+		return circuitBreakerValidate(spec)
 	case "bulkhead":
+		return bulkheadValidate(spec)
 	case "loadbalancer":
 		return nil
 	default:
@@ -120,6 +123,94 @@ func rateLimitingValidate(val interface{}) error {
 	return nil
 }
 
+func bulkheadValidate(val interface{}) error {
+	spec, ok := val.(map[string]interface{})
+	if !ok {
+		return &ErrIllegalItem{"bulkhead can not cast to map", val}
+	}
+	maxConcurrentCallsErr := specIntValidate("maxConcurrentCalls", spec)
+	if maxConcurrentCallsErr != nil {
+		return maxConcurrentCallsErr
+	}
+	nameErr := specStringValidate("name", spec)
+	if nameErr != nil {
+		return nameErr
+	}
+	maxWaitDurationErr := specStringValidate("maxWaitDuration", spec)
+	if maxWaitDurationErr != nil {
+		return maxWaitDurationErr
+	}
+	return nil
+}
+
+func circuitBreakerValidate(val interface{}) error {
+	spec, ok := val.(map[string]interface{})
+	if !ok {
+		return &ErrIllegalItem{"circuitBreaker can not cast to map", val}
+	}
+	failureRateThresholdErr := specRateValidate("failureRateThreshold", spec)
+	if failureRateThresholdErr != nil {
+		return failureRateThresholdErr
+	}
+	slowCallRateThresholdErr := specRateValidate("slowCallRateThreshold", spec)
+	if slowCallRateThresholdErr != nil {
+		return slowCallRateThresholdErr
+	}
+	slowCallDurationThresholdErr := specIntValidate("slowCallDurationThreshold", spec)
+	if slowCallDurationThresholdErr != nil {
+		return slowCallDurationThresholdErr
+	}
+	minimumNumberOfCallsErr := specIntValidate("minimumNumberOfCalls", spec)
+	if minimumNumberOfCallsErr != nil {
+		return minimumNumberOfCallsErr
+	}
+	slidingWindowType, ok := spec["slidingWindowType"].(string)
+	if !ok {
+		return &ErrIllegalItem{"slidingWindowType must be string", spec}
+	}
+	if !slidingWindowTypeSet[slidingWindowType] {
+		return &ErrIllegalItem{"slidingWindowType must be one of the count/time", slidingWindowType}
+	}
+	slidingWindowSizeErr := specIntValidate("slidingWindowSize", spec)
+	if slidingWindowSizeErr != nil {
+		return slidingWindowSizeErr
+	}
+	return nil
+}
+
+func specStringValidate(param string, spec map[string]interface{}) error {
+	value, ok := spec[param].(string)
+	if !ok {
+		return &ErrIllegalItem{param + "must be string", spec}
+	}
+	if value == "" {
+		return &ErrIllegalItem{param + "can not be empty", value}
+	}
+	return nil
+}
+
+func specIntValidate(param string, spec map[string]interface{}) error {
+	value, ok := spec[param].(int)
+	if !ok {
+		return &ErrIllegalItem{param + "must be int", spec}
+	}
+	if value < 0 {
+		return &ErrIllegalItem{param + "must be bigger than 0", value}
+	}
+	return nil
+}
+
+func specRateValidate(param string, spec map[string]interface{}) error {
+	rate, ok := spec[param].(float32)
+	if !ok {
+		return &ErrIllegalItem{param + "must be float", spec}
+	}
+	if rate < float32(0) || rate > float32(100) {
+		return &ErrIllegalItem{param + "must be between 0 and 100", rate}
+	}
+	return nil
+}
+
 func policyValidate(val interface{}) error {
 	spec, ok := val.(map[string]interface{})
 	if !ok {
@@ -139,9 +230,12 @@ func policyValidate(val interface{}) error {
 
 func init() {
 	methodSet = make(map[string]bool)
+	slidingWindowTypeSet = make(map[string]bool)
 	methodSet["GET"] = true
 	methodSet["POST"] = true
 	methodSet["DELETE"] = true
 	methodSet["PUT"] = true
 	methodSet["PATCH"] = true
+	slidingWindowTypeSet["count"] = true
+	slidingWindowTypeSet["time"] = true
 }
