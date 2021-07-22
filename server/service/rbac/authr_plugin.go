@@ -21,18 +21,15 @@ import (
 	"context"
 	"crypto/rsa"
 	"errors"
-	"fmt"
 
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/privacy"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/go-chassis/cari/pkg/errsvc"
 	"github.com/go-chassis/cari/rbac"
 	"github.com/go-chassis/go-chassis/v2/security/authr"
 	"github.com/go-chassis/go-chassis/v2/security/token"
-
-	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/privacy"
-	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
 var ErrUnauthorized = errors.New("wrong user name or password")
@@ -101,19 +98,6 @@ func (a *EmbeddedAuthenticator) Authenticate(ctx context.Context, tokenStr strin
 			return nil, rbac.NewError(rbac.ErrTokenExpired, "")
 		}
 		return nil, err
-	}
-	accountNameI := claims[rbac.ClaimsUser]
-	n, ok := accountNameI.(string)
-	if !ok {
-		return nil, rbac.ErrConvert
-	}
-	exist, err := datasource.GetAccountManager().AccountExist(ctx, n)
-	if err != nil {
-		return nil, err
-	}
-	if !exist {
-		msg := fmt.Sprintf("account [%s] is deleted", n)
-		return nil, rbac.NewError(rbac.ErrTokenOwnedAccountDeleted, msg)
 	}
 	return claims, nil
 }
