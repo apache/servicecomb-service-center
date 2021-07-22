@@ -56,6 +56,7 @@ require (
 	k8s.io/api v0.19.5
 	k8s.io/apimachinery v0.19.5
 	k8s.io/client-go v0.19.5
+	k8s.io/kube-openapi v0.0.0-20210527164424-3c818078ee3d
 )
 
 go 1.16

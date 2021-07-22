@@ -18,6 +18,8 @@
 package v1
 
 import (
+	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -52,7 +54,22 @@ func (t *Governance) Create(w http.ResponseWriter, r *http.Request) {
 		rest.WriteError(w, discovery.ErrInternal, err.Error())
 		return
 	}
-	id, err := gov.Create(kind, project, body)
+	p := &model.Policy{
+		GovernancePolicy: &model.GovernancePolicy{Selector: &model.Selector{}},
+	}
+	err = json.Unmarshal(body, p)
+	if err != nil {
+		log.Error("json err", err)
+		rest.WriteError(w, discovery.ErrInvalidParams, err.Error())
+		return
+	}
+	err = gov.ValidateSpec(kind, p.Spec)
+	if err != nil {
+		log.Error("validate policy err", err)
+		rest.WriteError(w, discovery.ErrInvalidParams, err.Error())
+		return
+	}
+	id, err := gov.Create(kind, project, p)
 	if err != nil {
 		if _, ok := err.(*kie.ErrIllegalItem); ok {
 			log.Error("", err)
@@ -62,7 +79,7 @@ func (t *Governance) Create(w http.ResponseWriter, r *http.Request) {
 		processError(w, err, "create gov data err")
 		return
 	}
-
+	log.Info(fmt.Sprintf("created %+v", p))
 	rest.WriteResponse(w, r, nil, &model.Policy{GovernancePolicy: &model.GovernancePolicy{ID: string(id)}})
 }
 
@@ -77,7 +94,21 @@ func (t *Governance) Put(w http.ResponseWriter, r *http.Request) {
 		processError(w, err, "read body err")
 		return
 	}
-	err = gov.Update(kind, id, project, body)
+	p := &model.Policy{}
+	err = json.Unmarshal(body, p)
+	if err != nil {
+		log.Error("json err", err)
+		rest.WriteError(w, discovery.ErrInvalidParams, err.Error())
+		return
+	}
+	err = gov.ValidateSpec(kind, p.Spec)
+	if err != nil {
+		log.Error("validate policy err", err)
+		rest.WriteError(w, discovery.ErrInvalidParams, err.Error())
+		return
+	}
+	log.Info(fmt.Sprintf("update %v", &p))
+	err = gov.Update(kind, id, project, p)
 	if err != nil {
 		if _, ok := err.(*kie.ErrIllegalItem); ok {
 			log.Error("", err)

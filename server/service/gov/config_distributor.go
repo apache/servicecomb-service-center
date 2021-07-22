@@ -18,6 +18,7 @@
 package gov
 
 import (
+	model "github.com/apache/servicecomb-service-center/pkg/gov"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
 )
@@ -38,8 +39,8 @@ var distributorPlugins = map[string]NewDistributors{}
 //or service mesh system like istio, linkerd.
 //ConfigDistributor will convert standard servicecomb gov config to concrete spec, that data plane can recognize.
 type ConfigDistributor interface {
-	Create(kind, project string, spec []byte) ([]byte, error)
-	Update(kind, id, project string, spec []byte) error
+	Create(kind, project string, policy *model.Policy) ([]byte, error)
+	Update(kind, id, project string, p *model.Policy) error
 	Delete(kind, id, project string) error
 	Display(project, app, env string) ([]byte, error)
 	List(kind, project, app, env string) ([]byte, error)
@@ -56,26 +57,24 @@ func InstallDistributor(t string, newDistributors NewDistributors) {
 //Init create distributors according to gov config.
 //it may creates multiple distributors. and distribute policy one by one
 func Init() error {
-	distOptions := config.GetGov().DistOptions
-	for _, opts := range distOptions {
-		if opts.Type == "" {
-			log.Warn("empty plugin, skip")
-		}
-		f, ok := distributorPlugins[opts.Type]
+	for name, opts := range config.GetGov().DistMap {
+		opts.Name = name
+		f, ok := distributorPlugins[name]
 		if !ok {
 			log.Warn("unsupported plugin " + opts.Type)
+			continue
 		}
 		cd, err := f(opts)
 		if err != nil {
 			log.Error("can not init config distributor", err)
 			return err
 		}
-		distributors[opts.Name+"::"+opts.Type] = cd
+		distributors[name+"::"+opts.Type] = cd
 	}
 	return nil
 }
 
-func Create(kind, project string, spec []byte) ([]byte, error) {
+func Create(kind, project string, spec *model.Policy) ([]byte, error) {
 	for _, cd := range distributors {
 		return cd.Create(kind, project, spec)
 	}
@@ -110,9 +109,9 @@ func Delete(kind, id, project string) error {
 	return nil
 }
 
-func Update(kind, id, project string, spec []byte) error {
+func Update(kind, id, project string, p *model.Policy) error {
 	for _, cd := range distributors {
-		return cd.Update(kind, id, project, spec)
+		return cd.Update(kind, id, project, p)
 	}
 	return nil
 }

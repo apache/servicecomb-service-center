@@ -21,6 +21,8 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/apache/servicecomb-service-center/pkg/gov"
 )
 
@@ -29,7 +31,7 @@ func TestNewInstance3(t *testing.T) {
 		GovernancePolicy: &gov.GovernancePolicy{
 			Name: "Traffic2adminAPI",
 		},
-		Spec: &gov.LBSpec{RetryNext: 3, MarkerName: "traffic2adminAPI"},
+		Spec: map[string]interface{}{"retryNext": 3, "match": "traffic2adminAPI"},
 	}, "", "  ")
 	t.Log(string(b))
 }
@@ -41,9 +43,10 @@ func TestNewInstance2(t *testing.T) {
 		Spec: &gov.LimiterSpec{Burst: 10, Rate: 100, MarkerName: "traffic2adminAPI"},
 	}, "", "  ")
 	t.Log(string(b))
+
 }
 func TestNewInstance(t *testing.T) {
-	b, _ := json.MarshalIndent(&gov.TrafficMarker{
+	b, _ := json.MarshalIndent(&gov.Policy{
 		GovernancePolicy: &gov.GovernancePolicy{
 			Name: "traffic2adminAPI",
 			ID:   "",
@@ -52,9 +55,9 @@ func TestNewInstance(t *testing.T) {
 				Environment: "development",
 			},
 		},
-		Spec: &gov.MatchSpec{
-			TrafficMarkPolicy: "perService",
-			MatchPolicies: []*gov.MatchPolicy{
+		Spec: map[string]interface{}{
+			"trafficMarkPolicy": "perService",
+			"matches": []*gov.MatchPolicy{
 				{
 					Headers: map[string]map[string]string{
 						"X-User": {"regex": "ja.*"},
@@ -74,4 +77,7 @@ func TestNewInstance(t *testing.T) {
 		},
 	}, "", "  ")
 	t.Log(string(b))
+	m := &gov.TrafficMarker{}
+	err := json.Unmarshal(b, m)
+	assert.NoError(t, err)
 }

@@ -24,6 +24,8 @@ cd /opt/service-center
 export SERVER_HOST="$(hostname)"
 export LOG_FILE=${LOG_FILE:-''}
 export LOG_LEVEL=${LOG_LEVEL:-'DEBUG'}
+export gov_kie_type=kie
+export gov_kie_endpoint=http://kie:30110
 if [ -z "${BACKEND_ADDRESS}" ]; then
   export REGISTRY_KIND=${REGISTRY_KIND:-'embedded_etcd'}
   export REGISTRY_ETCD_CLUSTER_NAME=${REGISTRY_ETCD_CLUSTER_NAME:-'sc-0'}
