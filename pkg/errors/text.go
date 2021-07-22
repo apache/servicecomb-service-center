@@ -29,4 +29,5 @@ const (
 	MsgGetRoleFailed          = "get role failed"
 	MsgRolePerm               = "check role permissions failed"
 	MsgNoPerm                 = "no permission to operate"
+	MsgListSelfPermsFailed    = "list self permissions failed"
 )

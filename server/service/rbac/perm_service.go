@@ -15,34 +15,33 @@
  * limitations under the License.
  */
 
-package core
+package rbac
 
 import (
-	"os"
+	"context"
 
-	// import the grace package and parse grace cmd line
-	_ "github.com/apache/servicecomb-service-center/pkg/grace"
-	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/server/config"
+	"github.com/apache/servicecomb-service-center/datasource"
+	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
+	"github.com/go-chassis/cari/rbac"
 )
 
-func Initialize() {
-	// initialize configuration
-	config.Init()
-	// Logging
-	initLogger()
-	// init the sc registration
-	InitRegistration()
-	// Register global services
-	RegisterGlobalServices()
-}
-
-func initLogger() {
-	log.SetGlobal(log.Config{
-		LoggerLevel:    config.GetLog().LogLevel,
-		LoggerFile:     os.ExpandEnv(config.GetLog().LogFilePath),
-		LogFormatText:  config.GetLog().LogFormat == "text",
-		LogRotateSize:  int(config.GetLog().LogRotateSize),
-		LogBackupCount: int(config.GetLog().LogBackupCount),
-	})
+// ListSelfPerms list the user permission from ctx
+func ListSelfPerms(ctx context.Context) ([]*rbac.Permission, error) {
+	user := UserFromContext(ctx)
+	if len(user) == 0 {
+		return nil, rbac.NewError(rbac.ErrUnauthorized, errorsEx.MsgListSelfPermsFailed)
+	}
+	account, err := datasource.GetAccountManager().GetAccount(ctx, user)
+	if err != nil {
+		return nil, err
+	}
+	var perms []*rbac.Permission
+	for _, roleName := range account.Roles {
+		role, err := datasource.GetRoleManager().GetRole(ctx, roleName)
+		if err != nil {
+			return nil, err
+		}
+		perms = append(perms, role.Perms...)
+	}
+	return perms, nil
 }

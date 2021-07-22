@@ -35,13 +35,18 @@ var errNilRequestBody = errors.New("request body is nil")
 
 func WriteError(w http.ResponseWriter, code int32, detail string) {
 	err := discovery.NewError(code, detail)
-	WriteErrsvcError(w, err)
+	WriteServiceError(w, err)
 }
 
-func WriteErrsvcError(w http.ResponseWriter, err *errsvc.Error) {
+func WriteServiceError(w http.ResponseWriter, err error) {
+	e, ok := err.(*errsvc.Error)
+	if !ok {
+		WriteError(w, discovery.ErrInternal, err.Error())
+		return
+	}
 	w.Header().Set(HeaderContentType, ContentTypeJSON)
-	w.WriteHeader(err.StatusCode())
-	b, _ := json.Marshal(err)
+	w.WriteHeader(e.StatusCode())
+	b, _ := json.Marshal(e)
 	_, _ = w.Write(b)
 }
 
