@@ -96,7 +96,7 @@ func matchValidate(val interface{}) error {
 					return &ErrIllegalItem{"method must be a string", method}
 				}
 				if !methodSet[methodStr] {
-					return &ErrIllegalItem{"method must be one of the GET/POST/PUT/DELETE", method}
+					return &ErrIllegalItem{"method must be one of the GET/POST/PUT/DELETE/PATCH", method}
 				}
 			}
 		}
@@ -143,4 +143,5 @@ func init() {
 	methodSet["POST"] = true
 	methodSet["DELETE"] = true
 	methodSet["PUT"] = true
+	methodSet["PATCH"] = true
 }
