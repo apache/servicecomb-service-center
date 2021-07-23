@@ -49,6 +49,8 @@ func ApplyAll(r *http.Request) (*auth.ResourceScope, error) {
 	}, nil
 }
 
+// FromRequest return the scope parsed from request
+// return nil mean apply all resources
 func FromRequest(r *http.Request) *auth.ResourceScope {
 	apiPath, ok := r.Context().Value(rest.CtxMatchPattern).(string)
 	if !ok {
