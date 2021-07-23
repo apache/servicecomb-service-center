@@ -28,8 +28,6 @@ import (
 )
 
 func TestCountFailure(t *testing.T) {
-	rbac.BanTime = 3 * time.Second
-
 	key1 := v4.MakeBanKey("root", "127.0.0.1")
 	key2 := v4.MakeBanKey("root", "10.0.0.1")
 	t.Run("ban root@IP, will not affect other root@another_IP", func(t *testing.T) {

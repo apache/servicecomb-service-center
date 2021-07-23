@@ -30,12 +30,9 @@ import (
 )
 
 const (
-	MaxAttempts = 2
-
-	BlockInterval = 1 * time.Hour
+	MaxAttempts   = 2
+	BlockInterval = 15 * time.Minute
 )
-
-var BanTime = 1 * time.Hour
 
 type LoginFailureLimiter struct {
 	limiter *rate.Limiter
