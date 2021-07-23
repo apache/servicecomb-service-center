@@ -20,7 +20,6 @@ package rbac
 import (
 	"context"
 	"crypto/rsa"
-	"errors"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/privacy"
@@ -32,7 +31,9 @@ import (
 	"github.com/go-chassis/go-chassis/v2/security/token"
 )
 
-var ErrUnauthorized = errors.New("wrong user name or password")
+// ErrAccountNotExistWhenExcludeServiceScope return when the auth scope not include the service resource
+// and auth err is ErrAccountNotExist
+const ErrAccountNotExistWhenExcludeServiceScope int32 = 404200
 
 //EmbeddedAuthenticator is sc default auth plugin, RBAC data is persisted in etcd
 type EmbeddedAuthenticator struct {
@@ -57,14 +58,14 @@ func (a *EmbeddedAuthenticator) Login(ctx context.Context, user string, password
 	if err != nil {
 		if errsvc.IsErrEqualCode(err, rbac.ErrAccountNotExist) {
 			TryLockAccount(MakeBanKey(user, ip))
-			return "", rbac.NewError(rbac.ErrUserOrPwdWrong, "")
+			return "", ErrUserOrPwdWrong()
 		}
 		return "", err
 	}
 	same := privacy.SamePassword(account.Password, password)
 	if !same {
 		TryLockAccount(MakeBanKey(user, ip))
-		return "", rbac.NewError(rbac.ErrUserOrPwdWrong, "")
+		return "", ErrUserOrPwdWrong()
 	}
 
 	secret, err := GetPrivateKey()
@@ -122,6 +123,14 @@ func (a *EmbeddedAuthenticator) authToken(tokenStr string, pub *rsa.PublicKey) (
 	})
 }
 
+func ErrUserOrPwdWrong() error {
+	if AuthResource(ResourceService) {
+		return rbac.NewError(rbac.ErrUserOrPwdWrong, "")
+	}
+	return rbac.NewError(ErrAccountNotExistWhenExcludeServiceScope, "")
+}
+
 func init() {
+	rbac.MustRegisterErr(ErrAccountNotExistWhenExcludeServiceScope, "User name or password is wrong")
 	authr.Install("default", newEmbeddedAuthenticator)
 }

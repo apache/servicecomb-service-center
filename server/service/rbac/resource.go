@@ -72,7 +72,7 @@ var (
 
 	APIServiceSchema = "/v4/:project/registry/microservices/:serviceId/schemas"
 
-	AuthResources = map[string]struct{}{}
+	authResources = map[string]struct{}{}
 
 	whiteAPIList = mapset.NewSet()
 )
@@ -112,19 +112,27 @@ func initAuthResources() {
 	scopes := strings.Split(config.GetString("rbac.scope", "*"), ",")
 	for _, scope := range scopes {
 		if scope == "*" {
-			AuthResources = map[string]struct{}{}
+			authResources = map[string]struct{}{}
 			break
 		}
-		AuthResources[scope] = struct{}{}
+		authResources[scope] = struct{}{}
 	}
-	log.Info(fmt.Sprintf("init must auth resources: %v", AuthResources))
+	log.Info(fmt.Sprintf("init must auth resources: %v", authResources))
+}
+
+func AuthResource(resource string) bool {
+	if len(authResources) == 0 {
+		return true
+	}
+	_, ok := authResources[resource]
+	return ok
 }
 
 func MustAuth(apiPattern string) bool {
 	found := true
-	if len(AuthResources) > 0 {
+	if len(authResources) > 0 {
 		resource := rbac.GetResource(apiPattern)
-		_, found = AuthResources[resource]
+		_, found = authResources[resource]
 	}
 	if !found {
 		return false
