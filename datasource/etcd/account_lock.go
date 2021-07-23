@@ -49,6 +49,25 @@ func (al AccountLockManager) GetLock(ctx context.Context, key string) (*datasour
 	return lock, nil
 }
 
+func (al AccountLockManager) ListLock(ctx context.Context) ([]*datasource.AccountLock, int64, error) {
+	resp, err := client.Instance().Do(ctx, client.GET,
+		client.WithStrKey(path.GenerateAccountLockKey("")), client.WithPrefix())
+	if err != nil {
+		return nil, 0, err
+	}
+	locks := make([]*datasource.AccountLock, 0, resp.Count)
+	for _, v := range resp.Kvs {
+		lock := &datasource.AccountLock{}
+		err = json.Unmarshal(v.Value, lock)
+		if err != nil {
+			log.Error("account lock info format invalid:", err)
+			continue //do not fail if some account is invalid
+		}
+		locks = append(locks, lock)
+	}
+	return locks, resp.Count, nil
+}
+
 func (al AccountLockManager) DeleteLock(ctx context.Context, key string) error {
 	_, err := client.Delete(ctx, path.GenerateAccountLockKey(key))
 	if err != nil {

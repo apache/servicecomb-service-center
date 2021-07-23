@@ -2,7 +2,6 @@ package account_test
 
 import (
 	"context"
-
 	"testing"
 	"time"
 
@@ -31,4 +30,21 @@ func TestIsBanned(t *testing.T) {
 			assert.NoError(t, err)
 			assert.False(t, ok)
 		})
+}
+
+func TestListAccountLock(t *testing.T) {
+	t.Run("list 1 account lock, should return 1 item", func(t *testing.T) {
+		err := account.Ban(context.TODO(), "dev_lock::127.0.0.1")
+		assert.NoError(t, err)
+
+		locks, n, err := account.ListAccountLock(context.Background())
+		assert.NoError(t, err)
+		assert.NotEqual(t, 0, n)
+		for _, lock := range locks {
+			if lock.Key == "dev_lock::127.0.0.1" {
+				return
+			}
+		}
+		assert.Fail(t, "test key not found")
+	})
 }

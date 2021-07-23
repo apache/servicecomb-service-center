@@ -42,6 +42,8 @@ var (
 
 	APIAccountList = "/v4/accounts"
 
+	APIAccountLockList = "/v4/account-locks"
+
 	APIRoleList = "/v4/roles"
 
 	APIAccountPassword = "/v4/accounts/:name/password"
@@ -79,18 +81,14 @@ var (
 
 func InitResourceMap() {
 	rbac.PartialMapResource(APIAccountList, ResourceAccount)
-
 	rbac.PartialMapResource(APIRoleList, ResourceRole)
-
 	rbac.PartialMapResource(APIGov, ResourceGovern)
-
 	rbac.PartialMapResource(APIServiceSchema, ResourceSchema)
-
 	rbac.PartialMapResource(APIOps, ResourceOps)
-
 	rbac.PartialMapResource("instances", ResourceService)
 	rbac.PartialMapResource(APILegacyGov, ResourceService)
 
+	rbac.MapResource(APIAccountLockList, ResourceAccount)
 	rbac.MapResource(APIServiceInfo, ResourceService)
 	rbac.MapResource(APIServicesList, ResourceService)
 	rbac.MapResource(APIServiceProperties, ResourceService)

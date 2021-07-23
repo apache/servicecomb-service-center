@@ -56,6 +56,26 @@ func (al *AccountLockManager) GetLock(ctx context.Context, key string) (*datasou
 	return &lock, nil
 }
 
+func (al *AccountLockManager) ListLock(ctx context.Context) ([]*datasource.AccountLock, int64, error) {
+	filter := mutil.NewFilter()
+	cursor, err := client.GetMongoClient().Find(ctx, model.CollectionAccountLock, filter)
+	if err != nil {
+		return nil, 0, err
+	}
+	var locks []*datasource.AccountLock
+	defer cursor.Close(ctx)
+	for cursor.Next(ctx) {
+		var lock datasource.AccountLock
+		err = cursor.Decode(&lock)
+		if err != nil {
+			log.Error("failed to decode account lock", err)
+			continue
+		}
+		locks = append(locks, &lock)
+	}
+	return locks, int64(len(locks)), nil
+}
+
 func (al *AccountLockManager) DeleteLock(ctx context.Context, key string) error {
 	filter := mutil.NewFilter(mutil.AccountLockKey(key))
 	_, err := client.GetMongoClient().Delete(ctx, model.CollectionAccountLock, filter)
