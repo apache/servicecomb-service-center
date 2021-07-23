@@ -38,7 +38,7 @@ func init() {
 		DistMap: map[string]config.DistributorOptions{
 			"kie": {
 				Type:     "kie",
-				Endpoint: "http://127.0.0.1:30110",
+				Endpoint: "http://127.0.0.1:27017",
 			},
 		},
 	}
