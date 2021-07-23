@@ -20,6 +20,7 @@ package kie_test
 import (
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/gov"
+	"github.com/apache/servicecomb-service-center/server/config"
 	govsvc "github.com/apache/servicecomb-service-center/server/service/gov"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -31,6 +32,21 @@ const (
 	Env1    = "env1"
 	Project = "test_kie"
 )
+
+func init() {
+	config.App.Gov = &config.Gov{
+		DistMap: map[string]config.DistributorOptions{
+			"kie": {
+				Type:     "kie",
+				Endpoint: "http://127.0.0.1:30110",
+			},
+		},
+	}
+	err := govsvc.Init()
+	if err != nil {
+		panic(err)
+	}
+}
 
 func TestDeleteMatchGroup(t *testing.T) {
 	var id1 string
