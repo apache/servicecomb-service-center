@@ -18,7 +18,6 @@
 package kie_test
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/pkg/gov"
 	"github.com/apache/servicecomb-service-center/server/config"
@@ -35,14 +34,11 @@ const (
 )
 
 func init() {
-	config.App = &config.AppConfig{
-		Gov: &config.Gov{
-			DistOptions: []config.DistributorOptions{
-				{
-					Name:     "kieServer",
-					Type:     "kie",
-					Endpoint: "http://127.0.0.1:30110",
-				},
+	config.App.Gov = &config.Gov{
+		DistMap: map[string]config.DistributorOptions{
+			"kie": {
+				Type:     "kie",
+				Endpoint: "http://127.0.0.1:30110",
 			},
 		},
 	}
@@ -56,7 +52,7 @@ func TestDelete(t *testing.T) {
 	var id1 string
 	var id2 string
 	t.Run("create two match-group with the same name and different environments", func(t *testing.T) {
-		b, _ := json.MarshalIndent(&gov.Policy{
+		res, err := govsvc.Create("match-group", Project, &gov.Policy{
 			GovernancePolicy: &gov.GovernancePolicy{
 				Name: "test",
 				Selector: &gov.Selector{
@@ -64,14 +60,13 @@ func TestDelete(t *testing.T) {
 					Environment: Env0,
 				},
 			},
-			Spec: &gov.LBSpec{RetryNext: 3, MarkerName: "test", Alias: "test-alias"},
-		}, "", "  ")
-		res, err := govsvc.Create("match-group", Project, b)
+			Spec: map[string]interface{}{"retryNext": 3, "match": "test"},
+		})
 		id1 = string(res)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, id1)
 
-		b, _ = json.MarshalIndent(&gov.Policy{
+		res, err = govsvc.Create("match-group", Project, &gov.Policy{
 			GovernancePolicy: &gov.GovernancePolicy{
 				Name: "test",
 				Selector: &gov.Selector{
@@ -79,9 +74,8 @@ func TestDelete(t *testing.T) {
 					Environment: Env1,
 				},
 			},
-			Spec: &gov.LBSpec{RetryNext: 3, MarkerName: "test"},
-		}, "", "  ")
-		res, err = govsvc.Create("match-group", Project, b)
+			Spec: map[string]interface{}{"retryNext": 3, "match": "traffic2adminAPI"},
+		})
 		id2 = string(res)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, id2)

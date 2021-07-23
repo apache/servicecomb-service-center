@@ -53,7 +53,6 @@ type LBSpec struct {
 	RetrySame  int            `json:"retrySame,omitempty"`
 	RetryNext  int            `json:"retryNext,omitempty"`
 	Bo         *BackOffPolicy `json:"backoff,omitempty"`
-	Alias      string         `json:"alias"`
 }
 type BackOffPolicy struct {
 	InitialInterval int `json:"initInterval"`
