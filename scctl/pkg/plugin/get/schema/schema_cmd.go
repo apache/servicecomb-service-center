@@ -18,12 +18,13 @@ package schema
 import (
 	"context"
 	"fmt"
-	"github.com/apache/servicecomb-service-center/datasource"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/apache/servicecomb-service-center/datasource"
 
 	pb "github.com/apache/servicecomb-service-center/scctl/pkg/progress-bar"
 

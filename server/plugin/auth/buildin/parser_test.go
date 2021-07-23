@@ -30,13 +30,13 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/plugin/auth"
 	"github.com/apache/servicecomb-service-center/server/plugin/auth/buildin"
-	"github.com/apache/servicecomb-service-center/server/service/rbac"
+	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 	"github.com/go-chassis/cari/discovery"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestGetAPIParseFunc(t *testing.T) {
-	rbac.InitResourceMap()
+	rbacsvc.InitResourceMap()
 
 	var serviceIDA, serviceIDB string
 

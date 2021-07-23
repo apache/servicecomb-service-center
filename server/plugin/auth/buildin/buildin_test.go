@@ -25,17 +25,17 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	_ "github.com/apache/servicecomb-service-center/test"
+
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/go-chassis/cari/pkg/errsvc"
-	"github.com/go-chassis/cari/rbac"
-
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/plugin/auth/buildin"
 	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
-	_ "github.com/apache/servicecomb-service-center/test"
 	"github.com/astaxie/beego"
+	"github.com/go-chassis/cari/pkg/errsvc"
 	carirbac "github.com/go-chassis/cari/rbac"
+	rbacmodel "github.com/go-chassis/cari/rbac"
 	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-chassis/v2/security/authr"
 	"github.com/go-chassis/go-chassis/v2/security/secret"
@@ -108,10 +108,10 @@ func TestTokenAuthenticator_Identify(t *testing.T) {
 		assert.NoError(t, err)
 	})
 	t.Run("valid normal token, should no be able to get account", func(t *testing.T) {
-		a := &rbac.Account{
+		a := &rbacmodel.Account{
 			Name:     "non-admin",
 			Password: "Complicated_password1",
-			Roles:    []string{rbac.RoleDeveloper},
+			Roles:    []string{rbacmodel.RoleDeveloper},
 		}
 		err := rbacsvc.CreateAccount(context.TODO(), a)
 		assert.NoError(t, err)
@@ -147,8 +147,6 @@ func TestTokenAuthenticator_Identify(t *testing.T) {
 
 	t.Run("TestTokenAuthenticator_ResourceScopes", func(t *testing.T) {
 		url := "/v4/accounts/:name"
-		a := buildin.New()
-		ta := a.(*buildin.TokenAuthenticator)
 
 		tests := []struct {
 			name     string
@@ -169,7 +167,7 @@ func TestTokenAuthenticator_Identify(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				util.SetRequestContext(tt.request, rest.CtxMatchPattern, url)
-				scopes := ta.ResourceScopes(tt.request)
+				scopes := buildin.FromRequest(tt.request)
 				assert.NotNil(t, scopes)
 				assert.Equal(t, tt.wantType, scopes.Type)
 				assert.Equal(t, tt.wantVerb, scopes.Verb)

@@ -39,8 +39,8 @@ type DisplayData struct {
 //Policy define policy and fault tolerant policy
 type Policy struct {
 	*GovernancePolicy
-	Kind string      `json:"kind,omitempty"`
-	Spec interface{} `json:"spec,omitempty"`
+	Kind string                 `json:"kind,omitempty"`
+	Spec map[string]interface{} `json:"spec,omitempty"`
 }
 
 type Selector struct {

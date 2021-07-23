@@ -43,6 +43,9 @@ gov:
     - name: kie
       type: kie
       endpoint: http://127.0.0.1:30110
+  kie:
+    type: kie
+    endpoint: http://127.0.0.1:30110
 
 log:
   # DEBUG, INFO, WARN, ERROR, FATAL
@@ -153,6 +156,7 @@ rbac:
   privateKeyFile: ./private.key
   publicKeyFile: ./public.key
   releaseLockAfter: 15m # failure login attempt causes account blocking, that is block duration
+  scope: '*' # specify auth resource scope, can be account,role,service,service/schema,...
 metrics:
   # enable to start metrics gather
   enable: true

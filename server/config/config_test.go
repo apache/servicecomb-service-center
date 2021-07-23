@@ -33,10 +33,9 @@ func TestInit(t *testing.T) {
 	defer archaius.Clean()
 	b := []byte(`
 gov:
-  plugins:
-    - type: mock
-    - type: kie
-    - type: istio
+  kieSever1:
+   type: kie
+   endpoint: 127.0.0.1:30110
 
 `)
 	dir := filepath.Join(util.GetAppRoot(), "conf")
@@ -50,5 +49,6 @@ gov:
 	assert.NoError(t, err)
 	config.Init()
 	assert.NoError(t, err)
-	assert.Equal(t, "mock", config.GetGov().DistOptions[0].Type)
+	assert.Equal(t, "kie", config.GetGov().DistMap["kieSever1"].Type)
+	assert.Equal(t, "127.0.0.1:30110", config.GetGov().DistMap["kieSever1"].Endpoint)
 }

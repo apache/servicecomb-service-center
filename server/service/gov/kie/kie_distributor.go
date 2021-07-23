@@ -61,22 +61,15 @@ var PolicyNames = []string{"retry", "rateLimiting", "circuitBreaker", "bulkhead"
 
 var rule = Validator{}
 
-func (d *Distributor) Create(kind, project string, spec []byte) ([]byte, error) {
-	p := &gov.Policy{
-		GovernancePolicy: &gov.GovernancePolicy{Selector: &gov.Selector{}},
-	}
-	err := json.Unmarshal(spec, p)
-	if err != nil {
-		return nil, err
-	}
+func (d *Distributor) Create(kind, project string, p *gov.Policy) ([]byte, error) {
 	if kind == KindMatchGroup {
-		err = d.generateID(project, p)
+		err := d.generateID(project, p)
 		if err != nil {
 			return nil, err
 		}
 	}
-	log.Info(fmt.Sprintf("create %+v", p))
-	err = rule.Validate(kind, p.Spec)
+
+	err := rule.Validate(kind, p.Spec)
 	if err != nil {
 		return nil, err
 	}
@@ -102,14 +95,8 @@ func (d *Distributor) Create(kind, project string, spec []byte) ([]byte, error) 
 	return []byte(res.ID), nil
 }
 
-func (d *Distributor) Update(kind, id, project string, spec []byte) error {
-	p := &gov.Policy{}
-	err := json.Unmarshal(spec, p)
-	if err != nil {
-		return err
-	}
-	log.Info(fmt.Sprintf("update %v", &p))
-	err = rule.Validate(kind, p.Spec)
+func (d *Distributor) Update(kind, id, project string, p *gov.Policy) error {
+	err := rule.Validate(kind, p.Spec)
 	if err != nil {
 		return err
 	}
@@ -228,8 +215,11 @@ func (d *Distributor) Display(project, app, env string) ([]byte, error) {
 	return b, nil
 }
 
-func setAliasIfEmpty(val interface{}, name string) {
-	spec := val.(map[string]interface{})
+func setAliasIfEmpty(spec map[string]interface{}, name string) {
+	if spec["alias"] == nil {
+		spec["alias"] = name
+		return
+	}
 	alias := spec["alias"].(string)
 	if alias == "" {
 		spec["alias"] = name
