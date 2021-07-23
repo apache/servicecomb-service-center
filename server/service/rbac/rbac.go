@@ -69,6 +69,8 @@ func add2WhiteAPIList() {
 	rbac.Add2WhiteAPIList(APITokenGranter)
 	rbac.Add2WhiteAPIList("/version")
 	rbac.Add2WhiteAPIList("/health")
+
+	Add2CheckPermWhiteAPIList(APISelfPerms)
 }
 
 func initBuildInAccount() {

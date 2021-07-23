@@ -77,6 +77,11 @@ func (ba *TokenAuthenticator) Identify(req *http.Request) error {
 		return err
 	}
 	util.SetRequestContext(req, rbacsvc.CtxRequestClaims, m)
+
+	if !rbacsvc.MustCheckPerm(pattern) {
+		return nil
+	}
+
 	// user can change self password
 	if isChangeSelfPassword(pattern, account, req) {
 		return nil

@@ -27,21 +27,25 @@ import (
 	"testing"
 	"time"
 
-	rbacmodel "github.com/go-chassis/cari/rbac"
+	_ "github.com/apache/servicecomb-service-center/test"
 
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/config"
 	v4 "github.com/apache/servicecomb-service-center/server/resource/v4"
 	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
-	_ "github.com/apache/servicecomb-service-center/test"
 	"github.com/astaxie/beego"
+	rbacmodel "github.com/go-chassis/cari/rbac"
 	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-chassis/v2/security/secret"
 	"github.com/go-chassis/go-chassis/v2/server/restful"
 	"github.com/stretchr/testify/assert"
 )
 
-var pwd = "Complicated_password1"
+const (
+	devAccount = "dev_account"
+	devPwd1    = "Complicated_password1"
+	devPwd2    = "Complicated_password2"
+)
 
 func init() {
 	beego.AppConfig.Set("rbac_enabled", "true")
@@ -70,7 +74,7 @@ func init() {
 		panic(err)
 	}
 
-	archaius.Set(rbacsvc.InitPassword, pwd)
+	archaius.Set(rbacsvc.InitPassword, devPwd1)
 	ctx := context.TODO()
 	rbacsvc.DeleteAccount(ctx, "root")
 
@@ -81,10 +85,10 @@ func init() {
 func TestAuthResource_Login(t *testing.T) {
 	ctx := context.TODO()
 
-	rbacsvc.DeleteAccount(ctx, "dev_account")
+	rbacsvc.DeleteAccount(ctx, devAccount)
 
 	t.Run("invalid user login", func(t *testing.T) {
-		b, _ := json.Marshal(&rbacmodel.Account{Name: "dev_account", Password: pwd})
+		b, _ := json.Marshal(&rbacmodel.Account{Name: devAccount, Password: devPwd1})
 
 		r, _ := http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(b))
 		w := httptest.NewRecorder()
@@ -95,7 +99,7 @@ func TestAuthResource_Login(t *testing.T) {
 	// root account token
 	var rootToken = &rbacmodel.Token{}
 	t.Run("root login", func(t *testing.T) {
-		b, _ := json.Marshal(&rbacmodel.Account{Name: "root", Password: pwd, Roles: []string{"admin"}})
+		b, _ := json.Marshal(&rbacmodel.Account{Name: "root", Password: devPwd1, Roles: []string{"admin"}})
 
 		r, _ := http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(b))
 		w := httptest.NewRecorder()
@@ -114,7 +118,7 @@ func TestAuthResource_Login(t *testing.T) {
 	})
 
 	t.Run("create dev_account,should success", func(t *testing.T) {
-		b, _ := json.Marshal(&rbacmodel.Account{Name: "dev_account", Password: "Complicated_password1", Roles: []string{"developer"}})
+		b, _ := json.Marshal(&rbacmodel.Account{Name: devAccount, Password: devPwd1, Roles: []string{"developer"}})
 
 		r, _ := http.NewRequest(http.MethodPost, "/v4/accounts", bytes.NewBuffer(b))
 		r.Header.Set(restful.HeaderAuth, "Bearer "+rootToken.TokenStr)
@@ -123,14 +127,14 @@ func TestAuthResource_Login(t *testing.T) {
 		assert.Equal(t, http.StatusOK, w.Code)
 	})
 	t.Run("given a valid token and deleted account, auth should fail", func(t *testing.T) {
-		b, _ := json.Marshal(&rbacmodel.Account{Name: "admin_account", Password: "Complicated_password1", Roles: []string{"admin"}})
+		b, _ := json.Marshal(&rbacmodel.Account{Name: "admin_account", Password: devPwd1, Roles: []string{"admin"}})
 		r, _ := http.NewRequest(http.MethodPost, "/v4/accounts", bytes.NewBuffer(b))
 		r.Header.Set(restful.HeaderAuth, "Bearer "+rootToken.TokenStr)
 		w := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code)
 
-		b, _ = json.Marshal(&rbacmodel.Account{Name: "admin_account", Password: "Complicated_password1"})
+		b, _ = json.Marshal(&rbacmodel.Account{Name: "admin_account", Password: devPwd1})
 		r2, _ := http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(b))
 		w2 := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w2, r2)
@@ -151,21 +155,21 @@ func TestAuthResource_Login(t *testing.T) {
 		assert.Equal(t, http.StatusUnauthorized, w4.Code)
 	})
 	t.Run("dev_account login and change pwd, then login again", func(t *testing.T) {
-		b, _ := json.Marshal(&rbacmodel.Account{Name: "dev_account", Password: "Complicated_password1", Roles: []string{"developer"}})
+		b, _ := json.Marshal(&rbacmodel.Account{Name: devAccount, Password: devPwd1, Roles: []string{"developer"}})
 
 		r, _ := http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(b))
 		w := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code)
 
-		b2, _ := json.Marshal(&rbacmodel.Account{Name: "dev_account", CurrentPassword: "Complicated_password1", Password: "Complicated_password2"})
-		r2, _ := http.NewRequest(http.MethodPost, "/v4/accounts/dev_account/password", bytes.NewBuffer(b2))
+		b2, _ := json.Marshal(&rbacmodel.Account{Name: devAccount, CurrentPassword: devPwd1, Password: devPwd2})
+		r2, _ := http.NewRequest(http.MethodPost, "/v4/accounts/"+devAccount+"/password", bytes.NewBuffer(b2))
 		r2.Header.Set(restful.HeaderAuth, "Bearer "+rootToken.TokenStr)
 		w2 := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w2, r2)
 		assert.Equal(t, http.StatusOK, w2.Code)
 
-		b3, _ := json.Marshal(&rbacmodel.Account{Name: "dev_account", Password: "Complicated_password2", Roles: []string{"developer"}})
+		b3, _ := json.Marshal(&rbacmodel.Account{Name: devAccount, Password: devPwd2, Roles: []string{"developer"}})
 		r3, _ := http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(b3))
 		w3 := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w3, r3)
@@ -177,7 +181,7 @@ func TestAuthResource_DeleteAccount(t *testing.T) {
 	rootToken := &rbacmodel.Token{}
 
 	t.Run("given root, try to delete it, should fail ", func(t *testing.T) {
-		b, _ := json.Marshal(&rbacmodel.Account{Name: "root", Password: "Complicated_password1"})
+		b, _ := json.Marshal(&rbacmodel.Account{Name: "root", Password: devPwd1})
 
 		r, _ := http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(b))
 		w := httptest.NewRecorder()
@@ -192,7 +196,7 @@ func TestAuthResource_DeleteAccount(t *testing.T) {
 		assert.Equal(t, http.StatusForbidden, w2.Code)
 	})
 	t.Run("dev_account can not even delete him self", func(t *testing.T) {
-		b, _ := json.Marshal(&rbacmodel.Account{Name: "dev_account", Password: "Complicated_password2", Roles: []string{"developer"}})
+		b, _ := json.Marshal(&rbacmodel.Account{Name: devAccount, Password: devPwd2, Roles: []string{"developer"}})
 
 		r, _ := http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(b))
 		w := httptest.NewRecorder()
@@ -201,7 +205,7 @@ func TestAuthResource_DeleteAccount(t *testing.T) {
 		devTo := &rbacmodel.Token{}
 		json.Unmarshal(w.Body.Bytes(), devTo)
 
-		r2, _ := http.NewRequest(http.MethodDelete, "/v4/accounts/dev_account", nil)
+		r2, _ := http.NewRequest(http.MethodDelete, "/v4/accounts/"+devAccount, nil)
 		r2.Header.Set(restful.HeaderAuth, "Bearer "+devTo.TokenStr)
 		w2 := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w2, r2)
@@ -241,7 +245,7 @@ func TestAuthResource_DeleteAccount(t *testing.T) {
 	})
 	t.Run("root can delete account", func(t *testing.T) {
 		var err error
-		b, err := json.Marshal(&rbacmodel.Account{Name: "root", Password: "Complicated_password1"})
+		b, err := json.Marshal(&rbacmodel.Account{Name: "root", Password: devPwd1})
 		assert.NoError(t, err)
 		r, err := http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(b))
 		assert.NoError(t, err)
@@ -251,7 +255,7 @@ func TestAuthResource_DeleteAccount(t *testing.T) {
 		to := &rbacmodel.Token{}
 		json.Unmarshal(w.Body.Bytes(), to)
 
-		b, _ = json.Marshal(&rbacmodel.Account{Name: "delete_account", Password: "Complicated_password1", Roles: []string{rbacmodel.RoleDeveloper}})
+		b, _ = json.Marshal(&rbacmodel.Account{Name: "delete_account", Password: devPwd1, Roles: []string{rbacmodel.RoleDeveloper}})
 		r2, _ := http.NewRequest(http.MethodPost, "/v4/accounts", bytes.NewBuffer(b))
 		r2.Header.Set(restful.HeaderAuth, "Bearer "+to.TokenStr)
 		w2 := httptest.NewRecorder()
@@ -267,7 +271,7 @@ func TestAuthResource_DeleteAccount(t *testing.T) {
 }
 func TestAuthResource_GetAccount(t *testing.T) {
 	t.Run("get account", func(t *testing.T) {
-		b, _ := json.Marshal(&rbacmodel.Account{Name: "root", Password: "Complicated_password1"})
+		b, _ := json.Marshal(&rbacmodel.Account{Name: "root", Password: devPwd1})
 		r, _ := http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(b))
 		w := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w, r)
@@ -275,7 +279,7 @@ func TestAuthResource_GetAccount(t *testing.T) {
 		to := &rbacmodel.Token{}
 		json.Unmarshal(w.Body.Bytes(), to)
 
-		r3, _ := http.NewRequest(http.MethodGet, "/v4/accounts/dev_account", nil)
+		r3, _ := http.NewRequest(http.MethodGet, "/v4/accounts/"+devAccount, nil)
 		r3.Header.Set(restful.HeaderAuth, "Bearer "+to.TokenStr)
 		w3 := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w3, r3)
@@ -283,12 +287,12 @@ func TestAuthResource_GetAccount(t *testing.T) {
 
 		a := &rbacmodel.Account{}
 		json.Unmarshal(w3.Body.Bytes(), a)
-		assert.Equal(t, "dev_account", a.Name)
+		assert.Equal(t, devAccount, a.Name)
 		assert.Equal(t, []string{"developer"}, a.Roles)
 		assert.Empty(t, a.Password)
 	})
 	t.Run("list account", func(t *testing.T) {
-		b, _ := json.Marshal(&rbacmodel.Account{Name: "root", Password: "Complicated_password1"})
+		b, _ := json.Marshal(&rbacmodel.Account{Name: "root", Password: devPwd1})
 		r, _ := http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(b))
 		w := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w, r)
@@ -309,7 +313,7 @@ func TestAuthResource_GetAccount(t *testing.T) {
 	})
 
 	t.Run("get a short expiration token", func(t *testing.T) {
-		b, _ := json.Marshal(&rbacmodel.Account{Name: "root", Password: "Complicated_password1", TokenExpirationTime: "10s"})
+		b, _ := json.Marshal(&rbacmodel.Account{Name: "root", Password: devPwd1, TokenExpirationTime: "10s"})
 		r, _ := http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(b))
 		w := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w, r)
@@ -317,7 +321,7 @@ func TestAuthResource_GetAccount(t *testing.T) {
 	})
 
 	t.Run("get a expiration token", func(t *testing.T) {
-		b, _ := json.Marshal(&rbacmodel.Account{Name: "root", Password: "Complicated_password1", TokenExpirationTime: "15m"})
+		b, _ := json.Marshal(&rbacmodel.Account{Name: "root", Password: devPwd1, TokenExpirationTime: "15m"})
 		r, _ := http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(b))
 		w := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w, r)
@@ -336,7 +340,7 @@ func TestAuthResource_GetAccount(t *testing.T) {
 
 func TestAuthResource_Login2(t *testing.T) {
 	t.Run("given wrong pwd, should bock user", func(t *testing.T) {
-		b, _ := json.Marshal(&rbacmodel.Account{Name: "dev_account", Password: "Complicated_password1"})
+		b, _ := json.Marshal(&rbacmodel.Account{Name: devAccount, Password: devPwd1})
 
 		r, _ := http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(b))
 		r.RemoteAddr = "1.1.1.1"
@@ -367,8 +371,63 @@ func TestAuthResource_Login2(t *testing.T) {
 	})
 }
 
+func TestAuthResource_SelfPerms(t *testing.T) {
+	t.Run("get self perms with invalid token, should return 401", func(t *testing.T) {
+		r, _ := http.NewRequest(http.MethodGet, "/v4/self-perms", nil)
+		r.RemoteAddr = "1.1.1.1"
+		w := httptest.NewRecorder()
+		rest.GetRouter().ServeHTTP(w, r)
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
+	})
+	t.Run("get self perms with root token, should return 200", func(t *testing.T) {
+		b, _ := json.Marshal(&rbacmodel.Account{Name: "root", Password: devPwd1})
+
+		r, _ := http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(b))
+		r.RemoteAddr = "1.1.1.1"
+		w := httptest.NewRecorder()
+		rest.GetRouter().ServeHTTP(w, r)
+		assert.Equal(t, http.StatusOK, w.Code)
+		to := &rbacmodel.Token{}
+		json.Unmarshal(w.Body.Bytes(), to)
+
+		r, _ = http.NewRequest(http.MethodGet, "/v4/self-perms", nil)
+		r.Header.Set(restful.HeaderAuth, "Bearer "+to.TokenStr)
+		r.RemoteAddr = "1.1.1.1"
+		w = httptest.NewRecorder()
+		rest.GetRouter().ServeHTTP(w, r)
+		assert.Equal(t, http.StatusOK, w.Code)
+		resp := &rbacmodel.SelfPermissionResponse{}
+		json.Unmarshal(w.Body.Bytes(), resp)
+		assert.Equal(t, "*", resp.Perms[0].Verbs[0])
+	})
+	t.Run("get self perms with dev token, should return 200", func(t *testing.T) {
+		const testSelfPermsAccount = "test_self_perms"
+		rbacsvc.DeleteAccount(context.Background(), testSelfPermsAccount)
+		rbacsvc.CreateAccount(context.Background(), &rbacmodel.Account{Name: testSelfPermsAccount, Password: devPwd1, Roles: []string{"developer"}})
+		b, _ := json.Marshal(&rbacmodel.Account{Name: testSelfPermsAccount, Password: devPwd1})
+
+		r, _ := http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(b))
+		r.RemoteAddr = "1.1.1.1"
+		w := httptest.NewRecorder()
+		rest.GetRouter().ServeHTTP(w, r)
+		assert.Equal(t, http.StatusOK, w.Code)
+		to := &rbacmodel.Token{}
+		json.Unmarshal(w.Body.Bytes(), to)
+
+		r, _ = http.NewRequest(http.MethodGet, "/v4/self-perms", nil)
+		r.Header.Set(restful.HeaderAuth, "Bearer "+to.TokenStr)
+		r.RemoteAddr = "1.1.1.1"
+		w = httptest.NewRecorder()
+		rest.GetRouter().ServeHTTP(w, r)
+		assert.Equal(t, http.StatusOK, w.Code)
+		resp := &rbacmodel.SelfPermissionResponse{}
+		json.Unmarshal(w.Body.Bytes(), resp)
+		assert.Equal(t, "*", resp.Perms[0].Verbs[0])
+	})
+}
+
 func BenchmarkAuthResource_LoginP(b *testing.B) {
-	body, _ := json.Marshal(&rbacmodel.Account{Name: "root", Password: pwd})
+	body, _ := json.Marshal(&rbacmodel.Account{Name: "root", Password: devPwd1})
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			r, _ := http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(body))
@@ -384,7 +443,7 @@ func BenchmarkAuthResource_LoginP(b *testing.B) {
 
 //
 func BenchmarkAuthResource_Login(b *testing.B) {
-	body, _ := json.Marshal(&rbacmodel.Account{Name: "root", Password: pwd})
+	body, _ := json.Marshal(&rbacmodel.Account{Name: "root", Password: devPwd1})
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		r, _ := http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(body))
