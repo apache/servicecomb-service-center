@@ -64,7 +64,7 @@ func (ba *TokenAuthenticator) Identify(req *http.Request) error {
 		return nil
 	}
 
-	account, err := ba.readAccount(req)
+	account, err := ba.VerifyRequest(req)
 	if err != nil {
 		return err
 	}
@@ -93,7 +93,7 @@ func (ba *TokenAuthenticator) Identify(req *http.Request) error {
 	return nil
 }
 
-func (ba *TokenAuthenticator) readAccount(req *http.Request) (*rbacmodel.Account, error) {
+func (ba *TokenAuthenticator) VerifyRequest(req *http.Request) (*rbacmodel.Account, error) {
 	claims, err := ba.VerifyToken(req)
 	if err != nil {
 		log.Errorf(err, "verify request token failed, %s %s", req.Method, req.RequestURI)
