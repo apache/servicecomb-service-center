@@ -38,7 +38,8 @@ var (
 )
 
 const (
-	StatusBanned = "banned"
+	StatusBanned    = "banned"
+	StatusAttempted = "attempted"
 )
 
 // AccountManager contains the RBAC CRUD
@@ -53,6 +54,8 @@ type AccountManager interface {
 
 // AccountLockManager saves login failure status
 type AccountLockManager interface {
+	// CreateLock insert or update account lock in datasource
+	CreateLock(ctx context.Context, lock *AccountLock) error
 	GetLock(ctx context.Context, key string) (*AccountLock, error)
 	ListLock(ctx context.Context) ([]*AccountLock, int64, error)
 	DeleteLock(ctx context.Context, key string) error

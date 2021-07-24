@@ -121,6 +121,8 @@ func TestAccount(t *testing.T) {
 }
 
 func TestAccountLock(t *testing.T) {
+	var banTime int64
+
 	t.Run("ban account TestAccountLock, should return no error", func(t *testing.T) {
 		err := datasource.GetAccountLockManager().Ban(context.Background(), "TestAccountLock")
 		assert.NoError(t, err)
@@ -129,6 +131,18 @@ func TestAccountLock(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, datasource.StatusBanned, lock.Status)
 		assert.Less(t, time.Now().Unix(), lock.ReleaseAt)
+
+		banTime = lock.ReleaseAt
+	})
+
+	t.Run("ban account TestAccountLock again, should return a new release time", func(t *testing.T) {
+		err := datasource.GetAccountLockManager().Ban(context.Background(), "TestAccountLock")
+		assert.NoError(t, err)
+
+		lock, err := datasource.GetAccountLockManager().GetLock(context.Background(), "TestAccountLock")
+		assert.NoError(t, err)
+		assert.Equal(t, datasource.StatusBanned, lock.Status)
+		assert.Less(t, banTime, lock.ReleaseAt)
 	})
 
 	t.Run("ban account TestAccountLock again, should refresh releaseAt", func(t *testing.T) {

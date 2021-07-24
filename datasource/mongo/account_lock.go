@@ -33,6 +33,29 @@ type AccountLockManager struct {
 	releaseAfter time.Duration
 }
 
+func (al *AccountLockManager) CreateLock(ctx context.Context, lock *datasource.AccountLock) error {
+	key := lock.Key
+	releaseAt := lock.ReleaseAt
+	filter := mutil.NewFilter(mutil.AccountLockKey(key))
+	updateFilter := mutil.NewFilter(mutil.Set(mutil.NewFilter(
+		mutil.AccountLockKey(key),
+		mutil.AccountLockStatus(lock.Status),
+		mutil.AccountLockReleaseAt(releaseAt),
+	)))
+	result, err := client.GetMongoClient().FindOneAndUpdate(ctx, model.CollectionAccountLock, filter, updateFilter,
+		options.FindOneAndUpdate().SetUpsert(true))
+	if err != nil {
+		log.Error(fmt.Sprintf("can not save account lock %s", key), err)
+		return err
+	}
+	if result.Err() != nil && result.Err() != mongo.ErrNoDocuments {
+		log.Error(fmt.Sprintf("can not save account lock %s", key), result.Err())
+		return result.Err()
+	}
+	log.Info(fmt.Sprintf("%s is locked, release at %d", key, releaseAt))
+	return nil
+}
+
 func (al *AccountLockManager) GetLock(ctx context.Context, key string) (*datasource.AccountLock, error) {
 	filter := mutil.NewFilter(mutil.AccountLockKey(key))
 	result, err := client.GetMongoClient().FindOne(ctx, model.CollectionAccountLock, filter)
@@ -88,25 +111,11 @@ func (al *AccountLockManager) DeleteLock(ctx context.Context, key string) error 
 }
 
 func (al *AccountLockManager) Ban(ctx context.Context, key string) error {
-	releaseAt := time.Now().Add(al.releaseAfter).Unix()
-	filter := mutil.NewFilter(mutil.AccountLockKey(key))
-	updateFilter := mutil.NewFilter(mutil.Set(mutil.NewFilter(
-		mutil.AccountLockKey(key),
-		mutil.AccountLockStatus(datasource.StatusBanned),
-		mutil.AccountLockReleaseAt(releaseAt),
-	)))
-	result, err := client.GetMongoClient().FindOneAndUpdate(ctx, model.CollectionAccountLock, filter, updateFilter,
-		options.FindOneAndUpdate().SetUpsert(true))
-	if err != nil {
-		log.Error(fmt.Sprintf("can not save account lock %s", key), err)
-		return err
-	}
-	if result.Err() != nil && result.Err() != mongo.ErrNoDocuments {
-		log.Error(fmt.Sprintf("can not save account lock %s", key), result.Err())
-		return result.Err()
-	}
-	log.Info(fmt.Sprintf("%s is locked, release at %d", key, releaseAt))
-	return nil
+	return al.CreateLock(ctx, &datasource.AccountLock{
+		Key:       key,
+		Status:    datasource.StatusBanned,
+		ReleaseAt: time.Now().Add(al.releaseAfter).Unix(),
+	})
 }
 
 func NewAccountLockManager(ReleaseAfter time.Duration) datasource.AccountLockManager {

@@ -32,12 +32,12 @@ func TestIsBanned(t *testing.T) {
 		})
 }
 
-func TestListAccountLock(t *testing.T) {
+func TestListLock(t *testing.T) {
 	t.Run("list 1 account lock, should return 1 item", func(t *testing.T) {
 		err := account.Ban(context.TODO(), "dev_lock::127.0.0.1")
 		assert.NoError(t, err)
 
-		locks, n, err := account.ListAccountLock(context.Background())
+		locks, n, err := account.ListLock(context.Background())
 		assert.NoError(t, err)
 		assert.NotEqual(t, 0, n)
 		for _, lock := range locks {

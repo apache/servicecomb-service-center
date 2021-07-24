@@ -427,7 +427,7 @@ func TestAuthResource_SelfPerms(t *testing.T) {
 	})
 }
 
-func TestAuthResource_ListAccountLock(t *testing.T) {
+func TestAuthResource_ListLock(t *testing.T) {
 	t.Run("admin list account, should pass", func(t *testing.T) {
 		b, _ := json.Marshal(&rbacmodel.Account{Name: "root", Password: devPwd1})
 		r, _ := http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(b))

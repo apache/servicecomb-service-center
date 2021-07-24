@@ -50,7 +50,7 @@ func (ar *AuthResource) URLPatterns() []rest.Route {
 		{Method: http.MethodDelete, Path: "/v4/accounts/:name", Func: ar.DeleteAccount},
 		{Method: http.MethodPut, Path: "/v4/accounts/:name", Func: ar.UpdateAccount},
 		{Method: http.MethodPost, Path: "/v4/accounts/:name/password", Func: ar.ChangePassword},
-		{Method: http.MethodGet, Path: "/v4/account-locks", Func: ar.ListAccountLock},
+		{Method: http.MethodGet, Path: "/v4/account-locks", Func: ar.ListLock},
 	}
 }
 
@@ -204,8 +204,8 @@ func (ar *AuthResource) ListSelfPerms(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (ar *AuthResource) ListAccountLock(w http.ResponseWriter, r *http.Request) {
-	al, n, err := accountsvc.ListAccountLock(r.Context())
+func (ar *AuthResource) ListLock(w http.ResponseWriter, r *http.Request) {
+	al, n, err := accountsvc.ListLock(r.Context())
 	if err != nil {
 		log.Error("get account lock failed", err)
 		rest.WriteServiceError(w, err)

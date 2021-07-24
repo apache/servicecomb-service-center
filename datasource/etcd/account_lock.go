@@ -31,6 +31,23 @@ type AccountLockManager struct {
 	releaseAfter time.Duration
 }
 
+func (al AccountLockManager) CreateLock(ctx context.Context, lock *datasource.AccountLock) error {
+	value, err := json.Marshal(lock)
+	if err != nil {
+		log.Errorf(err, "account lock is invalid")
+		return err
+	}
+	key := lock.Key
+	etcdKey := path.GenerateAccountLockKey(key)
+	err = client.PutBytes(ctx, etcdKey, value)
+	if err != nil {
+		log.Errorf(err, "can not save account lock")
+		return err
+	}
+	log.Info(fmt.Sprintf("%s is locked, release at %d", key, lock.ReleaseAt))
+	return nil
+}
+
 func (al AccountLockManager) GetLock(ctx context.Context, key string) (*datasource.AccountLock, error) {
 	resp, err := client.Instance().Do(ctx, client.GET,
 		client.WithStrKey(path.GenerateAccountLockKey(key)))
@@ -87,17 +104,5 @@ func (al AccountLockManager) Ban(ctx context.Context, key string) error {
 	l.Key = key
 	l.Status = datasource.StatusBanned
 	l.ReleaseAt = time.Now().Add(al.releaseAfter).Unix()
-	value, err := json.Marshal(l)
-	if err != nil {
-		log.Errorf(err, "account lock is invalid")
-		return err
-	}
-	etcdKey := path.GenerateAccountLockKey(key)
-	err = client.PutBytes(ctx, etcdKey, value)
-	if err != nil {
-		log.Errorf(err, "can not save account lock")
-		return err
-	}
-	log.Info(fmt.Sprintf("%s is locked, release at %d", key, l.ReleaseAt))
-	return nil
+	return al.CreateLock(ctx, l)
 }
