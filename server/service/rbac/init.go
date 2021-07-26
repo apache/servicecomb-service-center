@@ -26,9 +26,22 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
+const ErrUserOrPwdWrongInHalfOpening int32 = 401302
+
+var (
+	ErrTokenExpired     = rbac.NewError(rbac.ErrTokenExpired, "")
+	ErrAccountBlocked   = rbac.NewError(rbac.ErrAccountBlocked, "")
+	ErrUserOrPwdWrong   = rbac.NewError(rbac.ErrUserOrPwdWrong, "")
+	ErrUserOrPwdWrongEx = rbac.NewError(ErrUserOrPwdWrongInHalfOpening,
+		"User name or password is wrong, RBAC system is half opening")
+	ErrOldPwdWrong = rbac.NewError(rbac.ErrOldPwdWrong, "")
+)
+
 var roleMap = map[string]*rbac.Role{}
 
 func init() {
+	rbac.MustRegisterErr(ErrUserOrPwdWrongInHalfOpening, ErrUserOrPwdWrong.Error())
+
 	// Assign resources to admin role, admin role own all permissions
 	roleMap[rbac.RoleAdmin] = &rbac.Role{
 		Name:  rbac.RoleAdmin,

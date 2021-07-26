@@ -18,7 +18,9 @@
 package buildin
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -33,6 +35,8 @@ import (
 	"github.com/go-chassis/go-chassis/v2/security/authr"
 	"github.com/go-chassis/go-chassis/v2/server/restful"
 )
+
+var ErrNoRoles = errors.New("no role found in token")
 
 func init() {
 	plugin.RegisterPlugin(plugin.Plugin{Kind: auth.AUTH, Name: "buildin", New: New})
@@ -60,56 +64,80 @@ func (ba *TokenAuthenticator) Identify(req *http.Request) error {
 		return nil
 	}
 
-	claims, err := ba.VerifyToken(req)
+	account, err := ba.VerifyRequest(req)
 	if err != nil {
-		log.Errorf(err, "verify request token failed, %s %s", req.Method, req.RequestURI)
 		return err
 	}
 
-	m, ok := claims.(map[string]interface{})
-	if !ok {
-		log.Error("claims convert failed", rbacmodel.ErrConvertErr)
-		return rbacmodel.ErrConvertErr
-	}
-	account, err := rbacmodel.GetAccount(m)
+	// if account not exist should return auth failure
+	err = accountExist(req.Context(), account.Name)
 	if err != nil {
-		log.Error("get account from token failed", err)
 		return err
 	}
-	util.SetRequestContext(req, rbacsvc.CtxRequestClaims, m)
 
 	if !rbacsvc.MustCheckPerm(pattern) {
 		return nil
 	}
 
 	// user can change self password
-	if isChangeSelfPassword(pattern, account, req) {
+	if isChangeSelfPassword(pattern, account.Name, req) {
 		return nil
 	}
 
-	if len(account.Roles) == 0 {
-		log.Error("no role found in token", nil)
-		return errors.New("no role found in token")
-	}
-
-	project := req.URL.Query().Get(":project")
-	allow, matchedLabels, err := checkPerm(account.Roles, project, req, pattern, req.Method)
+	matchedLabels, err := checkPerm(account.Roles, req)
 	if err != nil {
 		return err
-	}
-	if !allow {
-		return rbacmodel.NewError(rbacmodel.ErrNoPermission, "")
 	}
 
 	util.SetRequestContext(req, authHandler.CtxResourceLabels, matchedLabels)
 	return nil
 }
 
-func isChangeSelfPassword(pattern string, a *rbacmodel.Account, req *http.Request) bool {
+func (ba *TokenAuthenticator) VerifyRequest(req *http.Request) (*rbacmodel.Account, error) {
+	claims, err := ba.VerifyToken(req)
+	if err != nil {
+		log.Errorf(err, "verify request token failed, %s %s", req.Method, req.RequestURI)
+		return nil, err
+	}
+	m, ok := claims.(map[string]interface{})
+	if !ok {
+		log.Error("claims convert failed", rbacmodel.ErrConvert)
+		return nil, rbacmodel.ErrConvert
+	}
+	util.SetRequestContext(req, rbacsvc.CtxRequestClaims, m)
+	account, err := rbacmodel.GetAccount(m)
+	if err != nil {
+		log.Error("get account from token failed", err)
+		return nil, err
+	}
+	if len(account.Roles) == 0 {
+		log.Error("no role found in token", nil)
+		return nil, ErrNoRoles
+	}
+	return account, nil
+}
+
+func accountExist(ctx context.Context, user string) error {
+	// if root should pass, cause of root initialization
+	if user == rbacsvc.RootName {
+		return nil
+	}
+	exist, err := rbacsvc.AccountExist(ctx, user)
+	if err != nil {
+		return err
+	}
+	if !exist {
+		msg := fmt.Sprintf("account [%s] is deleted", user)
+		return rbacmodel.NewError(rbacmodel.ErrTokenOwnedAccountDeleted, msg)
+	}
+	return nil
+}
+
+func isChangeSelfPassword(pattern string, user string, req *http.Request) bool {
 	if pattern != rbacsvc.APIAccountPassword {
 		return false
 	}
-	changerName := a.Name
+	changerName := user
 	targetName := req.URL.Query().Get(":name")
 	return changerName == targetName
 }
@@ -140,16 +168,17 @@ func (ba *TokenAuthenticator) VerifyToken(req *http.Request) (interface{}, error
 }
 
 //this method decouple business code and perm checks
-func checkPerm(roleList []string, project string, req *http.Request, apiPattern, method string) (bool, []map[string]string, error) {
+func checkPerm(roleList []string, req *http.Request) ([]map[string]string, error) {
 	hasAdmin, normalRoles := filterRoles(roleList)
 	if hasAdmin {
-		return true, nil, nil
+		return nil, nil
 	}
 	//todo fast check for dev role
 	targetResource := FromRequest(req)
 	if targetResource == nil {
-		return false, nil, errors.New("no valid resouce scope")
+		return nil, errors.New("no valid resouce scope")
 	}
 	//TODO add project
+	project := req.URL.Query().Get(":project")
 	return rbacsvc.Allow(req.Context(), project, normalRoles, targetResource)
 }

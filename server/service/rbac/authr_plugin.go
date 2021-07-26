@@ -20,22 +20,16 @@ package rbac
 import (
 	"context"
 	"crypto/rsa"
-	"errors"
-	"fmt"
 
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/privacy"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/go-chassis/cari/pkg/errsvc"
 	"github.com/go-chassis/cari/rbac"
 	"github.com/go-chassis/go-chassis/v2/security/authr"
 	"github.com/go-chassis/go-chassis/v2/security/token"
-
-	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/privacy"
-	"github.com/apache/servicecomb-service-center/pkg/util"
 )
-
-var ErrUnauthorized = errors.New("wrong user name or password")
 
 //EmbeddedAuthenticator is sc default auth plugin, RBAC data is persisted in etcd
 type EmbeddedAuthenticator struct {
@@ -50,7 +44,7 @@ func (a *EmbeddedAuthenticator) Login(ctx context.Context, user string, password
 	ip := util.GetIPFromContext(ctx)
 	if IsBanned(MakeBanKey(user, ip)) {
 		log.Warnf("ip [%s] is banned, account: %s", ip, user)
-		return "", rbac.NewError(rbac.ErrAccountBlocked, "")
+		return "", ErrAccountBlocked
 	}
 	opt := &authr.LoginOptions{}
 	for _, o := range opts {
@@ -60,14 +54,14 @@ func (a *EmbeddedAuthenticator) Login(ctx context.Context, user string, password
 	if err != nil {
 		if errsvc.IsErrEqualCode(err, rbac.ErrAccountNotExist) {
 			TryLockAccount(MakeBanKey(user, ip))
-			return "", rbac.NewError(rbac.ErrUserOrPwdWrong, "")
+			return "", UserOrPwdWrongError()
 		}
 		return "", err
 	}
 	same := privacy.SamePassword(account.Password, password)
 	if !same {
 		TryLockAccount(MakeBanKey(user, ip))
-		return "", rbac.NewError(rbac.ErrUserOrPwdWrong, "")
+		return "", UserOrPwdWrongError()
 	}
 
 	secret, err := GetPrivateKey()
@@ -98,22 +92,9 @@ func (a *EmbeddedAuthenticator) Authenticate(ctx context.Context, tokenStr strin
 	claims, err := a.authToken(tokenStr, p)
 	if err != nil {
 		if a.isTokenExpiredError(err) {
-			return nil, rbac.NewError(rbac.ErrTokenExpired, "")
+			return nil, ErrTokenExpired
 		}
 		return nil, err
-	}
-	accountNameI := claims[rbac.ClaimsUser]
-	n, ok := accountNameI.(string)
-	if !ok {
-		return nil, rbac.ErrConvert
-	}
-	exist, err := datasource.GetAccountManager().AccountExist(ctx, n)
-	if err != nil {
-		return nil, err
-	}
-	if !exist {
-		msg := fmt.Sprintf("account [%s] is deleted", n)
-		return nil, rbac.NewError(rbac.ErrTokenOwnedAccountDeleted, msg)
 	}
 	return claims, nil
 }
@@ -136,6 +117,13 @@ func (a *EmbeddedAuthenticator) authToken(tokenStr string, pub *rsa.PublicKey) (
 	return token.Verify(tokenStr, func(claims interface{}, method token.SigningMethod) (interface{}, error) {
 		return pub, nil
 	})
+}
+
+func UserOrPwdWrongError() error {
+	if AuthResource(ResourceService) {
+		return ErrUserOrPwdWrong
+	}
+	return ErrUserOrPwdWrongEx
 }
 
 func init() {

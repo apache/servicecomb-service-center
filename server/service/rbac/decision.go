@@ -19,46 +19,49 @@ package rbac
 
 import (
 	"context"
-
-	"github.com/go-chassis/cari/rbac"
+	"fmt"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/plugin/auth"
+	"github.com/go-chassis/cari/rbac"
 )
 
-// return: allow, matched labels(empty if no label defined), error
+// Allow return: matched labels(empty if no label defined), error
 func Allow(ctx context.Context, project string, roleList []string,
-	targetResouce *auth.ResourceScope) (bool, []map[string]string, error) {
+	targetResource *auth.ResourceScope) ([]map[string]string, error) {
 	//TODO check project
 	allPerms, err := getPermsByRoles(ctx, roleList)
 	if err != nil {
 		log.Error("get role list errors", err)
-		return false, nil, err
+		return nil, err
 	}
 	if len(allPerms) == 0 {
 		log.Warn("role list has no any permissions")
-		return false, nil, nil
+		return nil, rbac.NewError(rbac.ErrNoPermission, "role has no any permissions")
 	}
-	allow, labelList := GetLabel(allPerms, targetResouce.Type, targetResouce.Verb)
+	allow, labelList := GetLabel(allPerms, targetResource.Type, targetResource.Verb)
 	if !allow {
-		return false, nil, nil
+		return nil, rbac.NewError(rbac.ErrNoPermission,
+			fmt.Sprintf("role has no permissions[%s:%s]", targetResource.Type, targetResource.Verb))
 	}
 	// allow, but no label found, means we can ignore the labels
 	if len(labelList) == 0 {
-		return true, nil, nil
+		return nil, nil
 	}
 	// target resource needs no label, return without filter
-	if len(targetResouce.Labels) == 0 {
-		return true, labelList, nil
+	if len(targetResource.Labels) == 0 {
+		return labelList, nil
 	}
 	// allow, and labels found, filter the labels
-	filteredLabelList := FilterLabel(targetResouce.Labels, labelList)
+	filteredLabelList := FilterLabel(targetResource.Labels, labelList)
 	// target resource label matches no label in permission, means not allow
 	if len(filteredLabelList) == 0 {
-		return false, nil, nil
+		return nil, rbac.NewError(rbac.ErrNoPermission,
+			fmt.Sprintf("role has no permissions[%s:%s] for labels %v",
+				targetResource.Type, targetResource.Verb, targetResource.Labels))
 	}
-	return true, filteredLabelList, nil
+	return filteredLabelList, nil
 }
 
 func FilterLabel(targetResourceLabel []map[string]string, permLabelList []map[string]string) []map[string]string {
