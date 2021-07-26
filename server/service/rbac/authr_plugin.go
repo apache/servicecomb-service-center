@@ -31,10 +31,6 @@ import (
 	"github.com/go-chassis/go-chassis/v2/security/token"
 )
 
-// ErrAccountNotExistWhenExcludeServiceScope return when the auth scope not include the service resource
-// and auth err is ErrAccountNotExist
-const ErrAccountNotExistWhenExcludeServiceScope int32 = 404200
-
 //EmbeddedAuthenticator is sc default auth plugin, RBAC data is persisted in etcd
 type EmbeddedAuthenticator struct {
 }
@@ -48,7 +44,7 @@ func (a *EmbeddedAuthenticator) Login(ctx context.Context, user string, password
 	ip := util.GetIPFromContext(ctx)
 	if IsBanned(MakeBanKey(user, ip)) {
 		log.Warnf("ip [%s] is banned, account: %s", ip, user)
-		return "", rbac.NewError(rbac.ErrAccountBlocked, "")
+		return "", ErrAccountBlocked
 	}
 	opt := &authr.LoginOptions{}
 	for _, o := range opts {
@@ -58,14 +54,14 @@ func (a *EmbeddedAuthenticator) Login(ctx context.Context, user string, password
 	if err != nil {
 		if errsvc.IsErrEqualCode(err, rbac.ErrAccountNotExist) {
 			TryLockAccount(MakeBanKey(user, ip))
-			return "", ErrUserOrPwdWrong()
+			return "", UserOrPwdWrongError()
 		}
 		return "", err
 	}
 	same := privacy.SamePassword(account.Password, password)
 	if !same {
 		TryLockAccount(MakeBanKey(user, ip))
-		return "", ErrUserOrPwdWrong()
+		return "", UserOrPwdWrongError()
 	}
 
 	secret, err := GetPrivateKey()
@@ -96,7 +92,7 @@ func (a *EmbeddedAuthenticator) Authenticate(ctx context.Context, tokenStr strin
 	claims, err := a.authToken(tokenStr, p)
 	if err != nil {
 		if a.isTokenExpiredError(err) {
-			return nil, rbac.NewError(rbac.ErrTokenExpired, "")
+			return nil, ErrTokenExpired
 		}
 		return nil, err
 	}
@@ -123,14 +119,13 @@ func (a *EmbeddedAuthenticator) authToken(tokenStr string, pub *rsa.PublicKey) (
 	})
 }
 
-func ErrUserOrPwdWrong() error {
+func UserOrPwdWrongError() error {
 	if AuthResource(ResourceService) {
-		return rbac.NewError(rbac.ErrUserOrPwdWrong, "")
+		return ErrUserOrPwdWrong
 	}
-	return rbac.NewError(ErrAccountNotExistWhenExcludeServiceScope, "")
+	return ErrUserOrPwdWrongEx
 }
 
 func init() {
-	rbac.MustRegisterErr(ErrAccountNotExistWhenExcludeServiceScope, "User name or password is wrong")
 	authr.Install("default", newEmbeddedAuthenticator)
 }

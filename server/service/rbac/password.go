@@ -75,7 +75,7 @@ func changePassword(ctx context.Context, name, currentPassword, pwd string) erro
 	ip := util.GetIPFromContext(ctx)
 	if IsBanned(MakeBanKey(name, ip)) {
 		log.Warnf("ip [%s] is banned, account: %s", ip, name)
-		return rbac.NewError(rbac.ErrAccountBlocked, "")
+		return ErrAccountBlocked
 	}
 	if currentPassword == pwd {
 		return rbac.NewError(rbac.ErrNewPwdBad, ErrSamePassword.Error())
@@ -89,7 +89,7 @@ func changePassword(ctx context.Context, name, currentPassword, pwd string) erro
 	if !same {
 		log.Error("current password is wrong", nil)
 		TryLockAccount(MakeBanKey(name, ip))
-		return rbac.NewError(rbac.ErrOldPwdWrong, "")
+		return ErrOldPwdWrong
 	}
 	return doChangePassword(ctx, old, pwd)
 }
