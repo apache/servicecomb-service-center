@@ -109,7 +109,8 @@ func InitResourceMap() {
 }
 
 func initAuthResources() {
-	scopes := strings.Split(config.GetString("rbac.scope", "*"), ",")
+	// scope MUST contain role and account resources
+	scopes := strings.Split(config.GetString("rbac.scope", "*")+",role,account", ",")
 	for _, scope := range scopes {
 		if scope == "*" {
 			authResources = map[string]struct{}{}

@@ -32,8 +32,7 @@ import (
 	"github.com/go-chassis/cari/rbac"
 )
 
-//CreateAccount save 2 kv
-//1. account info
+//CreateAccount save account info
 func CreateAccount(ctx context.Context, a *rbac.Account) error {
 	quotaErr := quota.Apply(ctx, quota.NewApplyQuotaResource(quota.TypeAccount,
 		util.ParseDomainProject(ctx), "", 1))
@@ -140,8 +139,7 @@ func DeleteAccount(ctx context.Context, name string) error {
 	return err
 }
 
-//CreateAccount save 2 kv
-//1. account info
+//EditAccount save account info
 func EditAccount(ctx context.Context, a *rbac.Account) error {
 	exist, err := datasource.GetAccountManager().AccountExist(ctx, a.Name)
 	if err != nil {

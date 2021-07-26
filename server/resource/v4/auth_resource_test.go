@@ -209,7 +209,7 @@ func TestAuthResource_DeleteAccount(t *testing.T) {
 		r2.Header.Set(restful.HeaderAuth, "Bearer "+devTo.TokenStr)
 		w2 := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w2, r2)
-		assert.Equal(t, http.StatusUnauthorized, w2.Code)
+		assert.Equal(t, http.StatusForbidden, w2.Code)
 	})
 
 	t.Run("create your_account with admin role should be pass", func(t *testing.T) {
