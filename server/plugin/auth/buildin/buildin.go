@@ -79,11 +79,6 @@ func (ba *TokenAuthenticator) Identify(req *http.Request) error {
 		return nil
 	}
 
-	// user can change self password
-	if isChangeSelfPassword(pattern, account.Name, req) {
-		return nil
-	}
-
 	matchedLabels, err := checkPerm(account.Roles, req)
 	if err != nil {
 		return err
@@ -131,15 +126,6 @@ func accountExist(ctx context.Context, user string) error {
 		return rbacmodel.NewError(rbacmodel.ErrTokenOwnedAccountDeleted, msg)
 	}
 	return nil
-}
-
-func isChangeSelfPassword(pattern string, user string, req *http.Request) bool {
-	if pattern != rbacsvc.APIAccountPassword {
-		return false
-	}
-	changerName := user
-	targetName := req.URL.Query().Get(":name")
-	return changerName == targetName
 }
 
 func filterRoles(roleList []string) (hasAdmin bool, normalRoles []string) {

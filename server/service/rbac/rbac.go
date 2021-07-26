@@ -70,7 +70,10 @@ func add2WhiteAPIList() {
 	rbac.Add2WhiteAPIList("/version")
 	rbac.Add2WhiteAPIList("/health")
 
+	// user can list self permission without account get permission
 	Add2CheckPermWhiteAPIList(APISelfPerms)
+	// user can change self password without account modify permission
+	Add2CheckPermWhiteAPIList(APIAccountPassword)
 }
 
 func initBuildInAccount() {
