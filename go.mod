@@ -12,10 +12,11 @@ require (
 	github.com/coreos/bbolt v1.3.3 // indirect
 	github.com/coreos/etcd v3.3.25+incompatible
 	github.com/coreos/pkg v0.0.0-20180928190104-399ea9e2e55f // v4
+	github.com/deckarep/golang-set v1.7.1
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/elithrar/simple-scrypt v1.3.0
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-chassis/cari v0.5.0
+	github.com/go-chassis/cari v0.5.1-0.20210722135711-3b4cdd6dd9bf
 	github.com/go-chassis/foundation v0.3.1-0.20210513015331-b54416b66bcd
 	github.com/go-chassis/go-archaius v1.5.1
 	github.com/go-chassis/go-chassis/v2 v2.2.1-0.20210630123055-6b4c31c5ad02

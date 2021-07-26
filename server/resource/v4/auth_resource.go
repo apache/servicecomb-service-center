@@ -22,16 +22,14 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/go-chassis/cari/discovery"
-	"github.com/go-chassis/cari/pkg/errsvc"
-	"github.com/go-chassis/cari/rbac"
-	"github.com/go-chassis/go-chassis/v2/security/authr"
-
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 	"github.com/apache/servicecomb-service-center/server/service/validator"
+	"github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/cari/rbac"
+	"github.com/go-chassis/go-chassis/v2/security/authr"
 )
 
 const DefaultTokenExpirationDuration = "12h"
@@ -43,6 +41,7 @@ type AuthResource struct {
 func (ar *AuthResource) URLPatterns() []rest.Route {
 	return []rest.Route{
 		{Method: http.MethodPost, Path: "/v4/token", Func: ar.Login},
+		{Method: http.MethodGet, Path: "/v4/self-perms", Func: ar.ListSelfPerms},
 		{Method: http.MethodPost, Path: "/v4/accounts", Func: ar.CreateAccount},
 		{Method: http.MethodGet, Path: "/v4/accounts", Func: ar.ListAccount},
 		{Method: http.MethodGet, Path: "/v4/accounts/:name", Func: ar.GetAccount},
@@ -68,7 +67,7 @@ func (ar *AuthResource) CreateAccount(w http.ResponseWriter, req *http.Request) 
 	err = rbacsvc.CreateAccount(req.Context(), a)
 	if err != nil {
 		log.Error(errorsEx.MsgOperateAccountFailed, err)
-		writeErrsvcOrInternalErr(w, err)
+		rest.WriteServiceError(w, err)
 		return
 	}
 	rest.WriteSuccess(w, req)
@@ -79,7 +78,7 @@ func (ar *AuthResource) DeleteAccount(w http.ResponseWriter, req *http.Request) 
 	err := rbacsvc.DeleteAccount(req.Context(), name)
 	if err != nil {
 		log.Error(errorsEx.MsgOperateAccountFailed, err)
-		writeErrsvcOrInternalErr(w, err)
+		rest.WriteServiceError(w, err)
 		return
 	}
 	rest.WriteSuccess(w, req)
@@ -103,7 +102,7 @@ func (ar *AuthResource) UpdateAccount(w http.ResponseWriter, req *http.Request) 
 	err = rbacsvc.UpdateAccount(req.Context(), name, a)
 	if err != nil {
 		log.Error(errorsEx.MsgOperateAccountFailed, err)
-		writeErrsvcOrInternalErr(w, err)
+		rest.WriteServiceError(w, err)
 		return
 	}
 	rest.WriteSuccess(w, req)
@@ -127,7 +126,7 @@ func (ar *AuthResource) GetAccount(w http.ResponseWriter, r *http.Request) {
 	a, err := rbacsvc.GetAccount(r.Context(), r.URL.Query().Get(":name"))
 	if err != nil {
 		log.Error(errorsEx.MsgGetAccountFailed, err)
-		writeErrsvcOrInternalErr(w, err)
+		rest.WriteServiceError(w, err)
 		return
 	}
 	a.Password = ""
@@ -151,7 +150,7 @@ func (ar *AuthResource) ChangePassword(w http.ResponseWriter, req *http.Request)
 
 	err = rbacsvc.ChangePassword(req.Context(), a)
 	if err != nil {
-		writeErrsvcOrInternalErr(w, err)
+		rest.WriteServiceError(w, err)
 		return
 	}
 	rest.WriteSuccess(w, req)
@@ -182,21 +181,26 @@ func (ar *AuthResource) Login(w http.ResponseWriter, r *http.Request) {
 		authr.ExpireAfter(a.TokenExpirationTime))
 	if err != nil {
 		log.Error("not authorized", err)
-		writeErrsvcOrInternalErr(w, err)
+		rest.WriteServiceError(w, err)
 		return
 	}
 	rest.WriteResponse(w, r, nil, &rbac.Token{TokenStr: t})
 }
 
-func MakeBanKey(name, ip string) string {
-	return name + "::" + ip
-}
-
-func writeErrsvcOrInternalErr(w http.ResponseWriter, err error) {
-	e, ok := err.(*errsvc.Error)
-	if ok {
-		rest.WriteErrsvcError(w, e)
+func (ar *AuthResource) ListSelfPerms(w http.ResponseWriter, r *http.Request) {
+	perms, err := rbacsvc.ListSelfPerms(r.Context())
+	if err != nil {
+		log.Error(errorsEx.MsgGetAccountFailed, err)
+		rest.WriteServiceError(w, err)
 		return
 	}
-	rest.WriteError(w, discovery.ErrInternal, err.Error())
+	resp := &rbac.SelfPermissionResponse{
+		Perms: perms,
+	}
+	rest.WriteResponse(w, r, nil, resp)
+
+}
+
+func MakeBanKey(name, ip string) string {
+	return name + "::" + ip
 }

@@ -24,25 +24,38 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/go-chassis/cari/discovery"
-	"github.com/go-chassis/cari/pkg/errsvc"
-
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/cari/pkg/errsvc"
 )
 
 var errNilRequestBody = errors.New("request body is nil")
 
 func WriteError(w http.ResponseWriter, code int32, detail string) {
 	err := discovery.NewError(code, detail)
-	WriteErrsvcError(w, err)
+	WriteServiceError(w, err)
 }
 
-func WriteErrsvcError(w http.ResponseWriter, err *errsvc.Error) {
+func WriteServiceError(w http.ResponseWriter, err error) {
+	e, ok := err.(*errsvc.Error)
+	if !ok {
+		WriteError(w, discovery.ErrInternal, err.Error())
+		return
+	}
+	status := e.StatusCode()
+	b, err := json.Marshal(e)
+	if err != nil {
+		log.Error("json marshal failed", err)
+		status = http.StatusInternalServerError
+		b = util.StringToBytesWithNoCopy(err.Error())
+	}
 	w.Header().Set(HeaderContentType, ContentTypeJSON)
-	w.WriteHeader(err.StatusCode())
-	b, _ := json.Marshal(err)
-	_, _ = w.Write(b)
+	w.WriteHeader(status)
+	_, err = w.Write(b)
+	if err != nil {
+		log.Error("write err response failed", err)
+	}
 }
 
 // WriteResponse writes http response

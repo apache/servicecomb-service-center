@@ -23,6 +23,7 @@ import (
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
+	mapset "github.com/deckarep/golang-set"
 	"github.com/go-chassis/cari/rbac"
 )
 
@@ -37,6 +38,7 @@ const (
 
 var (
 	APITokenGranter = "/v4/token"
+	APISelfPerms    = "/v4/self-perms"
 
 	APIAccountList = "/v4/accounts"
 
@@ -71,6 +73,8 @@ var (
 	APIServiceSchema = "/v4/:project/registry/microservices/:serviceId/schemas"
 
 	AuthResources = map[string]struct{}{}
+
+	whiteAPIList = mapset.NewSet()
 )
 
 func InitResourceMap() {
@@ -126,4 +130,14 @@ func MustAuth(apiPattern string) bool {
 		return false
 	}
 	return rbac.MustAuth(apiPattern)
+}
+
+func Add2CheckPermWhiteAPIList(path ...string) {
+	for _, p := range path {
+		whiteAPIList.Add(p)
+	}
+}
+
+func MustCheckPerm(apiPattern string) bool {
+	return !whiteAPIList.Contains(apiPattern)
 }

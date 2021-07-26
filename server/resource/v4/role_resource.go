@@ -91,7 +91,7 @@ func (rr *RoleResource) CreateRole(w http.ResponseWriter, req *http.Request) {
 	err = rbacsvc.CreateRole(req.Context(), role)
 	if err != nil {
 		log.Error(errorsEx.MsgOperateRoleFailed, err)
-		writeErrsvcOrInternalErr(w, err)
+		rest.WriteServiceError(w, err)
 		return
 	}
 	rest.WriteResponse(w, req, nil, nil)
@@ -114,7 +114,7 @@ func (rr *RoleResource) UpdateRole(w http.ResponseWriter, req *http.Request) {
 	err = rbacsvc.EditRole(req.Context(), name, role)
 	if err != nil {
 		log.Error(errorsEx.MsgOperateRoleFailed, err)
-		writeErrsvcOrInternalErr(w, err)
+		rest.WriteServiceError(w, err)
 		return
 	}
 
@@ -126,7 +126,7 @@ func (rr *RoleResource) GetRole(w http.ResponseWriter, r *http.Request) {
 	resp, err := rbacsvc.GetRole(r.Context(), r.URL.Query().Get(":roleName"))
 	if err != nil {
 		log.Error(errorsEx.MsgGetRoleFailed, err)
-		writeErrsvcOrInternalErr(w, err)
+		rest.WriteServiceError(w, err)
 		return
 	}
 
@@ -140,7 +140,7 @@ func (rr *RoleResource) DeleteRole(w http.ResponseWriter, req *http.Request) {
 	err := rbacsvc.DeleteRole(req.Context(), n)
 	if err != nil {
 		log.Error(errorsEx.MsgJSON, err)
-		writeErrsvcOrInternalErr(w, err)
+		rest.WriteServiceError(w, err)
 		return
 	}
 
