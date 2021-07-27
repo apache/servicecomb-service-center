@@ -11,7 +11,7 @@ import (
 )
 
 func IsBanned(ctx context.Context, key string) (bool, error) {
-	lock, err := datasource.GetAccountLockManager().GetLock(ctx, key)
+	lock, err := GetLock(ctx, key)
 	if err != nil {
 		if err == datasource.ErrAccountLockNotExist {
 			return false, nil
@@ -19,7 +19,7 @@ func IsBanned(ctx context.Context, key string) (bool, error) {
 		return false, err
 	}
 	if lock.ReleaseAt < time.Now().Unix() {
-		err := datasource.GetAccountLockManager().DeleteLock(ctx, key)
+		err = DeleteLock(ctx, key)
 		if err != nil {
 			log.Errorf(err, "remove lock failed")
 			return false, datasource.ErrCannotReleaseLock
@@ -38,6 +38,10 @@ func Ban(ctx context.Context, key string) error {
 
 func UpsertLock(ctx context.Context, lock *datasource.AccountLock) error {
 	return datasource.GetAccountLockManager().UpsertLock(ctx, lock)
+}
+
+func GetLock(ctx context.Context, key string) (*datasource.AccountLock, error) {
+	return datasource.GetAccountLockManager().GetLock(ctx, key)
 }
 
 func ListLock(ctx context.Context) ([]*datasource.AccountLock, int64, error) {

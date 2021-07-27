@@ -23,9 +23,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	accountsvc "github.com/apache/servicecomb-service-center/server/service/account"
-
 	"golang.org/x/time/rate"
 )
 
@@ -59,11 +59,27 @@ func TryLockAccount(key string) {
 	}
 
 	allow := l.limiter.AllowN(time.Now(), 1)
+	status := datasource.StatusAttempted
 	if !allow {
-		err := accountsvc.Ban(context.TODO(), key)
-		if err != nil {
-			log.Error(fmt.Sprintf("can not ban account %s", key), err)
-		}
+		status = datasource.StatusBanned
+	}
+	saveLock(key, status)
+}
+
+func saveLock(key, status string) {
+	var err error
+	ctx := context.Background()
+	if status == datasource.StatusBanned {
+		err = accountsvc.Ban(ctx, key)
+	} else {
+		err = accountsvc.UpsertLock(ctx, &datasource.AccountLock{
+			Key:       key,
+			Status:    status,
+			ReleaseAt: time.Now().Unix(),
+		})
+	}
+	if err != nil {
+		log.Error(fmt.Sprintf("can not ban account %s", key), err)
 	}
 }
 
