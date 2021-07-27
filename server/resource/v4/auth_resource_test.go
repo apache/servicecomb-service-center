@@ -29,6 +29,7 @@ import (
 
 	_ "github.com/apache/servicecomb-service-center/test"
 
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/config"
 	v4 "github.com/apache/servicecomb-service-center/server/resource/v4"
@@ -42,9 +43,10 @@ import (
 )
 
 const (
-	devAccount = "dev_account"
-	devPwd1    = "Complicated_password1"
-	devPwd2    = "Complicated_password2"
+	devAccount           = "dev_account"
+	testSelfPermsAccount = "test_self_perms"
+	devPwd1              = "Complicated_password1"
+	devPwd2              = "Complicated_password2"
 )
 
 func init() {
@@ -401,7 +403,6 @@ func TestAuthResource_SelfPerms(t *testing.T) {
 		assert.Equal(t, "*", resp.Perms[0].Verbs[0])
 	})
 	t.Run("get self perms with dev token, should return 200", func(t *testing.T) {
-		const testSelfPermsAccount = "test_self_perms"
 		rbacsvc.DeleteAccount(context.Background(), testSelfPermsAccount)
 		rbacsvc.CreateAccount(context.Background(), &rbacmodel.Account{Name: testSelfPermsAccount, Password: devPwd1, Roles: []string{"developer"}})
 		b, _ := json.Marshal(&rbacmodel.Account{Name: testSelfPermsAccount, Password: devPwd1})
@@ -423,6 +424,46 @@ func TestAuthResource_SelfPerms(t *testing.T) {
 		resp := &rbacmodel.SelfPermissionResponse{}
 		json.Unmarshal(w.Body.Bytes(), resp)
 		assert.Equal(t, "*", resp.Perms[0].Verbs[0])
+	})
+}
+
+func TestAuthResource_ListLock(t *testing.T) {
+	t.Run("admin list account, should pass", func(t *testing.T) {
+		b, _ := json.Marshal(&rbacmodel.Account{Name: "root", Password: devPwd1})
+		r, _ := http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(b))
+		w := httptest.NewRecorder()
+		rest.GetRouter().ServeHTTP(w, r)
+		assert.Equal(t, http.StatusOK, w.Code)
+		to := &rbacmodel.Token{}
+		json.Unmarshal(w.Body.Bytes(), to)
+
+		r3, _ := http.NewRequest(http.MethodGet, "/v4/account-locks", nil)
+		r3.Header.Set(restful.HeaderAuth, "Bearer "+to.TokenStr)
+		w3 := httptest.NewRecorder()
+		rest.GetRouter().ServeHTTP(w3, r3)
+		assert.Equal(t, http.StatusOK, w3.Code)
+		resp := &datasource.AccountLockResponse{}
+		err := json.Unmarshal(w.Body.Bytes(), resp)
+		assert.NoError(t, err)
+	})
+	t.Run("not admin list account, should return 403", func(t *testing.T) {
+		const testListLock = "list_account_lock"
+		err := rbacsvc.CreateAccount(context.TODO(), &rbacmodel.Account{Name: testListLock, Password: devPwd1, Roles: []string{"developer"}})
+		assert.NoError(t, err)
+
+		b, _ := json.Marshal(&rbacmodel.Account{Name: testListLock, Password: devPwd1})
+		r, _ := http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(b))
+		w := httptest.NewRecorder()
+		rest.GetRouter().ServeHTTP(w, r)
+		assert.Equal(t, http.StatusOK, w.Code)
+		to := &rbacmodel.Token{}
+		json.Unmarshal(w.Body.Bytes(), to)
+
+		r3, _ := http.NewRequest(http.MethodGet, "/v4/account-locks", nil)
+		r3.Header.Set(restful.HeaderAuth, "Bearer "+to.TokenStr)
+		w3 := httptest.NewRecorder()
+		rest.GetRouter().ServeHTTP(w3, r3)
+		assert.Equal(t, http.StatusForbidden, w3.Code)
 	})
 }
 

@@ -22,9 +22,11 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/apache/servicecomb-service-center/datasource"
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
+	accountsvc "github.com/apache/servicecomb-service-center/server/service/account"
 	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 	"github.com/apache/servicecomb-service-center/server/service/validator"
 	"github.com/go-chassis/cari/discovery"
@@ -48,6 +50,7 @@ func (ar *AuthResource) URLPatterns() []rest.Route {
 		{Method: http.MethodDelete, Path: "/v4/accounts/:name", Func: ar.DeleteAccount},
 		{Method: http.MethodPut, Path: "/v4/accounts/:name", Func: ar.UpdateAccount},
 		{Method: http.MethodPost, Path: "/v4/accounts/:name/password", Func: ar.ChangePassword},
+		{Method: http.MethodGet, Path: "/v4/account-locks", Func: ar.ListLock},
 	}
 }
 
@@ -199,6 +202,20 @@ func (ar *AuthResource) ListSelfPerms(w http.ResponseWriter, r *http.Request) {
 	}
 	rest.WriteResponse(w, r, nil, resp)
 
+}
+
+func (ar *AuthResource) ListLock(w http.ResponseWriter, r *http.Request) {
+	al, n, err := accountsvc.ListLock(r.Context())
+	if err != nil {
+		log.Error("get account lock failed", err)
+		rest.WriteServiceError(w, err)
+		return
+	}
+	resp := &datasource.AccountLockResponse{
+		Total:       n,
+		AccountLock: al,
+	}
+	rest.WriteResponse(w, r, nil, resp)
 }
 
 func MakeBanKey(name, ip string) string {

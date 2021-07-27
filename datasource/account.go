@@ -38,7 +38,8 @@ var (
 )
 
 const (
-	StatusBanned = "banned"
+	StatusBanned    = "banned"
+	StatusAttempted = "attempted"
 )
 
 // AccountManager contains the RBAC CRUD
@@ -53,7 +54,9 @@ type AccountManager interface {
 
 // AccountLockManager saves login failure status
 type AccountLockManager interface {
+	UpsertLock(ctx context.Context, lock *AccountLock) error
 	GetLock(ctx context.Context, key string) (*AccountLock, error)
+	ListLock(ctx context.Context) ([]*AccountLock, int64, error)
 	DeleteLock(ctx context.Context, key string) error
 	Ban(ctx context.Context, key string) error
 }
@@ -61,4 +64,8 @@ type AccountLock struct {
 	Key       string `json:"key,omitempty"`
 	Status    string `json:"status,omitempty"`
 	ReleaseAt int64  `json:"releaseAt,omitempty" bson:"release_at"`
+}
+type AccountLockResponse struct {
+	Total       int64          `json:"total,omitempty"`
+	AccountLock []*AccountLock `json:"data,omitempty"`
 }

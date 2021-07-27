@@ -30,19 +30,16 @@ import (
 )
 
 const (
-	MaxAttempts = 2
-
-	BlockInterval = 1 * time.Hour
+	MaxAttempts   = 2
+	BlockInterval = 15 * time.Minute
 )
 
-var BanTime = 1 * time.Hour
+var clients sync.Map
 
 type LoginFailureLimiter struct {
 	limiter *rate.Limiter
 	Key     string
 }
-
-var clients sync.Map
 
 //TryLockAccount try to lock the account login attempt
 // it use time/rate to allow certainty failure,
@@ -74,10 +71,10 @@ func TryLockAccount(key string) {
 //it will release the client from banned status
 //use account name plus ip as key will maximum reduce the client conflicts
 func IsBanned(key string) bool {
-	IsBanned, err := accountsvc.IsBanned(context.TODO(), key)
+	banned, err := accountsvc.IsBanned(context.TODO(), key)
 	if err != nil {
 		log.Error("can not check lock list, so return banned for security concern", err)
 		return true
 	}
-	return IsBanned
+	return banned
 }

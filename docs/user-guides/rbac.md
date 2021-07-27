@@ -97,7 +97,7 @@ All APIs of the ServiceComb system is mapping to a **resource type**. resource i
 - service: permission to discover, register service and instance
 - governance:  permission to manage traffic control policy, such as rate limiting
 - service/schema: permission to register and discover contract
-- account: permission to manage accounts
+- account: permission to manage accounts and account-locks
 - role: permission to manage roles
 - ops: permission to access admin API
 

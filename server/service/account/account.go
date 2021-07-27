@@ -35,3 +35,15 @@ func IsBanned(ctx context.Context, key string) (bool, error) {
 func Ban(ctx context.Context, key string) error {
 	return datasource.GetAccountLockManager().Ban(ctx, key)
 }
+
+func UpsertLock(ctx context.Context, lock *datasource.AccountLock) error {
+	return datasource.GetAccountLockManager().UpsertLock(ctx, lock)
+}
+
+func ListLock(ctx context.Context) ([]*datasource.AccountLock, int64, error) {
+	return datasource.GetAccountLockManager().ListLock(ctx)
+}
+
+func DeleteLock(ctx context.Context, key string) error {
+	return datasource.GetAccountLockManager().DeleteLock(ctx, key)
+}
