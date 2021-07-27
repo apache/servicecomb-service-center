@@ -2424,7 +2424,7 @@ func (ds *MetadataManager) DeleteServicePri(ctx context.Context, serviceID strin
 		}
 
 		if rsp.Count > 0 {
-			log.Errorf(nil, "delete micro-service[%s] failed, service deployed instances[%s], operator: %s",
+			log.Errorf(nil, "delete micro-service[%s] failed, service deployed instances[%d], operator: %s",
 				serviceID, rsp.Count, remoteIP)
 			return pb.CreateResponse(pb.ErrDeployedInstance, "Can not delete the service deployed instance(s)."), err
 		}

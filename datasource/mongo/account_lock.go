@@ -110,6 +110,23 @@ func (al *AccountLockManager) DeleteLock(ctx context.Context, key string) error 
 	return nil
 }
 
+func (al *AccountLockManager) DeleteLockList(ctx context.Context, keys []string) error {
+	var delKeys []mongo.WriteModel
+	for _, key := range keys {
+		delKeys = append(delKeys, mongo.NewDeleteOneModel().SetFilter(mutil.NewFilter(mutil.AccountLockKey(key))))
+	}
+	if len(delKeys) == 0 {
+		return nil
+	}
+	_, err := client.GetMongoClient().BatchDelete(ctx, model.CollectionAccountLock, delKeys)
+	if err != nil {
+		log.Error(fmt.Sprintf("remove locks %v failed", keys), err)
+		return datasource.ErrCannotReleaseLock
+	}
+	log.Info(fmt.Sprintf("%v are released", keys))
+	return nil
+}
+
 func (al *AccountLockManager) Ban(ctx context.Context, key string) error {
 	return al.UpsertLock(ctx, &datasource.AccountLock{
 		Key:       key,

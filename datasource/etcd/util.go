@@ -428,7 +428,7 @@ func statistics(ctx context.Context, withShared bool) (*pb.Statistics, error) {
 func getInstanceCountByDomain(ctx context.Context, svcIDToNonVerKey map[string]string, resp chan datasource.GetInstanceCountByDomainResponse) {
 	domainID := util.ParseDomain(ctx)
 	key := path.GetInstanceRootKey(domainID) + "/"
-	instOpts := append([]client.PluginOpOption{},
+	instOpts := append(serviceUtil.FromContext(ctx),
 		client.WithStrKey(key),
 		client.WithPrefix(),
 		client.WithKeyOnly())
