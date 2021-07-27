@@ -24,7 +24,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	v1 "github.com/apache/servicecomb-service-center/server/resource/v1"
+	"github.com/apache/servicecomb-service-center/server/common"
 	"math/rand"
 	"strings"
 	"time"
@@ -63,8 +63,8 @@ var PolicyNames = []string{"retry", "rateLimiting", "circuitBreaker", "bulkhead"
 var rule = Validator{}
 
 func (d *Distributor) Create(ctx context.Context, p *gov.Policy) ([]byte, error) {
-	kind := ctx.Value(v1.KindKey).(string)
-	project := ctx.Value(v1.ProjectKey).(string)
+	kind := ctx.Value(common.KindKey).(string)
+	project := ctx.Value(common.ProjectKey).(string)
 	if kind == KindMatchGroup {
 		err := d.generateID(project, p)
 		if err != nil {
@@ -99,7 +99,7 @@ func (d *Distributor) Create(ctx context.Context, p *gov.Policy) ([]byte, error)
 }
 
 func (d *Distributor) Update(ctx context.Context, p *gov.Policy) error {
-	kind := ctx.Value(v1.KindKey).(string)
+	kind := ctx.Value(common.KindKey).(string)
 	err := rule.Validate(kind, p.Spec)
 	if err != nil {
 		return err
@@ -111,13 +111,13 @@ func (d *Distributor) Update(ctx context.Context, p *gov.Policy) error {
 	if err != nil {
 		return err
 	}
-	id := ctx.Value(v1.IDKey).(string)
+	id := ctx.Value(common.IDKey).(string)
 	kv := kie.KVRequest{
 		ID:     id,
 		Value:  string(yamlByte),
 		Status: p.Status,
 	}
-	project := ctx.Value(v1.ProjectKey).(string)
+	project := ctx.Value(common.ProjectKey).(string)
 	_, err = d.client.Put(context.TODO(), kv, kie.WithProject(project))
 	if err != nil {
 		log.Error("kie update failed", err)
@@ -127,14 +127,14 @@ func (d *Distributor) Update(ctx context.Context, p *gov.Policy) error {
 }
 
 func (d *Distributor) Delete(ctx context.Context) error {
-	kind := ctx.Value(v1.KindKey).(string)
+	kind := ctx.Value(common.KindKey).(string)
 	if kind == KindMatchGroup {
 		// should remove all policies of this group
 		return d.DeleteMatchGroup(ctx)
 	}
 
-	id := ctx.Value(v1.KindKey).(string)
-	project := ctx.Value(v1.ProjectKey).(string)
+	id := ctx.Value(common.KindKey).(string)
+	project := ctx.Value(common.ProjectKey).(string)
 	err := d.client.Delete(context.TODO(), id, kie.WithProject(project))
 	if err != nil {
 		log.Error("kie delete failed", err)
@@ -150,7 +150,7 @@ func (d *Distributor) DeleteMatchGroup(ctx context.Context) error {
 		return err
 	}
 
-	project := ctx.Value(v1.ProjectKey).(string)
+	project := ctx.Value(common.ProjectKey).(string)
 	labels := make(map[string]string)
 	labels[KeyApp] = policy.Selector.App
 	labels[KeyEnvironment] = policy.Selector.Environment
@@ -182,14 +182,14 @@ func (d *Distributor) DeleteMatchGroup(ctx context.Context) error {
 }
 
 func (d *Distributor) Display(ctx context.Context) ([]byte, error) {
-	context.WithValue(ctx, v1.KindKey, KindMatchGroup)
+	context.WithValue(ctx, common.KindKey, KindMatchGroup)
 	list, _, err := d.listDataByKind(ctx)
 	if err != nil {
 		return nil, err
 	}
 	policyMap := make(map[string]*gov.Policy)
 	for _, kind := range PolicyNames {
-		context.WithValue(ctx, v1.KindKey, kind)
+		context.WithValue(ctx, common.KindKey, kind)
 		policies, _, err := d.listDataByKind(ctx)
 		if err != nil {
 			continue
@@ -244,7 +244,7 @@ func (d *Distributor) List(ctx context.Context) ([]byte, error) {
 		return nil, err
 	}
 	r := make([]*gov.Policy, 0, list.Total)
-	kind := ctx.Value(v1.KindKey).(string)
+	kind := ctx.Value(common.KindKey).(string)
 	for _, item := range list.Data {
 		policy, err := d.transform(item, kind)
 		if err != nil {
@@ -267,9 +267,9 @@ func (d *Distributor) Get(ctx context.Context) ([]byte, error) {
 }
 
 func (d *Distributor) getPolicy(ctx context.Context) (*gov.Policy, error) {
-	id := ctx.Value(v1.IDKey).(string)
-	kind := ctx.Value(v1.KindKey).(string)
-	project := ctx.Value(v1.ProjectKey).(string)
+	id := ctx.Value(common.IDKey).(string)
+	kind := ctx.Value(common.KindKey).(string)
+	project := ctx.Value(common.ProjectKey).(string)
 	kv, err := d.client.Get(context.TODO(), id, kie.WithGetProject(project))
 	if err != nil {
 		return nil, err
@@ -326,10 +326,10 @@ func toSnake(name string) string {
 }
 
 func (d *Distributor) listDataByKind(ctx context.Context) (*kie.KVResponse, int, error) {
-	kind := ctx.Value(v1.KindKey).(string)
-	project := ctx.Value(v1.ProjectKey).(string)
-	app := ctx.Value(v1.AppKey).(string)
-	env := ctx.Value(v1.EnvironmentKey).(string)
+	kind := ctx.Value(common.KindKey).(string)
+	project := ctx.Value(common.ProjectKey).(string)
+	app := ctx.Value(common.AppKey).(string)
+	env := ctx.Value(common.EnvironmentKey).(string)
 	ops := []kie.GetOption{
 		kie.WithKey("beginWith(" + toGovKeyPrefix(kind) + ")"),
 		kie.WithRevision(0),
@@ -354,10 +354,10 @@ func (d *Distributor) generateID(project string, p *gov.Policy) error {
 	}
 	kind := KindMatchGroup
 	ctx := context.TODO()
-	context.WithValue(ctx, v1.KindKey, kind)
-	context.WithValue(ctx, v1.ProjectKey, project)
-	context.WithValue(ctx, v1.AppKey, p.Selector.App)
-	context.WithValue(ctx, v1.EnvironmentKey, p.Selector.Environment)
+	context.WithValue(ctx, common.KindKey, kind)
+	context.WithValue(ctx, common.ProjectKey, project)
+	context.WithValue(ctx, common.AppKey, p.Selector.App)
+	context.WithValue(ctx, common.EnvironmentKey, p.Selector.Environment)
 	list, _, err := d.listDataByKind(ctx)
 	if err != nil {
 		return err

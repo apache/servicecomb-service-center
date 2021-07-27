@@ -21,6 +21,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/server/common"
 	"io/ioutil"
 	"net/http"
 
@@ -35,35 +36,23 @@ import (
 type Governance struct {
 }
 
-const (
-	AppKey         = "app"
-	EnvironmentKey = "environment"
-	KindKey        = ":kind"
-	ProjectKey     = ":project"
-	IDKey          = ":id"
-	DisplayKey     = "display"
-	SpecKey        = "spec"
-)
-
-const HeaderAuth = "Authorization"
-
 func getCtx(r *http.Request) (context.Context, error) {
 	ctx := context.TODO()
 	query := r.URL.Query()
-	if query.Get(KindKey) != "" {
-		context.WithValue(ctx, KindKey, query.Get(KindKey))
+	if query.Get(common.KindKey) != "" {
+		context.WithValue(ctx, common.KindKey, query.Get(common.KindKey))
 	}
-	if query.Get(ProjectKey) != "" {
-		context.WithValue(ctx, ProjectKey, query.Get(ProjectKey))
+	if query.Get(common.ProjectKey) != "" {
+		context.WithValue(ctx, common.ProjectKey, query.Get(common.ProjectKey))
 	}
-	if query.Get(IDKey) != "" {
-		context.WithValue(ctx, IDKey, query.Get(IDKey))
+	if query.Get(common.IDKey) != "" {
+		context.WithValue(ctx, common.IDKey, query.Get(common.IDKey))
 	}
-	if query.Get(AppKey) != "" {
-		context.WithValue(ctx, AppKey, query.Get(AppKey))
+	if query.Get(common.AppKey) != "" {
+		context.WithValue(ctx, common.AppKey, query.Get(common.AppKey))
 	}
-	if query.Get(EnvironmentKey) != "" {
-		context.WithValue(ctx, EnvironmentKey, query.Get(EnvironmentKey))
+	if query.Get(common.EnvironmentKey) != "" {
+		context.WithValue(ctx, common.EnvironmentKey, query.Get(common.EnvironmentKey))
 	}
 	if r.Body != nil {
 		body, err := ioutil.ReadAll(r.Body)
@@ -71,12 +60,12 @@ func getCtx(r *http.Request) (context.Context, error) {
 			log.Error("read body err", err)
 			return nil, err
 		}
-		context.WithValue(ctx, SpecKey, body)
+		context.WithValue(ctx, common.SpecKey, body)
 	}
 
 	h := r.Header
-	if h[HeaderAuth] != nil {
-		context.WithValue(ctx, HeaderAuth, h[HeaderAuth])
+	if h[common.HeaderAuth] != nil {
+		context.WithValue(ctx, common.HeaderAuth, h[common.HeaderAuth])
 	}
 	return ctx, nil
 }
@@ -92,7 +81,7 @@ func (t *Governance) Create(w http.ResponseWriter, r *http.Request) {
 		GovernancePolicy: &model.GovernancePolicy{Selector: &model.Selector{}},
 	}
 
-	body := ctx.Value(SpecKey).([]byte)
+	body := ctx.Value(common.SpecKey).([]byte)
 	err = json.Unmarshal(body, p)
 	if err != nil {
 		log.Error("json err", err)
@@ -100,7 +89,7 @@ func (t *Governance) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kind := ctx.Value(KindKey).(string)
+	kind := ctx.Value(common.KindKey).(string)
 	err = gov.ValidateSpec(kind, p.Spec)
 	if err != nil {
 		log.Error("validate policy err", err)
@@ -131,7 +120,7 @@ func (t *Governance) Put(w http.ResponseWriter, r *http.Request) {
 	}
 	p := &model.Policy{}
 
-	body := ctx.Value(SpecKey).([]byte)
+	body := ctx.Value(common.SpecKey).([]byte)
 	err = json.Unmarshal(body, p)
 	if err != nil {
 		log.Error("json err", err)
@@ -139,7 +128,7 @@ func (t *Governance) Put(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kind := ctx.Value(KindKey).(string)
+	kind := ctx.Value(common.KindKey).(string)
 	err = gov.ValidateSpec(kind, p.Spec)
 	if err != nil {
 		log.Error("validate policy err", err)
@@ -166,7 +155,7 @@ func (t *Governance) ListOrDisPlay(w http.ResponseWriter, r *http.Request) {
 	var body []byte
 	var err error
 
-	if ctx.Value(KindKey).(string) == DisplayKey {
+	if ctx.Value(common.KindKey).(string) == common.DisplayKey {
 		body, err = gov.Display(ctx)
 	} else {
 		body, err = gov.List(ctx)
@@ -210,10 +199,10 @@ func (t *Governance) URLPatterns() []rest.Route {
 		//servicecomb.marker.{name}
 		//servicecomb.rateLimiter.{name}
 		//....
-		{Method: http.MethodPost, Path: "/v1/:project/gov/" + KindKey, Func: t.Create},
-		{Method: http.MethodGet, Path: "/v1/:project/gov/" + KindKey, Func: t.ListOrDisPlay},
-		{Method: http.MethodGet, Path: "/v1/:project/gov/" + KindKey + "/" + IDKey, Func: t.Get},
-		{Method: http.MethodPut, Path: "/v1/:project/gov/" + KindKey + "/" + IDKey, Func: t.Put},
-		{Method: http.MethodDelete, Path: "/v1/:project/gov/" + KindKey + "/" + IDKey, Func: t.Delete},
+		{Method: http.MethodPost, Path: "/v1/:project/gov/" + common.KindKey, Func: t.Create},
+		{Method: http.MethodGet, Path: "/v1/:project/gov/" + common.KindKey, Func: t.ListOrDisPlay},
+		{Method: http.MethodGet, Path: "/v1/:project/gov/" + common.KindKey + "/" + common.IDKey, Func: t.Get},
+		{Method: http.MethodPut, Path: "/v1/:project/gov/" + common.KindKey + "/" + common.IDKey, Func: t.Put},
+		{Method: http.MethodDelete, Path: "/v1/:project/gov/" + common.KindKey + "/" + common.IDKey, Func: t.Delete},
 	}
 }
