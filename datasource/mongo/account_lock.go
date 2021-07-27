@@ -33,7 +33,7 @@ type AccountLockManager struct {
 	releaseAfter time.Duration
 }
 
-func (al *AccountLockManager) CreateLock(ctx context.Context, lock *datasource.AccountLock) error {
+func (al *AccountLockManager) UpsertLock(ctx context.Context, lock *datasource.AccountLock) error {
 	key := lock.Key
 	releaseAt := lock.ReleaseAt
 	filter := mutil.NewFilter(mutil.AccountLockKey(key))
@@ -111,7 +111,7 @@ func (al *AccountLockManager) DeleteLock(ctx context.Context, key string) error 
 }
 
 func (al *AccountLockManager) Ban(ctx context.Context, key string) error {
-	return al.CreateLock(ctx, &datasource.AccountLock{
+	return al.UpsertLock(ctx, &datasource.AccountLock{
 		Key:       key,
 		Status:    datasource.StatusBanned,
 		ReleaseAt: time.Now().Add(al.releaseAfter).Unix(),

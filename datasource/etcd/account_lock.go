@@ -31,7 +31,7 @@ type AccountLockManager struct {
 	releaseAfter time.Duration
 }
 
-func (al AccountLockManager) CreateLock(ctx context.Context, lock *datasource.AccountLock) error {
+func (al AccountLockManager) UpsertLock(ctx context.Context, lock *datasource.AccountLock) error {
 	value, err := json.Marshal(lock)
 	if err != nil {
 		log.Errorf(err, "account lock is invalid")
@@ -104,5 +104,5 @@ func (al AccountLockManager) Ban(ctx context.Context, key string) error {
 	l.Key = key
 	l.Status = datasource.StatusBanned
 	l.ReleaseAt = time.Now().Add(al.releaseAfter).Unix()
-	return al.CreateLock(ctx, l)
+	return al.UpsertLock(ctx, l)
 }

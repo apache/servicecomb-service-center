@@ -136,6 +136,8 @@ func TestAccountLock(t *testing.T) {
 	})
 
 	t.Run("ban account TestAccountLock again, should return a new release time", func(t *testing.T) {
+		time.Sleep(time.Second)
+
 		err := datasource.GetAccountLockManager().Ban(context.Background(), "TestAccountLock")
 		assert.NoError(t, err)
 

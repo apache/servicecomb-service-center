@@ -37,7 +37,7 @@ func Ban(ctx context.Context, key string) error {
 }
 
 func UpsertLock(ctx context.Context, lock *datasource.AccountLock) error {
-	return datasource.GetAccountLockManager().CreateLock(ctx, lock)
+	return datasource.GetAccountLockManager().UpsertLock(ctx, lock)
 }
 
 func ListLock(ctx context.Context) ([]*datasource.AccountLock, int64, error) {
