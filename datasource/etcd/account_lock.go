@@ -95,6 +95,23 @@ func (al AccountLockManager) DeleteLock(ctx context.Context, key string) error {
 	return nil
 }
 
+func (al AccountLockManager) DeleteLockList(ctx context.Context, keys []string) error {
+	var opts []client.PluginOp
+	for _, key := range keys {
+		opts = append(opts, client.OpDel(client.WithStrKey(path.GenerateAccountLockKey(key))))
+	}
+	if len(opts) == 0 {
+		return nil
+	}
+	err := client.BatchCommit(ctx, opts)
+	if err != nil {
+		log.Error(fmt.Sprintf("remove locks %v failed", keys), err)
+		return datasource.ErrCannotReleaseLock
+	}
+	log.Info(fmt.Sprintf("%v are released", keys))
+	return nil
+}
+
 func NewAccountLockManager(ReleaseAfter time.Duration) datasource.AccountLockManager {
 	return &AccountLockManager{releaseAfter: ReleaseAfter}
 }

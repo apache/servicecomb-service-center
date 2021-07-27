@@ -47,3 +47,7 @@ func ListLock(ctx context.Context) ([]*datasource.AccountLock, int64, error) {
 func DeleteLock(ctx context.Context, key string) error {
 	return datasource.GetAccountLockManager().DeleteLock(ctx, key)
 }
+
+func DeleteLockList(ctx context.Context, keys []string) error {
+	return datasource.GetAccountLockManager().DeleteLockList(ctx, keys)
+}

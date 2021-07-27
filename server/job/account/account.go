@@ -27,7 +27,7 @@ import (
 	accountsvc "github.com/apache/servicecomb-service-center/server/service/account"
 )
 
-const releasedLockHistoryCleanupInterval = time.Minute
+const releasedLockHistoryCleanupInterval = 20 * time.Minute
 
 func init() {
 	startReleasedLockHistoryCleanupJob()
@@ -55,27 +55,25 @@ func startReleasedLockHistoryCleanupJob() {
 }
 
 func CleanupReleasedLockHistory(ctx context.Context) error {
-	locks, n, err := accountsvc.ListLock(ctx)
+	locks, _, err := accountsvc.ListLock(ctx)
 	if err != nil {
 		return err
 	}
-	if n == 0 {
-		return nil
-	}
-	removeN := 0
+	var keys []string
 	for _, lock := range locks {
 		if lock.ReleaseAt > time.Now().Unix() {
 			continue
 		}
-		err := accountsvc.DeleteLock(ctx, lock.Key)
-		if err != nil {
-			log.Error(fmt.Sprintf("delete lock %s history failed", lock.Key), err)
-			continue
-		}
-		removeN++
+		keys = append(keys, lock.Key)
 	}
-	if removeN > 0 {
-		log.Info(fmt.Sprintf("cleanup %d released lock history", removeN))
+	n := len(keys)
+	if n == 0 {
+		return nil
 	}
+	err = accountsvc.DeleteLockList(ctx, keys)
+	if err != nil {
+		return err
+	}
+	log.Info(fmt.Sprintf("cleanup %d released lock history", n))
 	return nil
 }

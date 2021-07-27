@@ -58,6 +58,7 @@ type AccountLockManager interface {
 	GetLock(ctx context.Context, key string) (*AccountLock, error)
 	ListLock(ctx context.Context) ([]*AccountLock, int64, error)
 	DeleteLock(ctx context.Context, key string) error
+	DeleteLockList(ctx context.Context, keys []string) error
 	Ban(ctx context.Context, key string) error
 }
 type AccountLock struct {
