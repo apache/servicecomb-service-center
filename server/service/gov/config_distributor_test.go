@@ -18,6 +18,7 @@
 package gov_test
 
 import (
+	"context"
 	"encoding/json"
 	"testing"
 
@@ -53,7 +54,7 @@ func init() {
 }
 
 func TestCreate(t *testing.T) {
-	res, err := svc.Create(MockKind, Project, &gov.Policy{
+	res, err := svc.Create(context.TODO(), MockKind, Project, &gov.Policy{
 		GovernancePolicy: &gov.GovernancePolicy{
 			Name: "Traffic2adminAPI",
 			Selector: &gov.Selector{
@@ -69,7 +70,7 @@ func TestCreate(t *testing.T) {
 }
 
 func TestUpdate(t *testing.T) {
-	err := svc.Update(MockKind, id, Project, &gov.Policy{
+	err := svc.Update(context.TODO(), MockKind, id, Project, &gov.Policy{
 		GovernancePolicy: &gov.GovernancePolicy{
 			Name: "Traffic2adminAPI",
 			Selector: &gov.Selector{
@@ -83,7 +84,7 @@ func TestUpdate(t *testing.T) {
 }
 
 func TestDisplay(t *testing.T) {
-	res, err := svc.Create(MatchGroup, Project, &gov.Policy{
+	res, err := svc.Create(context.TODO(), MatchGroup, Project, &gov.Policy{
 		GovernancePolicy: &gov.GovernancePolicy{
 			Name: "Traffic2adminAPI",
 			Selector: &gov.Selector{
@@ -95,7 +96,7 @@ func TestDisplay(t *testing.T) {
 	id = string(res)
 	assert.NoError(t, err)
 	policies := &[]*gov.DisplayData{}
-	res, err = svc.Display(Project, MockApp, MockEnv)
+	res, err = svc.Display(context.TODO(), Project, MockApp, MockEnv)
 	assert.NoError(t, err)
 	err = json.Unmarshal(res, policies)
 	assert.NoError(t, err)
@@ -104,7 +105,7 @@ func TestDisplay(t *testing.T) {
 
 func TestList(t *testing.T) {
 	policies := &[]*gov.Policy{}
-	res, err := svc.List(MockKind, Project, MockApp, MockEnv)
+	res, err := svc.List(context.TODO(), MockKind, Project, MockApp, MockEnv)
 	assert.NoError(t, err)
 	err = json.Unmarshal(res, policies)
 	assert.NoError(t, err)
@@ -113,7 +114,7 @@ func TestList(t *testing.T) {
 
 func TestGet(t *testing.T) {
 	policy := &gov.Policy{}
-	res, err := svc.Get(MockKind, id, Project)
+	res, err := svc.Get(context.TODO(), MockKind, id, Project)
 	assert.NoError(t, err)
 	err = json.Unmarshal(res, policy)
 	assert.NoError(t, err)
@@ -121,8 +122,8 @@ func TestGet(t *testing.T) {
 }
 
 func TestDelete(t *testing.T) {
-	err := svc.Delete(MockKind, id, Project)
+	err := svc.Delete(context.TODO(), MockKind, id, Project)
 	assert.NoError(t, err)
-	res, _ := svc.Get(MockKind, id, Project)
+	res, _ := svc.Get(context.TODO(), MockKind, id, Project)
 	assert.Nil(t, res)
 }

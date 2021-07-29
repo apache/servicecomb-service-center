@@ -150,7 +150,12 @@ func (ba *TokenAuthenticator) VerifyToken(req *http.Request) (interface{}, error
 	}
 	to := s[1]
 
-	return authr.Authenticate(req.Context(), to)
+	claims, err := authr.Authenticate(req.Context(), to)
+	if err != nil {
+		return nil, err
+	}
+	rbacsvc.WithToken(req, to)
+	return claims, nil
 }
 
 //this method decouple business code and perm checks
