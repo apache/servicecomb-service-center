@@ -68,7 +68,6 @@ import (
 	_ "github.com/apache/servicecomb-service-center/server/job/account"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/server/broker"
 	"github.com/apache/servicecomb-service-center/server/handler/accesslog"
 	"github.com/apache/servicecomb-service-center/server/handler/auth"
 	"github.com/apache/servicecomb-service-center/server/handler/context"
@@ -98,7 +97,4 @@ func init() {
 	metrics.RegisterHandlers()
 	tracing.RegisterHandlers()
 	route.RegisterHandlers()
-
-	// init broker
-	broker.Init()
 }
