@@ -20,14 +20,13 @@ package mongo
 import (
 	"context"
 
-	"github.com/patrickmn/go-cache"
-
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
 	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/patrickmn/go-cache"
 )
 
 type SysManager struct {
@@ -40,14 +39,6 @@ func (ds *SysManager) DumpCache(ctx context.Context) *dump.Cache {
 		Do(func(_ context.Context) { setInstanceValue(sd.Store().Instance(), &cache.Instances) }).
 		Done()
 	return &cache
-}
-
-func (ds *SysManager) DLock(ctx context.Context, request *datasource.DLockRequest) error {
-	return nil
-}
-
-func (ds *SysManager) DUnlock(ctx context.Context, request *datasource.DUnlockRequest) error {
-	return nil
 }
 
 func setServiceValue(e *sd.MongoCacher, setter dump.Setter) {

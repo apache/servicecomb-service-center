@@ -15,15 +15,35 @@
  * limitations under the License.
  */
 
-package datasource
+package admin
 
 import (
 	"context"
 
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/dump"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/server/alarm"
 )
 
-// SystemManager contains the APIs of system management
-type SystemManager interface {
-	DumpCache(ctx context.Context) *dump.Cache
+func Clusters(ctx context.Context, in *dump.ClustersRequest) (*dump.ClustersResponse, error) {
+	clusters, err := datasource.GetSCManager().GetClusters(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &dump.ClustersResponse{
+		Clusters: clusters,
+	}, nil
+}
+
+func AlarmList(ctx context.Context, in *dump.AlarmListRequest) (*dump.AlarmListResponse, error) {
+	return &dump.AlarmListResponse{
+		Alarms: alarm.ListAll(),
+	}, nil
+}
+
+func ClearAlarm(ctx context.Context, in *dump.ClearAlarmRequest) (*dump.ClearAlarmResponse, error) {
+	alarm.ClearAll()
+	log.Infof("service center alarms are cleared")
+	return &dump.ClearAlarmResponse{}, nil
 }

@@ -20,11 +20,11 @@ package admin
 import (
 	"net/http"
 
-	"github.com/apache/servicecomb-service-center/pkg/dump"
-
 	"strings"
 
+	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
+	adminsvc "github.com/apache/servicecomb-service-center/server/service/admin"
 )
 
 // Service 治理相关接口服务
@@ -51,27 +51,27 @@ func (ctrl *ControllerV4) Dump(w http.ResponseWriter, r *http.Request) {
 		Options: options,
 	}
 	ctx := r.Context()
-	resp, _ := AdminServiceAPI.Dump(ctx, request)
+	resp, _ := adminsvc.Dump(ctx, request)
 	rest.WriteResponse(w, r, resp.Response, resp)
 }
 
 func (ctrl *ControllerV4) Clusters(w http.ResponseWriter, r *http.Request) {
 	request := &dump.ClustersRequest{}
 	ctx := r.Context()
-	resp, _ := AdminServiceAPI.Clusters(ctx, request)
+	resp, _ := adminsvc.Clusters(ctx, request)
 	rest.WriteResponse(w, r, resp.Response, resp)
 }
 
 func (ctrl *ControllerV4) AlarmList(w http.ResponseWriter, r *http.Request) {
 	request := &dump.AlarmListRequest{}
 	ctx := r.Context()
-	resp, _ := AdminServiceAPI.AlarmList(ctx, request)
+	resp, _ := adminsvc.AlarmList(ctx, request)
 	rest.WriteResponse(w, r, resp.Response, resp)
 }
 
 func (ctrl *ControllerV4) ClearAlarm(w http.ResponseWriter, r *http.Request) {
 	request := &dump.ClearAlarmRequest{}
 	ctx := r.Context()
-	resp, _ := AdminServiceAPI.ClearAlarm(ctx, request)
+	resp, _ := adminsvc.ClearAlarm(ctx, request)
 	rest.WriteResponse(w, r, resp.Response, nil)
 }
