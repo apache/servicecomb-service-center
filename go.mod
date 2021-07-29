@@ -28,7 +28,6 @@ require (
 	github.com/jinzhu/copier v0.3.0
 	github.com/karlseguin/ccache v2.0.3-0.20170217060820-3ba9789cfd2c+incompatible
 	github.com/labstack/echo/v4 v4.1.18-0.20201218141459-936c48a17e97
-	github.com/natefinch/lumberjack v0.0.0-20170531160350-a96e63847dc3
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/onsi/ginkgo v1.15.0
 	github.com/onsi/gomega v1.10.5
@@ -53,6 +52,7 @@ require (
 	golang.org/x/time v0.0.0-20200416051211-89c76fbcd5d1
 	google.golang.org/grpc v1.37.0
 	google.golang.org/protobuf v1.25.0
+	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.19.5
 	k8s.io/apimachinery v0.19.5

@@ -22,12 +22,10 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"strings"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/metrics"
 	"github.com/apache/servicecomb-service-center/server/config"
-	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/opentracing/opentracing-go"
 	zipkin "github.com/openzipkin/zipkin-go-opentracing"
 )
@@ -38,6 +36,7 @@ const (
 	serverCollectorAddr = "TRACING_SERVER_ADDRESS"
 	samplerRate         = "TRACING_SIMPLER_RATE"
 	defaultSamplerRate  = 1
+	serviceName         = "service-center"
 )
 
 func initTracer() {
@@ -47,7 +46,7 @@ func initTracer() {
 		return
 	}
 	ipPort := metrics.InstanceName()
-	recorder := zipkin.NewRecorder(collector, false, ipPort, strings.ToLower(core.Service.ServiceName))
+	recorder := zipkin.NewRecorder(collector, false, ipPort, serviceName)
 	tracer, err := zipkin.NewTracer(recorder,
 		zipkin.TraceID128Bit(true),
 		zipkin.WithSampler(zipkin.NewCountingSampler(GetSamplerRate())))
@@ -68,7 +67,7 @@ func newCollector() (collector zipkin.Collector, err error) {
 			return
 		}
 	case "file":
-		fp := GetFilePath(core.Service.ServiceName + ".trace")
+		fp := GetFilePath(serviceName + ".trace")
 		collector, err = NewFileCollector(fp)
 		if err != nil {
 			return

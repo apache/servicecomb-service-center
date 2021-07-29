@@ -39,10 +39,6 @@ server:
     ipLookups: RemoteAddr,X-Forwarded-For,X-Real-IP
 
 gov:
-  plugins:
-    - name: kie
-      type: kie
-      endpoint: http://127.0.0.1:30110
   kie:
     type: kie
     endpoint: http://127.0.0.1:30110
@@ -169,6 +165,7 @@ tracing:
     collector:
       # type should be file or server
       type:
+      # the tracing file save dir path
       path:
       endpoint:
     sampler:
