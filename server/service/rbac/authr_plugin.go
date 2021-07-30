@@ -24,11 +24,11 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/privacy"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/dgrijalva/jwt-go"
 	"github.com/go-chassis/cari/pkg/errsvc"
 	"github.com/go-chassis/cari/rbac"
 	"github.com/go-chassis/go-chassis/v2/security/authr"
 	"github.com/go-chassis/go-chassis/v2/security/token"
+	"github.com/golang-jwt/jwt"
 )
 
 //EmbeddedAuthenticator is sc default auth plugin, RBAC data is persisted in etcd

@@ -13,7 +13,7 @@ require (
 	github.com/coreos/etcd v3.3.25+incompatible
 	github.com/coreos/pkg v0.0.0-20180928190104-399ea9e2e55f // v4
 	github.com/deckarep/golang-set v1.7.1
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/golang-jwt/jwt v3.2.1+incompatible
 	github.com/elithrar/simple-scrypt v1.3.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-chassis/cari v0.5.1-0.20210723060050-4a4f119d64ff
