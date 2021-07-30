@@ -21,6 +21,8 @@ package kie
 
 import (
 	"fmt"
+	"github.com/apache/servicecomb-service-center/server/service/gov"
+	"k8s.io/kube-openapi/pkg/validation/spec"
 )
 
 type Validator struct {
@@ -32,14 +34,19 @@ type ErrIllegalItem struct {
 }
 
 var (
-	methodSet map[string]bool
+	methodSet            []interface{}
+	slidingWindowTypeSet []interface{}
+	matchGroupParamsSet  []spec.Schema
+	minValue             float64
+	maxValue             float64
+	minLength            int64
 )
 
 func (e *ErrIllegalItem) Error() string {
 	return fmt.Sprintf("illegal item : %v , msg: %s", e.val, e.err)
 }
 
-func (d *Validator) Validate(kind string, spec interface{}) error {
+func (d *Validator) Validate(kind string, spec map[string]interface{}) error {
 	switch kind {
 	case "match-group":
 		return matchValidate(spec)
@@ -48,7 +55,9 @@ func (d *Validator) Validate(kind string, spec interface{}) error {
 	case "rate-limiting":
 		return rateLimitingValidate(spec)
 	case "circuit-breaker":
+		return circuitBreakerValidate(spec)
 	case "bulkhead":
+		return bulkheadValidate(spec)
 	case "loadbalancer":
 		return nil
 	default:
@@ -57,91 +66,183 @@ func (d *Validator) Validate(kind string, spec interface{}) error {
 	return nil
 }
 
-func matchValidate(val interface{}) error {
-	spec, ok := val.(map[string]interface{})
-	if !ok {
-		return &ErrIllegalItem{"can not cast to map", val}
-	}
-	if spec[Matches] == nil {
-		return nil
-	}
-	alias, ok := spec[Alias].(string)
-	if !ok {
-		return &ErrIllegalItem{"alias must be string", alias}
-	}
-	matches, ok := spec[Matches].([]interface{})
-	if !ok {
-		return &ErrIllegalItem{"don't have matches", spec}
-	}
-	for _, match := range matches {
-		match, ok := match.(map[string]interface{})
-		if !ok {
-			return &ErrIllegalItem{"match can not cast to map", match}
-		}
-		if match["name"] == nil {
-			return &ErrIllegalItem{"match's name can not be null", match}
-		}
-		if match["apiPath"] == nil && match["headers"] == nil && match[Method] == nil {
-			return &ErrIllegalItem{"match must have a match item [apiPath/headers/methods]", match}
-		}
-		//apiPath & headers do not check
-		if match[Method] != nil {
-			methods, ok := match[Method].([]interface{})
-			if !ok {
-				return &ErrIllegalItem{"methods must be a list", match}
-			}
-			for _, method := range methods {
-				methodStr, ok := method.(string)
-				if !ok {
-					return &ErrIllegalItem{"method must be a string", method}
-				}
-				if !methodSet[methodStr] {
-					return &ErrIllegalItem{"method must be one of the GET/POST/PUT/DELETE/PATCH", method}
-				}
-			}
-		}
-	}
-	return nil
-}
-
-func retryValidate(val interface{}) error {
-	err := policyValidate(val)
+func matchValidate(spec map[string]interface{}) error {
+	err := gov.ValidateSpec("MatchGroup", spec)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func rateLimitingValidate(val interface{}) error {
-	err := policyValidate(val)
+func retryValidate(spec map[string]interface{}) error {
+	err := policyValidate(spec)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func policyValidate(val interface{}) error {
-	spec, ok := val.(map[string]interface{})
-	if !ok {
-		return &ErrIllegalItem{"policy can not cast to map", val}
-	}
-	if spec[Rules] != nil {
-		rules, ok := spec[Rules].(map[string]interface{})
-		if !ok {
-			return &ErrIllegalItem{"policy's rules can not cast to map", spec}
-		}
-		if "" == rules["match"] {
-			return &ErrIllegalItem{"policy's rules match can not be nil", spec}
-		}
+func rateLimitingValidate(spec map[string]interface{}) error {
+	err := policyValidate(spec)
+	if err != nil {
+		return err
 	}
 	return nil
+}
+
+func bulkheadValidate(spec map[string]interface{}) error {
+	err := gov.ValidateSpec("bulkhead", spec)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func circuitBreakerValidate(spec map[string]interface{}) error {
+	err := gov.ValidateSpec("circuitBreaker", spec)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func policyValidate(spec map[string]interface{}) error {
+	err := gov.ValidateSpec("policy", spec)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func apiPathSchema() spec.Schema {
+	return spec.Schema{
+		SchemaProps: spec.SchemaProps{
+			Type:     []string{"object"},
+			Required: []string{"apiPath"},
+			Properties: map[string]spec.Schema{
+				"apiPath": {
+					SchemaProps: spec.SchemaProps{Type: []string{"object"}}},
+			},
+		}}
+}
+
+func headersSchema() spec.Schema {
+	return spec.Schema{
+		SchemaProps: spec.SchemaProps{
+			Type:     []string{"object"},
+			Required: []string{"headers"},
+			Properties: map[string]spec.Schema{
+				"headers": {
+					SchemaProps: spec.SchemaProps{Type: []string{"object"}}},
+			},
+		}}
+}
+
+func matchGroupSchema() *spec.Schema {
+	methodSchema := spec.SchemaOrArray{
+		Schema: &spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"string"},
+				Enum: methodSet,
+			}},
+		Schemas: nil,
+	}
+
+	matchSchema := spec.SchemaOrArray{
+		Schema: &spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type:     []string{"object"},
+				AnyOf:    matchGroupParamsSet,
+				Required: []string{"name", "method"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{Type: []string{"string"}}},
+					"method": {
+						SchemaProps: spec.SchemaProps{Type: []string{"array"}, Items: &methodSchema}},
+				},
+			}},
+		Schemas: nil,
+	}
+
+	return &spec.Schema{
+		SchemaProps: spec.SchemaProps{
+			Type:     []string{"object"},
+			Required: []string{"alias", Matches},
+			Properties: map[string]spec.Schema{
+				"alias": {
+					SchemaProps: spec.SchemaProps{Type: []string{"string"}}},
+				Matches: {
+					SchemaProps: spec.SchemaProps{Type: []string{"array"}, Items: &matchSchema}},
+			},
+		}}
+}
+
+func policySchema() *spec.Schema {
+	return &spec.Schema{
+		SchemaProps: spec.SchemaProps{
+			Type: []string{"object"},
+			Properties: map[string]spec.Schema{
+				Rules: {
+					SchemaProps: spec.SchemaProps{Type: []string{"object"}, PatternProperties: map[string]spec.Schema{
+						"match": {
+							SchemaProps: spec.SchemaProps{Type: []string{"string"}, Nullable: false, MinLength: &minLength}},
+					}}},
+			},
+		}}
+}
+
+func bulkheadSchema() *spec.Schema {
+	return &spec.Schema{
+		SchemaProps: spec.SchemaProps{
+			Type:     []string{"object"},
+			Required: []string{"name", "maxConcurrentCalls", "maxWaitDuration"},
+			Properties: map[string]spec.Schema{
+				"name": {
+					SchemaProps: spec.SchemaProps{Type: []string{"string"}, Nullable: false, MinLength: &minLength}},
+				"maxConcurrentCalls": {
+					SchemaProps: spec.SchemaProps{Type: []string{"integer"}, Minimum: &minValue}},
+				"maxWaitDuration": {
+					SchemaProps: spec.SchemaProps{Type: []string{"string"}, Nullable: false, MinLength: &minLength}},
+			},
+		}}
+}
+
+func circuitBreakerSchema() *spec.Schema {
+	return &spec.Schema{
+		SchemaProps: spec.SchemaProps{
+			Type: []string{"object"},
+			Required: []string{"failureRateThreshold", "slowCallRateThreshold", "slowCallDurationThreshold",
+				"minimumNumberOfCalls", "slidingWindowType", "slidingWindowSize"},
+			Properties: map[string]spec.Schema{
+				"failureRateThreshold": {
+					SchemaProps: spec.SchemaProps{Type: []string{"number"}, Minimum: &minValue, Maximum: &maxValue}},
+				"slowCallRateThreshold": {
+					SchemaProps: spec.SchemaProps{Type: []string{"number"}, Minimum: &minValue, Maximum: &maxValue}},
+				"slowCallDurationThreshold": {
+					SchemaProps: spec.SchemaProps{Type: []string{"integer"}, Minimum: &minValue}},
+				"minimumNumberOfCalls": {
+					SchemaProps: spec.SchemaProps{Type: []string{"integer"}, Minimum: &minValue}},
+				"slidingWindowType": {
+					SchemaProps: spec.SchemaProps{Type: []string{"string"}, Enum: slidingWindowTypeSet}},
+				"slidingWindowSize": {
+					SchemaProps: spec.SchemaProps{Type: []string{"integer"}, Minimum: &minValue}},
+			},
+		}}
 }
 
 func init() {
-	methodSet = make(map[string]bool)
-	methodSet["GET"] = true
-	methodSet["POST"] = true
-	methodSet["DELETE"] = true
-	methodSet["PUT"] = true
-	methodSet["PATCH"] = true
+	minValue = 0
+	maxValue = 100
+	minLength = 1
+	methodSet = make([]interface{}, 0)
+	slidingWindowTypeSet = make([]interface{}, 0)
+	matchGroupParamsSet = make([]spec.Schema, 0)
+	methodSet = append(methodSet, "GET", "POST", "DELETE", "PUT", "PATCH")
+	slidingWindowTypeSet = append(slidingWindowTypeSet, "count", "time")
+	matchGroupParamsSet = append(matchGroupParamsSet, apiPathSchema(), headersSchema())
+
+	gov.RegisterPolicy("MatchGroup", matchGroupSchema())
+	gov.RegisterPolicy("bulkhead", bulkheadSchema())
+	gov.RegisterPolicy("circuitBreaker", circuitBreakerSchema())
+	gov.RegisterPolicy("policy", policySchema())
 }
