@@ -18,35 +18,30 @@
 package pzipkin
 
 import (
-	"bufio"
 	"context"
 	"encoding/json"
-	"fmt"
-	"os"
-	"strings"
 	"time"
 
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/openzipkin/zipkin-go-opentracing/thrift/gen-go/zipkincore"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 type FileCollector struct {
-	Fd        *os.File
-	Timeout   time.Duration
-	Interval  time.Duration
+	// Timeout is the timeout of sending span to chan
+	Timeout time.Duration
+	// Interval is interval to log
+	Interval time.Duration
+	// BatchSize is the log batch size
 	BatchSize int
+	logger    *lumberjack.Logger
 	c         chan *zipkincore.Span
 	goroutine *gopool.Pool
 }
 
 func (f *FileCollector) Collect(span *zipkincore.Span) error {
-	if f.Fd == nil {
-		return fmt.Errorf("required FD to write")
-	}
-
 	timer := time.NewTimer(f.Timeout)
 	select {
 	case f.c <- span:
@@ -59,7 +54,7 @@ func (f *FileCollector) Collect(span *zipkincore.Span) error {
 
 func (f *FileCollector) Close() error {
 	f.goroutine.Close(true)
-	return f.Fd.Close()
+	return f.logger.Close()
 }
 
 func (f *FileCollector) write(batch []*zipkincore.Span) (c int) {
@@ -67,13 +62,7 @@ func (f *FileCollector) write(batch []*zipkincore.Span) (c int) {
 		return
 	}
 
-	if err := f.checkFile(); err != nil {
-		log.Errorf(err, "check tracing file failed")
-		return
-	}
-
 	newLine := [...]byte{'\n'}
-	w := bufio.NewWriter(f.Fd)
 	for _, span := range batch {
 		s := FromZipkinSpan(span)
 		b, err := json.Marshal(s)
@@ -81,45 +70,17 @@ func (f *FileCollector) write(batch []*zipkincore.Span) (c int) {
 			log.Errorf(err, "marshal span failed")
 			continue
 		}
-		_, err = w.Write(b)
+		_, err = f.logger.Write(b)
 		if err != nil {
 			log.Error("", err)
 		}
-		_, err = w.Write(newLine[:])
+		_, err = f.logger.Write(newLine[:])
 		if err != nil {
 			log.Error("", err)
 		}
 		c++
 	}
-	if err := w.Flush(); err != nil {
-		c = 0
-		log.Errorf(err, "write span to file failed")
-	}
 	return
-}
-
-func (f *FileCollector) checkFile() error {
-	if util.PathExist(f.Fd.Name()) || strings.Index(f.Fd.Name(), "/dev/") == 0 {
-		return nil
-	}
-
-	stat, err := f.Fd.Stat()
-	if err != nil {
-		return fmt.Errorf("stat %s: %s", f.Fd.Name(), err)
-	}
-
-	log.Warnf("tracing file %s does not exist, re-create one", f.Fd.Name())
-	fd, err := os.OpenFile(f.Fd.Name(), os.O_APPEND|os.O_CREATE|os.O_RDWR, stat.Mode())
-	if err != nil {
-		return fmt.Errorf("open %s: %s", f.Fd.Name(), err)
-	}
-
-	var old *os.File
-	f.Fd, old = fd, f.Fd
-	if err := old.Close(); err != nil {
-		log.Errorf(err, "close %s", f.Fd.Name())
-	}
-	return nil
 }
 
 func (f *FileCollector) Run() {
@@ -127,9 +88,7 @@ func (f *FileCollector) Run() {
 		var (
 			batch []*zipkincore.Span
 			prev  []*zipkincore.Span
-			i     = f.Interval * 10
 			t     = time.NewTicker(f.Interval)
-			nr    = time.Now().Add(i)
 			max   = f.BatchSize * 2
 		)
 		for {
@@ -163,14 +122,6 @@ func (f *FileCollector) Run() {
 					prev, batch = batch, batch[len(batch):] // new one
 				}
 			case <-t.C:
-				if time.Now().After(nr) {
-					log.RotateFile(f.Fd.Name(),
-						int(config.GetLog().LogRotateSize),
-						int(config.GetLog().LogBackupCount),
-					)
-					nr = time.Now().Add(i)
-				}
-
 				if c := f.write(batch); c > 0 {
 					batch = batch[:0]
 				}
@@ -180,15 +131,17 @@ func (f *FileCollector) Run() {
 }
 
 func NewFileCollector(path string) (*FileCollector, error) {
-	fd, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0600)
-	if err != nil {
-		return nil, err
-	}
 	fc := &FileCollector{
-		Fd:        fd,
 		Timeout:   5 * time.Second,
 		Interval:  10 * time.Second,
 		BatchSize: 100,
+		logger: &lumberjack.Logger{
+			Filename:   path,
+			MaxSize:    int(config.GetLog().LogRotateSize), // megabytes
+			MaxBackups: int(config.GetLog().LogBackupCount),
+			LocalTime:  true,
+			Compress:   true,
+		},
 		c:         make(chan *zipkincore.Span, 1000),
 		goroutine: gopool.New(context.Background()),
 	}
