@@ -52,6 +52,18 @@ var _ = Describe("'Micro-service' service", func() {
 			})
 		})
 
+		Context("when AppId of service is nil", func() {
+			It("should not be passed", func() {
+				resp, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+					Service: &pb.MicroService{
+						ServiceName: "test",
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
+			})
+		})
+
 		Context("all max", func() {
 			It("should be passed", func() {
 				size := quota.DefaultSchemaQuota + 1

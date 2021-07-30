@@ -90,7 +90,7 @@ func CreateServiceReqValidator() *validate.Validator {
 
 		var microServiceValidator validate.Validator
 		microServiceValidator.AddRules(MicroServiceKeyValidator().GetRules())
-		microServiceValidator.AddRule("AppId", &validate.Rule{Max: 160, Regexp: nameRegex})
+		microServiceValidator.AddRule("AppId", &validate.Rule{Min: 1, Max: 160, Regexp: nameRegex})
 		microServiceValidator.AddRule("Version", &validate.Rule{Max: 64, Regexp: versionRegex})
 		microServiceValidator.AddRule("ServiceId", &validate.Rule{Max: 64, Regexp: serviceIDRegex})
 		microServiceValidator.AddRule("Description", &validate.Rule{Max: 256})

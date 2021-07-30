@@ -30,9 +30,6 @@ type GetInstanceCountByDomainResponse struct {
 }
 
 func SetServiceDefaultValue(service *discovery.MicroService) {
-	if len(service.AppId) == 0 {
-		service.AppId = discovery.AppID
-	}
 	if len(service.Version) == 0 {
 		service.Version = discovery.VERSION
 	}
