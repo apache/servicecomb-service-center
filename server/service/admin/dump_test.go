@@ -16,15 +16,15 @@
  */
 package admin_test
 
-// initialize
 import (
 	"context"
 	"testing"
 
+	_ "github.com/apache/servicecomb-service-center/test"
+
 	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/rest/admin"
-	_ "github.com/apache/servicecomb-service-center/test"
+	adminsvc "github.com/apache/servicecomb-service-center/server/service/admin"
 	"github.com/astaxie/beego"
 	"github.com/go-chassis/cari/discovery"
 	"github.com/stretchr/testify/assert"
@@ -35,11 +35,11 @@ func init() {
 }
 func TestAdminService_Dump(t *testing.T) {
 	t.Log("execute 'dump' operation,when get all,should be passed")
-	resp, err := admin.AdminServiceAPI.Dump(getContext(), &dump.Request{})
+	resp, err := adminsvc.Dump(getContext(), &dump.Request{})
 	assert.NoError(t, err)
 	assert.Equal(t, discovery.ResponseSuccess, resp.Response.GetCode())
 	t.Log("execute 'dump' operation,when get by domain project,should be passed")
-	resp, err = admin.AdminServiceAPI.Dump(
+	resp, err = adminsvc.Dump(
 		util.SetDomainProject(context.Background(), "x", "x"),
 		&dump.Request{})
 	assert.NoError(t, err)

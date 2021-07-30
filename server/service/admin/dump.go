@@ -22,54 +22,50 @@ import (
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/dump"
-	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/alarm"
 	"github.com/apache/servicecomb-service-center/version"
+	mapset "github.com/deckarep/golang-set"
 	"github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/go-archaius"
 )
 
-var (
-	AdminServiceAPI = &Service{}
-)
-
-type Service struct {
-}
-
-func (service *Service) Dump(ctx context.Context, in *dump.Request) (*dump.Response, error) {
+func Dump(ctx context.Context, in *dump.Request) (*dump.Response, error) {
 	domainProject := util.ParseDomainProject(ctx)
-
 	if !datasource.IsDefaultDomainProject(domainProject) {
 		return &dump.Response{
 			Response: discovery.CreateResponse(discovery.ErrForbidden, "Required admin permission"),
 		}, nil
 	}
-
 	resp := &dump.Response{
 		Response: discovery.CreateResponse(discovery.ResponseSuccess, "Admin dump successfully"),
 	}
-
-	if len(in.Options) == 0 {
-		service.dump(ctx, "cache", resp)
+	set := toSet(in.Options)
+	if set.Cardinality() == 0 {
+		appendData(ctx, "cache", resp)
 		return resp, nil
 	}
-
-	options := make(map[string]struct{}, len(in.Options))
-	for _, option := range in.Options {
-		if option == "all" {
-			service.dump(ctx, "all", resp)
-			return resp, nil
-		}
-		options[option] = struct{}{}
-	}
-	for option := range options {
-		service.dump(ctx, option, resp)
-	}
+	set.Each(func(option interface{}) bool {
+		appendData(ctx, option.(string), resp)
+		return true
+	})
 	return resp, nil
 }
 
-func (service *Service) dump(ctx context.Context, option string, resp *dump.Response) {
+func toSet(arr []string) mapset.Set {
+	if len(arr) == 0 {
+		return mapset.NewSet()
+	}
+	set := mapset.NewSet()
+	for _, kind := range arr {
+		if kind == "all" {
+			return mapset.NewSet("all")
+		}
+		set.Add(kind)
+	}
+	return set
+}
+
+func appendData(ctx context.Context, option string, resp *dump.Response) {
 	switch option {
 	case "info":
 		resp.Info = version.Ver()
@@ -78,30 +74,8 @@ func (service *Service) dump(ctx context.Context, option string, resp *dump.Resp
 	case "cache":
 		resp.Cache = datasource.GetSystemManager().DumpCache(ctx)
 	case "all":
-		service.dump(ctx, "info", resp)
-		service.dump(ctx, "config", resp)
-		service.dump(ctx, "cache", resp)
+		appendData(ctx, "info", resp)
+		appendData(ctx, "config", resp)
+		appendData(ctx, "cache", resp)
 	}
-}
-
-func (service *Service) Clusters(ctx context.Context, in *dump.ClustersRequest) (*dump.ClustersResponse, error) {
-	clusters, err := datasource.GetSCManager().GetClusters(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return &dump.ClustersResponse{
-		Clusters: clusters,
-	}, nil
-}
-
-func (service *Service) AlarmList(ctx context.Context, in *dump.AlarmListRequest) (*dump.AlarmListResponse, error) {
-	return &dump.AlarmListResponse{
-		Alarms: alarm.ListAll(),
-	}, nil
-}
-
-func (service *Service) ClearAlarm(ctx context.Context, in *dump.ClearAlarmRequest) (*dump.ClearAlarmResponse, error) {
-	alarm.ClearAll()
-	log.Infof("service center alarms are cleared")
-	return &dump.ClearAlarmResponse{}, nil
 }
