@@ -34,17 +34,9 @@ type InstanceEvent struct {
 	Response *pb.WatchInstanceResponse
 }
 
-func NewInstanceEvent(serviceID, domainProject string, rev int64, response *pb.WatchInstanceResponse) *InstanceEvent {
+func NewInstanceEvent(serviceID string, rev int64, createAt simple.Time, response *pb.WatchInstanceResponse) *InstanceEvent {
 	return &InstanceEvent{
-		Event:    event.NewEvent(INSTANCE, domainProject, serviceID),
-		Revision: rev,
-		Response: response,
-	}
-}
-
-func NewInstanceEventWithTime(serviceID, domainProject string, rev int64, createAt simple.Time, response *pb.WatchInstanceResponse) *InstanceEvent {
-	return &InstanceEvent{
-		Event:    event.NewEventWithTime(INSTANCE, domainProject, serviceID, createAt),
+		Event:    event.NewEventWithTime(INSTANCE, response.Key.Tenant, serviceID, createAt),
 		Revision: rev,
 		Response: response,
 	}

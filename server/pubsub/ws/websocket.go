@@ -25,7 +25,6 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/connection"
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/gorilla/websocket"
 )
@@ -98,7 +97,7 @@ func (wh *WebSocket) registerMessageHandler() {
 }
 
 func (wh *WebSocket) ReadMessage() error {
-	wh.Conn.SetReadLimit(connection.ReadMaxBody)
+	wh.Conn.SetReadLimit(ReadMaxBody)
 	err := wh.Conn.SetReadDeadline(time.Now().Add(wh.ReadTimeout))
 	if err != nil {
 		log.Error("", err)

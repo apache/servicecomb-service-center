@@ -102,10 +102,6 @@ func (dm *DepManager) SearchConsumerDependency(ctx context.Context, request *pb.
 	}, nil
 }
 
-func (dm *DepManager) DeleteDependency() {
-	panic("implement me")
-}
-
 func (dm *DepManager) DependencyHandle(ctx context.Context) error {
 	var dep *event.DependencyEventHandler
 	err := dep.Handle()

@@ -18,26 +18,25 @@
 package ws_test
 
 import (
-	"context"
 	"testing"
 
-	"github.com/apache/servicecomb-service-center/server/connection/ws"
-	"github.com/apache/servicecomb-service-center/server/event"
+	"github.com/apache/servicecomb-service-center/server/pubsub/ws"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewBroker(t *testing.T) {
-	t.Run("should not return nil when new broker", func(t *testing.T) {
-		assert.NotNil(t, ws.NewBroker(nil, nil))
-
+func TestNewHealthCheck(t *testing.T) {
+	t.Run("should not return nil when new", func(t *testing.T) {
+		assert.NotNil(t, ws.NewHealthCheck())
 	})
 }
 
-func TestBroker_Listen(t *testing.T) {
-	t.Run("should return err when listen context cancelled", func(t *testing.T) {
-		broker := ws.NewBroker(nil, event.NewInstanceSubscriber("", ""))
-		ctx, cancel := context.WithCancel(context.Background())
-		cancel()
-		assert.Equal(t, context.Canceled, broker.Listen(ctx))
+func TestHealthCheck_Run(t *testing.T) {
+	mock := NewTest()
+
+	t.Run("should return 1 when accept one ws", func(t *testing.T) {
+		check := ws.NewHealthCheck()
+		webSocket := ws.NewWebSocket("", "", mock.ServerConn)
+		assert.Equal(t, 1, check.Accept(webSocket))
+		assert.Equal(t, 0, check.Remove(webSocket))
 	})
 }

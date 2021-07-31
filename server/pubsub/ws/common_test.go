@@ -18,25 +18,30 @@
 package ws_test
 
 import (
+	"context"
+	"errors"
 	"testing"
 
-	"github.com/apache/servicecomb-service-center/server/connection/ws"
+	"github.com/apache/servicecomb-service-center/server/pubsub/ws"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewHealthCheck(t *testing.T) {
-	t.Run("should not return nil when new", func(t *testing.T) {
-		assert.NotNil(t, ws.NewHealthCheck())
+func TestSendEstablishError(t *testing.T) {
+	mock := NewTest()
+	t.Run("should read the err when call", func(t *testing.T) {
+		ws.SendEstablishError(mock.ServerConn, errors.New("error"))
+		_, message, err := mock.ClientConn.ReadMessage()
+		assert.Nil(t, err)
+		assert.Equal(t, "error", string(message))
 	})
 }
 
-func TestHealthCheck_Run(t *testing.T) {
-	mock := NewTest()
-
-	t.Run("should return 1 when accept one ws", func(t *testing.T) {
-		check := ws.NewHealthCheck()
-		webSocket := ws.NewWebSocket("", "", mock.ServerConn)
-		assert.Equal(t, 1, check.Accept(webSocket))
-		assert.Equal(t, 0, check.Remove(webSocket))
+func TestWatch(t *testing.T) {
+	t.Run("should return when ctx cancelled", func(t *testing.T) {
+		mock := NewTest()
+		mock.ServerConn.Close()
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+		ws.Watch(ctx, "", mock.ServerConn)
 	})
 }

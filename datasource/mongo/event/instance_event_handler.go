@@ -83,14 +83,14 @@ func (h InstanceEventHandler) OnEvent(evt sd.MongoEvent) {
 			providerID, microService.Environment, microService.AppId, microService.ServiceName, microService.Version), err)
 		return
 	}
-	PublishInstanceEvent(evt, domainProject, discovery.MicroServiceToKey(domainProject, microService), consumerIDS)
+	PublishInstanceEvent(evt, discovery.MicroServiceToKey(domainProject, microService), consumerIDS)
 }
 
 func NewInstanceEventHandler() *InstanceEventHandler {
 	return &InstanceEventHandler{}
 }
 
-func PublishInstanceEvent(evt sd.MongoEvent, domainProject string, serviceKey *discovery.MicroServiceKey, subscribers []string) {
+func PublishInstanceEvent(evt sd.MongoEvent, serviceKey *discovery.MicroServiceKey, subscribers []string) {
 	if len(subscribers) == 0 {
 		return
 	}
@@ -101,7 +101,7 @@ func PublishInstanceEvent(evt sd.MongoEvent, domainProject string, serviceKey *d
 		Instance: evt.Value.(model.Instance).Instance,
 	}
 	for _, consumerID := range subscribers {
-		evt := event.NewInstanceEventWithTime(consumerID, domainProject, -1, simple.FromTime(time.Now()), response)
+		evt := event.NewInstanceEvent(consumerID, -1, simple.FromTime(time.Now()), response)
 		err := event.Center().Fire(evt)
 		if err != nil {
 			log.Error(fmt.Sprintf("publish event[%v] into channel failed", evt), err)

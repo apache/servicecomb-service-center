@@ -24,17 +24,16 @@ import (
 	"sync"
 	"time"
 
-	"github.com/apache/servicecomb-service-center/datasource"
-	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
-
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/gorilla/websocket"
 
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/config"
-	"github.com/apache/servicecomb-service-center/server/connection"
 	"github.com/apache/servicecomb-service-center/server/metrics"
+	"github.com/apache/servicecomb-service-center/server/pubsub/ws"
+	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
 )
 
 const (
@@ -81,7 +80,7 @@ func (c *client) sendClose(code int, text string) error {
 	if code != websocket.CloseNoStatusReceived {
 		message = websocket.FormatCloseMessage(code, text)
 	}
-	err := c.conn.WriteControl(websocket.CloseMessage, message, time.Now().Add(connection.SendTimeout))
+	err := c.conn.WriteControl(websocket.CloseMessage, message, time.Now().Add(ws.SendTimeout))
 	if err != nil {
 		log.Error(fmt.Sprintf("watcher[%s] catch an err", remoteAddr), err)
 		return err
@@ -98,7 +97,7 @@ func (c *client) heartbeat() {
 	}()
 	for {
 		<-ticker.C
-		err := c.conn.SetWriteDeadline(time.Now().Add(connection.SendTimeout))
+		err := c.conn.SetWriteDeadline(time.Now().Add(ws.SendTimeout))
 		if err != nil {
 			log.Error("", err)
 		}
@@ -116,7 +115,7 @@ func (c *client) handleMessage() {
 
 	remoteAddr := c.conn.RemoteAddr().String()
 	c.conn.SetPongHandler(func(message string) error {
-		err := c.conn.SetReadDeadline(time.Now().Add(connection.ReadTimeout))
+		err := c.conn.SetReadDeadline(time.Now().Add(ws.ReadTimeout))
 		if err != nil {
 			log.Error("", err)
 		}
