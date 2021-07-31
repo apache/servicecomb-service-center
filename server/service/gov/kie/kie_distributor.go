@@ -278,7 +278,7 @@ func initClient(endpoint string) *kie.Client {
 	client, err := kie.NewClient(
 		kie.Config{Endpoint: endpoint,
 			DefaultLabels: map[string]string{},
-			HttpOptions: &httpclient.Options{
+			HTTPOptions: &httpclient.Options{
 				SignRequest: rbacsvc.SignRequest,
 			},
 		})
