@@ -212,19 +212,15 @@ func (ds *MetadataManager) GetService(ctx context.Context, request *pb.GetServic
 }
 
 func (ds *MetadataManager) GetServiceDetail(ctx context.Context, request *pb.GetServiceRequest) (
-	*pb.GetServiceDetailResponse, error) {
+	*pb.ServiceDetail, error) {
 	domainProject := util.ParseDomainProject(ctx)
 
 	service, err := serviceUtil.GetService(ctx, domainProject, request.ServiceId)
 	if err != nil {
 		if errors.Is(err, datasource.ErrNoData) {
-			return &pb.GetServiceDetailResponse{
-				Response: pb.CreateResponse(pb.ErrServiceNotExists, "Service does not exist."),
-			}, nil
+			return nil, pb.NewError(pb.ErrServiceNotExists, "Service does not exist.")
 		}
-		return &pb.GetServiceDetailResponse{
-			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
-		}, err
+		return nil, pb.NewError(pb.ErrInternal, err.Error())
 	}
 
 	key := &pb.MicroServiceKey{
@@ -238,9 +234,7 @@ func (ds *MetadataManager) GetServiceDetail(ctx context.Context, request *pb.Get
 	if err != nil {
 		log.Error(fmt.Sprintf("get service[%s/%s/%s] all versions failed",
 			service.Environment, service.AppId, service.ServiceName), err)
-		return &pb.GetServiceDetailResponse{
-			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
-		}, err
+		return nil, pb.NewError(pb.ErrInternal, err.Error())
 	}
 
 	options := []string{"tags", "instances", "schemas", "dependencies"}
@@ -250,20 +244,15 @@ func (ds *MetadataManager) GetServiceDetail(ctx context.Context, request *pb.Get
 		options:       options,
 	})
 	if err != nil {
-		return &pb.GetServiceDetailResponse{
-			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
-		}, err
+		return nil, pb.NewError(pb.ErrInternal, err.Error())
 	}
 
 	serviceInfo.MicroService = service
 	serviceInfo.MicroServiceVersions = versions
-	return &pb.GetServiceDetailResponse{
-		Response: pb.CreateResponse(pb.ResponseSuccess, "Get service successfully."),
-		Service:  serviceInfo,
-	}, nil
+	return serviceInfo, nil
 }
 
-func (ds *MetadataManager) GetServicesInfo(ctx context.Context, request *pb.GetServicesInfoRequest) (
+func (ds *MetadataManager) ListServiceDetail(ctx context.Context, request *pb.GetServicesInfoRequest) (
 	*pb.GetServicesInfoResponse, error) {
 	ctx = util.WithCacheOnly(ctx)
 
@@ -287,13 +276,10 @@ func (ds *MetadataManager) GetServicesInfo(ctx context.Context, request *pb.GetS
 		var err error
 		st, err = statistics(ctx, request.WithShared)
 		if err != nil {
-			return &pb.GetServicesInfoResponse{
-				Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
-			}, err
+			return nil, pb.NewError(pb.ErrInternal, err.Error())
 		}
 		if len(optionMap) == 1 {
 			return &pb.GetServicesInfoResponse{
-				Response:   pb.CreateResponse(pb.ResponseSuccess, "Statistics successfully."),
 				Statistics: st,
 			}, nil
 		}
@@ -303,9 +289,7 @@ func (ds *MetadataManager) GetServicesInfo(ctx context.Context, request *pb.GetS
 	services, err := serviceUtil.GetAllServiceUtil(ctx)
 	if err != nil {
 		log.Error("get all services by domain failed", err)
-		return &pb.GetServicesInfoResponse{
-			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
-		}, err
+		return nil, pb.NewError(pb.ErrInternal, err.Error())
 	}
 
 	allServiceDetails := make([]*pb.ServiceDetail, 0, len(services))
@@ -322,17 +306,13 @@ func (ds *MetadataManager) GetServicesInfo(ctx context.Context, request *pb.GetS
 			options:       options,
 		})
 		if err != nil {
-			return &pb.GetServicesInfoResponse{
-				Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
-			}, err
+			return nil, pb.NewError(pb.ErrInternal, err.Error())
 		}
 		serviceDetail.MicroService = service
 		tmpServiceDetail := &pb.ServiceDetail{}
 		err = copier.CopyWithOption(tmpServiceDetail, serviceDetail, copier.Option{DeepCopy: true})
 		if err != nil {
-			return &pb.GetServicesInfoResponse{
-				Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
-			}, err
+			return nil, pb.NewError(pb.ErrInternal, err.Error())
 		}
 		tmpServiceDetail.MicroService.Properties = nil
 		tmpServiceDetail.MicroService.Schemas = nil
@@ -344,7 +324,6 @@ func (ds *MetadataManager) GetServicesInfo(ctx context.Context, request *pb.GetS
 	}
 
 	return &pb.GetServicesInfoResponse{
-		Response:          pb.CreateResponse(pb.ResponseSuccess, "Get services info successfully."),
 		AllServicesDetail: allServiceDetails,
 		Statistics:        st,
 	}, nil
@@ -366,24 +345,17 @@ func (ds *MetadataManager) filterServices(domainProject string, request *pb.GetS
 	return true
 }
 
-func (ds *MetadataManager) GetServicesStatistics(ctx context.Context, request *pb.GetServicesRequest) (
-	*pb.GetServicesInfoStatisticsResponse, error) {
+func (ds *MetadataManager) GetOverview(ctx context.Context, request *pb.GetServicesRequest) (
+	*pb.Statistics, error) {
 	ctx = util.WithCacheOnly(ctx)
-	var st *pb.Statistics
-	var err error
-	st, err = statistics(ctx, false)
+	st, err := statistics(ctx, false)
 	if err != nil {
-		return &pb.GetServicesInfoStatisticsResponse{
-			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
-		}, err
+		return nil, pb.NewError(pb.ErrInternal, err.Error())
 	}
-	return &pb.GetServicesInfoStatisticsResponse{
-		Response:   pb.CreateResponse(pb.ResponseSuccess, "Get services statistics successfully."),
-		Statistics: st,
-	}, nil
+	return st, nil
 }
 
-func (ds *MetadataManager) GetApplications(ctx context.Context, request *pb.GetAppsRequest) (*pb.GetAppsResponse, error) {
+func (ds *MetadataManager) ListApp(ctx context.Context, request *pb.GetAppsRequest) (*pb.GetAppsResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
 	key := path.GetServiceAppKey(domainProject, request.Environment, "")
 

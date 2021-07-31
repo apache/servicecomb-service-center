@@ -44,10 +44,10 @@ type MetadataManager interface {
 	GetServices(ctx context.Context, request *pb.GetServicesRequest) (*pb.GetServicesResponse, error)
 	GetService(ctx context.Context, request *pb.GetServiceRequest) (*pb.MicroService, error)
 
-	GetServiceDetail(ctx context.Context, request *pb.GetServiceRequest) (*pb.GetServiceDetailResponse, error)
-	GetServicesInfo(ctx context.Context, request *pb.GetServicesInfoRequest) (*pb.GetServicesInfoResponse, error)
-	GetServicesStatistics(ctx context.Context, request *pb.GetServicesRequest) (*pb.GetServicesInfoStatisticsResponse, error)
-	GetApplications(ctx context.Context, request *pb.GetAppsRequest) (*pb.GetAppsResponse, error)
+	GetServiceDetail(ctx context.Context, request *pb.GetServiceRequest) (*pb.ServiceDetail, error)
+	ListServiceDetail(ctx context.Context, request *pb.GetServicesInfoRequest) (*pb.GetServicesInfoResponse, error)
+	GetOverview(ctx context.Context, request *pb.GetServicesRequest) (*pb.Statistics, error)
+	ListApp(ctx context.Context, request *pb.GetAppsRequest) (*pb.GetAppsResponse, error)
 
 	ExistServiceByID(ctx context.Context, request *pb.GetExistenceByIDRequest) (*pb.GetExistenceByIDResponse, error)
 	ExistService(ctx context.Context, request *pb.GetExistenceRequest) (*pb.GetExistenceResponse, error)

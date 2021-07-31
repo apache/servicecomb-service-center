@@ -17,26 +17,29 @@
 package govern_test
 
 import (
-	"bytes"
-	"io/ioutil"
-	"net/http"
-	"net/http/httptest"
+	"context"
+	"github.com/onsi/ginkgo/reporters"
+	"testing"
 
-	"github.com/apache/servicecomb-service-center/server/service/disco"
+	_ "github.com/apache/servicecomb-service-center/test"
 
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/rest/govern"
+	"github.com/apache/servicecomb-service-center/server/service/disco"
+	"github.com/apache/servicecomb-service-center/server/service/govern"
 	pb "github.com/go-chassis/cari/discovery"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-type mockGovernHandler struct {
-	Func func(w http.ResponseWriter, r *http.Request)
+func TestGovern(t *testing.T) {
+	RegisterFailHandler(Fail)
+	junitReporter := reporters.NewJUnitReporter("model.junit.xml")
+	RunSpecsWithDefaultAndCustomReporters(t, "model Suite", []Reporter{junitReporter})
 }
 
-func (m *mockGovernHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	m.Func(w, r)
+func getContext() context.Context {
+	return util.WithNoCache(util.SetDomainProject(context.Background(), "default", "default"))
 }
 
 var _ = Describe("'Govern' service", func() {
@@ -44,40 +47,40 @@ var _ = Describe("'Govern' service", func() {
 		Context("when get all services", func() {
 			It("should be passed", func() {
 				By("all options")
-				resp, err := governService.GetServicesInfo(getContext(), &pb.GetServicesInfoRequest{
+				resp, err := govern.ListServiceDetail(getContext(), &pb.GetServicesInfoRequest{
 					Options: []string{"all"},
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
+				Expect(resp).ToNot(BeNil())
 
 				By("only service metadata")
-				resp, err = governService.GetServicesInfo(getContext(), &pb.GetServicesInfoRequest{
+				resp, err = govern.ListServiceDetail(getContext(), &pb.GetServicesInfoRequest{
 					Options: []string{""},
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
+				Expect(resp).ToNot(BeNil())
 
 				By("custom options")
-				resp, err = governService.GetServicesInfo(getContext(), &pb.GetServicesInfoRequest{
+				resp, err = govern.ListServiceDetail(getContext(), &pb.GetServicesInfoRequest{
 					Options: []string{"tags", "rules", "instances", "schemas", "statistics"},
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
+				Expect(resp).ToNot(BeNil())
 
 				By("'statistics' option")
-				resp, err = governService.GetServicesInfo(getContext(), &pb.GetServicesInfoRequest{
+				resp, err = govern.ListServiceDetail(getContext(), &pb.GetServicesInfoRequest{
 					Options: []string{"statistics"},
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
+				Expect(resp).ToNot(BeNil())
 
 				By("get instance count")
-				resp, err = governService.GetServicesInfo(getContext(), &pb.GetServicesInfoRequest{
+				resp, err = govern.ListServiceDetail(getContext(), &pb.GetServicesInfoRequest{
 					Options:   []string{"instances"},
 					CountOnly: true,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
+				Expect(resp).ToNot(BeNil())
 			})
 		})
 
@@ -95,21 +98,9 @@ var _ = Describe("'Govern' service", func() {
 				Expect(err).To(BeNil())
 				Expect(respC.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
-				svr := httptest.NewServer(&mockGovernHandler{func(w http.ResponseWriter, r *http.Request) {
-					ctrl := &govern.ResourceV4{}
-					ctrl.GetGraph(w, r.WithContext(getContext()))
-				}})
-				defer svr.Close()
-
-				resp, err := http.Get(svr.URL)
+				graph, err := govern.Draw(getContext(), false)
 				Expect(err).To(BeNil())
-
-				body, err := ioutil.ReadAll(resp.Body)
-				resp.Body.Close()
-				Expect(err).To(BeNil())
-
-				Expect(string(body)).ToNot(Equal(""))
-				Expect(string(body)).ToNot(Equal("{}"))
+				Expect(len(graph.Nodes)).ToNot(Equal(0))
 			})
 		})
 	})
@@ -157,21 +148,21 @@ var _ = Describe("'Govern' service", func() {
 
 		Context("when get invalid service detail", func() {
 			It("should be failed", func() {
-				resp, err := governService.GetServiceDetail(getContext(), &pb.GetServiceRequest{
+				resp, err := govern.GetServiceDetail(getContext(), &pb.GetServiceRequest{
 					ServiceId: "",
 				})
-				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).ToNot(Equal(pb.ResponseSuccess))
+				Expect(err).ToNot(BeNil())
+				Expect(resp).To(BeNil())
 			})
 		})
 
 		Context("when get a service detail", func() {
 			It("should be passed", func() {
-				respGetServiceDetail, err := governService.GetServiceDetail(getContext(), &pb.GetServiceRequest{
+				respGetServiceDetail, err := govern.GetServiceDetail(getContext(), &pb.GetServiceRequest{
 					ServiceId: serviceId,
 				})
 				Expect(err).To(BeNil())
-				Expect(respGetServiceDetail.Response.GetCode()).To(Equal(pb.ResponseSuccess))
+				Expect(respGetServiceDetail).ToNot(BeNil())
 
 				respDelete, err := core.ServiceAPI.Delete(getContext(), &pb.DeleteServiceRequest{
 					ServiceId: serviceId,
@@ -180,11 +171,11 @@ var _ = Describe("'Govern' service", func() {
 				Expect(err).To(BeNil())
 				Expect(respDelete.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
-				respGetServiceDetail, err = governService.GetServiceDetail(getContext(), &pb.GetServiceRequest{
+				respGetServiceDetail, err = govern.GetServiceDetail(getContext(), &pb.GetServiceRequest{
 					ServiceId: serviceId,
 				})
-				Expect(err).To(BeNil())
-				Expect(respGetServiceDetail.Response.GetCode()).ToNot(Equal(pb.ResponseSuccess))
+				Expect(err).ToNot(BeNil())
+				Expect(respGetServiceDetail).To(BeNil())
 			})
 		})
 	})
@@ -192,48 +183,25 @@ var _ = Describe("'Govern' service", func() {
 	Describe("execute 'get apps' operation", func() {
 		Context("when request is invalid", func() {
 			It("should be failed", func() {
-				resp, err := governService.GetApplications(getContext(), &pb.GetAppsRequest{
+				resp, err := govern.ListApp(getContext(), &pb.GetAppsRequest{
 					Environment: "non-exist-env",
 				})
-				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).ToNot(Equal(pb.ResponseSuccess))
+				Expect(err).ToNot(BeNil())
+				Expect(resp).To(BeNil())
 			})
 		})
 
 		Context("when request is valid", func() {
 			It("should be passed", func() {
-				resp, err := governService.GetApplications(getContext(), &pb.GetAppsRequest{})
+				resp, err := govern.ListApp(getContext(), &pb.GetAppsRequest{})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
-				resp, err = governService.GetApplications(getContext(), &pb.GetAppsRequest{
+				resp, err = govern.ListApp(getContext(), &pb.GetAppsRequest{
 					Environment: pb.ENV_ACCEPT,
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
-			})
-		})
-	})
-
-	Describe("execute all operations", func() {
-		Context("when request is valid", func() {
-			It("should be passed", func() {
-				var num int
-				ctrl := &govern.ResourceV4{}
-				svr := httptest.NewServer(&mockGovernHandler{func(w http.ResponseWriter, r *http.Request) {
-					defer func() {
-						Expect(recover()).To(BeNil())
-					}()
-					route := ctrl.URLPatterns()[num]
-					r.Method = route.Method
-					route.Func(w, r)
-					num++
-				}})
-				defer svr.Close()
-
-				for range ctrl.URLPatterns() {
-					http.Post(svr.URL, "application/json", bytes.NewBuffer([]byte("{}")))
-				}
 			})
 		})
 	})

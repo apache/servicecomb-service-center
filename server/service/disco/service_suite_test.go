@@ -19,18 +19,15 @@ package disco_test
 // initialize
 import (
 	"context"
+	"testing"
 
-	"github.com/apache/servicecomb-service-center/server/service/disco"
+	_ "github.com/apache/servicecomb-service-center/test"
 
 	"github.com/apache/servicecomb-service-center/pkg/proto"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	_ "github.com/apache/servicecomb-service-center/test"
-
+	"github.com/apache/servicecomb-service-center/server/service/disco"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
-
-	"testing"
-
 	. "github.com/onsi/gomega"
 )
 
@@ -48,10 +45,4 @@ func TestGrpc(t *testing.T) {
 	RegisterFailHandler(Fail)
 	junitReporter := reporters.NewJUnitReporter("model.junit.xml")
 	RunSpecsWithDefaultAndCustomReporters(t, "model Suite", []Reporter{junitReporter})
-}
-
-func TestRegisterGrpcServices(t *testing.T) {
-	defer func() {
-		recover()
-	}()
 }

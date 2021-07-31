@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package v4_test
+package rbac_test
 
 import (
 	"strings"
