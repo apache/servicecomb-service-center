@@ -215,13 +215,13 @@ func circuitBreakerSchema() *spec.Schema {
 				"minimumNumberOfCalls", "slidingWindowType", "slidingWindowSize"},
 			Properties: map[string]spec.Schema{
 				"failureRateThreshold": {
-					SchemaProps: spec.SchemaProps{Type: []string{"number"}, Minimum: &minValue, Maximum: &maxValue}},
+					SchemaProps: spec.SchemaProps{Type: []string{"number"}, Minimum: &minValue, ExclusiveMinimum: true, Maximum: &maxValue}},
 				"slowCallRateThreshold": {
-					SchemaProps: spec.SchemaProps{Type: []string{"number"}, Minimum: &minValue, Maximum: &maxValue}},
+					SchemaProps: spec.SchemaProps{Type: []string{"number"}, Minimum: &minValue, ExclusiveMinimum: true, Maximum: &maxValue}},
 				"slowCallDurationThreshold": {
-					SchemaProps: spec.SchemaProps{Type: []string{"integer"}, Minimum: &minValue}},
+					SchemaProps: spec.SchemaProps{Type: []string{"integer"}, Minimum: &minValue, ExclusiveMinimum: true}},
 				"minimumNumberOfCalls": {
-					SchemaProps: spec.SchemaProps{Type: []string{"integer"}, Minimum: &minValue}},
+					SchemaProps: spec.SchemaProps{Type: []string{"integer"}, Minimum: &minValue, ExclusiveMinimum: true}},
 				"slidingWindowType": {
 					SchemaProps: spec.SchemaProps{Type: []string{"string"}, Enum: slidingWindowTypeSet}},
 				"slidingWindowSize": {
