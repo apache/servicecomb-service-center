@@ -21,17 +21,23 @@ import (
 	"context"
 	"errors"
 	"fmt"
-
-	pb "github.com/go-chassis/cari/discovery"
-	"github.com/go-chassis/cari/pkg/errsvc"
+	"strconv"
+	"time"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/config"
 	apt "github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/health"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	"github.com/apache/servicecomb-service-center/server/service/validator"
+	pb "github.com/go-chassis/cari/discovery"
+)
+
+const (
+	defaultMinInterval = 5 * time.Second
+	defaultMinTimes    = 3
 )
 
 func RegisterInstance(ctx context.Context, in *pb.RegisterInstanceRequest) (*pb.RegisterInstanceResponse, error) {
@@ -43,23 +49,61 @@ func RegisterInstance(ctx context.Context, in *pb.RegisterInstanceRequest) (*pb.
 		}, nil
 	}
 	remoteIP := util.GetIPFromContext(ctx)
-	instanceFlag := fmt.Sprintf("endpoints %v, host '%s', serviceID %s",
-		in.Instance.Endpoints, in.Instance.HostName, in.Instance.ServiceId)
 	domainProject := util.ParseDomainProject(ctx)
-	quotaErr := checkInstanceQuota(ctx, domainProject, in.Instance.ServiceId)
-	if quotaErr != nil {
-		log.Error(fmt.Sprintf("register instance failed, %s, operator %s",
-			instanceFlag, remoteIP), quotaErr)
-		response := &pb.RegisterInstanceResponse{
-			Response: pb.CreateResponseWithSCErr(quotaErr),
-		}
-		if quotaErr.InternalError() {
-			return response, quotaErr
-		}
-		return response, nil
+	if quotaErr := checkInstanceQuota(ctx, domainProject, in.Instance.ServiceId); quotaErr != nil {
+		log.Error(fmt.Sprintf("register instance failed, endpoints %v, host '%s', serviceID %s, operator %s",
+			in.Instance.Endpoints, in.Instance.HostName, in.Instance.ServiceId, remoteIP), quotaErr)
+		response, err := datasource.WrapErrResponse(quotaErr)
+		return &pb.RegisterInstanceResponse{
+			Response: response,
+		}, err
+	}
+	if popErr := populateInstanceDefaultValue(ctx, in.Instance); popErr != nil {
+		response, err := datasource.WrapErrResponse(popErr)
+		return &pb.RegisterInstanceResponse{
+			Response: response,
+		}, err
+	}
+	return datasource.GetMetadataManager().RegisterInstance(ctx, in)
+}
+
+// instance util
+func populateInstanceDefaultValue(ctx context.Context, instance *pb.MicroServiceInstance) error {
+	if len(instance.Status) == 0 {
+		instance.Status = pb.MSI_UP
 	}
 
-	return datasource.GetMetadataManager().RegisterInstance(ctx, in)
+	instance.Timestamp = strconv.FormatInt(time.Now().Unix(), 10)
+	instance.ModTimestamp = instance.Timestamp
+
+	// 这里应该根据租约计时
+	// Health check对象仅用于呈现服务健康检查逻辑，如果CHECK_BY_PLATFORM类型，表明由sidecar代发心跳，实例120s超时
+	if instance.HealthCheck == nil {
+		instance.HealthCheck = &pb.HealthCheck{
+			Mode:     pb.CHECK_BY_HEARTBEAT,
+			Interval: datasource.DefaultLeaseRenewalInterval,
+			Times:    datasource.DefaultLeaseRetryTimes,
+		}
+	} else if instance.HealthCheck.Mode == pb.CHECK_BY_HEARTBEAT {
+		renewalInterval := int32(config.GetDuration("registry.instance.minInterval", defaultMinInterval) / time.Second)
+		if instance.HealthCheck.Interval < renewalInterval {
+			instance.HealthCheck.Interval = renewalInterval
+		}
+		retryTimes := int32(config.GetInt("registry.instance.minTimes", defaultMinTimes))
+		if instance.HealthCheck.Times < retryTimes {
+			instance.HealthCheck.Times = retryTimes
+		}
+	} else if instance.HealthCheck.Mode == pb.CHECK_BY_PLATFORM {
+		instance.HealthCheck.Interval = datasource.DefaultLeaseRenewalInterval
+		instance.HealthCheck.Times = datasource.DefaultLeaseRetryTimes
+	}
+
+	microservice, err := GetService(ctx, &pb.GetServiceRequest{ServiceId: instance.ServiceId})
+	if err != nil {
+		return pb.NewError(pb.ErrServiceNotExists, "Invalid 'serviceID' in request body.")
+	}
+	instance.Version = microservice.Version
+	return nil
 }
 
 func UnregisterInstance(ctx context.Context,
@@ -225,12 +269,11 @@ func ClusterHealth(ctx context.Context) (*pb.GetInstancesResponse, error) {
 	}, nil
 }
 
-func checkInstanceQuota(ctx context.Context, domainProject string, serviceID string) *errsvc.Error {
+func checkInstanceQuota(ctx context.Context, domainProject string, serviceID string) error {
 	if !apt.IsSCInstance(ctx) {
 		res := quota.NewApplyQuotaResource(quota.TypeInstance,
 			domainProject, serviceID, 1)
-		err := quota.Apply(ctx, res)
-		return err
+		return quota.Apply(ctx, res)
 	}
 	return nil
 }

@@ -29,7 +29,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/service/quota"
 	pb "github.com/go-chassis/cari/discovery"
-	"github.com/go-chassis/cari/pkg/errsvc"
 )
 
 const QUOTA plugin.Kind = "quota"
@@ -112,8 +111,8 @@ func (r ResourceType) String() string {
 	}
 }
 
-//申请配额sourceType serviceinstance servicetype
-func Apply(ctx context.Context, res *ApplyQuotaResource) *errsvc.Error {
+// Apply 申请配额sourceType serviceinstance servicetype
+func Apply(ctx context.Context, res *ApplyQuotaResource) error {
 	if res == nil {
 		err := errors.New("invalid parameters")
 		log.Errorf(err, "quota check failed")
@@ -129,7 +128,7 @@ func Apply(ctx context.Context, res *ApplyQuotaResource) *errsvc.Error {
 	if curNum+res.QuotaSize > limitQuota {
 		mes := fmt.Sprintf("no quota to create %s, max num is %d, curNum is %d, apply num is %d",
 			res.QuotaType, limitQuota, curNum, res.QuotaSize)
-		log.Errorf(nil, mes)
+		log.Error(mes, nil)
 		return pb.NewError(pb.ErrNotEnoughQuota, mes)
 	}
 	return nil

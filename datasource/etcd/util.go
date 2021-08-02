@@ -19,12 +19,7 @@ package etcd
 
 import (
 	"context"
-	"strconv"
 	"strings"
-	"time"
-
-	pb "github.com/go-chassis/cari/discovery"
-	"github.com/go-chassis/cari/pkg/errsvc"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
@@ -35,8 +30,8 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
+	pb "github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/cari/pkg/errsvc"
 )
 
 type ServiceDetailOpt struct {
@@ -151,52 +146,6 @@ func commitSchemaInfo(domainProject string, serviceID string, schema *pb.Schema)
 	key := path.GenerateServiceSchemaKey(domainProject, serviceID, schema.SchemaId)
 	opt := client.OpPut(client.WithStrKey(key), client.WithStrValue(schema.Schema))
 	return []client.PluginOp{opt}
-}
-
-// instance util
-func preProcessRegisterInstance(ctx context.Context, instance *pb.MicroServiceInstance) *errsvc.Error {
-	if len(instance.Status) == 0 {
-		instance.Status = pb.MSI_UP
-	}
-
-	if len(instance.InstanceId) == 0 {
-		instance.InstanceId = uuid.Generator().GetInstanceID(ctx)
-	}
-
-	instance.Timestamp = strconv.FormatInt(time.Now().Unix(), 10)
-	instance.ModTimestamp = instance.Timestamp
-
-	// 这里应该根据租约计时
-	renewalInterval := core.RegistryDefaultLeaseRenewalInterval
-	retryTimes := core.RegistryDefaultLeaseRetryTimes
-	if instance.HealthCheck == nil {
-		instance.HealthCheck = &pb.HealthCheck{
-			Mode:     pb.CHECK_BY_HEARTBEAT,
-			Interval: renewalInterval,
-			Times:    retryTimes,
-		}
-	} else {
-		// Health check对象仅用于呈现服务健康检查逻辑，如果CHECK_BY_PLATFORM类型，表明由sidecar代发心跳，实例120s超时
-		switch instance.HealthCheck.Mode {
-		case pb.CHECK_BY_HEARTBEAT:
-			d := instance.HealthCheck.Interval * (instance.HealthCheck.Times + 1)
-			if d <= 0 {
-				return pb.NewError(pb.ErrInvalidParams, "Invalid 'healthCheck' settings in request body.")
-			}
-		case pb.CHECK_BY_PLATFORM:
-			// 默认120s
-			instance.HealthCheck.Interval = renewalInterval
-			instance.HealthCheck.Times = retryTimes
-		}
-	}
-
-	domainProject := util.ParseDomainProject(ctx)
-	microservice, err := serviceUtil.GetService(ctx, domainProject, instance.ServiceId)
-	if err != nil {
-		return pb.NewError(pb.ErrServiceNotExists, "Invalid 'serviceID' in request body.")
-	}
-	instance.Version = microservice.Version
-	return nil
 }
 
 func getHeartbeatFunc(ctx context.Context, domainProject string, instancesHbRst chan<- *pb.InstanceHbRst, element *pb.HeartbeatSetElement) func(context.Context) {

@@ -880,15 +880,11 @@ func (ds *MetadataManager) ModifySchemas(ctx context.Context, request *discovery
 		}
 		return &discovery.ModifySchemasResponse{Response: discovery.CreateResponse(discovery.ErrInternal, err.Error())}, err
 	}
-	respErr := ds.modifySchemas(ctx, svc.Service, request.Schemas)
-	if respErr != nil {
-		resp := &discovery.ModifySchemasResponse{
-			Response: discovery.CreateResponseWithSCErr(respErr),
-		}
-		if respErr.InternalError() {
-			return resp, err
-		}
-		return resp, nil
+	if respErr := ds.modifySchemas(ctx, svc.Service, request.Schemas); respErr != nil {
+		response, err := datasource.WrapErrResponse(respErr)
+		return &discovery.ModifySchemasResponse{
+			Response: response,
+		}, err
 	}
 	return &discovery.ModifySchemasResponse{
 		Response: discovery.CreateResponse(discovery.ResponseSuccess, "modify schemas info success"),
@@ -896,7 +892,7 @@ func (ds *MetadataManager) ModifySchemas(ctx context.Context, request *discovery
 
 }
 
-func (ds *MetadataManager) modifySchemas(ctx context.Context, service *discovery.MicroService, schemas []*discovery.Schema) *errsvc.Error {
+func (ds *MetadataManager) modifySchemas(ctx context.Context, service *discovery.MicroService, schemas []*discovery.Schema) error {
 	domain := util.ParseDomain(ctx)
 	project := util.ParseProject(ctx)
 	remoteIP := util.GetIPFromContext(ctx)
@@ -968,10 +964,10 @@ func (ds *MetadataManager) modifySchemas(ctx context.Context, service *discovery
 		quotaSize := len(needAddSchemas) - len(needDeleteSchemas)
 		if quotaSize > 0 {
 			res := quota.NewApplyQuotaResource(quota.TypeSchema, util.ParseDomainProject(ctx), serviceID, int64(quotaSize))
-			err := quota.Apply(ctx, res)
-			if err != nil {
-				log.Error(fmt.Sprintf("modify service[%s] schemas failed, operator: %s", serviceID, remoteIP), err)
-				return err
+			errQuota := quota.Apply(ctx, res)
+			if errQuota != nil {
+				log.Error(fmt.Sprintf("modify service[%s] schemas failed, operator: %s", serviceID, remoteIP), errQuota)
+				return errQuota
 			}
 		}
 		var schemaIDs []string
@@ -1192,9 +1188,10 @@ func (ds *MetadataManager) RegisterInstance(ctx context.Context,
 
 	isCustomID := true
 
-	if len(request.Instance.InstanceId) == 0 {
+	instance := request.Instance
+	if len(instance.InstanceId) == 0 {
 		isCustomID = false
-		request.Instance.InstanceId = uuid.Generator().GetInstanceID(ctx)
+		instance.InstanceId = uuid.Generator().GetInstanceID(ctx)
 	}
 
 	// if queueSize is more than 0 and channel is not full, then do fast register instance
@@ -1205,7 +1202,7 @@ func (ds *MetadataManager) RegisterInstance(ctx context.Context,
 
 		return &discovery.RegisterInstanceResponse{
 			Response:   discovery.CreateResponse(discovery.ResponseSuccess, "Register service instance successfully."),
-			InstanceId: request.Instance.InstanceId,
+			InstanceId: instance.InstanceId,
 		}, nil
 	}
 
@@ -1288,15 +1285,13 @@ func preProcessRegister(ctx context.Context, instance *discovery.MicroServiceIns
 				Response: resp.Response,
 			}, false, err
 		}
-
 	}
-
-	if err := preProcessRegisterInstance(ctx, instance); err != nil {
-		log.Error(fmt.Sprintf("register service %s instance failed, endpoints %s, host %s operator %s",
-			instance.ServiceId, instance.Endpoints, instance.HostName, remoteIP), err)
-		return &discovery.RegisterInstanceResponse{
-			Response: discovery.CreateResponseWithSCErr(err),
-		}, false, nil
+	if instance.HealthCheck == nil {
+		instance.HealthCheck = &discovery.HealthCheck{
+			Mode:     discovery.CHECK_BY_HEARTBEAT,
+			Interval: datasource.DefaultLeaseRenewalInterval,
+			Times:    datasource.DefaultLeaseRetryTimes,
+		}
 	}
 
 	return &discovery.RegisterInstanceResponse{
@@ -2210,61 +2205,6 @@ func AppendFindResponse(ctx context.Context, index int64, resp *discovery.Respon
 		Instances: instances,
 		Rev:       ov,
 	})
-}
-
-func preProcessRegisterInstance(ctx context.Context, instance *discovery.MicroServiceInstance) *errsvc.Error {
-	if len(instance.Status) == 0 {
-		instance.Status = discovery.MSI_UP
-	}
-
-	if len(instance.InstanceId) == 0 {
-		instance.InstanceId = uuid.Generator().GetInstanceID(ctx)
-	}
-
-	instance.Timestamp = strconv.FormatInt(time.Now().Unix(), 10)
-	instance.ModTimestamp = instance.Timestamp
-
-	// 这里应该根据租约计时
-	renewalInterval := apt.RegistryDefaultLeaseRenewalInterval
-	retryTimes := apt.RegistryDefaultLeaseRetryTimes
-	if instance.HealthCheck == nil {
-		instance.HealthCheck = &discovery.HealthCheck{
-			Mode:     discovery.CHECK_BY_HEARTBEAT,
-			Interval: renewalInterval,
-			Times:    retryTimes,
-		}
-	} else {
-		// Health check对象仅用于呈现服务健康检查逻辑，如果CHECK_BY_PLATFORM类型，表明由sidecar代发心跳，实例120s超时
-		switch instance.HealthCheck.Mode {
-		case discovery.CHECK_BY_HEARTBEAT:
-			d := instance.HealthCheck.Interval * (instance.HealthCheck.Times + 1)
-			if d <= 0 {
-				return discovery.NewError(discovery.ErrInvalidParams, "invalid 'healthCheck' settings in request body.")
-			}
-		case discovery.CHECK_BY_PLATFORM:
-			// 默认120s
-			instance.HealthCheck.Interval = renewalInterval
-			instance.HealthCheck.Times = retryTimes
-		}
-	}
-
-	cacheService, ok := cache.GetServiceByID(ctx, instance.ServiceId)
-
-	var microService *discovery.MicroService
-	if ok {
-		microService = cacheService.Service
-		instance.Version = microService.Version
-	} else {
-		filter := mutil.NewBasicFilter(ctx, mutil.ServiceServiceID(instance.ServiceId))
-		microservice, err := dao.GetService(ctx, filter)
-		if err != nil {
-			log.Error("Get service failed", err)
-			return discovery.NewError(discovery.ErrServiceNotExists, "invalid 'serviceID' in request body.")
-		}
-		instance.Version = microservice.Service.Version
-	}
-
-	return nil
 }
 
 // servicesBasicFilter query services with domain, project, env, appID, serviceName, alias

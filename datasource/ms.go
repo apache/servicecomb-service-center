@@ -24,16 +24,18 @@ import (
 	pb "github.com/go-chassis/cari/discovery"
 )
 
+const (
+	ExistTypeMicroservice             = "microservice"
+	ExistTypeSchema                   = "schema"
+	DefaultLeaseRenewalInterval int32 = 30
+	DefaultLeaseRetryTimes      int32 = 3
+)
+
 var (
 	ErrServiceNotExists     = errors.New("service does not exist")
 	ErrInstanceNotExists    = errors.New("instance does not exist")
 	ErrUndefinedSchemaID    = errors.New("non-existent schemaID can't be added request")
 	ErrModifySchemaNotAllow = errors.New("schema already exist, can not be changed request")
-)
-
-const (
-	ExistTypeMicroservice = "microservice"
-	ExistTypeSchema       = "schema"
 )
 
 // Attention: request validation must be finished before the following interface being invoked!!!

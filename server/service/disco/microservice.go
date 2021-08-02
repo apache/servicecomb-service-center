@@ -21,9 +21,6 @@ import (
 	"context"
 	"fmt"
 
-	pb "github.com/go-chassis/cari/discovery"
-	"github.com/go-chassis/cari/pkg/errsvc"
-
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -31,6 +28,7 @@ import (
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	"github.com/apache/servicecomb-service-center/server/service/validator"
+	pb "github.com/go-chassis/cari/discovery"
 )
 
 type MicroServiceService struct {
@@ -66,25 +64,20 @@ func (s *MicroServiceService) CreateServicePri(ctx context.Context, in *pb.Creat
 	domainProject := util.ParseDomainProject(ctx)
 
 	datasource.SetServiceDefaultValue(service)
-	err := validator.Validate(in)
-	if err != nil {
+	if err := validator.Validate(in); err != nil {
 		log.Errorf(err, "create micro-service[%s] failed, operator: %s",
 			serviceFlag, remoteIP)
 		return &pb.CreateServiceResponse{
 			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
 		}, nil
 	}
-	quotaErr := checkServiceQuota(ctx, domainProject)
-	if quotaErr != nil {
+	if quotaErr := checkServiceQuota(ctx, domainProject); quotaErr != nil {
 		log.Error(fmt.Sprintf("create micro-service[%s] failed, operator: %s",
-			serviceFlag, remoteIP), err)
-		resp := &pb.CreateServiceResponse{
-			Response: pb.CreateResponseWithSCErr(quotaErr),
-		}
-		if quotaErr.InternalError() {
-			return resp, quotaErr
-		}
-		return resp, nil
+			serviceFlag, remoteIP), quotaErr)
+		response, err := datasource.WrapErrResponse(quotaErr)
+		return &pb.CreateServiceResponse{
+			Response: response,
+		}, err
 	}
 
 	return RegisterService(ctx, in)
@@ -337,12 +330,11 @@ func (s *MicroServiceService) isCreateServiceEx(in *pb.CreateServiceRequest) boo
 	return true
 }
 
-func checkServiceQuota(ctx context.Context, domainProject string) *errsvc.Error {
+func checkServiceQuota(ctx context.Context, domainProject string) error {
 	if core.IsSCInstance(ctx) {
 		log.Debugf("skip quota check")
 		return nil
 	}
 	res := quota.NewApplyQuotaResource(quota.TypeService, domainProject, "", 1)
-	rst := quota.Apply(ctx, res)
-	return rst
+	return quota.Apply(ctx, res)
 }
