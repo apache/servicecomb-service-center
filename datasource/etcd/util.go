@@ -279,16 +279,6 @@ func getServiceDetailUtil(ctx context.Context, serviceDetailOpt ServiceDetailOpt
 				return nil, err
 			}
 			serviceDetail.Tags = tags
-		case "rules":
-			rules, err := serviceUtil.GetRulesUtil(ctx, domainProject, serviceID)
-			if err != nil {
-				log.Errorf(err, "get service[%s]'s all rules failed", serviceID)
-				return nil, err
-			}
-			for _, rule := range rules {
-				rule.Timestamp = rule.ModTimestamp
-			}
-			serviceDetail.Rules = rules
 		case "instances":
 			if serviceDetailOpt.countOnly {
 				instanceCount, err := serviceUtil.GetInstanceCountOfOneService(ctx, domainProject, serviceID)

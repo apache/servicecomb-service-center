@@ -23,8 +23,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"reflect"
-	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -350,11 +348,10 @@ func (ds *MetadataManager) DelServicePri(ctx context.Context, serviceID string, 
 	}
 
 	schemaOps := client.MongoOperation{Table: model.CollectionSchema, Models: []mongo.WriteModel{mongo.NewDeleteManyModel().SetFilter(bson.M{model.ColumnServiceID: serviceID})}}
-	rulesOps := client.MongoOperation{Table: model.CollectionRule, Models: []mongo.WriteModel{mongo.NewDeleteManyModel().SetFilter(bson.M{model.ColumnServiceID: serviceID})}}
 	instanceOps := client.MongoOperation{Table: model.CollectionInstance, Models: []mongo.WriteModel{mongo.NewDeleteManyModel().SetFilter(bson.M{mutil.ConnectWithDot([]string{model.ColumnInstance, model.ColumnServiceID}): serviceID})}}
 	serviceOps := client.MongoOperation{Table: model.CollectionService, Models: []mongo.WriteModel{mongo.NewDeleteOneModel().SetFilter(bson.M{mutil.ConnectWithDot([]string{model.ColumnService, model.ColumnServiceID}): serviceID})}}
 
-	err = client.GetMongoClient().MultiTableBatchUpdate(ctx, []client.MongoOperation{schemaOps, rulesOps, instanceOps, serviceOps})
+	err = client.GetMongoClient().MultiTableBatchUpdate(ctx, []client.MongoOperation{schemaOps, instanceOps, serviceOps})
 	if err != nil {
 		log.Error(fmt.Sprintf("micro-service[%s] failed, operator: %s", serviceID, remoteIP), err)
 		return discovery.CreateResponse(discovery.ErrUnavailableBackend, err.Error()), err
@@ -448,7 +445,7 @@ func (ds *MetadataManager) GetServiceDetail(ctx context.Context, request *discov
 			Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
 		}, err
 	}
-	options := []string{"tags", "rules", "instances", "schemas", "dependencies"}
+	options := []string{"tags", "instances", "schemas", "dependencies"}
 	serviceInfo, err := getServiceDetailUtil(ctx, mgSvc, false, options)
 	if err != nil {
 		return &discovery.GetServiceDetailResponse{
@@ -473,7 +470,7 @@ func (ds *MetadataManager) GetServicesInfo(ctx context.Context, request *discove
 	options := make([]string, 0, len(optionMap))
 	if _, ok := optionMap["all"]; ok {
 		optionMap["statistics"] = struct{}{}
-		options = []string{"tags", "rules", "instances", "schemas", "dependencies"}
+		options = []string{"tags", "instances", "schemas", "dependencies"}
 	} else {
 		for opt := range optionMap {
 			options = append(options, opt)
@@ -1120,222 +1117,6 @@ func (ds *MetadataManager) modifySchema(ctx context.Context, serviceID string, s
 	return nil
 }
 
-func (ds *MetadataManager) AddRule(ctx context.Context, request *discovery.AddServiceRulesRequest) (*discovery.AddServiceRulesResponse, error) {
-	remoteIP := util.GetIPFromContext(ctx)
-	domain := util.ParseDomain(ctx)
-	project := util.ParseProject(ctx)
-	exist, err := ServiceExistID(ctx, request.ServiceId)
-	if err != nil {
-		log.Error(fmt.Sprintf("failed to add rules for service %s for get service failed", request.ServiceId), err)
-		return &discovery.AddServiceRulesResponse{
-			Response: discovery.CreateResponse(discovery.ErrInternal, "Failed to check service exist"),
-		}, nil
-	}
-	if !exist {
-		return &discovery.AddServiceRulesResponse{Response: discovery.CreateResponse(discovery.ErrServiceNotExists, "Service does not exist")}, nil
-	}
-	res := quota.NewApplyQuotaResource(quota.TypeRule, util.ParseDomainProject(ctx), request.ServiceId, int64(len(request.Rules)))
-	errQuota := quota.Apply(ctx, res)
-	if errQuota != nil {
-		log.Error(fmt.Sprintf("add service[%s] rule failed, operator: %s", request.ServiceId, remoteIP), errQuota)
-		response := &discovery.AddServiceRulesResponse{
-			Response: discovery.CreateResponseWithSCErr(errQuota),
-		}
-		if errQuota.InternalError() {
-			return response, errQuota
-		}
-		return response, nil
-	}
-	filter := mutil.NewDomainProjectFilter(domain, project, mutil.ServiceID(request.ServiceId))
-	rules, err := dao.GetServiceRules(ctx, filter)
-	if err != nil {
-		return &discovery.AddServiceRulesResponse{
-			Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
-		}, err
-	}
-	var ruleType string
-	if len(rules) != 0 {
-		ruleType = rules[0].RuleType
-	}
-	ruleIDs := make([]string, 0, len(request.Rules))
-	for _, rule := range request.Rules {
-		if len(ruleType) == 0 {
-			ruleType = rule.RuleType
-		} else if ruleType != rule.RuleType {
-			return &discovery.AddServiceRulesResponse{
-				Response: discovery.CreateResponse(discovery.ErrBlackAndWhiteRule, "Service can only contain one rule type,Black or white."),
-			}, nil
-		}
-		//the rule unique index is (serviceid,attribute,pattern)
-		filter = mutil.NewFilter(
-			mutil.ServiceID(request.ServiceId),
-			mutil.RuleAttribute(rule.Attribute),
-			mutil.RulePattern(rule.Pattern),
-		)
-		exist, err := dao.RuleExist(ctx, filter)
-		if err != nil {
-			return &discovery.AddServiceRulesResponse{
-				Response: discovery.CreateResponse(discovery.ErrUnavailableBackend, "Can not check rule if exist."),
-			}, nil
-		}
-		if exist {
-			continue
-		}
-		timestamp := strconv.FormatInt(time.Now().Unix(), 10)
-		ruleAdd := &model.Rule{
-			Domain:    util.ParseDomain(ctx),
-			Project:   util.ParseProject(ctx),
-			ServiceID: request.ServiceId,
-			Rule: &discovery.ServiceRule{
-				RuleId:       util.GenerateUUID(),
-				RuleType:     rule.RuleType,
-				Attribute:    rule.Attribute,
-				Pattern:      rule.Pattern,
-				Description:  rule.Description,
-				Timestamp:    timestamp,
-				ModTimestamp: timestamp,
-			},
-		}
-		ruleIDs = append(ruleIDs, ruleAdd.Rule.RuleId)
-		_, err = client.GetMongoClient().Insert(ctx, model.CollectionRule, ruleAdd)
-		if err != nil {
-			return &discovery.AddServiceRulesResponse{
-				Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
-			}, err
-		}
-	}
-	return &discovery.AddServiceRulesResponse{
-		Response: discovery.CreateResponse(discovery.ResponseSuccess, "Add service rules successfully."),
-		RuleIds:  ruleIDs,
-	}, nil
-}
-
-func (ds *MetadataManager) GetRules(ctx context.Context, request *discovery.GetServiceRulesRequest) (*discovery.GetServiceRulesResponse, error) {
-	exist, err := ServiceExistID(ctx, request.ServiceId)
-	if err != nil {
-		return &discovery.GetServiceRulesResponse{
-			Response: discovery.CreateResponse(discovery.ErrServiceNotExists, "GetRules failed for get service failed."),
-		}, nil
-	}
-	if !exist {
-		return &discovery.GetServiceRulesResponse{
-			Response: discovery.CreateResponse(discovery.ErrServiceNotExists, "GetRules failed for service not exist."),
-		}, nil
-	}
-	filter := mutil.NewBasicFilter(ctx, mutil.ServiceID(request.ServiceId))
-	rules, err := dao.GetServiceRules(ctx, filter)
-	if err != nil {
-		return &discovery.GetServiceRulesResponse{
-			Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
-		}, nil
-	}
-	return &discovery.GetServiceRulesResponse{
-		Response: discovery.CreateResponse(discovery.ResponseSuccess, "Get service rules successfully."),
-		Rules:    rules,
-	}, nil
-}
-
-func (ds *MetadataManager) DeleteRule(ctx context.Context, request *discovery.DeleteServiceRulesRequest) (*discovery.DeleteServiceRulesResponse, error) {
-	exist, err := ServiceExistID(ctx, request.ServiceId)
-	domain := util.ParseDomain(ctx)
-	project := util.ParseProject(ctx)
-	if err != nil {
-		log.Error(fmt.Sprintf("failed to add tags for service %s for get service failed", request.ServiceId), err)
-		return &discovery.DeleteServiceRulesResponse{
-			Response: discovery.CreateResponse(discovery.ErrInternal, "Failed to check service exist"),
-		}, err
-	}
-	if !exist {
-		return &discovery.DeleteServiceRulesResponse{Response: discovery.CreateResponse(discovery.ErrServiceNotExists, "Service not exist")}, nil
-	}
-	var delRules []mongo.WriteModel
-	for _, ruleID := range request.RuleIds {
-		filter := mutil.NewDomainProjectFilter(domain, project, mutil.ServiceID(request.ServiceId), mutil.RuleRuleID(ruleID))
-		exist, err := dao.RuleExist(ctx, filter)
-		if err != nil {
-			return &discovery.DeleteServiceRulesResponse{
-				Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
-			}, err
-		}
-		if !exist {
-			return &discovery.DeleteServiceRulesResponse{
-				Response: discovery.CreateResponse(discovery.ErrRuleNotExists, "This rule does not exist."),
-			}, nil
-		}
-		filter = mutil.NewDomainProjectFilter(domain, project, mutil.ServiceID(request.ServiceId), mutil.RuleRuleID(ruleID))
-		delRules = append(delRules, mongo.NewDeleteOneModel().SetFilter(filter))
-	}
-	if len(delRules) > 0 {
-		_, err := client.GetMongoClient().BatchDelete(ctx, model.CollectionRule, delRules)
-		if err != nil {
-			return &discovery.DeleteServiceRulesResponse{
-				Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
-			}, err
-		}
-	}
-	return &discovery.DeleteServiceRulesResponse{
-		Response: discovery.CreateResponse(discovery.ResponseSuccess, "Delete service rules successfully."),
-	}, nil
-}
-
-func (ds *MetadataManager) UpdateRule(ctx context.Context, request *discovery.UpdateServiceRuleRequest) (*discovery.UpdateServiceRuleResponse, error) {
-	domain := util.ParseDomain(ctx)
-	project := util.ParseProject(ctx)
-	exist, err := ServiceExistID(ctx, request.ServiceId)
-	if err != nil {
-		return &discovery.UpdateServiceRuleResponse{
-			Response: discovery.CreateResponse(discovery.ErrServiceNotExists, "UpdateRule failed for get service failed."),
-		}, nil
-	}
-	if !exist {
-		return &discovery.UpdateServiceRuleResponse{
-			Response: discovery.CreateResponse(discovery.ErrServiceNotExists, "UpdateRule failed for service not exist."),
-		}, nil
-	}
-	filter := mutil.NewDomainProjectFilter(domain, project, mutil.ServiceID(request.ServiceId))
-	rules, err := dao.GetServiceRules(ctx, filter)
-	if err != nil {
-		return &discovery.UpdateServiceRuleResponse{
-			Response: discovery.CreateResponse(discovery.ErrUnavailableBackend, "UpdateRule failed for get rule."),
-		}, nil
-	}
-	if len(rules) >= 1 && rules[0].RuleType != request.Rule.RuleType {
-		return &discovery.UpdateServiceRuleResponse{
-			Response: discovery.CreateResponse(discovery.ErrModifyRuleNotAllow, "Exist multiple rules, can not change rule type. Rule type is ."+rules[0].RuleType),
-		}, nil
-	}
-	filter = mutil.NewDomainProjectFilter(domain, project, mutil.ServiceID(request.ServiceId), mutil.RuleRuleID(request.RuleId))
-	exist, err = dao.RuleExist(ctx, filter)
-	if err != nil {
-		return &discovery.UpdateServiceRuleResponse{
-			Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
-		}, nil
-	}
-	if !exist {
-		return &discovery.UpdateServiceRuleResponse{
-			Response: discovery.CreateResponse(discovery.ErrRuleNotExists, "This rule does not exist."),
-		}, nil
-	}
-	filter = mutil.NewDomainProjectFilter(domain, project, mutil.ServiceID(request.ServiceId), mutil.RuleRuleID(request.RuleId))
-	setFilter := mutil.NewFilter(
-		mutil.RuleRuleType(request.Rule.RuleType),
-		mutil.RulePattern(request.Rule.Pattern),
-		mutil.RuleAttribute(request.Rule.Attribute),
-		mutil.RuleDescription(request.Rule.Description),
-		mutil.RuleModTime(strconv.FormatInt(time.Now().Unix(), baseTen)),
-	)
-	updateFilter := mutil.NewFilter(mutil.Set(setFilter))
-	err = dao.UpdateRule(ctx, filter, updateFilter)
-	if err != nil {
-		return &discovery.UpdateServiceRuleResponse{
-			Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
-		}, err
-	}
-	return &discovery.UpdateServiceRuleResponse{
-		Response: discovery.CreateResponse(discovery.ResponseSuccess, "Update service rules succesfully."),
-	}, nil
-}
-
 func (ds *MetadataManager) isSchemaEditable() bool {
 	return !ds.SchemaNotEditable
 }
@@ -1359,17 +1140,6 @@ func getServiceDetailUtil(ctx context.Context, mgs *model.Service, countOnly boo
 		switch expr {
 		case "tags":
 			serviceDetail.Tags = mgs.Tags
-		case "rules":
-			filter := mutil.NewDomainProjectFilter(domain, project, mutil.ServiceID(mgs.Service.ServiceId))
-			rules, err := dao.GetServiceRules(ctx, filter)
-			if err != nil {
-				log.Error(fmt.Sprintf("get service %s's all rules failed", mgs.Service.ServiceId), err)
-				return nil, err
-			}
-			for _, rule := range rules {
-				rule.Timestamp = rule.ModTimestamp
-			}
-			serviceDetail.Rules = rules
 		case "instances":
 			if countOnly {
 				filter := mutil.NewDomainProjectFilter(domain, project, mutil.InstanceServiceID(serviceID))
@@ -2645,99 +2415,9 @@ func accessible(ctx context.Context, consumerID string, providerID string) *errs
 	if err != nil {
 		return discovery.NewError(discovery.ErrPermissionDeny, err.Error())
 	}
-
-	// 黑白名单
-	filter = mutil.NewDomainProjectFilter(providerDomain, providerProject, mutil.ServiceID(providerID))
-	rules, err := dao.GetRules(ctx, filter)
-	if err != nil {
-		return discovery.NewError(discovery.ErrInternal, fmt.Sprintf("an error occurred in query provider rules(%s)", err.Error()))
-	}
-
-	if len(rules) == 0 {
-		return nil
-	}
-	return MatchRules(rules, consumerService.Service, consumerService.Tags)
-}
-
-func MatchRules(rulesOfProvider []*model.Rule, consumer *discovery.MicroService, tagsOfConsumer map[string]string) *errsvc.Error {
-	if consumer == nil {
-		return discovery.NewError(discovery.ErrInvalidParams, "consumer is nil")
-	}
-
-	if len(rulesOfProvider) <= 0 {
-		return nil
-	}
-	if rulesOfProvider[0].Rule.RuleType == "WHITE" {
-		return patternWhiteList(rulesOfProvider, tagsOfConsumer, consumer)
-	}
-	return patternBlackList(rulesOfProvider, tagsOfConsumer, consumer)
-}
-
-func parsePattern(v reflect.Value, rule *discovery.ServiceRule, tagsOfConsumer map[string]string, consumerID string) (string, *errsvc.Error) {
-	if strings.HasPrefix(rule.Attribute, "tag_") {
-		key := rule.Attribute[4:]
-		value := tagsOfConsumer[key]
-		if len(value) == 0 {
-			log.Info(fmt.Sprintf("can not find service[%s] tag[%s]", consumerID, key))
-		}
-		return value, nil
-	}
-	key := v.FieldByName(rule.Attribute)
-	if !key.IsValid() {
-		log.Error(fmt.Sprintf("can not find service[%s] field[%s], ruleID is %s",
-			consumerID, rule.Attribute, rule.RuleId), nil)
-		return "", discovery.NewError(discovery.ErrInternal, fmt.Sprintf("can not find field '%s'", rule.Attribute))
-	}
-	return key.String(), nil
-
-}
-
-func patternWhiteList(rulesOfProvider []*model.Rule, tagsOfConsumer map[string]string, consumer *discovery.MicroService) *errsvc.Error {
-	v := reflect.Indirect(reflect.ValueOf(consumer))
-	consumerID := consumer.ServiceId
-	for _, rule := range rulesOfProvider {
-		value, err := parsePattern(v, rule.Rule, tagsOfConsumer, consumerID)
-		if err != nil {
-			return err
-		}
-		if len(value) == 0 {
-			continue
-		}
-
-		match, _ := regexp.MatchString(rule.Rule.Pattern, value)
-		if match {
-			log.Info(fmt.Sprintf("consumer[%s][%s/%s/%s/%s] match white list, rule.Pattern is %s, value is %s",
-				consumerID, consumer.Environment, consumer.AppId, consumer.ServiceName, consumer.Version,
-				rule.Rule.Pattern, value))
-			return nil
-		}
-	}
-	return discovery.NewError(discovery.ErrPermissionDeny, "not found in white list")
-}
-
-func patternBlackList(rulesOfProvider []*model.Rule, tagsOfConsumer map[string]string, consumer *discovery.MicroService) *errsvc.Error {
-	v := reflect.Indirect(reflect.ValueOf(consumer))
-	consumerID := consumer.ServiceId
-	for _, rule := range rulesOfProvider {
-		var value string
-		value, err := parsePattern(v, rule.Rule, tagsOfConsumer, consumerID)
-		if err != nil {
-			return err
-		}
-		if len(value) == 0 {
-			continue
-		}
-
-		match, _ := regexp.MatchString(rule.Rule.Pattern, value)
-		if match {
-			log.Warn(fmt.Sprintf("no permission to access, consumer[%s][%s/%s/%s/%s] match black list, rule.Pattern is %s, value is %s",
-				consumerID, consumer.Environment, consumer.AppId, consumer.ServiceName, consumer.Version,
-				rule.Rule.Pattern, value))
-			return discovery.NewError(discovery.ErrPermissionDeny, "found in black list")
-		}
-	}
 	return nil
 }
+
 func allowAcrossDimension(ctx context.Context, providerService *model.Service, consumerService *model.Service) error {
 	if providerService.Service.AppId != consumerService.Service.AppId {
 		if len(providerService.Service.Properties) == 0 {

@@ -147,20 +147,13 @@ var _ = Describe("'Micro-service' service", func() {
 				Expect(err).To(BeNil())
 				Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
-				By("check the tags/rules/instances")
+				By("check the tags/instances")
 				respGetTags, err := serviceResource.GetTags(getContext(), &pb.GetServiceTagsRequest{
 					ServiceId: resp.ServiceId,
 				})
 				Expect(err).To(BeNil())
 				Expect(respGetTags.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 				Expect(respGetTags.Tags["second"]).To(Equal("second"))
-
-				respGetRules, err := serviceResource.GetRule(getContext(), &pb.GetServiceRulesRequest{
-					ServiceId: resp.ServiceId,
-				})
-				Expect(err).To(BeNil())
-				Expect(respGetRules.Response.GetCode()).To(Equal(pb.ResponseSuccess))
-				Expect(respGetRules.Rules[0].Attribute).To(Equal("ServiceName"))
 
 				respGetInsts, err := disco.GetInstances(getContext(), &pb.GetInstancesRequest{
 					ConsumerServiceId: resp.ServiceId,

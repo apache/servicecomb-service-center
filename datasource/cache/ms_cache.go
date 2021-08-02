@@ -84,31 +84,6 @@ func transCacheToInsts(cache []interface{}) ([]*discovery.MicroServiceInstance, 
 	return res, true
 }
 
-func GetRulesByServiceID(serviceID string) ([]*model.Rule, bool) {
-	cacheRes := sd.Store().Rule().Cache().GetValue(serviceID)
-	return transCacheToRules(cacheRes)
-}
-
-func transCacheToRules(cacheRules []interface{}) ([]*model.Rule, bool) {
-	res := make([]*model.Rule, 0, len(cacheRules))
-	for _, v := range cacheRules {
-		t, ok := v.(model.Rule)
-		if !ok {
-			return nil, false
-		}
-		res = append(res, &model.Rule{
-			Domain:    t.Domain,
-			Project:   t.Project,
-			ServiceID: t.ServiceID,
-			Rule:      t.Rule,
-		})
-	}
-	if len(res) == 0 {
-		return nil, false
-	}
-	return res, true
-}
-
 func GetServiceByID(ctx context.Context, serviceID string) (*model.Service, bool) {
 	if util.NoCache(ctx) {
 		return nil, false

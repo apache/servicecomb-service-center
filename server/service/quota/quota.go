@@ -40,16 +40,6 @@ func InstanceUsage(ctx context.Context, request *discovery.GetServiceCountReques
 	return resp.Count, nil
 }
 
-func RuleUsage(ctx context.Context, serviceID string) (int64, error) {
-	resp, err := datasource.GetMetadataManager().GetRules(ctx, &discovery.GetServiceRulesRequest{
-		ServiceId: serviceID,
-	})
-	if err != nil {
-		return 0, err
-	}
-	return int64(len(resp.Rules)), nil
-}
-
 func SchemaUsage(ctx context.Context, serviceID string) (int64, error) {
 	resp, err := datasource.GetMetadataManager().GetAllSchemas(ctx, &discovery.GetAllSchemaRequest{
 		ServiceId:  serviceID,

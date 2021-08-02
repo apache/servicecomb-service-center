@@ -316,42 +316,6 @@ func SchemaID(schemaID string) Option {
 	}
 }
 
-func RuleAttribute(attribute string) Option {
-	return func(filter bson.M) {
-		filter[ConnectWithDot([]string{model.ColumnRule, model.ColumnAttribute})] = attribute
-	}
-}
-
-func RuleRuleID(ruleID string) Option {
-	return func(filter bson.M) {
-		filter[ConnectWithDot([]string{model.ColumnRule, model.ColumnRuleID})] = ruleID
-	}
-}
-
-func RuleRuleType(ruleType string) Option {
-	return func(filter bson.M) {
-		filter[ConnectWithDot([]string{model.ColumnRule, model.ColumnRuleType})] = ruleType
-	}
-}
-
-func RulePattern(pattern string) Option {
-	return func(filter bson.M) {
-		filter[ConnectWithDot([]string{model.ColumnRule, model.ColumnPattern})] = pattern
-	}
-}
-
-func RuleDescription(description string) Option {
-	return func(filter bson.M) {
-		filter[ConnectWithDot([]string{model.ColumnRule, model.ColumnDescription})] = description
-	}
-}
-
-func RuleModTime(modTime string) Option {
-	return func(filter bson.M) {
-		filter[ConnectWithDot([]string{model.ColumnRule, model.ColumnModTime})] = modTime
-	}
-}
-
 func SchemaSummary(schemaSummary string) Option {
 	return func(filter bson.M) {
 		filter[model.ColumnSchemaSummary] = schemaSummary

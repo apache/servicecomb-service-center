@@ -77,7 +77,7 @@ func (h InstanceEventHandler) OnEvent(evt sd.MongoEvent) {
 	if !syncernotify.GetSyncerNotifyCenter().Closed() {
 		NotifySyncerInstanceEvent(evt, microService)
 	}
-	consumerIDS, _, err := mongo.GetAllConsumerIds(ctx, microService)
+	consumerIDS, err := mongo.GetConsumerIDs(ctx, microService)
 	if err != nil {
 		log.Error(fmt.Sprintf("get service[%s][%s/%s/%s/%s]'s consumerIDs failed",
 			providerID, microService.Environment, microService.AppId, microService.ServiceName, microService.Version), err)

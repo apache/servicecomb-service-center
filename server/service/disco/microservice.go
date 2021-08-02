@@ -262,28 +262,8 @@ func (s *MicroServiceService) CreateServiceEx(ctx context.Context, in *pb.Create
 		ServiceId: serviceID,
 		Response:  &pb.Response{},
 	}
-	var chanLen int = 0
+	var chanLen = 0
 	createRespChan := make(chan *pb.Response, 10)
-	//create rules
-	if in.Rules != nil && len(in.Rules) != 0 {
-		chanLen++
-		gopool.Go(func(_ context.Context) {
-			req := &pb.AddServiceRulesRequest{
-				ServiceId: serviceID,
-				Rules:     in.Rules,
-			}
-			chanRsp := &pb.Response{}
-			rsp, err := s.AddRule(ctx, req)
-			if err != nil {
-				chanRsp.Message = err.Error()
-			}
-
-			if rsp.Response.GetCode() != pb.ResponseSuccess {
-				chanRsp.Message = rsp.Response.GetMessage()
-			}
-			createRespChan <- chanRsp
-		})
-	}
 	//create tags
 	if in.Tags != nil && len(in.Tags) != 0 {
 		chanLen++

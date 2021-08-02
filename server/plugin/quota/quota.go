@@ -38,15 +38,13 @@ const (
 	defaultServiceLimit  = 50000
 	defaultInstanceLimit = 150000
 	defaultSchemaLimit   = 100
-	defaultRuleLimit     = 100
 	defaultTagLimit      = 100
 	defaultAccountLimit  = 1000
 	defaultRoleLimit     = 100
 )
 
 const (
-	TypeRule ResourceType = iota
-	TypeSchema
+	TypeSchema ResourceType = iota
 	TypeTag
 	TypeService
 	TypeInstance
@@ -59,7 +57,6 @@ var (
 	DefaultInstanceQuota = defaultInstanceLimit
 	DefaultSchemaQuota   = defaultSchemaLimit
 	DefaultTagQuota      = defaultTagLimit
-	DefaultRuleQuota     = defaultRuleLimit
 	DefaultAccountQuota  = defaultAccountLimit
 	DefaultRoleQuota     = defaultRoleLimit
 )
@@ -69,7 +66,6 @@ func Init() {
 	DefaultInstanceQuota = config.GetInt("quota.cap.instance.limit", defaultInstanceLimit, config.WithENV("QUOTA_INSTANCE"))
 	DefaultSchemaQuota = config.GetInt("quota.cap.schema.limit", defaultSchemaLimit, config.WithENV("QUOTA_SCHEMA"))
 	DefaultTagQuota = config.GetInt("quota.cap.tag.limit", defaultTagLimit, config.WithENV("QUOTA_TAG"))
-	DefaultRuleQuota = config.GetInt("quota.cap.rule.limit", defaultRuleLimit, config.WithENV("QUOTA_RULE"))
 	DefaultAccountQuota = config.GetInt("quota.cap.account.limit", defaultAccountLimit, config.WithENV("QUOTA_ACCOUNT"))
 	DefaultRoleQuota = config.GetInt("quota.cap.role.limit", defaultRoleLimit, config.WithENV("QUOTA_ROLE"))
 }
@@ -99,8 +95,6 @@ type ResourceType int
 
 func (r ResourceType) String() string {
 	switch r {
-	case TypeRule:
-		return "RULE"
 	case TypeSchema:
 		return "SCHEMA"
 	case TypeTag:
@@ -157,8 +151,6 @@ func GetResourceUsage(ctx context.Context, res *ApplyQuotaResource) (int64, erro
 			Domain:  util.ParseDomain(ctx),
 			Project: util.ParseProject(ctx),
 		})
-	case TypeRule:
-		return quota.RuleUsage(ctx, serviceID)
 	case TypeSchema:
 		return quota.SchemaUsage(ctx, serviceID)
 	case TypeTag:

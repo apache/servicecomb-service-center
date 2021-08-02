@@ -40,8 +40,6 @@ var (
 	ServiceIndex    sd.Type
 	ServiceAlias    sd.Type
 	ServiceTag      sd.Type
-	RULE            sd.Type
-	RuleIndex       sd.Type
 	DependencyRule  sd.Type
 	DependencyQueue sd.Type
 	SCHEMA          sd.Type
@@ -67,9 +65,6 @@ func registerInnerTypes() {
 	SchemaSummary = Store().MustInstall(NewAddOn("SCHEMA_SUMMARY",
 		sd.Configure().WithPrefix(path.GetServiceSchemaSummaryRootKey("")).
 			WithInitSize(100).WithParser(value.StringParser)))
-	RULE = Store().MustInstall(NewAddOn("RULE",
-		sd.Configure().WithPrefix(path.GetServiceRuleRootKey("")).
-			WithInitSize(100).WithParser(value.RuleParser)))
 	LEASE = Store().MustInstall(NewAddOn("LEASE",
 		sd.Configure().WithPrefix(path.GetInstanceLeaseRootKey("")).
 			WithInitSize(1000).WithParser(value.StringParser)))
@@ -82,9 +77,6 @@ func registerInnerTypes() {
 	ServiceTag = Store().MustInstall(NewAddOn("SERVICE_TAG",
 		sd.Configure().WithPrefix(path.GetServiceTagRootKey("")).
 			WithInitSize(100).WithParser(value.MapParser)))
-	RuleIndex = Store().MustInstall(NewAddOn("RULE_INDEX",
-		sd.Configure().WithPrefix(path.GetServiceRuleIndexRootKey("")).
-			WithInitSize(100).WithParser(value.StringParser)))
 	DependencyRule = Store().MustInstall(NewAddOn("DEPENDENCY_RULE",
 		sd.Configure().WithPrefix(path.GetServiceDependencyRuleRootKey("")).
 			WithInitSize(100).WithParser(value.DependencyRuleParser)))

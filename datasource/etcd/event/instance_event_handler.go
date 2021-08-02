@@ -95,7 +95,7 @@ func (h *InstanceEventHandler) OnEvent(evt sd.KvEvent) {
 		providerInstanceID, instance.Endpoints)
 
 	// 查询所有consumer
-	consumerIDs, _, err := serviceUtil.GetAllConsumerIds(ctx, domainProject, ms)
+	consumerIDs, err := serviceUtil.GetConsumerIds(ctx, domainProject, ms)
 	if err != nil {
 		log.Errorf(err, "get service[%s][%s/%s/%s/%s]'s consumerIDs failed",
 			providerID, ms.Environment, ms.AppId, ms.ServiceName, ms.Version)
