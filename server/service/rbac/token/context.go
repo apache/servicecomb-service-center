@@ -2,8 +2,9 @@ package token
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/pkg/util"
 	"net/http"
+
+	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
 const CtxRequestToken util.CtxKey = "_request_token"
