@@ -22,14 +22,13 @@ import (
 	"errors"
 	"net/http"
 
-	rbacmodel "github.com/go-chassis/cari/rbac"
-
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/service/rbac/token"
+	rbacmodel "github.com/go-chassis/cari/rbac"
 )
 
 const (
 	CtxRequestClaims util.CtxKey = "_request_claims"
-	CtxRequestToken  util.CtxKey = "_request_token"
 )
 
 func UserFromContext(ctx context.Context) string {
@@ -52,23 +51,11 @@ func AccountFromContext(ctx context.Context) (*rbacmodel.Account, error) {
 	return rbacmodel.GetAccount(m)
 }
 
-func WithToken(req *http.Request, token string) *http.Request {
-	return util.SetRequestContext(req, CtxRequestToken, token)
-}
-
-func TokenFromRequest(req *http.Request) string {
-	token, ok := req.Context().Value(CtxRequestToken).(string)
-	if !ok {
-		return ""
-	}
-	return token
-}
-
 func SignRequest(req *http.Request) error {
-	token := TokenFromRequest(req)
-	if token == "" {
+	auth := token.FromContext(req.Context())
+	if auth == "" {
 		return errors.New("request unauthorized")
 	}
-	req.Header.Set("Authorization", token)
+	req.Header.Set("Authorization", auth)
 	return nil
 }

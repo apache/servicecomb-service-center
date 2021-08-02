@@ -31,6 +31,7 @@ import (
 	authHandler "github.com/apache/servicecomb-service-center/server/handler/auth"
 	"github.com/apache/servicecomb-service-center/server/plugin/auth"
 	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
+	"github.com/apache/servicecomb-service-center/server/service/rbac/token"
 	rbacmodel "github.com/go-chassis/cari/rbac"
 	"github.com/go-chassis/go-chassis/v2/security/authr"
 	"github.com/go-chassis/go-chassis/v2/server/restful"
@@ -154,7 +155,7 @@ func (ba *TokenAuthenticator) VerifyToken(req *http.Request) (interface{}, error
 	if err != nil {
 		return nil, err
 	}
-	rbacsvc.WithToken(req, to)
+	token.WithRequest(req, to)
 	return claims, nil
 }
 
