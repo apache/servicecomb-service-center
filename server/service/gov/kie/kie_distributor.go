@@ -24,18 +24,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
-	"github.com/go-chassis/foundation/httpclient"
 	"math/rand"
 	"strings"
 	"time"
 
-	"github.com/apache/servicecomb-service-center/pkg/log"
-
 	"github.com/apache/servicecomb-service-center/pkg/gov"
+	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
 	svc "github.com/apache/servicecomb-service-center/server/service/gov"
+	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 	"github.com/ghodss/yaml"
+	"github.com/go-chassis/foundation/httpclient"
 	"github.com/go-chassis/kie-client"
 )
 
