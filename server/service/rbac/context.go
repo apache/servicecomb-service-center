@@ -66,10 +66,9 @@ func TokenFromRequest(req *http.Request) string {
 
 func SignRequest(req *http.Request) error {
 	token := TokenFromRequest(req)
-	h := req.Header
 	if token == "" {
 		return errors.New("request unauthorized")
 	}
-	h.Set("Authorization", token)
+	req.Header.Set("Authorization", token)
 	return nil
 }
