@@ -156,12 +156,12 @@ func (ds *SCManager) registryService(pCtx context.Context) error {
 	}
 	if respE.Response.GetCode() == pb.ResponseSuccess {
 		log.Warn(fmt.Sprintf("service center service[%s] already registered", respE.ServiceId))
-		respG, err := datasource.GetMetadataManager().GetService(ctx, core.GetServiceRequest(respE.ServiceId))
-		if respG.Response.GetCode() != pb.ResponseSuccess {
+		service, err := datasource.GetMetadataManager().GetService(ctx, core.GetServiceRequest(respE.ServiceId))
+		if err != nil {
 			log.Error(fmt.Sprintf("query service center service[%s] info failed", respE.ServiceId), err)
 			return mutil.ErrLostServiceFile
 		}
-		core.Service = respG.Service
+		core.Service = service
 		return nil
 	}
 

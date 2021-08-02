@@ -42,7 +42,7 @@ type MetadataManager interface {
 	// Microservice management
 	RegisterService(ctx context.Context, request *pb.CreateServiceRequest) (*pb.CreateServiceResponse, error)
 	GetServices(ctx context.Context, request *pb.GetServicesRequest) (*pb.GetServicesResponse, error)
-	GetService(ctx context.Context, request *pb.GetServiceRequest) (*pb.GetServiceResponse, error)
+	GetService(ctx context.Context, request *pb.GetServiceRequest) (*pb.MicroService, error)
 
 	GetServiceDetail(ctx context.Context, request *pb.GetServiceRequest) (*pb.GetServiceDetailResponse, error)
 	GetServicesInfo(ctx context.Context, request *pb.GetServicesInfoRequest) (*pb.GetServicesInfoResponse, error)

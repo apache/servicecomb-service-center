@@ -19,6 +19,7 @@ package datasource_test
 
 import (
 	"context"
+	"github.com/go-chassis/cari/pkg/errsvc"
 	"strconv"
 	"strings"
 	"testing"
@@ -277,20 +278,19 @@ func TestService_Get(t *testing.T) {
 		assert.Equal(t, resp.Response.GetCode(), pb.ResponseSuccess)
 
 		// search service by serviceID
-		queryResp, err := datasource.GetMetadataManager().GetService(getContext(), &pb.GetServiceRequest{
+		_, err = datasource.GetMetadataManager().GetService(getContext(), &pb.GetServiceRequest{
 			ServiceId: "ms-service-query-id",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, queryResp.Response.GetCode(), pb.ResponseSuccess)
 	})
 
 	t.Run("query a service by a not existed serviceId, should not pass", func(t *testing.T) {
 		// not exist service
-		resp, err := datasource.GetMetadataManager().GetService(getContext(), &pb.GetServiceRequest{
+		_, err := datasource.GetMetadataManager().GetService(getContext(), &pb.GetServiceRequest{
 			ServiceId: "no-exist-service",
 		})
-		assert.NoError(t, err)
-		assert.Equal(t, resp.Response.GetCode(), pb.ErrServiceNotExists)
+		assert.NotNil(t, err)
+		assert.Equal(t, pb.ErrServiceNotExists, err.(*errsvc.Error).Code)
 	})
 }
 
@@ -496,13 +496,13 @@ func TestService_Update(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
-		respGetService, err := datasource.GetMetadataManager().GetService(getContext(), &pb.GetServiceRequest{
+		service, err := datasource.GetMetadataManager().GetService(getContext(), &pb.GetServiceRequest{
 			ServiceId: serviceId,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, serviceId, respGetService.Service.ServiceId)
-		assert.Equal(t, "", respGetService.Service.Properties["test"])
-		assert.Equal(t, "v", respGetService.Service.Properties["k"])
+		assert.Equal(t, serviceId, service.ServiceId)
+		assert.Equal(t, "", service.Properties["test"])
+		assert.Equal(t, "v", service.Properties["k"])
 	})
 
 	t.Run("update service that does not exist", func(t *testing.T) {

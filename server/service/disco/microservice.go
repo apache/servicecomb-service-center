@@ -198,15 +198,14 @@ func (s *MicroServiceService) getDeleteServiceFunc(ctx context.Context, serviceI
 }
 
 func (s *MicroServiceService) GetOne(ctx context.Context, in *pb.GetServiceRequest) (*pb.GetServiceResponse, error) {
-	err := validator.Validate(in)
+	service, err := GetService(ctx, in)
 	if err != nil {
 		log.Errorf(err, "get micro-service[%s] failed", in.ServiceId)
 		return &pb.GetServiceResponse{
 			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
-		}, nil
+		}, err
 	}
-
-	return datasource.GetMetadataManager().GetService(ctx, in)
+	return &pb.GetServiceResponse{Response: pb.CreateResponse(pb.ResponseSuccess, ""), Service: service}, nil
 }
 
 func (s *MicroServiceService) GetServices(ctx context.Context, in *pb.GetServicesRequest) (*pb.GetServicesResponse, error) {
