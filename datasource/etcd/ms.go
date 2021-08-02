@@ -196,26 +196,19 @@ func (ds *MetadataManager) GetServices(ctx context.Context, request *pb.GetServi
 }
 
 func (ds *MetadataManager) GetService(ctx context.Context, request *pb.GetServiceRequest) (
-	*pb.GetServiceResponse, error) {
+	*pb.MicroService, error) {
 	domainProject := util.ParseDomainProject(ctx)
 	singleService, err := serviceUtil.GetService(ctx, domainProject, request.ServiceId)
 
 	if err != nil {
 		if errors.Is(err, datasource.ErrNoData) {
 			log.Debug(fmt.Sprintf("get micro-service[%s] failed, service does not exist in db", request.ServiceId))
-			return &pb.GetServiceResponse{
-				Response: pb.CreateResponse(pb.ErrServiceNotExists, "Service does not exist."),
-			}, nil
+			return nil, pb.NewError(pb.ErrServiceNotExists, "Service does not exist.")
 		}
 		log.Error(fmt.Sprintf("get micro-service[%s] failed, get service file failed", request.ServiceId), err)
-		return &pb.GetServiceResponse{
-			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
-		}, err
+		return nil, pb.NewError(pb.ErrInternal, err.Error())
 	}
-	return &pb.GetServiceResponse{
-		Response: pb.CreateResponse(pb.ResponseSuccess, "Get service successfully."),
-		Service:  singleService,
-	}, nil
+	return singleService, nil
 }
 
 func (ds *MetadataManager) GetServiceDetail(ctx context.Context, request *pb.GetServiceRequest) (

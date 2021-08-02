@@ -209,7 +209,7 @@ func (ds *MetadataManager) GetApplications(ctx context.Context, request *discove
 	}, nil
 }
 
-func (ds *MetadataManager) GetService(ctx context.Context, request *discovery.GetServiceRequest) (*discovery.GetServiceResponse, error) {
+func (ds *MetadataManager) GetService(ctx context.Context, request *discovery.GetServiceRequest) (*discovery.MicroService, error) {
 	svc, ok := cache.GetServiceByID(ctx, request.ServiceId)
 	if !ok {
 		var err error
@@ -217,20 +217,13 @@ func (ds *MetadataManager) GetService(ctx context.Context, request *discovery.Ge
 		if err != nil {
 			if errors.Is(err, datasource.ErrNoData) {
 				log.Debug(fmt.Sprintf("service %s not exist in db", request.ServiceId))
-				return &discovery.GetServiceResponse{
-					Response: discovery.CreateResponse(discovery.ErrServiceNotExists, "Service not exist."),
-				}, nil
+				return nil, discovery.NewError(discovery.ErrServiceNotExists, "Service not exist.")
 			}
 			log.Error(fmt.Sprintf("failed to get single service %s from mongo", request.ServiceId), err)
-			return &discovery.GetServiceResponse{
-				Response: discovery.CreateResponse(discovery.ErrInternal, "get service data from mongodb failed."),
-			}, err
+			return nil, discovery.NewError(discovery.ErrInternal, "get service data from mongodb failed.")
 		}
 	}
-	return &discovery.GetServiceResponse{
-		Response: discovery.CreateResponse(discovery.ResponseSuccess, "Get service successfully."),
-		Service:  svc.Service,
-	}, nil
+	return svc.Service, nil
 }
 
 func (ds *MetadataManager) ExistServiceByID(ctx context.Context, request *discovery.GetExistenceByIDRequest) (*discovery.GetExistenceByIDResponse, error) {

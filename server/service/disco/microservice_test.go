@@ -20,13 +20,14 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/apache/servicecomb-service-center/server/service/disco"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
+	"github.com/apache/servicecomb-service-center/server/service/disco"
 	pb "github.com/go-chassis/cari/discovery"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	"github.com/go-chassis/cari/pkg/errsvc"
 )
 
 var (
@@ -1019,23 +1020,23 @@ var _ = Describe("'Micro-service' service", func() {
 
 		Context("when query a not exist service by serviceId", func() {
 			It("should be failed", func() {
-				resp, err := serviceResource.GetOne(getContext(), &pb.GetServiceRequest{
+				service, err := disco.GetService(getContext(), &pb.GetServiceRequest{
 					ServiceId: "",
 				})
-				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
+				Expect(service).To(BeNil())
+				Expect(err.(*errsvc.Error).Code).To(Equal(pb.ErrInvalidParams))
 
-				resp, err = serviceResource.GetOne(getContext(), &pb.GetServiceRequest{
+				service, err = disco.GetService(getContext(), &pb.GetServiceRequest{
 					ServiceId: "notexistservice",
 				})
-				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(pb.ErrServiceNotExists))
+				Expect(service).To(BeNil())
+				Expect(err.(*errsvc.Error).Code).To(Equal(pb.ErrServiceNotExists))
 
-				resp, err = serviceResource.GetOne(getContext(), &pb.GetServiceRequest{
+				service, err = disco.GetService(getContext(), &pb.GetServiceRequest{
 					ServiceId: TOO_LONG_SERVICEID,
 				})
-				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
+				Expect(service).To(BeNil())
+				Expect(err.(*errsvc.Error).Code).To(Equal(pb.ErrInvalidParams))
 			})
 		})
 	})
@@ -1079,13 +1080,13 @@ var _ = Describe("'Micro-service' service", func() {
 				resp, err = serviceResource.UpdateProperties(getContext(), r2)
 				Expect(err).To(BeNil())
 
-				resp2, err := serviceResource.GetOne(getContext(), &pb.GetServiceRequest{
+				service, err := disco.GetService(getContext(), &pb.GetServiceRequest{
 					ServiceId: serviceId,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp2.Service.ServiceId).To(Equal(serviceId))
-				Expect(resp2.Service.Properties["test"]).To(Equal(""))
-				Expect(resp2.Service.Properties["k"]).To(Equal("v"))
+				Expect(service.ServiceId).To(Equal(serviceId))
+				Expect(service.Properties["test"]).To(Equal(""))
+				Expect(service.Properties["k"]).To(Equal("v"))
 			})
 		})
 

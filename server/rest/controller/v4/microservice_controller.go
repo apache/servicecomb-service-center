@@ -26,6 +26,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
+	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
 	pb "github.com/go-chassis/cari/discovery"
 )
 
@@ -156,13 +157,13 @@ func (s *MicroServiceService) GetServiceOne(w http.ResponseWriter, r *http.Reque
 	request := &pb.GetServiceRequest{
 		ServiceId: r.URL.Query().Get(":serviceId"),
 	}
-	resp, err := core.ServiceAPI.GetOne(r.Context(), request)
+	service, err := discosvc.GetService(r.Context(), request)
 	if err != nil {
 		log.Errorf(err, "get service[%s] failed", request.ServiceId)
-		rest.WriteError(w, pb.ErrInternal, "get service failed")
+		rest.WriteServiceError(w, err)
 		return
 	}
-	rest.WriteResponse(w, r, resp.Response, resp)
+	rest.WriteResponse(w, r, nil, &pb.GetServiceResponse{Service: service})
 }
 
 func (s *MicroServiceService) UnregisterServices(w http.ResponseWriter, r *http.Request) {

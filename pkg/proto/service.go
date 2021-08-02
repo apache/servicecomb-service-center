@@ -24,10 +24,12 @@ import (
 	"google.golang.org/grpc"
 )
 
+// ServiceCtrlServer deprecated, Use disco pkg instead
 type ServiceCtrlServer interface {
 	Exist(context.Context, *discovery.GetExistenceRequest) (*discovery.GetExistenceResponse, error)
 	Create(context.Context, *discovery.CreateServiceRequest) (*discovery.CreateServiceResponse, error)
 	Delete(context.Context, *discovery.DeleteServiceRequest) (*discovery.DeleteServiceResponse, error)
+	// deprecated
 	GetOne(context.Context, *discovery.GetServiceRequest) (*discovery.GetServiceResponse, error)
 	GetServices(context.Context, *discovery.GetServicesRequest) (*discovery.GetServicesResponse, error)
 	UpdateProperties(context.Context, *discovery.UpdateServicePropsRequest) (*discovery.UpdateServicePropsResponse, error)

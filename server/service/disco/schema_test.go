@@ -20,13 +20,13 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/apache/servicecomb-service-center/datasource"
-
-	"github.com/apache/servicecomb-service-center/server/plugin/quota"
-	pb "github.com/go-chassis/cari/discovery"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/server/plugin/quota"
+	"github.com/apache/servicecomb-service-center/server/service/disco"
+	pb "github.com/go-chassis/cari/discovery"
 )
 
 const (
@@ -384,12 +384,11 @@ var _ = Describe("'Schema' service", func() {
 				Expect(err).To(BeNil())
 				Expect(respCreateService.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
-				respGetOne, err := serviceResource.GetOne(getContext(), &pb.GetServiceRequest{
+				service, err := disco.GetService(getContext(), &pb.GetServiceRequest{
 					ServiceId: serviceIdDev1,
 				})
 				Expect(err).To(BeNil())
-				Expect(respGetOne.Response.GetCode()).To(Equal(pb.ResponseSuccess))
-				Expect(respGetOne.Service.Schemas).To(Equal([]string{"second_schemaId"}))
+				Expect(service.Schemas).To(Equal([]string{"second_schemaId"}))
 
 				By("create empty")
 				schemas = []*pb.Schema{}
@@ -415,12 +414,11 @@ var _ = Describe("'Schema' service", func() {
 				Expect(err).To(BeNil())
 				Expect(respCreateService.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
-				respGetOne, err = serviceResource.GetOne(getContext(), &pb.GetServiceRequest{
+				service, err = disco.GetService(getContext(), &pb.GetServiceRequest{
 					ServiceId: serviceIdDev2,
 				})
 				Expect(err).To(BeNil())
-				Expect(respGetOne.Response.GetCode()).To(Equal(pb.ResponseSuccess))
-				Expect(respGetOne.Service.Schemas).To(Equal([]string{"second_schemaId"}))
+				Expect(service.Schemas).To(Equal([]string{"second_schemaId"}))
 			})
 		})
 
