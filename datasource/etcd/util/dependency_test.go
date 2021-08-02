@@ -279,10 +279,3 @@ func TestDependencyRelationFilterOpt(t *testing.T) {
 		t.Fatalf(`ToDependencyRelationFilterOpt failed`)
 	}
 }
-
-func TestGetConsumerIdsWithFilter(t *testing.T) {
-	_, _, err := GetConsumerIdsWithFilter(context.Background(), "", &discovery.MicroService{}, nil)
-	if err != nil {
-		t.Fatalf(`TestGetConsumerIdsWithFilter failed`)
-	}
-}

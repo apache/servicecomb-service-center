@@ -45,8 +45,6 @@ func (sm *SysManager) DumpCache(ctx context.Context) *dump.Cache {
 		Do(func(_ context.Context) { setValue(kv.Store().ServiceIndex(), &cache.Indexes) }).
 		Do(func(_ context.Context) { setValue(kv.Store().ServiceAlias(), &cache.Aliases) }).
 		Do(func(_ context.Context) { setValue(kv.Store().ServiceTag(), &cache.Tags) }).
-		Do(func(_ context.Context) { setValue(kv.Store().RuleIndex(), &cache.RuleIndexes) }).
-		Do(func(_ context.Context) { setValue(kv.Store().Rule(), &cache.Rules) }).
 		Do(func(_ context.Context) { setValue(kv.Store().DependencyRule(), &cache.DependencyRules) }).
 		Do(func(_ context.Context) { setValue(kv.Store().SchemaSummary(), &cache.Summaries) }).
 		Do(func(_ context.Context) { setValue(kv.Store().Instance(), &cache.Instances) }).

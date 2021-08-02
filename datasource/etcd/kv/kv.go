@@ -183,8 +183,6 @@ func (s *TypeStore) Lease() sd.Adaptor              { return s.Adaptors(LEASE) }
 func (s *TypeStore) ServiceIndex() sd.Adaptor       { return s.Adaptors(ServiceIndex) }
 func (s *TypeStore) ServiceAlias() sd.Adaptor       { return s.Adaptors(ServiceAlias) }
 func (s *TypeStore) ServiceTag() sd.Adaptor         { return s.Adaptors(ServiceTag) }
-func (s *TypeStore) Rule() sd.Adaptor               { return s.Adaptors(RULE) }
-func (s *TypeStore) RuleIndex() sd.Adaptor          { return s.Adaptors(RuleIndex) }
 func (s *TypeStore) Schema() sd.Adaptor             { return s.Adaptors(SCHEMA) }
 func (s *TypeStore) DependencyRule() sd.Adaptor     { return s.Adaptors(DependencyRule) }
 func (s *TypeStore) DependencyQueue() sd.Adaptor    { return s.Adaptors(DependencyQueue) }

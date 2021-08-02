@@ -123,7 +123,6 @@ func (s *TypeStore) Ready() <-chan struct{} {
 func (s *TypeStore) TypeCacher(id string) *MongoCacher { return s.getOrCreateCache(id) }
 func (s *TypeStore) Service() *MongoCacher             { return s.TypeCacher(service) }
 func (s *TypeStore) Instance() *MongoCacher            { return s.TypeCacher(instance) }
-func (s *TypeStore) Rule() *MongoCacher                { return s.TypeCacher(rule) }
 func (s *TypeStore) Dep() *MongoCacher                 { return s.TypeCacher(dep) }
 
 func Store() *TypeStore {

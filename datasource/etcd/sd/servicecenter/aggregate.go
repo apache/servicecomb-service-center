@@ -68,8 +68,6 @@ func (c *SCClientAggregate) GetScCache(ctx context.Context) (*dump.Cache, map[st
 		c.cacheAppend(client.Cfg.Name, &caches.Indexes, &cache.Indexes)
 		c.cacheAppend(client.Cfg.Name, &caches.Aliases, &cache.Aliases)
 		c.cacheAppend(client.Cfg.Name, &caches.Tags, &cache.Tags)
-		c.cacheAppend(client.Cfg.Name, &caches.Rules, &cache.Rules)
-		c.cacheAppend(client.Cfg.Name, &caches.RuleIndexes, &cache.RuleIndexes)
 		c.cacheAppend(client.Cfg.Name, &caches.DependencyRules, &cache.DependencyRules)
 		c.cacheAppend(client.Cfg.Name, &caches.Summaries, &cache.Summaries)
 		c.cacheAppend(client.Cfg.Name, &caches.Instances, &cache.Instances)

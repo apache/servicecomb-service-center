@@ -28,7 +28,6 @@ const (
 	CollectionAccountLock = "account_lock"
 	CollectionService     = "service"
 	CollectionSchema      = "schema"
-	CollectionRule        = "rule"
 	CollectionInstance    = "instance"
 	CollectionDep         = "dependency"
 	CollectionRole        = "role"
@@ -42,7 +41,6 @@ const (
 	ColumnTag                  = "tags"
 	ColumnSchemaID             = "schema_id"
 	ColumnServiceID            = "service_id"
-	ColumnRuleID               = "rule_id"
 	ColumnService              = "service"
 	ColumnProperty             = "properties"
 	ColumnModTime              = "mod_timestamp"
@@ -52,15 +50,10 @@ const (
 	ColumnAlias                = "alias"
 	ColumnVersion              = "version"
 	ColumnSchemas              = "schemas"
-	ColumnAttribute            = "attribute"
-	ColumnPattern              = "pattern"
-	ColumnDescription          = "description"
-	ColumnRuleType             = "rule_type"
 	ColumnSchema               = "schema"
 	ColumnSchemaSummary        = "schema_summary"
 	ColumnDep                  = "dep"
 	ColumnDependency           = "dependency"
-	ColumnRule                 = "rule"
 	ColumnInstance             = "instance"
 	ColumnInstanceID           = "instance_id"
 	ColumnTenant               = "tenant"
@@ -97,13 +90,6 @@ type Schema struct {
 	SchemaID      string `json:"schemaID,omitempty" bson:"schema_id"`
 	Schema        string `json:"schema,omitempty"`
 	SchemaSummary string `json:"schemaSummary,omitempty" bson:"schema_summary"`
-}
-
-type Rule struct {
-	Domain    string          `json:"domain,omitempty"`
-	Project   string          `json:"project,omitempty"`
-	ServiceID string          `json:"serviceID,omitempty" bson:"service_id"`
-	Rule      *pb.ServiceRule `json:"rule,omitempty"`
 }
 
 type Instance struct {

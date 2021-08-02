@@ -19,56 +19,37 @@ package mongo
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	pb "github.com/go-chassis/cari/discovery"
 
-	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/cache"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client/dao"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
 )
 
-func GetAllConsumerIds(ctx context.Context, provider *pb.MicroService) (allow []string, deny []string, err error) {
+func GetConsumerIDs(ctx context.Context, provider *pb.MicroService) ([]string, error) {
 	if provider == nil || len(provider.ServiceId) == 0 {
-		return nil, nil, fmt.Errorf("invalid provider")
+		return nil, fmt.Errorf("invalid provider")
 	}
 
-	//todo 删除服务，最后实例推送有误差
-	providerRules, ok := cache.GetRulesByServiceID(provider.ServiceId)
-	if !ok {
-		providerRules, err = dao.GetRulesByServiceID(ctx, provider.ServiceId)
-		if err != nil {
-			return nil, nil, err
-		}
-	}
-
-	allow, deny, err = GetConsumerIDsWithFilter(ctx, provider, providerRules)
-	if err != nil && !errors.Is(err, datasource.ErrNoData) {
-		return nil, nil, err
-	}
-	return allow, deny, nil
-}
-
-func GetConsumerIDsWithFilter(ctx context.Context, provider *pb.MicroService, rules []*model.Rule) (allow []string, deny []string, err error) {
+	var err error
 	serviceDeps, ok := cache.GetProviderServiceOfDeps(provider)
 	if !ok {
 		serviceDeps, err = dao.GetProviderDeps(ctx, provider)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 	}
-	consumerIDs := make([]string, len(serviceDeps.Dependency))
+	consumerIDs := make([]string, 0, len(serviceDeps.Dependency))
 	for _, serviceKeys := range serviceDeps.Dependency {
 		id, ok := cache.GetServiceID(ctx, serviceKeys)
 		if !ok {
 			id, err = dao.GetServiceID(ctx, serviceKeys)
 			if err != nil {
-				return nil, nil, err
+				return nil, err
 			}
 		}
 		consumerIDs = append(consumerIDs, id)
 	}
-	return FilterAll(ctx, consumerIDs, rules)
+	return consumerIDs, nil
 }

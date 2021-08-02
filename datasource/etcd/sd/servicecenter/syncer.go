@@ -86,14 +86,6 @@ func (c *Syncer) Sync(ctx context.Context) {
 	if ok {
 		c.check(tagCacher, &cache.Tags, errs)
 	}
-	ruleCacher, ok := c.cachers[kv.RULE]
-	if ok {
-		c.check(ruleCacher, &cache.Rules, errs)
-	}
-	ruleIndexCacher, ok := c.cachers[kv.RuleIndex]
-	if ok {
-		c.check(ruleIndexCacher, &cache.RuleIndexes, errs)
-	}
 	depRuleCacher, ok := c.cachers[kv.DependencyRule]
 	if ok {
 		c.check(depRuleCacher, &cache.DependencyRules, errs)
