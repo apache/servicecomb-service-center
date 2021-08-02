@@ -18,6 +18,7 @@
 package mock
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -38,7 +39,7 @@ const MatchGroup = "match-group"
 
 var PolicyNames = []string{"retry", "rateLimiting", "circuitBreaker", "bulkhead"}
 
-func (d *Distributor) Create(kind, project string, p *gov.Policy) ([]byte, error) {
+func (d *Distributor) Create(ctx context.Context, kind, project string, p *gov.Policy) ([]byte, error) {
 	p.ID = uuid.NewV4().String()
 	p.Kind = kind
 	log.Println(fmt.Sprintf("create %v", &p))
@@ -46,7 +47,7 @@ func (d *Distributor) Create(kind, project string, p *gov.Policy) ([]byte, error
 	return []byte(p.ID), nil
 }
 
-func (d *Distributor) Update(kind, id, project string, p *gov.Policy) error {
+func (d *Distributor) Update(ctx context.Context, kind, id, project string, p *gov.Policy) error {
 	if d.lbPolicies[id] == nil {
 		return fmt.Errorf("id not exsit")
 	}
@@ -57,12 +58,12 @@ func (d *Distributor) Update(kind, id, project string, p *gov.Policy) error {
 	return nil
 }
 
-func (d *Distributor) Delete(kind, id, project string) error {
+func (d *Distributor) Delete(ctx context.Context, kind, id, project string) error {
 	delete(d.lbPolicies, id)
 	return nil
 }
 
-func (d *Distributor) Display(project, app, env string) ([]byte, error) {
+func (d *Distributor) Display(ctx context.Context, project, app, env string) ([]byte, error) {
 	list := make([]*gov.Policy, 0)
 	for _, g := range d.lbPolicies {
 		if checkPolicy(g, MatchGroup, app, env) {
@@ -91,7 +92,7 @@ func (d *Distributor) Display(project, app, env string) ([]byte, error) {
 	b, _ := json.MarshalIndent(r, "", "  ")
 	return b, nil
 }
-func (d *Distributor) List(kind, project, app, env string) ([]byte, error) {
+func (d *Distributor) List(ctx context.Context, kind, project, app, env string) ([]byte, error) {
 	r := make([]*gov.Policy, 0, len(d.lbPolicies))
 	for _, g := range d.lbPolicies {
 		if checkPolicy(g, kind, app, env) {
@@ -106,7 +107,7 @@ func checkPolicy(g *gov.Policy, kind, app, env string) bool {
 	return g.Kind == kind && g.Selector != nil && g.Selector.App == app && g.Selector.Environment == env
 }
 
-func (d *Distributor) Get(kind, id, project string) ([]byte, error) {
+func (d *Distributor) Get(ctx context.Context, kind, id, project string) ([]byte, error) {
 	r := d.lbPolicies[id]
 	if r == nil {
 		return nil, nil

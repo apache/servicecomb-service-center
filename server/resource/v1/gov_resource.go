@@ -69,7 +69,7 @@ func (t *Governance) Create(w http.ResponseWriter, r *http.Request) {
 		rest.WriteError(w, discovery.ErrInvalidParams, err.Error())
 		return
 	}
-	id, err := gov.Create(kind, project, p)
+	id, err := gov.Create(r.Context(), kind, project, p)
 	if err != nil {
 		if _, ok := err.(*kie.ErrIllegalItem); ok {
 			log.Error("", err)
@@ -108,7 +108,7 @@ func (t *Governance) Put(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Info(fmt.Sprintf("update %v", &p))
-	err = gov.Update(kind, id, project, p)
+	err = gov.Update(r.Context(), kind, id, project, p)
 	if err != nil {
 		if _, ok := err.(*kie.ErrIllegalItem); ok {
 			log.Error("", err)
@@ -131,9 +131,9 @@ func (t *Governance) ListOrDisPlay(w http.ResponseWriter, r *http.Request) {
 	var body []byte
 	var err error
 	if kind == DisplayKey {
-		body, err = gov.Display(project, app, environment)
+		body, err = gov.Display(r.Context(), project, app, environment)
 	} else {
-		body, err = gov.List(kind, project, app, environment)
+		body, err = gov.List(r.Context(), kind, project, app, environment)
 	}
 	if err != nil {
 		processError(w, err, "list gov err")
@@ -148,7 +148,7 @@ func (t *Governance) Get(w http.ResponseWriter, r *http.Request) {
 	kind := query.Get(KindKey)
 	id := query.Get(IDKey)
 	project := query.Get(ProjectKey)
-	body, err := gov.Get(kind, id, project)
+	body, err := gov.Get(r.Context(), kind, id, project)
 	if err != nil {
 		processError(w, err, "get gov err")
 		return
@@ -162,7 +162,7 @@ func (t *Governance) Delete(w http.ResponseWriter, r *http.Request) {
 	kind := query.Get(KindKey)
 	id := query.Get(IDKey)
 	project := query.Get(ProjectKey)
-	err := gov.Delete(kind, id, project)
+	err := gov.Delete(r.Context(), kind, id, project)
 	if err != nil {
 		processError(w, err, "delete gov err")
 		return

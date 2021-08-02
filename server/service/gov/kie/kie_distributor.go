@@ -28,12 +28,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/apache/servicecomb-service-center/pkg/log"
-
 	"github.com/apache/servicecomb-service-center/pkg/gov"
+	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
 	svc "github.com/apache/servicecomb-service-center/server/service/gov"
+	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 	"github.com/ghodss/yaml"
+	"github.com/go-chassis/foundation/httpclient"
 	"github.com/go-chassis/kie-client"
 )
 
@@ -61,9 +62,9 @@ var PolicyNames = []string{"retry", "rateLimiting", "circuitBreaker", "bulkhead"
 
 var rule = Validator{}
 
-func (d *Distributor) Create(kind, project string, p *gov.Policy) ([]byte, error) {
+func (d *Distributor) Create(ctx context.Context, kind, project string, p *gov.Policy) ([]byte, error) {
 	if kind == KindMatchGroup {
-		err := d.generateID(project, p)
+		err := d.generateID(ctx, project, p)
 		if err != nil {
 			return nil, err
 		}
@@ -87,7 +88,7 @@ func (d *Distributor) Create(kind, project string, p *gov.Policy) ([]byte, error
 		ValueType: TypeText,
 		Labels:    map[string]string{KeyApp: p.Selector.App, KeyEnvironment: p.Selector.Environment},
 	}
-	res, err := d.client.Create(context.TODO(), kv, kie.WithProject(project))
+	res, err := d.client.Create(ctx, kv, kie.WithProject(project))
 	if err != nil {
 		log.Error("kie create failed", err)
 		return nil, err
@@ -95,7 +96,7 @@ func (d *Distributor) Create(kind, project string, p *gov.Policy) ([]byte, error
 	return []byte(res.ID), nil
 }
 
-func (d *Distributor) Update(kind, id, project string, p *gov.Policy) error {
+func (d *Distributor) Update(ctx context.Context, kind, id, project string, p *gov.Policy) error {
 	err := rule.Validate(kind, p.Spec)
 	if err != nil {
 		return err
@@ -112,7 +113,7 @@ func (d *Distributor) Update(kind, id, project string, p *gov.Policy) error {
 		Value:  string(yamlByte),
 		Status: p.Status,
 	}
-	_, err = d.client.Put(context.TODO(), kv, kie.WithProject(project))
+	_, err = d.client.Put(ctx, kv, kie.WithProject(project))
 	if err != nil {
 		log.Error("kie update failed", err)
 		return err
@@ -120,13 +121,13 @@ func (d *Distributor) Update(kind, id, project string, p *gov.Policy) error {
 	return nil
 }
 
-func (d *Distributor) Delete(kind, id, project string) error {
+func (d *Distributor) Delete(ctx context.Context, kind, id, project string) error {
 	if kind == KindMatchGroup {
 		// should remove all policies of this group
-		return d.DeleteMatchGroup(id, project)
+		return d.DeleteMatchGroup(ctx, id, project)
 	}
 
-	err := d.client.Delete(context.TODO(), id, kie.WithProject(project))
+	err := d.client.Delete(ctx, id, kie.WithProject(project))
 	if err != nil {
 		log.Error("kie delete failed", err)
 		return err
@@ -134,8 +135,8 @@ func (d *Distributor) Delete(kind, id, project string) error {
 	return nil
 }
 
-func (d *Distributor) DeleteMatchGroup(id string, project string) error {
-	policy, err := d.getPolicy(KindMatchGroup, id, project)
+func (d *Distributor) DeleteMatchGroup(ctx context.Context, id string, project string) error {
+	policy, err := d.getPolicy(ctx, KindMatchGroup, id, project)
 	if err != nil {
 		log.Error("kie get failed", err)
 		return err
@@ -150,7 +151,7 @@ func (d *Distributor) DeleteMatchGroup(id string, project string) error {
 		kie.WithRevision(0),
 		kie.WithGetProject(project),
 	}
-	idList, _, err := d.client.List(context.TODO(), ops...)
+	idList, _, err := d.client.List(ctx, ops...)
 	if err != nil {
 		log.Error("kie list failed", err)
 		return err
@@ -163,7 +164,7 @@ func (d *Distributor) DeleteMatchGroup(id string, project string) error {
 		return nil
 	}
 
-	err = d.client.Delete(context.TODO(), ids[:len(ids)-1], kie.WithProject(project))
+	err = d.client.Delete(ctx, ids[:len(ids)-1], kie.WithProject(project))
 	if err != nil {
 		log.Error("kie list failed", err)
 		return err
@@ -171,14 +172,14 @@ func (d *Distributor) DeleteMatchGroup(id string, project string) error {
 	return nil
 }
 
-func (d *Distributor) Display(project, app, env string) ([]byte, error) {
-	list, _, err := d.listDataByKind(KindMatchGroup, project, app, env)
+func (d *Distributor) Display(ctx context.Context, project, app, env string) ([]byte, error) {
+	list, _, err := d.listDataByKind(ctx, KindMatchGroup, project, app, env)
 	if err != nil {
 		return nil, err
 	}
 	policyMap := make(map[string]*gov.Policy)
 	for _, kind := range PolicyNames {
-		policies, _, err := d.listDataByKind(kind, project, app, env)
+		policies, _, err := d.listDataByKind(ctx, kind, project, app, env)
 		if err != nil {
 			continue
 		}
@@ -226,8 +227,8 @@ func setAliasIfEmpty(spec map[string]interface{}, name string) {
 	}
 }
 
-func (d *Distributor) List(kind, project, app, env string) ([]byte, error) {
-	list, _, err := d.listDataByKind(kind, project, app, env)
+func (d *Distributor) List(ctx context.Context, kind, project, app, env string) ([]byte, error) {
+	list, _, err := d.listDataByKind(ctx, kind, project, app, env)
 	if err != nil {
 		return nil, err
 	}
@@ -244,8 +245,8 @@ func (d *Distributor) List(kind, project, app, env string) ([]byte, error) {
 	return b, nil
 }
 
-func (d *Distributor) Get(kind, id, project string) ([]byte, error) {
-	policy, err := d.getPolicy(kind, id, project)
+func (d *Distributor) Get(ctx context.Context, kind, id, project string) ([]byte, error) {
+	policy, err := d.getPolicy(ctx, kind, id, project)
 	if err != nil {
 		return nil, err
 	}
@@ -253,8 +254,8 @@ func (d *Distributor) Get(kind, id, project string) ([]byte, error) {
 	return b, nil
 }
 
-func (d *Distributor) getPolicy(kind string, id string, project string) (*gov.Policy, error) {
-	kv, err := d.client.Get(context.TODO(), id, kie.WithGetProject(project))
+func (d *Distributor) getPolicy(ctx context.Context, kind string, id string, project string) (*gov.Policy, error) {
+	kv, err := d.client.Get(ctx, id, kie.WithGetProject(project))
 	if err != nil {
 		return nil, err
 	}
@@ -276,6 +277,9 @@ func initClient(endpoint string) *kie.Client {
 	client, err := kie.NewClient(
 		kie.Config{Endpoint: endpoint,
 			DefaultLabels: map[string]string{},
+			HTTPOptions: &httpclient.Options{
+				SignRequest: rbacsvc.SignRequest,
+			},
 		})
 	if err != nil {
 		log.Fatal("init kie client failed, err: %s", err)
@@ -309,7 +313,7 @@ func toSnake(name string) string {
 	return buffer.String()
 }
 
-func (d *Distributor) listDataByKind(kind, project, app, env string) (*kie.KVResponse, int, error) {
+func (d *Distributor) listDataByKind(ctx context.Context, kind, project, app, env string) (*kie.KVResponse, int, error) {
 	ops := []kie.GetOption{
 		kie.WithKey("beginWith(" + toGovKeyPrefix(kind) + ")"),
 		kie.WithRevision(0),
@@ -325,15 +329,15 @@ func (d *Distributor) listDataByKind(kind, project, app, env string) (*kie.KVRes
 	if len(labels) > 0 {
 		ops = append(ops, kie.WithLabels(labels))
 	}
-	return d.client.List(context.TODO(), ops...)
+	return d.client.List(ctx, ops...)
 }
 
-func (d *Distributor) generateID(project string, p *gov.Policy) error {
+func (d *Distributor) generateID(ctx context.Context, project string, p *gov.Policy) error {
 	if p.Name != "" {
 		return nil
 	}
 	kind := KindMatchGroup
-	list, _, err := d.listDataByKind(kind, project, p.Selector.App, p.Selector.Environment)
+	list, _, err := d.listDataByKind(ctx, kind, project, p.Selector.App, p.Selector.Environment)
 	if err != nil {
 		return err
 	}
