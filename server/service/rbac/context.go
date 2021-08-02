@@ -71,6 +71,5 @@ func SignRequest(req *http.Request) error {
 		return errors.New("request unauthorized")
 	}
 	h.Set("Authorization", token)
-	req.Header = h
 	return nil
 }
