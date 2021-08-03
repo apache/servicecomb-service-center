@@ -22,6 +22,8 @@ import (
 	"testing"
 	"time"
 
+	_ "github.com/apache/servicecomb-service-center/test"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/mongo"
 	pb "github.com/go-chassis/cari/discovery"

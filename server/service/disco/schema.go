@@ -18,15 +18,14 @@
 package disco
 
 import (
+	"context"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	"github.com/apache/servicecomb-service-center/server/service/validator"
 	pb "github.com/go-chassis/cari/discovery"
-	"github.com/go-chassis/cari/pkg/errsvc"
-
-	"context"
 )
 
 func (s *MicroServiceService) GetSchemaInfo(ctx context.Context, in *pb.GetSchemaRequest) (*pb.GetSchemaResponse, error) {
@@ -104,19 +103,16 @@ func (s *MicroServiceService) ModifySchema(ctx context.Context, request *pb.Modi
 	domainProject := util.ParseDomainProject(ctx)
 	respErr := s.canModifySchema(ctx, domainProject, request)
 	if respErr != nil {
-		resp := &pb.ModifySchemaResponse{
-			Response: pb.CreateResponseWithSCErr(respErr),
-		}
-		if respErr.InternalError() {
-			return resp, respErr
-		}
-		return resp, nil
+		response, err := datasource.WrapErrResponse(respErr)
+		return &pb.ModifySchemaResponse{
+			Response: response,
+		}, err
 	}
 
 	return datasource.GetMetadataManager().ModifySchema(ctx, request)
 }
 
-func (s *MicroServiceService) canModifySchema(ctx context.Context, domainProject string, in *pb.ModifySchemaRequest) *errsvc.Error {
+func (s *MicroServiceService) canModifySchema(ctx context.Context, domainProject string, in *pb.ModifySchemaRequest) error {
 	remoteIP := util.GetIPFromContext(ctx)
 	serviceID := in.ServiceId
 	schemaID := in.SchemaId
@@ -132,8 +128,7 @@ func (s *MicroServiceService) canModifySchema(ctx context.Context, domainProject
 	}
 
 	res := quota.NewApplyQuotaResource(quota.TypeSchema, domainProject, serviceID, 1)
-	errQuota := quota.Apply(ctx, res)
-	if errQuota != nil {
+	if errQuota := quota.Apply(ctx, res); errQuota != nil {
 		log.Errorf(errQuota, "update schema[%s/%s] failed, operator: %s", serviceID, schemaID, remoteIP)
 		return errQuota
 	}

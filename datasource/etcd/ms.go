@@ -511,59 +511,38 @@ func (ds *MetadataManager) UnregisterService(ctx context.Context, request *pb.De
 	}, err
 }
 
+// RegisterInstance TODO use ds.registerInstance() instead after refactor
 func (ds *MetadataManager) RegisterInstance(ctx context.Context, request *pb.RegisterInstanceRequest) (
 	*pb.RegisterInstanceResponse, error) {
+	instanceID, respErr := ds.registerInstance(ctx, request)
+	if respErr != nil {
+		response, err := datasource.WrapErrResponse(respErr)
+		return &pb.RegisterInstanceResponse{Response: response}, err
+	}
+	return &pb.RegisterInstanceResponse{
+		Response:   pb.CreateResponse(pb.ResponseSuccess, "Register service instance successfully."),
+		InstanceId: instanceID,
+	}, nil
+}
+
+func (ds *MetadataManager) registerInstance(ctx context.Context, request *pb.RegisterInstanceRequest) (string, error) {
 	remoteIP := util.GetIPFromContext(ctx)
 	instance := request.Instance
 
 	//允许自定义id
 	if len(instance.InstanceId) > 0 {
-		// keep alive the lease ttl
-		// there are two reasons for sending a heartbeat here:
-		// 1. request the scenario the instance has been removed,
-		//    the cast of registration operation can be reduced.
-		// 2. request the self-protection scenario, the instance is unhealthy
-		//    and needs to be re-registered.
-		resp, err := ds.Heartbeat(ctx, &pb.HeartbeatRequest{ServiceId: instance.ServiceId,
-			InstanceId: instance.InstanceId})
-		if resp == nil {
-			log.Errorf(err, "register service[%s]'s instance failed, endpoints %v, host '%s', operator %s",
-				instance.ServiceId, instance.Endpoints, instance.HostName, remoteIP)
-			return &pb.RegisterInstanceResponse{
-				Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
-			}, nil
+		needRegister, err := ds.sendHeartbeatInstead(ctx, instance)
+		if err != nil {
+			return "", err
 		}
-		switch resp.Response.GetCode() {
-		case pb.ResponseSuccess:
-			log.Info(fmt.Sprintf("register instance successful, reuse instance[%s/%s], operator %s",
-				instance.ServiceId, instance.InstanceId, remoteIP))
-			return &pb.RegisterInstanceResponse{
-				Response:   resp.Response,
-				InstanceId: instance.InstanceId,
-			}, nil
-		case pb.ErrInstanceNotExists:
-			// register a new one
-		default:
-			log.Error(fmt.Sprintf("register instance failed, reuse instance[%s/%s], operator %s",
-				instance.ServiceId, instance.InstanceId, remoteIP), err)
-			return &pb.RegisterInstanceResponse{
-				Response: resp.Response,
-			}, err
+		if !needRegister {
+			return instance.InstanceId, nil
 		}
+	} else {
+		instance.InstanceId = uuid.Generator().GetInstanceID(ctx)
 	}
 
-	if err := preProcessRegisterInstance(ctx, instance); err != nil {
-		log.Error(fmt.Sprintf("register service[%s]'s instance failed, endpoints %v, host '%s', operator %s",
-			instance.ServiceId, instance.Endpoints, instance.HostName, remoteIP), err)
-		return &pb.RegisterInstanceResponse{
-			Response: pb.CreateResponseWithSCErr(err),
-		}, nil
-	}
-
-	ttl := int64(instance.HealthCheck.Interval * (instance.HealthCheck.Times + 1))
-	if ds.InstanceTTL > 0 {
-		ttl = ds.InstanceTTL
-	}
+	ttl := ds.calcInstanceTTL(instance)
 	instanceFlag := fmt.Sprintf("ttl %ds, endpoints %v, host '%s', serviceID %s",
 		ttl, instance.Endpoints, instance.HostName, instance.ServiceId)
 
@@ -575,17 +554,13 @@ func (ds *MetadataManager) RegisterInstance(ctx context.Context, request *pb.Reg
 	if err != nil {
 		log.Error(fmt.Sprintf("register instance failed, %s, instanceID %s, operator %s",
 			instanceFlag, instanceID, remoteIP), err)
-		return &pb.RegisterInstanceResponse{
-			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
-		}, err
+		return "", pb.NewError(pb.ErrInternal, err.Error())
 	}
 
 	leaseID, err := client.Instance().LeaseGrant(ctx, ttl)
 	if err != nil {
 		log.Error(fmt.Sprintf("grant lease failed, %s, operator: %s", instanceFlag, remoteIP), err)
-		return &pb.RegisterInstanceResponse{
-			Response: pb.CreateResponse(pb.ErrUnavailableBackend, err.Error()),
-		}, err
+		return "", pb.NewError(pb.ErrUnavailableBackend, err.Error())
 	}
 
 	// build the request options
@@ -607,26 +582,62 @@ func (ds *MetadataManager) RegisterInstance(ctx context.Context, request *pb.Reg
 	if err != nil {
 		log.Error(fmt.Sprintf("register instance failed, %s, instanceID %s, operator %s",
 			instanceFlag, instanceID, remoteIP), err)
-		return &pb.RegisterInstanceResponse{
-			Response: pb.CreateResponse(pb.ErrUnavailableBackend, err.Error()),
-		}, err
+		return "", pb.NewError(pb.ErrUnavailableBackend, err.Error())
 	}
 	if !resp.Succeeded {
 		log.Error(fmt.Sprintf("register instance failed, %s, instanceID %s, operator %s: service does not exist",
 			instanceFlag, instanceID, remoteIP), nil)
-		return &pb.RegisterInstanceResponse{
-			Response: pb.CreateResponse(pb.ErrServiceNotExists, "Service does not exist."),
-		}, nil
+		return "", pb.NewError(pb.ErrServiceNotExists, "Service does not exist.")
 	}
-
-	//TODO increase usage in quota system
 
 	log.Info(fmt.Sprintf("register instance %s, instanceID %s, operator %s",
 		instanceFlag, instanceID, remoteIP))
-	return &pb.RegisterInstanceResponse{
-		Response:   pb.CreateResponse(pb.ResponseSuccess, "Register service instance successfully."),
-		InstanceId: instanceID,
-	}, nil
+	return instanceID, nil
+}
+
+func (ds *MetadataManager) calcInstanceTTL(instance *pb.MicroServiceInstance) int64 {
+	if instance.HealthCheck == nil {
+		instance.HealthCheck = &pb.HealthCheck{
+			Mode:     pb.CHECK_BY_HEARTBEAT,
+			Interval: datasource.DefaultLeaseRenewalInterval,
+			Times:    datasource.DefaultLeaseRetryTimes,
+		}
+	}
+	ttl := int64(instance.HealthCheck.Interval * (instance.HealthCheck.Times + 1))
+	if ds.InstanceTTL > 0 {
+		ttl = ds.InstanceTTL
+	}
+	return ttl
+}
+
+func (ds *MetadataManager) sendHeartbeatInstead(ctx context.Context, instance *pb.MicroServiceInstance) (bool, error) {
+	remoteIP := util.GetIPFromContext(ctx)
+	// keep alive the lease ttl
+	// there are two reasons for sending a heartbeat here:
+	// 1. request the scenario the instance has been removed,
+	//    the cast of registration operation can be reduced.
+	// 2. request the self-protection scenario, the instance is unhealthy
+	//    and needs to be re-registered.
+	resp, err := ds.Heartbeat(ctx, &pb.HeartbeatRequest{ServiceId: instance.ServiceId,
+		InstanceId: instance.InstanceId})
+	if resp == nil {
+		log.Errorf(err, "register service[%s]'s instance failed, endpoints %v, host '%s', operator %s",
+			instance.ServiceId, instance.Endpoints, instance.HostName, remoteIP)
+		return false, pb.NewError(pb.ErrInternal, err.Error())
+	}
+	switch resp.Response.GetCode() {
+	case pb.ResponseSuccess:
+		log.Info(fmt.Sprintf("register instance successful, reuse instance[%s/%s], operator %s",
+			instance.ServiceId, instance.InstanceId, remoteIP))
+		return false, nil
+	case pb.ErrInstanceNotExists:
+		// register a new one
+	default:
+		log.Error(fmt.Sprintf("register instance failed, reuse instance[%s/%s], operator %s",
+			instance.ServiceId, instance.InstanceId, remoteIP), err)
+		return false, err
+	}
+	return true, nil
 }
 
 func (ds *MetadataManager) ExistInstanceByID(ctx context.Context, request *pb.MicroServiceInstanceKey) (*pb.GetExistenceByIDResponse, error) {
@@ -1344,16 +1355,12 @@ func (ds *MetadataManager) ModifySchemas(ctx context.Context, request *pb.Modify
 		}, err
 	}
 
-	respErr := ds.modifySchemas(ctx, domainProject, serviceInfo, request.Schemas)
-	if respErr != nil {
-		log.Error(fmt.Sprintf("modify service[%s] schemas failed, operator: %s", serviceID, remoteIP), nil)
-		resp := &pb.ModifySchemasResponse{
-			Response: pb.CreateResponseWithSCErr(respErr),
-		}
-		if respErr.InternalError() {
-			return resp, respErr
-		}
-		return resp, nil
+	if respErr := ds.modifySchemas(ctx, domainProject, serviceInfo, request.Schemas); respErr != nil {
+		log.Error(fmt.Sprintf("modify service[%s] schemas failed, operator: %s", serviceID, remoteIP), respErr)
+		response, err := datasource.WrapErrResponse(respErr)
+		return &pb.ModifySchemasResponse{
+			Response: response,
+		}, err
 	}
 
 	return &pb.ModifySchemasResponse{
@@ -1797,7 +1804,7 @@ func (ds *MetadataManager) DeleteTags(ctx context.Context, request *pb.DeleteSer
 }
 
 func (ds *MetadataManager) modifySchemas(ctx context.Context, domainProject string, service *pb.MicroService,
-	schemas []*pb.Schema) *errsvc.Error {
+	schemas []*pb.Schema) error {
 	remoteIP := util.GetIPFromContext(ctx)
 	serviceID := service.ServiceId
 	schemasFromDatabase, err := getSchemasFromDatabase(ctx, domainProject, serviceID)
@@ -1858,10 +1865,10 @@ func (ds *MetadataManager) modifySchemas(ctx context.Context, domainProject stri
 		quotaSize := len(needAddSchemas) - len(needDeleteSchemas)
 		if quotaSize > 0 {
 			res := quota.NewApplyQuotaResource(quota.TypeSchema, domainProject, serviceID, int64(quotaSize))
-			err := quota.Apply(ctx, res)
-			if err != nil {
-				log.Errorf(err, "modify service[%s] schemas failed, operator: %s", serviceID, remoteIP)
-				return err
+			errQuota := quota.Apply(ctx, res)
+			if errQuota != nil {
+				log.Errorf(errQuota, "modify service[%s] schemas failed, operator: %s", serviceID, remoteIP)
+				return errQuota
 			}
 		}
 

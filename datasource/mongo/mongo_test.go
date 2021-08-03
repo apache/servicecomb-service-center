@@ -20,34 +20,23 @@ package mongo_test
 // initialize
 import (
 	"context"
-
-	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/pkg/util"
-	_ "github.com/apache/servicecomb-service-center/test"
-
-	. "github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/reporters"
-
 	"testing"
 	"time"
 
-	. "github.com/onsi/gomega"
+	_ "github.com/apache/servicecomb-service-center/test"
+
+	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
 var timeLimit = 2 * time.Second
-
-var _ = BeforeSuite(func() {
-	//clear service created in last test
-	time.Sleep(timeLimit)
-	_ = datasource.GetSCManager().ClearNoInstanceServices(context.Background(), timeLimit)
-})
 
 func getContext() context.Context {
 	return util.WithNoCache(util.SetDomainProject(context.Background(), "default", "default"))
 }
 
 func TestMongo(t *testing.T) {
-	RegisterFailHandler(Fail)
-	junitReporter := reporters.NewJUnitReporter("mongo.junit.xml")
-	RunSpecsWithDefaultAndCustomReporters(t, "mongo Suite", []Reporter{junitReporter})
+	//clear service created in last test
+	time.Sleep(timeLimit)
+	_ = datasource.GetSCManager().ClearNoInstanceServices(getContext(), timeLimit)
 }

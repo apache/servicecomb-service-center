@@ -599,7 +599,7 @@ func TestInstance_Query(t *testing.T) {
 		})
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
-		assert.Equal(t, instanceId2, respFind.Instances[0].InstanceId)
+		assertInstancesContain(t, respFind.Instances, instanceId2)
 
 		respFind, err = datasource.GetMetadataManager().FindInstances(getContext(), &pb.FindInstancesRequest{
 			ConsumerServiceId: serviceId1,
@@ -610,7 +610,7 @@ func TestInstance_Query(t *testing.T) {
 		})
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
-		assert.Equal(t, instanceId2, respFind.Instances[0].InstanceId)
+		assertInstancesContain(t, respFind.Instances, instanceId2)
 
 		respFind, err = datasource.GetMetadataManager().FindInstances(getContext(), &pb.FindInstancesRequest{
 			ConsumerServiceId: serviceId1,
@@ -620,7 +620,7 @@ func TestInstance_Query(t *testing.T) {
 		})
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
-		assert.Equal(t, instanceId1, respFind.Instances[0].InstanceId)
+		assertInstancesContain(t, respFind.Instances, instanceId1)
 
 		respFind, err = datasource.GetMetadataManager().FindInstances(getContext(), &pb.FindInstancesRequest{
 			ConsumerServiceId: serviceId1,
@@ -641,7 +641,7 @@ func TestInstance_Query(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
 		assert.Equal(t, 1, len(respFind.Instances))
-		assert.Equal(t, instanceId4, respFind.Instances[0].InstanceId)
+		assertInstancesContain(t, respFind.Instances, instanceId4)
 
 		respFind, err = datasource.GetMetadataManager().FindInstances(getContext(), &pb.FindInstancesRequest{
 			Environment: pb.ENV_PROD,
@@ -652,7 +652,7 @@ func TestInstance_Query(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
 		assert.Equal(t, 1, len(respFind.Instances))
-		assert.Equal(t, instanceId4, respFind.Instances[0].InstanceId)
+		assertInstancesContain(t, respFind.Instances, instanceId4)
 
 		log.Info("find with rev")
 		ctx := util.SetContext(getContext(), util.CtxNocache, "")
@@ -665,8 +665,8 @@ func TestInstance_Query(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
 		rev, _ := ctx.Value(util.CtxResponseRevision).(string)
-		assert.Equal(t, instanceId8, respFind.Instances[0].InstanceId)
 		assert.NotEqual(t, 0, len(rev))
+		assertInstancesContain(t, respFind.Instances, instanceId8)
 
 		util.WithRequestRev(ctx, "x")
 		respFind, err = datasource.GetMetadataManager().FindInstances(ctx, &pb.FindInstancesRequest{
@@ -677,8 +677,8 @@ func TestInstance_Query(t *testing.T) {
 		})
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
-		assert.Equal(t, instanceId8, respFind.Instances[0].InstanceId)
 		assert.Equal(t, ctx.Value(util.CtxResponseRevision), rev)
+		assertInstancesContain(t, respFind.Instances, instanceId8)
 
 		log.Info("find should return 200 if consumer is diff apps")
 		respFind, err = datasource.GetMetadataManager().FindInstances(getContext(), &pb.FindInstancesRequest{
@@ -720,7 +720,7 @@ func TestInstance_Query(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
 		assert.Equal(t, 1, len(respFind.Instances))
-		assert.Equal(t, instanceId5, respFind.Instances[0].InstanceId)
+		assertInstancesContain(t, respFind.Instances, instanceId5)
 
 		respFind, err = datasource.GetMetadataManager().FindInstances(getContext(), &pb.FindInstancesRequest{
 			ConsumerServiceId: serviceId7,
@@ -731,7 +731,7 @@ func TestInstance_Query(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
 		assert.Equal(t, 1, len(respFind.Instances))
-		assert.Equal(t, instanceId5, respFind.Instances[0].InstanceId)
+		assertInstancesContain(t, respFind.Instances, instanceId5)
 
 		log.Info("query same domain deps")
 		// todo finish ut after implementing GetConsumerDependencies interface
@@ -770,9 +770,9 @@ func TestInstance_Query(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
 		assert.Equal(t, int64(0), respFind.Services.Updated[0].Index)
-		assert.Equal(t, instanceId2, respFind.Services.Updated[0].Instances[0].InstanceId)
+		assertInstancesContain(t, respFind.Services.Updated[0].Instances, instanceId2)
 		assert.Equal(t, int64(1), respFind.Services.Updated[1].Index)
-		assert.Equal(t, instanceId2, respFind.Services.Updated[1].Instances[0].InstanceId)
+		assertInstancesContain(t, respFind.Services.Updated[1].Instances, instanceId2)
 		assert.Equal(t, int64(2), respFind.Services.Failed[0].Indexes[0])
 		assert.Equal(t, pb.ErrServiceNotExists, respFind.Services.Failed[0].Error.Code)
 
@@ -1019,6 +1019,17 @@ func TestInstance_Query(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotEqual(t, pb.ResponseSuccess, respFind.Response.GetCode())
 	})
+}
+
+func assertInstancesContain(t *testing.T, instances []*pb.MicroServiceInstance, instanceId2 string) {
+	found := false
+	for _, instance := range instances {
+		if instance.InstanceId == instanceId2 {
+			found = true
+			break
+		}
+	}
+	assert.True(t, found)
 }
 
 func TestServicesStatistics_Get(t *testing.T) {
