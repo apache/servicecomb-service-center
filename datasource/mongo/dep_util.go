@@ -53,3 +53,15 @@ func GetConsumerIDs(ctx context.Context, provider *pb.MicroService) ([]string, e
 	}
 	return consumerIDs, nil
 }
+
+func GetConsumers(ctx context.Context, domainProject string, provider *pb.MicroService,
+	opts ...DependencyRelationFilterOption) ([]*pb.MicroService, error) {
+	dr := NewProviderDependencyRelation(ctx, domainProject, provider)
+	return dr.GetDependencyConsumers(opts...)
+}
+
+func GetProviders(ctx context.Context, domainProject string, consumer *pb.MicroService,
+	opts ...DependencyRelationFilterOption) ([]*pb.MicroService, error) {
+	dr := NewConsumerDependencyRelation(ctx, domainProject, consumer)
+	return dr.GetDependencyProviders(opts...)
+}

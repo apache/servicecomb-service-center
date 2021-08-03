@@ -64,7 +64,7 @@ func newMetadataManager(schemaNotEditable bool, instanceTTL int64) datasource.Me
 	}
 }
 
-// RegisterService() implement:
+// RegisterService implement:
 // 1. capsule request to etcd kv format
 // 2. invoke etcd client to store data
 // 3. check etcd-client response && construct createServiceResponse
@@ -409,14 +409,14 @@ func (ds *MetadataManager) ExistService(ctx context.Context, request *pb.GetExis
 	serviceFlag := util.StringJoin([]string{
 		request.Environment, request.AppId, request.ServiceName, request.Version}, path.SPLIT)
 
-	ids, exist, err := serviceUtil.FindServiceIds(ctx, request.Version, &pb.MicroServiceKey{
+	ids, exist, err := serviceUtil.FindServiceIds(ctx, &pb.MicroServiceKey{
 		Environment: request.Environment,
 		AppId:       request.AppId,
 		ServiceName: request.ServiceName,
 		Alias:       request.ServiceName,
 		Version:     request.Version,
 		Tenant:      domainProject,
-	})
+	}, true)
 	if err != nil {
 		log.Error(fmt.Sprintf("micro-service[%s] exist failed, find serviceIDs failed", serviceFlag), err)
 		return &pb.GetExistenceResponse{
@@ -953,7 +953,7 @@ func (ds *MetadataManager) findInstance(ctx context.Context, request *pb.FindIns
 	// add dependency queue
 	if len(request.ConsumerServiceId) > 0 &&
 		len(item.ServiceIds) > 0 &&
-		!cache.DependencyRule.ExistVersionRule(ctx, request.ConsumerServiceId, provider) {
+		!cache.DependencyRule.ExistRule(ctx, request.ConsumerServiceId, provider) {
 		provider, err = ds.reshapeProviderKey(ctx, provider, item.ServiceIds[0])
 		if err != nil {
 			return nil, err
@@ -1022,7 +1022,7 @@ func (ds *MetadataManager) genFindResult(ctx context.Context, oldRev string, ite
 
 func (ds *MetadataManager) reshapeProviderKey(ctx context.Context, provider *pb.MicroServiceKey, providerID string) (
 	*pb.MicroServiceKey, error) {
-	//维护version的规则,service name 可能是别名，所以重新获取
+	// 维护version的规则,service name 可能是别名，所以重新获取
 	providerService, err := serviceUtil.GetService(ctx, provider.Tenant, providerID)
 	if err != nil {
 		return nil, err
@@ -2045,8 +2045,7 @@ func (ds *MetadataManager) DeleteServicePri(ctx context.Context, serviceID strin
 
 	// 强制删除，则与该服务相关的信息删除，非强制删除： 如果作为该被依赖（作为provider，提供服务,且不是只存在自依赖）或者存在实例，则不能删除
 	if !force {
-		dr := serviceUtil.NewProviderDependencyRelation(ctx, domainProject, microservice)
-		services, err := dr.GetDependencyConsumerIds()
+		services, err := serviceUtil.GetConsumerIds(ctx, domainProject, microservice)
 		if err != nil {
 			log.Errorf(err, "delete micro-service[%s] failed, get service dependency failed, operator: %s",
 				serviceID, remoteIP)

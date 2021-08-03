@@ -29,14 +29,14 @@ import (
 type ClustersIndex map[string]int
 
 const (
-	CtxFindConsumer         util.CtxKey = "_consumer"
-	CtxFindProvider         util.CtxKey = "_provider"
-	CtxFindProviderInstance util.CtxKey = "_provider_instance"
-	CtxFindTags             util.CtxKey = "_tags"
-	CtxFindRequestRev       util.CtxKey = "_rev"
+	CtxConsumerID          util.CtxKey = "_consumer"
+	CtxProviderKey         util.CtxKey = "_provider"
+	CtxProviderInstanceKey util.CtxKey = "_provider_instance"
+	CtxTags                util.CtxKey = "_tags"
+	CtxRequestRev          util.CtxKey = "_rev"
 
-	Find = "_find"
-	Dep  = "_dep"
+	FindResult = "_find"
+	DepResult  = "_dep"
 
 	DefaultCacheMaxSize = 10000
 )

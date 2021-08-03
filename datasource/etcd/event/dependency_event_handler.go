@@ -191,16 +191,10 @@ func (h *DependencyEventHandler) dependencyRuleHandle(res interface{}) error {
 	providersInfo := pb.DependenciesToKeys(r.Providers, domainProject)
 
 	var dep serviceUtil.Dependency
-	var err error
 	dep.DomainProject = domainProject
 	dep.Consumer = consumerInfo
 	dep.ProvidersRule = providersInfo
-	if r.Override {
-		err = serviceUtil.CreateDependencyRule(ctx, &dep)
-	} else {
-		err = serviceUtil.AddDependencyRule(ctx, &dep)
-	}
-
+	err := serviceUtil.AddDependencyRule(ctx, &dep)
 	if err != nil {
 		log.Errorf(err, "modify dependency rule failed, override: %t, consumer %s", r.Override, consumerFlag)
 		return fmt.Errorf("override: %t, consumer is %s, %s", r.Override, consumerFlag, err.Error())

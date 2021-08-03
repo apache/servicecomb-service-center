@@ -27,11 +27,11 @@ type ConsumerFilter struct {
 }
 
 func (f *ConsumerFilter) Name(ctx context.Context, _ *cache.Node) string {
-	return ctx.Value(CtxFindConsumer).(string)
+	return ctx.Value(CtxConsumerID).(string)
 }
 
 func (f *ConsumerFilter) Init(ctx context.Context, parent *cache.Node) (node *cache.Node, err error) {
 	node = cache.NewNode()
-	node.Cache.Set(Dep, &DependencyRuleItem{})
+	node.Cache.Set(DepResult, &DependencyRuleItem{})
 	return
 }

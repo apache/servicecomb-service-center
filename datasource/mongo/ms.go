@@ -239,14 +239,14 @@ func (ds *MetadataManager) ExistService(ctx context.Context, request *discovery.
 	serviceFlag := util.StringJoin([]string{
 		request.Environment, request.AppId, request.ServiceName, request.Version}, "/")
 
-	ids, exist, err := FindServiceIds(ctx, request.Version, &discovery.MicroServiceKey{
+	ids, exist, err := FindServiceIds(ctx, &discovery.MicroServiceKey{
 		Environment: request.Environment,
 		AppId:       request.AppId,
 		ServiceName: request.ServiceName,
 		Alias:       request.ServiceName,
 		Version:     request.Version,
 		Tenant:      domainProject,
-	})
+	}, true)
 	if err != nil {
 		log.Error(fmt.Sprintf("micro-service[%s] exist failed, find serviceIDs failed", serviceFlag), err)
 		return &discovery.GetExistenceResponse{
@@ -308,8 +308,7 @@ func (ds *MetadataManager) DelServicePri(ctx context.Context, serviceID string, 
 	}
 	// 强制删除，则与该服务相关的信息删除，非强制删除： 如果作为该被依赖（作为provider，提供服务,且不是只存在自依赖）或者存在实例，则不能删除
 	if !force {
-		dr := NewProviderDependencyRelation(ctx, util.ParseDomainProject(ctx), microservice.Service)
-		services, err := dr.GetDependencyConsumerIds()
+		services, err := GetConsumerIDs(ctx, microservice.Service)
 		if err != nil {
 			log.Error(fmt.Sprintf("delete micro-service[%s] failed, get service dependency failed, operator: %s",
 				serviceID, remoteIP), err)
@@ -1127,13 +1126,14 @@ func getServiceDetailUtil(ctx context.Context, mgs *model.Service, countOnly boo
 			serviceDetail.SchemaInfos = schemas
 		case "dependencies":
 			service := mgs.Service
-			dr := NewDependencyRelation(ctx, domainProject, service, service)
-			consumers, err := dr.GetDependencyConsumers(WithoutSelfDependency(), WithSameDomainProject())
+			consumers, err := GetConsumers(ctx, domainProject, service,
+				WithoutSelfDependency(), WithSameDomainProject())
 			if err != nil {
 				log.Error(fmt.Sprintf("get service[%s][%s/%s/%s/%s]'s all consumers failed",
 					service.ServiceId, service.Environment, service.AppId, service.ServiceName, service.Version), err)
 			}
-			providers, err := dr.GetDependencyProviders(WithoutSelfDependency(), WithSameDomainProject())
+			providers, err := GetProviders(ctx, domainProject, service,
+				WithoutSelfDependency(), WithSameDomainProject())
 			if err != nil {
 				log.Error(fmt.Sprintf("get service[%s][%s/%s/%s/%s]'s all providers failed",
 					service.ServiceId, service.Environment, service.AppId, service.ServiceName, service.Version), err)
@@ -1842,13 +1842,6 @@ func (ds *MetadataManager) findSharedServiceInstance(ctx context.Context, reques
 	findFlag := func() string {
 		return fmt.Sprintf("find shared provider[%s/%s/%s/%s]", provider.Environment, provider.AppId, provider.ServiceName, provider.Version)
 	}
-	basicFilterServices, err := servicesBasicFilter(ctx, provider)
-	if err != nil {
-		log.Error(fmt.Sprintf("find shared service instance failed %s", findFlag()), err)
-		return &discovery.FindInstancesResponse{
-			Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
-		}, err
-	}
 	services, err := filterServices(ctx, provider)
 	if err != nil {
 		log.Error(fmt.Sprintf("find shared service instance failed %s", findFlag()), err)
@@ -1856,7 +1849,7 @@ func (ds *MetadataManager) findSharedServiceInstance(ctx context.Context, reques
 			Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
 		}, err
 	}
-	if services == nil && len(basicFilterServices) == 0 {
+	if len(services) == 0 {
 		mes := fmt.Errorf("%s failed, provider does not exist", findFlag())
 		log.Error("find shared service instance failed", mes)
 		return &discovery.FindInstancesResponse{
@@ -1921,13 +1914,6 @@ func (ds *MetadataManager) findInstance(ctx context.Context, request *discovery.
 			request.ConsumerServiceId, service.Service.Environment, service.Service.AppId, service.Service.ServiceName, service.Service.Version,
 			provider.Environment, provider.AppId, provider.ServiceName, provider.Version)
 	}
-	basicFilterServices, err := servicesBasicFilter(ctx, provider)
-	if err != nil {
-		log.Error(fmt.Sprintf("find instance failed %s", findFlag()), err)
-		return &discovery.FindInstancesResponse{
-			Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
-		}, err
-	}
 	services, err := filterServices(ctx, provider)
 	if err != nil {
 		log.Error(fmt.Sprintf("find instance failed %s", findFlag()), err)
@@ -1935,7 +1921,7 @@ func (ds *MetadataManager) findInstance(ctx context.Context, request *discovery.
 			Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
 		}, err
 	}
-	if services == nil && len(basicFilterServices) == 0 {
+	if len(services) == 0 {
 		mes := fmt.Errorf("%s failed, provider does not exist", findFlag())
 		log.Error("find instance failed", mes)
 		return &discovery.FindInstancesResponse{
@@ -2175,42 +2161,11 @@ func AppendFindResponse(ctx context.Context, index int64, resp *discovery.Respon
 	})
 }
 
-// servicesBasicFilter query services with domain, project, env, appID, serviceName, alias
-func servicesBasicFilter(ctx context.Context, key *discovery.MicroServiceKey) ([]*model.Service, error) {
-	tenant := strings.Split(key.Tenant, "/")
-	if len(tenant) != 2 {
-		return nil, errors.New("invalid 'domain' or 'project'")
-	}
-	serviceNameOption := mutil.ServiceServiceName(key.ServiceName)
-	if len(key.Alias) > 0 {
-		serviceNameOption = mutil.Or(serviceNameOption, mutil.ServiceAlias(key.Alias))
-	}
-	filter := mutil.NewDomainProjectFilter(tenant[0], tenant[1],
-		mutil.ServiceEnv(key.Environment),
-		mutil.ServiceAppID(key.AppId),
-		serviceNameOption,
-	)
-	rangeIdx := strings.Index(key.Version, "-")
-	// if the version number is clear, need to add the version number to query
-	switch {
-	case key.Version == "latest":
-		return dao.GetServices(ctx, filter)
-	case len(key.Version) > 0 && key.Version[len(key.Version)-1:] == "+":
-		return dao.GetServices(ctx, filter)
-	case rangeIdx > 0:
-		return dao.GetServices(ctx, filter)
-	default:
-		filter[mutil.ConnectWithDot([]string{model.ColumnService, model.ColumnVersion})] = key.Version
-		return dao.GetServices(ctx, filter)
-	}
-}
-
 func filterServices(ctx context.Context, key *discovery.MicroServiceKey) ([]*model.Service, error) {
 	tenant := strings.Split(key.Tenant, "/")
 	if len(tenant) != 2 {
 		return nil, errors.New("invalid 'domain' or 'project'")
 	}
-	rangeIdx := strings.Index(key.Version, "-")
 	serviceNameOption := mutil.ServiceServiceName(key.ServiceName)
 	if len(key.Alias) > 0 {
 		serviceNameOption = mutil.Or(serviceNameOption, mutil.ServiceAlias(key.Alias))
@@ -2220,23 +2175,7 @@ func filterServices(ctx context.Context, key *discovery.MicroServiceKey) ([]*mod
 		mutil.ServiceAppID(key.AppId),
 		serviceNameOption,
 	)
-	switch {
-	case key.Version == "latest":
-		findOption := &options.FindOptions{Sort: bson.M{mutil.ConnectWithDot([]string{model.ColumnService, model.ColumnVersion}): -1}}
-		return dao.GetServices(ctx, filter, findOption)
-	case len(key.Version) > 0 && key.Version[len(key.Version)-1:] == "+":
-		start := key.Version[:len(key.Version)-1]
-		filter[mutil.ConnectWithDot([]string{model.ColumnService, model.ColumnVersion})] = bson.M{"$gte": start}
-		return dao.GetServices(ctx, filter)
-	case rangeIdx > 0:
-		start := key.Version[:rangeIdx]
-		end := key.Version[rangeIdx+1:]
-		filter[mutil.ConnectWithDot([]string{model.ColumnService, model.ColumnVersion})] = bson.M{"$gte": start, "$lte": end}
-		return dao.GetServices(ctx, filter)
-	default:
-		filter[mutil.ConnectWithDot([]string{model.ColumnService, model.ColumnVersion})] = key.Version
-		return dao.GetServices(ctx, filter)
-	}
+	return dao.GetServices(ctx, filter)
 }
 
 func filterServiceIDs(ctx context.Context, consumerID string, tags []string, services []*model.Service) []string {

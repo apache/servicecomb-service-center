@@ -293,14 +293,6 @@ func GenerateServiceDependencyRuleKey(serviceType string, domainProject string, 
 			serviceType,
 		}, SPLIT)
 	}
-	if in.ServiceName == "*" {
-		return util.StringJoin([]string{
-			GetServiceDependencyRuleRootKey(domainProject),
-			serviceType,
-			in.Environment,
-			in.ServiceName,
-		}, SPLIT)
-	}
 	return util.StringJoin([]string{
 		GetServiceDependencyRuleRootKey(domainProject),
 		serviceType,

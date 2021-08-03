@@ -33,7 +33,7 @@ const (
 )
 
 func GetProviderServiceOfDeps(provider *discovery.MicroService) (*discovery.MicroServiceDependency, bool) {
-	res := sd.Store().Dep().Cache().GetValue(genDepserivceKey(Provider, provider))
+	res := sd.Store().Dep().Cache().GetValue(genDepServiceKey(Provider, provider))
 	deps, ok := transCacheToDep(res)
 	if !ok {
 		return nil, false
@@ -56,7 +56,7 @@ func transCacheToDep(cache []interface{}) ([]*discovery.MicroServiceDependency, 
 	return res, true
 }
 
-func genDepserivceKey(ruleType string, service *discovery.MicroService) string {
+func genDepServiceKey(ruleType string, service *discovery.MicroService) string {
 	return strings.Join([]string{ruleType, service.AppId, service.ServiceName, service.Version}, "/")
 }
 

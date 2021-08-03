@@ -57,13 +57,6 @@ func TestGenerateDependencyRuleKey(t *testing.T) {
 		Version:     "4",
 	})
 	assert.Equal(t, "/cse-sr/ms/dep-rules/a/c/1/2/3/4", k)
-	k = path.GenerateConsumerDependencyRuleKey("a", &discovery.MicroServiceKey{
-		Environment: "1",
-		AppId:       "2",
-		ServiceName: "*",
-		Version:     "4",
-	})
-	assert.Equal(t, "/cse-sr/ms/dep-rules/a/c/1/*", k)
 
 	// provider
 	k = path.GenerateProviderDependencyRuleKey("a", nil)
@@ -76,12 +69,4 @@ func TestGenerateDependencyRuleKey(t *testing.T) {
 		Version:     "4",
 	})
 	assert.Equal(t, "/cse-sr/ms/dep-rules/a/p/1/2/3/4", k)
-
-	k = path.GenerateProviderDependencyRuleKey("a", &discovery.MicroServiceKey{
-		Environment: "1",
-		AppId:       "2",
-		ServiceName: "*",
-		Version:     "4",
-	})
-	assert.Equal(t, "/cse-sr/ms/dep-rules/a/p/1/*", k)
 }

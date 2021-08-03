@@ -35,7 +35,7 @@ type InstancesFilter struct {
 }
 
 func (f *InstancesFilter) Name(ctx context.Context, _ *cache.Node) string {
-	instanceKey, ok := ctx.Value(CtxFindProviderInstance).(*pb.HeartbeatSetElement)
+	instanceKey, ok := ctx.Value(CtxProviderInstanceKey).(*pb.HeartbeatSetElement)
 	if ok {
 		return instanceKey.ServiceId + path.SPLIT + instanceKey.InstanceId
 	}
@@ -43,7 +43,7 @@ func (f *InstancesFilter) Name(ctx context.Context, _ *cache.Node) string {
 }
 
 func (f *InstancesFilter) Init(ctx context.Context, parent *cache.Node) (node *cache.Node, err error) {
-	pCopy := *parent.Cache.Get(Find).(*VersionRuleCacheItem)
+	pCopy := *parent.Cache.Get(FindResult).(*VersionRuleCacheItem)
 
 	pCopy.Instances, pCopy.Rev, err = f.Find(ctx, parent)
 	if err != nil {
@@ -52,16 +52,16 @@ func (f *InstancesFilter) Init(ctx context.Context, parent *cache.Node) (node *c
 
 	pCopy.InitBrokenQueue()
 	node = cache.NewNode()
-	node.Cache.Set(Find, &pCopy)
+	node.Cache.Set(FindResult, &pCopy)
 	return
 }
 
 func (f *InstancesFilter) Find(ctx context.Context, parent *cache.Node) (
 	instances []*pb.MicroServiceInstance, rev string, err error) {
-	pCache := parent.Cache.Get(Find).(*VersionRuleCacheItem)
-	provider := ctx.Value(CtxFindProvider).(*pb.MicroServiceKey)
+	pCache := parent.Cache.Get(FindResult).(*VersionRuleCacheItem)
+	provider := ctx.Value(CtxProviderKey).(*pb.MicroServiceKey)
 
-	instanceKey, ok := ctx.Value(CtxFindProviderInstance).(*pb.HeartbeatSetElement)
+	instanceKey, ok := ctx.Value(CtxProviderInstanceKey).(*pb.HeartbeatSetElement)
 	if ok {
 		if len(pCache.ServiceIds) == 0 {
 			// can not find by instanceKey.ServiceID after pre-filters init
@@ -72,7 +72,7 @@ func (f *InstancesFilter) Find(ctx context.Context, parent *cache.Node) (
 		instances, rev, err = f.BatchFindInstances(ctx, provider.Tenant, pCache.ServiceIds)
 	}
 	if err != nil {
-		consumer := ctx.Value(CtxFindConsumer).(*pb.MicroService)
+		consumer := ctx.Value(CtxConsumerID).(*pb.MicroService)
 		findFlag := fmt.Sprintf("consumer '%s' find provider %s/%s/%s", consumer.ServiceId,
 			provider.AppId, provider.ServiceName, provider.Version)
 		log.Errorf(err, "Find failed, %s", findFlag)

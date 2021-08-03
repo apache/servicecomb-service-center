@@ -42,8 +42,6 @@ type ServiceCtrlServer interface {
 	DeleteSchema(context.Context, *discovery.DeleteSchemaRequest) (*discovery.DeleteSchemaResponse, error)
 	ModifySchema(context.Context, *discovery.ModifySchemaRequest) (*discovery.ModifySchemaResponse, error)
 	ModifySchemas(context.Context, *discovery.ModifySchemasRequest) (*discovery.ModifySchemasResponse, error)
-	AddDependenciesForMicroServices(context.Context, *discovery.AddDependenciesRequest) (*discovery.AddDependenciesResponse, error)
-	CreateDependenciesForMicroServices(context.Context, *discovery.CreateDependenciesRequest) (*discovery.CreateDependenciesResponse, error)
 	GetProviderDependencies(context.Context, *discovery.GetDependenciesRequest) (*discovery.GetProDependenciesResponse, error)
 	GetConsumerDependencies(context.Context, *discovery.GetDependenciesRequest) (*discovery.GetConDependenciesResponse, error)
 	DeleteServices(context.Context, *discovery.DelServicesRequest) (*discovery.DelServicesResponse, error)

@@ -90,9 +90,6 @@ func (dep *Dependency) addConsumerOfProviderRule(ctx context.Context) ([]client.
 		opts = append(opts, client.OpPut(
 			client.WithStrKey(proProkey),
 			client.WithValue(data)))
-		if providerRule.ServiceName == "*" {
-			break
-		}
 	}
 	return opts, nil
 }

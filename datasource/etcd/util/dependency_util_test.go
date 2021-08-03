@@ -19,14 +19,10 @@ package util_test
 
 import (
 	"context"
-	"errors"
 	"testing"
 
-	"github.com/go-chassis/cari/discovery"
-	"github.com/stretchr/testify/assert"
-
-	"github.com/apache/servicecomb-service-center/datasource"
 	. "github.com/apache/servicecomb-service-center/datasource/etcd/util"
+	"github.com/go-chassis/cari/discovery"
 )
 
 func TestDeleteDependencyForService(t *testing.T) {
@@ -59,15 +55,8 @@ func TestEqualServiceDependency(t *testing.T) {
 	}
 }
 
-func TestCreateDependencyRule(t *testing.T) {
-	err := CreateDependencyRule(context.Background(), &Dependency{
-		Consumer: &discovery.MicroServiceKey{},
-	})
-	if err != nil {
-		t.Fatalf(`CreateDependencyRule failed`)
-	}
-
-	err = AddDependencyRule(context.Background(), &Dependency{
+func TestAddDependencyRule(t *testing.T) {
+	err := AddDependencyRule(context.Background(), &Dependency{
 		Consumer: &discovery.MicroServiceKey{},
 	})
 	if err != nil {
@@ -117,9 +106,9 @@ func TestCreateDependencyRule(t *testing.T) {
 }
 
 func TestDependencyRuleExistUtil(t *testing.T) {
-	_, err := DependencyRuleExistUtil(context.Background(), "", &discovery.MicroServiceKey{})
+	_, err := DependencyRuleExistWithKey(context.Background(), "", &discovery.MicroServiceKey{})
 	if err == nil {
-		t.Fatalf(`DependencyRuleExistUtil failed`)
+		t.Fatalf(`DependencyRuleExistWithKey failed`)
 	}
 }
 
@@ -197,64 +186,8 @@ func TestUpdateServiceForAddDependency(t *testing.T) {
 	}
 }
 
-func TestDependency(t *testing.T) {
-	d := &Dependency{
-		DeleteDependencyRuleList: []*discovery.MicroServiceKey{
-			{ServiceName: "b", Version: "1.0.0"},
-		},
-		CreateDependencyRuleList: []*discovery.MicroServiceKey{
-			{ServiceName: "a", Version: "1.0.0"},
-		},
-	}
-	err := d.Commit(context.Background())
-	if err != nil {
-		t.Fatalf(`Dependency_UpdateProvidersRuleOfConsumer failed`)
-	}
-
-	dr := NewDependencyRelation(context.Background(), "", &discovery.MicroService{}, &discovery.MicroService{})
-	_, err = dr.GetProviderIdsByRules([]*discovery.MicroServiceKey{
-		{ServiceName: "*"},
-	})
-	if err != nil {
-		t.Fatalf(`DependencyRelation_getDependencyProviderIds * failed`)
-	}
-	_, err = dr.GetProviderIdsByRules([]*discovery.MicroServiceKey{
-		{ServiceName: "a", Version: "1.0.0"},
-		{ServiceName: "b", Version: "latest"},
-	})
-	if err != nil {
-		t.Fatalf(`DependencyRelation_getDependencyProviderIds failed`)
-	}
-
-	_, err = dr.GetDependencyConsumers()
-	if err != nil {
-		t.Fatalf(`DependencyRelation_GetDependencyConsumers failed`)
-	}
-
-	t.Run("GetServiceByMicroServiceKey when service not exist", func(t *testing.T) {
-		_, err = dr.GetServiceByMicroServiceKey(&discovery.MicroServiceKey{})
-		if err != nil && !errors.Is(err, datasource.ErrNoData) {
-			t.Fatalf(`DependencyRelation_getServiceByMicroServiceKey failed`)
-		}
-		assert.Equal(t, datasource.ErrNoData, err, "service not exist")
-	})
-
-	_, err = dr.GetConsumerOfSameServiceNameAndAppID(&discovery.MicroServiceKey{})
-	if err != nil {
-		t.Fatalf(`DependencyRelation_getConsumerOfSameServiceNameAndAppId failed`)
-	}
-
-	dr = NewConsumerDependencyRelation(context.Background(), "", &discovery.MicroService{})
-	_, err = dr.GetDependencyConsumersOfProvider()
-	if err == nil {
-		t.Fatalf(`DependencyRelation_getDependencyConsumersOfProvider failed`)
-	}
-	_, err = dr.GetDependencyProviders()
-	if err != nil {
-		t.Fatalf(`DependencyRelation_GetDependencyProviders failed`)
-	}
-
-	err = CleanUpDependencyRules(context.Background(), "")
+func TestCleanUpDependencyRules(t *testing.T) {
+	err := CleanUpDependencyRules(context.Background(), "")
 	if err == nil {
 		t.Fatalf(`DependencyRelation_CleanUpDependencyRules failed`)
 	}
@@ -267,15 +200,5 @@ func TestDependency(t *testing.T) {
 	_, err = RemoveProviderRuleKeys(context.Background(), "a/b", nil)
 	if err != nil {
 		t.Fatalf(`DependencyRelation_removeProviderRuleKeys failed`)
-	}
-}
-
-func TestDependencyRelationFilterOpt(t *testing.T) {
-	op := ToDependencyRelationFilterOpt(
-		WithSameDomainProject(),
-		WithoutSelfDependency(),
-	)
-	if !op.NonSelf || !op.SameDomainProject {
-		t.Fatalf(`ToDependencyRelationFilterOpt failed`)
 	}
 }

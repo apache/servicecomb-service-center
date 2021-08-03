@@ -23,50 +23,84 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	_ "github.com/apache/servicecomb-service-center/test"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
-	_ "github.com/apache/servicecomb-service-center/test"
-
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-
 	proto "github.com/go-chassis/cari/discovery"
-
-	. "github.com/onsi/ginkgo"
-	"github.com/onsi/ginkgo/reporters"
-
-	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/assert"
 )
 
-func init() {
-}
-
-func TestMicroservice(t *testing.T) {
-	RegisterFailHandler(Fail)
-	junitReporter := reporters.NewJUnitReporter("util.junit.xml")
-	RunSpecsWithDefaultAndCustomReporters(t, "util Suite", []Reporter{junitReporter})
+func getContextWith(domain string, project string) context.Context {
+	return util.WithNoCache(util.SetDomainProject(context.Background(), domain, project))
 }
 
 func TestFindServiceIds(t *testing.T) {
-	_, _, err := serviceUtil.FindServiceIds(context.Background(),
-		"latest", &proto.MicroServiceKey{})
-	if err != nil {
-		t.Fatalf("TestFindServiceIds failed")
-	}
+	ctx := getContextWith("default", "default")
+	t.Run("no service, should return empty", func(t *testing.T) {
+		ids, exist, err := serviceUtil.FindServiceIds(ctx, &proto.MicroServiceKey{}, false)
+		assert.NoError(t, err)
+		assert.False(t, exist)
+		assert.Empty(t, ids)
 
-	_, _, err = serviceUtil.FindServiceIds(context.Background(),
-		"1.0.0", &proto.MicroServiceKey{})
-	if err != nil {
-		t.Fatalf("TestFindServiceIds failed")
-	}
+		ids, exist, err = serviceUtil.FindServiceIds(ctx, &proto.MicroServiceKey{}, true)
+		assert.NoError(t, err)
+		assert.False(t, exist)
+		assert.Empty(t, ids)
+	})
 
-	_, _, err = serviceUtil.FindServiceIds(context.Background(),
-		"1.0+", &proto.MicroServiceKey{Alias: "test"})
-	if err != nil {
-		t.Fatalf("TestFindServiceIds failed")
-	}
+	t.Run("exist service, should return empty", func(t *testing.T) {
+		resp, err := datasource.GetMetadataManager().RegisterService(ctx, &proto.CreateServiceRequest{
+			Service: &proto.MicroService{
+				Alias:       "test_find_alias_ids",
+				ServiceName: "test_find_service_ids",
+				Version:     "2.0",
+			},
+		})
+		assert.NoError(t, err)
+		serviceID1 := resp.ServiceId
+		defer datasource.GetMetadataManager().UnregisterService(ctx, &proto.DeleteServiceRequest{ServiceId: serviceID1})
+
+		resp, err = datasource.GetMetadataManager().RegisterService(ctx, &proto.CreateServiceRequest{
+			Service: &proto.MicroService{
+				Alias:       "test_find_alias_ids",
+				ServiceName: "test_find_service_ids",
+				Version:     "3.0",
+			},
+		})
+		assert.NoError(t, err)
+		serviceID2 := resp.ServiceId
+		defer datasource.GetMetadataManager().UnregisterService(ctx, &proto.DeleteServiceRequest{ServiceId: serviceID2})
+
+		ids, exist, err := serviceUtil.FindServiceIds(ctx, &proto.MicroServiceKey{
+			Tenant:      "default/default",
+			ServiceName: "test_find_service_ids",
+			Version:     "1.0",
+		}, false)
+		assert.NoError(t, err)
+		assert.True(t, exist)
+		assert.Equal(t, 2, len(ids))
+
+		ids, exist, err = serviceUtil.FindServiceIds(ctx, &proto.MicroServiceKey{
+			Tenant:      "default/default",
+			ServiceName: "test_find_service_ids",
+			Version:     "1.0",
+		}, true)
+		assert.NoError(t, err)
+		assert.True(t, exist)
+		assert.Empty(t, ids)
+
+		ids, exist, err = serviceUtil.FindServiceIds(ctx, &proto.MicroServiceKey{
+			Tenant:      "default/default",
+			ServiceName: "test_find_service_ids",
+			Version:     "2.0",
+		}, true)
+		assert.NoError(t, err)
+		assert.True(t, exist)
+		assert.Equal(t, []string{serviceID1}, ids)
+	})
 }
 
 func TestGetService(t *testing.T) {

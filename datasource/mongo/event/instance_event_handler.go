@@ -77,13 +77,13 @@ func (h InstanceEventHandler) OnEvent(evt sd.MongoEvent) {
 	if !syncernotify.GetSyncerNotifyCenter().Closed() {
 		NotifySyncerInstanceEvent(evt, microService)
 	}
-	consumerIDS, err := mongo.GetConsumerIDs(ctx, microService)
+	consumerIDs, err := mongo.GetConsumerIDs(ctx, microService)
 	if err != nil {
 		log.Error(fmt.Sprintf("get service[%s][%s/%s/%s/%s]'s consumerIDs failed",
 			providerID, microService.Environment, microService.AppId, microService.ServiceName, microService.Version), err)
 		return
 	}
-	PublishInstanceEvent(evt, discovery.MicroServiceToKey(domainProject, microService), consumerIDS)
+	PublishInstanceEvent(evt, discovery.MicroServiceToKey(domainProject, microService), consumerIDs)
 }
 
 func NewInstanceEventHandler() *InstanceEventHandler {

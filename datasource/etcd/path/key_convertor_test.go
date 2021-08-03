@@ -105,13 +105,6 @@ func TestGetInfoFromKV(t *testing.T) {
 	dt, k := path.GetInfoFromDependencyRuleKV([]byte(path.GenerateProviderDependencyRuleKey("a/b", &discovery.MicroServiceKey{
 		Tenant:      "a/b",
 		AppId:       "c",
-		ServiceName: "*",
-	})))
-	assert.False(t, dt != path.DepsProvider || k == nil || k.AppId != "" || k.ServiceName != "*")
-
-	dt, k = path.GetInfoFromDependencyRuleKV([]byte(path.GenerateProviderDependencyRuleKey("a/b", &discovery.MicroServiceKey{
-		Tenant:      "a/b",
-		AppId:       "c",
 		ServiceName: "d",
 		Version:     "e",
 	})))

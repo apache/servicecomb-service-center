@@ -34,8 +34,8 @@ type ConsistencyFilter struct {
 }
 
 func (f *ConsistencyFilter) Name(ctx context.Context, parent *cache.Node) string {
-	item := parent.Cache.Get(Find).(*VersionRuleCacheItem)
-	requestRev := ctx.Value(CtxFindRequestRev).(string)
+	item := parent.Cache.Get(FindResult).(*VersionRuleCacheItem)
+	requestRev := ctx.Value(CtxRequestRev).(string)
 	if len(requestRev) == 0 || requestRev == item.Rev {
 		return ""
 	}
@@ -50,8 +50,8 @@ func (f *ConsistencyFilter) Name(ctx context.Context, parent *cache.Node) string
 // It's impossible to guarantee consistency if the backend is not creditable,
 // thus in this condition RevisionFilter uses cache only.
 func (f *ConsistencyFilter) Init(ctx context.Context, parent *cache.Node) (node *cache.Node, err error) {
-	pCache := parent.Cache.Get(Find).(*VersionRuleCacheItem)
-	requestRev := ctx.Value(CtxFindRequestRev).(string)
+	pCache := parent.Cache.Get(FindResult).(*VersionRuleCacheItem)
+	requestRev := ctx.Value(CtxRequestRev).(string)
 	// do not need to check consistency between sc instances:
 	// 1. request without rev param
 	// 2. request rev is the same as cache current sc instance
@@ -59,13 +59,13 @@ func (f *ConsistencyFilter) Init(ctx context.Context, parent *cache.Node) (node 
 	if len(requestRev) == 0 || requestRev == pCache.Rev ||
 		!(kv.Store().Instance().Creditable()) {
 		node = cache.NewNode()
-		node.Cache.Set(Find, pCache)
+		node.Cache.Set(FindResult, pCache)
 		return
 	}
 
 	if pCache.BrokenWait() {
 		node = cache.NewNode()
-		node.Cache.Set(Find, pCache)
+		node.Cache.Set(FindResult, pCache)
 		return
 	}
 
@@ -82,6 +82,6 @@ func (f *ConsistencyFilter) Init(ctx context.Context, parent *cache.Node) (node 
 	pCache.Broken()
 
 	node = cache.NewNode()
-	node.Cache.Set(Find, pCache)
+	node.Cache.Set(FindResult, pCache)
 	return
 }
