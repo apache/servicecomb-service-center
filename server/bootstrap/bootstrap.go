@@ -49,9 +49,6 @@ import (
 	//tlsconf
 	_ "github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf/buildin"
 
-	//module 'govern'
-	_ "github.com/apache/servicecomb-service-center/server/rest/govern"
-
 	//module 'admin'
 	_ "github.com/apache/servicecomb-service-center/server/rest/admin"
 

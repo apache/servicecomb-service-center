@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package v1
+package gov
 
 import (
 	"encoding/json"

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package v4_test
+package rbac_test
 
 import (
 	"bytes"
@@ -32,7 +32,7 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/config"
-	v4 "github.com/apache/servicecomb-service-center/server/resource/v4"
+	v4 "github.com/apache/servicecomb-service-center/server/resource/rbac"
 	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 	"github.com/astaxie/beego"
 	rbacmodel "github.com/go-chassis/cari/rbac"

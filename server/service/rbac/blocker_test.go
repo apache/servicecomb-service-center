@@ -23,15 +23,15 @@ import (
 	"time"
 
 	"github.com/apache/servicecomb-service-center/datasource"
-	v4 "github.com/apache/servicecomb-service-center/server/resource/v4"
+	"github.com/apache/servicecomb-service-center/server/resource/rbac"
 	accountsvc "github.com/apache/servicecomb-service-center/server/service/account"
 	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestCountFailure(t *testing.T) {
-	key1 := v4.MakeBanKey("root", "127.0.0.1")
-	key2 := v4.MakeBanKey("root", "10.0.0.1")
+	key1 := rbac.MakeBanKey("root", "127.0.0.1")
+	key2 := rbac.MakeBanKey("root", "10.0.0.1")
 	t.Run("ban root@IP, will not affect other root@another_IP", func(t *testing.T) {
 		rbacsvc.TryLockAccount(key1)
 		assert.False(t, rbacsvc.IsBanned(key1))
@@ -68,7 +68,7 @@ func TestCountFailure(t *testing.T) {
 }
 
 func TestTryLockAccount(t *testing.T) {
-	key1 := v4.MakeBanKey("attempted", "127.0.0.1")
+	key1 := rbac.MakeBanKey("attempted", "127.0.0.1")
 	var oldReleaseAt int64
 	t.Run("try lock account, should save attempted lock", func(t *testing.T) {
 		rbacsvc.TryLockAccount(key1)

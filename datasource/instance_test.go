@@ -1101,17 +1101,15 @@ func TestServicesStatistics_Get(t *testing.T) {
 	t.Run("query services statistics", func(t *testing.T) {
 		ctx = util.WithNoCache(util.SetDomainProject(context.Background(), "default", "Project1"))
 		log.Info("query services default domain statistics")
-		respFind, err := datasource.GetMetadataManager().GetServicesStatistics(ctx, &pb.GetServicesRequest{})
+		st, err := datasource.GetMetadataManager().GetOverview(ctx, &pb.GetServicesRequest{})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
-		assert.Equal(t, int64(2), respFind.Statistics.Instances.CountByDomain)
+		assert.Equal(t, int64(2), st.Instances.CountByDomain)
 
 		log.Info("query services domain statistics")
 		ctx = util.WithNoCache(util.SetDomainProject(context.Background(), "DomainTest1", "Project1"))
-		respFind, err = datasource.GetMetadataManager().GetServicesStatistics(ctx, &pb.GetServicesRequest{})
+		st, err = datasource.GetMetadataManager().GetOverview(ctx, &pb.GetServicesRequest{})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
-		assert.Equal(t, int64(1), respFind.Statistics.Instances.CountByDomain)
+		assert.Equal(t, int64(1), st.Instances.CountByDomain)
 	})
 
 	t.Run("delete a service ", func(t *testing.T) {

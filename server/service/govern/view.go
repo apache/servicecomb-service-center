@@ -20,48 +20,37 @@ package govern
 import (
 	"context"
 
-	pb "github.com/go-chassis/cari/discovery"
-
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/pkg/proto"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/service/validator"
+	pb "github.com/go-chassis/cari/discovery"
 )
 
-var ServiceAPI proto.GovernServiceCtrlServer = &Service{}
-
-type Service struct {
-}
-
-func (governService *Service) GetServicesInfo(ctx context.Context, in *pb.GetServicesInfoRequest) (*pb.GetServicesInfoResponse, error) {
+func ListServiceDetail(ctx context.Context, in *pb.GetServicesInfoRequest) (*pb.GetServicesInfoResponse, error) {
 	ctx = util.WithCacheOnly(ctx)
-	return datasource.GetMetadataManager().GetServicesInfo(ctx, in)
+	return datasource.GetMetadataManager().ListServiceDetail(ctx, in)
 }
 
-func (governService *Service) GetServiceDetail(ctx context.Context, in *pb.GetServiceRequest) (*pb.GetServiceDetailResponse, error) {
+func GetServiceDetail(ctx context.Context, in *pb.GetServiceRequest) (*pb.ServiceDetail, error) {
 	ctx = util.WithCacheOnly(ctx)
 
 	if len(in.ServiceId) == 0 {
-		return &pb.GetServiceDetailResponse{
-			Response: pb.CreateResponse(pb.ErrInvalidParams, "Invalid request for getting service detail."),
-		}, nil
+		return nil, pb.NewError(pb.ErrInvalidParams, "Invalid request for getting service detail.")
 	}
 
 	return datasource.GetMetadataManager().GetServiceDetail(ctx, in)
 }
 
-func (governService *Service) GetApplications(ctx context.Context, in *pb.GetAppsRequest) (*pb.GetAppsResponse, error) {
+func ListApp(ctx context.Context, in *pb.GetAppsRequest) (*pb.GetAppsResponse, error) {
 	err := validator.Validate(in)
 	if err != nil {
-		return &pb.GetAppsResponse{
-			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
-		}, nil
+		return nil, pb.NewError(pb.ErrInvalidParams, err.Error())
 	}
 
-	return datasource.GetMetadataManager().GetApplications(ctx, in)
+	return datasource.GetMetadataManager().ListApp(ctx, in)
 }
 
-func (governService *Service) GetServicesStatistics(ctx context.Context, in *pb.GetServicesRequest) (*pb.GetServicesInfoStatisticsResponse, error) {
+func GetOverview(ctx context.Context, in *pb.GetServicesRequest) (*pb.Statistics, error) {
 	ctx = util.WithCacheOnly(ctx)
-	return datasource.GetMetadataManager().GetServicesStatistics(ctx, in)
+	return datasource.GetMetadataManager().GetOverview(ctx, in)
 }

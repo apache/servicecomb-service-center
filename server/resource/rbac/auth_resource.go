@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package v4
+package rbac
 
 import (
 	"encoding/json"

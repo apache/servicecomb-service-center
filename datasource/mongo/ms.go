@@ -168,7 +168,7 @@ func (ds *MetadataManager) GetServices(ctx context.Context, request *discovery.G
 	}, nil
 }
 
-func (ds *MetadataManager) GetApplications(ctx context.Context, request *discovery.GetAppsRequest) (*discovery.GetAppsResponse, error) {
+func (ds *MetadataManager) ListApp(ctx context.Context, request *discovery.GetAppsRequest) (*discovery.GetAppsResponse, error) {
 	domain := util.ParseDomain(ctx)
 	project := util.ParseProject(ctx)
 
@@ -179,15 +179,11 @@ func (ds *MetadataManager) GetApplications(ctx context.Context, request *discove
 
 	services, err := dao.GetMicroServices(ctx, filter)
 	if err != nil {
-		return &discovery.GetAppsResponse{
-			Response: discovery.CreateResponse(discovery.ErrInternal, "get services data failed."),
-		}, nil
+		return nil, discovery.NewError(discovery.ErrInternal, "get services data failed.")
 	}
 	l := len(services)
 	if l == 0 {
-		return &discovery.GetAppsResponse{
-			Response: discovery.CreateResponse(discovery.ResponseSuccess, "Get all applications successfully."),
-		}, nil
+		return &discovery.GetAppsResponse{}, nil
 	}
 	apps := make([]string, 0, l)
 	hash := make(map[string]struct{}, l)
@@ -202,8 +198,7 @@ func (ds *MetadataManager) GetApplications(ctx context.Context, request *discove
 		apps = append(apps, svc.AppId)
 	}
 	return &discovery.GetAppsResponse{
-		Response: discovery.CreateResponse(discovery.ResponseSuccess, "Get all applications successfully."),
-		AppIds:   apps,
+		AppIds: apps,
 	}, nil
 }
 
@@ -407,18 +402,15 @@ func (ds *MetadataManager) GetDeleteServiceFunc(ctx context.Context, serviceID s
 	}
 }
 
-func (ds *MetadataManager) GetServiceDetail(ctx context.Context, request *discovery.GetServiceRequest) (*discovery.GetServiceDetailResponse, error) {
+func (ds *MetadataManager) GetServiceDetail(ctx context.Context, request *discovery.GetServiceRequest) (
+	*discovery.ServiceDetail, error) {
 	filter := mutil.NewBasicFilter(ctx, mutil.ServiceServiceID(request.ServiceId))
 	mgSvc, err := dao.GetService(ctx, filter)
 	if err != nil {
 		if errors.Is(err, datasource.ErrNoData) {
-			return &discovery.GetServiceDetailResponse{
-				Response: discovery.CreateResponse(discovery.ErrServiceNotExists, "Service does not exist."),
-			}, nil
+			return nil, discovery.NewError(discovery.ErrServiceNotExists, "Service does not exist.")
 		}
-		return &discovery.GetServiceDetailResponse{
-			Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
-		}, err
+		return nil, discovery.NewError(discovery.ErrInternal, err.Error())
 	}
 	svc := mgSvc.Service
 	key := &discovery.MicroServiceKey{
@@ -434,27 +426,20 @@ func (ds *MetadataManager) GetServiceDetail(ctx context.Context, request *discov
 	versions, err := dao.GetServicesVersions(ctx, filter)
 	if err != nil {
 		log.Error(fmt.Sprintf("get service %s %s %s all versions failed", svc.Environment, svc.AppId, svc.ServiceName), err)
-		return &discovery.GetServiceDetailResponse{
-			Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
-		}, err
+		return nil, discovery.NewError(discovery.ErrInternal, err.Error())
 	}
 	options := []string{"tags", "instances", "schemas", "dependencies"}
 	serviceInfo, err := getServiceDetailUtil(ctx, mgSvc, false, options)
 	if err != nil {
-		return &discovery.GetServiceDetailResponse{
-			Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
-		}, err
+		return nil, discovery.NewError(discovery.ErrInternal, err.Error())
 	}
 	serviceInfo.MicroService = svc
 	serviceInfo.MicroServiceVersions = versions
-	return &discovery.GetServiceDetailResponse{
-		Response: discovery.CreateResponse(discovery.ResponseSuccess, "Get service successfully"),
-		Service:  serviceInfo,
-	}, nil
+	return serviceInfo, nil
 
 }
 
-func (ds *MetadataManager) GetServicesInfo(ctx context.Context, request *discovery.GetServicesInfoRequest) (*discovery.GetServicesInfoResponse, error) {
+func (ds *MetadataManager) ListServiceDetail(ctx context.Context, request *discovery.GetServicesInfoRequest) (*discovery.GetServicesInfoResponse, error) {
 	optionMap := make(map[string]struct{}, len(request.Options))
 	for _, opt := range request.Options {
 		optionMap[opt] = struct{}{}
@@ -474,13 +459,10 @@ func (ds *MetadataManager) GetServicesInfo(ctx context.Context, request *discove
 		var err error
 		st, err = statistics(ctx, request.WithShared)
 		if err != nil {
-			return &discovery.GetServicesInfoResponse{
-				Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
-			}, err
+			return nil, discovery.NewError(discovery.ErrInternal, err.Error())
 		}
 		if len(optionMap) == 1 {
 			return &discovery.GetServicesInfoResponse{
-				Response:   discovery.CreateResponse(discovery.ResponseSuccess, "Statistics successfully."),
 				Statistics: st,
 			}, nil
 		}
@@ -489,9 +471,7 @@ func (ds *MetadataManager) GetServicesInfo(ctx context.Context, request *discove
 	services, err := dao.GetServices(ctx, filters)
 	if err != nil {
 		log.Error("get all services by domain failed", err)
-		return &discovery.GetServicesInfoResponse{
-			Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
-		}, err
+		return nil, discovery.NewError(discovery.ErrInternal, err.Error())
 	}
 	allServiceDetails := make([]*discovery.ServiceDetail, 0, len(services))
 	domainProject := util.ParseDomainProject(ctx)
@@ -502,17 +482,13 @@ func (ds *MetadataManager) GetServicesInfo(ctx context.Context, request *discove
 
 		serviceDetail, err := getServiceDetailUtil(ctx, mgSvc, request.CountOnly, options)
 		if err != nil {
-			return &discovery.GetServicesInfoResponse{
-				Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
-			}, err
+			return nil, discovery.NewError(discovery.ErrInternal, err.Error())
 		}
 		serviceDetail.MicroService = mgSvc.Service
 		tmpServiceDetail := &discovery.ServiceDetail{}
 		err = copier.CopyWithOption(tmpServiceDetail, serviceDetail, copier.Option{DeepCopy: true})
 		if err != nil {
-			return &discovery.GetServicesInfoResponse{
-				Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
-			}, err
+			return nil, discovery.NewError(discovery.ErrInternal, err.Error())
 		}
 		tmpServiceDetail.MicroService.Properties = nil
 		tmpServiceDetail.MicroService.Schemas = nil
@@ -524,7 +500,6 @@ func (ds *MetadataManager) GetServicesInfo(ctx context.Context, request *discove
 	}
 
 	return &discovery.GetServicesInfoResponse{
-		Response:          discovery.CreateResponse(discovery.ResponseSuccess, "Get services info successfully."),
 		AllServicesDetail: allServiceDetails,
 		Statistics:        st,
 	}, nil
@@ -545,21 +520,14 @@ func (ds *MetadataManager) filterServices(ctx context.Context, request *discover
 	return mutil.NewBasicFilter(ctx, opts...)
 }
 
-func (ds *MetadataManager) GetServicesStatistics(ctx context.Context, request *discovery.GetServicesRequest) (
-	*discovery.GetServicesInfoStatisticsResponse, error) {
+func (ds *MetadataManager) GetOverview(ctx context.Context, request *discovery.GetServicesRequest) (
+	*discovery.Statistics, error) {
 	ctx = util.WithCacheOnly(ctx)
-	var st *discovery.Statistics
-	var err error
-	st, err = statistics(ctx, false)
+	st, err := statistics(ctx, false)
 	if err != nil {
-		return &discovery.GetServicesInfoStatisticsResponse{
-			Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
-		}, err
+		return nil, discovery.NewError(discovery.ErrInternal, err.Error())
 	}
-	return &discovery.GetServicesInfoStatisticsResponse{
-		Response:   discovery.CreateResponse(discovery.ResponseSuccess, "Get services statistics successfully."),
-		Statistics: st,
-	}, nil
+	return st, nil
 }
 
 func (ds *MetadataManager) AddTags(ctx context.Context, request *discovery.AddServiceTagsRequest) (*discovery.AddServiceTagsResponse, error) {
