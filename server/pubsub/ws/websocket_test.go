@@ -26,9 +26,9 @@ import (
 	"testing"
 	"time"
 
-	wss "github.com/apache/servicecomb-service-center/server/connection/ws"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/event"
+	"github.com/apache/servicecomb-service-center/server/pubsub/ws"
 	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/assert"
 )
@@ -81,15 +81,15 @@ func NewTest() *watcherConn {
 func TestNewWebSocket(t *testing.T) {
 	mock := NewTest()
 	t.Run("should return not nil when new", func(t *testing.T) {
-		assert.NotNil(t, wss.NewWebSocket("", "", mock.ServerConn))
+		assert.NotNil(t, ws.NewWebSocket("", "", mock.ServerConn))
 	})
 }
 
 func TestWebSocket_NeedCheck(t *testing.T) {
 	mock := NewTest()
 	conn := mock.ServerConn
-	options := wss.ToOptions()
-	webSocket := &wss.WebSocket{
+	options := ws.ToOptions()
+	webSocket := &ws.WebSocket{
 		Options:       options,
 		DomainProject: "default",
 		ConsumerID:    "",
@@ -119,7 +119,7 @@ func TestWebSocket_NeedCheck(t *testing.T) {
 
 func TestWebSocket_Idle(t *testing.T) {
 	mock := NewTest()
-	webSocket := wss.NewWebSocket("", "", mock.ServerConn)
+	webSocket := ws.NewWebSocket("", "", mock.ServerConn)
 
 	t.Run("should idle when new", func(t *testing.T) {
 		select {
@@ -156,13 +156,13 @@ func TestWebSocket_CheckHealth(t *testing.T) {
 	event.Center().Start()
 
 	t.Run("should do nothing when recv PING", func(t *testing.T) {
-		ws := wss.NewWebSocket("", "", mock.ServerConn)
+		ws := ws.NewWebSocket("", "", mock.ServerConn)
 		mock.ClientConn.WriteControl(websocket.PingMessage, []byte{}, time.Now().Add(time.Second))
 		<-time.After(time.Second)
 		assert.Nil(t, ws.CheckHealth(context.Background()))
 	})
 	t.Run("should return err when consumer not exist", func(t *testing.T) {
-		ws := wss.NewWebSocket("", "", mock.ServerConn)
+		ws := ws.NewWebSocket("", "", mock.ServerConn)
 		assert.Equal(t, "service does not exist", ws.CheckHealth(context.Background()).Error())
 	})
 }

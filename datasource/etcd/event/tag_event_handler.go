@@ -91,7 +91,7 @@ func (apt *TagsChangedTask) publish(ctx context.Context, domainProject, consumer
 		}
 
 		providerKey := pb.MicroServiceToKey(domainProject, provider)
-		PublishInstanceEvent(apt.KvEvent, domainProject, providerKey, []string{consumerID})
+		PublishInstanceEvent(apt.KvEvent, providerKey, []string{consumerID})
 	}
 	return nil
 }

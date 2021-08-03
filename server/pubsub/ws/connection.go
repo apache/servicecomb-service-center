@@ -15,33 +15,14 @@
  * limitations under the License.
  */
 
-package ws_test
+// connection pkg impl the pub/sub mechanism of the long connection of diff protocols
+package ws
 
-import (
-	"context"
-	"errors"
-	"testing"
+import "time"
 
-	wss "github.com/apache/servicecomb-service-center/server/connection/ws"
-	"github.com/stretchr/testify/assert"
+const (
+	HeartbeatInterval = 30 * time.Second
+	ReadTimeout       = HeartbeatInterval * 4
+	SendTimeout       = 5 * time.Second
+	ReadMaxBody       = 64
 )
-
-func TestSendEstablishError(t *testing.T) {
-	mock := NewTest()
-	t.Run("should read the err when call", func(t *testing.T) {
-		wss.SendEstablishError(mock.ServerConn, errors.New("error"))
-		_, message, err := mock.ClientConn.ReadMessage()
-		assert.Nil(t, err)
-		assert.Equal(t, "error", string(message))
-	})
-}
-
-func TestWatch(t *testing.T) {
-	t.Run("should return when ctx cancelled", func(t *testing.T) {
-		mock := NewTest()
-		mock.ServerConn.Close()
-		ctx, cancel := context.WithCancel(context.Background())
-		cancel()
-		wss.Watch(ctx, "", mock.ServerConn)
-	})
-}

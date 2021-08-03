@@ -173,10 +173,6 @@ func (ds *DepManager) AddOrUpdateDependencies(ctx context.Context, dependencys [
 	return discovery.CreateResponse(discovery.ResponseSuccess, "Create dependency successfully."), nil
 }
 
-func (ds *DepManager) DeleteDependency() {
-	panic("implement me")
-}
-
 func (ds *DepManager) DependencyHandle(ctx context.Context) (err error) {
 	return nil
 }

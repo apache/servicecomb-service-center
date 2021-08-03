@@ -102,14 +102,14 @@ func (h *InstanceEventHandler) OnEvent(evt sd.KvEvent) {
 		return
 	}
 
-	PublishInstanceEvent(evt, domainProject, pb.MicroServiceToKey(domainProject, ms), consumerIDs)
+	PublishInstanceEvent(evt, pb.MicroServiceToKey(domainProject, ms), consumerIDs)
 }
 
 func NewInstanceEventHandler() *InstanceEventHandler {
 	return &InstanceEventHandler{}
 }
 
-func PublishInstanceEvent(evt sd.KvEvent, domainProject string, serviceKey *pb.MicroServiceKey, subscribers []string) {
+func PublishInstanceEvent(evt sd.KvEvent, serviceKey *pb.MicroServiceKey, subscribers []string) {
 	defer cache.FindInstances.Remove(serviceKey)
 
 	if len(subscribers) == 0 {
@@ -123,7 +123,7 @@ func PublishInstanceEvent(evt sd.KvEvent, domainProject string, serviceKey *pb.M
 		Instance: evt.KV.Value.(*pb.MicroServiceInstance),
 	}
 	for _, consumerID := range subscribers {
-		evt := event.NewInstanceEventWithTime(consumerID, domainProject, evt.Revision, evt.CreateAt, response)
+		evt := event.NewInstanceEvent(consumerID, evt.Revision, evt.CreateAt, response)
 		err := event.Center().Fire(evt)
 		if err != nil {
 			log.Errorf(err, "publish event[%v] into channel failed", evt)

@@ -14,37 +14,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package disco_test
+package pubsub_test
 
 import (
 	"context"
-	"testing"
-
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/pubsub"
 	"github.com/apache/servicecomb-service-center/server/service/disco"
+	"testing"
 
 	pb "github.com/go-chassis/cari/discovery"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"google.golang.org/grpc"
 )
 
-type grpcWatchServer struct {
-	grpc.ServerStream
-}
-
-func (x *grpcWatchServer) Send(m *pb.WatchInstanceResponse) error {
-	return nil
-}
-
-func (x *grpcWatchServer) Context() context.Context {
-	return getContext()
+func getContext() context.Context {
+	return util.WithNoCache(util.SetDomainProject(context.Background(), "default", "default"))
 }
 
 func TestInstanceService_WebSocketWatch(t *testing.T) {
 	defer func() {
 		recover()
 	}()
-	disco.WebSocketWatch(context.Background(), &pb.WatchInstanceRequest{}, nil)
+	pubsub.Watch(context.Background(), &pb.WatchInstanceRequest{}, nil)
 }
 
 var _ = Describe("'Instance' service", func() {
@@ -54,7 +46,7 @@ var _ = Describe("'Instance' service", func() {
 		)
 
 		It("should be passed", func() {
-			respCreate, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+			respCreate, err := disco.RegisterService(getContext(), &pb.CreateServiceRequest{
 				Service: &pb.MicroService{
 					ServiceName: "service_name_watch",
 					AppId:       "service_name_watch",
@@ -71,27 +63,15 @@ var _ = Describe("'Instance' service", func() {
 		Context("when request is invalid", func() {
 			It("should be failed", func() {
 				By("service does not exist")
-				err := disco.WatchPreOpera(getContext(), &pb.WatchInstanceRequest{
-					SelfServiceId: "-1",
-				})
-				Expect(err).NotTo(BeNil())
-
-				err = disco.Watch(&pb.WatchInstanceRequest{
-					SelfServiceId: "-1",
-				}, &grpcWatchServer{})
+				err := pubsub.ExistService(getContext(), "-1")
 				Expect(err).NotTo(BeNil())
 
 				By("service id is empty")
-				err = disco.WatchPreOpera(getContext(), &pb.WatchInstanceRequest{
-					SelfServiceId: "",
-				})
+				err = pubsub.ExistService(getContext(), "")
 				Expect(err).NotTo(BeNil())
 
 				By("request is valid")
-				err = disco.WatchPreOpera(getContext(),
-					&pb.WatchInstanceRequest{
-						SelfServiceId: serviceId,
-					})
+				err = pubsub.ExistService(getContext(), serviceId)
 				Expect(err).To(BeNil())
 			})
 		})

@@ -15,14 +15,22 @@
  * limitations under the License.
  */
 
-// connection pkg impl the pub/sub mechanism of the long connection of diff protocols
-package connection
+package ws
 
-import "time"
-
-const (
-	HeartbeatInterval = 30 * time.Second
-	ReadTimeout       = HeartbeatInterval * 4
-	SendTimeout       = 5 * time.Second
-	ReadMaxBody       = 64
+import (
+	"time"
 )
+
+type Options struct {
+	ReadTimeout    time.Duration
+	SendTimeout    time.Duration
+	HealthInterval time.Duration
+}
+
+func ToOptions() Options {
+	return Options{
+		ReadTimeout:    ReadTimeout,
+		SendTimeout:    SendTimeout,
+		HealthInterval: HeartbeatInterval,
+	}
+}
