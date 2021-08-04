@@ -140,11 +140,6 @@ func (dr *DependencyRelation) GetDependencyConsumersOfProvider() ([]*pb.MicroSer
 	if dr.provider == nil {
 		return nil, util.ErrInvalidConsumer
 	}
-	consumerDependAllList, err := dr.getConsumerOfDependAllServices()
-	if err != nil {
-		log.Error(fmt.Sprintf("get consumers that depend on all services failed, %s", dr.provider.ServiceId), err)
-		return nil, err
-	}
 	providerService := pb.MicroServiceToKey(dr.domainProject, dr.provider)
 	consumerDependList, err := dr.GetConsumerOfSameServiceNameAndAppID(providerService)
 	if err != nil {
@@ -152,15 +147,11 @@ func (dr *DependencyRelation) GetDependencyConsumersOfProvider() ([]*pb.MicroSer
 			dr.provider.Environment, dr.provider.AppId, dr.provider.ServiceName, dr.provider.Version)
 		return nil, err
 	}
-	consumerDependAllList = append(consumerDependAllList, consumerDependList...)
-	return consumerDependAllList, nil
+	return consumerDependList, nil
 }
 
 func (dr *DependencyRelation) GetConsumerOfSameServiceNameAndAppID(provider *pb.MicroServiceKey) ([]*pb.MicroServiceKey, error) {
-	providerVersion := provider.Version
-	provider.Version = ""
 	filter := GenerateRuleKeyWithSameServiceNameAndAppID(path.DepsProvider, dr.domainProject, provider)
-	provider.Version = providerVersion
 	depRules, err := getServiceKeysInDep(dr.ctx, filter)
 	if err != nil {
 		return nil, err
@@ -197,30 +188,6 @@ func (dr *DependencyRelation) GetServiceByMicroServiceKey(service *pb.MicroServi
 		}
 	}
 	return nil, nil
-}
-
-func (dr *DependencyRelation) getConsumerOfDependAllServices() ([]*pb.MicroServiceKey, error) {
-	providerService := pb.MicroServiceToKey(dr.domainProject, dr.provider)
-	providerService.ServiceName = "*"
-	filter := GenerateProviderDependencyRuleKey(dr.domainProject, providerService)
-	findRes, err := client.GetMongoClient().Find(dr.ctx, model.CollectionDep, filter)
-	if err != nil {
-		return nil, err
-	}
-	if findRes.Err() != nil {
-		return nil, findRes.Err()
-	}
-
-	var msKeys []*pb.MicroServiceKey
-	for findRes.Next(dr.ctx) {
-		var depRule *model.DependencyRule
-		err = findRes.Decode(&depRule)
-		if err != nil {
-			return nil, err
-		}
-		msKeys = append(msKeys, depRule.ServiceKey)
-	}
-	return msKeys, nil
 }
 
 func getServiceKeysInDep(ctx context.Context, filter interface{}) ([]*model.DependencyRule, error) {
@@ -291,7 +258,7 @@ func MicroServiceKeyFilter(key *pb.MicroServiceKey) (bson.M, error) {
 	filter := util.NewDomainProjectFilter(tenant[0], tenant[1],
 		util.ServiceEnv(key.Environment),
 		util.ServiceAppID(key.AppId),
-		util.ServiceAlias(key.Alias),
+		util.ServiceServiceName(key.ServiceName),
 		util.ServiceVersion(key.Version),
 	)
 	return filter, nil
@@ -355,7 +322,7 @@ func findServiceKeysByServiceName(ctx context.Context, key *pb.MicroServiceKey, 
 func findServiceKeysByAlias(ctx context.Context, key *pb.MicroServiceKey, baseFilter bson.D, matchVersion bool) ([]string, bool, error) {
 	filter := append(baseFilter,
 		bson.E{Key: util.ConnectWithDot([]string{model.ColumnService, model.ColumnAlias}), Value: key.Alias})
-	return serviceVersionFilter(ctx, "", filter, matchVersion)
+	return serviceVersionFilter(ctx, key.Version, filter, matchVersion)
 }
 
 type ServiceVersionFilter func(ctx context.Context, filter bson.D) ([]string, error)

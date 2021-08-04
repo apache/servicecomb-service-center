@@ -33,6 +33,7 @@ var FindInstances = &FindInstancesCache{
 func init() {
 	FindInstances.AddFilter(
 		&ServiceFilter{},
+		&VersionFilter{},
 		&TagsFilter{},
 		&AccessibleFilter{},
 		&InstancesFilter{},

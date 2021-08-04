@@ -120,17 +120,14 @@ func AddServiceVersionRule(ctx context.Context, domainProject string, consumer *
 
 	id := util.StringJoin([]string{provider.AppId, provider.ServiceName}, "_")
 	key := path.GenerateConsumerDependencyQueueKey(domainProject, consumer.ServiceId, id)
-	resp, err := client.Instance().TxnWithCmp(ctx,
-		nil,
-		[]client.CompareOp{client.OpCmp(client.CmpStrVal(key), client.CmpEqual, util.BytesToStringWithNoCopy(data))},
-		[]client.PluginOp{client.OpPut(client.WithStrKey(key), client.WithValue(data))})
+	override, err := client.Instance().PutNoOverride(ctx, client.WithStrKey(key), client.WithValue(data))
 	if err != nil {
 		return err
 	}
-	if !resp.Succeeded {
-		log.Infof("put in queue[%s/%s]: consumer[%s/%s/%s/%s] -> provider[%s/%s/%s/%s]", consumer.ServiceId, id,
+	if override {
+		log.Infof("put in queue[%s/%s]: consumer[%s/%s/%s/%s] -> provider[%s/%s/%s]", consumer.ServiceId, id,
 			consumer.Environment, consumer.AppId, consumer.ServiceName, consumer.Version,
-			provider.Environment, provider.AppId, provider.ServiceName, provider.Version)
+			provider.Environment, provider.AppId, provider.ServiceName)
 	}
 	return nil
 }
@@ -310,15 +307,10 @@ func removeProviderRuleOfConsumer(ctx context.Context, domainProject string, cac
 	}
 
 	var ops []client.PluginOp
-loop:
 	for _, keyValue := range resp.Kvs {
 		var left []*pb.MicroServiceKey
 		all := keyValue.Value.(*pb.MicroServiceDependency).Dependency
 		for _, key := range all {
-			if key.ServiceName == "*" {
-				continue loop
-			}
-
 			id := path.GenerateProviderDependencyRuleKey(key.Tenant, key)
 			exist, ok := cache[id]
 			if !ok {

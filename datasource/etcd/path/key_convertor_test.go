@@ -52,13 +52,6 @@ func TestGetInfoFromKV(t *testing.T) {
 	d, p = path.GetInfoFromProjectKV([]byte("sdf"))
 	assert.False(t, d != "" || p != "")
 
-	var r string
-	s, r, d = path.GetInfoFromRuleKV([]byte(path.GenerateServiceRuleKey("a/b", "c", "d")))
-	assert.False(t, d != "a/b" || s != "c" || r != "d")
-
-	s, r, d = path.GetInfoFromRuleKV([]byte("sdf"))
-	assert.False(t, d != "" || s != "" || r != "")
-
 	s, d = path.GetInfoFromTagKV([]byte(path.GenerateServiceTagKey("a/b", "c")))
 	assert.False(t, d != "a/b" || s != "c")
 

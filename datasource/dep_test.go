@@ -100,7 +100,6 @@ func Test_Get(t *testing.T) {
 			ConsumerServiceId: consumerId1,
 			AppId:             "dep_get_dep_group",
 			ServiceName:       "dep_get_dep_provider",
-			VersionRule:       "1.0.0+",
 		})
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
@@ -128,7 +127,6 @@ func Test_Get(t *testing.T) {
 			ConsumerServiceId: consumerId1,
 			AppId:             "dep_get_dep_group",
 			ServiceName:       "dep_get_dep_consumer",
-			VersionRule:       "1.0.0+",
 		})
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
@@ -149,7 +147,6 @@ func Test_Get(t *testing.T) {
 			ConsumerServiceId: providerId2,
 			AppId:             "dep_get_dep_group",
 			ServiceName:       "dep_get_dep_finder",
-			VersionRule:       "1.0.0+",
 		})
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
@@ -173,7 +170,6 @@ func Test_Get(t *testing.T) {
 			ConsumerServiceId: providerId2,
 			AppId:             "dep_get_dep_group",
 			ServiceName:       "dep_get_dep_finder",
-			VersionRule:       "1.0.0+",
 		})
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
@@ -226,7 +222,6 @@ func Test_Get(t *testing.T) {
 			ConsumerServiceId: providerId2,
 			AppId:             "dep_get_dep_group",
 			ServiceName:       "dep_get_dep_finder",
-			VersionRule:       "1.0.0+",
 		})
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)

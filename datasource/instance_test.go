@@ -589,54 +589,33 @@ func TestInstance_Query(t *testing.T) {
 		instanceId9 = respCreateInstance.InstanceId
 	})
 
-	t.Run("query instance", func(t *testing.T) {
-		log.Info("find with version rule")
+	t.Run("query instance, should ok", func(t *testing.T) {
 		respFind, err := datasource.GetMetadataManager().FindInstances(getContext(), &pb.FindInstancesRequest{
 			ConsumerServiceId: serviceId1,
 			AppId:             "query_instance_ms",
 			ServiceName:       "query_instance_service_ms",
-			VersionRule:       "latest",
-		})
-		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
-		assertInstancesContain(t, respFind.Instances, instanceId2)
-
-		respFind, err = datasource.GetMetadataManager().FindInstances(getContext(), &pb.FindInstancesRequest{
-			ConsumerServiceId: serviceId1,
-			AppId:             "query_instance_ms",
-			ServiceName:       "query_instance_service_ms",
-			VersionRule:       "1.0.0+",
-			Tags:              []string{},
-		})
-		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
-		assertInstancesContain(t, respFind.Instances, instanceId2)
-
-		respFind, err = datasource.GetMetadataManager().FindInstances(getContext(), &pb.FindInstancesRequest{
-			ConsumerServiceId: serviceId1,
-			AppId:             "query_instance_ms",
-			ServiceName:       "query_instance_service_ms",
-			VersionRule:       "1.0.0",
 		})
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
 		assertInstancesContain(t, respFind.Instances, instanceId1)
+		assertInstancesContain(t, respFind.Instances, instanceId2)
+	})
 
-		respFind, err = datasource.GetMetadataManager().FindInstances(getContext(), &pb.FindInstancesRequest{
+	t.Run("query not exist service instance, should failed", func(t *testing.T) {
+		respFind, err := datasource.GetMetadataManager().FindInstances(getContext(), &pb.FindInstancesRequest{
 			ConsumerServiceId: serviceId1,
-			AppId:             "query_instance",
-			ServiceName:       "query_instance_service",
-			VersionRule:       "0.0.0",
+			AppId:             "query_instance_ms",
+			ServiceName:       "not-exist",
 		})
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ErrServiceNotExists, respFind.Response.GetCode())
+	})
 
-		log.Info("find with env")
-		respFind, err = datasource.GetMetadataManager().FindInstances(getContext(), &pb.FindInstancesRequest{
+	t.Run("query instance when with consumerID or specify env without consumerID, should ok", func(t *testing.T) {
+		respFind, err := datasource.GetMetadataManager().FindInstances(getContext(), &pb.FindInstancesRequest{
 			ConsumerServiceId: serviceId4,
 			AppId:             "query_instance_ms",
 			ServiceName:       "query_instance_diff_env_service_ms",
-			VersionRule:       "1.0.0",
 		})
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
@@ -647,20 +626,19 @@ func TestInstance_Query(t *testing.T) {
 			Environment: pb.ENV_PROD,
 			AppId:       "query_instance_ms",
 			ServiceName: "query_instance_diff_env_service_ms",
-			VersionRule: "1.0.0",
 		})
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
 		assert.Equal(t, 1, len(respFind.Instances))
 		assertInstancesContain(t, respFind.Instances, instanceId4)
+	})
 
-		log.Info("find with rev")
+	t.Run("query instance with revision, should ok", func(t *testing.T) {
 		ctx := util.SetContext(getContext(), util.CtxNocache, "")
-		respFind, err = datasource.GetMetadataManager().FindInstances(ctx, &pb.FindInstancesRequest{
+		respFind, err := datasource.GetMetadataManager().FindInstances(ctx, &pb.FindInstancesRequest{
 			ConsumerServiceId: serviceId8,
 			AppId:             "query_instance_ms",
 			ServiceName:       "query_instance_with_rev_ms",
-			VersionRule:       "1.0.0",
 		})
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
@@ -673,41 +651,41 @@ func TestInstance_Query(t *testing.T) {
 			ConsumerServiceId: serviceId8,
 			AppId:             "query_instance_ms",
 			ServiceName:       "query_instance_with_rev_ms",
-			VersionRule:       "1.0.0",
 		})
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
 		assert.Equal(t, ctx.Value(util.CtxResponseRevision), rev)
 		assertInstancesContain(t, respFind.Instances, instanceId8)
+	})
 
-		log.Info("find should return 200 if consumer is diff apps")
-		respFind, err = datasource.GetMetadataManager().FindInstances(getContext(), &pb.FindInstancesRequest{
+	t.Run("find should return 200 if consumer is diff apps, should ok", func(t *testing.T) {
+		respFind, err := datasource.GetMetadataManager().FindInstances(getContext(), &pb.FindInstancesRequest{
 			ConsumerServiceId: serviceId3,
 			AppId:             "query_instance_ms",
 			ServiceName:       "query_instance_service_ms",
-			VersionRule:       "1.0.5",
 		})
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
 		assert.Equal(t, 0, len(respFind.Instances))
+	})
 
-		log.Info("provider tag does not exist")
-		respFind, err = datasource.GetMetadataManager().FindInstances(getContext(), &pb.FindInstancesRequest{
+	t.Run("find provider instance but specify tag does not exist, should ok", func(t *testing.T) {
+		respFind, err := datasource.GetMetadataManager().FindInstances(getContext(), &pb.FindInstancesRequest{
 			ConsumerServiceId: serviceId1,
 			AppId:             "query_instance_ms",
 			ServiceName:       "query_instance_service_ms",
-			VersionRule:       "latest",
 			Tags:              []string{"not_exist_tag"},
 		})
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
 		assert.Equal(t, 0, len(respFind.Instances))
+	})
 
-		log.Info("shared service discovery")
+	t.Run("find global provider instance, should ok", func(t *testing.T) {
 		config.Server.Config.GlobalVisible = "query_instance_shared_provider_ms"
 		core.RegisterGlobalServices()
 		core.Service.Environment = pb.ENV_PROD
-		respFind, err = datasource.GetMetadataManager().FindInstances(
+		respFind, err := datasource.GetMetadataManager().FindInstances(
 			util.SetTargetDomainProject(
 				util.SetDomainProject(util.CloneContext(getContext()), "user", "user"),
 				"default", "default"),
@@ -715,7 +693,6 @@ func TestInstance_Query(t *testing.T) {
 				ConsumerServiceId: serviceId6,
 				AppId:             "default",
 				ServiceName:       "query_instance_shared_provider_ms",
-				VersionRule:       "1.0.0",
 			})
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
@@ -726,7 +703,6 @@ func TestInstance_Query(t *testing.T) {
 			ConsumerServiceId: serviceId7,
 			AppId:             "default",
 			ServiceName:       "query_instance_shared_provider_ms",
-			VersionRule:       "1.0.0",
 		})
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
@@ -739,8 +715,7 @@ func TestInstance_Query(t *testing.T) {
 		core.Service.Environment = pb.ENV_DEV
 	})
 
-	t.Run("batch query instances", func(t *testing.T) {
-		log.Info("find with version rule")
+	t.Run("batch query instances, should ok", func(t *testing.T) {
 		respFind, err := datasource.GetMetadataManager().BatchFind(getContext(), &pb.BatchFindInstancesRequest{
 			ConsumerServiceId: serviceId1,
 			Services: []*pb.FindService{
@@ -748,21 +723,23 @@ func TestInstance_Query(t *testing.T) {
 					Service: &pb.MicroServiceKey{
 						AppId:       "query_instance_ms",
 						ServiceName: "query_instance_service_ms",
-						Version:     "latest",
 					},
 				},
 				{
 					Service: &pb.MicroServiceKey{
 						AppId:       "query_instance_ms",
-						ServiceName: "query_instance_service_ms",
-						Version:     "1.0.0+",
+						ServiceName: "query_instance_diff_env_service_ms",
 					},
 				},
 				{
 					Service: &pb.MicroServiceKey{
-						AppId:       "query_instance_ms",
+						AppId:       "query_instance_diff_app_ms",
 						ServiceName: "query_instance_service_ms",
-						Version:     "0.0.0",
+					},
+				},
+				{
+					Service: &pb.MicroServiceKey{
+						ServiceName: "not-exists",
 					},
 				},
 			},
@@ -770,21 +747,22 @@ func TestInstance_Query(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
 		assert.Equal(t, int64(0), respFind.Services.Updated[0].Index)
+		assertInstancesContain(t, respFind.Services.Updated[0].Instances, instanceId1)
 		assertInstancesContain(t, respFind.Services.Updated[0].Instances, instanceId2)
-		assert.Equal(t, int64(1), respFind.Services.Updated[1].Index)
-		assertInstancesContain(t, respFind.Services.Updated[1].Instances, instanceId2)
-		assert.Equal(t, int64(2), respFind.Services.Failed[0].Indexes[0])
+		assert.Equal(t, int64(2), respFind.Services.Updated[1].Index)
+		assert.Empty(t, respFind.Services.Updated[1].Instances)
+		assert.Equal(t, 2, len(respFind.Services.Failed[0].Indexes))
 		assert.Equal(t, pb.ErrServiceNotExists, respFind.Services.Failed[0].Error.Code)
+	})
 
-		log.Info("find with env")
-		respFind, err = datasource.GetMetadataManager().BatchFind(getContext(), &pb.BatchFindInstancesRequest{
+	t.Run("batch query instances without specify env, should ok", func(t *testing.T) {
+		respFind, err := datasource.GetMetadataManager().BatchFind(getContext(), &pb.BatchFindInstancesRequest{
 			ConsumerServiceId: serviceId4,
 			Services: []*pb.FindService{
 				{
 					Service: &pb.MicroServiceKey{
 						AppId:       "query_instance_ms",
 						ServiceName: "query_instance_diff_env_service_ms",
-						Version:     "1.0.0",
 					},
 				},
 			},
@@ -793,24 +771,23 @@ func TestInstance_Query(t *testing.T) {
 		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
 		assert.Equal(t, 1, len(respFind.Services.Updated[0].Instances))
 		assert.Equal(t, instanceId4, respFind.Services.Updated[0].Instances[0].InstanceId)
+	})
 
-		log.Info("find with rev")
+	t.Run("batch query instances with revision, should ok", func(t *testing.T) {
 		ctx := util.SetContext(getContext(), util.CtxNocache, "")
-		respFind, err = datasource.GetMetadataManager().BatchFind(ctx, &pb.BatchFindInstancesRequest{
+		respFind, err := datasource.GetMetadataManager().BatchFind(ctx, &pb.BatchFindInstancesRequest{
 			ConsumerServiceId: serviceId8,
 			Services: []*pb.FindService{
 				{
 					Service: &pb.MicroServiceKey{
 						AppId:       "query_instance_ms",
 						ServiceName: "query_instance_with_rev_ms",
-						Version:     "1.0.0",
 					},
 				},
 				{
 					Service: &pb.MicroServiceKey{
 						AppId:       "query_instance_ms",
 						ServiceName: "batch_query_instance_with_rev_ms",
-						Version:     "1.0.0",
 					},
 				},
 			},
@@ -851,7 +828,6 @@ func TestInstance_Query(t *testing.T) {
 					Service: &pb.MicroServiceKey{
 						AppId:       "query_instance_ms",
 						ServiceName: "query_instance_with_rev_ms",
-						Version:     "1.0.0",
 					},
 					Rev: "x",
 				},
@@ -880,7 +856,6 @@ func TestInstance_Query(t *testing.T) {
 					Service: &pb.MicroServiceKey{
 						AppId:       "query_instance_ms",
 						ServiceName: "query_instance_with_rev_ms",
-						Version:     "1.0.0",
 					},
 					Rev: rev,
 				},
@@ -899,9 +874,10 @@ func TestInstance_Query(t *testing.T) {
 		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
 		assert.Equal(t, int64(0), respFind.Services.NotModified[0])
 		assert.Equal(t, int64(0), respFind.Instances.NotModified[0])
+	})
 
-		log.Info("find should return 200 even if consumer is diff apps")
-		respFind, err = datasource.GetMetadataManager().BatchFind(getContext(), &pb.BatchFindInstancesRequest{
+	t.Run("find should return 200 even if consumer is diff apps, should ok", func(t *testing.T) {
+		respFind, err := datasource.GetMetadataManager().BatchFind(getContext(), &pb.BatchFindInstancesRequest{
 			ConsumerServiceId: serviceId3,
 			Services: []*pb.FindService{
 				{
@@ -916,12 +892,13 @@ func TestInstance_Query(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
 		assert.Equal(t, 0, len(respFind.Services.Updated[0].Instances))
+	})
 
-		log.Info("shared service discovery")
+	t.Run("find shared service discovery, should ok", func(t *testing.T) {
 		config.Server.Config.GlobalVisible = "query_instance_shared_provider_ms"
 		core.RegisterGlobalServices()
 		core.Service.Environment = pb.ENV_PROD
-		respFind, err = datasource.GetMetadataManager().BatchFind(
+		respFind, err := datasource.GetMetadataManager().BatchFind(
 			util.SetTargetDomainProject(
 				util.SetDomainProject(util.CloneContext(getContext()), "user", "user"),
 				"default", "default"),
@@ -932,7 +909,6 @@ func TestInstance_Query(t *testing.T) {
 						Service: &pb.MicroServiceKey{
 							AppId:       "default",
 							ServiceName: "query_instance_shared_provider_ms",
-							Version:     "1.0.0",
 						},
 					},
 				},
@@ -949,7 +925,6 @@ func TestInstance_Query(t *testing.T) {
 					Service: &pb.MicroServiceKey{
 						AppId:       "default",
 						ServiceName: "query_instance_shared_provider_ms",
-						Version:     "1.0.0",
 					},
 				},
 			},
@@ -1021,10 +996,10 @@ func TestInstance_Query(t *testing.T) {
 	})
 }
 
-func assertInstancesContain(t *testing.T, instances []*pb.MicroServiceInstance, instanceId2 string) {
+func assertInstancesContain(t *testing.T, instances []*pb.MicroServiceInstance, instanceId string) {
 	found := false
 	for _, instance := range instances {
-		if instance.InstanceId == instanceId2 {
+		if instance.InstanceId == instanceId {
 			found = true
 			break
 		}

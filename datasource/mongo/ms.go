@@ -308,7 +308,8 @@ func (ds *MetadataManager) DelServicePri(ctx context.Context, serviceID string, 
 	}
 	// 强制删除，则与该服务相关的信息删除，非强制删除： 如果作为该被依赖（作为provider，提供服务,且不是只存在自依赖）或者存在实例，则不能删除
 	if !force {
-		services, err := GetConsumerIDs(ctx, microservice.Service)
+		dr := NewProviderDependencyRelation(ctx, util.ParseDomainProject(ctx), microservice.Service)
+		services, err := dr.GetDependencyConsumerIds()
 		if err != nil {
 			log.Error(fmt.Sprintf("delete micro-service[%s] failed, get service dependency failed, operator: %s",
 				serviceID, remoteIP), err)
@@ -375,9 +376,12 @@ func (ds *MetadataManager) UpdateService(ctx context.Context, request *discovery
 	err := dao.UpdateService(ctx, filter, updateFilter)
 	if err != nil {
 		log.Error(fmt.Sprintf("update service %s properties failed, update mongo failed", request.ServiceId), err)
-		return &discovery.UpdateServicePropsResponse{
-			Response: discovery.CreateResponse(discovery.ErrUnavailableBackend, "Update doc in mongo failed."),
-		}, nil
+		if err == client.ErrNoDocuments {
+			return &discovery.UpdateServicePropsResponse{
+				Response: discovery.CreateResponse(discovery.ErrServiceNotExists, "Service does not exist."),
+			}, nil
+		}
+		return nil, discovery.NewError(discovery.ErrUnavailableBackend, "Update doc in mongo failed.")
 	}
 	return &discovery.UpdateServicePropsResponse{
 		Response: discovery.CreateResponse(discovery.ResponseSuccess, "Update service successfully."),
@@ -1545,7 +1549,6 @@ func (ds *MetadataManager) FindInstances(ctx context.Context, request *discovery
 		AppId:       request.AppId,
 		ServiceName: request.ServiceName,
 		Alias:       request.Alias,
-		Version:     request.VersionRule,
 	}
 	rev, ok := ctx.Value(util.CtxRequestRevision).(string)
 	if !ok {
@@ -1888,15 +1891,15 @@ func (ds *MetadataManager) findInstance(ctx context.Context, request *discovery.
 		service, err = dao.GetService(ctx, filter)
 		if err != nil {
 			if errors.Is(err, datasource.ErrNoData) {
-				log.Debug(fmt.Sprintf("consumer does not exist, consumer %s find provider %s/%s/%s/%s",
-					request.ConsumerServiceId, request.Environment, request.AppId, request.ServiceName, request.VersionRule))
+				log.Debug(fmt.Sprintf("consumer does not exist, consumer %s find provider %s/%s/%s",
+					request.ConsumerServiceId, request.Environment, request.AppId, request.ServiceName))
 				return &discovery.FindInstancesResponse{
 					Response: discovery.CreateResponse(discovery.ErrServiceNotExists,
 						fmt.Sprintf("Consumer[%s] does not exist.", request.ConsumerServiceId)),
 				}, nil
 			}
-			log.Error(fmt.Sprintf("get consumer failed, consumer %s find provider %s/%s/%s/%s",
-				request.ConsumerServiceId, request.Environment, request.AppId, request.ServiceName, request.VersionRule), err)
+			log.Error(fmt.Sprintf("get consumer failed, consumer %s find provider %s/%s/%s",
+				request.ConsumerServiceId, request.Environment, request.AppId, request.ServiceName), err)
 			return &discovery.FindInstancesResponse{
 				Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
 			}, err
@@ -2085,7 +2088,6 @@ func (ds *MetadataManager) batchFindServices(ctx context.Context, request *disco
 			ConsumerServiceId: request.ConsumerServiceId,
 			AppId:             key.Service.AppId,
 			ServiceName:       key.Service.ServiceName,
-			VersionRule:       key.Service.Version,
 			Environment:       key.Service.Environment,
 		})
 		if err != nil {

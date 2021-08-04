@@ -138,7 +138,6 @@ var _ = Describe("'Dependency' service", func() {
 					ConsumerServiceId: consumerId1,
 					AppId:             "get_dep_group",
 					ServiceName:       "get_dep_provider",
-					VersionRule:       "1.0.0+",
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
@@ -162,41 +161,11 @@ var _ = Describe("'Dependency' service", func() {
 				Expect(respGetC.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 				Expect(len(respGetC.Providers)).To(Equal(2))
 
-				//重复find
-				resp, err = disco.FindInstances(getContext(), &pb.FindInstancesRequest{
-					ConsumerServiceId: consumerId1,
-					AppId:             "get_dep_group",
-					ServiceName:       "get_dep_provider",
-					VersionRule:       "2.0.0+",
-				})
-				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
-
-				DependencyHandle()
-
-				By("get consumer again")
-				respGetP, err = serviceResource.GetProviderDependencies(getContext(), &pb.GetDependenciesRequest{
-					ServiceId: providerId1,
-				})
-				Expect(err).To(BeNil())
-				Expect(respGetP.Response.GetCode()).To(Equal(pb.ResponseSuccess))
-				Expect(len(respGetP.Consumers)).To(Equal(0))
-
-				By("get provider again")
-				respGetC, err = serviceResource.GetConsumerDependencies(getContext(), &pb.GetDependenciesRequest{
-					ServiceId: consumerId1,
-				})
-				Expect(err).To(BeNil())
-				Expect(respGetC.Response.GetCode()).To(Equal(pb.ResponseSuccess))
-				Expect(len(respGetC.Providers)).To(Equal(1))
-				Expect(respGetC.Providers[0].ServiceId).To(Equal(providerId2))
-
 				By("get self deps")
 				resp, err = disco.FindInstances(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: consumerId1,
 					AppId:             "get_dep_group",
 					ServiceName:       "get_dep_consumer",
-					VersionRule:       "1.0.0+",
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
@@ -209,14 +178,21 @@ var _ = Describe("'Dependency' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(respGetC.Response.GetCode()).To(Equal(pb.ResponseSuccess))
-				Expect(len(respGetC.Providers)).To(Equal(1))
+				Expect(len(respGetC.Providers)).To(Equal(2))
+
+				respGetC, err = serviceResource.GetConsumerDependencies(getContext(), &pb.GetDependenciesRequest{
+					ServiceId: consumerId1,
+					NoSelf:    false,
+				})
+				Expect(err).To(BeNil())
+				Expect(respGetC.Response.GetCode()).To(Equal(pb.ResponseSuccess))
+				Expect(len(respGetC.Providers)).To(Equal(3))
 
 				By("find before provider register")
 				resp, err = disco.FindInstances(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: providerId2,
 					AppId:             "get_dep_group",
 					ServiceName:       "get_dep_finder",
-					VersionRule:       "1.0.0+",
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.GetCode()).To(Equal(pb.ErrServiceNotExists))
@@ -238,7 +214,6 @@ var _ = Describe("'Dependency' service", func() {
 					ConsumerServiceId: providerId2,
 					AppId:             "get_dep_group",
 					ServiceName:       "get_dep_finder",
-					VersionRule:       "1.0.0+",
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
@@ -286,7 +261,6 @@ var _ = Describe("'Dependency' service", func() {
 					ConsumerServiceId: providerId2,
 					AppId:             "get_dep_group",
 					ServiceName:       "get_dep_finder",
-					VersionRule:       "1.0.0+",
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))

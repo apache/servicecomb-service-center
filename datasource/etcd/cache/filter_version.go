@@ -28,10 +28,10 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
-type VersionRuleFilter struct {
+type VersionFilter struct {
 }
 
-func (f *VersionRuleFilter) Name(ctx context.Context, _ *cache.Node) string {
+func (f *VersionFilter) Name(ctx context.Context, _ *cache.Node) string {
 	instanceKey, ok := ctx.Value(CtxProviderInstanceKey).(*pb.HeartbeatSetElement)
 	if ok {
 		return instanceKey.ServiceId
@@ -39,7 +39,7 @@ func (f *VersionRuleFilter) Name(ctx context.Context, _ *cache.Node) string {
 	return ""
 }
 
-func (f *VersionRuleFilter) Init(ctx context.Context, parent *cache.Node) (node *cache.Node, err error) {
+func (f *VersionFilter) Init(ctx context.Context, parent *cache.Node) (node *cache.Node, err error) {
 	instance, ok := ctx.Value(CtxProviderInstanceKey).(*pb.HeartbeatSetElement)
 	if ok {
 		node = cache.NewNode()
@@ -53,8 +53,8 @@ func (f *VersionRuleFilter) Init(ctx context.Context, parent *cache.Node) (node 
 	ids, exist, err := serviceUtil.FindServiceIds(ctx, provider, false)
 	if err != nil {
 		consumer := ctx.Value(CtxConsumerID).(*pb.MicroService)
-		findFlag := fmt.Sprintf("consumer '%s' find provider %s/%s/%s", consumer.ServiceId,
-			provider.AppId, provider.ServiceName, provider.Version)
+		findFlag := fmt.Sprintf("consumer '%s' find provider %s/%s", consumer.ServiceId,
+			provider.AppId, provider.ServiceName)
 		log.Errorf(err, "FindServiceIds failed, %s", findFlag)
 		return
 	}

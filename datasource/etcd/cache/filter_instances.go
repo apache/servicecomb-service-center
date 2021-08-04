@@ -73,8 +73,8 @@ func (f *InstancesFilter) Find(ctx context.Context, parent *cache.Node) (
 	}
 	if err != nil {
 		consumer := ctx.Value(CtxConsumerID).(*pb.MicroService)
-		findFlag := fmt.Sprintf("consumer '%s' find provider %s/%s/%s", consumer.ServiceId,
-			provider.AppId, provider.ServiceName, provider.Version)
+		findFlag := fmt.Sprintf("consumer '%s' find provider %s/%s", consumer.ServiceId,
+			provider.AppId, provider.ServiceName)
 		log.Errorf(err, "Find failed, %s", findFlag)
 	}
 	return
@@ -105,8 +105,9 @@ func (f *InstancesFilter) findInstances(ctx context.Context, domainProject, serv
 
 func (f *InstancesFilter) FindInstances(ctx context.Context, domainProject string, instanceKey *pb.HeartbeatSetElement) (instances []*pb.MicroServiceInstance, rev string, err error) {
 	var (
-		maxRevs = make([]int64, len(getOrCreateClustersIndex()))
-		counts  = make([]int64, len(getOrCreateClustersIndex()))
+		index   = getOrCreateClustersIndex()
+		maxRevs = make([]int64, len(index))
+		counts  = make([]int64, len(index))
 	)
 	instances, err = f.findInstances(ctx, domainProject, instanceKey.ServiceId, instanceKey.InstanceId, maxRevs, counts)
 	if err != nil {
@@ -117,8 +118,9 @@ func (f *InstancesFilter) FindInstances(ctx context.Context, domainProject strin
 
 func (f *InstancesFilter) BatchFindInstances(ctx context.Context, domainProject string, serviceIDs []string) (instances []*pb.MicroServiceInstance, rev string, err error) {
 	var (
-		maxRevs = make([]int64, len(getOrCreateClustersIndex()))
-		counts  = make([]int64, len(getOrCreateClustersIndex()))
+		index   = getOrCreateClustersIndex()
+		maxRevs = make([]int64, len(index))
+		counts  = make([]int64, len(index))
 	)
 	for _, providerServiceID := range serviceIDs {
 		insts, err := f.findInstances(ctx, domainProject, providerServiceID, "", maxRevs, counts)

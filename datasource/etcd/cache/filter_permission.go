@@ -43,8 +43,8 @@ func (f *AccessibleFilter) Init(ctx context.Context, parent *cache.Node) (node *
 	for _, providerServiceID := range pCopy.ServiceIds {
 		if err := util.Accessible(ctx, consumerID, providerServiceID); err != nil {
 			provider := ctx.Value(CtxProviderKey).(*pb.MicroServiceKey)
-			findFlag := fmt.Sprintf("consumer '%s' find provider %s/%s/%s", consumerID,
-				provider.AppId, provider.ServiceName, provider.Version)
+			findFlag := fmt.Sprintf("consumer '%s' find provider %s/%s", consumerID,
+				provider.AppId, provider.ServiceName)
 			log.Errorf(err, "AccessibleFilter failed, %s", findFlag)
 			continue
 		}

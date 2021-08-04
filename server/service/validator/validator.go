@@ -51,6 +51,7 @@ func init() {
 	accountLoginValidator.AddRule("TokenExpirationTime", &validate.Rule{Regexp: &validate.TokenExpirationTimeChecker{}})
 }
 
+// deprecated use the ValidateXXX func instead, e.g. rbac_validator.go
 func Validate(v interface{}) error {
 	err := baseCheck(v)
 	if err != nil {
@@ -65,10 +66,6 @@ func Validate(v interface{}) error {
 		return GetServiceReqValidator().Validate(v)
 	case *pb.UpdateServicePropsRequest:
 		return UpdateServicePropsReqValidator().Validate(v)
-	case *pb.CreateDependenciesRequest:
-		return CreateDependenciesReqValidator().Validate(v)
-	case *pb.AddDependenciesRequest:
-		return AddDependenciesReqValidator().Validate(v)
 	case *pb.GetServiceTagsRequest:
 		return GetTagsReqValidator().Validate(v)
 	case *pb.AddServiceTagsRequest:

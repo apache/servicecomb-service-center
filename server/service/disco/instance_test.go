@@ -990,6 +990,7 @@ var _ = Describe("'Instance' service", func() {
 			Expect(err).To(BeNil())
 			Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 			instanceId1 = resp.InstanceId
+			Expect(instanceId1).To(Equal(instanceId1))
 
 			resp, err = discosvc.RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
 				Instance: &pb.MicroServiceInstance{
@@ -1083,7 +1084,6 @@ var _ = Describe("'Instance' service", func() {
 					ConsumerServiceId: serviceId1,
 					AppId:             TOO_LONG_APPID,
 					ServiceName:       "query_instance_service",
-					VersionRule:       "1.0.0",
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
@@ -1091,7 +1091,6 @@ var _ = Describe("'Instance' service", func() {
 					ConsumerServiceId: serviceId1,
 					AppId:             "",
 					ServiceName:       "query_instance_service",
-					VersionRule:       "1.0.0",
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
@@ -1099,7 +1098,6 @@ var _ = Describe("'Instance' service", func() {
 					ConsumerServiceId: serviceId1,
 					AppId:             " ",
 					ServiceName:       "query_instance_service",
-					VersionRule:       "1.0.0",
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
@@ -1109,7 +1107,6 @@ var _ = Describe("'Instance' service", func() {
 					ConsumerServiceId: serviceId1,
 					AppId:             "query_instance",
 					ServiceName:       TOO_LONG_EXISTENCE,
-					VersionRule:       "1.0.0",
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
@@ -1117,7 +1114,6 @@ var _ = Describe("'Instance' service", func() {
 					ConsumerServiceId: serviceId1,
 					AppId:             "query_instance",
 					ServiceName:       "",
-					VersionRule:       "1.0.0",
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
@@ -1125,93 +1121,15 @@ var _ = Describe("'Instance' service", func() {
 					ConsumerServiceId: serviceId1,
 					AppId:             "query_instance",
 					ServiceName:       " ",
-					VersionRule:       "1.0.0",
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
-
-				By("invalid version")
-				respFind, err = discosvc.FindInstances(getContext(), &pb.FindInstancesRequest{
-					ConsumerServiceId: serviceId1,
-					AppId:             "query_instance",
-					ServiceName:       "query_instance_service",
-					VersionRule:       "1.32768.0",
-				})
-				Expect(err).To(BeNil())
-				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
-				respFind, err = discosvc.FindInstances(getContext(), &pb.FindInstancesRequest{
-					ConsumerServiceId: serviceId1,
-					AppId:             "query_instance",
-					ServiceName:       "query_instance_service",
-					VersionRule:       "1.0.0-1.32768.0",
-				})
-				Expect(err).To(BeNil())
-				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
-				respFind, err = discosvc.FindInstances(getContext(), &pb.FindInstancesRequest{
-					ConsumerServiceId: serviceId1,
-					AppId:             "query_instance",
-					ServiceName:       "query_instance_service",
-					VersionRule:       " ",
-				})
-				Expect(err).To(BeNil())
-				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
-				respFind, err = discosvc.FindInstances(getContext(), &pb.FindInstancesRequest{
-					ConsumerServiceId: serviceId1,
-					AppId:             "query_instance",
-					ServiceName:       "query_instance_service",
-					VersionRule:       "",
-				})
-				Expect(err).To(BeNil())
-				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
-
-				By("consumerId is empty")
-				respFind, err = discosvc.FindInstances(getContext(), &pb.FindInstancesRequest{
-					ConsumerServiceId: "",
-					AppId:             "query_instance",
-					ServiceName:       "query_instance_service",
-					VersionRule:       "1.0.0+",
-				})
-				Expect(err).To(BeNil())
-				Expect(respFind.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
 				By("provider does not exist")
 				respFind, err = discosvc.FindInstances(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					AppId:             "query_instance",
 					ServiceName:       "noneservice",
-					VersionRule:       "latest",
-				})
-				Expect(err).To(BeNil())
-				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrServiceNotExists))
-
-				By("provider does not contain 3.0.0+ versions")
-				respFind, err = discosvc.FindInstances(getContext(), &pb.FindInstancesRequest{
-					ConsumerServiceId: serviceId1,
-					AppId:             "query_instance",
-					ServiceName:       "query_instance_service",
-					VersionRule:       "3.0.0+",
-				})
-				Expect(err).To(BeNil())
-				Expect(respFind.Response.GetCode()).To(Equal(pb.ResponseSuccess))
-				Expect(len(respFind.Instances)).To(Equal(0))
-
-				By("provider does not contain 2.0.0-2.0.1 versions")
-				respFind, err = discosvc.FindInstances(getContext(), &pb.FindInstancesRequest{
-					ConsumerServiceId: serviceId1,
-					AppId:             "query_instance",
-					ServiceName:       "query_instance_service",
-					VersionRule:       "2.0.0-2.0.1",
-				})
-				Expect(err).To(BeNil())
-				Expect(respFind.Response.GetCode()).To(Equal(pb.ResponseSuccess))
-				Expect(len(respFind.Instances)).To(Equal(0))
-
-				By("provider does not contain 2.0.0 version")
-				respFind, err = discosvc.FindInstances(getContext(), &pb.FindInstancesRequest{
-					ConsumerServiceId: serviceId1,
-					AppId:             "query_instance",
-					ServiceName:       "query_instance_service",
-					VersionRule:       "2.0.0",
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrServiceNotExists))
@@ -1221,7 +1139,6 @@ var _ = Describe("'Instance' service", func() {
 					ConsumerServiceId: "notExistServiceId",
 					AppId:             "query_instance",
 					ServiceName:       "query_instance_service",
-					VersionRule:       "2.0.0",
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrServiceNotExists))
@@ -1266,7 +1183,6 @@ var _ = Describe("'Instance' service", func() {
 							Service: &pb.MicroServiceKey{
 								AppId:       TOO_LONG_APPID,
 								ServiceName: "query_instance_service",
-								Version:     "1.0.0",
 							},
 						},
 					},
@@ -1280,7 +1196,6 @@ var _ = Describe("'Instance' service", func() {
 							Service: &pb.MicroServiceKey{
 								AppId:       "",
 								ServiceName: "query_instance_service",
-								Version:     "1.0.0",
 							},
 						},
 					},
@@ -1294,7 +1209,6 @@ var _ = Describe("'Instance' service", func() {
 							Service: &pb.MicroServiceKey{
 								AppId:       " ",
 								ServiceName: "query_instance_service",
-								Version:     "1.0.0",
 							},
 						},
 					},
@@ -1310,7 +1224,6 @@ var _ = Describe("'Instance' service", func() {
 							Service: &pb.MicroServiceKey{
 								AppId:       "query_instance",
 								ServiceName: TOO_LONG_EXISTENCE,
-								Version:     "1.0.0",
 							},
 						},
 					},
@@ -1324,7 +1237,6 @@ var _ = Describe("'Instance' service", func() {
 							Service: &pb.MicroServiceKey{
 								AppId:       "query_instance",
 								ServiceName: "",
-								Version:     "1.0.0",
 							},
 						},
 					},
@@ -1338,65 +1250,6 @@ var _ = Describe("'Instance' service", func() {
 							Service: &pb.MicroServiceKey{
 								AppId:       "query_instance",
 								ServiceName: " ",
-								Version:     "1.0.0",
-							},
-						},
-					},
-				})
-				Expect(err).To(BeNil())
-				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
-
-				By("invalid version")
-				respFind, err = discosvc.BatchFindInstances(getContext(), &pb.BatchFindInstancesRequest{
-					ConsumerServiceId: serviceId1,
-					Services: []*pb.FindService{
-						{
-							Service: &pb.MicroServiceKey{
-								AppId:       "query_instance",
-								ServiceName: "query_instance_service",
-								Version:     "1.32768.0",
-							},
-						},
-					},
-				})
-				Expect(err).To(BeNil())
-				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
-				respFind, err = discosvc.BatchFindInstances(getContext(), &pb.BatchFindInstancesRequest{
-					ConsumerServiceId: serviceId1,
-					Services: []*pb.FindService{
-						{
-							Service: &pb.MicroServiceKey{
-								AppId:       "query_instance",
-								ServiceName: "query_instance_service",
-								Version:     "1.0.0-1.32768.0",
-							},
-						},
-					},
-				})
-				Expect(err).To(BeNil())
-				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
-				respFind, err = discosvc.BatchFindInstances(getContext(), &pb.BatchFindInstancesRequest{
-					ConsumerServiceId: serviceId1,
-					Services: []*pb.FindService{
-						{
-							Service: &pb.MicroServiceKey{
-								AppId:       "query_instance",
-								ServiceName: "query_instance_service",
-								Version:     " ",
-							},
-						},
-					},
-				})
-				Expect(err).To(BeNil())
-				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
-				respFind, err = discosvc.BatchFindInstances(getContext(), &pb.BatchFindInstancesRequest{
-					ConsumerServiceId: serviceId1,
-					Services: []*pb.FindService{
-						{
-							Service: &pb.MicroServiceKey{
-								AppId:       "query_instance",
-								ServiceName: "query_instance_service",
-								Version:     "",
 							},
 						},
 					},
@@ -1432,13 +1285,11 @@ var _ = Describe("'Instance' service", func() {
 
 				By("consumerId is empty")
 				respFind, err = discosvc.BatchFindInstances(getContext(), &pb.BatchFindInstancesRequest{
-					ConsumerServiceId: serviceId1,
 					Services: []*pb.FindService{
 						{
 							Service: &pb.MicroServiceKey{
 								AppId:       "query_instance",
 								ServiceName: "query_instance_service",
-								Version:     "1.0.0+",
 							},
 						},
 					},
@@ -1454,7 +1305,6 @@ var _ = Describe("'Instance' service", func() {
 							Service: &pb.MicroServiceKey{
 								AppId:       "query_instance",
 								ServiceName: "noneservice",
-								Version:     "latest",
 							},
 						},
 					},
@@ -1479,25 +1329,6 @@ var _ = Describe("'Instance' service", func() {
 				Expect(respFind.Instances.Failed[0].Error.Code).To(Equal(pb.ErrInstanceNotExists))
 				Expect(respFind.Instances.Failed[0].Indexes[0]).To(Equal(int64(0)))
 
-				By("provider does not contain 3.0.0+ versions")
-				respFind, err = discosvc.BatchFindInstances(getContext(), &pb.BatchFindInstancesRequest{
-					ConsumerServiceId: serviceId1,
-					Services: []*pb.FindService{
-						{
-							Service: &pb.MicroServiceKey{
-								AppId:       "query_instance",
-								ServiceName: "query_instance_service",
-								Version:     "3.0.0+",
-							},
-						},
-					},
-				})
-				Expect(err).To(BeNil())
-				Expect(respFind.Response.GetCode()).To(Equal(pb.ResponseSuccess))
-				Expect(len(respFind.Services.Updated[0].Instances)).To(Equal(0))
-				Expect(respFind.Services.Updated[0].Index).To(Equal(int64(0)))
-				Expect(respFind.Services.Updated[0].Rev).ToNot(Equal(""))
-
 				By("consumer does not exist")
 				respFind, err = discosvc.BatchFindInstances(getContext(), &pb.BatchFindInstancesRequest{
 					ConsumerServiceId: "notExistServiceId",
@@ -1506,7 +1337,6 @@ var _ = Describe("'Instance' service", func() {
 							Service: &pb.MicroServiceKey{
 								AppId:       "query_instance",
 								ServiceName: "query_instance_service",
-								Version:     "2.0.0",
 							},
 						},
 					},
@@ -1519,64 +1349,33 @@ var _ = Describe("'Instance' service", func() {
 		})
 
 		Context("when query instances", func() {
-			It("should be passed", func() {
+			It("without consumerID should be passed", func() {
+				By("consumerId is empty")
+				respFind, err := discosvc.FindInstances(getContext(), &pb.FindInstancesRequest{
+					ConsumerServiceId: "",
+					AppId:             "query_instance",
+					ServiceName:       "query_instance_service",
+				})
+				Expect(err).To(BeNil())
+				Expect(respFind.Response.GetCode()).To(Equal(pb.ResponseSuccess))
+			})
+
+			It("with consumerID should be passed", func() {
 				By("find with version rule")
 				respFind, err := discosvc.FindInstances(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					AppId:             "query_instance",
 					ServiceName:       "query_instance_service",
-					VersionRule:       "latest",
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId2))
-
-				respFind, err = discosvc.FindInstances(getContext(), &pb.FindInstancesRequest{
-					ConsumerServiceId: serviceId1,
-					AppId:             "query_instance",
-					ServiceName:       "query_instance_service",
-					VersionRule:       "1.0.0+",
-					Tags:              []string{},
-				})
-				Expect(err).To(BeNil())
-				Expect(respFind.Response.GetCode()).To(Equal(pb.ResponseSuccess))
-				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId2))
-
-				respFind, err = discosvc.FindInstances(getContext(), &pb.FindInstancesRequest{
-					ConsumerServiceId: serviceId1,
-					AppId:             "query_instance",
-					ServiceName:       "query_instance_service",
-					VersionRule:       "1.0.0-1.0.1",
-				})
-				Expect(err).To(BeNil())
-				Expect(respFind.Response.GetCode()).To(Equal(pb.ResponseSuccess))
-				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId1))
-
-				respFind, err = discosvc.FindInstances(getContext(), &pb.FindInstancesRequest{
-					ConsumerServiceId: serviceId1,
-					AppId:             "query_instance",
-					ServiceName:       "query_instance_service",
-					VersionRule:       "1.0.0",
-				})
-				Expect(err).To(BeNil())
-				Expect(respFind.Response.GetCode()).To(Equal(pb.ResponseSuccess))
-				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId1))
-
-				respFind, err = discosvc.FindInstances(getContext(), &pb.FindInstancesRequest{
-					ConsumerServiceId: serviceId1,
-					AppId:             "query_instance",
-					ServiceName:       "query_instance_service",
-					VersionRule:       "0.0.0",
-				})
-				Expect(err).To(BeNil())
-				Expect(respFind.Response.GetCode()).To(Equal(pb.ErrServiceNotExists))
 
 				By("find with env")
 				respFind, err = discosvc.FindInstances(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId4,
 					AppId:             "query_instance",
 					ServiceName:       "query_instance_diff_env_service",
-					VersionRule:       "1.0.0",
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ResponseSuccess))
@@ -1587,7 +1386,6 @@ var _ = Describe("'Instance' service", func() {
 					Environment: pb.ENV_PROD,
 					AppId:       "query_instance",
 					ServiceName: "query_instance_diff_env_service",
-					VersionRule: "1.0.0",
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ResponseSuccess))
@@ -1600,7 +1398,6 @@ var _ = Describe("'Instance' service", func() {
 					ConsumerServiceId: serviceId8,
 					AppId:             "query_instance",
 					ServiceName:       "query_instance_with_rev",
-					VersionRule:       "1.0.0",
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ResponseSuccess))
@@ -1613,7 +1410,6 @@ var _ = Describe("'Instance' service", func() {
 					ConsumerServiceId: serviceId8,
 					AppId:             "query_instance",
 					ServiceName:       "query_instance_with_rev",
-					VersionRule:       "1.0.0",
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ResponseSuccess))
@@ -1625,7 +1421,6 @@ var _ = Describe("'Instance' service", func() {
 					ConsumerServiceId: serviceId8,
 					AppId:             "query_instance",
 					ServiceName:       "query_instance_with_rev",
-					VersionRule:       "1.0.0",
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ResponseSuccess))
@@ -1637,7 +1432,6 @@ var _ = Describe("'Instance' service", func() {
 					ConsumerServiceId: serviceId3,
 					AppId:             "query_instance",
 					ServiceName:       "query_instance_service",
-					VersionRule:       "1.0.5",
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ResponseSuccess))
@@ -1648,7 +1442,6 @@ var _ = Describe("'Instance' service", func() {
 					ConsumerServiceId: serviceId1,
 					AppId:             "query_instance",
 					ServiceName:       "query_instance_service",
-					VersionRule:       "latest",
 					Tags:              []string{"notexisttag"},
 				})
 				Expect(err).To(BeNil())
@@ -1668,7 +1461,6 @@ var _ = Describe("'Instance' service", func() {
 						ConsumerServiceId: serviceId6,
 						AppId:             "default",
 						ServiceName:       "query_instance_shared_provider",
-						VersionRule:       "1.0.0",
 					})
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ResponseSuccess))
@@ -1679,7 +1471,6 @@ var _ = Describe("'Instance' service", func() {
 					ConsumerServiceId: serviceId7,
 					AppId:             "default",
 					ServiceName:       "query_instance_shared_provider",
-					VersionRule:       "1.0.0",
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ResponseSuccess))
@@ -1705,7 +1496,6 @@ var _ = Describe("'Instance' service", func() {
 					AppId:             "query_instance_alias",
 					ServiceName:       "query_instance_alias:query_instance_alias",
 					Alias:             "query_instance_alias:query_instance_alias",
-					VersionRule:       "0.0.0.0+",
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ResponseSuccess))
@@ -1724,21 +1514,24 @@ var _ = Describe("'Instance' service", func() {
 							Service: &pb.MicroServiceKey{
 								AppId:       "query_instance",
 								ServiceName: "query_instance_service",
-								Version:     "latest",
 							},
 						},
 						{
 							Service: &pb.MicroServiceKey{
 								AppId:       "query_instance",
-								ServiceName: "query_instance_service",
-								Version:     "1.0.0+",
+								ServiceName: "query_instance_diff_env_service",
 							},
 						},
 						{
 							Service: &pb.MicroServiceKey{
-								AppId:       "query_instance",
+								AppId:       "query_instance_diff_app",
 								ServiceName: "query_instance_service",
-								Version:     "0.0.0",
+							},
+						},
+						{
+							Service: &pb.MicroServiceKey{
+								AppId:       "not-exists",
+								ServiceName: "not-exists",
 							},
 						},
 					},
@@ -1746,10 +1539,11 @@ var _ = Describe("'Instance' service", func() {
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 				Expect(respFind.Services.Updated[0].Index).To(Equal(int64(0)))
-				Expect(respFind.Services.Updated[0].Instances[0].InstanceId).To(Equal(instanceId2))
-				Expect(respFind.Services.Updated[1].Index).To(Equal(int64(1)))
-				Expect(respFind.Services.Updated[1].Instances[0].InstanceId).To(Equal(instanceId2))
-				Expect(respFind.Services.Failed[0].Indexes[0]).To(Equal(int64(2)))
+				assertInstanceContain(respFind.Services.Updated[0].Instances, instanceId1)
+				assertInstanceContain(respFind.Services.Updated[0].Instances, instanceId2)
+				Expect(respFind.Services.Updated[1].Index).To(Equal(int64(2)))
+				Expect(respFind.Services.Updated[1].Instances).To(BeEmpty())
+				Expect(len(respFind.Services.Failed[0].Indexes)).To(Equal(2))
 				Expect(respFind.Services.Failed[0].Error.Code).To(Equal(pb.ErrServiceNotExists))
 
 				By("find with env")
@@ -1760,7 +1554,6 @@ var _ = Describe("'Instance' service", func() {
 							Service: &pb.MicroServiceKey{
 								AppId:       "query_instance",
 								ServiceName: "query_instance_diff_env_service",
-								Version:     "1.0.0",
 							},
 						},
 					},
@@ -1777,7 +1570,6 @@ var _ = Describe("'Instance' service", func() {
 								Environment: pb.ENV_PROD,
 								AppId:       "query_instance",
 								ServiceName: "query_instance_diff_env_service",
-								Version:     "1.0.0",
 							},
 						},
 					},
@@ -1796,14 +1588,12 @@ var _ = Describe("'Instance' service", func() {
 							Service: &pb.MicroServiceKey{
 								AppId:       "query_instance",
 								ServiceName: "query_instance_with_rev",
-								Version:     "1.0.0",
 							},
 						},
 						{
 							Service: &pb.MicroServiceKey{
 								AppId:       "query_instance",
 								ServiceName: "batch_query_instance_with_rev",
-								Version:     "1.0.0",
 							},
 						},
 					},
@@ -1844,7 +1634,6 @@ var _ = Describe("'Instance' service", func() {
 							Service: &pb.MicroServiceKey{
 								AppId:       "query_instance",
 								ServiceName: "query_instance_with_rev",
-								Version:     "1.0.0",
 							},
 							Rev: "x",
 						},
@@ -1873,7 +1662,6 @@ var _ = Describe("'Instance' service", func() {
 							Service: &pb.MicroServiceKey{
 								AppId:       "query_instance",
 								ServiceName: "query_instance_with_rev",
-								Version:     "1.0.0",
 							},
 							Rev: rev,
 						},
@@ -1901,7 +1689,6 @@ var _ = Describe("'Instance' service", func() {
 							Service: &pb.MicroServiceKey{
 								AppId:       "query_instance",
 								ServiceName: "query_instance_service",
-								Version:     "1.0.5",
 							},
 						},
 					},
@@ -1926,7 +1713,6 @@ var _ = Describe("'Instance' service", func() {
 								Service: &pb.MicroServiceKey{
 									AppId:       "default",
 									ServiceName: "query_instance_shared_provider",
-									Version:     "1.0.0",
 								},
 							},
 						},
@@ -1943,7 +1729,6 @@ var _ = Describe("'Instance' service", func() {
 							Service: &pb.MicroServiceKey{
 								AppId:       "default",
 								ServiceName: "query_instance_shared_provider",
-								Version:     "1.0.0",
 							},
 						},
 					},
@@ -2306,3 +2091,14 @@ var _ = Describe("'Instance' service", func() {
 		})
 	})
 })
+
+func assertInstanceContain(instances []*pb.MicroServiceInstance, instanceID string) {
+	found := false
+	for _, instance := range instances {
+		if instance.InstanceId == instanceID {
+			found = true
+			break
+		}
+	}
+	Expect(found).To(BeTrue())
+}

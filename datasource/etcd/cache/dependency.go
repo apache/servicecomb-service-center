@@ -36,6 +36,7 @@ func init() {
 }
 
 type DependencyRuleItem struct {
+	// Access whether the cache is access by outside
 	Access bool
 }
 

@@ -71,18 +71,6 @@ func GetInfoFromProjectKV(key []byte) (domain, project string) {
 	return keys[l-2], keys[l-1]
 }
 
-func GetInfoFromRuleKV(key []byte) (serviceID, ruleID, domainProject string) {
-	keys := ToResponse(key)
-	l := len(keys)
-	if l < 4 {
-		return
-	}
-	serviceID = keys[l-2]
-	ruleID = keys[l-1]
-	domainProject = fmt.Sprintf("%s/%s", keys[l-4], keys[l-3])
-	return
-}
-
 func GetInfoFromTagKV(key []byte) (serviceID, domainProject string) {
 	keys := ToResponse(key)
 	l := len(keys)

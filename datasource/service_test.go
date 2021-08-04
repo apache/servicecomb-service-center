@@ -369,14 +369,6 @@ func TestService_Exist(t *testing.T) {
 			Version:     "2.0.0",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ErrServiceNotExists, resp.Response.GetCode())
-		resp, err = datasource.GetMetadataManager().ExistService(getContext(), &pb.GetExistenceRequest{
-			Type:        datasource.ExistTypeMicroservice,
-			AppId:       "exist_appId_service_ms",
-			ServiceName: "exist_service_service_ms",
-			Version:     "0.0.0-1.0.0",
-		})
-		assert.NoError(t, err)
 		assert.Equal(t, pb.ErrServiceVersionNotExists, resp.Response.GetCode())
 	})
 
@@ -422,36 +414,6 @@ func TestService_Exist(t *testing.T) {
 		})
 		assert.NoError(t, err)
 		assert.Equal(t, serviceId2, resp.ServiceId)
-
-		log.Info("check with latest versionRule")
-		resp, err = datasource.GetMetadataManager().ExistService(getContext(), &pb.GetExistenceRequest{
-			Type:        datasource.ExistTypeMicroservice,
-			AppId:       "exist_appId_service_ms",
-			ServiceName: "es_service_ms",
-			Version:     "latest",
-		})
-		assert.NoError(t, err)
-		assert.Equal(t, serviceId1, resp.ServiceId)
-
-		log.Info("check with 1.0.0+ versionRule")
-		resp, err = datasource.GetMetadataManager().ExistService(getContext(), &pb.GetExistenceRequest{
-			Type:        datasource.ExistTypeMicroservice,
-			AppId:       "exist_appId_service_ms",
-			ServiceName: "es_service_ms",
-			Version:     "1.0.0+",
-		})
-		assert.NoError(t, err)
-		assert.Equal(t, serviceId1, resp.ServiceId)
-
-		log.Info("check with range versionRule")
-		resp, err = datasource.GetMetadataManager().ExistService(getContext(), &pb.GetExistenceRequest{
-			Type:        datasource.ExistTypeMicroservice,
-			AppId:       "exist_appId_service_ms",
-			ServiceName: "es_service_ms",
-			Version:     "0.9.1-1.0.1",
-		})
-		assert.NoError(t, err)
-		assert.Equal(t, serviceId1, resp.ServiceId)
 	})
 }
 

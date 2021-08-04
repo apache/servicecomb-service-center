@@ -881,7 +881,6 @@ func (ds *MetadataManager) FindInstances(ctx context.Context, request *pb.FindIn
 		AppId:       request.AppId,
 		ServiceName: request.ServiceName,
 		Alias:       request.Alias,
-		Version:     request.VersionRule,
 	}
 
 	rev, ok := ctx.Value(util.CtxRequestRevision).(string)
@@ -908,15 +907,15 @@ func (ds *MetadataManager) findInstance(ctx context.Context, request *pb.FindIns
 		service, err = serviceUtil.GetService(ctx, domainProject, request.ConsumerServiceId)
 		if err != nil {
 			if errors.Is(err, datasource.ErrNoData) {
-				log.Debug(fmt.Sprintf("consumer does not exist, consumer[%s] find provider[%s/%s/%s/%s]",
-					request.ConsumerServiceId, request.Environment, request.AppId, request.ServiceName, request.VersionRule))
+				log.Debug(fmt.Sprintf("consumer does not exist, consumer[%s] find provider[%s/%s/%s]",
+					request.ConsumerServiceId, request.Environment, request.AppId, request.ServiceName))
 				return &pb.FindInstancesResponse{
 					Response: pb.CreateResponse(pb.ErrServiceNotExists,
 						fmt.Sprintf("Consumer[%s] does not exist.", request.ConsumerServiceId)),
 				}, nil
 			}
-			log.Error(fmt.Sprintf("get consumer failed, consumer[%s] find provider[%s/%s/%s/%s]",
-				request.ConsumerServiceId, request.Environment, request.AppId, request.ServiceName, request.VersionRule), err)
+			log.Error(fmt.Sprintf("get consumer failed, consumer[%s] find provider[%s/%s/%s]",
+				request.ConsumerServiceId, request.Environment, request.AppId, request.ServiceName), err)
 			return &pb.FindInstancesResponse{
 				Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 			}, err
@@ -929,9 +928,9 @@ func (ds *MetadataManager) findInstance(ctx context.Context, request *pb.FindIns
 	ctx = util.SetTargetDomainProject(ctx, util.ParseDomain(ctx), util.ParseProject(ctx))
 	provider.Tenant = util.ParseTargetDomainProject(ctx)
 
-	findFlag := fmt.Sprintf("Consumer[%s][%s/%s/%s/%s] find provider[%s/%s/%s/%s]",
+	findFlag := fmt.Sprintf("Consumer[%s][%s/%s/%s/%s] find provider[%s/%s/%s]",
 		request.ConsumerServiceId, service.Environment, service.AppId, service.ServiceName, service.Version,
-		provider.Environment, provider.AppId, provider.ServiceName, provider.Version)
+		provider.Environment, provider.AppId, provider.ServiceName)
 
 	// cache
 	var item *cache.VersionRuleCacheItem
@@ -1022,15 +1021,14 @@ func (ds *MetadataManager) genFindResult(ctx context.Context, oldRev string, ite
 
 func (ds *MetadataManager) reshapeProviderKey(ctx context.Context, provider *pb.MicroServiceKey, providerID string) (
 	*pb.MicroServiceKey, error) {
-	// 维护version的规则,service name 可能是别名，所以重新获取
+	// service name 可能是别名，所以重新获取
 	providerService, err := serviceUtil.GetService(ctx, provider.Tenant, providerID)
 	if err != nil {
 		return nil, err
 	}
 
-	versionRule := provider.Version
 	provider = pb.MicroServiceToKey(provider.Tenant, providerService)
-	provider.Version = versionRule
+	provider.Version = ""
 	return provider, nil
 }
 
@@ -1200,7 +1198,6 @@ func (ds *MetadataManager) batchFindServices(ctx context.Context, request *pb.Ba
 			ConsumerServiceId: request.ConsumerServiceId,
 			AppId:             key.Service.AppId,
 			ServiceName:       key.Service.ServiceName,
-			VersionRule:       key.Service.Version,
 			Environment:       key.Service.Environment,
 		})
 		if err != nil {
@@ -2098,14 +2095,6 @@ func (ds *MetadataManager) DeleteServicePri(ctx context.Context, serviceID strin
 		return pb.CreateResponse(pb.ErrInternal, err.Error()), err
 	}
 	opts = append(opts, optDeleteDep)
-
-	//删除黑白名单
-	opts = append(opts, client.OpDel(
-		client.WithStrKey(path.GenerateServiceRuleKey(domainProject, serviceID, "")),
-		client.WithPrefix()))
-	opts = append(opts, client.OpDel(client.WithStrKey(
-		util.StringJoin([]string{path.GetServiceRuleIndexRootKey(domainProject), serviceID, ""}, path.SPLIT)),
-		client.WithPrefix()))
 
 	//删除schemas
 	opts = append(opts, client.OpDel(
