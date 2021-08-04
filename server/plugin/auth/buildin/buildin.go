@@ -155,7 +155,7 @@ func (ba *TokenAuthenticator) VerifyToken(req *http.Request) (interface{}, error
 	if err != nil {
 		return nil, err
 	}
-	token.WithRequest(req, to)
+	token.WithRequest(req, v)
 	return claims, nil
 }
 
