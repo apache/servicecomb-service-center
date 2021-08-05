@@ -19,6 +19,7 @@ package servicecenter
 
 import (
 	"context"
+	"fmt"
 
 	sc "github.com/apache/servicecomb-service-center/client"
 
@@ -78,7 +79,7 @@ func (c *Client) GetAll(ctx context.Context) (*pb.SyncData, error) {
 
 		ss, err := c.cli.GetSchemasByServiceID(ctx, domain, project, service.Value.ServiceId)
 		if err != nil {
-			log.Warnf("get schemas by serviceId failed: %s", err)
+			log.Warn(fmt.Sprintf("get schemas by serviceId failed: %s", err))
 			continue
 		}
 		schemas = append(schemas, ss...)

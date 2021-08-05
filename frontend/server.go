@@ -33,7 +33,7 @@ func Serve(c Config) {
 	// handle all requests by serving a file of the same name
 	dir, err := os.Getwd()
 	if err != nil {
-		log.Fatalf("Cant get cwd, error:%s", err)
+		log.Fatalf("Cant get cwd, error: %s", err)
 	}
 	staticPath := filepath.Join(dir, "app")
 	e.Static("/", staticPath)

@@ -17,6 +17,7 @@ package servicecenter
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/go-chassis/cari/pkg/errsvc"
@@ -71,7 +72,7 @@ func (i *ClusterIndexer) search(ctx context.Context, opts ...etcdclient.PluginOp
 	default:
 		return &sd.Response{}, nil
 	}
-	log.Debugf("search '%s' match special options, request sc server, opts: %s", key, op)
+	log.Debug(fmt.Sprintf("search '%s' match special options, request sc server, opts: %s", key, op))
 	return
 }
 

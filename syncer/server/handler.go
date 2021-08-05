@@ -41,11 +41,11 @@ const (
 
 // tickHandler Timed task handler
 func (s *Server) tickHandler() {
-	log.Debugf("is leader: %v", s.etcd.IsLeader())
+	log.Debug(fmt.Sprintf("is leader: %v", s.etcd.IsLeader()))
 	if !s.etcd.IsLeader() {
 		return
 	}
-	log.Debugf("Handle Tick")
+	log.Debug("Handle Tick")
 
 	// sends a UserEvent on Serf, the event will be broadcast between members
 	s.mux.Lock()
@@ -99,18 +99,18 @@ func (s *Server) userEvent(data ...[]byte) (success bool) {
 	// Get member information and get synchronized data from it
 	members := s.serf.MembersByTags(tags)
 	if len(members) == 0 {
-		log.Warnf("serf member = %s is not found", clusterName)
+		log.Warn(fmt.Sprintf("serf member = %s is not found", clusterName))
 		return
 	}
 
 	// todo: grpc supports multi-address polling
 	// Get dta from remote member
 	endpoint := fmt.Sprintf("%s:%s", members[0].Addr, members[0].Tags[tagKeyRPCPort])
-	log.Debugf("Going to pull data from %s %s", members[0].Name, endpoint)
+	log.Debug(fmt.Sprintf("going to pull data from %s %s", members[0].Name, endpoint))
 
 	enabled, err := strconv.ParseBool(members[0].Tags[tagKeyTLSEnabled])
 	if err != nil {
-		log.Warnf("get tls enabled failed, err = %s", err)
+		log.Warn(fmt.Sprintf("get tls enabled failed, err = %s", err))
 	}
 	var tlsConfig *tls.Config
 	if enabled {
@@ -126,7 +126,7 @@ func (s *Server) userEvent(data ...[]byte) (success bool) {
 	cli := client.NewSyncClient(endpoint, tlsConfig)
 	syncData, err := cli.Pull(context.Background(), s.conf.Listener.RPCAddr)
 	if err != nil {
-		log.Errorf(err, "Pull other serf instances failed, node name is '%s'", members[0].Name)
+		log.Error(fmt.Sprintf("Pull other serf instances failed, node name is '%s'", members[0].Name), err)
 		return
 	}
 	// Registry instances to servicecenter and update storage of it

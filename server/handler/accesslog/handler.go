@@ -19,17 +19,16 @@ package accesslog
 
 import (
 	"fmt"
-	"github.com/go-chassis/openlog"
 	"net/http"
 	"os"
 	"time"
-
-	"github.com/apache/servicecomb-service-center/server/config"
 
 	"github.com/apache/servicecomb-service-center/pkg/chain"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/config"
+	"github.com/go-chassis/openlog"
 )
 
 // Handler implements chain.Handler

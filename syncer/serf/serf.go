@@ -19,6 +19,7 @@ package serf
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -180,13 +181,13 @@ func (s *Server) Query(name string, payload []byte, callback CallbackFunc, opts 
 
 // Join asks the Serf instance to join. See the Serf.Join function.
 func (s *Server) Join(addrs []string) (n int, err error) {
-	log.Infof("serf: join to: %v replay : %v", addrs)
+	log.Info(fmt.Sprintf("serf: join to: %v", addrs))
 	n, err = s.serf.Join(addrs, true)
 	if n > 0 {
-		log.Infof("serf: joined: %d nodes", n)
+		log.Info(fmt.Sprintf("serf: joined: %d nodes", n))
 	}
 	if err != nil {
-		log.Warnf("serf: error joining: %v", err)
+		log.Warn(fmt.Sprintf("serf: error joining: %v", err))
 	}
 	return
 }
@@ -236,9 +237,9 @@ func (s *Server) responseCallback(resp *serf.QueryResponse, callback CallbackFun
 	for {
 		select {
 		case a := <-resp.AckCh():
-			log.Infof("query response ack: %s", a)
+			log.Info(fmt.Sprintf("query response ack: %s", a))
 		case r := <-resp.ResponseCh():
-			log.Infof("query response: from %s, content %s", r.From, string(r.Payload))
+			log.Info(fmt.Sprintf("query response: from %s, content %s", r.From, string(r.Payload)))
 			callback(r.From, r.Payload)
 		case <-hourglass:
 			log.Info("query response timeout")

@@ -20,6 +20,7 @@ package rest
 import (
 	"compress/gzip"
 	"crypto/tls"
+	"fmt"
 	"net"
 	"net/http"
 	"os"
@@ -119,7 +120,7 @@ func (srv *Server) Serve() (err error) {
 	defer log.Recover()
 	srv.state = serverStateRunning
 	err = srv.Server.Serve(srv.Listener)
-	log.Errorf(err, "rest server serve failed")
+	log.Error("rest server serve failed", err)
 	srv.wg.Wait()
 	return
 }
@@ -245,7 +246,7 @@ func (srv *Server) Shutdown() {
 	srv.state = serverStateTerminating
 	err := srv.Listener.Close()
 	if err != nil {
-		log.Errorf(err, "server listener close failed")
+		log.Error("server listener close failed", err)
 	}
 
 	if srv.GraceTimeout >= 0 {
@@ -274,10 +275,10 @@ func (srv *Server) gracefulStop(d time.Duration) {
 	}
 
 	if n != 0 {
-		log.Warnf("%s timed out, force close %d connection(s)", d, n)
+		log.Warn(fmt.Sprintf("%s timed out, force close %d connection(s)", d, n))
 		err := srv.Server.Close()
 		if err != nil {
-			log.Errorf(err, "server close failed")
+			log.Error("server close failed", err)
 		}
 	}
 }

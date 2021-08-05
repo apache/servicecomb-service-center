@@ -19,6 +19,7 @@ package disco
 
 import (
 	"context"
+	"fmt"
 
 	pb "github.com/go-chassis/cari/discovery"
 
@@ -32,7 +33,7 @@ func (s *MicroServiceService) AddTags(ctx context.Context, in *pb.AddServiceTags
 	err := validator.Validate(in)
 	if err != nil {
 		remoteIP := util.GetIPFromContext(ctx)
-		log.Errorf(err, "add service[%s]'s tags %v failed, operator: %s", in.ServiceId, in.Tags, remoteIP)
+		log.Error(fmt.Sprintf("add service[%s]'s tags %v failed, operator: %s", in.ServiceId, in.Tags, remoteIP), err)
 		return &pb.AddServiceTagsResponse{
 			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
 		}, nil
@@ -46,7 +47,7 @@ func (s *MicroServiceService) UpdateTag(ctx context.Context, in *pb.UpdateServic
 	if err != nil {
 		remoteIP := util.GetIPFromContext(ctx)
 		tagFlag := util.StringJoin([]string{in.Key, in.Value}, "/")
-		log.Errorf(err, "update service[%s]'s tag[%s] failed, operator: %s", in.ServiceId, tagFlag, remoteIP)
+		log.Error(fmt.Sprintf("update service[%s]'s tag[%s] failed, operator: %s", in.ServiceId, tagFlag, remoteIP), err)
 		return &pb.UpdateServiceTagResponse{
 			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
 		}, nil
@@ -59,7 +60,7 @@ func (s *MicroServiceService) DeleteTags(ctx context.Context, in *pb.DeleteServi
 	err := validator.Validate(in)
 	if err != nil {
 		remoteIP := util.GetIPFromContext(ctx)
-		log.Errorf(err, "delete service[%s]'s tags %v failed, operator: %s", in.ServiceId, in.Keys, remoteIP)
+		log.Error(fmt.Sprintf("delete service[%s]'s tags %v failed, operator: %s", in.ServiceId, in.Keys, remoteIP), err)
 		return &pb.DeleteServiceTagsResponse{
 			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
 		}, nil
@@ -71,7 +72,7 @@ func (s *MicroServiceService) DeleteTags(ctx context.Context, in *pb.DeleteServi
 func (s *MicroServiceService) GetTags(ctx context.Context, in *pb.GetServiceTagsRequest) (*pb.GetServiceTagsResponse, error) {
 	err := validator.Validate(in)
 	if err != nil {
-		log.Errorf(err, "get service[%s]'s tags failed", in.ServiceId)
+		log.Error(fmt.Sprintf("get service[%s]'s tags failed", in.ServiceId), err)
 		return &pb.GetServiceTagsResponse{
 			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
 		}, nil

@@ -16,6 +16,7 @@
 package alarm
 
 import (
+	"fmt"
 	"sync"
 
 	nf "github.com/apache/servicecomb-service-center/pkg/event"
@@ -82,7 +83,7 @@ func (ac *Service) OnMessage(evt nf.Event) {
 	default:
 		ac.alarms.Put(alarm.ID, alarm)
 	}
-	log.Debugf("alarm[%s] %s, %v", alarm.ID, alarm.Status, alarm.Fields)
+	log.Debug(fmt.Sprintf("alarm[%s] %s, %v", alarm.ID, alarm.Status, alarm.Fields))
 }
 
 func NewAlarmService() *Service {

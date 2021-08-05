@@ -2,6 +2,7 @@ package disco
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -20,7 +21,7 @@ func UnregisterService(ctx context.Context, request *pb.DeleteServiceRequest) (*
 func GetService(ctx context.Context, in *pb.GetServiceRequest) (*pb.MicroService, error) {
 	err := validator.Validate(in)
 	if err != nil {
-		log.Errorf(err, "get micro-service[%s] failed", in.ServiceId)
+		log.Error(fmt.Sprintf("get micro-service[%s] failed", in.ServiceId), err)
 		return nil, pb.NewError(pb.ErrInvalidParams, err.Error())
 	}
 	return datasource.GetMetadataManager().GetService(ctx, in)

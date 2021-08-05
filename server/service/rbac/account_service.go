@@ -41,7 +41,7 @@ func CreateAccount(ctx context.Context, a *rbac.Account) error {
 	}
 	err := validator.ValidateCreateAccount(a)
 	if err != nil {
-		log.Errorf(err, "create account [%s] failed", a.Name)
+		log.Error(fmt.Sprintf("create account [%s] failed", a.Name), err)
 		return discovery.NewError(discovery.ErrInvalidParams, err.Error())
 	}
 	if len(a.Status) == 0 {
@@ -49,7 +49,7 @@ func CreateAccount(ctx context.Context, a *rbac.Account) error {
 	}
 	err = a.Check()
 	if err != nil {
-		log.Errorf(err, "create account [%s] failed", a.Name)
+		log.Error(fmt.Sprintf("create account [%s] failed", a.Name), err)
 		return discovery.NewError(discovery.ErrInvalidParams, err.Error())
 	}
 	if err = checkRoleNames(ctx, a.Roles); err != nil {
@@ -58,10 +58,10 @@ func CreateAccount(ctx context.Context, a *rbac.Account) error {
 
 	err = datasource.GetAccountManager().CreateAccount(ctx, a)
 	if err == nil {
-		log.Infof("create account [%s] success", a.Name)
+		log.Info(fmt.Sprintf("create account [%s] success", a.Name))
 		return nil
 	}
-	log.Errorf(err, "create account [%s] failed", a.Name)
+	log.Error(fmt.Sprintf("create account [%s] failed", a.Name), err)
 	if err == datasource.ErrAccountDuplicated {
 		return rbac.NewError(rbac.ErrAccountConflict, err.Error())
 	}
@@ -84,7 +84,7 @@ func UpdateAccount(ctx context.Context, name string, a *rbac.Account) error {
 
 	oldAccount, err := GetAccount(ctx, name)
 	if err != nil {
-		log.Errorf(err, "get account [%s] failed", name)
+		log.Error(fmt.Sprintf("get account [%s] failed", name), err)
 		return err
 	}
 	if len(a.Status) != 0 {
@@ -98,10 +98,10 @@ func UpdateAccount(ctx context.Context, name string, a *rbac.Account) error {
 	}
 	err = datasource.GetAccountManager().UpdateAccount(ctx, name, oldAccount)
 	if err != nil {
-		log.Errorf(err, "can not edit account info")
+		log.Error("can not edit account info", err)
 		return err
 	}
-	log.Infof("account [%s] is edit", oldAccount.ID)
+	log.Info(fmt.Sprintf("account [%s] is edit", oldAccount.ID))
 	return nil
 }
 
@@ -128,7 +128,7 @@ func DeleteAccount(ctx context.Context, name string) error {
 	}
 	exist, err := datasource.GetAccountManager().AccountExist(ctx, name)
 	if err != nil {
-		log.Errorf(err, "check account [%s] exit failed", name)
+		log.Error(fmt.Sprintf("check account [%s] exit failed", name), err)
 		return err
 	}
 	if !exist {
@@ -143,7 +143,7 @@ func DeleteAccount(ctx context.Context, name string) error {
 func EditAccount(ctx context.Context, a *rbac.Account) error {
 	exist, err := datasource.GetAccountManager().AccountExist(ctx, a.Name)
 	if err != nil {
-		log.Errorf(err, "can not edit account info")
+		log.Error("can not edit account info", err)
 		return err
 	}
 	if !exist {
@@ -152,10 +152,10 @@ func EditAccount(ctx context.Context, a *rbac.Account) error {
 
 	err = datasource.GetAccountManager().UpdateAccount(ctx, a.Name, a)
 	if err != nil {
-		log.Errorf(err, "can not edit account info")
+		log.Error("can not edit account info", err)
 		return err
 	}
-	log.Infof("account [%s] is edit", a.ID)
+	log.Info(fmt.Sprintf("account [%s] is edit", a.ID))
 	return nil
 }
 
@@ -163,7 +163,7 @@ func checkRoleNames(ctx context.Context, roles []string) error {
 	for _, name := range roles {
 		exist, err := RoleExist(ctx, name)
 		if err != nil {
-			log.Errorf(err, "check role [%s] exist failed", name)
+			log.Error(fmt.Sprintf("check role [%s] exist failed", name), err)
 			return err
 		}
 		if !exist {

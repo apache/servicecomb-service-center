@@ -16,6 +16,8 @@
 package aggregate
 
 import (
+	"fmt"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
@@ -66,18 +68,18 @@ func getLogConflictFunc(t sd.Type) func(origin, conflict *sd.KeyValue) {
 		return func(origin, conflict *sd.KeyValue) {
 			if serviceID, conflictID := origin.Value.(string), conflict.Value.(string); conflictID != serviceID {
 				key := path.GetInfoFromSvcIndexKV(conflict.Key)
-				log.Warnf("conflict! can not merge microservice index[%s][%s][%s/%s/%s/%s], found one[%s] in cluster[%s]",
+				log.Warn(fmt.Sprintf("conflict! can not merge microservice index[%s][%s][%s/%s/%s/%s], found one[%s] in cluster[%s]",
 					conflict.ClusterName, conflictID, key.Environment, key.AppId, key.ServiceName, key.Version,
-					serviceID, origin.ClusterName)
+					serviceID, origin.ClusterName))
 			}
 		}
 	case kv.ServiceAlias:
 		return func(origin, conflict *sd.KeyValue) {
 			if serviceID, conflictID := origin.Value.(string), conflict.Value.(string); conflictID != serviceID {
 				key := path.GetInfoFromSvcAliasKV(conflict.Key)
-				log.Warnf("conflict! can not merge microservice alias[%s][%s][%s/%s/%s/%s], found one[%s] in cluster[%s]",
+				log.Warn(fmt.Sprintf("conflict! can not merge microservice alias[%s][%s][%s/%s/%s/%s], found one[%s] in cluster[%s]",
 					conflict.ClusterName, conflictID, key.Environment, key.AppId, key.ServiceName, key.Version,
-					serviceID, origin.ClusterName)
+					serviceID, origin.ClusterName))
 			}
 		}
 	}
@@ -90,7 +92,7 @@ func NewAggregator(t sd.Type, cfg *sd.Config) *Aggregator {
 		// create and get all plugin instances
 		repo, err := sd.New(sd.Options{Kind: sd.Kind(name)})
 		if err != nil {
-			log.Errorf(err, "failed to new plugin instance[%s]", name)
+			log.Error(fmt.Sprintf("failed to new plugin instance[%s]", name), err)
 			continue
 		}
 		as.Adaptors = append(as.Adaptors, repo.New(t, cfg))

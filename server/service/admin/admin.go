@@ -44,6 +44,6 @@ func AlarmList(ctx context.Context, in *dump.AlarmListRequest) (*dump.AlarmListR
 
 func ClearAlarm(ctx context.Context, in *dump.ClearAlarmRequest) (*dump.ClearAlarmResponse, error) {
 	alarm.ClearAll()
-	log.Infof("service center alarms are cleared")
+	log.Info("service center alarms are cleared")
 	return &dump.ClearAlarmResponse{}, nil
 }

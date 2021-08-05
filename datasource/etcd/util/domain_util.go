@@ -19,6 +19,7 @@ package util
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
@@ -111,7 +112,7 @@ func NewDomainProject(ctx context.Context, domain, project string) error {
 	if !ok && err == nil {
 		ok, err = AddDomain(ctx, domain)
 		if ok {
-			log.Infof("new domain(%s)", domain)
+			log.Info(fmt.Sprintf("new domain(%s)", domain))
 		}
 	}
 	if err != nil {
@@ -121,7 +122,7 @@ func NewDomainProject(ctx context.Context, domain, project string) error {
 	if !ok && err == nil {
 		ok, err = AddProject(ctx, domain, project)
 		if ok {
-			log.Infof("new project(%s/%s)", domain, project)
+			log.Info(fmt.Sprintf("new project(%s/%s)", domain, project))
 		}
 	}
 	return err

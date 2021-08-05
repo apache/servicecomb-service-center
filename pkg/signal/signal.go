@@ -18,6 +18,7 @@
 package signal
 
 import (
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -31,7 +32,7 @@ func RegisterListener() {
 }
 
 func HandleSignals() {
-	defer log.Sync()
+	defer log.Flush()
 
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh,
@@ -43,10 +44,10 @@ func HandleSignals() {
 		switch sig {
 		case syscall.SIGINT, syscall.SIGKILL, syscall.SIGTERM:
 			<-time.After(wait)
-			log.Warnf("waiting for server response timed out(%s), force shutdown", wait)
+			log.Warn(fmt.Sprintf("waiting for server response timed out(%s), force shutdown", wait))
 			os.Exit(1)
 		default:
-			log.Warnf("received signal '%v'", sig)
+			log.Warn(fmt.Sprintf("received signal '%v'", sig))
 		}
 	}
 }

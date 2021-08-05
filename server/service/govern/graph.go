@@ -19,6 +19,7 @@ package govern
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -94,8 +95,8 @@ func Draw(ctx context.Context, withShared bool) (*Graph, error) {
 		}
 		proResp, err := core.ServiceAPI.GetConsumerDependencies(ctx, proRequest)
 		if err != nil {
-			log.Errorf(err, "get service[%s/%s/%s/%s]'s providers failed",
-				service.Environment, service.AppId, service.ServiceName, service.Version)
+			log.Error(fmt.Sprintf("get service[%s/%s/%s/%s]'s providers failed",
+				service.Environment, service.AppId, service.ServiceName, service.Version), err)
 			return nil, err
 		}
 

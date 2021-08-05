@@ -19,6 +19,7 @@ package buildin
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/plugin"
@@ -31,11 +32,11 @@ func init() {
 
 func New() plugin.Instance {
 	quota.Init()
-	log.Infof("quota init, service: %d, instance: %d, schema: %d/service, tag: %d/service"+
+	log.Info(fmt.Sprintf("quota init, service: %d, instance: %d, schema: %d/service, tag: %d/service"+
 		", account: %d, role: %d",
 		quota.DefaultServiceQuota, quota.DefaultInstanceQuota,
 		quota.DefaultSchemaQuota, quota.DefaultTagQuota,
-		quota.DefaultAccountQuota, quota.DefaultRoleQuota)
+		quota.DefaultAccountQuota, quota.DefaultRoleQuota))
 	return &Quota{}
 }
 

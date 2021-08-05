@@ -94,10 +94,10 @@ func getPermsByRoles(ctx context.Context, roleList []string) ([]*rbac.Permission
 			continue
 		}
 		if err == datasource.ErrRoleNotExist {
-			log.Warnf("role [%s] not exist", name)
+			log.Warn(fmt.Sprintf("role [%s] not exist", name))
 			continue
 		}
-		log.Errorf(err, "get role [%s] failed", name)
+		log.Error(fmt.Sprintf("get role [%s] failed", name), err)
 		return nil, err
 	}
 	return allPerms, nil

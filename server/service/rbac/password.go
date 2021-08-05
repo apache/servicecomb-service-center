@@ -19,6 +19,7 @@ package rbac
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/cari/rbac"
@@ -74,7 +75,7 @@ func changePassword(ctx context.Context, name, currentPassword, pwd string) erro
 	}
 	ip := util.GetIPFromContext(ctx)
 	if IsBanned(MakeBanKey(name, ip)) {
-		log.Warnf("ip [%s] is banned, account: %s", ip, name)
+		log.Warn(fmt.Sprintf("ip [%s] is banned, account: %s", ip, name))
 		return ErrAccountBlocked
 	}
 	if currentPassword == pwd {

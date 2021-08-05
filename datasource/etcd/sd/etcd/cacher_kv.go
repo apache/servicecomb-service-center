@@ -89,7 +89,7 @@ func (c *KvCacher) doList(cfg sdcommon.ListWatchConfig) error {
 	// just reset the cacher if cache marked dirty
 	if c.cache.Dirty() {
 		c.reset(rev, resources)
-		log.Warnf("Cache[%s] is reset!", c.cache.Name())
+		log.Warn(fmt.Sprintf("cache[%s] is reset!", c.cache.Name()))
 		return nil
 	}
 
@@ -98,8 +98,8 @@ func (c *KvCacher) doList(cfg sdcommon.ListWatchConfig) error {
 	// there is no change between List() and cache, then stop the self preservation
 	if ec, kc := len(evts), len(resources); c.Cfg.DeferHandler != nil && ec == 0 && kc != 0 &&
 		c.Cfg.DeferHandler.Reset() {
-		log.Warnf("most of the protected data(%d/%d) are recovered",
-			kc, c.cache.GetAll(nil))
+		log.Warn(fmt.Sprintf("most of the protected data(%d/%d) are recovered",
+			kc, c.cache.GetAll(nil)))
 	}
 
 	// notify the subscribers
@@ -181,11 +181,11 @@ func (c *KvCacher) handleEventBus(eventBus *sdcommon.EventBus) error {
 					evt.KV = c.doParse(resource)
 				}
 			default:
-				log.Errorf(nil, "unknown KeyValue %v", resource)
+				log.Error(fmt.Sprintf("unknown KeyValue %v", resource), nil)
 				continue
 			}
 			if evt.KV == nil {
-				log.Errorf(nil, "failed to parse KeyValue %v", resource)
+				log.Error(fmt.Sprintf("failed to parse KeyValue %v", resource), nil)
 				continue
 			}
 			evts = append(evts, evt)
@@ -206,7 +206,7 @@ func (c *KvCacher) needDeferHandle(evts []sd.KvEvent) bool {
 }
 
 func (c *KvCacher) refresh(ctx context.Context) {
-	log.Debugf("start to list and watch %s", c.Cfg)
+	log.Debug(fmt.Sprintf("start to list and watch %s", c.Cfg))
 	retries := 0
 
 	timer := time.NewTimer(sdcommon.MinWaitInterval)
@@ -222,7 +222,7 @@ func (c *KvCacher) refresh(ctx context.Context) {
 
 		select {
 		case <-ctx.Done():
-			log.Debugf("stop to list and watch %s", c.Cfg)
+			log.Debug(fmt.Sprintf("stop to list and watch %s", c.Cfg))
 			return
 		case <-timer.C:
 			timer.Reset(nextPeriod)
@@ -420,12 +420,12 @@ func (c *KvCacher) buildCache(evts []sd.KvEvent) {
 			case init:
 				evt.Type = rmodel.EVT_INIT
 			case !ok && evt.Type != rmodel.EVT_CREATE:
-				log.Warnf("unexpected %s event! it should be %s key %s",
-					evt.Type, rmodel.EVT_CREATE, key)
+				log.Warn(fmt.Sprintf("unexpected %s event! it should be %s key %s",
+					evt.Type, rmodel.EVT_CREATE, key))
 				evt.Type = rmodel.EVT_CREATE
 			case ok && evt.Type != rmodel.EVT_UPDATE:
-				log.Warnf("unexpected %s event! it should be %s key %s",
-					evt.Type, rmodel.EVT_UPDATE, key)
+				log.Warn(fmt.Sprintf("unexpected %s event! it should be %s key %s",
+					evt.Type, rmodel.EVT_UPDATE, key))
 				evt.Type = rmodel.EVT_UPDATE
 			}
 
@@ -433,8 +433,8 @@ func (c *KvCacher) buildCache(evts []sd.KvEvent) {
 			evts[i] = evt
 		case rmodel.EVT_DELETE:
 			if !ok {
-				log.Warnf("unexpected %s event! key %s does not cache",
-					evt.Type, key)
+				log.Warn(fmt.Sprintf("unexpected %s event! key %s does not cache",
+					evt.Type, key))
 			} else {
 				evt.KV = prevKv
 				c.cache.Remove(key)
@@ -460,7 +460,7 @@ func (c *KvCacher) notify(evts []sd.KvEvent) {
 func (c *KvCacher) doParse(src *sdcommon.Resource) (kv *sd.KeyValue) {
 	kv = sd.NewKeyValue()
 	if err := ParseResourceToEtcdKeyValue(kv, src, c.Cfg.Parser); err != nil {
-		log.Errorf(err, "parse %s value failed", src.Key)
+		log.Error(fmt.Sprintf("parse %s value failed", src.Key), err)
 		return nil
 	}
 	return

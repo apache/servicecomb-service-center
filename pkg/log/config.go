@@ -33,7 +33,7 @@ type Config struct {
 	NoLevel      bool // if true, not record level
 	NoCaller     bool // if true, not record caller
 	// Event driven
-	ExitFunc    func()
+	FlushFunc   func()
 	RecoverFunc func(r interface{})
 }
 
@@ -63,7 +63,7 @@ func (cfg Config) WithNoCaller(b bool) Config {
 }
 
 func (cfg Config) WithExitFunc(f func()) Config {
-	cfg.ExitFunc = f
+	cfg.FlushFunc = f
 	return cfg
 }
 

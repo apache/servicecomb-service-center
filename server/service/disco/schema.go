@@ -19,6 +19,7 @@ package disco
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -31,7 +32,7 @@ import (
 func (s *MicroServiceService) GetSchemaInfo(ctx context.Context, in *pb.GetSchemaRequest) (*pb.GetSchemaResponse, error) {
 	err := validator.Validate(in)
 	if err != nil {
-		log.Errorf(nil, "get schema[%s/%s] failed", in.ServiceId, in.SchemaId)
+		log.Error(fmt.Sprintf("get schema[%s/%s] failed", in.ServiceId, in.SchemaId), nil)
 		return &pb.GetSchemaResponse{
 			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
 		}, nil
@@ -43,7 +44,7 @@ func (s *MicroServiceService) GetSchemaInfo(ctx context.Context, in *pb.GetSchem
 func (s *MicroServiceService) GetAllSchemaInfo(ctx context.Context, in *pb.GetAllSchemaRequest) (*pb.GetAllSchemaResponse, error) {
 	err := validator.Validate(in)
 	if err != nil {
-		log.Errorf(nil, "get service[%s] all schemas failed", in.ServiceId)
+		log.Error(fmt.Sprintf("get service[%s] all schemas failed", in.ServiceId), nil)
 		return &pb.GetAllSchemaResponse{
 			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
 		}, nil
@@ -56,7 +57,7 @@ func (s *MicroServiceService) DeleteSchema(ctx context.Context, in *pb.DeleteSch
 	err := validator.Validate(in)
 	if err != nil {
 		remoteIP := util.GetIPFromContext(ctx)
-		log.Errorf(err, "delete schema[%s/%s] failed, operator: %s", in.ServiceId, in.SchemaId, remoteIP)
+		log.Error(fmt.Sprintf("delete schema[%s/%s] failed, operator: %s", in.ServiceId, in.SchemaId, remoteIP), err)
 		return &pb.DeleteSchemaResponse{
 			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
 		}, nil
@@ -81,7 +82,7 @@ func (s *MicroServiceService) ModifySchemas(ctx context.Context, in *pb.ModifySc
 	err := validator.Validate(in)
 	if err != nil {
 		remoteIP := util.GetIPFromContext(ctx)
-		log.Errorf(err, "modify service[%s] schemas failed, operator: %s", in.ServiceId, remoteIP)
+		log.Error(fmt.Sprintf("modify service[%s] schemas failed, operator: %s", in.ServiceId, remoteIP), err)
 		return &pb.ModifySchemasResponse{
 			Response: pb.CreateResponse(pb.ErrInvalidParams, "Invalid request."),
 		}, nil
@@ -117,23 +118,23 @@ func (s *MicroServiceService) canModifySchema(ctx context.Context, domainProject
 	serviceID := in.ServiceId
 	schemaID := in.SchemaId
 	if len(schemaID) == 0 || len(serviceID) == 0 {
-		log.Errorf(nil, "update schema[%s/%s] failed, invalid params, operator: %s",
-			serviceID, schemaID, remoteIP)
+		log.Error(fmt.Sprintf("update schema[%s/%s] failed, invalid params, operator: %s",
+			serviceID, schemaID, remoteIP), nil)
 		return pb.NewError(pb.ErrInvalidParams, "serviceID or schemaID is nil")
 	}
 	err := validator.Validate(in)
 	if err != nil {
-		log.Errorf(err, "update schema[%s/%s] failed, operator: %s", serviceID, schemaID, remoteIP)
+		log.Error(fmt.Sprintf("update schema[%s/%s] failed, operator: %s", serviceID, schemaID, remoteIP), err)
 		return pb.NewError(pb.ErrInvalidParams, err.Error())
 	}
 
 	res := quota.NewApplyQuotaResource(quota.TypeSchema, domainProject, serviceID, 1)
 	if errQuota := quota.Apply(ctx, res); errQuota != nil {
-		log.Errorf(errQuota, "update schema[%s/%s] failed, operator: %s", serviceID, schemaID, remoteIP)
+		log.Error(fmt.Sprintf("update schema[%s/%s] failed, operator: %s", serviceID, schemaID, remoteIP), errQuota)
 		return errQuota
 	}
 	if len(in.Summary) == 0 {
-		log.Warnf("schema[%s/%s]'s summary is empty, operator: %s", serviceID, schemaID, remoteIP)
+		log.Warn(fmt.Sprintf("schema[%s/%s]'s summary is empty, operator: %s", serviceID, schemaID, remoteIP))
 	}
 	return nil
 }

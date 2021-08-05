@@ -206,13 +206,13 @@ func (ds *SCManager) selfHeartBeat(pCtx context.Context) error {
 		return err
 	}
 	if respI.Response.GetCode() == pb.ResponseSuccess {
-		log.Debugf("update service center instance[%s/%s] heartbeat",
-			core.Instance.ServiceId, core.Instance.InstanceId)
+		log.Debug(fmt.Sprintf("update service center instance[%s/%s] heartbeat",
+			core.Instance.ServiceId, core.Instance.InstanceId))
 		return nil
 	}
 	err = fmt.Errorf(respI.Response.GetMessage())
-	log.Errorf(err, "update service center instance[%s/%s] heartbeat failed",
-		core.Instance.ServiceId, core.Instance.InstanceId)
+	log.Error(fmt.Sprintf("update service center instance[%s/%s] heartbeat failed",
+		core.Instance.ServiceId, core.Instance.InstanceId), err)
 	return err
 }
 
@@ -230,8 +230,8 @@ func (ds *SCManager) autoSelfHeartBeat() {
 				//服务不存在，创建服务
 				err = ds.SelfRegister(ctx)
 				if err != nil {
-					log.Errorf(err, "retry to register[%s/%s/%s/%s] failed",
-						core.Service.Environment, core.Service.AppId, core.Service.ServiceName, core.Service.Version)
+					log.Error(fmt.Sprintf("retry to register[%s/%s/%s/%s] failed",
+						core.Service.Environment, core.Service.AppId, core.Service.ServiceName, core.Service.Version), err)
 				}
 			}
 		}

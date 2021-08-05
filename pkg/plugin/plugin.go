@@ -18,6 +18,7 @@
 package plugin
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -76,7 +77,7 @@ func (pm *Manager) Register(p Plugin) {
 	m[p.Name] = &p
 	pm.plugins[t] = m
 	pm.instances[t] = &wrapInstance{}
-	log.Infof("load '%s' plugin named '%s'", t, p.Name)
+	log.Info(fmt.Sprintf("load '%s' plugin named '%s'", t, p.Name))
 }
 
 // Get gets a 'Plugin'
@@ -156,8 +157,8 @@ func (pm *Manager) New(pn Kind) {
 
 		f = p.New
 	}
-	log.Infof("call %s '%s' plugin %s(), new a '%s' instance",
-		title, p.Kind, util.FuncName(f), p.Name)
+	log.Info(fmt.Sprintf("call %s '%s' plugin %s(), new a '%s' instance",
+		title, p.Kind, util.FuncName(f), p.Name))
 
 	wi.instance = f()
 }

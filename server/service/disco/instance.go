@@ -43,7 +43,7 @@ const (
 func RegisterInstance(ctx context.Context, in *pb.RegisterInstanceRequest) (*pb.RegisterInstanceResponse, error) {
 	if err := validator.Validate(in); err != nil {
 		remoteIP := util.GetIPFromContext(ctx)
-		log.Errorf(err, "register instance failed, invalid parameters, operator %s", remoteIP)
+		log.Error(fmt.Sprintf("register instance failed, invalid parameters, operator %s", remoteIP), err)
 		return &pb.RegisterInstanceResponse{
 			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
 		}, nil
@@ -110,7 +110,7 @@ func UnregisterInstance(ctx context.Context,
 	in *pb.UnregisterInstanceRequest) (*pb.UnregisterInstanceResponse, error) {
 	if err := validator.Validate(in); err != nil {
 		remoteIP := util.GetIPFromContext(ctx)
-		log.Errorf(err, "unregister instance failed, invalid parameters, operator %s", remoteIP)
+		log.Error(fmt.Sprintf("unregister instance failed, invalid parameters, operator %s", remoteIP), err)
 		return &pb.UnregisterInstanceResponse{
 			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
 		}, nil
@@ -122,7 +122,7 @@ func UnregisterInstance(ctx context.Context,
 func Heartbeat(ctx context.Context, in *pb.HeartbeatRequest) (*pb.HeartbeatResponse, error) {
 	if err := validator.Validate(in); err != nil {
 		remoteIP := util.GetIPFromContext(ctx)
-		log.Errorf(err, "heartbeat failed, invalid parameters, operator %s", remoteIP)
+		log.Error(fmt.Sprintf("heartbeat failed, invalid parameters, operator %s", remoteIP), err)
 		return &pb.HeartbeatResponse{
 			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
 		}, nil
@@ -134,7 +134,7 @@ func Heartbeat(ctx context.Context, in *pb.HeartbeatRequest) (*pb.HeartbeatRespo
 func HeartbeatSet(ctx context.Context,
 	in *pb.HeartbeatSetRequest) (*pb.HeartbeatSetResponse, error) {
 	if len(in.Instances) == 0 {
-		log.Errorf(nil, "heartbeats failed, invalid request. Body not contain Instances or is empty")
+		log.Error("heartbeats failed, invalid request. Body not contain Instances or is empty", nil)
 		return &pb.HeartbeatSetResponse{
 			Response: pb.CreateResponse(pb.ErrInvalidParams, "Request format invalid."),
 		}, nil
@@ -146,7 +146,7 @@ func GetOneInstance(ctx context.Context,
 	in *pb.GetOneInstanceRequest) (*pb.GetOneInstanceResponse, error) {
 	err := validator.Validate(in)
 	if err != nil {
-		log.Errorf(err, "get instance failed: invalid parameters")
+		log.Error("get instance failed: invalid parameters", err)
 		return &pb.GetOneInstanceResponse{
 			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
 		}, nil
@@ -158,7 +158,7 @@ func GetOneInstance(ctx context.Context,
 func GetInstances(ctx context.Context, in *pb.GetInstancesRequest) (*pb.GetInstancesResponse, error) {
 	err := validator.Validate(in)
 	if err != nil {
-		log.Errorf(err, "get instances failed: invalid parameters")
+		log.Error("get instances failed: invalid parameters", err)
 		return &pb.GetInstancesResponse{
 			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
 		}, nil
@@ -170,7 +170,7 @@ func GetInstances(ctx context.Context, in *pb.GetInstancesRequest) (*pb.GetInsta
 func FindInstances(ctx context.Context, in *pb.FindInstancesRequest) (*pb.FindInstancesResponse, error) {
 	err := validator.Validate(in)
 	if err != nil {
-		log.Errorf(err, "find instance failed: invalid parameters")
+		log.Error("find instance failed: invalid parameters", err)
 		return &pb.FindInstancesResponse{
 			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
 		}, nil
@@ -182,7 +182,7 @@ func FindInstances(ctx context.Context, in *pb.FindInstancesRequest) (*pb.FindIn
 func BatchFindInstances(ctx context.Context, in *pb.BatchFindInstancesRequest) (*pb.BatchFindInstancesResponse, error) {
 	if len(in.Services) == 0 && len(in.Instances) == 0 {
 		err := errors.New("Required services or instances")
-		log.Errorf(err, "batch find instance failed: invalid parameters")
+		log.Error("batch find instance failed: invalid parameters", err)
 		return &pb.BatchFindInstancesResponse{
 			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
 		}, nil
@@ -190,7 +190,7 @@ func BatchFindInstances(ctx context.Context, in *pb.BatchFindInstancesRequest) (
 
 	err := validator.Validate(in)
 	if err != nil {
-		log.Errorf(err, "batch find instance failed: invalid parameters")
+		log.Error("batch find instance failed: invalid parameters", err)
 		return &pb.BatchFindInstancesResponse{
 			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
 		}, nil
@@ -202,7 +202,7 @@ func BatchFindInstances(ctx context.Context, in *pb.BatchFindInstancesRequest) (
 func UpdateInstanceStatus(ctx context.Context, in *pb.UpdateInstanceStatusRequest) (*pb.UpdateInstanceStatusResponse, error) {
 	if err := validator.Validate(in); err != nil {
 		updateStatusFlag := util.StringJoin([]string{in.ServiceId, in.InstanceId, in.Status}, "/")
-		log.Errorf(nil, "update instance[%s] status failed", updateStatusFlag)
+		log.Error(fmt.Sprintf("update instance[%s] status failed", updateStatusFlag), nil)
 		return &pb.UpdateInstanceStatusResponse{
 			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
 		}, nil
@@ -214,7 +214,7 @@ func UpdateInstanceStatus(ctx context.Context, in *pb.UpdateInstanceStatusReques
 func UpdateInstanceProperties(ctx context.Context, in *pb.UpdateInstancePropsRequest) (*pb.UpdateInstancePropsResponse, error) {
 	if err := validator.Validate(in); err != nil {
 		instanceFlag := util.StringJoin([]string{in.ServiceId, in.InstanceId}, "/")
-		log.Errorf(nil, "update instance[%s] properties failed", instanceFlag)
+		log.Error(fmt.Sprintf("update instance[%s] properties failed", instanceFlag), nil)
 		return &pb.UpdateInstancePropsResponse{
 			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
 		}, nil
@@ -239,15 +239,15 @@ func ClusterHealth(ctx context.Context) (*pb.GetInstancesResponse, error) {
 	})
 
 	if err != nil {
-		log.Errorf(err, "health check failed: get service center[%s/%s/%s/%s]'s serviceID failed",
-			apt.Service.Environment, apt.Service.AppId, apt.Service.ServiceName, apt.Service.Version)
+		log.Error(fmt.Sprintf("health check failed: get service center[%s/%s/%s/%s]'s serviceID failed",
+			apt.Service.Environment, apt.Service.AppId, apt.Service.ServiceName, apt.Service.Version), err)
 		return &pb.GetInstancesResponse{
 			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err
 	}
 	if len(svcResp.ServiceId) == 0 {
-		log.Errorf(nil, "health check failed: service center[%s/%s/%s/%s]'s serviceID does not exist",
-			apt.Service.Environment, apt.Service.AppId, apt.Service.ServiceName, apt.Service.Version)
+		log.Error(fmt.Sprintf("health check failed: service center[%s/%s/%s/%s]'s serviceID does not exist",
+			apt.Service.Environment, apt.Service.AppId, apt.Service.ServiceName, apt.Service.Version), nil)
 		return &pb.GetInstancesResponse{
 			Response: pb.CreateResponse(pb.ErrServiceNotExists, "ServiceCenter's serviceID not exist."),
 		}, nil
@@ -257,8 +257,8 @@ func ClusterHealth(ctx context.Context) (*pb.GetInstancesResponse, error) {
 		ProviderServiceId: svcResp.ServiceId,
 	})
 	if err != nil {
-		log.Errorf(err, "health check failed: get service center[%s][%s/%s/%s/%s]'s instances failed",
-			svcResp.ServiceId, apt.Service.Environment, apt.Service.AppId, apt.Service.ServiceName, apt.Service.Version)
+		log.Error(fmt.Sprintf("health check failed: get service center[%s][%s/%s/%s/%s]'s instances failed",
+			svcResp.ServiceId, apt.Service.Environment, apt.Service.AppId, apt.Service.ServiceName, apt.Service.Version), err)
 		return &pb.GetInstancesResponse{
 			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
 		}, err

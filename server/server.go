@@ -19,6 +19,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"os"
 	"strings"
@@ -79,7 +80,7 @@ func (s *ServiceCenterServer) Run() {
 func (s *ServiceCenterServer) waitForQuit() {
 	err := <-s.APIServer.Err()
 	if err != nil {
-		log.Errorf(err, "service center catch errors")
+		log.Error("service center catch errors", err)
 	}
 
 	s.Stop()
@@ -128,7 +129,7 @@ func (s *ServiceCenterServer) initMetrics() {
 	}
 	interval, err := time.ParseDuration(strings.TrimSpace(config.GetString("metrics.interval", defaultCollectPeriod.String())))
 	if err != nil {
-		log.Errorf(err, "invalid metrics config[interval], set default %s", defaultCollectPeriod)
+		log.Error(fmt.Sprintf("invalid metrics config[interval], set default %s", defaultCollectPeriod), err)
 	}
 	if interval <= time.Second {
 		interval = defaultCollectPeriod
@@ -218,6 +219,6 @@ func (s *ServiceCenterServer) Stop() {
 
 	gopool.CloseAndWait()
 
-	log.Warnf("service center stopped")
-	log.Sync()
+	log.Warn("service center stopped")
+	log.Flush()
 }

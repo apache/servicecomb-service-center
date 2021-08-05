@@ -18,6 +18,7 @@
 package config
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -35,7 +36,7 @@ import (
 func DefaultConfig() *Config {
 	hostname, err := os.Hostname()
 	if err != nil {
-		log.Errorf(err, "Error determining hostname: %s", err)
+		log.Error("error determining hostname", err)
 		hostname = string(uuid.NewUUID())
 	}
 
@@ -71,20 +72,20 @@ func LoadConfig(filepath string) (*Config, error) {
 	}
 	if !(utils.IsFileExist(filepath)) {
 		err := errors.New("file is not exist")
-		log.Errorf(err, "Load config from %s failed", filepath)
+		log.Error(fmt.Sprintf("Load config from %s failed", filepath), err)
 		return nil, err
 	}
 
 	byteArr, err := ioutil.ReadFile(filepath)
 	if err != nil {
-		log.Errorf(err, "Load config from %s failed", filepath)
+		log.Error(fmt.Sprintf("Load config from %s failed", filepath), err)
 		return nil, err
 	}
 
 	conf := &Config{}
 	err = yaml.Unmarshal(byteArr, conf)
 	if err != nil {
-		log.Errorf(err, "Unmarshal config file failed, content is %s", byteArr)
+		log.Error(fmt.Sprintf("Unmarshal config file failed, content is %s", byteArr), err)
 		return nil, err
 	}
 	return conf, nil

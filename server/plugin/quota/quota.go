@@ -115,14 +115,14 @@ func (r ResourceType) String() string {
 func Apply(ctx context.Context, res *ApplyQuotaResource) error {
 	if res == nil {
 		err := errors.New("invalid parameters")
-		log.Errorf(err, "quota check failed")
+		log.Error("quota check failed", err)
 		return pb.NewError(pb.ErrInternal, err.Error())
 	}
 
 	limitQuota := plugin.Plugins().Instance(QUOTA).(Manager).GetQuota(ctx, res.QuotaType)
 	curNum, err := GetResourceUsage(ctx, res)
 	if err != nil {
-		log.Errorf(err, "%s quota check failed", res.QuotaType)
+		log.Error(fmt.Sprintf("%s quota check failed", res.QuotaType), err)
 		return pb.NewError(pb.ErrInternal, err.Error())
 	}
 	if curNum+res.QuotaSize > limitQuota {

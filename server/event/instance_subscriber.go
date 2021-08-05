@@ -19,6 +19,7 @@ package event
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/apache/servicecomb-service-center/pkg/event"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -45,7 +46,7 @@ func (w *InstanceSubscriber) OnAccept() {
 	if w.Err() != nil {
 		return
 	}
-	log.Debugf("accepted by event service, %s watcher %s %s", w.Type(), w.Group(), w.Subject())
+	log.Debug(fmt.Sprintf("accepted by event service, %s watcher %s %s", w.Type(), w.Group(), w.Subject()))
 }
 
 //被通知
@@ -69,8 +70,8 @@ func (w *InstanceSubscriber) sendMessage(evt *InstanceEvent) {
 	select {
 	case w.Job <- evt:
 	default:
-		log.Errorf(nil, "the %s watcher %s %s event queue is full, drop the blocked events",
-			w.Type(), w.Group(), w.Subject())
+		log.Error(fmt.Sprintf("the %s watcher %s %s event queue is full, drop the blocked events",
+			w.Type(), w.Group(), w.Subject()), nil)
 		w.cleanup()
 		w.Job <- evt
 	}

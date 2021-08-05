@@ -59,7 +59,7 @@ func (s *BusService) newBus(t Type) *Bus {
 
 func (s *BusService) Start() {
 	if !s.Closed() {
-		log.Warnf("notify service is already running")
+		log.Warn("notify service is already running")
 		return
 	}
 	s.mux.Lock()
@@ -72,19 +72,19 @@ func (s *BusService) Start() {
 		log.Error("", err)
 	}
 
-	log.Debugf("notify service is started")
+	log.Debug("notify service is started")
 }
 
 func (s *BusService) AddSubscriber(n Subscriber) error {
 	if n == nil {
 		err := errors.New("required Subscriber")
-		log.Errorf(err, "add subscriber failed")
+		log.Error("add subscriber failed", err)
 		return err
 	}
 
 	if !n.Type().IsValid() {
 		err := errors.New("unknown subscribe type")
-		log.Errorf(err, "add %s subscriber[%s/%s] failed", n.Type(), n.Subject(), n.Group())
+		log.Error(fmt.Sprintf("add %s subscriber[%s/%s] failed", n.Type(), n.Subject(), n.Group()), err)
 		return err
 	}
 

@@ -92,7 +92,7 @@ func (ba *TokenAuthenticator) Identify(req *http.Request) error {
 func (ba *TokenAuthenticator) VerifyRequest(req *http.Request) (*rbacmodel.Account, error) {
 	claims, err := ba.VerifyToken(req)
 	if err != nil {
-		log.Errorf(err, "verify request token failed, %s %s", req.Method, req.RequestURI)
+		log.Error(fmt.Sprintf("verify request token failed, %s %s", req.Method, req.RequestURI), err)
 		return nil, err
 	}
 	m, ok := claims.(map[string]interface{})

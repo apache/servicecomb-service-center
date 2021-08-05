@@ -18,6 +18,7 @@
 package sd
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -65,10 +66,10 @@ func EventProxy(t Type) *KvEventProxy {
 // the event handler/func must be good performance, or will block the event bus.
 func AddEventHandleFunc(t Type, f KvEventFunc) {
 	EventProxy(t).AddHandleFunc(f)
-	log.Infof("register event handle function[%s] %s", t, util.FuncName(f))
+	log.Info(fmt.Sprintf("register event handle function[%s] %s", t, util.FuncName(f)))
 }
 
 func AddEventHandler(h KvEventHandler) {
 	EventProxy(h.Type()).AddHandleFunc(h.OnEvent)
-	log.Infof("register event handler[%s] %s", h.Type(), util.Reflect(h).Name())
+	log.Info(fmt.Sprintf("register event handler[%s] %s", h.Type(), util.Reflect(h).Name()))
 }

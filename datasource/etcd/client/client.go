@@ -21,6 +21,7 @@ package client
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/coreos/etcd/mvcc/mvccpb"
 
@@ -142,7 +143,7 @@ func KeepAlive(ctx context.Context, opts ...PluginOpOption) (int64, error) {
 
 	t := NewLeaseAsyncTask(op)
 	if op.Mode == ModeNoCache {
-		log.Debugf("keep alive lease WitchNoCache, request etcd server, op: %s", op)
+		log.Debug(fmt.Sprintf("keep alive lease WitchNoCache, request etcd server, op: %s", op))
 		err := t.Do(ctx)
 		ttl := t.TTL
 		return ttl, err

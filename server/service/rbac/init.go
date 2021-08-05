@@ -19,6 +19,7 @@ package rbac
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/go-chassis/cari/pkg/errsvc"
 	"github.com/go-chassis/cari/rbac"
@@ -62,21 +63,21 @@ func initBuildInRole() {
 func createBuildInRole(r *rbac.Role) {
 	roleExist, err := RoleExist(context.Background(), r.Name)
 	if err != nil {
-		log.Fatalf(err, "check role [%s] exist failed", r.Name)
+		log.Fatal(fmt.Sprintf("check role [%s] exist failed", r.Name), err)
 		return
 	}
 	if roleExist {
-		log.Infof("role [%s] already exists", r.Name)
+		log.Info(fmt.Sprintf("role [%s] already exists", r.Name))
 		return
 	}
 	err = CreateRole(context.Background(), r)
 	if err == nil {
-		log.Infof("create role [%s] success", r.Name)
+		log.Info(fmt.Sprintf("create role [%s] success", r.Name))
 		return
 	}
 	if errsvc.IsErrEqualCode(err, rbac.ErrRoleConflict) {
-		log.Infof("role [%s] already exists", r.Name)
+		log.Info(fmt.Sprintf("role [%s] already exists", r.Name))
 		return
 	}
-	log.Fatalf(err, "create role [%s] failed", r.Name)
+	log.Fatal(fmt.Sprintf("create role [%s] failed", r.Name), err)
 }

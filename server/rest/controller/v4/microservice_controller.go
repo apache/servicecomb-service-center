@@ -19,6 +19,7 @@ package v4
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -58,13 +59,13 @@ func (s *MicroServiceService) Register(w http.ResponseWriter, r *http.Request) {
 	var request pb.CreateServiceRequest
 	err = json.Unmarshal(message, &request)
 	if err != nil {
-		log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(message))
+		log.Error(fmt.Sprintf("invalid json: %s", util.BytesToStringWithNoCopy(message)), err)
 		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
 	resp, err := core.ServiceAPI.Create(r.Context(), &request)
 	if err != nil {
-		log.Errorf(err, "create service failed")
+		log.Error("create service failed", err)
 		rest.WriteError(w, pb.ErrInternal, err.Error())
 		return
 	}
@@ -83,13 +84,13 @@ func (s *MicroServiceService) Update(w http.ResponseWriter, r *http.Request) {
 	}
 	err = json.Unmarshal(message, request)
 	if err != nil {
-		log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(message))
+		log.Error(fmt.Sprintf("invalid json: %s", util.BytesToStringWithNoCopy(message)), err)
 		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
 	resp, err := core.ServiceAPI.UpdateProperties(r.Context(), request)
 	if err != nil {
-		log.Errorf(err, "can not update service")
+		log.Error("can not update service", err)
 		rest.WriteError(w, pb.ErrInternal, "can not update service")
 		return
 	}
@@ -113,7 +114,7 @@ func (s *MicroServiceService) Unregister(w http.ResponseWriter, r *http.Request)
 	}
 	resp, err := core.ServiceAPI.Delete(r.Context(), request)
 	if err != nil {
-		log.Errorf(err, "delete service[%s] failed", serviceID)
+		log.Error(fmt.Sprintf("delete service[%s] failed", serviceID), err)
 		rest.WriteError(w, pb.ErrInternal, "delete service failed")
 		return
 	}
@@ -124,7 +125,7 @@ func (s *MicroServiceService) GetServices(w http.ResponseWriter, r *http.Request
 	request := &pb.GetServicesRequest{}
 	resp, err := core.ServiceAPI.GetServices(r.Context(), request)
 	if err != nil {
-		log.Errorf(err, "get services failed")
+		log.Error("get services failed", err)
 		rest.WriteError(w, pb.ErrInternal, err.Error())
 		return
 	}
@@ -144,7 +145,7 @@ func (s *MicroServiceService) GetExistence(w http.ResponseWriter, r *http.Reques
 	}
 	resp, err := core.ServiceAPI.Exist(r.Context(), request)
 	if err != nil {
-		log.Errorf(err, "check service existence failed")
+		log.Error("check service existence failed", err)
 		rest.WriteError(w, pb.ErrInternal, "check service existence failed")
 		return
 	}
@@ -159,7 +160,7 @@ func (s *MicroServiceService) GetServiceOne(w http.ResponseWriter, r *http.Reque
 	}
 	service, err := discosvc.GetService(r.Context(), request)
 	if err != nil {
-		log.Errorf(err, "get service[%s] failed", request.ServiceId)
+		log.Error(fmt.Sprintf("get service[%s] failed", request.ServiceId), err)
 		rest.WriteServiceError(w, err)
 		return
 	}
@@ -178,14 +179,14 @@ func (s *MicroServiceService) UnregisterServices(w http.ResponseWriter, r *http.
 
 	err = json.Unmarshal(message, request)
 	if err != nil {
-		log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(message))
+		log.Error(fmt.Sprintf("invalid json: %s", util.BytesToStringWithNoCopy(message)), err)
 		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
 
 	resp, err := core.ServiceAPI.DeleteServices(r.Context(), request)
 	if err != nil {
-		log.Errorf(err, "delete services failed")
+		log.Error("delete services failed", err)
 		rest.WriteError(w, pb.ErrInternal, "delete services failed")
 		return
 	}

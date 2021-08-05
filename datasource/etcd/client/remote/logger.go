@@ -52,7 +52,7 @@ func (l *clientLogger) getCaller(depth int) string {
 }
 
 func (l *clientLogger) Flush() {
-	log.Sync()
+	log.Flush()
 }
 
 func (l *clientLogger) Debug(args ...interface{}) {

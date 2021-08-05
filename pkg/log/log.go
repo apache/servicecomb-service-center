@@ -69,9 +69,9 @@ func Fatal(msg string, err error) {
 	Logger.Fatal(msg, openlog.WithErr(err))
 }
 
-func Sync() {
-	if Configure.ExitFunc != nil {
-		Configure.ExitFunc()
+func Flush() {
+	if Configure.FlushFunc != nil {
+		Configure.FlushFunc()
 	}
 }
 

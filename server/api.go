@@ -70,7 +70,7 @@ func (s *APIServer) graceDone() {
 	grace.Before(s.MarkForked)
 	grace.After(s.Stop)
 	if err := grace.Done(); err != nil {
-		log.Errorf(err, "server reload failed")
+		log.Error("server reload failed", err)
 	}
 }
 
@@ -102,7 +102,7 @@ func (s *APIServer) serve() (err error) {
 		if err != nil {
 			return
 		}
-		log.Infof("listen address[%d]: rest://%s", i, s.HTTPServer.Listener.Addr().String())
+		log.Info(fmt.Sprintf("listen address[%d]: rest://%s", i, s.HTTPServer.Listener.Addr().String()))
 
 		s.populateEndpoint(s.HTTPServer.Listener.Addr().String())
 
@@ -111,7 +111,7 @@ func (s *APIServer) serve() (err error) {
 			if s.isClose {
 				return
 			}
-			log.Errorf(err, "error to serve %s", addr)
+			log.Error(fmt.Sprintf("error to serve %s", addr), err)
 			s.err <- err
 		})
 	}
@@ -137,7 +137,7 @@ func (s *APIServer) Start() {
 	defer log.Info("api server is ready")
 
 	if !config.GetRegistry().SelfRegister {
-		log.Warnf("self register disabled")
+		log.Warn("self register disabled")
 		return
 	}
 

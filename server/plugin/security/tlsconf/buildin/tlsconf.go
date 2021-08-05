@@ -19,6 +19,7 @@ package buildin
 
 import (
 	"crypto/tls"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -49,14 +50,14 @@ func GetSSLPath(path string) string {
 func GetPassphase() (decrypt string) {
 	passphase, err := ioutil.ReadFile(GetSSLPath("cert_pwd"))
 	if err != nil {
-		log.Errorf(err, "read file cert_pwd failed.")
+		log.Error("read file cert_pwd failed.", err)
 	}
 
 	decrypt = util.BytesToStringWithNoCopy(passphase)
 	if len(decrypt) > 0 {
 		tmp, err := cipher.Decrypt(decrypt)
 		if err != nil {
-			log.Errorf(err, "decrypt ssl passphase(%d) failed.", len(decrypt))
+			log.Error(fmt.Sprintf("decrypt ssl passphase(%d) failed.", len(decrypt)), err)
 		} else {
 			decrypt = tmp
 		}
@@ -86,11 +87,11 @@ func GetClientTLSConfig() (_ *tls.Config, err error) {
 	clientTLSConfig, err = tlsutil.GetClientTLSConfig(opts...)
 
 	if clientTLSConfig != nil {
-		log.Infof("client ssl configs enabled, verifyclient %t, minv %#x, cipers %d, pphase %d.",
+		log.Info(fmt.Sprintf("client ssl configs enabled, verifyclient %t, minv %#x, cipers %d, pphase %d.",
 			tlsconf.GetOptions().VerifyPeer,
 			clientTLSConfig.MinVersion,
 			len(clientTLSConfig.CipherSuites),
-			len(passphase))
+			len(passphase)))
 	}
 	return clientTLSConfig, err
 }
@@ -117,11 +118,11 @@ func GetServerTLSConfig() (_ *tls.Config, err error) {
 	serverTLSConfig, err = tlsutil.GetServerTLSConfig(opts...)
 
 	if serverTLSConfig != nil {
-		log.Infof("server ssl configs enabled, verifyClient %t, minv %#x, ciphers %d, phase %d.",
+		log.Info(fmt.Sprintf("server ssl configs enabled, verifyClient %t, minv %#x, ciphers %d, phase %d.",
 			tlsconf.GetOptions().VerifyPeer,
 			serverTLSConfig.MinVersion,
 			len(serverTLSConfig.CipherSuites),
-			len(passphase))
+			len(passphase)))
 	}
 	return serverTLSConfig, err
 }

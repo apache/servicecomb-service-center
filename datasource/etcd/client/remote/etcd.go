@@ -185,7 +185,7 @@ func (c *Client) Close() {
 	if c.Client != nil {
 		c.Client.Close()
 	}
-	log.Debugf("etcd client stopped")
+	log.Debug("etcd client stopped")
 }
 
 func (c *Client) Compact(ctx context.Context, reserve int64) error {
@@ -194,7 +194,7 @@ func (c *Client) Compact(ctx context.Context, reserve int64) error {
 
 	revToCompact := max(0, curRev-reserve)
 	if revToCompact <= 0 {
-		log.Infof("revision is %d, <=%d, no nead to compact %s", curRev, reserve, eps)
+		log.Info(fmt.Sprintf("revision is %d, <=%d, no nead to compact %s", curRev, reserve, eps))
 		return nil
 	}
 
@@ -208,22 +208,7 @@ func (c *Client) Compact(ctx context.Context, reserve int64) error {
 	}
 	log.InfoOrWarn(t, fmt.Sprintf("compacted %s, revision is %d(current: %d, reserve %d)",
 		eps, revToCompact, curRev, reserve))
-
-	// TODO can not defrag! because cache will always be unavailable when space in used is too large.
-	// c.defragment(ctx, eps, t)
 	return nil
-}
-
-func (c *Client) defragment(ctx context.Context, eps []string, t time.Time) {
-	for _, ep := range eps {
-		t = time.Now()
-		_, err := c.Client.Defragment(ctx, ep)
-		if err != nil {
-			log.Error(fmt.Sprintf("Defrag %s failed", ep), err)
-			continue
-		}
-		log.InfoOrWarn(t, fmt.Sprintf("Defraged %s", ep))
-	}
 }
 
 func (c *Client) getLeaderCurrentRevision(ctx context.Context) int64 {
@@ -237,7 +222,7 @@ func (c *Client) getLeaderCurrentRevision(ctx context.Context) int64 {
 		}
 		curRev = resp.Header.Revision
 		if resp.Leader == resp.Header.MemberId {
-			log.Infof("get leader endpoint: %s, revision is %d", ep, curRev)
+			log.Info(fmt.Sprintf("get leader endpoint: %s, revision is %d", ep, curRev))
 			break
 		}
 	}
@@ -457,8 +442,8 @@ func (c *Client) Paging(ctx context.Context, op client.PluginOp) (*clientv3.GetR
 	}
 
 	if op.Offset == -1 {
-		log.InfoOrWarn(start, "get too many KeyValues(%s) from etcd, now paging.(%d vs %d)",
-			key, recordCount, op.Limit)
+		log.InfoOrWarn(start, fmt.Sprintf("get too many KeyValues(%s) from etcd, now paging.(%d vs %d)",
+			key, recordCount, op.Limit))
 	}
 
 	// too slow
@@ -883,7 +868,7 @@ func callback(action client.ActionType, rev int64, kvs []*mvccpb.KeyValue, cb cl
 }
 
 func NewRegistry(opts datasource.Options) client.Registry {
-	log.Warnf("enable etcd registry mode")
+	log.Warn("enable etcd registry mode")
 
 	inst := &Client{}
 	if err := inst.Initialize(); err != nil {

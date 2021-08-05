@@ -19,6 +19,7 @@ package event
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/cache"
@@ -53,7 +54,7 @@ func (h *ServiceEventHandler) OnEvent(evt sd.KvEvent) {
 		newDomain, newProject := path.SplitDomainProject(domainProject)
 		err := serviceUtil.NewDomainProject(context.Background(), newDomain, newProject)
 		if err != nil {
-			log.Errorf(err, "new domain[%s] or project[%s] failed", newDomain, newProject)
+			log.Error(fmt.Sprintf("new domain[%s] or project[%s] failed", newDomain, newProject), err)
 		}
 	}
 
@@ -61,8 +62,8 @@ func (h *ServiceEventHandler) OnEvent(evt sd.KvEvent) {
 		return
 	}
 
-	log.Infof("caught [%s] service[%s][%s/%s/%s/%s] event",
-		evt.Type, ms.ServiceId, ms.Environment, ms.AppId, ms.ServiceName, ms.Version)
+	log.Info(fmt.Sprintf("caught [%s] service[%s][%s/%s/%s/%s] event",
+		evt.Type, ms.ServiceId, ms.Environment, ms.AppId, ms.ServiceName, ms.Version))
 
 	// cache
 	providerKey := pb.MicroServiceToKey(domainProject, ms)

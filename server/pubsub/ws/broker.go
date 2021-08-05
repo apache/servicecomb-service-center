@@ -59,13 +59,13 @@ func (b *Broker) write(evt *event.InstanceEvent) error {
 		providerFlag = fmt.Sprintf("%s/%s(%s)", resp.Instance.ServiceId, resp.Instance.InstanceId, providerFlag)
 	}
 	remoteAddr := b.consumer.Conn.RemoteAddr().String()
-	log.Infof("event[%s] is coming in, subscriber[%s] watch %s, group: %s",
-		resp.Action, remoteAddr, providerFlag, b.producer.Group())
+	log.Info(fmt.Sprintf("event[%s] is coming in, subscriber[%s] watch %s, group: %s",
+		resp.Action, remoteAddr, providerFlag, b.producer.Group()))
 
 	resp.Response = nil
 	data, err := json.Marshal(resp)
 	if err != nil {
-		log.Errorf(err, "subscriber[%s] watch %s, group: %s", remoteAddr, providerFlag, b.producer.Group())
+		log.Error(fmt.Sprintf("subscriber[%s] watch %s, group: %s", remoteAddr, providerFlag, b.producer.Group()), err)
 		data = util.StringToBytesWithNoCopy(fmt.Sprintf("marshal output file error, %s", err.Error()))
 	}
 	err = b.consumer.WriteTextMessage(data)

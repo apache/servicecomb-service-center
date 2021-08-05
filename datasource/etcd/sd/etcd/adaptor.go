@@ -18,6 +18,8 @@
 package etcd
 
 import (
+	"fmt"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
@@ -58,9 +60,8 @@ func NewEtcdAdaptor(name string, cfg *sd.Config) *Adaptor {
 		adaptor.Cacher = NewKvCacher(cfg, kvCache)
 		adaptor.Indexer = NewCacheIndexer(cfg, kvCache)
 	default:
-		log.Infof(
-			"core will not cache '%s' and ignore all events of it, cache enabled: %v, init size: %d",
-			name, enableCache, cfg.InitSize)
+		log.Info(fmt.Sprintf("core will not cache '%s' and ignore all events of it, cache enabled: %v, init size: %d",
+			name, enableCache, cfg.InitSize))
 		adaptor.Cacher = sd.NullCacher
 		adaptor.Indexer = NewEtcdIndexer(cfg.Key, cfg.Parser)
 	}

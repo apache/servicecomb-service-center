@@ -202,8 +202,8 @@ func NewZapLogger(cfg Config) *ZapLogger {
 		zapLogger: l,
 		zapSugar:  l.Sugar(),
 	}
-	if cfg.ExitFunc == nil {
-		cfg.ExitFunc = logger.Sync
+	if cfg.FlushFunc == nil {
+		cfg.FlushFunc = logger.Sync
 	}
 	if cfg.RecoverFunc == nil {
 		cfg.RecoverFunc = func(r interface{}) {

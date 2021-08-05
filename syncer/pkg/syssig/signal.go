@@ -54,7 +54,7 @@ func Run(ctx context.Context) {
 		case <-ctx.Done():
 
 		case sig := <-sigChan:
-			log.Infof("system signal: %s", sig.String())
+			log.Info(fmt.Sprintf("system signal: %s", sig.String()))
 			calls := callbacks(sig)
 			for _, call := range calls {
 				call()

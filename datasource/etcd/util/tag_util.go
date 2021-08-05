@@ -20,6 +20,7 @@ package util
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/cari/pkg/errsvc"
@@ -58,7 +59,7 @@ func GetTagsUtils(ctx context.Context, domainProject, serviceID string) (tags ma
 	opts := append(FromContext(ctx), client.WithStrKey(key))
 	resp, err := kv.Store().ServiceTag().Search(ctx, opts...)
 	if err != nil {
-		log.Errorf(err, "get service[%s] tags file failed", serviceID)
+		log.Error(fmt.Sprintf("get service[%s] tags file failed", serviceID), err)
 		return tags, err
 	}
 
