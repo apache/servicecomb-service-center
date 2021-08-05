@@ -55,7 +55,7 @@ func (f *VersionFilter) Init(ctx context.Context, parent *cache.Node) (node *cac
 		consumer := ctx.Value(CtxConsumerID).(*pb.MicroService)
 		findFlag := fmt.Sprintf("consumer '%s' find provider %s/%s", consumer.ServiceId,
 			provider.AppId, provider.ServiceName)
-		log.Errorf(err, "FindServiceIds failed, %s", findFlag)
+		log.Error(fmt.Sprintf("FindServiceIds failed, %s", findFlag),err)
 		return
 	}
 	if !exist {

@@ -19,6 +19,7 @@ package sd
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
@@ -72,7 +73,7 @@ func (i *CacheIndexer) searchByPrefix(op client.PluginOp) *Response {
 	t := time.Now()
 	kvs := make([]*KeyValue, 0, resp.Count)
 	i.Cache.GetPrefix(prefix, &kvs)
-	log.NilOrWarnf(t, "too long to index data[%d] from cache '%s'", len(kvs), i.Cache.Name())
+	log.NilOrWarn(t, fmt.Sprintf("too long to index data[%d] from cache '%s'", len(kvs), i.Cache.Name()))
 
 	resp.Kvs = kvs
 	return resp

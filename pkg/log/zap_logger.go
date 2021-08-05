@@ -25,13 +25,10 @@ import (
 	"time"
 
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/go-chassis/openlog"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
-)
-
-const (
-	defaultLogLevel = "DEBUG"
 )
 
 var (
@@ -46,56 +43,6 @@ var (
 		"FATAL": zap.FatalLevel,
 	}
 )
-
-// Config struct for lager and rotate parameters
-type Config struct {
-	LoggerLevel string
-	LoggerFile  string
-	// if false, log print with JSON format
-	LogFormatText bool
-	// M Bytes
-	LogRotateSize  int
-	LogBackupCount int
-	// days
-	LogBackupAge int
-	CallerSkip   int
-	NoTime       bool // if true, not record time
-	NoLevel      bool // if true, not record level
-	NoCaller     bool // if true, not record caller
-}
-
-func (cfg Config) WithCallerSkip(s int) Config {
-	cfg.CallerSkip = s
-	return cfg
-}
-
-func (cfg Config) WithFile(path string) Config {
-	cfg.LoggerFile = path
-	return cfg
-}
-
-func (cfg Config) WithNoTime(b bool) Config {
-	cfg.NoTime = b
-	return cfg
-}
-
-func (cfg Config) WithNoLevel(b bool) Config {
-	cfg.NoLevel = b
-	return cfg
-}
-
-func (cfg Config) WithNoCaller(b bool) Config {
-	cfg.NoCaller = b
-	return cfg
-}
-
-func Configure() Config {
-	return Config{
-		LoggerLevel:   defaultLogLevel,
-		LogFormatText: true,
-		CallerSkip:    globalCallerSkip,
-	}
-}
 
 func toZapConfig(c Config) zapcore.Core {
 	// level config
@@ -158,71 +105,45 @@ func toZapConfig(c Config) zapcore.Core {
 	return zapcore.NewCore(enc, syncer, levelEnabler)
 }
 
-type Logger struct {
+type ZapLogger struct {
 	Config Config
 
 	zapLogger *zap.Logger
 	zapSugar  *zap.SugaredLogger
 }
 
-func (l *Logger) Debug(msg string) {
+func (l *ZapLogger) Debug(msg string, opts ...openlog.Option) {
 	l.zapLogger.Debug(msg)
 }
 
-func (l *Logger) Debugf(format string, args ...interface{}) {
-	l.zapSugar.Debugf(format, args...)
-}
-
-func (l *Logger) Info(msg string) {
+func (l *ZapLogger) Info(msg string, opts ...openlog.Option) {
 	l.zapLogger.Info(msg)
 }
 
-func (l *Logger) Infof(format string, args ...interface{}) {
-	l.zapSugar.Infof(format, args...)
-}
-
-func (l *Logger) Warn(msg string) {
+func (l *ZapLogger) Warn(msg string, opts ...openlog.Option) {
 	l.zapLogger.Warn(msg)
 }
 
-func (l *Logger) Warnf(format string, args ...interface{}) {
-	l.zapSugar.Warnf(format, args...)
-}
-
-func (l *Logger) Error(msg string, err error) {
-	if err == nil {
+func (l *ZapLogger) Error(msg string, opts ...openlog.Option) {
+	options := openlog.ToOptions(opts...)
+	if options.Err == nil {
 		l.zapLogger.Error(msg)
 		return
 	}
-	l.zapLogger.Error(msg, zap.String("error", err.Error()))
+	l.zapLogger.Error(msg, zap.String("error", options.Err.Error()))
 }
 
-func (l *Logger) Errorf(err error, format string, args ...interface{}) {
-	if err == nil {
-		l.zapSugar.Errorf(format, args...)
-		return
-	}
-	l.zapSugar.With("error", err.Error()).Errorf(format, args...)
-}
-
-func (l *Logger) Fatal(msg string, err error) {
-	if err == nil {
+func (l *ZapLogger) Fatal(msg string, opts ...openlog.Option) {
+	options := openlog.ToOptions(opts...)
+	if options.Err == nil {
 		l.zapLogger.Panic(msg)
 		return
 	}
-	l.zapLogger.Panic(msg, zap.String("error", err.Error()))
+	l.zapLogger.Panic(msg, zap.String("error", options.Err.Error()))
 }
 
-func (l *Logger) Fatalf(err error, format string, args ...interface{}) {
-	if err == nil {
-		l.zapSugar.Panicf(format, args...)
-		return
-	}
-	l.zapSugar.With("error", err.Error()).Panicf(format, args...)
-}
-
-// callSkip equals to 0 identify the caller of Recover()
-func (l *Logger) Recover(r interface{}, callerSkip int) {
+// Recover callSkip equals to 0 identify the caller of Recover()
+func (l *ZapLogger) Recover(r interface{}, callerSkip int) {
 	e := zapcore.Entry{
 		Level:  zap.PanicLevel, // zapcore sync automatically when larger than ErrorLevel
 		Time:   time.Now(),
@@ -250,7 +171,7 @@ func (l *Logger) Recover(r interface{}, callerSkip int) {
 	}
 }
 
-func (l *Logger) Sync() {
+func (l *ZapLogger) Sync() {
 	err := l.zapLogger.Sync()
 	if err != nil {
 		log.Println(err)
@@ -265,16 +186,29 @@ func (l *Logger) Sync() {
 	}
 }
 
-func NewLogger(cfg Config) *Logger {
+func NewZapLogger(cfg Config) *ZapLogger {
 	opts := make([]zap.Option, 1)
 	opts[0] = zap.ErrorOutput(StderrSyncer)
 	if !cfg.NoCaller {
 		opts = append(opts, zap.AddCaller(), zap.AddCallerSkip(cfg.CallerSkip))
 	}
 	l := zap.New(toZapConfig(cfg), opts...)
-	return &Logger{
+	// zap internal log
+	_ = zap.ReplaceGlobals(l)
+	// golang log
+	_ = zap.RedirectStdLog(l)
+	logger := &ZapLogger{
 		Config:    cfg,
 		zapLogger: l,
 		zapSugar:  l.Sugar(),
 	}
+	if cfg.ExitFunc == nil {
+		cfg.ExitFunc = logger.Sync
+	}
+	if cfg.RecoverFunc == nil {
+		cfg.RecoverFunc = func(r interface{}) {
+			logger.Recover(r, 3)
+		}
+	}
+	return logger
 }

@@ -83,8 +83,8 @@ func (c *KvCacher) doList(cfg sdcommon.ListWatchConfig) error {
 	rev := c.getRevision()
 	resources := resp.Resources
 	start := time.Now()
-	defer log.DebugOrWarnf(start, "finish to cache key %s, %d items, rev: %d",
-		c.Cfg.Key, len(resources), rev)
+	defer log.DebugOrWarn(start, fmt.Sprintf("finish to cache key %s, %d items, rev: %d",
+		c.Cfg.Key, len(resources), rev))
 
 	// just reset the cacher if cache marked dirty
 	if c.cache.Dirty() {
@@ -191,8 +191,8 @@ func (c *KvCacher) handleEventBus(eventBus *sdcommon.EventBus) error {
 			evts = append(evts, evt)
 		}
 		c.sync(evts)
-		log.DebugOrWarnf(start, "finish to handle %d events, prefix: %s, rev: %d",
-			len(evts), c.Cfg.Key, rev)
+		log.DebugOrWarn(start, fmt.Sprintf("finish to handle %d events, prefix: %s, rev: %d",
+			len(evts), c.Cfg.Key, rev))
 	}
 	return nil
 }

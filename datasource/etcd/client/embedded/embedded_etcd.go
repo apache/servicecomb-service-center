@@ -246,8 +246,8 @@ func (s *EtcdEmbed) Compact(ctx context.Context, reserve int64) error {
 		Physical: true,
 	})
 	if err != nil {
-		log.Errorf(err, "compact locally failed, revision is %d(current: %d, reserve %d)",
-			revToCompact, curRev, reserve)
+		log.Error(fmt.Sprintf("compact locally failed, revision is %d(current: %d, reserve %d)",
+			revToCompact, curRev, reserve), err)
 		return err
 	}
 	log.Infof("compacted locally, revision is %d(current: %d, reserve %d)", revToCompact, curRev, reserve)
@@ -473,7 +473,7 @@ func (s *EtcdEmbed) readyNotify() {
 		})
 	case <-time.After(timeout):
 		err := fmt.Errorf("timed out(%s)", timeout)
-		log.Errorf(err, "read notify failed")
+		log.Error("read notify failed", err)
 
 		s.Embed.Server.Stop()
 

@@ -45,7 +45,7 @@ func (f *AccessibleFilter) Init(ctx context.Context, parent *cache.Node) (node *
 			provider := ctx.Value(CtxProviderKey).(*pb.MicroServiceKey)
 			findFlag := fmt.Sprintf("consumer '%s' find provider %s/%s", consumerID,
 				provider.AppId, provider.ServiceName)
-			log.Errorf(err, "AccessibleFilter failed, %s", findFlag)
+			log.Error(fmt.Sprintf( "AccessibleFilter failed, %s", findFlag),err )
 			continue
 		}
 		ids = append(ids, providerServiceID)

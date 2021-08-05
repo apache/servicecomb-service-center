@@ -19,6 +19,7 @@ package accesslog
 
 import (
 	"fmt"
+	"github.com/go-chassis/openlog"
 	"net/http"
 	"os"
 	"time"
@@ -35,7 +36,7 @@ import (
 // Handler records access log.
 // Make sure to complete the initialization before handling the request.
 type Handler struct {
-	logger        *log.Logger
+	logger        openlog.Logger
 	whiteListAPIs map[string]struct{} // not record access log
 }
 
@@ -75,7 +76,7 @@ func (h *Handler) Handle(i *chain.Invocation) {
 		statusCode := i.Context().Value(rest.CtxResponseStatus).(int)
 		// format:  remoteIp requestReceiveTime "method requestUri proto" statusCode requestBodySize delay(ms)
 		// example: 127.0.0.1 2006-01-02T15:04:05.000Z07:00 "GET /v4/default/registry/microservices HTTP/1.1" 200 0 0
-		h.logger.Infof("%s %s \"%s %s %s\" %d %d %s",
+		h.logger.Info(fmt.Sprintf("%s %s \"%s %s %s\" %d %d %s",
 			util.GetIPFromContext(i.Context()),
 			startTimeStr,
 			r.Method,
@@ -83,12 +84,12 @@ func (h *Handler) Handle(i *chain.Invocation) {
 			r.Proto,
 			statusCode,
 			r.ContentLength,
-			delayByMillisecond)
+			delayByMillisecond))
 	}))
 }
 
 // NewAccessLogHandler creates a Handler
-func NewAccessLogHandler(l *log.Logger) *Handler {
+func NewAccessLogHandler(l openlog.Logger) *Handler {
 	return &Handler{
 		logger:        l,
 		whiteListAPIs: make(map[string]struct{})}

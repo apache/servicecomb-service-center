@@ -20,7 +20,6 @@ package cache
 import (
 	"context"
 	"fmt"
-
 	pb "github.com/go-chassis/cari/discovery"
 
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
@@ -75,7 +74,7 @@ func (f *InstancesFilter) Find(ctx context.Context, parent *cache.Node) (
 		consumer := ctx.Value(CtxConsumerID).(*pb.MicroService)
 		findFlag := fmt.Sprintf("consumer '%s' find provider %s/%s", consumer.ServiceId,
 			provider.AppId, provider.ServiceName)
-		log.Errorf(err, "Find failed, %s", findFlag)
+		log.Error(fmt.Sprintf( "Find failed, %s", findFlag),err )
 	}
 	return
 }

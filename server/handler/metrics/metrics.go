@@ -18,6 +18,7 @@
 package metrics
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -41,7 +42,7 @@ func (h *Handler) Handle(i *chain.Invocation) {
 		w, r := i.Context().Value(rest.CtxResponse).(http.ResponseWriter),
 			i.Context().Value(rest.CtxRequest).(*http.Request)
 		metrics.ReportRequestCompleted(w, r, start)
-		log.NilOrWarnf(start, "%s %s", r.Method, r.RequestURI)
+		log.NilOrWarn(start, fmt.Sprintf("%s %s", r.Method, r.RequestURI))
 	}))
 }
 

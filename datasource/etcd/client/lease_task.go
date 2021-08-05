@@ -19,6 +19,7 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
@@ -50,12 +51,12 @@ func (lat *LeaseTask) Do(ctx context.Context) (err error) {
 	lat.TTL, err = lat.Client.LeaseRenew(ctx, lat.LeaseID)
 	metrics.ReportHeartbeatCompleted(err, recv)
 	if err != nil {
-		log.Errorf(err, "[%s]task[%s] renew lease[%d] failed(recv: %s, send: %s)",
+		log.Error(fmt.Sprintf("[%s]task[%s] renew lease[%d] failed(recv: %s, send: %s)",
 			time.Since(recv),
 			lat.Key(),
 			lat.LeaseID,
 			recv.Format(leaseProfTimeFmt),
-			start.Format(leaseProfTimeFmt))
+			start.Format(leaseProfTimeFmt)), err)
 		if _, ok := err.(errorsEx.InternalError); !ok {
 			// it means lease not found if err is not the InternalError type
 			lat.err = err
