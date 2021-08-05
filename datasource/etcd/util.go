@@ -254,8 +254,7 @@ func getServiceDetailUtil(ctx context.Context, serviceDetailOpt ServiceDetailOpt
 			serviceDetail.SchemaInfos = schemas
 		case "dependencies":
 			service := serviceDetailOpt.service
-			dr := serviceUtil.NewDependencyRelation(ctx, domainProject, service, service)
-			consumers, err := dr.GetDependencyConsumers(
+			consumers, err := serviceUtil.GetConsumers(ctx, domainProject, service,
 				serviceUtil.WithoutSelfDependency(),
 				serviceUtil.WithSameDomainProject())
 			if err != nil {
@@ -263,7 +262,7 @@ func getServiceDetailUtil(ctx context.Context, serviceDetailOpt ServiceDetailOpt
 					service.ServiceId, service.Environment, service.AppId, service.ServiceName, service.Version)
 				return nil, err
 			}
-			providers, err := dr.GetDependencyProviders(
+			providers, err := serviceUtil.GetProviders(ctx, domainProject, service,
 				serviceUtil.WithoutSelfDependency(),
 				serviceUtil.WithSameDomainProject())
 			if err != nil {

@@ -52,10 +52,8 @@ var (
 func FindInstanceReqValidator() *validate.Validator {
 	return findInstanceReqValidator.Init(func(v *validate.Validator) {
 		v.AddRule("ConsumerServiceId", GetInstanceReqValidator().GetRule("ConsumerServiceId"))
-		v.AddRules(ExistenceReqValidator().GetRules())
-		v.AddRule("VersionRule", ExistenceReqValidator().GetRule("Version"))
+		v.AddRules(MicroServiceSearchKeyValidator().GetRules())
 		v.AddRule("Tags", UpdateTagReqValidator().GetRule("Key"))
-		v.AddRule("Environment", MicroServiceKeyValidator().GetRule("Environment"))
 	})
 }
 
@@ -63,7 +61,7 @@ func BatchFindInstanceReqValidator() *validate.Validator {
 	return batchFindInstanceReqValidator.Init(func(v *validate.Validator) {
 		var findServiceValidator validate.Validator
 		findServiceValidator.AddRule("Service", &validate.Rule{Min: 1})
-		findServiceValidator.AddSub("Service", ExistenceReqValidator())
+		findServiceValidator.AddSub("Service", MicroServiceSearchKeyValidator())
 		var findInstanceValidator validate.Validator
 		findInstanceValidator.AddRule("Instance", &validate.Rule{Min: 1})
 		findInstanceValidator.AddSub("Instance", HeartbeatReqValidator())

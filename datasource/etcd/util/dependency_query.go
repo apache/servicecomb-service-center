@@ -21,7 +21,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
 	pb "github.com/go-chassis/cari/discovery"
 
@@ -30,7 +29,6 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
 // DependencyRelationFilterOpt contains SameDomainProject and NonSelf flag
@@ -85,10 +83,6 @@ func (dr *DependencyRelation) GetDependencyProviders(opts ...DependencyRelationF
 			return nil, err
 		}
 
-		if key.ServiceName == "*" {
-			services = services[:0]
-		}
-
 		for _, providerID := range providerIDs {
 			provider, err := GetService(dr.ctx, key.Tenant, providerID)
 			if err != nil {
@@ -106,15 +100,11 @@ func (dr *DependencyRelation) GetDependencyProviders(opts ...DependencyRelationF
 			}
 			services = append(services, provider)
 		}
-
-		if key.ServiceName == "*" {
-			break
-		}
 	}
 	return services, nil
 }
 
-func (dr *DependencyRelation) GetDependencyProviderIds() ([]string, error) {
+func (dr *DependencyRelation) getDependencyProviderIds() ([]string, error) {
 	keys, err := dr.getProviderKeys()
 	if err != nil {
 		return nil, err
@@ -124,7 +114,7 @@ func (dr *DependencyRelation) GetDependencyProviderIds() ([]string, error) {
 
 func (dr *DependencyRelation) getProviderKeys() ([]*pb.MicroServiceKey, error) {
 	if dr.consumer == nil {
-		return nil, fmt.Errorf("Invalid consumer")
+		return nil, errors.New("invalid consumer")
 	}
 	consumerMicroServiceKey := pb.MicroServiceToKey(dr.domainProject, dr.consumer)
 
@@ -140,52 +130,23 @@ func (dr *DependencyRelation) GetProviderIdsByRules(providerRules []*pb.MicroSer
 	provideServiceIds := make([]string, 0, len(providerRules))
 	for _, provider := range providerRules {
 		serviceIDs, err := dr.parseDependencyRule(provider)
-		switch {
-		case provider.ServiceName == "*":
-			if err != nil {
-				log.Errorf(err, "get all serviceIDs failed")
-				return provideServiceIds, err
-			}
-			return serviceIDs, nil
-		default:
-			if err != nil {
-				log.Errorf(err, "get service[%s/%s/%s/%s]'s providerIDs failed",
-					provider.Environment, provider.AppId, provider.ServiceName, provider.Version)
-				return provideServiceIds, err
-			}
-			if len(serviceIDs) == 0 {
-				log.Warnf("get service[%s/%s/%s/%s]'s providerIDs is empty",
-					provider.Environment, provider.AppId, provider.ServiceName, provider.Version)
-				continue
-			}
-			provideServiceIds = append(provideServiceIds, serviceIDs...)
+		if err != nil {
+			log.Errorf(err, "get service[%s/%s/%s/%s]'s providerIDs failed",
+				provider.Environment, provider.AppId, provider.ServiceName, provider.Version)
+			return provideServiceIds, err
 		}
+		if len(serviceIDs) == 0 {
+			log.Warnf("get service[%s/%s/%s/%s]'s providerIDs is empty",
+				provider.Environment, provider.AppId, provider.ServiceName, provider.Version)
+			continue
+		}
+		provideServiceIds = append(provideServiceIds, serviceIDs...)
 	}
 	return provideServiceIds, nil
 }
 
 func (dr *DependencyRelation) parseDependencyRule(dependencyRule *pb.MicroServiceKey) (serviceIDs []string, err error) {
-	opts := FromContext(dr.ctx)
-	switch {
-	case dependencyRule.ServiceName == "*":
-		log.Infof("service[%s/%s/%s/%s] rely all service",
-			dr.consumer.Environment, dr.consumer.AppId, dr.consumer.ServiceName, dr.consumer.Version)
-		splited := strings.Split(path.GenerateServiceIndexKey(dependencyRule), "/")
-		allServiceKey := util.StringJoin(splited[:len(splited)-3], "/") + "/"
-		sopts := append(opts,
-			client.WithStrKey(allServiceKey),
-			client.WithPrefix())
-		resp, err := kv.Store().ServiceIndex().Search(dr.ctx, sopts...)
-		if err != nil {
-			return nil, err
-		}
-
-		for _, kv := range resp.Kvs {
-			serviceIDs = append(serviceIDs, kv.Value.(string))
-		}
-	default:
-		serviceIDs, _, err = FindServiceIds(dr.ctx, dependencyRule.Version, dependencyRule)
-	}
+	serviceIDs, _, err = FindServiceIds(dr.ctx, dependencyRule, false)
 	return
 }
 
@@ -235,7 +196,7 @@ func (dr *DependencyRelation) GetServiceByMicroServiceKey(service *pb.MicroServi
 	return GetService(dr.ctx, service.Tenant, serviceID)
 }
 
-func (dr *DependencyRelation) GetDependencyConsumerIds() ([]string, error) {
+func (dr *DependencyRelation) getDependencyConsumerIds() ([]string, error) {
 	consumerDependAllList, err := dr.GetDependencyConsumersOfProvider()
 	if err != nil {
 		return nil, err
@@ -261,49 +222,22 @@ func (dr *DependencyRelation) GetDependencyConsumerIds() ([]string, error) {
 
 func (dr *DependencyRelation) GetDependencyConsumersOfProvider() ([]*pb.MicroServiceKey, error) {
 	if dr.provider == nil {
-		return nil, fmt.Errorf("Invalid provider")
+		return nil, errors.New("invalid provider")
 	}
 	providerService := pb.MicroServiceToKey(dr.domainProject, dr.provider)
-	consumerDependAllList, err := dr.getConsumerOfDependAllServices()
-	if err != nil {
-		log.Errorf(err, "get consumers that depend on all services failed, %s", dr.provider.ServiceId)
-		return nil, err
-	}
-
 	consumerDependList, err := dr.GetConsumerOfSameServiceNameAndAppID(providerService)
 	if err != nil {
 		log.Errorf(err, "get consumers that depend on rule[%s/%s/%s/%s] failed",
 			dr.provider.Environment, dr.provider.AppId, dr.provider.ServiceName, dr.provider.Version)
 		return nil, err
 	}
-	consumerDependAllList = append(consumerDependAllList, consumerDependList...)
-	return consumerDependAllList, nil
-}
-
-func (dr *DependencyRelation) getConsumerOfDependAllServices() ([]*pb.MicroServiceKey, error) {
-	providerService := pb.MicroServiceToKey(dr.domainProject, dr.provider)
-	providerService.ServiceName = "*"
-	relyAllKey := path.GenerateProviderDependencyRuleKey(dr.domainProject, providerService)
-	opts := append(FromContext(dr.ctx), client.WithStrKey(relyAllKey))
-	rsp, err := kv.Store().DependencyRule().Search(dr.ctx, opts...)
-	if err != nil {
-		log.Errorf(err, "get consumers that rely all service failed, %s/%s/%s/%s",
-			dr.provider.Environment, dr.provider.AppId, dr.provider.ServiceName, dr.provider.Version)
-		return nil, err
-	}
-	if len(rsp.Kvs) != 0 {
-		log.Infof("exist consumers that rely all service, %s/%s/%s/%s",
-			dr.provider.Environment, dr.provider.AppId, dr.provider.ServiceName, dr.provider.Version)
-		return rsp.Kvs[0].Value.(*pb.MicroServiceDependency).Dependency, nil
-	}
-	return nil, nil
+	return consumerDependList, nil
 }
 
 func (dr *DependencyRelation) GetConsumerOfSameServiceNameAndAppID(provider *pb.MicroServiceKey) ([]*pb.MicroServiceKey, error) {
-	providerVersion := provider.Version
-	provider.Version = ""
-	prefix := path.GenerateProviderDependencyRuleKey(dr.domainProject, provider)
-	provider.Version = providerVersion
+	copy := *provider
+	copy.Version = ""
+	prefix := path.GenerateProviderDependencyRuleKey(dr.domainProject, &copy)
 
 	opts := append(FromContext(dr.ctx),
 		client.WithStrKey(prefix),
@@ -316,36 +250,7 @@ func (dr *DependencyRelation) GetConsumerOfSameServiceNameAndAppID(provider *pb.
 	}
 
 	allConsumers := make([]*pb.MicroServiceKey, 0, len(rsp.Kvs))
-	var latestServiceID []string
-
 	for _, kv := range rsp.Kvs {
-		providerVersionRuleArr := strings.Split(util.BytesToStringWithNoCopy(kv.Key), "/")
-		providerVersionRule := providerVersionRuleArr[len(providerVersionRuleArr)-1]
-		if providerVersionRule == "latest" {
-			if latestServiceID == nil {
-				latestServiceID, _, err = FindServiceIds(dr.ctx, providerVersionRule, provider)
-				if err != nil {
-					log.Errorf(err, "get service[%s/%s/%s/%s]'s serviceID failed",
-						provider.Environment, provider.AppId, provider.ServiceName, providerVersionRule)
-					return nil, err
-				}
-			}
-			if len(latestServiceID) == 0 {
-				log.Infof("service[%s/%s/%s/%s] does not exist",
-					provider.Environment, provider.AppId, provider.ServiceName, providerVersionRule)
-				continue
-			}
-			if dr.provider.ServiceId != latestServiceID[0] {
-				continue
-			}
-
-		} else {
-			if !VersionMatchRule(providerVersion, providerVersionRule) {
-				continue
-			}
-		}
-
-		log.Debugf("providerETCD is %s", providerVersionRuleArr)
 		allConsumers = append(allConsumers, kv.Value.(*pb.MicroServiceDependency).Dependency...)
 	}
 	return allConsumers, nil

@@ -30,14 +30,13 @@ import (
 
 const (
 	Provider = "p"
-	Consumer = "c"
 )
 
 func GetProviderDeps(ctx context.Context, provider *discovery.MicroService) (*discovery.MicroServiceDependency, error) {
-	return getServiceofDeps(ctx, Provider, provider)
+	return getServiceOfDeps(ctx, Provider, provider)
 }
 
-func getServiceofDeps(ctx context.Context, ruleType string, provider *discovery.MicroService) (*discovery.MicroServiceDependency, error) {
+func getServiceOfDeps(ctx context.Context, ruleType string, provider *discovery.MicroService) (*discovery.MicroServiceDependency, error) {
 	filter := mutil.NewFilter(
 		mutil.ServiceType(ruleType),
 		mutil.ServiceKeyTenant(util.ParseDomainProject(ctx)),

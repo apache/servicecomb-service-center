@@ -19,7 +19,6 @@ package etcd
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -53,9 +52,7 @@ func (dm *DepManager) SearchProviderDependency(ctx context.Context, request *pb.
 		return nil, err
 	}
 
-	dr := serviceUtil.NewProviderDependencyRelation(ctx, domainProject, provider)
-	services, err := dr.GetDependencyConsumers(toDependencyFilterOptions(request)...)
-
+	services, err := serviceUtil.GetConsumers(ctx, domainProject, provider, toDependencyFilterOptions(request)...)
 	if err != nil {
 		log.Error(fmt.Sprintf("query provider failed, provider is %s/%s/%s/%s",
 			provider.Environment, provider.AppId, provider.ServiceName, provider.Version), err)
@@ -86,8 +83,7 @@ func (dm *DepManager) SearchConsumerDependency(ctx context.Context, request *pb.
 		return nil, err
 	}
 
-	dr := serviceUtil.NewConsumerDependencyRelation(ctx, domainProject, consumer)
-	services, err := dr.GetDependencyProviders(toDependencyFilterOptions(request)...)
+	services, err := serviceUtil.GetProviders(ctx, domainProject, consumer, toDependencyFilterOptions(request)...)
 	if err != nil {
 		log.Error(fmt.Sprintf("query consumer failed, consumer is %s/%s/%s/%s",
 			consumer.Environment, consumer.AppId, consumer.ServiceName, consumer.Version), err)
@@ -121,58 +117,4 @@ func (dm *DepManager) DependencyHandle(ctx context.Context) error {
 		}
 	}
 	return nil
-}
-
-func (dm *DepManager) AddOrUpdateDependencies(ctx context.Context, dependencyInfos []*pb.ConsumerDependency, override bool) (*pb.Response, error) {
-	opts := make([]client.PluginOp, 0, len(dependencyInfos))
-	domainProject := util.ParseDomainProject(ctx)
-	for _, dependencyInfo := range dependencyInfos {
-		consumerFlag := util.StringJoin([]string{dependencyInfo.Consumer.Environment, dependencyInfo.Consumer.AppId, dependencyInfo.Consumer.ServiceName, dependencyInfo.Consumer.Version}, "/")
-		consumerInfo := pb.DependenciesToKeys([]*pb.MicroServiceKey{dependencyInfo.Consumer}, domainProject)[0]
-		providersInfo := pb.DependenciesToKeys(dependencyInfo.Providers, domainProject)
-
-		rsp := serviceUtil.ParamsChecker(consumerInfo, providersInfo)
-		if rsp != nil {
-			log.Errorf(nil, "put request into dependency queue failed, override: %t, consumer is %s, %s",
-				override, consumerFlag, rsp.Response.GetMessage())
-			return rsp.Response, nil
-		}
-
-		consumerID, err := serviceUtil.GetServiceID(ctx, consumerInfo)
-		if err != nil {
-			log.Errorf(err, "put request into dependency queue failed, override: %t, get consumer[%s] id failed",
-				override, consumerFlag)
-			return pb.CreateResponse(pb.ErrInternal, err.Error()), err
-		}
-		if len(consumerID) == 0 {
-			log.Errorf(nil, "put request into dependency queue failed, override: %t, consumer[%s] does not exist",
-				override, consumerFlag)
-			return pb.CreateResponse(pb.ErrServiceNotExists, fmt.Sprintf("Consumer %s does not exist.", consumerFlag)), nil
-		}
-
-		dependencyInfo.Override = override
-		data, err := json.Marshal(dependencyInfo)
-		if err != nil {
-			log.Errorf(err, "put request into dependency queue failed, override: %t, marshal consumer[%s] dependency failed",
-				override, consumerFlag)
-			return pb.CreateResponse(pb.ErrInternal, err.Error()), err
-		}
-
-		id := path.DepsQueueUUID
-		if !override {
-			id = util.GenerateUUID()
-		}
-		key := path.GenerateConsumerDependencyQueueKey(domainProject, consumerID, id)
-		opts = append(opts, client.OpPut(client.WithStrKey(key), client.WithValue(data)))
-	}
-
-	err := client.BatchCommit(ctx, opts)
-	if err != nil {
-		log.Errorf(err, "put request into dependency queue failed, override: %t, %v", override, dependencyInfos)
-		return pb.CreateResponse(pb.ErrInternal, err.Error()), err
-	}
-
-	log.Infof("put request into dependency queue successfully, override: %t, %v, from remote %s",
-		override, dependencyInfos, util.GetIPFromContext(ctx))
-	return pb.CreateResponse(pb.ResponseSuccess, "Create dependency successfully."), nil
 }

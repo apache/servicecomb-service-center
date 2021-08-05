@@ -28,6 +28,7 @@ import (
 
 var (
 	microServiceKeyValidator       validate.Validator
+	microServiceKeySearchValidator validate.Validator
 	existenceReqValidator          validate.Validator
 	getServiceReqValidator         validate.Validator
 	createServiceReqValidator      validate.Validator
@@ -40,9 +41,7 @@ var (
 	// find 支持alias，多个:
 	serviceNameForFindRegex, _ = regexp.Compile(`^[a-zA-Z0-9]*$|^[a-zA-Z0-9][a-zA-Z0-9_\-.:]*[a-zA-Z0-9]$`)
 	// version規則: x[.y[.z]]
-	versionRegex = validate.NewVersionRegexp(false)
-	// version模糊规则: 1.0, 1.0+, 1.0-2.0, latest
-	versionFuzzyRegex  = validate.NewVersionRegexp(true)
+	versionRegex       = validate.NewVersionRegexp(false)
 	pathRegex, _       = regexp.Compile(`^[A-Za-z0-9.,?'\\/+&amp;%$#=~_\-@{}]*$`)
 	levelRegex, _      = regexp.Compile(`^(FRONT|MIDDLE|BACK)$`)
 	statusRegex, _     = regexp.Compile("^(" + discovery.MS_UP + "|" + discovery.MS_DOWN + ")?$")
@@ -65,11 +64,19 @@ func MicroServiceKeyValidator() *validate.Validator {
 	})
 }
 
+func MicroServiceSearchKeyValidator() *validate.Validator {
+	return microServiceKeySearchValidator.Init(func(v *validate.Validator) {
+		v.AddRule("Environment", &validate.Rule{Regexp: envRegex})
+		v.AddRule("AppId", &validate.Rule{Min: 1, Max: 160, Regexp: nameRegex})
+		// support name or alias
+		v.AddRule("ServiceName", &validate.Rule{Min: 1, Max: 160 + 1 + 128, Regexp: serviceNameForFindRegex})
+	})
+}
+
 func ExistenceReqValidator() *validate.Validator {
 	return existenceReqValidator.Init(func(v *validate.Validator) {
-		v.AddRules(MicroServiceKeyValidator().GetRules())
-		v.AddRule("ServiceName", &validate.Rule{Min: 1, Max: 160 + 1 + 128, Regexp: serviceNameForFindRegex})
-		v.AddRule("Version", &validate.Rule{Min: 1, Max: 129, Regexp: versionFuzzyRegex})
+		v.AddRules(MicroServiceSearchKeyValidator().GetRules())
+		v.AddRule("Version", &validate.Rule{Min: 1, Max: 64, Regexp: versionRegex})
 	})
 }
 

@@ -368,7 +368,6 @@ var _ = Describe("'Tag' service", func() {
 					ConsumerServiceId: consumerId,
 					AppId:             "find_inst_tag_group",
 					ServiceName:       "find_inst_tag_provider",
-					VersionRule:       "1.0.0+",
 					Tags:              []string{"not-exist-tag"},
 				})
 				Expect(err).To(BeNil())
@@ -379,7 +378,6 @@ var _ = Describe("'Tag' service", func() {
 					ConsumerServiceId: consumerId,
 					AppId:             "find_inst_tag_group",
 					ServiceName:       "find_inst_tag_provider",
-					VersionRule:       "1.0.0+",
 					Tags:              []string{"filter_tag"},
 				})
 				Expect(err).To(BeNil())

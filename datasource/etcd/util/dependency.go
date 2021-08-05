@@ -75,8 +75,8 @@ func (dep *Dependency) removeConsumerOfProviderRule(ctx context.Context) ([]clie
 func (dep *Dependency) addConsumerOfProviderRule(ctx context.Context) ([]client.PluginOp, error) {
 	opts := make([]client.PluginOp, 0, len(dep.CreateDependencyRuleList))
 	for _, providerRule := range dep.CreateDependencyRuleList {
-		proProkey := path.GenerateProviderDependencyRuleKey(providerRule.Tenant, providerRule)
-		tmpValue, err := TransferToMicroServiceDependency(ctx, proProkey)
+		providerRuleKey := path.GenerateProviderDependencyRuleKey(providerRule.Tenant, providerRule)
+		tmpValue, err := TransferToMicroServiceDependency(ctx, providerRuleKey)
 		if err != nil {
 			return nil, err
 		}
@@ -88,11 +88,8 @@ func (dep *Dependency) addConsumerOfProviderRule(ctx context.Context) ([]client.
 			return nil, errMarshal
 		}
 		opts = append(opts, client.OpPut(
-			client.WithStrKey(proProkey),
+			client.WithStrKey(providerRuleKey),
 			client.WithValue(data)))
-		if providerRule.ServiceName == "*" {
-			break
-		}
 	}
 	return opts, nil
 }

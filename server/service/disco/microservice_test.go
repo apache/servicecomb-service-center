@@ -868,6 +868,30 @@ var _ = Describe("'Micro-service' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
+				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
+					Type:        "microservice",
+					AppId:       "exist_appId",
+					ServiceName: "exist_service",
+					Version:     "0.0.0-1.0.0",
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
+				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
+					Type:        "microservice",
+					AppId:       "exist_appId",
+					ServiceName: "exist_service",
+					Version:     "0.0.0+",
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
+				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
+					Type:        "microservice",
+					AppId:       "exist_appId",
+					ServiceName: "exist_service",
+					Version:     "latest",
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 			})
 		})
 
@@ -911,14 +935,6 @@ var _ = Describe("'Micro-service' service", func() {
 					AppId:       "exist_appId",
 					ServiceName: "exist_service",
 					Version:     "2.0.0",
-				})
-				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(pb.ErrServiceNotExists))
-				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
-					Type:        "microservice",
-					AppId:       "exist_appId",
-					ServiceName: "exist_service",
-					Version:     "0.0.0-1.0.0",
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.GetCode()).To(Equal(pb.ErrServiceVersionNotExists))
@@ -968,36 +984,6 @@ var _ = Describe("'Micro-service' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.ServiceId).To(Equal(serviceId2))
-
-				By("search with latest versionRule")
-				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
-					Type:        "microservice",
-					AppId:       "exist_appId",
-					ServiceName: "exist_service",
-					Version:     "latest",
-				})
-				Expect(err).To(BeNil())
-				Expect(resp.ServiceId).To(Equal(serviceId1))
-
-				By("search with 1.0.0+ versionRule")
-				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
-					Type:        "microservice",
-					AppId:       "exist_appId",
-					ServiceName: "exist_service",
-					Version:     "1.0.0+",
-				})
-				Expect(err).To(BeNil())
-				Expect(resp.ServiceId).To(Equal(serviceId1))
-
-				By("search with range versionRule")
-				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
-					Type:        "microservice",
-					AppId:       "exist_appId",
-					ServiceName: "exist_service",
-					Version:     "0.9.1-1.0.1",
-				})
-				Expect(err).To(BeNil())
-				Expect(resp.ServiceId).To(Equal(serviceId1))
 			})
 		})
 	})
@@ -1192,7 +1178,6 @@ var _ = Describe("'Micro-service' service", func() {
 				ConsumerServiceId: serviceConsumerId,
 				AppId:             provider.AppId,
 				ServiceName:       provider.ServiceName,
-				VersionRule:       provider.Version,
 			})
 			Expect(err).To(BeNil())
 			Expect(respFind.Response.GetCode()).To(Equal(pb.ResponseSuccess))

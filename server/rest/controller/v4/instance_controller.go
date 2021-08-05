@@ -131,7 +131,6 @@ func (s *MicroServiceInstanceService) FindInstances(w http.ResponseWriter, r *ht
 		AppId:             query.Get("appId"),
 		ServiceName:       serviceName,
 		Alias:             serviceName,
-		VersionRule:       query.Get("version"),
 		Environment:       query.Get("env"),
 		Tags:              ids,
 	}
