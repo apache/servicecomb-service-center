@@ -67,6 +67,6 @@ type AccountLock struct {
 	ReleaseAt int64  `json:"releaseAt,omitempty" bson:"release_at"`
 }
 type AccountLockResponse struct {
-	Total       int64          `json:"total,omitempty"`
-	AccountLock []*AccountLock `json:"data,omitempty"`
+	Total       int64          `json:"total"`
+	AccountLock []*AccountLock `json:"data"`
 }
