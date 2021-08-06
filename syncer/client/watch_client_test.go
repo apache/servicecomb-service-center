@@ -20,6 +20,7 @@
 package client
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/apache/servicecomb-service-center/pkg/dump"
@@ -45,5 +46,5 @@ func TestWatchInstance(t *testing.T) {
 }
 
 func fakeAddToQueue(event *dump.WatchInstanceChangedEvent) {
-	log.Debugf("success add instance event to queue:%s", event)
+	log.Debug(fmt.Sprintf("success add instance event to queue: %v", event))
 }

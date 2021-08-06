@@ -19,6 +19,7 @@ package kv
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -67,7 +68,7 @@ func (iedh *InstanceEventDeferHandler) OnCondition(cache sd.CacheReader, evts []
 
 func (iedh *InstanceEventDeferHandler) recoverOrDefer(evt sd.KvEvent) {
 	if evt.KV == nil {
-		log.Errorf(nil, "defer or replayEvent a %s nil KV", evt.Type)
+		log.Error(fmt.Sprintf("defer or replayEvent a %s nil KV", evt.Type), nil)
 		return
 	}
 	kv := evt.KV
@@ -76,7 +77,7 @@ func (iedh *InstanceEventDeferHandler) recoverOrDefer(evt sd.KvEvent) {
 	switch evt.Type {
 	case discovery.EVT_CREATE, discovery.EVT_UPDATE:
 		if ok {
-			log.Infof("recovered key %s events", key)
+			log.Info(fmt.Sprintf("recovered key %s events", key))
 			// return nil // no need to publish event to subscribers?
 		}
 		iedh.replayEvent(evt)
@@ -87,7 +88,7 @@ func (iedh *InstanceEventDeferHandler) recoverOrDefer(evt sd.KvEvent) {
 
 		instance := kv.Value.(*discovery.MicroServiceInstance)
 		if instance == nil {
-			log.Errorf(nil, "defer or replayEvent a %s nil Value, KV is %v", evt.Type, kv)
+			log.Error(fmt.Sprintf("defer or replayEvent a %s nil Value, KV is %v", evt.Type, kv), nil)
 			return
 		}
 		ttl := instance.HealthCheck.Interval * (instance.HealthCheck.Times + 1)
@@ -131,8 +132,8 @@ func (iedh *InstanceEventDeferHandler) check(ctx context.Context) {
 			total := iedh.cache.GetAll(nil)
 			if total > selfPreservationInitCount && float64(del) >= float64(total)*iedh.Percent {
 				iedh.enabled = true
-				log.Warnf("self preservation is enabled, caught %d/%d(>=%.0f%%) DELETE events",
-					del, total, iedh.Percent*100)
+				log.Warn(fmt.Sprintf("self preservation is enabled, caught %d/%d(>=%.0f%%) DELETE events",
+					del, total, iedh.Percent*100))
 			}
 
 			if !n {
@@ -166,12 +167,12 @@ func (iedh *InstanceEventDeferHandler) ReplayEvents() {
 		if item.ReplayAfter > 0 {
 			continue
 		}
-		log.Warnf("replay delete event, remove key: %s", key)
+		log.Warn(fmt.Sprintf("replay delete event, remove key: %s", key))
 		iedh.replayEvent(item.event)
 	}
 	if len(iedh.items) == 0 {
 		iedh.enabled = false
-		log.Warnf("self preservation stopped")
+		log.Warn("self preservation stopped")
 	}
 }
 
@@ -183,7 +184,7 @@ func (iedh *InstanceEventDeferHandler) replayEvent(evt sd.KvEvent) {
 
 func (iedh *InstanceEventDeferHandler) Reset() bool {
 	if iedh.enabled || len(iedh.items) != 0 {
-		log.Warnf("self preservation is reset")
+		log.Warn("self preservation is reset")
 		iedh.resetCh <- struct{}{}
 		return true
 	}

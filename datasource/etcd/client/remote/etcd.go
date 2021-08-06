@@ -94,7 +94,7 @@ func (c *Client) Initialize() (err error) {
 
 	c.Client, err = c.newClient()
 	if err != nil {
-		log.Errorf(err, "get etcd client %v failed.", c.Endpoints)
+		log.Error(fmt.Sprintf("get etcd client %v failed.", c.Endpoints), err)
 		return
 	}
 
@@ -185,7 +185,7 @@ func (c *Client) Close() {
 	if c.Client != nil {
 		c.Client.Close()
 	}
-	log.Debugf("etcd client stopped")
+	log.Debug("etcd client stopped")
 }
 
 func (c *Client) Compact(ctx context.Context, reserve int64) error {
@@ -194,7 +194,7 @@ func (c *Client) Compact(ctx context.Context, reserve int64) error {
 
 	revToCompact := max(0, curRev-reserve)
 	if revToCompact <= 0 {
-		log.Infof("revision is %d, <=%d, no nead to compact %s", curRev, reserve, eps)
+		log.Info(fmt.Sprintf("revision is %d, <=%d, no nead to compact %s", curRev, reserve, eps))
 		return nil
 	}
 
@@ -202,23 +202,12 @@ func (c *Client) Compact(ctx context.Context, reserve int64) error {
 	_, err := c.Client.Compact(ctx, revToCompact, clientv3.WithCompactPhysical())
 	client.ReportBackendOperationCompleted(OperationCompact, err, t)
 	if err != nil {
-		log.Errorf(err, "compact %s failed, revision is %d(current: %d, reserve %d)",
-			eps, revToCompact, curRev, reserve)
+		log.Error(fmt.Sprintf("compact %s failed, revision is %d(current: %d, reserve %d)",
+			eps, revToCompact, curRev, reserve), err)
 		return err
 	}
-	log.InfoOrWarnf(t, "compacted %s, revision is %d(current: %d, reserve %d)", eps, revToCompact, curRev, reserve)
-
-	// TODO can not defrag! because cache will always be unavailable when space in used is too large.
-	/*for _, ep := range eps {
-		t = time.Now()
-		_, err := c.Client.Defragment(ctx, ep)
-		if err != nil {
-			log.Errorf(err, "Defrag %s failed", ep)
-			continue
-		}
-		log.InfoOrWarnf(t, "Defraged %s", ep)
-	}*/
-
+	log.InfoOrWarn(t, fmt.Sprintf("compacted %s, revision is %d(current: %d, reserve %d)",
+		eps, revToCompact, curRev, reserve))
 	return nil
 }
 
@@ -233,7 +222,7 @@ func (c *Client) getLeaderCurrentRevision(ctx context.Context) int64 {
 		}
 		curRev = resp.Header.Revision
 		if resp.Leader == resp.Header.MemberId {
-			log.Infof("get leader endpoint: %s, revision is %d", ep, curRev)
+			log.Info(fmt.Sprintf("get leader endpoint: %s, revision is %d", ep, curRev))
 			break
 		}
 	}
@@ -366,7 +355,7 @@ func (c *Client) PutNoOverride(ctx context.Context, opts ...client.PluginOpOptio
 		client.OpCmp(client.CmpCreateRev(op.Key), client.CmpEqual, 0),
 	}, nil)
 	if err != nil {
-		log.Errorf(err, "PutNoOverride %s failed", op.Key)
+		log.Error(fmt.Sprintf("PutNoOverride %s failed", op.Key), err)
 		return false, err
 	}
 	return resp.Succeeded, nil
@@ -453,8 +442,8 @@ func (c *Client) Paging(ctx context.Context, op client.PluginOp) (*clientv3.GetR
 	}
 
 	if op.Offset == -1 {
-		log.InfoOrWarnf(start, "get too many KeyValues(%s) from etcd, now paging.(%d vs %d)",
-			key, recordCount, op.Limit)
+		log.InfoOrWarn(start, fmt.Sprintf("get too many KeyValues(%s) from etcd, now paging.(%d vs %d)",
+			key, recordCount, op.Limit))
 	}
 
 	// too slow
@@ -467,7 +456,7 @@ func (c *Client) Paging(ctx context.Context, op client.PluginOp) (*clientv3.GetR
 			}
 			etcdResp.Kvs[i], etcdResp.Kvs[last] = etcdResp.Kvs[last], etcdResp.Kvs[i]
 		}
-		log.NilOrWarnf(t, "sorted descend %d KeyValues(%s)", recordCount, key)
+		log.NilOrWarn(t, fmt.Sprintf("sorted descend %d KeyValues(%s)", recordCount, key))
 	}
 	return etcdResp, nil
 }
@@ -542,7 +531,7 @@ func (c *Client) Do(ctx context.Context, opts ...client.PluginOpOption) (*client
 
 	resp.Succeeded = true
 
-	log.NilOrWarnf(start, "registry client do %s", op)
+	log.NilOrWarn(start, fmt.Sprintf("registry client do %s", op))
 	return resp, nil
 }
 
@@ -598,8 +587,8 @@ func (c *Client) TxnWithCmp(ctx context.Context, success []client.PluginOp, cmps
 		}
 		return nil, err
 	}
-	log.NilOrWarnf(start, "registry client txn {if(%v): %s, then: %d, else: %d}, rev: %d",
-		resp.Succeeded, cmps, len(success), len(fail), resp.Header.Revision)
+	log.NilOrWarn(start, fmt.Sprintf("registry client txn {if(%v): %s, then: %d, else: %d}, rev: %d",
+		resp.Succeeded, cmps, len(success), len(fail), resp.Header.Revision))
 
 	var rangeResponse etcdserverpb.RangeResponse
 	for _, itf := range resp.Responses {
@@ -634,7 +623,7 @@ func (c *Client) LeaseGrant(ctx context.Context, TTL int64) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	log.NilOrWarnf(start, "registry client grant lease %ds", TTL)
+	log.NilOrWarn(start, fmt.Sprintf("registry client grant lease %ds", TTL))
 	return int64(etcdResp.ID), nil
 }
 
@@ -658,7 +647,7 @@ func (c *Client) LeaseRenew(ctx context.Context, leaseID int64) (int64, error) {
 		}
 		return 0, errorsEx.Internal(err)
 	}
-	log.NilOrWarnf(start, "registry client renew lease %d", leaseID)
+	log.NilOrWarn(start, fmt.Sprintf("registry client renew lease %d", leaseID))
 	return etcdResp.TTL, nil
 }
 
@@ -682,7 +671,7 @@ func (c *Client) LeaseRevoke(ctx context.Context, leaseID int64) error {
 		}
 		return errorsEx.Internal(err)
 	}
-	log.NilOrWarnf(start, "registry client revoke lease %d", leaseID)
+	log.NilOrWarn(start, fmt.Sprintf("registry client revoke lease %d", leaseID))
 	return nil
 }
 
@@ -751,7 +740,7 @@ func (c *Client) HealthCheckLoop(pctx context.Context) {
 					break
 				}
 				d := backoff.GetBackoff().Delay(i)
-				log.Errorf(healthCheckErr, "retry to sync members from etcd %s after %s", c.Endpoints, d)
+				log.Error(fmt.Sprintf("retry to sync members from etcd %s after %s", c.Endpoints, d), healthCheckErr)
 				select {
 				case <-pctx.Done():
 					return
@@ -780,13 +769,13 @@ func (c *Client) HealthCheckLoop(pctx context.Context) {
 func (c *Client) ReOpen() error {
 	client, cerr := c.newClient()
 	if cerr != nil {
-		log.Errorf(cerr, "create a new connection to etcd %v failed",
-			c.Endpoints)
+		log.Error(fmt.Sprintf("create a new connection to etcd %v failed",
+			c.Endpoints), cerr)
 		return cerr
 	}
 	c.Client, client = client, c.Client
 	if cerr = client.Close(); cerr != nil {
-		log.Errorf(cerr, "failed to close the unavailable etcd client")
+		log.Error("failed to close the unavailable etcd client", cerr)
 	}
 	client = nil
 	return nil
@@ -879,7 +868,7 @@ func callback(action client.ActionType, rev int64, kvs []*mvccpb.KeyValue, cb cl
 }
 
 func NewRegistry(opts datasource.Options) client.Registry {
-	log.Warnf("enable etcd registry mode")
+	log.Warn("enable etcd registry mode")
 
 	inst := &Client{}
 	if err := inst.Initialize(); err != nil {

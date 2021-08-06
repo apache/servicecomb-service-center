@@ -17,7 +17,11 @@
 
 package event
 
-import "github.com/apache/servicecomb-service-center/pkg/log"
+import (
+	"fmt"
+
+	"github.com/apache/servicecomb-service-center/pkg/log"
+)
 
 const (
 	CheckerGroup   = "__HealthChecker__"
@@ -39,13 +43,13 @@ func (s *SubscriberHealthChecker) OnMessage(evt Event) {
 	err := j.ErrorSubscriber.Err()
 
 	if j.ErrorSubscriber.Type() == INNER {
-		log.Errorf(nil, "remove %s watcher failed, here cause a dead lock, subject: %s, group: %s",
-			j.ErrorSubscriber.Type(), j.ErrorSubscriber.Subject(), j.ErrorSubscriber.Group())
+		log.Error(fmt.Sprintf("remove %s watcher failed, here cause a dead lock, subject: %s, group: %s",
+			j.ErrorSubscriber.Type(), j.ErrorSubscriber.Subject(), j.ErrorSubscriber.Group()), nil)
 		return
 	}
 
-	log.Debugf("notification service remove %s watcher, error: %v, subject: %s, group: %s",
-		j.ErrorSubscriber.Type(), err, j.ErrorSubscriber.Subject(), j.ErrorSubscriber.Group())
+	log.Debug(fmt.Sprintf("notification service remove %s watcher, error: %v, subject: %s, group: %s",
+		j.ErrorSubscriber.Type(), err, j.ErrorSubscriber.Subject(), j.ErrorSubscriber.Group()))
 	s.Bus().RemoveSubscriber(j.ErrorSubscriber)
 }
 

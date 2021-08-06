@@ -90,15 +90,15 @@ func (h *InstanceEventHandler) OnEvent(evt sd.KvEvent) {
 		return
 	}
 
-	log.Infof("caught [%s] service[%s][%s/%s/%s/%s] instance[%s] event, endpoints %v",
+	log.Info(fmt.Sprintf("caught [%s] service[%s][%s/%s/%s/%s] instance[%s] event, endpoints %v",
 		action, providerID, ms.Environment, ms.AppId, ms.ServiceName, ms.Version,
-		providerInstanceID, instance.Endpoints)
+		providerInstanceID, instance.Endpoints))
 
 	// 查询所有consumer
 	consumerIDs, err := serviceUtil.GetConsumerIds(ctx, domainProject, ms)
 	if err != nil {
-		log.Errorf(err, "get service[%s][%s/%s/%s/%s]'s consumerIDs failed",
-			providerID, ms.Environment, ms.AppId, ms.ServiceName, ms.Version)
+		log.Error(fmt.Sprintf("get service[%s][%s/%s/%s/%s]'s consumerIDs failed",
+			providerID, ms.Environment, ms.AppId, ms.ServiceName, ms.Version), err)
 		return
 	}
 
@@ -126,7 +126,7 @@ func PublishInstanceEvent(evt sd.KvEvent, serviceKey *pb.MicroServiceKey, subscr
 		evt := event.NewInstanceEvent(consumerID, evt.Revision, evt.CreateAt, response)
 		err := event.Center().Fire(evt)
 		if err != nil {
-			log.Errorf(err, "publish event[%v] into channel failed", evt)
+			log.Error(fmt.Sprintf("publish event[%v] into channel failed", evt), err)
 		}
 	}
 }
@@ -150,5 +150,5 @@ func NotifySyncerInstanceEvent(evt sd.KvEvent, domainProject string, ms *pb.Micr
 
 	syncernotify.GetSyncerNotifyCenter().AddEvent(instEvent)
 
-	log.Debugf("success to add instance change event:%s to event queue", instEvent)
+	log.Debug(fmt.Sprintf("success to add instance change event: %v to event queue", instEvent))
 }

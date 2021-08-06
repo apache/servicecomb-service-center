@@ -42,7 +42,7 @@ const (
 func initTracer() {
 	collector, err := newCollector()
 	if err != nil {
-		log.Errorf(err, "new tracing collector failed, use the noop tracer")
+		log.Error("new tracing collector failed, use the noop tracer", err)
 		return
 	}
 	ipPort := metrics.InstanceName()
@@ -51,7 +51,7 @@ func initTracer() {
 		zipkin.TraceID128Bit(true),
 		zipkin.WithSampler(zipkin.NewCountingSampler(GetSamplerRate())))
 	if err != nil {
-		log.Errorf(err, "new tracer failed")
+		log.Error("new tracer failed", err)
 		return
 	}
 	opentracing.SetGlobalTracer(tracer)

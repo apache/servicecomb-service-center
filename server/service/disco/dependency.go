@@ -30,7 +30,7 @@ func (s *MicroServiceService) GetProviderDependencies(ctx context.Context,
 	in *pb.GetDependenciesRequest) (*pb.GetProDependenciesResponse, error) {
 	err := validator.Validate(in)
 	if err != nil {
-		log.Errorf(err, "GetProviderDependencies failed for validating parameters failed")
+		log.Error("GetProviderDependencies failed for validating parameters failed", err)
 		return &pb.GetProDependenciesResponse{
 			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
 		}, nil
@@ -42,7 +42,7 @@ func (s *MicroServiceService) GetProviderDependencies(ctx context.Context,
 func (s *MicroServiceService) GetConsumerDependencies(ctx context.Context, in *pb.GetDependenciesRequest) (*pb.GetConDependenciesResponse, error) {
 	err := validator.Validate(in)
 	if err != nil {
-		log.Errorf(err, "GetConsumerDependencies failed for validating parameters failed")
+		log.Error("GetConsumerDependencies failed for validating parameters failed", err)
 		return &pb.GetConDependenciesResponse{
 			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
 		}, nil

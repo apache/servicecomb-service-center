@@ -74,16 +74,16 @@ func Start(ctx context.Context, conf *Config) (err error) {
 
 		for i := 0; i <= retryDiscover; i++ {
 			// 定时发送心跳
-			err1 := discoveryToCaches(ctx, consumerID, conf.Provider)
-			if err1 == nil {
+			cacheErr := discoveryToCaches(ctx, consumerID, conf.Provider)
+			if cacheErr == nil {
 				err = nil
-				log.Infof("discovery provider success, appID = %s, name = %s, version = %s",
-					conf.Provider.AppID, conf.Provider.Name, conf.Provider.Version)
+				log.Info(fmt.Sprintf("discovery provider success, appID = %s, name = %s, version = %s",
+					conf.Provider.AppID, conf.Provider.Name, conf.Provider.Version))
 				break
 			}
-			err = err1
-			log.Warnf("discovery provider failed, appID = %s, name = %s, version = %s",
-				conf.Provider.AppID, conf.Provider.Name, conf.Provider.Version)
+			err = cacheErr
+			log.Warn(fmt.Sprintf("discovery provider failed, appID = %s, name = %s, version = %s",
+				conf.Provider.AppID, conf.Provider.Name, conf.Provider.Version))
 			log.Info("waiting for retry")
 			time.Sleep(time.Duration(retryDiscoverInterval) * time.Second)
 
@@ -163,7 +163,8 @@ func heartbeat(ctx context.Context, ins *discovery.MicroServiceInstance) {
 		// 定时发送心跳
 		err := cli.Heartbeat(ctx, domain, project, ins.ServiceId, ins.InstanceId)
 		if err != nil {
-			log.Errorf(err, "send heartbeat failed, domain = %s, serviceID = %s, instanceID = %s", domain, project, ins.ServiceId, ins.InstanceId)
+			log.Error(fmt.Sprintf("send heartbeat failed, domain = %s, project = %s, serviceID = %s, instanceID = %s",
+				domain, project, ins.ServiceId, ins.InstanceId), err)
 			return
 		}
 		log.Debug("send heartbeat success")
@@ -190,7 +191,7 @@ func watchAndRenewCaches(ctx context.Context, provider *MicroService) {
 		log.Debug("reply from watch service")
 		list, ok := providerCaches.Load(result.Instance.ServiceId)
 		if !ok {
-			log.Infof("provider \"%s\" not found", result.Instance.ServiceId)
+			log.Info(fmt.Sprintf("provider \"%s\" not found", result.Instance.ServiceId))
 			return
 		}
 		providerList := list.([]*discovery.MicroServiceInstance)
@@ -211,11 +212,11 @@ func watchAndRenewCaches(ctx context.Context, provider *MicroService) {
 		if !renew && result.Action != "DELETE" {
 			providerList = append(providerList, result.Instance)
 		}
-		log.Debugf("update provider list: %s", providerList)
+		log.Debug(fmt.Sprintf("update provider list: %s", providerList))
 		providerCaches.Store(provider.Name, providerList)
 	})
 	if err != nil {
-		log.Errorf(err, "watch service %s failed", provider.ID)
+		log.Error(fmt.Sprintf("watch service %s failed", provider.ID), err)
 	}
 }
 

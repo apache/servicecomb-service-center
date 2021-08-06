@@ -18,6 +18,7 @@
 package prometheus
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -33,10 +34,10 @@ var Vectors = make(map[string]prometheus.Collector)
 
 func registerMetrics(name string, vec prometheus.Collector) {
 	if _, ok := Vectors[name]; ok {
-		log.Warnf("found duplicate metrics name[%s], override!", name)
+		log.Warn(fmt.Sprintf("found duplicate metrics name[%s], override!", name))
 	}
 	if err := metrics.GetSystemPrometheusRegistry().Register(vec); err != nil {
-		log.Fatalf(err, "register prometheus metrics[%s] failed", name)
+		log.Fatal(fmt.Sprintf("register prometheus metrics[%s] failed", name), err)
 	}
 	Vectors[name] = vec
 }

@@ -143,8 +143,8 @@ func (dr *DependencyRelation) GetDependencyConsumersOfProvider() ([]*pb.MicroSer
 	providerService := pb.MicroServiceToKey(dr.domainProject, dr.provider)
 	consumerDependList, err := dr.GetConsumerOfSameServiceNameAndAppID(providerService)
 	if err != nil {
-		log.Errorf(err, "get consumers that depend on rule[%s/%s/%s/%s] failed",
-			dr.provider.Environment, dr.provider.AppId, dr.provider.ServiceName, dr.provider.Version)
+		log.Error(fmt.Sprintf("get consumers that depend on rule[%s/%s/%s/%s] failed",
+			dr.provider.Environment, dr.provider.AppId, dr.provider.ServiceName, dr.provider.Version), err)
 		return nil, err
 	}
 	return consumerDependList, nil

@@ -131,13 +131,13 @@ func (dr *DependencyRelation) GetProviderIdsByRules(providerRules []*pb.MicroSer
 	for _, provider := range providerRules {
 		serviceIDs, err := dr.parseDependencyRule(provider)
 		if err != nil {
-			log.Errorf(err, "get service[%s/%s/%s/%s]'s providerIDs failed",
-				provider.Environment, provider.AppId, provider.ServiceName, provider.Version)
+			log.Error(fmt.Sprintf("get service[%s/%s/%s/%s]'s providerIDs failed",
+				provider.Environment, provider.AppId, provider.ServiceName, provider.Version), err)
 			return provideServiceIds, err
 		}
 		if len(serviceIDs) == 0 {
-			log.Warnf("get service[%s/%s/%s/%s]'s providerIDs is empty",
-				provider.Environment, provider.AppId, provider.ServiceName, provider.Version)
+			log.Warn(fmt.Sprintf("get service[%s/%s/%s/%s]'s providerIDs is empty",
+				provider.Environment, provider.AppId, provider.ServiceName, provider.Version))
 			continue
 		}
 		provideServiceIds = append(provideServiceIds, serviceIDs...)
@@ -153,7 +153,7 @@ func (dr *DependencyRelation) parseDependencyRule(dependencyRule *pb.MicroServic
 func (dr *DependencyRelation) GetDependencyConsumers(opts ...DependencyRelationFilterOption) ([]*pb.MicroService, error) {
 	consumerDependAllList, err := dr.GetDependencyConsumersOfProvider()
 	if err != nil {
-		log.Errorf(err, "get service[%s]'s consumers failed", dr.provider.ServiceId)
+		log.Error(fmt.Sprintf("get service[%s]'s consumers failed", dr.provider.ServiceId), err)
 		return nil, err
 	}
 	consumers := make([]*pb.MicroService, 0)
@@ -205,13 +205,13 @@ func (dr *DependencyRelation) getDependencyConsumerIds() ([]string, error) {
 	for _, consumer := range consumerDependAllList {
 		consumerID, err := GetServiceID(dr.ctx, consumer)
 		if err != nil {
-			log.Errorf(err, "get consumer[%s/%s/%s/%s] failed",
-				consumer.Environment, consumer.AppId, consumer.ServiceName, consumer.Version)
+			log.Error(fmt.Sprintf("get consumer[%s/%s/%s/%s] failed",
+				consumer.Environment, consumer.AppId, consumer.ServiceName, consumer.Version), err)
 			return nil, err
 		}
 		if len(consumerID) == 0 {
-			log.Warnf("get consumer[%s/%s/%s/%s] not exist",
-				consumer.Environment, consumer.AppId, consumer.ServiceName, consumer.Version)
+			log.Warn(fmt.Sprintf("get consumer[%s/%s/%s/%s] not exist",
+				consumer.Environment, consumer.AppId, consumer.ServiceName, consumer.Version))
 			continue
 		}
 		consumerIDs = append(consumerIDs, consumerID)
@@ -227,8 +227,8 @@ func (dr *DependencyRelation) GetDependencyConsumersOfProvider() ([]*pb.MicroSer
 	providerService := pb.MicroServiceToKey(dr.domainProject, dr.provider)
 	consumerDependList, err := dr.GetConsumerOfSameServiceNameAndAppID(providerService)
 	if err != nil {
-		log.Errorf(err, "get consumers that depend on rule[%s/%s/%s/%s] failed",
-			dr.provider.Environment, dr.provider.AppId, dr.provider.ServiceName, dr.provider.Version)
+		log.Error(fmt.Sprintf("get consumers that depend on rule[%s/%s/%s/%s] failed",
+			dr.provider.Environment, dr.provider.AppId, dr.provider.ServiceName, dr.provider.Version), err)
 		return nil, err
 	}
 	return consumerDependList, nil
@@ -244,8 +244,8 @@ func (dr *DependencyRelation) GetConsumerOfSameServiceNameAndAppID(provider *pb.
 		client.WithPrefix())
 	rsp, err := kv.Store().DependencyRule().Search(dr.ctx, opts...)
 	if err != nil {
-		log.Errorf(err, "get service[%s/%s/%s]'s dependency rules failed",
-			provider.Environment, provider.AppId, provider.ServiceName)
+		log.Error(fmt.Sprintf("get service[%s/%s/%s]'s dependency rules failed",
+			provider.Environment, provider.AppId, provider.ServiceName), err)
 		return nil, err
 	}
 

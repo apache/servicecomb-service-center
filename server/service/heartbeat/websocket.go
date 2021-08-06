@@ -119,7 +119,7 @@ func (c *client) handleMessage() {
 		if err != nil {
 			log.Error("", err)
 		}
-		log.Infof("received 'Pong' message '%s' from watcher[%s]\n", message, remoteAddr)
+		log.Info(fmt.Sprintf("received 'Pong' message '%s' from watcher[%s]\n", message, remoteAddr))
 		request := &pb.HeartbeatRequest{
 			ServiceId:  c.serviceID,
 			InstanceId: c.instanceID,
@@ -148,9 +148,9 @@ func (c *client) handleMessage() {
 
 func SendEstablishError(conn *websocket.Conn, err error) {
 	remoteAddr := conn.RemoteAddr().String()
-	log.Errorf(err, "establish[%s] websocket failed.", remoteAddr)
+	log.Error(fmt.Sprintf("establish[%s] websocket failed.", remoteAddr), err)
 	if err := conn.WriteMessage(websocket.TextMessage, util.StringToBytesWithNoCopy(err.Error())); err != nil {
-		log.Errorf(err, "establish[%s] websocket failed: write message failed.", remoteAddr)
+		log.Error(fmt.Sprintf("establish[%s] websocket failed: write message failed.", remoteAddr), err)
 	}
 }
 

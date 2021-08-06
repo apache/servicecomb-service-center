@@ -35,9 +35,9 @@ func (s *servicecenter) heartbeatInstances(mapping pb.SyncMapping, instance *pb.
 	item := mapping[index]
 	err := s.servicecenter.Heartbeat(context.Background(), item.DomainProject, item.CurServiceID, item.CurInstanceID)
 	if err != nil {
-		log.Errorf(err, "Servicecenter heartbeat instance failed")
+		log.Error("Servicecenter heartbeat instance failed", err)
 	}
-	log.Debugf("Instance %s is already exist, sent heartbeat to service-center", item.OrgInstanceID)
+	log.Debug(fmt.Sprintf("Instance %s is already exist, sent heartbeat to service-center", item.OrgInstanceID))
 	return true
 }
 
@@ -64,10 +64,10 @@ func (s *servicecenter) createService(service *pb.SyncService) (string, error) {
 func (s *servicecenter) registryInstances(domainProject, serviceID string, instance *pb.SyncInstance) string {
 	instanceID, err := s.servicecenter.RegisterInstance(context.Background(), domainProject, serviceID, instance)
 	if err != nil {
-		log.Errorf(err, "Servicecenter registry instance failed")
+		log.Error("Servicecenter registry instance failed", err)
 		return ""
 	}
-	log.Debugf("Registered instance successful, instanceID = %s", instanceID)
+	log.Debug(fmt.Sprintf("Registered instance successful, instanceID = %s", instanceID))
 	return instanceID
 }
 
@@ -86,9 +86,9 @@ next:
 
 		err := s.servicecenter.UnregisterInstance(ctx, val.DomainProject, val.CurServiceID, val.CurInstanceID)
 		if err != nil {
-			log.Errorf(err, "Servicecenter delete instance failed")
+			log.Error("Servicecenter delete instance failed", err)
 		}
-		log.Debugf("Unregistered instance, InstanceID = %s", val.CurInstanceID)
+		log.Debug(fmt.Sprintf("Unregistered instance, InstanceID = %s", val.CurInstanceID))
 	}
 	return nm
 }

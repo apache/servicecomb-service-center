@@ -19,6 +19,7 @@ package validator
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 
 	pb "github.com/go-chassis/cari/discovery"
@@ -101,7 +102,7 @@ func Validate(v interface{}) error {
 	case *pb.GetAppsRequest:
 		return MicroServiceKeyValidator().Validate(v)
 	default:
-		log.Warnf("No validator for %T.", t)
+		log.Warn(fmt.Sprintf("No validator for %T.", t))
 		return nil
 	}
 }

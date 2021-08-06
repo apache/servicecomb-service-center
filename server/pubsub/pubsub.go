@@ -20,6 +20,7 @@ package pubsub
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/gorilla/websocket"
@@ -33,7 +34,7 @@ var ErrRequiredServiceID = errors.New("required the serviceID")
 
 // Watch listen the provider instance events by serviceID
 func Watch(ctx context.Context, in *pb.WatchInstanceRequest, conn *websocket.Conn) {
-	log.Infof("new a web socket watch with service[%s]", in.SelfServiceId)
+	log.Info(fmt.Sprintf("new a web socket watch with service[%s]", in.SelfServiceId))
 	if err := ExistService(ctx, in.SelfServiceId); err != nil {
 		ws.SendEstablishError(conn, err)
 		return

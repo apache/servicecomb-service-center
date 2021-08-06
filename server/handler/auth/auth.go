@@ -18,6 +18,7 @@
 package auth
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/go-chassis/cari/discovery"
@@ -41,7 +42,7 @@ func (h *Handler) Handle(i *chain.Invocation) {
 	r := i.Context().Value(rest.CtxRequest).(*http.Request)
 
 	if err := auth.Identify(r); err != nil {
-		log.Errorf(err, "authenticate request failed, %s %s", r.Method, r.RequestURI)
+		log.Error(fmt.Sprintf("authenticate request failed, %s %s", r.Method, r.RequestURI), err)
 		if e, ok := err.(*errsvc.Error); ok {
 			i.Fail(e)
 			return

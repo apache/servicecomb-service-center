@@ -18,6 +18,7 @@
 package plugin
 
 import (
+	"fmt"
 	pg "plugin"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -37,7 +38,7 @@ func DynamicPluginFunc(pn Kind, funcName string) pg.Symbol {
 
 	f, err := FindFunc(pn.String(), funcName)
 	if err != nil {
-		log.Errorf(err, "plugin '%s': not implemented function '%s'", pn, funcName)
+		log.Error(fmt.Sprintf("plugin '%s': not implemented function '%s'", pn, funcName), err)
 	}
 	return f
 }

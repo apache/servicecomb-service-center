@@ -180,5 +180,5 @@ func loadServerConfig() ServerConfig {
 func setCPUs() {
 	cores := runtime.NumCPU()
 	runtime.GOMAXPROCS(cores)
-	log.Infof("service center is running simultaneously with %d CPU cores", cores)
+	log.Info(fmt.Sprintf("service center is running simultaneously with %d CPU cores", cores))
 }

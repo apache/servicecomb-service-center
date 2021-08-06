@@ -66,7 +66,7 @@ func AutoReportCPUUsage(ctx context.Context) {
 
 			diff := ct - cpuTotal
 			if diff <= 0 {
-				log.Warnf("the current cpu usage is the same as the previous period")
+				log.Warn("the current cpu usage is the same as the previous period")
 				continue
 			}
 			cpuGauge.WithLabelValues(metrics.InstanceName()).Set(

@@ -61,8 +61,8 @@ func Watch(ctx context.Context, serviceID string, conn *websocket.Conn) {
 
 func SendEstablishError(conn *websocket.Conn, err error) {
 	remoteAddr := conn.RemoteAddr().String()
-	log.Errorf(err, "establish[%s] websocket watch failed.", remoteAddr)
+	log.Error(fmt.Sprintf("establish[%s] websocket watch failed.", remoteAddr), err)
 	if err := conn.WriteMessage(websocket.TextMessage, util.StringToBytesWithNoCopy(err.Error())); err != nil {
-		log.Errorf(err, "establish[%s] websocket watch failed: write message failed.", remoteAddr)
+		log.Error(fmt.Sprintf("establish[%s] websocket watch failed: write message failed.", remoteAddr), err)
 	}
 }

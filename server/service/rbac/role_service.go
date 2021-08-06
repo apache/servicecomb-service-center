@@ -20,6 +20,7 @@ package rbac
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/cari/rbac"
@@ -35,7 +36,7 @@ import (
 func CreateRole(ctx context.Context, r *rbac.Role) error {
 	err := validator.ValidateCreateRole(r)
 	if err != nil {
-		log.Errorf(err, "create role [%s] failed", r.Name)
+		log.Error(fmt.Sprintf("create role [%s] failed", r.Name), err)
 		return discovery.NewError(discovery.ErrInvalidParams, err.Error())
 	}
 	quotaErr := quota.Apply(ctx, quota.NewApplyQuotaResource(quota.TypeRole,
@@ -45,11 +46,11 @@ func CreateRole(ctx context.Context, r *rbac.Role) error {
 	}
 	err = datasource.GetRoleManager().CreateRole(ctx, r)
 	if err == nil {
-		log.Infof("create role [%s] success", r.Name)
+		log.Info(fmt.Sprintf("create role [%s] success", r.Name))
 		return nil
 	}
 
-	log.Errorf(err, "create role [%s] failed", r.Name)
+	log.Error(fmt.Sprintf("create role [%s] failed", r.Name), err)
 	if err == datasource.ErrRoleDuplicated {
 		return rbac.NewError(rbac.ErrRoleConflict, err.Error())
 	}
@@ -82,11 +83,11 @@ func DeleteRole(ctx context.Context, name string) error {
 	}
 	exist, err := RoleExist(ctx, name)
 	if err != nil {
-		log.Errorf(err, "check role [%s] exist failed", name)
+		log.Error(fmt.Sprintf("check role [%s] exist failed", name), err)
 		return err
 	}
 	if !exist {
-		log.Errorf(err, "role [%s] not exist", name)
+		log.Error(fmt.Sprintf("role [%s] not exist", name), err)
 		return rbac.NewError(rbac.ErrRoleNotExist, "")
 	}
 	succeed, err := datasource.GetRoleManager().DeleteRole(ctx, name)
@@ -108,16 +109,16 @@ func EditRole(ctx context.Context, name string, a *rbac.Role) error {
 	}
 	exist, err := RoleExist(ctx, name)
 	if err != nil {
-		log.Errorf(err, "check role [%s] exist failed", name)
+		log.Error(fmt.Sprintf("check role [%s] exist failed", name), err)
 		return err
 	}
 	if !exist {
-		log.Errorf(err, "role [%s] not exist", name)
+		log.Error(fmt.Sprintf("role [%s] not exist", name), err)
 		return rbac.NewError(rbac.ErrRoleNotExist, "")
 	}
 	oldRole, err := GetRole(ctx, name)
 	if err != nil {
-		log.Errorf(err, "get role [%s] failed", name)
+		log.Error(fmt.Sprintf("get role [%s] failed", name), err)
 		return err
 	}
 
@@ -125,10 +126,10 @@ func EditRole(ctx context.Context, name string, a *rbac.Role) error {
 
 	err = datasource.GetRoleManager().UpdateRole(ctx, name, oldRole)
 	if err != nil {
-		log.Errorf(err, "can not edit role info")
+		log.Error("can not edit role info", err)
 		return err
 	}
-	log.Infof("role [%s] is edit", oldRole.ID)
+	log.Info(fmt.Sprintf("role [%s] is edit", oldRole.ID))
 	return nil
 }
 

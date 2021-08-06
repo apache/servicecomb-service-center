@@ -54,7 +54,7 @@ func (c *Syncer) Sync(ctx context.Context) {
 	cache, errs := c.Client.GetScCache(ctx)
 	if len(errs) > 0 {
 		err := fmt.Errorf("%v", errs)
-		log.Errorf(err, "Sync catches errors")
+		log.Error("Sync catches errors", err)
 		err = alarm.Raise(alarm.IDBackendConnectionRefuse,
 			alarm.AdditionalContext(err.Error()))
 		if err != nil {
@@ -136,8 +136,8 @@ func (c *Syncer) checkWithConflictHandleFunc(local *Cacher, remote dump.Getter, 
 			// if connect to some cluster failed, then skip to notify changes
 			// of these clusters to prevent publish the wrong changes events of kvs.
 			if err, ok := skipClusters[old.ClusterName]; ok {
-				log.Errorf(err, "cluster[%s] temporarily unavailable, skip cluster[%s] event %s %s",
-					old.ClusterName, v.ClusterName, pb.EVT_UPDATE, v.Key)
+				log.Error(fmt.Sprintf("cluster[%s] temporarily unavailable, skip cluster[%s] event %s %s",
+					old.ClusterName, v.ClusterName, pb.EVT_UPDATE, v.Key), err)
 				break
 			}
 			newKv.Version = 1 + old.Version
@@ -159,8 +159,8 @@ func (c *Syncer) checkWithConflictHandleFunc(local *Cacher, remote dump.Getter, 
 		})
 		if !exist {
 			if err, ok := skipClusters[v.ClusterName]; ok {
-				log.Errorf(err, "cluster[%s] temporarily unavailable, skip event %s %s",
-					v.ClusterName, pb.EVT_DELETE, v.Key)
+				log.Error(fmt.Sprintf("cluster[%s] temporarily unavailable, skip event %s %s",
+					v.ClusterName, pb.EVT_DELETE, v.Key), err)
 				return true
 			}
 			deletes = append(deletes, v)
@@ -182,18 +182,18 @@ func (c *Syncer) logConflictFunc(origin *dump.KV, conflict dump.Getter, index in
 		keyValue := (*slice)[index]
 		if serviceID := origin.Value.(string); keyValue.Value != serviceID {
 			key := path.GetInfoFromSvcIndexKV(util.StringToBytesWithNoCopy(keyValue.Key))
-			log.Warnf("conflict! can not merge microservice index[%s][%s][%s/%s/%s/%s], found one[%s] in cluster[%s]",
+			log.Warn(fmt.Sprintf("conflict! can not merge microservice index[%s][%s][%s/%s/%s/%s], found one[%s] in cluster[%s]",
 				keyValue.ClusterName, keyValue.Value, key.Environment, key.AppId, key.ServiceName, key.Version,
-				serviceID, origin.ClusterName)
+				serviceID, origin.ClusterName))
 		}
 	case *dump.MicroserviceAliasSlice:
 		slice := conflict.(*dump.MicroserviceAliasSlice)
 		keyValue := (*slice)[index]
 		if serviceID := origin.Value.(string); keyValue.Value != serviceID {
 			key := path.GetInfoFromSvcAliasKV(util.StringToBytesWithNoCopy(keyValue.Key))
-			log.Warnf("conflict! can not merge microservice alias[%s][%s][%s/%s/%s/%s], found one[%s] in cluster[%s]",
+			log.Warn(fmt.Sprintf("conflict! can not merge microservice alias[%s][%s][%s/%s/%s/%s], found one[%s] in cluster[%s]",
 				keyValue.ClusterName, keyValue.Value, key.Environment, key.AppId, key.ServiceName, key.Version,
-				serviceID, origin.ClusterName)
+				serviceID, origin.ClusterName))
 		}
 	}
 }

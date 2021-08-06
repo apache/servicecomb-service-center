@@ -18,6 +18,8 @@
 package event
 
 import (
+	"fmt"
+
 	pb "github.com/go-chassis/cari/discovery"
 
 	"github.com/apache/servicecomb-service-center/datasource/etcd/cache"
@@ -45,8 +47,8 @@ func (h *DependencyRuleEventHandler) OnEvent(evt sd.KvEvent) {
 	if t != path.DepsProvider {
 		return
 	}
-	log.Debugf("caught [%s] provider rule[%s/%s/%s/%s] event",
-		action, providerKey.Environment, providerKey.AppId, providerKey.ServiceName, providerKey.Version)
+	log.Debug(fmt.Sprintf("caught [%s] provider rule[%s/%s/%s/%s] event",
+		action, providerKey.Environment, providerKey.AppId, providerKey.ServiceName, providerKey.Version))
 	cache.DependencyRule.Remove(providerKey)
 }
 

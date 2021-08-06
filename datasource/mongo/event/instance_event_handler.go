@@ -143,5 +143,6 @@ func NotifySyncerInstanceEvent(event sd.MongoEvent, microService *discovery.Micr
 	}
 	syncernotify.GetSyncerNotifyCenter().AddEvent(instEvent)
 
-	log.Debug(fmt.Sprintf("success to add instance change event action [%s], instanceKey : %s to event queue", instEvent.Action, instanceKey))
+	log.Debug(fmt.Sprintf("success to add instance change event action [%s], instanceKey : %s to event queue",
+		instEvent.Action, instanceKey))
 }

@@ -75,10 +75,10 @@ func (sm *SCManager) registerService(ctx context.Context) error {
 		return err
 	}
 	if respE.Response.GetCode() == pb.ResponseSuccess {
-		log.Warnf("service center service[%s] already registered", respE.ServiceId)
+		log.Warn(fmt.Sprintf("service center service[%s] already registered", respE.ServiceId))
 		respG, err := core.ServiceAPI.GetOne(ctx, core.GetServiceRequest(respE.ServiceId))
 		if respG.Response.GetCode() != pb.ResponseSuccess {
-			log.Errorf(err, "query service center service[%s] info failed", respE.ServiceId)
+			log.Error(fmt.Sprintf("query service center service[%s] info failed", respE.ServiceId), err)
 			return datasource.ErrServiceNotExists
 		}
 		core.Service = respG.Service
@@ -95,7 +95,7 @@ func (sm *SCManager) registerService(ctx context.Context) error {
 		return errors.New(respS.Response.GetMessage())
 	}
 	core.Service.ServiceId = respS.ServiceId
-	log.Infof("register service center service[%s]", respS.ServiceId)
+	log.Info(fmt.Sprintf("register service center service[%s]", respS.ServiceId))
 	return nil
 }
 
@@ -113,8 +113,8 @@ func (sm *SCManager) registerInstance(ctx context.Context) error {
 		return errors.New(respI.Response.GetMessage())
 	}
 	core.Instance.InstanceId = respI.InstanceId
-	log.Infof("register service center instance[%s/%s], endpoints is %s",
-		core.Service.ServiceId, respI.InstanceId, core.Instance.Endpoints)
+	log.Info(fmt.Sprintf("register service center instance[%s/%s], endpoints is %s",
+		core.Service.ServiceId, respI.InstanceId, core.Instance.Endpoints))
 	return nil
 }
 
@@ -126,13 +126,13 @@ func (sm *SCManager) selfHeartBeat(pCtx context.Context) error {
 		return err
 	}
 	if respI.Response.GetCode() == pb.ResponseSuccess {
-		log.Debugf("update service center instance[%s/%s] heartbeat",
-			core.Instance.ServiceId, core.Instance.InstanceId)
+		log.Debug(fmt.Sprintf("update service center instance[%s/%s] heartbeat",
+			core.Instance.ServiceId, core.Instance.InstanceId))
 		return nil
 	}
 	err = fmt.Errorf(respI.Response.GetMessage())
-	log.Errorf(err, "update service center instance[%s/%s] heartbeat failed",
-		core.Instance.ServiceId, core.Instance.InstanceId)
+	log.Error(fmt.Sprintf("update service center instance[%s/%s] heartbeat failed",
+		core.Instance.ServiceId, core.Instance.InstanceId), err)
 	return err
 }
 
@@ -150,8 +150,8 @@ func (sm *SCManager) autoSelfHeartBeat() {
 				//服务不存在，创建服务
 				err = sm.selfRegister(ctx)
 				if err != nil {
-					log.Errorf(err, "retry to register[%s/%s/%s/%s] failed",
-						core.Service.Environment, core.Service.AppId, core.Service.ServiceName, core.Service.Version)
+					log.Error(fmt.Sprintf("retry to register[%s/%s/%s/%s] failed",
+						core.Service.Environment, core.Service.AppId, core.Service.ServiceName, core.Service.Version), err)
 				}
 			}
 		}
@@ -174,8 +174,8 @@ func (sm *SCManager) SelfUnregister(pCtx context.Context) error {
 		log.Error(err.Error(), nil)
 		return err
 	}
-	log.Warnf("unregister service center instance[%s/%s]",
-		core.Service.ServiceId, core.Instance.InstanceId)
+	log.Warn(fmt.Sprintf("unregister service center instance[%s/%s]",
+		core.Service.ServiceId, core.Instance.InstanceId))
 	return nil
 }
 
@@ -190,7 +190,7 @@ func (sm *SCManager) ClearNoInstanceServices(ctx context.Context, serviceTTL tim
 		return nil
 	}
 	timeLimit := time.Now().Add(0 - serviceTTL)
-	log.Infof("clear no-instance services created before %s", timeLimit)
+	log.Info(fmt.Sprintf("clear no-instance services created before %s", timeLimit))
 	timeLimitStamp := strconv.FormatInt(timeLimit.Unix(), 10)
 
 	for domainProject, svcList := range services {
@@ -199,7 +199,7 @@ func (sm *SCManager) ClearNoInstanceServices(ctx context.Context, serviceTTL tim
 		}
 		ctx, err := ctxFromDomainProject(ctx, domainProject)
 		if err != nil {
-			log.Errorf(err, "get domain project context failed")
+			log.Error("get domain project context failed", err)
 			continue
 		}
 		for _, svc := range svcList {
@@ -208,7 +208,7 @@ func (sm *SCManager) ClearNoInstanceServices(ctx context.Context, serviceTTL tim
 			}
 			ok, err := shouldClear(ctx, timeLimitStamp, svc)
 			if err != nil {
-				log.Errorf(err, "check service clear necessity failed")
+				log.Error("check service clear necessity failed", err)
 				continue
 			}
 			if !ok {
@@ -224,14 +224,14 @@ func (sm *SCManager) ClearNoInstanceServices(ctx context.Context, serviceTTL tim
 			}
 			delSvcResp, err := core.ServiceAPI.Delete(ctx, delSvcReq)
 			if err != nil {
-				log.Errorf(err, "clear service failed, %s", svcCtxStr)
+				log.Error(fmt.Sprintf("clear service failed, %s", svcCtxStr), err)
 				continue
 			}
 			if delSvcResp.Response.GetCode() != pb.ResponseSuccess {
-				log.Errorf(nil, "clear service failed, %s, %s", delSvcResp.Response.GetMessage(), svcCtxStr)
+				log.Error(fmt.Sprintf("clear service failed, %s, %s", delSvcResp.Response.GetMessage(), svcCtxStr), err)
 				continue
 			}
-			log.Warnf("clear service success, %s", svcCtxStr)
+			log.Warn(fmt.Sprintf("clear service success, %s", svcCtxStr))
 		}
 	}
 	return nil
@@ -290,14 +290,14 @@ func (sm *SCManager) UpgradeVersion(ctx context.Context) error {
 	lock, err := mux.Lock(mux.GlobalLock)
 
 	if err != nil {
-		log.Errorf(err, "wait for server ready failed")
+		log.Error("wait for server ready failed", err)
 		return err
 	}
 	if needUpgrade(ctx) {
 		config.Server.Version = version.Ver().Version
 
 		if err := sm.UpgradeServerVersion(ctx); err != nil {
-			log.Errorf(err, "upgrade server version failed")
+			log.Error("upgrade server version failed", err)
 			os.Exit(1)
 		}
 	}

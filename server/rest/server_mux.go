@@ -18,6 +18,7 @@
 package rest
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -48,16 +49,16 @@ func RegisterServeMux(name string) {
 func RegisterServeMuxHandleFunc(name, pattern string, f http.HandlerFunc) {
 	serveMuxMap[name].HandleFunc(pattern, f)
 
-	log.Infof("register serve mux '%s' http handle function %s(), pattern %s",
-		name, util.FuncName(f), pattern)
+	log.Info(fmt.Sprintf("register serve mux '%s' http handle function %s(), pattern %s",
+		name, util.FuncName(f), pattern))
 }
 
 func RegisterServeMuxHandler(name, pattern string, h http.Handler) {
 	serveMuxMap[name].Handle(pattern, h)
 
 	t := util.Reflect(h).Type
-	log.Infof("register serve mux '%s' http handler %s/%s, pattern %s",
-		name, t.PkgPath(), t.Name(), pattern)
+	log.Info(fmt.Sprintf("register serve mux '%s' http handler %s/%s, pattern %s",
+		name, t.PkgPath(), t.Name(), pattern))
 }
 
 func RegisterServerHandleFunc(pattern string, f http.HandlerFunc) {

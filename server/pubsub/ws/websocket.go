@@ -20,6 +20,7 @@ package ws
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/apache/servicecomb-service-center/datasource"
@@ -55,8 +56,8 @@ func (wh *WebSocket) Init() {
 
 	wh.SetIdle()
 
-	log.Debugf("start watching instance status, subscriber[%s], consumer: %s",
-		wh.RemoteAddr, wh.ConsumerID)
+	log.Debug(fmt.Sprintf("start watching instance status, subscriber[%s], consumer: %s",
+		wh.RemoteAddr, wh.ConsumerID))
 }
 
 func (wh *WebSocket) registerMessageHandler() {
@@ -70,8 +71,8 @@ func (wh *WebSocket) registerMessageHandler() {
 			}
 		}()
 		if wh.needPing {
-			log.Infof("received 'Ping' message '%s' from subscriber[%s], no longer send 'Ping' to it, consumer: %s",
-				message, remoteAddr, wh.ConsumerID)
+			log.Info(fmt.Sprintf("received 'Ping' message '%s' from subscriber[%s], no longer send 'Ping' to it, consumer: %s",
+				message, remoteAddr, wh.ConsumerID))
 		}
 		wh.needPing = false
 		return wh.WritePingPong(websocket.PongMessage)
@@ -84,14 +85,14 @@ func (wh *WebSocket) registerMessageHandler() {
 				log.Error("", err)
 			}
 		}()
-		log.Debugf("received 'Pong' message '%s' from subscriber[%s], consumer: %s",
-			message, remoteAddr, wh.ConsumerID)
+		log.Debug(fmt.Sprintf("received 'Pong' message '%s' from subscriber[%s], consumer: %s",
+			message, remoteAddr, wh.ConsumerID))
 		return nil
 	})
 	// CLOSE
 	wh.Conn.SetCloseHandler(func(code int, text string) error {
-		log.Infof("subscriber[%s] active closed, code: %d, message: '%s', consumer: %s",
-			remoteAddr, code, text, wh.ConsumerID)
+		log.Info(fmt.Sprintf("subscriber[%s] active closed, code: %d, message: '%s', consumer: %s",
+			remoteAddr, code, text, wh.ConsumerID))
 		return wh.sendClose(code, text)
 	})
 }
@@ -118,8 +119,8 @@ func (wh *WebSocket) sendClose(code int, text string) error {
 	}
 	err := wh.Conn.WriteControl(websocket.CloseMessage, message, time.Now().Add(wh.SendTimeout))
 	if err != nil {
-		log.Errorf(err, "subscriber[%s] catch an err, consumer: %s",
-			remoteAddr, wh.ConsumerID)
+		log.Error(fmt.Sprintf("subscriber[%s] catch an err, consumer: %s",
+			remoteAddr, wh.ConsumerID), err)
 		return err
 	}
 	return nil
@@ -162,8 +163,8 @@ func (wh *WebSocket) CheckHealth(ctx context.Context) error {
 		return err
 	}
 
-	log.Debugf("send 'Ping' message to subscriber[%s], consumer: %s",
-		remoteAddr, wh.ConsumerID)
+	log.Debug(fmt.Sprintf("send 'Ping' message to subscriber[%s], consumer: %s",
+		remoteAddr, wh.ConsumerID))
 	return nil
 }
 
@@ -178,8 +179,8 @@ func (wh *WebSocket) WriteTextMessage(message []byte) error {
 	}
 	err = wh.Conn.WriteMessage(websocket.TextMessage, message)
 	if err != nil {
-		log.Errorf(err, "subscriber[%s] catch an err, msg size: %d",
-			wh.Conn.RemoteAddr().String(), len(message))
+		log.Error(fmt.Sprintf("subscriber[%s] catch an err, msg size: %d",
+			wh.Conn.RemoteAddr().String(), len(message)), err)
 	}
 	return err
 }

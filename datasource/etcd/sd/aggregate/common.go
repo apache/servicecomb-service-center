@@ -16,6 +16,7 @@
 package aggregate
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -42,7 +43,7 @@ func init() {
 
 	modes := config.GetString("discovery.aggregate.mode", AggregateModes, config.WithStandby("aggregate_mode"))
 	repos = strings.Split(modes, ",")
-	log.Infof("aggregate_mode is %s", repos)
+	log.Info(fmt.Sprintf("aggregate_mode is %s", repos))
 
 	// here save the index if found the registry plugin in modes list,
 	// it is used for getting the one writable registry to handle requests
@@ -51,7 +52,7 @@ func init() {
 	for i, repo := range repos {
 		if repo == registry {
 			registryIndex = i
-			log.Infof("found the registry index is %d", registryIndex)
+			log.Info(fmt.Sprintf("found the registry index is %d", registryIndex))
 			break
 		}
 	}

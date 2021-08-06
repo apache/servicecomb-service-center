@@ -82,7 +82,7 @@ func runSyncer(cmd *cobra.Command, args []string) {
 	if configFile != "" {
 		fromFile, err := config.LoadConfig(configFile)
 		if err != nil {
-			log.Errorf(err, "load config file failed")
+			log.Error("load config file failed", err)
 			return
 		}
 		if fromFile != nil {
@@ -93,7 +93,7 @@ func runSyncer(cmd *cobra.Command, args []string) {
 	*conf = config.Merge(*defaultConfig, *conf)
 	err := config.Verify(conf)
 	if err != nil {
-		log.Errorf(err, "verify syncer config failed")
+		log.Error("verify syncer config failed", err)
 		return
 	}
 

@@ -18,6 +18,7 @@ package tlsutil
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"fmt"
 	"io/ioutil"
 	"strings"
 
@@ -43,7 +44,7 @@ func ParseSSLCipherSuites(ciphers string, permitTLSCipherSuiteMap map[string]uin
 			cipherSuiteList = append(cipherSuiteList, cipherSuite)
 		} else {
 			// 配置算法不存在
-			log.Warnf("cipher %s not exist.", cipherSuiteName)
+			log.Warn(fmt.Sprintf("cipher %s not exist.", cipherSuiteName))
 		}
 	}
 
@@ -59,7 +60,7 @@ func ParseSSLProtocol(sprotocol string) uint16 {
 	if protocol, ok := TLSVersionMap[sprotocol]; ok {
 		result = protocol
 	} else {
-		log.Warnf("invalid ssl minimal version(%s), use default.", sprotocol)
+		log.Warn(fmt.Sprintf("invalid ssl minimal version(%s), use default.", sprotocol))
 	}
 
 	return result
@@ -69,7 +70,7 @@ func GetX509CACertPool(caCertFile string) (caCertPool *x509.CertPool, err error)
 	pool := x509.NewCertPool()
 	caCert, err := ioutil.ReadFile(caCertFile)
 	if err != nil {
-		log.Errorf(err, "read ca cert file %s failed.", caCertFile)
+		log.Error(fmt.Sprintf("read ca cert file %s failed.", caCertFile), err)
 		return nil, err
 	}
 

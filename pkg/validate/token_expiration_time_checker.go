@@ -18,6 +18,7 @@
 package validate
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -38,11 +39,11 @@ const (
 func (p *TokenExpirationTimeChecker) MatchString(s string) bool {
 	duration, err := time.ParseDuration(s)
 	if err != nil {
-		log.Errorf(err, "Invalid duration value '%s'", s)
+		log.Error(fmt.Sprintf("Invalid duration value '%s'", s), err)
 		return false
 	}
 	if duration > MaxTokenDuration || duration < MinTokenDuration {
-		log.Errorf(err, "TokenExpirationTime('%s') should >= 15m and <= 24h.", s)
+		log.Error(fmt.Sprintf("TokenExpirationTime('%s') should >= 15m and <= 24h.", s), err)
 		return false
 	}
 	return true

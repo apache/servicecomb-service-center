@@ -141,7 +141,7 @@ func (c *WatchClient) WatchInstances(callback func(*dump.WatchInstanceChangedEve
 			}
 		}
 
-		log.Debugf("close conn:%s", c.conn.RemoteAddr())
+		log.Debug(fmt.Sprintf("close conn:%s", c.conn.RemoteAddr()))
 		err := c.conn.Close()
 
 		c.mux.Lock()
@@ -169,7 +169,7 @@ func (c *WatchClient) WatchInstanceHeartbeat(callback func(*dump.WatchInstanceCh
 				err := c.conn.WriteControl(websocket.PingMessage, []byte{}, time.Now().Add(5*time.Second))
 
 				if err != nil {
-					log.Errorf(err, "fail to send ping to service center, try to conn again")
+					log.Error("fail to send ping to service center, try to conn again", err)
 
 					c.mux.RLock()
 					connIsReady := c.ready

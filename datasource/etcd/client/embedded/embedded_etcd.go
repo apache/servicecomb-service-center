@@ -67,7 +67,7 @@ func (s *EtcdEmbed) Close() {
 		s.Embed.Close()
 	}
 	s.goroutine.Close(true)
-	log.Debugf("embedded etcd client stopped")
+	log.Debug("embedded etcd client stopped")
 }
 
 func (s *EtcdEmbed) getPrefixEndKey(prefix []byte) []byte {
@@ -236,24 +236,24 @@ func (s *EtcdEmbed) Compact(ctx context.Context, reserve int64) error {
 	curRev := s.getLeaderCurrentRevision(ctx)
 	revToCompact := max(0, curRev-reserve)
 	if revToCompact <= 0 {
-		log.Infof("revision is %d, <=%d, no nead to compact", curRev, reserve)
+		log.Info(fmt.Sprintf("revision is %d, <=%d, no nead to compact", curRev, reserve))
 		return nil
 	}
 
-	log.Infof("compacting... revision is %d(current: %d, reserve %d)", revToCompact, curRev, reserve)
+	log.Info(fmt.Sprintf("compacting... revision is %d(current: %d, reserve %d)", revToCompact, curRev, reserve))
 	_, err := s.Embed.Server.Compact(ctx, &etcdserverpb.CompactionRequest{
 		Revision: revToCompact,
 		Physical: true,
 	})
 	if err != nil {
-		log.Errorf(err, "compact locally failed, revision is %d(current: %d, reserve %d)",
-			revToCompact, curRev, reserve)
+		log.Error(fmt.Sprintf("compact locally failed, revision is %d(current: %d, reserve %d)",
+			revToCompact, curRev, reserve), err)
 		return err
 	}
-	log.Infof("compacted locally, revision is %d(current: %d, reserve %d)", revToCompact, curRev, reserve)
+	log.Info(fmt.Sprintf("compacted locally, revision is %d(current: %d, reserve %d)", revToCompact, curRev, reserve))
 
 	// TODO defragment
-	log.Infof("defraged locally")
+	log.Info("defraged locally")
 
 	return nil
 }
@@ -267,7 +267,7 @@ func (s *EtcdEmbed) PutNoOverride(ctx context.Context, opts ...client.PluginOpOp
 	resp, err := s.TxnWithCmp(ctx, []client.PluginOp{op}, []client.CompareOp{
 		client.OpCmp(client.CmpCreateRev(op.Key), client.CmpEqual, 0),
 	}, nil)
-	log.Debugf("response %s %v %v", op.Key, resp.Succeeded, resp.Revision)
+	log.Debug(fmt.Sprintf("response %s %v %v", op.Key, resp.Succeeded, resp.Revision))
 	if err != nil {
 		return false, err
 	}
@@ -473,7 +473,7 @@ func (s *EtcdEmbed) readyNotify() {
 		})
 	case <-time.After(timeout):
 		err := fmt.Errorf("timed out(%s)", timeout)
-		log.Errorf(err, "read notify failed")
+		log.Error("read notify failed", err)
 
 		s.Embed.Server.Stop()
 
@@ -539,7 +539,7 @@ func callback(action client.ActionType, rev int64, kvs []*mvccpb.KeyValue, cb cl
 }
 
 func newEmbeddedEtcd(opts datasource.Options) client.Registry {
-	log.Warnf("enable embedded registry mode")
+	log.Warn("enable embedded registry mode")
 
 	hostName := "sc-0"
 	if len(etcd.Configuration().ClusterName) > 0 {
@@ -586,8 +586,8 @@ func newEmbeddedEtcd(opts datasource.Options) client.Registry {
 	serverCfg.AutoCompactionMode = compactor.ModePeriodic
 	serverCfg.AutoCompactionRetention = "1h"
 
-	log.Debugf("--initial-cluster %s --initial-advertise-peer-urls %s --listen-peer-urls %s",
-		serverCfg.InitialCluster, mgrAddrs, mgrAddrs)
+	log.Debug(fmt.Sprintf("--initial-cluster %s --initial-advertise-peer-urls %s --listen-peer-urls %s",
+		serverCfg.InitialCluster, mgrAddrs, mgrAddrs))
 
 	etcd, err := embed.StartEtcd(serverCfg)
 	if err != nil {

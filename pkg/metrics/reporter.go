@@ -17,7 +17,11 @@
 
 package metrics
 
-import "github.com/apache/servicecomb-service-center/pkg/log"
+import (
+	"fmt"
+
+	"github.com/apache/servicecomb-service-center/pkg/log"
+)
 
 var reporters = make(map[string]Reporter)
 
@@ -28,7 +32,7 @@ type Reporter interface {
 
 func RegisterReporter(name string, r Reporter) {
 	reporters[name] = r
-	log.Infof("register metrics reporter '%s'", name)
+	log.Info(fmt.Sprintf("register metrics reporter '%s'", name))
 }
 
 func Report() {

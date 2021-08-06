@@ -129,7 +129,7 @@ func verifyJoin(join *Join) (err error) {
 	}
 
 	if _, err1 := time.ParseDuration(join.RetryInterval); err1 != nil {
-		log.Warnf("join retry interval '%s' is wrong", join.RetryInterval)
+		log.Warn(fmt.Sprintf("join retry interval '%s' is wrong", join.RetryInterval))
 		join.RetryInterval = defaultRetryJoinInterval
 	}
 	return
@@ -160,7 +160,7 @@ func verifyRegistry(r *Registry) (err error) {
 	for _, addr := range endpoints {
 		_, err = url.Parse(addr)
 		if err != nil {
-			log.Errorf(err, "Verify registry endpoints failed, urls has %s", addr)
+			log.Error(fmt.Sprintf("Verify registry endpoints failed, urls has %s", addr), err)
 			return err
 		}
 	}

@@ -36,7 +36,7 @@ func (c *Client) CreateService(ctx context.Context, domainProject string, syncSe
 	domain, project := util.FromDomainProject(domainProject)
 	serviceID, err := c.cli.CreateService(ctx, domain, project, service)
 	if err != nil {
-		log.Debugf("create service err %v", err)
+		log.Debug(fmt.Sprintf("create service err %v", err))
 		return "", err
 	}
 
@@ -57,9 +57,9 @@ func (c *Client) CreateService(ctx context.Context, domainProject string, syncSe
 			}
 			schemas = append(schemas, schematised)
 		}
-		err2 := c.CreateSchemas(ctx, domain, project, serviceID, schemas)
-		if err2 != nil {
-			log.Errorf(err2, "create service schemas failed, serviceID = %s", serviceID)
+		err := c.CreateSchemas(ctx, domain, project, serviceID, schemas)
+		if err != nil {
+			log.Error(fmt.Sprintf("create service schemas failed, serviceID = %s", serviceID), err)
 		}
 	}
 

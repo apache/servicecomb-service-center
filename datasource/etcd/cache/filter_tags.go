@@ -61,7 +61,7 @@ loopProviderIds:
 			provider := ctx.Value(CtxProviderKey).(*pb.MicroServiceKey)
 			findFlag := fmt.Sprintf("consumer '%s' find provider %s/%s/%s", consumer.ServiceId,
 				provider.AppId, provider.ServiceName, provider.Version)
-			log.Errorf(err, "TagsFilter failed, %s", findFlag)
+			log.Error(fmt.Sprintf("TagsFilter failed, %s", findFlag), err)
 			return nil, err
 		}
 		if len(tagsFromETCD) == 0 {

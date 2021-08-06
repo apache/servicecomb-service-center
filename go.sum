@@ -257,6 +257,8 @@ github.com/go-chassis/kie-client v0.1.1-0.20210731071824-96f1f1e47e71 h1:3ZRlumK
 github.com/go-chassis/kie-client v0.1.1-0.20210731071824-96f1f1e47e71/go.mod h1:UTdbtyN5ge/v9DmQzdVRxQP7z51Q4z6hyl+W6ZpUHFM=
 github.com/go-chassis/openlog v1.1.2 h1:LgGfwwOhpU8c6URV6ADpaRBPVY7Ph1C28jCQ6zzQawQ=
 github.com/go-chassis/openlog v1.1.2/go.mod h1:+eYCADVxWyJkwsFMUBrMxyQlNqW+UUsCxvR2LrYZUaA=
+github.com/go-chassis/openlog v1.1.3 h1:XqIOvZ8YPJ9o9lLtLBskQNNWolK5kC6a4Sv7r4s9sZ4=
+github.com/go-chassis/openlog v1.1.3/go.mod h1:+eYCADVxWyJkwsFMUBrMxyQlNqW+UUsCxvR2LrYZUaA=
 github.com/go-chassis/sc-client v0.6.1-0.20210615014358-a45e9090c751 h1:hpWN/MZBMsnJqXdMkW7v0wsC+4rYulPsBFMrHCmZMQc=
 github.com/go-chassis/sc-client v0.6.1-0.20210615014358-a45e9090c751/go.mod h1:TBS9g7OaIeu1OR/9tVPJEl6BgHFcYEdbuJlgVDQczbc=
 github.com/go-chassis/seclog v1.3.0 h1:ofjF+GpDd7YFdxa6xk13brZfVSKMdZoQVPoCWjFHGUk=

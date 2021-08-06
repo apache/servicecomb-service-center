@@ -19,6 +19,7 @@ package storage
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
@@ -52,7 +53,7 @@ func NewStorage(engine clientv3.KV) Storage {
 func (s *storage) getValue(opt clientv3.Op, handler func(key, val []byte) (next bool)) {
 	resp, err := s.engine.Do(context.Background(), opt)
 	if err != nil {
-		log.Errorf(err, "Do etcd operation failed: %s", err)
+		log.Error("Do etcd operation failed", err)
 		return
 	}
 
@@ -129,7 +130,8 @@ next:
 
 		delOp := delMappingOp(entry.ClusterName, entry.OrgInstanceID)
 		if _, err := s.engine.Do(context.Background(), delOp); err != nil {
-			log.Errorf(err, "Delete instance clusterName=%s instanceID=%s failed", entry.ClusterName, entry.OrgInstanceID)
+			log.Error(fmt.Sprintf("Delete instance clusterName=%s instanceID=%s failed",
+				entry.ClusterName, entry.OrgInstanceID), err)
 		}
 
 		s.deleteInstance(entry.CurInstanceID)
@@ -141,14 +143,14 @@ func (s *storage) UpdateServices(services []*pb.SyncService) {
 	for _, val := range services {
 		data, err := proto.Marshal(val)
 		if err != nil {
-			log.Errorf(err, "Proto marshal failed: %s", err)
+			log.Error("Proto marshal failed", err)
 			continue
 		}
 
 		updateOp := putServiceOp(val.ServiceId, data)
 		_, err = s.engine.Do(context.Background(), updateOp)
 		if err != nil {
-			log.Errorf(err, "Save service to etcd failed: %s", err)
+			log.Error("Save service to etcd failed", err)
 		}
 	}
 }
@@ -160,7 +162,7 @@ func (s *storage) GetServices() (services []*pb.SyncService) {
 		next = true
 		item := &pb.SyncService{}
 		if err := proto.Unmarshal(val, item); err != nil {
-			log.Errorf(err, "Proto unmarshal '%s' failed: %s", val, err)
+			log.Error(fmt.Sprintf("Proto unmarshal '%s' failed", val), err)
 			return
 		}
 		services = append(services, item)
@@ -181,7 +183,7 @@ func (s *storage) deleteService(serviceID string) {
 	delOp := deleteServiceOp(serviceID)
 	_, err := s.engine.Do(context.Background(), delOp)
 	if err != nil {
-		log.Errorf(err, "Delete service from etcd failed: %s", err)
+		log.Error("Delete service from etcd failed", err)
 	}
 }
 
@@ -190,14 +192,14 @@ func (s *storage) UpdateInstances(instances []*pb.SyncInstance) {
 	for _, val := range instances {
 		data, err := proto.Marshal(val)
 		if err != nil {
-			log.Errorf(err, "Proto marshal failed: %s", err)
+			log.Error("Proto marshal failed", err)
 			continue
 		}
 
 		updateOp := putInstanceOp(val.InstanceId, data)
 		_, err = s.engine.Do(context.Background(), updateOp)
 		if err != nil {
-			log.Errorf(err, "Save instance to etcd failed: %s", err)
+			log.Error("Save instance to etcd failed", err)
 		}
 	}
 }
@@ -209,7 +211,7 @@ func (s *storage) GetInstances() (instances []*pb.SyncInstance) {
 		next = true
 		item := &pb.SyncInstance{}
 		if err := proto.Unmarshal(val, item); err != nil {
-			log.Errorf(err, "Proto unmarshal '%s' failed: %s", val, err)
+			log.Error(fmt.Sprintf("Proto unmarshal '%s' failed", val), err)
 			return
 		}
 		instances = append(instances, item)
@@ -229,7 +231,7 @@ func (s *storage) deleteInstance(instanceID string) {
 	delOp := deleteInstanceOp(instanceID)
 	_, err := s.engine.Do(context.Background(), delOp)
 	if err != nil {
-		log.Errorf(err, "Delete instance from etcd failed: %s", err)
+		log.Error("Delete instance from etcd failed", err)
 	}
 }
 
@@ -239,14 +241,14 @@ func (s *storage) UpdateMapByCluster(clusterName string, mapping pb.SyncMapping)
 	for _, val := range mapping {
 		data, err := proto.Marshal(val)
 		if err != nil {
-			log.Errorf(err, "Proto marshal failed: %s", err)
+			log.Error("Proto marshal failed", err)
 			continue
 		}
 
 		putOp := putMappingOp(clusterName, val.OrgInstanceID, data)
 		_, err = s.engine.Do(context.Background(), putOp)
 		if err != nil {
-			log.Errorf(err, "Save mapping to etcd failed: %s", err)
+			log.Error("Save mapping to etcd failed", err)
 		}
 		newMaps = append(newMaps, val)
 	}
@@ -259,7 +261,7 @@ func (s *storage) GetMapByCluster(clusterName string) (mapping pb.SyncMapping) {
 		next = true
 		item := &pb.MappingEntry{}
 		if err := proto.Unmarshal(val, item); err != nil {
-			log.Errorf(err, "Proto unmarshal '%s' failed: %s", val, err)
+			log.Error(fmt.Sprintf("Proto unmarshal '%s' failed", val), err)
 			return
 		}
 		mapping = append(mapping, item)
@@ -275,14 +277,14 @@ func (s *storage) UpdateMaps(maps pb.SyncMapping) {
 	for _, val := range maps {
 		data, err := proto.Marshal(val)
 		if err != nil {
-			log.Errorf(err, "Proto marshal failed: %s", err)
+			log.Error("Proto marshal failed", err)
 			continue
 		}
 
 		putOp := putMappingOp(val.ClusterName, val.OrgInstanceID, data)
 		_, err = s.engine.Do(context.Background(), putOp)
 		if err != nil {
-			log.Errorf(err, "Save mapping to etcd failed: %s", err)
+			log.Error("Save mapping to etcd failed", err)
 			continue
 		}
 		mappings = append(mappings, val)
@@ -296,7 +298,7 @@ func (s *storage) GetMaps() (mapping pb.SyncMapping) {
 		next = true
 		item := &pb.MappingEntry{}
 		if err := proto.Unmarshal(val, item); err != nil {
-			log.Errorf(err, "Proto unmarshal '%s' failed: %s", val, err)
+			log.Error(fmt.Sprintf("Proto unmarshal '%s' failed", val), err)
 			return
 		}
 		mapping = append(mapping, item)

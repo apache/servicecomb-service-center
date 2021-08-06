@@ -100,7 +100,7 @@ func (rm *RoleManager) GetRole(ctx context.Context, name string) (*rbac.Role, er
 	role := &rbac.Role{}
 	err = json.Unmarshal(resp.Kvs[0].Value, role)
 	if err != nil {
-		log.Errorf(err, "role info format invalid")
+		log.Error("role info format invalid", err)
 		return nil, err
 	}
 	return role, nil
@@ -152,7 +152,7 @@ func (rm *RoleManager) UpdateRole(ctx context.Context, name string, role *rbac.R
 	role.UpdateTime = strconv.FormatInt(time.Now().Unix(), 10)
 	value, err := json.Marshal(role)
 	if err != nil {
-		log.Errorf(err, "role info is invalid")
+		log.Error("role info is invalid", err)
 		return err
 	}
 	_, err = client.Instance().Do(ctx, client.PUT,
