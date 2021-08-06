@@ -88,13 +88,6 @@ func ParseAddOrUpdateRules(ctx context.Context, dep *Dependency, oldProviderRule
 		if ok, _ := ContainServiceDependency(oldProviderRules.Dependency, tmpProviderRule); ok {
 			continue
 		}
-
-		if tmpProviderRule.ServiceName == "*" {
-			createDependencyRuleList = append([]*discovery.MicroServiceKey{}, tmpProviderRule)
-			deleteDependencyRuleList = oldProviderRules.Dependency
-			break
-		}
-
 		createDependencyRuleList = append(createDependencyRuleList, tmpProviderRule)
 		old := IsNeedUpdate(oldProviderRules.Dependency, tmpProviderRule)
 		if old != nil {
@@ -102,14 +95,10 @@ func ParseAddOrUpdateRules(ctx context.Context, dep *Dependency, oldProviderRule
 		}
 	}
 	for _, oldProviderRule := range oldProviderRules.Dependency {
-		if oldProviderRule.ServiceName == "*" {
-			return
-		}
 		if ok, _ := ContainServiceDependency(deleteDependencyRuleList, oldProviderRule); !ok {
 			existDependencyRuleList = append(existDependencyRuleList, oldProviderRule)
 		}
 	}
-
 	dep.ProvidersRule = append(createDependencyRuleList, existDependencyRuleList...)
 	setDep(dep, createDependencyRuleList, existDependencyRuleList, deleteDependencyRuleList)
 }

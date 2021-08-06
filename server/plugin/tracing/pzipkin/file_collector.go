@@ -20,6 +20,7 @@ package pzipkin
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
@@ -47,7 +48,7 @@ func (f *FileCollector) Collect(span *zipkincore.Span) error {
 	case f.c <- span:
 		timer.Stop()
 	case <-timer.C:
-		log.Errorf(nil, "send span to handle channel timed out(%s)", f.Timeout)
+		log.Error(fmt.Sprintf("send span to handle channel timed out(%s)", f.Timeout), nil)
 	}
 	return nil
 }
@@ -67,7 +68,7 @@ func (f *FileCollector) write(batch []*zipkincore.Span) (c int) {
 		s := FromZipkinSpan(span)
 		b, err := json.Marshal(s)
 		if err != nil {
-			log.Errorf(err, "marshal span failed")
+			log.Error("marshal span failed", err)
 			continue
 		}
 		_, err = f.logger.Write(b)
@@ -100,8 +101,8 @@ func (f *FileCollector) Run() {
 				l := len(batch)
 				if l >= max {
 					dispose := l - f.BatchSize
-					log.Errorf(nil, "backlog is full, dispose %d span(s), max: %d",
-						dispose, max)
+					log.Error(fmt.Sprintf("backlog is full, dispose %d span(s), max: %d",
+						dispose, max), nil)
 					batch = batch[dispose:] // allocate more
 				}
 

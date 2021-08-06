@@ -20,6 +20,7 @@ package task
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 )
@@ -37,7 +38,7 @@ type Tasker interface {
 // RegisterTasker register an tasker to manager
 func RegisterTasker(name string, fn generator) {
 	if _, ok := taskMgr[name]; ok {
-		log.Warnf("task generator is already exist, name = %s", name)
+		log.Warn(fmt.Sprintf("task generator is already exist, name = %s", name))
 	}
 	taskMgr[name] = fn
 }
@@ -47,7 +48,7 @@ func GenerateTasker(name string, ops ...Option) (Tasker, error) {
 	fn, ok := taskMgr[name]
 	if !ok {
 		err := errors.New("trigger generator is not found")
-		log.Errorf(err, "name = %s", name)
+		log.Error(fmt.Sprintf("name = %s", name), err)
 		return nil, err
 	}
 	return fn(toMap(ops...))

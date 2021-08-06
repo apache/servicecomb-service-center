@@ -21,7 +21,7 @@ func IsBanned(ctx context.Context, key string) (bool, error) {
 	if lock.ReleaseAt < time.Now().Unix() {
 		err = DeleteLock(ctx, key)
 		if err != nil {
-			log.Errorf(err, "remove lock failed")
+			log.Error("remove lock failed", err)
 			return false, datasource.ErrCannotReleaseLock
 		}
 		log.Info(fmt.Sprintf("release lock for %s", key))

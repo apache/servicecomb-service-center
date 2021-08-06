@@ -122,10 +122,10 @@ func handleSignals() {
 		fireSignalHook(PreSignal, sig)
 		switch sig {
 		case syscall.SIGHUP:
-			log.Debugf("received signal '%v', now forking", sig)
+			log.Debug(fmt.Sprintf("received signal '%v', now forking", sig))
 			err := fork()
 			if err != nil {
-				log.Errorf(err, "fork a process failed")
+				log.Error("fork a process failed", err)
 			}
 		}
 		fireSignalHook(PostSignal, sig)
@@ -152,10 +152,10 @@ func fork() (err error) {
 	}
 
 	if err = newCommand(args...); err != nil {
-		log.Errorf(err, "fork a process failed, %v", args)
+		log.Error(fmt.Sprintf("fork a process failed, %v", args), err)
 		return
 	}
-	log.Warnf("fork process %v", args)
+	log.Warn(fmt.Sprintf("fork process %v", args))
 	return
 }
 

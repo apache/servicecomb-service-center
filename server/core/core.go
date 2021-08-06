@@ -38,7 +38,7 @@ func Initialize() {
 }
 
 func initLogger() {
-	log.SetGlobal(log.Config{
+	log.Init(log.Config{
 		LoggerLevel:    config.GetLog().LogLevel,
 		LoggerFile:     os.ExpandEnv(config.GetLog().LogFilePath),
 		LogFormatText:  config.GetLog().LogFormat == "text",

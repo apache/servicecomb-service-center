@@ -34,8 +34,6 @@ type MicroserviceSlice []*Microservice
 type MicroserviceIndexSlice []*MicroserviceIndex
 type MicroserviceAliasSlice []*MicroserviceAlias
 type TagSlice []*Tag
-type MicroServiceRuleSlice []*MicroServiceRule
-type MicroServiceRuleIndexSlice []*MicroServiceRuleIndex
 type MicroServiceDependencyRuleSlice []*MicroServiceDependencyRule
 type SummarySlice []*Summary
 type InstanceSlice []*Instance
@@ -72,22 +70,6 @@ func (s *TagSlice) ForEach(f func(i int, v *KV) bool) {
 		}
 	}
 }
-func (s *MicroServiceRuleIndexSlice) ForEach(f func(i int, v *KV) bool) {
-	for i, v := range *s {
-		v.KV.Value = v.Value
-		if !f(i, v.KV) {
-			break
-		}
-	}
-}
-func (s *MicroServiceRuleSlice) ForEach(f func(i int, v *KV) bool) {
-	for i, v := range *s {
-		v.KV.Value = v.Value
-		if !f(i, v.KV) {
-			break
-		}
-	}
-}
 func (s *MicroServiceDependencyRuleSlice) ForEach(f func(i int, v *KV) bool) {
 	for i, v := range *s {
 		v.KV.Value = v.Value
@@ -113,12 +95,10 @@ func (s *InstanceSlice) ForEach(f func(i int, v *KV) bool) {
 	}
 }
 
-func (s *MicroserviceSlice) SetValue(v *KV)          { *s = append(*s, NewMicroservice(v)) }
-func (s *MicroserviceIndexSlice) SetValue(v *KV)     { *s = append(*s, NewMicroserviceIndex(v)) }
-func (s *MicroserviceAliasSlice) SetValue(v *KV)     { *s = append(*s, NewMicroserviceAlias(v)) }
-func (s *TagSlice) SetValue(v *KV)                   { *s = append(*s, NewTag(v)) }
-func (s *MicroServiceRuleIndexSlice) SetValue(v *KV) { *s = append(*s, NewMicroServiceRuleIndex(v)) }
-func (s *MicroServiceRuleSlice) SetValue(v *KV)      { *s = append(*s, NewMicroServiceRule(v)) }
+func (s *MicroserviceSlice) SetValue(v *KV)      { *s = append(*s, NewMicroservice(v)) }
+func (s *MicroserviceIndexSlice) SetValue(v *KV) { *s = append(*s, NewMicroserviceIndex(v)) }
+func (s *MicroserviceAliasSlice) SetValue(v *KV) { *s = append(*s, NewMicroserviceAlias(v)) }
+func (s *TagSlice) SetValue(v *KV)               { *s = append(*s, NewTag(v)) }
 func (s *MicroServiceDependencyRuleSlice) SetValue(v *KV) {
 	*s = append(*s, NewMicroServiceDependencyRule(v))
 }
@@ -135,12 +115,6 @@ func NewMicroserviceAlias(kv *KV) *MicroserviceAlias {
 	return &MicroserviceAlias{kv, kv.Value.(string)}
 }
 func NewTag(kv *KV) *Tag { return &Tag{kv, kv.Value.(map[string]string)} }
-func NewMicroServiceRuleIndex(kv *KV) *MicroServiceRuleIndex {
-	return &MicroServiceRuleIndex{kv, kv.Value.(string)}
-}
-func NewMicroServiceRule(kv *KV) *MicroServiceRule {
-	return &MicroServiceRule{kv, kv.Value.(*discovery.ServiceRule)}
-}
 func NewMicroServiceDependencyRule(kv *KV) *MicroServiceDependencyRule {
 	return &MicroServiceDependencyRule{kv, kv.Value.(*discovery.MicroServiceDependency)}
 }
@@ -154,8 +128,6 @@ type Cache struct {
 	Indexes         MicroserviceIndexSlice          `json:"serviceIndexes,omitempty"`
 	Aliases         MicroserviceAliasSlice          `json:"serviceAliases,omitempty"`
 	Tags            TagSlice                        `json:"serviceTags,omitempty"`
-	Rules           MicroServiceRuleSlice           `json:"serviceRules,omitempty"`
-	RuleIndexes     MicroServiceRuleIndexSlice      `json:"serviceRuleIndexes,omitempty"`
 	DependencyRules MicroServiceDependencyRuleSlice `json:"dependencyRules,omitempty"`
 	Summaries       SummarySlice                    `json:"summaries,omitempty"`
 	Instances       InstanceSlice                   `json:"instances,omitempty"`
@@ -188,15 +160,6 @@ type MicroServiceDependencyRule struct {
 	Value *discovery.MicroServiceDependency `json:"value,omitempty"`
 }
 
-type MicroServiceRuleIndex struct {
-	*KV
-	Value string `json:"value,omitempty"`
-}
-
-type MicroServiceRule struct {
-	*KV
-	Value *discovery.ServiceRule `json:"value,omitempty"`
-}
 type Summary struct {
 	*KV
 	Value string `json:"value,omitempty"`

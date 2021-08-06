@@ -16,6 +16,7 @@
 package syncernotify
 
 import (
+	"fmt"
 	"sync"
 
 	pb "github.com/apache/servicecomb-service-center/pkg/dump"
@@ -47,12 +48,12 @@ func NewSyncerNotifyService() *Service {
 
 func (s *Service) AddEvent(event *pb.WatchInstanceChangedEvent) {
 	s.instEventCh <- event
-	log.Debugf("add instance event to instance event channel, instEventCh len is:%s", len(s.instEventCh))
+	log.Debug(fmt.Sprintf("add instance event to instance event channel, instEventCh len is: %d", len(s.instEventCh)))
 }
 
 func (s *Service) Start() {
 	if !s.Closed() {
-		log.Warnf("syncer notify service is already running")
+		log.Warn("syncer notify service is already running")
 		return
 	}
 
@@ -60,7 +61,7 @@ func (s *Service) Start() {
 	s.isClose = false
 	s.mux.Unlock()
 
-	log.Debugf("syncer notify service is started")
+	log.Debug("syncer notify service is started")
 }
 
 func (s *Service) Closed() (b bool) {

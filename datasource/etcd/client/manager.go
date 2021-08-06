@@ -55,7 +55,7 @@ func Init(opts datasource.Options) error {
 		}
 
 		t := backoff.GetBackoff().Delay(i)
-		log.Errorf(err, "initialize client[%v] failed, retry after %s", opts.Kind, t)
+		log.Error(fmt.Sprintf("initialize client[%v] failed, retry after %s", opts.Kind, t), err)
 		<-time.After(t)
 	}
 	log.Info(fmt.Sprintf("client plugin [%s] enabled", opts.Kind))

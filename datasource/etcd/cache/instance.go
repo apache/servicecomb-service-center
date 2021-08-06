@@ -33,7 +33,7 @@ var FindInstances = &FindInstancesCache{
 func init() {
 	FindInstances.AddFilter(
 		&ServiceFilter{},
-		&VersionRuleFilter{},
+		&VersionFilter{},
 		&TagsFilter{},
 		&AccessibleFilter{},
 		&InstancesFilter{},
@@ -75,29 +75,29 @@ type FindInstancesCache struct {
 func (f *FindInstancesCache) Get(ctx context.Context, consumer *pb.MicroService, provider *pb.MicroServiceKey,
 	tags []string, rev string) (*VersionRuleCacheItem, error) {
 	cloneCtx := context.WithValue(context.WithValue(context.WithValue(context.WithValue(ctx,
-		CtxFindConsumer, consumer),
-		CtxFindProvider, provider),
-		CtxFindTags, tags),
-		CtxFindRequestRev, rev)
+		CtxConsumerID, consumer),
+		CtxProviderKey, provider),
+		CtxTags, tags),
+		CtxRequestRev, rev)
 
 	node, err := f.Tree.Get(cloneCtx, cache.Options().Temporary(ctx.Value(util.CtxNocache) == "1"))
 	if node == nil {
 		return nil, err
 	}
-	return node.Cache.Get(Find).(*VersionRuleCacheItem), nil
+	return node.Cache.Get(FindResult).(*VersionRuleCacheItem), nil
 }
 
 func (f *FindInstancesCache) GetWithProviderID(ctx context.Context, consumer *pb.MicroService, provider *pb.MicroServiceKey,
 	instanceKey *pb.HeartbeatSetElement, tags []string, rev string) (*VersionRuleCacheItem, error) {
-	cloneCtx := context.WithValue(ctx, CtxFindProviderInstance, instanceKey)
+	cloneCtx := context.WithValue(ctx, CtxProviderInstanceKey, instanceKey)
 	return f.Get(cloneCtx, consumer, provider, tags, rev)
 }
 
 func (f *FindInstancesCache) Remove(provider *pb.MicroServiceKey) {
-	f.Tree.Remove(context.WithValue(context.Background(), CtxFindProvider, provider))
+	f.Tree.Remove(context.WithValue(context.Background(), CtxProviderKey, provider))
 	if len(provider.Alias) > 0 {
 		copy := *provider
 		copy.ServiceName = copy.Alias
-		f.Tree.Remove(context.WithValue(context.Background(), CtxFindProvider, &copy))
+		f.Tree.Remove(context.WithValue(context.Background(), CtxProviderKey, &copy))
 	}
 }

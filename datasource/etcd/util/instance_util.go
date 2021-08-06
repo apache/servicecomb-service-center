@@ -91,7 +91,7 @@ func GetAllInstancesOfOneService(ctx context.Context, domainProject string, serv
 	opts := append(FromContext(ctx), client.WithStrKey(key), client.WithPrefix())
 	resp, err := kv.Store().Instance().Search(ctx, opts...)
 	if err != nil {
-		log.Errorf(err, "get service[%s]'s instances failed", serviceID)
+		log.Error(fmt.Sprintf("get service[%s]'s instances failed", serviceID), err)
 		return nil, err
 	}
 
@@ -110,7 +110,7 @@ func GetInstanceCountOfOneService(ctx context.Context, domainProject string, ser
 		client.WithCountOnly())
 	resp, err := kv.Store().Instance().Search(ctx, opts...)
 	if err != nil {
-		log.Errorf(err, "get number of service[%s]'s instances failed", serviceID)
+		log.Error(fmt.Sprintf("get number of service[%s]'s instances failed", serviceID), err)
 		return 0, err
 	}
 	return resp.Count, nil
@@ -139,11 +139,11 @@ func DeleteServiceAllInstances(ctx context.Context, serviceID string) error {
 		client.WithPrefix(),
 		client.WithNoCache())
 	if err != nil {
-		log.Errorf(err, "delete all of service[%s]'s instances failed: get instance lease failed", serviceID)
+		log.Error(fmt.Sprintf("delete all of service[%s]'s instances failed: get instance lease failed", serviceID), err)
 		return err
 	}
 	if resp.Count <= 0 {
-		log.Warnf("service[%s] has no deployment of instance.", serviceID)
+		log.Warn(fmt.Sprintf("service[%s] has no deployment of instance.", serviceID))
 		return nil
 	}
 	for _, v := range resp.Kvs {
@@ -164,8 +164,8 @@ func QueryServiceInstancesKvs(ctx context.Context, serviceID string, rev int64) 
 		client.WithPrefix(),
 		client.WithRev(rev))
 	if err != nil {
-		log.Errorf(err, "get service[%s]'s instances with revision %d failed",
-			serviceID, rev)
+		log.Error(fmt.Sprintf("get service[%s]'s instances with revision %d failed",
+			serviceID, rev), err)
 		return nil, err
 	}
 	return resp.Kvs, nil

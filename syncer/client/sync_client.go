@@ -20,6 +20,7 @@ package client
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"sync"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -64,7 +65,7 @@ func NewSyncClient(addr string, tlsConf *tls.Config) (cli *Client) {
 func (c *Client) Pull(ctx context.Context, addr string) (*pb.SyncData, error) {
 	data, err := c.cli.Pull(ctx, &pb.PullRequest{Addr: addr})
 	if err != nil {
-		log.Errorf(err, "Pull from grpc client failed, going to close the client")
+		log.Error("Pull from grpc client failed, going to close the client", err)
 		closeClient(c.addr)
 	}
 	return data, err
@@ -94,6 +95,6 @@ func closeClient(addr string) {
 		cli := val.(*Client)
 		cli.conn.Close()
 		clients.Delete(addr)
-		log.Infof("Close grpc client connection to %s", addr)
+		log.Info(fmt.Sprintf("Close grpc client connection to %s", addr))
 	}
 }

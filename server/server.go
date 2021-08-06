@@ -19,6 +19,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"os"
 	"strings"
@@ -60,10 +61,8 @@ type endpoint struct {
 }
 
 type ServiceCenterServer struct {
-	REST endpoint
-	GRPC endpoint
-
-	apiService          *APIServer
+	Endpoint            endpoint
+	APIServer           *APIServer
 	eventCenter         *nf.BusService
 	syncerNotifyService *snf.Service
 }
@@ -79,9 +78,9 @@ func (s *ServiceCenterServer) Run() {
 }
 
 func (s *ServiceCenterServer) waitForQuit() {
-	err := <-s.apiService.Err()
+	err := <-s.APIServer.Err()
 	if err != nil {
-		log.Errorf(err, "service center catch errors")
+		log.Error("service center catch errors", err)
 	}
 
 	s.Stop()
@@ -95,16 +94,14 @@ func (s *ServiceCenterServer) initialize() {
 	s.initSSL()
 	// Datasource
 	s.initDatasource()
-	s.apiService = GetAPIServer()
+	s.APIServer = GetAPIServer()
 	s.eventCenter = event.Center()
 	s.syncerNotifyService = snf.GetSyncerNotifyCenter()
 }
 
 func (s *ServiceCenterServer) initEndpoints() {
-	s.REST.Host = config.GetString("server.host", "", config.WithStandby("httpaddr"))
-	s.REST.Port = config.GetString("server.port", "", config.WithStandby("httpport"))
-	s.GRPC.Host = config.GetString("server.rpc.host", "", config.WithStandby("rpcaddr"))
-	s.GRPC.Port = config.GetString("server.rpc.port", "", config.WithStandby("rpcport"))
+	s.Endpoint.Host = config.GetString("server.host", "", config.WithStandby("httpaddr"))
+	s.Endpoint.Port = config.GetString("server.port", "", config.WithStandby("httpport"))
 }
 
 func (s *ServiceCenterServer) initDatasource() {
@@ -132,20 +129,16 @@ func (s *ServiceCenterServer) initMetrics() {
 	}
 	interval, err := time.ParseDuration(strings.TrimSpace(config.GetString("metrics.interval", defaultCollectPeriod.String())))
 	if err != nil {
-		log.Errorf(err, "invalid metrics config[interval], set default %s", defaultCollectPeriod)
+		log.Error(fmt.Sprintf("invalid metrics config[interval], set default %s", defaultCollectPeriod), err)
 	}
 	if interval <= time.Second {
 		interval = defaultCollectPeriod
 	}
 	var instance string
-	if len(s.REST.Host) > 0 {
-		instance = net.JoinHostPort(s.REST.Host, s.REST.Port)
+	if len(s.Endpoint.Host) > 0 {
+		instance = net.JoinHostPort(s.Endpoint.Host, s.Endpoint.Port)
 	} else {
-		if len(s.GRPC.Host) > 0 {
-			instance = net.JoinHostPort(s.GRPC.Host, s.GRPC.Port)
-		} else {
-			log.Fatal("init metrics InstanceName failed", nil)
-		}
+		log.Fatal("init metrics InstanceName failed", nil)
 	}
 
 	if err := metrics.Init(metrics.Options{
@@ -207,14 +200,13 @@ func (s *ServiceCenterServer) startServices() {
 
 func (s *ServiceCenterServer) startAPIService() {
 	core.Instance.HostName = util.HostName()
-	s.apiService.AddListener(REST, s.REST.Host, s.REST.Port)
-	s.apiService.AddListener(RPC, s.REST.Host, s.GRPC.Port)
-	s.apiService.Start()
+	s.APIServer.AddListener(s.Endpoint.Host, s.Endpoint.Port)
+	s.APIServer.Start()
 }
 
 func (s *ServiceCenterServer) Stop() {
-	if s.apiService != nil {
-		s.apiService.Stop()
+	if s.APIServer != nil {
+		s.APIServer.Stop()
 	}
 
 	if s.eventCenter != nil {
@@ -227,6 +219,6 @@ func (s *ServiceCenterServer) Stop() {
 
 	gopool.CloseAndWait()
 
-	log.Warnf("service center stopped")
-	log.Sync()
+	log.Warn("service center stopped")
+	log.Flush()
 }

@@ -140,7 +140,7 @@ func toSyncInstance(serviceID string, instance *Instance) (syncInstance *pb.Sync
 
 	content, err := json.Marshal(instance)
 	if err != nil {
-		log.Errorf(err, "transform sc service to syncer service failed: %s", err)
+		log.Error("transform sc service to syncer service failed", err)
 		return
 	}
 	syncInstance.Expansions = []*pb.Expansion{{
@@ -161,8 +161,8 @@ func toInstance(serviceID string, syncInstance *pb.SyncInstance) (instance *Inst
 			if err == nil {
 				return
 			}
-			log.Errorf(err, "proto unmarshal %s instance, instanceID = %s, kind = %v, content = %v failed",
-				PluginName, syncInstance.InstanceId, matches[0].Kind, matches[0].Bytes)
+			log.Error(fmt.Sprintf("proto unmarshal %s instance, instanceID = %s, kind = %v, content = %v failed",
+				PluginName, syncInstance.InstanceId, matches[0].Kind, matches[0].Bytes), err)
 		}
 	}
 	instance.InstanceID = syncInstance.InstanceId

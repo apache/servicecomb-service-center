@@ -49,10 +49,10 @@ func (vs *Set) Print() {
 }
 
 func (vs *Set) Log() {
-	log.Infof("Version: %s", vs.Version)
-	log.Infof("Build tag: %s", vs.BuildTag)
-	log.Infof("Go version: %s", vs.GoVersion)
-	log.Infof("OS/Arch: %s/%s", vs.OS, vs.Arch)
+	log.Info(fmt.Sprintf("Version: %s", vs.Version))
+	log.Info(fmt.Sprintf("Build tag: %s", vs.BuildTag))
+	log.Info(fmt.Sprintf("Go version: %s", vs.GoVersion))
+	log.Info(fmt.Sprintf("OS/Arch: %s/%s", vs.OS, vs.Arch))
 }
 
 func (vs *Set) LoadRuntimeInfo() {

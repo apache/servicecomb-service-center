@@ -100,8 +100,7 @@ func (c *MongoCacher) doList(cfg sdcommon.ListWatchConfig) error {
 
 	resources := resp.Resources
 
-	defer log.Debug(fmt.Sprintf("finish to cache key %s, %d items",
-		c.Options.Key, len(resources)))
+	defer log.Debug(fmt.Sprintf("finish to cache key %s, %d items", c.Options.Key, len(resources)))
 
 	//just reset the cacher if cache marked dirty
 	if c.cache.Dirty() {

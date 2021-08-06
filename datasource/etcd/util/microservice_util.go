@@ -183,39 +183,40 @@ func GetServiceAllVersions(ctx context.Context, key *pb.MicroServiceKey, alias b
 	return resp, err
 }
 
-func FindServiceIds(ctx context.Context, versionRule string, key *pb.MicroServiceKey) ([]string, bool, error) {
-	// 版本规则
-	match := ParseVersionRule(versionRule)
-	if match == nil {
-		copy := *key
-		copy.Version = versionRule
-		serviceID, err := GetServiceID(ctx, &copy)
-		if err != nil {
-			return nil, false, err
-		}
-		if len(serviceID) > 0 {
-			return []string{serviceID}, true, nil
-		}
-		return nil, false, nil
-	}
-
-	searchAlias := false
-	alsoFindAlias := len(key.Alias) > 0
-
-FIND_RULE:
-	resp, err := GetServiceAllVersions(ctx, key, searchAlias)
+// FindServiceIds return serviceIDs match the key, the existence of the micro-service without consider of version
+func FindServiceIds(ctx context.Context, key *pb.MicroServiceKey, matchVersion bool) ([]string, bool, error) {
+	resp, err := GetServiceAllVersions(ctx, key, false)
 	if err != nil {
 		return nil, false, err
 	}
-	if len(resp.Kvs) == 0 {
-		if !alsoFindAlias {
-			return nil, false, nil
+	fromEtcdKey := path.GetInfoFromSvcIndexKV
+	kvs := resp.Kvs
+	if len(kvs) == 0 {
+		resp, err := GetServiceAllVersions(ctx, key, true)
+		if err != nil {
+			return nil, false, err
 		}
-		searchAlias = true
-		alsoFindAlias = false
-		goto FIND_RULE
+		fromEtcdKey = path.GetInfoFromSvcAliasKV
+		kvs = resp.Kvs
 	}
-	return match(resp.Kvs), true, nil
+	var (
+		etcdKeys   [][]byte
+		serviceIDs []string
+	)
+	for _, kv := range kvs {
+		etcdKeys = append(etcdKeys, kv.Key)
+		serviceIDs = append(serviceIDs, kv.Value.(string))
+	}
+	if !matchVersion {
+		return serviceIDs, len(serviceIDs) > 0, nil
+	}
+	for i, etcdKey := range etcdKeys {
+		serviceKey := fromEtcdKey(etcdKey)
+		if serviceKey.Version == key.Version {
+			return []string{serviceIDs[i]}, len(serviceIDs) > 0, nil
+		}
+	}
+	return nil, len(serviceIDs) > 0, nil
 }
 
 func ServiceExist(ctx context.Context, domainProject string, serviceID string) bool {

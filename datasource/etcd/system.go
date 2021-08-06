@@ -19,11 +19,9 @@ package etcd
 
 import (
 	"context"
-	"sync"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/mux"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/etcdsync"
@@ -31,8 +29,7 @@ import (
 )
 
 type SysManager struct {
-	lockMux sync.Mutex
-	locks   map[string]*etcdsync.DLock
+	locks map[string]*etcdsync.DLock
 }
 
 func newSysManager() datasource.SystemManager {
@@ -48,8 +45,6 @@ func (sm *SysManager) DumpCache(ctx context.Context) *dump.Cache {
 		Do(func(_ context.Context) { setValue(kv.Store().ServiceIndex(), &cache.Indexes) }).
 		Do(func(_ context.Context) { setValue(kv.Store().ServiceAlias(), &cache.Aliases) }).
 		Do(func(_ context.Context) { setValue(kv.Store().ServiceTag(), &cache.Tags) }).
-		Do(func(_ context.Context) { setValue(kv.Store().RuleIndex(), &cache.RuleIndexes) }).
-		Do(func(_ context.Context) { setValue(kv.Store().Rule(), &cache.Rules) }).
 		Do(func(_ context.Context) { setValue(kv.Store().DependencyRule(), &cache.DependencyRules) }).
 		Do(func(_ context.Context) { setValue(kv.Store().SchemaSummary(), &cache.Summaries) }).
 		Do(func(_ context.Context) { setValue(kv.Store().Instance(), &cache.Instances) }).
@@ -67,43 +62,4 @@ func setValue(e sd.Adaptor, setter dump.Setter) {
 		})
 		return true
 	})
-}
-
-func (sm *SysManager) DLock(ctx context.Context, request *datasource.DLockRequest) error {
-	var (
-		lock *etcdsync.DLock
-		err  error
-	)
-	sm.lockMux.Lock()
-
-	id := mux.Type(request.ID)
-	if request.Wait {
-		lock, err = mux.Lock(id)
-	} else {
-		lock, err = mux.Try(id)
-	}
-	if err != nil {
-		sm.lockMux.Unlock()
-		return err
-	}
-	sm.locks[request.ID] = lock
-
-	sm.lockMux.Unlock()
-	return nil
-}
-
-func (sm *SysManager) DUnlock(ctx context.Context, request *datasource.DUnlockRequest) error {
-	sm.lockMux.Lock()
-
-	lock, ok := sm.locks[request.ID]
-	if !ok {
-		sm.lockMux.Unlock()
-		return datasource.ErrDLockNotFound
-	}
-
-	err := lock.Unlock()
-	delete(sm.locks, request.ID)
-
-	sm.lockMux.Unlock()
-	return err
 }

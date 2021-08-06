@@ -169,5 +169,5 @@ func Go(f func(context.Context)) {
 
 func CloseAndWait() {
 	defaultGo.Close(true)
-	log.Debugf("all goroutines exited")
+	log.Debug("all goroutines exited")
 }

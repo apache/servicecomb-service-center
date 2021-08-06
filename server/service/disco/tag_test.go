@@ -102,7 +102,7 @@ var _ = Describe("'Tag' service", func() {
 		Context("when request is valid", func() {
 			It("should be passed", func() {
 				By("all max")
-				size := quota.DefaultRuleQuota
+				size := quota.DefaultTagQuota
 				tags := make(map[string]string, size)
 				for i := 0; i < size; i++ {
 					s := "tag" + strconv.Itoa(i)
@@ -128,7 +128,7 @@ var _ = Describe("'Tag' service", func() {
 
 		Context("when create tag out of gauge", func() {
 			It("should be failed", func() {
-				size := quota.DefaultRuleQuota + 1
+				size := quota.DefaultTagQuota + 1
 				tags := make(map[string]string, size)
 				for i := 0; i < size; i++ {
 					s := "tag" + strconv.Itoa(i)
@@ -141,7 +141,7 @@ var _ = Describe("'Tag' service", func() {
 				Expect(err).To(BeNil())
 				Expect(respAddTags.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
-				size = quota.DefaultRuleQuota
+				size = quota.DefaultTagQuota
 				tags = make(map[string]string, size)
 				for i := 0; i < size; i++ {
 					s := "tag" + strconv.Itoa(i)
@@ -368,7 +368,6 @@ var _ = Describe("'Tag' service", func() {
 					ConsumerServiceId: consumerId,
 					AppId:             "find_inst_tag_group",
 					ServiceName:       "find_inst_tag_provider",
-					VersionRule:       "1.0.0+",
 					Tags:              []string{"not-exist-tag"},
 				})
 				Expect(err).To(BeNil())
@@ -379,52 +378,9 @@ var _ = Describe("'Tag' service", func() {
 					ConsumerServiceId: consumerId,
 					AppId:             "find_inst_tag_group",
 					ServiceName:       "find_inst_tag_provider",
-					VersionRule:       "1.0.0+",
 					Tags:              []string{"filter_tag"},
 				})
 				Expect(err).To(BeNil())
-				Expect(findResp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
-				Expect(findResp.Instances[0].InstanceId).To(Equal(instanceResp.InstanceId))
-
-				respAddRule, err := serviceResource.AddRule(getContext(), &pb.AddServiceRulesRequest{
-					ServiceId: providerId,
-					Rules: []*pb.AddOrUpdateServiceRule{
-						{
-							RuleType:    "WHITE",
-							Attribute:   "tag_consumer_tag",
-							Pattern:     "f*",
-							Description: "test white",
-						},
-					},
-				})
-				Expect(err).To(BeNil())
-				Expect(respAddRule.Response.GetCode()).To(Equal(pb.ResponseSuccess))
-
-				findResp, err = disco.FindInstances(getContext(), &pb.FindInstancesRequest{
-					ConsumerServiceId: consumerId,
-					AppId:             "find_inst_tag_group",
-					ServiceName:       "find_inst_tag_provider",
-					VersionRule:       "1.0.0+",
-					Tags:              []string{"filter_tag"},
-				})
-				Expect(err).To(BeNil())
-				Expect(findResp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
-				Expect(len(findResp.Instances)).To(Equal(0))
-
-				addTagResp, err = serviceResource.AddTags(getContext(), &pb.AddServiceTagsRequest{
-					ServiceId: consumerId,
-					Tags:      map[string]string{"consumer_tag": "filter"},
-				})
-				Expect(err).To(BeNil())
-				Expect(addTagResp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
-
-				findResp, err = disco.FindInstances(getContext(), &pb.FindInstancesRequest{
-					ConsumerServiceId: consumerId,
-					AppId:             "find_inst_tag_group",
-					ServiceName:       "find_inst_tag_provider",
-					VersionRule:       "1.0.0+",
-					Tags:              []string{"filter_tag"},
-				})
 				Expect(findResp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 				Expect(findResp.Instances[0].InstanceId).To(Equal(instanceResp.InstanceId))
 			})
@@ -512,7 +468,7 @@ var _ = Describe("'Tag' service", func() {
 				Expect(respAddTags.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				var arr []string
-				for i := 0; i < quota.DefaultRuleQuota+1; i++ {
+				for i := 0; i < quota.DefaultTagQuota+1; i++ {
 					arr = append(arr, strconv.Itoa(i))
 				}
 				respAddTags, err = serviceResource.DeleteTags(getContext(), &pb.DeleteServiceTagsRequest{

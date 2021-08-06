@@ -13,14 +13,15 @@ require (
 	github.com/coreos/etcd v3.3.25+incompatible
 	github.com/coreos/pkg v0.0.0-20180928190104-399ea9e2e55f // v4
 	github.com/deckarep/golang-set v1.7.1
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/elithrar/simple-scrypt v1.3.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-chassis/cari v0.5.1-0.20210723060050-4a4f119d64ff
 	github.com/go-chassis/foundation v0.3.1-0.20210513015331-b54416b66bcd
 	github.com/go-chassis/go-archaius v1.5.1
 	github.com/go-chassis/go-chassis/v2 v2.2.1-0.20210630123055-6b4c31c5ad02
-	github.com/go-chassis/kie-client v0.1.0
+	github.com/go-chassis/kie-client v0.1.1-0.20210731071824-96f1f1e47e71
+	github.com/go-chassis/openlog v1.1.3
+	github.com/golang-jwt/jwt v3.2.1+incompatible
 	github.com/golang/protobuf v1.4.3
 	github.com/gorilla/websocket v1.4.3-0.20210424162022-e8629af678b7
 	github.com/hashicorp/serf v0.8.3

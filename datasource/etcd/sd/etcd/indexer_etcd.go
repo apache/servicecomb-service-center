@@ -48,7 +48,7 @@ func (i *Indexer) Search(ctx context.Context, opts ...client.PluginOpOption) (r 
 	op := client.OpGet(opts...)
 	key := util.BytesToStringWithNoCopy(op.Key)
 
-	log.Debugf("search '%s' match special options, request etcd server, opts: %s", key, op)
+	log.Debug(fmt.Sprintf("search '%s' match special options, request etcd server, opts: %s", key, op))
 
 	if err := i.CheckPrefix(key); err != nil {
 		return nil, err

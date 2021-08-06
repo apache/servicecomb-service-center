@@ -24,16 +24,18 @@ import (
 	pb "github.com/go-chassis/cari/discovery"
 )
 
+const (
+	ExistTypeMicroservice             = "microservice"
+	ExistTypeSchema                   = "schema"
+	DefaultLeaseRenewalInterval int32 = 30
+	DefaultLeaseRetryTimes      int32 = 3
+)
+
 var (
 	ErrServiceNotExists     = errors.New("service does not exist")
 	ErrInstanceNotExists    = errors.New("instance does not exist")
 	ErrUndefinedSchemaID    = errors.New("non-existent schemaID can't be added request")
 	ErrModifySchemaNotAllow = errors.New("schema already exist, can not be changed request")
-)
-
-const (
-	ExistTypeMicroservice = "microservice"
-	ExistTypeSchema       = "schema"
 )
 
 // Attention: request validation must be finished before the following interface being invoked!!!
@@ -42,12 +44,12 @@ type MetadataManager interface {
 	// Microservice management
 	RegisterService(ctx context.Context, request *pb.CreateServiceRequest) (*pb.CreateServiceResponse, error)
 	GetServices(ctx context.Context, request *pb.GetServicesRequest) (*pb.GetServicesResponse, error)
-	GetService(ctx context.Context, request *pb.GetServiceRequest) (*pb.GetServiceResponse, error)
+	GetService(ctx context.Context, request *pb.GetServiceRequest) (*pb.MicroService, error)
 
-	GetServiceDetail(ctx context.Context, request *pb.GetServiceRequest) (*pb.GetServiceDetailResponse, error)
-	GetServicesInfo(ctx context.Context, request *pb.GetServicesInfoRequest) (*pb.GetServicesInfoResponse, error)
-	GetServicesStatistics(ctx context.Context, request *pb.GetServicesRequest) (*pb.GetServicesInfoStatisticsResponse, error)
-	GetApplications(ctx context.Context, request *pb.GetAppsRequest) (*pb.GetAppsResponse, error)
+	GetServiceDetail(ctx context.Context, request *pb.GetServiceRequest) (*pb.ServiceDetail, error)
+	ListServiceDetail(ctx context.Context, request *pb.GetServicesInfoRequest) (*pb.GetServicesInfoResponse, error)
+	GetOverview(ctx context.Context, request *pb.GetServicesRequest) (*pb.Statistics, error)
+	ListApp(ctx context.Context, request *pb.GetAppsRequest) (*pb.GetAppsResponse, error)
 
 	ExistServiceByID(ctx context.Context, request *pb.GetExistenceByIDRequest) (*pb.GetExistenceByIDResponse, error)
 	ExistService(ctx context.Context, request *pb.GetExistenceRequest) (*pb.GetExistenceResponse, error)
@@ -98,10 +100,4 @@ type MetadataManager interface {
 	GetTags(ctx context.Context, request *pb.GetServiceTagsRequest) (*pb.GetServiceTagsResponse, error)
 	UpdateTag(ctx context.Context, request *pb.UpdateServiceTagRequest) (*pb.UpdateServiceTagResponse, error)
 	DeleteTags(ctx context.Context, request *pb.DeleteServiceTagsRequest) (*pb.DeleteServiceTagsResponse, error)
-
-	// White/black list management
-	AddRule(ctx context.Context, request *pb.AddServiceRulesRequest) (*pb.AddServiceRulesResponse, error)
-	GetRules(ctx context.Context, request *pb.GetServiceRulesRequest) (*pb.GetServiceRulesResponse, error)
-	UpdateRule(ctx context.Context, request *pb.UpdateServiceRuleRequest) (*pb.UpdateServiceRuleResponse, error)
-	DeleteRule(ctx context.Context, request *pb.DeleteServiceRulesRequest) (*pb.DeleteServiceRulesResponse, error)
 }

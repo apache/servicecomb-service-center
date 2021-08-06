@@ -64,8 +64,8 @@ func (h *ServiceEventHandler) OnEvent(evt sd.MongoEvent) {
 		return
 	}
 
-	log.Infof("caught [%s] service[%s][%s/%s/%s/%s] event",
-		evt.Type, ms.Service.ServiceId, ms.Service.Environment, ms.Service.AppId, ms.Service.ServiceName, ms.Service.Version)
+	log.Info(fmt.Sprintf("caught [%s] service[%s][%s/%s/%s/%s] event",
+		evt.Type, ms.Service.ServiceId, ms.Service.Environment, ms.Service.AppId, ms.Service.ServiceName, ms.Service.Version))
 }
 
 func newDomain(ctx context.Context, domain string) error {

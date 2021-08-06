@@ -34,14 +34,14 @@ type AccountLockManager struct {
 func (al AccountLockManager) UpsertLock(ctx context.Context, lock *datasource.AccountLock) error {
 	value, err := json.Marshal(lock)
 	if err != nil {
-		log.Errorf(err, "account lock is invalid")
+		log.Error("account lock is invalid", err)
 		return err
 	}
 	key := lock.Key
 	etcdKey := path.GenerateAccountLockKey(key)
 	err = client.PutBytes(ctx, etcdKey, value)
 	if err != nil {
-		log.Errorf(err, "can not save account lock")
+		log.Error("can not save account lock", err)
 		return err
 	}
 	log.Info(fmt.Sprintf("%s is locked, release at %d", key, lock.ReleaseAt))

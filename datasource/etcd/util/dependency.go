@@ -20,6 +20,7 @@ package util
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/go-chassis/cari/discovery"
 
@@ -43,7 +44,6 @@ func (dep *Dependency) removeConsumerOfProviderRule(ctx context.Context) ([]clie
 	opts := make([]client.PluginOp, 0, len(dep.DeleteDependencyRuleList))
 	for _, providerRule := range dep.DeleteDependencyRuleList {
 		proProkey := path.GenerateProviderDependencyRuleKey(providerRule.Tenant, providerRule)
-		log.Debugf("This proProkey is %s", proProkey)
 		consumerValue, err := TransferToMicroServiceDependency(ctx, proProkey)
 		if err != nil {
 			return nil, err
@@ -53,7 +53,7 @@ func (dep *Dependency) removeConsumerOfProviderRule(ctx context.Context) ([]clie
 				consumerValue.Dependency = append(consumerValue.Dependency[:key], consumerValue.Dependency[key+1:]...)
 				break
 			}
-			log.Debugf("tmp and dep.Consumer not equal, tmp %v, consumer %v", tmp, dep.Consumer)
+			log.Debug(fmt.Sprintf("tmp and dep.Consumer not equal, tmp %v, consumer %v", tmp, dep.Consumer))
 		}
 		//删除后，如果不存在依赖规则了，就删除该provider的依赖规则，如果有，则更新该依赖规则
 		if len(consumerValue.Dependency) == 0 {
@@ -62,7 +62,7 @@ func (dep *Dependency) removeConsumerOfProviderRule(ctx context.Context) ([]clie
 		}
 		data, err := json.Marshal(consumerValue)
 		if err != nil {
-			log.Errorf(err, "Marshal MicroServiceDependency failed")
+			log.Error("Marshal MicroServiceDependency failed", err)
 			return nil, err
 		}
 		opts = append(opts, client.OpPut(
@@ -75,8 +75,8 @@ func (dep *Dependency) removeConsumerOfProviderRule(ctx context.Context) ([]clie
 func (dep *Dependency) addConsumerOfProviderRule(ctx context.Context) ([]client.PluginOp, error) {
 	opts := make([]client.PluginOp, 0, len(dep.CreateDependencyRuleList))
 	for _, providerRule := range dep.CreateDependencyRuleList {
-		proProkey := path.GenerateProviderDependencyRuleKey(providerRule.Tenant, providerRule)
-		tmpValue, err := TransferToMicroServiceDependency(ctx, proProkey)
+		providerRuleKey := path.GenerateProviderDependencyRuleKey(providerRule.Tenant, providerRule)
+		tmpValue, err := TransferToMicroServiceDependency(ctx, providerRuleKey)
 		if err != nil {
 			return nil, err
 		}
@@ -84,15 +84,12 @@ func (dep *Dependency) addConsumerOfProviderRule(ctx context.Context) ([]client.
 
 		data, errMarshal := json.Marshal(tmpValue)
 		if errMarshal != nil {
-			log.Errorf(errMarshal, "Marshal MicroServiceDependency failed")
+			log.Error("Marshal MicroServiceDependency failed", errMarshal)
 			return nil, errMarshal
 		}
 		opts = append(opts, client.OpPut(
-			client.WithStrKey(proProkey),
+			client.WithStrKey(providerRuleKey),
 			client.WithValue(data)))
-		if providerRule.ServiceName == "*" {
-			break
-		}
 	}
 	return opts, nil
 }
@@ -108,7 +105,7 @@ func (dep *Dependency) updateProvidersRuleOfConsumer(_ context.Context) ([]clien
 	}
 	data, err := json.Marshal(dependency)
 	if err != nil {
-		log.Errorf(err, "Marshal MicroServiceDependency failed")
+		log.Error("Marshal MicroServiceDependency failed", err)
 		return nil, err
 	}
 	return []client.PluginOp{client.OpPut(client.WithStrKey(conKey), client.WithValue(data))}, nil

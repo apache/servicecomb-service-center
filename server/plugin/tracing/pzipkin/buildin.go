@@ -60,7 +60,7 @@ func (zp *Zipkin) ServerBegin(operationName string, itf tracing.Request) tracing
 		case nil:
 		case opentracing.ErrSpanContextNotFound:
 		default:
-			log.Errorf(err, "tracer extract request failed")
+			log.Error("tracer extract request failed", err)
 			return nil
 		}
 
@@ -119,7 +119,7 @@ func (zp *Zipkin) ClientBegin(operationName string, itf tracing.Request) tracing
 			opentracing.HTTPHeaders,
 			carrier,
 		); err != nil {
-			log.Errorf(err, "tracer inject request failed")
+			log.Error("tracer inject request failed", err)
 		}
 	case *tracing.Operation:
 		r := itf.(*tracing.Operation)
@@ -147,7 +147,7 @@ func (zp *Zipkin) ClientBegin(operationName string, itf tracing.Request) tracing
 			opentracing.HTTPHeaders,
 			carrier,
 		); err != nil {
-			log.Errorf(err, "tracer inject request failed")
+			log.Error("tracer inject request failed", err)
 		}
 		// inject context
 		err := carrier.ForeachKey(func(key, val string) error {

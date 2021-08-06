@@ -33,7 +33,6 @@ import (
 func EnsureDB() {
 	EnsureService()
 	EnsureInstance()
-	EnsureRule()
 	EnsureSchema()
 	EnsureDep()
 	EnsureAccountLock()
@@ -75,13 +74,6 @@ func EnsureInstance() {
 
 func EnsureSchema() {
 	EnsureCollection(model.CollectionSchema, []mongo.IndexModel{mutil.BuildIndexDoc(
-		model.ColumnDomain,
-		model.ColumnProject,
-		model.ColumnServiceID)})
-}
-
-func EnsureRule() {
-	EnsureCollection(model.CollectionRule, []mongo.IndexModel{mutil.BuildIndexDoc(
 		model.ColumnDomain,
 		model.ColumnProject,
 		model.ColumnServiceID)})

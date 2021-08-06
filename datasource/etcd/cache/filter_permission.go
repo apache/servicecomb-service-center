@@ -32,20 +32,20 @@ type AccessibleFilter struct {
 }
 
 func (f *AccessibleFilter) Name(ctx context.Context, _ *cache.Node) string {
-	consumer := ctx.Value(CtxFindConsumer).(*pb.MicroService)
+	consumer := ctx.Value(CtxConsumerID).(*pb.MicroService)
 	return consumer.ServiceId
 }
 
 func (f *AccessibleFilter) Init(ctx context.Context, parent *cache.Node) (node *cache.Node, err error) {
 	var ids []string
-	consumerID := ctx.Value(CtxFindConsumer).(*pb.MicroService).ServiceId
-	pCopy := *parent.Cache.Get(Find).(*VersionRuleCacheItem)
+	consumerID := ctx.Value(CtxConsumerID).(*pb.MicroService).ServiceId
+	pCopy := *parent.Cache.Get(FindResult).(*VersionRuleCacheItem)
 	for _, providerServiceID := range pCopy.ServiceIds {
 		if err := util.Accessible(ctx, consumerID, providerServiceID); err != nil {
-			provider := ctx.Value(CtxFindProvider).(*pb.MicroServiceKey)
-			findFlag := fmt.Sprintf("consumer '%s' find provider %s/%s/%s", consumerID,
-				provider.AppId, provider.ServiceName, provider.Version)
-			log.Errorf(err, "AccessibleFilter failed, %s", findFlag)
+			provider := ctx.Value(CtxProviderKey).(*pb.MicroServiceKey)
+			findFlag := fmt.Sprintf("consumer '%s' find provider %s/%s", consumerID,
+				provider.AppId, provider.ServiceName)
+			log.Error(fmt.Sprintf("AccessibleFilter failed, %s", findFlag), err)
 			continue
 		}
 		ids = append(ids, providerServiceID)
@@ -54,6 +54,6 @@ func (f *AccessibleFilter) Init(ctx context.Context, parent *cache.Node) (node *
 	pCopy.ServiceIds = ids
 
 	node = cache.NewNode()
-	node.Cache.Set(Find, &pCopy)
+	node.Cache.Set(FindResult, &pCopy)
 	return
 }

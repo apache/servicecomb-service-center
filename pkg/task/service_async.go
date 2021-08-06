@@ -20,6 +20,7 @@ package task
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -115,7 +116,7 @@ func (lat *AsyncTaskService) daemon(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			log.Debugf("daemon thread exited for AsyncTaskService stopped")
+			log.Debug("daemon thread exited for AsyncTaskService stopped")
 			return
 		case <-timer.C:
 			lat.lock.RLock()
@@ -164,7 +165,7 @@ func (lat *AsyncTaskService) daemon(ctx context.Context) {
 			}
 			lat.lock.Unlock()
 
-			log.Debugf("daemon thread completed, %d executor(s) removed", len(removes))
+			log.Debug(fmt.Sprintf("daemon thread completed, %d executor(s) removed", len(removes)))
 		}
 	}
 }

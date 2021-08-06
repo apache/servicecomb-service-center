@@ -19,6 +19,7 @@ package validator
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 
 	pb "github.com/go-chassis/cari/discovery"
@@ -51,6 +52,7 @@ func init() {
 	accountLoginValidator.AddRule("TokenExpirationTime", &validate.Rule{Regexp: &validate.TokenExpirationTimeChecker{}})
 }
 
+// deprecated use the ValidateXXX func instead, e.g. rbac_validator.go
 func Validate(v interface{}) error {
 	err := baseCheck(v)
 	if err != nil {
@@ -65,10 +67,6 @@ func Validate(v interface{}) error {
 		return GetServiceReqValidator().Validate(v)
 	case *pb.UpdateServicePropsRequest:
 		return UpdateServicePropsReqValidator().Validate(v)
-	case *pb.CreateDependenciesRequest:
-		return CreateDependenciesReqValidator().Validate(v)
-	case *pb.AddDependenciesRequest:
-		return AddDependenciesReqValidator().Validate(v)
 	case *pb.GetServiceTagsRequest:
 		return GetTagsReqValidator().Validate(v)
 	case *pb.AddServiceTagsRequest:
@@ -101,18 +99,10 @@ func Validate(v interface{}) error {
 		return HeartbeatReqValidator().Validate(v)
 	case *pb.UpdateInstancePropsRequest:
 		return UpdateInstancePropsReqValidator().Validate(v)
-	case *pb.GetServiceRulesRequest:
-		return GetRulesReqValidator().Validate(v)
-	case *pb.AddServiceRulesRequest:
-		return AddRulesReqValidator().Validate(v)
-	case *pb.UpdateServiceRuleRequest:
-		return UpdateRuleReqValidator().Validate(v)
-	case *pb.DeleteServiceRulesRequest:
-		return DeleteRulesReqValidator().Validate(v)
 	case *pb.GetAppsRequest:
 		return MicroServiceKeyValidator().Validate(v)
 	default:
-		log.Warnf("No validator for %T.", t)
+		log.Warn(fmt.Sprintf("No validator for %T.", t))
 		return nil
 	}
 }

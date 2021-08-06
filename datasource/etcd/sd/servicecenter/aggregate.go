@@ -18,6 +18,7 @@ package servicecenter
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"strings"
 	"sync"
 
@@ -68,8 +69,6 @@ func (c *SCClientAggregate) GetScCache(ctx context.Context) (*dump.Cache, map[st
 		c.cacheAppend(client.Cfg.Name, &caches.Indexes, &cache.Indexes)
 		c.cacheAppend(client.Cfg.Name, &caches.Aliases, &cache.Aliases)
 		c.cacheAppend(client.Cfg.Name, &caches.Tags, &cache.Tags)
-		c.cacheAppend(client.Cfg.Name, &caches.Rules, &cache.Rules)
-		c.cacheAppend(client.Cfg.Name, &caches.RuleIndexes, &cache.RuleIndexes)
 		c.cacheAppend(client.Cfg.Name, &caches.DependencyRules, &cache.DependencyRules)
 		c.cacheAppend(client.Cfg.Name, &caches.Summaries, &cache.Summaries)
 		c.cacheAppend(client.Cfg.Name, &caches.Instances, &cache.Instances)
@@ -93,7 +92,7 @@ func (c *SCClientAggregate) GetSchemasByServiceID(ctx context.Context, domainPro
 	for _, client := range *c {
 		schemas, err := client.GetSchemasByServiceID(ctx, dp[0], dp[1], serviceID)
 		if err != nil && err.InternalError() {
-			log.Errorf(err, "get schema by serviceID[%s/%s] failed", domainProject, serviceID)
+			log.Error(fmt.Sprintf("get schema by serviceID[%s/%s] failed", domainProject, serviceID), err)
 			continue
 		}
 		if schemas == nil {
@@ -119,7 +118,7 @@ func (c *SCClientAggregate) GetSchemaBySchemaID(ctx context.Context, domainProje
 	for _, client := range *c {
 		schema, err := client.GetSchemaBySchemaID(ctx, dp[0], dp[1], serviceID, schemaID)
 		if err != nil && err.InternalError() {
-			log.Errorf(err, "get schema by serviceID[%s/%s] failed", domainProject, serviceID)
+			log.Error(fmt.Sprintf("get schema by serviceID[%s/%s] failed", domainProject, serviceID), err)
 			continue
 		}
 		if schema == nil {
@@ -142,7 +141,7 @@ func (c *SCClientAggregate) GetInstancesByServiceID(ctx context.Context, domain,
 	for _, client := range *c {
 		insts, err := client.GetInstancesByServiceID(ctx, domain, project, providerID, consumerID)
 		if err != nil && err.InternalError() {
-			log.Errorf(err, "consumer[%s] get provider[%s/%s/%s] instances failed", consumerID, domain, project, providerID)
+			log.Error(fmt.Sprintf("consumer[%s] get provider[%s/%s/%s] instances failed", consumerID, domain, project, providerID), err)
 			continue
 		}
 		if insts == nil {
@@ -166,7 +165,7 @@ func (c *SCClientAggregate) GetInstanceByInstanceID(ctx context.Context, domain,
 	for _, client := range *c {
 		instance, err := client.GetInstanceByInstanceID(ctx, domain, project, providerID, instanceID, consumerID)
 		if err != nil && err.InternalError() {
-			log.Errorf(err, "consumer[%s] get provider[%s/%s/%s] instances failed", consumerID, domain, project, providerID)
+			log.Error(fmt.Sprintf("consumer[%s] get provider[%s/%s/%s] instances failed", consumerID, domain, project, providerID), err)
 			continue
 		}
 		if instance == nil {
@@ -194,7 +193,7 @@ func GetOrCreateSCClient() *SCClientAggregate {
 			}
 			client, err := client.NewSCClient(client.Config{Name: name, Endpoints: endpoints})
 			if err != nil {
-				log.Errorf(err, "new service center[%s]%v client failed", name, endpoints)
+				log.Error(fmt.Sprintf("new service center[%s]%v client failed", name, endpoints), err)
 				continue
 			}
 			client.Timeout = etcd.Configuration().RequestTimeOut
@@ -202,13 +201,13 @@ func GetOrCreateSCClient() *SCClientAggregate {
 			if strings.Contains(endpoints[0], "https") {
 				client.TLS, err = getClientTLS()
 				if err != nil {
-					log.Errorf(err, "get service center[%s]%v tls config failed", name, endpoints)
+					log.Error(fmt.Sprintf("get service center[%s]%v tls config failed", name, endpoints), err)
 					continue
 				}
 			}
 
 			*scClient = append(*scClient, client)
-			log.Infof("new service center[%s]%v client", name, endpoints)
+			log.Info(fmt.Sprintf("new service center[%s]%v client", name, endpoints))
 		}
 	})
 	return scClient

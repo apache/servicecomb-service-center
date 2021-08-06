@@ -30,7 +30,7 @@ type ServiceFilter struct {
 }
 
 func (f *ServiceFilter) Name(ctx context.Context, _ *cache.Node) string {
-	provider := ctx.Value(CtxFindProvider).(*pb.MicroServiceKey)
+	provider := ctx.Value(CtxProviderKey).(*pb.MicroServiceKey)
 	return util.StringJoin([]string{
 		provider.Tenant,
 		provider.Environment,

@@ -45,12 +45,12 @@ func (ds *AccountManager) CreateAccount(ctx context.Context, a *rbac.Account) er
 	defer func() {
 		err := lock.Unlock()
 		if err != nil {
-			log.Errorf(err, "can not release account lock")
+			log.Error("can not release account lock", err)
 		}
 	}()
 	exist, err := ds.AccountExist(ctx, a.Name)
 	if err != nil {
-		log.Errorf(err, "can not save account info")
+		log.Error("can not save account info", err)
 		return err
 	}
 	if exist {
@@ -73,7 +73,7 @@ func (ds *AccountManager) CreateAccount(ctx context.Context, a *rbac.Account) er
 	}
 	err = client.BatchCommit(ctx, opts)
 	if err != nil {
-		log.Errorf(err, "can not save account info")
+		log.Error("can not save account info", err)
 		return err
 	}
 	log.Info("create new account: " + a.ID)
@@ -83,7 +83,7 @@ func GenAccountOpts(a *rbac.Account, action client.ActionType) ([]client.PluginO
 	opts := make([]client.PluginOp, 0)
 	value, err := json.Marshal(a)
 	if err != nil {
-		log.Errorf(err, "account info is invalid")
+		log.Error("account info is invalid", err)
 		return nil, err
 	}
 	opts = append(opts, client.PluginOp{
@@ -127,7 +127,7 @@ func (ds *AccountManager) GetAccount(ctx context.Context, name string) (*rbac.Ac
 	account := &rbac.Account{}
 	err = json.Unmarshal(resp.Kvs[0].Value, account)
 	if err != nil {
-		log.Errorf(err, "account info format invalid")
+		log.Error("account info format invalid", err)
 		return nil, err
 	}
 	ds.compatibleOldVersionAccount(account)

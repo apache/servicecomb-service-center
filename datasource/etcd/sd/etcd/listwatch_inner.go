@@ -39,7 +39,7 @@ func (lw *innerListWatch) List(op sdcommon.ListWatchConfig) (*sdcommon.ListWatch
 	defer cancel()
 	resp, err := lw.Client.Do(otCtx, client.WatchPrefixOpOptions(lw.Prefix)...)
 	if err != nil {
-		log.Errorf(err, "list prefix %s failed, current rev: %d", lw.Prefix, lw.Revision())
+		log.Error(fmt.Sprintf("list prefix %s failed, current rev: %d", lw.Prefix, lw.Revision()), err)
 		return nil, err
 	}
 	lw.setRevision(resp.Revision)
@@ -90,7 +90,7 @@ func (lw *innerListWatch) DoWatch(ctx context.Context, f func(*sdcommon.ListWatc
 
 	err := lw.Client.Watch(ctx, opts...)
 	if err != nil { // compact可能会导致watch失败 or message body size lager than 4MB
-		log.Errorf(err, "watch prefix %s failed, start rev: %d+1->%d->0", lw.Prefix, rev, lw.Revision())
+		log.Error(fmt.Sprintf("watch prefix %s failed, start rev: %d+1->%d->0", lw.Prefix, rev, lw.Revision()), err)
 
 		lw.setRevision(0)
 		f(nil)

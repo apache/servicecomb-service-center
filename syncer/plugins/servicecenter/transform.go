@@ -85,7 +85,7 @@ func toSyncService(service *scpb.MicroService) (syncService *pb.SyncService) {
 	serviceInpbsc := ServiceCopy(service)
 	content, err := proto.Marshal(serviceInpbsc)
 	if err != nil {
-		log.Errorf(err, "transform sc service to syncer service failed: %s", err)
+		log.Error("transform sc service to syncer service failed", err)
 		return
 	}
 
@@ -138,7 +138,7 @@ func toSyncInstance(serviceID string, instance *scpb.MicroServiceInstance) (sync
 		endpoint := ep
 		addr, err := url.Parse(ep)
 		if err != nil {
-			log.Errorf(err, "parse sc instance endpoint failed: %s", err)
+			log.Error("parse sc instance endpoint failed", err)
 			continue
 		}
 		if addr.Scheme == "rest" {
@@ -164,7 +164,7 @@ func toSyncInstance(serviceID string, instance *scpb.MicroServiceInstance) (sync
 	instaceInpbsc := InstanceCopy(instance)
 	content, err := proto.Marshal(instaceInpbsc)
 	if err != nil {
-		log.Errorf(err, "transform sc instance to syncer instance failed: %s", err)
+		log.Error("transform sc instance to syncer instance failed", err)
 		return
 	}
 
@@ -254,7 +254,7 @@ func toInstance(syncInstance *pb.SyncInstance) (instance *scpb.MicroServiceInsta
 	for _, ep := range syncInstance.Endpoints {
 		addr, err := url.Parse(ep)
 		if err != nil {
-			log.Errorf(err, "parse sc instance endpoint failed: %s", err)
+			log.Error("parse sc instance endpoint failed", err)
 			continue
 		}
 		endpoint := ""

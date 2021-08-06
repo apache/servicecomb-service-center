@@ -33,7 +33,7 @@ const (
 )
 
 func GetProviderServiceOfDeps(provider *discovery.MicroService) (*discovery.MicroServiceDependency, bool) {
-	res := sd.Store().Dep().Cache().GetValue(genDepserivceKey(Provider, provider))
+	res := sd.Store().Dep().Cache().GetValue(genDepServiceKey(Provider, provider))
 	deps, ok := transCacheToDep(res)
 	if !ok {
 		return nil, false
@@ -56,7 +56,7 @@ func transCacheToDep(cache []interface{}) ([]*discovery.MicroServiceDependency, 
 	return res, true
 }
 
-func genDepserivceKey(ruleType string, service *discovery.MicroService) string {
+func genDepServiceKey(ruleType string, service *discovery.MicroService) string {
 	return strings.Join([]string{ruleType, service.AppId, service.ServiceName, service.Version}, "/")
 }
 
@@ -77,31 +77,6 @@ func transCacheToInsts(cache []interface{}) ([]*discovery.MicroServiceInstance, 
 			return nil, false
 		}
 		res = append(res, inst.Instance)
-	}
-	if len(res) == 0 {
-		return nil, false
-	}
-	return res, true
-}
-
-func GetRulesByServiceID(serviceID string) ([]*model.Rule, bool) {
-	cacheRes := sd.Store().Rule().Cache().GetValue(serviceID)
-	return transCacheToRules(cacheRes)
-}
-
-func transCacheToRules(cacheRules []interface{}) ([]*model.Rule, bool) {
-	res := make([]*model.Rule, 0, len(cacheRules))
-	for _, v := range cacheRules {
-		t, ok := v.(model.Rule)
-		if !ok {
-			return nil, false
-		}
-		res = append(res, &model.Rule{
-			Domain:    t.Domain,
-			Project:   t.Project,
-			ServiceID: t.ServiceID,
-			Rule:      t.Rule,
-		})
 	}
 	if len(res) == 0 {
 		return nil, false

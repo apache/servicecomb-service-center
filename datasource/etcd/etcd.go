@@ -17,6 +17,7 @@ package etcd
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"strings"
 	"time"
@@ -85,7 +86,7 @@ func (ds *DataSource) MetricsManager() datasource.MetricsManager {
 
 func NewDataSource(opts datasource.Options) (datasource.DataSource, error) {
 	// TODO: construct a reasonable DataSource instance
-	log.Warnf("data source enable etcd mode")
+	log.Warn("data source enable etcd mode")
 
 	inst := &DataSource{}
 
@@ -136,12 +137,12 @@ func (ds *DataSource) initClustersIndex() {
 func (ds *DataSource) initPlugins(opts datasource.Options) {
 	err := client.Init(opts)
 	if err != nil {
-		log.Fatalf(err, "client init failed")
+		log.Fatal("client init failed", err)
 	}
 	kind := config.GetString("discovery.kind", "", config.WithStandby("discovery_plugin"))
 	err = sd.Init(sd.Options{Kind: sd.Kind(kind)})
 	if err != nil {
-		log.Fatalf(err, "sd init failed")
+		log.Fatal("sd init failed", err)
 	}
 }
 
@@ -157,7 +158,7 @@ func (ds *DataSource) autoCompact() {
 		return
 	}
 	gopool.Go(func(ctx context.Context) {
-		log.Infof("enabled the automatic compact mechanism, compact once every %s, reserve %d", interval, delta)
+		log.Info(fmt.Sprintf("enabled the automatic compact mechanism, compact once every %s, reserve %d", interval, delta))
 		for {
 			select {
 			case <-ctx.Done():
@@ -165,7 +166,7 @@ func (ds *DataSource) autoCompact() {
 			case <-time.After(interval):
 				lock, err := mux.Try(mux.GlobalLock)
 				if err != nil {
-					log.Errorf(err, "can not compact backend by this service center instance now")
+					log.Error("can not compact backend by this service center instance now", err)
 					continue
 				}
 

@@ -90,26 +90,26 @@ func (h *InstanceEventHandler) OnEvent(evt sd.KvEvent) {
 		return
 	}
 
-	log.Infof("caught [%s] service[%s][%s/%s/%s/%s] instance[%s] event, endpoints %v",
+	log.Info(fmt.Sprintf("caught [%s] service[%s][%s/%s/%s/%s] instance[%s] event, endpoints %v",
 		action, providerID, ms.Environment, ms.AppId, ms.ServiceName, ms.Version,
-		providerInstanceID, instance.Endpoints)
+		providerInstanceID, instance.Endpoints))
 
 	// 查询所有consumer
-	consumerIDs, _, err := serviceUtil.GetAllConsumerIds(ctx, domainProject, ms)
+	consumerIDs, err := serviceUtil.GetConsumerIds(ctx, domainProject, ms)
 	if err != nil {
-		log.Errorf(err, "get service[%s][%s/%s/%s/%s]'s consumerIDs failed",
-			providerID, ms.Environment, ms.AppId, ms.ServiceName, ms.Version)
+		log.Error(fmt.Sprintf("get service[%s][%s/%s/%s/%s]'s consumerIDs failed",
+			providerID, ms.Environment, ms.AppId, ms.ServiceName, ms.Version), err)
 		return
 	}
 
-	PublishInstanceEvent(evt, domainProject, pb.MicroServiceToKey(domainProject, ms), consumerIDs)
+	PublishInstanceEvent(evt, pb.MicroServiceToKey(domainProject, ms), consumerIDs)
 }
 
 func NewInstanceEventHandler() *InstanceEventHandler {
 	return &InstanceEventHandler{}
 }
 
-func PublishInstanceEvent(evt sd.KvEvent, domainProject string, serviceKey *pb.MicroServiceKey, subscribers []string) {
+func PublishInstanceEvent(evt sd.KvEvent, serviceKey *pb.MicroServiceKey, subscribers []string) {
 	defer cache.FindInstances.Remove(serviceKey)
 
 	if len(subscribers) == 0 {
@@ -123,10 +123,10 @@ func PublishInstanceEvent(evt sd.KvEvent, domainProject string, serviceKey *pb.M
 		Instance: evt.KV.Value.(*pb.MicroServiceInstance),
 	}
 	for _, consumerID := range subscribers {
-		evt := event.NewInstanceEventWithTime(consumerID, domainProject, evt.Revision, evt.CreateAt, response)
+		evt := event.NewInstanceEvent(consumerID, evt.Revision, evt.CreateAt, response)
 		err := event.Center().Fire(evt)
 		if err != nil {
-			log.Errorf(err, "publish event[%v] into channel failed", evt)
+			log.Error(fmt.Sprintf("publish event[%v] into channel failed", evt), err)
 		}
 	}
 }
@@ -150,5 +150,5 @@ func NotifySyncerInstanceEvent(evt sd.KvEvent, domainProject string, ms *pb.Micr
 
 	syncernotify.GetSyncerNotifyCenter().AddEvent(instEvent)
 
-	log.Debugf("success to add instance change event:%s to event queue", instEvent)
+	log.Debug(fmt.Sprintf("success to add instance change event: %v to event queue", instEvent))
 }

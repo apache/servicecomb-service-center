@@ -20,15 +20,16 @@ package rbac
 import (
 	"context"
 	"crypto/rsa"
+	"fmt"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/privacy"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/dgrijalva/jwt-go"
 	"github.com/go-chassis/cari/pkg/errsvc"
 	"github.com/go-chassis/cari/rbac"
 	"github.com/go-chassis/go-chassis/v2/security/authr"
 	"github.com/go-chassis/go-chassis/v2/security/token"
+	"github.com/golang-jwt/jwt"
 )
 
 //EmbeddedAuthenticator is sc default auth plugin, RBAC data is persisted in etcd
@@ -43,7 +44,7 @@ func newEmbeddedAuthenticator(opts *authr.Options) (authr.Authenticator, error) 
 func (a *EmbeddedAuthenticator) Login(ctx context.Context, user string, password string, opts ...authr.LoginOption) (string, error) {
 	ip := util.GetIPFromContext(ctx)
 	if IsBanned(MakeBanKey(user, ip)) {
-		log.Warnf("ip [%s] is banned, account: %s", ip, user)
+		log.Warn(fmt.Sprintf("ip [%s] is banned, account: %s", ip, user))
 		return "", ErrAccountBlocked
 	}
 	opt := &authr.LoginOptions{}
@@ -76,7 +77,7 @@ func (a *EmbeddedAuthenticator) Login(ctx context.Context, user string, password
 		token.WithExpTime(opt.ExpireAfter),
 		token.WithSigningMethod(token.RS512)) //TODO config for each user
 	if err != nil {
-		log.Errorf(err, "can not sign a token")
+		log.Error("can not sign a token", err)
 		return "", err
 	}
 	return tokenStr, nil

@@ -20,13 +20,16 @@ package rbac
 import (
 	"context"
 	"errors"
-
-	rbacmodel "github.com/go-chassis/cari/rbac"
+	"net/http"
 
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/service/rbac/token"
+	rbacmodel "github.com/go-chassis/cari/rbac"
 )
 
-const CtxRequestClaims util.CtxKey = "_request_claims"
+const (
+	CtxRequestClaims util.CtxKey = "_request_claims"
+)
 
 func UserFromContext(ctx context.Context) string {
 	m, ok := ctx.Value(CtxRequestClaims).(map[string]interface{})
@@ -46,4 +49,13 @@ func AccountFromContext(ctx context.Context) (*rbacmodel.Account, error) {
 		return nil, errors.New("no claims from request context")
 	}
 	return rbacmodel.GetAccount(m)
+}
+
+func SignRequest(req *http.Request) error {
+	auth := token.FromContext(req.Context())
+	if auth == "" {
+		return errors.New("request unauthorized")
+	}
+	req.Header.Set("Authorization", "Bearer "+auth)
+	return nil
 }

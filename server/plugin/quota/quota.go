@@ -29,7 +29,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/service/quota"
 	pb "github.com/go-chassis/cari/discovery"
-	"github.com/go-chassis/cari/pkg/errsvc"
 )
 
 const QUOTA plugin.Kind = "quota"
@@ -38,15 +37,13 @@ const (
 	defaultServiceLimit  = 50000
 	defaultInstanceLimit = 150000
 	defaultSchemaLimit   = 100
-	defaultRuleLimit     = 100
 	defaultTagLimit      = 100
 	defaultAccountLimit  = 1000
 	defaultRoleLimit     = 100
 )
 
 const (
-	TypeRule ResourceType = iota
-	TypeSchema
+	TypeSchema ResourceType = iota
 	TypeTag
 	TypeService
 	TypeInstance
@@ -59,7 +56,6 @@ var (
 	DefaultInstanceQuota = defaultInstanceLimit
 	DefaultSchemaQuota   = defaultSchemaLimit
 	DefaultTagQuota      = defaultTagLimit
-	DefaultRuleQuota     = defaultRuleLimit
 	DefaultAccountQuota  = defaultAccountLimit
 	DefaultRoleQuota     = defaultRoleLimit
 )
@@ -69,7 +65,6 @@ func Init() {
 	DefaultInstanceQuota = config.GetInt("quota.cap.instance.limit", defaultInstanceLimit, config.WithENV("QUOTA_INSTANCE"))
 	DefaultSchemaQuota = config.GetInt("quota.cap.schema.limit", defaultSchemaLimit, config.WithENV("QUOTA_SCHEMA"))
 	DefaultTagQuota = config.GetInt("quota.cap.tag.limit", defaultTagLimit, config.WithENV("QUOTA_TAG"))
-	DefaultRuleQuota = config.GetInt("quota.cap.rule.limit", defaultRuleLimit, config.WithENV("QUOTA_RULE"))
 	DefaultAccountQuota = config.GetInt("quota.cap.account.limit", defaultAccountLimit, config.WithENV("QUOTA_ACCOUNT"))
 	DefaultRoleQuota = config.GetInt("quota.cap.role.limit", defaultRoleLimit, config.WithENV("QUOTA_ROLE"))
 }
@@ -99,8 +94,6 @@ type ResourceType int
 
 func (r ResourceType) String() string {
 	switch r {
-	case TypeRule:
-		return "RULE"
 	case TypeSchema:
 		return "SCHEMA"
 	case TypeTag:
@@ -118,24 +111,24 @@ func (r ResourceType) String() string {
 	}
 }
 
-//申请配额sourceType serviceinstance servicetype
-func Apply(ctx context.Context, res *ApplyQuotaResource) *errsvc.Error {
+// Apply 申请配额sourceType serviceinstance servicetype
+func Apply(ctx context.Context, res *ApplyQuotaResource) error {
 	if res == nil {
 		err := errors.New("invalid parameters")
-		log.Errorf(err, "quota check failed")
+		log.Error("quota check failed", err)
 		return pb.NewError(pb.ErrInternal, err.Error())
 	}
 
 	limitQuota := plugin.Plugins().Instance(QUOTA).(Manager).GetQuota(ctx, res.QuotaType)
 	curNum, err := GetResourceUsage(ctx, res)
 	if err != nil {
-		log.Errorf(err, "%s quota check failed", res.QuotaType)
+		log.Error(fmt.Sprintf("%s quota check failed", res.QuotaType), err)
 		return pb.NewError(pb.ErrInternal, err.Error())
 	}
 	if curNum+res.QuotaSize > limitQuota {
 		mes := fmt.Sprintf("no quota to create %s, max num is %d, curNum is %d, apply num is %d",
 			res.QuotaType, limitQuota, curNum, res.QuotaSize)
-		log.Errorf(nil, mes)
+		log.Error(mes, nil)
 		return pb.NewError(pb.ErrNotEnoughQuota, mes)
 	}
 	return nil
@@ -157,8 +150,6 @@ func GetResourceUsage(ctx context.Context, res *ApplyQuotaResource) (int64, erro
 			Domain:  util.ParseDomain(ctx),
 			Project: util.ParseProject(ctx),
 		})
-	case TypeRule:
-		return quota.RuleUsage(ctx, serviceID)
 	case TypeSchema:
 		return quota.SchemaUsage(ctx, serviceID)
 	case TypeTag:

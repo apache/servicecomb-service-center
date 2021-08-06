@@ -19,6 +19,7 @@ package syncernotify
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
@@ -71,11 +72,11 @@ func (wh *Publisher) loop(ctx context.Context) {
 				}
 			}
 			if !wsIsActive {
-				log.Debugf("release websocket conn :%s", wh.ws.conn.RemoteAddr())
+				log.Debug(fmt.Sprintf("release websocket conn :%s", wh.ws.conn.RemoteAddr()))
 
 				err := wh.ws.conn.Close()
 				if err != nil {
-					log.Errorf(err, "conn close failed")
+					log.Error("conn close failed", err)
 				}
 
 				wh.ws = nil
@@ -90,7 +91,7 @@ func (wh *Publisher) loop(ctx context.Context) {
 }
 
 func (wh *Publisher) Accept(ws *WebSocket) {
-	log.Debugf("get a new websocket:%s", ws.conn.RemoteAddr())
+	log.Debug(fmt.Sprintf("get a new websocket:%s", ws.conn.RemoteAddr()))
 	wh.ws = ws
 }
 

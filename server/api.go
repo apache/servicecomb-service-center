@@ -21,7 +21,6 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"strconv"
 	"time"
 
 	"github.com/apache/servicecomb-service-center/server/service/disco"
@@ -53,33 +52,15 @@ func InitAPI() {
 	core.ServiceAPI = disco.AssembleResources()
 }
 
-type APIType int64
-
-func (t APIType) String() string {
-	switch t {
-	case RPC:
-		return "grpc" // support grpc
-	case REST:
-		return "rest"
-	default:
-		return "SCHEME" + strconv.Itoa(int(t))
-	}
-}
-
 type APIServer struct {
-	Listeners map[APIType]string
+	Listeners  []string
+	HTTPServer *rest.Server
 
-	restSrv   *rest.Server
 	isClose   bool
 	forked    bool
 	err       chan error
 	goroutine *gopool.Pool
 }
-
-const (
-	RPC  APIType = 0
-	REST APIType = 1
-)
 
 func (s *APIServer) Err() <-chan error {
 	return s.err
@@ -89,7 +70,7 @@ func (s *APIServer) graceDone() {
 	grace.Before(s.MarkForked)
 	grace.After(s.Stop)
 	if err := grace.Done(); err != nil {
-		log.Errorf(err, "server reload failed")
+		log.Error("server reload failed", err)
 	}
 }
 
@@ -97,48 +78,43 @@ func (s *APIServer) MarkForked() {
 	s.forked = true
 }
 
-func (s *APIServer) AddListener(t APIType, ip, port string) {
-	if s.Listeners == nil {
-		s.Listeners = map[APIType]string{}
-	}
+func (s *APIServer) AddListener(ip, port string) {
 	if len(ip) == 0 {
 		return
 	}
-	s.Listeners[t] = net.JoinHostPort(ip, port)
+	s.Listeners = append(s.Listeners, net.JoinHostPort(ip, port))
 }
 
-func (s *APIServer) populateEndpoint(t APIType, ipPort string) {
+func (s *APIServer) populateEndpoint(ipPort string) {
 	if len(ipPort) == 0 {
 		return
 	}
-	address := fmt.Sprintf("%s://%s/", t, ipPort)
+	address := fmt.Sprintf("rest://%s/", ipPort)
 	if config.GetSSL().SslEnabled {
 		address += "?sslEnabled=true"
 	}
 	core.Instance.Endpoints = append(core.Instance.Endpoints, address)
 }
 
-func (s *APIServer) startRESTServer() (err error) {
-	addr, ok := s.Listeners[REST]
-	if !ok {
-		return
-	}
-	s.restSrv, err = rs.NewServer(addr)
-	if err != nil {
-		return
-	}
-	log.Infof("listen address: %s://%s", REST, s.restSrv.Listener.Addr().String())
-
-	s.populateEndpoint(REST, s.restSrv.Listener.Addr().String())
-
-	s.goroutine.Do(func(_ context.Context) {
-		err := s.restSrv.Serve()
-		if s.isClose {
+func (s *APIServer) serve() (err error) {
+	for i, addr := range s.Listeners {
+		s.HTTPServer, err = rs.NewServer(addr)
+		if err != nil {
 			return
 		}
-		log.Errorf(err, "error to start REST API server %s", addr)
-		s.err <- err
-	})
+		log.Info(fmt.Sprintf("listen address[%d]: rest://%s", i, s.HTTPServer.Listener.Addr().String()))
+
+		s.populateEndpoint(s.HTTPServer.Listener.Addr().String())
+
+		s.goroutine.Do(func(_ context.Context) {
+			err := s.HTTPServer.Serve()
+			if s.isClose {
+				return
+			}
+			log.Error(fmt.Sprintf("error to serve %s", addr), err)
+			s.err <- err
+		})
+	}
 	return
 }
 
@@ -150,7 +126,7 @@ func (s *APIServer) Start() {
 
 	core.Instance.Endpoints = nil
 
-	err := s.startRESTServer()
+	err := s.serve()
 	if err != nil {
 		s.err <- err
 		return
@@ -161,7 +137,7 @@ func (s *APIServer) Start() {
 	defer log.Info("api server is ready")
 
 	if !config.GetRegistry().SelfRegister {
-		log.Warnf("self register disabled")
+		log.Warn("self register disabled")
 		return
 	}
 
@@ -179,8 +155,8 @@ func (s *APIServer) Stop() {
 		s.selfUnregister()
 	}
 
-	if s.restSrv != nil {
-		s.restSrv.Shutdown()
+	if s.HTTPServer != nil {
+		s.HTTPServer.Shutdown()
 	}
 
 	close(s.err)

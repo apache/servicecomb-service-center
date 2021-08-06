@@ -35,13 +35,13 @@ type TagsFilter struct {
 }
 
 func (f *TagsFilter) Name(ctx context.Context, _ *cache.Node) string {
-	tags, _ := ctx.Value(CtxFindTags).([]string)
+	tags, _ := ctx.Value(CtxTags).([]string)
 	sort.Strings(tags)
 	return strings.Join(tags, ",")
 }
 
 func (f *TagsFilter) Init(ctx context.Context, parent *cache.Node) (node *cache.Node, err error) {
-	tags, _ := ctx.Value(CtxFindTags).([]string)
+	tags, _ := ctx.Value(CtxTags).([]string)
 	if len(tags) == 0 {
 		node = cache.NewNode()
 		node.Cache = parent.Cache
@@ -51,17 +51,17 @@ func (f *TagsFilter) Init(ctx context.Context, parent *cache.Node) (node *cache.
 	var ids []string
 
 	targetDomainProject := util.ParseTargetDomainProject(ctx)
-	pCopy := *parent.Cache.Get(Find).(*VersionRuleCacheItem)
+	pCopy := *parent.Cache.Get(FindResult).(*VersionRuleCacheItem)
 
 loopProviderIds:
 	for _, providerServiceID := range pCopy.ServiceIds {
 		tagsFromETCD, err := serviceUtil.GetTagsUtils(ctx, targetDomainProject, providerServiceID)
 		if err != nil {
-			consumer := ctx.Value(CtxFindConsumer).(*pb.MicroService)
-			provider := ctx.Value(CtxFindProvider).(*pb.MicroServiceKey)
+			consumer := ctx.Value(CtxConsumerID).(*pb.MicroService)
+			provider := ctx.Value(CtxProviderKey).(*pb.MicroServiceKey)
 			findFlag := fmt.Sprintf("consumer '%s' find provider %s/%s/%s", consumer.ServiceId,
 				provider.AppId, provider.ServiceName, provider.Version)
-			log.Errorf(err, "TagsFilter failed, %s", findFlag)
+			log.Error(fmt.Sprintf("TagsFilter failed, %s", findFlag), err)
 			return nil, err
 		}
 		if len(tagsFromETCD) == 0 {
@@ -78,6 +78,6 @@ loopProviderIds:
 	pCopy.ServiceIds = ids
 
 	node = cache.NewNode()
-	node.Cache.Set(Find, &pCopy)
+	node.Cache.Set(FindResult, &pCopy)
 	return
 }

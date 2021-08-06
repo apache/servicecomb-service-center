@@ -20,13 +20,14 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/apache/servicecomb-service-center/server/service/disco"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
+	"github.com/apache/servicecomb-service-center/server/service/disco"
 	pb "github.com/go-chassis/cari/discovery"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	"github.com/go-chassis/cari/pkg/errsvc"
 )
 
 var (
@@ -147,20 +148,13 @@ var _ = Describe("'Micro-service' service", func() {
 				Expect(err).To(BeNil())
 				Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
-				By("check the tags/rules/instances")
+				By("check the tags/instances")
 				respGetTags, err := serviceResource.GetTags(getContext(), &pb.GetServiceTagsRequest{
 					ServiceId: resp.ServiceId,
 				})
 				Expect(err).To(BeNil())
 				Expect(respGetTags.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 				Expect(respGetTags.Tags["second"]).To(Equal("second"))
-
-				respGetRules, err := serviceResource.GetRule(getContext(), &pb.GetServiceRulesRequest{
-					ServiceId: resp.ServiceId,
-				})
-				Expect(err).To(BeNil())
-				Expect(respGetRules.Response.GetCode()).To(Equal(pb.ResponseSuccess))
-				Expect(respGetRules.Rules[0].Attribute).To(Equal("ServiceName"))
 
 				respGetInsts, err := disco.GetInstances(getContext(), &pb.GetInstancesRequest{
 					ConsumerServiceId: resp.ServiceId,
@@ -874,6 +868,30 @@ var _ = Describe("'Micro-service' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
+				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
+					Type:        "microservice",
+					AppId:       "exist_appId",
+					ServiceName: "exist_service",
+					Version:     "0.0.0-1.0.0",
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
+				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
+					Type:        "microservice",
+					AppId:       "exist_appId",
+					ServiceName: "exist_service",
+					Version:     "0.0.0+",
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
+				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
+					Type:        "microservice",
+					AppId:       "exist_appId",
+					ServiceName: "exist_service",
+					Version:     "latest",
+				})
+				Expect(err).To(BeNil())
+				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 			})
 		})
 
@@ -917,14 +935,6 @@ var _ = Describe("'Micro-service' service", func() {
 					AppId:       "exist_appId",
 					ServiceName: "exist_service",
 					Version:     "2.0.0",
-				})
-				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(pb.ErrServiceNotExists))
-				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
-					Type:        "microservice",
-					AppId:       "exist_appId",
-					ServiceName: "exist_service",
-					Version:     "0.0.0-1.0.0",
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.GetCode()).To(Equal(pb.ErrServiceVersionNotExists))
@@ -974,36 +984,6 @@ var _ = Describe("'Micro-service' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.ServiceId).To(Equal(serviceId2))
-
-				By("search with latest versionRule")
-				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
-					Type:        "microservice",
-					AppId:       "exist_appId",
-					ServiceName: "exist_service",
-					Version:     "latest",
-				})
-				Expect(err).To(BeNil())
-				Expect(resp.ServiceId).To(Equal(serviceId1))
-
-				By("search with 1.0.0+ versionRule")
-				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
-					Type:        "microservice",
-					AppId:       "exist_appId",
-					ServiceName: "exist_service",
-					Version:     "1.0.0+",
-				})
-				Expect(err).To(BeNil())
-				Expect(resp.ServiceId).To(Equal(serviceId1))
-
-				By("search with range versionRule")
-				resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
-					Type:        "microservice",
-					AppId:       "exist_appId",
-					ServiceName: "exist_service",
-					Version:     "0.9.1-1.0.1",
-				})
-				Expect(err).To(BeNil())
-				Expect(resp.ServiceId).To(Equal(serviceId1))
 			})
 		})
 	})
@@ -1019,23 +999,23 @@ var _ = Describe("'Micro-service' service", func() {
 
 		Context("when query a not exist service by serviceId", func() {
 			It("should be failed", func() {
-				resp, err := serviceResource.GetOne(getContext(), &pb.GetServiceRequest{
+				service, err := disco.GetService(getContext(), &pb.GetServiceRequest{
 					ServiceId: "",
 				})
-				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
+				Expect(service).To(BeNil())
+				Expect(err.(*errsvc.Error).Code).To(Equal(pb.ErrInvalidParams))
 
-				resp, err = serviceResource.GetOne(getContext(), &pb.GetServiceRequest{
+				service, err = disco.GetService(getContext(), &pb.GetServiceRequest{
 					ServiceId: "notexistservice",
 				})
-				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(pb.ErrServiceNotExists))
+				Expect(service).To(BeNil())
+				Expect(err.(*errsvc.Error).Code).To(Equal(pb.ErrServiceNotExists))
 
-				resp, err = serviceResource.GetOne(getContext(), &pb.GetServiceRequest{
+				service, err = disco.GetService(getContext(), &pb.GetServiceRequest{
 					ServiceId: TOO_LONG_SERVICEID,
 				})
-				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
+				Expect(service).To(BeNil())
+				Expect(err.(*errsvc.Error).Code).To(Equal(pb.ErrInvalidParams))
 			})
 		})
 	})
@@ -1079,13 +1059,13 @@ var _ = Describe("'Micro-service' service", func() {
 				resp, err = serviceResource.UpdateProperties(getContext(), r2)
 				Expect(err).To(BeNil())
 
-				resp2, err := serviceResource.GetOne(getContext(), &pb.GetServiceRequest{
+				service, err := disco.GetService(getContext(), &pb.GetServiceRequest{
 					ServiceId: serviceId,
 				})
 				Expect(err).To(BeNil())
-				Expect(resp2.Service.ServiceId).To(Equal(serviceId))
-				Expect(resp2.Service.Properties["test"]).To(Equal(""))
-				Expect(resp2.Service.Properties["k"]).To(Equal("v"))
+				Expect(service.ServiceId).To(Equal(serviceId))
+				Expect(service.Properties["test"]).To(Equal(""))
+				Expect(service.Properties["k"]).To(Equal("v"))
 			})
 		})
 
@@ -1198,7 +1178,6 @@ var _ = Describe("'Micro-service' service", func() {
 				ConsumerServiceId: serviceConsumerId,
 				AppId:             provider.AppId,
 				ServiceName:       provider.ServiceName,
-				VersionRule:       provider.Version,
 			})
 			Expect(err).To(BeNil())
 			Expect(respFind.Response.GetCode()).To(Equal(pb.ResponseSuccess))

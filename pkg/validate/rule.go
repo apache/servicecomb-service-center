@@ -52,7 +52,7 @@ func (v *Rule) Match(s interface{}) (ok bool, invalidValue interface{}) {
 	var invalid bool
 	sv := reflect.ValueOf(s)
 	k := sv.Kind()
-	if v.Min > 0 && !invalid {
+	if v.Min >= 0 && !invalid {
 		switch k {
 		case reflect.String:
 			invalid = len(sv.String()) < v.Min

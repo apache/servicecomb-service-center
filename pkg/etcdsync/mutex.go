@@ -82,7 +82,7 @@ func NewDLock(key string, ttl int64, wait bool) (l *DLock, err error) {
 		}
 	}
 	// failed
-	log.Errorf(err, "Lock key %s failed, id=%s", l.key, l.id)
+	log.Error(fmt.Sprintf("Lock key %s failed, id=%s", l.key, l.id), err)
 	l = nil
 	return
 }
@@ -100,7 +100,7 @@ func (m *DLock) Lock(wait bool) (err error) {
 		etcdclient.WithStrKey(m.key),
 		etcdclient.WithStrValue(m.id)}
 
-	log.Infof("Trying to create a lock: key=%s, id=%s", m.key, m.id)
+	log.Info(fmt.Sprintf("Trying to create a lock: key=%s, id=%s", m.key, m.id))
 
 	var leaseID int64
 	putOpts := opts
@@ -113,7 +113,7 @@ func (m *DLock) Lock(wait bool) (err error) {
 	}
 	success, err := etcdclient.Instance().PutNoOverride(m.ctx, putOpts...)
 	if err == nil && success {
-		log.Infof("Create Lock OK, key=%s, id=%s", m.key, m.id)
+		log.Info(fmt.Sprintf("Create Lock OK, key=%s, id=%s", m.key, m.id))
 		return nil
 	}
 
@@ -128,7 +128,7 @@ func (m *DLock) Lock(wait bool) (err error) {
 		return fmt.Errorf("key %s is locked by id=%s", m.key, m.id)
 	}
 
-	log.Errorf(err, "Key %s is locked, waiting for other node releases it, id=%s", m.key, m.id)
+	log.Error(fmt.Sprintf("Key %s is locked, waiting for other node releases it, id=%s", m.key, m.id), err)
 
 	ctx, cancel := context.WithTimeout(m.ctx, time.Duration(m.ttl)*time.Second)
 	gopool.Go(func(context.Context) {
@@ -144,7 +144,7 @@ func (m *DLock) Lock(wait bool) (err error) {
 					return nil
 				}))
 		if err != nil {
-			log.Warnf("%s, key=%s, id=%s", err.Error(), m.key, m.id)
+			log.Warn(fmt.Sprintf("%s, key=%s, id=%s", err.Error(), m.key, m.id))
 		}
 	})
 	select {
@@ -172,10 +172,10 @@ func (m *DLock) Unlock() (err error) {
 	for i := 1; i <= DefaultRetryTimes; i++ {
 		_, err = etcdclient.Instance().Do(m.ctx, opts...)
 		if err == nil {
-			log.Infof("Delete lock OK, key=%s, id=%s", m.key, m.id)
+			log.Info(fmt.Sprintf("Delete lock OK, key=%s, id=%s", m.key, m.id))
 			return nil
 		}
-		log.Errorf(err, "Delete lock failed, key=%s, id=%s", m.key, m.id)
+		log.Error(fmt.Sprintf("Delete lock failed, key=%s, id=%s", m.key, m.id), err)
 		e, ok := err.(client.Error)
 		if ok && e.Code == client.ErrorCodeKeyNotFound {
 			return nil

@@ -61,7 +61,7 @@ func (s *MicroServiceInstanceService) RegisterInstance(w http.ResponseWriter, r 
 	request := &pb.RegisterInstanceRequest{}
 	err = json.Unmarshal(message, request)
 	if err != nil {
-		log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(message))
+		log.Error(fmt.Sprintf("invalid json: %s", util.BytesToStringWithNoCopy(message)), err)
 		rest.WriteError(w, pb.ErrInvalidParams, "Unmarshal error")
 		return
 	}
@@ -71,7 +71,7 @@ func (s *MicroServiceInstanceService) RegisterInstance(w http.ResponseWriter, r 
 
 	resp, err := discosvc.RegisterInstance(r.Context(), request)
 	if err != nil {
-		log.Errorf(err, "register instance failed")
+		log.Error("register instance failed", err)
 		rest.WriteError(w, pb.ErrInternal, "register instance failed")
 		return
 	}
@@ -100,7 +100,7 @@ func (s *MicroServiceInstanceService) HeartbeatSet(w http.ResponseWriter, r *htt
 	request := &pb.HeartbeatSetRequest{}
 	err = json.Unmarshal(message, request)
 	if err != nil {
-		log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(message))
+		log.Error(fmt.Sprintf("invalid json: %s", util.BytesToStringWithNoCopy(message)), err)
 		rest.WriteError(w, pb.ErrInvalidParams, "Unmarshal error")
 		return
 	}
@@ -131,7 +131,6 @@ func (s *MicroServiceInstanceService) FindInstances(w http.ResponseWriter, r *ht
 		AppId:             query.Get("appId"),
 		ServiceName:       serviceName,
 		Alias:             serviceName,
-		VersionRule:       query.Get("version"),
 		Environment:       query.Get("env"),
 		Tags:              ids,
 	}
@@ -166,7 +165,7 @@ func (s *MicroServiceInstanceService) InstancesAction(w http.ResponseWriter, r *
 		request := &pb.BatchFindInstancesRequest{}
 		err = json.Unmarshal(message, request)
 		if err != nil {
-			log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(message))
+			log.Error(fmt.Sprintf("invalid json: %s", util.BytesToStringWithNoCopy(message)), err)
 			rest.WriteError(w, pb.ErrInvalidParams, "Unmarshal error")
 			return
 		}
@@ -176,7 +175,7 @@ func (s *MicroServiceInstanceService) InstancesAction(w http.ResponseWriter, r *
 		rest.WriteResponse(w, r, resp.Response, resp)
 	default:
 		err = fmt.Errorf("Invalid action: %s", action)
-		log.Errorf(err, "invalid request")
+		log.Error("invalid request", err)
 		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
 	}
 }
@@ -261,13 +260,13 @@ func (s *MicroServiceInstanceService) UpdateMetadata(w http.ResponseWriter, r *h
 	}
 	err = json.Unmarshal(message, request)
 	if err != nil {
-		log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(message))
+		log.Error(fmt.Sprintf("invalid json: %s", util.BytesToStringWithNoCopy(message)), err)
 		rest.WriteError(w, pb.ErrInvalidParams, "Unmarshal error")
 		return
 	}
 	resp, err := discosvc.UpdateInstanceProperties(r.Context(), request)
 	if err != nil {
-		log.Errorf(err, "can not update instance")
+		log.Error("can not update instance", err)
 		rest.WriteError(w, pb.ErrInternal, "can not update instance")
 	}
 	rest.WriteResponse(w, r, resp.Response, nil)

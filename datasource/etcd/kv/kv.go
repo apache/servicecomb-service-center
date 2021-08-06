@@ -21,6 +21,7 @@ package kv
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
@@ -74,7 +75,7 @@ func (s *TypeStore) getOrCreateAdaptor(t sd.Type) sd.Adaptor {
 			adaptor.Run()
 			return adaptor, nil
 		}
-		log.Warnf("type '%s' not found", t)
+		log.Warn(fmt.Sprintf("type '%s' not found", t))
 		return nil, nil
 	})
 	return v.(sd.Adaptor)
@@ -97,7 +98,7 @@ func (s *TypeStore) store(ctx context.Context) {
 
 	util.SafeCloseChan(s.ready)
 
-	log.Debugf("all adaptors are ready")
+	log.Debug("all adaptors are ready")
 }
 
 func (s *TypeStore) autoClearCache(ctx context.Context) {
@@ -106,7 +107,7 @@ func (s *TypeStore) autoClearCache(ctx context.Context) {
 		return
 	}
 
-	log.Infof("start auto clear cache in %v", ttl)
+	log.Info(fmt.Sprintf("start auto clear cache in %v", ttl))
 	for {
 		select {
 		case <-ctx.Done():
@@ -120,7 +121,7 @@ func (s *TypeStore) autoClearCache(ctx context.Context) {
 				}
 				cache.MarkDirty()
 			}
-			log.Warnf("caches are marked dirty!")
+			log.Warn("caches are marked dirty!")
 		}
 	}
 }
@@ -140,7 +141,7 @@ func (s *TypeStore) Stop() {
 
 	util.SafeCloseChan(s.ready)
 
-	log.Debugf("store daemon stopped")
+	log.Debug("store daemon stopped")
 }
 
 func (s *TypeStore) Ready() <-chan struct{} {
@@ -163,7 +164,7 @@ func (s *TypeStore) Install(addOn AddOn) (id sd.Type, err error) {
 
 	s.AddOns[id] = addOn
 
-	log.Infof("install new type %d:%s->%s", id, addOn.Name(), addOn.Config().Key)
+	log.Info(fmt.Sprintf("install new type %d:%s->%s", id, addOn.Name(), addOn.Config().Key))
 	return
 }
 
@@ -183,8 +184,6 @@ func (s *TypeStore) Lease() sd.Adaptor              { return s.Adaptors(LEASE) }
 func (s *TypeStore) ServiceIndex() sd.Adaptor       { return s.Adaptors(ServiceIndex) }
 func (s *TypeStore) ServiceAlias() sd.Adaptor       { return s.Adaptors(ServiceAlias) }
 func (s *TypeStore) ServiceTag() sd.Adaptor         { return s.Adaptors(ServiceTag) }
-func (s *TypeStore) Rule() sd.Adaptor               { return s.Adaptors(RULE) }
-func (s *TypeStore) RuleIndex() sd.Adaptor          { return s.Adaptors(RuleIndex) }
 func (s *TypeStore) Schema() sd.Adaptor             { return s.Adaptors(SCHEMA) }
 func (s *TypeStore) DependencyRule() sd.Adaptor     { return s.Adaptors(DependencyRule) }
 func (s *TypeStore) DependencyQueue() sd.Adaptor    { return s.Adaptors(DependencyQueue) }

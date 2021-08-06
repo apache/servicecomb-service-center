@@ -24,17 +24,15 @@ import (
 	"google.golang.org/grpc"
 )
 
+// ServiceCtrlServer deprecated, Use disco pkg instead
 type ServiceCtrlServer interface {
 	Exist(context.Context, *discovery.GetExistenceRequest) (*discovery.GetExistenceResponse, error)
 	Create(context.Context, *discovery.CreateServiceRequest) (*discovery.CreateServiceResponse, error)
 	Delete(context.Context, *discovery.DeleteServiceRequest) (*discovery.DeleteServiceResponse, error)
+	// deprecated
 	GetOne(context.Context, *discovery.GetServiceRequest) (*discovery.GetServiceResponse, error)
 	GetServices(context.Context, *discovery.GetServicesRequest) (*discovery.GetServicesResponse, error)
 	UpdateProperties(context.Context, *discovery.UpdateServicePropsRequest) (*discovery.UpdateServicePropsResponse, error)
-	AddRule(context.Context, *discovery.AddServiceRulesRequest) (*discovery.AddServiceRulesResponse, error)
-	GetRule(context.Context, *discovery.GetServiceRulesRequest) (*discovery.GetServiceRulesResponse, error)
-	UpdateRule(context.Context, *discovery.UpdateServiceRuleRequest) (*discovery.UpdateServiceRuleResponse, error)
-	DeleteRule(context.Context, *discovery.DeleteServiceRulesRequest) (*discovery.DeleteServiceRulesResponse, error)
 	AddTags(context.Context, *discovery.AddServiceTagsRequest) (*discovery.AddServiceTagsResponse, error)
 	GetTags(context.Context, *discovery.GetServiceTagsRequest) (*discovery.GetServiceTagsResponse, error)
 	UpdateTag(context.Context, *discovery.UpdateServiceTagRequest) (*discovery.UpdateServiceTagResponse, error)
@@ -44,8 +42,6 @@ type ServiceCtrlServer interface {
 	DeleteSchema(context.Context, *discovery.DeleteSchemaRequest) (*discovery.DeleteSchemaResponse, error)
 	ModifySchema(context.Context, *discovery.ModifySchemaRequest) (*discovery.ModifySchemaResponse, error)
 	ModifySchemas(context.Context, *discovery.ModifySchemasRequest) (*discovery.ModifySchemasResponse, error)
-	AddDependenciesForMicroServices(context.Context, *discovery.AddDependenciesRequest) (*discovery.AddDependenciesResponse, error)
-	CreateDependenciesForMicroServices(context.Context, *discovery.CreateDependenciesRequest) (*discovery.CreateDependenciesResponse, error)
 	GetProviderDependencies(context.Context, *discovery.GetDependenciesRequest) (*discovery.GetProDependenciesResponse, error)
 	GetConsumerDependencies(context.Context, *discovery.GetDependenciesRequest) (*discovery.GetConDependenciesResponse, error)
 	DeleteServices(context.Context, *discovery.DelServicesRequest) (*discovery.DelServicesResponse, error)

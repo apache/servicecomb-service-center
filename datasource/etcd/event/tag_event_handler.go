@@ -77,8 +77,8 @@ func (apt *TagsChangedTask) publish(ctx context.Context, domainProject, consumer
 
 	providerIDs, err := serviceUtil.GetProviderIds(ctx, domainProject, consumer)
 	if err != nil {
-		log.Errorf(err, "get service[%s][%s/%s/%s/%s]'s providerIDs failed",
-			consumerID, consumer.Environment, consumer.AppId, consumer.ServiceName, consumer.Version)
+		log.Error(fmt.Sprintf("get service[%s][%s/%s/%s/%s]'s providerIDs failed",
+			consumerID, consumer.Environment, consumer.AppId, consumer.ServiceName, consumer.Version), err)
 		return err
 	}
 
@@ -91,7 +91,7 @@ func (apt *TagsChangedTask) publish(ctx context.Context, domainProject, consumer
 		}
 
 		providerKey := pb.MicroServiceToKey(domainProject, provider)
-		PublishInstanceEvent(apt.KvEvent, domainProject, providerKey, []string{consumerID})
+		PublishInstanceEvent(apt.KvEvent, providerKey, []string{consumerID})
 	}
 	return nil
 }
@@ -115,11 +115,11 @@ func (h *TagEventHandler) OnEvent(evt sd.KvEvent) {
 	consumerID, domainProject := path.GetInfoFromTagKV(evt.KV.Key)
 
 	if event.Center().Closed() {
-		log.Warnf("caught [%s] service tags[%s/%s] event, but notify service is closed",
-			action, consumerID, evt.KV.Value)
+		log.Warn(fmt.Sprintf("caught [%s] service tags[%s/%s] event, but notify service is closed",
+			action, consumerID, evt.KV.Value))
 		return
 	}
-	log.Infof("caught [%s] service tags[%s/%s] event", action, consumerID, evt.KV.Value)
+	log.Info(fmt.Sprintf("caught [%s] service tags[%s/%s] event", action, consumerID, evt.KV.Value))
 
 	err := task.GetService().Add(context.Background(),
 		NewTagsChangedAsyncTask(domainProject, consumerID, evt))

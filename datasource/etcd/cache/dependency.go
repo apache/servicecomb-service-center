@@ -36,30 +36,31 @@ func init() {
 }
 
 type DependencyRuleItem struct {
-	VersionRule string
+	// Access whether the cache is access by outside
+	Access bool
 }
 
 type DependencyRuleCache struct {
 	*cache.Tree
 }
 
-func (f *DependencyRuleCache) ExistVersionRule(ctx context.Context, consumerID string, provider *pb.MicroServiceKey) bool {
+func (f *DependencyRuleCache) ExistRule(ctx context.Context, consumerID string, provider *pb.MicroServiceKey) bool {
 	cloneCtx := context.WithValue(context.WithValue(ctx,
-		CtxFindConsumer, consumerID),
-		CtxFindProvider, provider)
+		CtxConsumerID, consumerID),
+		CtxProviderKey, provider)
 
 	node, _ := f.Tree.Get(cloneCtx, cache.Options().Temporary(ctx.Value(util.CtxNocache) == "1"))
 	if node == nil {
 		return false
 	}
-	v := node.Cache.Get(Dep).(*DependencyRuleItem)
-	if v.VersionRule != provider.Version {
-		v.VersionRule = provider.Version
+	v := node.Cache.Get(DepResult).(*DependencyRuleItem)
+	if !v.Access {
+		v.Access = true
 		return false
 	}
 	return true
 }
 
 func (f *DependencyRuleCache) Remove(provider *pb.MicroServiceKey) {
-	f.Tree.Remove(context.WithValue(context.Background(), CtxFindProvider, provider))
+	f.Tree.Remove(context.WithValue(context.Background(), CtxProviderKey, provider))
 }

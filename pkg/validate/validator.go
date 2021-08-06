@@ -53,6 +53,13 @@ func (v *Validator) AddRule(name string, rule *Rule) {
 	v.rules[name] = rule
 }
 
+func (v *Validator) RemoveRule(name string) {
+	if v.rules == nil {
+		return
+	}
+	delete(v.rules, name)
+}
+
 func (v *Validator) GetRules() map[string](*Rule) {
 	return v.rules
 }

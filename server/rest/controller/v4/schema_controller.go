@@ -20,6 +20,7 @@ package v4
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -82,7 +83,7 @@ func (s *SchemaService) ModifySchema(w http.ResponseWriter, r *http.Request) {
 	request := &pb.ModifySchemaRequest{}
 	err = json.Unmarshal(message, request)
 	if err != nil {
-		log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(message))
+		log.Error(fmt.Sprintf("invalid json: %s", util.BytesToStringWithNoCopy(message)), err)
 		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
@@ -91,7 +92,7 @@ func (s *SchemaService) ModifySchema(w http.ResponseWriter, r *http.Request) {
 	request.SchemaId = query.Get(":schemaId")
 	resp, err := core.ServiceAPI.ModifySchema(r.Context(), request)
 	if err != nil {
-		log.Errorf(err, "can not update schema")
+		log.Error("can not update schema", err)
 		rest.WriteError(w, pb.ErrInternal, "can not update schema")
 		return
 	}
@@ -109,14 +110,14 @@ func (s *SchemaService) ModifySchemas(w http.ResponseWriter, r *http.Request) {
 	request := &pb.ModifySchemasRequest{}
 	err = json.Unmarshal(message, request)
 	if err != nil {
-		log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(message))
+		log.Error(fmt.Sprintf("invalid json: %s", util.BytesToStringWithNoCopy(message)), err)
 		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
 	request.ServiceId = serviceID
 	resp, err := core.ServiceAPI.ModifySchemas(r.Context(), request)
 	if err != nil {
-		log.Errorf(err, "can not update schema")
+		log.Error("can not update schema", err)
 		rest.WriteError(w, pb.ErrInternal, "can not update schema")
 		return
 	}

@@ -19,12 +19,8 @@ package etcd
 
 import (
 	"context"
-	"strconv"
+	"fmt"
 	"strings"
-	"time"
-
-	pb "github.com/go-chassis/cari/discovery"
-	"github.com/go-chassis/cari/pkg/errsvc"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
@@ -35,8 +31,8 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
+	pb "github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/cari/pkg/errsvc"
 )
 
 type ServiceDetailOpt struct {
@@ -53,7 +49,7 @@ func getSchemaSummary(ctx context.Context, domainProject string, serviceID strin
 		client.WithStrKey(key),
 	)
 	if err != nil {
-		log.Errorf(err, "get schema[%s/%s] summary failed", serviceID, schemaID)
+		log.Error(fmt.Sprintf("get schema[%s/%s] summary failed", serviceID, schemaID), err)
 		return "", err
 	}
 	if len(resp.Kvs) == 0 {
@@ -68,7 +64,7 @@ func getSchemasFromDatabase(ctx context.Context, domainProject string, serviceID
 		client.WithPrefix(),
 		client.WithStrKey(key))
 	if err != nil {
-		log.Errorf(err, "get service[%s]'s schema failed", serviceID)
+		log.Error(fmt.Sprintf("get service[%s]'s schema failed", serviceID), err)
 		return nil, err
 	}
 	schemas := make([]*pb.Schema, 0, len(resp.Kvs))
@@ -125,7 +121,7 @@ func isExistSchemaID(service *pb.MicroService, schemas []*pb.Schema) bool {
 	serviceSchemaIds := service.Schemas
 	for _, schema := range schemas {
 		if !containsValueInSlice(serviceSchemaIds, schema.SchemaId) {
-			log.Errorf(nil, "schema[%s/%s] does not exist schemaID", service.ServiceId, schema.SchemaId)
+			log.Error(fmt.Sprintf("schema[%s/%s] does not exist schemaID", service.ServiceId, schema.SchemaId), nil)
 			return false
 		}
 	}
@@ -153,52 +149,6 @@ func commitSchemaInfo(domainProject string, serviceID string, schema *pb.Schema)
 	return []client.PluginOp{opt}
 }
 
-// instance util
-func preProcessRegisterInstance(ctx context.Context, instance *pb.MicroServiceInstance) *errsvc.Error {
-	if len(instance.Status) == 0 {
-		instance.Status = pb.MSI_UP
-	}
-
-	if len(instance.InstanceId) == 0 {
-		instance.InstanceId = uuid.Generator().GetInstanceID(ctx)
-	}
-
-	instance.Timestamp = strconv.FormatInt(time.Now().Unix(), 10)
-	instance.ModTimestamp = instance.Timestamp
-
-	// 这里应该根据租约计时
-	renewalInterval := core.RegistryDefaultLeaseRenewalInterval
-	retryTimes := core.RegistryDefaultLeaseRetryTimes
-	if instance.HealthCheck == nil {
-		instance.HealthCheck = &pb.HealthCheck{
-			Mode:     pb.CHECK_BY_HEARTBEAT,
-			Interval: renewalInterval,
-			Times:    retryTimes,
-		}
-	} else {
-		// Health check对象仅用于呈现服务健康检查逻辑，如果CHECK_BY_PLATFORM类型，表明由sidecar代发心跳，实例120s超时
-		switch instance.HealthCheck.Mode {
-		case pb.CHECK_BY_HEARTBEAT:
-			d := instance.HealthCheck.Interval * (instance.HealthCheck.Times + 1)
-			if d <= 0 {
-				return pb.NewError(pb.ErrInvalidParams, "Invalid 'healthCheck' settings in request body.")
-			}
-		case pb.CHECK_BY_PLATFORM:
-			// 默认120s
-			instance.HealthCheck.Interval = renewalInterval
-			instance.HealthCheck.Times = retryTimes
-		}
-	}
-
-	domainProject := util.ParseDomainProject(ctx)
-	microservice, err := serviceUtil.GetService(ctx, domainProject, instance.ServiceId)
-	if err != nil {
-		return pb.NewError(pb.ErrServiceNotExists, "Invalid 'serviceID' in request body.")
-	}
-	instance.Version = microservice.Version
-	return nil
-}
-
 func getHeartbeatFunc(ctx context.Context, domainProject string, instancesHbRst chan<- *pb.InstanceHbRst, element *pb.HeartbeatSetElement) func(context.Context) {
 	return func(_ context.Context) {
 		hbRst := &pb.InstanceHbRst{
@@ -209,7 +159,7 @@ func getHeartbeatFunc(ctx context.Context, domainProject string, instancesHbRst 
 		_, _, err := serviceUtil.HeartbeatUtil(ctx, domainProject, element.ServiceId, element.InstanceId)
 		if err != nil {
 			hbRst.ErrMessage = err.Error()
-			log.Errorf(err, "heartbeat set failed, %s/%s", element.ServiceId, element.InstanceId)
+			log.Error(fmt.Sprintf("heartbeat set failed, %s/%s", element.ServiceId, element.InstanceId), err)
 		}
 		instancesHbRst <- hbRst
 	}
@@ -275,25 +225,15 @@ func getServiceDetailUtil(ctx context.Context, serviceDetailOpt ServiceDetailOpt
 		case "tags":
 			tags, err := serviceUtil.GetTagsUtils(ctx, domainProject, serviceID)
 			if err != nil {
-				log.Errorf(err, "get service[%s]'s all tags failed", serviceID)
+				log.Error(fmt.Sprintf("get service[%s]'s all tags failed", serviceID), err)
 				return nil, err
 			}
 			serviceDetail.Tags = tags
-		case "rules":
-			rules, err := serviceUtil.GetRulesUtil(ctx, domainProject, serviceID)
-			if err != nil {
-				log.Errorf(err, "get service[%s]'s all rules failed", serviceID)
-				return nil, err
-			}
-			for _, rule := range rules {
-				rule.Timestamp = rule.ModTimestamp
-			}
-			serviceDetail.Rules = rules
 		case "instances":
 			if serviceDetailOpt.countOnly {
 				instanceCount, err := serviceUtil.GetInstanceCountOfOneService(ctx, domainProject, serviceID)
 				if err != nil {
-					log.Errorf(err, "get number of service[%s]'s instances failed", serviceID)
+					log.Error(fmt.Sprintf("get number of service[%s]'s instances failed", serviceID), err)
 					return nil, err
 				}
 				serviceDetail.Statics.Instances = &pb.StInstance{
@@ -302,34 +242,33 @@ func getServiceDetailUtil(ctx context.Context, serviceDetailOpt ServiceDetailOpt
 			}
 			instances, err := serviceUtil.GetAllInstancesOfOneService(ctx, domainProject, serviceID)
 			if err != nil {
-				log.Errorf(err, "get service[%s]'s all instances failed", serviceID)
+				log.Error(fmt.Sprintf("get service[%s]'s all instances failed", serviceID), err)
 				return nil, err
 			}
 			serviceDetail.Instances = instances
 		case "schemas":
 			schemas, err := getSchemaInfoUtil(ctx, domainProject, serviceID)
 			if err != nil {
-				log.Errorf(err, "get service[%s]'s all schemas failed", serviceID)
+				log.Error(fmt.Sprintf("get service[%s]'s all schemas failed", serviceID), err)
 				return nil, err
 			}
 			serviceDetail.SchemaInfos = schemas
 		case "dependencies":
 			service := serviceDetailOpt.service
-			dr := serviceUtil.NewDependencyRelation(ctx, domainProject, service, service)
-			consumers, err := dr.GetDependencyConsumers(
+			consumers, err := serviceUtil.GetConsumers(ctx, domainProject, service,
 				serviceUtil.WithoutSelfDependency(),
 				serviceUtil.WithSameDomainProject())
 			if err != nil {
-				log.Errorf(err, "get service[%s][%s/%s/%s/%s]'s all consumers failed",
-					service.ServiceId, service.Environment, service.AppId, service.ServiceName, service.Version)
+				log.Error(fmt.Sprintf("get service[%s][%s/%s/%s/%s]'s all consumers failed",
+					service.ServiceId, service.Environment, service.AppId, service.ServiceName, service.Version), err)
 				return nil, err
 			}
-			providers, err := dr.GetDependencyProviders(
+			providers, err := serviceUtil.GetProviders(ctx, domainProject, service,
 				serviceUtil.WithoutSelfDependency(),
 				serviceUtil.WithSameDomainProject())
 			if err != nil {
-				log.Errorf(err, "get service[%s][%s/%s/%s/%s]'s all providers failed",
-					service.ServiceId, service.Environment, service.AppId, service.ServiceName, service.Version)
+				log.Error(fmt.Sprintf("get service[%s][%s/%s/%s/%s]'s all providers failed",
+					service.ServiceId, service.Environment, service.AppId, service.ServiceName, service.Version), err)
 				return nil, err
 			}
 
@@ -338,7 +277,7 @@ func getServiceDetailUtil(ctx context.Context, serviceDetailOpt ServiceDetailOpt
 		case "":
 			continue
 		default:
-			log.Errorf(nil, "request option[%s] is invalid", opt)
+			log.Error(fmt.Sprintf("request option[%s] is invalid", opt), nil)
 		}
 	}
 	return serviceDetail, nil
@@ -351,7 +290,7 @@ func getSchemaInfoUtil(ctx context.Context, domainProject string, serviceID stri
 		client.WithStrKey(key),
 		client.WithPrefix())
 	if err != nil {
-		log.Errorf(err, "get service[%s]'s schemas failed", serviceID)
+		log.Error(fmt.Sprintf("get service[%s]'s schemas failed", serviceID), err)
 		return make([]*pb.Schema, 0), err
 	}
 	schemas := make([]*pb.Schema, 0, len(resp.Kvs))
@@ -438,7 +377,7 @@ func getInstanceCountByDomain(ctx context.Context, svcIDToNonVerKey map[string]s
 	}
 
 	if err != nil {
-		log.Errorf(err, "get number of instances by domain[%s]", domainID)
+		log.Error(fmt.Sprintf("get number of instances by domain[%s]", domainID), err)
 	} else {
 		for _, keyValue := range respIns.Kvs {
 			serviceID, _, _ := path.GetInfoFromInstKV(keyValue.Key)

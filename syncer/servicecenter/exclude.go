@@ -19,6 +19,7 @@ package servicecenter
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
@@ -38,7 +39,8 @@ func (s *servicecenter) exclude(data *pb.SyncData, mapping pb.SyncMapping) (*pb.
 		svc := searchService(inst, data.Services)
 		if svc == nil {
 			err := errors.New("service does not exist")
-			log.Errorf(err, "servicecenter.exclude, serviceID = %s, instanceId = %s", inst.ServiceId, inst.InstanceId)
+			log.Error(fmt.Sprintf("servicecenter.exclude, serviceID = %s, instanceId = %s",
+				inst.ServiceId, inst.InstanceId), err)
 			continue
 		}
 		// exclude instances from other servicecenter

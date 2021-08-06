@@ -267,7 +267,6 @@ func TestTag_Update(t *testing.T) {
 			ConsumerServiceId: consumerId,
 			AppId:             "find_inst_tag_group_ms",
 			ServiceName:       "find_inst_tag_provider_ms",
-			VersionRule:       "1.0.0+",
 			Tags:              []string{"not-exist-tag"},
 		})
 		assert.NoError(t, err)
@@ -278,7 +277,6 @@ func TestTag_Update(t *testing.T) {
 			ConsumerServiceId: consumerId,
 			AppId:             "find_inst_tag_group_ms",
 			ServiceName:       "find_inst_tag_provider_ms",
-			VersionRule:       "1.0.0+",
 			Tags:              []string{"filter_tag"},
 		})
 		assert.NoError(t, err)
@@ -299,7 +297,6 @@ func TestTag_Update(t *testing.T) {
 			ConsumerServiceId: consumerId,
 			AppId:             "find_inst_tag_group_ms",
 			ServiceName:       "find_inst_tag_provider_ms",
-			VersionRule:       "1.0.0+",
 			Tags:              []string{"filter_tag"},
 		})
 		assert.NoError(t, err)

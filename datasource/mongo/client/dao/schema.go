@@ -20,6 +20,8 @@ package dao
 import (
 	"context"
 
+	"go.mongodb.org/mongo-driver/mongo/options"
+
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
 	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
@@ -84,4 +86,12 @@ func SchemaSummaryExist(ctx context.Context, serviceID, schemaID string) (bool, 
 func CountSchema(ctx context.Context, serviceID string) (int64, error) {
 	filter := mutil.NewBasicFilter(ctx, mutil.ServiceID(serviceID))
 	return client.Count(ctx, model.CollectionSchema, filter)
+}
+
+func UpdateSchema(ctx context.Context, filter interface{}, update interface{}, opts ...*options.FindOneAndUpdateOptions) error {
+	_, err := client.GetMongoClient().FindOneAndUpdate(ctx, model.CollectionSchema, filter, update, opts...)
+	if err != nil {
+		return err
+	}
+	return nil
 }

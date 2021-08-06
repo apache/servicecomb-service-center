@@ -17,6 +17,11 @@
 
 package datasource
 
+import (
+	pb "github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/cari/pkg/errsvc"
+)
+
 const (
 	SPLIT                 = "/"
 	ServiceKeyPrefix      = "/cse-sr/ms/files"
@@ -26,3 +31,16 @@ const (
 	RegistryDomainProject = "default/default"
 	RegistryAppID         = "default"
 )
+
+// WrapErrResponse is temp func here to wait finish to refact the discosvc pkg
+func WrapErrResponse(respErr error) (*pb.Response, error) {
+	err, ok := respErr.(*errsvc.Error)
+	if !ok {
+		return pb.CreateResponse(pb.ErrInternal, err.Error()), err
+	}
+	resp := pb.CreateResponseWithSCErr(err)
+	if err.InternalError() {
+		return resp, err
+	}
+	return resp, nil
+}

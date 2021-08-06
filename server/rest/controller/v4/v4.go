@@ -31,7 +31,6 @@ func initRouter() {
 	roa.RegisterServant(&SchemaService{})
 	roa.RegisterServant(&DependencyService{})
 	roa.RegisterServant(&TagService{})
-	roa.RegisterServant(&RuleService{})
 	roa.RegisterServant(&MicroServiceInstanceService{})
 	roa.RegisterServant(&WatchService{})
 }

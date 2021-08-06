@@ -31,6 +31,7 @@ import (
 	authHandler "github.com/apache/servicecomb-service-center/server/handler/auth"
 	"github.com/apache/servicecomb-service-center/server/plugin/auth"
 	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
+	"github.com/apache/servicecomb-service-center/server/service/rbac/token"
 	rbacmodel "github.com/go-chassis/cari/rbac"
 	"github.com/go-chassis/go-chassis/v2/security/authr"
 	"github.com/go-chassis/go-chassis/v2/server/restful"
@@ -91,7 +92,7 @@ func (ba *TokenAuthenticator) Identify(req *http.Request) error {
 func (ba *TokenAuthenticator) VerifyRequest(req *http.Request) (*rbacmodel.Account, error) {
 	claims, err := ba.VerifyToken(req)
 	if err != nil {
-		log.Errorf(err, "verify request token failed, %s %s", req.Method, req.RequestURI)
+		log.Error(fmt.Sprintf("verify request token failed, %s %s", req.Method, req.RequestURI), err)
 		return nil, err
 	}
 	m, ok := claims.(map[string]interface{})
@@ -150,7 +151,12 @@ func (ba *TokenAuthenticator) VerifyToken(req *http.Request) (interface{}, error
 	}
 	to := s[1]
 
-	return authr.Authenticate(req.Context(), to)
+	claims, err := authr.Authenticate(req.Context(), to)
+	if err != nil {
+		return nil, err
+	}
+	token.WithRequest(req, to)
+	return claims, nil
 }
 
 //this method decouple business code and perm checks

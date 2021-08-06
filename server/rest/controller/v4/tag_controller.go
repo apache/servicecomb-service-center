@@ -19,6 +19,7 @@ package v4
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -53,7 +54,7 @@ func (s *TagService) AddTags(w http.ResponseWriter, r *http.Request) {
 	var tags map[string]map[string]string
 	err = json.Unmarshal(message, &tags)
 	if err != nil {
-		log.Errorf(err, "invalid json: %s", util.BytesToStringWithNoCopy(message))
+		log.Error(fmt.Sprintf("invalid json: %s", util.BytesToStringWithNoCopy(message)), err)
 		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
@@ -63,7 +64,7 @@ func (s *TagService) AddTags(w http.ResponseWriter, r *http.Request) {
 		Tags:      tags["tags"],
 	})
 	if err != nil {
-		log.Errorf(err, "can not add tag")
+		log.Error("can not add tag", err)
 		rest.WriteError(w, pb.ErrInternal, "can not add tag")
 		return
 	}

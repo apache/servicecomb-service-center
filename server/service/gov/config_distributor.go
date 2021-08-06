@@ -18,6 +18,8 @@
 package gov
 
 import (
+	"context"
+
 	model "github.com/apache/servicecomb-service-center/pkg/gov"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
@@ -39,12 +41,12 @@ var distributorPlugins = map[string]NewDistributors{}
 //or service mesh system like istio, linkerd.
 //ConfigDistributor will convert standard servicecomb gov config to concrete spec, that data plane can recognize.
 type ConfigDistributor interface {
-	Create(kind, project string, policy *model.Policy) ([]byte, error)
-	Update(kind, id, project string, p *model.Policy) error
-	Delete(kind, id, project string) error
-	Display(project, app, env string) ([]byte, error)
-	List(kind, project, app, env string) ([]byte, error)
-	Get(kind, id, project string) ([]byte, error)
+	Create(ctx context.Context, kind, project string, policy *model.Policy) ([]byte, error)
+	Update(ctx context.Context, kind, id, project string, p *model.Policy) error
+	Delete(ctx context.Context, kind, id, project string) error
+	Display(ctx context.Context, project, app, env string) ([]byte, error)
+	List(ctx context.Context, kind, project, app, env string) ([]byte, error)
+	Get(ctx context.Context, kind, id, project string) ([]byte, error)
 	Type() string
 	Name() string
 }
@@ -74,44 +76,44 @@ func Init() error {
 	return nil
 }
 
-func Create(kind, project string, spec *model.Policy) ([]byte, error) {
+func Create(ctx context.Context, kind, project string, spec *model.Policy) ([]byte, error) {
 	for _, cd := range distributors {
-		return cd.Create(kind, project, spec)
+		return cd.Create(ctx, kind, project, spec)
 	}
 	return nil, nil
 }
 
-func List(kind, project, app, env string) ([]byte, error) {
+func List(ctx context.Context, kind, project, app, env string) ([]byte, error) {
 	for _, cd := range distributors {
-		return cd.List(kind, project, app, env)
+		return cd.List(ctx, kind, project, app, env)
 	}
 	return nil, nil
 }
 
-func Display(project, app, env string) ([]byte, error) {
+func Display(ctx context.Context, project, app, env string) ([]byte, error) {
 	for _, cd := range distributors {
-		return cd.Display(project, app, env)
+		return cd.Display(ctx, project, app, env)
 	}
 	return nil, nil
 }
 
-func Get(kind, id, project string) ([]byte, error) {
+func Get(ctx context.Context, kind, id, project string) ([]byte, error) {
 	for _, cd := range distributors {
-		return cd.Get(kind, id, project)
+		return cd.Get(ctx, kind, id, project)
 	}
 	return nil, nil
 }
 
-func Delete(kind, id, project string) error {
+func Delete(ctx context.Context, kind, id, project string) error {
 	for _, cd := range distributors {
-		return cd.Delete(kind, id, project)
+		return cd.Delete(ctx, kind, id, project)
 	}
 	return nil
 }
 
-func Update(kind, id, project string, p *model.Policy) error {
+func Update(ctx context.Context, kind, id, project string, p *model.Policy) error {
 	for _, cd := range distributors {
-		return cd.Update(kind, id, project, p)
+		return cd.Update(ctx, kind, id, project, p)
 	}
 	return nil
 }

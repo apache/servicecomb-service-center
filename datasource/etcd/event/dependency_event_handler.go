@@ -80,7 +80,7 @@ func (h *DependencyEventHandler) tryWithBackoff(success func() error, backoff fu
 	defer log.Recover()
 	lock, err := mux.Try(mux.DepQueueLock)
 	if err != nil {
-		log.Errorf(err, "try to lock %s failed", mux.DepQueueLock)
+		log.Error(fmt.Sprintf("try to lock %s failed", mux.DepQueueLock), err)
 		return h.backoff(backoff, retries), err
 	}
 
@@ -95,7 +95,7 @@ func (h *DependencyEventHandler) tryWithBackoff(success func() error, backoff fu
 	}()
 	err = success()
 	if err != nil {
-		log.Errorf(err, "handle dependency event failed")
+		log.Error("handle dependency event failed", err)
 		return h.backoff(backoff, retries), err
 	}
 
@@ -191,27 +191,21 @@ func (h *DependencyEventHandler) dependencyRuleHandle(res interface{}) error {
 	providersInfo := pb.DependenciesToKeys(r.Providers, domainProject)
 
 	var dep serviceUtil.Dependency
-	var err error
 	dep.DomainProject = domainProject
 	dep.Consumer = consumerInfo
 	dep.ProvidersRule = providersInfo
-	if r.Override {
-		err = serviceUtil.CreateDependencyRule(ctx, &dep)
-	} else {
-		err = serviceUtil.AddDependencyRule(ctx, &dep)
-	}
-
+	err := serviceUtil.AddDependencyRule(ctx, &dep)
 	if err != nil {
-		log.Errorf(err, "modify dependency rule failed, override: %t, consumer %s", r.Override, consumerFlag)
+		log.Error(fmt.Sprintf("modify dependency rule failed, override: %t, consumer %s", r.Override, consumerFlag), err)
 		return fmt.Errorf("override: %t, consumer is %s, %s", r.Override, consumerFlag, err.Error())
 	}
 
 	if err = h.removeKV(ctx, dependencyEventHandlerRes.kv); err != nil {
-		log.Errorf(err, "remove dependency rule failed, override: %t, consumer %s", r.Override, consumerFlag)
+		log.Error(fmt.Sprintf("remove dependency rule failed, override: %t, consumer %s", r.Override, consumerFlag), err)
 		return err
 	}
 
-	log.Infof("maintain dependency [%v] successfully", r)
+	log.Info(fmt.Sprintf("maintain dependency [%v] successfully", r))
 	return nil
 }
 
@@ -223,7 +217,7 @@ func (h *DependencyEventHandler) removeKV(ctx context.Context, kv *sd.KeyValue) 
 		return fmt.Errorf("can not remove the dependency %s request, %s", util.BytesToStringWithNoCopy(kv.Key), err.Error())
 	}
 	if !dResp.Succeeded {
-		log.Infof("the dependency %s request is changed", util.BytesToStringWithNoCopy(kv.Key))
+		log.Info(fmt.Sprintf("the dependency %s request is changed", util.BytesToStringWithNoCopy(kv.Key)))
 	}
 	return nil
 }
@@ -232,7 +226,7 @@ func (h *DependencyEventHandler) CleanUp(domainProjects map[string]struct{}) {
 	for domainProject := range domainProjects {
 		ctx := util.WithGlobal(context.Background())
 		if err := serviceUtil.CleanUpDependencyRules(ctx, domainProject); err != nil {
-			log.Errorf(err, "clean up '%s' dependency rules failed", domainProject)
+			log.Error(fmt.Sprintf("clean up '%s' dependency rules failed", domainProject), err)
 		}
 	}
 }

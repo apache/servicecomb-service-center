@@ -18,6 +18,7 @@
 package etcd
 
 import (
+	"fmt"
 	"net/url"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -97,7 +98,7 @@ func mergeConfig(src *embed.Config, dst *config) error {
 	if dst.peerAddr != "" {
 		peer, err := url.Parse(proto + dst.peerAddr)
 		if err != nil {
-			log.Errorf(err, "parse peer listener '%s' failed", dst.peerAddr)
+			log.Error(fmt.Sprintf("parse peer listener '%s' failed", dst.peerAddr), err)
 			return err
 		}
 		src.APUrls = []url.URL{*peer}

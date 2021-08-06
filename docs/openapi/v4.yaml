@@ -440,168 +440,6 @@ paths:
           description: 内部错误
           schema:
             $ref: '#/definitions/Error'
-  /v4/{project}/registry/microservices/{serviceId}/rules:
-    post:
-      description: |
-        为serviceId的服务新增黑白名单，同一服务，attribute和pattern唯一标识一份黑白名单。
-      operationId: addRule
-      parameters:
-        - name: x-domain-name
-          in: header
-          type: string
-          default: default
-        - name: project
-          in: path
-          required: true
-          type: string
-        - name: serviceId
-          in: path
-          description: 微服务唯一标识。
-          required: true
-          type: string
-        - name: rules
-          in: body
-          description: 新增黑白名单。
-          required: true
-          schema:
-            $ref: '#/definitions/AddRules'
-      tags:
-        - microservices
-        - rules
-      responses:
-        200:
-          description: 创建成功
-          schema:
-            $ref: '#/definitions/AddRuleResponse'
-        400:
-          description: 错误的请求
-          schema:
-            $ref: '#/definitions/Error'
-        500:
-          description: 内部错误
-          schema:
-            $ref: '#/definitions/Error'
-    get:
-      description: |
-        获取serviceId的服务的黑白名单信息。
-      operationId: getRule
-      parameters:
-        - name: x-domain-name
-          in: header
-          required: true
-          type: string
-          default: default
-        - name: project
-          in: path
-          required: true
-          type: string
-        - name: serviceId
-          in: path
-          description: 微服务唯一标识。
-          required: true
-          type: string
-      tags:
-        - microservices
-        - rules
-      responses:
-        200:
-          description: 查询成功
-          schema:
-            $ref: '#/definitions/Rules'
-        400:
-          description: 错误的请求
-          schema:
-            $ref: '#/definitions/Error'
-        500:
-          description: 内部错误
-          schema:
-            $ref: '#/definitions/Error'
-  /v4/{project}/registry/microservices/{serviceId}/rules/{ruleId}:
-    put:
-      description: |
-        为serviceId的服务更新黑白名单。
-      operationId: updateRule
-      parameters:
-        - name: x-domain-name
-          in: header
-          type: string
-          default: default
-        - name: project
-          in: path
-          required: true
-          type: string
-        - name: serviceId
-          in: path
-          description: 微服务唯一标识。
-          required: true
-          type: string
-        - name: ruleId
-          in: path
-          description: ruleId。
-          required: true
-          type: string
-        - name: rule
-          in: body
-          description: 要更新的rule
-          required: true
-          schema:
-            $ref: "#/definitions/AddOrUpdateRule"
-      tags:
-        - microservices
-        - rules
-      responses:
-        200:
-          description: 修改成功
-          schema:
-            type: string
-        400:
-          description: 错误的请求
-          schema:
-            $ref: '#/definitions/Error'
-        500:
-          description: 内部错误
-          schema:
-            $ref: '#/definitions/Error'
-    delete:
-      description: |
-        为serviceId的服务删除黑白名单。
-      operationId: deleteRule
-      parameters:
-        - name: x-domain-name
-          in: header
-          required: true
-          type: string
-          default: default
-        - name: project
-          in: path
-          required: true
-          type: string
-        - name: serviceId
-          in: path
-          description: 微服务唯一标识。
-          required: true
-          type: string
-        - name: ruleId
-          in: path
-          description: ruleId。
-          required: true
-          type: string
-      tags:
-        - microservices
-        - rules
-      responses:
-        200:
-          description: 删除成功
-          schema:
-            type: string
-        400:
-          description: 错误的请求
-          schema:
-            $ref: '#/definitions/Error'
-        500:
-          description: 内部错误
-          schema:
-            $ref: '#/definitions/Error'
   /v4/{project}/registry/microservices/{serviceId}/schemas/{schemaId}:
     get:
       description: |
@@ -1322,7 +1160,7 @@ paths:
   /v4/{project}/registry/instances:
     get:
       description: |
-        实例注册后可以根据微服务版本规则或字段条件 发现该微服务的实例。同时会将此微服务版本规则记录到依赖关系中，当发现相同微服务的不同版本规则时，会覆盖已有的依赖关系。
+        实例注册后可以根据微服务字段条件 发现该微服务的实例。同时会将此微服务记录到依赖关系中。
       operationId: find
       parameters:
         - name: x-domain-name
@@ -1351,11 +1189,6 @@ paths:
           description: 微服务名称。
           required: true
           type: string
-        - name: version
-          in: query
-          description: 版本规则：1.精确版本匹配 2.后续版本匹配 3.最新版本 4.版本范围
-          type: string
-          required: true
         - name: tags
           in: query
           description: Tag标签过滤，多个时逗号分隔。
@@ -2407,7 +2240,6 @@ definitions:
     required:
         - appId
         - serviceName
-        - version
     properties:
       environment:
         type: string
@@ -2417,11 +2249,7 @@ definitions:
         description: 应用app唯一标识。
       serviceName:
         type: string
-        description: 微服务名称，作为provider支持为*，表示依赖同一租户下的所有服务,当服务名称为*的时候，appId和version可以省略，consumer不支持*。
-      version:
-        type: string
-        description: 微服务版本，作为provider支持+，如1.0.1+[表示1.0.1以上的版本(包括1.0.1)]、固定版本和latest(当前最新版本)，作为consumer只能为固定版本。
-
+        description: 微服务名称
   GetProDependenciesResponse:
     type: object
     properties:

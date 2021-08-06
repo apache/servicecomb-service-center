@@ -30,7 +30,6 @@ import (
 const (
 	service  = "service"
 	instance = "instance"
-	rule     = "rule"
 	dep      = "dependency"
 )
 

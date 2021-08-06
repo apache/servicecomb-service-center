@@ -20,6 +20,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"syscall"
@@ -75,7 +76,7 @@ func start(ctx context.Context, conf *servicecenter.Config) {
 			log.Error("call provider failed", err)
 			return
 		}
-		log.Infof("call provider success, repay is '%s'", msg)
+		log.Info(fmt.Sprintf("call provider success, repay is '%s'", msg))
 	}
 
 	if conf.Service.Instance != nil {
