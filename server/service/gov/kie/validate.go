@@ -21,6 +21,7 @@ package kie
 
 import (
 	"fmt"
+
 	"github.com/apache/servicecomb-service-center/server/service/gov"
 	"k8s.io/kube-openapi/pkg/validation/spec"
 )
@@ -63,7 +64,6 @@ func (d *Validator) Validate(kind string, spec map[string]interface{}) error {
 	default:
 		return &ErrIllegalItem{"not support kind yet", kind}
 	}
-	return nil
 }
 
 func matchValidate(spec map[string]interface{}) error {
