@@ -21,8 +21,8 @@ import (
 
 	"github.com/apache/servicecomb-service-center/datasource/etcd"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/go-chassis/foundation/gopool"
 )
 
 type ConflictChecker struct {

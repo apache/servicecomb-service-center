@@ -16,9 +16,9 @@
 package dump
 
 import (
-	"github.com/apache/servicecomb-service-center/pkg/cluster"
 	"github.com/apache/servicecomb-service-center/server/alarm/model"
 	"github.com/go-chassis/cari/discovery"
+	"github.com/little-cui/etcdadpt"
 )
 
 type AlarmListRequest struct {
@@ -34,7 +34,7 @@ type ClustersRequest struct {
 
 type ClustersResponse struct {
 	Response *discovery.Response `json:"-"`
-	Clusters cluster.Clusters    `json:"clusters,omitempty"`
+	Clusters etcdadpt.Clusters   `json:"clusters,omitempty"`
 }
 
 type ClearAlarmRequest struct {

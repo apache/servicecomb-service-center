@@ -138,7 +138,8 @@ func TestClusterIndexer_Sync(t *testing.T) {
 		fmt.Println(evt)
 	})
 	arr = dump.MicroserviceIndexSlice{}
-	arr.SetValue(&dump.KV{Key: "/a", Value: "a", Rev: 1, ClusterName: etcd.Configuration().ClusterName})
+	configuration := etcd.Configuration()
+	arr.SetValue(&dump.KV{Key: "/a", Value: "a", Rev: 1, ClusterName: configuration.ClusterName})
 	syncer.checkWithConflictHandleFunc(sccacher, &arr, nil, func(*dump.KV, dump.Getter, int) {
 		t.Fatalf("TestClusterIndexer_Sync failed")
 	})
@@ -151,7 +152,7 @@ func TestClusterIndexer_Sync(t *testing.T) {
 		fmt.Println(evt)
 	})
 	arr = dump.MicroserviceIndexSlice{}
-	arr.SetValue(&dump.KV{Key: "/a", Value: "x", Rev: 2, ClusterName: etcd.Configuration().ClusterName})
+	arr.SetValue(&dump.KV{Key: "/a", Value: "x", Rev: 2, ClusterName: configuration.ClusterName})
 	arr.SetValue(&dump.KV{Key: "/a", Value: "aa", Rev: 2, ClusterName: "a"})
 	syncer.checkWithConflictHandleFunc(sccacher, &arr, nil, func(kv *dump.KV, _ dump.Getter, _ int) {
 		t.Fatalf("TestClusterIndexer_Sync failed %v", kv)

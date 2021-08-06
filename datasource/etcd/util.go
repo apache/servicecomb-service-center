@@ -23,16 +23,15 @@ import (
 	"strings"
 
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
-	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/cari/pkg/errsvc"
+	"github.com/go-chassis/foundation/gopool"
+	"github.com/little-cui/etcdadpt"
 )
 
 type ServiceDetailOpt struct {
@@ -46,7 +45,7 @@ type ServiceDetailOpt struct {
 func getSchemaSummary(ctx context.Context, domainProject string, serviceID string, schemaID string) (string, error) {
 	key := path.GenerateServiceSchemaSummaryKey(domainProject, serviceID, schemaID)
 	resp, err := kv.Store().SchemaSummary().Search(ctx,
-		client.WithStrKey(key),
+		etcdadpt.WithStrKey(key),
 	)
 	if err != nil {
 		log.Error(fmt.Sprintf("get schema[%s/%s] summary failed", serviceID, schemaID), err)
@@ -61,8 +60,8 @@ func getSchemaSummary(ctx context.Context, domainProject string, serviceID strin
 func getSchemasFromDatabase(ctx context.Context, domainProject string, serviceID string) ([]*pb.Schema, error) {
 	key := path.GenerateServiceSchemaKey(domainProject, serviceID, "")
 	resp, err := kv.Store().Schema().Search(ctx,
-		client.WithPrefix(),
-		client.WithStrKey(key))
+		etcdadpt.WithPrefix(),
+		etcdadpt.WithStrKey(key))
 	if err != nil {
 		log.Error(fmt.Sprintf("get service[%s]'s schema failed", serviceID), err)
 		return nil, err
@@ -83,7 +82,7 @@ func getSchemasFromDatabase(ctx context.Context, domainProject string, serviceID
 }
 
 func checkSchemaInfoExist(ctx context.Context, key string) (bool, error) {
-	opts := append(serviceUtil.FromContext(ctx), client.WithStrKey(key), client.WithCountOnly())
+	opts := append(serviceUtil.FromContext(ctx), etcdadpt.WithStrKey(key), etcdadpt.WithCountOnly())
 	resp, errDo := kv.Store().Schema().Search(ctx, opts...)
 	if errDo != nil {
 		return false, errDo
@@ -96,7 +95,7 @@ func checkSchemaInfoExist(ctx context.Context, key string) (bool, error) {
 
 func isExistSchemaSummary(ctx context.Context, domainProject, serviceID, schemaID string) (bool, error) {
 	key := path.GenerateServiceSchemaSummaryKey(domainProject, serviceID, schemaID)
-	resp, err := kv.Store().SchemaSummary().Search(ctx, client.WithStrKey(key), client.WithCountOnly())
+	resp, err := kv.Store().SchemaSummary().Search(ctx, etcdadpt.WithStrKey(key), etcdadpt.WithCountOnly())
 	if err != nil {
 		return true, err
 	}
@@ -106,13 +105,13 @@ func isExistSchemaSummary(ctx context.Context, domainProject, serviceID, schemaI
 	return true, nil
 }
 
-func schemaWithDatabaseOpera(invoke client.Operation, domainProject string, serviceID string, schema *pb.Schema) []client.PluginOp {
-	pluginOps := make([]client.PluginOp, 0)
+func schemaWithDatabaseOpera(invoke etcdadpt.Operation, domainProject string, serviceID string, schema *pb.Schema) []etcdadpt.OpOptions {
+	pluginOps := make([]etcdadpt.OpOptions, 0)
 	key := path.GenerateServiceSchemaKey(domainProject, serviceID, schema.SchemaId)
-	opt := invoke(client.WithStrKey(key), client.WithStrValue(schema.Schema))
+	opt := invoke(etcdadpt.WithStrKey(key), etcdadpt.WithStrValue(schema.Schema))
 	pluginOps = append(pluginOps, opt)
 	keySummary := path.GenerateServiceSchemaSummaryKey(domainProject, serviceID, schema.SchemaId)
-	opt = invoke(client.WithStrKey(keySummary), client.WithStrValue(schema.Summary))
+	opt = invoke(etcdadpt.WithStrKey(keySummary), etcdadpt.WithStrValue(schema.Summary))
 	pluginOps = append(pluginOps, opt)
 	return pluginOps
 }
@@ -140,13 +139,13 @@ func containsValueInSlice(in []string, value string) bool {
 	return false
 }
 
-func commitSchemaInfo(domainProject string, serviceID string, schema *pb.Schema) []client.PluginOp {
+func commitSchemaInfo(domainProject string, serviceID string, schema *pb.Schema) []etcdadpt.OpOptions {
 	if len(schema.Summary) != 0 {
-		return schemaWithDatabaseOpera(client.OpPut, domainProject, serviceID, schema)
+		return schemaWithDatabaseOpera(etcdadpt.OpPut, domainProject, serviceID, schema)
 	}
 	key := path.GenerateServiceSchemaKey(domainProject, serviceID, schema.SchemaId)
-	opt := client.OpPut(client.WithStrKey(key), client.WithStrValue(schema.Schema))
-	return []client.PluginOp{opt}
+	opt := etcdadpt.OpPut(etcdadpt.WithStrKey(key), etcdadpt.WithStrValue(schema.Schema))
+	return []etcdadpt.OpOptions{opt}
 }
 
 func getHeartbeatFunc(ctx context.Context, domainProject string, instancesHbRst chan<- *pb.InstanceHbRst, element *pb.HeartbeatSetElement) func(context.Context) {
@@ -174,9 +173,9 @@ func revokeInstance(ctx context.Context, domainProject string, serviceID string,
 		return pb.NewError(pb.ErrInstanceNotExists, "Instance's leaseId not exist.")
 	}
 
-	err = client.Instance().LeaseRevoke(ctx, leaseID)
+	err = etcdadpt.Instance().LeaseRevoke(ctx, leaseID)
 	if err != nil {
-		if _, ok := err.(errorsEx.InternalError); !ok {
+		if err == etcdadpt.ErrLeaseNotFound {
 			return pb.NewError(pb.ErrInstanceNotExists, err.Error())
 		}
 		return pb.NewError(pb.ErrUnavailableBackend, err.Error())
@@ -193,8 +192,8 @@ func getServiceAllVersions(ctx context.Context, serviceKey *pb.MicroServiceKey) 
 	key := path.GenerateServiceIndexKey(&copyKey)
 
 	opts := append(serviceUtil.FromContext(ctx),
-		client.WithStrKey(key),
-		client.WithPrefix())
+		etcdadpt.WithStrKey(key),
+		etcdadpt.WithPrefix())
 
 	resp, err := kv.Store().ServiceIndex().Search(ctx, opts...)
 	if err != nil {
@@ -287,8 +286,8 @@ func getSchemaInfoUtil(ctx context.Context, domainProject string, serviceID stri
 	key := path.GenerateServiceSchemaKey(domainProject, serviceID, "")
 
 	resp, err := kv.Store().Schema().Search(ctx,
-		client.WithStrKey(key),
-		client.WithPrefix())
+		etcdadpt.WithStrKey(key),
+		etcdadpt.WithPrefix())
 	if err != nil {
 		log.Error(fmt.Sprintf("get service[%s]'s schemas failed", serviceID), err)
 		return make([]*pb.Schema, 0), err
@@ -315,8 +314,8 @@ func statistics(ctx context.Context, withShared bool) (*pb.Statistics, error) {
 	// services
 	key := path.GetServiceIndexRootKey(domainProject) + "/"
 	svcOpts := append(opts,
-		client.WithStrKey(key),
-		client.WithPrefix())
+		etcdadpt.WithStrKey(key),
+		etcdadpt.WithPrefix())
 	respSvc, err := kv.Store().ServiceIndex().Search(ctx, svcOpts...)
 	if err != nil {
 		return nil, err
@@ -340,9 +339,9 @@ func statistics(ctx context.Context, withShared bool) (*pb.Statistics, error) {
 	// instance
 	key = path.GetInstanceRootKey(domainProject) + "/"
 	instOpts := append(opts,
-		client.WithStrKey(key),
-		client.WithPrefix(),
-		client.WithKeyOnly())
+		etcdadpt.WithStrKey(key),
+		etcdadpt.WithPrefix(),
+		etcdadpt.WithKeyOnly())
 	respIns, err := kv.Store().Instance().Search(ctx, instOpts...)
 	if err != nil {
 		return nil, err
@@ -368,9 +367,9 @@ func getInstanceCountByDomain(ctx context.Context, svcIDToNonVerKey map[string]s
 	domainID := util.ParseDomain(ctx)
 	key := path.GetInstanceRootKey(domainID) + "/"
 	instOpts := append(serviceUtil.FromContext(ctx),
-		client.WithStrKey(key),
-		client.WithPrefix(),
-		client.WithKeyOnly())
+		etcdadpt.WithStrKey(key),
+		etcdadpt.WithPrefix(),
+		etcdadpt.WithKeyOnly())
 	respIns, err := kv.Store().Instance().Search(ctx, instOpts...)
 	ret := datasource.GetInstanceCountByDomainResponse{
 		Err: err,

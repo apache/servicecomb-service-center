@@ -22,16 +22,17 @@ import (
 	"sync"
 	"time"
 
+	"github.com/apache/servicecomb-service-center/pkg/goutil"
 	pb "github.com/go-chassis/cari/discovery"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/alarm"
+	"github.com/go-chassis/foundation/gopool"
 )
 
 var (
@@ -61,7 +62,7 @@ type K8sClient struct {
 func (c *K8sClient) init() (err error) {
 	c.ready = make(chan struct{})
 	c.stopCh = make(chan struct{})
-	c.goroutine = gopool.New(context.Background())
+	c.goroutine = goutil.New()
 
 	// if KUBERNETES_CONFIG_PATH is unset, then service center must be deployed in the same k8s cluster
 	c.kubeClient, err = createKubeClient(os.Getenv("KUBERNETES_CONFIG_PATH"))

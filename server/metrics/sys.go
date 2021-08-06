@@ -23,11 +23,11 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/metrics"
 	helper "github.com/apache/servicecomb-service-center/pkg/prometheus"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/go-chassis/foundation/gopool"
 	"github.com/prometheus/client_golang/prometheus"
 )
 

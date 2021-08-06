@@ -23,9 +23,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/prometheus"
+	"github.com/go-chassis/foundation/gopool"
 )
 
 // EmptyGather just active when metrics disabled

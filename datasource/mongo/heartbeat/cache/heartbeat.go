@@ -31,9 +31,9 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/util"
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
+	"github.com/go-chassis/foundation/gopool"
 )
 
 const (

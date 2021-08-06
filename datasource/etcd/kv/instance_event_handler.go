@@ -23,12 +23,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-chassis/cari/discovery"
-
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/foundation/gopool"
+	"github.com/go-chassis/foundation/timeutil"
 )
 
 type deferItem struct {
@@ -137,7 +137,7 @@ func (iedh *InstanceEventDeferHandler) check(ctx context.Context) {
 			}
 
 			if !n {
-				util.ResetTimer(t, deferCheckWindow)
+				timeutil.ResetTimer(t, deferCheckWindow)
 				n = true
 			}
 		case <-t.C:
@@ -155,7 +155,7 @@ func (iedh *InstanceEventDeferHandler) check(ctx context.Context) {
 		case <-iedh.resetCh:
 			iedh.ReplayEvents()
 			iedh.enabled = false
-			util.ResetTimer(t, deferCheckWindow)
+			timeutil.ResetTimer(t, deferCheckWindow)
 		}
 	}
 }

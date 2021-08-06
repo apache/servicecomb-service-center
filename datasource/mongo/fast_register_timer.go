@@ -24,9 +24,10 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
+	"github.com/apache/servicecomb-service-center/pkg/goutil"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/go-chassis/foundation/gopool"
 )
 
 const (
@@ -46,7 +47,7 @@ type FastRegisterTimeTask struct {
 
 func NewRegisterTimeTask() *FastRegisterTimeTask {
 	return &FastRegisterTimeTask{
-		goroutine: gopool.New(context.Background()),
+		goroutine: goutil.New(),
 	}
 }
 

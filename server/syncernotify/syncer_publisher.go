@@ -22,9 +22,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
+	"github.com/apache/servicecomb-service-center/pkg/goutil"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/alarm"
+	"github.com/go-chassis/foundation/gopool"
 )
 
 var publisher *Publisher
@@ -97,7 +98,7 @@ func (wh *Publisher) Accept(ws *WebSocket) {
 
 func NewPublisher() *Publisher {
 	return &Publisher{
-		goroutine: gopool.New(context.Background()),
+		goroutine: goutil.New(),
 	}
 }
 

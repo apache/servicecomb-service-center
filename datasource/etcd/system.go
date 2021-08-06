@@ -25,7 +25,8 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/etcdsync"
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
+	"github.com/apache/servicecomb-service-center/pkg/goutil"
+	"github.com/go-chassis/foundation/gopool"
 )
 
 type SysManager struct {
@@ -40,7 +41,7 @@ func newSysManager() datasource.SystemManager {
 }
 func (sm *SysManager) DumpCache(ctx context.Context) *dump.Cache {
 	var cache dump.Cache
-	gopool.New(ctx, gopool.Configure().Workers(2)).
+	goutil.New(gopool.Configure().WithContext(ctx).Workers(10)).
 		Do(func(_ context.Context) { setValue(kv.Store().Service(), &cache.Microservices) }).
 		Do(func(_ context.Context) { setValue(kv.Store().ServiceIndex(), &cache.Indexes) }).
 		Do(func(_ context.Context) { setValue(kv.Store().ServiceAlias(), &cache.Aliases) }).

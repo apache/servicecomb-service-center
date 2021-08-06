@@ -25,9 +25,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
+	"github.com/apache/servicecomb-service-center/pkg/goutil"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/go-chassis/foundation/gopool"
+	"github.com/go-chassis/foundation/timeutil"
 )
 
 const (
@@ -133,7 +135,7 @@ func (lat *AsyncTaskService) daemon(ctx context.Context) {
 
 			timer.Reset(executeInterval)
 		case <-ticker.C:
-			util.ResetTimer(timer, executeInterval)
+			timeutil.ResetTimer(timer, executeInterval)
 
 			lat.lock.RLock()
 			l := len(lat.executors)
@@ -214,7 +216,7 @@ func (lat *AsyncTaskService) renew() {
 
 func NewTaskService() Service {
 	lat := &AsyncTaskService{
-		goroutine: gopool.New(context.Background()),
+		goroutine: goutil.New(gopool.Configure().Workers(1)),
 		ready:     make(chan struct{}),
 		isClose:   true,
 	}

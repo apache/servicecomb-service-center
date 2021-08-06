@@ -19,9 +19,8 @@ package sd
 
 import (
 	"context"
+	"github.com/little-cui/etcdadpt"
 	"testing"
-
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 )
 
 type mockCache struct {
@@ -59,15 +58,15 @@ func TestCacheIndexer_Search(t *testing.T) {
 
 	// not match cache
 	c.Put("ka", &KeyValue{Key: []byte("ka"), Value: []byte("va"), Version: 1, ModRevision: 1})
-	resp, err := i.Search(context.Background(), client.WithStrKey("/a"))
+	resp, err := i.Search(context.Background(), etcdadpt.WithStrKey("/a"))
 	if err != nil || resp == nil || resp.Count != 0 {
 		t.Fatalf("TestEtcdIndexer_Search failed, %v, %v", err, resp)
 	}
-	resp, err = i.Search(context.Background(), client.WithStrKey("/a"), client.WithPrefix())
+	resp, err = i.Search(context.Background(), etcdadpt.WithStrKey("/a"), etcdadpt.WithPrefix())
 	if err != nil || resp == nil || resp.Count != 0 {
 		t.Fatalf("TestEtcdIndexer_Search failed, %v, %v", err, resp)
 	}
-	resp, err = i.Search(context.Background(), client.WithStrKey("/a"), client.WithCountOnly())
+	resp, err = i.Search(context.Background(), etcdadpt.WithStrKey("/a"), etcdadpt.WithCountOnly())
 	if err != nil || resp == nil || resp.Count != 0 {
 		t.Fatalf("TestEtcdIndexer_Search failed, %v, %v", err, resp)
 	}
@@ -76,21 +75,21 @@ func TestCacheIndexer_Search(t *testing.T) {
 	c.Put("/a", &KeyValue{Key: []byte("/a"), Value: []byte("va"), Version: 1, ModRevision: 1})
 
 	// exact match
-	resp, err = i.Search(context.Background(), client.WithStrKey("/a"))
+	resp, err = i.Search(context.Background(), etcdadpt.WithStrKey("/a"))
 	if err != nil || resp == nil || resp.Count != 1 || string(resp.Kvs[0].Value.([]byte)) != "va" {
 		t.Fatalf("TestEtcdIndexer_Search failed, %v, %v", err, resp)
 	}
-	resp, err = i.Search(context.Background(), client.WithStrKey("/a"), client.WithCountOnly())
+	resp, err = i.Search(context.Background(), etcdadpt.WithStrKey("/a"), etcdadpt.WithCountOnly())
 	if err != nil || resp == nil || resp.Count != 1 || len(resp.Kvs) != 0 {
 		t.Fatalf("TestEtcdIndexer_Search failed, %v, %v", err, resp)
 	}
 
 	// prefix match
-	resp, err = i.Search(context.Background(), client.WithStrKey("/a"), client.WithPrefix())
+	resp, err = i.Search(context.Background(), etcdadpt.WithStrKey("/a"), etcdadpt.WithPrefix())
 	if err != nil || resp == nil || resp.Count != 1 || string(resp.Kvs[0].Value.([]byte)) != "va" {
 		t.Fatalf("TestEtcdIndexer_Search failed, %v, %v", err, resp)
 	}
-	resp, err = i.Search(context.Background(), client.WithStrKey("/a"), client.WithPrefix(), client.WithCountOnly())
+	resp, err = i.Search(context.Background(), etcdadpt.WithStrKey("/a"), etcdadpt.WithPrefix(), etcdadpt.WithCountOnly())
 	if err != nil || resp == nil || resp.Count != 1 || len(resp.Kvs) != 0 {
 		t.Fatalf("TestEtcdIndexer_Search failed, %v, %v", err, resp)
 	}

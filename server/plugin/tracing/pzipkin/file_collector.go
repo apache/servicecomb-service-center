@@ -23,9 +23,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
+	"github.com/apache/servicecomb-service-center/pkg/goutil"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
+	"github.com/go-chassis/foundation/gopool"
 	"github.com/openzipkin/zipkin-go-opentracing/thrift/gen-go/zipkincore"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
@@ -144,7 +145,7 @@ func NewFileCollector(path string) (*FileCollector, error) {
 			Compress:   true,
 		},
 		c:         make(chan *zipkincore.Span, 1000),
-		goroutine: gopool.New(context.Background()),
+		goroutine: goutil.New(gopool.Configure().Workers(1)),
 	}
 	fc.Run()
 	return fc, nil

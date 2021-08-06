@@ -17,11 +17,9 @@
 package util
 
 import (
+	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
-	"time"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func TestInt16ToInt64(t *testing.T) {
@@ -48,40 +46,6 @@ func TestInt16ToInt64(t *testing.T) {
 	if i != 1<<16 {
 		t.Fatalf("Int16ToInt64 failed, %v %d != %d", bs, i, 1<<16)
 	}
-}
-
-func TestFileLastName(t *testing.T) {
-	n := FileLastName("")
-	if n != "" {
-		t.Fatal("TestFileLastName '' failed", n)
-	}
-	n = FileLastName("a")
-	if n != "a" {
-		t.Fatal("TestFileLastName 'a' failed", n)
-	}
-	n = FileLastName("a/b")
-	if n != "a/b" {
-		t.Fatal("TestFileLastName 'a/b' failed", n)
-	}
-	n = FileLastName("a/b/c")
-	if n != "b/c" {
-		t.Fatal("TestFileLastName 'b/c' failed", n)
-	}
-	n = FileLastName("b/")
-	if n != "b/" {
-		t.Fatal("TestFileLastName 'b' failed", n)
-	}
-	n = FileLastName("/")
-	if n != "/" {
-		t.Fatal("TestFileLastName 'b' failed", n)
-	}
-}
-
-func TestResetTimer(t *testing.T) {
-	timer := time.NewTimer(time.Microsecond)
-	ResetTimer(timer, time.Microsecond)
-	ResetTimer(timer, time.Second)
-	<-timer.C
 }
 
 func TestStringJoin(t *testing.T) {

@@ -22,6 +22,8 @@ import (
 
 	// import the grace package and parse grace cmd line
 	_ "github.com/apache/servicecomb-service-center/pkg/grace"
+
+	"github.com/apache/servicecomb-service-center/pkg/goutil"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
 )
@@ -31,6 +33,8 @@ func Initialize() {
 	config.Init()
 	// Logging
 	initLogger()
+	// go pool
+	goutil.Init()
 	// init the sc registration
 	InitRegistration()
 	// Register global services

@@ -21,11 +21,11 @@ import (
 	"context"
 	"errors"
 
-	"github.com/go-chassis/cari/discovery"
-	"github.com/go-chassis/cari/pkg/errsvc"
-
 	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
+	"github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/cari/pkg/errsvc"
+	"github.com/little-cui/etcdadpt"
 )
 
 func HeartbeatUtil(ctx context.Context, domainProject string, serviceID string, instanceID string) (leaseID int64, ttl int64, _ *errsvc.Error) {
@@ -45,8 +45,8 @@ func KeepAliveLease(ctx context.Context, domainProject, serviceID, instanceID st
 		return ttl, errors.New("leaseId not exist, instance not exist")
 	}
 	ttl, err = client.KeepAlive(ctx,
-		client.WithStrKey(path.GenerateInstanceLeaseKey(domainProject, serviceID, instanceID)),
-		client.WithLease(leaseID))
+		etcdadpt.WithStrKey(path.GenerateInstanceLeaseKey(domainProject, serviceID, instanceID)),
+		etcdadpt.WithLease(leaseID))
 	if err != nil {
 		return ttl, err
 	}

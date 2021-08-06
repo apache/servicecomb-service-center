@@ -15,38 +15,28 @@
  * limitations under the License.
  */
 
-package backoff
+// Package goutil wrap the gopool funcs and inject the logger
+package goutil
 
 import (
-	"math"
-	"time"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/go-chassis/foundation/gopool"
 )
 
-var DefaultBackoff Backoff = &PowerBackoff{
-	MaxDelay:  30 * time.Second,
-	InitDelay: 1 * time.Second,
-	Factor:    1.6,
+func Init(cfgs ...*gopool.Config) {
+	gopool.Init(getConfig(cfgs))
 }
 
-type Backoff interface {
-	Delay(retries int) time.Duration
+func New(cfgs ...*gopool.Config) *gopool.Pool {
+	return gopool.New(getConfig(cfgs))
 }
 
-// delay = min(MaxDelay, InitDelay * power(Factor, retries))
-type PowerBackoff struct {
-	MaxDelay  time.Duration
-	InitDelay time.Duration
-	Factor    float64
-}
-
-func (pb *PowerBackoff) Delay(retries int) time.Duration {
-	if retries <= 0 {
-		return pb.InitDelay
+func getConfig(cfgs []*gopool.Config) *gopool.Config {
+	var cfg *gopool.Config
+	if len(cfgs) == 0 {
+		cfg = gopool.Configure()
+	} else {
+		cfg = cfgs[0]
 	}
-
-	return time.Duration(math.Min(float64(pb.MaxDelay), float64(pb.InitDelay)*math.Pow(pb.Factor, float64(retries))))
-}
-
-func GetBackoff() Backoff {
-	return DefaultBackoff
+	return cfg.WithRecoverFunc(log.Panic)
 }

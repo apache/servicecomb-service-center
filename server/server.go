@@ -19,7 +19,9 @@ package server
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
+	"github.com/little-cui/etcdadpt"
 	"net"
 	"os"
 	"strings"
@@ -27,11 +29,11 @@ import (
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	nf "github.com/apache/servicecomb-service-center/pkg/event"
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/plugin"
 	"github.com/apache/servicecomb-service-center/pkg/signal"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/alarm"
 	"github.com/apache/servicecomb-service-center/server/command"
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/core"
@@ -41,6 +43,7 @@ import (
 	"github.com/apache/servicecomb-service-center/server/service/gov"
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
 	snf "github.com/apache/servicecomb-service-center/server/syncernotify"
+	"github.com/go-chassis/foundation/gopool"
 )
 
 const defaultCollectPeriod = 30 * time.Second
@@ -112,15 +115,38 @@ func (s *ServiceCenterServer) initDatasource() {
 	if err != nil {
 		log.Warn("releaseAfter is invalid, use default config")
 	}
+	tlsConfig, err := getDatasourceTLSConfig()
+	if err != nil {
+		log.Fatal("get datasource tlsConfig failed", err)
+	}
 	if err := datasource.Init(datasource.Options{
-		Kind:                kind,
-		SslEnabled:          config.GetSSL().SslEnabled,
+		Kind: kind,
+		Config: etcdadpt.Config{
+			SslEnabled: config.GetSSL().SslEnabled,
+			TLSConfig:  tlsConfig,
+			ErrorFunc: func(err error) {
+				if err != nil {
+					return
+				}
+				err = alarm.Raise(alarm.IDBackendConnectionRefuse, alarm.AdditionalContext("%v", err))
+				if err != nil {
+					log.Error("", err)
+				}
+			},
+		},
 		InstanceTTL:         config.GetRegistry().InstanceTTL,
 		SchemaNotEditable:   config.GetRegistry().SchemaNotEditable,
 		ReleaseAccountAfter: d,
 	}); err != nil {
 		log.Fatal("init datasource failed", err)
 	}
+}
+
+func getDatasourceTLSConfig() (*tls.Config, error) {
+	if config.GetSSL().SslEnabled {
+		return tlsconf.ClientConfig()
+	}
+	return nil, nil
 }
 
 func (s *ServiceCenterServer) initMetrics() {

@@ -22,11 +22,10 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/go-chassis/cari/discovery"
-
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/go-chassis/cari/discovery"
+	"github.com/little-cui/etcdadpt"
 )
 
 // Dependency contains dependency rules
@@ -40,8 +39,8 @@ type Dependency struct {
 	CreateDependencyRuleList []*discovery.MicroServiceKey
 }
 
-func (dep *Dependency) removeConsumerOfProviderRule(ctx context.Context) ([]client.PluginOp, error) {
-	opts := make([]client.PluginOp, 0, len(dep.DeleteDependencyRuleList))
+func (dep *Dependency) removeConsumerOfProviderRule(ctx context.Context) ([]etcdadpt.OpOptions, error) {
+	opts := make([]etcdadpt.OpOptions, 0, len(dep.DeleteDependencyRuleList))
 	for _, providerRule := range dep.DeleteDependencyRuleList {
 		proProkey := path.GenerateProviderDependencyRuleKey(providerRule.Tenant, providerRule)
 		consumerValue, err := TransferToMicroServiceDependency(ctx, proProkey)
@@ -57,7 +56,7 @@ func (dep *Dependency) removeConsumerOfProviderRule(ctx context.Context) ([]clie
 		}
 		//删除后，如果不存在依赖规则了，就删除该provider的依赖规则，如果有，则更新该依赖规则
 		if len(consumerValue.Dependency) == 0 {
-			opts = append(opts, client.OpDel(client.WithStrKey(proProkey)))
+			opts = append(opts, etcdadpt.OpDel(etcdadpt.WithStrKey(proProkey)))
 			continue
 		}
 		data, err := json.Marshal(consumerValue)
@@ -65,15 +64,15 @@ func (dep *Dependency) removeConsumerOfProviderRule(ctx context.Context) ([]clie
 			log.Error("Marshal MicroServiceDependency failed", err)
 			return nil, err
 		}
-		opts = append(opts, client.OpPut(
-			client.WithStrKey(proProkey),
-			client.WithValue(data)))
+		opts = append(opts, etcdadpt.OpPut(
+			etcdadpt.WithStrKey(proProkey),
+			etcdadpt.WithValue(data)))
 	}
 	return opts, nil
 }
 
-func (dep *Dependency) addConsumerOfProviderRule(ctx context.Context) ([]client.PluginOp, error) {
-	opts := make([]client.PluginOp, 0, len(dep.CreateDependencyRuleList))
+func (dep *Dependency) addConsumerOfProviderRule(ctx context.Context) ([]etcdadpt.OpOptions, error) {
+	opts := make([]etcdadpt.OpOptions, 0, len(dep.CreateDependencyRuleList))
 	for _, providerRule := range dep.CreateDependencyRuleList {
 		providerRuleKey := path.GenerateProviderDependencyRuleKey(providerRule.Tenant, providerRule)
 		tmpValue, err := TransferToMicroServiceDependency(ctx, providerRuleKey)
@@ -87,17 +86,17 @@ func (dep *Dependency) addConsumerOfProviderRule(ctx context.Context) ([]client.
 			log.Error("Marshal MicroServiceDependency failed", errMarshal)
 			return nil, errMarshal
 		}
-		opts = append(opts, client.OpPut(
-			client.WithStrKey(providerRuleKey),
-			client.WithValue(data)))
+		opts = append(opts, etcdadpt.OpPut(
+			etcdadpt.WithStrKey(providerRuleKey),
+			etcdadpt.WithValue(data)))
 	}
 	return opts, nil
 }
 
-func (dep *Dependency) updateProvidersRuleOfConsumer(_ context.Context) ([]client.PluginOp, error) {
+func (dep *Dependency) updateProvidersRuleOfConsumer(_ context.Context) ([]etcdadpt.OpOptions, error) {
 	conKey := path.GenerateConsumerDependencyRuleKey(dep.DomainProject, dep.Consumer)
 	if len(dep.ProvidersRule) == 0 {
-		return []client.PluginOp{client.OpDel(client.WithStrKey(conKey))}, nil
+		return []etcdadpt.OpOptions{etcdadpt.OpDel(etcdadpt.WithStrKey(conKey))}, nil
 	}
 
 	dependency := &discovery.MicroServiceDependency{
@@ -108,7 +107,7 @@ func (dep *Dependency) updateProvidersRuleOfConsumer(_ context.Context) ([]clien
 		log.Error("Marshal MicroServiceDependency failed", err)
 		return nil, err
 	}
-	return []client.PluginOp{client.OpPut(client.WithStrKey(conKey), client.WithValue(data))}, nil
+	return []etcdadpt.OpOptions{etcdadpt.OpPut(etcdadpt.WithStrKey(conKey), etcdadpt.WithValue(data))}, nil
 }
 
 // Commit is dependent rule operations
@@ -125,5 +124,5 @@ func (dep *Dependency) Commit(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	return client.BatchCommit(ctx, append(append(dopts, copts...), uopts...))
+	return etcdadpt.Txn(ctx, append(append(dopts, copts...), uopts...))
 }

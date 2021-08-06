@@ -25,16 +25,17 @@ import (
 	"sync"
 	"time"
 
-	rmodel "github.com/go-chassis/cari/discovery"
-
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/datasource/sdcommon"
-	"github.com/apache/servicecomb-service-center/pkg/backoff"
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
+	"github.com/apache/servicecomb-service-center/pkg/goutil"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/config"
+	rmodel "github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/foundation/backoff"
+	"github.com/go-chassis/foundation/gopool"
+	"github.com/go-chassis/foundation/timeutil"
+	"github.com/little-cui/etcdadpt"
 )
 
 // KvCacher implements sd.Cacher.
@@ -387,7 +388,7 @@ func (c *KvCacher) handleDeferEvents(ctx context.Context) {
 			evts[i] = evt
 			i++
 
-			util.ResetTimer(timer, interval)
+			timeutil.ResetTimer(timer, interval)
 		case <-timer.C:
 			timer.Reset(interval)
 
@@ -520,10 +521,10 @@ func NewKvCacher(cfg *sd.Config, cache sd.Cache) *KvCacher {
 		cache: cache,
 		ready: make(chan struct{}),
 		lw: &innerListWatch{
-			Client: client.Instance(),
+			Client: etcdadpt.Instance(),
 			Prefix: cfg.Key,
 		},
-		goroutine: gopool.New(context.Background()),
+		goroutine: goutil.New(),
 	}
 }
 

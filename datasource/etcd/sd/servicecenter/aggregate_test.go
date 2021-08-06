@@ -25,8 +25,9 @@ import (
 )
 
 func TestNewSCClientAggregate(t *testing.T) {
-	etcd.Configuration().ClusterAddresses = "sc-1=127.0.0.1:2379,127.0.0.2:2379"
-	etcd.Configuration().InitClusterInfo()
+	cfg := etcd.Configuration()
+	cfg.ClusterAddresses = "sc-1=127.0.0.1:2379,127.0.0.2:2379"
+	cfg.Init()
 	c := GetOrCreateSCClient()
 	if len(*c) == 0 {
 		t.Fatalf("TestNewSCClientAggregate failed")

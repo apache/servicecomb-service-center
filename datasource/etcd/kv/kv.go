@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-// kv package provides a TypeStore to manage the implementations of sd package, see types.go
+// Package kv provides a TypeStore to manage the implementations of sd package, see types.go
 package kv
 
 import (
@@ -25,10 +25,11 @@ import (
 	"time"
 
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
+	"github.com/apache/servicecomb-service-center/pkg/goutil"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/config"
+	"github.com/go-chassis/foundation/gopool"
 )
 
 var store = &TypeStore{}
@@ -50,7 +51,7 @@ type TypeStore struct {
 func (s *TypeStore) Initialize() {
 	s.AddOns = make(map[sd.Type]AddOn)
 	s.ready = make(chan struct{})
-	s.goroutine = gopool.New(context.Background())
+	s.goroutine = goutil.New()
 }
 
 func (s *TypeStore) OnCacheEvent(evt sd.KvEvent) {

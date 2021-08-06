@@ -21,12 +21,12 @@ package util_test
 import (
 	"context"
 	"errors"
+	"github.com/little-cui/etcdadpt"
 	"testing"
 
 	_ "github.com/apache/servicecomb-service-center/test"
 
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	proto "github.com/go-chassis/cari/discovery"
@@ -153,8 +153,8 @@ func TestFromContext(t *testing.T) {
 		t.Fatalf("TestFromContext failed")
 	}
 
-	op := client.OptionsToOp(opts...)
-	if op.Mode != client.ModeNoCache {
+	op := etcdadpt.OptionsToOp(opts...)
+	if op.Mode != etcdadpt.ModeNoCache {
 		t.Fatalf("TestFromContext failed")
 	}
 
@@ -164,8 +164,8 @@ func TestFromContext(t *testing.T) {
 		t.Fatalf("TestFromContext failed")
 	}
 
-	op = client.OptionsToOp(opts...)
-	if op.Mode != client.ModeCache {
+	op = etcdadpt.OptionsToOp(opts...)
+	if op.Mode != etcdadpt.ModeCache {
 		t.Fatalf("TestFromContext failed")
 	}
 }

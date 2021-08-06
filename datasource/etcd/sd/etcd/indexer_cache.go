@@ -21,9 +21,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/little-cui/etcdadpt"
 )
 
 // CacheIndexer implements sd.Indexer.
@@ -34,8 +34,8 @@ type CacheIndexer struct {
 	*sd.CacheIndexer
 }
 
-func (i *CacheIndexer) Search(ctx context.Context, opts ...client.PluginOpOption) (*sd.Response, error) {
-	op := client.OpGet(opts...)
+func (i *CacheIndexer) Search(ctx context.Context, opts ...etcdadpt.OpOption) (*sd.Response, error) {
+	op := etcdadpt.OpGet(opts...)
 	key := util.BytesToStringWithNoCopy(op.Key)
 
 	if op.NoCache() {

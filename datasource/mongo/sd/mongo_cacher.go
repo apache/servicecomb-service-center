@@ -24,13 +24,13 @@ import (
 	"sync"
 	"time"
 
-	rmodel "github.com/go-chassis/cari/discovery"
-
 	"github.com/apache/servicecomb-service-center/datasource/sdcommon"
-	"github.com/apache/servicecomb-service-center/pkg/backoff"
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
+	"github.com/apache/servicecomb-service-center/pkg/goutil"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	rmodel "github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/foundation/backoff"
+	"github.com/go-chassis/foundation/gopool"
 )
 
 // MongoCacher manages mongo cache.
@@ -422,6 +422,6 @@ func NewMongoCacher(options *Options, cache MongoCache, pf parsefunc) *MongoCach
 			Key:       options.Key,
 			parseFunc: pf,
 		},
-		goroutine: gopool.New(context.Background()),
+		goroutine: goutil.New(),
 	}
 }

@@ -21,13 +21,13 @@ import (
 	_ "github.com/apache/servicecomb-service-center/datasource/etcd"
 
 	//registry is buildin
-	_ "github.com/apache/servicecomb-service-center/datasource/etcd/client/buildin"
+	_ "github.com/little-cui/etcdadpt/buildin"
 
 	//registry etcd
-	_ "github.com/apache/servicecomb-service-center/datasource/etcd/client/remote"
+	_ "github.com/little-cui/etcdadpt/remote"
 
 	//registry etcd
-	_ "github.com/apache/servicecomb-service-center/datasource/etcd/client/embedded"
+	_ "github.com/little-cui/etcdadpt/embedded"
 
 	//discovery
 	_ "github.com/apache/servicecomb-service-center/datasource/etcd/sd/aggregate"

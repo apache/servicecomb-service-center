@@ -23,6 +23,7 @@ import (
 	"testing"
 
 	"github.com/apache/servicecomb-service-center/pkg/task"
+	"github.com/little-cui/etcdadpt"
 )
 
 var closedCh = make(chan struct{})
@@ -54,26 +55,26 @@ func (a *mockAsyncTaskService) LatestHandled(key string) (task.Task, error) {
 }
 
 func TestKeepAlive(t *testing.T) {
-	tt := NewLeaseAsyncTask(OpGet())
+	tt := NewLeaseAsyncTask(etcdadpt.OpGet())
 	tt.TTL = 1
 	task.RegisterService(&mockAsyncTaskService{Task: tt})
 
 	// KeepAlive case: add task error
-	ttl, err := KeepAlive(context.Background(), WithKey([]byte("error")))
+	ttl, err := KeepAlive(context.Background(), etcdadpt.WithKey([]byte("error")))
 	if err == nil || ttl > 0 {
 		t.Fatalf("TestStore failed")
 	}
 
 	// KeepAlive case: get last task error
 	tt.key = "LeaseAsyncTask_a"
-	ttl, err = KeepAlive(context.Background(), WithKey([]byte("b")))
+	ttl, err = KeepAlive(context.Background(), etcdadpt.WithKey([]byte("b")))
 	if err == nil || ttl > 0 {
 		t.Fatalf("TestStore failed")
 	}
 
 	// KeepAlive case: get last task error
 	tt.key = "LeaseAsyncTask_a"
-	ttl, err = KeepAlive(context.Background(), WithKey([]byte("a")))
+	ttl, err = KeepAlive(context.Background(), etcdadpt.WithKey([]byte("a")))
 	if err != nil || ttl != 1 {
 		t.Fatalf("TestStore failed")
 	}

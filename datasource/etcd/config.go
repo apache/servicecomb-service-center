@@ -18,35 +18,29 @@
 package etcd
 
 import (
-	"context"
-	"sync"
 	"time"
 
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
+	"github.com/little-cui/etcdadpt"
 )
 
-var (
-	defaultRegistryConfig client.Config
-	configOnce            sync.Once
-)
+func Configuration() etcdadpt.Config {
+	cfg := etcdadpt.Config{}
+	cfg.Logger = log.Logger
 
-func Configuration() *client.Config {
-	configOnce.Do(func() {
-		defaultRegistryConfig.ClusterName = config.GetString("registry.etcd.cluster.name", client.DefaultClusterName, config.WithStandby("manager_name"))
-		defaultRegistryConfig.ManagerAddress = config.GetString("registry.etcd.cluster.managerEndpoints", "", config.WithStandby("manager_addr"))
-		defaultRegistryConfig.ClusterAddresses = config.GetString("registry.etcd.cluster.endpoints", "http://127.0.0.1:2379", config.WithStandby("manager_cluster"))
-		defaultRegistryConfig.InitClusterInfo()
+	// cluster configs
+	cfg.ClusterName = config.GetString("registry.etcd.cluster.name", etcdadpt.DefaultClusterName, config.WithStandby("manager_name"))
+	cfg.ManagerAddress = config.GetString("registry.etcd.cluster.managerEndpoints", "", config.WithStandby("manager_addr"))
+	cfg.ClusterAddresses = config.GetString("registry.etcd.cluster.endpoints", "http://127.0.0.1:2379", config.WithStandby("manager_cluster"))
 
-		defaultRegistryConfig.DialTimeout = config.GetDuration("registry.etcd.connect.timeout", client.DefaultDialTimeout, config.WithStandby("connect_timeout"))
-		defaultRegistryConfig.RequestTimeOut = config.GetDuration("registry.etcd.request.timeout", client.DefaultRequestTimeout, config.WithStandby("registry_timeout"))
-		defaultRegistryConfig.AutoSyncInterval = config.GetDuration("registry.etcd.autoSyncInterval", 30*time.Second, config.WithStandby("auto_sync_interval"))
-		defaultRegistryConfig.CompactIndexDelta = config.GetInt64("registry.etcd.compact.indexDelta", 100, config.WithStandby("compact_index_delta"))
-		defaultRegistryConfig.CompactInterval = config.GetDuration("registry.etcd.compact.interval", 12*time.Hour, config.WithStandby("compact_interval"))
-	})
-	return &defaultRegistryConfig
-}
+	// connection configs
+	cfg.DialTimeout = config.GetDuration("registry.etcd.connect.timeout", etcdadpt.DefaultDialTimeout, config.WithStandby("connect_timeout"))
+	cfg.RequestTimeOut = config.GetDuration("registry.etcd.request.timeout", etcdadpt.DefaultRequestTimeout, config.WithStandby("registry_timeout"))
+	cfg.AutoSyncInterval = config.GetDuration("registry.etcd.autoSyncInterval", 30*time.Second, config.WithStandby("auto_sync_interval"))
 
-func WithTimeout(ctx context.Context) (context.Context, context.CancelFunc) {
-	return context.WithTimeout(ctx, defaultRegistryConfig.RequestTimeOut)
+	// compaction configs
+	cfg.CompactIndexDelta = config.GetInt64("registry.etcd.compact.indexDelta", 100, config.WithStandby("compact_index_delta"))
+	cfg.CompactInterval = config.GetDuration("registry.etcd.compact.interval", 12*time.Hour, config.WithStandby("compact_interval"))
+	return cfg
 }

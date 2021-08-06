@@ -14,20 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package client_test
+package client
 
 import (
 	"context"
 	"fmt"
 	"testing"
 
-	. "github.com/apache/servicecomb-service-center/datasource/etcd/client"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client/buildin"
-	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
+	"github.com/little-cui/etcdadpt"
+	"github.com/little-cui/etcdadpt/buildin"
 )
 
 type mockRegistry struct {
-	*buildin.Registry
+	*buildin.Client
 	LeaseErr error
 }
 
@@ -40,10 +39,10 @@ func (c *mockRegistry) LeaseRenew(ctx context.Context, leaseID int64) (TTL int64
 
 func TestLeaseTask_Do(t *testing.T) {
 	c := &mockRegistry{}
-	lt := NewLeaseAsyncTask(OptionsToOp(WithStrKey("/a"), WithLease(1)))
+	lt := NewLeaseAsyncTask(etcdadpt.OptionsToOp(etcdadpt.WithStrKey("/a"), etcdadpt.WithLease(1)))
 	lt.Client = c
 
-	c.LeaseErr = errorsEx.InternalError("lease not found")
+	c.LeaseErr = etcdadpt.ErrLeaseNotFound
 	err := lt.Do(context.Background())
 	if err != nil || lt.Err() != nil {
 		t.Fatalf("TestLeaseTask_Do failed")

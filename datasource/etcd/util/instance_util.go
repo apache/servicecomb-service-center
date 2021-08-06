@@ -26,20 +26,19 @@ import (
 	"strings"
 	"time"
 
-	pb "github.com/go-chassis/cari/discovery"
-	"github.com/go-chassis/cari/pkg/errsvc"
-
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	pb "github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/cari/pkg/errsvc"
+	"github.com/little-cui/etcdadpt"
 )
 
 func GetLeaseID(ctx context.Context, domainProject string, serviceID string, instanceID string) (int64, error) {
 	opts := append(FromContext(ctx),
-		client.WithStrKey(path.GenerateInstanceLeaseKey(domainProject, serviceID, instanceID)))
+		etcdadpt.WithStrKey(path.GenerateInstanceLeaseKey(domainProject, serviceID, instanceID)))
 	resp, err := kv.Store().Lease().Search(ctx, opts...)
 	if err != nil {
 		return -1, err
@@ -53,7 +52,7 @@ func GetLeaseID(ctx context.Context, domainProject string, serviceID string, ins
 
 func GetInstance(ctx context.Context, domainProject string, serviceID string, instanceID string) (*pb.MicroServiceInstance, error) {
 	key := path.GenerateInstanceKey(domainProject, serviceID, instanceID)
-	opts := append(FromContext(ctx), client.WithStrKey(key))
+	opts := append(FromContext(ctx), etcdadpt.WithStrKey(key))
 
 	resp, err := kv.Store().Instance().Search(ctx, opts...)
 	if err != nil {
@@ -68,7 +67,7 @@ func GetInstance(ctx context.Context, domainProject string, serviceID string, in
 
 func InstanceExist(ctx context.Context, domainProject string, serviceID string, instanceID string) (bool, error) {
 	key := path.GenerateInstanceKey(domainProject, serviceID, instanceID)
-	opts := append(FromContext(ctx), client.WithStrKey(key))
+	opts := append(FromContext(ctx), etcdadpt.WithStrKey(key))
 	resp, err := kv.Store().Instance().Search(ctx, opts...)
 	if err != nil {
 		return false, err
@@ -88,7 +87,7 @@ func FormatRevision(revs, counts []int64) (s string) {
 
 func GetAllInstancesOfOneService(ctx context.Context, domainProject string, serviceID string) ([]*pb.MicroServiceInstance, error) {
 	key := path.GenerateInstanceKey(domainProject, serviceID, "")
-	opts := append(FromContext(ctx), client.WithStrKey(key), client.WithPrefix())
+	opts := append(FromContext(ctx), etcdadpt.WithStrKey(key), etcdadpt.WithPrefix())
 	resp, err := kv.Store().Instance().Search(ctx, opts...)
 	if err != nil {
 		log.Error(fmt.Sprintf("get service[%s]'s instances failed", serviceID), err)
@@ -105,9 +104,9 @@ func GetAllInstancesOfOneService(ctx context.Context, domainProject string, serv
 func GetInstanceCountOfOneService(ctx context.Context, domainProject string, serviceID string) (int64, error) {
 	key := path.GenerateInstanceKey(domainProject, serviceID, "")
 	opts := append(FromContext(ctx),
-		client.WithStrKey(key),
-		client.WithPrefix(),
-		client.WithCountOnly())
+		etcdadpt.WithStrKey(key),
+		etcdadpt.WithPrefix(),
+		etcdadpt.WithCountOnly())
 	resp, err := kv.Store().Instance().Search(ctx, opts...)
 	if err != nil {
 		log.Error(fmt.Sprintf("get number of service[%s]'s instances failed", serviceID), err)
@@ -135,9 +134,9 @@ func DeleteServiceAllInstances(ctx context.Context, serviceID string) error {
 
 	instanceLeaseKey := path.GenerateInstanceLeaseKey(domainProject, serviceID, "")
 	resp, err := kv.Store().Lease().Search(ctx,
-		client.WithStrKey(instanceLeaseKey),
-		client.WithPrefix(),
-		client.WithNoCache())
+		etcdadpt.WithStrKey(instanceLeaseKey),
+		etcdadpt.WithPrefix(),
+		etcdadpt.WithNoCache())
 	if err != nil {
 		log.Error(fmt.Sprintf("delete all of service[%s]'s instances failed: get instance lease failed", serviceID), err)
 		return err
@@ -148,7 +147,7 @@ func DeleteServiceAllInstances(ctx context.Context, serviceID string) error {
 	}
 	for _, v := range resp.Kvs {
 		leaseID, _ := strconv.ParseInt(v.Value.(string), 10, 64)
-		err := client.Instance().LeaseRevoke(ctx, leaseID)
+		err := etcdadpt.Instance().LeaseRevoke(ctx, leaseID)
 		if err != nil {
 			log.Error("", err)
 		}
@@ -160,9 +159,9 @@ func QueryServiceInstancesKvs(ctx context.Context, serviceID string, rev int64) 
 	domainProject := util.ParseDomainProject(ctx)
 	key := path.GenerateInstanceKey(domainProject, serviceID, "")
 	resp, err := kv.Store().Instance().Search(ctx,
-		client.WithStrKey(key),
-		client.WithPrefix(),
-		client.WithRev(rev))
+		etcdadpt.WithStrKey(key),
+		etcdadpt.WithPrefix(),
+		etcdadpt.WithRev(rev))
 	if err != nil {
 		log.Error(fmt.Sprintf("get service[%s]'s instances with revision %d failed",
 			serviceID, rev), err)
@@ -188,14 +187,14 @@ func UpdateInstance(ctx context.Context, domainProject string, instance *pb.Micr
 
 	key := path.GenerateInstanceKey(domainProject, instance.ServiceId, instance.InstanceId)
 
-	resp, err := client.Instance().TxnWithCmp(ctx,
-		[]client.PluginOp{client.OpPut(
-			client.WithStrKey(key),
-			client.WithValue(data),
-			client.WithLease(leaseID))},
-		[]client.CompareOp{client.OpCmp(
-			client.CmpVer(util.StringToBytesWithNoCopy(path.GenerateServiceKey(domainProject, instance.ServiceId))),
-			client.CmpNotEqual, 0)},
+	resp, err := etcdadpt.TxnWithCmp(ctx,
+		[]etcdadpt.OpOptions{etcdadpt.OpPut(
+			etcdadpt.WithStrKey(key),
+			etcdadpt.WithValue(data),
+			etcdadpt.WithLease(leaseID))},
+		[]etcdadpt.CmpOptions{etcdadpt.OpCmp(
+			etcdadpt.CmpVer(util.StringToBytesWithNoCopy(path.GenerateServiceKey(domainProject, instance.ServiceId))),
+			etcdadpt.CmpNotEqual, 0)},
 		nil)
 	if err != nil {
 		return pb.NewError(pb.ErrUnavailableBackend, err.Error())

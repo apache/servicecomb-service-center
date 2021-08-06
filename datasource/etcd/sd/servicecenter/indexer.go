@@ -20,15 +20,14 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/go-chassis/cari/pkg/errsvc"
-
 	"github.com/apache/servicecomb-service-center/client"
-	etcdclient "github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/go-chassis/cari/pkg/errsvc"
+	etcdclient "github.com/little-cui/etcdadpt"
 )
 
 // ClusterIndexer implements sd.Indexer.
@@ -40,7 +39,7 @@ type ClusterIndexer struct {
 	Type   sd.Type
 }
 
-func (i *ClusterIndexer) Search(ctx context.Context, opts ...etcdclient.PluginOpOption) (resp *sd.Response, err error) {
+func (i *ClusterIndexer) Search(ctx context.Context, opts ...etcdclient.OpOption) (resp *sd.Response, err error) {
 	op := etcdclient.OpGet(opts...)
 
 	if op.NoCache() {
@@ -59,7 +58,7 @@ func (i *ClusterIndexer) Search(ctx context.Context, opts ...etcdclient.PluginOp
 	return i.search(ctx, opts...)
 }
 
-func (i *ClusterIndexer) search(ctx context.Context, opts ...etcdclient.PluginOpOption) (r *sd.Response, err error) {
+func (i *ClusterIndexer) search(ctx context.Context, opts ...etcdclient.OpOption) (r *sd.Response, err error) {
 	op := etcdclient.OpGet(opts...)
 	key := util.BytesToStringWithNoCopy(op.Key)
 
@@ -76,7 +75,7 @@ func (i *ClusterIndexer) search(ctx context.Context, opts ...etcdclient.PluginOp
 	return
 }
 
-func (i *ClusterIndexer) searchSchemas(ctx context.Context, op etcdclient.PluginOp) (*sd.Response, error) {
+func (i *ClusterIndexer) searchSchemas(ctx context.Context, op etcdclient.OpOptions) (*sd.Response, error) {
 	var (
 		resp  *sd.Response
 		scErr *errsvc.Error
@@ -93,7 +92,7 @@ func (i *ClusterIndexer) searchSchemas(ctx context.Context, op etcdclient.Plugin
 	return resp, nil
 }
 
-func (i *ClusterIndexer) searchInstances(ctx context.Context, op etcdclient.PluginOp) (r *sd.Response, err error) {
+func (i *ClusterIndexer) searchInstances(ctx context.Context, op etcdclient.OpOptions) (r *sd.Response, err error) {
 	var (
 		resp  *sd.Response
 		scErr *errsvc.Error

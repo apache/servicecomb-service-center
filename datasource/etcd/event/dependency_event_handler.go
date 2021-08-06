@@ -23,21 +23,21 @@ import (
 	"sync"
 	"time"
 
-	pb "github.com/go-chassis/cari/discovery"
-
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/mux"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
-	"github.com/apache/servicecomb-service-center/pkg/backoff"
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/queue"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/config"
+	pb "github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/foundation/backoff"
+	"github.com/go-chassis/foundation/gopool"
+	"github.com/go-chassis/foundation/timeutil"
+	"github.com/little-cui/etcdadpt"
 )
 
 // just for unit test
@@ -117,7 +117,7 @@ func (h *DependencyEventHandler) eventLoop() {
 				if err != nil {
 					log.Error("", err)
 				}
-				util.ResetTimer(timer, period)
+				timeutil.ResetTimer(timer, period)
 			case <-timer.C:
 				h.notify()
 				timer.Reset(period)
@@ -145,8 +145,8 @@ func (h *DependencyEventHandler) Handle() error {
 	defer testMux.Unlock()
 
 	key := path.GetServiceDependencyQueueRootKey("")
-	resp, err := kv.Store().DependencyQueue().Search(context.Background(), client.WithNoCache(),
-		client.WithStrKey(key), client.WithPrefix(), client.WithAscendOrder(), client.WithOrderByCreate())
+	resp, err := kv.Store().DependencyQueue().Search(context.Background(), etcdadpt.WithNoCache(),
+		etcdadpt.WithStrKey(key), etcdadpt.WithPrefix(), etcdadpt.WithAscendOrder(), etcdadpt.WithOrderByCreate())
 	if err != nil {
 		return err
 	}
@@ -210,8 +210,8 @@ func (h *DependencyEventHandler) dependencyRuleHandle(res interface{}) error {
 }
 
 func (h *DependencyEventHandler) removeKV(ctx context.Context, kv *sd.KeyValue) error {
-	dResp, err := client.Instance().TxnWithCmp(ctx, []client.PluginOp{client.OpDel(client.WithKey(kv.Key))},
-		[]client.CompareOp{client.OpCmp(client.CmpVer(kv.Key), client.CmpEqual, kv.Version)},
+	dResp, err := etcdadpt.TxnWithCmp(ctx, []etcdadpt.OpOptions{etcdadpt.OpDel(etcdadpt.WithKey(kv.Key))},
+		[]etcdadpt.CmpOptions{etcdadpt.OpCmp(etcdadpt.CmpVer(kv.Key), etcdadpt.CmpEqual, kv.Version)},
 		nil)
 	if err != nil {
 		return fmt.Errorf("can not remove the dependency %s request, %s", util.BytesToStringWithNoCopy(kv.Key), err.Error())

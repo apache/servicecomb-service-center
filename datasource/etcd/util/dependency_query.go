@@ -22,13 +22,12 @@ import (
 	"errors"
 	"fmt"
 
-	pb "github.com/go-chassis/cari/discovery"
-
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	pb "github.com/go-chassis/cari/discovery"
+	"github.com/little-cui/etcdadpt"
 )
 
 // DependencyRelationFilterOpt contains SameDomainProject and NonSelf flag
@@ -240,8 +239,8 @@ func (dr *DependencyRelation) GetConsumerOfSameServiceNameAndAppID(provider *pb.
 	prefix := path.GenerateProviderDependencyRuleKey(dr.domainProject, &copy)
 
 	opts := append(FromContext(dr.ctx),
-		client.WithStrKey(prefix),
-		client.WithPrefix())
+		etcdadpt.WithStrKey(prefix),
+		etcdadpt.WithPrefix())
 	rsp, err := kv.Store().DependencyRule().Search(dr.ctx, opts...)
 	if err != nil {
 		log.Error(fmt.Sprintf("get service[%s/%s/%s]'s dependency rules failed",

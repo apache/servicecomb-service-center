@@ -25,24 +25,22 @@ import (
 	"strconv"
 	"time"
 
-	pb "github.com/go-chassis/cari/discovery"
-	"github.com/go-chassis/cari/pkg/errsvc"
-	"github.com/jinzhu/copier"
-
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/cache"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
-	registry "github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
+	pb "github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/cari/pkg/errsvc"
+	"github.com/go-chassis/foundation/gopool"
+	"github.com/jinzhu/copier"
+	"github.com/little-cui/etcdadpt"
 )
 
 var (
@@ -110,26 +108,26 @@ func (ds *MetadataManager) RegisterService(ctx context.Context, request *pb.Crea
 	indexBytes := util.StringToBytesWithNoCopy(index)
 	aliasBytes := util.StringToBytesWithNoCopy(path.GenerateServiceAliasKey(serviceKey))
 
-	opts := []client.PluginOp{
-		client.OpPut(client.WithKey(keyBytes), client.WithValue(data)),
-		client.OpPut(client.WithKey(indexBytes), client.WithStrValue(service.ServiceId)),
+	opts := []etcdadpt.OpOptions{
+		etcdadpt.OpPut(etcdadpt.WithKey(keyBytes), etcdadpt.WithValue(data)),
+		etcdadpt.OpPut(etcdadpt.WithKey(indexBytes), etcdadpt.WithStrValue(service.ServiceId)),
 	}
-	uniqueCmpOpts := []client.CompareOp{
-		client.OpCmp(client.CmpVer(indexBytes), client.CmpEqual, 0),
-		client.OpCmp(client.CmpVer(keyBytes), client.CmpEqual, 0),
+	uniqueCmpOpts := []etcdadpt.CmpOptions{
+		etcdadpt.OpCmp(etcdadpt.CmpVer(indexBytes), etcdadpt.CmpEqual, 0),
+		etcdadpt.OpCmp(etcdadpt.CmpVer(keyBytes), etcdadpt.CmpEqual, 0),
 	}
-	failOpts := []client.PluginOp{
-		client.OpGet(client.WithKey(indexBytes)),
+	failOpts := []etcdadpt.OpOptions{
+		etcdadpt.OpGet(etcdadpt.WithKey(indexBytes)),
 	}
 
 	if len(serviceKey.Alias) > 0 {
-		opts = append(opts, client.OpPut(client.WithKey(aliasBytes), client.WithStrValue(service.ServiceId)))
+		opts = append(opts, etcdadpt.OpPut(etcdadpt.WithKey(aliasBytes), etcdadpt.WithStrValue(service.ServiceId)))
 		uniqueCmpOpts = append(uniqueCmpOpts,
-			client.OpCmp(client.CmpVer(aliasBytes), client.CmpEqual, 0))
-		failOpts = append(failOpts, client.OpGet(client.WithKey(aliasBytes)))
+			etcdadpt.OpCmp(etcdadpt.CmpVer(aliasBytes), etcdadpt.CmpEqual, 0))
+		failOpts = append(failOpts, etcdadpt.OpGet(etcdadpt.WithKey(aliasBytes)))
 	}
 
-	resp, err := client.Instance().TxnWithCmp(ctx, opts, uniqueCmpOpts, failOpts)
+	resp, err := etcdadpt.TxnWithCmp(ctx, opts, uniqueCmpOpts, failOpts)
 	if err != nil {
 		log.Error(fmt.Sprintf("create micro-service[%s] failed, operator: %s",
 			serviceFlag, remoteIP), err)
@@ -360,9 +358,9 @@ func (ds *MetadataManager) ListApp(ctx context.Context, request *pb.GetAppsReque
 	key := path.GetServiceAppKey(domainProject, request.Environment, "")
 
 	opts := append(serviceUtil.FromContext(ctx),
-		registry.WithStrKey(key),
-		registry.WithPrefix(),
-		registry.WithKeyOnly())
+		etcdadpt.WithStrKey(key),
+		etcdadpt.WithPrefix(),
+		etcdadpt.WithKeyOnly())
 
 	resp, err := kv.Store().ServiceIndex().Search(ctx, opts...)
 	if err != nil {
@@ -477,11 +475,11 @@ func (ds *MetadataManager) UpdateService(ctx context.Context, request *pb.Update
 	}
 
 	// Set key file
-	resp, err := client.Instance().TxnWithCmp(ctx,
-		[]client.PluginOp{client.OpPut(client.WithStrKey(key), client.WithValue(data))},
-		[]client.CompareOp{client.OpCmp(
-			client.CmpVer(util.StringToBytesWithNoCopy(key)),
-			client.CmpNotEqual, 0)},
+	resp, err := etcdadpt.TxnWithCmp(ctx,
+		[]etcdadpt.OpOptions{etcdadpt.OpPut(etcdadpt.WithStrKey(key), etcdadpt.WithValue(data))},
+		[]etcdadpt.CmpOptions{etcdadpt.OpCmp(
+			etcdadpt.CmpVer(util.StringToBytesWithNoCopy(key)),
+			etcdadpt.CmpNotEqual, 0)},
 		nil)
 	if err != nil {
 		log.Error(fmt.Sprintf("update service[%s] properties failed, operator: %s", request.ServiceId, remoteIP), err)
@@ -557,7 +555,7 @@ func (ds *MetadataManager) registerInstance(ctx context.Context, request *pb.Reg
 		return "", pb.NewError(pb.ErrInternal, err.Error())
 	}
 
-	leaseID, err := client.Instance().LeaseGrant(ctx, ttl)
+	leaseID, err := etcdadpt.Instance().LeaseGrant(ctx, ttl)
 	if err != nil {
 		log.Error(fmt.Sprintf("grant lease failed, %s, operator: %s", instanceFlag, remoteIP), err)
 		return "", pb.NewError(pb.ErrUnavailableBackend, err.Error())
@@ -567,17 +565,17 @@ func (ds *MetadataManager) registerInstance(ctx context.Context, request *pb.Reg
 	key := path.GenerateInstanceKey(domainProject, instance.ServiceId, instanceID)
 	hbKey := path.GenerateInstanceLeaseKey(domainProject, instance.ServiceId, instanceID)
 
-	opts := []client.PluginOp{
-		client.OpPut(client.WithStrKey(key), client.WithValue(data),
-			client.WithLease(leaseID)),
-		client.OpPut(client.WithStrKey(hbKey), client.WithStrValue(fmt.Sprintf("%d", leaseID)),
-			client.WithLease(leaseID)),
+	opts := []etcdadpt.OpOptions{
+		etcdadpt.OpPut(etcdadpt.WithStrKey(key), etcdadpt.WithValue(data),
+			etcdadpt.WithLease(leaseID)),
+		etcdadpt.OpPut(etcdadpt.WithStrKey(hbKey), etcdadpt.WithStrValue(fmt.Sprintf("%d", leaseID)),
+			etcdadpt.WithLease(leaseID)),
 	}
 
-	resp, err := client.Instance().TxnWithCmp(ctx, opts,
-		[]client.CompareOp{client.OpCmp(
-			client.CmpVer(util.StringToBytesWithNoCopy(path.GenerateServiceKey(domainProject, instance.ServiceId))),
-			client.CmpNotEqual, 0)},
+	resp, err := etcdadpt.TxnWithCmp(ctx, opts,
+		[]etcdadpt.CmpOptions{etcdadpt.OpCmp(
+			etcdadpt.CmpVer(util.StringToBytesWithNoCopy(path.GenerateServiceKey(domainProject, instance.ServiceId))),
+			etcdadpt.CmpNotEqual, 0)},
 		nil)
 	if err != nil {
 		log.Error(fmt.Sprintf("register instance failed, %s, instanceID %s, operator %s",
@@ -852,7 +850,7 @@ func (ds *MetadataManager) BatchGetProviderInstances(ctx context.Context, reques
 
 func (ds *MetadataManager) findInstances(ctx context.Context, domainProject, serviceID string, maxRevs []int64, counts []int64) (instances []*pb.MicroServiceInstance, err error) {
 	key := path.GenerateInstanceKey(domainProject, serviceID, "")
-	opts := append(serviceUtil.FromContext(ctx), client.WithStrKey(key), client.WithPrefix())
+	opts := append(serviceUtil.FromContext(ctx), etcdadpt.WithStrKey(key), etcdadpt.WithPrefix())
 	resp, err := kv.Store().Instance().Search(ctx, opts...)
 	if err != nil {
 		return nil, err
@@ -1311,7 +1309,7 @@ func (ds *MetadataManager) Heartbeat(ctx context.Context, request *pb.HeartbeatR
 func (ds *MetadataManager) GetAllInstances(ctx context.Context, request *pb.GetAllInstancesRequest) (*pb.GetAllInstancesResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
 	key := path.GetInstanceRootKey(domainProject) + path.SPLIT
-	opts := append(serviceUtil.FromContext(ctx), client.WithStrKey(key), client.WithPrefix())
+	opts := append(serviceUtil.FromContext(ctx), etcdadpt.WithStrKey(key), etcdadpt.WithPrefix())
 	kvs, err := kv.Store().Instance().Search(ctx, opts...)
 	if err != nil {
 		return nil, err
@@ -1446,7 +1444,7 @@ func (ds *MetadataManager) GetSchema(ctx context.Context, request *pb.GetSchemaR
 	}
 
 	key := path.GenerateServiceSchemaKey(domainProject, request.ServiceId, request.SchemaId)
-	opts := append(serviceUtil.FromContext(ctx), client.WithStrKey(key))
+	opts := append(serviceUtil.FromContext(ctx), etcdadpt.WithStrKey(key))
 	resp, errDo := kv.Store().Schema().Search(ctx, opts...)
 	if errDo != nil {
 		log.Error(fmt.Sprintf("get schema[%s/%s] failed", request.ServiceId, request.SchemaId), errDo)
@@ -1505,7 +1503,7 @@ func (ds *MetadataManager) GetAllSchemas(ctx context.Context, request *pb.GetAll
 	}
 
 	key := path.GenerateServiceSchemaSummaryKey(domainProject, request.ServiceId, "")
-	opts := append(serviceUtil.FromContext(ctx), client.WithStrKey(key), client.WithPrefix())
+	opts := append(serviceUtil.FromContext(ctx), etcdadpt.WithStrKey(key), etcdadpt.WithPrefix())
 	resp, errDo := kv.Store().SchemaSummary().Search(ctx, opts...)
 	if errDo != nil {
 		log.Error(fmt.Sprintf("get service[%s] all schema summaries failed", request.ServiceId), errDo)
@@ -1517,7 +1515,7 @@ func (ds *MetadataManager) GetAllSchemas(ctx context.Context, request *pb.GetAll
 	respWithSchema := &sd.Response{}
 	if request.WithSchema {
 		key := path.GenerateServiceSchemaKey(domainProject, request.ServiceId, "")
-		opts := append(serviceUtil.FromContext(ctx), client.WithStrKey(key), client.WithPrefix())
+		opts := append(serviceUtil.FromContext(ctx), etcdadpt.WithStrKey(key), etcdadpt.WithPrefix())
 		respWithSchema, errDo = kv.Store().Schema().Search(ctx, opts...)
 		if errDo != nil {
 			log.Error(fmt.Sprintf("get service[%s] all schemas failed", request.ServiceId), errDo)
@@ -1583,15 +1581,15 @@ func (ds *MetadataManager) DeleteSchema(ctx context.Context, request *pb.DeleteS
 		}, nil
 	}
 	epSummaryKey := path.GenerateServiceSchemaSummaryKey(domainProject, request.ServiceId, request.SchemaId)
-	opts := []client.PluginOp{
-		client.OpDel(client.WithStrKey(epSummaryKey)),
-		client.OpDel(client.WithStrKey(key)),
+	opts := []etcdadpt.OpOptions{
+		etcdadpt.OpDel(etcdadpt.WithStrKey(epSummaryKey)),
+		etcdadpt.OpDel(etcdadpt.WithStrKey(key)),
 	}
 
-	resp, errDo := client.Instance().TxnWithCmp(ctx, opts,
-		[]client.CompareOp{client.OpCmp(
-			client.CmpVer(util.StringToBytesWithNoCopy(path.GenerateServiceKey(domainProject, request.ServiceId))),
-			client.CmpNotEqual, 0)},
+	resp, errDo := etcdadpt.TxnWithCmp(ctx, opts,
+		[]etcdadpt.CmpOptions{etcdadpt.OpCmp(
+			etcdadpt.CmpVer(util.StringToBytesWithNoCopy(path.GenerateServiceKey(domainProject, request.ServiceId))),
+			etcdadpt.CmpNotEqual, 0)},
 		nil)
 	if errDo != nil {
 		log.Error(fmt.Sprintf("delete schema[%s/%s] failed, operator: %s",
@@ -1775,11 +1773,11 @@ func (ds *MetadataManager) DeleteTags(ctx context.Context, request *pb.DeleteSer
 
 	key := path.GenerateServiceTagKey(domainProject, request.ServiceId)
 
-	resp, err := client.Instance().TxnWithCmp(ctx,
-		[]client.PluginOp{client.OpPut(client.WithStrKey(key), client.WithValue(data))},
-		[]client.CompareOp{client.OpCmp(
-			client.CmpVer(util.StringToBytesWithNoCopy(path.GenerateServiceKey(domainProject, request.ServiceId))),
-			client.CmpNotEqual, 0)},
+	resp, err := etcdadpt.TxnWithCmp(ctx,
+		[]etcdadpt.OpOptions{etcdadpt.OpPut(etcdadpt.WithStrKey(key), etcdadpt.WithValue(data))},
+		[]etcdadpt.CmpOptions{etcdadpt.OpCmp(
+			etcdadpt.CmpVer(util.StringToBytesWithNoCopy(path.GenerateServiceKey(domainProject, request.ServiceId))),
+			etcdadpt.CmpNotEqual, 0)},
 		nil)
 	if err != nil {
 		log.Error(fmt.Sprintf("delete service[%s]'s tags %v failed, operator: %s",
@@ -1816,7 +1814,7 @@ func (ds *MetadataManager) modifySchemas(ctx context.Context, domainProject stri
 	needUpdateSchemas, needAddSchemas, needDeleteSchemas, nonExistSchemaIds :=
 		datasource.SchemasAnalysis(schemas, schemasFromDatabase, service.Schemas)
 
-	pluginOps := make([]client.PluginOp, 0)
+	pluginOps := make([]etcdadpt.OpOptions, 0)
 	if !ds.isSchemaEditable() {
 		if len(service.Schemas) == 0 {
 			res := quota.NewApplyQuotaResource(quota.TypeSchema, domainProject, serviceID, int64(len(nonExistSchemaIds)))
@@ -1846,7 +1844,7 @@ func (ds *MetadataManager) modifySchemas(ctx context.Context, domainProject stri
 					return pb.NewError(pb.ErrInternal, err.Error())
 				}
 				if !exist {
-					opts := schemaWithDatabaseOpera(client.OpPut, domainProject, serviceID, needUpdateSchema)
+					opts := schemaWithDatabaseOpera(etcdadpt.OpPut, domainProject, serviceID, needUpdateSchema)
 					pluginOps = append(pluginOps, opts...)
 				} else {
 					log.Warn(fmt.Sprintf("schema[%s/%s] and it's summary already exist, skip to update, operator: %s",
@@ -1857,7 +1855,7 @@ func (ds *MetadataManager) modifySchemas(ctx context.Context, domainProject stri
 
 		for _, schema := range needAddSchemas {
 			log.Info(fmt.Sprintf("add new schema[%s/%s], operator: %s", serviceID, schema.SchemaId, remoteIP))
-			opts := schemaWithDatabaseOpera(client.OpPut, domainProject, service.ServiceId, schema)
+			opts := schemaWithDatabaseOpera(etcdadpt.OpPut, domainProject, service.ServiceId, schema)
 			pluginOps = append(pluginOps, opts...)
 		}
 	} else {
@@ -1874,21 +1872,21 @@ func (ds *MetadataManager) modifySchemas(ctx context.Context, domainProject stri
 		var schemaIDs []string
 		for _, schema := range needAddSchemas {
 			log.Info(fmt.Sprintf("add new schema[%s/%s], operator: %s", serviceID, schema.SchemaId, remoteIP))
-			opts := schemaWithDatabaseOpera(client.OpPut, domainProject, service.ServiceId, schema)
+			opts := schemaWithDatabaseOpera(etcdadpt.OpPut, domainProject, service.ServiceId, schema)
 			pluginOps = append(pluginOps, opts...)
 			schemaIDs = append(schemaIDs, schema.SchemaId)
 		}
 
 		for _, schema := range needUpdateSchemas {
 			log.Info(fmt.Sprintf("update schema[%s/%s], operator: %s", serviceID, schema.SchemaId, remoteIP))
-			opts := schemaWithDatabaseOpera(client.OpPut, domainProject, serviceID, schema)
+			opts := schemaWithDatabaseOpera(etcdadpt.OpPut, domainProject, serviceID, schema)
 			pluginOps = append(pluginOps, opts...)
 			schemaIDs = append(schemaIDs, schema.SchemaId)
 		}
 
 		for _, schema := range needDeleteSchemas {
 			log.Info(fmt.Sprintf("delete non-existent schema[%s/%s], operator: %s", serviceID, schema.SchemaId, remoteIP))
-			opts := schemaWithDatabaseOpera(client.OpDel, domainProject, serviceID, schema)
+			opts := schemaWithDatabaseOpera(etcdadpt.OpDel, domainProject, serviceID, schema)
 			pluginOps = append(pluginOps, opts...)
 		}
 
@@ -1903,10 +1901,10 @@ func (ds *MetadataManager) modifySchemas(ctx context.Context, domainProject stri
 	}
 
 	if len(pluginOps) != 0 {
-		resp, err := client.BatchCommitWithCmp(ctx, pluginOps,
-			[]client.CompareOp{client.OpCmp(
-				client.CmpVer(util.StringToBytesWithNoCopy(path.GenerateServiceKey(domainProject, serviceID))),
-				client.CmpNotEqual, 0)},
+		resp, err := etcdadpt.TxnWithCmp(ctx, pluginOps,
+			[]etcdadpt.CmpOptions{etcdadpt.OpCmp(
+				etcdadpt.CmpVer(util.StringToBytesWithNoCopy(path.GenerateServiceKey(domainProject, serviceID))),
+				etcdadpt.CmpNotEqual, 0)},
 			nil)
 		if err != nil {
 			return pb.NewError(pb.ErrUnavailableBackend, err.Error())
@@ -1939,7 +1937,7 @@ func (ds *MetadataManager) modifySchema(ctx context.Context, serviceID string, s
 		return pb.NewError(pb.ErrInternal, err.Error())
 	}
 
-	var pluginOps []client.PluginOp
+	var pluginOps []etcdadpt.OpOptions
 	isExist := isExistSchemaID(microService, []*pb.Schema{schema})
 
 	if !ds.isSchemaEditable() {
@@ -1948,7 +1946,7 @@ func (ds *MetadataManager) modifySchema(ctx context.Context, serviceID string, s
 		}
 
 		key := path.GenerateServiceSchemaKey(domainProject, serviceID, schemaID)
-		respSchema, err := kv.Store().Schema().Search(ctx, client.WithStrKey(key), client.WithCountOnly())
+		respSchema, err := kv.Store().Schema().Search(ctx, etcdadpt.WithStrKey(key), etcdadpt.WithCountOnly())
 		if err != nil {
 			log.Error(fmt.Sprintf("modify schema[%s/%s] failed, get schema summary failed, operator: %s",
 				serviceID, schemaID, remoteIP), err)
@@ -2001,10 +1999,10 @@ func (ds *MetadataManager) modifySchema(ctx context.Context, serviceID string, s
 	opts := commitSchemaInfo(domainProject, serviceID, schema)
 	pluginOps = append(pluginOps, opts...)
 
-	resp, err := client.Instance().TxnWithCmp(ctx, pluginOps,
-		[]client.CompareOp{client.OpCmp(
-			client.CmpVer(util.StringToBytesWithNoCopy(path.GenerateServiceKey(domainProject, serviceID))),
-			client.CmpNotEqual, 0)},
+	resp, err := etcdadpt.TxnWithCmp(ctx, pluginOps,
+		[]etcdadpt.CmpOptions{etcdadpt.OpCmp(
+			etcdadpt.CmpVer(util.StringToBytesWithNoCopy(path.GenerateServiceKey(domainProject, serviceID))),
+			etcdadpt.CmpNotEqual, 0)},
 		nil)
 	if err != nil {
 		return pb.NewError(pb.ErrUnavailableBackend, err.Error())
@@ -2058,9 +2056,9 @@ func (ds *MetadataManager) DeleteServicePri(ctx context.Context, serviceID strin
 
 		instancesKey := path.GenerateInstanceKey(domainProject, serviceID, "")
 		rsp, err := kv.Store().Instance().Search(ctx,
-			client.WithStrKey(instancesKey),
-			client.WithPrefix(),
-			client.WithCountOnly())
+			etcdadpt.WithStrKey(instancesKey),
+			etcdadpt.WithPrefix(),
+			etcdadpt.WithCountOnly())
 		if err != nil {
 			log.Error(fmt.Sprintf("delete micro-service[%s] failed, get instances failed, operator: %s",
 				serviceID, remoteIP), err)
@@ -2083,10 +2081,10 @@ func (ds *MetadataManager) DeleteServicePri(ctx context.Context, serviceID strin
 		Version:     microservice.Version,
 		Alias:       microservice.Alias,
 	}
-	opts := []client.PluginOp{
-		client.OpDel(client.WithStrKey(path.GenerateServiceIndexKey(serviceKey))),
-		client.OpDel(client.WithStrKey(path.GenerateServiceAliasKey(serviceKey))),
-		client.OpDel(client.WithStrKey(serviceIDKey)),
+	opts := []etcdadpt.OpOptions{
+		etcdadpt.OpDel(etcdadpt.WithStrKey(path.GenerateServiceIndexKey(serviceKey))),
+		etcdadpt.OpDel(etcdadpt.WithStrKey(path.GenerateServiceAliasKey(serviceKey))),
+		etcdadpt.OpDel(etcdadpt.WithStrKey(serviceIDKey)),
 	}
 
 	//删除依赖规则
@@ -2099,24 +2097,24 @@ func (ds *MetadataManager) DeleteServicePri(ctx context.Context, serviceID strin
 	opts = append(opts, optDeleteDep)
 
 	//删除schemas
-	opts = append(opts, client.OpDel(
-		client.WithStrKey(path.GenerateServiceSchemaKey(domainProject, serviceID, "")),
-		client.WithPrefix()))
-	opts = append(opts, client.OpDel(
-		client.WithStrKey(path.GenerateServiceSchemaSummaryKey(domainProject, serviceID, "")),
-		client.WithPrefix()))
+	opts = append(opts, etcdadpt.OpDel(
+		etcdadpt.WithStrKey(path.GenerateServiceSchemaKey(domainProject, serviceID, "")),
+		etcdadpt.WithPrefix()))
+	opts = append(opts, etcdadpt.OpDel(
+		etcdadpt.WithStrKey(path.GenerateServiceSchemaSummaryKey(domainProject, serviceID, "")),
+		etcdadpt.WithPrefix()))
 
 	//删除tags
-	opts = append(opts, client.OpDel(
-		client.WithStrKey(path.GenerateServiceTagKey(domainProject, serviceID))))
+	opts = append(opts, etcdadpt.OpDel(
+		etcdadpt.WithStrKey(path.GenerateServiceTagKey(domainProject, serviceID))))
 
 	//删除instances
-	opts = append(opts, client.OpDel(
-		client.WithStrKey(path.GenerateInstanceKey(domainProject, serviceID, "")),
-		client.WithPrefix()))
-	opts = append(opts, client.OpDel(
-		client.WithStrKey(path.GenerateInstanceLeaseKey(domainProject, serviceID, "")),
-		client.WithPrefix()))
+	opts = append(opts, etcdadpt.OpDel(
+		etcdadpt.WithStrKey(path.GenerateInstanceKey(domainProject, serviceID, "")),
+		etcdadpt.WithPrefix()))
+	opts = append(opts, etcdadpt.OpDel(
+		etcdadpt.WithStrKey(path.GenerateInstanceLeaseKey(domainProject, serviceID, "")),
+		etcdadpt.WithPrefix()))
 
 	//删除实例
 	err = serviceUtil.DeleteServiceAllInstances(ctx, serviceID)
@@ -2126,10 +2124,10 @@ func (ds *MetadataManager) DeleteServicePri(ctx context.Context, serviceID strin
 		return pb.CreateResponse(pb.ErrUnavailableBackend, err.Error()), err
 	}
 
-	resp, err := client.Instance().TxnWithCmp(ctx, opts,
-		[]client.CompareOp{client.OpCmp(
-			client.CmpVer(util.StringToBytesWithNoCopy(serviceIDKey)),
-			client.CmpNotEqual, 0)},
+	resp, err := etcdadpt.TxnWithCmp(ctx, opts,
+		[]etcdadpt.CmpOptions{etcdadpt.OpCmp(
+			etcdadpt.CmpVer(util.StringToBytesWithNoCopy(serviceIDKey)),
+			etcdadpt.CmpNotEqual, 0)},
 		nil)
 	if err != nil {
 		log.Error(fmt.Sprintf("%s micro-service[%s] failed, operator: %s", title, serviceID, remoteIP), err)

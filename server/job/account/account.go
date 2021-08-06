@@ -22,9 +22,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	accountsvc "github.com/apache/servicecomb-service-center/server/service/account"
+	"github.com/go-chassis/foundation/gopool"
 )
 
 const releasedLockHistoryCleanupInterval = 20 * time.Minute

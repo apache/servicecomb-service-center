@@ -22,9 +22,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/little-cui/etcdadpt"
 )
 
 // CacheIndexer implements sd.Indexer.
@@ -33,8 +33,8 @@ type CacheIndexer struct {
 	Cache CacheReader
 }
 
-func (i *CacheIndexer) Search(ctx context.Context, opts ...client.PluginOpOption) (resp *Response, _ error) {
-	op := client.OpGet(opts...)
+func (i *CacheIndexer) Search(ctx context.Context, opts ...etcdadpt.OpOption) (resp *Response, _ error) {
+	op := etcdadpt.OpGet(opts...)
 	if op.Prefix {
 		resp = i.searchByPrefix(op)
 	} else {
@@ -43,7 +43,7 @@ func (i *CacheIndexer) Search(ctx context.Context, opts ...client.PluginOpOption
 	return
 }
 
-func (i *CacheIndexer) search(op client.PluginOp) *Response {
+func (i *CacheIndexer) search(op etcdadpt.OpOptions) *Response {
 	resp := new(Response)
 
 	key := util.BytesToStringWithNoCopy(op.Key)
@@ -60,7 +60,7 @@ func (i *CacheIndexer) search(op client.PluginOp) *Response {
 	return resp
 }
 
-func (i *CacheIndexer) searchByPrefix(op client.PluginOp) *Response {
+func (i *CacheIndexer) searchByPrefix(op etcdadpt.OpOptions) *Response {
 	resp := new(Response)
 
 	prefix := util.BytesToStringWithNoCopy(op.Key)

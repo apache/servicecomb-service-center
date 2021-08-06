@@ -20,30 +20,30 @@ package etcd
 import (
 	"context"
 	"fmt"
+	"github.com/little-cui/etcdadpt"
+	"github.com/little-cui/etcdadpt/buildin"
 	"testing"
 	"time"
 
 	"github.com/coreos/etcd/mvcc/mvccpb"
 
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client/buildin"
 	"github.com/apache/servicecomb-service-center/datasource/sdcommon"
 )
 
 type mockRegistry struct {
-	*buildin.Registry
-	Response *client.PluginResponse
+	*buildin.Client
+	Response *etcdadpt.Response
 }
 
-func (c *mockRegistry) Do(ctx context.Context, opts ...client.PluginOpOption) (*client.PluginResponse, error) {
+func (c *mockRegistry) Do(ctx context.Context, opts ...etcdadpt.OpOption) (*etcdadpt.Response, error) {
 	if c.Response == nil {
 		return nil, fmt.Errorf("error")
 	}
 	return c.Response, nil
 }
 
-func (c *mockRegistry) Watch(ctx context.Context, opts ...client.PluginOpOption) error {
-	op := client.OptionsToOp(opts...)
+func (c *mockRegistry) Watch(ctx context.Context, opts ...etcdadpt.OpOption) error {
+	op := etcdadpt.OptionsToOp(opts...)
 	if c.Response == nil {
 		return fmt.Errorf("error")
 	}
@@ -76,7 +76,7 @@ func TestPrefixListWatch(t *testing.T) {
 	}
 	w.Stop()
 
-	test := &client.PluginResponse{
+	test := &etcdadpt.Response{
 		Revision: 2,
 	}
 	lw = &innerListWatch{
@@ -95,7 +95,7 @@ func TestPrefixListWatch(t *testing.T) {
 	}
 	w.Stop()
 
-	test = &client.PluginResponse{
+	test = &etcdadpt.Response{
 		Kvs:      []*mvccpb.KeyValue{{ModRevision: 3}},
 		Revision: 4,
 	}

@@ -21,14 +21,13 @@ import (
 	"context"
 	"fmt"
 
-	pb "github.com/go-chassis/cari/discovery"
-
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/cache"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	pb "github.com/go-chassis/cari/discovery"
+	"github.com/little-cui/etcdadpt"
 )
 
 type InstancesFilter struct {
@@ -82,7 +81,7 @@ func (f *InstancesFilter) Find(ctx context.Context, parent *cache.Node) (
 
 func (f *InstancesFilter) findInstances(ctx context.Context, domainProject, serviceID, instanceID string, maxRevs []int64, counts []int64) (instances []*pb.MicroServiceInstance, err error) {
 	key := path.GenerateInstanceKey(domainProject, serviceID, instanceID)
-	opts := append(util.FromContext(ctx), client.WithStrKey(key), client.WithPrefix())
+	opts := append(util.FromContext(ctx), etcdadpt.WithStrKey(key), etcdadpt.WithPrefix())
 	resp, err := kv.Store().Instance().Search(ctx, opts...)
 	if err != nil {
 		return nil, err

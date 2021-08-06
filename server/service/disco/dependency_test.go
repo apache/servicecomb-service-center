@@ -18,13 +18,13 @@ package disco_test
 
 import (
 	"github.com/apache/servicecomb-service-center/server/service/disco"
+	"github.com/little-cui/etcdadpt"
 
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/go-archaius"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/event"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
@@ -290,7 +290,7 @@ func DependencyHandle() {
 
 			key := path.GetServiceDependencyQueueRootKey("")
 			resp, err := kv.Store().DependencyQueue().Search(getContext(),
-				client.WithStrKey(key), client.WithPrefix(), client.WithCountOnly())
+				etcdadpt.WithStrKey(key), etcdadpt.WithPrefix(), etcdadpt.WithCountOnly())
 
 			Expect(err).To(BeNil())
 

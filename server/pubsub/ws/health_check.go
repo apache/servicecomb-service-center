@@ -23,8 +23,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/go-chassis/foundation/gopool"
 )
 
 var checker *HealthCheck
@@ -35,21 +35,15 @@ func init() {
 }
 
 type HealthCheck struct {
-	wss       []*WebSocket
-	lock      sync.Mutex
-	goroutine *gopool.Pool
+	wss  []*WebSocket
+	lock sync.Mutex
 }
 
 func (wh *HealthCheck) Run() {
 	gopool.Go(checker.loop)
 }
 
-func (wh *HealthCheck) Stop() {
-	wh.goroutine.Close(true)
-}
-
 func (wh *HealthCheck) loop(ctx context.Context) {
-	defer wh.Stop()
 	ticker := time.NewTicker(500 * time.Millisecond)
 	for {
 		select {
@@ -68,7 +62,7 @@ func (wh *HealthCheck) loop(ctx context.Context) {
 }
 
 func (wh *HealthCheck) check(ws *WebSocket) {
-	wh.goroutine.Do(func(ctx context.Context) {
+	gopool.Go(func(ctx context.Context) {
 		if err := ws.CheckHealth(ctx); err != nil {
 			wh.Remove(ws)
 			log.Error(fmt.Sprintf("checker removed unhealth websocket[%s]", ws.RemoteAddr), err)
@@ -98,9 +92,7 @@ func (wh *HealthCheck) Remove(ws *WebSocket) int {
 }
 
 func NewHealthCheck() *HealthCheck {
-	return &HealthCheck{
-		goroutine: gopool.New(context.Background()),
-	}
+	return &HealthCheck{}
 }
 
 func HealthChecker() *HealthCheck {

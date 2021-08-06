@@ -23,14 +23,14 @@ import (
 	"io/ioutil"
 	"time"
 
+	"github.com/apache/servicecomb-service-center/pkg/goutil"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/server/plugin/security/cipher"
+	"github.com/go-chassis/foundation/gopool"
 	"github.com/go-chassis/go-chassis/v2/storage"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
-	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/server/plugin/security/cipher"
 )
 
 const (
@@ -82,7 +82,7 @@ func NewMongoClient(config storage.Options) {
 func (mc *MongoClient) Initialize(config storage.Options) (err error) {
 	mc.err = make(chan error, 1)
 	mc.ready = make(chan struct{})
-	mc.goroutine = gopool.New(context.Background())
+	mc.goroutine = goutil.New()
 	mc.dbconfig = config
 	err = mc.newClient(context.Background())
 	if err != nil {

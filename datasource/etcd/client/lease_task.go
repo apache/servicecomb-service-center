@@ -22,17 +22,17 @@ import (
 	"fmt"
 	"time"
 
-	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	simple "github.com/apache/servicecomb-service-center/pkg/time"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/metrics"
+	"github.com/little-cui/etcdadpt"
 )
 
 const leaseProfTimeFmt = "15:04:05.000"
 
 type LeaseTask struct {
-	Client Registry
+	Client etcdadpt.Client
 
 	key     string
 	LeaseID int64
@@ -57,7 +57,7 @@ func (lat *LeaseTask) Do(ctx context.Context) (err error) {
 			lat.LeaseID,
 			recv.Format(leaseProfTimeFmt),
 			start.Format(leaseProfTimeFmt)), err)
-		if _, ok := err.(errorsEx.InternalError); !ok {
+		if err != etcdadpt.ErrLeaseNotFound {
 			// it means lease not found if err is not the InternalError type
 			lat.err = err
 			return
@@ -86,9 +86,9 @@ func (lat *LeaseTask) ReceiveTime() time.Time {
 	return lat.recvTime.Local()
 }
 
-func NewLeaseAsyncTask(op PluginOp) *LeaseTask {
+func NewLeaseAsyncTask(op etcdadpt.OpOptions) *LeaseTask {
 	return &LeaseTask{
-		Client:   Instance(),
+		Client:   etcdadpt.Instance(),
 		key:      ToLeaseAsyncTaskKey(util.BytesToStringWithNoCopy(op.Key)),
 		LeaseID:  op.Lease,
 		recvTime: simple.FromTime(time.Now()),

@@ -21,14 +21,14 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/sdcommon"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/little-cui/etcdadpt"
 )
 
 type innerListWatch struct {
-	Client client.Registry
+	Client etcdadpt.Client
 	Prefix string
 
 	rev int64
@@ -37,7 +37,7 @@ type innerListWatch struct {
 func (lw *innerListWatch) List(op sdcommon.ListWatchConfig) (*sdcommon.ListWatchResp, error) {
 	otCtx, cancel := context.WithTimeout(op.Context, op.Timeout)
 	defer cancel()
-	resp, err := lw.Client.Do(otCtx, client.WatchPrefixOpOptions(lw.Prefix)...)
+	resp, err := lw.Client.Do(otCtx, etcdadpt.WatchPrefixOpOptions(lw.Prefix)...)
 	if err != nil {
 		log.Error(fmt.Sprintf("list prefix %s failed, current rev: %d", lw.Prefix, lw.Revision()), err)
 		return nil, err
@@ -64,10 +64,10 @@ func (lw *innerListWatch) EventBus(op sdcommon.ListWatchConfig) *sdcommon.EventB
 func (lw *innerListWatch) DoWatch(ctx context.Context, f func(*sdcommon.ListWatchResp)) error {
 	rev := lw.Revision()
 	opts := append(
-		client.WatchPrefixOpOptions(lw.Prefix),
-		client.WithRev(rev+1),
-		client.WithWatchCallback(
-			func(message string, resp *client.PluginResponse) error {
+		etcdadpt.WatchPrefixOpOptions(lw.Prefix),
+		etcdadpt.WithRev(rev+1),
+		etcdadpt.WithWatchCallback(
+			func(message string, resp *etcdadpt.Response) error {
 				if resp == nil || len(resp.Kvs) == 0 {
 					return fmt.Errorf("unknown event %s, watch prefix %s", resp, lw.Prefix)
 				}
@@ -76,9 +76,9 @@ func (lw *innerListWatch) DoWatch(ctx context.Context, f func(*sdcommon.ListWatc
 
 				lwRsp := lw.doParsePluginRspToLwRsp(resp)
 				switch resp.Action {
-				case client.ActionPut:
+				case etcdadpt.ActionPut:
 					lwRsp.Action = sdcommon.ActionPUT
-				case client.ActionDelete:
+				case etcdadpt.ActionDelete:
 					lwRsp.Action = sdcommon.ActionDelete
 				default:
 					log.Warn(fmt.Sprintf("unrecognized action::%s", lwRsp.Action))
@@ -98,7 +98,7 @@ func (lw *innerListWatch) DoWatch(ctx context.Context, f func(*sdcommon.ListWatc
 	return err
 }
 
-func (lw *innerListWatch) doParsePluginRspToLwRsp(pluginRsp *client.PluginResponse) *sdcommon.ListWatchResp {
+func (lw *innerListWatch) doParsePluginRspToLwRsp(pluginRsp *etcdadpt.Response) *sdcommon.ListWatchResp {
 	lwRsp := &sdcommon.ListWatchResp{}
 
 	lwRsp.Revision = pluginRsp.Revision

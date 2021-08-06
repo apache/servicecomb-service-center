@@ -22,17 +22,16 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/go-chassis/cari/pkg/errsvc"
-
 	"github.com/apache/servicecomb-service-center/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd"
-	etcdclient "github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf"
+	"github.com/go-chassis/cari/pkg/errsvc"
+	etcdclient "github.com/little-cui/etcdadpt"
 )
 
 var (
@@ -186,9 +185,10 @@ func (c *SCClientAggregate) GetInstanceByInstanceID(ctx context.Context, domain,
 func GetOrCreateSCClient() *SCClientAggregate {
 	clientOnce.Do(func() {
 		scClient = &SCClientAggregate{}
-		clusters := etcd.Configuration().Clusters
+		cfg := etcd.Configuration()
+		clusters := cfg.Clusters()
 		for name, endpoints := range clusters {
-			if len(name) == 0 || name == etcd.Configuration().ClusterName {
+			if len(name) == 0 || name == cfg.ClusterName {
 				continue
 			}
 			client, err := client.NewSCClient(client.Config{Name: name, Endpoints: endpoints})
@@ -196,7 +196,7 @@ func GetOrCreateSCClient() *SCClientAggregate {
 				log.Error(fmt.Sprintf("new service center[%s]%v client failed", name, endpoints), err)
 				continue
 			}
-			client.Timeout = etcd.Configuration().RequestTimeOut
+			client.Timeout = cfg.RequestTimeOut
 			// TLS
 			if strings.Contains(endpoints[0], "https") {
 				client.TLS, err = getClientTLS()

@@ -18,9 +18,9 @@ package aggregate
 import (
 	"context"
 
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/little-cui/etcdadpt"
 )
 
 // AdaptorsIndexer implements sd.Indexer.
@@ -35,7 +35,7 @@ type AdaptorsIndexer struct {
 // it always searches successfully, no matter how many Adaptors are abnormal.
 // But at the cost of that, AdaptorsIndexer doesn't guarantee the correctness
 // of the search results.
-func (i *AdaptorsIndexer) Search(ctx context.Context, opts ...client.PluginOpOption) (*sd.Response, error) {
+func (i *AdaptorsIndexer) Search(ctx context.Context, opts ...etcdadpt.OpOption) (*sd.Response, error) {
 	var (
 		response sd.Response
 		exists   = make(map[string]struct{})
@@ -82,8 +82,8 @@ type AggregatorIndexer struct {
 }
 
 // Search implements sd.Indexer#Search.
-func (i *AggregatorIndexer) Search(ctx context.Context, opts ...client.PluginOpOption) (resp *sd.Response, err error) {
-	op := client.OpGet(opts...)
+func (i *AggregatorIndexer) Search(ctx context.Context, opts ...etcdadpt.OpOption) (resp *sd.Response, err error) {
+	op := etcdadpt.OpGet(opts...)
 
 	indexer := i.LocalIndexer
 	if op.Global {

@@ -30,8 +30,8 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/value"
 	"github.com/apache/servicecomb-service-center/datasource/sdcommon"
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/go-chassis/foundation/gopool"
 )
 
 type mockCache struct {
@@ -115,7 +115,7 @@ func TestNewKvCacher(t *testing.T) {
 		Cfg:       sd.Configure(),
 		ready:     make(chan struct{}),
 		lw:        lw,
-		goroutine: gopool.New(context.Background()),
+		goroutine: gopool.New(),
 		cache:     &mockCache{},
 	}
 
@@ -137,7 +137,7 @@ func TestNewKvCacher(t *testing.T) {
 			}),
 		ready:     make(chan struct{}),
 		lw:        lw,
-		goroutine: gopool.New(context.Background()),
+		goroutine: gopool.New(),
 		cache:     &mockCache{},
 	}
 

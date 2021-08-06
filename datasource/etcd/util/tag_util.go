@@ -22,14 +22,13 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/go-chassis/cari/discovery"
-	"github.com/go-chassis/cari/pkg/errsvc"
-
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/cari/pkg/errsvc"
+	"github.com/little-cui/etcdadpt"
 )
 
 func AddTagIntoETCD(ctx context.Context, domainProject string, serviceID string, dataTags map[string]string) *errsvc.Error {
@@ -39,11 +38,11 @@ func AddTagIntoETCD(ctx context.Context, domainProject string, serviceID string,
 		return discovery.NewError(discovery.ErrInternal, err.Error())
 	}
 
-	resp, err := client.Instance().TxnWithCmp(ctx,
-		[]client.PluginOp{client.OpPut(client.WithStrKey(key), client.WithValue(data))},
-		[]client.CompareOp{client.OpCmp(
-			client.CmpVer(util.StringToBytesWithNoCopy(path.GenerateServiceKey(domainProject, serviceID))),
-			client.CmpNotEqual, 0)},
+	resp, err := etcdadpt.TxnWithCmp(ctx,
+		[]etcdadpt.OpOptions{etcdadpt.OpPut(etcdadpt.WithStrKey(key), etcdadpt.WithValue(data))},
+		[]etcdadpt.CmpOptions{etcdadpt.OpCmp(
+			etcdadpt.CmpVer(util.StringToBytesWithNoCopy(path.GenerateServiceKey(domainProject, serviceID))),
+			etcdadpt.CmpNotEqual, 0)},
 		nil)
 	if err != nil {
 		return discovery.NewError(discovery.ErrUnavailableBackend, err.Error())
@@ -56,7 +55,7 @@ func AddTagIntoETCD(ctx context.Context, domainProject string, serviceID string,
 
 func GetTagsUtils(ctx context.Context, domainProject, serviceID string) (tags map[string]string, err error) {
 	key := path.GenerateServiceTagKey(domainProject, serviceID)
-	opts := append(FromContext(ctx), client.WithStrKey(key))
+	opts := append(FromContext(ctx), etcdadpt.WithStrKey(key))
 	resp, err := kv.Store().ServiceTag().Search(ctx, opts...)
 	if err != nil {
 		log.Error(fmt.Sprintf("get service[%s] tags file failed", serviceID), err)

@@ -21,9 +21,9 @@ import (
 	"context"
 	"errors"
 
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/queue"
+	"github.com/go-chassis/foundation/gopool"
 )
 
 type Executor struct {

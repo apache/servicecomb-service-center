@@ -15,55 +15,28 @@
  * limitations under the License.
  */
 
-package client
+package tracing
 
 import (
-	"time"
+	tracesvc "github.com/apache/servicecomb-service-center/server/plugin/tracing"
+	"github.com/little-cui/etcdadpt/middleware/tracing"
 )
 
-const (
-	ActionGet ActionType = iota
-	ActionPut
-	ActionDelete
-)
+type Tracer struct{}
 
-const (
-	OrderByKey SortTarget = iota
-	OrderByCreate
-)
+func (t *Tracer) Begin(operationName string, r *tracing.Request) (span interface{}) {
+	return tracesvc.ClientBegin(operationName, &tracesvc.Request{
+		Ctx:      r.Ctx,
+		Endpoint: r.Endpoint,
+		Method:   r.Options.Action.String(),
+		URL:      "/?" + r.Options.URI(),
+	})
+}
 
-const (
-	SortNone SortOrder = iota
-	SortAscend
-	SortDescend
-)
+func (t *Tracer) End(span interface{}, response *tracing.Response) {
+	tracesvc.ClientEnd(span, response.Code, response.Message)
+}
 
-const (
-	CmpVersion CompareType = iota
-	CmpCreate
-	CmpMod
-	CmpValue
-)
-
-const (
-	CmpEqual CompareResult = iota
-	CmpGreater
-	CmpLess
-	CmpNotEqual
-)
-
-const (
-	ModeBoth CacheMode = iota
-	ModeCache
-	ModeNoCache
-)
-
-const (
-	// grpc does not allow to transport a large body more then 4MB in a request
-	DefaultPageCount = 4096
-	// the timeout dial to etcd
-	DefaultDialTimeout    = 10 * time.Second
-	DefaultRequestTimeout = 30 * time.Second
-
-	DefaultClusterName = "default"
-)
+func New() *Tracer {
+	return &Tracer{}
+}

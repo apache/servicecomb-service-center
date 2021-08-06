@@ -20,7 +20,7 @@ package sd
 import (
 	"context"
 
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
+	"github.com/little-cui/etcdadpt"
 )
 
 // Indexer searches k-v data.
@@ -28,7 +28,7 @@ import (
 // e.g. cache, cache, file, other Indexers...
 type Indexer interface {
 	// Search searches k-v data based on the input options
-	Search(ctx context.Context, opts ...client.PluginOpOption) (*Response, error)
+	Search(ctx context.Context, opts ...etcdadpt.OpOption) (*Response, error)
 	// Creditable judges whether Indexer's search results are creditable
 	// It is recommended to use cache only and not to call the backend
 	// directly, If Indexer is not creditable.

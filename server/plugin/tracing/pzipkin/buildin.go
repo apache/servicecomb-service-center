@@ -45,7 +45,7 @@ func New() plugin.Instance {
 type Zipkin struct {
 }
 
-func (zp *Zipkin) ServerBegin(operationName string, itf tracing.Request) tracing.Span {
+func (zp *Zipkin) ServerBegin(operationName string, itf interface{}) interface{} {
 	var (
 		span opentracing.Span
 		ctx  context.Context
@@ -81,7 +81,7 @@ func (zp *Zipkin) ServerBegin(operationName string, itf tracing.Request) tracing
 	return span
 }
 
-func (zp *Zipkin) ServerEnd(itf tracing.Span, code int, message string) {
+func (zp *Zipkin) ServerEnd(itf interface{}, code int, message string) {
 	span, ok := itf.(opentracing.Span)
 	if !ok {
 		return
@@ -90,13 +90,12 @@ func (zp *Zipkin) ServerEnd(itf tracing.Span, code int, message string) {
 	span.Finish()
 }
 
-func (zp *Zipkin) ClientBegin(operationName string, itf tracing.Request) tracing.Span {
+func (zp *Zipkin) ClientBegin(operationName string, itf interface{}) interface{} {
 	var (
 		span opentracing.Span
 	)
-	switch itf.(type) {
+	switch r := itf.(type) {
 	case *http.Request:
-		r := itf.(*http.Request)
 		ctx := r.Context()
 
 		parentSpan, ok := ctx.Value(tracing.CtxTraceSpan).(opentracing.Span)
@@ -121,8 +120,7 @@ func (zp *Zipkin) ClientBegin(operationName string, itf tracing.Request) tracing
 		); err != nil {
 			log.Error("tracer inject request failed", err)
 		}
-	case *tracing.Operation:
-		r := itf.(*tracing.Operation)
+	case *tracing.Request:
 		ctx := r.Ctx
 
 		parentSpan, ok := ctx.Value(tracing.CtxTraceSpan).(opentracing.Span)
@@ -130,11 +128,11 @@ func (zp *Zipkin) ClientBegin(operationName string, itf tracing.Request) tracing
 			return nil
 		}
 
-		u, _ := url.Parse(r.Endpoint + r.Options.URL())
+		u, _ := url.Parse(r.Endpoint + r.URL)
 
 		span = ZipkinTracer().StartSpan(operationName, opentracing.ChildOf(parentSpan.Context()))
 		ext.SpanKindRPCClient.Set(span)
-		ext.HTTPMethod.Set(span, r.Options.Method())
+		ext.HTTPMethod.Set(span, r.Method)
 		ext.HTTPUrl.Set(span, u.String())
 
 		span.SetTag("protocol", "gRPC")
@@ -164,7 +162,7 @@ func (zp *Zipkin) ClientBegin(operationName string, itf tracing.Request) tracing
 	return span
 }
 
-func (zp *Zipkin) ClientEnd(itf tracing.Span, code int, message string) {
+func (zp *Zipkin) ClientEnd(itf interface{}, code int, message string) {
 	span, ok := itf.(opentracing.Span)
 	if !ok {
 		return

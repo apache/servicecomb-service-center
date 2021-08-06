@@ -22,17 +22,17 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/value"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/little-cui/etcdadpt"
 )
 
 // Indexer implements sd.Indexer.
 // Indexer searches data from etcd server.
 type Indexer struct {
-	Client client.Registry
+	Client etcdadpt.Client
 	Parser value.Parser
 	Root   string
 }
@@ -44,8 +44,8 @@ func (i *Indexer) CheckPrefix(key string) error {
 	return nil
 }
 
-func (i *Indexer) Search(ctx context.Context, opts ...client.PluginOpOption) (r *sd.Response, err error) {
-	op := client.OpGet(opts...)
+func (i *Indexer) Search(ctx context.Context, opts ...etcdadpt.OpOption) (r *sd.Response, err error) {
+	op := etcdadpt.OpGet(opts...)
 	key := util.BytesToStringWithNoCopy(op.Key)
 
 	log.Debug(fmt.Sprintf("search '%s' match special options, request etcd server, opts: %s", key, op))
@@ -88,5 +88,5 @@ func (i *Indexer) Creditable() bool {
 }
 
 func NewEtcdIndexer(root string, p value.Parser) (indexer *Indexer) {
-	return &Indexer{Client: client.Instance(), Parser: p, Root: root}
+	return &Indexer{Client: etcdadpt.Instance(), Parser: p, Root: root}
 }

@@ -26,7 +26,6 @@ import (
 	"syscall"
 
 	"github.com/apache/servicecomb-service-center/pkg/dump"
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rpc"
 	"github.com/apache/servicecomb-service-center/syncer/client"
@@ -41,6 +40,7 @@ import (
 	"github.com/apache/servicecomb-service-center/syncer/servicecenter"
 	"github.com/apache/servicecomb-service-center/syncer/task"
 	"github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/foundation/gopool"
 	ggrpc "google.golang.org/grpc"
 
 	// import plugins

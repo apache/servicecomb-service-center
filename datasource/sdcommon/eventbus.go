@@ -21,8 +21,8 @@ import (
 	"context"
 	"sync"
 
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/go-chassis/foundation/gopool"
 )
 
 type EventBus struct {
