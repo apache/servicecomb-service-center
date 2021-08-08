@@ -18,6 +18,7 @@
 package datasource_test
 
 import (
+	"github.com/little-cui/etcdadpt"
 	"strconv"
 	"testing"
 
@@ -812,7 +813,7 @@ func genLocalDatasource(editable bool) datasource.DataSource {
 	}
 	if t == "etcd" {
 		ds, _ := etcd.NewDataSource(datasource.Options{
-			Kind:              "etcd",
+			Config:            etcdadpt.Config{Kind: "etcd"},
 			SchemaNotEditable: !editable,
 		})
 

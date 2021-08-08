@@ -20,14 +20,14 @@ import (
 	"time"
 
 	"github.com/apache/servicecomb-service-center/datasource/etcd"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/go-chassis/foundation/gopool"
 )
 
 type ConflictChecker struct {
-	Cache              sd.CacheReader
-	ConflictHandleFunc func(origin, conflict *sd.KeyValue)
+	Cache              kvstore.CacheReader
+	ConflictHandleFunc func(origin, conflict *kvstore.KeyValue)
 }
 
 func (c *ConflictChecker) Run(ctx context.Context) {
@@ -51,12 +51,12 @@ func (c *ConflictChecker) Check() {
 		return
 	}
 
-	var arr []*sd.KeyValue
+	var arr []*kvstore.KeyValue
 	for _, item := range caches {
 		item.GetAll(&arr)
 	}
 
-	exists := make(map[string]*sd.KeyValue)
+	exists := make(map[string]*kvstore.KeyValue)
 	for _, v := range arr {
 		key := util.BytesToStringWithNoCopy(v.Key)
 		if kv, ok := exists[key]; ok {
@@ -67,7 +67,7 @@ func (c *ConflictChecker) Check() {
 	}
 }
 
-func NewConflictChecker(cache sd.CacheReader, f func(origin, conflict *sd.KeyValue)) *ConflictChecker {
+func NewConflictChecker(cache kvstore.CacheReader, f func(origin, conflict *kvstore.KeyValue)) *ConflictChecker {
 	checker := &ConflictChecker{Cache: cache, ConflictHandleFunc: f}
 	gopool.Go(checker.Run)
 	return checker

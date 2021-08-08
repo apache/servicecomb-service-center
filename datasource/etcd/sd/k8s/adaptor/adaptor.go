@@ -16,39 +16,39 @@
 package adaptor
 
 import (
-	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
 )
 
-// K8sAdaptor implements sd.Adaptor.
+// K8sAdaptor implements state.State.
 // K8sAdaptor does service pkg with kubernetes as it's cache.
 type K8sAdaptor struct {
-	sd.Cacher
-	sd.Indexer
+	kvstore.Cacher
+	kvstore.Indexer
 }
 
 func (se *K8sAdaptor) Run() {
-	if r, ok := se.Cacher.(sd.Runnable); ok {
+	if r, ok := se.Cacher.(kvstore.Runnable); ok {
 		r.Run()
 	}
 }
 
 func (se *K8sAdaptor) Stop() {
-	if r, ok := se.Cacher.(sd.Runnable); ok {
+	if r, ok := se.Cacher.(kvstore.Runnable); ok {
 		r.Stop()
 	}
 }
 
 func (se *K8sAdaptor) Ready() <-chan struct{} {
-	if r, ok := se.Cacher.(sd.Runnable); ok {
+	if r, ok := se.Cacher.(kvstore.Runnable); ok {
 		return r.Ready()
 	}
 	return closedCh
 }
 
-func NewK8sAdaptor(t sd.Type, cfg *sd.Config) *K8sAdaptor {
-	cache := sd.NewKvCache(t.String(), cfg)
+func NewK8sAdaptor(t kvstore.Type, cfg *kvstore.Options) *K8sAdaptor {
+	cache := kvstore.NewKvCache(t.String(), cfg)
 	return &K8sAdaptor{
-		Indexer: sd.NewCacheIndexer(cache),
+		Indexer: kvstore.NewCacheIndexer(cache),
 		Cacher:  BuildCacher(t, cfg, cache),
 	}
 }

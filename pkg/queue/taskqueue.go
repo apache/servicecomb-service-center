@@ -98,6 +98,6 @@ func NewTaskQueue(size int) *TaskQueue {
 	}
 	return &TaskQueue{
 		taskCh:    make(chan Task, size),
-		goroutine: goutil.New(gopool.Configure().Workers(1)),
+		goroutine: goutil.New(gopool.Configure()),
 	}
 }

@@ -14,15 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package client
+package client_test
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"testing"
 
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/little-cui/etcdadpt"
 	"github.com/little-cui/etcdadpt/buildin"
+	"github.com/stretchr/testify/assert"
 )
 
 type mockRegistry struct {
@@ -39,18 +41,14 @@ func (c *mockRegistry) LeaseRenew(ctx context.Context, leaseID int64) (TTL int64
 
 func TestLeaseTask_Do(t *testing.T) {
 	c := &mockRegistry{}
-	lt := NewLeaseAsyncTask(etcdadpt.OptionsToOp(etcdadpt.WithStrKey("/a"), etcdadpt.WithLease(1)))
+	lt := client.NewLeaseAsyncTask(etcdadpt.OptionsToOp(etcdadpt.WithStrKey("/a"), etcdadpt.WithLease(1)))
 	lt.Client = c
 
-	c.LeaseErr = etcdadpt.ErrLeaseNotFound
+	c.LeaseErr = errors.New("other error")
 	err := lt.Do(context.Background())
-	if err != nil || lt.Err() != nil {
-		t.Fatalf("TestLeaseTask_Do failed")
-	}
+	assert.NoError(t, err)
 
-	c.LeaseErr = fmt.Errorf("network error")
+	c.LeaseErr = etcdadpt.ErrLeaseNotFound
 	err = lt.Do(context.Background())
-	if err == nil || lt.Err() == nil {
-		t.Fatalf("TestLeaseTask_Do failed")
-	}
+	assert.Error(t, err)
 }

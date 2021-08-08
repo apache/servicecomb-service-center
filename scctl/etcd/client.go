@@ -23,7 +23,7 @@ import (
 
 	"github.com/coreos/etcd/clientv3"
 
-	"github.com/apache/servicecomb-service-center/pkg/tlsutil"
+	"github.com/go-chassis/foundation/tlsutil"
 )
 
 func NewEtcdClient(cfg Config) (*clientv3.Client, error) {

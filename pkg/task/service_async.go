@@ -216,7 +216,7 @@ func (lat *AsyncTaskService) renew() {
 
 func NewTaskService() Service {
 	lat := &AsyncTaskService{
-		goroutine: goutil.New(gopool.Configure().Workers(1)),
+		goroutine: goutil.New(gopool.Configure()),
 		ready:     make(chan struct{}),
 		isClose:   true,
 	}

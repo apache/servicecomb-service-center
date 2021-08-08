@@ -26,10 +26,10 @@ import (
 	"sync"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/tlsutil"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/plugin/security/cipher"
 	"github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf"
+	"github.com/go-chassis/foundation/tlsutil"
 )
 
 var (

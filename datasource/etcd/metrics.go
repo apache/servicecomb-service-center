@@ -22,8 +22,8 @@ import (
 	"fmt"
 
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/go-chassis/cari/discovery"
 	"github.com/little-cui/etcdadpt"
@@ -41,7 +41,7 @@ func (m *MetricsManager) Report(ctx context.Context, r datasource.MetricsReporte
 
 func reportDomains(ctx context.Context, r datasource.MetricsReporter) {
 	key := path.GenerateDomainKey("")
-	domainsResp, err := kv.Store().Domain().Search(ctx,
+	domainsResp, err := sd.Domain().Search(ctx,
 		etcdadpt.WithCacheOnly(), etcdadpt.WithCountOnly(),
 		etcdadpt.WithStrKey(key),
 		etcdadpt.WithPrefix())
@@ -54,7 +54,7 @@ func reportDomains(ctx context.Context, r datasource.MetricsReporter) {
 
 func reportSchemas(ctx context.Context, r datasource.MetricsReporter) {
 	key := path.GetServiceSchemaSummaryRootKey("")
-	schemaKeysResp, err := kv.Store().SchemaSummary().Search(ctx,
+	schemaKeysResp, err := sd.SchemaSummary().Search(ctx,
 		etcdadpt.WithCacheOnly(), etcdadpt.WithKeyOnly(),
 		etcdadpt.WithStrKey(key),
 		etcdadpt.WithPrefix())
@@ -75,7 +75,7 @@ func reportSchemas(ctx context.Context, r datasource.MetricsReporter) {
 
 func reportServices(ctx context.Context, r datasource.MetricsReporter) {
 	key := path.GetServiceRootKey("")
-	servicesResp, err := kv.Store().Service().Search(ctx,
+	servicesResp, err := sd.Service().Search(ctx,
 		etcdadpt.WithCacheOnly(),
 		etcdadpt.WithStrKey(key),
 		etcdadpt.WithPrefix())
@@ -104,7 +104,7 @@ func reportServices(ctx context.Context, r datasource.MetricsReporter) {
 }
 
 func reportInstances(ctx context.Context, r datasource.MetricsReporter, domainProject string, service *discovery.MicroService) {
-	instancesResp, err := kv.Store().Instance().Search(ctx,
+	instancesResp, err := sd.Instance().Search(ctx,
 		etcdadpt.WithCacheOnly(), etcdadpt.WithCountOnly(),
 		etcdadpt.WithStrKey(path.GenerateInstanceKey(domainProject, service.ServiceId, "")),
 		etcdadpt.WithPrefix())

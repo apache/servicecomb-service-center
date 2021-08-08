@@ -20,62 +20,42 @@ import (
 	"crypto/tls"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	_ "github.com/apache/servicecomb-service-center/server/plugin/security/cipher/buildin"
 
 	"github.com/apache/servicecomb-service-center/server/config"
-	_ "github.com/apache/servicecomb-service-center/server/plugin/security/cipher/buildin"
 	"github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf"
 	"github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf/buildin"
+	"github.com/stretchr/testify/assert"
 )
 
 func init() {
 	config.Init()
 	_ = tlsconf.Init(tlsconf.Options{
-		Dir:        "../../../../../examples/service_center/ssl/",
-		VerifyPeer: true,
+		Dir:              "../../../../../examples/service_center/ssl/",
+		MinVersion:       "TLSv1.2",
+		ClientMinVersion: "TLSv1.2",
+		VerifyPeer:       true,
 	})
 }
 
 func TestGetServerTLSConfig(t *testing.T) {
 	serverTLSConfig, err := buildin.GetServerTLSConfig()
-	if err != nil {
-		t.Fatalf("GetServerTLSConfig failed %v", err)
-	}
-	if len(serverTLSConfig.Certificates) == 0 {
-		t.Fatalf("GetServerTLSConfig failed")
-	}
-	if serverTLSConfig.ClientCAs == nil {
-		t.Fatalf("GetServerTLSConfig failed")
-	}
-	if len(serverTLSConfig.CipherSuites) != 0 {
-		t.Fatalf("GetServerTLSConfig failed")
-	}
-	if serverTLSConfig.MinVersion != tls.VersionTLS12 {
-		t.Fatalf("GetServerTLSConfig failed")
-	}
-	assert.Equal(t, int(serverTLSConfig.MaxVersion), int(tls.VersionTLS13))
+	assert.NoError(t, err)
+	assert.NotEmpty(t, serverTLSConfig.Certificates)
+	assert.NotNil(t, serverTLSConfig.ClientCAs)
+	assert.Empty(t, serverTLSConfig.CipherSuites)
+	assert.True(t, tls.VersionTLS12 == serverTLSConfig.MinVersion)
+	assert.Equal(t, int(serverTLSConfig.MaxVersion), tls.VersionTLS13)
 	assert.Equal(t, serverTLSConfig.ClientAuth, tls.RequireAndVerifyClientCert)
 }
 
 func TestGetClientTLSConfig(t *testing.T) {
 	clientTLSConfig, err := buildin.GetClientTLSConfig()
-	if err != nil {
-		t.Fatalf("GetClientTLSConfig failed")
-	}
-	if len(clientTLSConfig.Certificates) == 0 {
-		t.Fatalf("GetClientTLSConfig failed")
-	}
-	if clientTLSConfig.RootCAs == nil {
-		t.Fatalf("GetClientTLSConfig failed")
-	}
-	if len(clientTLSConfig.CipherSuites) != 0 {
-		t.Fatalf("GetClientTLSConfig failed")
-	}
-	if clientTLSConfig.MinVersion != tls.VersionTLS12 {
-		t.Fatalf("GetClientTLSConfig failed")
-	}
+	assert.NoError(t, err)
+	assert.NotEmpty(t, clientTLSConfig.Certificates)
+	assert.NotNil(t, clientTLSConfig.RootCAs)
+	assert.Empty(t, clientTLSConfig.CipherSuites)
+	assert.True(t, tls.VersionTLS12 == clientTLSConfig.MinVersion)
 	assert.Equal(t, int(clientTLSConfig.MaxVersion), tls.VersionTLS13)
-	if clientTLSConfig.InsecureSkipVerify != true {
-		t.Fatalf("GetClientTLSConfig failed")
-	}
+	assert.True(t, clientTLSConfig.InsecureSkipVerify)
 }

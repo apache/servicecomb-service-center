@@ -57,13 +57,14 @@ func (lat *LeaseTask) Do(ctx context.Context) (err error) {
 			lat.LeaseID,
 			recv.Format(leaseProfTimeFmt),
 			start.Format(leaseProfTimeFmt)), err)
-		if err != etcdadpt.ErrLeaseNotFound {
-			// it means lease not found if err is not the InternalError type
+		if err == etcdadpt.ErrLeaseNotFound {
+			// it means instance is deleted
 			lat.err = err
 			return
 		}
 	}
 
+	// DON'T care about other errors, so client should send heartbeat in next interval
 	lat.err, err = nil, nil
 
 	cost := time.Since(recv)

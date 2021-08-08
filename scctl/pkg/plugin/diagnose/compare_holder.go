@@ -18,6 +18,7 @@ package diagnose
 import (
 	"context"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/state/parser"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/value"
 	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/coreos/etcd/mvcc/mvccpb"
@@ -31,7 +32,7 @@ type CompareHolder interface {
 
 type DataStore struct {
 	Data       []*mvccpb.KeyValue
-	DataParser value.Parser
+	DataParser parser.Parser
 }
 
 func (d *DataStore) ForEach(f func(i int, v *dump.KV) bool) {

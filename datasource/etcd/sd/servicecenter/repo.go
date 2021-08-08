@@ -16,20 +16,21 @@
 package servicecenter
 
 import (
-	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/state"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
 )
 
 func init() {
-	sd.Install("servicecenter", NewRepository)
+	state.Install("servicecenter", NewRepository)
 }
 
 type Repository struct {
 }
 
-func (r *Repository) New(t sd.Type, cfg *sd.Config) sd.Adaptor {
+func (r *Repository) New(t kvstore.Type, cfg *kvstore.Options) state.State {
 	return NewServiceCenterAdaptor(t, cfg)
 }
 
-func NewRepository(opts sd.Options) sd.AdaptorRepository {
+func NewRepository(opts state.Config) state.Repository {
 	return &Repository{}
 }

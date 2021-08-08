@@ -20,14 +20,12 @@ package etcd
 import (
 	"time"
 
-	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/little-cui/etcdadpt"
 )
 
 func Configuration() etcdadpt.Config {
 	cfg := etcdadpt.Config{}
-	cfg.Logger = log.Logger
 
 	// cluster configs
 	cfg.ClusterName = config.GetString("registry.etcd.cluster.name", etcdadpt.DefaultClusterName, config.WithStandby("manager_name"))

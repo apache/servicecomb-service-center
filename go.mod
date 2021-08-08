@@ -16,7 +16,7 @@ require (
 	github.com/elithrar/simple-scrypt v1.3.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-chassis/cari v0.5.1-0.20210723060050-4a4f119d64ff
-	github.com/go-chassis/foundation v0.3.1-0.20210806081520-3bd92d1ef787
+	github.com/go-chassis/foundation v0.3.1-0.20210811025651-7f4d2b2b906c
 	github.com/go-chassis/go-archaius v1.5.1
 	github.com/go-chassis/go-chassis/v2 v2.2.1-0.20210630123055-6b4c31c5ad02
 	github.com/go-chassis/kie-client v0.1.1-0.20210731071824-96f1f1e47e71
@@ -29,7 +29,7 @@ require (
 	github.com/jinzhu/copier v0.3.0
 	github.com/karlseguin/ccache v2.0.3-0.20170217060820-3ba9789cfd2c+incompatible
 	github.com/labstack/echo/v4 v4.1.18-0.20201218141459-936c48a17e97
-	github.com/little-cui/etcdadpt v0.0.0-20210808131820-2cca0210dcfb
+	github.com/little-cui/etcdadpt v0.1.0
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/onsi/ginkgo v1.15.0
 	github.com/onsi/gomega v1.10.5

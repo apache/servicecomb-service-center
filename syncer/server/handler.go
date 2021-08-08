@@ -25,11 +25,11 @@ import (
 
 	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/tlsutil"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/alarm"
 	"github.com/apache/servicecomb-service-center/syncer/client"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
+	"github.com/go-chassis/foundation/tlsutil"
 )
 
 const (

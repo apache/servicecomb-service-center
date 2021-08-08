@@ -22,19 +22,19 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/little-cui/etcdadpt"
 )
 
-func GetAllDomainRawData(ctx context.Context) ([]*sd.KeyValue, error) {
+func GetAllDomainRawData(ctx context.Context) ([]*kvstore.KeyValue, error) {
 	opts := append(FromContext(ctx),
 		etcdadpt.WithStrKey(path.GenerateDomainKey("")),
 		etcdadpt.WithPrefix())
-	rsp, err := kv.Store().Domain().Search(ctx, opts...)
+	rsp, err := sd.Domain().Search(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +77,7 @@ func DomainExist(ctx context.Context, domain string) (bool, error) {
 	opts := append(FromContext(ctx),
 		etcdadpt.WithStrKey(path.GenerateDomainKey(domain)),
 		etcdadpt.WithCountOnly())
-	rsp, err := kv.Store().Domain().Search(ctx, opts...)
+	rsp, err := sd.Domain().Search(ctx, opts...)
 	if err != nil {
 		return false, err
 	}
@@ -96,7 +96,7 @@ func ProjectExist(ctx context.Context, domain, project string) (bool, error) {
 	opts := append(FromContext(ctx),
 		etcdadpt.WithStrKey(path.GenerateProjectKey(domain, project)),
 		etcdadpt.WithCountOnly())
-	rsp, err := kv.Store().Project().Search(ctx, opts...)
+	rsp, err := sd.Project().Search(ctx, opts...)
 	if err != nil {
 		return false, err
 	}

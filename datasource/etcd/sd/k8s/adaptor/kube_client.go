@@ -23,16 +23,15 @@ import (
 	"time"
 
 	"github.com/apache/servicecomb-service-center/pkg/goutil"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/alarm"
 	pb "github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/foundation/gopool"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
-
-	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/alarm"
-	"github.com/go-chassis/foundation/gopool"
 )
 
 var (

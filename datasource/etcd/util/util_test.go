@@ -21,7 +21,6 @@ package util_test
 import (
 	"context"
 	"errors"
-	"github.com/little-cui/etcdadpt"
 	"testing"
 
 	_ "github.com/apache/servicecomb-service-center/test"
@@ -30,6 +29,7 @@ import (
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	proto "github.com/go-chassis/cari/discovery"
+	"github.com/little-cui/etcdadpt"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -17,6 +17,7 @@
 package value
 
 import (
+	"github.com/apache/servicecomb-service-center/datasource/etcd/state/parser"
 	"testing"
 
 	"github.com/go-chassis/cari/discovery"
@@ -24,11 +25,11 @@ import (
 )
 
 func TestParseInnerValueTypeFunc(t *testing.T) {
-	r, err := BytesParser.Unmarshal(nil)
+	r, err := parser.BytesParser.Unmarshal(nil)
 	if err == nil {
 		t.Fatalf("BytesParser.Unmarshal failed")
 	}
-	r, err = BytesParser.Unmarshal([]byte("a"))
+	r, err = parser.BytesParser.Unmarshal([]byte("a"))
 	if err != nil {
 		t.Fatalf("BytesParser.Unmarshal failed, %s", err.Error())
 	}
@@ -36,11 +37,11 @@ func TestParseInnerValueTypeFunc(t *testing.T) {
 		t.Fatalf("BytesParser.Unmarshal failed, %s", v)
 	}
 
-	r, err = StringParser.Unmarshal(nil)
+	r, err = parser.StringParser.Unmarshal(nil)
 	if err != nil {
 		t.Fatalf("StringParser.Unmarshal failed")
 	}
-	r, err = StringParser.Unmarshal([]byte("abc"))
+	r, err = parser.StringParser.Unmarshal([]byte("abc"))
 	if err != nil {
 		t.Fatalf("StringParser.Unmarshal failed, %s", err.Error())
 	}
@@ -48,11 +49,11 @@ func TestParseInnerValueTypeFunc(t *testing.T) {
 		t.Fatalf("StringParser.Unmarshal failed, %s", v)
 	}
 
-	r, err = MapParser.Unmarshal(nil)
+	r, err = parser.MapParser.Unmarshal(nil)
 	if err == nil {
 		t.Fatalf("MapParser.Unmarshal failed")
 	}
-	r, err = MapParser.Unmarshal([]byte(`{"a": "abc"}`))
+	r, err = parser.MapParser.Unmarshal([]byte(`{"a": "abc"}`))
 	if err != nil {
 		t.Fatalf("MapParser.Unmarshal failed, %s", err.Error())
 	}
@@ -60,17 +61,17 @@ func TestParseInnerValueTypeFunc(t *testing.T) {
 		t.Fatalf("MapParser.Unmarshal failed, %s", v)
 	}
 
-	r, err = MapParser.Unmarshal([]byte(`xxx`))
+	r, err = parser.MapParser.Unmarshal([]byte(`xxx`))
 	if err == nil {
 		t.Fatalf("MapParser.Unmarshal failed")
 	}
 
 	var m interface{} = new(discovery.MicroService)
-	err = JSONUnmarshal(nil, nil)
+	err = parser.JSONUnmarshal(nil, nil)
 	if err == nil {
 		t.Fatalf("JSONUnmarshal failed")
 	}
-	err = JSONUnmarshal([]byte(`{"serviceName": "abc"}`), &m)
+	err = parser.JSONUnmarshal([]byte(`{"serviceName": "abc"}`), &m)
 	if err != nil {
 		t.Fatalf("MapParser.Unmarshal failed, %v", err)
 	}

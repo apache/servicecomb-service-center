@@ -19,16 +19,15 @@ import (
 	"reflect"
 	"strconv"
 
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	pb "github.com/go-chassis/cari/discovery"
 	v1 "k8s.io/api/core/v1"
-
-	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
-	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
 type InstanceCacher struct {
-	*sd.CommonCacher
+	*kvstore.CommonCacher
 }
 
 // onServiceEvent is the method to refresh service cache
@@ -50,11 +49,11 @@ func (c *InstanceCacher) onServiceEvent(evt K8sEvent) {
 	}
 }
 
-func (c *InstanceCacher) getInstances(domainProject, serviceID string) (m map[string]*sd.KeyValue) {
-	var arr []*sd.KeyValue
+func (c *InstanceCacher) getInstances(domainProject, serviceID string) (m map[string]*kvstore.KeyValue) {
+	var arr []*kvstore.KeyValue
 	key := path.GenerateInstanceKey(domainProject, serviceID, "")
 	if l := c.Cache().GetPrefix(key, &arr); l > 0 {
-		m = make(map[string]*sd.KeyValue, l)
+		m = make(map[string]*kvstore.KeyValue, l)
 		for _, kv := range arr {
 			m[util.BytesToStringWithNoCopy(kv.Key)] = kv
 		}
@@ -63,7 +62,7 @@ func (c *InstanceCacher) getInstances(domainProject, serviceID string) (m map[st
 }
 
 func (c *InstanceCacher) deleteInstances(domainProject, serviceID string) {
-	var kvs []*sd.KeyValue
+	var kvs []*kvstore.KeyValue
 	c.Cache().GetPrefix(path.GenerateInstanceKey(domainProject, serviceID, ""), &kvs)
 	for _, kv := range kvs {
 		key := util.BytesToStringWithNoCopy(kv.Key)
@@ -83,7 +82,7 @@ func (c *InstanceCacher) onEndpointsEvent(evt K8sEvent) {
 	serviceID := generateServiceID(domainProject, svc)
 
 	oldKvs := c.getInstances(domainProject, serviceID)
-	newKvs := make(map[string]*sd.KeyValue)
+	newKvs := make(map[string]*kvstore.KeyValue)
 	for _, ss := range ep.Subsets {
 		for _, ea := range ss.Addresses {
 			pod := Kubernetes().GetPodByIP(ea.IP)
@@ -142,7 +141,7 @@ func (c *InstanceCacher) onEndpointsEvent(evt K8sEvent) {
 	}
 }
 
-func NewInstanceCacher(c *sd.CommonCacher) (i *InstanceCacher) {
+func NewInstanceCacher(c *kvstore.CommonCacher) (i *InstanceCacher) {
 	i = &InstanceCacher{CommonCacher: c}
 	Kubernetes().AppendEventFunc(TypeService, i.onServiceEvent)
 	Kubernetes().AppendEventFunc(TypeEndpoint, i.onEndpointsEvent)

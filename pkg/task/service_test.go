@@ -17,18 +17,17 @@
 package task
 
 import (
-	"testing"
-
 	"context"
 	"errors"
+	"github.com/stretchr/testify/assert"
+	"testing"
 	"time"
 )
 
 type testTask struct {
-	done   context.CancelFunc
-	test   string
-	result bool
-	wait   time.Duration
+	done      context.CancelFunc
+	returnErr string
+	sleep     time.Duration
 }
 
 func (tt *testTask) Key() string {
@@ -36,17 +35,17 @@ func (tt *testTask) Key() string {
 }
 
 func (tt *testTask) Err() error {
-	if tt.result {
+	if len(tt.returnErr) == 0 {
 		return nil
 	}
-	return errors.New(tt.test)
+	return errors.New(tt.returnErr)
 }
 
 func (tt *testTask) Do(ctx context.Context) error {
 	if tt.done != nil {
 		defer tt.done()
 	}
-	wait := tt.wait
+	wait := tt.sleep
 	if wait == 0 {
 		<-time.After(time.Second)
 	} else {
@@ -63,39 +62,32 @@ func TestBaseAsyncTasker_AddTask(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	err := at.Add(ctx, nil)
-	if err == nil {
-		t.Fatalf("add nil task should be error")
-	}
+	assert.Error(t, err)
 	cancel()
 
 	testCtx1, testC1 := context.WithCancel(context.Background())
 	err = at.Add(testCtx1, &testTask{
-		done: testC1,
-		test: "test1",
+		done:      testC1,
+		returnErr: "test1",
 	})
-	if testCtx1.Err() == nil || err == nil || err.Error() != "test1" {
-		t.Fatalf("first time add task should be sync")
-	}
-	lt, _ := at.LatestHandled("test")
-	if lt.Err().Error() != "test1" {
-		t.Fatalf("should get first handled task 'test1'")
-	}
+	assert.Error(t, testCtx1.Err())
+	assert.Equal(t, "test1", err.Error())
 
-	testCtx2, testC2 := context.WithTimeout(context.Background(), 3*time.Second)
+	lt, _ := at.LatestHandled("test")
+	assert.Equal(t, "test1", lt.Err().Error())
+
+	testCtx2, testC2 := context.WithCancel(context.Background())
 	err = at.Add(testCtx2, &testTask{
-		done: testC2,
-		test: "test2",
+		done:      testC2,
+		returnErr: "test2",
 	})
-	if err.Error() != "test1" {
-		t.Fatalf("second time add task should return prev result")
-	}
+	assert.Equal(t, "test1", err.Error())
+
 	<-testCtx2.Done()
 	// pkg/task/executor.go:53
 	<-time.After(time.Millisecond)
 	lt, _ = at.LatestHandled("test")
-	if lt.Err().Error() != "test2" {
-		t.Fatalf("should get second handled task 'test2'")
-	}
+	assert.Equal(t, "test2", lt.Err().Error())
 }
 
 func TestBaseAsyncTasker_Stop(t *testing.T) {
@@ -105,19 +97,15 @@ func TestBaseAsyncTasker_Stop(t *testing.T) {
 
 	_, cancel := context.WithCancel(context.Background())
 	err := at.Add(context.Background(), &testTask{
-		done:   cancel,
-		test:   "test stop",
-		result: true,
+		done: cancel,
 	})
 	if err != nil {
 		t.Fatalf("add task should be ok")
 	}
 	_, cancel = context.WithCancel(context.Background())
 	err = at.Add(context.Background(), &testTask{
-		done:   cancel,
-		test:   "test stop",
-		wait:   3 * time.Second,
-		result: true,
+		done:  cancel,
+		sleep: 3 * time.Second,
 	})
 	if err != nil {
 		t.Fatalf("add task should be ok")
@@ -125,7 +113,7 @@ func TestBaseAsyncTasker_Stop(t *testing.T) {
 	<-time.After(time.Second)
 	at.Stop()
 
-	err = at.Add(context.Background(), &testTask{result: true})
+	err = at.Add(context.Background(), &testTask{})
 	if err != nil {
 		t.Fatalf("add task should be ok when Tasker is stopped")
 	}

@@ -24,9 +24,9 @@ import (
 	"strings"
 
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/config"
@@ -40,7 +40,7 @@ import (
 */
 func GetServiceWithRev(ctx context.Context, domain string, id string, rev int64) (*pb.MicroService, error) {
 	key := path.GenerateServiceKey(domain, id)
-	serviceResp, err := kv.Store().Service().Search(ctx,
+	serviceResp, err := sd.Service().Search(ctx,
 		etcdadpt.WithStrKey(key),
 		etcdadpt.WithRev(rev))
 	if err != nil {
@@ -55,7 +55,7 @@ func GetServiceWithRev(ctx context.Context, domain string, id string, rev int64)
 func GetService(ctx context.Context, domainProject string, serviceID string) (*pb.MicroService, error) {
 	key := path.GenerateServiceKey(domainProject, serviceID)
 	opts := append(FromContext(ctx), etcdadpt.WithStrKey(key))
-	serviceResp, err := kv.Store().Service().Search(ctx, opts...)
+	serviceResp, err := sd.Service().Search(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -65,12 +65,12 @@ func GetService(ctx context.Context, domainProject string, serviceID string) (*p
 	return serviceResp.Kvs[0].Value.(*pb.MicroService), nil
 }
 
-func getServicesRawData(ctx context.Context, domainProject string) ([]*sd.KeyValue, error) {
+func getServicesRawData(ctx context.Context, domainProject string) ([]*kvstore.KeyValue, error) {
 	key := path.GenerateServiceKey(domainProject, "")
 	opts := append(FromContext(ctx),
 		etcdadpt.WithStrKey(key),
 		etcdadpt.WithPrefix())
-	resp, err := kv.Store().Service().Search(ctx, opts...)
+	resp, err := sd.Service().Search(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +84,7 @@ func GetAllServicesAcrossDomainProject(ctx context.Context) (map[string][]*pb.Mi
 	opts := append(FromContext(ctx),
 		etcdadpt.WithStrKey(key),
 		etcdadpt.WithPrefix())
-	serviceResp, err := kv.Store().Service().Search(ctx, opts...)
+	serviceResp, err := sd.Service().Search(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +139,7 @@ func GetServiceID(ctx context.Context, key *pb.MicroServiceKey) (serviceID strin
 
 func searchServiceID(ctx context.Context, key *pb.MicroServiceKey) (string, error) {
 	opts := append(FromContext(ctx), etcdadpt.WithStrKey(path.GenerateServiceIndexKey(key)))
-	resp, err := kv.Store().ServiceIndex().Search(ctx, opts...)
+	resp, err := sd.ServiceIndex().Search(ctx, opts...)
 	if err != nil {
 		return "", err
 	}
@@ -151,7 +151,7 @@ func searchServiceID(ctx context.Context, key *pb.MicroServiceKey) (string, erro
 
 func searchServiceIDFromAlias(ctx context.Context, key *pb.MicroServiceKey) (string, error) {
 	opts := append(FromContext(ctx), etcdadpt.WithStrKey(path.GenerateServiceAliasKey(key)))
-	resp, err := kv.Store().ServiceAlias().Search(ctx, opts...)
+	resp, err := sd.ServiceAlias().Search(ctx, opts...)
 	if err != nil {
 		return "", err
 	}
@@ -161,19 +161,19 @@ func searchServiceIDFromAlias(ctx context.Context, key *pb.MicroServiceKey) (str
 	return resp.Kvs[0].Value.(string), nil
 }
 
-func GetServiceAllVersions(ctx context.Context, key *pb.MicroServiceKey, alias bool) (*sd.Response, error) {
+func GetServiceAllVersions(ctx context.Context, key *pb.MicroServiceKey, alias bool) (*kvstore.Response, error) {
 	copy := *key
 	copy.Version = ""
 	var (
 		prefix  string
-		indexer sd.Indexer
+		indexer kvstore.Indexer
 	)
 	if alias {
 		prefix = path.GenerateServiceAliasKey(&copy)
-		indexer = kv.Store().ServiceAlias()
+		indexer = sd.ServiceAlias()
 	} else {
 		prefix = path.GenerateServiceIndexKey(&copy)
-		indexer = kv.Store().ServiceIndex()
+		indexer = sd.ServiceIndex()
 	}
 	opts := append(FromContext(ctx),
 		etcdadpt.WithStrKey(prefix),
@@ -223,7 +223,7 @@ func ServiceExist(ctx context.Context, domainProject string, serviceID string) b
 	opts := append(FromContext(ctx),
 		etcdadpt.WithStrKey(path.GenerateServiceKey(domainProject, serviceID)),
 		etcdadpt.WithCountOnly())
-	resp, err := kv.Store().Service().Search(ctx, opts...)
+	resp, err := sd.Service().Search(ctx, opts...)
 	if err != nil || resp.Count == 0 {
 		return false
 	}
@@ -265,7 +265,7 @@ func GetOneDomainProjectServiceCount(ctx context.Context, domainProject string) 
 		etcdadpt.WithStrKey(key),
 		etcdadpt.WithCountOnly(),
 		etcdadpt.WithPrefix())
-	resp, err := kv.Store().Service().Search(ctx, opts...)
+	resp, err := sd.Service().Search(ctx, opts...)
 	if err != nil {
 		return 0, err
 	}
@@ -278,7 +278,7 @@ func GetOneDomainProjectInstanceCount(ctx context.Context, domainProject string)
 		etcdadpt.WithStrKey(key),
 		etcdadpt.WithCountOnly(),
 		etcdadpt.WithPrefix())
-	resp, err := kv.Store().Instance().Search(ctx, opts...)
+	resp, err := sd.Instance().Search(ctx, opts...)
 	if err != nil {
 		return 0, err
 	}
@@ -313,7 +313,7 @@ func GetGlobalServiceIDs(ctx context.Context) ([]string, error) {
 		opts := append(FromContext(ctx),
 			etcdadpt.WithStrKey(key),
 			etcdadpt.WithPrefix())
-		resp, err := kv.Store().ServiceIndex().Search(ctx, opts...)
+		resp, err := sd.ServiceIndex().Search(ctx, opts...)
 		if err != nil {
 			return nil, err
 		}
@@ -337,7 +337,7 @@ func GetGlobalServiceCount(ctx context.Context) (int64, error) {
 			etcdadpt.WithStrKey(key),
 			etcdadpt.WithCountOnly(),
 			etcdadpt.WithPrefix())
-		resp, err := kv.Store().ServiceIndex().Search(ctx, opts...)
+		resp, err := sd.ServiceIndex().Search(ctx, opts...)
 		if err != nil {
 			return 0, err
 		}

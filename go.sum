@@ -246,6 +246,8 @@ github.com/go-chassis/foundation v0.3.1-0.20210513015331-b54416b66bcd h1:K1XdDbs
 github.com/go-chassis/foundation v0.3.1-0.20210513015331-b54416b66bcd/go.mod h1:2PjwqpVwYEVaAldl5A58a08viH8p27pNeYaiE3ZxOBA=
 github.com/go-chassis/foundation v0.3.1-0.20210806081520-3bd92d1ef787 h1:XWbUjex+ge+rnmSeNumU+oRewcscXWLvcfGNFEtlK0o=
 github.com/go-chassis/foundation v0.3.1-0.20210806081520-3bd92d1ef787/go.mod h1:6NsIUaHghTFRGfCBcZN011zl196F6OR5QvD9N+P4oWU=
+github.com/go-chassis/foundation v0.3.1-0.20210811025651-7f4d2b2b906c h1:6ooUyysnayGgoJHV++NLEcnnnXzsw3ud4VydjISGBqI=
+github.com/go-chassis/foundation v0.3.1-0.20210811025651-7f4d2b2b906c/go.mod h1:6NsIUaHghTFRGfCBcZN011zl196F6OR5QvD9N+P4oWU=
 github.com/go-chassis/go-archaius v1.5.1 h1:1FrNyzzmD6o6BIjPF8uQ4Cc+u7qYIgQTpDk8uopBqfo=
 github.com/go-chassis/go-archaius v1.5.1/go.mod h1:QPwvvtBxvwiC48rmydoAqxopqOr93RCQ6syWsIkXPXQ=
 github.com/go-chassis/go-chassis/v2 v2.2.1-0.20210630123055-6b4c31c5ad02 h1:biwxeKtaF7Bb9A25YsC6sUCJsYWPEy7E13EnCD87RSo=
@@ -573,6 +575,14 @@ github.com/little-cui/etcdadpt v0.0.0-20210808130137-9383ecf91703 h1:rq23vwJqcaV
 github.com/little-cui/etcdadpt v0.0.0-20210808130137-9383ecf91703/go.mod h1:gxgrmwRiKs5w5qKEt2d3QOpdrHACnBORzreniLoH0S0=
 github.com/little-cui/etcdadpt v0.0.0-20210808131820-2cca0210dcfb h1:EFzdV32KFS2cNW5Mtgr60nNmw97sg7oMeRwrS8GXNFA=
 github.com/little-cui/etcdadpt v0.0.0-20210808131820-2cca0210dcfb/go.mod h1:gxgrmwRiKs5w5qKEt2d3QOpdrHACnBORzreniLoH0S0=
+github.com/little-cui/etcdadpt v0.0.0-20210810032727-8a15a83c8bd1 h1:QG0lf9G+qzP7ehQxW92ZVqw3GMiydSRyMIBB/VNwkvU=
+github.com/little-cui/etcdadpt v0.0.0-20210810032727-8a15a83c8bd1/go.mod h1:gxgrmwRiKs5w5qKEt2d3QOpdrHACnBORzreniLoH0S0=
+github.com/little-cui/etcdadpt v0.0.0-20210810065605-9de459911133 h1:K32vvnjyZM/6K0gL0RkkzjBOyzJvW8l+eam6Y35CNWw=
+github.com/little-cui/etcdadpt v0.0.0-20210810065605-9de459911133/go.mod h1:gxgrmwRiKs5w5qKEt2d3QOpdrHACnBORzreniLoH0S0=
+github.com/little-cui/etcdadpt v0.0.0-20210810075513-c1b3b553bd16 h1:81fTtq/xBcMqlBtdIc4oy9kX2OdJwjt8dax3rLGg5cI=
+github.com/little-cui/etcdadpt v0.0.0-20210810075513-c1b3b553bd16/go.mod h1:gxgrmwRiKs5w5qKEt2d3QOpdrHACnBORzreniLoH0S0=
+github.com/little-cui/etcdadpt v0.1.0 h1:yfVTl04zUE2SFN+3xbBRnFgmXOeIxAqc10IDBwO20FY=
+github.com/little-cui/etcdadpt v0.1.0/go.mod h1:gxgrmwRiKs5w5qKEt2d3QOpdrHACnBORzreniLoH0S0=
 github.com/magiconair/properties v1.8.1 h1:ZC2Vc7/ZFkGmsVC9KvOjumD+G5lXy2RtTKyzRKO2BQ4=
 github.com/magiconair/properties v1.8.1/go.mod h1:PppfXfuXeibc/6YijjN8zIbojt8czPbwD3XqdrwzmxQ=
 github.com/mailru/easyjson v0.0.0-20160728113105-d5b7844b561a/go.mod h1:C1wdFJiN94OJF2b5HbByQZoLdCWB1Yqtg26g4irojpc=

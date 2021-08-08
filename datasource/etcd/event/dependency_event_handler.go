@@ -24,10 +24,10 @@ import (
 	"time"
 
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/mux"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/queue"
@@ -36,6 +36,7 @@ import (
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/foundation/backoff"
 	"github.com/go-chassis/foundation/gopool"
+	"github.com/go-chassis/foundation/stringutil"
 	"github.com/go-chassis/foundation/timeutil"
 	"github.com/little-cui/etcdadpt"
 )
@@ -49,11 +50,11 @@ type DependencyEventHandler struct {
 	signals *queue.UniQueue
 }
 
-func (h *DependencyEventHandler) Type() sd.Type {
-	return kv.DependencyQueue
+func (h *DependencyEventHandler) Type() kvstore.Type {
+	return sd.TypeDependencyQueue
 }
 
-func (h *DependencyEventHandler) OnEvent(evt sd.KvEvent) {
+func (h *DependencyEventHandler) OnEvent(evt kvstore.Event) {
 	action := evt.Type
 	if action != pb.EVT_CREATE && action != pb.EVT_UPDATE && action != pb.EVT_INIT {
 		return
@@ -128,11 +129,11 @@ func (h *DependencyEventHandler) eventLoop() {
 
 type DependencyEventHandlerResource struct {
 	dep           *pb.ConsumerDependency
-	kv            *sd.KeyValue
+	kv            *kvstore.KeyValue
 	domainProject string
 }
 
-func NewDependencyEventHandlerResource(dep *pb.ConsumerDependency, kv *sd.KeyValue, domainProject string) *DependencyEventHandlerResource {
+func NewDependencyEventHandlerResource(dep *pb.ConsumerDependency, kv *kvstore.KeyValue, domainProject string) *DependencyEventHandlerResource {
 	return &DependencyEventHandlerResource{
 		dep,
 		kv,
@@ -145,7 +146,7 @@ func (h *DependencyEventHandler) Handle() error {
 	defer testMux.Unlock()
 
 	key := path.GetServiceDependencyQueueRootKey("")
-	resp, err := kv.Store().DependencyQueue().Search(context.Background(), etcdadpt.WithNoCache(),
+	resp, err := sd.DependencyQueue().Search(context.Background(), etcdadpt.WithNoCache(),
 		etcdadpt.WithStrKey(key), etcdadpt.WithPrefix(), etcdadpt.WithAscendOrder(), etcdadpt.WithOrderByCreate())
 	if err != nil {
 		return err
@@ -209,9 +210,9 @@ func (h *DependencyEventHandler) dependencyRuleHandle(res interface{}) error {
 	return nil
 }
 
-func (h *DependencyEventHandler) removeKV(ctx context.Context, kv *sd.KeyValue) error {
-	dResp, err := etcdadpt.TxnWithCmp(ctx, []etcdadpt.OpOptions{etcdadpt.OpDel(etcdadpt.WithKey(kv.Key))},
-		[]etcdadpt.CmpOptions{etcdadpt.OpCmp(etcdadpt.CmpVer(kv.Key), etcdadpt.CmpEqual, kv.Version)},
+func (h *DependencyEventHandler) removeKV(ctx context.Context, kv *kvstore.KeyValue) error {
+	dResp, err := etcdadpt.TxnWithCmp(ctx, etcdadpt.Ops(etcdadpt.OpDel(etcdadpt.WithKey(kv.Key))),
+		etcdadpt.If(etcdadpt.EqualVer(stringutil.Bytes2str(kv.Key), kv.Version)),
 		nil)
 	if err != nil {
 		return fmt.Errorf("can not remove the dependency %s request, %s", util.BytesToStringWithNoCopy(kv.Key), err.Error())

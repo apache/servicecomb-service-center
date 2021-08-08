@@ -21,7 +21,8 @@ import (
 	"context"
 	"testing"
 
-	. "github.com/apache/servicecomb-service-center/datasource/etcd/util"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/util"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestHeartbeatUtil(t *testing.T) {
@@ -30,17 +31,13 @@ func TestHeartbeatUtil(t *testing.T) {
 			t.Fatalf("TestHeartbeatUtil failed")
 		}
 	}()
-	HeartbeatUtil(context.Background(), "", "", "")
+	util.HeartbeatUtil(context.Background(), "", "", "")
 }
 
 func TestKeepAliveLease(t *testing.T) {
-	_, err := KeepAliveLease(context.Background(), "", "", "", -1)
-	if err == nil {
-		t.Fatalf("KeepAliveLease -1 failed")
-	}
+	_, err := util.KeepAliveLease(context.Background(), "", "", "", -1)
+	assert.Error(t, err)
 
-	_, err = KeepAliveLease(context.Background(), "", "", "", 0)
-	if err == nil {
-		t.Fatalf("KeepAliveLease failed")
-	}
+	_, err = util.KeepAliveLease(context.Background(), "", "", "", 0)
+	assert.Error(t, err)
 }

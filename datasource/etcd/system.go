@@ -21,8 +21,9 @@ import (
 	"context"
 
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/state"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
 	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/etcdsync"
 	"github.com/apache/servicecomb-service-center/pkg/goutil"
@@ -42,19 +43,19 @@ func newSysManager() datasource.SystemManager {
 func (sm *SysManager) DumpCache(ctx context.Context) *dump.Cache {
 	var cache dump.Cache
 	goutil.New(gopool.Configure().WithContext(ctx).Workers(10)).
-		Do(func(_ context.Context) { setValue(kv.Store().Service(), &cache.Microservices) }).
-		Do(func(_ context.Context) { setValue(kv.Store().ServiceIndex(), &cache.Indexes) }).
-		Do(func(_ context.Context) { setValue(kv.Store().ServiceAlias(), &cache.Aliases) }).
-		Do(func(_ context.Context) { setValue(kv.Store().ServiceTag(), &cache.Tags) }).
-		Do(func(_ context.Context) { setValue(kv.Store().DependencyRule(), &cache.DependencyRules) }).
-		Do(func(_ context.Context) { setValue(kv.Store().SchemaSummary(), &cache.Summaries) }).
-		Do(func(_ context.Context) { setValue(kv.Store().Instance(), &cache.Instances) }).
+		Do(func(_ context.Context) { setValue(sd.Service(), &cache.Microservices) }).
+		Do(func(_ context.Context) { setValue(sd.ServiceIndex(), &cache.Indexes) }).
+		Do(func(_ context.Context) { setValue(sd.ServiceAlias(), &cache.Aliases) }).
+		Do(func(_ context.Context) { setValue(sd.ServiceTag(), &cache.Tags) }).
+		Do(func(_ context.Context) { setValue(sd.DependencyRule(), &cache.DependencyRules) }).
+		Do(func(_ context.Context) { setValue(sd.SchemaSummary(), &cache.Summaries) }).
+		Do(func(_ context.Context) { setValue(sd.Instance(), &cache.Instances) }).
 		Done()
 	return &cache
 }
 
-func setValue(e sd.Adaptor, setter dump.Setter) {
-	e.Cache().ForEach(func(k string, kv *sd.KeyValue) (next bool) {
+func setValue(e state.State, setter dump.Setter) {
+	e.Cache().ForEach(func(k string, kv *kvstore.KeyValue) (next bool) {
 		setter.SetValue(&dump.KV{
 			Key:         k,
 			Rev:         kv.ModRevision,

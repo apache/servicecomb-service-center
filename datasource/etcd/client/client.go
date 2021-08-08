@@ -28,8 +28,8 @@ import (
 
 // KeepAlive will always return ok when cache is unavailable
 // unless the cache response is LeaseNotFound
-func KeepAlive(ctx context.Context, opts ...etcdadpt.OpOption) (int64, error) {
-	op := etcdadpt.OpPut(opts...)
+func KeepAlive(ctx context.Context, key string, leaseID int64, opts ...etcdadpt.OpOption) (int64, error) {
+	op := etcdadpt.OpPut(append(opts, etcdadpt.WithStrKey(key), etcdadpt.WithLease(leaseID))...)
 
 	t := NewLeaseAsyncTask(op)
 	if op.Mode == etcdadpt.ModeNoCache {

@@ -26,13 +26,13 @@ import (
 type dataSourceEngine func(opts Options) (DataSource, error)
 
 var (
-	plugins        = make(map[Kind]dataSourceEngine)
+	plugins        = make(map[string]dataSourceEngine)
 	dataSourceInst DataSource
 )
 
 // load plugins configuration into plugins
 func Install(pluginImplName string, engineFunc dataSourceEngine) {
-	plugins[Kind(pluginImplName)] = engineFunc
+	plugins[pluginImplName] = engineFunc
 }
 
 // Init construct storage plugin instance

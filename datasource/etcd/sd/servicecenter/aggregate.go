@@ -25,13 +25,13 @@ import (
 	"github.com/apache/servicecomb-service-center/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
 	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf"
 	"github.com/go-chassis/cari/pkg/errsvc"
-	etcdclient "github.com/little-cui/etcdadpt"
+	"github.com/little-cui/etcdadpt"
 )
 
 var (
@@ -77,7 +77,7 @@ func (c *SCClientAggregate) GetScCache(ctx context.Context) (*dump.Cache, map[st
 
 func (c *SCClientAggregate) cacheAppend(name string, setter dump.Setter, getter dump.Getter) {
 	getter.ForEach(func(_ int, v *dump.KV) bool {
-		if len(v.ClusterName) == 0 || v.ClusterName == etcdclient.DefaultClusterName {
+		if len(v.ClusterName) == 0 || v.ClusterName == etcdadpt.DefaultClusterName {
 			v.ClusterName = name
 		}
 		setter.SetValue(v)
@@ -85,9 +85,9 @@ func (c *SCClientAggregate) cacheAppend(name string, setter dump.Setter, getter 
 	})
 }
 
-func (c *SCClientAggregate) GetSchemasByServiceID(ctx context.Context, domainProject, serviceID string) (*sd.Response, *errsvc.Error) {
+func (c *SCClientAggregate) GetSchemasByServiceID(ctx context.Context, domainProject, serviceID string) (*kvstore.Response, *errsvc.Error) {
 	dp := strings.Split(domainProject, "/")
-	var response sd.Response
+	var response kvstore.Response
 	for _, client := range *c {
 		schemas, err := client.GetSchemasByServiceID(ctx, dp[0], dp[1], serviceID)
 		if err != nil && err.InternalError() {
@@ -99,7 +99,7 @@ func (c *SCClientAggregate) GetSchemasByServiceID(ctx context.Context, domainPro
 		}
 		response.Count = int64(len(schemas))
 		for _, schema := range schemas {
-			response.Kvs = append(response.Kvs, &sd.KeyValue{
+			response.Kvs = append(response.Kvs, &kvstore.KeyValue{
 				Key:         []byte(path.GenerateServiceSchemaKey(domainProject, serviceID, schema.SchemaId)),
 				Value:       util.StringToBytesWithNoCopy(schema.Schema),
 				ModRevision: 0,
@@ -111,9 +111,9 @@ func (c *SCClientAggregate) GetSchemasByServiceID(ctx context.Context, domainPro
 	return &response, nil
 }
 
-func (c *SCClientAggregate) GetSchemaBySchemaID(ctx context.Context, domainProject, serviceID, schemaID string) (*sd.Response, *errsvc.Error) {
+func (c *SCClientAggregate) GetSchemaBySchemaID(ctx context.Context, domainProject, serviceID, schemaID string) (*kvstore.Response, *errsvc.Error) {
 	dp := strings.Split(domainProject, "/")
-	var response sd.Response
+	var response kvstore.Response
 	for _, client := range *c {
 		schema, err := client.GetSchemaBySchemaID(ctx, dp[0], dp[1], serviceID, schemaID)
 		if err != nil && err.InternalError() {
@@ -124,7 +124,7 @@ func (c *SCClientAggregate) GetSchemaBySchemaID(ctx context.Context, domainProje
 			continue
 		}
 		response.Count = 1
-		response.Kvs = append(response.Kvs, &sd.KeyValue{
+		response.Kvs = append(response.Kvs, &kvstore.KeyValue{
 			Key:         []byte(path.GenerateServiceSchemaKey(domainProject, serviceID, schema.SchemaId)),
 			Value:       util.StringToBytesWithNoCopy(schema.Schema),
 			ModRevision: 0,
@@ -135,8 +135,8 @@ func (c *SCClientAggregate) GetSchemaBySchemaID(ctx context.Context, domainProje
 	return &response, nil
 }
 
-func (c *SCClientAggregate) GetInstancesByServiceID(ctx context.Context, domain, project, providerID, consumerID string) (*sd.Response, *errsvc.Error) {
-	var response sd.Response
+func (c *SCClientAggregate) GetInstancesByServiceID(ctx context.Context, domain, project, providerID, consumerID string) (*kvstore.Response, *errsvc.Error) {
+	var response kvstore.Response
 	for _, client := range *c {
 		insts, err := client.GetInstancesByServiceID(ctx, domain, project, providerID, consumerID)
 		if err != nil && err.InternalError() {
@@ -148,7 +148,7 @@ func (c *SCClientAggregate) GetInstancesByServiceID(ctx context.Context, domain,
 		}
 		response.Count = int64(len(insts))
 		for _, instance := range insts {
-			response.Kvs = append(response.Kvs, &sd.KeyValue{
+			response.Kvs = append(response.Kvs, &kvstore.KeyValue{
 				Key:         []byte(path.GenerateInstanceKey(domain+"/"+project, providerID, instance.InstanceId)),
 				Value:       instance,
 				ModRevision: 0,
@@ -159,8 +159,8 @@ func (c *SCClientAggregate) GetInstancesByServiceID(ctx context.Context, domain,
 	return &response, nil
 }
 
-func (c *SCClientAggregate) GetInstanceByInstanceID(ctx context.Context, domain, project, providerID, instanceID, consumerID string) (*sd.Response, *errsvc.Error) {
-	var response sd.Response
+func (c *SCClientAggregate) GetInstanceByInstanceID(ctx context.Context, domain, project, providerID, instanceID, consumerID string) (*kvstore.Response, *errsvc.Error) {
+	var response kvstore.Response
 	for _, client := range *c {
 		instance, err := client.GetInstanceByInstanceID(ctx, domain, project, providerID, instanceID, consumerID)
 		if err != nil && err.InternalError() {
@@ -171,7 +171,7 @@ func (c *SCClientAggregate) GetInstanceByInstanceID(ctx context.Context, domain,
 			continue
 		}
 		response.Count = 1
-		response.Kvs = append(response.Kvs, &sd.KeyValue{
+		response.Kvs = append(response.Kvs, &kvstore.KeyValue{
 			Key:         []byte(path.GenerateInstanceKey(domain+"/"+project, providerID, instance.InstanceId)),
 			Value:       instance,
 			ModRevision: 0,
@@ -185,8 +185,12 @@ func (c *SCClientAggregate) GetInstanceByInstanceID(ctx context.Context, domain,
 func GetOrCreateSCClient() *SCClientAggregate {
 	clientOnce.Do(func() {
 		scClient = &SCClientAggregate{}
+		// TODO should not use the etcd config
 		cfg := etcd.Configuration()
-		clusters := cfg.Clusters()
+		clusters, err := etcdadpt.ListCluster(context.Background())
+		if err != nil {
+			log.Fatal("GetOrCreateSCClient failed", err)
+		}
 		for name, endpoints := range clusters {
 			if len(name) == 0 || name == cfg.ClusterName {
 				continue

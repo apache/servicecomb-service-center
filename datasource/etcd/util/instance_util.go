@@ -26,9 +26,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	pb "github.com/go-chassis/cari/discovery"
@@ -39,7 +39,7 @@ import (
 func GetLeaseID(ctx context.Context, domainProject string, serviceID string, instanceID string) (int64, error) {
 	opts := append(FromContext(ctx),
 		etcdadpt.WithStrKey(path.GenerateInstanceLeaseKey(domainProject, serviceID, instanceID)))
-	resp, err := kv.Store().Lease().Search(ctx, opts...)
+	resp, err := sd.Lease().Search(ctx, opts...)
 	if err != nil {
 		return -1, err
 	}
@@ -54,7 +54,7 @@ func GetInstance(ctx context.Context, domainProject string, serviceID string, in
 	key := path.GenerateInstanceKey(domainProject, serviceID, instanceID)
 	opts := append(FromContext(ctx), etcdadpt.WithStrKey(key))
 
-	resp, err := kv.Store().Instance().Search(ctx, opts...)
+	resp, err := sd.Instance().Search(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func GetInstance(ctx context.Context, domainProject string, serviceID string, in
 func InstanceExist(ctx context.Context, domainProject string, serviceID string, instanceID string) (bool, error) {
 	key := path.GenerateInstanceKey(domainProject, serviceID, instanceID)
 	opts := append(FromContext(ctx), etcdadpt.WithStrKey(key))
-	resp, err := kv.Store().Instance().Search(ctx, opts...)
+	resp, err := sd.Instance().Search(ctx, opts...)
 	if err != nil {
 		return false, err
 	}
@@ -88,7 +88,7 @@ func FormatRevision(revs, counts []int64) (s string) {
 func GetAllInstancesOfOneService(ctx context.Context, domainProject string, serviceID string) ([]*pb.MicroServiceInstance, error) {
 	key := path.GenerateInstanceKey(domainProject, serviceID, "")
 	opts := append(FromContext(ctx), etcdadpt.WithStrKey(key), etcdadpt.WithPrefix())
-	resp, err := kv.Store().Instance().Search(ctx, opts...)
+	resp, err := sd.Instance().Search(ctx, opts...)
 	if err != nil {
 		log.Error(fmt.Sprintf("get service[%s]'s instances failed", serviceID), err)
 		return nil, err
@@ -107,7 +107,7 @@ func GetInstanceCountOfOneService(ctx context.Context, domainProject string, ser
 		etcdadpt.WithStrKey(key),
 		etcdadpt.WithPrefix(),
 		etcdadpt.WithCountOnly())
-	resp, err := kv.Store().Instance().Search(ctx, opts...)
+	resp, err := sd.Instance().Search(ctx, opts...)
 	if err != nil {
 		log.Error(fmt.Sprintf("get number of service[%s]'s instances failed", serviceID), err)
 		return 0, err
@@ -133,7 +133,7 @@ func DeleteServiceAllInstances(ctx context.Context, serviceID string) error {
 	domainProject := util.ParseDomainProject(ctx)
 
 	instanceLeaseKey := path.GenerateInstanceLeaseKey(domainProject, serviceID, "")
-	resp, err := kv.Store().Lease().Search(ctx,
+	resp, err := sd.Lease().Search(ctx,
 		etcdadpt.WithStrKey(instanceLeaseKey),
 		etcdadpt.WithPrefix(),
 		etcdadpt.WithNoCache())
@@ -155,10 +155,10 @@ func DeleteServiceAllInstances(ctx context.Context, serviceID string) error {
 	return nil
 }
 
-func QueryServiceInstancesKvs(ctx context.Context, serviceID string, rev int64) ([]*sd.KeyValue, error) {
+func QueryServiceInstancesKvs(ctx context.Context, serviceID string, rev int64) ([]*kvstore.KeyValue, error) {
 	domainProject := util.ParseDomainProject(ctx)
 	key := path.GenerateInstanceKey(domainProject, serviceID, "")
-	resp, err := kv.Store().Instance().Search(ctx,
+	resp, err := sd.Instance().Search(ctx,
 		etcdadpt.WithStrKey(key),
 		etcdadpt.WithPrefix(),
 		etcdadpt.WithRev(rev))
@@ -188,13 +188,8 @@ func UpdateInstance(ctx context.Context, domainProject string, instance *pb.Micr
 	key := path.GenerateInstanceKey(domainProject, instance.ServiceId, instance.InstanceId)
 
 	resp, err := etcdadpt.TxnWithCmp(ctx,
-		[]etcdadpt.OpOptions{etcdadpt.OpPut(
-			etcdadpt.WithStrKey(key),
-			etcdadpt.WithValue(data),
-			etcdadpt.WithLease(leaseID))},
-		[]etcdadpt.CmpOptions{etcdadpt.OpCmp(
-			etcdadpt.CmpVer(util.StringToBytesWithNoCopy(path.GenerateServiceKey(domainProject, instance.ServiceId))),
-			etcdadpt.CmpNotEqual, 0)},
+		etcdadpt.Ops(etcdadpt.OpPut(etcdadpt.WithStrKey(key), etcdadpt.WithValue(data), etcdadpt.WithLease(leaseID))),
+		etcdadpt.If(etcdadpt.NotEqualVer(path.GenerateServiceKey(domainProject, instance.ServiceId), 0)),
 		nil)
 	if err != nil {
 		return pb.NewError(pb.ErrUnavailableBackend, err.Error())

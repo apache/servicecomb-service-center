@@ -22,13 +22,14 @@ import (
 	"time"
 
 	_ "github.com/apache/servicecomb-service-center/server/init"
-	"github.com/apache/servicecomb-service-center/server/service/disco"
 
 	_ "github.com/apache/servicecomb-service-center/server/bootstrap"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/service/disco"
 	"github.com/go-chassis/go-archaius"
+	"github.com/little-cui/etcdadpt"
 )
 
 func init() {
@@ -45,7 +46,9 @@ func init() {
 		archaius.Set("registry.heartbeat.kind", "checker")
 	}
 	datasource.Init(datasource.Options{
-		Kind:                datasource.Kind(t.(string)),
+		Config: etcdadpt.Config{
+			Kind: t.(string),
+		},
 		ReleaseAccountAfter: 3 * time.Second,
 	})
 	core.ServiceAPI = disco.AssembleResources()

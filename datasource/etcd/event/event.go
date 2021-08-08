@@ -18,13 +18,13 @@
 package event
 
 import (
-	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
 )
 
 func Initialize() {
-	sd.AddEventHandler(NewServiceEventHandler())
-	sd.AddEventHandler(NewInstanceEventHandler())
-	sd.AddEventHandler(NewTagEventHandler())
-	sd.AddEventHandler(NewDependencyEventHandler())
-	sd.AddEventHandler(NewDependencyRuleEventHandler())
+	kvstore.AddEventHandler(NewServiceEventHandler())
+	kvstore.AddEventHandler(NewInstanceEventHandler())
+	kvstore.AddEventHandler(NewTagEventHandler())
+	kvstore.AddEventHandler(NewDependencyEventHandler())
+	kvstore.AddEventHandler(NewDependencyRuleEventHandler())
 }

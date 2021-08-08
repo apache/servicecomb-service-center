@@ -23,8 +23,8 @@ import (
 	"strings"
 
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -44,7 +44,7 @@ type ServiceDetailOpt struct {
 // schema
 func getSchemaSummary(ctx context.Context, domainProject string, serviceID string, schemaID string) (string, error) {
 	key := path.GenerateServiceSchemaSummaryKey(domainProject, serviceID, schemaID)
-	resp, err := kv.Store().SchemaSummary().Search(ctx,
+	resp, err := sd.SchemaSummary().Search(ctx,
 		etcdadpt.WithStrKey(key),
 	)
 	if err != nil {
@@ -59,7 +59,7 @@ func getSchemaSummary(ctx context.Context, domainProject string, serviceID strin
 
 func getSchemasFromDatabase(ctx context.Context, domainProject string, serviceID string) ([]*pb.Schema, error) {
 	key := path.GenerateServiceSchemaKey(domainProject, serviceID, "")
-	resp, err := kv.Store().Schema().Search(ctx,
+	resp, err := sd.Schema().Search(ctx,
 		etcdadpt.WithPrefix(),
 		etcdadpt.WithStrKey(key))
 	if err != nil {
@@ -83,7 +83,7 @@ func getSchemasFromDatabase(ctx context.Context, domainProject string, serviceID
 
 func checkSchemaInfoExist(ctx context.Context, key string) (bool, error) {
 	opts := append(serviceUtil.FromContext(ctx), etcdadpt.WithStrKey(key), etcdadpt.WithCountOnly())
-	resp, errDo := kv.Store().Schema().Search(ctx, opts...)
+	resp, errDo := sd.Schema().Search(ctx, opts...)
 	if errDo != nil {
 		return false, errDo
 	}
@@ -95,7 +95,7 @@ func checkSchemaInfoExist(ctx context.Context, key string) (bool, error) {
 
 func isExistSchemaSummary(ctx context.Context, domainProject, serviceID, schemaID string) (bool, error) {
 	key := path.GenerateServiceSchemaSummaryKey(domainProject, serviceID, schemaID)
-	resp, err := kv.Store().SchemaSummary().Search(ctx, etcdadpt.WithStrKey(key), etcdadpt.WithCountOnly())
+	resp, err := sd.SchemaSummary().Search(ctx, etcdadpt.WithStrKey(key), etcdadpt.WithCountOnly())
 	if err != nil {
 		return true, err
 	}
@@ -195,7 +195,7 @@ func getServiceAllVersions(ctx context.Context, serviceKey *pb.MicroServiceKey) 
 		etcdadpt.WithStrKey(key),
 		etcdadpt.WithPrefix())
 
-	resp, err := kv.Store().ServiceIndex().Search(ctx, opts...)
+	resp, err := sd.ServiceIndex().Search(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -285,7 +285,7 @@ func getServiceDetailUtil(ctx context.Context, serviceDetailOpt ServiceDetailOpt
 func getSchemaInfoUtil(ctx context.Context, domainProject string, serviceID string) ([]*pb.Schema, error) {
 	key := path.GenerateServiceSchemaKey(domainProject, serviceID, "")
 
-	resp, err := kv.Store().Schema().Search(ctx,
+	resp, err := sd.Schema().Search(ctx,
 		etcdadpt.WithStrKey(key),
 		etcdadpt.WithPrefix())
 	if err != nil {
@@ -316,7 +316,7 @@ func statistics(ctx context.Context, withShared bool) (*pb.Statistics, error) {
 	svcOpts := append(opts,
 		etcdadpt.WithStrKey(key),
 		etcdadpt.WithPrefix())
-	respSvc, err := kv.Store().ServiceIndex().Search(ctx, svcOpts...)
+	respSvc, err := sd.ServiceIndex().Search(ctx, svcOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -342,7 +342,7 @@ func statistics(ctx context.Context, withShared bool) (*pb.Statistics, error) {
 		etcdadpt.WithStrKey(key),
 		etcdadpt.WithPrefix(),
 		etcdadpt.WithKeyOnly())
-	respIns, err := kv.Store().Instance().Search(ctx, instOpts...)
+	respIns, err := sd.Instance().Search(ctx, instOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -370,7 +370,7 @@ func getInstanceCountByDomain(ctx context.Context, svcIDToNonVerKey map[string]s
 		etcdadpt.WithStrKey(key),
 		etcdadpt.WithPrefix(),
 		etcdadpt.WithKeyOnly())
-	respIns, err := kv.Store().Instance().Search(ctx, instOpts...)
+	respIns, err := sd.Instance().Search(ctx, instOpts...)
 	ret := datasource.GetInstanceCountByDomainResponse{
 		Err: err,
 	}

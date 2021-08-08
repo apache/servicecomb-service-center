@@ -16,24 +16,24 @@
 package servicecenter
 
 import (
-	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
 )
 
 type Cacher struct {
-	*sd.CommonCacher
+	*kvstore.CommonCacher
 }
 
 func (c *Cacher) Ready() <-chan struct{} {
 	return closedCh
 }
 
-func NewServiceCenterCacher(cfg *sd.Config, cache sd.Cache) *Cacher {
+func NewServiceCenterCacher(cfg *kvstore.Options, cache kvstore.Cache) *Cacher {
 	return &Cacher{
-		CommonCacher: sd.NewCommonCacher(cfg, cache),
+		CommonCacher: kvstore.NewCommonCacher(cfg, cache),
 	}
 }
 
-func BuildCacher(t sd.Type, cfg *sd.Config, cache sd.Cache) sd.Cacher {
+func BuildCacher(t kvstore.Type, cfg *kvstore.Options, cache kvstore.Cache) kvstore.Cacher {
 	cr := NewServiceCenterCacher(cfg, cache)
 	GetOrCreateSyncer().AddCacher(t, cr)
 	return cr

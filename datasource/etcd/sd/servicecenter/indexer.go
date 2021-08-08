@@ -21,26 +21,26 @@ import (
 	"strings"
 
 	"github.com/apache/servicecomb-service-center/client"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/go-chassis/cari/pkg/errsvc"
-	etcdclient "github.com/little-cui/etcdadpt"
+	"github.com/little-cui/etcdadpt"
 )
 
-// ClusterIndexer implements sd.Indexer.
+// ClusterIndexer implements kvstore.Indexer.
 // ClusterIndexer searches data from cache(firstly) and
 // other service-centers(secondly).
 type ClusterIndexer struct {
-	*sd.CacheIndexer
+	*kvstore.CacheIndexer
 	Client *SCClientAggregate
-	Type   sd.Type
+	Type   kvstore.Type
 }
 
-func (i *ClusterIndexer) Search(ctx context.Context, opts ...etcdclient.OpOption) (resp *sd.Response, err error) {
-	op := etcdclient.OpGet(opts...)
+func (i *ClusterIndexer) Search(ctx context.Context, opts ...etcdadpt.OpOption) (resp *kvstore.Response, err error) {
+	op := etcdadpt.OpGet(opts...)
 
 	if op.NoCache() {
 		return i.search(ctx, opts...)
@@ -58,26 +58,26 @@ func (i *ClusterIndexer) Search(ctx context.Context, opts ...etcdclient.OpOption
 	return i.search(ctx, opts...)
 }
 
-func (i *ClusterIndexer) search(ctx context.Context, opts ...etcdclient.OpOption) (r *sd.Response, err error) {
-	op := etcdclient.OpGet(opts...)
+func (i *ClusterIndexer) search(ctx context.Context, opts ...etcdadpt.OpOption) (r *kvstore.Response, err error) {
+	op := etcdadpt.OpGet(opts...)
 	key := util.BytesToStringWithNoCopy(op.Key)
 
 	ctx = context.WithValue(ctx, client.QueryGlobal, "0")
 	switch i.Type {
-	case kv.SCHEMA:
+	case sd.TypeSchema:
 		r, err = i.searchSchemas(ctx, op)
-	case kv.INSTANCE:
+	case sd.TypeInstance:
 		r, err = i.searchInstances(ctx, op)
 	default:
-		return &sd.Response{}, nil
+		return &kvstore.Response{}, nil
 	}
 	log.Debug(fmt.Sprintf("search '%s' match special options, request sc server, opts: %s", key, op))
 	return
 }
 
-func (i *ClusterIndexer) searchSchemas(ctx context.Context, op etcdclient.OpOptions) (*sd.Response, error) {
+func (i *ClusterIndexer) searchSchemas(ctx context.Context, op etcdadpt.OpOptions) (*kvstore.Response, error) {
 	var (
-		resp  *sd.Response
+		resp  *kvstore.Response
 		scErr *errsvc.Error
 	)
 	domainProject, serviceID, schemaID := path.GetInfoFromSchemaKV(op.Key)
@@ -92,9 +92,9 @@ func (i *ClusterIndexer) searchSchemas(ctx context.Context, op etcdclient.OpOpti
 	return resp, nil
 }
 
-func (i *ClusterIndexer) searchInstances(ctx context.Context, op etcdclient.OpOptions) (r *sd.Response, err error) {
+func (i *ClusterIndexer) searchInstances(ctx context.Context, op etcdadpt.OpOptions) (r *kvstore.Response, err error) {
 	var (
-		resp  *sd.Response
+		resp  *kvstore.Response
 		scErr *errsvc.Error
 	)
 	serviceID, instanceID, domainProject := path.GetInfoFromInstKV(op.Key)
@@ -110,16 +110,16 @@ func (i *ClusterIndexer) searchInstances(ctx context.Context, op etcdclient.OpOp
 	return resp, nil
 }
 
-// Creditable implements sd.Indexer#Creditable.
+// Creditable implements kvstore.Indexer#Creditable.
 // ClusterIndexer's search result's are not creditable as SCClientAggregate
 // ignores sc clients' errors.
 func (i *ClusterIndexer) Creditable() bool {
 	return false
 }
 
-func NewClusterIndexer(t sd.Type, cache sd.Cache) *ClusterIndexer {
+func NewClusterIndexer(t kvstore.Type, cache kvstore.Cache) *ClusterIndexer {
 	return &ClusterIndexer{
-		CacheIndexer: sd.NewCacheIndexer(cache),
+		CacheIndexer: kvstore.NewCacheIndexer(cache),
 		Client:       GetOrCreateSCClient(),
 		Type:         t,
 	}

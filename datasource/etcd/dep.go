@@ -24,8 +24,8 @@ import (
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/event"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -106,7 +106,7 @@ func (dm *DepManager) DependencyHandle(ctx context.Context) error {
 	}
 	for {
 		key := path.GetServiceDependencyQueueRootKey("")
-		resp, err := kv.Store().DependencyQueue().Search(ctx,
+		resp, err := sd.DependencyQueue().Search(ctx,
 			etcdadpt.WithStrKey(key), etcdadpt.WithPrefix(), etcdadpt.WithCountOnly())
 		if err != nil {
 			return err

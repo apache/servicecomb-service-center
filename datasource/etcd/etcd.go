@@ -24,9 +24,9 @@ import (
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/event"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/mux"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/state"
 	tracer "github.com/apache/servicecomb-service-center/datasource/etcd/tracing"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
@@ -41,6 +41,8 @@ func init() {
 	datasource.Install("etcd", NewDataSource)
 	datasource.Install("embeded_etcd", NewDataSource) //TODO remove misspell in future
 	datasource.Install("embedded_etcd", NewDataSource)
+
+	sd.RegisterInnerTypes()
 }
 
 type DataSource struct {
@@ -89,17 +91,18 @@ func (ds *DataSource) MetricsManager() datasource.MetricsManager {
 }
 
 func NewDataSource(opts datasource.Options) (datasource.DataSource, error) {
-	// TODO: construct a reasonable DataSource instance
 	log.Warn("data source enable etcd mode")
 
-	if len(opts.Config.Kind) == 0 {
-		opts.Config = Configuration()
-	}
+	etcdCfg := Configuration()
+	etcdCfg.Kind = opts.Kind
+	etcdCfg.Logger = opts.Logger
+	etcdCfg.SslEnabled = opts.SslEnabled
+	etcdCfg.TLSConfig = opts.TLSConfig
+	etcdCfg.ConnectedFunc = opts.ConnectedFunc
+	etcdCfg.ErrorFunc = opts.ErrorFunc
+	opts.Config = etcdCfg
 	opts.Config.Init()
 	opts.SslEnabled = opts.SslEnabled && strings.Contains(strings.ToLower(opts.ClusterAddresses), "https://")
-	if opts.ReleaseAccountAfter == 0 {
-		opts.ReleaseAccountAfter = 15 * time.Minute
-	}
 	inst := &DataSource{
 		Options: &opts,
 	}
@@ -118,10 +121,6 @@ func NewDataSource(opts datasource.Options) (datasource.DataSource, error) {
 }
 
 func (ds *DataSource) initialize() error {
-	// init client/sd plugins
-	ds.initPlugins()
-	// Add events handlers
-	event.Initialize()
 	// Wait for kv store ready
 	ds.initKvStore()
 	// Compact
@@ -151,21 +150,27 @@ func (ds *DataSource) initPlugins() {
 	if err != nil {
 		log.Fatal("client init failed", err)
 	}
+	// clusters
+	ds.initClustersIndex()
 
 	// discovery
 	kind := config.GetString("discovery.kind", "", config.WithStandby("discovery_plugin"))
-	err = sd.Init(sd.Options{Kind: sd.Kind(kind)})
+	err = state.Init(state.Config{
+		Kind:        kind,
+		ClusterName: ds.Options.ClusterName,
+		Logger:      ds.Options.Logger,
+		EnableCache: ds.Options.EnableCache,
+	})
 	if err != nil {
 		log.Fatal("sd init failed", err)
 	}
-
-	// clusters
-	ds.initClustersIndex()
 }
 
 func (ds *DataSource) initKvStore() {
-	kv.Store().Run()
-	<-kv.Store().Ready()
+	// init client/sd plugins
+	ds.initPlugins()
+	// Add events handlers
+	event.Initialize()
 }
 
 func (ds *DataSource) autoCompact() {

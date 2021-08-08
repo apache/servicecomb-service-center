@@ -27,9 +27,9 @@ import (
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/cache"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -362,7 +362,7 @@ func (ds *MetadataManager) ListApp(ctx context.Context, request *pb.GetAppsReque
 		etcdadpt.WithPrefix(),
 		etcdadpt.WithKeyOnly())
 
-	resp, err := kv.Store().ServiceIndex().Search(ctx, opts...)
+	resp, err := sd.ServiceIndex().Search(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -476,10 +476,8 @@ func (ds *MetadataManager) UpdateService(ctx context.Context, request *pb.Update
 
 	// Set key file
 	resp, err := etcdadpt.TxnWithCmp(ctx,
-		[]etcdadpt.OpOptions{etcdadpt.OpPut(etcdadpt.WithStrKey(key), etcdadpt.WithValue(data))},
-		[]etcdadpt.CmpOptions{etcdadpt.OpCmp(
-			etcdadpt.CmpVer(util.StringToBytesWithNoCopy(key)),
-			etcdadpt.CmpNotEqual, 0)},
+		etcdadpt.Ops(etcdadpt.OpPut(etcdadpt.WithStrKey(key), etcdadpt.WithValue(data))),
+		etcdadpt.If(etcdadpt.NotEqualVer(key, 0)),
 		nil)
 	if err != nil {
 		log.Error(fmt.Sprintf("update service[%s] properties failed, operator: %s", request.ServiceId, remoteIP), err)
@@ -565,17 +563,13 @@ func (ds *MetadataManager) registerInstance(ctx context.Context, request *pb.Reg
 	key := path.GenerateInstanceKey(domainProject, instance.ServiceId, instanceID)
 	hbKey := path.GenerateInstanceLeaseKey(domainProject, instance.ServiceId, instanceID)
 
-	opts := []etcdadpt.OpOptions{
-		etcdadpt.OpPut(etcdadpt.WithStrKey(key), etcdadpt.WithValue(data),
-			etcdadpt.WithLease(leaseID)),
-		etcdadpt.OpPut(etcdadpt.WithStrKey(hbKey), etcdadpt.WithStrValue(fmt.Sprintf("%d", leaseID)),
-			etcdadpt.WithLease(leaseID)),
-	}
-
-	resp, err := etcdadpt.TxnWithCmp(ctx, opts,
-		[]etcdadpt.CmpOptions{etcdadpt.OpCmp(
-			etcdadpt.CmpVer(util.StringToBytesWithNoCopy(path.GenerateServiceKey(domainProject, instance.ServiceId))),
-			etcdadpt.CmpNotEqual, 0)},
+	leaseOp := etcdadpt.WithLease(leaseID)
+	resp, err := etcdadpt.TxnWithCmp(ctx,
+		etcdadpt.Ops(
+			etcdadpt.OpPut(etcdadpt.WithStrKey(key), etcdadpt.WithValue(data), leaseOp),
+			etcdadpt.OpPut(etcdadpt.WithStrKey(hbKey), etcdadpt.WithStrValue(fmt.Sprintf("%d", leaseID)), leaseOp),
+		),
+		etcdadpt.If(etcdadpt.NotEqualVer(path.GenerateServiceKey(domainProject, instance.ServiceId), 0)),
 		nil)
 	if err != nil {
 		log.Error(fmt.Sprintf("register instance failed, %s, instanceID %s, operator %s",
@@ -851,7 +845,7 @@ func (ds *MetadataManager) BatchGetProviderInstances(ctx context.Context, reques
 func (ds *MetadataManager) findInstances(ctx context.Context, domainProject, serviceID string, maxRevs []int64, counts []int64) (instances []*pb.MicroServiceInstance, err error) {
 	key := path.GenerateInstanceKey(domainProject, serviceID, "")
 	opts := append(serviceUtil.FromContext(ctx), etcdadpt.WithStrKey(key), etcdadpt.WithPrefix())
-	resp, err := kv.Store().Instance().Search(ctx, opts...)
+	resp, err := sd.Instance().Search(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1310,7 +1304,7 @@ func (ds *MetadataManager) GetAllInstances(ctx context.Context, request *pb.GetA
 	domainProject := util.ParseDomainProject(ctx)
 	key := path.GetInstanceRootKey(domainProject) + path.SPLIT
 	opts := append(serviceUtil.FromContext(ctx), etcdadpt.WithStrKey(key), etcdadpt.WithPrefix())
-	kvs, err := kv.Store().Instance().Search(ctx, opts...)
+	kvs, err := sd.Instance().Search(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1445,7 +1439,7 @@ func (ds *MetadataManager) GetSchema(ctx context.Context, request *pb.GetSchemaR
 
 	key := path.GenerateServiceSchemaKey(domainProject, request.ServiceId, request.SchemaId)
 	opts := append(serviceUtil.FromContext(ctx), etcdadpt.WithStrKey(key))
-	resp, errDo := kv.Store().Schema().Search(ctx, opts...)
+	resp, errDo := sd.Schema().Search(ctx, opts...)
 	if errDo != nil {
 		log.Error(fmt.Sprintf("get schema[%s/%s] failed", request.ServiceId, request.SchemaId), errDo)
 		return &pb.GetSchemaResponse{
@@ -1504,7 +1498,7 @@ func (ds *MetadataManager) GetAllSchemas(ctx context.Context, request *pb.GetAll
 
 	key := path.GenerateServiceSchemaSummaryKey(domainProject, request.ServiceId, "")
 	opts := append(serviceUtil.FromContext(ctx), etcdadpt.WithStrKey(key), etcdadpt.WithPrefix())
-	resp, errDo := kv.Store().SchemaSummary().Search(ctx, opts...)
+	resp, errDo := sd.SchemaSummary().Search(ctx, opts...)
 	if errDo != nil {
 		log.Error(fmt.Sprintf("get service[%s] all schema summaries failed", request.ServiceId), errDo)
 		return &pb.GetAllSchemaResponse{
@@ -1512,11 +1506,11 @@ func (ds *MetadataManager) GetAllSchemas(ctx context.Context, request *pb.GetAll
 		}, errDo
 	}
 
-	respWithSchema := &sd.Response{}
+	respWithSchema := &kvstore.Response{}
 	if request.WithSchema {
 		key := path.GenerateServiceSchemaKey(domainProject, request.ServiceId, "")
 		opts := append(serviceUtil.FromContext(ctx), etcdadpt.WithStrKey(key), etcdadpt.WithPrefix())
-		respWithSchema, errDo = kv.Store().Schema().Search(ctx, opts...)
+		respWithSchema, errDo = sd.Schema().Search(ctx, opts...)
 		if errDo != nil {
 			log.Error(fmt.Sprintf("get service[%s] all schemas failed", request.ServiceId), errDo)
 			return &pb.GetAllSchemaResponse{
@@ -1581,15 +1575,12 @@ func (ds *MetadataManager) DeleteSchema(ctx context.Context, request *pb.DeleteS
 		}, nil
 	}
 	epSummaryKey := path.GenerateServiceSchemaSummaryKey(domainProject, request.ServiceId, request.SchemaId)
-	opts := []etcdadpt.OpOptions{
-		etcdadpt.OpDel(etcdadpt.WithStrKey(epSummaryKey)),
-		etcdadpt.OpDel(etcdadpt.WithStrKey(key)),
-	}
-
-	resp, errDo := etcdadpt.TxnWithCmp(ctx, opts,
-		[]etcdadpt.CmpOptions{etcdadpt.OpCmp(
-			etcdadpt.CmpVer(util.StringToBytesWithNoCopy(path.GenerateServiceKey(domainProject, request.ServiceId))),
-			etcdadpt.CmpNotEqual, 0)},
+	resp, errDo := etcdadpt.TxnWithCmp(ctx,
+		etcdadpt.Ops(
+			etcdadpt.OpDel(etcdadpt.WithStrKey(epSummaryKey)),
+			etcdadpt.OpDel(etcdadpt.WithStrKey(key)),
+		),
+		etcdadpt.If(etcdadpt.NotEqualVer(path.GenerateServiceKey(domainProject, request.ServiceId), 0)),
 		nil)
 	if errDo != nil {
 		log.Error(fmt.Sprintf("delete schema[%s/%s] failed, operator: %s",
@@ -1774,10 +1765,8 @@ func (ds *MetadataManager) DeleteTags(ctx context.Context, request *pb.DeleteSer
 	key := path.GenerateServiceTagKey(domainProject, request.ServiceId)
 
 	resp, err := etcdadpt.TxnWithCmp(ctx,
-		[]etcdadpt.OpOptions{etcdadpt.OpPut(etcdadpt.WithStrKey(key), etcdadpt.WithValue(data))},
-		[]etcdadpt.CmpOptions{etcdadpt.OpCmp(
-			etcdadpt.CmpVer(util.StringToBytesWithNoCopy(path.GenerateServiceKey(domainProject, request.ServiceId))),
-			etcdadpt.CmpNotEqual, 0)},
+		etcdadpt.Ops(etcdadpt.OpPut(etcdadpt.WithStrKey(key), etcdadpt.WithValue(data))),
+		etcdadpt.If(etcdadpt.NotEqualVer(path.GenerateServiceKey(domainProject, request.ServiceId), 0)),
 		nil)
 	if err != nil {
 		log.Error(fmt.Sprintf("delete service[%s]'s tags %v failed, operator: %s",
@@ -1902,9 +1891,7 @@ func (ds *MetadataManager) modifySchemas(ctx context.Context, domainProject stri
 
 	if len(pluginOps) != 0 {
 		resp, err := etcdadpt.TxnWithCmp(ctx, pluginOps,
-			[]etcdadpt.CmpOptions{etcdadpt.OpCmp(
-				etcdadpt.CmpVer(util.StringToBytesWithNoCopy(path.GenerateServiceKey(domainProject, serviceID))),
-				etcdadpt.CmpNotEqual, 0)},
+			etcdadpt.If(etcdadpt.NotEqualVer(path.GenerateServiceKey(domainProject, serviceID), 0)),
 			nil)
 		if err != nil {
 			return pb.NewError(pb.ErrUnavailableBackend, err.Error())
@@ -1946,7 +1933,7 @@ func (ds *MetadataManager) modifySchema(ctx context.Context, serviceID string, s
 		}
 
 		key := path.GenerateServiceSchemaKey(domainProject, serviceID, schemaID)
-		respSchema, err := kv.Store().Schema().Search(ctx, etcdadpt.WithStrKey(key), etcdadpt.WithCountOnly())
+		respSchema, err := sd.Schema().Search(ctx, etcdadpt.WithStrKey(key), etcdadpt.WithCountOnly())
 		if err != nil {
 			log.Error(fmt.Sprintf("modify schema[%s/%s] failed, get schema summary failed, operator: %s",
 				serviceID, schemaID, remoteIP), err)
@@ -2000,9 +1987,7 @@ func (ds *MetadataManager) modifySchema(ctx context.Context, serviceID string, s
 	pluginOps = append(pluginOps, opts...)
 
 	resp, err := etcdadpt.TxnWithCmp(ctx, pluginOps,
-		[]etcdadpt.CmpOptions{etcdadpt.OpCmp(
-			etcdadpt.CmpVer(util.StringToBytesWithNoCopy(path.GenerateServiceKey(domainProject, serviceID))),
-			etcdadpt.CmpNotEqual, 0)},
+		etcdadpt.If(etcdadpt.NotEqualVer(path.GenerateServiceKey(domainProject, serviceID), 0)),
 		nil)
 	if err != nil {
 		return pb.NewError(pb.ErrUnavailableBackend, err.Error())
@@ -2055,7 +2040,7 @@ func (ds *MetadataManager) DeleteServicePri(ctx context.Context, serviceID strin
 		}
 
 		instancesKey := path.GenerateInstanceKey(domainProject, serviceID, "")
-		rsp, err := kv.Store().Instance().Search(ctx,
+		rsp, err := sd.Instance().Search(ctx,
 			etcdadpt.WithStrKey(instancesKey),
 			etcdadpt.WithPrefix(),
 			etcdadpt.WithCountOnly())
@@ -2124,11 +2109,7 @@ func (ds *MetadataManager) DeleteServicePri(ctx context.Context, serviceID strin
 		return pb.CreateResponse(pb.ErrUnavailableBackend, err.Error()), err
 	}
 
-	resp, err := etcdadpt.TxnWithCmp(ctx, opts,
-		[]etcdadpt.CmpOptions{etcdadpt.OpCmp(
-			etcdadpt.CmpVer(util.StringToBytesWithNoCopy(serviceIDKey)),
-			etcdadpt.CmpNotEqual, 0)},
-		nil)
+	resp, err := etcdadpt.TxnWithCmp(ctx, opts, etcdadpt.If(etcdadpt.NotEqualVer(serviceIDKey, 0)), nil)
 	if err != nil {
 		log.Error(fmt.Sprintf("%s micro-service[%s] failed, operator: %s", title, serviceID, remoteIP), err)
 		return pb.CreateResponse(pb.ErrUnavailableBackend, err.Error()), err

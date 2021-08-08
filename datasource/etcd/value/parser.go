@@ -18,106 +18,20 @@
 package value
 
 import (
-	"encoding/json"
-	"errors"
-
-	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/state/parser"
 	"github.com/go-chassis/cari/discovery"
 )
 
 var (
-	errParseNilPoint  = errors.New("parse nil point")
-	errTargetNilPoint = errors.New("target is nil point")
+	newService         parser.CreateValueFunc = func() interface{} { return new(discovery.MicroService) }
+	newInstance        parser.CreateValueFunc = func() interface{} { return new(discovery.MicroServiceInstance) }
+	newRule            parser.CreateValueFunc = func() interface{} { return new(discovery.ServiceRule) }
+	newDependencyRule  parser.CreateValueFunc = func() interface{} { return new(discovery.MicroServiceDependency) }
+	newDependencyQueue parser.CreateValueFunc = func() interface{} { return new(discovery.ConsumerDependency) }
+
+	ServiceParser         = parser.New(newService, parser.JSONUnmarshal)
+	InstanceParser        = parser.New(newInstance, parser.JSONUnmarshal)
+	RuleParser            = parser.New(newRule, parser.JSONUnmarshal)
+	DependencyRuleParser  = parser.New(newDependencyRule, parser.JSONUnmarshal)
+	DependencyQueueParser = parser.New(newDependencyQueue, parser.JSONUnmarshal)
 )
-
-// new
-type CreateValueFunc func() interface{}
-
-var (
-	newBytes  CreateValueFunc = func() interface{} { return []byte(nil) }
-	newString CreateValueFunc = func() interface{} { return "" }
-	newMap    CreateValueFunc = func() interface{} { return make(map[string]string) }
-
-	newService         CreateValueFunc = func() interface{} { return new(discovery.MicroService) }
-	newInstance        CreateValueFunc = func() interface{} { return new(discovery.MicroServiceInstance) }
-	newRule            CreateValueFunc = func() interface{} { return new(discovery.ServiceRule) }
-	newDependencyRule  CreateValueFunc = func() interface{} { return new(discovery.MicroServiceDependency) }
-	newDependencyQueue CreateValueFunc = func() interface{} { return new(discovery.ConsumerDependency) }
-)
-
-// parse
-type ParseValueFunc func(src []byte, dist interface{}) error
-
-var (
-	UnParse ParseValueFunc = func(src []byte, dist interface{}) error {
-		if err := check(src, dist); err != nil {
-			return err
-		}
-		d := dist.(*interface{})
-		*d = src
-		return nil
-	}
-	TextUnmarshal ParseValueFunc = func(src []byte, dist interface{}) error {
-		if dist == nil {
-			return errTargetNilPoint
-		}
-		d := dist.(*interface{})
-		*d = util.BytesToStringWithNoCopy(src)
-		return nil
-	}
-	MapUnmarshal ParseValueFunc = func(src []byte, dist interface{}) error {
-		if err := check(src, dist); err != nil {
-			return err
-		}
-		d := dist.(*interface{})
-		m := (*d).(map[string]string)
-		return json.Unmarshal(src, &m)
-	}
-	JSONUnmarshal ParseValueFunc = func(src []byte, dist interface{}) error {
-		if err := check(src, dist); err != nil {
-			return err
-		}
-		d := dist.(*interface{})
-		return json.Unmarshal(src, *d)
-	}
-)
-
-type Parser interface {
-	Unmarshal(src []byte) (interface{}, error)
-}
-
-type CommonParser struct {
-	NewFunc  CreateValueFunc
-	FromFunc ParseValueFunc
-}
-
-func (p *CommonParser) Unmarshal(src []byte) (interface{}, error) {
-	v := p.NewFunc()
-	if err := p.FromFunc(src, &v); err != nil {
-		return nil, err
-	}
-	return v, nil
-}
-
-// global parser
-var (
-	BytesParser  = &CommonParser{newBytes, UnParse}
-	StringParser = &CommonParser{newString, TextUnmarshal}
-	MapParser    = &CommonParser{newMap, MapUnmarshal}
-
-	ServiceParser         = &CommonParser{newService, JSONUnmarshal}
-	InstanceParser        = &CommonParser{newInstance, JSONUnmarshal}
-	RuleParser            = &CommonParser{newRule, JSONUnmarshal}
-	DependencyRuleParser  = &CommonParser{newDependencyRule, JSONUnmarshal}
-	DependencyQueueParser = &CommonParser{newDependencyQueue, JSONUnmarshal}
-)
-
-func check(src []byte, dist interface{}) error {
-	if src == nil {
-		return errParseNilPoint
-	}
-	if dist == nil {
-		return errTargetNilPoint
-	}
-	return nil
-}

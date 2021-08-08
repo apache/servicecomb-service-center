@@ -25,7 +25,7 @@ import (
 	"sync"
 	"time"
 
-	client2 "github.com/apache/servicecomb-service-center/client"
+	"github.com/apache/servicecomb-service-center/client"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/syncer/pkg/ticker"
 	"github.com/go-chassis/cari/discovery"
@@ -33,7 +33,7 @@ import (
 
 var (
 	domain, project       string
-	cli                   *client2.Client
+	cli                   *client.Client
 	once                  sync.Once
 	heartbeatInterval     = 30
 	providerCaches        = &sync.Map{}
@@ -45,7 +45,7 @@ var (
 
 func Start(ctx context.Context, conf *Config) (err error) {
 	once.Do(func() {
-		cli, err = client2.NewSCClient(client2.Config{Endpoints: conf.Registry.Endpoints})
+		cli, err = client.NewSCClient(client.Config{Endpoints: conf.Registry.Endpoints})
 		if err != nil {
 			log.Error("new service center client failed", err)
 			return
@@ -119,7 +119,7 @@ func Do(ctx context.Context, method, addr string, headers http.Header, body []by
 		log.Error("", err)
 	}
 
-	client, err := client2.NewLBClient(endpoints, (&client2.Config{Endpoints: endpoints}).Merge())
+	client, err := client.NewLBClient(endpoints, (&client.Config{Endpoints: endpoints}).Merge())
 	if err != nil {
 		return nil, err
 	}

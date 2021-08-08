@@ -60,21 +60,21 @@ func TestKeepAlive(t *testing.T) {
 	task.RegisterService(&mockAsyncTaskService{Task: tt})
 
 	// KeepAlive case: add task error
-	ttl, err := KeepAlive(context.Background(), etcdadpt.WithKey([]byte("error")))
+	ttl, err := KeepAlive(context.Background(), "error", 0)
 	if err == nil || ttl > 0 {
 		t.Fatalf("TestStore failed")
 	}
 
 	// KeepAlive case: get last task error
 	tt.key = "LeaseAsyncTask_a"
-	ttl, err = KeepAlive(context.Background(), etcdadpt.WithKey([]byte("b")))
+	ttl, err = KeepAlive(context.Background(), "b", 0)
 	if err == nil || ttl > 0 {
 		t.Fatalf("TestStore failed")
 	}
 
 	// KeepAlive case: get last task error
 	tt.key = "LeaseAsyncTask_a"
-	ttl, err = KeepAlive(context.Background(), etcdadpt.WithKey([]byte("a")))
+	ttl, err = KeepAlive(context.Background(), "a", 0)
 	if err != nil || ttl != 1 {
 		t.Fatalf("TestStore failed")
 	}

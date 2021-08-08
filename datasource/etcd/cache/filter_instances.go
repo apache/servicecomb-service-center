@@ -21,8 +21,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/cache"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -82,7 +82,7 @@ func (f *InstancesFilter) Find(ctx context.Context, parent *cache.Node) (
 func (f *InstancesFilter) findInstances(ctx context.Context, domainProject, serviceID, instanceID string, maxRevs []int64, counts []int64) (instances []*pb.MicroServiceInstance, err error) {
 	key := path.GenerateInstanceKey(domainProject, serviceID, instanceID)
 	opts := append(util.FromContext(ctx), etcdadpt.WithStrKey(key), etcdadpt.WithPrefix())
-	resp, err := kv.Store().Instance().Search(ctx, opts...)
+	resp, err := sd.Instance().Search(ctx, opts...)
 	if err != nil {
 		return nil, err
 	}

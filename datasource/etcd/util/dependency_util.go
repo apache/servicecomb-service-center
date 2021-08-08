@@ -24,8 +24,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	pb "github.com/go-chassis/cari/discovery"
@@ -138,7 +138,7 @@ func TransferToMicroServiceDependency(ctx context.Context, key string) (*pb.Micr
 	}
 
 	opts := append(FromContext(ctx), etcdadpt.WithStrKey(key))
-	res, err := kv.Store().DependencyRule().Search(ctx, opts...)
+	res, err := sd.DependencyRule().Search(ctx, opts...)
 	if err != nil {
 		log.Error(fmt.Sprintf("get dependency rule[%s] failed", key), nil)
 		return nil, err
@@ -300,7 +300,7 @@ func DeleteDependencyForDeleteService(domainProject string, serviceID string, se
 
 func removeProviderRuleOfConsumer(ctx context.Context, domainProject string, cache map[string]bool) ([]etcdadpt.OpOptions, error) {
 	key := path.GenerateConsumerDependencyRuleKey(domainProject, nil) + path.SPLIT
-	resp, err := kv.Store().DependencyRule().Search(ctx,
+	resp, err := sd.DependencyRule().Search(ctx,
 		etcdadpt.WithStrKey(key), etcdadpt.WithPrefix())
 	if err != nil {
 		return nil, err
@@ -346,7 +346,7 @@ func removeProviderRuleOfConsumer(ctx context.Context, domainProject string, cac
 
 func RemoveProviderRuleKeys(ctx context.Context, domainProject string, cache map[string]bool) ([]etcdadpt.OpOptions, error) {
 	key := path.GenerateProviderDependencyRuleKey(domainProject, nil) + path.SPLIT
-	resp, err := kv.Store().DependencyRule().Search(ctx,
+	resp, err := sd.DependencyRule().Search(ctx,
 		etcdadpt.WithStrKey(key), etcdadpt.WithPrefix(), etcdadpt.WithKeyOnly())
 	if err != nil {
 		return nil, err
