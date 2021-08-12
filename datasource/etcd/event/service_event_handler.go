@@ -23,9 +23,9 @@ import (
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/cache"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/go-chassis/cari/discovery"
@@ -37,11 +37,11 @@ import (
 type ServiceEventHandler struct {
 }
 
-func (h *ServiceEventHandler) Type() sd.Type {
-	return kv.SERVICE
+func (h *ServiceEventHandler) Type() kvstore.Type {
+	return sd.TypeService
 }
 
-func (h *ServiceEventHandler) OnEvent(evt sd.KvEvent) {
+func (h *ServiceEventHandler) OnEvent(evt kvstore.Event) {
 	ms, ok := evt.KV.Value.(*pb.MicroService)
 	if !ok {
 		log.Error("failed to assert MicroService", datasource.ErrAssertFail)

@@ -32,8 +32,8 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 
 	"github.com/apache/servicecomb-service-center/pkg/buffer"
-	"github.com/apache/servicecomb-service-center/pkg/tlsutil"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/go-chassis/foundation/tlsutil"
 
 	"context"
 )

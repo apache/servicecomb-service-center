@@ -20,11 +20,11 @@ package chain
 import (
 	"context"
 
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
+	"github.com/apache/servicecomb-service-center/pkg/goutil"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
-var pool = gopool.New(context.Background())
+var pool = goutil.New()
 
 type CallbackFunc func(r Result)
 

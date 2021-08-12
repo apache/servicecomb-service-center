@@ -16,15 +16,15 @@
 package adaptor
 
 import (
+	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
 	pb "github.com/go-chassis/cari/discovery"
 	v1 "k8s.io/api/core/v1"
 
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 )
 
 type ServiceCacher struct {
-	*sd.CommonCacher
+	*kvstore.CommonCacher
 }
 
 // onServiceEvent is the method to refresh service cache
@@ -59,7 +59,7 @@ func (c *ServiceCacher) onServiceEvent(evt K8sEvent) {
 	}
 }
 
-func NewServiceCacher(c *sd.CommonCacher) (s *ServiceCacher) {
+func NewServiceCacher(c *kvstore.CommonCacher) (s *ServiceCacher) {
 	s = &ServiceCacher{CommonCacher: c}
 	Kubernetes().AppendEventFunc(TypeService, s.onServiceEvent)
 	return

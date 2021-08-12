@@ -23,14 +23,14 @@ import (
 	"fmt"
 
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/event"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	pb "github.com/go-chassis/cari/discovery"
+	"github.com/little-cui/etcdadpt"
 )
 
 type DepManager struct {
@@ -106,8 +106,8 @@ func (dm *DepManager) DependencyHandle(ctx context.Context) error {
 	}
 	for {
 		key := path.GetServiceDependencyQueueRootKey("")
-		resp, err := kv.Store().DependencyQueue().Search(ctx,
-			client.WithStrKey(key), client.WithPrefix(), client.WithCountOnly())
+		resp, err := sd.DependencyQueue().Search(ctx,
+			etcdadpt.WithStrKey(key), etcdadpt.WithPrefix(), etcdadpt.WithCountOnly())
 		if err != nil {
 			return err
 		}

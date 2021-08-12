@@ -24,8 +24,9 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
 	"github.com/apache/servicecomb-service-center/pkg/dump"
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
+	"github.com/apache/servicecomb-service-center/pkg/goutil"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/go-chassis/foundation/gopool"
 	"github.com/patrickmn/go-cache"
 )
 
@@ -34,7 +35,7 @@ type SysManager struct {
 
 func (ds *SysManager) DumpCache(ctx context.Context) *dump.Cache {
 	var cache dump.Cache
-	gopool.New(ctx, gopool.Configure().Workers(2)).
+	goutil.New(gopool.Configure().Workers(2).WithContext(ctx)).
 		Do(func(_ context.Context) { setServiceValue(sd.Store().Service(), &cache.Microservices) }).
 		Do(func(_ context.Context) { setInstanceValue(sd.Store().Instance(), &cache.Instances) }).
 		Done()

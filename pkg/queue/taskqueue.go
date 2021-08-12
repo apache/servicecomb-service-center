@@ -18,7 +18,8 @@ package queue
 import (
 	"context"
 
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
+	"github.com/apache/servicecomb-service-center/pkg/goutil"
+	"github.com/go-chassis/foundation/gopool"
 )
 
 const (
@@ -97,6 +98,6 @@ func NewTaskQueue(size int) *TaskQueue {
 	}
 	return &TaskQueue{
 		taskCh:    make(chan Task, size),
-		goroutine: gopool.New(context.Background()),
+		goroutine: goutil.New(gopool.Configure()),
 	}
 }

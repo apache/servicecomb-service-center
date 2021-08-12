@@ -24,11 +24,11 @@ import (
 	"sync"
 	"time"
 
-	etcdclient "github.com/apache/servicecomb-service-center/datasource/etcd/client"
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/coreos/etcd/client"
+	"github.com/go-chassis/foundation/gopool"
+	"github.com/little-cui/etcdadpt"
+	"github.com/little-cui/etcdadpt/middleware/metrics"
 )
 
 const (
@@ -96,29 +96,25 @@ func (m *DLock) Lock(wait bool) (err error) {
 		m.mutex.Lock()
 	}
 
-	opts := []etcdclient.PluginOpOption{
-		etcdclient.WithStrKey(m.key),
-		etcdclient.WithStrValue(m.id)}
-
 	log.Info(fmt.Sprintf("Trying to create a lock: key=%s, id=%s", m.key, m.id))
 
 	var leaseID int64
-	putOpts := opts
+	var opts []etcdadpt.OpOption
 	if m.ttl > 0 {
-		leaseID, err = etcdclient.Instance().LeaseGrant(m.ctx, m.ttl)
+		leaseID, err = etcdadpt.Instance().LeaseGrant(m.ctx, m.ttl)
 		if err != nil {
 			return err
 		}
-		putOpts = append(opts, etcdclient.WithLease(leaseID))
+		opts = append(opts, etcdadpt.WithLease(leaseID))
 	}
-	success, err := etcdclient.Instance().PutNoOverride(m.ctx, putOpts...)
+	success, err := etcdadpt.Insert(m.ctx, m.key, m.id, opts...)
 	if err == nil && success {
 		log.Info(fmt.Sprintf("Create Lock OK, key=%s, id=%s", m.key, m.id))
 		return nil
 	}
 
 	if leaseID > 0 {
-		err = etcdclient.Instance().LeaseRevoke(m.ctx, leaseID)
+		err = etcdadpt.Instance().LeaseRevoke(m.ctx, leaseID)
 		if err != nil {
 			return err
 		}
@@ -133,11 +129,11 @@ func (m *DLock) Lock(wait bool) (err error) {
 	ctx, cancel := context.WithTimeout(m.ctx, time.Duration(m.ttl)*time.Second)
 	gopool.Go(func(context.Context) {
 		defer cancel()
-		err := etcdclient.Instance().Watch(ctx,
-			etcdclient.WithStrKey(m.key),
-			etcdclient.WithWatchCallback(
-				func(message string, evt *etcdclient.PluginResponse) error {
-					if evt != nil && evt.Action == etcdclient.ActionDelete {
+		err := etcdadpt.Instance().Watch(ctx,
+			etcdadpt.WithStrKey(m.key),
+			etcdadpt.WithWatchCallback(
+				func(message string, evt *etcdadpt.Response) error {
+					if evt != nil && evt.Action == etcdadpt.ActionDelete {
 						// break this for-loop, and try to create the node again.
 						return fmt.Errorf("lock released")
 					}
@@ -162,24 +158,16 @@ func (m *DLock) Unlock() (err error) {
 			m.mutex.Unlock()
 		}
 
-		etcdclient.ReportBackendOperationCompleted(OperationGlobalLock, nil, m.createAt)
+		metrics.ReportBackendOperationCompleted(OperationGlobalLock, nil, m.createAt)
 	}()
 
-	opts := []etcdclient.PluginOpOption{
-		etcdclient.DEL,
-		etcdclient.WithStrKey(m.key)}
-
 	for i := 1; i <= DefaultRetryTimes; i++ {
-		_, err = etcdclient.Instance().Do(m.ctx, opts...)
+		_, err := etcdadpt.Delete(m.ctx, m.key)
 		if err == nil {
 			log.Info(fmt.Sprintf("Delete lock OK, key=%s, id=%s", m.key, m.id))
 			return nil
 		}
 		log.Error(fmt.Sprintf("Delete lock failed, key=%s, id=%s", m.key, m.id), err)
-		e, ok := err.(client.Error)
-		if ok && e.Code == client.ErrorCodeKeyNotFound {
-			return nil
-		}
 	}
 	return err
 }

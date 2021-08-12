@@ -23,6 +23,8 @@ import (
 	"strings"
 	"sync"
 	"unsafe"
+
+	"github.com/go-chassis/foundation/fileutil"
 )
 
 var (
@@ -46,7 +48,7 @@ type ReflectObject struct {
 
 // Name returns a short name of the object type
 func (o *ReflectObject) Name() string {
-	return FileLastName(o.FullName)
+	return fileutil.LastNameOf(o.FullName)
 }
 
 type Reflector struct {

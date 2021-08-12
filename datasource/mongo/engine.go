@@ -24,21 +24,19 @@ import (
 	"strings"
 	"time"
 
-	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
-
-	pb "github.com/go-chassis/cari/discovery"
-
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
 	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
-	"github.com/apache/servicecomb-service-center/pkg/cluster"
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/metrics"
+	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
+	pb "github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/foundation/gopool"
+	"github.com/little-cui/etcdadpt"
 )
 
 type SCManager struct {
@@ -143,7 +141,7 @@ func (ds *SCManager) UpgradeVersion(ctx context.Context) error {
 	return nil
 }
 
-func (ds *SCManager) GetClusters(ctx context.Context) (cluster.Clusters, error) {
+func (ds *SCManager) GetClusters(ctx context.Context) (etcdadpt.Clusters, error) {
 	return nil, nil
 }
 

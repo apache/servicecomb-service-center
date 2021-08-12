@@ -23,9 +23,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
+	"github.com/go-chassis/foundation/gopool"
 	"github.com/openzipkin/zipkin-go-opentracing/thrift/gen-go/zipkincore"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
@@ -39,7 +39,6 @@ type FileCollector struct {
 	BatchSize int
 	logger    *lumberjack.Logger
 	c         chan *zipkincore.Span
-	goroutine *gopool.Pool
 }
 
 func (f *FileCollector) Collect(span *zipkincore.Span) error {
@@ -54,7 +53,6 @@ func (f *FileCollector) Collect(span *zipkincore.Span) error {
 }
 
 func (f *FileCollector) Close() error {
-	f.goroutine.Close(true)
 	return f.logger.Close()
 }
 
@@ -85,7 +83,7 @@ func (f *FileCollector) write(batch []*zipkincore.Span) (c int) {
 }
 
 func (f *FileCollector) Run() {
-	f.goroutine.Do(func(ctx context.Context) {
+	gopool.Go(func(ctx context.Context) {
 		var (
 			batch []*zipkincore.Span
 			prev  []*zipkincore.Span
@@ -143,8 +141,7 @@ func NewFileCollector(path string) (*FileCollector, error) {
 			LocalTime:  true,
 			Compress:   true,
 		},
-		c:         make(chan *zipkincore.Span, 1000),
-		goroutine: gopool.New(context.Background()),
+		c: make(chan *zipkincore.Span, 1000),
 	}
 	fc.Run()
 	return fc, nil

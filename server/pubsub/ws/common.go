@@ -21,11 +21,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
+	"github.com/apache/servicecomb-service-center/pkg/goutil"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/event"
 	"github.com/apache/servicecomb-service-center/server/metrics"
+	"github.com/go-chassis/foundation/gopool"
 	"github.com/gorilla/websocket"
 )
 
@@ -46,7 +47,7 @@ func Watch(ctx context.Context, serviceID string, conn *websocket.Conn) {
 	metrics.ReportSubscriber(domain, Websocket, 1)
 	defer metrics.ReportSubscriber(domain, Websocket, -1)
 
-	pool := gopool.New(ctx).Do(func(ctx context.Context) {
+	pool := goutil.New(gopool.Configure().WithContext(ctx).Workers(1)).Do(func(ctx context.Context) {
 		if err := NewBroker(ws, subscriber).Listen(ctx); err != nil {
 			log.Error(fmt.Sprintf("[%s] listen service[%s] failed", conn.RemoteAddr(), serviceID), err)
 		}

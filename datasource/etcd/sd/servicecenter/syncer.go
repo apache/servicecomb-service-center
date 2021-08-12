@@ -24,14 +24,15 @@ import (
 	pb "github.com/go-chassis/cari/discovery"
 
 	"github.com/apache/servicecomb-service-center/datasource/etcd"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/state"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
 	"github.com/apache/servicecomb-service-center/pkg/dump"
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/alarm"
+	"github.com/go-chassis/foundation/gopool"
 )
 
 var (
@@ -42,11 +43,11 @@ var (
 type Syncer struct {
 	Client *SCClientAggregate
 
-	cachers map[sd.Type]*Cacher
+	cachers map[kvstore.Type]*Cacher
 }
 
 func (c *Syncer) Initialize() {
-	c.cachers = make(map[sd.Type]*Cacher)
+	c.cachers = make(map[kvstore.Type]*Cacher)
 	c.Client = GetOrCreateSCClient()
 }
 
@@ -69,33 +70,33 @@ func (c *Syncer) Sync(ctx context.Context) {
 		log.Error("", err)
 	}
 	// microservice
-	serviceCacher, ok := c.cachers[kv.SERVICE]
+	serviceCacher, ok := c.cachers[sd.TypeService]
 	if ok {
 		c.check(serviceCacher, &cache.Microservices, errs)
 	}
-	indexCacher, ok := c.cachers[kv.ServiceIndex]
+	indexCacher, ok := c.cachers[sd.TypeServiceIndex]
 	if ok {
 		c.checkWithConflictHandleFunc(indexCacher, &cache.Indexes, errs, c.logConflictFunc)
 	}
-	aliasCacher, ok := c.cachers[kv.ServiceAlias]
+	aliasCacher, ok := c.cachers[sd.TypeServiceAlias]
 	if ok {
 		c.checkWithConflictHandleFunc(aliasCacher, &cache.Aliases, errs, c.logConflictFunc)
 	}
 	// microservice meta
-	tagCacher, ok := c.cachers[kv.ServiceTag]
+	tagCacher, ok := c.cachers[sd.TypeServiceTag]
 	if ok {
 		c.check(tagCacher, &cache.Tags, errs)
 	}
-	depRuleCacher, ok := c.cachers[kv.DependencyRule]
+	depRuleCacher, ok := c.cachers[sd.TypeDependencyRule]
 	if ok {
 		c.check(depRuleCacher, &cache.DependencyRules, errs)
 	}
-	schemaSummaryCacher, ok := c.cachers[kv.SchemaSummary]
+	schemaSummaryCacher, ok := c.cachers[sd.TypeSchemaSummary]
 	if ok {
 		c.check(schemaSummaryCacher, &cache.Summaries, errs)
 	}
 	// instance
-	instCacher, ok := c.cachers[kv.INSTANCE]
+	instCacher, ok := c.cachers[sd.TypeInstance]
 	if ok {
 		c.check(instCacher, &cache.Instances, errs)
 	}
@@ -112,7 +113,7 @@ func (c *Syncer) checkWithConflictHandleFunc(local *Cacher, remote dump.Getter, 
 		// because the result of the remote return may contain the same data as
 		// the local cache of the current SC. So we need to ignore it and
 		// prevent the aggregation result from increasing.
-		if v.ClusterName == etcd.Configuration().ClusterName {
+		if v.ClusterName == state.Configuration().ClusterName {
 			return true
 		}
 		if kv, ok := exists[v.Key]; ok {
@@ -121,7 +122,7 @@ func (c *Syncer) checkWithConflictHandleFunc(local *Cacher, remote dump.Getter, 
 		}
 		exists[v.Key] = v
 		old := local.Cache().Get(v.Key)
-		newKv := &sd.KeyValue{
+		newKv := &kvstore.KeyValue{
 			Key:         util.StringToBytesWithNoCopy(v.Key),
 			Value:       v.Value,
 			ModRevision: v.Rev,
@@ -147,11 +148,11 @@ func (c *Syncer) checkWithConflictHandleFunc(local *Cacher, remote dump.Getter, 
 		return true
 	})
 
-	var deletes []*sd.KeyValue
-	local.Cache().ForEach(func(key string, v *sd.KeyValue) (next bool) {
+	var deletes []*kvstore.KeyValue
+	local.Cache().ForEach(func(key string, v *kvstore.KeyValue) (next bool) {
 		var exist bool
 		remote.ForEach(func(_ int, v *dump.KV) bool {
-			if v.ClusterName == etcd.Configuration().ClusterName {
+			if v.ClusterName == state.Configuration().ClusterName {
 				return true
 			}
 			exist = v.Key == key
@@ -199,11 +200,12 @@ func (c *Syncer) logConflictFunc(origin *dump.KV, conflict dump.Getter, index in
 }
 
 func (c *Syncer) loop(ctx context.Context) {
+	cfg := etcd.Configuration()
 	select {
 	case <-ctx.Done():
 	case <-time.After(minWaitInterval):
 		c.Sync(ctx)
-		d := etcd.Configuration().AutoSyncInterval
+		d := cfg.AutoSyncInterval
 		if d == 0 {
 			return
 		}
@@ -223,7 +225,7 @@ func (c *Syncer) loop(ctx context.Context) {
 }
 
 // unsafe
-func (c *Syncer) AddCacher(t sd.Type, cacher *Cacher) {
+func (c *Syncer) AddCacher(t kvstore.Type, cacher *Cacher) {
 	c.cachers[t] = cacher
 }
 

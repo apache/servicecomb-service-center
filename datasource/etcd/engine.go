@@ -27,22 +27,19 @@ import (
 	"strings"
 	"time"
 
-	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
-
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/mux"
-	"github.com/apache/servicecomb-service-center/server/config"
-	"github.com/apache/servicecomb-service-center/version"
-
 	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/mux"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
-	"github.com/apache/servicecomb-service-center/pkg/cluster"
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/core"
+	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
+	"github.com/apache/servicecomb-service-center/version"
 	pb "github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/foundation/gopool"
+	"github.com/little-cui/etcdadpt"
 )
 
 type SCManager struct {
@@ -271,20 +268,15 @@ func shouldClear(ctx context.Context, timeLimitStamp string, svc *pb.MicroServic
 	return true, nil
 }
 
-func (sm *SCManager) GetClusters(ctx context.Context) (cluster.Clusters, error) {
-	return Configuration().Clusters, nil
+func (sm *SCManager) GetClusters(ctx context.Context) (etcdadpt.Clusters, error) {
+	return etcdadpt.ListCluster(ctx)
 }
 func (sm *SCManager) UpgradeServerVersion(ctx context.Context) error {
 	bytes, err := json.Marshal(config.Server)
 	if err != nil {
 		return err
 	}
-	_, err = client.Instance().Do(ctx,
-		client.PUT, client.WithStrKey(path.GetServerInfoKey()), client.WithValue(bytes))
-	if err != nil {
-		return err
-	}
-	return nil
+	return etcdadpt.PutBytes(ctx, path.GetServerInfoKey(), bytes)
 }
 func (sm *SCManager) UpgradeVersion(ctx context.Context) error {
 	lock, err := mux.Lock(mux.GlobalLock)

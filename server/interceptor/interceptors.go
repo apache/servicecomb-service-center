@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"net/http"
 
-	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
@@ -59,9 +58,7 @@ func InvokeInterceptors(w http.ResponseWriter, req *http.Request) (err error) {
 	defer func() {
 		if itf := recover(); itf != nil {
 			log.Panic(itf)
-
-			err = errorsEx.Internal(itf)
-
+			err = fmt.Errorf("%v", itf)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}()

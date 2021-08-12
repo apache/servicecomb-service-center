@@ -23,14 +23,16 @@ import (
 	"time"
 
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/event"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/mux"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/state"
+	tracer "github.com/apache/servicecomb-service-center/datasource/etcd/tracing"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
+	"github.com/go-chassis/foundation/gopool"
+	"github.com/little-cui/etcdadpt"
+	"github.com/little-cui/etcdadpt/middleware/tracing"
 )
 
 var clustersIndex = make(map[string]int)
@@ -39,9 +41,13 @@ func init() {
 	datasource.Install("etcd", NewDataSource)
 	datasource.Install("embeded_etcd", NewDataSource) //TODO remove misspell in future
 	datasource.Install("embedded_etcd", NewDataSource)
+
+	sd.RegisterInnerTypes()
 }
 
 type DataSource struct {
+	Options *datasource.Options
+
 	accountLockManager datasource.AccountLockManager
 	accountManager     datasource.AccountManager
 	metadataManager    datasource.MetadataManager
@@ -85,19 +91,23 @@ func (ds *DataSource) MetricsManager() datasource.MetricsManager {
 }
 
 func NewDataSource(opts datasource.Options) (datasource.DataSource, error) {
-	// TODO: construct a reasonable DataSource instance
 	log.Warn("data source enable etcd mode")
 
-	inst := &DataSource{}
-
-	registryAddresses := strings.Join(Configuration().RegistryAddresses(), ",")
-	Configuration().SslEnabled = opts.SslEnabled && strings.Contains(strings.ToLower(registryAddresses), "https://")
-
-	if err := inst.initialize(opts); err != nil {
-		return nil, err
+	etcdCfg := Configuration()
+	etcdCfg.Kind = opts.Kind
+	etcdCfg.Logger = opts.Logger
+	etcdCfg.SslEnabled = opts.SslEnabled
+	etcdCfg.TLSConfig = opts.TLSConfig
+	etcdCfg.ConnectedFunc = opts.ConnectedFunc
+	etcdCfg.ErrorFunc = opts.ErrorFunc
+	opts.Config = etcdCfg
+	opts.Config.Init()
+	opts.SslEnabled = opts.SslEnabled && strings.Contains(strings.ToLower(opts.ClusterAddresses), "https://")
+	inst := &DataSource{
+		Options: &opts,
 	}
-	if opts.ReleaseAccountAfter == 0 {
-		opts.ReleaseAccountAfter = 15 * time.Minute
+	if err := inst.initialize(); err != nil {
+		return nil, err
 	}
 	inst.accountManager = &AccountManager{}
 	inst.accountLockManager = NewAccountLockManager(opts.ReleaseAccountAfter)
@@ -110,12 +120,7 @@ func NewDataSource(opts datasource.Options) (datasource.DataSource, error) {
 	return inst, nil
 }
 
-func (ds *DataSource) initialize(opts datasource.Options) error {
-	ds.initClustersIndex()
-	// init client/sd plugins
-	ds.initPlugins(opts)
-	// Add events handlers
-	event.Initialize()
+func (ds *DataSource) initialize() error {
 	// Wait for kv store ready
 	ds.initKvStore()
 	// Compact
@@ -124,8 +129,12 @@ func (ds *DataSource) initialize(opts datasource.Options) error {
 }
 
 func (ds *DataSource) initClustersIndex() {
+	clusterMap, err := etcdadpt.ListCluster(context.Background())
+	if err != nil {
+		log.Fatal("init clusters index failed", err)
+	}
 	var clusters []string
-	for name := range Configuration().Clusters {
+	for name := range clusterMap {
 		clusters = append(clusters, name)
 	}
 	sort.Strings(clusters)
@@ -134,26 +143,39 @@ func (ds *DataSource) initClustersIndex() {
 	}
 }
 
-func (ds *DataSource) initPlugins(opts datasource.Options) {
-	err := client.Init(opts)
+func (ds *DataSource) initPlugins() {
+	// registry
+	tracing.Register(tracer.New())
+	err := etcdadpt.Init(ds.Options.Config)
 	if err != nil {
 		log.Fatal("client init failed", err)
 	}
+	// clusters
+	ds.initClustersIndex()
+
+	// discovery
 	kind := config.GetString("discovery.kind", "", config.WithStandby("discovery_plugin"))
-	err = sd.Init(sd.Options{Kind: sd.Kind(kind)})
+	err = state.Init(state.Config{
+		Kind:        kind,
+		ClusterName: ds.Options.ClusterName,
+		Logger:      ds.Options.Logger,
+		EnableCache: ds.Options.EnableCache,
+	})
 	if err != nil {
 		log.Fatal("sd init failed", err)
 	}
 }
 
 func (ds *DataSource) initKvStore() {
-	kv.Store().Run()
-	<-kv.Store().Ready()
+	// init client/sd plugins
+	ds.initPlugins()
+	// Add events handlers
+	event.Initialize()
 }
 
 func (ds *DataSource) autoCompact() {
-	delta := Configuration().CompactIndexDelta
-	interval := Configuration().CompactInterval
+	delta := ds.Options.CompactIndexDelta
+	interval := ds.Options.CompactInterval
 	if delta <= 0 || interval == 0 {
 		return
 	}
@@ -170,7 +192,7 @@ func (ds *DataSource) autoCompact() {
 					continue
 				}
 
-				err = client.Instance().Compact(ctx, delta)
+				err = etcdadpt.Instance().Compact(ctx, delta)
 				if err != nil {
 					log.Error("", err)
 				}

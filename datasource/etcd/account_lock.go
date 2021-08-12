@@ -22,9 +22,9 @@ import (
 	"time"
 
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/little-cui/etcdadpt"
 )
 
 type AccountLockManager struct {
@@ -39,7 +39,7 @@ func (al AccountLockManager) UpsertLock(ctx context.Context, lock *datasource.Ac
 	}
 	key := lock.Key
 	etcdKey := path.GenerateAccountLockKey(key)
-	err = client.PutBytes(ctx, etcdKey, value)
+	err = etcdadpt.PutBytes(ctx, etcdKey, value)
 	if err != nil {
 		log.Error("can not save account lock", err)
 		return err
@@ -49,16 +49,15 @@ func (al AccountLockManager) UpsertLock(ctx context.Context, lock *datasource.Ac
 }
 
 func (al AccountLockManager) GetLock(ctx context.Context, key string) (*datasource.AccountLock, error) {
-	resp, err := client.Instance().Do(ctx, client.GET,
-		client.WithStrKey(path.GenerateAccountLockKey(key)))
+	kv, err := etcdadpt.Get(ctx, path.GenerateAccountLockKey(key))
 	if err != nil {
 		return nil, err
 	}
-	if resp.Count == 0 {
+	if kv == nil {
 		return nil, datasource.ErrAccountLockNotExist
 	}
 	lock := &datasource.AccountLock{}
-	err = json.Unmarshal(resp.Kvs[0].Value, lock)
+	err = json.Unmarshal(kv.Value, lock)
 	if err != nil {
 		log.Error(fmt.Sprintf("key %s format invalid", key), err)
 		return nil, err
@@ -67,13 +66,12 @@ func (al AccountLockManager) GetLock(ctx context.Context, key string) (*datasour
 }
 
 func (al AccountLockManager) ListLock(ctx context.Context) ([]*datasource.AccountLock, int64, error) {
-	resp, err := client.Instance().Do(ctx, client.GET,
-		client.WithStrKey(path.GenerateAccountLockKey("")), client.WithPrefix())
+	kvs, n, err := etcdadpt.List(ctx, path.GenerateAccountLockKey(""))
 	if err != nil {
 		return nil, 0, err
 	}
-	locks := make([]*datasource.AccountLock, 0, resp.Count)
-	for _, v := range resp.Kvs {
+	locks := make([]*datasource.AccountLock, 0, n)
+	for _, v := range kvs {
 		lock := &datasource.AccountLock{}
 		err = json.Unmarshal(v.Value, lock)
 		if err != nil {
@@ -82,11 +80,11 @@ func (al AccountLockManager) ListLock(ctx context.Context) ([]*datasource.Accoun
 		}
 		locks = append(locks, lock)
 	}
-	return locks, resp.Count, nil
+	return locks, n, nil
 }
 
 func (al AccountLockManager) DeleteLock(ctx context.Context, key string) error {
-	_, err := client.Delete(ctx, path.GenerateAccountLockKey(key))
+	_, err := etcdadpt.Delete(ctx, path.GenerateAccountLockKey(key))
 	if err != nil {
 		log.Error(fmt.Sprintf("remove lock %s failed", key), err)
 		return datasource.ErrCannotReleaseLock
@@ -96,14 +94,14 @@ func (al AccountLockManager) DeleteLock(ctx context.Context, key string) error {
 }
 
 func (al AccountLockManager) DeleteLockList(ctx context.Context, keys []string) error {
-	var opts []client.PluginOp
+	var opts []etcdadpt.OpOptions
 	for _, key := range keys {
-		opts = append(opts, client.OpDel(client.WithStrKey(path.GenerateAccountLockKey(key))))
+		opts = append(opts, etcdadpt.OpDel(etcdadpt.WithStrKey(path.GenerateAccountLockKey(key))))
 	}
 	if len(opts) == 0 {
 		return nil
 	}
-	err := client.BatchCommit(ctx, opts)
+	err := etcdadpt.Txn(ctx, opts)
 	if err != nil {
 		log.Error(fmt.Sprintf("remove locks %v failed", keys), err)
 		return datasource.ErrCannotReleaseLock

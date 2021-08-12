@@ -19,6 +19,7 @@ package server
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"net"
 	"os"
@@ -27,11 +28,11 @@ import (
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	nf "github.com/apache/servicecomb-service-center/pkg/event"
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/plugin"
 	"github.com/apache/servicecomb-service-center/pkg/signal"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/alarm"
 	"github.com/apache/servicecomb-service-center/server/command"
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/core"
@@ -41,9 +42,14 @@ import (
 	"github.com/apache/servicecomb-service-center/server/service/gov"
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
 	snf "github.com/apache/servicecomb-service-center/server/syncernotify"
+	"github.com/go-chassis/foundation/gopool"
+	"github.com/little-cui/etcdadpt"
 )
 
-const defaultCollectPeriod = 30 * time.Second
+const (
+	defaultCollectPeriod    = 30 * time.Second
+	defaultReleaseLockAfter = 15 * time.Minute
+)
 
 var server ServiceCenterServer
 
@@ -106,21 +112,57 @@ func (s *ServiceCenterServer) initEndpoints() {
 
 func (s *ServiceCenterServer) initDatasource() {
 	// init datasource
-	kind := datasource.Kind(config.GetString("registry.kind", "", config.WithStandby("registry_plugin")))
-	ReleaseAccountAfter := config.GetString("rbac.releaseLockAfter", "15m")
-	d, err := time.ParseDuration(ReleaseAccountAfter)
+	kind := config.GetString("registry.kind", "", config.WithStandby("registry_plugin"))
+	releaseLockAfter := getReleaseLockAfter()
+	tlsConfig, err := getDatasourceTLSConfig()
 	if err != nil {
-		log.Warn("releaseAfter is invalid, use default config")
+		log.Fatal("get datasource tlsConfig failed", err)
 	}
 	if err := datasource.Init(datasource.Options{
-		Kind:                kind,
-		SslEnabled:          config.GetSSL().SslEnabled,
+		Config: etcdadpt.Config{
+			Kind:       kind,
+			SslEnabled: config.GetSSL().SslEnabled,
+			TLSConfig:  tlsConfig,
+			ConnectedFunc: func() {
+				err := alarm.Clear(alarm.IDBackendConnectionRefuse)
+				if err != nil {
+					log.Error("", err)
+				}
+			},
+			ErrorFunc: func(err error) {
+				if err == nil {
+					return
+				}
+				err = alarm.Raise(alarm.IDBackendConnectionRefuse, alarm.AdditionalContext("%v", err))
+				if err != nil {
+					log.Error("", err)
+				}
+			},
+		},
+		EnableCache:         config.GetRegistry().EnableCache,
 		InstanceTTL:         config.GetRegistry().InstanceTTL,
 		SchemaNotEditable:   config.GetRegistry().SchemaNotEditable,
-		ReleaseAccountAfter: d,
+		ReleaseAccountAfter: releaseLockAfter,
 	}); err != nil {
 		log.Fatal("init datasource failed", err)
 	}
+}
+
+func getReleaseLockAfter() time.Duration {
+	releaseLockAfter := config.GetString("rbac.releaseLockAfter", "15m")
+	d, err := time.ParseDuration(releaseLockAfter)
+	if err != nil {
+		log.Warn("releaseAfter is invalid, use default config")
+		d = defaultReleaseLockAfter
+	}
+	return d
+}
+
+func getDatasourceTLSConfig() (*tls.Config, error) {
+	if config.GetSSL().SslEnabled {
+		return tlsconf.ClientConfig()
+	}
+	return nil, nil
 }
 
 func (s *ServiceCenterServer) initMetrics() {

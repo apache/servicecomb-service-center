@@ -18,23 +18,14 @@
 package bootstrap
 
 import (
-	_ "github.com/apache/servicecomb-service-center/datasource/etcd"
-
-	//registry is buildin
-	_ "github.com/apache/servicecomb-service-center/datasource/etcd/client/buildin"
-
-	//registry etcd
-	_ "github.com/apache/servicecomb-service-center/datasource/etcd/client/remote"
-
-	//registry etcd
-	_ "github.com/apache/servicecomb-service-center/datasource/etcd/client/embedded"
+	//registry
+	_ "github.com/little-cui/etcdadpt/buildin"
+	_ "github.com/little-cui/etcdadpt/embedded"
+	_ "github.com/little-cui/etcdadpt/remote"
 
 	//discovery
 	_ "github.com/apache/servicecomb-service-center/datasource/etcd/sd/aggregate"
-
-	_ "github.com/apache/servicecomb-service-center/datasource/etcd/sd/servicecenter"
-
-	_ "github.com/apache/servicecomb-service-center/datasource/etcd/sd/etcd"
-
 	_ "github.com/apache/servicecomb-service-center/datasource/etcd/sd/k8s"
+	_ "github.com/apache/servicecomb-service-center/datasource/etcd/sd/servicecenter"
+	_ "github.com/apache/servicecomb-service-center/datasource/etcd/state/etcd"
 )

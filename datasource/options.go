@@ -17,15 +17,19 @@
 
 package datasource
 
-import "time"
+import (
+	"time"
+
+	"github.com/little-cui/etcdadpt"
+)
 
 //Options contains configuration for plugins
 type Options struct {
-	Kind              Kind
-	SslEnabled        bool
+	etcdadpt.Config
+
+	EnableCache       bool
 	SchemaNotEditable bool
 	// InstanceTTL: the default ttl of instance lease
 	InstanceTTL         int64
 	ReleaseAccountAfter time.Duration
-	// TODO: pay attention to more net config like TLSConfig when coding
 }

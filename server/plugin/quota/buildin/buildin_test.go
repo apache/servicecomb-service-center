@@ -17,20 +17,19 @@ package buildin_test
 
 import (
 	"context"
-
-	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
-
-	"github.com/apache/servicecomb-service-center/pkg/util"
-
-	"github.com/apache/servicecomb-service-center/datasource"
-	_ "github.com/apache/servicecomb-service-center/server/init"
-
 	"testing"
 
+	_ "github.com/apache/servicecomb-service-center/server/init"
+
 	_ "github.com/apache/servicecomb-service-center/server/bootstrap"
+
+	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
+	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/go-archaius"
+	"github.com/little-cui/etcdadpt"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -38,7 +37,7 @@ func init() {
 	archaius.Set("registry.cache.mode", 0)
 	archaius.Set("discovery.kind", "etcd")
 	archaius.Set("registry.kind", "etcd")
-	err := datasource.Init(datasource.Options{Kind: "etcd"})
+	err := datasource.Init(datasource.Options{Config: etcdadpt.Config{Kind: "etcd"}})
 	if err != nil {
 		panic(err)
 	}

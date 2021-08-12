@@ -24,7 +24,6 @@ import (
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 
-	"github.com/apache/servicecomb-service-center/pkg/tlsutil"
 	"github.com/apache/servicecomb-service-center/syncer/config"
 	"github.com/apache/servicecomb-service-center/syncer/etcd"
 	"github.com/apache/servicecomb-service-center/syncer/grpc"
@@ -32,6 +31,7 @@ import (
 	"github.com/apache/servicecomb-service-center/syncer/plugins"
 	"github.com/apache/servicecomb-service-center/syncer/serf"
 	"github.com/apache/servicecomb-service-center/syncer/task"
+	"github.com/go-chassis/foundation/tlsutil"
 )
 
 const (
@@ -115,8 +115,8 @@ func convertSCConfigOption(c *config.Config) []plugins.SCConfigOption {
 	return opts
 }
 
-func tlsConfigToOptions(t *config.TLSConfig) []tlsutil.SSLConfigOption {
-	return []tlsutil.SSLConfigOption{
+func tlsConfigToOptions(t *config.TLSConfig) []tlsutil.TLSOption {
+	return []tlsutil.TLSOption{
 		tlsutil.WithVerifyPeer(t.VerifyPeer),
 		tlsutil.WithVersion(tlsutil.ParseSSLProtocol(t.MinVersion), tls.VersionTLS12),
 		tlsutil.WithCipherSuits(

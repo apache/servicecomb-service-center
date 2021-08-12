@@ -18,11 +18,11 @@ package util
 
 import (
 	"fmt"
+	sd "github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
 	"reflect"
 	"sort"
 	"testing"
 
-	sd "github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/stretchr/testify/assert"
 )

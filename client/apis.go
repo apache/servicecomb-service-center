@@ -21,13 +21,12 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/go-chassis/cari/discovery"
-	"github.com/go-chassis/cari/pkg/errsvc"
-
-	"github.com/apache/servicecomb-service-center/pkg/cluster"
 	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/version"
+	"github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/cari/pkg/errsvc"
+	"github.com/little-cui/etcdadpt"
 )
 
 const (
@@ -111,7 +110,7 @@ func (c *Client) GetScCache(ctx context.Context) (*dump.Cache, *errsvc.Error) {
 	return dump.Cache, nil
 }
 
-func (c *Client) GetClusters(ctx context.Context) (cluster.Clusters, *errsvc.Error) {
+func (c *Client) GetClusters(ctx context.Context) (etcdadpt.Clusters, *errsvc.Error) {
 	headers := c.CommonHeaders(ctx)
 	// only default domain has admin permission
 	headers.Set("X-Domain-Name", "default")

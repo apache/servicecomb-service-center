@@ -21,7 +21,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/apache/servicecomb-service-center/pkg/cluster"
+	"github.com/little-cui/etcdadpt"
 )
 
 // SCManager contains the APIs of registration of SC itself
@@ -31,5 +31,5 @@ type SCManager interface {
 	// OPS
 	ClearNoInstanceServices(ctx context.Context, ttl time.Duration) error
 	UpgradeVersion(ctx context.Context) error
-	GetClusters(ctx context.Context) (cluster.Clusters, error)
+	GetClusters(ctx context.Context) (etcdadpt.Clusters, error)
 }

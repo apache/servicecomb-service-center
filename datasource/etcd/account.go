@@ -22,16 +22,15 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/go-chassis/cari/rbac"
-	"github.com/go-chassis/foundation/stringutil"
-
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/pkg/etcdsync"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/privacy"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/go-chassis/cari/rbac"
+	"github.com/go-chassis/foundation/stringutil"
+	"github.com/little-cui/etcdadpt"
 )
 
 type AccountManager struct {
@@ -66,12 +65,12 @@ func (ds *AccountManager) CreateAccount(ctx context.Context, a *rbac.Account) er
 	a.ID = util.GenerateUUID()
 	a.CreateTime = strconv.FormatInt(time.Now().Unix(), 10)
 	a.UpdateTime = a.CreateTime
-	opts, err := GenAccountOpts(a, client.ActionPut)
+	opts, err := GenAccountOpts(a, etcdadpt.ActionPut)
 	if err != nil {
 		log.Error("", err)
 		return err
 	}
-	err = client.BatchCommit(ctx, opts)
+	err = etcdadpt.Txn(ctx, opts)
 	if err != nil {
 		log.Error("can not save account info", err)
 		return err
@@ -79,20 +78,20 @@ func (ds *AccountManager) CreateAccount(ctx context.Context, a *rbac.Account) er
 	log.Info("create new account: " + a.ID)
 	return nil
 }
-func GenAccountOpts(a *rbac.Account, action client.ActionType) ([]client.PluginOp, error) {
-	opts := make([]client.PluginOp, 0)
+func GenAccountOpts(a *rbac.Account, action etcdadpt.Action) ([]etcdadpt.OpOptions, error) {
+	opts := make([]etcdadpt.OpOptions, 0)
 	value, err := json.Marshal(a)
 	if err != nil {
 		log.Error("account info is invalid", err)
 		return nil, err
 	}
-	opts = append(opts, client.PluginOp{
+	opts = append(opts, etcdadpt.OpOptions{
 		Key:    stringutil.Str2bytes(path.GenerateAccountKey(a.Name)),
 		Value:  value,
 		Action: action,
 	})
 	for _, r := range a.Roles {
-		opt := client.PluginOp{
+		opt := etcdadpt.OpOptions{
 			Key:    stringutil.Str2bytes(path.GenRoleAccountIdxKey(r, a.Name)),
 			Action: action,
 		}
@@ -102,30 +101,18 @@ func GenAccountOpts(a *rbac.Account, action client.ActionType) ([]client.PluginO
 	return opts, nil
 }
 func (ds *AccountManager) AccountExist(ctx context.Context, name string) (bool, error) {
-	resp, err := client.Instance().Do(ctx, client.GET,
-		client.WithStrKey(path.GenerateRBACAccountKey(name)))
-	if err != nil {
-		return false, err
-	}
-	if resp.Count == 0 {
-		return false, nil
-	}
-	return true, nil
+	return etcdadpt.Exist(ctx, path.GenerateRBACAccountKey(name))
 }
 func (ds *AccountManager) GetAccount(ctx context.Context, name string) (*rbac.Account, error) {
-	resp, err := client.Instance().Do(ctx, client.GET,
-		client.WithStrKey(path.GenerateRBACAccountKey(name)))
+	kv, err := etcdadpt.Get(ctx, path.GenerateRBACAccountKey(name))
 	if err != nil {
 		return nil, err
 	}
-	if resp.Count == 0 {
+	if kv == nil {
 		return nil, datasource.ErrAccountNotExist
 	}
-	if resp.Count != 1 {
-		return nil, client.ErrNotUnique
-	}
 	account := &rbac.Account{}
-	err = json.Unmarshal(resp.Kvs[0].Value, account)
+	err = json.Unmarshal(kv.Value, account)
 	if err != nil {
 		log.Error("account info format invalid", err)
 		return nil, err
@@ -145,13 +132,12 @@ func (ds *AccountManager) compatibleOldVersionAccount(a *rbac.Account) {
 }
 
 func (ds *AccountManager) ListAccount(ctx context.Context) ([]*rbac.Account, int64, error) {
-	resp, err := client.Instance().Do(ctx, client.GET,
-		client.WithStrKey(path.GenerateRBACAccountKey("")), client.WithPrefix())
+	kvs, n, err := etcdadpt.List(ctx, path.GenerateRBACAccountKey(""))
 	if err != nil {
 		return nil, 0, err
 	}
-	accounts := make([]*rbac.Account, 0, resp.Count)
-	for _, v := range resp.Kvs {
+	accounts := make([]*rbac.Account, 0, n)
+	for _, v := range kvs {
 		a := &rbac.Account{}
 		err = json.Unmarshal(v.Value, a)
 		if err != nil {
@@ -162,7 +148,7 @@ func (ds *AccountManager) ListAccount(ctx context.Context) ([]*rbac.Account, int
 		ds.compatibleOldVersionAccount(a)
 		accounts = append(accounts, a)
 	}
-	return accounts, resp.Count, nil
+	return accounts, n, nil
 }
 func (ds *AccountManager) DeleteAccount(ctx context.Context, names []string) (bool, error) {
 	if len(names) == 0 {
@@ -178,13 +164,13 @@ func (ds *AccountManager) DeleteAccount(ctx context.Context, names []string) (bo
 			log.Warn("can not find account")
 			continue
 		}
-		opts, err := GenAccountOpts(a, client.ActionDelete)
+		opts, err := GenAccountOpts(a, etcdadpt.ActionDelete)
 		if err != nil {
 			log.Error("", err)
 			continue //do not fail if some account is invalid
 
 		}
-		err = client.BatchCommit(ctx, opts)
+		err = etcdadpt.Txn(ctx, opts)
 		if err != nil {
 			log.Error(datasource.ErrDeleteAccountFailed.Error(), err)
 			return false, err
@@ -194,13 +180,13 @@ func (ds *AccountManager) DeleteAccount(ctx context.Context, names []string) (bo
 }
 func (ds *AccountManager) UpdateAccount(ctx context.Context, name string, account *rbac.Account) error {
 	var (
-		opts []client.PluginOp
+		opts []etcdadpt.OpOptions
 		err  error
 	)
 
 	account.UpdateTime = strconv.FormatInt(time.Now().Unix(), 10)
 
-	opts, err = GenAccountOpts(account, client.ActionPut)
+	opts, err = GenAccountOpts(account, etcdadpt.ActionPut)
 	if err != nil {
 		log.Error("GenAccountOpts failed", err)
 		return err
@@ -216,14 +202,14 @@ func (ds *AccountManager) UpdateAccount(ctx context.Context, name string, accoun
 		if hasRole(account, r) {
 			continue
 		}
-		opt := client.PluginOp{
+		opt := etcdadpt.OpOptions{
 			Key:    stringutil.Str2bytes(path.GenRoleAccountIdxKey(r, old.Name)),
-			Action: client.ActionDelete,
+			Action: etcdadpt.ActionDelete,
 		}
 		opts = append(opts, opt)
 	}
 
-	err = client.BatchCommit(ctx, opts)
+	err = etcdadpt.Txn(ctx, opts)
 	if err != nil {
 		log.Error("BatchCommit failed", err)
 	}

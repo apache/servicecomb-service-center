@@ -16,45 +16,45 @@
 package servicecenter
 
 import (
-	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
 )
 
-// Adaptor implements sd.Adaptor.
+// Adaptor implements state.State.
 // Adaptor does service pkg with other service-centers
 // as it's cache.
 type Adaptor struct {
-	sd.Cacher
-	sd.Indexer
+	kvstore.Cacher
+	kvstore.Indexer
 }
 
 func (se *Adaptor) Run() {
-	if r, ok := se.Cacher.(sd.Runnable); ok {
+	if r, ok := se.Cacher.(kvstore.Runnable); ok {
 		r.Run()
 	}
 }
 
 func (se *Adaptor) Stop() {
-	if r, ok := se.Cacher.(sd.Runnable); ok {
+	if r, ok := se.Cacher.(kvstore.Runnable); ok {
 		r.Stop()
 	}
 }
 
 func (se *Adaptor) Ready() <-chan struct{} {
-	if r, ok := se.Cacher.(sd.Runnable); ok {
+	if r, ok := se.Cacher.(kvstore.Runnable); ok {
 		return r.Ready()
 	}
 	return closedCh
 }
 
-func NewServiceCenterAdaptor(t sd.Type, cfg *sd.Config) *Adaptor {
-	if t == kv.SCHEMA {
+func NewServiceCenterAdaptor(t kvstore.Type, cfg *kvstore.Options) *Adaptor {
+	if t == sd.TypeSchema {
 		return &Adaptor{
-			Indexer: NewClusterIndexer(t, sd.NullCache),
-			Cacher:  sd.NullCacher,
+			Indexer: NewClusterIndexer(t, kvstore.NullCache),
+			Cacher:  kvstore.NullCacher,
 		}
 	}
-	cache := sd.NewKvCache(t.String(), cfg)
+	cache := kvstore.NewKvCache(t.String(), cfg)
 	return &Adaptor{
 		Indexer: NewClusterIndexer(t, cache),
 		Cacher:  BuildCacher(t, cfg, cache),

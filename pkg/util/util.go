@@ -20,7 +20,6 @@ package util
 import (
 	"runtime"
 	"strings"
-	"time"
 	"unsafe"
 )
 
@@ -115,15 +114,6 @@ func Int16ToInt64(bs []int16) (in int64) {
 	return
 }
 
-func FileLastName(file string) string {
-	if sp1 := strings.LastIndex(file, "/"); sp1 >= 0 {
-		if sp2 := strings.LastIndex(file[:sp1], "/"); sp2 >= 0 {
-			file = file[sp2+1:]
-		}
-	}
-	return file
-}
-
 func SliceHave(arr []string, str string) bool {
 	for _, item := range arr {
 		if item == str {
@@ -131,22 +121,6 @@ func SliceHave(arr []string, str string) bool {
 		}
 	}
 	return false
-}
-
-// do not call after drain timer.C channel
-func ResetTimer(timer *time.Timer, d time.Duration) {
-	if !timer.Stop() {
-		// timer is expired: can not find the timer in timer stack
-		// select {
-		// case <-timer.C:
-		// 	// here block when drain channel call before timer.Stop()
-		// default:
-		// 	// here will cause a BUG When sendTime() after drain channel
-		// 	// BUG: timer.C still trigger even after timer.Reset()
-		// }
-		<-timer.C
-	}
-	timer.Reset(d)
 }
 
 func StringTRUE(s string) bool {

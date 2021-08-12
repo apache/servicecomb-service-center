@@ -22,25 +22,24 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/version"
+	"github.com/little-cui/etcdadpt"
 )
 
 func loadServerVersion(ctx context.Context) error {
-	resp, err := client.Instance().Do(ctx,
-		client.GET, client.WithStrKey(path.GetServerInfoKey()))
+	kv, err := etcdadpt.Get(ctx, path.GetServerInfoKey())
 	if err != nil {
 		return err
 	}
-	if len(resp.Kvs) == 0 {
+	if kv == nil {
 		return nil
 	}
 
-	err = json.Unmarshal(resp.Kvs[0].Value, &config.Server)
+	err = json.Unmarshal(kv.Value, &config.Server)
 	if err != nil {
 		log.Error("load server version failed, maybe incompatible", err)
 		return nil

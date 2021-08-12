@@ -25,7 +25,6 @@ import (
 	"github.com/go-chassis/cari/pkg/errsvc"
 
 	"github.com/apache/servicecomb-service-center/pkg/chain"
-	"github.com/apache/servicecomb-service-center/pkg/errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -85,10 +84,7 @@ func (h *Handler) responseError(w http.ResponseWriter, e error) (statusCode int)
 	}
 
 	body = util.StringToBytesWithNoCopy(e.Error())
-	switch err := e.(type) {
-	case errors.InternalError:
-		statusCode = http.StatusInternalServerError
-	case *errsvc.Error:
+	if err, ok := e.(*errsvc.Error); ok {
 		statusCode = err.StatusCode()
 		contentType = rest.ContentTypeJSON
 		body, _ = json.Marshal(err)

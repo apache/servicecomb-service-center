@@ -16,18 +16,18 @@
 package adaptor
 
 import (
-	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
 )
 
-func BuildCacher(t sd.Type, cfg *sd.Config, cache sd.Cache) sd.Cacher {
-	kc := sd.NewCommonCacher(cfg, cache)
+func BuildCacher(t kvstore.Type, cfg *kvstore.Options, cache kvstore.Cache) kvstore.Cacher {
+	kc := kvstore.NewCommonCacher(cfg, cache)
 	switch t {
-	case kv.SERVICE:
+	case sd.TypeService:
 		return NewServiceCacher(kc)
-	case kv.ServiceIndex:
+	case sd.TypeServiceIndex:
 		return NewServiceIndexCacher(kc)
-	case kv.INSTANCE:
+	case sd.TypeInstance:
 		return NewInstanceCacher(kc)
 	default:
 		return kc

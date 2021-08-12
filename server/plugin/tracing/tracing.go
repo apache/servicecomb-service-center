@@ -29,44 +29,36 @@ const (
 	CtxTraceSpan util.CtxKey = "x-trace-span"
 )
 
-type Request interface{}
-
-type Span interface{}
-
 type Tracing interface {
-	ServerBegin(operationName string, r Request) Span
-	ServerEnd(span Span, code int, message string)
-	ClientBegin(operationName string, r Request) Span
-	ClientEnd(span Span, code int, message string)
+	ServerBegin(operationName string, r interface{}) interface{}
+	ServerEnd(span interface{}, code int, message string)
+	ClientBegin(operationName string, r interface{}) interface{}
+	ClientEnd(span interface{}, code int, message string)
 }
 
-type Options interface {
-	Method() string
-	URL() string
-}
-
-type Operation struct {
+type Request struct {
 	Ctx      context.Context
 	Endpoint string
-	Options  Options
+	Method   string
+	URL      string
 }
 
 func Trace() Tracing {
 	return plugin.Plugins().Instance(TRACING).(Tracing)
 }
 
-func ServerBegin(operationName string, r Request) Span {
+func ServerBegin(operationName string, r interface{}) interface{} {
 	return Trace().ServerBegin(operationName, r)
 }
 
-func ServerEnd(span Span, code int, message string) {
+func ServerEnd(span interface{}, code int, message string) {
 	Trace().ServerEnd(span, code, message)
 }
 
-func ClientBegin(operationName string, r Request) Span {
+func ClientBegin(operationName string, r interface{}) interface{} {
 	return Trace().ClientBegin(operationName, r)
 }
 
-func ClientEnd(span Span, code int, message string) {
+func ClientEnd(span interface{}, code int, message string) {
 	Trace().ClientEnd(span, code, message)
 }

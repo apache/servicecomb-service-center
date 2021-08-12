@@ -21,17 +21,17 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/pkg/validate"
 )
 
-type VersionRule func(sorted []string, kvs map[string]*sd.KeyValue, start, end string) []string
+type VersionRule func(sorted []string, kvs map[string]*kvstore.KeyValue, start, end string) []string
 
-func (vr VersionRule) Match(kvs []*sd.KeyValue, ops ...string) []string {
+func (vr VersionRule) Match(kvs []*kvstore.KeyValue, ops ...string) []string {
 	sorter := &serviceKeySorter{
 		sortArr: make([]string, len(kvs)),
-		kvs:     make(map[string]*sd.KeyValue, len(kvs)),
+		kvs:     make(map[string]*kvstore.KeyValue, len(kvs)),
 		cmp:     Larger,
 	}
 	for i, kv := range kvs {
@@ -55,7 +55,7 @@ func (vr VersionRule) Match(kvs []*sd.KeyValue, ops ...string) []string {
 
 type serviceKeySorter struct {
 	sortArr []string
-	kvs     map[string]*sd.KeyValue
+	kvs     map[string]*kvstore.KeyValue
 	cmp     func(i, j string) bool
 }
 
@@ -81,14 +81,14 @@ func LessEqual(start, end string) bool {
 	return !Larger(start, end)
 }
 
-func Latest(sorted []string, kvs map[string]*sd.KeyValue, start, end string) []string {
+func Latest(sorted []string, kvs map[string]*kvstore.KeyValue, start, end string) []string {
 	if len(sorted) == 0 {
 		return []string{}
 	}
 	return []string{kvs[sorted[0]].Value.(string)}
 }
 
-func Range(sorted []string, kvs map[string]*sd.KeyValue, start, end string) []string {
+func Range(sorted []string, kvs map[string]*kvstore.KeyValue, start, end string) []string {
 	result := make([]string, len(sorted))
 	i, flag := 0, 0
 
@@ -121,7 +121,7 @@ func Range(sorted []string, kvs map[string]*sd.KeyValue, start, end string) []st
 	return result[:i]
 }
 
-func AtLess(sorted []string, kvs map[string]*sd.KeyValue, start, end string) []string {
+func AtLess(sorted []string, kvs map[string]*kvstore.KeyValue, start, end string) []string {
 	result := make([]string, len(sorted))
 
 	if len(sorted) == 0 || Larger(start, sorted[0]) {
@@ -137,7 +137,7 @@ func AtLess(sorted []string, kvs map[string]*sd.KeyValue, start, end string) []s
 	return result[:]
 }
 
-func ParseVersionRule(versionRule string) func(kvs []*sd.KeyValue) []string {
+func ParseVersionRule(versionRule string) func(kvs []*kvstore.KeyValue) []string {
 	if len(versionRule) == 0 {
 		return nil
 	}
@@ -145,20 +145,20 @@ func ParseVersionRule(versionRule string) func(kvs []*sd.KeyValue) []string {
 	rangeIdx := strings.Index(versionRule, "-")
 	switch {
 	case versionRule == "latest":
-		return func(kvs []*sd.KeyValue) []string {
+		return func(kvs []*kvstore.KeyValue) []string {
 			return VersionRule(Latest).Match(kvs)
 		}
 	case versionRule[len(versionRule)-1:] == "+":
 		// 取最低版本及高版本集合
 		start := versionRule[:len(versionRule)-1]
-		return func(kvs []*sd.KeyValue) []string {
+		return func(kvs []*kvstore.KeyValue) []string {
 			return VersionRule(AtLess).Match(kvs, start)
 		}
 	case rangeIdx > 0:
 		// 取版本范围集合
 		start := versionRule[:rangeIdx]
 		end := versionRule[rangeIdx+1:]
-		return func(kvs []*sd.KeyValue) []string {
+		return func(kvs []*kvstore.KeyValue) []string {
 			return VersionRule(Range).Match(kvs, start, end)
 		}
 	default:
@@ -173,7 +173,7 @@ func VersionMatchRule(version string, versionRule string) bool {
 		return version == versionRule
 	}
 
-	return len(match([]*sd.KeyValue{
+	return len(match([]*kvstore.KeyValue{
 		{
 			Key:   util.StringToBytesWithNoCopy("/" + version),
 			Value: "",

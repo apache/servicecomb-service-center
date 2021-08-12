@@ -18,12 +18,12 @@ package diagnose
 import (
 	"context"
 	"fmt"
-
+	"github.com/apache/servicecomb-service-center/datasource/etcd/state/parser"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/value"
 	"github.com/apache/servicecomb-service-center/pkg/dump"
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	pb "github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/foundation/gopool"
 )
 
 type CompareHolder interface {
@@ -32,7 +32,7 @@ type CompareHolder interface {
 
 type DataStore struct {
 	Data       []*mvccpb.KeyValue
-	DataParser value.Parser
+	DataParser parser.Parser
 }
 
 func (d *DataStore) ForEach(f func(i int, v *dump.KV) bool) {
@@ -77,7 +77,7 @@ func (h *abstractCompareHolder) Compare() *CompareResult {
 		del    []string
 	)
 
-	gopool.New(context.Background(), gopool.Configure().Workers(3)).
+	gopool.New(gopool.Configure().Workers(5)).
 		Do(func(_ context.Context) {
 			left := h.toMap(h.Cache)
 			leftCh <- left

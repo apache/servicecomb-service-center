@@ -18,91 +18,73 @@
 package sd
 
 import (
-	"encoding/json"
-	"fmt"
-	"strconv"
 	"time"
 
-	"github.com/go-chassis/cari/discovery"
-
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
-	simple "github.com/apache/servicecomb-service-center/pkg/time"
-	"github.com/apache/servicecomb-service-center/pkg/util"
-)
-
-var (
-	Types     []Type
-	typeNames []string
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/state"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/state/parser"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/value"
 )
 
 const (
-	TypeError = Type(-1)
+	eventBlockSize             = 1000
+	deferCheckWindow           = 2 * time.Second // instance DELETE event will be delay.
+	selfPreservationPercentage = 0.8
+	selfPreservationMaxTTL     = 10 * 60 // 10min
+	selfPreservationInitCount  = 5
 )
 
-type Type int
+var (
+	TypeDomain          kvstore.Type
+	TypeProject         kvstore.Type
+	TypeService         kvstore.Type
+	TypeServiceIndex    kvstore.Type
+	TypeServiceAlias    kvstore.Type
+	TypeServiceTag      kvstore.Type
+	TypeDependencyRule  kvstore.Type
+	TypeDependencyQueue kvstore.Type
+	TypeSchema          kvstore.Type
+	TypeSchemaSummary   kvstore.Type
+	TypeInstance        kvstore.Type
+	TypeLease           kvstore.Type
+)
 
-type Kind string
-
-func (st Type) String() string {
-	if int(st) < 0 {
-		return "TypeError"
-	}
-	if int(st) < len(typeNames) {
-		return typeNames[st]
-	}
-	return "TYPE" + strconv.Itoa(int(st))
-}
-
-func RegisterType(name string) (newID Type, err error) {
-	for _, n := range Types {
-		if n.String() == name {
-			return TypeError, fmt.Errorf("redeclare store type '%s'", n)
-		}
-	}
-	newID = Type(len(Types))
-	Types = append(Types, newID)
-	typeNames = append(typeNames, name)
-	return
-}
-
-type KeyValue struct {
-	Key            []byte
-	Value          interface{}
-	Version        int64
-	CreateRevision int64
-	ModRevision    int64
-	ClusterName    string
-}
-
-func (kv *KeyValue) String() string {
-	b, _ := json.Marshal(kv.Value)
-	return fmt.Sprintf("{key: '%s', value: %s, version: %d, cluster: '%s'}",
-		util.BytesToStringWithNoCopy(kv.Key), util.BytesToStringWithNoCopy(b), kv.Version, kv.ClusterName)
-}
-
-func NewKeyValue() *KeyValue {
-	return &KeyValue{ClusterName: client.DefaultClusterName}
-}
-
-type Response struct {
-	Kvs   []*KeyValue
-	Count int64
-}
-
-type KvEvent struct {
-	Revision int64
-	Type     discovery.EventType
-	KV       *KeyValue
-	CreateAt simple.Time
-}
-
-type KvEventFunc func(evt KvEvent)
-
-type KvEventHandler interface {
-	Type() Type
-	OnEvent(evt KvEvent)
-}
-
-func NewKvEvent(action discovery.EventType, kv *KeyValue, rev int64) KvEvent {
-	return KvEvent{Type: action, KV: kv, Revision: rev, CreateAt: simple.FromTime(time.Now())}
+func RegisterInnerTypes() {
+	TypeService = state.MustRegister("SERVICE", path.GetServiceRootKey(""),
+		state.WithInitSize(500),
+		state.WithParser(value.ServiceParser))
+	TypeInstance = state.MustRegister("INSTANCE", path.GetInstanceRootKey(""),
+		state.WithInitSize(1000),
+		state.WithParser(value.InstanceParser),
+		state.WithDeferHandler(NewInstanceEventDeferHandler()))
+	TypeDomain = state.MustRegister("DOMAIN", path.GenerateDomainKey(""),
+		state.WithInitSize(100),
+		state.WithParser(parser.StringParser))
+	TypeSchema = state.MustRegister("SCHEMA", path.GetServiceSchemaRootKey(""),
+		state.WithInitSize(0))
+	TypeSchemaSummary = state.MustRegister("SCHEMA_SUMMARY", path.GetServiceSchemaSummaryRootKey(""),
+		state.WithInitSize(100),
+		state.WithParser(parser.StringParser))
+	TypeLease = state.MustRegister("LEASE", path.GetInstanceLeaseRootKey(""),
+		state.WithInitSize(1000),
+		state.WithParser(parser.StringParser))
+	TypeServiceIndex = state.MustRegister("SERVICE_INDEX", path.GetServiceIndexRootKey(""),
+		state.WithInitSize(500),
+		state.WithParser(parser.StringParser))
+	TypeServiceAlias = state.MustRegister("SERVICE_ALIAS", path.GetServiceAliasRootKey(""),
+		state.WithInitSize(100),
+		state.WithParser(parser.StringParser))
+	TypeServiceTag = state.MustRegister("SERVICE_TAG", path.GetServiceTagRootKey(""),
+		state.WithInitSize(100),
+		state.WithParser(parser.MapParser))
+	TypeDependencyRule = state.MustRegister("DEPENDENCY_RULE", path.GetServiceDependencyRuleRootKey(""),
+		state.WithInitSize(100),
+		state.WithParser(value.DependencyRuleParser))
+	TypeDependencyQueue = state.MustRegister("DEPENDENCY_QUEUE", path.GetServiceDependencyQueueRootKey(""),
+		state.WithInitSize(100),
+		state.WithParser(value.DependencyQueueParser))
+	TypeProject = state.MustRegister("PROJECT", path.GetProjectRootKey(""),
+		state.WithInitSize(100),
+		state.WithParser(parser.StringParser))
 }

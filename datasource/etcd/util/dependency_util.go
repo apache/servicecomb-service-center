@@ -24,12 +24,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	pb "github.com/go-chassis/cari/discovery"
+	"github.com/little-cui/etcdadpt"
 )
 
 func GetConsumerIds(ctx context.Context, domainProject string, provider *pb.MicroService) ([]string, error) {
@@ -120,7 +120,7 @@ func AddServiceVersionRule(ctx context.Context, domainProject string, consumer *
 
 	id := util.StringJoin([]string{provider.AppId, provider.ServiceName}, "_")
 	key := path.GenerateConsumerDependencyQueueKey(domainProject, consumer.ServiceId, id)
-	override, err := client.Instance().PutNoOverride(ctx, client.WithStrKey(key), client.WithValue(data))
+	override, err := etcdadpt.InsertBytes(ctx, key, data)
 	if err != nil {
 		return err
 	}
@@ -137,8 +137,8 @@ func TransferToMicroServiceDependency(ctx context.Context, key string) (*pb.Micr
 		Dependency: []*pb.MicroServiceKey{},
 	}
 
-	opts := append(FromContext(ctx), client.WithStrKey(key))
-	res, err := kv.Store().DependencyRule().Search(ctx, opts...)
+	opts := append(FromContext(ctx), etcdadpt.WithStrKey(key))
+	res, err := sd.DependencyRule().Search(ctx, opts...)
 	if err != nil {
 		log.Error(fmt.Sprintf("get dependency rule[%s] failed", key), nil)
 		return nil, err
@@ -285,7 +285,7 @@ func ParamsChecker(consumerInfo *pb.MicroServiceKey, providersInfo []*pb.MicroSe
 	return nil
 }
 
-func DeleteDependencyForDeleteService(domainProject string, serviceID string, service *pb.MicroServiceKey) (client.PluginOp, error) {
+func DeleteDependencyForDeleteService(domainProject string, serviceID string, service *pb.MicroServiceKey) (etcdadpt.OpOptions, error) {
 	key := path.GenerateConsumerDependencyQueueKey(domainProject, serviceID, path.DepsQueueUUID)
 	conDep := new(pb.ConsumerDependency)
 	conDep.Consumer = service
@@ -293,20 +293,20 @@ func DeleteDependencyForDeleteService(domainProject string, serviceID string, se
 	conDep.Override = true
 	data, err := json.Marshal(conDep)
 	if err != nil {
-		return client.PluginOp{}, err
+		return etcdadpt.OpOptions{}, err
 	}
-	return client.OpPut(client.WithStrKey(key), client.WithValue(data)), nil
+	return etcdadpt.OpPut(etcdadpt.WithStrKey(key), etcdadpt.WithValue(data)), nil
 }
 
-func removeProviderRuleOfConsumer(ctx context.Context, domainProject string, cache map[string]bool) ([]client.PluginOp, error) {
+func removeProviderRuleOfConsumer(ctx context.Context, domainProject string, cache map[string]bool) ([]etcdadpt.OpOptions, error) {
 	key := path.GenerateConsumerDependencyRuleKey(domainProject, nil) + path.SPLIT
-	resp, err := kv.Store().DependencyRule().Search(ctx,
-		client.WithStrKey(key), client.WithPrefix())
+	resp, err := sd.DependencyRule().Search(ctx,
+		etcdadpt.WithStrKey(key), etcdadpt.WithPrefix())
 	if err != nil {
 		return nil, err
 	}
 
-	var ops []client.PluginOp
+	var ops []etcdadpt.OpOptions
 	for _, keyValue := range resp.Kvs {
 		var left []*pb.MicroServiceKey
 		all := keyValue.Value.(*pb.MicroServiceDependency).Dependency
@@ -332,27 +332,27 @@ func removeProviderRuleOfConsumer(ctx context.Context, domainProject string, cac
 		}
 
 		if len(left) == 0 {
-			ops = append(ops, client.OpDel(client.WithKey(keyValue.Key)))
+			ops = append(ops, etcdadpt.OpDel(etcdadpt.WithKey(keyValue.Key)))
 		} else {
 			val, err := json.Marshal(&pb.MicroServiceDependency{Dependency: left})
 			if err != nil {
 				return nil, fmt.Errorf("%v, marshal %v", err, left)
 			}
-			ops = append(ops, client.OpPut(client.WithKey(keyValue.Key), client.WithValue(val)))
+			ops = append(ops, etcdadpt.OpPut(etcdadpt.WithKey(keyValue.Key), etcdadpt.WithValue(val)))
 		}
 	}
 	return ops, nil
 }
 
-func RemoveProviderRuleKeys(ctx context.Context, domainProject string, cache map[string]bool) ([]client.PluginOp, error) {
+func RemoveProviderRuleKeys(ctx context.Context, domainProject string, cache map[string]bool) ([]etcdadpt.OpOptions, error) {
 	key := path.GenerateProviderDependencyRuleKey(domainProject, nil) + path.SPLIT
-	resp, err := kv.Store().DependencyRule().Search(ctx,
-		client.WithStrKey(key), client.WithPrefix(), client.WithKeyOnly())
+	resp, err := sd.DependencyRule().Search(ctx,
+		etcdadpt.WithStrKey(key), etcdadpt.WithPrefix(), etcdadpt.WithKeyOnly())
 	if err != nil {
 		return nil, err
 	}
 
-	var ops []client.PluginOp
+	var ops []etcdadpt.OpOptions
 	for _, keyValue := range resp.Kvs {
 		id := util.BytesToStringWithNoCopy(keyValue.Key)
 		exist, ok := cache[id]
@@ -371,7 +371,7 @@ func RemoveProviderRuleKeys(ctx context.Context, domainProject string, cache map
 		}
 
 		if !exist {
-			ops = append(ops, client.OpDel(client.WithKey(keyValue.Key)))
+			ops = append(ops, etcdadpt.OpDel(etcdadpt.WithKey(keyValue.Key)))
 		}
 	}
 	return ops, nil
@@ -393,10 +393,10 @@ func CleanUpDependencyRules(ctx context.Context, domainProject string) error {
 		return err
 	}
 
-	ops := append(append([]client.PluginOp(nil), pOps...), kOps...)
+	ops := append(append([]etcdadpt.OpOptions(nil), pOps...), kOps...)
 	if len(ops) == 0 {
 		return nil
 	}
 
-	return client.BatchCommit(ctx, ops)
+	return etcdadpt.Txn(ctx, ops)
 }

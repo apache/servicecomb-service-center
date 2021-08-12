@@ -23,9 +23,9 @@ import (
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/cache"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -48,11 +48,11 @@ const (
 type InstanceEventHandler struct {
 }
 
-func (h *InstanceEventHandler) Type() sd.Type {
-	return kv.INSTANCE
+func (h *InstanceEventHandler) Type() kvstore.Type {
+	return sd.TypeInstance
 }
 
-func (h *InstanceEventHandler) OnEvent(evt sd.KvEvent) {
+func (h *InstanceEventHandler) OnEvent(evt kvstore.Event) {
 	action := evt.Type
 	instance, ok := evt.KV.Value.(*pb.MicroServiceInstance)
 	if !ok {
@@ -109,7 +109,7 @@ func NewInstanceEventHandler() *InstanceEventHandler {
 	return &InstanceEventHandler{}
 }
 
-func PublishInstanceEvent(evt sd.KvEvent, serviceKey *pb.MicroServiceKey, subscribers []string) {
+func PublishInstanceEvent(evt kvstore.Event, serviceKey *pb.MicroServiceKey, subscribers []string) {
 	defer cache.FindInstances.Remove(serviceKey)
 
 	if len(subscribers) == 0 {
@@ -131,7 +131,7 @@ func PublishInstanceEvent(evt sd.KvEvent, serviceKey *pb.MicroServiceKey, subscr
 	}
 }
 
-func NotifySyncerInstanceEvent(evt sd.KvEvent, domainProject string, ms *pb.MicroService) {
+func NotifySyncerInstanceEvent(evt kvstore.Event, domainProject string, ms *pb.MicroService) {
 	msInstance := evt.KV.Value.(*pb.MicroServiceInstance)
 
 	serviceKey := msKeyPrefix + domainProject + sep + ms.ServiceId

@@ -24,14 +24,13 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/go-chassis/cari/rbac"
-
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/pkg/etcdsync"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/go-chassis/cari/rbac"
+	"github.com/little-cui/etcdadpt"
 )
 
 type RoleManager struct {
@@ -65,7 +64,7 @@ func (rm *RoleManager) CreateRole(ctx context.Context, r *rbac.Role) error {
 		log.Error("role info is invalid", err)
 		return err
 	}
-	err = client.PutBytes(ctx, key, value)
+	err = etcdadpt.PutBytes(ctx, key, value)
 	if err != nil {
 		log.Error("can not save account info", err)
 		return err
@@ -75,30 +74,19 @@ func (rm *RoleManager) CreateRole(ctx context.Context, r *rbac.Role) error {
 }
 
 func (rm *RoleManager) RoleExist(ctx context.Context, name string) (bool, error) {
-	resp, err := client.Instance().Do(ctx, client.GET,
-		client.WithStrKey(path.GenerateRBACRoleKey(name)))
-	if err != nil {
-		return false, err
-	}
-	if resp.Count == 0 {
-		return false, nil
-	}
-	return true, nil
+	return etcdadpt.Exist(ctx, path.GenerateRBACRoleKey(name))
 }
+
 func (rm *RoleManager) GetRole(ctx context.Context, name string) (*rbac.Role, error) {
-	resp, err := client.Instance().Do(ctx, client.GET,
-		client.WithStrKey(path.GenerateRBACRoleKey(name)))
+	kv, err := etcdadpt.Get(ctx, path.GenerateRBACRoleKey(name))
 	if err != nil {
 		return nil, err
 	}
-	if resp.Count == 0 {
+	if kv == nil {
 		return nil, datasource.ErrRoleNotExist
 	}
-	if resp.Count != 1 {
-		return nil, client.ErrNotUnique
-	}
 	role := &rbac.Role{}
-	err = json.Unmarshal(resp.Kvs[0].Value, role)
+	err = json.Unmarshal(kv.Value, role)
 	if err != nil {
 		log.Error("role info format invalid", err)
 		return nil, err
@@ -106,13 +94,12 @@ func (rm *RoleManager) GetRole(ctx context.Context, name string) (*rbac.Role, er
 	return role, nil
 }
 func (rm *RoleManager) ListRole(ctx context.Context) ([]*rbac.Role, int64, error) {
-	resp, err := client.Instance().Do(ctx, client.GET,
-		client.WithStrKey(path.GenerateRBACRoleKey("")), client.WithPrefix())
+	kvs, n, err := etcdadpt.List(ctx, path.GenerateRBACRoleKey(""))
 	if err != nil {
 		return nil, 0, err
 	}
-	roles := make([]*rbac.Role, 0, resp.Count)
-	for _, v := range resp.Kvs {
+	roles := make([]*rbac.Role, 0, n)
+	for _, v := range kvs {
 		r := &rbac.Role{}
 		err = json.Unmarshal(v.Value, r)
 		if err != nil {
@@ -122,7 +109,7 @@ func (rm *RoleManager) ListRole(ctx context.Context) ([]*rbac.Role, int64, error
 
 		roles = append(roles, r)
 	}
-	return roles, resp.Count, nil
+	return roles, n, nil
 }
 func (rm *RoleManager) DeleteRole(ctx context.Context, name string) (bool, error) {
 	exists, err := RoleBindingExists(ctx, name)
@@ -133,15 +120,14 @@ func (rm *RoleManager) DeleteRole(ctx context.Context, name string) (bool, error
 	if exists {
 		return false, datasource.ErrRoleBindingExist
 	}
-	resp, err := client.Instance().Do(ctx, client.DEL,
-		client.WithStrKey(path.GenerateRBACRoleKey(name)))
+	del, err := etcdadpt.Delete(ctx, path.GenerateRBACRoleKey(name))
 	if err != nil {
 		return false, err
 	}
-	return resp.Succeeded, nil
+	return del, nil
 }
 func RoleBindingExists(ctx context.Context, role string) (bool, error) {
-	_, total, err := client.List(ctx, path.GenRoleAccountPrefixIdxKey(role))
+	_, total, err := etcdadpt.List(ctx, path.GenRoleAccountPrefixIdxKey(role))
 	if err != nil {
 		log.Error("", err)
 		return false, err
@@ -155,8 +141,5 @@ func (rm *RoleManager) UpdateRole(ctx context.Context, name string, role *rbac.R
 		log.Error("role info is invalid", err)
 		return err
 	}
-	_, err = client.Instance().Do(ctx, client.PUT,
-		client.WithStrKey(path.GenerateRBACRoleKey(name)),
-		client.WithValue(value))
-	return err
+	return etcdadpt.PutBytes(ctx, path.GenerateRBACRoleKey(name), value)
 }

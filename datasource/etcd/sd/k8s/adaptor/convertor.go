@@ -23,8 +23,8 @@ import (
 	pb "github.com/go-chassis/cari/discovery"
 	v1 "k8s.io/api/core/v1"
 
-	"github.com/apache/servicecomb-service-center/datasource/etcd"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/state"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
@@ -114,12 +114,12 @@ func FromK8sService(domainProject string, svc *v1.Service) (ms *pb.MicroService)
 	return
 }
 
-func AsKeyValue(key string, v interface{}, resourceVersion string) *sd.KeyValue {
+func AsKeyValue(key string, v interface{}, resourceVersion string) *kvstore.KeyValue {
 	rev, _ := strconv.ParseInt(resourceVersion, 10, 64)
-	kv := sd.NewKeyValue()
+	kv := kvstore.NewKeyValue()
 	kv.Key = util.StringToBytesWithNoCopy(key)
 	kv.Value = v
 	kv.ModRevision = rev
-	kv.ClusterName = etcd.Configuration().ClusterName
+	kv.ClusterName = state.Configuration().ClusterName
 	return kv
 }

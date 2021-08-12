@@ -21,7 +21,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/apache/servicecomb-service-center/datasource/etcd/kv"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/cache"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -57,7 +57,7 @@ func (f *ConsistencyFilter) Init(ctx context.Context, parent *cache.Node) (node 
 	// 2. request rev is the same as cache current sc instance
 	// 3. datasource has no cache indexer
 	if len(requestRev) == 0 || requestRev == pCache.Rev ||
-		!(kv.Store().Instance().Creditable()) {
+		!(sd.Instance().Creditable()) {
 		node = cache.NewNode()
 		node.Cache.Set(FindResult, pCache)
 		return
