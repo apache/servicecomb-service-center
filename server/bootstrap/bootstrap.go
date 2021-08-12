@@ -63,6 +63,7 @@ import (
 
 	//jobs
 	_ "github.com/apache/servicecomb-service-center/server/job/account"
+	_ "github.com/apache/servicecomb-service-center/server/job/disco"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/handler/accesslog"

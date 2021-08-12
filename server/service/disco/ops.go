@@ -14,37 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package etcd_test
 
-// initialize
+package disco
+
 import (
 	"context"
-	"testing"
-	"time"
-
-	_ "github.com/apache/servicecomb-service-center/test"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/onsi/ginkgo/reporters"
 )
 
-var timeLimit = 2 * time.Second
-
-var _ = BeforeSuite(func() {
-	//clear service created in last test
-	time.Sleep(timeLimit)
-	_ = datasource.GetSCManager().ClearNoInstanceServices(context.Background(), timeLimit)
-})
-
-func TestEtcd(t *testing.T) {
-	RegisterFailHandler(Fail)
-	junitReporter := reporters.NewJUnitReporter("etcd.junit.xml")
-	RunSpecsWithDefaultAndCustomReporters(t, "etcd Suite", []Reporter{junitReporter})
-}
-
-func getContext() context.Context {
-	return util.WithNoCache(util.SetDomainProject(context.Background(), "default", "default"))
+func CleanupUnusedMicroservice(ctx context.Context, reserveVersionCount int) error {
+	return datasource.GetMetadataManager().CleanupUnusedMicroservice(ctx, reserveVersionCount)
 }
