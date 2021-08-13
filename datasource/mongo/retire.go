@@ -15,4 +15,14 @@
  * limitations under the License.
  */
 
-package disco_test
+package mongo
+
+import (
+	"context"
+
+	"github.com/apache/servicecomb-service-center/datasource"
+)
+
+func (ds *MetadataManager) RetireService(ctx context.Context, plan *datasource.RetirePlan) error {
+	panic("implement me")
+}

@@ -15,31 +15,14 @@
  * limitations under the License.
  */
 
-package mux
+package disco
 
 import (
-	"reflect"
-	"unsafe"
+	"context"
 
-	"github.com/apache/servicecomb-service-center/pkg/etcdsync"
+	"github.com/apache/servicecomb-service-center/datasource"
 )
 
-type ID string
-
-func (m *ID) String() (s string) {
-	pMT := (*reflect.StringHeader)(unsafe.Pointer(m))
-	pStr := (*reflect.StringHeader)(unsafe.Pointer(&s))
-	pStr.Data = pMT.Data
-	pStr.Len = pMT.Len
-	return
-}
-
-const GlobalLock ID = "/cse-sr/lock/global"
-
-func Lock(t ID) (*etcdsync.DLock, error) {
-	return etcdsync.Lock(t.String(), -1, true)
-}
-
-func Try(t ID) (*etcdsync.DLock, error) {
-	return etcdsync.Lock(t.String(), -1, false)
+func RetireService(ctx context.Context, plan *datasource.RetirePlan) error {
+	return datasource.GetMetadataManager().RetireService(ctx, plan)
 }

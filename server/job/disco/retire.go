@@ -20,39 +20,47 @@ package disco
 import (
 	"context"
 	"fmt"
-	"github.com/apache/servicecomb-service-center/server/config"
 	"time"
 
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/server/config"
 	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
 	"github.com/go-chassis/foundation/gopool"
 )
 
 const (
-	defaultRotateMicroserviceInterval = 12 * time.Hour
+	defaultRetireMicroserviceInterval = 12 * time.Hour
 	defaultReserveVersionCount        = 3
 )
 
 func init() {
-	startRotateMicroServiceJob()
+	startRetireServiceJob()
 }
 
-func startRotateMicroServiceJob() {
-	interval := config.GetDuration("registry.service.rotate.interval", defaultRotateMicroserviceInterval)
-	reserve := config.GetInt("registry.service.rotate.reserveVersion", defaultReserveVersionCount)
+func startRetireServiceJob() {
+	disable := config.GetBool("registry.service.retire.disable", false)
+	if disable {
+		return
+	}
 
-	log.Info(fmt.Sprintf("start rotate microservice job(every %s)", interval))
+	localPlan := &datasource.RetirePlan{
+		Interval: config.GetDuration("registry.service.retire.interval", defaultRetireMicroserviceInterval),
+		Reserve:  config.GetInt("registry.service.retire.reserve", defaultReserveVersionCount),
+	}
+
+	log.Info(fmt.Sprintf("start retire microservice job, plan is %v", localPlan))
 	gopool.Go(func(ctx context.Context) {
-		tick := time.NewTicker(interval)
+		tick := time.NewTicker(localPlan.Interval)
 		defer tick.Stop()
 		for {
 			select {
 			case <-ctx.Done():
 				return
 			case <-tick.C:
-				err := discosvc.RotateMicroservice(ctx, reserve)
+				err := discosvc.RetireService(ctx, localPlan)
 				if err != nil {
-					log.Error("rotate microservice failed", err)
+					log.Error("retire microservice failed", err)
 				}
 			}
 		}

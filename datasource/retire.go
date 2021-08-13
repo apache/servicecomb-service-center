@@ -15,14 +15,16 @@
  * limitations under the License.
  */
 
-package disco
+package datasource
 
-import (
-	"context"
+import "time"
 
-	"github.com/apache/servicecomb-service-center/datasource"
-)
+type RetirePlan struct {
+	Interval  time.Duration `json:"interval,omitempty"`
+	Reserve   int           `json:"reserve,omitempty"`
+	LastRunAt int64         `json:"lastRunAt,omitempty" bson:"last_run_at"`
+}
 
-func RotateMicroservice(ctx context.Context, reserveVersionCount int) error {
-	return datasource.GetMetadataManager().RotateMicroservice(ctx, reserveVersionCount)
+func (r *RetirePlan) ShouldRetire() bool {
+	return time.Now().Add(-r.Interval).Unix() >= r.LastRunAt
 }

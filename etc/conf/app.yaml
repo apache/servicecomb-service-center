@@ -131,9 +131,12 @@ registry:
   service:
     # globalVisible is the global microservice name list
     globalVisible:
-    rotate:
+    # retire the 'reserve' latest versions for each of service,
+    # delete other versions which doesn't register any instances.
+    retire:
+      disable: false
       interval: 12h
-      reserveVersion: 3
+      reserve: 3
   instance:
     # By default, instance TTL = (times + 1) * interval
     # if ttl > 0, the instance will always set this value, ignore the API request body

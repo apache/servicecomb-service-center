@@ -44,6 +44,7 @@ const (
 	DepsQueueUUID            = "0"
 	DepsConsumer             = "c"
 	DepsProvider             = "p"
+	RegistryRetirePlan       = "retire-plan"
 )
 
 func GetRootKey() string {
@@ -346,4 +347,8 @@ func GenerateMetricsKey(name, utc, domain string) string {
 		utc,
 		domain,
 	}, SPLIT)
+}
+
+func GenerateRetirePlanKey() string {
+	return util.StringJoin([]string{GetRootKey(), RegistryRetirePlan}, SPLIT)
 }

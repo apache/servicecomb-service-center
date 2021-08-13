@@ -72,8 +72,8 @@ func TestGetOldServiceIDs(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := etcd.GetOldServiceIDs(tt.args.indexesResp, reserve); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GetOldServiceIDs() = %v, want %v", got, tt.want)
+			if got := etcd.GetRetireServiceIDs(tt.args.indexesResp, reserve); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GetRetireServiceIDs() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -133,8 +133,8 @@ func TestFilterInUsed(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := etcd.FilterUnused(ctx, tt.args.serviceIDKeys); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("FilterUnused() = %v, want %v", got, tt.want)
+			if got := etcd.FilterNoInstance(ctx, tt.args.serviceIDKeys); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("FilterNoInstance() = %v, want %v", got, tt.want)
 			}
 		})
 	}

@@ -101,6 +101,7 @@ type MetadataManager interface {
 	UpdateTag(ctx context.Context, request *pb.UpdateServiceTagRequest) (*pb.UpdateServiceTagResponse, error)
 	DeleteTags(ctx context.Context, request *pb.DeleteServiceTagsRequest) (*pb.DeleteServiceTagsResponse, error)
 
-	// RotateMicroservice keep the 'reserveVersionCount' latest versions
-	RotateMicroservice(ctx context.Context, reserveVersionCount int) error
+	// RetireService retire the 'RetirePlan.Reserve' latest versions for each of service,
+	// delete other versions which doesn't register any instances.
+	RetireService(ctx context.Context, plan *RetirePlan) error
 }
