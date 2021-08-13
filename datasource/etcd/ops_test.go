@@ -45,7 +45,7 @@ func TestGetOldServiceIDs(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want []*etcd.CleanupServiceIDKey
+		want []*etcd.RotateServiceIDKey
 	}{
 		{"input empty should return empty", args{indexesResp: &kvstore.Response{}}, nil},
 		{"less then reserve version count should return empty", args{indexesResp: &kvstore.Response{
@@ -65,7 +65,7 @@ func TestGetOldServiceIDs(t *testing.T) {
 				{Key: []byte(etcdKeyPrefix + "svc1/3.0"), Value: "svc1-3.0"},
 				{Key: []byte(etcdKeyPrefix + "svc2/1.0"), Value: "svc2-1.0"},
 			}, Count: 6,
-		}}, []*etcd.CleanupServiceIDKey{
+		}}, []*etcd.RotateServiceIDKey{
 			{domainProject, "svc1-1.2"},
 			{domainProject, "svc1-1.0"},
 		}},
@@ -114,19 +114,19 @@ func TestFilterInUsed(t *testing.T) {
 	assert.NoError(t, err)
 
 	type args struct {
-		serviceIDKeys []*etcd.CleanupServiceIDKey
+		serviceIDKeys []*etcd.RotateServiceIDKey
 	}
 	tests := []struct {
 		name string
 		args args
-		want []*etcd.CleanupServiceIDKey
+		want []*etcd.RotateServiceIDKey
 	}{
-		{"input empty should return empty", args{serviceIDKeys: []*etcd.CleanupServiceIDKey{}}, []*etcd.CleanupServiceIDKey{}},
-		{"input only one unused should return it", args{serviceIDKeys: []*etcd.CleanupServiceIDKey{
+		{"input empty should return empty", args{serviceIDKeys: []*etcd.RotateServiceIDKey{}}, []*etcd.RotateServiceIDKey{}},
+		{"input only one unused should return it", args{serviceIDKeys: []*etcd.RotateServiceIDKey{
 			{DomainProject: domainProject, ServiceID: notExistServiceID},
 			{DomainProject: domainProject, ServiceID: inusedServiceID},
 			{DomainProject: domainProject, ServiceID: unusedServiceID},
-		}}, []*etcd.CleanupServiceIDKey{
+		}}, []*etcd.RotateServiceIDKey{
 			{DomainProject: domainProject, ServiceID: notExistServiceID},
 			{DomainProject: domainProject, ServiceID: unusedServiceID},
 		}},
@@ -146,7 +146,7 @@ func TestUnregisterManyService(t *testing.T) {
 
 	t.Run("delete many should ok", func(t *testing.T) {
 		const serviceVersionCount = 10
-		var serviceIDs []*etcd.CleanupServiceIDKey
+		var serviceIDs []*etcd.RotateServiceIDKey
 		for i := 0; i < serviceVersionCount; i++ {
 			serviceID := serviceIDPrefix + fmt.Sprintf("%v", i)
 			_, err := datasource.GetMetadataManager().RegisterService(ctx, &pb.CreateServiceRequest{
@@ -156,7 +156,7 @@ func TestUnregisterManyService(t *testing.T) {
 				},
 			})
 			assert.NoError(t, err)
-			serviceIDs = append(serviceIDs, &etcd.CleanupServiceIDKey{DomainProject: domainProject, ServiceID: serviceID})
+			serviceIDs = append(serviceIDs, &etcd.RotateServiceIDKey{DomainProject: domainProject, ServiceID: serviceID})
 		}
 
 		deleted := etcd.UnregisterManyService(ctx, serviceIDs)
@@ -168,7 +168,7 @@ func TestUnregisterManyService(t *testing.T) {
 	})
 
 	t.Run("delete inused should failed", func(t *testing.T) {
-		var serviceIDs []*etcd.CleanupServiceIDKey
+		var serviceIDs []*etcd.RotateServiceIDKey
 		service, err := datasource.GetMetadataManager().RegisterService(ctx, &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
 				ServiceId:   serviceIDPrefix + "1",
@@ -176,7 +176,7 @@ func TestUnregisterManyService(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		serviceIDs = append(serviceIDs, &etcd.CleanupServiceIDKey{DomainProject: domainProject, ServiceID: service.ServiceId})
+		serviceIDs = append(serviceIDs, &etcd.RotateServiceIDKey{DomainProject: domainProject, ServiceID: service.ServiceId})
 
 		defer datasource.GetMetadataManager().UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: service.ServiceId, Force: true})
 

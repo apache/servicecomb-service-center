@@ -75,6 +75,6 @@ func (ds *MetadataManager) getNotGlobalServiceFilter(ctx context.Context) (bson.
 	return mutil.NewFilter(mutil.NotIn(serviceIDs)), nil
 }
 
-func (ds *MetadataManager) CleanupUnusedMicroservice(ctx context.Context, reserveVersionCount int) error {
+func (ds *MetadataManager) RotateMicroservice(ctx context.Context, reserveVersionCount int) error {
 	panic("implement me")
 }

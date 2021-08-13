@@ -36,9 +36,9 @@ import (
 	"github.com/little-cui/etcdadpt"
 )
 
-const poolSizeOfCleanup = 5
+const poolSizeOfRotation = 5
 
-type CleanupServiceIDKey struct {
+type RotateServiceIDKey struct {
 	DomainProject string
 	ServiceID     string
 }
@@ -103,7 +103,7 @@ func (ds *MetadataManager) getGlobalInstanceCount(ctx context.Context, domainPro
 	return global, nil
 }
 
-func (ds *MetadataManager) CleanupUnusedMicroservice(ctx context.Context, reserveVersionCount int) error {
+func (ds *MetadataManager) RotateMicroservice(ctx context.Context, reserveVersionCount int) error {
 	key := path.GetServiceIndexRootKey("")
 	indexesResp, err := sd.ServiceIndex().Search(ctx, etcdadpt.WithStrKey(key), etcdadpt.WithPrefix())
 	if err != nil {
@@ -119,16 +119,16 @@ func (ds *MetadataManager) CleanupUnusedMicroservice(ctx context.Context, reserv
 		return nil
 	}
 
-	log.Warn(fmt.Sprintf("start clean up %d microservices", len(serviceIDKeys)))
+	log.Warn(fmt.Sprintf("start rotate %d microservices", len(serviceIDKeys)))
 	n := UnregisterManyService(ctx, serviceIDKeys)
 	if n > 0 {
-		log.Warn(fmt.Sprintf("auto clean up %d microservices", n))
+		log.Warn(fmt.Sprintf("%d microservices rotated", n))
 	}
 	return nil
 }
 
-func FilterUnused(ctx context.Context, serviceIDKeys []*CleanupServiceIDKey) []*CleanupServiceIDKey {
-	matched := make([]*CleanupServiceIDKey, 0, len(serviceIDKeys))
+func FilterUnused(ctx context.Context, serviceIDKeys []*RotateServiceIDKey) []*RotateServiceIDKey {
+	matched := make([]*RotateServiceIDKey, 0, len(serviceIDKeys))
 	for _, serviceIDKey := range serviceIDKeys {
 		serviceID := serviceIDKey.ServiceID
 		instanceKey := path.GenerateInstanceKey(serviceIDKey.DomainProject, serviceID, "")
@@ -146,8 +146,8 @@ func FilterUnused(ctx context.Context, serviceIDKeys []*CleanupServiceIDKey) []*
 	return matched
 }
 
-func UnregisterManyService(ctx context.Context, serviceIDKeys []*CleanupServiceIDKey) (deleted int64) {
-	pool := goutil.New(gopool.Configure().WithContext(ctx).Workers(poolSizeOfCleanup))
+func UnregisterManyService(ctx context.Context, serviceIDKeys []*RotateServiceIDKey) (deleted int64) {
+	pool := goutil.New(gopool.Configure().WithContext(ctx).Workers(poolSizeOfRotation))
 	defer pool.Done()
 
 	for _, key := range serviceIDKeys {
@@ -164,7 +164,7 @@ func UnregisterManyService(ctx context.Context, serviceIDKeys []*CleanupServiceI
 	return
 }
 
-func GetOldServiceIDs(indexesResp *kvstore.Response, reserveVersionCount int) []*CleanupServiceIDKey {
+func GetOldServiceIDs(indexesResp *kvstore.Response, reserveVersionCount int) []*RotateServiceIDKey {
 	total := indexesResp.Count
 	if total == 0 {
 		return nil
@@ -191,12 +191,12 @@ func GetOldServiceIDs(indexesResp *kvstore.Response, reserveVersionCount int) []
 		return nil
 	}
 
-	var serviceIDs []*CleanupServiceIDKey
+	var serviceIDs []*RotateServiceIDKey
 	for key, serviceKey := range matched {
 		kvs := serviceVersionMap[key]
 		serviceUtil.Sort(kvs, serviceUtil.Larger)
 		for _, kv := range kvs[reserveVersionCount:] {
-			serviceIDs = append(serviceIDs, &CleanupServiceIDKey{
+			serviceIDs = append(serviceIDs, &RotateServiceIDKey{
 				DomainProject: serviceKey.Tenant,
 				ServiceID:     kv.Value.(string),
 			})

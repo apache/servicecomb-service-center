@@ -20,6 +20,7 @@ package disco
 import (
 	"context"
 	"fmt"
+	"github.com/apache/servicecomb-service-center/server/config"
 	"time"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -28,27 +29,30 @@ import (
 )
 
 const (
-	unusedMicroserviceCleanupInterval = 12 * time.Hour
-	reserveVersionCount               = 3
+	defaultRotateMicroserviceInterval = 12 * time.Hour
+	defaultReserveVersionCount        = 3
 )
 
 func init() {
-	startCleanupUnusedMicroserviceJob()
+	startRotateMicroServiceJob()
 }
 
-func startCleanupUnusedMicroserviceJob() {
-	log.Info(fmt.Sprintf("start unused microservice cleanup job(every %s)", unusedMicroserviceCleanupInterval))
+func startRotateMicroServiceJob() {
+	interval := config.GetDuration("registry.service.rotate.interval", defaultRotateMicroserviceInterval)
+	reserve := config.GetInt("registry.service.rotate.reserveVersion", defaultReserveVersionCount)
+
+	log.Info(fmt.Sprintf("start rotate microservice job(every %s)", interval))
 	gopool.Go(func(ctx context.Context) {
-		tick := time.NewTicker(unusedMicroserviceCleanupInterval)
+		tick := time.NewTicker(interval)
 		defer tick.Stop()
 		for {
 			select {
 			case <-ctx.Done():
 				return
 			case <-tick.C:
-				err := discosvc.CleanupUnusedMicroservice(ctx, reserveVersionCount)
+				err := discosvc.RotateMicroservice(ctx, reserve)
 				if err != nil {
-					log.Error("cleanup lock history failed", err)
+					log.Error("rotate microservice failed", err)
 				}
 			}
 		}

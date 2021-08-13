@@ -23,6 +23,6 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource"
 )
 
-func CleanupUnusedMicroservice(ctx context.Context, reserveVersionCount int) error {
-	return datasource.GetMetadataManager().CleanupUnusedMicroservice(ctx, reserveVersionCount)
+func RotateMicroservice(ctx context.Context, reserveVersionCount int) error {
+	return datasource.GetMetadataManager().RotateMicroservice(ctx, reserveVersionCount)
 }

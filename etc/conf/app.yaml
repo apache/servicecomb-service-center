@@ -129,7 +129,11 @@ registry:
     queueSize: 0
 
   service:
+    # globalVisible is the global microservice name list
     globalVisible:
+    rotate:
+      interval: 12h
+      reserveVersion: 3
   instance:
     # By default, instance TTL = (times + 1) * interval
     # if ttl > 0, the instance will always set this value, ignore the API request body
@@ -158,6 +162,7 @@ rbac:
   publicKeyFile: ./public.key
   releaseLockAfter: 15m # failure login attempt causes account blocking, that is block duration
   scope: '*' # specify auth resource scope, can be account,role,service,service/schema,...
+
 metrics:
   # enable to start metrics gather
   enable: true
