@@ -23,8 +23,8 @@ import (
 )
 
 var (
-	errParseNilPoint  = errors.New("parse nil point")
-	errTargetNilPoint = errors.New("target is nil point")
+	ErrParseNilPoint  = errors.New("parse nil point")
+	ErrTargetNilPoint = errors.New("target is nil point")
 )
 
 // new
@@ -47,16 +47,16 @@ type ParseValueFunc func(src []byte, dist interface{}) error
 
 var (
 	UnParse ParseValueFunc = func(src []byte, dist interface{}) error {
-		if err := check(src, dist); err != nil {
-			return err
+		if dist == nil {
+			return ErrTargetNilPoint
 		}
 		d := dist.(*interface{})
 		*d = src
 		return nil
 	}
 	TextUnmarshal ParseValueFunc = func(src []byte, dist interface{}) error {
-		if err := check(src, dist); err != nil {
-			return err
+		if dist == nil {
+			return ErrTargetNilPoint
 		}
 		d := dist.(*interface{})
 		*d = util.BytesToStringWithNoCopy(src)
@@ -70,7 +70,7 @@ var (
 		m := (*d).(map[string]string)
 		return json.Unmarshal(src, &m)
 	}
-	JsonUnmarshal ParseValueFunc = func(src []byte, dist interface{}) error {
+	JSONUnmarshal ParseValueFunc = func(src []byte, dist interface{}) error {
 		if err := check(src, dist); err != nil {
 			return err
 		}
@@ -102,19 +102,19 @@ var (
 	StringParser = &CommonParser{newString, TextUnmarshal}
 	MapParser    = &CommonParser{newMap, MapUnmarshal}
 
-	ServiceParser         = &CommonParser{newService, JsonUnmarshal}
-	InstanceParser        = &CommonParser{newInstance, JsonUnmarshal}
-	RuleParser            = &CommonParser{newRule, JsonUnmarshal}
-	DependencyRuleParser  = &CommonParser{newDependencyRule, JsonUnmarshal}
-	DependencyQueueParser = &CommonParser{newDependencyQueue, JsonUnmarshal}
+	ServiceParser         = &CommonParser{newService, JSONUnmarshal}
+	InstanceParser        = &CommonParser{newInstance, JSONUnmarshal}
+	RuleParser            = &CommonParser{newRule, JSONUnmarshal}
+	DependencyRuleParser  = &CommonParser{newDependencyRule, JSONUnmarshal}
+	DependencyQueueParser = &CommonParser{newDependencyQueue, JSONUnmarshal}
 )
 
 func check(src []byte, dist interface{}) error {
 	if src == nil {
-		return errParseNilPoint
+		return ErrParseNilPoint
 	}
 	if dist == nil {
-		return errTargetNilPoint
+		return ErrTargetNilPoint
 	}
 	return nil
 }

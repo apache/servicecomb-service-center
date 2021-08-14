@@ -45,7 +45,7 @@ func (i *Indexer) CheckPrefix(key string) error {
 	return nil
 }
 
-func (i *Indexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (r *discovery.Response, err error) {
+func (i *Indexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (*discovery.Response, error) {
 	op := registry.OpGet(opts...)
 	key := util.BytesToStringWithNoCopy(op.Key)
 
@@ -60,10 +60,10 @@ func (i *Indexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (
 		return nil, err
 	}
 
-	r = new(discovery.Response)
+	r := new(discovery.Response)
 	r.Count = resp.Count
 	if len(resp.Kvs) == 0 || op.CountOnly {
-		return
+		return r, nil
 	}
 
 	p := i.Parser
@@ -74,13 +74,13 @@ func (i *Indexer) Search(ctx context.Context, opts ...registry.PluginOpOption) (
 	kvs := make([]*discovery.KeyValue, 0, len(resp.Kvs))
 	for _, src := range resp.Kvs {
 		kv := discovery.NewKeyValue()
-		if err = FromEtcdKeyValue(kv, src, p); err != nil {
+		if err := FromEtcdKeyValue(kv, src, p); err != nil {
 			continue
 		}
 		kvs = append(kvs, kv)
 	}
 	r.Kvs = kvs
-	return
+	return r, nil
 }
 
 // Creditable implements discovery.Indexer.Creditable.
