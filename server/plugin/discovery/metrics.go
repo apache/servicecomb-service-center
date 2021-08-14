@@ -17,9 +17,10 @@
 package discovery
 
 import (
+	"time"
+
 	"github.com/apache/servicecomb-service-center/server/metric"
 	"github.com/prometheus/client_golang/prometheus"
-	"time"
 )
 
 var (

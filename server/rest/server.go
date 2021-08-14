@@ -19,10 +19,11 @@ package rest
 
 import (
 	"crypto/tls"
+	"time"
+
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/plugin"
-	"time"
 )
 
 func LoadConfig() (srvCfg *rest.ServerConfig, err error) {

@@ -17,8 +17,9 @@ package registry
 
 import (
 	"fmt"
-	"github.com/coreos/etcd/mvcc/mvccpb"
 	"strconv"
+
+	"github.com/coreos/etcd/mvcc/mvccpb"
 )
 
 type ActionType int

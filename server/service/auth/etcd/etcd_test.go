@@ -21,6 +21,8 @@ package etcd
 
 import (
 	"context"
+	"testing"
+
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	mgr "github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery/etcd"
@@ -29,7 +31,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/service/auth"
 	"github.com/astaxie/beego"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 var (

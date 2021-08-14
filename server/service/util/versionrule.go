@@ -17,12 +17,13 @@
 package util
 
 import (
-	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 )
 
 type VersionRule func(sorted []string, kvs map[string]*discovery.KeyValue, start, end string) []string

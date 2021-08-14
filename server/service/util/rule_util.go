@@ -19,6 +19,10 @@ package util
 import (
 	"context"
 	"fmt"
+	"reflect"
+	"regexp"
+	"strings"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -27,9 +31,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
-	"reflect"
-	"regexp"
-	"strings"
 )
 
 type RuleFilter struct {

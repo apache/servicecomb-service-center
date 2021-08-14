@@ -19,12 +19,13 @@ package service
 
 import (
 	"errors"
+	"reflect"
+	"regexp"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/validate"
-	"reflect"
-	"regexp"
 )
 
 var createAccountValidator = &validate.Validator{}

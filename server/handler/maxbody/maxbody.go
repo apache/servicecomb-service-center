@@ -18,10 +18,11 @@
 package maxbody
 
 import (
+	"net/http"
+
 	"github.com/apache/servicecomb-service-center/pkg/chain"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"net/http"
 )
 
 const (

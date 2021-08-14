@@ -18,8 +18,11 @@
 package govern
 
 import (
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"net/http"
+
+	"github.com/apache/servicecomb-service-center/server/core/proto"
+
+	"strings"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
@@ -28,7 +31,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/rest/controller"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
-	"strings"
 )
 
 // Service 治理相关接口服务

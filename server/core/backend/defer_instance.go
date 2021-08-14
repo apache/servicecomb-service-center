@@ -19,13 +19,14 @@ package backend
 
 import (
 	"context"
+	"sync"
+	"time"
+
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
-	"sync"
-	"time"
 )
 
 type deferItem struct {

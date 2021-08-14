@@ -19,10 +19,11 @@ package ws_test
 
 import (
 	"context"
+	"testing"
+
 	"github.com/apache/servicecomb-service-center/server/connection/ws"
 	"github.com/apache/servicecomb-service-center/server/event"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestNewBroker(t *testing.T) {

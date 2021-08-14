@@ -20,8 +20,9 @@ package event
 import (
 	"errors"
 	"fmt"
-	"github.com/apache/servicecomb-service-center/pkg/log"
 	"sync"
+
+	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
 // BusService is the daemon service to manage multiple type Bus

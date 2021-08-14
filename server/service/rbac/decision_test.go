@@ -19,9 +19,10 @@ package rbac_test
 
 import (
 	"context"
+	"testing"
+
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestAllow(t *testing.T) {

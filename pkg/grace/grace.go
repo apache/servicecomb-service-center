@@ -20,13 +20,14 @@ package grace
 import (
 	"flag"
 	"fmt"
-	"github.com/apache/servicecomb-service-center/pkg/log"
 	"os"
 	"os/exec"
 	"os/signal"
 	"strings"
 	"sync"
 	"syscall"
+
+	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
 const (

@@ -20,10 +20,11 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/astaxie/beego"
 	"net"
 	"net/url"
 	"strconv"
+
+	"github.com/astaxie/beego"
 )
 
 type Config struct {

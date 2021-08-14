@@ -20,6 +20,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math/rand"
+	"strconv"
+	"testing"
+
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -27,9 +31,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	"github.com/coreos/etcd/mvcc/mvccpb"
-	"math/rand"
-	"strconv"
-	"testing"
 )
 
 type mockCache struct {

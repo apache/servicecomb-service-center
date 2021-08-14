@@ -17,13 +17,7 @@
 package etcd
 
 import (
-	_ "github.com/apache/servicecomb-service-center/server/plugin/tracing/pzipkin"
-	"github.com/stretchr/testify/assert"
-)
-import _ "github.com/apache/servicecomb-service-center/server/plugin/security/buildin"
-import _ "github.com/apache/servicecomb-service-center/server/plugin/tls/buildin"
-import (
-	context2 "context"
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
@@ -31,12 +25,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/apache/servicecomb-service-center/server/plugin/registry"
+	_ "github.com/apache/servicecomb-service-center/server/plugin/security/buildin"
+	_ "github.com/apache/servicecomb-service-center/server/plugin/tls/buildin"
+	_ "github.com/apache/servicecomb-service-center/server/plugin/tracing/pzipkin"
 
-	"context"
+	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/etcdserver/etcdserverpb"
 	"github.com/coreos/etcd/mvcc/mvccpb"
+	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -749,11 +746,11 @@ type mockKVForPagine struct {
 	rangeResp2 *clientv3.GetResponse
 }
 
-func (m *mockKVForPagine) Put(ctx context2.Context, key, val string, opts ...clientv3.OpOption) (*clientv3.PutResponse, error) {
+func (m *mockKVForPagine) Put(ctx context.Context, key, val string, opts ...clientv3.OpOption) (*clientv3.PutResponse, error) {
 	return nil, nil
 }
 
-func (m *mockKVForPagine) Get(ctx context2.Context, key string, opts ...clientv3.OpOption) (*clientv3.GetResponse, error) {
+func (m *mockKVForPagine) Get(ctx context.Context, key string, opts ...clientv3.OpOption) (*clientv3.GetResponse, error) {
 	op := &clientv3.Op{}
 	for _, o := range opts {
 		o(op)
@@ -768,19 +765,19 @@ func (m *mockKVForPagine) Get(ctx context2.Context, key string, opts ...clientv3
 	return m.rangeResp2, nil
 }
 
-func (m *mockKVForPagine) Delete(ctx context2.Context, key string, opts ...clientv3.OpOption) (*clientv3.DeleteResponse, error) {
+func (m *mockKVForPagine) Delete(ctx context.Context, key string, opts ...clientv3.OpOption) (*clientv3.DeleteResponse, error) {
 	return nil, nil
 }
 
-func (m *mockKVForPagine) Compact(ctx context2.Context, rev int64, opts ...clientv3.CompactOption) (*clientv3.CompactResponse, error) {
+func (m *mockKVForPagine) Compact(ctx context.Context, rev int64, opts ...clientv3.CompactOption) (*clientv3.CompactResponse, error) {
 	return nil, nil
 }
 
-func (m *mockKVForPagine) Do(ctx context2.Context, op clientv3.Op) (clientv3.OpResponse, error) {
+func (m *mockKVForPagine) Do(ctx context.Context, op clientv3.Op) (clientv3.OpResponse, error) {
 	return clientv3.OpResponse{}, nil
 }
 
-func (m *mockKVForPagine) Txn(ctx context2.Context) clientv3.Txn {
+func (m *mockKVForPagine) Txn(ctx context.Context) clientv3.Txn {
 	return nil
 }
 
@@ -828,7 +825,7 @@ func TestEtcdClient_paging(t *testing.T) {
 		Offset: -1,
 		Limit:  registry.DefaultPageCount,
 	}
-	r, err := c.paging(context2.Background(), op)
+	r, err := c.paging(context.Background(), op)
 	if err != nil {
 		t.Fatalf("TestEtcdClient_paging failed, %#v", err)
 	}

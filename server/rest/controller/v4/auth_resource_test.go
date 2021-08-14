@@ -23,6 +23,15 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+	"time"
+
+	_ "github.com/apache/servicecomb-service-center/server/handler/auth"
+	_ "github.com/apache/servicecomb-service-center/test"
+
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	v4 "github.com/apache/servicecomb-service-center/server/rest/controller/v4"
@@ -33,14 +42,6 @@ import (
 	"github.com/go-chassis/go-chassis/security/secret"
 	"github.com/go-chassis/go-chassis/server/restful"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
-	"net/http"
-	"net/http/httptest"
-	"testing"
-	"time"
-
-	_ "github.com/apache/servicecomb-service-center/server/handler/auth"
-	_ "github.com/apache/servicecomb-service-center/test"
 )
 
 func init() {

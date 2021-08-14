@@ -29,8 +29,8 @@ import (
 	"time"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/tlsutil"
 	"github.com/apache/servicecomb-service-center/syncer/pkg/utils"
+	"github.com/go-chassis/foundation/tlsutil"
 	"github.com/pkg/errors"
 )
 

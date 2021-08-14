@@ -17,25 +17,24 @@ package task_test
 
 // initialize
 import (
-	_ "github.com/apache/servicecomb-service-center/server/bootstrap"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
-)
-import _ "github.com/apache/servicecomb-service-center/server"
-
-import (
 	"context"
 	"fmt"
 	"testing"
 	"time"
 
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
-	"github.com/apache/servicecomb-service-center/pkg/util"
-	apt "github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/task"
-	"github.com/astaxie/beego"
+	_ "github.com/apache/servicecomb-service-center/server/bootstrap"
+
+	_ "github.com/apache/servicecomb-service-center/server"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	pb "github.com/apache/servicecomb-service-center/pkg/registry"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	apt "github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/apache/servicecomb-service-center/server/task"
+	"github.com/astaxie/beego"
 )
 
 func init() {

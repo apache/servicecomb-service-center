@@ -17,10 +17,11 @@ package servicecenter
 
 import (
 	"fmt"
-	"github.com/apache/servicecomb-service-center/pkg/model"
-	proto "github.com/apache/servicecomb-service-center/pkg/registry"
 	"sync"
 	"time"
+
+	"github.com/apache/servicecomb-service-center/pkg/model"
+	proto "github.com/apache/servicecomb-service-center/pkg/registry"
 
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"

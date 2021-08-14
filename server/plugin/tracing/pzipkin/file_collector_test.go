@@ -19,11 +19,12 @@ package pzipkin
 import (
 	"context"
 	"fmt"
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
-	"github.com/openzipkin/zipkin-go-opentracing/thrift/gen-go/zipkincore"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/apache/servicecomb-service-center/pkg/gopool"
+	"github.com/openzipkin/zipkin-go-opentracing/thrift/gen-go/zipkincore"
 )
 
 func TestFileCollector_Collect(t *testing.T) {

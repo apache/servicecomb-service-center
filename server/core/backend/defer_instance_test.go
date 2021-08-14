@@ -18,11 +18,12 @@ package backend
 
 import (
 	"fmt"
+	"testing"
+	"time"
+
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
-	"testing"
-	"time"
 )
 
 type mockCache struct {

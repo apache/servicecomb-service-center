@@ -16,9 +16,10 @@
 package core
 
 import (
+	"testing"
+
 	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestGenerateAccountKey(t *testing.T) {

@@ -18,6 +18,7 @@ package proto
 import (
 	"encoding/json"
 	"errors"
+
 	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )

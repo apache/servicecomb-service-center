@@ -18,6 +18,8 @@ package admin_test
 
 import (
 	"context"
+	"testing"
+
 	model2 "github.com/apache/servicecomb-service-center/pkg/model"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
@@ -28,7 +30,6 @@ import (
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"github.com/astaxie/beego"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func init() {

@@ -17,21 +17,21 @@
 package util_test
 
 import (
+	"context"
+	"testing"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
 	_ "github.com/apache/servicecomb-service-center/server/plugin/discovery/etcd"
 	_ "github.com/apache/servicecomb-service-center/server/plugin/quota/buildin"
 	_ "github.com/apache/servicecomb-service-center/server/plugin/registry/buildin"
-)
 
-import (
-	"context"
 	proto "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
-	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
-	. "github.com/onsi/gomega"
-	"testing"
 )
 
 func init() {

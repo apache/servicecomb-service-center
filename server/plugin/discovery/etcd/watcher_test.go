@@ -19,9 +19,10 @@ package etcd
 import (
 	"context"
 	"fmt"
-	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	"testing"
 	"time"
+
+	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 )
 
 type mockWatcher struct {

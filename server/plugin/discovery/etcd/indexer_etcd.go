@@ -18,8 +18,9 @@ package etcd
 
 import (
 	"fmt"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"strings"
+
+	"github.com/apache/servicecomb-service-center/server/core/proto"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"

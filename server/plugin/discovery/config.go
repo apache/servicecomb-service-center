@@ -18,8 +18,9 @@ package discovery
 
 import (
 	"fmt"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"time"
+
+	"github.com/apache/servicecomb-service-center/server/core/proto"
 )
 
 type Config struct {

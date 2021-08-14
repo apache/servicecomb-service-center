@@ -18,13 +18,14 @@ package v3
 
 import (
 	"encoding/json"
+	"net/http"
+
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/rest/controller"
-	"github.com/apache/servicecomb-service-center/server/rest/controller/v4"
+	v4 "github.com/apache/servicecomb-service-center/server/rest/controller/v4"
 	"github.com/apache/servicecomb-service-center/version"
-	"net/http"
 )
 
 var (

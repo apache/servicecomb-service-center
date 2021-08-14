@@ -19,10 +19,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+
+	"github.com/apache/servicecomb-service-center/pkg/registry"
 
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 )

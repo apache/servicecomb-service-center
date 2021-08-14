@@ -20,6 +20,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
+	"time"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -33,8 +36,6 @@ import (
 	depUtil "github.com/apache/servicecomb-service-center/server/service/dep/etcd"
 	"github.com/apache/servicecomb-service-center/server/service/ms"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
-	"strconv"
-	"time"
 )
 
 // TODO: define error with names here

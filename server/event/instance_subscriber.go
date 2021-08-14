@@ -19,6 +19,7 @@ package event
 
 import (
 	"errors"
+
 	"github.com/apache/servicecomb-service-center/pkg/event"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/connection"

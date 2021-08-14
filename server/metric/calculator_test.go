@@ -17,8 +17,9 @@
 package metric
 
 import (
-	dto "github.com/prometheus/client_model/go"
 	"testing"
+
+	dto "github.com/prometheus/client_model/go"
 )
 
 func TestCommonCalculator_Calc(t *testing.T) {

@@ -16,10 +16,11 @@
 package auth
 
 import (
+	"testing"
+
 	"github.com/apache/servicecomb-service-center/server/service/auth/etcd"
 	"github.com/go-chassis/go-archaius"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestInit(t *testing.T) {

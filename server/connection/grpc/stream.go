@@ -20,12 +20,13 @@ package grpc
 import (
 	"context"
 	"errors"
+	"time"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/connection"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/event"
-	"time"
 )
 
 const GRPC = "gRPC"

@@ -16,10 +16,11 @@
 package dep
 
 import (
+	"testing"
+
 	"github.com/apache/servicecomb-service-center/server/service/dep/etcd"
 	"github.com/go-chassis/go-archaius"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestInit(t *testing.T) {

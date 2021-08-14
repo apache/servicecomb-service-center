@@ -18,8 +18,9 @@
 package event
 
 import (
-	simple "github.com/apache/servicecomb-service-center/pkg/time"
 	"time"
+
+	simple "github.com/apache/servicecomb-service-center/pkg/time"
 )
 
 type Event interface {

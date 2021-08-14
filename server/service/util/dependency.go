@@ -19,6 +19,7 @@ package util
 import (
 	"context"
 	"encoding/json"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	rmodel "github.com/apache/servicecomb-service-center/pkg/registry"
 	apt "github.com/apache/servicecomb-service-center/server/core"

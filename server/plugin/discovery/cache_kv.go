@@ -17,9 +17,10 @@
 package discovery
 
 import (
-	"github.com/apache/servicecomb-service-center/pkg/util"
 	"strings"
 	"sync"
+
+	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
 // KvCache implements Cache.

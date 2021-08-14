@@ -18,10 +18,11 @@ package etcd
 
 import (
 	"context"
+	"sync"
+
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
-	"sync"
 )
 
 type innerWatcher struct {

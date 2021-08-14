@@ -17,10 +17,11 @@
 package metric
 
 import (
-	"github.com/astaxie/beego"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/astaxie/beego"
 )
 
 func TestInstanceName(t *testing.T) {

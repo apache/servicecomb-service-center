@@ -18,9 +18,10 @@
 package rest
 
 import (
+	"net/http"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"net/http"
 )
 
 // The rest middleware design:

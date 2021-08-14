@@ -17,10 +17,11 @@ package core
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/pkg/registry"
-	"github.com/astaxie/beego"
 	"os"
 	"testing"
+
+	"github.com/apache/servicecomb-service-center/pkg/registry"
+	"github.com/astaxie/beego"
 )
 
 func TestPrepareSelfRegistration(t *testing.T) {

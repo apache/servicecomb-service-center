@@ -18,11 +18,12 @@ package util
 
 import (
 	"fmt"
+	"sort"
+	"testing"
+
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"sort"
-	"testing"
 )
 
 const VERSIONRULE_BASE = 5000

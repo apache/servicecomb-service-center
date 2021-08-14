@@ -19,6 +19,7 @@ package proto
 
 import (
 	"context"
+
 	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"google.golang.org/grpc"
 )

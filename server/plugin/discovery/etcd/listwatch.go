@@ -19,8 +19,9 @@ package etcd
 import (
 	"context"
 	"fmt"
-	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	"time"
+
+	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 )
 
 type ListWatchConfig struct {

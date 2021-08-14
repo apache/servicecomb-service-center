@@ -19,23 +19,25 @@ package integrationtest_test
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/go-chassis/cari/discovery"
-	"github.com/gorilla/websocket"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"strings"
 	"sync"
 
+	"github.com/go-chassis/cari/discovery"
+	"github.com/gorilla/websocket"
+	"github.com/stretchr/testify/assert"
+
 	"bytes"
-	. "github.com/apache/servicecomb-service-center/integration"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	"github.com/widuu/gojson"
 	"io/ioutil"
 	"math/rand"
 	"strconv"
 	"testing"
 	"time"
+
+	. "github.com/apache/servicecomb-service-center/integration"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"github.com/widuu/gojson"
 )
 
 var _ = Describe("MicroService Api Test", func() {

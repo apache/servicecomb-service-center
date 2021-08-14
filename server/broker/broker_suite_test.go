@@ -16,16 +16,19 @@
  */
 package broker_test
 
-import _ "github.com/apache/servicecomb-service-center/server/bootstrap"
 import (
+	"testing"
+
+	_ "github.com/apache/servicecomb-service-center/server/bootstrap"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
 	"github.com/apache/servicecomb-service-center/server/broker"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/service"
 	"github.com/astaxie/beego"
-	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
-	. "github.com/onsi/gomega"
-	"testing"
 )
 
 func init() {

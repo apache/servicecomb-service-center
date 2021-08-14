@@ -19,6 +19,8 @@ package kv_test
 
 import (
 	"context"
+	"testing"
+
 	mgr "github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery/etcd"
 	etcd2 "github.com/apache/servicecomb-service-center/server/plugin/registry/etcd"
@@ -26,7 +28,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/service/kv"
 	"github.com/astaxie/beego"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func init() {

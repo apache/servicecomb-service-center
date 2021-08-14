@@ -19,12 +19,13 @@ package metric
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/pkg/gopool"
-	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/prometheus/client_golang/prometheus"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/apache/servicecomb-service-center/pkg/gopool"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 // Gatherer is the reader of sc metrics

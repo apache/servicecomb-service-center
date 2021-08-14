@@ -17,10 +17,11 @@
 package servicecenter
 
 import (
-	"github.com/apache/servicecomb-service-center/pkg/model"
 	"net/url"
 	"strconv"
 	"strings"
+
+	"github.com/apache/servicecomb-service-center/pkg/model"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	scpb "github.com/apache/servicecomb-service-center/pkg/registry"

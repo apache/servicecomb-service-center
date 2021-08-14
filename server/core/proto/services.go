@@ -18,6 +18,7 @@ package proto
 
 import (
 	"context"
+
 	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/gorilla/websocket"
 )

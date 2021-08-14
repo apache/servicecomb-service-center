@@ -20,6 +20,8 @@ package cache
 import (
 	"context"
 	"fmt"
+	"sort"
+
 	"github.com/apache/servicecomb-service-center/pkg/cache"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
@@ -27,7 +29,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/core/backend"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
-	"sort"
 )
 
 var clustersIndex = make(map[string]int)

@@ -18,8 +18,9 @@ package util
 
 import (
 	"encoding/json"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"strings"
+
+	"github.com/apache/servicecomb-service-center/server/core/proto"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"

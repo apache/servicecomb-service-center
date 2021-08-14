@@ -18,11 +18,12 @@
 package core
 
 import (
-	"github.com/apache/servicecomb-service-center/server/core/proto"
-	"github.com/go-chassis/go-archaius"
 	"os"
 	"runtime"
 	"time"
+
+	"github.com/apache/servicecomb-service-center/server/core/proto"
+	"github.com/go-chassis/go-archaius"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/plugin"

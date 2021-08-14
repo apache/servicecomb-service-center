@@ -19,9 +19,10 @@ package validate
 
 import (
 	"fmt"
-	"github.com/apache/servicecomb-service-center/pkg/util"
 	"reflect"
 	"unicode/utf8"
+
+	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
 type Rule struct {

@@ -18,6 +18,9 @@ package servicecenter
 import (
 	"context"
 	"crypto/tls"
+	"strings"
+	"sync"
+
 	client2 "github.com/apache/servicecomb-service-center/client"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/model"
@@ -27,8 +30,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
-	"strings"
-	"sync"
 )
 
 var (

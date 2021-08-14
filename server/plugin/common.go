@@ -16,9 +16,10 @@
 package plugin
 
 import (
+	pg "plugin"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/plugin"
-	pg "plugin"
 )
 
 const (

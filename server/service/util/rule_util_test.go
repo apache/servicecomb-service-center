@@ -18,11 +18,12 @@ package util
 
 import (
 	"context"
+	"net/http"
+	"testing"
+
 	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
-	"net/http"
-	"testing"
 )
 
 func TestRuleFilter_Filter(t *testing.T) {

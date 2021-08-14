@@ -18,10 +18,11 @@
 package pzipkin
 
 import (
+	"strconv"
+
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/openzipkin/zipkin-go-opentracing/thrift/gen-go/zipkincore"
 	"github.com/openzipkin/zipkin-go-opentracing/types"
-	"strconv"
 )
 
 type Span struct {

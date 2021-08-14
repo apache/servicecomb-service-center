@@ -18,8 +18,9 @@ package buildin
 import (
 	"context"
 	"errors"
-	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	"testing"
+
+	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 )
 
 func TestCommonQuotaCheck(t *testing.T) {

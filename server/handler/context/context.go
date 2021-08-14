@@ -18,10 +18,11 @@
 package context
 
 import (
+	"net/http"
+
 	"github.com/apache/servicecomb-service-center/pkg/chain"
 	roa "github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"net/http"
 )
 
 type Handler struct {

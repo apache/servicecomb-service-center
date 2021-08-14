@@ -17,9 +17,10 @@
 package etcd
 
 import (
+	"testing"
+
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
-	"testing"
 )
 
 func TestNewKvEntity(t *testing.T) {

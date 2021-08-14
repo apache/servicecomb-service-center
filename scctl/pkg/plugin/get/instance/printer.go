@@ -16,10 +16,11 @@
 package instance
 
 import (
+	"time"
+
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/model"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/writer"
-	"time"
 )
 
 const neverExpire = "Never"

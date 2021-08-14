@@ -16,9 +16,10 @@
 package schema
 
 import (
-	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"os"
 	"path/filepath"
+
+	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 )
 
 type Config struct {

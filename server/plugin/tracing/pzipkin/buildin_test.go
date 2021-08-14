@@ -18,12 +18,13 @@ package pzipkin
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/plugin/registry"
-	"github.com/apache/servicecomb-service-center/server/plugin/tracing"
 	"net/http"
 	"os"
 	"testing"
+
+	"github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/plugin/registry"
+	"github.com/apache/servicecomb-service-center/server/plugin/tracing"
 )
 
 func TestZipkin_XBegin(t *testing.T) {

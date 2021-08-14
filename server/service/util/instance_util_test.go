@@ -18,11 +18,12 @@ package util
 
 import (
 	"context"
+	"testing"
+
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
-	"testing"
 )
 
 func TestFormatRevision(t *testing.T) {

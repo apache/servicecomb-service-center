@@ -18,12 +18,13 @@
 package util
 
 import (
-	"github.com/satori/go.uuid"
 	"strings"
+
+	uuid "github.com/satori/go.uuid"
 )
 
 const DASH = "-"
 
 func GenerateUUID() string {
-	return strings.Replace(uuid.NewV1().String(), string(DASH), "", -1)
+	return strings.Replace(uuid.NewV1().String(), DASH, "", -1)
 }
