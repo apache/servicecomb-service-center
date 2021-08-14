@@ -37,8 +37,8 @@ var (
 	MapParser    = New(newMap, MapUnmarshal)
 
 	UnParse ParseValueFunc = func(src []byte, dist interface{}) error {
-		if err := check(src, dist); err != nil {
-			return err
+		if dist == nil {
+			return ErrTargetNilPoint
 		}
 		d := dist.(*interface{})
 		*d = src

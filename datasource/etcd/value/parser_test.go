@@ -17,67 +17,47 @@
 package value
 
 import (
-	"github.com/apache/servicecomb-service-center/datasource/etcd/state/parser"
 	"testing"
 
+	"github.com/apache/servicecomb-service-center/datasource/etcd/state/parser"
 	"github.com/go-chassis/cari/discovery"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestParseInnerValueTypeFunc(t *testing.T) {
 	r, err := parser.BytesParser.Unmarshal(nil)
-	if err == nil {
-		t.Fatalf("BytesParser.Unmarshal failed")
-	}
+	assert.NoError(t, err)
+	assert.Nil(t, r.([]byte))
+
 	r, err = parser.BytesParser.Unmarshal([]byte("a"))
-	if err != nil {
-		t.Fatalf("BytesParser.Unmarshal failed, %s", err.Error())
-	}
-	if v, ok := r.([]byte); !ok || v[0] != 'a' {
-		t.Fatalf("BytesParser.Unmarshal failed, %s", v)
-	}
+	assert.NoError(t, err)
+	assert.Equal(t, []byte("a"), r.([]byte))
 
 	r, err = parser.StringParser.Unmarshal(nil)
-	if err != nil {
-		t.Fatalf("StringParser.Unmarshal failed")
-	}
+	assert.NoError(t, err)
+	assert.Equal(t, "", r.(string))
+
 	r, err = parser.StringParser.Unmarshal([]byte("abc"))
-	if err != nil {
-		t.Fatalf("StringParser.Unmarshal failed, %s", err.Error())
-	}
-	if v, ok := r.(string); !ok || v != "abc" {
-		t.Fatalf("StringParser.Unmarshal failed, %s", v)
-	}
+	assert.NoError(t, err)
+	assert.Equal(t, "abc", r.(string))
 
 	r, err = parser.MapParser.Unmarshal(nil)
-	if err == nil {
-		t.Fatalf("MapParser.Unmarshal failed")
-	}
+	assert.ErrorIs(t, parser.ErrParseNilPoint, err)
+
 	r, err = parser.MapParser.Unmarshal([]byte(`{"a": "abc"}`))
-	if err != nil {
-		t.Fatalf("MapParser.Unmarshal failed, %s", err.Error())
-	}
-	if v, ok := r.(map[string]string); !ok || v["a"] != "abc" {
-		t.Fatalf("MapParser.Unmarshal failed, %s", v)
-	}
+	assert.NoError(t, err)
+	assert.Equal(t, map[string]string{"a": "abc"}, r.(map[string]string))
 
 	r, err = parser.MapParser.Unmarshal([]byte(`xxx`))
-	if err == nil {
-		t.Fatalf("MapParser.Unmarshal failed")
-	}
+	assert.Error(t, err)
 
 	var m interface{} = new(discovery.MicroService)
 	err = parser.JSONUnmarshal(nil, nil)
-	if err == nil {
-		t.Fatalf("JSONUnmarshal failed")
-	}
+	assert.ErrorIs(t, parser.ErrParseNilPoint, err)
+
 	err = parser.JSONUnmarshal([]byte(`{"serviceName": "abc"}`), &m)
-	if err != nil {
-		t.Fatalf("MapParser.Unmarshal failed, %v", err)
-	}
-	if m.(*discovery.MicroService).ServiceName != "abc" {
-		t.Fatalf("MapParser.Unmarshal failed, %s", m)
-	}
+	assert.NoError(t, err)
+	assert.Equal(t, "abc", m.(*discovery.MicroService).ServiceName)
 }
 
 func TestParseValueTypeFunc(t *testing.T) {
