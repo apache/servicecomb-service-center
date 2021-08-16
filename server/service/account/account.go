@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/apache/servicecomb-service-center/pkg/log"
-
 	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/pkg/log"
 )
+
+const CleanupInterval = 20 * time.Minute
 
 func IsBanned(ctx context.Context, key string) (bool, error) {
 	lock, err := GetLock(ctx, key)
@@ -32,12 +33,23 @@ func IsBanned(ctx context.Context, key string) (bool, error) {
 	}
 	return false, nil
 }
+
 func Ban(ctx context.Context, key string) error {
 	return datasource.GetAccountLockManager().Ban(ctx, key)
 }
 
-func UpsertLock(ctx context.Context, lock *datasource.AccountLock) error {
-	return datasource.GetAccountLockManager().UpsertLock(ctx, lock)
+func Lock(ctx context.Context, key, status string) error {
+	var err error
+	if status == datasource.StatusBanned {
+		err = Ban(ctx, key)
+	} else {
+		err = datasource.GetAccountLockManager().UpsertLock(ctx, &datasource.AccountLock{
+			Key:       key,
+			Status:    status,
+			ReleaseAt: time.Now().Add(CleanupInterval).Unix(),
+		})
+	}
+	return err
 }
 
 func GetLock(ctx context.Context, key string) (*datasource.AccountLock, error) {
