@@ -329,7 +329,12 @@ func (d *Distributor) listDataByKind(ctx context.Context, kind, project, app, en
 	if len(labels) > 0 {
 		ops = append(ops, kie.WithLabels(labels))
 	}
-	return d.client.List(ctx, ops...)
+	list, rev, err := d.client.List(ctx, ops...)
+	if err == kie.ErrNoChanges {
+		list = &kie.KVResponse{}
+		err = nil
+	}
+	return list, rev, err
 }
 
 func (d *Distributor) generateID(ctx context.Context, project string, p *gov.Policy) error {
