@@ -33,23 +33,29 @@ import (
 )
 
 func init() {
-	t := archaius.Get("TEST_MODE")
-	if t == nil {
-		t = "etcd"
-	}
+	var kind = "etcd"
 	archaius.Set("rbac.releaseLockAfter", "3s")
-	if t == "etcd" {
+	if IsETCD() {
 		archaius.Set("registry.cache.mode", 0)
 		archaius.Set("discovery.kind", "etcd")
 		archaius.Set("registry.kind", "etcd")
 	} else {
 		archaius.Set("registry.heartbeat.kind", "checker")
+		kind = "mongo"
 	}
 	datasource.Init(datasource.Options{
 		Config: etcdadpt.Config{
-			Kind: t.(string),
+			Kind: kind,
 		},
 		ReleaseAccountAfter: 3 * time.Second,
 	})
 	core.ServiceAPI = disco.AssembleResources()
+}
+
+func IsETCD() bool {
+	t := archaius.Get("TEST_MODE")
+	if t == nil {
+		t = "etcd"
+	}
+	return t == "etcd"
 }

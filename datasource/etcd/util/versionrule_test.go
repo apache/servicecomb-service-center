@@ -18,11 +18,11 @@ package util
 
 import (
 	"fmt"
-	sd "github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
 	"reflect"
 	"sort"
 	"testing"
 
+	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/stretchr/testify/assert"
 )
@@ -30,11 +30,11 @@ import (
 const VERSIONRULE_BASE = 5000
 
 func BenchmarkVersionRule_Latest_GetServicesIds(b *testing.B) {
-	var kvs = make([]*sd.KeyValue, VERSIONRULE_BASE)
+	var kvs = make([]*kvstore.KeyValue, VERSIONRULE_BASE)
 	for i := 1; i <= VERSIONRULE_BASE; i++ {
-		kvs[i-1] = &sd.KeyValue{
+		kvs[i-1] = &kvstore.KeyValue{
 			Key:   []byte(fmt.Sprintf("/service/ver/1.%d", i)),
-			Value: []byte(fmt.Sprintf("%d", i)),
+			Value: fmt.Sprintf("%d", i),
 		}
 	}
 	b.N = VERSIONRULE_BASE
@@ -44,14 +44,15 @@ func BenchmarkVersionRule_Latest_GetServicesIds(b *testing.B) {
 	}
 	b.ReportAllocs()
 	// 5000	   7105020 ns/op	 2180198 B/op	   39068 allocs/op
+	// 5000	   8364556 ns/op	  123167 B/op	       5 allocs/op
 }
 
 func BenchmarkVersionRule_Range_GetServicesIds(b *testing.B) {
-	var kvs = make([]*sd.KeyValue, VERSIONRULE_BASE)
+	var kvs = make([]*kvstore.KeyValue, VERSIONRULE_BASE)
 	for i := 1; i <= VERSIONRULE_BASE; i++ {
-		kvs[i-1] = &sd.KeyValue{
+		kvs[i-1] = &kvstore.KeyValue{
 			Key:   []byte(fmt.Sprintf("/service/ver/1.%d", i)),
-			Value: []byte(fmt.Sprintf("%d", i)),
+			Value: fmt.Sprintf("%d", i),
 		}
 	}
 	b.N = VERSIONRULE_BASE
@@ -61,14 +62,15 @@ func BenchmarkVersionRule_Range_GetServicesIds(b *testing.B) {
 	}
 	b.ReportAllocs()
 	// 5000	   7244029 ns/op	 2287389 B/op	   39584 allocs/op
+	// 5000	   8824243 ns/op	  205161 B/op	       9 allocs/op
 }
 
 func BenchmarkVersionRule_AtLess_GetServicesIds(b *testing.B) {
-	var kvs = make([]*sd.KeyValue, VERSIONRULE_BASE)
+	var kvs = make([]*kvstore.KeyValue, VERSIONRULE_BASE)
 	for i := 1; i <= VERSIONRULE_BASE; i++ {
-		kvs[i-1] = &sd.KeyValue{
+		kvs[i-1] = &kvstore.KeyValue{
 			Key:   []byte(fmt.Sprintf("/service/ver/1.%d", i)),
-			Value: []byte(fmt.Sprintf("%d", i)),
+			Value: fmt.Sprintf("%d", i),
 		}
 	}
 	b.N = VERSIONRULE_BASE
@@ -78,11 +80,12 @@ func BenchmarkVersionRule_AtLess_GetServicesIds(b *testing.B) {
 	}
 	b.ReportAllocs()
 	// 5000	  11221098 ns/op	 3174720 B/op	   58064 allocs/op
+	// 5000	   8723274 ns/op	  205146 B/op	       7 allocs/op
 }
 
 func BenchmarkParseVersionRule(b *testing.B) {
-	f := ParseVersionRule("latest")
-	kvs := []*sd.KeyValue{
+	f := ParseVersionRule("0.0.0.0+")
+	kvs := []*kvstore.KeyValue{
 		{
 			Key:   []byte("/service/ver/1.0.300"),
 			Value: "1.0.300",
@@ -103,6 +106,8 @@ func BenchmarkParseVersionRule(b *testing.B) {
 		}
 	})
 	b.ReportAllocs()
+	// latest:      4786342	       214 ns/op	     160 B/op	       4 allocs/op
+	// 0.0.0.0+:    2768061	       374 ns/op	     192 B/op	       4 allocs/op
 }
 
 func TestSorter(t *testing.T) {
@@ -112,7 +117,7 @@ func TestSorter(t *testing.T) {
 		kvs := []string{"1.0.0", "1.0.1"}
 		sort.Sort(&serviceKeySorter{
 			sortArr: kvs,
-			kvs:     make(map[string]*sd.KeyValue),
+			kvs:     make([]*kvstore.KeyValue, len(kvs)),
 			cmp:     Larger,
 		})
 		assert.Equal(t, "1.0.1", kvs[0])
@@ -123,7 +128,7 @@ func TestSorter(t *testing.T) {
 		kvs := []string{"1.0.1", "1.0.0"}
 		sort.Sort(&serviceKeySorter{
 			sortArr: kvs,
-			kvs:     make(map[string]*sd.KeyValue),
+			kvs:     make([]*kvstore.KeyValue, len(kvs)),
 			cmp:     Larger,
 		})
 		assert.Equal(t, "1.0.1", kvs[0])
@@ -134,7 +139,7 @@ func TestSorter(t *testing.T) {
 		kvs := []string{"1.0.0.0", "1.0.1"}
 		sort.Sort(&serviceKeySorter{
 			sortArr: kvs,
-			kvs:     make(map[string]*sd.KeyValue),
+			kvs:     make([]*kvstore.KeyValue, len(kvs)),
 			cmp:     Larger,
 		})
 		assert.Equal(t, "1.0.1", kvs[0])
@@ -145,7 +150,7 @@ func TestSorter(t *testing.T) {
 		kvs := []string{"1.0.9", "1.0.10"}
 		sort.Sort(&serviceKeySorter{
 			sortArr: kvs,
-			kvs:     make(map[string]*sd.KeyValue),
+			kvs:     make([]*kvstore.KeyValue, len(kvs)),
 			cmp:     Larger,
 		})
 		assert.Equal(t, "1.0.10", kvs[0])
@@ -156,7 +161,7 @@ func TestSorter(t *testing.T) {
 		kvs := []string{"1.10", "4"}
 		sort.Sort(&serviceKeySorter{
 			sortArr: kvs,
-			kvs:     make(map[string]*sd.KeyValue),
+			kvs:     make([]*kvstore.KeyValue, len(kvs)),
 			cmp:     Larger,
 		})
 		assert.Equal(t, "4", kvs[0])
@@ -169,7 +174,7 @@ func TestSorter(t *testing.T) {
 		kvs := []string{"1.a", "1.0.1.a", ""}
 		sort.Sort(&serviceKeySorter{
 			sortArr: kvs,
-			kvs:     make(map[string]*sd.KeyValue),
+			kvs:     make([]*kvstore.KeyValue, len(kvs)),
 			cmp:     Larger,
 		})
 		assert.Equal(t, "1.a", kvs[0])
@@ -181,7 +186,7 @@ func TestSorter(t *testing.T) {
 		kvs := []string{"1.0", "1.0.1.32768"}
 		sort.Sort(&serviceKeySorter{
 			sortArr: kvs,
-			kvs:     make(map[string]*sd.KeyValue),
+			kvs:     make([]*kvstore.KeyValue, len(kvs)),
 			cmp:     Larger,
 		})
 		assert.Equal(t, "1.0", kvs[0])
@@ -189,7 +194,7 @@ func TestSorter(t *testing.T) {
 		kvs = []string{"1.0", "1.0.1.32767"}
 		sort.Sort(&serviceKeySorter{
 			sortArr: kvs,
-			kvs:     make(map[string]*sd.KeyValue),
+			kvs:     make([]*kvstore.KeyValue, len(kvs)),
 			cmp:     Larger,
 		})
 		assert.Equal(t, "1.0.1.32767", kvs[0])
@@ -199,9 +204,9 @@ func TestSorter(t *testing.T) {
 
 func TestVersionRule(t *testing.T) {
 	const count = 10
-	var kvs = [count]*sd.KeyValue{}
+	var kvs = [count]*kvstore.KeyValue{}
 	for i := 1; i <= count; i++ {
-		kvs[i-1] = &sd.KeyValue{
+		kvs[i-1] = &kvstore.KeyValue{
 			Key:   []byte(fmt.Sprintf("/service/ver/1.%d", i)),
 			Value: fmt.Sprintf("%d", i),
 		}
@@ -236,14 +241,14 @@ func TestVersionRule(t *testing.T) {
 		assert.Equal(t, "1", results[9])
 	})
 
-	t.Run("range3 ver in [1.4.1, 1.9.1]", func(t *testing.T) {
+	t.Run("range3 ver in [1.4.1, 1.9.1)", func(t *testing.T) {
 		results := VersionRule(Range).Match(kvs[:], "1.4.1", "1.9.1")
 		assert.Equal(t, 5, len(results))
 		assert.Equal(t, "9", results[0])
 		assert.Equal(t, "5", results[4])
 	})
 
-	t.Run("range4 ver in [2, 4]", func(t *testing.T) {
+	t.Run("range4 ver in [2, 4)", func(t *testing.T) {
 		results := VersionRule(Range).Match(kvs[:], "2", "4")
 		assert.Equal(t, len(results), 0)
 	})
@@ -300,7 +305,7 @@ func TestVersionRule(t *testing.T) {
 		assert.Equal(t, fmt.Sprintf("%d", count), results[0])
 	})
 
-	t.Run("range ver in[1.4, 1.8]", func(t *testing.T) {
+	t.Run("range ver in[1.4, 1.8)", func(t *testing.T) {
 		match := ParseVersionRule("1.4-1.8")
 		results := match(kvs[:])
 		assert.Equal(t, 4, len(results))
@@ -322,7 +327,7 @@ func TestVersionRule(t *testing.T) {
 		assert.Equal(t, true, VersionMatchRule("1.0", "latest"))
 	})
 
-	t.Run("range ver in [1.4, 1.8]", func(t *testing.T) {
+	t.Run("range ver in [1.4, 1.8)", func(t *testing.T) {
 		assert.Equal(t, true, VersionMatchRule("1.4", "1.4-1.8"))
 		assert.Equal(t, true, VersionMatchRule("1.6", "1.4-1.8"))
 		assert.Equal(t, false, VersionMatchRule("1.8", "1.4-1.8"))
@@ -335,4 +340,44 @@ func TestVersionRule(t *testing.T) {
 		assert.Equal(t, true, VersionMatchRule("1.9", "1.6+"))
 		assert.Equal(t, false, VersionMatchRule("1.0", "1.6+"))
 	})
+}
+
+func TestSort(t *testing.T) {
+	type args struct {
+		kvs []*kvstore.KeyValue
+		cmp func(start, end string) bool
+	}
+	tests := []struct {
+		name string
+		args args
+		want []*kvstore.KeyValue
+	}{
+		{"sort asc order", args{kvs: []*kvstore.KeyValue{
+			{Key: []byte("/svc/1.1.0"), Value: "1"},
+			{Key: []byte("/svc/2.0.1"), Value: "2"},
+			{Key: []byte("/svc/1.0.0"), Value: "0"},
+		}, cmp: LessEqual}, []*kvstore.KeyValue{
+			{Key: []byte("/svc/1.0.0"), Value: "0"},
+			{Key: []byte("/svc/1.1.0"), Value: "1"},
+			{Key: []byte("/svc/2.0.1"), Value: "2"},
+		}},
+		{"sort desc order", args{kvs: []*kvstore.KeyValue{
+			{Key: []byte("/svc/1.1.0"), Value: "1"},
+			{Key: []byte("/svc/2.0.1"), Value: "2"},
+			{Key: []byte("/svc/1.0.0"), Value: "0"},
+		}, cmp: Larger}, []*kvstore.KeyValue{
+			{Key: []byte("/svc/2.0.1"), Value: "2"},
+			{Key: []byte("/svc/1.1.0"), Value: "1"},
+			{Key: []byte("/svc/1.0.0"), Value: "0"},
+		}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.args.kvs
+			Sort(got, tt.args.cmp)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Sort() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }

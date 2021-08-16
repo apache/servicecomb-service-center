@@ -15,31 +15,16 @@
  * limitations under the License.
  */
 
-package mux
+package datasource
 
-import (
-	"reflect"
-	"unsafe"
+import "time"
 
-	"github.com/apache/servicecomb-service-center/pkg/etcdsync"
-)
-
-type ID string
-
-func (m *ID) String() (s string) {
-	pMT := (*reflect.StringHeader)(unsafe.Pointer(m))
-	pStr := (*reflect.StringHeader)(unsafe.Pointer(&s))
-	pStr.Data = pMT.Data
-	pStr.Len = pMT.Len
-	return
+type RetirePlan struct {
+	Interval  time.Duration `json:"interval,omitempty"`
+	Reserve   int           `json:"reserve,omitempty"`
+	LastRunAt int64         `json:"lastRunAt,omitempty" bson:"last_run_at"`
 }
 
-const GlobalLock ID = "/cse-sr/lock/global"
-
-func Lock(t ID) (*etcdsync.DLock, error) {
-	return etcdsync.Lock(t.String(), -1, true)
-}
-
-func Try(t ID) (*etcdsync.DLock, error) {
-	return etcdsync.Lock(t.String(), -1, false)
+func (r *RetirePlan) ShouldRetire() bool {
+	return time.Now().Add(-r.Interval).Unix() >= r.LastRunAt
 }

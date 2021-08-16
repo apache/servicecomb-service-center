@@ -41,6 +41,8 @@ import (
 	"github.com/little-cui/etcdadpt"
 )
 
+const DepQueueLock mux.ID = "/cse-sr/lock/dep-queue"
+
 // just for unit test
 var testMux sync.Mutex
 
@@ -79,9 +81,9 @@ func (h *DependencyEventHandler) backoff(f func(), retries int) int {
 
 func (h *DependencyEventHandler) tryWithBackoff(success func() error, backoff func(), retries int) (int, error) {
 	defer log.Recover()
-	lock, err := mux.Try(mux.DepQueueLock)
+	lock, err := mux.Try(DepQueueLock)
 	if err != nil {
-		log.Error(fmt.Sprintf("try to lock %s failed", mux.DepQueueLock), err)
+		log.Error(fmt.Sprintf("try to lock %s failed", DepQueueLock), err)
 		return h.backoff(backoff, retries), err
 	}
 

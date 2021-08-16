@@ -100,4 +100,8 @@ type MetadataManager interface {
 	GetTags(ctx context.Context, request *pb.GetServiceTagsRequest) (*pb.GetServiceTagsResponse, error)
 	UpdateTag(ctx context.Context, request *pb.UpdateServiceTagRequest) (*pb.UpdateServiceTagResponse, error)
 	DeleteTags(ctx context.Context, request *pb.DeleteServiceTagsRequest) (*pb.DeleteServiceTagsResponse, error)
+
+	// RetireService retire the 'RetirePlan.Reserve' latest versions for each of service,
+	// delete other versions which doesn't register any instances.
+	RetireService(ctx context.Context, plan *RetirePlan) error
 }

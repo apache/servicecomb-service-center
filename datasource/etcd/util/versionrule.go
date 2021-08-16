@@ -26,20 +26,34 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/validate"
 )
 
-type VersionRule func(sorted []string, kvs map[string]*kvstore.KeyValue, start, end string) []string
+type VersionRule func(sorted []string, kvs []*kvstore.KeyValue, start, end string) []string
 
-func (vr VersionRule) Match(kvs []*kvstore.KeyValue, ops ...string) []string {
+func Sort(kvs []*kvstore.KeyValue, cmp func(start, end string) bool) {
+	sorter := newSorter(kvs, cmp, true)
+	sort.Sort(sorter)
+}
+
+func newSorter(kvs []*kvstore.KeyValue, cmp func(start string, end string) bool, ref bool) *serviceKeySorter {
+	tmp := kvs
+	if !ref {
+		tmp = make([]*kvstore.KeyValue, len(kvs))
+	}
 	sorter := &serviceKeySorter{
 		sortArr: make([]string, len(kvs)),
-		kvs:     make(map[string]*kvstore.KeyValue, len(kvs)),
-		cmp:     Larger,
+		kvs:     tmp,
+		cmp:     cmp,
 	}
 	for i, kv := range kvs {
 		key := util.BytesToStringWithNoCopy(kv.Key)
 		ver := key[strings.LastIndex(key, "/")+1:]
 		sorter.sortArr[i] = ver
-		sorter.kvs[ver] = kv
+		sorter.kvs[i] = kv
 	}
+	return sorter
+}
+
+func (vr VersionRule) Match(kvs []*kvstore.KeyValue, ops ...string) []string {
+	sorter := newSorter(kvs, Larger, false)
 	sort.Sort(sorter)
 
 	args := [2]string{}
@@ -55,7 +69,7 @@ func (vr VersionRule) Match(kvs []*kvstore.KeyValue, ops ...string) []string {
 
 type serviceKeySorter struct {
 	sortArr []string
-	kvs     map[string]*kvstore.KeyValue
+	kvs     []*kvstore.KeyValue
 	cmp     func(i, j string) bool
 }
 
@@ -65,6 +79,7 @@ func (sks *serviceKeySorter) Len() int {
 
 func (sks *serviceKeySorter) Swap(i, j int) {
 	sks.sortArr[i], sks.sortArr[j] = sks.sortArr[j], sks.sortArr[i]
+	sks.kvs[i], sks.kvs[j] = sks.kvs[j], sks.kvs[i]
 }
 
 func (sks *serviceKeySorter) Less(i, j int) bool {
@@ -81,50 +96,57 @@ func LessEqual(start, end string) bool {
 	return !Larger(start, end)
 }
 
-func Latest(sorted []string, kvs map[string]*kvstore.KeyValue, start, end string) []string {
+// Latest return latest version kv
+func Latest(sorted []string, kvs []*kvstore.KeyValue, start, end string) []string {
 	if len(sorted) == 0 {
 		return []string{}
 	}
-	return []string{kvs[sorted[0]].Value.(string)}
+	return []string{kvs[0].Value.(string)}
 }
 
-func Range(sorted []string, kvs map[string]*kvstore.KeyValue, start, end string) []string {
-	result := make([]string, len(sorted))
-	i, flag := 0, 0
+// Range return start <= version < end
+func Range(sorted []string, kvs []*kvstore.KeyValue, start, end string) []string {
+	total := len(sorted)
+	if total == 0 {
+		return []string{}
+	}
+
+	result := make([]string, 0, total)
+	firstFound := false
 
 	if Larger(start, end) {
 		start, end = end, start
 	}
 
-	l := len(sorted)
-	if l == 0 || Larger(start, sorted[0]) || LessEqual(end, sorted[l-1]) {
+	eldest, latest := sorted[total-1], sorted[0]
+	if Larger(start, latest) || LessEqual(end, eldest) {
 		return []string{}
 	}
 
-	for _, k := range sorted {
-		// end >= k >= start
-		switch flag {
-		case 0:
+	for i, k := range sorted {
+		if !firstFound {
 			if LessEqual(end, k) {
 				continue
 			}
-			flag = 1
-		case 1:
-			if Larger(start, k) {
-				return result[:i]
-			}
+			firstFound = true
+		} else if Larger(start, k) {
+			break
 		}
-
-		result[i] = kvs[k].Value.(string)
-		i++
+		// end >= k >= start
+		result = append(result, kvs[i].Value.(string))
 	}
-	return result[:i]
+	return result
 }
 
-func AtLess(sorted []string, kvs map[string]*kvstore.KeyValue, start, end string) []string {
-	result := make([]string, len(sorted))
+// AtLess return version >= start
+func AtLess(sorted []string, kvs []*kvstore.KeyValue, start, end string) []string {
+	total := len(sorted)
+	if total == 0 {
+		return []string{}
+	}
 
-	if len(sorted) == 0 || Larger(start, sorted[0]) {
+	result := make([]string, 0, total)
+	if Larger(start, sorted[0]) {
 		return []string{}
 	}
 
@@ -132,9 +154,9 @@ func AtLess(sorted []string, kvs map[string]*kvstore.KeyValue, start, end string
 		if Larger(start, k) {
 			return result[:i]
 		}
-		result[i] = kvs[k].Value.(string)
+		result = append(result, kvs[i].Value.(string))
 	}
-	return result[:]
+	return result
 }
 
 func ParseVersionRule(versionRule string) func(kvs []*kvstore.KeyValue) []string {

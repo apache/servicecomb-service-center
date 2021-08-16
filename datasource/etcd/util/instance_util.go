@@ -142,7 +142,6 @@ func DeleteServiceAllInstances(ctx context.Context, serviceID string) error {
 		return err
 	}
 	if resp.Count <= 0 {
-		log.Warn(fmt.Sprintf("service[%s] has no deployment of instance.", serviceID))
 		return nil
 	}
 	for _, v := range resp.Kvs {
@@ -152,6 +151,7 @@ func DeleteServiceAllInstances(ctx context.Context, serviceID string) error {
 			log.Error("", err)
 		}
 	}
+	log.Warn(fmt.Sprintf("force delete service[%s] %d instance.", serviceID, resp.Count))
 	return nil
 }
 
