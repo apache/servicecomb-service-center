@@ -54,7 +54,7 @@ func AccountFromContext(ctx context.Context) (*rbacmodel.Account, error) {
 func SignRequest(req *http.Request) error {
 	auth := token.FromContext(req.Context())
 	if auth == "" {
-		return errors.New("request unauthorized")
+		return nil
 	}
 	req.Header.Set("Authorization", "Bearer "+auth)
 	return nil
