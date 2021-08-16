@@ -274,12 +274,16 @@ func (d *Distributor) Name() string {
 }
 
 func initClient(endpoint string) *kie.Client {
+	var options *httpclient.Options
+	if rbacsvc.Enabled() {
+		options = &httpclient.Options{
+			SignRequest: rbacsvc.SignRequest,
+		}
+	}
 	client, err := kie.NewClient(
 		kie.Config{Endpoint: endpoint,
 			DefaultLabels: map[string]string{},
-			HTTPOptions: &httpclient.Options{
-				SignRequest: rbacsvc.SignRequest,
-			},
+			HTTPOptions:   options,
 		})
 	if err != nil {
 		log.Fatal("init kie client failed, err: %s", err)
