@@ -164,6 +164,7 @@ rbac:
   privateKeyFile: ./private.key
   publicKeyFile: ./public.key
   releaseLockAfter: 15m # failure login attempt causes account blocking, that is block duration
+  retainLockHistoryFor: 20m # the ttl of lock history
   scope: '*' # specify auth resource scope, can be account,role,service,service/schema,...
 
 metrics:

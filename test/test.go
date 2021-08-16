@@ -19,8 +19,6 @@
 package test
 
 import (
-	"time"
-
 	_ "github.com/apache/servicecomb-service-center/server/init"
 
 	_ "github.com/apache/servicecomb-service-center/server/bootstrap"
@@ -47,7 +45,6 @@ func init() {
 		Config: etcdadpt.Config{
 			Kind: kind,
 		},
-		ReleaseAccountAfter: 3 * time.Second,
 	})
 	core.ServiceAPI = disco.AssembleResources()
 }

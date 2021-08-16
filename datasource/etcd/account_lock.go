@@ -19,7 +19,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
@@ -28,7 +27,6 @@ import (
 )
 
 type AccountLockManager struct {
-	releaseAfter time.Duration
 }
 
 func (al AccountLockManager) UpsertLock(ctx context.Context, lock *datasource.AccountLock) error {
@@ -110,14 +108,6 @@ func (al AccountLockManager) DeleteLockList(ctx context.Context, keys []string) 
 	return nil
 }
 
-func NewAccountLockManager(ReleaseAfter time.Duration) datasource.AccountLockManager {
-	return &AccountLockManager{releaseAfter: ReleaseAfter}
-}
-
-func (al AccountLockManager) Ban(ctx context.Context, key string) error {
-	l := &datasource.AccountLock{}
-	l.Key = key
-	l.Status = datasource.StatusBanned
-	l.ReleaseAt = time.Now().Add(al.releaseAfter).Unix()
-	return al.UpsertLock(ctx, l)
+func NewAccountLockManager() datasource.AccountLockManager {
+	return &AccountLockManager{}
 }

@@ -47,8 +47,7 @@ import (
 )
 
 const (
-	defaultCollectPeriod    = 30 * time.Second
-	defaultReleaseLockAfter = 15 * time.Minute
+	defaultCollectPeriod = 30 * time.Second
 )
 
 var server ServiceCenterServer
@@ -113,7 +112,6 @@ func (s *ServiceCenterServer) initEndpoints() {
 func (s *ServiceCenterServer) initDatasource() {
 	// init datasource
 	kind := config.GetString("registry.kind", "", config.WithStandby("registry_plugin"))
-	releaseLockAfter := getReleaseLockAfter()
 	tlsConfig, err := getDatasourceTLSConfig()
 	if err != nil {
 		log.Fatal("get datasource tlsConfig failed", err)
@@ -139,23 +137,12 @@ func (s *ServiceCenterServer) initDatasource() {
 				}
 			},
 		},
-		EnableCache:         config.GetRegistry().EnableCache,
-		InstanceTTL:         config.GetRegistry().InstanceTTL,
-		SchemaNotEditable:   config.GetRegistry().SchemaNotEditable,
-		ReleaseAccountAfter: releaseLockAfter,
+		EnableCache:       config.GetRegistry().EnableCache,
+		InstanceTTL:       config.GetRegistry().InstanceTTL,
+		SchemaNotEditable: config.GetRegistry().SchemaNotEditable,
 	}); err != nil {
 		log.Fatal("init datasource failed", err)
 	}
-}
-
-func getReleaseLockAfter() time.Duration {
-	releaseLockAfter := config.GetString("rbac.releaseLockAfter", "15m")
-	d, err := time.ParseDuration(releaseLockAfter)
-	if err != nil {
-		log.Warn("releaseAfter is invalid, use default config")
-		d = defaultReleaseLockAfter
-	}
-	return d
 }
 
 func getDatasourceTLSConfig() (*tls.Config, error) {
