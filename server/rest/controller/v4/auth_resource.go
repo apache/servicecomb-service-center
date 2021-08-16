@@ -20,6 +20,9 @@ package v4
 import (
 	"context"
 	"encoding/json"
+	"io/ioutil"
+	"net/http"
+
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
@@ -31,8 +34,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
 	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
 	"github.com/go-chassis/go-chassis/security/authr"
-	"io/ioutil"
-	"net/http"
 )
 
 type AuthResource struct {

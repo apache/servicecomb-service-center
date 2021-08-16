@@ -19,6 +19,8 @@ package util
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -26,7 +28,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/core/backend"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
-	"strings"
 )
 
 type DependencyRelationFilterOpt struct {

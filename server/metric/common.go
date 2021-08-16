@@ -18,12 +18,13 @@
 package metric
 
 import (
-	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/astaxie/beego"
 	"net"
 	"os"
 	"sync"
 	"time"
+
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/astaxie/beego"
 )
 
 const (

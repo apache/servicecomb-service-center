@@ -18,6 +18,7 @@ package diagnose
 import (
 	"context"
 	"fmt"
+
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/model"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"

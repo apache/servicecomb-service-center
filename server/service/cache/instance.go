@@ -19,10 +19,11 @@ package cache
 
 import (
 	"context"
+	"time"
+
 	"github.com/apache/servicecomb-service-center/pkg/cache"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"time"
 )
 
 var FindInstances = &FindInstancesCache{

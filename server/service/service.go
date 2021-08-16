@@ -18,8 +18,9 @@
 package service
 
 import (
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"os"
+
+	"github.com/apache/servicecomb-service-center/server/core/proto"
 )
 
 var (

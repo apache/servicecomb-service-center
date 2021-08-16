@@ -19,6 +19,8 @@ package dao_test
 
 import (
 	"context"
+	"testing"
+
 	"github.com/apache/servicecomb-service-center/pkg/privacy"
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	mgr "github.com/apache/servicecomb-service-center/server/plugin"
@@ -28,7 +30,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/service/rbac/dao"
 	"github.com/astaxie/beego"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func init() {

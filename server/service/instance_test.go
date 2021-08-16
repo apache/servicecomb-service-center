@@ -17,6 +17,11 @@
 package service_test
 
 import (
+	"math"
+	"os"
+	"strconv"
+	"strings"
+
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
@@ -24,10 +29,6 @@ import (
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"math"
-	"os"
-	"strconv"
-	"strings"
 )
 
 var (

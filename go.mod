@@ -1,7 +1,6 @@
 module github.com/apache/servicecomb-service-center
 
 replace (
-	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b => github.com/go-chassis/glog v0.0.0-20180920075250-95a09b2413e9
 	github.com/apache/thrift => github.com/apache/thrift v0.0.0-20180125231006-3d556248a8b9
 	google.golang.org/grpc => google.golang.org/grpc v1.26.0
 )
@@ -18,6 +17,7 @@ require (
 	github.com/go-chassis/foundation v0.3.0
 	github.com/go-chassis/go-archaius v1.3.2
 	github.com/go-chassis/go-chassis v0.0.0-20200826064053-d90be848aa10
+	github.com/go-chassis/foundation v0.3.1-0.20210811025651-7f4d2b2b906c
 	github.com/go-chassis/paas-lager v1.1.1
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang/protobuf v1.4.3
@@ -40,7 +40,7 @@ require (
 	github.com/satori/go.uuid v1.1.0
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/pflag v1.0.5
-	github.com/stretchr/testify v1.6.1
+	github.com/stretchr/testify v1.7.0
 	github.com/widuu/gojson v0.0.0-20170212122013-7da9d2cd949b
 	go.uber.org/zap v1.13.0
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a

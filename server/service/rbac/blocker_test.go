@@ -18,10 +18,11 @@
 package rbac_test
 
 import (
-	"github.com/apache/servicecomb-service-center/server/service/rbac"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	"github.com/apache/servicecomb-service-center/server/service/rbac"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCountFailure(t *testing.T) {

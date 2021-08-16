@@ -17,11 +17,12 @@ package adaptor
 
 import (
 	"context"
+	"reflect"
+
 	"github.com/apache/servicecomb-service-center/pkg/queue"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/types"
 	"k8s.io/client-go/tools/cache"
-	"reflect"
 )
 
 type K8sEvent struct {

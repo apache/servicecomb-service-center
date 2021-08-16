@@ -16,11 +16,12 @@
 package counter
 
 import (
+	"testing"
+
 	registry2 "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
-	"testing"
 )
 
 type mockCounter struct {

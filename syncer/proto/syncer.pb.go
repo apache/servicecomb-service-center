@@ -37,12 +37,15 @@ It has these top-level messages:
 */
 package proto
 
-import proto1 "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-
 import (
+	fmt "fmt"
+
+	proto1 "github.com/golang/protobuf/proto"
+
+	math "math"
+
 	context "context"
+
 	grpc "google.golang.org/grpc"
 )
 

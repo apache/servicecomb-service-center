@@ -17,9 +17,10 @@ package core
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"strings"
 )
 
 func KvToResponse(key []byte) (keys []string) {

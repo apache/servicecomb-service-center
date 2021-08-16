@@ -17,12 +17,13 @@ package servicecenter
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	model2 "github.com/apache/servicecomb-service-center/pkg/model"
 	registry2 "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
-	"testing"
 )
 
 func TestClusterIndexer_Sync(t *testing.T) {

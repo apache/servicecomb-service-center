@@ -19,10 +19,11 @@ package etcd
 
 import (
 	"context"
+	"net/http"
+
 	"github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	"github.com/apache/servicecomb-service-center/server/plugin/tracing"
-	"net/http"
 )
 
 func TracingBegin(ctx context.Context, operationName string, op registry.PluginOp) tracing.Span {

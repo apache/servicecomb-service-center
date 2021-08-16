@@ -18,11 +18,12 @@ package etcd
 
 import (
 	"context"
+	"testing"
+
 	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	"github.com/coreos/etcd/mvcc/mvccpb"
-	"testing"
 )
 
 func TestEtcdIndexer_Search(t *testing.T) {

@@ -19,9 +19,10 @@ package chain
 import (
 	"context"
 	"errors"
-	"github.com/apache/servicecomb-service-center/pkg/util"
 	"testing"
 	"time"
+
+	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
 const (

@@ -18,16 +18,14 @@
 package server
 
 import (
-	//plugin
-	_ "github.com/apache/servicecomb-service-center/server/service/event"
-	"github.com/apache/servicecomb-service-center/server/service/rbac"
-)
-import (
+	"context"
 	"fmt"
 	"os"
 	"time"
 
-	"context"
+	//plugin
+	_ "github.com/apache/servicecomb-service-center/server/service/event"
+
 	nf "github.com/apache/servicecomb-service-center/pkg/event"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -36,6 +34,7 @@ import (
 	"github.com/apache/servicecomb-service-center/server/event"
 	"github.com/apache/servicecomb-service-center/server/mux"
 	"github.com/apache/servicecomb-service-center/server/plugin"
+	"github.com/apache/servicecomb-service-center/server/service/rbac"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 	"github.com/apache/servicecomb-service-center/version"
 	"github.com/astaxie/beego"

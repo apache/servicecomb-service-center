@@ -17,12 +17,13 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"time"
+
 	"github.com/apache/servicecomb-service-center/client"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/version"
 	"github.com/spf13/cobra"
-	"os"
-	"time"
 )
 
 const (

@@ -19,12 +19,13 @@ package log
 
 import (
 	"fmt"
-	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/go-chassis/paas-lager/third_party/forked/cloudfoundry/lager"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/go-chassis/paas-lager/third_party/forked/cloudfoundry/lager"
 )
 
 const (

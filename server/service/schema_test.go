@@ -17,9 +17,10 @@
 package service_test
 
 import (
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"strconv"
 	"strings"
+
+	"github.com/apache/servicecomb-service-center/server/core/proto"
 
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"

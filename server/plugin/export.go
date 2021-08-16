@@ -24,7 +24,7 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/tls"
 	"github.com/apache/servicecomb-service-center/server/plugin/tracing"
 	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
-	"github.com/go-chassis/foundation/security"
+	"github.com/go-chassis/cari/security"
 )
 
 const (

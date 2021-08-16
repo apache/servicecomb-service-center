@@ -19,10 +19,11 @@ package backend
 import (
 	"context"
 	"errors"
+	"testing"
+
 	"github.com/apache/servicecomb-service-center/pkg/task"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
-	"testing"
 )
 
 var closedCh = make(chan struct{})

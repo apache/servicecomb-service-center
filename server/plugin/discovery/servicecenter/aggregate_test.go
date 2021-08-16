@@ -16,8 +16,9 @@
 package servicecenter
 
 import (
-	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	"testing"
+
+	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 )
 
 func TestNewSCClientAggregate(t *testing.T) {

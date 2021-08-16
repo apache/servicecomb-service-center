@@ -17,8 +17,9 @@
 package core
 
 import (
-	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"testing"
+
+	"github.com/apache/servicecomb-service-center/pkg/registry"
 )
 
 func TestGetInfoFromKV(t *testing.T) {

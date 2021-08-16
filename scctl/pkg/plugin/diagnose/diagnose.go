@@ -19,6 +19,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+
 	"github.com/apache/servicecomb-service-center/client"
 	"github.com/apache/servicecomb-service-center/pkg/model"
 	"github.com/apache/servicecomb-service-center/scctl/etcd"

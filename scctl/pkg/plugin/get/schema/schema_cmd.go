@@ -18,20 +18,21 @@ package schema
 import (
 	"context"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
+
 	"github.com/apache/servicecomb-service-center/client"
 	model2 "github.com/apache/servicecomb-service-center/pkg/model"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/cmd"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/model"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/plugin/get"
-	"github.com/apache/servicecomb-service-center/scctl/pkg/progress-bar"
+	pb "github.com/apache/servicecomb-service-center/scctl/pkg/progress-bar"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/spf13/cobra"
-	"io"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"strings"
 )
 
 var (

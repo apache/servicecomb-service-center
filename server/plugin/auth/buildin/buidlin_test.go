@@ -19,6 +19,11 @@ package buildin_test
 
 import (
 	"context"
+	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
 	"github.com/apache/servicecomb-service-center/pkg/rbacframe"
 	mgr "github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/auth/buildin"
@@ -34,10 +39,6 @@ import (
 	"github.com/go-chassis/go-chassis/security/secret"
 	"github.com/go-chassis/go-chassis/server/restful"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
-	"net/http"
-	"net/http/httptest"
-	"testing"
 )
 
 func init() {

@@ -16,9 +16,10 @@
 package discovery
 
 import (
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"testing"
 	"time"
+
+	"github.com/apache/servicecomb-service-center/server/core/proto"
 )
 
 type mockDeferHandler struct {

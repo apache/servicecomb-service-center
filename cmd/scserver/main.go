@@ -17,9 +17,11 @@
 
 package main
 
-import _ "github.com/apache/servicecomb-service-center/server/init"
-import _ "github.com/apache/servicecomb-service-center/server/bootstrap"
 import (
+	_ "github.com/apache/servicecomb-service-center/server/init"
+
+	_ "github.com/apache/servicecomb-service-center/server/bootstrap"
+
 	"github.com/apache/servicecomb-service-center/server"
 )
 

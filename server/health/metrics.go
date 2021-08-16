@@ -17,12 +17,13 @@ package health
 
 import (
 	"context"
+	"runtime"
+	"time"
+
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/metric"
 	"github.com/prometheus/client_golang/prometheus"
-	"runtime"
-	"time"
 )
 
 const durationReportCPUUsage = 3 * time.Second

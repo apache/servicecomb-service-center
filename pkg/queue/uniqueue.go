@@ -20,6 +20,7 @@ package queue
 import (
 	"context"
 	"fmt"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 

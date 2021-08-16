@@ -17,59 +17,64 @@
 package bootstrap
 
 //rest v3 api
-import _ "github.com/apache/servicecomb-service-center/server/rest/controller/v3"
-
-// rest v4 api
-import _ "github.com/apache/servicecomb-service-center/server/rest/controller/v4"
-
-//registry is buildin
-import _ "github.com/apache/servicecomb-service-center/server/plugin/registry/buildin"
-
-//registry etcd
-import _ "github.com/apache/servicecomb-service-center/server/plugin/registry/etcd"
-
-//registry etcd
-import _ "github.com/apache/servicecomb-service-center/server/plugin/registry/embededetcd"
-
-//discovery
-import _ "github.com/apache/servicecomb-service-center/server/plugin/discovery/aggregate"
-import _ "github.com/apache/servicecomb-service-center/server/plugin/discovery/servicecenter"
-import _ "github.com/apache/servicecomb-service-center/server/plugin/discovery/etcd"
-import _ "github.com/apache/servicecomb-service-center/server/plugin/discovery/k8s"
-
-//cipher
-import _ "github.com/apache/servicecomb-service-center/server/plugin/security/buildin"
-
-//quota
-import _ "github.com/apache/servicecomb-service-center/server/plugin/quota/buildin"
-import _ "github.com/apache/servicecomb-service-center/server/plugin/quota/unlimit"
-
-//auth
-import _ "github.com/apache/servicecomb-service-center/server/plugin/auth/buildin"
-
-//uuid
-import _ "github.com/apache/servicecomb-service-center/server/plugin/uuid/buildin"
-import _ "github.com/apache/servicecomb-service-center/server/plugin/uuid/context"
-
-//tracing
-import _ "github.com/apache/servicecomb-service-center/server/plugin/tracing/pzipkin"
-
-//tls
-import _ "github.com/apache/servicecomb-service-center/server/plugin/tls/buildin"
-
-//module 'govern'
-import _ "github.com/apache/servicecomb-service-center/server/rest/govern"
-
-//module 'broker'
-import _ "github.com/apache/servicecomb-service-center/server/broker"
-
-//module 'admin'
-import _ "github.com/apache/servicecomb-service-center/server/rest/admin"
-
-//metrics
-import _ "github.com/apache/servicecomb-service-center/server/metric"
-
 import (
+	_ "github.com/apache/servicecomb-service-center/server/rest/controller/v3"
+
+	// rest v4 api
+	_ "github.com/apache/servicecomb-service-center/server/rest/controller/v4"
+
+	//registry is buildin
+	_ "github.com/apache/servicecomb-service-center/server/plugin/registry/buildin"
+
+	//registry etcd
+	_ "github.com/apache/servicecomb-service-center/server/plugin/registry/etcd"
+
+	//registry etcd
+	_ "github.com/apache/servicecomb-service-center/server/plugin/registry/embededetcd"
+
+	//discovery
+	_ "github.com/apache/servicecomb-service-center/server/plugin/discovery/aggregate"
+
+	_ "github.com/apache/servicecomb-service-center/server/plugin/discovery/servicecenter"
+
+	_ "github.com/apache/servicecomb-service-center/server/plugin/discovery/etcd"
+
+	_ "github.com/apache/servicecomb-service-center/server/plugin/discovery/k8s"
+
+	//cipher
+	_ "github.com/apache/servicecomb-service-center/server/plugin/security/buildin"
+
+	//quota
+	_ "github.com/apache/servicecomb-service-center/server/plugin/quota/buildin"
+
+	_ "github.com/apache/servicecomb-service-center/server/plugin/quota/unlimit"
+
+	//auth
+	_ "github.com/apache/servicecomb-service-center/server/plugin/auth/buildin"
+
+	//uuid
+	_ "github.com/apache/servicecomb-service-center/server/plugin/uuid/buildin"
+
+	_ "github.com/apache/servicecomb-service-center/server/plugin/uuid/context"
+
+	//tracing
+	_ "github.com/apache/servicecomb-service-center/server/plugin/tracing/pzipkin"
+
+	//tls
+	_ "github.com/apache/servicecomb-service-center/server/plugin/tls/buildin"
+
+	//module 'govern'
+	_ "github.com/apache/servicecomb-service-center/server/rest/govern"
+
+	//module 'broker'
+	_ "github.com/apache/servicecomb-service-center/server/broker"
+
+	//module 'admin'
+	_ "github.com/apache/servicecomb-service-center/server/rest/admin"
+
+	//metrics
+	_ "github.com/apache/servicecomb-service-center/server/metric"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/handler/accesslog"
 	"github.com/apache/servicecomb-service-center/server/handler/auth"

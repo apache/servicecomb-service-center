@@ -18,13 +18,14 @@ package etcdsync_test
 
 import (
 	"fmt"
-	"github.com/apache/servicecomb-service-center/pkg/etcdsync"
-	"github.com/astaxie/beego"
-	"github.com/stretchr/testify/assert"
 	"testing"
 
 	_ "github.com/apache/servicecomb-service-center/server/plugin/registry/etcd"
 	_ "github.com/apache/servicecomb-service-center/server/plugin/tracing/pzipkin"
+
+	"github.com/apache/servicecomb-service-center/pkg/etcdsync"
+	"github.com/astaxie/beego"
+	"github.com/stretchr/testify/assert"
 )
 
 func init() {

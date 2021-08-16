@@ -17,14 +17,14 @@
 package ws_test
 
 import (
-	_ "github.com/apache/servicecomb-service-center/test"
-
 	"context"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
+
+	_ "github.com/apache/servicecomb-service-center/test"
 
 	wss "github.com/apache/servicecomb-service-center/server/connection/ws"
 	"github.com/apache/servicecomb-service-center/server/core"

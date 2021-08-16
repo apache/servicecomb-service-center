@@ -17,10 +17,11 @@ package diagnose
 
 import (
 	"fmt"
+	"testing"
+
 	model2 "github.com/apache/servicecomb-service-center/pkg/model"
 	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/coreos/etcd/mvcc/mvccpb"
-	"testing"
 )
 
 func TestNewDiagnoseCommand(t *testing.T) {

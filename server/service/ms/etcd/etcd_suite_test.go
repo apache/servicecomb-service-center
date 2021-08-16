@@ -18,17 +18,18 @@ package etcd_test
 
 // initialize
 import (
-	_ "github.com/apache/servicecomb-service-center/server/bootstrap"
-)
-import (
 	"context"
+	"testing"
+
+	_ "github.com/apache/servicecomb-service-center/server/bootstrap"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/astaxie/beego"
-	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
-	. "github.com/onsi/gomega"
-	"testing"
 )
 
 func init() {

@@ -17,6 +17,7 @@ package health
 
 import (
 	"context"
+
 	"github.com/apache/servicecomb-service-center/client"
 	"github.com/apache/servicecomb-service-center/scctl/pkg/cmd"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"

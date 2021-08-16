@@ -20,6 +20,10 @@ package etcd
 import (
 	"context"
 	"fmt"
+	"os"
+	"sync"
+	"time"
+
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -27,9 +31,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	"github.com/apache/servicecomb-service-center/server/service/lock"
 	"github.com/coreos/etcd/client"
-	"os"
-	"sync"
-	"time"
 )
 
 const (

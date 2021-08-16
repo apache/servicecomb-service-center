@@ -18,11 +18,12 @@
 package tracing
 
 import (
+	"net/http"
+	"strconv"
+
 	"github.com/apache/servicecomb-service-center/pkg/chain"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/plugin"
-	"net/http"
-	"strconv"
 )
 
 type Handler struct {

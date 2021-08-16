@@ -17,9 +17,10 @@
 package etcd
 
 import (
+	"testing"
+
 	"github.com/apache/servicecomb-service-center/server/metric"
 	"github.com/astaxie/beego"
-	"testing"
 )
 
 func init() {

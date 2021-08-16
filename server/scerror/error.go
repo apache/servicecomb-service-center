@@ -20,6 +20,7 @@ package scerror
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 

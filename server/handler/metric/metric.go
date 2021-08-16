@@ -18,13 +18,14 @@
 package metric
 
 import (
+	"net/http"
+	"time"
+
 	"github.com/apache/servicecomb-service-center/pkg/chain"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/metric/prometheus"
 	svr "github.com/apache/servicecomb-service-center/server/rest"
-	"net/http"
-	"time"
 )
 
 type MetricsHandler struct {

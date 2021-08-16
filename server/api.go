@@ -20,6 +20,9 @@ package server
 import (
 	"context"
 	"fmt"
+	"net"
+	"strconv"
+
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/grace"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -28,8 +31,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/core/backend"
 	rs "github.com/apache/servicecomb-service-center/server/rest"
 	"github.com/apache/servicecomb-service-center/server/service"
-	"net"
-	"strconv"
 )
 
 var apiServer *APIServer

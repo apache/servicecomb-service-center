@@ -16,8 +16,9 @@
 package discovery
 
 import (
-	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"testing"
+
+	"github.com/apache/servicecomb-service-center/pkg/registry"
 )
 
 func TestNewCommonCacher(t *testing.T) {

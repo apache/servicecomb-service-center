@@ -21,7 +21,6 @@ import (
 	"net/url"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/tlsutil"
 	"github.com/coreos/etcd/compactor"
 	"github.com/coreos/etcd/embed"
 	"github.com/coreos/etcd/etcdserver"
@@ -31,7 +30,6 @@ type config struct {
 	name     string
 	dataDir  string
 	peerAddr string
-	tlsConf  *tlsutil.SSLConfig
 	peers    map[string]string
 }
 

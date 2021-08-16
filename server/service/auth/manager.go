@@ -17,6 +17,7 @@ package auth
 
 import (
 	"fmt"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 

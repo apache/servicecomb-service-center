@@ -16,13 +16,14 @@
 package registry
 
 import (
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/types"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/astaxie/beego"
-	"strings"
-	"sync"
-	"time"
 )
 
 var (

@@ -19,6 +19,9 @@ package admin
 
 import (
 	"context"
+	"os"
+	"strings"
+
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/model"
@@ -32,8 +35,6 @@ import (
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	"github.com/apache/servicecomb-service-center/version"
 	"github.com/astaxie/beego"
-	"os"
-	"strings"
 )
 
 var (

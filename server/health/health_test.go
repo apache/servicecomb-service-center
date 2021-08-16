@@ -16,10 +16,11 @@
 package health
 
 import (
-	"github.com/apache/servicecomb-service-center/server/alarm"
-	"github.com/apache/servicecomb-service-center/server/event"
 	"testing"
 	"time"
+
+	"github.com/apache/servicecomb-service-center/server/alarm"
+	"github.com/apache/servicecomb-service-center/server/event"
 )
 
 func TestDefaultHealthChecker_Healthy(t *testing.T) {

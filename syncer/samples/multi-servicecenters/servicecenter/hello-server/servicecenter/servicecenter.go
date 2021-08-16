@@ -20,14 +20,15 @@ package servicecenter
 import (
 	"context"
 	"fmt"
-	client2 "github.com/apache/servicecomb-service-center/client"
-	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/registry"
-	"github.com/apache/servicecomb-service-center/syncer/pkg/ticker"
 	"net/http"
 	"net/url"
 	"sync"
 	"time"
+
+	client2 "github.com/apache/servicecomb-service-center/client"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/registry"
+	"github.com/apache/servicecomb-service-center/syncer/pkg/ticker"
 )
 
 var (

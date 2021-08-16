@@ -17,8 +17,9 @@ package discovery
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	"testing"
+
+	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 )
 
 type mockCache struct {

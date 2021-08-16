@@ -18,8 +18,9 @@ package util
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"testing"
+
+	"github.com/apache/servicecomb-service-center/pkg/registry"
 )
 
 func TestDeleteDependencyForService(t *testing.T) {

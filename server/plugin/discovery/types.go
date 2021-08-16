@@ -18,12 +18,13 @@ package discovery
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"time"
+
 	simple "github.com/apache/servicecomb-service-center/pkg/time"
 	"github.com/apache/servicecomb-service-center/pkg/types"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
-	"strconv"
-	"time"
 )
 
 var (

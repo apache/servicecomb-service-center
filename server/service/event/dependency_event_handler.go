@@ -19,6 +19,8 @@ package event
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/apache/servicecomb-service-center/pkg/backoff"
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -32,7 +34,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
-	"time"
 )
 
 const defaultEventHandleInterval = 5 * time.Minute

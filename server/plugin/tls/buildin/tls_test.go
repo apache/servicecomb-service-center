@@ -18,12 +18,14 @@ package buildin_test
 
 import (
 	"crypto/tls"
-	"github.com/apache/servicecomb-service-center/server/core"
-	_ "github.com/apache/servicecomb-service-center/server/plugin/security/buildin"
-	"github.com/apache/servicecomb-service-center/server/plugin/tls/buildin"
-	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
+
+	_ "github.com/apache/servicecomb-service-center/server/plugin/security/buildin"
+
+	"github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/plugin/tls/buildin"
+	"github.com/stretchr/testify/assert"
 )
 
 func init() {

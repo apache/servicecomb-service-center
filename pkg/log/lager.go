@@ -18,10 +18,11 @@
 package log
 
 import (
+	"runtime/debug"
+
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	stlager "github.com/go-chassis/paas-lager"
 	"github.com/go-chassis/paas-lager/third_party/forked/cloudfoundry/lager"
-	"runtime/debug"
 )
 
 var (

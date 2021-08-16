@@ -18,9 +18,10 @@
 package registry
 
 import (
+	"time"
+
 	"github.com/apache/servicecomb-service-center/server/metric"
 	"github.com/prometheus/client_golang/prometheus"
-	"time"
 )
 
 const (

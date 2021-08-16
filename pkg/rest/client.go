@@ -18,9 +18,9 @@ package rest
 import (
 	"bytes"
 	"compress/gzip"
+	"context"
 	"crypto/tls"
 	"fmt"
-	"github.com/apache/servicecomb-service-center/pkg/log"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -31,10 +31,9 @@ import (
 	"time"
 
 	"github.com/apache/servicecomb-service-center/pkg/buffer"
-	"github.com/apache/servicecomb-service-center/pkg/tlsutil"
+	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-
-	"context"
+	"github.com/go-chassis/foundation/tlsutil"
 )
 
 var defaultURLClientOption = URLClientOption{

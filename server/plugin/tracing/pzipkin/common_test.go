@@ -16,10 +16,11 @@
 package pzipkin
 
 import (
-	"github.com/openzipkin/zipkin-go-opentracing"
 	"os"
 	"path/filepath"
 	"testing"
+
+	zipkintracer "github.com/openzipkin/zipkin-go-opentracing"
 )
 
 func TestGetFilePath(t *testing.T) {

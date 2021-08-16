@@ -18,11 +18,12 @@ package event
 
 import (
 	"context"
+	"testing"
+
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"github.com/apache/servicecomb-service-center/server/service/cache"
-	"testing"
 )
 
 func TestNewDependencyRuleEventHandler(t *testing.T) {

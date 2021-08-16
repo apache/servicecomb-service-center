@@ -17,6 +17,7 @@ package etcd
 
 import (
 	"encoding/json"
+
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	apt "github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"

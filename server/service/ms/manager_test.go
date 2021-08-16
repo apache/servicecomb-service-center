@@ -16,14 +16,15 @@
 package ms_test
 
 import (
+	"strconv"
+	"strings"
+	"testing"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/service/ms"
 	"github.com/apache/servicecomb-service-center/server/service/ms/etcd"
 	"github.com/go-chassis/go-archaius"
 	"github.com/stretchr/testify/assert"
-	"strconv"
-	"strings"
-	"testing"
 )
 
 func TestInit(t *testing.T) {

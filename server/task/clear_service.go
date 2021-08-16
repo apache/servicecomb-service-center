@@ -18,10 +18,11 @@ package task
 import (
 	"context"
 	"errors"
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/apache/servicecomb-service-center/server/core/proto"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"

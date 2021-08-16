@@ -19,11 +19,12 @@ package etcd
 import (
 	"context"
 	"fmt"
+	"testing"
+	"time"
+
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry/buildin"
 	"github.com/coreos/etcd/mvcc/mvccpb"
-	"testing"
-	"time"
 )
 
 type mockRegistry struct {

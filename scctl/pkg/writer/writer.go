@@ -16,11 +16,12 @@
 package writer
 
 import (
-	"github.com/olekukonko/tablewriter"
 	"os"
 	"sort"
 	"strconv"
 	"time"
+
+	"github.com/olekukonko/tablewriter"
 )
 
 const Day = time.Hour * 24

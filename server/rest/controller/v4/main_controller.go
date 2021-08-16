@@ -19,14 +19,15 @@ package v4
 
 import (
 	"encoding/json"
+	"net/http"
+	"sync"
+
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/rest/controller"
 	"github.com/apache/servicecomb-service-center/version"
-	"net/http"
-	"sync"
 )
 
 var (

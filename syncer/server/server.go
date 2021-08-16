@@ -23,6 +23,14 @@ import (
 	"strconv"
 	"syscall"
 
+	// import plugins
+	_ "github.com/apache/servicecomb-service-center/syncer/plugins/eureka"
+	_ "github.com/apache/servicecomb-service-center/syncer/plugins/servicecenter"
+
+	// import task
+	_ "github.com/apache/servicecomb-service-center/syncer/task/idle"
+	_ "github.com/apache/servicecomb-service-center/syncer/task/ticker"
+
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rpc"
@@ -37,14 +45,6 @@ import (
 	"github.com/apache/servicecomb-service-center/syncer/servicecenter"
 	"github.com/apache/servicecomb-service-center/syncer/task"
 	ggrpc "google.golang.org/grpc"
-
-	// import plugins
-	_ "github.com/apache/servicecomb-service-center/syncer/plugins/eureka"
-	_ "github.com/apache/servicecomb-service-center/syncer/plugins/servicecenter"
-
-	// import task
-	_ "github.com/apache/servicecomb-service-center/syncer/task/idle"
-	_ "github.com/apache/servicecomb-service-center/syncer/task/ticker"
 )
 
 var stopChanErr = errors.New("stopped syncer by stopCh")

@@ -16,9 +16,10 @@
 package aggregate
 
 import (
+	"strings"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/astaxie/beego"
-	"strings"
 )
 
 const (

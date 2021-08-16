@@ -18,12 +18,13 @@
 package v4
 
 import (
+	"net/http"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/gorilla/websocket"
-	"net/http"
 )
 
 type WatchService struct {
