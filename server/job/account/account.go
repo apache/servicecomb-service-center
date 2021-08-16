@@ -27,7 +27,7 @@ import (
 	"github.com/go-chassis/foundation/gopool"
 )
 
-const releasedLockHistoryCleanupInterval = 20 * time.Minute
+const CleanupInterval = 1 * time.Minute
 
 func init() {
 	startReleasedLockHistoryCleanupJob()
@@ -36,9 +36,9 @@ func init() {
 // startReleasedLockHistoryCleanupJob cause of accountsvc.IsBanned may be never called
 // after locked account, then run a job to cleanup the released lock
 func startReleasedLockHistoryCleanupJob() {
-	log.Info(fmt.Sprintf("start released lock history cleanup job(every %s)", releasedLockHistoryCleanupInterval))
+	log.Info(fmt.Sprintf("start released lock history cleanup job(every %s)", CleanupInterval))
 	gopool.Go(func(ctx context.Context) {
-		tick := time.NewTicker(releasedLockHistoryCleanupInterval)
+		tick := time.NewTicker(CleanupInterval)
 		defer tick.Stop()
 		for {
 			select {
@@ -59,9 +59,10 @@ func CleanupReleasedLockHistory(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	now := time.Now().Unix()
 	var keys []string
 	for _, lock := range locks {
-		if lock.ReleaseAt > time.Now().Unix() {
+		if lock.ReleaseAt > now {
 			continue
 		}
 		keys = append(keys, lock.Key)

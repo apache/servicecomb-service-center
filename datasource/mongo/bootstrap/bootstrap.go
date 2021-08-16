@@ -18,6 +18,7 @@
 package bootstrap
 
 import (
+	// registry
 	_ "github.com/apache/servicecomb-service-center/datasource/mongo"
 
 	// heartbeat

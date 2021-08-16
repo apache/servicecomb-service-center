@@ -63,21 +63,7 @@ func TryLockAccount(key string) {
 	if !allow {
 		status = datasource.StatusBanned
 	}
-	saveLock(key, status)
-}
-
-func saveLock(key, status string) {
-	var err error
-	ctx := context.Background()
-	if status == datasource.StatusBanned {
-		err = accountsvc.Ban(ctx, key)
-	} else {
-		err = accountsvc.UpsertLock(ctx, &datasource.AccountLock{
-			Key:       key,
-			Status:    status,
-			ReleaseAt: time.Now().Unix(),
-		})
-	}
+	err := accountsvc.Lock(context.Background(), key, status)
 	if err != nil {
 		log.Error(fmt.Sprintf("can not ban account %s", key), err)
 	}

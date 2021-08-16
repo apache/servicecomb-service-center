@@ -18,8 +18,6 @@
 package datasource
 
 import (
-	"time"
-
 	"github.com/little-cui/etcdadpt"
 )
 
@@ -30,6 +28,5 @@ type Options struct {
 	EnableCache       bool
 	SchemaNotEditable bool
 	// InstanceTTL: the default ttl of instance lease
-	InstanceTTL         int64
-	ReleaseAccountAfter time.Duration
+	InstanceTTL int64
 }

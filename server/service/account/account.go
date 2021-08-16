@@ -5,9 +5,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/apache/servicecomb-service-center/pkg/log"
-
 	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/server/config"
+)
+
+const (
+	defaultReleaseLockAfter     = 15 * time.Minute
+	defaultRetainLockHistoryFor = 20 * time.Minute
 )
 
 func IsBanned(ctx context.Context, key string) (bool, error) {
@@ -32,11 +37,21 @@ func IsBanned(ctx context.Context, key string) (bool, error) {
 	}
 	return false, nil
 }
+
 func Ban(ctx context.Context, key string) error {
-	return datasource.GetAccountLockManager().Ban(ctx, key)
+	return Lock(ctx, key, datasource.StatusBanned)
 }
 
-func UpsertLock(ctx context.Context, lock *datasource.AccountLock) error {
+func Lock(ctx context.Context, key, status string) error {
+	duration := config.GetDuration("rbac.retainLockHistoryFor", defaultRetainLockHistoryFor)
+	if status == datasource.StatusBanned {
+		duration = config.GetDuration("rbac.releaseLockAfter", defaultReleaseLockAfter)
+	}
+	lock := &datasource.AccountLock{
+		Key:       key,
+		Status:    status,
+		ReleaseAt: time.Now().Add(duration).Unix(),
+	}
 	return datasource.GetAccountLockManager().UpsertLock(ctx, lock)
 }
 

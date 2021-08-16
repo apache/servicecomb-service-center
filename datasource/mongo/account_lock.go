@@ -18,7 +18,6 @@ package mongo
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
@@ -30,7 +29,6 @@ import (
 )
 
 type AccountLockManager struct {
-	releaseAfter time.Duration
 }
 
 func (al *AccountLockManager) UpsertLock(ctx context.Context, lock *datasource.AccountLock) error {
@@ -127,14 +125,6 @@ func (al *AccountLockManager) DeleteLockList(ctx context.Context, keys []string)
 	return nil
 }
 
-func (al *AccountLockManager) Ban(ctx context.Context, key string) error {
-	return al.UpsertLock(ctx, &datasource.AccountLock{
-		Key:       key,
-		Status:    datasource.StatusBanned,
-		ReleaseAt: time.Now().Add(al.releaseAfter).Unix(),
-	})
-}
-
-func NewAccountLockManager(ReleaseAfter time.Duration) datasource.AccountLockManager {
-	return &AccountLockManager{releaseAfter: ReleaseAfter}
+func NewAccountLockManager() datasource.AccountLockManager {
+	return &AccountLockManager{}
 }
