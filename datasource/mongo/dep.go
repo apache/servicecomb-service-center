@@ -22,18 +22,17 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/go-chassis/cari/discovery"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/dao"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
-	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/go-chassis/cari/discovery"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type DepManager struct {
@@ -42,8 +41,7 @@ type DepManager struct {
 func (ds *DepManager) SearchProviderDependency(ctx context.Context, request *discovery.GetDependenciesRequest) (*discovery.GetProDependenciesResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
 	providerServiceID := request.ServiceId
-	filter := mutil.NewBasicFilter(ctx, mutil.ServiceServiceID(providerServiceID))
-	provider, err := dao.GetService(ctx, filter)
+	provider, err := GetServiceByID(ctx, providerServiceID)
 	if err != nil {
 		if errors.Is(err, datasource.ErrNoData) {
 			log.Debug(fmt.Sprintf("query provider service failed, there is no provider %s in db", providerServiceID))
@@ -79,8 +77,7 @@ func (ds *DepManager) SearchProviderDependency(ctx context.Context, request *dis
 func (ds *DepManager) SearchConsumerDependency(ctx context.Context, request *discovery.GetDependenciesRequest) (*discovery.GetConDependenciesResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
 	consumerID := request.ServiceId
-	filter := mutil.NewBasicFilter(ctx, mutil.ServiceServiceID(consumerID))
-	consumer, err := dao.GetService(ctx, filter)
+	consumer, err := GetServiceByID(ctx, consumerID)
 	if err != nil {
 		if errors.Is(err, datasource.ErrNoData) {
 			log.Debug(fmt.Sprintf("query consumer service failed, there is no consumer %s in db", consumerID))
@@ -352,41 +349,4 @@ func TransferToMicroServiceDependency(ctx context.Context, filter bson.M) (*disc
 		return microServiceDependency, nil
 	}
 	return microServiceDependency, nil
-}
-
-func GetServiceID(ctx context.Context, key *discovery.MicroServiceKey) (string, error) {
-	filter := mutil.NewBasicFilter(
-		ctx,
-		mutil.ServiceEnv(key.Environment),
-		mutil.ServiceAppID(key.AppId),
-		mutil.ServiceServiceName(key.ServiceName),
-		mutil.ServiceVersion(key.Version),
-	)
-	id, err := getServiceID(ctx, filter)
-	if err != nil && !errors.Is(err, datasource.ErrNoData) {
-		return "", err
-	}
-	if len(id) == 0 && len(key.Alias) != 0 {
-		filter = mutil.NewBasicFilter(
-			ctx,
-			mutil.ServiceEnv(key.Environment),
-			mutil.ServiceAppID(key.AppId),
-			mutil.ServiceAlias(key.Alias),
-			mutil.ServiceVersion(key.Version),
-		)
-		return getServiceID(ctx, filter)
-	}
-	return id, nil
-}
-
-func getServiceID(ctx context.Context, filter bson.M) (serviceID string, err error) {
-	svc, err := dao.GetService(ctx, filter)
-	if err != nil {
-		return
-	}
-	if svc != nil {
-		serviceID = svc.Service.ServiceId
-		return
-	}
-	return
 }

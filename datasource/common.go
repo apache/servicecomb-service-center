@@ -30,6 +30,7 @@ const (
 	RegistryProject       = "default"
 	RegistryDomainProject = "default/default"
 	RegistryAppID         = "default"
+	Provider              = "p"
 )
 
 // WrapErrResponse is temp func here to wait finish to refact the discosvc pkg

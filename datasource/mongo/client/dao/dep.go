@@ -20,20 +20,17 @@ package dao
 import (
 	"context"
 
+	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
-	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/go-chassis/cari/discovery"
 )
 
-const (
-	Provider = "p"
-)
-
 func GetProviderDeps(ctx context.Context, provider *discovery.MicroService) (*discovery.MicroServiceDependency, error) {
-	return getServiceOfDeps(ctx, Provider, provider)
+	return getServiceOfDeps(ctx, datasource.Provider, provider)
 }
 
 func getServiceOfDeps(ctx context.Context, ruleType string, provider *discovery.MicroService) (*discovery.MicroServiceDependency, error) {

@@ -19,11 +19,12 @@ package sd
 
 import (
 	"reflect"
+	"strings"
 
-	cmap "github.com/orcaman/concurrent-map"
-
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
 	"github.com/apache/servicecomb-service-center/datasource/sdcommon"
+	cmap "github.com/orcaman/concurrent-map"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -38,7 +39,7 @@ type instanceStore struct {
 func init() {
 	RegisterCacher(instance, newInstanceStore)
 	InstIndexCols = NewIndexCols()
-	InstIndexCols.AddIndexFunc(InstSericeIDIndex)
+	InstIndexCols.AddIndexFunc(InstServiceIDIndex)
 }
 
 func newInstanceStore() *MongoCacher {
@@ -158,7 +159,7 @@ func (s *instanceStore) isValueNotUpdated(value interface{}, newValue interface{
 	return reflect.DeepEqual(newInst, oldInst)
 }
 
-func InstSericeIDIndex(data interface{}) string {
+func InstServiceIDIndex(data interface{}) string {
 	inst := data.(model.Instance)
-	return inst.Instance.ServiceId
+	return strings.Join([]string{inst.Domain, inst.Project, inst.Instance.ServiceId}, datasource.SPLIT)
 }

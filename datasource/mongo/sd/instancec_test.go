@@ -66,22 +66,45 @@ func TestInstCacheBasicFunc(t *testing.T) {
 		DocumentID: "id2",
 		Value:      inst2,
 	}
-	t.Run("update&&delete instCache, should pass", func(t *testing.T) {
+	t.Run("add instCache, should pass", func(t *testing.T) {
 		instanceCache.cache.ProcessUpdate(event1)
 		assert.Equal(t, instanceCache.cache.Size(), 1)
 		assert.Nil(t, instanceCache.cache.Get("id_not_exist"))
 		assert.Equal(t, inst1.Instance.InstanceId, instanceCache.cache.Get("id1").(model.Instance).Instance.InstanceId)
-		assert.Len(t, instanceCache.cache.GetValue("svcid"), 1)
+		assert.Len(t, instanceCache.cache.GetValue("default/default/svcid"), 1)
 		instanceCache.cache.ProcessUpdate(event2)
 		assert.Equal(t, instanceCache.cache.Size(), 2)
-		assert.Len(t, instanceCache.cache.GetValue("svcid"), 2)
+		assert.Len(t, instanceCache.cache.GetValue("default/default/svcid"), 2)
+
+	})
+
+	t.Run("update instCache, should pass", func(t *testing.T) {
+		assert.Equal(t, inst1, instanceCache.cache.Get("id1").(model.Instance))
+		instUpdate := model.Instance{
+			Domain:  "default",
+			Project: "default",
+			Instance: &discovery.MicroServiceInstance{
+				InstanceId: "123456789",
+				ServiceId:  "svcid",
+				HostName:   "hostUpdate",
+			},
+		}
+		eventUpdate := MongoEvent{
+			DocumentID: "id1",
+			Value:      instUpdate,
+		}
+		instanceCache.cache.ProcessUpdate(eventUpdate)
+		assert.Equal(t, instUpdate, instanceCache.cache.Get("id1").(model.Instance))
+	})
+
+	t.Run("delete instCache, should pass", func(t *testing.T) {
 		instanceCache.cache.ProcessDelete(event1)
 		assert.Nil(t, instanceCache.cache.Get("id1"))
-		assert.Len(t, instanceCache.cache.GetValue("svcid"), 1)
+		assert.Len(t, instanceCache.cache.GetValue("default/default/svcid"), 1)
 		instanceCache.cache.ProcessDelete(event2)
-		assert.Len(t, instanceCache.cache.GetValue("svcid"), 0)
+		assert.Len(t, instanceCache.cache.GetValue("default/default/svcid"), 0)
 		assert.Nil(t, instanceCache.cache.Get("id2"))
-		assert.Len(t, instanceCache.cache.GetValue("svcid"), 0)
+		assert.Len(t, instanceCache.cache.GetValue("default/default/svcid"), 0)
 	})
 }
 
