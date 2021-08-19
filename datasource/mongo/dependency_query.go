@@ -23,17 +23,15 @@ import (
 	"fmt"
 	"strings"
 
-	pb "github.com/go-chassis/cari/discovery"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo/options"
-
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/dao"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	pb "github.com/go-chassis/cari/discovery"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type DependencyRelation struct {
@@ -86,8 +84,7 @@ func (dr *DependencyRelation) GetDependencyProviders(opts ...DependencyRelationF
 		}
 
 		for _, providerID := range providerIDs {
-			filter := util.NewBasicFilter(dr.ctx, util.ServiceServiceID(providerID))
-			provider, err := dao.GetService(dr.ctx, filter)
+			provider, err := GetServiceByID(dr.ctx, providerID)
 			if err != nil {
 				if errors.Is(err, datasource.ErrNoData) {
 					log.Warn(fmt.Sprintf("provider[%s/%s/%s/%s] does not exist",

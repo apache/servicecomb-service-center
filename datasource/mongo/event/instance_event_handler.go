@@ -22,20 +22,18 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-chassis/cari/discovery"
+	simple "github.com/apache/servicecomb-service-center/pkg/time"
 
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/datasource/cache"
 	"github.com/apache/servicecomb-service-center/datasource/mongo"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/dao"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
 	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	simple "github.com/apache/servicecomb-service-center/pkg/time"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/event"
 	"github.com/apache/servicecomb-service-center/server/syncernotify"
+	"github.com/go-chassis/cari/discovery"
 )
 
 // InstanceEventHandler is the handler to handle events
@@ -58,14 +56,11 @@ func (h InstanceEventHandler) OnEvent(evt sd.MongoEvent) {
 	providerInstanceID := instance.Instance.InstanceId
 	domainProject := instance.Domain + "/" + instance.Project
 	ctx := util.SetDomainProject(context.Background(), instance.Domain, instance.Project)
-	res, ok := cache.GetServiceByID(ctx, providerID)
-	var err error
-	if !ok {
-		res, err = dao.GetServiceByID(ctx, providerID)
-		if err != nil {
-			log.Error(fmt.Sprintf("caught [%s] instance[%s/%s] event, endpoints %v, get provider's file failed from db\n",
-				action, providerID, providerInstanceID, instance.Instance.Endpoints), err)
-		}
+
+	res, err := mongo.GetServiceByID(ctx, providerID)
+	if err != nil {
+		log.Error(fmt.Sprintf("caught [%s] instance[%s/%s] event, endpoints %v, get provider's file failed from db\n",
+			action, providerID, providerInstanceID, instance.Instance.Endpoints), err)
 	}
 	if res == nil {
 		return

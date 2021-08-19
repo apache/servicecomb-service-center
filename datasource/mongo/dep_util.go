@@ -21,10 +21,9 @@ import (
 	"context"
 	"fmt"
 
-	pb "github.com/go-chassis/cari/discovery"
-
 	"github.com/apache/servicecomb-service-center/datasource/cache"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client/dao"
+	pb "github.com/go-chassis/cari/discovery"
 )
 
 func GetConsumerIDs(ctx context.Context, provider *pb.MicroService) ([]string, error) {
@@ -42,12 +41,9 @@ func GetConsumerIDs(ctx context.Context, provider *pb.MicroService) ([]string, e
 	}
 	consumerIDs := make([]string, 0, len(serviceDeps.Dependency))
 	for _, serviceKeys := range serviceDeps.Dependency {
-		id, ok := cache.GetServiceID(ctx, serviceKeys)
-		if !ok {
-			id, err = dao.GetServiceID(ctx, serviceKeys)
-			if err != nil {
-				return nil, err
-			}
+		id, err := GetServiceID(ctx, serviceKeys)
+		if err != nil {
+			return nil, err
 		}
 		consumerIDs = append(consumerIDs, id)
 	}

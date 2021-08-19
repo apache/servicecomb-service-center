@@ -71,7 +71,8 @@ func TestServiceCacheBasicFunc(t *testing.T) {
 		DocumentID: "id2",
 		Value:      svc2,
 	}
-	t.Run("update&&delete serviceCache, should pass", func(t *testing.T) {
+
+	t.Run("add serviceCache, should pass", func(t *testing.T) {
 		serviceCache.cache.ProcessUpdate(event1)
 		assert.Equal(t, serviceCache.cache.Size(), 1)
 		assert.Nil(t, serviceCache.cache.Get("id_not_exist"))
@@ -82,6 +83,32 @@ func TestServiceCacheBasicFunc(t *testing.T) {
 		assert.Len(t, serviceCache.cache.GetValue("default/default/appid1/svc1/1.0"), 2)
 		assert.Len(t, serviceCache.cache.GetValue("default/default/987654321"), 1)
 		assert.Len(t, serviceCache.cache.GetValue("default/default/123456789"), 1)
+
+	})
+
+	t.Run("update serviceCache, should pass", func(t *testing.T) {
+		assert.Equal(t, svc1, serviceCache.cache.Get("id1").(model.Service))
+		var svc1Update = model.Service{
+			Domain:  "default",
+			Project: "default",
+			Tags:    nil,
+			Service: &discovery.MicroService{
+				ServiceId:   "123456789",
+				AppId:       "appid1",
+				ServiceName: "svc1",
+				Version:     "1.0",
+				Description: "update",
+			},
+		}
+		eventUpdate := MongoEvent{
+			DocumentID: "id1",
+			Value:      svc1Update,
+		}
+		serviceCache.cache.ProcessUpdate(eventUpdate)
+		assert.Equal(t, svc1Update, serviceCache.cache.Get("id1").(model.Service))
+	})
+
+	t.Run("delete serviceCache, should pass", func(t *testing.T) {
 		serviceCache.cache.ProcessDelete(event1)
 		assert.Nil(t, serviceCache.cache.Get("id1"))
 		assert.Len(t, serviceCache.cache.GetValue("default/default/appid1/svc1/1.0"), 1)
