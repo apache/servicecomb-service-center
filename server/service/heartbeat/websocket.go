@@ -124,9 +124,15 @@ func (c *client) handleMessage() {
 			ServiceId:  c.serviceID,
 			InstanceId: c.instanceID,
 		}
-		_, err = discosvc.Heartbeat(c.cxt, request)
-		if err != nil {
+		resp, err := discosvc.Heartbeat(c.cxt, request)
+		if resp != nil && resp.Response.GetCode() == pb.ErrInstanceNotExists {
 			log.Error("instance heartbeat report failed ", err)
+			closeMessage := "heartbeat reporting failed because the instance does not exist"
+			if err := c.conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(pb.ErrWebsocketInstanceNotExists,
+				closeMessage), time.Now().Add(ws.SendTimeout)); err != nil {
+				log.Error("write close message failed", err)
+				return err
+			}
 		}
 		return err
 	})
@@ -149,7 +155,8 @@ func (c *client) handleMessage() {
 func SendEstablishError(conn *websocket.Conn, err error) {
 	remoteAddr := conn.RemoteAddr().String()
 	log.Error(fmt.Sprintf("establish[%s] websocket failed.", remoteAddr), err)
-	if err := conn.WriteMessage(websocket.TextMessage, util.StringToBytesWithNoCopy(err.Error())); err != nil {
+	if err := conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(pb.ErrWebsocketInstanceNotExists,
+		"heartbeat reporting failed because the instance does not exist"), time.Now().Add(ws.SendTimeout)); err != nil {
 		log.Error(fmt.Sprintf("establish[%s] websocket failed: write message failed.", remoteAddr), err)
 	}
 }
