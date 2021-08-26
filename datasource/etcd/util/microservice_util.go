@@ -177,8 +177,7 @@ func GetServiceAllVersions(ctx context.Context, key *pb.MicroServiceKey, alias b
 	}
 	opts := append(FromContext(ctx),
 		etcdadpt.WithStrKey(prefix),
-		etcdadpt.WithPrefix(),
-		etcdadpt.WithDescendOrder())
+		etcdadpt.WithPrefix())
 	resp, err := indexer.Search(ctx, opts...)
 	return resp, err
 }
