@@ -119,7 +119,7 @@ func TestCacheIndexer_Search(t *testing.T) {
 	if err != nil || resp == nil || resp.Count != 1 || string(resp.Kvs[0].Key) != "/a/b" {
 		t.Fatalf("TestEtcdIndexer_Search failed, %v, %v", err, resp)
 	}
-	resp, err = i.Search(context.Background(), etcdadpt.WithStrKey("/a"), etcdadpt.WithOffset(0), etcdadpt.WithLimit(1))
+	resp, err = i.Search(context.Background(), etcdadpt.WithStrKey("/a"), etcdadpt.WithLimit(1))
 	if err != nil || resp == nil || resp.Count != 1 || string(resp.Kvs[0].Key) != "/a/b" {
 		t.Fatalf("TestEtcdIndexer_Search failed, %v, %v", err, resp)
 	}

@@ -1361,7 +1361,7 @@ var _ = Describe("'Instance' service", func() {
 			})
 
 			It("with consumerID should be passed", func() {
-				By("find with version rule")
+				By("find")
 				respFind, err := discosvc.FindInstances(getContext(), &pb.FindInstancesRequest{
 					ConsumerServiceId: serviceId1,
 					AppId:             "query_instance",
@@ -1369,7 +1369,7 @@ var _ = Describe("'Instance' service", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(respFind.Response.GetCode()).To(Equal(pb.ResponseSuccess))
-				Expect(respFind.Instances[0].InstanceId).To(Equal(instanceId2))
+				assertInstanceContain(respFind.Instances, instanceId2)
 
 				By("find with env")
 				respFind, err = discosvc.FindInstances(getContext(), &pb.FindInstancesRequest{

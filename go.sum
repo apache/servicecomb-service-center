@@ -437,6 +437,8 @@ github.com/lightstep/lightstep-tracer-common/golang/gogo v0.0.0-20190605223551-b
 github.com/lightstep/lightstep-tracer-go v0.18.1/go.mod h1:jlF1pusYV4pidLvZ+XD0UBX0ZE6WURAspgAczcDHrL4=
 github.com/little-cui/etcdadpt v0.1.0 h1:yfVTl04zUE2SFN+3xbBRnFgmXOeIxAqc10IDBwO20FY=
 github.com/little-cui/etcdadpt v0.1.0/go.mod h1:gxgrmwRiKs5w5qKEt2d3QOpdrHACnBORzreniLoH0S0=
+github.com/little-cui/etcdadpt v0.1.2 h1:84P4OaIiqbL2biHPdbl59y9i7UyYX7YPMXsfeEa0Gec=
+github.com/little-cui/etcdadpt v0.1.2/go.mod h1:gxgrmwRiKs5w5qKEt2d3QOpdrHACnBORzreniLoH0S0=
 github.com/magiconair/properties v1.8.1/go.mod h1:PppfXfuXeibc/6YijjN8zIbojt8czPbwD3XqdrwzmxQ=
 github.com/mailru/easyjson v0.0.0-20160728113105-d5b7844b561a/go.mod h1:C1wdFJiN94OJF2b5HbByQZoLdCWB1Yqtg26g4irojpc=
 github.com/mailru/easyjson v0.0.0-20190614124828-94de47d64c63/go.mod h1:C1wdFJiN94OJF2b5HbByQZoLdCWB1Yqtg26g4irojpc=

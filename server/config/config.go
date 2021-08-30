@@ -109,8 +109,10 @@ func Reload() error {
 		return err
 	}
 	*Server = loadServerConfig()
-	body, _ := json.MarshalIndent(archaius.GetConfigs(), "", "  ")
-	log.Debug(fmt.Sprintf("finish to reload configurations\n%s", body))
+	if GetLog().LogLevel == "DEBUG" {
+		body, _ := json.MarshalIndent(archaius.GetConfigs(), "", "  ")
+		log.Debug(fmt.Sprintf("finish to reload configurations\n%s", body))
+	}
 	return nil
 }
 
