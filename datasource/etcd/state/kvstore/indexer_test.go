@@ -19,8 +19,9 @@ package kvstore
 
 import (
 	"context"
-	"github.com/little-cui/etcdadpt"
 	"testing"
+
+	"github.com/little-cui/etcdadpt"
 )
 
 type mockCache struct {

@@ -18,9 +18,10 @@ package sd
 
 import (
 	"fmt"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
 	"testing"
 	"time"
+
+	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
 
 	pb "github.com/go-chassis/cari/discovery"
 

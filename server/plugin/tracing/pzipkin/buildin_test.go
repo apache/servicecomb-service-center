@@ -18,9 +18,10 @@ package pzipkin
 
 import (
 	"context"
-	"github.com/little-cui/etcdadpt"
 	"net/http"
 	"testing"
+
+	"github.com/little-cui/etcdadpt"
 
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/core"

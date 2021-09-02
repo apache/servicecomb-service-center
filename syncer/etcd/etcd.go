@@ -20,11 +20,12 @@ package etcd
 import (
 	"context"
 
+	clientv3 "go.etcd.io/etcd/client/v3"
+	"go.etcd.io/etcd/server/v3/embed"
+	"go.etcd.io/etcd/server/v3/etcdserver/api/v3client"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/syncer/pkg/utils"
-	"github.com/coreos/etcd/clientv3"
-	"github.com/coreos/etcd/embed"
-	"github.com/coreos/etcd/etcdserver/api/v3client"
 	"github.com/pkg/errors"
 )
 

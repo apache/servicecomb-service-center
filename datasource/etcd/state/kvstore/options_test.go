@@ -18,9 +18,10 @@
 package kvstore
 
 import (
-	"github.com/apache/servicecomb-service-center/datasource/etcd/state/parser"
 	"testing"
 	"time"
+
+	"github.com/apache/servicecomb-service-center/datasource/etcd/state/parser"
 )
 
 type mockDeferHandler struct {
