@@ -6,6 +6,10 @@ output
 **/*.log
 syncer/syncer
 
+#binary
+scserver
+main
+
 *.iml
 .idea/
 **/*junit.xml
@@ -37,7 +41,6 @@ docs/_static
 docs/_templates
 
 .DS_Store
-main
 # go mod
 
 # VS Code Project files

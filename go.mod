@@ -1,9 +1,13 @@
 module github.com/apache/servicecomb-service-center
 
-replace github.com/apache/thrift => github.com/apache/thrift v0.0.0-20180125231006-3d556248a8b9
+replace (
+	github.com/apache/servicecomb-service-center/api => ./api
+	github.com/apache/thrift => github.com/apache/thrift v0.0.0-20180125231006-3d556248a8b9
+)
 
 require (
 	github.com/NYTimes/gziphandler v1.1.1
+	github.com/apache/servicecomb-service-center/api v0.0.0
 	github.com/astaxie/beego v1.12.2
 	github.com/cheggaaa/pb v1.0.25
 	github.com/deckarep/golang-set v1.7.1
@@ -12,6 +16,7 @@ require (
 	github.com/go-chassis/cari v0.5.1-0.20210823023004-74041d1363c4
 	github.com/go-chassis/foundation v0.3.1-0.20210811025651-7f4d2b2b906c
 	github.com/go-chassis/go-archaius v1.5.1
+	github.com/go-chassis/go-chassis-extension/protocol/grpc v0.0.0-20210902082902-eb5df922afcd // indirect
 	github.com/go-chassis/go-chassis/v2 v2.3.0
 	github.com/go-chassis/kie-client v0.1.1-0.20210926011742-97eed4281056
 	github.com/go-chassis/openlog v1.1.3
@@ -50,8 +55,8 @@ require (
 	go.uber.org/zap v1.17.0
 	golang.org/x/crypto v0.0.0-20210421170649-83a5a9bb288b
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba
-	google.golang.org/grpc v1.38.0
-	google.golang.org/protobuf v1.26.0
+	google.golang.org/grpc v1.40.0
+	google.golang.org/protobuf v1.27.1
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.19.5

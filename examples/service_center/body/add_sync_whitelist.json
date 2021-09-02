@@ -1,0 +1,21 @@
+{
+  "sync_white_list": [
+    {
+      "resources": [
+        {
+          "type": "service"
+        }
+      ]
+    },
+    {
+      "resources": [
+        {
+          "type": "service",
+          "labels": {
+            "serviceName": "order-service"
+          }
+        }
+      ]
+    }
+  ]
+}
