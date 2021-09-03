@@ -20,8 +20,8 @@ import (
 	"testing"
 
 	"github.com/apache/servicecomb-service-center/pkg/dump"
-	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/go-chassis/cari/discovery"
+	"go.etcd.io/etcd/api/v3/mvccpb"
 )
 
 func TestNewDiagnoseCommand(t *testing.T) {

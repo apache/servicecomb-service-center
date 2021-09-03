@@ -18,8 +18,9 @@ package govern_test
 
 import (
 	"context"
-	"github.com/onsi/ginkgo/reporters"
 	"testing"
+
+	"github.com/onsi/ginkgo/reporters"
 
 	_ "github.com/apache/servicecomb-service-center/test"
 

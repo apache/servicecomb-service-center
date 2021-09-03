@@ -22,14 +22,15 @@ import (
 
 	"bytes"
 	"encoding/json"
-	. "github.com/apache/servicecomb-service-center/integration"
-	"github.com/widuu/gojson"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"strconv"
 	"strings"
 	"testing"
+
+	. "github.com/apache/servicecomb-service-center/integration"
+	"github.com/widuu/gojson"
 )
 
 var serviceName = ""

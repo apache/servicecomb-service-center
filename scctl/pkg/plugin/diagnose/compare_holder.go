@@ -18,12 +18,13 @@ package diagnose
 import (
 	"context"
 	"fmt"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd/state/parser"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/value"
 	"github.com/apache/servicecomb-service-center/pkg/dump"
-	"github.com/coreos/etcd/mvcc/mvccpb"
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/foundation/gopool"
+	"go.etcd.io/etcd/api/v3/mvccpb"
 )
 
 type CompareHolder interface {

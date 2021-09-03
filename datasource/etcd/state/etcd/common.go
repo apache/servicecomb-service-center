@@ -19,7 +19,7 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/state"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/state/parser"
-	"github.com/coreos/etcd/mvcc/mvccpb"
+	"go.etcd.io/etcd/api/v3/mvccpb"
 
 	"github.com/apache/servicecomb-service-center/datasource/sdcommon"
 	"github.com/apache/servicecomb-service-center/pkg/util"

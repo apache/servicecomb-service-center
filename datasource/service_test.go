@@ -19,11 +19,12 @@ package datasource_test
 
 import (
 	"context"
-	"github.com/go-chassis/cari/pkg/errsvc"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/go-chassis/cari/pkg/errsvc"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"

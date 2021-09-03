@@ -18,10 +18,11 @@ package pubsub_test
 
 import (
 	"context"
+	"testing"
+
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/pubsub"
 	"github.com/apache/servicecomb-service-center/server/service/disco"
-	"testing"
 
 	pb "github.com/go-chassis/cari/discovery"
 	. "github.com/onsi/ginkgo"

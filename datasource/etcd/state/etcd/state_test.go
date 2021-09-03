@@ -18,9 +18,10 @@
 package etcd
 
 import (
+	"testing"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd/state"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
-	"testing"
 
 	"github.com/stretchr/testify/assert"
 )

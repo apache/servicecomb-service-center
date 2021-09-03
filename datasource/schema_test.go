@@ -18,9 +18,10 @@
 package datasource_test
 
 import (
-	"github.com/little-cui/etcdadpt"
 	"strconv"
 	"testing"
+
+	"github.com/little-cui/etcdadpt"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd"

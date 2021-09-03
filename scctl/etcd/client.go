@@ -21,7 +21,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/coreos/etcd/clientv3"
+	clientv3 "go.etcd.io/etcd/client/v3"
 
 	"github.com/go-chassis/foundation/tlsutil"
 )

@@ -16,8 +16,9 @@
 package servicecenter_test
 
 import (
-	"github.com/little-cui/etcdadpt"
 	"testing"
+
+	"github.com/little-cui/etcdadpt"
 
 	_ "github.com/apache/servicecomb-service-center/test"
 

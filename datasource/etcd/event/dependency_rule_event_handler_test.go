@@ -18,8 +18,9 @@ package event
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
 	"testing"
+
+	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
 
 	pb "github.com/go-chassis/cari/discovery"
 

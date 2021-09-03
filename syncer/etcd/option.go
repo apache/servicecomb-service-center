@@ -21,10 +21,11 @@ import (
 	"fmt"
 	"net/url"
 
+	"go.etcd.io/etcd/server/v3/embed"
+	"go.etcd.io/etcd/server/v3/etcdserver"
+	"go.etcd.io/etcd/server/v3/etcdserver/api/v3compactor"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/coreos/etcd/compactor"
-	"github.com/coreos/etcd/embed"
-	"github.com/coreos/etcd/etcdserver"
 )
 
 type config struct {
@@ -72,7 +73,7 @@ func toEtcdConfig(ops ...Option) (*embed.Config, error) {
 	conf.EnableV2 = false
 	conf.EnablePprof = false
 	conf.QuotaBackendBytes = etcdserver.MaxQuotaBytes
-	conf.AutoCompactionMode = compactor.ModePeriodic
+	conf.AutoCompactionMode = v3compactor.ModePeriodic
 	conf.AutoCompactionRetention = "1h"
 
 	conf.ACUrls = nil

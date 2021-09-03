@@ -21,9 +21,10 @@ import (
 	"context"
 	"fmt"
 
+	clientv3 "go.etcd.io/etcd/client/v3"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/apache/servicecomb-service-center/syncer/proto"
-	"github.com/coreos/etcd/clientv3"
 	"google.golang.org/protobuf/proto"
 )
 

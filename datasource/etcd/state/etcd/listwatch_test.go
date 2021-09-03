@@ -23,8 +23,9 @@ import (
 	"testing"
 	"time"
 
+	"go.etcd.io/etcd/api/v3/mvccpb"
+
 	"github.com/apache/servicecomb-service-center/datasource/sdcommon"
-	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/little-cui/etcdadpt"
 	"github.com/little-cui/etcdadpt/buildin"
 )
