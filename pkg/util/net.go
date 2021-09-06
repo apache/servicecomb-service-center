@@ -70,7 +70,11 @@ func GetRealIP(r *http.Request) string {
 			return ip
 		}
 	}
-	return strings.Split(r.RemoteAddr, ":")[0]
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		return ""
+	}
+	return host
 }
 
 func InetNtoIP(ipnr uint32) net.IP {

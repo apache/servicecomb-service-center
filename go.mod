@@ -44,8 +44,8 @@ require (
 	github.com/urfave/cli v1.22.4
 	github.com/widuu/gojson v0.0.0-20170212122013-7da9d2cd949b
 	go.etcd.io/etcd/api/v3 v3.5.0
-	go.etcd.io/etcd/client/v3 v3.5.0 // indirect
-	go.etcd.io/etcd/server/v3 v3.5.0 // indirect
+	go.etcd.io/etcd/client/v3 v3.5.0
+	go.etcd.io/etcd/server/v3 v3.5.0
 	go.mongodb.org/mongo-driver v1.4.2
 	go.uber.org/zap v1.17.0
 	golang.org/x/crypto v0.0.0-20210421170649-83a5a9bb288b
