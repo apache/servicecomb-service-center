@@ -149,7 +149,10 @@ func (h *DependencyEventHandler) Handle() error {
 
 	key := path.GetServiceDependencyQueueRootKey("")
 	resp, err := sd.DependencyQueue().Search(context.Background(), etcdadpt.WithNoCache(),
-		etcdadpt.WithStrKey(key), etcdadpt.WithPrefix())
+		etcdadpt.WithStrKey(key), etcdadpt.WithPrefix(),
+		etcdadpt.WithOrderByCreate(), etcdadpt.WithAscendOrder(),
+		// get one page
+		etcdadpt.WithLimit(etcdadpt.DefaultPageCount))
 	if err != nil {
 		return err
 	}
@@ -193,11 +196,18 @@ func (h *DependencyEventHandler) dependencyRuleHandle(res interface{}) error {
 	consumerInfo := pb.DependenciesToKeys([]*pb.MicroServiceKey{r.Consumer}, domainProject)[0]
 	providersInfo := pb.DependenciesToKeys(r.Providers, domainProject)
 
-	var dep serviceUtil.Dependency
+	var (
+		dep serviceUtil.Dependency
+		err error
+	)
 	dep.DomainProject = domainProject
 	dep.Consumer = consumerInfo
 	dep.ProvidersRule = providersInfo
-	err := serviceUtil.AddDependencyRule(ctx, &dep)
+	if r.Override {
+		err = serviceUtil.CreateDependencyRule(ctx, &dep)
+	} else {
+		err = serviceUtil.AddDependencyRule(ctx, &dep)
+	}
 	if err != nil {
 		log.Error(fmt.Sprintf("modify dependency rule failed, override: %t, consumer %s", r.Override, consumerFlag), err)
 		return fmt.Errorf("override: %t, consumer is %s, %s", r.Override, consumerFlag, err.Error())

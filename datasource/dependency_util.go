@@ -43,25 +43,17 @@ type Dependency struct {
 func ParamsChecker(consumerInfo *discovery.MicroServiceKey, providersInfo []*discovery.MicroServiceKey) *discovery.CreateDependenciesResponse {
 	flag := make(map[string]bool, len(providersInfo))
 	for _, providerInfo := range providersInfo {
-		//存在带*的情况，后面的数据就不校验了
-		if providerInfo.ServiceName == "*" {
-			break
+		if len(providerInfo.ServiceName) == 0 {
+			return BadParamsResponse("Required provider serviceName")
 		}
 		if len(providerInfo.AppId) == 0 {
 			providerInfo.AppId = consumerInfo.AppId
 		}
-
-		version := providerInfo.Version
-		if len(version) == 0 {
-			return BadParamsResponse("Required provider version")
-		}
-
-		providerInfo.Version = ""
+		providerInfo.Version = AllVersions
 		if _, ok := flag[toString(providerInfo)]; ok {
 			return BadParamsResponse("Invalid request body for provider info.Duplicate provider or (serviceName and appId is same).")
 		}
 		flag[toString(providerInfo)] = true
-		providerInfo.Version = version
 	}
 	return nil
 }

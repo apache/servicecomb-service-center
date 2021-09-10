@@ -65,6 +65,10 @@ func Validate(v interface{}) error {
 		*pb.DeleteServiceRequest,
 		*pb.GetDependenciesRequest:
 		return GetServiceReqValidator().Validate(v)
+	case *pb.CreateDependenciesRequest:
+		return CreateDependenciesReqValidator().Validate(v)
+	case *pb.AddDependenciesRequest:
+		return AddDependenciesReqValidator().Validate(v)
 	case *pb.UpdateServicePropsRequest:
 		return UpdateServicePropsReqValidator().Validate(v)
 	case *pb.GetServiceTagsRequest:
