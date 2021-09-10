@@ -110,6 +110,64 @@ func (ds *DepManager) SearchConsumerDependency(ctx context.Context, request *dis
 	}, nil
 }
 
+func (ds *DepManager) AddOrUpdateDependencies(ctx context.Context, dependencys []*discovery.ConsumerDependency, override bool) (*discovery.Response, error) {
+	domainProject := util.ParseDomainProject(ctx)
+	for _, dependency := range dependencys {
+		consumerFlag := util.StringJoin([]string{
+			dependency.Consumer.Environment,
+			dependency.Consumer.AppId,
+			dependency.Consumer.ServiceName,
+			dependency.Consumer.Version}, "/")
+		consumerInfo := discovery.DependenciesToKeys([]*discovery.MicroServiceKey{dependency.Consumer}, domainProject)[0]
+		providersInfo := discovery.DependenciesToKeys(dependency.Providers, domainProject)
+
+		rsp := datasource.ParamsChecker(consumerInfo, providersInfo)
+		if rsp != nil {
+			log.Error(fmt.Sprintf("put request into dependency queue failed, override: %t consumer is %s %s",
+				override, consumerFlag, rsp.Response.GetMessage()), nil)
+			return rsp.Response, nil
+		}
+
+		consumerID, err := GetServiceID(ctx, consumerInfo)
+		if err != nil && !errors.Is(err, datasource.ErrNoData) {
+			log.Error(fmt.Sprintf("put request into dependency queue failed, override: %t, get consumer %s id failed",
+				override, consumerFlag), err)
+			return discovery.CreateResponse(discovery.ErrInternal, err.Error()), err
+		}
+		if len(consumerID) == 0 {
+			log.Error(fmt.Sprintf("put request into dependency queue failed, override: %t consumer %s does not exist",
+				override, consumerFlag), err)
+			return discovery.CreateResponse(discovery.ErrServiceNotExists, fmt.Sprintf("Consumer %s does not exist.", consumerFlag)), nil
+		}
+
+		dependency.Override = override
+		if !override {
+			id := util.GenerateUUID()
+
+			domain := util.ParseDomain(ctx)
+			project := util.ParseProject(ctx)
+			data := &model.ConsumerDep{
+				Domain:      domain,
+				Project:     project,
+				ConsumerID:  consumerID,
+				UUID:        id,
+				ConsumerDep: dependency,
+			}
+			insertRes, err := client.GetMongoClient().Insert(ctx, model.CollectionDep, data)
+			if err != nil {
+				log.Error("failed to insert dep to mongodb", err)
+				return discovery.CreateResponse(discovery.ErrInternal, err.Error()), err
+			}
+			log.Info(fmt.Sprintf("insert dep to mongodb success %s", insertRes.InsertedID))
+		}
+		err = syncDependencyRule(ctx, domainProject, dependency)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return discovery.CreateResponse(discovery.ResponseSuccess, "Create dependency successfully."), nil
+}
+
 func (ds *DepManager) DependencyHandle(ctx context.Context) (err error) {
 	return nil
 }
@@ -130,7 +188,11 @@ func syncDependencyRule(ctx context.Context, domainProject string, r *discovery.
 	if err != nil {
 		return err
 	}
-	datasource.ParseAddOrUpdateRules(ctx, &dep, oldProviderRules)
+	if r.Override {
+		datasource.ParseOverrideRules(ctx, &dep, oldProviderRules)
+	} else {
+		datasource.ParseAddOrUpdateRules(ctx, &dep, oldProviderRules)
+	}
 	return updateDeps(domainProject, &dep)
 }
 

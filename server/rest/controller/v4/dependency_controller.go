@@ -18,9 +18,14 @@
 package v4
 
 import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"net/http"
 
+	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
 	pb "github.com/go-chassis/cari/discovery"
 )
@@ -30,9 +35,59 @@ type DependencyService struct {
 
 func (s *DependencyService) URLPatterns() []rest.Route {
 	return []rest.Route{
+		{Method: http.MethodPost, Path: "/v4/:project/registry/dependencies", Func: s.AddDependenciesForMicroServices},
+		{Method: http.MethodPut, Path: "/v4/:project/registry/dependencies", Func: s.CreateDependenciesForMicroServices},
 		{Method: http.MethodGet, Path: "/v4/:project/registry/microservices/:consumerId/providers", Func: s.GetConProDependencies},
 		{Method: http.MethodGet, Path: "/v4/:project/registry/microservices/:providerId/consumers", Func: s.GetProConDependencies},
 	}
+}
+
+//Deprecated
+func (s *DependencyService) AddDependenciesForMicroServices(w http.ResponseWriter, r *http.Request) {
+	requestBody, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Error("read body failed", err)
+		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
+		return
+	}
+	request := &pb.AddDependenciesRequest{}
+	err = json.Unmarshal(requestBody, request)
+	if err != nil {
+		log.Error(fmt.Sprintf("invalid json: %s", util.BytesToStringWithNoCopy(requestBody)), err)
+		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
+		return
+	}
+
+	resp, err := core.ServiceAPI.AddDependenciesForMicroServices(r.Context(), request)
+	if err != nil {
+		rest.WriteError(w, pb.ErrInternal, err.Error())
+	}
+	w.Header().Add("Deprecation", "version=\"v4\"")
+	rest.WriteResponse(w, r, resp.Response, nil)
+}
+
+//Deprecated
+func (s *DependencyService) CreateDependenciesForMicroServices(w http.ResponseWriter, r *http.Request) {
+	requestBody, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Error("read body failed", err)
+		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
+		return
+	}
+	request := &pb.CreateDependenciesRequest{}
+	err = json.Unmarshal(requestBody, request)
+	if err != nil {
+		log.Error(fmt.Sprintf("invalid json: %s", util.BytesToStringWithNoCopy(requestBody)), err)
+		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
+		return
+	}
+
+	resp, err := core.ServiceAPI.CreateDependenciesForMicroServices(r.Context(), request)
+	if err != nil {
+		rest.WriteError(w, pb.ErrInternal, err.Error())
+	}
+	w.Header().Add("Deprecation", "version=\"v4\"")
+	rest.WriteResponse(w, r, resp.Response, nil)
 }
 
 func (s *DependencyService) GetConProDependencies(w http.ResponseWriter, r *http.Request) {

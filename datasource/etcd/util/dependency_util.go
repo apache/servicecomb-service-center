@@ -201,6 +201,34 @@ func parseAddOrUpdateRules(ctx context.Context, dep *Dependency) (createDependen
 	return
 }
 
+func parseOverrideRules(ctx context.Context, dep *Dependency) (createDependencyRuleList, existDependencyRuleList, deleteDependencyRuleList []*pb.MicroServiceKey) {
+	conKey := path.GenerateConsumerDependencyRuleKey(dep.DomainProject, dep.Consumer)
+
+	oldProviderRules, err := TransferToMicroServiceDependency(ctx, conKey)
+	if err != nil {
+		log.Error(fmt.Sprintf("override dependency rule failed, get consumer[%s/%s/%s/%s]'s dependency rule failed",
+			dep.Consumer.Environment, dep.Consumer.AppId, dep.Consumer.ServiceName, dep.Consumer.Version), err)
+		return
+	}
+
+	deleteDependencyRuleList = make([]*pb.MicroServiceKey, 0, len(oldProviderRules.Dependency))
+	createDependencyRuleList = make([]*pb.MicroServiceKey, 0, len(dep.ProvidersRule))
+	existDependencyRuleList = make([]*pb.MicroServiceKey, 0, len(oldProviderRules.Dependency))
+	for _, oldProviderRule := range oldProviderRules.Dependency {
+		if ok, _ := ContainServiceDependency(dep.ProvidersRule, oldProviderRule); !ok {
+			deleteDependencyRuleList = append(deleteDependencyRuleList, oldProviderRule)
+		} else {
+			existDependencyRuleList = append(existDependencyRuleList, oldProviderRule)
+		}
+	}
+	for _, tmpProviderRule := range dep.ProvidersRule {
+		if ok, _ := ContainServiceDependency(existDependencyRuleList, tmpProviderRule); !ok {
+			createDependencyRuleList = append(createDependencyRuleList, tmpProviderRule)
+		}
+	}
+	return
+}
+
 func syncDependencyRule(ctx context.Context, dep *Dependency, filter func(context.Context, *Dependency) (_, _, _ []*pb.MicroServiceKey)) error {
 	//更新consumer的providers的值,consumer的版本是确定的
 	consumerFlag := strings.Join([]string{dep.Consumer.Environment, dep.Consumer.AppId, dep.Consumer.ServiceName, dep.Consumer.Version}, "/")
@@ -225,6 +253,10 @@ func syncDependencyRule(ctx context.Context, dep *Dependency, filter func(contex
 
 func AddDependencyRule(ctx context.Context, dep *Dependency) error {
 	return syncDependencyRule(ctx, dep, parseAddOrUpdateRules)
+}
+
+func CreateDependencyRule(ctx context.Context, dep *Dependency) error {
+	return syncDependencyRule(ctx, dep, parseOverrideRules)
 }
 
 func IsNeedUpdate(services []*pb.MicroServiceKey, service *pb.MicroServiceKey) *pb.MicroServiceKey {
@@ -257,32 +289,6 @@ func BadParamsResponse(detailErr string) *pb.CreateDependenciesResponse {
 	return &pb.CreateDependenciesResponse{
 		Response: pb.CreateResponse(pb.ErrInvalidParams, detailErr),
 	}
-}
-
-func ParamsChecker(consumerInfo *pb.MicroServiceKey, providersInfo []*pb.MicroServiceKey) *pb.CreateDependenciesResponse {
-	flag := make(map[string]bool, len(providersInfo))
-	for _, providerInfo := range providersInfo {
-		//存在带*的情况，后面的数据就不校验了
-		if providerInfo.ServiceName == "*" {
-			break
-		}
-		if len(providerInfo.AppId) == 0 {
-			providerInfo.AppId = consumerInfo.AppId
-		}
-
-		version := providerInfo.Version
-		if len(version) == 0 {
-			return BadParamsResponse("Required provider version")
-		}
-
-		providerInfo.Version = ""
-		if _, ok := flag[toString(providerInfo)]; ok {
-			return BadParamsResponse("Invalid request body for provider info.Duplicate provider or (serviceName and appId is same).")
-		}
-		flag[toString(providerInfo)] = true
-		providerInfo.Version = version
-	}
-	return nil
 }
 
 func DeleteDependencyForDeleteService(domainProject string, serviceID string, service *pb.MicroServiceKey) (etcdadpt.OpOptions, error) {

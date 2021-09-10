@@ -1020,7 +1020,7 @@ func (ds *MetadataManager) reshapeProviderKey(ctx context.Context, provider *pb.
 	}
 
 	provider = pb.MicroServiceToKey(provider.Tenant, providerService)
-	provider.Version = "0.0.0+" // just compatible to old version
+	provider.Version = datasource.AllVersions // just compatible to old version
 	return provider, nil
 }
 

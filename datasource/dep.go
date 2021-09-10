@@ -23,9 +23,12 @@ import (
 	pb "github.com/go-chassis/cari/discovery"
 )
 
+const AllVersions = "0.0.0+"
+
 // DependencyManager contains the CRUD of microservice dependencies
 type DependencyManager interface {
 	SearchProviderDependency(ctx context.Context, request *pb.GetDependenciesRequest) (*pb.GetProDependenciesResponse, error)
 	SearchConsumerDependency(ctx context.Context, request *pb.GetDependenciesRequest) (*pb.GetConDependenciesResponse, error)
+	AddOrUpdateDependencies(ctx context.Context, dependencyInfos []*pb.ConsumerDependency, override bool) (*pb.Response, error)
 	DependencyHandle(ctx context.Context) error
 }

@@ -26,6 +26,30 @@ import (
 	pb "github.com/go-chassis/cari/discovery"
 )
 
+func (s *MicroServiceService) AddDependenciesForMicroServices(ctx context.Context,
+	in *pb.AddDependenciesRequest) (*pb.AddDependenciesResponse, error) {
+	if err := validator.Validate(in); err != nil {
+		return &pb.AddDependenciesResponse{
+			Response: datasource.BadParamsResponse(err.Error()).Response,
+		}, nil
+	}
+
+	resp, err := datasource.GetDependencyManager().AddOrUpdateDependencies(ctx, in.Dependencies, false)
+	return &pb.AddDependenciesResponse{Response: resp}, err
+}
+
+func (s *MicroServiceService) CreateDependenciesForMicroServices(ctx context.Context,
+	in *pb.CreateDependenciesRequest) (*pb.CreateDependenciesResponse, error) {
+	if err := validator.Validate(in); err != nil {
+		return &pb.CreateDependenciesResponse{
+			Response: datasource.BadParamsResponse(err.Error()).Response,
+		}, nil
+	}
+
+	resp, err := datasource.GetDependencyManager().AddOrUpdateDependencies(ctx, in.Dependencies, true)
+	return &pb.CreateDependenciesResponse{Response: resp}, err
+}
+
 func (s *MicroServiceService) GetProviderDependencies(ctx context.Context,
 	in *pb.GetDependenciesRequest) (*pb.GetProDependenciesResponse, error) {
 	err := validator.Validate(in)

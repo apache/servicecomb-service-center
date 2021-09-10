@@ -112,56 +112,6 @@ func TestDependencyRuleExistUtil(t *testing.T) {
 	}
 }
 
-func TestParamsChecker(t *testing.T) {
-	p := ParamsChecker(nil, nil)
-	if p != nil {
-		t.Fatalf(`ParamsChecker invalid failed`)
-	}
-
-	p = ParamsChecker(&discovery.MicroServiceKey{
-		AppId:       "a",
-		ServiceName: "b",
-		Version:     "1.0.0",
-	}, nil)
-	if p != nil {
-		t.Fatalf(`ParamsChecker invalid failed`)
-	}
-
-	p = ParamsChecker(&discovery.MicroServiceKey{
-		AppId:       "a",
-		ServiceName: "b",
-		Version:     "1.0.0",
-	}, []*discovery.MicroServiceKey{
-		{ServiceName: "*"},
-	})
-	if p != nil {
-		t.Fatalf(`ParamsChecker * failed`)
-	}
-
-	p = ParamsChecker(&discovery.MicroServiceKey{
-		AppId:       "a",
-		ServiceName: "b",
-		Version:     "1.0.0",
-	}, []*discovery.MicroServiceKey{
-		{},
-	})
-	if p == nil {
-		t.Fatalf(`ParamsChecker invalid provider key failed`)
-	}
-
-	p = ParamsChecker(&discovery.MicroServiceKey{
-		AppId:       "a",
-		ServiceName: "b",
-		Version:     "1.0.0",
-	}, []*discovery.MicroServiceKey{
-		{ServiceName: "a", Version: "1"},
-		{ServiceName: "a", Version: "1"},
-	})
-	if p == nil {
-		t.Fatalf(`ParamsChecker duplicate provider key failed`)
-	}
-}
-
 func TestServiceDependencyRuleExist(t *testing.T) {
 	_, err := DependencyRuleExist(context.Background(), &discovery.MicroServiceKey{}, &discovery.MicroServiceKey{})
 	if err != nil {
