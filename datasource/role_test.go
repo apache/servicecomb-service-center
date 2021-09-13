@@ -33,20 +33,20 @@ import (
 var (
 	r1 = rbac.Role{
 		ID:    "11111-22222-33333",
-		Name:  "test-role1",
+		Name:  "test-role",
 		Perms: nil,
 	}
 
 	r2 = rbac.Role{
 		ID:    "11111-22222-33333-44444",
-		Name:  "test-role2",
+		Name:  "test-role-ex",
 		Perms: nil,
 	}
 
 	a = rbac.Account{
 		Name:     "account-role-test",
 		Password: "abc",
-		Roles:    []string{"test-role1"},
+		Roles:    []string{"test-role"},
 	}
 )
 
@@ -54,7 +54,7 @@ func TestRole(t *testing.T) {
 	t.Run("create role should success", func(t *testing.T) {
 		err := datasource.GetRoleManager().CreateRole(context.Background(), &r1)
 		assert.NoError(t, err)
-		r, err := datasource.GetRoleManager().GetRole(context.Background(), "test-role1")
+		r, err := datasource.GetRoleManager().GetRole(context.Background(), "test-role")
 		assert.NoError(t, err)
 		assert.Equal(t, r1, *r)
 		dt, _ := strconv.Atoi(r.CreateTime)
@@ -62,7 +62,7 @@ func TestRole(t *testing.T) {
 		assert.Equal(t, r.CreateTime, r.UpdateTime)
 	})
 	t.Run("role should exist", func(t *testing.T) {
-		exist, err := datasource.GetRoleManager().RoleExist(context.Background(), "test-role1")
+		exist, err := datasource.GetRoleManager().RoleExist(context.Background(), "test-role")
 		assert.NoError(t, err)
 		assert.True(t, exist)
 	})
@@ -73,21 +73,22 @@ func TestRole(t *testing.T) {
 	})
 
 	t.Run("update role should success", func(t *testing.T) {
-		r, err := datasource.GetRoleManager().GetRole(context.Background(), "test-role1")
+		r, err := datasource.GetRoleManager().GetRole(context.Background(), "test-role")
 		assert.NoError(t, err)
 		old, _ := strconv.Atoi(r.UpdateTime)
 
 		time.Sleep(time.Second)
 		r1.ID = "11111-22222-33333-4"
-		err = datasource.GetRoleManager().UpdateRole(context.Background(), "test-role1", &r1)
+		err = datasource.GetRoleManager().UpdateRole(context.Background(), "test-role", &r1)
 		assert.NoError(t, err)
 
-		r, err = datasource.GetRoleManager().GetRole(context.Background(), "test-role1")
+		r, err = datasource.GetRoleManager().GetRole(context.Background(), "test-role")
 		assert.NoError(t, err)
 		last, _ := strconv.Atoi(r.UpdateTime)
 		assert.Less(t, old, last)
 		assert.NotEqual(t, r.CreateTime, r.UpdateTime)
 	})
+
 	t.Run("add new role should success", func(t *testing.T) {
 		err := datasource.GetRoleManager().CreateRole(context.Background(), &r2)
 		assert.NoError(t, err)
@@ -100,16 +101,16 @@ func TestRole(t *testing.T) {
 		err := datasource.GetAccountManager().CreateAccount(context.Background(), &a)
 		assert.NoError(t, err)
 
-		_, err = datasource.GetRoleManager().DeleteRole(context.Background(), "test-role1")
+		_, err = datasource.GetRoleManager().DeleteRole(context.Background(), "test-role")
 		assert.Error(t, err)
 	})
 
 	t.Run("update account role and delete old role should success", func(t *testing.T) {
-		a.Roles = []string{"test-role2"}
+		a.Roles = []string{"test-role-ex"}
 		err := datasource.GetAccountManager().UpdateAccount(context.Background(), "account-role-test", &a)
 		assert.NoError(t, err)
 
-		_, err = datasource.GetRoleManager().DeleteRole(context.Background(), "test-role1")
+		_, err = datasource.GetRoleManager().DeleteRole(context.Background(), "test-role")
 		assert.NoError(t, err)
 	})
 
@@ -118,8 +119,9 @@ func TestRole(t *testing.T) {
 		assert.True(t, b)
 		assert.NoError(t, err)
 
-		_, err = datasource.GetRoleManager().DeleteRole(context.Background(), "test-role2")
+		_, err = datasource.GetRoleManager().DeleteRole(context.Background(), "test-role-ex")
 		assert.NoError(t, err)
+
 		_, n, err := datasource.GetRoleManager().ListRole(context.Background())
 		assert.NoError(t, err)
 		assert.Equal(t, int64(0), n)

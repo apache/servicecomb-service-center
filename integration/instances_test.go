@@ -340,25 +340,6 @@ var _ = Describe("MicroService Api Test", func() {
 				Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
 			})
 
-			It("Find Micro-service Info by alias", func() {
-				req, _ := http.NewRequest(GET, SCURL+FINDINSTANCE+"?appId="+serviceAppId+"&serviceName="+alias+"&version="+serviceVersion, nil)
-				req.Header.Set("X-Domain-Name", "default")
-				req.Header.Set("X-ConsumerId", consumerID)
-				resp, _ := scclient.Do(req)
-				respbody, _ := ioutil.ReadAll(resp.Body)
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
-				servicesStruct := map[string][]map[string]interface{}{}
-				json.Unmarshal(respbody, &servicesStruct)
-				foundMicroServiceInstance := false
-				for _, services := range servicesStruct["instances"] {
-					if services["instanceId"] == serviceInstanceID {
-						foundMicroServiceInstance = true
-						break
-					}
-				}
-				Expect(foundMicroServiceInstance).To(Equal(true))
-			})
-
 			It("Find Micro-Service Instance by ServiceID", func() {
 				url := strings.Replace(GETINSTANCE, ":serviceId", providerID, 1)
 				req, _ := http.NewRequest(GET, SCURL+url, nil)
@@ -411,6 +392,25 @@ var _ = Describe("MicroService Api Test", func() {
 				req.Header.Set("X-ConsumerId", consumerID)
 				resp, _ := scclient.Do(req)
 				Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
+			})
+
+			It("Find Micro-service Info by alias", func() {
+				req, _ := http.NewRequest(GET, SCURL+FINDINSTANCE+"?appId="+serviceAppId+"&serviceName="+alias+"&version="+serviceVersion, nil)
+				req.Header.Set("X-Domain-Name", "default")
+				req.Header.Set("X-ConsumerId", consumerID)
+				resp, _ := scclient.Do(req)
+				respbody, _ := ioutil.ReadAll(resp.Body)
+				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				servicesStruct := map[string][]map[string]interface{}{}
+				json.Unmarshal(respbody, &servicesStruct)
+				foundMicroServiceInstance := false
+				for _, services := range servicesStruct["instances"] {
+					if services["instanceId"] == serviceInstanceID {
+						foundMicroServiceInstance = true
+						break
+					}
+				}
+				Expect(foundMicroServiceInstance).To(Equal(true))
 			})
 
 			It("Find Micro-Service Instance with rev", func() {
