@@ -154,7 +154,7 @@ func (ds *DataSource) initPlugins() {
 	ds.initClustersIndex()
 
 	// discovery
-	kind := config.GetString("discovery.kind", "", config.WithStandby("discovery_plugin"))
+	kind := config.GetString("discovery.kind", "etcd", config.WithStandby("discovery_plugin"))
 	err = state.Init(state.Config{
 		Kind:        kind,
 		ClusterName: ds.Options.ClusterName,

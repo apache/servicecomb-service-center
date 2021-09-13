@@ -103,6 +103,7 @@ func GenRoleAccountPrefixIdxKey(role string) string {
 		GetRootKey(),
 		"idx-role-account",
 		role,
+		"",
 	}, SPLIT)
 }
 
