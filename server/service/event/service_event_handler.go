@@ -45,7 +45,7 @@ func (h *ServiceEventHandler) Type() discovery.Type {
 func (h *ServiceEventHandler) OnEvent(evt discovery.KvEvent) {
 	ms := evt.KV.Value.(*pb.MicroService)
 	_, domainProject := core.GetInfoFromSvcKV(evt.KV.Key)
-	fn, fv := getFramework(ms)
+	fn, fv := pb.ToFrameworkLabel(ms)
 
 	switch evt.Type {
 	case pb.EVT_INIT, pb.EVT_CREATE:
@@ -73,17 +73,6 @@ func (h *ServiceEventHandler) OnEvent(evt discovery.KvEvent) {
 	// cache
 	providerKey := proto.MicroServiceToKey(domainProject, ms)
 	cache.FindInstances.Remove(providerKey)
-}
-
-func getFramework(ms *pb.MicroService) (string, string) {
-	if ms.Framework != nil && len(ms.Framework.Name) > 0 {
-		version := ms.Framework.Version
-		if len(ms.Framework.Version) == 0 {
-			version = "UNKNOWN"
-		}
-		return ms.Framework.Name, version
-	}
-	return "UNKNOWN", "UNKNOWN"
 }
 
 func NewServiceEventHandler() *ServiceEventHandler {

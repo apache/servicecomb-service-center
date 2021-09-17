@@ -415,3 +415,14 @@ type GetAppsResponse struct {
 type MicroServiceDependency struct {
 	Dependency []*MicroServiceKey `json:"Dependency,omitempty"`
 }
+
+func ToFrameworkLabel(ms *MicroService) (string, string) {
+	if ms.Framework != nil && len(ms.Framework.Name) > 0 {
+		version := ms.Framework.Version
+		if len(ms.Framework.Version) == 0 {
+			version = "UNKNOWN"
+		}
+		return ms.Framework.Name, version
+	}
+	return "UNKNOWN", "UNKNOWN"
+}

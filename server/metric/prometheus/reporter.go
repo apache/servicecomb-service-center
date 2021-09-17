@@ -16,6 +16,8 @@
 package prometheus
 
 import (
+	"context"
+	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/metric"
 	dto "github.com/prometheus/client_model/go"
 )
@@ -31,11 +33,16 @@ var qpsLabelMap = map[string]int{
 	"domain":   3,
 }
 
-type APIReporter struct {
+type Reporter struct {
 	cache *metric.Details
 }
 
-func (r *APIReporter) Report() {
+func (r *Reporter) Report() {
+	r.reportMetaMetrics()
+	r.reportHttpMetrics()
+}
+
+func (r *Reporter) reportHttpMetrics() {
 	details := metric.Gatherer.Records.Get(httpRequestTotal)
 	if details == nil {
 		return
@@ -53,7 +60,7 @@ func (r *APIReporter) Report() {
 	})
 }
 
-func (r *APIReporter) toLabels(pairs []*dto.LabelPair) (labels []string) {
+func (r *Reporter) toLabels(pairs []*dto.LabelPair) (labels []string) {
 	labels = make([]string, len(qpsLabelMap))
 	for _, pair := range pairs {
 		if i, ok := qpsLabelMap[pair.GetName()]; ok {
@@ -63,10 +70,19 @@ func (r *APIReporter) toLabels(pairs []*dto.LabelPair) (labels []string) {
 	return
 }
 
-func init() {
-	metric.RegisterReporter("rest", NewAPIReporter())
+func (r *Reporter) reportMetaMetrics() {
+	ResetMetaMetrics()
+	mgr := MetricsManager{}
+	err := mgr.Report(context.Background(), GetMetaReporter())
+	if err != nil {
+		log.Error("report meta metrics failed", err)
+	}
 }
 
-func NewAPIReporter() *APIReporter {
-	return &APIReporter{}
+func init() {
+	metric.RegisterReporter("job", NewReporter())
+}
+
+func NewReporter() *Reporter {
+	return &Reporter{}
 }

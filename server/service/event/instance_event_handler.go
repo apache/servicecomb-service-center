@@ -72,7 +72,7 @@ func (h *InstanceEventHandler) OnEvent(evt discovery.KvEvent) {
 				action, providerID, providerInstanceID, instance.Endpoints)
 			return
 		}
-		frameworkName, frameworkVersion := getFramework(ms)
+		frameworkName, frameworkVersion := pb.ToFrameworkLabel(ms)
 		metrics.ReportFramework(domainName, projectName, frameworkName, frameworkVersion, count)
 		return
 	}
@@ -101,7 +101,7 @@ func (h *InstanceEventHandler) OnEvent(evt discovery.KvEvent) {
 	}
 
 	if action != pb.EVT_UPDATE {
-		frameworkName, frameworkVersion := getFramework(ms)
+		frameworkName, frameworkVersion := pb.ToFrameworkLabel(ms)
 		metrics.ReportInstances(domainName, count)
 		metrics.ReportFramework(domainName, projectName, frameworkName, frameworkVersion, count)
 	}
