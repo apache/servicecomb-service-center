@@ -37,6 +37,7 @@ type Config struct {
 	ClusterName      string         `json:"manageName,omitempty"`
 	ClusterAddresses string         `json:"manageClusters,omitempty"` // the raw string of cluster configuration
 	Clusters         types.Clusters `json:"-"`                        // parsed from ClusterAddresses
+	ClusterCheck     bool           `json:"checkCluster,omitempty"`
 	DialTimeout      time.Duration  `json:"connectTimeout"`
 	RequestTimeOut   time.Duration  `json:"registryTimeout"`
 	AutoSyncInterval time.Duration  `json:"autoSyncInterval"`
@@ -89,6 +90,7 @@ func Configuration() *Config {
 		defaultRegistryConfig.ClusterName = beego.AppConfig.DefaultString("manager_name", DefaultClusterName)
 		defaultRegistryConfig.ManagerAddress = beego.AppConfig.String("manager_addr")
 		defaultRegistryConfig.ClusterAddresses = beego.AppConfig.DefaultString("manager_cluster", "http://127.0.0.1:2379")
+		defaultRegistryConfig.ClusterCheck = beego.AppConfig.DefaultBool("registry_check_cluster", true)
 		defaultRegistryConfig.InitClusterInfo()
 
 		registryAddresses := strings.Join(defaultRegistryConfig.RegistryAddresses(), ",")
