@@ -57,6 +57,7 @@ type Client struct {
 	DialTimeout      time.Duration
 	TLSConfig        *tls.Config
 	AutoSyncInterval time.Duration
+	ClusterCheck     bool
 
 	err       chan error
 	ready     chan struct{}
@@ -87,6 +88,7 @@ func (c *Client) Initialize() (err error) {
 	if c.AutoSyncInterval == 0 {
 		c.AutoSyncInterval = registry.Configuration().AutoSyncInterval
 	}
+	c.ClusterCheck = registry.Configuration().ClusterCheck
 
 	c.Client, err = c.newClient()
 	if err != nil {
@@ -139,7 +141,7 @@ func (c *Client) newClient() (*clientv3.Client, error) {
 
 	registry.ReportBackendInstance(len(resp.Members))
 
-	if len(c.Endpoints) == 1 {
+	if !c.ClusterCheck || len(c.Endpoints) == 1 {
 		// no need to check remote endpoints
 		return client, nil
 	}
