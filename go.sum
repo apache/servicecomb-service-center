@@ -280,6 +280,8 @@ github.com/go-chassis/go-restful-swagger20 v1.0.3/go.mod h1:eW62fYuzlNFDvIacB6AV
 github.com/go-chassis/kie-client v0.0.0-20201210060018-938c7680a9ab/go.mod h1:UTdbtyN5ge/v9DmQzdVRxQP7z51Q4z6hyl+W6ZpUHFM=
 github.com/go-chassis/kie-client v0.1.1-0.20210731071824-96f1f1e47e71 h1:3ZRlumK36aVzLzHVp9Y7RsEYK0qMwX/enD7xU6ntj78=
 github.com/go-chassis/kie-client v0.1.1-0.20210731071824-96f1f1e47e71/go.mod h1:UTdbtyN5ge/v9DmQzdVRxQP7z51Q4z6hyl+W6ZpUHFM=
+github.com/go-chassis/kie-client v0.1.1-0.20210926011742-97eed4281056 h1:Y8CyErFNg4d1dPYXvNWxpyzzLQ/kuyuxJF2/7My7qLc=
+github.com/go-chassis/kie-client v0.1.1-0.20210926011742-97eed4281056/go.mod h1:N4SrGTb+e9ZiuOOU9vC/AohqsDtCkY2amNAPcvpEem0=
 github.com/go-chassis/openlog v1.1.2/go.mod h1:+eYCADVxWyJkwsFMUBrMxyQlNqW+UUsCxvR2LrYZUaA=
 github.com/go-chassis/openlog v1.1.3 h1:XqIOvZ8YPJ9o9lLtLBskQNNWolK5kC6a4Sv7r4s9sZ4=
 github.com/go-chassis/openlog v1.1.3/go.mod h1:+eYCADVxWyJkwsFMUBrMxyQlNqW+UUsCxvR2LrYZUaA=
