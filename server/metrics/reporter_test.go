@@ -14,14 +14,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package metric
+package metrics
 
 import "testing"
 
-func TestMetricsGatherer_Collect(t *testing.T) {
-	g := NewGatherer()
-	err := g.Collect()
-	if err != nil {
-		t.Fatalf("TestMetricsGatherer_Collect")
+type mockReporter struct {
+	V bool
+}
+
+func (m *mockReporter) Report() {
+	m.V = true
+}
+
+func TestRegisterReporter(t *testing.T) {
+	r := &mockReporter{}
+	RegisterReporter("test", r)
+	Report()
+	if !r.V {
+		t.Fatalf("TestRegisterReporter failed")
 	}
 }

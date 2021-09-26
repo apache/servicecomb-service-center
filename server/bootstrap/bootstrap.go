@@ -73,7 +73,7 @@ import (
 	_ "github.com/apache/servicecomb-service-center/server/rest/admin"
 
 	//metrics
-	_ "github.com/apache/servicecomb-service-center/server/metric"
+	_ "github.com/apache/servicecomb-service-center/server/metrics/prometheus"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/handler/accesslog"

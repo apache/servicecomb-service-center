@@ -14,23 +14,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package metric
 
-import "testing"
+package metrics
 
-type mockReporter struct {
-	V bool
-}
+import "github.com/apache/servicecomb-service-center/pkg/log"
 
-func (m *mockReporter) Report() {
-	m.V = true
-}
+var reporters = make(map[string]Reporter)
 
-func TestRegisterReporter(t *testing.T) {
-	r := &mockReporter{}
-	RegisterReporter("test", r)
+// Reporter is the interface to implement handler to process metrics after calculate
+type Reporter interface {
 	Report()
-	if !r.V {
-		t.Fatalf("TestRegisterReporter failed")
+}
+
+func RegisterReporter(name string, r Reporter) {
+	reporters[name] = r
+	log.Infof("register metrics reporter '%s'", name)
+}
+
+func Report() {
+	for _, r := range reporters {
+		r.Report()
 	}
 }

@@ -18,67 +18,67 @@
 package prometheus
 
 import (
-	"github.com/apache/servicecomb-service-center/server/metric"
+	"github.com/apache/servicecomb-service-center/server/metrics"
 )
 
 var metaReporter = &MetaReporter{}
 
 type MetricsLabels struct {
-	Domain           string `json:"domain,omitempty"`
-	Project          string `json:"project,omitempty"`
-	Framework        string `json:"framework,omitempty"`
-	FrameworkVersion string `json:"frameworkVersion,omitempty"`
+	Domain           string `json:"domain"`
+	Project          string `json:"project"`
+	Framework        string `json:"framework"`
+	FrameworkVersion string `json:"frameworkVersion"`
 }
 
 type MetaReporter struct {
 }
 
 func (m *MetaReporter) DomainAdd(delta float64) {
-	instance := metric.InstanceName()
+	instance := metrics.InstanceName()
 	labels := map[string]string{
-		"instance": instance,
+		LabelInstance: instance,
 	}
 	domainCounter.With(labels).Add(delta)
 }
 func (m *MetaReporter) ServiceAdd(delta float64, ml MetricsLabels) {
-	instance := metric.InstanceName()
+	instance := metrics.InstanceName()
 	labels := map[string]string{
-		"instance":         instance,
-		"framework":        ml.Framework,
-		"frameworkVersion": ml.FrameworkVersion,
-		"domain":           ml.Domain,
-		"project":          ml.Project,
+		LabelInstance:         instance,
+		LabelFramework:        ml.Framework,
+		LabelFrameworkVersion: ml.FrameworkVersion,
+		LabelDomain:           ml.Domain,
+		LabelProject:          ml.Project,
 	}
 	serviceCounter.With(labels).Add(delta)
 }
 func (m *MetaReporter) InstanceAdd(delta float64, ml MetricsLabels) {
-	instance := metric.InstanceName()
+	instance := metrics.InstanceName()
 	labels := map[string]string{
-		"instance":         instance,
-		"framework":        ml.Framework,
-		"frameworkVersion": ml.FrameworkVersion,
-		"domain":           ml.Domain,
-		"project":          ml.Project,
+		LabelInstance:         instance,
+		LabelFramework:        ml.Framework,
+		LabelFrameworkVersion: ml.FrameworkVersion,
+		LabelDomain:           ml.Domain,
+		LabelProject:          ml.Project,
 	}
 	instanceCounter.With(labels).Add(delta)
 }
 func (m *MetaReporter) SchemaAdd(delta float64, ml MetricsLabels) {
-	instance := metric.InstanceName()
+	instance := metrics.InstanceName()
 	labels := map[string]string{
-		"instance": instance,
-		"domain":   ml.Domain,
-		"project":  ml.Project,
+		LabelInstance: instance,
+		LabelDomain:   ml.Domain,
+		LabelProject:  ml.Project,
 	}
 	schemaCounter.With(labels).Add(delta)
 }
 func (m *MetaReporter) FrameworkSet(ml MetricsLabels) {
-	instance := metric.InstanceName()
+	instance := metrics.InstanceName()
 	labels := map[string]string{
-		"instance":         instance,
-		"framework":        ml.Framework,
-		"frameworkVersion": ml.FrameworkVersion,
-		"domain":           ml.Domain,
-		"project":          ml.Project,
+		LabelInstance:         instance,
+		LabelFramework:        ml.Framework,
+		LabelFrameworkVersion: ml.FrameworkVersion,
+		LabelDomain:           ml.Domain,
+		LabelProject:          ml.Project,
 	}
 	frameworkCounter.With(labels).Set(1)
 }

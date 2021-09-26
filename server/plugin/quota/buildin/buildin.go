@@ -23,12 +23,10 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	mgr "github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
-	"github.com/apache/servicecomb-service-center/server/plugin/quota/counter"
 )
 
 func init() {
 	mgr.RegisterPlugin(mgr.Plugin{PName: mgr.QUOTA, Name: "buildin", New: New})
-	counter.RegisterCounterListener("buildin")
 }
 
 func New() mgr.Instance {

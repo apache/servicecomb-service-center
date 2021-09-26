@@ -27,7 +27,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"github.com/apache/servicecomb-service-center/server/service/cache"
-	"github.com/apache/servicecomb-service-center/server/service/metrics"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
 )
 
@@ -45,7 +44,6 @@ func (h *ServiceEventHandler) Type() discovery.Type {
 func (h *ServiceEventHandler) OnEvent(evt discovery.KvEvent) {
 	ms := evt.KV.Value.(*pb.MicroService)
 	_, domainProject := core.GetInfoFromSvcKV(evt.KV.Key)
-	fn, fv := pb.ToFrameworkLabel(ms)
 
 	switch evt.Type {
 	case pb.EVT_INIT, pb.EVT_CREATE:
@@ -56,11 +54,6 @@ func (h *ServiceEventHandler) OnEvent(evt discovery.KvEvent) {
 		if err != nil {
 			log.Errorf(err, "new domain[%s] or project[%s] failed", newDomain, newProject)
 		}
-		metrics.ReportServices(newDomain, fn, fv, 1)
-	case pb.EVT_DELETE:
-		domainName := domainProject[:strings.Index(domainProject, "/")]
-		metrics.ReportServices(domainName, fn, fv, -1)
-	default:
 	}
 
 	if evt.Type == pb.EVT_INIT {

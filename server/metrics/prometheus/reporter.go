@@ -17,8 +17,9 @@ package prometheus
 
 import (
 	"context"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/server/metric"
+	"github.com/apache/servicecomb-service-center/server/metrics"
 	dto "github.com/prometheus/client_model/go"
 )
 
@@ -34,16 +35,16 @@ var qpsLabelMap = map[string]int{
 }
 
 type Reporter struct {
-	cache *metric.Details
+	cache *metrics.Details
 }
 
 func (r *Reporter) Report() {
 	r.reportMetaMetrics()
-	r.reportHttpMetrics()
+	r.reportHTTPMetrics()
 }
 
-func (r *Reporter) reportHttpMetrics() {
-	details := metric.Gatherer.Records.Get(httpRequestTotal)
+func (r *Reporter) reportHTTPMetrics() {
+	details := metrics.Gatherer.Records.Get(httpRequestTotal)
 	if details == nil {
 		return
 	}
@@ -55,7 +56,7 @@ func (r *Reporter) reportHttpMetrics() {
 	}
 	details.ForEach(func(labels []*dto.LabelPair, v float64) (next bool) {
 		old := r.cache.Get(labels)
-		queryPerSeconds.WithLabelValues(r.toLabels(labels)...).Set((v - old) / metric.Period.Seconds())
+		queryPerSeconds.WithLabelValues(r.toLabels(labels)...).Set((v - old) / metrics.Period.Seconds())
 		return true
 	})
 }
@@ -80,7 +81,7 @@ func (r *Reporter) reportMetaMetrics() {
 }
 
 func init() {
-	metric.RegisterReporter("job", NewReporter())
+	metrics.RegisterReporter("job", NewReporter())
 }
 
 func NewReporter() *Reporter {

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package metric
+package metrics
 
 import (
 	"reflect"
@@ -41,7 +41,7 @@ func NewDetails() *Details {
 	}
 }
 
-// Details is the struct to hold the calculated result and index by metric label
+// Details is the struct to hold the calculated result and index by metrics label
 type Details struct {
 	// Summary is the calculation results of the details
 	Summary float64
@@ -94,7 +94,7 @@ func (cm *Details) ForEach(f func(labels []*dto.LabelPair, v float64) (next bool
 	}
 }
 
-// Metrics is the struct to hold the Details objects store and index by metric name
+// Metrics is the struct to hold the Details objects store and index by metrics name
 type Metrics struct {
 	mapper map[string]*Details
 }

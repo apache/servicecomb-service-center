@@ -26,7 +26,7 @@ import (
 
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/metric"
+	"github.com/apache/servicecomb-service-center/server/metrics"
 	api "github.com/apache/servicecomb-service-center/server/rest"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -35,7 +35,7 @@ import (
 var (
 	incomingRequests = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Namespace: metric.FamilyName,
+			Namespace: metrics.FamilyName,
 			Subsystem: "http",
 			Name:      "request_total",
 			Help:      "Counter of requests received into ROA handler",
@@ -43,7 +43,7 @@ var (
 
 	successfulRequests = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Namespace: metric.FamilyName,
+			Namespace: metrics.FamilyName,
 			Subsystem: "http",
 			Name:      "success_total",
 			Help:      "Counter of successful requests processed by ROA handler",
@@ -51,16 +51,16 @@ var (
 
 	reqDurations = prometheus.NewSummaryVec(
 		prometheus.SummaryOpts{
-			Namespace:  metric.FamilyName,
+			Namespace:  metrics.FamilyName,
 			Subsystem:  "http",
 			Name:       "request_durations_microseconds",
 			Help:       "HTTP request latency summary of ROA handler",
-			Objectives: metric.Pxx,
+			Objectives: metrics.Pxx,
 		}, []string{"method", "instance", "api", "domain"})
 
 	queryPerSeconds = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Namespace: metric.FamilyName,
+			Namespace: metrics.FamilyName,
 			Subsystem: "http",
 			Name:      "query_per_seconds",
 			Help:      "HTTP requests per seconds of ROA handler",
@@ -75,7 +75,7 @@ func init() {
 }
 
 func ReportRequestCompleted(w http.ResponseWriter, r *http.Request, start time.Time) {
-	instance := metric.InstanceName()
+	instance := metrics.InstanceName()
 	elapsed := float64(time.Since(start).Nanoseconds()) / float64(time.Microsecond)
 	route, _ := r.Context().Value(rest.CtxMatchFunc).(string)
 	domain := util.ParseDomain(r.Context())
