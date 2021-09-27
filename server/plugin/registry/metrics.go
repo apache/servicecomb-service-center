@@ -20,7 +20,7 @@ package registry
 import (
 	"time"
 
-	"github.com/apache/servicecomb-service-center/server/metric"
+	"github.com/apache/servicecomb-service-center/server/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -32,7 +32,7 @@ const (
 var (
 	backendCounter = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Namespace: metric.FamilyName,
+			Namespace: metrics.FamilyName,
 			Subsystem: "db",
 			Name:      "backend_total",
 			Help:      "Gauge of the backend instance",
@@ -40,7 +40,7 @@ var (
 
 	operationCounter = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Namespace: metric.FamilyName,
+			Namespace: metrics.FamilyName,
 			Subsystem: "db",
 			Name:      "backend_operation_total",
 			Help:      "Counter of backend operation",
@@ -48,11 +48,11 @@ var (
 
 	operationLatency = prometheus.NewSummaryVec(
 		prometheus.SummaryOpts{
-			Namespace:  metric.FamilyName,
+			Namespace:  metrics.FamilyName,
 			Subsystem:  "db",
 			Name:       "backend_operation_durations_microseconds",
 			Help:       "Latency of backend operation",
-			Objectives: metric.Pxx,
+			Objectives: metrics.Pxx,
 		}, []string{"instance", "operation", "status"})
 )
 
@@ -61,12 +61,12 @@ func init() {
 }
 
 func ReportBackendInstance(c int) {
-	instance := metric.InstanceName()
+	instance := metrics.InstanceName()
 	backendCounter.WithLabelValues(instance).Set(float64(c))
 }
 
 func ReportBackendOperationCompleted(operation string, err error, start time.Time) {
-	instance := metric.InstanceName()
+	instance := metrics.InstanceName()
 	elapsed := float64(time.Since(start).Nanoseconds()) / float64(time.Microsecond)
 	status := success
 	if err != nil {

@@ -21,12 +21,10 @@ import (
 )
 
 func init() {
-	discovery.AddEventHandler(NewDomainEventHandler())
 	discovery.AddEventHandler(NewServiceEventHandler())
 	discovery.AddEventHandler(NewInstanceEventHandler())
 	discovery.AddEventHandler(NewRuleEventHandler())
 	discovery.AddEventHandler(NewTagEventHandler())
 	discovery.AddEventHandler(NewDependencyEventHandler())
 	discovery.AddEventHandler(NewDependencyRuleEventHandler())
-	discovery.AddEventHandler(NewSchemaSummaryEventHandler())
 }

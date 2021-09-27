@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package metric
+package metrics
 
 import (
 	"context"
@@ -29,28 +29,28 @@ import (
 )
 
 // Gatherer is the reader of sc metrics
-var Gatherer *MetricsGatherer
+var Gatherer *Gather
 
 func init() {
 	Gatherer = NewGatherer()
 	Gatherer.Start()
 }
 
-func NewGatherer() *MetricsGatherer {
-	return &MetricsGatherer{
+func NewGatherer() *Gather {
+	return &Gather{
 		Records: NewMetrics(),
 		closed:  true,
 	}
 }
 
-type MetricsGatherer struct {
+type Gather struct {
 	Records *Metrics
 
 	lock   sync.Mutex
 	closed bool
 }
 
-func (mm *MetricsGatherer) Start() {
+func (mm *Gather) Start() {
 	mm.lock.Lock()
 	if !mm.closed {
 		mm.lock.Unlock()
@@ -63,7 +63,7 @@ func (mm *MetricsGatherer) Start() {
 	mm.lock.Unlock()
 }
 
-func (mm *MetricsGatherer) loop(ctx context.Context) {
+func (mm *Gather) loop(ctx context.Context) {
 	ticker := time.NewTicker(Period)
 	for {
 		select {
@@ -80,7 +80,7 @@ func (mm *MetricsGatherer) loop(ctx context.Context) {
 	}
 }
 
-func (mm *MetricsGatherer) Collect() error {
+func (mm *Gather) Collect() error {
 	mfs, err := prometheus.DefaultGatherer.Gather()
 	if err != nil {
 		return err

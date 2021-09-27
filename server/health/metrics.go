@@ -22,7 +22,7 @@ import (
 
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/metric"
+	"github.com/apache/servicecomb-service-center/server/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -31,7 +31,7 @@ const durationReportCPUUsage = 3 * time.Second
 var (
 	cpuGauge = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Namespace: metric.FamilyName,
+			Namespace: metrics.FamilyName,
 			Subsystem: "process",
 			Name:      "cpu_usage",
 			Help:      "Process cpu usage",
@@ -55,7 +55,7 @@ func AutoReportCPUUsage(ctx context.Context) {
 			return
 		case <-time.After(durationReportCPUUsage):
 			pt, ct := util.GetProcCPUUsage()
-			cpuGauge.WithLabelValues(metric.InstanceName()).Set(
+			cpuGauge.WithLabelValues(metrics.InstanceName()).Set(
 				(pt - cpuProc) * float64(cpus) / (ct - cpuTotal))
 			cpuTotal, cpuProc = ct, pt
 		}

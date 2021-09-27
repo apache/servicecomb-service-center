@@ -14,33 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package event
+package metrics
 
-import (
-	"github.com/apache/servicecomb-service-center/pkg/registry"
-	"github.com/apache/servicecomb-service-center/server/core/backend"
-	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
-	"github.com/apache/servicecomb-service-center/server/service/metrics"
-)
+import "testing"
 
-// DomainEventHandler report domain & project total number
-type DomainEventHandler struct {
-}
-
-func (h *DomainEventHandler) Type() discovery.Type {
-	return backend.DOMAIN
-}
-
-func (h *DomainEventHandler) OnEvent(evt discovery.KvEvent) {
-	action := evt.Type
-	switch action {
-	case registry.EVT_INIT, registry.EVT_CREATE:
-		metrics.ReportDomains(1)
-	case registry.EVT_DELETE:
-		metrics.ReportDomains(-1)
+func TestMetricsGatherer_Collect(t *testing.T) {
+	g := NewGatherer()
+	err := g.Collect()
+	if err != nil {
+		t.Fatalf("TestMetricsGatherer_Collect")
 	}
-}
-
-func NewDomainEventHandler() *DomainEventHandler {
-	return &DomainEventHandler{}
 }

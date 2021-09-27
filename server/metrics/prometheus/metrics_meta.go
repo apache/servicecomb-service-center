@@ -15,11 +15,10 @@
  * limitations under the License.
  */
 
-package metrics
+package prometheus
 
 import (
-	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/metric"
+	"github.com/apache/servicecomb-service-center/server/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -32,87 +31,56 @@ const (
 	KeyFrameworkTotal = "framework_total"
 
 	SubSystem = "db"
-)
 
-// Key return metrics key
-func Key(name string) string {
-	return util.StringJoin([]string{SubSystem, name}, "_")
-}
+	LabelInstance         = "instance"
+	LabelFramework        = "framework"
+	LabelFrameworkVersion = "frameworkVersion"
+	LabelDomain           = "domain"
+	LabelProject          = "project"
+)
 
 var (
 	domainCounter = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Namespace: metric.FamilyName,
+			Namespace: metrics.FamilyName,
 			Subsystem: SubSystem,
 			Name:      KeyDomainTotal,
 			Help:      "Gauge of domain created in Service Center",
-		}, []string{"instance"})
+		}, []string{LabelInstance})
 
 	serviceCounter = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Namespace: metric.FamilyName,
+			Namespace: metrics.FamilyName,
 			Subsystem: "db",
 			Name:      KeyServiceTotal,
 			Help:      "Gauge of microservice created in Service Center",
-		}, []string{"instance", "framework", "frameworkVersion", "domain"})
+		}, []string{LabelInstance, LabelFramework, LabelFrameworkVersion, LabelDomain, LabelProject})
 
 	instanceCounter = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Namespace: metric.FamilyName,
+			Namespace: metrics.FamilyName,
 			Subsystem: SubSystem,
 			Name:      KeyInstanceTotal,
 			Help:      "Gauge of microservice created in Service Center",
-		}, []string{"instance", "domain"})
+		}, []string{LabelInstance, LabelFramework, LabelFrameworkVersion, LabelDomain, LabelProject})
 
 	schemaCounter = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Namespace: metric.FamilyName,
+			Namespace: metrics.FamilyName,
 			Subsystem: SubSystem,
 			Name:      KeySchemaTotal,
 			Help:      "Gauge of schema created in Service Center",
-		}, []string{"instance", "domain"})
+		}, []string{LabelInstance, LabelDomain, LabelProject})
 
 	frameworkCounter = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Namespace: metric.FamilyName,
+			Namespace: metrics.FamilyName,
 			Subsystem: SubSystem,
 			Name:      KeyFrameworkTotal,
 			Help:      "Gauge of client framework info in Service Center",
-		}, metric.ToLabelNames(Framework{}))
+		}, []string{LabelInstance, LabelFramework, LabelFrameworkVersion, LabelDomain, LabelProject})
 )
-
-// Framework return framework info.
-type Framework struct {
-	DomainName       string `json:"domainName"`
-	ProjectName      string `json:"projectName"`
-	FrameWork        string `json:"framework"`
-	FrameworkVersion string `json:"frameworkVersion"`
-}
 
 func init() {
 	prometheus.MustRegister(domainCounter, serviceCounter, instanceCounter, schemaCounter, frameworkCounter)
-}
-
-func ReportDomains(c float64) {
-	instance := metric.InstanceName()
-	domainCounter.WithLabelValues(instance).Add(c)
-}
-
-func ReportServices(domain, framework, frameworkVersion string, c float64) {
-	instance := metric.InstanceName()
-	serviceCounter.WithLabelValues(instance, framework, frameworkVersion, domain).Add(c)
-}
-
-func ReportInstances(domain string, c float64) {
-	instance := metric.InstanceName()
-	instanceCounter.WithLabelValues(instance, domain).Add(c)
-}
-
-func ReportSchemas(domain string, c float64) {
-	instance := metric.InstanceName()
-	schemaCounter.WithLabelValues(instance, domain).Add(c)
-}
-
-func ReportFramework(domainName, projectName string, framework, frameworkVersion string, c float64) {
-	frameworkCounter.WithLabelValues(domainName, projectName, framework, frameworkVersion).Add(c)
 }

@@ -21,7 +21,7 @@ import (
 	"time"
 
 	"github.com/apache/servicecomb-service-center/pkg/event"
-	"github.com/apache/servicecomb-service-center/server/metric"
+	"github.com/apache/servicecomb-service-center/server/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -33,7 +33,7 @@ const (
 var (
 	notifyCounter = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Namespace: metric.FamilyName,
+			Namespace: metrics.FamilyName,
 			Subsystem: "notify",
 			Name:      "publish_total",
 			Help:      "Counter of publishing instance events",
@@ -41,16 +41,16 @@ var (
 
 	notifyLatency = prometheus.NewSummaryVec(
 		prometheus.SummaryOpts{
-			Namespace:  metric.FamilyName,
+			Namespace:  metrics.FamilyName,
 			Subsystem:  "notify",
 			Name:       "publish_durations_microseconds",
 			Help:       "Latency of publishing instance events",
-			Objectives: metric.Pxx,
+			Objectives: metrics.Pxx,
 		}, []string{"instance", "source", "status"})
 
 	pendingGauge = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Namespace: metric.FamilyName,
+			Namespace: metrics.FamilyName,
 			Subsystem: "notify",
 			Name:      "pending_total",
 			Help:      "Counter of pending instance events",
@@ -58,16 +58,16 @@ var (
 
 	pendingLatency = prometheus.NewSummaryVec(
 		prometheus.SummaryOpts{
-			Namespace:  metric.FamilyName,
+			Namespace:  metrics.FamilyName,
 			Subsystem:  "notify",
 			Name:       "pending_durations_microseconds",
 			Help:       "Latency of pending instance events",
-			Objectives: metric.Pxx,
+			Objectives: metrics.Pxx,
 		}, []string{"instance", "source"})
 
 	subscriberGauge = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Namespace: metric.FamilyName,
+			Namespace: metrics.FamilyName,
 			Subsystem: "notify",
 			Name:      "subscriber_total",
 			Help:      "Gauge of subscribers",
@@ -79,7 +79,7 @@ func init() {
 }
 
 func ReportPublishCompleted(evt event.Event, err error) {
-	instance := metric.InstanceName()
+	instance := metrics.InstanceName()
 	elapsed := float64(time.Since(evt.CreateAt()).Nanoseconds()) / float64(time.Microsecond)
 	status := success
 	if err != nil {
@@ -91,14 +91,14 @@ func ReportPublishCompleted(evt event.Event, err error) {
 }
 
 func ReportPendingCompleted(evt event.Event) {
-	instance := metric.InstanceName()
+	instance := metrics.InstanceName()
 	elapsed := float64(time.Since(evt.CreateAt()).Nanoseconds()) / float64(time.Microsecond)
 	pendingLatency.WithLabelValues(instance, evt.Type().String()).Observe(elapsed)
 	pendingGauge.WithLabelValues(instance, evt.Type().String()).Inc()
 }
 
 func ReportSubscriber(domain, scheme string, n float64) {
-	instance := metric.InstanceName()
+	instance := metrics.InstanceName()
 
 	subscriberGauge.WithLabelValues(instance, domain, scheme).Add(n)
 }

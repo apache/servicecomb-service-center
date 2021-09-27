@@ -19,7 +19,7 @@ package etcd
 import (
 	"testing"
 
-	"github.com/apache/servicecomb-service-center/server/metric"
+	"github.com/apache/servicecomb-service-center/server/metrics"
 	"github.com/astaxie/beego"
 )
 
@@ -29,17 +29,17 @@ func init() {
 
 func TestReportCacheSize(t *testing.T) {
 	ReportCacheSize("a", "b", 100)
-	err := metric.Gatherer.Collect()
+	err := metrics.Gatherer.Collect()
 	if err != nil {
 		t.Fatalf("TestReportCacheSize failed")
 	}
-	if metric.Gatherer.Records.Summary("local_cache_size_bytes") != 100 {
+	if metrics.Gatherer.Records.Summary("local_cache_size_bytes") != 100 {
 		t.Fatalf("TestReportCacheSize failed")
 	}
 
 	ReportCacheSize("", "b", 200)
-	err = metric.Gatherer.Collect()
-	if metric.Gatherer.Records.Summary("local_cache_size_bytes") != 100 {
+	err = metrics.Gatherer.Collect()
+	if metrics.Gatherer.Records.Summary("local_cache_size_bytes") != 100 {
 		t.Fatalf("TestReportCacheSize failed")
 	}
 }

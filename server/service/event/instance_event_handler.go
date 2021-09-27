@@ -30,13 +30,7 @@ import (
 	"github.com/apache/servicecomb-service-center/server/event"
 	"github.com/apache/servicecomb-service-center/server/plugin/discovery"
 	"github.com/apache/servicecomb-service-center/server/service/cache"
-	"github.com/apache/servicecomb-service-center/server/service/metrics"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
-)
-
-const (
-	increaseOne = 1
-	decreaseOne = -1
 )
 
 // InstanceEventHandler is the handler to handle:
@@ -57,33 +51,19 @@ func (h *InstanceEventHandler) OnEvent(evt discovery.KvEvent) {
 	providerID, providerInstanceID, domainProject := apt.GetInfoFromInstKV(evt.KV.Key)
 	idx := strings.Index(domainProject, "/")
 	domainName := domainProject[:idx]
-	projectName := domainProject[idx+1:]
 
 	ctx := context.WithValue(context.WithValue(context.Background(),
 		util.CtxCacheOnly, "1"),
 		util.CtxGlobal, "1")
 
-	var count float64 = increaseOne
 	if action == pb.EVT_INIT {
-		metrics.ReportInstances(domainName, count)
-		ms, err := serviceUtil.GetService(ctx, domainProject, providerID)
-		if err != nil {
-			log.Warnf("caught [%s] instance[%s/%s] event, endpoints %v, get cached provider's file failed",
-				action, providerID, providerInstanceID, instance.Endpoints)
-			return
-		}
-		frameworkName, frameworkVersion := getFramework(ms)
-		metrics.ReportFramework(domainName, projectName, frameworkName, frameworkVersion, count)
 		return
 	}
 
-	if action == pb.EVT_DELETE {
-		count = decreaseOne
-		if !apt.IsDefaultDomainProject(domainProject) {
-			projectName := domainProject[idx+1:]
-			serviceUtil.RemandInstanceQuota(
-				util.SetDomainProject(context.Background(), domainName, projectName))
-		}
+	if action == pb.EVT_DELETE && !apt.IsDefaultDomainProject(domainProject) {
+		projectName := domainProject[idx+1:]
+		serviceUtil.RemandInstanceQuota(
+			util.SetDomainProject(context.Background(), domainName, projectName))
 	}
 
 	// 查询服务版本信息
@@ -98,12 +78,6 @@ func (h *InstanceEventHandler) OnEvent(evt discovery.KvEvent) {
 		log.Warnf("caught [%s] instance[%s/%s] event, endpoints %v, but notify service is closed",
 			action, providerID, providerInstanceID, instance.Endpoints)
 		return
-	}
-
-	if action != pb.EVT_UPDATE {
-		frameworkName, frameworkVersion := getFramework(ms)
-		metrics.ReportInstances(domainName, count)
-		metrics.ReportFramework(domainName, projectName, frameworkName, frameworkVersion, count)
 	}
 
 	log.Infof("caught [%s] service[%s][%s/%s/%s/%s] instance[%s] event, endpoints %v",

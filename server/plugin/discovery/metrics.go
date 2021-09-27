@@ -19,14 +19,14 @@ package discovery
 import (
 	"time"
 
-	"github.com/apache/servicecomb-service-center/server/metric"
+	"github.com/apache/servicecomb-service-center/server/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
 var (
 	eventsCounter = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Namespace: metric.FamilyName,
+			Namespace: metrics.FamilyName,
 			Subsystem: "db",
 			Name:      "backend_event_total",
 			Help:      "Counter of backend events",
@@ -34,16 +34,16 @@ var (
 
 	eventsLatency = prometheus.NewSummaryVec(
 		prometheus.SummaryOpts{
-			Namespace:  metric.FamilyName,
+			Namespace:  metrics.FamilyName,
 			Subsystem:  "db",
 			Name:       "backend_event_durations_microseconds",
 			Help:       "Latency of backend events processing",
-			Objectives: metric.Pxx,
+			Objectives: metrics.Pxx,
 		}, []string{"instance", "prefix"})
 
 	dispatchCounter = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Namespace: metric.FamilyName,
+			Namespace: metrics.FamilyName,
 			Subsystem: "db",
 			Name:      "dispatch_event_total",
 			Help:      "Counter of backend events dispatch",
@@ -51,11 +51,11 @@ var (
 
 	dispatchLatency = prometheus.NewSummaryVec(
 		prometheus.SummaryOpts{
-			Namespace:  metric.FamilyName,
+			Namespace:  metrics.FamilyName,
 			Subsystem:  "db",
 			Name:       "dispatch_event_durations_microseconds",
 			Help:       "Latency of backend events dispatch",
-			Objectives: metric.Pxx,
+			Objectives: metrics.Pxx,
 		}, []string{"instance", "prefix"})
 )
 
@@ -68,7 +68,7 @@ func ReportProcessEventCompleted(prefix string, evts []KvEvent) {
 	if l == 0 {
 		return
 	}
-	instance := metric.InstanceName()
+	instance := metrics.InstanceName()
 	now := time.Now()
 	for _, evt := range evts {
 		elapsed := float64(now.Sub(evt.CreateAt.Local()).Nanoseconds()) / float64(time.Microsecond)
@@ -83,7 +83,7 @@ func ReportDispatchEventCompleted(prefix string, evts []KvEvent) {
 	if l == 0 {
 		return
 	}
-	instance := metric.InstanceName()
+	instance := metrics.InstanceName()
 	now := time.Now()
 	for _, evt := range evts {
 		elapsed := float64(now.Sub(evt.CreateAt.Local()).Nanoseconds()) / float64(time.Microsecond)

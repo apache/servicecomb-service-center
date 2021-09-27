@@ -21,6 +21,7 @@ import (
 
 	"github.com/apache/servicecomb-service-center/pkg/registry"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/go-chassis/foundation/stringutil"
 )
 
 func KvToResponse(key []byte) (keys []string) {
@@ -166,4 +167,8 @@ func GetInfoFromDependencyRuleKV(key []byte) (t string, _ *registry.MicroService
 		ServiceName: keys[l-2],
 		Version:     keys[l-1],
 	}
+}
+
+func SplitDomainProject(domainProject string) (string, string) {
+	return stringutil.SplitToTwo(domainProject, SPLIT)
 }
