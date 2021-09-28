@@ -13,7 +13,7 @@ require (
 	github.com/go-chassis/foundation v0.3.1-0.20210811025651-7f4d2b2b906c
 	github.com/go-chassis/go-archaius v1.5.1
 	github.com/go-chassis/go-chassis/v2 v2.3.0
-	github.com/go-chassis/kie-client v0.1.1-0.20210731071824-96f1f1e47e71
+	github.com/go-chassis/kie-client v0.1.1-0.20210926011742-97eed4281056
 	github.com/go-chassis/openlog v1.1.3
 	github.com/go-kit/kit v0.10.0 // indirect
 	github.com/golang-jwt/jwt v3.2.1+incompatible
