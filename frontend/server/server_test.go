@@ -14,17 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package main
+package server
 
 import (
 	"io/ioutil"
 	"net/http"
+	"os"
+	"path/filepath"
 	"sync"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/labstack/echo/v4"
+	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -32,12 +33,17 @@ const (
 	FrontAddr = "127.0.0.1:30104"
 )
 
+func init() {
+	wd, _ := os.Getwd()
+	_ = os.Chdir(filepath.Join(wd, "../"))
+}
+
 func TestStatic(t *testing.T) {
 	var wg sync.WaitGroup
 
 	cfg := Config{
-		scAddr:       "http://" + SCAddr,
-		frontendAddr: FrontAddr,
+		SCAddr:       "http://" + SCAddr,
+		FrontendAddr: FrontAddr,
 	}
 
 	wg.Add(1)
@@ -88,8 +94,8 @@ func TestDirectoryTraversal(t *testing.T) {
 	var wg sync.WaitGroup
 
 	cfg := Config{
-		scAddr:       "http://" + SCAddr,
-		frontendAddr: FrontAddr,
+		SCAddr:       "http://" + SCAddr,
+		FrontendAddr: FrontAddr,
 	}
 
 	wg.Add(1)
