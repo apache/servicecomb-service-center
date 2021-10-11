@@ -121,7 +121,7 @@ func (router *Router) serve(ph *urlPatternHandler, w http.ResponseWriter, r *htt
 		Invoke(doNothingFunc)
 }
 
-// NewRouter news an Router
+// NewRouter news a Router
 func NewRouter() *Router {
 	return &Router{
 		handlers: make(map[string][]*urlPatternHandler),

@@ -86,10 +86,14 @@ func GetRBAC() ServerConfigDetail {
 func Init() {
 	setCPUs()
 
-	err := archaius.Init(archaius.WithMemorySource(), archaius.WithENVSource(),
-		archaius.WithOptionalFiles([]string{filepath.Join(util.GetAppRoot(), "conf", "app.yaml")}))
+	err := archaius.Init(archaius.WithMemorySource(), archaius.WithENVSource())
 	if err != nil {
 		log.Fatal("can not init archaius", err)
+	}
+
+	err = archaius.AddFile(filepath.Join(util.GetAppRoot(), "conf", "app.yaml"))
+	if err != nil {
+		log.Warn(fmt.Sprintf("can not add config file source, error: %s", err))
 	}
 
 	err = Reload()

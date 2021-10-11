@@ -612,6 +612,12 @@ github.com/lightstep/lightstep-tracer-go v0.18.1 h1:vi1F1IQ8N7hNWytK9DpJsUfQhGuN
 github.com/lightstep/lightstep-tracer-go v0.18.1/go.mod h1:jlF1pusYV4pidLvZ+XD0UBX0ZE6WURAspgAczcDHrL4=
 github.com/little-cui/etcdadpt v0.1.4-0.20210902120751-b6d0212f913e h1:pcA89qPpIdaBur0ha7RCfKDv5jK2LnilHrTS2FPkzYY=
 github.com/little-cui/etcdadpt v0.1.4-0.20210902120751-b6d0212f913e/go.mod h1:727wftF2FS4vfkgFLmIvQue1XH+9u4lK2/hd6L7OAC8=
+github.com/little-cui/etcdadpt v0.2.0 h1:6UE6CHzKHVMSb4jkBjWynVBV+2QC+XfMkYW80j10wtM=
+github.com/little-cui/etcdadpt v0.2.0/go.mod h1:727wftF2FS4vfkgFLmIvQue1XH+9u4lK2/hd6L7OAC8=
+github.com/little-cui/etcdadpt v0.2.1-0.20211011160708-27df691edc3e h1:wdFXNX2cusZPoIKsRw003s+TbFQ6A0h89IEQNcZ4ml0=
+github.com/little-cui/etcdadpt v0.2.1-0.20211011160708-27df691edc3e/go.mod h1:727wftF2FS4vfkgFLmIvQue1XH+9u4lK2/hd6L7OAC8=
+github.com/little-cui/etcdadpt v0.2.1 h1:eT1A+BV1/2/dmmZA2Nl+cc7uTMuwd6T6DD+JrXr8xcA=
+github.com/little-cui/etcdadpt v0.2.1/go.mod h1:727wftF2FS4vfkgFLmIvQue1XH+9u4lK2/hd6L7OAC8=
 github.com/lyft/protoc-gen-validate v0.0.13 h1:KNt/RhmQTOLr7Aj8PsJ7mTronaFyx80mRTT9qF261dA=
 github.com/lyft/protoc-gen-validate v0.0.13/go.mod h1:XbGvPuh87YZc5TdIa2/I4pLk0QoUACkjt2znoq26NVQ=
 github.com/magiconair/properties v1.8.1 h1:ZC2Vc7/ZFkGmsVC9KvOjumD+G5lXy2RtTKyzRKO2BQ4=
