@@ -119,6 +119,7 @@ func (s *ServiceCenterServer) initDatasource() {
 	if err := datasource.Init(datasource.Options{
 		Config: etcdadpt.Config{
 			Kind:       kind,
+			Logger:     log.Logger,
 			SslEnabled: config.GetSSL().SslEnabled,
 			TLSConfig:  tlsConfig,
 			ConnectedFunc: func() {

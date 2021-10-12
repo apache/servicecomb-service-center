@@ -149,10 +149,7 @@ func (h *DependencyEventHandler) Handle() error {
 
 	key := path.GetServiceDependencyQueueRootKey("")
 	resp, err := sd.DependencyQueue().Search(context.Background(), etcdadpt.WithNoCache(),
-		etcdadpt.WithStrKey(key), etcdadpt.WithPrefix(),
-		etcdadpt.WithOrderByCreate(), etcdadpt.WithAscendOrder(),
-		// get one page
-		etcdadpt.WithLimit(etcdadpt.DefaultPageCount))
+		etcdadpt.WithStrKey(key), etcdadpt.WithPrefix())
 	if err != nil {
 		return err
 	}

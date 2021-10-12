@@ -105,7 +105,7 @@ registry:
       # endpoints: sc-0=http://127.0.0.1:2380
       # if registry_plugin equals to 'etcd', then
       # endpoints: 127.0.0.1:2379
-      endpoints: 127.0.0.1:2379
+      endpoints: http://127.0.0.1:2379
     # the timeout for failing to establish a connection
     connect:
       timeout: 10s
