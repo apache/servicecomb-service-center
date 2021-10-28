@@ -1,4 +1,25 @@
-# All Metrics
+# Metrics
+
+---
+
+## How to export the metrics
+
+Service-Center is compatible with the [Prometheus](https://prometheus.io/) standard.
+By default, the full metrics can be collected by accessing the `/metrics` API through the `30100` port.
+
+If you want to customize the metrics configuration.
+```yaml
+metrics:
+  enable: true # enable to start metrics gather
+  interval: 30s # the duration of collection
+  exporter: prometheus # use the prometheus exporter
+  prometheus:
+    # optional, listen another ip-port and path if set, e.g. http://127.0.0.1:80/other
+    listenURL:
+```
+
+
+## Summary
 
 **FamilyName**: service_center 
 

@@ -230,7 +230,7 @@ func (s *ServiceCenterServer) startServices() {
 
 func (s *ServiceCenterServer) startAPIService() {
 	core.Instance.HostName = util.HostName()
-	s.APIServer.AddListener(s.Endpoint.Host, s.Endpoint.Port)
+	s.APIServer.Listen(s.Endpoint.Host, s.Endpoint.Port)
 	s.APIServer.Start()
 }
 

@@ -53,7 +53,7 @@ func InitAPI() {
 }
 
 type APIServer struct {
-	Listeners  []string
+	HostPort   string
 	HTTPServer *rest.Server
 
 	isClose   bool
@@ -78,11 +78,11 @@ func (s *APIServer) MarkForked() {
 	s.forked = true
 }
 
-func (s *APIServer) AddListener(ip, port string) {
+func (s *APIServer) Listen(ip, port string) {
 	if len(ip) == 0 {
 		return
 	}
-	s.Listeners = append(s.Listeners, net.JoinHostPort(ip, port))
+	s.HostPort = net.JoinHostPort(ip, port)
 }
 
 func (s *APIServer) populateEndpoint(ipPort string) {
@@ -97,24 +97,22 @@ func (s *APIServer) populateEndpoint(ipPort string) {
 }
 
 func (s *APIServer) serve() (err error) {
-	for i, addr := range s.Listeners {
-		s.HTTPServer, err = rs.NewServer(addr)
-		if err != nil {
+	s.HTTPServer, err = rs.NewServer(s.HostPort)
+	if err != nil {
+		return
+	}
+	log.Info(fmt.Sprintf("listen address: rest://%s", s.HTTPServer.Listener.Addr().String()))
+
+	s.populateEndpoint(s.HTTPServer.Listener.Addr().String())
+
+	s.goroutine.Do(func(_ context.Context) {
+		err := s.HTTPServer.Serve()
+		if s.isClose {
 			return
 		}
-		log.Info(fmt.Sprintf("listen address[%d]: rest://%s", i, s.HTTPServer.Listener.Addr().String()))
-
-		s.populateEndpoint(s.HTTPServer.Listener.Addr().String())
-
-		s.goroutine.Do(func(_ context.Context) {
-			err := s.HTTPServer.Serve()
-			if s.isClose {
-				return
-			}
-			log.Error(fmt.Sprintf("error to serve %s", addr), err)
-			s.err <- err
-		})
-	}
+		log.Error(fmt.Sprintf("error to serve %s", s.HostPort), err)
+		s.err <- err
+	})
 	return
 }
 

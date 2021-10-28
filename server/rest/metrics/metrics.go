@@ -18,16 +18,20 @@
 package metrics
 
 import (
-	promutil "github.com/apache/servicecomb-service-center/pkg/prometheus"
+	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
-	"github.com/apache/servicecomb-service-center/server/rest"
 )
 
-const exporterPrometheus = "prometheus"
+const (
+	exporterPrometheus = "prometheus"
+)
 
 func init() {
 	if config.GetString("metrics.exporter", "") != exporterPrometheus {
 		return
 	}
-	rest.RegisterServerHandler("/metrics", promutil.HTTPHandler())
+	err := ListenAndServe()
+	if err != nil {
+		log.Error("metrics server listen and serve failed", err)
+	}
 }
