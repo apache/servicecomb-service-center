@@ -172,6 +172,9 @@ metrics:
   enable: true
   interval: 30s
   exporter: prometheus
+  prometheus:
+    # optional, listen another ip-port and path if set, e.g. http://127.0.0.1:80/other
+    listenURL:
 
 tracing:
   kind:
