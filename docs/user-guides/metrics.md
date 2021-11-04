@@ -24,40 +24,52 @@ metrics:
 **FamilyName**: service_center 
 
 ### Server
-1. **http_request_total**: The total number of received service requests.
-1. **http_success_total**: Total number of requests responding to status code 2xx or 3xx.
-1. **http_request_durations_microseconds**: The latency of http requests.
-1. **http_query_per_seconds**: TPS of http requests.
+
+|metric|type|description|
+|:---|:---:|:---|
+|http_request_total|counter|The total number of received service requests.|
+|http_success_total|counter|Total number of requests responding to status code 2xx or 3xx.|
+|http_request_durations_microseconds|summary|The latency of http requests.|
+|http_query_per_seconds|gauge|TPS of http requests.|
 
 ### Pub/Sub
-1. **notify_publish_total**: The total number of instance events.
-1. **notify_publish_durations_microseconds**: The latency between the event generated in ServiceCenter and received by the client.
-1. **notify_pending_total**: The total number of pending instances events.
-1. **notify_pending_durations_microseconds**: The latency of pending instances events.
-1. **notify_subscriber_total**: The total number of subscriber, e.g. Websocket, gRPC.
+
+|metric|type|description|
+|:---|:---:|:---|
+|notify_publish_total|counter|The total number of instance events.|
+|notify_publish_durations_microseconds|summary|The latency between the event generated in ServiceCenter and received by the client.|
+|notify_pending_total|counter|The total number of pending instances events.|
+|notify_pending_durations_microseconds|summary|The latency of pending instances events.|
+|notify_subscriber_total|counter|The total number of subscriber, e.g. Websocket, gRPC.|
 
 ### Meta
-1. **db_heartbeat_total**: The total number of received instance heartbeats.
-1. **db_heartbeat_durations_microseconds**: The latency of received instance heartbeats.
-1. **db_service_total**: The total number of micro-services.
-1. **db_domain_total**: The total number of domains.
-1. **db_instance_total**: The total number of instances.
-1. **db_schema_total**: The total number of schemas.
-1. **db_framework_total**: The total number of SDK frameworks.
+
+|metric|type|description|
+|:---|:---:|:---|
+|db_heartbeat_total|counter|The total number of received instance heartbeats.|
+|db_heartbeat_durations_microseconds|summary|The latency of received instance heartbeats.|
+|db_service_total|counter|The total number of micro-services.|
+|db_domain_total|counter|The total number of domains.|
+|db_instance_total|counter|The total number of instances.|
+|db_schema_total|counter|The total number of schemas.|
+|db_framework_total|counter|The total number of SDK frameworks.|
 
 ### Backend
-1. **db_backend_event_total**: The total number of received backend events, e.g. etcd, Mongo.
-1. **db_backend_event_durations_microseconds**: The latency between received backend events and finish to build cache.
-1. **db_dispatch_event_total**: The total number of dispatch events to resource handlers.
-1. **db_dispatch_event_durations_microseconds**: The latency between received backend events and finish to dispatch.
-1. **db_backend_operation_total**: The total number of backend requests, e.g. etcd, mongo.
-1. **db_backend_operation_durations_microseconds**: The latency of backend requests.
-1. **db_backend_total**: The total number of backend instances.
+
+|metric|type|description|
+|:---|:---:|:---|
+|db_backend_event_total|counter|The total number of received backend events, e.g. etcd, Mongo.|
+|db_backend_event_durations_microseconds|summary|The latency between received backend events and finish to build cache.|
+|db_dispatch_event_total|counter|The total number of dispatch events to resource handlers.|
+|db_dispatch_event_durations_microseconds|summary|The latency between received backend events and finish to dispatch.|
 
 ### System
-1. **db_sc_total**: The total number of ServiceCenter instances.
-1. process_resident_memory_bytes
-1. process_cpu_seconds_total
-1. process_cpu_usage
-1. go_threads
-1. go_goroutines
+
+|metric|type|description|
+|:---|:---:|:---|
+|db_sc_total|counter|The total number of ServiceCenter instances.|
+|process_resident_memory_bytes|||
+|process_cpu_seconds_total|||
+|process_cpu_usage|||
+|go_threads|||
+|go_goroutines|||
