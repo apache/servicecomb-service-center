@@ -61,7 +61,11 @@ func (m *MetaReporter) ServiceUsageSet() {
 		"instance": instance,
 	}
 	used := promutil.GaugeValue(KeyServiceTotal, labels)
-	if err := metrics.GaugeSet(KeyServiceUsage, used/float64(quota.DefaultServiceQuota), labels); err != nil {
+	total := float64(quota.DefaultServiceQuota)
+	if total <= 0 {
+		return
+	}
+	if err := metrics.GaugeSet(KeyServiceUsage, used/total, labels); err != nil {
 		log.Error("gauge set failed", err)
 	}
 }
@@ -84,7 +88,11 @@ func (m *MetaReporter) InstanceUsageSet() {
 		"instance": instance,
 	}
 	used := promutil.GaugeValue(KeyInstanceTotal, labels)
-	if err := metrics.GaugeSet(KeyInstanceUsage, used/float64(quota.DefaultInstanceQuota), labels); err != nil {
+	total := float64(quota.DefaultInstanceQuota)
+	if total <= 0 {
+		return
+	}
+	if err := metrics.GaugeSet(KeyInstanceUsage, used/total, labels); err != nil {
 		log.Error("gauge set failed", err)
 	}
 }

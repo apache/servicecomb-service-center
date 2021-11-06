@@ -33,7 +33,13 @@ func TestMetaReporter_ServiceUsageSet(t *testing.T) {
 	labels := map[string]string{}
 
 	reporter := metrics.MetaReporter{}
-	assert.Equal(t, 0/float64(quota.DefaultServiceQuota), promutil.GaugeValue(metrics.KeyServiceUsage, labels))
+	assert.Equal(t, float64(0), promutil.GaugeValue(metrics.KeyServiceUsage, labels))
+
+	old := quota.DefaultServiceQuota
+	quota.DefaultServiceQuota = 0
+	reporter.ServiceUsageSet()
+	assert.Equal(t, float64(0), promutil.GaugeValue(metrics.KeyServiceUsage, labels))
+	quota.DefaultServiceQuota = old
 
 	reporter.ServiceAdd(1, datasource.MetricsLabels{Domain: "D1", Project: "P1"})
 	reporter.ServiceUsageSet()
@@ -49,7 +55,13 @@ func TestMetaReporter_InstanceUsageSet(t *testing.T) {
 	labels := map[string]string{}
 
 	reporter := metrics.MetaReporter{}
-	assert.Equal(t, 0/float64(quota.DefaultInstanceQuota), promutil.GaugeValue(metrics.KeyInstanceUsage, labels))
+	assert.Equal(t, float64(0), promutil.GaugeValue(metrics.KeyInstanceUsage, labels))
+
+	old := quota.DefaultInstanceQuota
+	quota.DefaultInstanceQuota = 0
+	reporter.InstanceUsageSet()
+	assert.Equal(t, float64(0), promutil.GaugeValue(metrics.KeyInstanceUsage, labels))
+	quota.DefaultInstanceQuota = old
 
 	reporter.InstanceAdd(1, datasource.MetricsLabels{Domain: "D1", Project: "P1"})
 	reporter.InstanceUsageSet()
