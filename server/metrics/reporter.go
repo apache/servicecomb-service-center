@@ -18,10 +18,6 @@
 package metrics
 
 import (
-	"context"
-
-	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/metrics"
 )
 
@@ -33,10 +29,5 @@ type Reporter struct {
 }
 
 func (r *Reporter) Report() {
-	ResetMetaMetrics()
-	err := datasource.GetMetricsManager().Report(context.Background(), GetMetaReporter())
-	if err != nil {
-		log.Error("report metrics failed", err)
-		return
-	}
+	ReportMetaMetrics()
 }

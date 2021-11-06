@@ -25,6 +25,7 @@ import (
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/metrics"
 	"github.com/apache/servicecomb-service-center/server/service/disco"
 	"github.com/go-chassis/go-archaius"
 	"github.com/little-cui/etcdadpt"
@@ -32,20 +33,22 @@ import (
 
 func init() {
 	var kind = "etcd"
-	archaius.Set("rbac.releaseLockAfter", "3s")
+	_ = archaius.Set("rbac.releaseLockAfter", "3s")
 	if IsETCD() {
-		archaius.Set("registry.cache.mode", 0)
-		archaius.Set("discovery.kind", "etcd")
-		archaius.Set("registry.kind", "etcd")
+		_ = archaius.Set("registry.cache.mode", 0)
+		_ = archaius.Set("discovery.kind", "etcd")
+		_ = archaius.Set("registry.kind", "etcd")
 	} else {
-		archaius.Set("registry.heartbeat.kind", "checker")
+		_ = archaius.Set("registry.heartbeat.kind", "checker")
 		kind = "mongo"
 	}
-	datasource.Init(datasource.Options{
+	_ = datasource.Init(datasource.Options{
 		Config: etcdadpt.Config{
 			Kind: kind,
 		},
 	})
+	_ = metrics.Init(metrics.Options{})
+
 	core.ServiceAPI = disco.AssembleResources()
 }
 

@@ -18,9 +18,13 @@
 package metrics
 
 import (
+	"context"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	metricsvc "github.com/apache/servicecomb-service-center/pkg/metrics"
+	promutil "github.com/apache/servicecomb-service-center/pkg/prometheus"
+	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	"github.com/go-chassis/go-chassis/v2/pkg/metrics"
 )
 
@@ -51,6 +55,16 @@ func (m *MetaReporter) ServiceAdd(delta float64, ml datasource.MetricsLabels) {
 		log.Error("gauge add failed", err)
 	}
 }
+func (m *MetaReporter) ServiceUsageSet() {
+	instance := metricsvc.InstanceName()
+	labels := map[string]string{
+		"instance": instance,
+	}
+	used := promutil.GaugeValue(KeyServiceTotal, labels)
+	if err := metrics.GaugeSet(KeyServiceUsage, used/float64(quota.DefaultServiceQuota), labels); err != nil {
+		log.Error("gauge set failed", err)
+	}
+}
 func (m *MetaReporter) InstanceAdd(delta float64, ml datasource.MetricsLabels) {
 	instance := metricsvc.InstanceName()
 	labels := map[string]string{
@@ -62,6 +76,16 @@ func (m *MetaReporter) InstanceAdd(delta float64, ml datasource.MetricsLabels) {
 	}
 	if err := metrics.GaugeAdd(KeyInstanceTotal, delta, labels); err != nil {
 		log.Error("gauge add failed", err)
+	}
+}
+func (m *MetaReporter) InstanceUsageSet() {
+	instance := metricsvc.InstanceName()
+	labels := map[string]string{
+		"instance": instance,
+	}
+	used := promutil.GaugeValue(KeyInstanceTotal, labels)
+	if err := metrics.GaugeSet(KeyInstanceUsage, used/float64(quota.DefaultInstanceQuota), labels); err != nil {
+		log.Error("gauge set failed", err)
 	}
 }
 func (m *MetaReporter) SchemaAdd(delta float64, ml datasource.MetricsLabels) {
@@ -113,4 +137,16 @@ func ResetMetaMetrics() {
 		log.Error("reset metrics failed", err)
 		return
 	}
+}
+
+func ReportMetaMetrics() {
+	ResetMetaMetrics()
+	r := GetMetaReporter()
+	err := datasource.GetMetricsManager().Report(context.Background(), r)
+	if err != nil {
+		log.Error("report metrics failed", err)
+		return
+	}
+	r.ServiceUsageSet()
+	r.InstanceUsageSet()
 }

@@ -31,6 +31,8 @@ const (
 	SubSystem            = "db"
 	KeyServiceTotal      = metricsvc.FamilyName + "_" + SubSystem + "_" + "service_total"
 	KeyInstanceTotal     = metricsvc.FamilyName + "_" + SubSystem + "_" + "instance_total"
+	KeyServiceUsage      = metricsvc.FamilyName + "_" + SubSystem + "_" + "service_usage"
+	KeyInstanceUsage     = metricsvc.FamilyName + "_" + SubSystem + "_" + "instance_usage"
 	KeyDomainTotal       = metricsvc.FamilyName + "_" + SubSystem + "_" + "domain_total"
 	KeySchemaTotal       = metricsvc.FamilyName + "_" + SubSystem + "_" + "schema_total"
 	KeyFrameworkTotal    = metricsvc.FamilyName + "_" + SubSystem + "_" + "framework_total"
@@ -67,6 +69,20 @@ func InitMetaMetrics() (err error) {
 		Key:    KeyInstanceTotal,
 		Help:   "Gauge of microservice instance created in Service Center",
 		Labels: []string{"instance", "framework", "frameworkVersion", "domain", "project"},
+	}); err != nil {
+		return
+	}
+	if err = metrics.CreateGauge(metrics.GaugeOpts{
+		Key:    KeyServiceUsage,
+		Help:   "Gauge of microservice usage in Service Center",
+		Labels: []string{"instance"},
+	}); err != nil {
+		return
+	}
+	if err = metrics.CreateGauge(metrics.GaugeOpts{
+		Key:    KeyInstanceUsage,
+		Help:   "Gauge of microservice instance usage in Service Center",
+		Labels: []string{"instance"},
 	}); err != nil {
 		return
 	}
