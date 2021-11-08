@@ -48,9 +48,11 @@ metrics:
 |:---|:---:|:---|
 |db_heartbeat_total|counter|The total number of received instance heartbeats.|
 |db_heartbeat_durations_microseconds|summary|The latency of received instance heartbeats.|
-|db_service_total|counter|The total number of micro-services.|
 |db_domain_total|counter|The total number of domains.|
+|db_service_total|counter|The total number of micro-services.|
+|db_service_usage|gauge|The usage percentage of service quota.|
 |db_instance_total|counter|The total number of instances.|
+|db_instance_usage|gauge|The usage percentage of instances.|
 |db_schema_total|counter|The total number of schemas.|
 |db_framework_total|counter|The total number of SDK frameworks.|
 
