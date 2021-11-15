@@ -26,6 +26,7 @@ import (
 	"strings"
 	"time"
 
+	syncv1 "github.com/apache/servicecomb-service-center/api/sync/v1"
 	"github.com/apache/servicecomb-service-center/datasource"
 	nf "github.com/apache/servicecomb-service-center/pkg/event"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -39,10 +40,13 @@ import (
 	"github.com/apache/servicecomb-service-center/server/event"
 	"github.com/apache/servicecomb-service-center/server/metrics"
 	"github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf"
+	"github.com/apache/servicecomb-service-center/server/rpc/sync"
 	"github.com/apache/servicecomb-service-center/server/service/gov"
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
 	snf "github.com/apache/servicecomb-service-center/server/syncernotify"
 	"github.com/go-chassis/foundation/gopool"
+	"github.com/go-chassis/go-chassis/v2"
+	chassisServer "github.com/go-chassis/go-chassis/v2/core/server"
 	"github.com/little-cui/etcdadpt"
 )
 
@@ -56,7 +60,6 @@ func Run() {
 	if err := command.ParseConfig(os.Args); err != nil {
 		log.Fatal(err.Error(), err)
 	}
-
 	server.Run()
 }
 
@@ -76,6 +79,15 @@ func (s *ServiceCenterServer) Run() {
 	s.initialize()
 
 	s.startServices()
+
+	chassis.RegisterSchema("grpc", &sync.Server{},
+		chassisServer.WithRPCServiceDesc(&syncv1.EventService_ServiceDesc))
+
+	go func() {
+		if err := chassis.Run(); err != nil {
+			log.Warn(err.Error())
+		}
+	}()
 
 	signal.RegisterListener()
 

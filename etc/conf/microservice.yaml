@@ -1,0 +1,4 @@
+servicecomb:
+  service:
+    name: servicecomb-service-center
+    version: 2.0.0

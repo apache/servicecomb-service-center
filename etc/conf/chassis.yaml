@@ -1,0 +1,20 @@
+---
+servicecomb:
+  registry:
+    disabled: true
+  protocols:
+    grpc:
+      listenAddress: 127.0.0.1:30105
+  handler:
+    chain:
+      Provider:
+        default: access-log,ratelimiter-provider,monitoring
+# ssl:
+#   Provider.cipherPlugin: default
+#   Provider.verifyPeer: false
+#   Provider.cipherSuits: TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+#   Provider.protocol: TLSv1.2
+#   Provider.caFile:
+#   Provider.certFile:
+#   Provider.keyFile:
+#   Provider.certPwdFile:

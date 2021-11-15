@@ -1,0 +1,23 @@
+syntax = "proto3";
+package api.sync.v1;
+option go_package="github.com/apache/servicecomb-service-center/api/sync/v1;v1";
+message EventList {
+  repeated Event Events= 1;
+}
+message Event {
+  string id = 1;      //entity id
+  string action = 2;  //create, delete, update
+  string subject = 3; //a entity name such as account, role, service, instance
+  map<string, string> opts = 4; //metadata or options
+  bytes value = 5; // the entity
+}
+message Results {
+  map<string, Result> results = 1; //id to result
+}
+message Result {
+  int32  code  = 1; //reuse standard http code
+  string message = 2;
+}
+service EventService {
+  rpc Sync(EventList) returns (Results) {}
+}
