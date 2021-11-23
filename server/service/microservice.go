@@ -18,13 +18,12 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
 	"time"
-
-	"github.com/apache/servicecomb-service-center/server/core/proto"
 
 	"github.com/apache/servicecomb-service-center/pkg/gopool"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -33,14 +32,13 @@ import (
 	"github.com/apache/servicecomb-service-center/server/core"
 	apt "github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/core/backend"
+	"github.com/apache/servicecomb-service-center/server/core/proto"
 	"github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	"github.com/apache/servicecomb-service-center/server/plugin/registry"
 	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
 	scerr "github.com/apache/servicecomb-service-center/server/scerror"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
-
-	"context"
 )
 
 type MicroServiceService struct {
@@ -512,6 +510,7 @@ func (s *MicroServiceService) GetServices(ctx context.Context, in *pb.GetService
 		}, err
 	}
 
+	services = apt.RemoveSharedServices(in.WithShared, util.ParseDomainProject(ctx), services)
 	return &pb.GetServicesResponse{
 		Response: proto.CreateResponse(proto.Response_SUCCESS, "Get all services successfully."),
 		Services: services,

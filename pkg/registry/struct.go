@@ -213,6 +213,7 @@ type GetServiceResponse struct {
 }
 
 type GetServicesRequest struct {
+	WithShared bool
 }
 
 type GetServicesResponse struct {

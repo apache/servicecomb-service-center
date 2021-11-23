@@ -54,7 +54,7 @@ func (governService *ResourceV4) GetGraph(w http.ResponseWriter, r *http.Request
 		graph      Graph
 		withShared = util.StringTRUE(r.URL.Query().Get("withShared"))
 	)
-	request := &pb.GetServicesRequest{}
+	request := &pb.GetServicesRequest{WithShared: withShared}
 	ctx := r.Context()
 	domainProject := util.ParseDomainProject(ctx)
 
@@ -69,10 +69,6 @@ func (governService *ResourceV4) GetGraph(w http.ResponseWriter, r *http.Request
 	}
 	nodes := make([]Node, 0, len(services))
 	for _, service := range services {
-		if governService.isSkipped(withShared, domainProject, service) {
-			continue
-		}
-
 		var node Node
 		node.Name = service.ServiceName
 		node.ID = service.ServiceId

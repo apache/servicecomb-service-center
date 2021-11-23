@@ -125,6 +125,25 @@ func IsShared(key *registry.MicroServiceKey) bool {
 	return ok
 }
 
+func RemoveSharedServices(withShared bool, domainProject string,
+	services []*registry.MicroService) []*registry.MicroService {
+	if withShared || !IsDefaultDomainProject(domainProject) {
+		return services
+	}
+
+	for i := len(services) - 1; i >= 0; i-- {
+		if !IsShared(proto.MicroServiceToKey(domainProject, services[i])) {
+			continue
+		}
+		if i == len(services)-1 {
+			services = services[0:i]
+			continue
+		}
+		services = append(services[0:i], services[i+1:]...)
+	}
+	return services
+}
+
 func IsSCInstance(ctx context.Context) bool {
 	b, _ := ctx.Value(CtxScSelf).(bool)
 	return b

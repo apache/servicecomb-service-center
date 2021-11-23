@@ -21,7 +21,10 @@ import (
 	"testing"
 
 	"github.com/apache/servicecomb-service-center/pkg/registry"
+	"github.com/apache/servicecomb-service-center/server/core/proto"
+
 	"github.com/astaxie/beego"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestPrepareSelfRegistration(t *testing.T) {
@@ -79,4 +82,82 @@ func TestSetSharedMode(t *testing.T) {
 	if !IsShared(&registry.MicroServiceKey{Tenant: "default/default", AppId: "default", Alias: "shared"}) {
 		t.Fatalf("TestSetSharedMode failed")
 	}
+}
+
+func TestRemoveSharedServices(t *testing.T) {
+	testSharedServiceName := "TestRemoveSharedServices"
+	err := os.Setenv("CSE_SHARED_SERVICES", testSharedServiceName)
+	SetSharedMode()
+	assert.NoError(t, err)
+	sharedSvc := &registry.MicroService{
+		AppId:       RegistryAppID,
+		ServiceName: testSharedServiceName,
+	}
+	noneSharedSvc := &registry.MicroService{
+		AppId:       RegistryAppID,
+		ServiceName: "a",
+	}
+
+	services := []*registry.MicroService{sharedSvc, noneSharedSvc, sharedSvc, noneSharedSvc}
+	assert.True(t, hasSharedService(services))
+	t.Run("withShared: true, should not remove shared services", func(t *testing.T) {
+		s := RemoveSharedServices(true, RegistryDomainProject, services)
+		assert.Equal(t, 4, len(s))
+	})
+	t.Run("withShared: false, but not default domain project, "+
+		"should not remove shared services", func(t *testing.T) {
+		s := RemoveSharedServices(false, "a/a", services)
+		assert.Equal(t, 4, len(s))
+	})
+	t.Run("withShared: false, default domain project, "+
+		"should remove shared services", func(t *testing.T) {
+		s := RemoveSharedServices(false, RegistryDomainProject, services)
+		assert.Equal(t, 2, len(s))
+		assert.False(t, hasSharedService(s))
+	})
+	t.Run("remove shared services", func(t *testing.T) {
+		t.Run("is shared service: [no, no, no]", func(t *testing.T) {
+			services = []*registry.MicroService{noneSharedSvc, noneSharedSvc, noneSharedSvc}
+			s := RemoveSharedServices(false, RegistryDomainProject, services)
+			assert.Equal(t, 3, len(s))
+		})
+		t.Run("is shared service: [yes]", func(t *testing.T) {
+			services = []*registry.MicroService{sharedSvc}
+			s := RemoveSharedServices(false, RegistryDomainProject, services)
+			assert.Equal(t, 0, len(s))
+			assert.False(t, hasSharedService(s))
+		})
+		t.Run("is shared service: [yes, yes, yes]", func(t *testing.T) {
+			services = []*registry.MicroService{sharedSvc, sharedSvc, sharedSvc}
+			s := RemoveSharedServices(false, RegistryDomainProject, services)
+			assert.Equal(t, 0, len(s))
+		})
+		t.Run("is shared service: [yes, yes, yes, no, no]", func(t *testing.T) {
+			services = []*registry.MicroService{sharedSvc, sharedSvc, sharedSvc, noneSharedSvc, noneSharedSvc}
+			s := RemoveSharedServices(false, RegistryDomainProject, services)
+			assert.Equal(t, 2, len(s))
+			assert.False(t, hasSharedService(s))
+		})
+		t.Run("is shared service: [no, no, yes, yes]", func(t *testing.T) {
+			services = []*registry.MicroService{noneSharedSvc, noneSharedSvc, sharedSvc, sharedSvc}
+			s := RemoveSharedServices(false, RegistryDomainProject, services)
+			assert.Equal(t, 2, len(s))
+			assert.False(t, hasSharedService(s))
+		})
+		t.Run("is shared service: [yes, no, no, yes, no, yes, yes]", func(t *testing.T) {
+			services = []*registry.MicroService{sharedSvc, noneSharedSvc, noneSharedSvc, sharedSvc, noneSharedSvc, sharedSvc, sharedSvc}
+			s := RemoveSharedServices(false, RegistryDomainProject, services)
+			assert.Equal(t, 3, len(s))
+			assert.False(t, hasSharedService(s))
+		})
+	})
+}
+
+func hasSharedService(services []*registry.MicroService) bool {
+	for _, s := range services {
+		if IsShared(proto.MicroServiceToKey(RegistryDomainProject, s)) {
+			return true
+		}
+	}
+	return false
 }
