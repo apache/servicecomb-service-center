@@ -16,7 +16,6 @@ require (
 	github.com/go-chassis/cari v0.5.1-0.20211124031617-99bda218b0cf
 	github.com/go-chassis/foundation v0.3.1-0.20210811025651-7f4d2b2b906c
 	github.com/go-chassis/go-archaius v1.5.1
-	github.com/go-chassis/go-chassis v1.8.3 // indirect
 	github.com/go-chassis/go-chassis-extension/protocol/grpc v0.0.0-20210902082902-eb5df922afcd
 	github.com/go-chassis/go-chassis/v2 v2.3.0
 	github.com/go-chassis/kie-client v0.1.1-0.20210926011742-97eed4281056
