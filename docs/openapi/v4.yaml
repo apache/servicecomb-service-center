@@ -169,6 +169,11 @@ paths:
           in: path
           required: true
           type: string
+        - name: withShared
+          in: query
+          default: false
+          description: 控制返回信息中是否包含共享服务（例如SERVICECENTER）；共享服务的domain为default，仅当该值为true且domain为default时，返回信息才会包含共享服务。
+          type: boolean
       responses:
         200:
           description: 查询成功

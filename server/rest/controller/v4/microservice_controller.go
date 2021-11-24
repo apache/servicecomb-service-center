@@ -122,7 +122,9 @@ func (s *MicroServiceService) Unregister(w http.ResponseWriter, r *http.Request)
 }
 
 func (s *MicroServiceService) GetServices(w http.ResponseWriter, r *http.Request) {
-	request := &pb.GetServicesRequest{}
+	request := &pb.GetServicesRequest{
+		WithShared: util.StringTRUE(r.URL.Query().Get("withShared")),
+	}
 	resp, err := core.ServiceAPI.GetServices(r.Context(), request)
 	if err != nil {
 		log.Error("get services failed", err)
