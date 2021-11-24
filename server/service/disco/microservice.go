@@ -202,7 +202,11 @@ func (s *MicroServiceService) GetOne(ctx context.Context, in *pb.GetServiceReque
 }
 
 func (s *MicroServiceService) GetServices(ctx context.Context, in *pb.GetServicesRequest) (*pb.GetServicesResponse, error) {
-	return datasource.GetMetadataManager().GetServices(ctx, in)
+	resp, err := datasource.GetMetadataManager().GetServices(ctx, in)
+	if err == nil && len(resp.Services) > 0 {
+		resp.Services = datasource.RemoveGlobalServices(in.WithShared, util.ParseDomainProject(ctx), resp.Services)
+	}
+	return resp, err
 }
 
 func (s *MicroServiceService) UpdateProperties(ctx context.Context, in *pb.UpdateServicePropsRequest) (*pb.UpdateServicePropsResponse, error) {

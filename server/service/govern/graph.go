@@ -65,7 +65,7 @@ type Graph struct {
 func Draw(ctx context.Context, withShared bool) (*Graph, error) {
 	var graph Graph
 
-	resp, err := core.ServiceAPI.GetServices(ctx, &discovery.GetServicesRequest{})
+	resp, err := core.ServiceAPI.GetServices(ctx, &discovery.GetServicesRequest{WithShared: withShared})
 	if err != nil {
 		return nil, discovery.NewError(discovery.ErrInternal, err.Error())
 	}
@@ -77,10 +77,6 @@ func Draw(ctx context.Context, withShared bool) (*Graph, error) {
 	domainProject := util.ParseDomainProject(ctx)
 	nodes := make([]Node, 0, len(services))
 	for _, service := range services {
-		if isSkipped(withShared, domainProject, service) {
-			continue
-		}
-
 		var node Node
 		node.Name = service.ServiceName
 		node.ID = service.ServiceId

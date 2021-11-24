@@ -239,8 +239,8 @@ var _ = Describe("MicroService Api Test", func() {
 				}
 				healthcheck := map[string]interface{}{
 					"mode":     "push",
-					"interval": 30,
-					"times":    2,
+					"interval": 60,
+					"times":    3,
 				}
 				instance := map[string]interface{}{
 					"endpoints":   endpoints,
