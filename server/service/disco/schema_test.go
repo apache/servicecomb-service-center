@@ -77,7 +77,7 @@ var _ = Describe("'Schema' service", func() {
 		Context("when create an invalid schema", func() {
 			f := func() {
 				By("service id is empty")
-				resp, err := serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
+				resp, err := disco.PutSchema(getContext(), &pb.ModifySchemaRequest{
 					ServiceId: "",
 					SchemaId:  "com.huawei.test",
 					Schema:    "create schema",
@@ -86,7 +86,7 @@ var _ = Describe("'Schema' service", func() {
 				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("service does not exist")
-				resp, err = serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
+				resp, err = disco.PutSchema(getContext(), &pb.ModifySchemaRequest{
 					ServiceId: "notExistService",
 					SchemaId:  "com.huawei.test",
 					Schema:    "create schema",
@@ -95,7 +95,7 @@ var _ = Describe("'Schema' service", func() {
 				Expect(resp.Response.GetCode()).To(Equal(pb.ErrServiceNotExists))
 
 				By("schema id is invalid")
-				resp, err = serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
+				resp, err = disco.PutSchema(getContext(), &pb.ModifySchemaRequest{
 					ServiceId: serviceIdDev,
 					SchemaId:  invalidSchemaId,
 					Schema:    "create schema",
@@ -104,7 +104,7 @@ var _ = Describe("'Schema' service", func() {
 				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("summary is invalid")
-				resp, err = serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
+				resp, err = disco.PutSchema(getContext(), &pb.ModifySchemaRequest{
 					ServiceId: serviceIdDev,
 					SchemaId:  "com.huawei.test",
 					Schema:    "create schema",
@@ -113,7 +113,7 @@ var _ = Describe("'Schema' service", func() {
 				Expect(err).To(BeNil())
 				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
-				resp, err = serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
+				resp, err = disco.PutSchema(getContext(), &pb.ModifySchemaRequest{
 					ServiceId: serviceIdDev,
 					SchemaId:  "com.huawei.test",
 					Schema:    "create schema",
@@ -135,21 +135,21 @@ var _ = Describe("'Schema' service", func() {
 		Context("when batch create invalid schemas", func() {
 			f := func() {
 				By("service does not exist")
-				respCreateService, err := serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
+				respCreateService, err := disco.PutSchemas(getContext(), &pb.ModifySchemasRequest{
 					ServiceId: "not_exist_serviceId",
 				})
 				Expect(err).To(BeNil())
 				Expect(respCreateService.Response.GetCode()).ToNot(Equal(pb.ResponseSuccess))
 
 				By("service id is empty")
-				respCreateService, err = serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
+				respCreateService, err = disco.PutSchemas(getContext(), &pb.ModifySchemasRequest{
 					ServiceId: "",
 				})
 				Expect(err).To(BeNil())
 				Expect(respCreateService.Response.GetCode()).ToNot(Equal(pb.ResponseSuccess))
 
 				By("schema id is invalid")
-				respCreateService, err = serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
+				respCreateService, err = disco.PutSchemas(getContext(), &pb.ModifySchemasRequest{
 					ServiceId: serviceIdDev,
 					Schemas: []*pb.Schema{
 						{
@@ -161,7 +161,7 @@ var _ = Describe("'Schema' service", func() {
 				Expect(respCreateService.Response.GetCode()).ToNot(Equal(pb.ResponseSuccess))
 
 				By("schema is empty")
-				respCreateService, err = serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
+				respCreateService, err = disco.PutSchemas(getContext(), &pb.ModifySchemasRequest{
 					ServiceId: serviceIdDev,
 					Schemas: []*pb.Schema{
 						{
@@ -173,7 +173,7 @@ var _ = Describe("'Schema' service", func() {
 				Expect(respCreateService.Response.GetCode()).ToNot(Equal(pb.ResponseSuccess))
 
 				By("summary is empty")
-				respCreateService, err = serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
+				respCreateService, err = disco.PutSchemas(getContext(), &pb.ModifySchemasRequest{
 					ServiceId: serviceIdDev,
 					Schemas: []*pb.Schema{
 						{
@@ -186,7 +186,7 @@ var _ = Describe("'Schema' service", func() {
 				Expect(respCreateService.Response.GetCode()).ToNot(Equal(pb.ResponseSuccess))
 
 				By("summery is invalid")
-				respCreateService, err = serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
+				respCreateService, err = disco.PutSchemas(getContext(), &pb.ModifySchemasRequest{
 					ServiceId: serviceIdDev,
 					Schemas: []*pb.Schema{
 						{
@@ -226,7 +226,7 @@ var _ = Describe("'Schema' service", func() {
 
 			It("should be failed in dev env", func() {
 				By("batch modify schemas 1")
-				respCreateSchemas, err := serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
+				respCreateSchemas, err := disco.PutSchemas(getContext(), &pb.ModifySchemasRequest{
 					ServiceId: serviceIdDev,
 					Schemas:   schemas,
 				})
@@ -234,7 +234,7 @@ var _ = Describe("'Schema' service", func() {
 				Expect(respCreateSchemas.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("batch modify schemas 2")
-				respCreateSchemas, err = serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
+				respCreateSchemas, err = disco.PutSchemas(getContext(), &pb.ModifySchemasRequest{
 					ServiceId: serviceIdDev,
 					Schemas:   schemas[:quota.DefaultSchemaQuota],
 				})
@@ -244,7 +244,7 @@ var _ = Describe("'Schema' service", func() {
 				By("modify one schema")
 				respCreateService := &pb.ModifySchemaResponse{}
 				schema := schemas[quota.DefaultSchemaQuota]
-				respCreateService, err = serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
+				respCreateService, err = disco.PutSchema(getContext(), &pb.ModifySchemaRequest{
 					ServiceId: serviceIdDev,
 					SchemaId:  schema.SchemaId,
 					Schema:    schema.Schema,
@@ -254,7 +254,7 @@ var _ = Describe("'Schema' service", func() {
 			})
 
 			It("should be failed in prod env", func() {
-				respCreateService, err := serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
+				respCreateService, err := disco.PutSchemas(getContext(), &pb.ModifySchemasRequest{
 					ServiceId: serviceIdDev,
 					Schemas:   schemas,
 				})
@@ -331,14 +331,14 @@ var _ = Describe("'Schema' service", func() {
 						Summary:  "first0summary",
 					},
 				}
-				respCreateService, err := serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
+				respCreateService, err := disco.PutSchemas(getContext(), &pb.ModifySchemasRequest{
 					ServiceId: serviceIdDev1,
 					Schemas:   schemas,
 				})
 				Expect(err).To(BeNil())
 				Expect(respCreateService.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
-				respGetAllSchema, err := serviceResource.GetAllSchemaInfo(getContext(), &pb.GetAllSchemaRequest{
+				respGetAllSchema, err := disco.ListSchema(getContext(), &pb.GetAllSchemaRequest{
 					ServiceId: serviceIdDev1,
 				})
 				Expect(err).To(BeNil())
@@ -347,7 +347,7 @@ var _ = Describe("'Schema' service", func() {
 
 				By("modify schemas when service schema id already exists")
 				schemas = []*pb.Schema{}
-				respCreateService, err = serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
+				respCreateService, err = disco.PutSchemas(getContext(), &pb.ModifySchemasRequest{
 					ServiceId: serviceIdDev2,
 					Schemas:   schemas,
 				})
@@ -362,7 +362,7 @@ var _ = Describe("'Schema' service", func() {
 						Summary:  "first0summary1change",
 					},
 				}
-				respCreateService, err = serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
+				respCreateService, err = disco.PutSchemas(getContext(), &pb.ModifySchemasRequest{
 					ServiceId: serviceIdDev1,
 					Schemas:   schemas,
 				})
@@ -377,7 +377,7 @@ var _ = Describe("'Schema' service", func() {
 						Summary:  "second0summary",
 					},
 				}
-				respCreateService, err = serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
+				respCreateService, err = disco.PutSchemas(getContext(), &pb.ModifySchemasRequest{
 					ServiceId: serviceIdDev1,
 					Schemas:   schemas,
 				})
@@ -392,7 +392,7 @@ var _ = Describe("'Schema' service", func() {
 
 				By("create empty")
 				schemas = []*pb.Schema{}
-				respCreateService, err = serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
+				respCreateService, err = disco.PutSchemas(getContext(), &pb.ModifySchemasRequest{
 					ServiceId: serviceIdDev1,
 					Schemas:   schemas,
 				})
@@ -407,7 +407,7 @@ var _ = Describe("'Schema' service", func() {
 						Summary:  "second0summary",
 					},
 				}
-				respCreateService, err = serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
+				respCreateService, err = disco.PutSchemas(getContext(), &pb.ModifySchemasRequest{
 					ServiceId: serviceIdDev2,
 					Schemas:   schemas,
 				})
@@ -449,7 +449,7 @@ var _ = Describe("'Schema' service", func() {
 
 			It("summary is empty", func() {
 				By("add schema when summary is empty")
-				respModifySchema, err := serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
+				respModifySchema, err := disco.PutSchema(getContext(), &pb.ModifySchemaRequest{
 					ServiceId: serviceIdPro,
 					SchemaId:  "first_schemaId",
 					Schema:    "first_schema",
@@ -466,7 +466,7 @@ var _ = Describe("'Schema' service", func() {
 					},
 				}
 
-				respModifySchemas, err := serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
+				respModifySchemas, err := disco.PutSchemas(getContext(), &pb.ModifySchemasRequest{
 					ServiceId: serviceIdPro,
 					Schemas:   schemas,
 				})
@@ -489,7 +489,7 @@ var _ = Describe("'Schema' service", func() {
 						Summary:  "second0summary",
 					},
 				}
-				respModifySchemas, err = serviceResource.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
+				respModifySchemas, err = disco.PutSchemas(getContext(), &pb.ModifySchemasRequest{
 					ServiceId: serviceIdPro,
 					Schemas:   schemas,
 				})
@@ -519,7 +519,7 @@ var _ = Describe("'Schema' service", func() {
 			Expect(respCreateService.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 			serviceId = respCreateService.ServiceId
 
-			resp, err := serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
+			resp, err := disco.PutSchema(getContext(), &pb.ModifySchemaRequest{
 				ServiceId: serviceId,
 				SchemaId:  "com.huawei.test",
 				Schema:    "query schema",
@@ -528,7 +528,7 @@ var _ = Describe("'Schema' service", func() {
 			Expect(err).To(BeNil())
 			Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
-			resp, err = serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
+			resp, err = disco.PutSchema(getContext(), &pb.ModifySchemaRequest{
 				ServiceId: serviceId,
 				SchemaId:  "com.huawei.test.no.summary",
 				Schema:    "query schema",
@@ -635,7 +635,7 @@ var _ = Describe("'Schema' service", func() {
 			Expect(respCreateService.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 			serviceId = respCreateService.ServiceId
 
-			resp, err := serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
+			resp, err := disco.PutSchema(getContext(), &pb.ModifySchemaRequest{
 				ServiceId: serviceId,
 				SchemaId:  "com.huawei.test",
 				Schema:    "get schema",
@@ -662,7 +662,7 @@ var _ = Describe("'Schema' service", func() {
 			Expect(respCreateService.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 			serviceId1 = respCreateService.ServiceId
 
-			respPutData, err := serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
+			respPutData, err := disco.PutSchema(getContext(), &pb.ModifySchemaRequest{
 				ServiceId: serviceId1,
 				SchemaId:  schemaId2,
 				Schema:    schemaContent,
@@ -670,7 +670,7 @@ var _ = Describe("'Schema' service", func() {
 			Expect(err).To(BeNil())
 			Expect(respPutData.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
-			respPutData, err = serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
+			respPutData, err = disco.PutSchema(getContext(), &pb.ModifySchemaRequest{
 				ServiceId: serviceId1,
 				SchemaId:  schemaId3,
 				Schema:    schemaContent,
@@ -679,7 +679,7 @@ var _ = Describe("'Schema' service", func() {
 			Expect(err).To(BeNil())
 			Expect(respPutData.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
-			respGetAllSchema, err := serviceResource.GetAllSchemaInfo(getContext(), &pb.GetAllSchemaRequest{
+			respGetAllSchema, err := disco.ListSchema(getContext(), &pb.GetAllSchemaRequest{
 				ServiceId:  serviceId1,
 				WithSchema: false,
 			})
@@ -701,7 +701,7 @@ var _ = Describe("'Schema' service", func() {
 				}
 			}
 
-			respGetAllSchema, err = serviceResource.GetAllSchemaInfo(getContext(), &pb.GetAllSchemaRequest{
+			respGetAllSchema, err = disco.ListSchema(getContext(), &pb.GetAllSchemaRequest{
 				ServiceId:  serviceId1,
 				WithSchema: true,
 			})
@@ -728,49 +728,49 @@ var _ = Describe("'Schema' service", func() {
 		Context("when request is invalid", func() {
 			It("should be failed", func() {
 				By("service does not exist")
-				resp, err := serviceResource.GetSchemaInfo(getContext(), &pb.GetSchemaRequest{
+				resp, err := disco.GetSchema(getContext(), &pb.GetSchemaRequest{
 					ServiceId: "noneexistservice",
 					SchemaId:  "com.huawei.test",
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.GetCode()).To(Equal(pb.ErrServiceNotExists))
 
-				respA, err := serviceResource.GetAllSchemaInfo(getContext(), &pb.GetAllSchemaRequest{
+				respA, err := disco.ListSchema(getContext(), &pb.GetAllSchemaRequest{
 					ServiceId: "noneexistservice",
 				})
 				Expect(err).To(BeNil())
 				Expect(respA.Response.GetCode()).To(Equal(pb.ErrServiceNotExists))
 
 				By("service id is empty")
-				resp, err = serviceResource.GetSchemaInfo(getContext(), &pb.GetSchemaRequest{
+				resp, err = disco.GetSchema(getContext(), &pb.GetSchemaRequest{
 					ServiceId: "",
 					SchemaId:  "com.huawei.test",
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
-				respA, err = serviceResource.GetAllSchemaInfo(getContext(), &pb.GetAllSchemaRequest{
+				respA, err = disco.ListSchema(getContext(), &pb.GetAllSchemaRequest{
 					ServiceId: "",
 				})
 				Expect(err).To(BeNil())
 				Expect(respA.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("service id is invalid")
-				resp, err = serviceResource.GetSchemaInfo(getContext(), &pb.GetSchemaRequest{
+				resp, err = disco.GetSchema(getContext(), &pb.GetSchemaRequest{
 					ServiceId: TOO_LONG_SERVICEID,
 					SchemaId:  "com.huawei.test",
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
-				respA, err = serviceResource.GetAllSchemaInfo(getContext(), &pb.GetAllSchemaRequest{
+				respA, err = disco.ListSchema(getContext(), &pb.GetAllSchemaRequest{
 					ServiceId: TOO_LONG_SERVICEID,
 				})
 				Expect(err).To(BeNil())
 				Expect(respA.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("schema id does not exist")
-				resp, err = serviceResource.GetSchemaInfo(getContext(), &pb.GetSchemaRequest{
+				resp, err = disco.GetSchema(getContext(), &pb.GetSchemaRequest{
 					ServiceId: serviceId,
 					SchemaId:  "nonexistschema",
 				})
@@ -778,19 +778,19 @@ var _ = Describe("'Schema' service", func() {
 				Expect(resp.Response.GetCode()).To(Equal(pb.ErrSchemaNotExists))
 
 				By("schema id is invalid")
-				resp, err = serviceResource.GetSchemaInfo(getContext(), &pb.GetSchemaRequest{
+				resp, err = disco.GetSchema(getContext(), &pb.GetSchemaRequest{
 					ServiceId: serviceId,
 					SchemaId:  "",
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
-				resp, err = serviceResource.GetSchemaInfo(getContext(), &pb.GetSchemaRequest{
+				resp, err = disco.GetSchema(getContext(), &pb.GetSchemaRequest{
 					ServiceId: serviceId,
 					SchemaId:  TOO_LONG_SCHEMAID,
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
-				resp, err = serviceResource.GetSchemaInfo(getContext(), &pb.GetSchemaRequest{
+				resp, err = disco.GetSchema(getContext(), &pb.GetSchemaRequest{
 					ServiceId: serviceId,
 					SchemaId:  invalidSchemaId,
 				})
@@ -798,7 +798,7 @@ var _ = Describe("'Schema' service", func() {
 				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				By("schema content does not exist")
-				resp, err = serviceResource.GetSchemaInfo(getContext(), &pb.GetSchemaRequest{
+				resp, err = disco.GetSchema(getContext(), &pb.GetSchemaRequest{
 					ServiceId: serviceId,
 					SchemaId:  "non-schema-content",
 				})
@@ -809,7 +809,7 @@ var _ = Describe("'Schema' service", func() {
 
 		Context("when request is valid", func() {
 			It("should be passed", func() {
-				resp, err := serviceResource.GetSchemaInfo(getContext(), &pb.GetSchemaRequest{
+				resp, err := disco.GetSchema(getContext(), &pb.GetSchemaRequest{
 					ServiceId: serviceId,
 					SchemaId:  "com.huawei.test",
 				})
@@ -840,7 +840,7 @@ var _ = Describe("'Schema' service", func() {
 			Expect(respCreateService.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 			serviceId = respCreateService.ServiceId
 
-			resp, err := serviceResource.ModifySchema(getContext(), &pb.ModifySchemaRequest{
+			resp, err := disco.PutSchema(getContext(), &pb.ModifySchemaRequest{
 				ServiceId: serviceId,
 				SchemaId:  "com.huawei.test",
 				Schema:    "delete schema",
@@ -853,7 +853,7 @@ var _ = Describe("'Schema' service", func() {
 		Context("when request is invalid", func() {
 			It("should be failed", func() {
 				By("schema id does not exist")
-				resp, err := serviceResource.DeleteSchema(getContext(), &pb.DeleteSchemaRequest{
+				resp, err := disco.DeleteSchema(getContext(), &pb.DeleteSchemaRequest{
 					ServiceId: serviceId,
 					SchemaId:  "noneschema",
 				})
@@ -861,7 +861,7 @@ var _ = Describe("'Schema' service", func() {
 				Expect(resp.Response.GetCode()).ToNot(Equal(pb.ResponseSuccess))
 
 				By("service id is empty")
-				resp, err = serviceResource.DeleteSchema(getContext(), &pb.DeleteSchemaRequest{
+				resp, err = disco.DeleteSchema(getContext(), &pb.DeleteSchemaRequest{
 					ServiceId: "",
 					SchemaId:  "com.huawei.test",
 				})
@@ -869,7 +869,7 @@ var _ = Describe("'Schema' service", func() {
 				Expect(resp.Response.GetCode()).ToNot(Equal(pb.ResponseSuccess))
 
 				By("service id does not exist")
-				resp, err = serviceResource.DeleteSchema(getContext(), &pb.DeleteSchemaRequest{
+				resp, err = disco.DeleteSchema(getContext(), &pb.DeleteSchemaRequest{
 					ServiceId: "noexistservice",
 					SchemaId:  "com.huawei.test",
 				})
@@ -877,7 +877,7 @@ var _ = Describe("'Schema' service", func() {
 				Expect(resp.Response.GetCode()).ToNot(Equal(pb.ResponseSuccess))
 
 				By("schema id is invalid")
-				resp, err = serviceResource.DeleteSchema(getContext(), &pb.DeleteSchemaRequest{
+				resp, err = disco.DeleteSchema(getContext(), &pb.DeleteSchemaRequest{
 					ServiceId: serviceId,
 					SchemaId:  invalidSchemaId,
 				})
@@ -888,14 +888,14 @@ var _ = Describe("'Schema' service", func() {
 
 		Context("when request is valid", func() {
 			It("should be passed", func() {
-				resp, err := serviceResource.DeleteSchema(getContext(), &pb.DeleteSchemaRequest{
+				resp, err := disco.DeleteSchema(getContext(), &pb.DeleteSchemaRequest{
 					ServiceId: serviceId,
 					SchemaId:  "com.huawei.test",
 				})
 				Expect(err).To(BeNil())
 				Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
-				respGet, err := serviceResource.GetSchemaInfo(getContext(), &pb.GetSchemaRequest{
+				respGet, err := disco.GetSchema(getContext(), &pb.GetSchemaRequest{
 					ServiceId: serviceId,
 					SchemaId:  "com.huawei.test",
 				})

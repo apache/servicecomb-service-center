@@ -664,26 +664,18 @@ func (ds *MetadataManager) DeleteTags(ctx context.Context, request *discovery.De
 func (ds *MetadataManager) GetSchema(ctx context.Context, request *discovery.GetSchemaRequest) (*discovery.GetSchemaResponse, error) {
 	exist, err := ServiceExistID(ctx, request.ServiceId)
 	if err != nil {
-		return &discovery.GetSchemaResponse{
-			Response: discovery.CreateResponse(discovery.ErrInternal, "GetSchema failed to check service exist."),
-		}, nil
+		return nil, discovery.NewError(discovery.ErrInternal, "GetSchema failed to check service exist.")
 	}
 	if !exist {
-		return &discovery.GetSchemaResponse{
-			Response: discovery.CreateResponse(discovery.ErrServiceNotExists, "GetSchema service does not exist."),
-		}, nil
+		return nil, discovery.NewError(discovery.ErrServiceNotExists, "GetSchema service does not exist.")
 	}
 	filter := mutil.NewBasicFilter(ctx, mutil.ServiceID(request.ServiceId), mutil.SchemaID(request.SchemaId))
 	schema, err := dao.GetSchema(ctx, filter)
 	if err != nil {
-		return &discovery.GetSchemaResponse{
-			Response: discovery.CreateResponse(discovery.ErrInternal, "GetSchema failed from mongodb."),
-		}, nil
+		return nil, discovery.NewError(discovery.ErrInternal, "GetSchema failed from mongodb.")
 	}
 	if schema == nil {
-		return &discovery.GetSchemaResponse{
-			Response: discovery.CreateResponse(discovery.ErrSchemaNotExists, "Do not have this schema info."),
-		}, nil
+		return nil, discovery.NewError(discovery.ErrSchemaNotExists, "Do not have this schema info.")
 	}
 	return &discovery.GetSchemaResponse{
 		Response:      discovery.CreateResponse(discovery.ResponseSuccess, "Get schema info successfully."),
@@ -700,14 +692,10 @@ func (ds *MetadataManager) GetAllSchemas(ctx context.Context, request *discovery
 	if err != nil {
 		if errors.Is(err, datasource.ErrNoData) {
 			log.Debug(fmt.Sprintf("service %s not exist in db", request.ServiceId))
-			return &discovery.GetAllSchemaResponse{
-				Response: discovery.CreateResponse(discovery.ErrServiceNotExists, "GetAllSchemas failed for service not exist"),
-			}, nil
+			return nil, discovery.NewError(discovery.ErrServiceNotExists, "ListSchema failed for service not exist")
 		}
 		log.Error(fmt.Sprintf("get service[%s] all schemas failed, get service failed", request.ServiceId), err)
-		return &discovery.GetAllSchemaResponse{
-			Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
-		}, err
+		return nil, discovery.NewError(discovery.ErrInternal, err.Error())
 	}
 	schemasList := svc.Service.Schemas
 	if len(schemasList) == 0 {
@@ -723,9 +711,7 @@ func (ds *MetadataManager) GetAllSchemas(ctx context.Context, request *discovery
 		filter := mutil.NewDomainProjectFilter(domain, project, mutil.ServiceID(request.ServiceId), mutil.SchemaID(schemaID))
 		schema, err := dao.GetSchema(ctx, filter)
 		if err != nil {
-			return &discovery.GetAllSchemaResponse{
-				Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
-			}, err
+			return nil, discovery.NewError(discovery.ErrInternal, err.Error())
 		}
 		if schema == nil {
 			schemas = append(schemas, tempSchema)
@@ -778,26 +764,18 @@ func (ds *MetadataManager) ExistSchema(ctx context.Context, request *discovery.G
 func (ds *MetadataManager) DeleteSchema(ctx context.Context, request *discovery.DeleteSchemaRequest) (*discovery.DeleteSchemaResponse, error) {
 	exist, err := ServiceExistID(ctx, request.ServiceId)
 	if err != nil {
-		return &discovery.DeleteSchemaResponse{
-			Response: discovery.CreateResponse(discovery.ErrServiceNotExists, "DeleteSchema failed for get service failed."),
-		}, nil
+		return nil, discovery.NewError(discovery.ErrServiceNotExists, "DeleteSchema failed for get service failed.")
 	}
 	if !exist {
-		return &discovery.DeleteSchemaResponse{
-			Response: discovery.CreateResponse(discovery.ErrServiceNotExists, "DeleteSchema failed for service not exist."),
-		}, nil
+		return nil, discovery.NewError(discovery.ErrServiceNotExists, "DeleteSchema failed for service not exist.")
 	}
 	filter := mutil.NewBasicFilter(ctx, mutil.ServiceID(request.ServiceId), mutil.SchemaID(request.SchemaId))
 	res, err := client.GetMongoClient().DocDelete(ctx, model.CollectionSchema, filter)
 	if err != nil {
-		return &discovery.DeleteSchemaResponse{
-			Response: discovery.CreateResponse(discovery.ErrUnavailableBackend, "DeleteSchema failed for delete schema failed."),
-		}, err
+		return nil, discovery.NewError(discovery.ErrUnavailableBackend, "DeleteSchema failed for delete schema failed.")
 	}
 	if !res {
-		return &discovery.DeleteSchemaResponse{
-			Response: discovery.CreateResponse(discovery.ErrSchemaNotExists, "DeleteSchema failed for schema not exist."),
-		}, nil
+		return nil, discovery.NewError(discovery.ErrSchemaNotExists, "DeleteSchema failed for schema not exist.")
 	}
 	return &discovery.DeleteSchemaResponse{
 		Response: discovery.CreateResponse(discovery.ResponseSuccess, "Delete schema info successfully."),
@@ -816,13 +794,7 @@ func (ds *MetadataManager) ModifySchema(ctx context.Context, request *discovery.
 	err := ds.modifySchema(ctx, request.ServiceId, &schema)
 	if err != nil {
 		log.Error(fmt.Sprintf("modify schema[%s/%s] failed, operator: %s", serviceID, schemaID, remoteIP), err)
-		resp := &discovery.ModifySchemaResponse{
-			Response: discovery.CreateResponseWithSCErr(err),
-		}
-		if err.InternalError() {
-			return resp, err
-		}
-		return resp, nil
+		return nil, err
 	}
 	log.Info(fmt.Sprintf("modify schema[%s/%s] successfully, operator: %s", serviceID, schemaID, remoteIP))
 	return &discovery.ModifySchemaResponse{
@@ -835,15 +807,12 @@ func (ds *MetadataManager) ModifySchemas(ctx context.Context, request *discovery
 	svc, err := dao.GetService(ctx, filter)
 	if err != nil {
 		if errors.Is(err, datasource.ErrNoData) {
-			return &discovery.ModifySchemasResponse{Response: discovery.CreateResponse(discovery.ErrServiceNotExists, "Service not exist")}, nil
+			return nil, discovery.NewError(discovery.ErrServiceNotExists, "Service not exist")
 		}
-		return &discovery.ModifySchemasResponse{Response: discovery.CreateResponse(discovery.ErrInternal, err.Error())}, err
+		return nil, discovery.NewError(discovery.ErrInternal, err.Error())
 	}
 	if respErr := ds.modifySchemas(ctx, svc.Service, request.Schemas); respErr != nil {
-		response, err := datasource.WrapErrResponse(respErr)
-		return &discovery.ModifySchemasResponse{
-			Response: response,
-		}, err
+		return nil, respErr
 	}
 	return &discovery.ModifySchemasResponse{
 		Response: discovery.CreateResponse(discovery.ResponseSuccess, "modify schemas info success"),
