@@ -1,0 +1,20 @@
+syntax = "proto3";
+package api.sync.v1;
+option go_package="github.com/apache/servicecomb-service-center/api/auth/v1;v1";
+
+message CheckPermRequest {
+  string verb = 1;      //create,update,delete,get
+  string token = 2;  //account token
+  string resourceType = 3; // resource type such as service, config
+  map<string, string> resourceLabels = 4;
+}
+message ResourceLabels {
+  map<string, string> labels = 1;
+}
+message CheckPermReply {
+  bool   allow = 1;
+  repeated ResourceLabels resourceLabels = 2;// partial resource's labels
+}
+service PolicyService {
+  rpc HasPerm(CheckPermRequest) returns (CheckPermReply) {}
+}
