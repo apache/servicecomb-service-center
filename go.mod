@@ -7,10 +7,17 @@ replace (
 
 require (
 	github.com/NYTimes/gziphandler v1.1.1
+	github.com/Shopify/sarama v1.19.0 // indirect
+	github.com/Shopify/toxiproxy v2.1.4+incompatible // indirect
 	github.com/apache/servicecomb-service-center/api v0.0.0
+	github.com/apache/thrift v0.13.0 // indirect
 	github.com/astaxie/beego v1.12.2
+	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/cheggaaa/pb v1.0.25
 	github.com/deckarep/golang-set v1.7.1
+	github.com/eapache/go-resiliency v1.1.0 // indirect
+	github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21 // indirect
+	github.com/eapache/queue v1.1.0 // indirect
 	github.com/elithrar/simple-scrypt v1.3.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-chassis/cari v0.5.1-0.20211124031617-99bda218b0cf
@@ -20,11 +27,9 @@ require (
 	github.com/go-chassis/go-chassis/v2 v2.3.0
 	github.com/go-chassis/kie-client v0.1.1-0.20210926011742-97eed4281056
 	github.com/go-chassis/openlog v1.1.3
-	github.com/go-kit/kit v0.10.0 // indirect
 	github.com/golang-jwt/jwt v3.2.1+incompatible
-	github.com/golang/protobuf v1.5.2
 	github.com/gorilla/websocket v1.4.3-0.20210424162022-e8629af678b7
-	github.com/hashicorp/serf v0.8.3
+	github.com/hashicorp/go-version v1.2.0 // indirect
 	github.com/iancoleman/strcase v0.1.2
 	github.com/jinzhu/copier v0.3.0
 	github.com/karlseguin/ccache v2.0.3-0.20170217060820-3ba9789cfd2c+incompatible
@@ -33,14 +38,16 @@ require (
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/onsi/ginkgo v1.15.0
 	github.com/onsi/gomega v1.10.5
+	github.com/opentracing-contrib/go-observer v0.0.0-20170622124052-a52f23424492 // indirect
 	github.com/opentracing/opentracing-go v1.1.0
 	github.com/openzipkin/zipkin-go-opentracing v0.3.3-0.20180123190626-6bb822a7f15f
 	github.com/orcaman/concurrent-map v0.0.0-20210501183033-44dafcb38ecc
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/pkg/errors v0.9.1
+	github.com/pierrec/lz4 v2.0.5+incompatible // indirect
 	github.com/prometheus/client_golang v1.11.0
 	github.com/prometheus/client_model v0.2.0
 	github.com/prometheus/procfs v0.6.0
+	github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a // indirect
 	github.com/rs/cors v1.7.0 // v1.1
 	github.com/satori/go.uuid v1.1.0
 	github.com/spf13/cobra v1.1.3
@@ -50,15 +57,13 @@ require (
 	github.com/widuu/gojson v0.0.0-20170212122013-7da9d2cd949b
 	go.etcd.io/etcd/api/v3 v3.5.0
 	go.etcd.io/etcd/client/v3 v3.5.0
-	go.etcd.io/etcd/server/v3 v3.5.0
 	go.mongodb.org/mongo-driver v1.4.2
 	go.uber.org/zap v1.17.0
 	golang.org/x/crypto v0.0.0-20210421170649-83a5a9bb288b
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba
 	google.golang.org/grpc v1.40.0
-	google.golang.org/protobuf v1.27.1
+	gopkg.in/cheggaaa/pb.v1 v1.0.25 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
-	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.19.5
 	k8s.io/apimachinery v0.19.5
 	k8s.io/client-go v0.19.5
