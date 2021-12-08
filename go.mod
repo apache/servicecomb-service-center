@@ -13,7 +13,7 @@ require (
 	github.com/deckarep/golang-set v1.7.1
 	github.com/elithrar/simple-scrypt v1.3.0
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-chassis/cari v0.5.1-0.20211124031617-99bda218b0cf
+	github.com/go-chassis/cari v0.5.1-0.20211208092532-78a52aa9d52e
 	github.com/go-chassis/foundation v0.3.1-0.20210811025651-7f4d2b2b906c
 	github.com/go-chassis/go-archaius v1.5.1
 	github.com/go-chassis/go-chassis-extension/protocol/grpc v0.0.0-20210902082902-eb5df922afcd
