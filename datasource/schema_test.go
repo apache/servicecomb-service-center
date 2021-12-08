@@ -792,12 +792,11 @@ func TestSchema_Delete(t *testing.T) {
 	})
 
 	t.Run("test delete when request is valid", func(t *testing.T) {
-		resp, err := datasource.GetMetadataManager().DeleteSchema(getContext(), &pb.DeleteSchemaRequest{
+		_, err := datasource.GetMetadataManager().DeleteSchema(getContext(), &pb.DeleteSchemaRequest{
 			ServiceId: serviceId,
 			SchemaId:  "com.huawei.test.ms",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
 		_, err = datasource.GetMetadataManager().GetSchema(getContext(), &pb.GetSchemaRequest{
 			ServiceId: serviceId,

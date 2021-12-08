@@ -732,26 +732,18 @@ func (ds *MetadataManager) GetAllSchemas(ctx context.Context, request *discovery
 func (ds *MetadataManager) ExistSchema(ctx context.Context, request *discovery.GetExistenceRequest) (*discovery.GetExistenceResponse, error) {
 	exist, err := ServiceExistID(ctx, request.ServiceId)
 	if err != nil {
-		return &discovery.GetExistenceResponse{
-			Response: discovery.CreateResponse(discovery.ErrServiceNotExists, "ExistSchema failed for get service failed"),
-		}, nil
+		return nil, discovery.NewError(discovery.ErrServiceNotExists, "ExistSchema failed for get service failed")
 	}
 	if !exist {
-		return &discovery.GetExistenceResponse{
-			Response: discovery.CreateResponse(discovery.ErrServiceNotExists, "ExistSchema failed for service not exist"),
-		}, nil
+		return nil, discovery.NewError(discovery.ErrServiceNotExists, "ExistSchema failed for service not exist")
 	}
 	filter := mutil.NewBasicFilter(ctx, mutil.ServiceID(request.ServiceId), mutil.SchemaID(request.SchemaId))
 	Schema, err := dao.GetSchema(ctx, filter)
 	if err != nil {
-		return &discovery.GetExistenceResponse{
-			Response: discovery.CreateResponse(discovery.ErrInternal, "ExistSchema failed for get schema failed."),
-		}, nil
+		return nil, discovery.NewError(discovery.ErrInternal, "ExistSchema failed for get schema failed.")
 	}
 	if Schema == nil {
-		return &discovery.GetExistenceResponse{
-			Response: discovery.CreateResponse(discovery.ErrSchemaNotExists, "ExistSchema failed for schema not exist."),
-		}, nil
+		return nil, discovery.NewError(discovery.ErrSchemaNotExists, "ExistSchema failed for schema not exist.")
 	}
 	return &discovery.GetExistenceResponse{
 		Response:  discovery.CreateResponse(discovery.ResponseSuccess, "Schema exist."),
@@ -953,7 +945,7 @@ func (ds *MetadataManager) modifySchemas(ctx context.Context, service *discovery
 
 // modifySchema will be modified in the following cases
 // 1.service have no relation --> update the schema && update the service
-// 2.service is editable && service have relation with the schema --> update the shema
+// 2.service is editable && service have relation with the schema --> update the schema
 // 3.service is editable && service have no relation with the schema --> update the schema && update the service
 // 4.service can't edit && service have relation with the schema && schema summary not exist --> update the schema
 func (ds *MetadataManager) modifySchema(ctx context.Context, serviceID string, schema *discovery.Schema) *errsvc.Error {
@@ -1003,8 +995,7 @@ func (ds *MetadataManager) modifySchema(ctx context.Context, serviceID string, s
 		}
 	} else {
 		if !isExist {
-			copy(newSchemas, microservice.Schemas)
-			newSchemas = append(newSchemas, schema.SchemaId)
+			newSchemas = append(microservice.Schemas, schema.SchemaId)
 		}
 	}
 	if len(newSchemas) != 0 {

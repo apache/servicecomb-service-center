@@ -19,7 +19,6 @@ package v4
 
 import (
 	roa "github.com/apache/servicecomb-service-center/pkg/rest"
-	"github.com/apache/servicecomb-service-center/server/resource/disco"
 )
 
 func init() {
@@ -29,7 +28,6 @@ func init() {
 func initRouter() {
 	roa.RegisterServant(&MainService{})
 	roa.RegisterServant(&MicroServiceService{})
-	roa.RegisterServant(&disco.SchemaService{})
 	roa.RegisterServant(&DependencyService{})
 	roa.RegisterServant(&TagService{})
 	roa.RegisterServant(&MicroServiceInstanceService{})

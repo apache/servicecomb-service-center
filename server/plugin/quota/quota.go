@@ -123,7 +123,7 @@ func Apply(ctx context.Context, res *ApplyQuotaResource) error {
 	curNum, err := GetResourceUsage(ctx, res)
 	if err != nil {
 		log.Error(fmt.Sprintf("%s quota check failed", res.QuotaType), err)
-		return pb.NewError(pb.ErrInternal, err.Error())
+		return err
 	}
 	if curNum+res.QuotaSize > limitQuota {
 		mes := fmt.Sprintf("no quota to create %s, max num is %d, curNum is %d, apply num is %d",

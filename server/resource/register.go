@@ -19,6 +19,7 @@ package resource
 
 import (
 	roa "github.com/apache/servicecomb-service-center/pkg/rest"
+	"github.com/apache/servicecomb-service-center/server/resource/disco"
 	"github.com/apache/servicecomb-service-center/server/resource/gov"
 	"github.com/apache/servicecomb-service-center/server/resource/govern"
 	"github.com/apache/servicecomb-service-center/server/resource/rbac"
@@ -34,6 +35,7 @@ func initRouter() {
 		roa.RegisterServant(&rbac.AuthResource{})
 		roa.RegisterServant(&rbac.RoleResource{})
 	}
+	roa.RegisterServant(&disco.SchemaResource{})
 	roa.RegisterServant(&gov.Governance{})
 	roa.RegisterServant(&govern.Resource{})
 }

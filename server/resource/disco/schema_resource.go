@@ -35,11 +35,11 @@ import (
 
 var errModifySchemaDisabled = errors.New("schema modify is disabled")
 
-type SchemaService struct {
+type SchemaResource struct {
 	//
 }
 
-func (s *SchemaService) URLPatterns() []rest.Route {
+func (s *SchemaResource) URLPatterns() []rest.Route {
 	var r = []rest.Route{
 		{Method: http.MethodGet, Path: "/v4/:project/registry/microservices/:serviceId/schemas/:schemaId", Func: s.GetSchema},
 		{Method: http.MethodDelete, Path: "/v4/:project/registry/microservices/:serviceId/schemas/:schemaId", Func: s.DeleteSchema},
@@ -56,11 +56,11 @@ func (s *SchemaService) URLPatterns() []rest.Route {
 	return r
 }
 
-func (s *SchemaService) DisableSchema(w http.ResponseWriter, r *http.Request) {
+func (s *SchemaResource) DisableSchema(w http.ResponseWriter, r *http.Request) {
 	rest.WriteError(w, pb.ErrForbidden, errModifySchemaDisabled.Error())
 }
 
-func (s *SchemaService) GetSchema(w http.ResponseWriter, r *http.Request) {
+func (s *SchemaResource) GetSchema(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	request := &pb.GetSchemaRequest{
 		ServiceId: query.Get(":serviceId"),
@@ -68,6 +68,7 @@ func (s *SchemaService) GetSchema(w http.ResponseWriter, r *http.Request) {
 	}
 	resp, err := discosvc.GetSchema(r.Context(), request)
 	if err != nil {
+		log.Error("get schema failed", err)
 		rest.WriteServiceError(w, err)
 		return
 	}
@@ -76,7 +77,7 @@ func (s *SchemaService) GetSchema(w http.ResponseWriter, r *http.Request) {
 	rest.WriteResponse(w, r, nil, resp)
 }
 
-func (s *SchemaService) PutSchema(w http.ResponseWriter, r *http.Request) {
+func (s *SchemaResource) PutSchema(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
@@ -96,13 +97,14 @@ func (s *SchemaService) PutSchema(w http.ResponseWriter, r *http.Request) {
 	request.SchemaId = query.Get(":schemaId")
 	_, svcErr := discosvc.PutSchema(r.Context(), request)
 	if svcErr != nil {
+		log.Error("put schema failed", svcErr)
 		rest.WriteServiceError(w, svcErr)
 		return
 	}
 	rest.WriteResponse(w, r, nil, nil)
 }
 
-func (s *SchemaService) PutSchemas(w http.ResponseWriter, r *http.Request) {
+func (s *SchemaResource) PutSchemas(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
@@ -120,13 +122,14 @@ func (s *SchemaService) PutSchemas(w http.ResponseWriter, r *http.Request) {
 	request.ServiceId = serviceID
 	_, svcErr := discosvc.PutSchemas(r.Context(), request)
 	if svcErr != nil {
+		log.Error("put all schemas failed", svcErr)
 		rest.WriteServiceError(w, svcErr)
 		return
 	}
 	rest.WriteResponse(w, r, nil, nil)
 }
 
-func (s *SchemaService) DeleteSchema(w http.ResponseWriter, r *http.Request) {
+func (s *SchemaResource) DeleteSchema(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	request := &pb.DeleteSchemaRequest{
 		ServiceId: query.Get(":serviceId"),
@@ -134,13 +137,14 @@ func (s *SchemaService) DeleteSchema(w http.ResponseWriter, r *http.Request) {
 	}
 	_, err := discosvc.DeleteSchema(r.Context(), request)
 	if err != nil {
+		log.Error("delete schema failed", err)
 		rest.WriteServiceError(w, err)
 		return
 	}
 	rest.WriteResponse(w, r, nil, nil)
 }
 
-func (s *SchemaService) ListSchema(w http.ResponseWriter, r *http.Request) {
+func (s *SchemaResource) ListSchema(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	withSchema := query.Get("withSchema")
 	serviceID := query.Get(":serviceId")
@@ -154,6 +158,7 @@ func (s *SchemaService) ListSchema(w http.ResponseWriter, r *http.Request) {
 	}
 	resp, err := discosvc.ListSchema(r.Context(), request)
 	if err != nil {
+		log.Error("list schema failed", err)
 		rest.WriteServiceError(w, err)
 		return
 	}

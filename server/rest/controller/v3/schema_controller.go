@@ -24,7 +24,7 @@ import (
 )
 
 type SchemaService struct {
-	v4.SchemaService
+	v4.SchemaResource
 }
 
 func (this *SchemaService) URLPatterns() []rest.Route {
