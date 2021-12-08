@@ -66,6 +66,7 @@ if [ ${db_name} == "etcd" ];then
   [ $? == 0 ] && ut_for_dir pkg
   [ $? == 0 ] && ut_for_dir server
   [ $? == 0 ] && ut_for_dir scctl
+  [ $? == 0 ] && ut_for_dir eventbase/datasource/etcd
 elif [ ${db_name} == "mongo" ];then
   export TEST_MODE=mongo
   [ $? == 0 ] && ut_for_file datasource

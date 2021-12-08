@@ -32,6 +32,14 @@ type TaskFindOption func(options *TaskFindOptions)
 
 type TombstoneFindOption func(options *TombstoneFindOptions)
 
+func NewTaskFindOptions() TaskFindOptions {
+	return TaskFindOptions{}
+}
+
+func NewTombstoneFindOptions() TombstoneFindOptions {
+	return TombstoneFindOptions{}
+}
+
 // WithAction find task with action
 func WithAction(action string) TaskFindOption {
 	return func(options *TaskFindOptions) {

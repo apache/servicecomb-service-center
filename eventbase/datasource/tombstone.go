@@ -30,6 +30,6 @@ type TombstoneDao interface {
 	Get(ctx context.Context, req *model.GetTombstoneRequest) (*sync.Tombstone, error)
 	// Create func is used for ut
 	Create(ctx context.Context, tombstone *sync.Tombstone) (*sync.Tombstone, error)
-	Delete(ctx context.Context, tombstone ...*sync.Tombstone) error
-	List(ctx context.Context, domain string, project string, options ...TombstoneFindOptions) ([]*sync.Tombstone, error)
+	Delete(ctx context.Context, tombstones ...*sync.Tombstone) error
+	List(ctx context.Context, domain string, project string, options ...TombstoneFindOption) ([]*sync.Tombstone, error)
 }
