@@ -15,19 +15,31 @@
  * limitations under the License.
  */
 
-package datasource
+package etcd_test
 
-import "errors"
+import (
+	"testing"
+	"time"
 
-var (
-	ErrTaskAlreadyExists      = errors.New("task already exists")
-	ErrTaskNotExists          = errors.New("task not exists")
-	ErrTombstoneAlreadyExists = errors.New("tombstone already exists")
-	ErrTombstoneNotExists     = errors.New("tombstone not exists")
+	"github.com/go-chassis/cari/db"
+	"github.com/stretchr/testify/assert"
+
+	"servicecomb-service-center/eventbase/datasource/etcd"
+	_ "servicecomb-service-center/eventbase/datasource/etcd"
+	"servicecomb-service-center/eventbase/test"
 )
 
-// DataSource is the DAO layer
-type DataSource interface {
-	TaskDao() TaskDao
-	TombstoneDao() TombstoneDao
+func TestNewDatasource(t *testing.T) {
+	t.Run("create etcd datasource should pass with no error", func(t *testing.T) {
+		cfg := &db.Config{
+			Kind:    test.Etcd,
+			URI:     test.EtcdURI,
+			Timeout: 10 * time.Second,
+		}
+		etcdDatasource, err := etcd.NewDatasource(cfg)
+		assert.NoError(t, err)
+		assert.NotNil(t, etcdDatasource)
+		assert.NotNil(t, etcdDatasource.TaskDao())
+		assert.NotNil(t, etcdDatasource.TombstoneDao())
+	})
 }
