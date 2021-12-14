@@ -29,44 +29,38 @@ import (
 	pb "github.com/go-chassis/cari/discovery"
 )
 
-func (s *MicroServiceService) GetSchemaInfo(ctx context.Context, in *pb.GetSchemaRequest) (*pb.GetSchemaResponse, error) {
+func GetSchema(ctx context.Context, in *pb.GetSchemaRequest) (*pb.GetSchemaResponse, error) {
 	err := validator.Validate(in)
 	if err != nil {
 		log.Error(fmt.Sprintf("get schema[%s/%s] failed", in.ServiceId, in.SchemaId), nil)
-		return &pb.GetSchemaResponse{
-			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
-		}, nil
+		return nil, pb.NewError(pb.ErrInvalidParams, err.Error())
 	}
 
 	return datasource.GetMetadataManager().GetSchema(ctx, in)
 }
 
-func (s *MicroServiceService) GetAllSchemaInfo(ctx context.Context, in *pb.GetAllSchemaRequest) (*pb.GetAllSchemaResponse, error) {
+func ListSchema(ctx context.Context, in *pb.GetAllSchemaRequest) (*pb.GetAllSchemaResponse, error) {
 	err := validator.Validate(in)
 	if err != nil {
 		log.Error(fmt.Sprintf("get service[%s] all schemas failed", in.ServiceId), nil)
-		return &pb.GetAllSchemaResponse{
-			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
-		}, nil
+		return nil, pb.NewError(pb.ErrInvalidParams, err.Error())
 	}
 
 	return datasource.GetMetadataManager().GetAllSchemas(ctx, in)
 }
 
-func (s *MicroServiceService) DeleteSchema(ctx context.Context, in *pb.DeleteSchemaRequest) (*pb.DeleteSchemaResponse, error) {
+func DeleteSchema(ctx context.Context, in *pb.DeleteSchemaRequest) (*pb.DeleteSchemaResponse, error) {
 	err := validator.Validate(in)
 	if err != nil {
 		remoteIP := util.GetIPFromContext(ctx)
 		log.Error(fmt.Sprintf("delete schema[%s/%s] failed, operator: %s", in.ServiceId, in.SchemaId, remoteIP), err)
-		return &pb.DeleteSchemaResponse{
-			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
-		}, nil
+		return nil, pb.NewError(pb.ErrInvalidParams, err.Error())
 	}
 
 	return datasource.GetMetadataManager().DeleteSchema(ctx, in)
 }
 
-// ModifySchemas covers all the schemas of a service.
+// PutSchemas covers all the schemas of a service.
 // To cover the old schemas, ModifySchemas adds new schemas into, delete and
 // modify the old schemas.
 // 1. When the service is in production environment and schema is not editable:
@@ -78,19 +72,17 @@ func (s *MicroServiceService) DeleteSchema(ctx context.Context, in *pb.DeleteSch
 // If the request contains a new schemaID,
 // the new schemaID will be automatically added to the service information.
 // Schema is allowed to add/delete/modify.
-func (s *MicroServiceService) ModifySchemas(ctx context.Context, in *pb.ModifySchemasRequest) (*pb.ModifySchemasResponse, error) {
+func PutSchemas(ctx context.Context, in *pb.ModifySchemasRequest) (*pb.ModifySchemasResponse, error) {
 	err := validator.Validate(in)
 	if err != nil {
 		remoteIP := util.GetIPFromContext(ctx)
 		log.Error(fmt.Sprintf("modify service[%s] schemas failed, operator: %s", in.ServiceId, remoteIP), err)
-		return &pb.ModifySchemasResponse{
-			Response: pb.CreateResponse(pb.ErrInvalidParams, "Invalid request."),
-		}, nil
+		return nil, pb.NewError(pb.ErrInvalidParams, "Invalid request.")
 	}
 	return datasource.GetMetadataManager().ModifySchemas(ctx, in)
 }
 
-// ModifySchema modifies a specific schema
+// PutSchema modifies a specific schema
 // 1. When the service is in production environment and schema is not editable:
 // If the request contains a new schemaID (the number of schemaIDs of
 // the service is also required to be 0, or the request will be rejected),
@@ -100,20 +92,17 @@ func (s *MicroServiceService) ModifySchemas(ctx context.Context, in *pb.ModifySc
 // If the request contains a new schemaID,
 // the new schemaID will be automatically added to the service information.
 // Schema is allowed to add/modify.
-func (s *MicroServiceService) ModifySchema(ctx context.Context, request *pb.ModifySchemaRequest) (*pb.ModifySchemaResponse, error) {
+func PutSchema(ctx context.Context, request *pb.ModifySchemaRequest) (*pb.ModifySchemaResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
-	respErr := s.canModifySchema(ctx, domainProject, request)
-	if respErr != nil {
-		response, err := datasource.WrapErrResponse(respErr)
-		return &pb.ModifySchemaResponse{
-			Response: response,
-		}, err
+	err := canModifySchema(ctx, domainProject, request)
+	if err != nil {
+		return nil, err
 	}
 
 	return datasource.GetMetadataManager().ModifySchema(ctx, request)
 }
 
-func (s *MicroServiceService) canModifySchema(ctx context.Context, domainProject string, in *pb.ModifySchemaRequest) error {
+func canModifySchema(ctx context.Context, domainProject string, in *pb.ModifySchemaRequest) error {
 	remoteIP := util.GetIPFromContext(ctx)
 	serviceID := in.ServiceId
 	schemaID := in.SchemaId

@@ -21,15 +21,15 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/little-cui/etcdadpt"
-
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd"
 	"github.com/apache/servicecomb-service-center/datasource/mongo"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	pb "github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/cari/pkg/errsvc"
 	"github.com/go-chassis/go-archaius"
+	"github.com/little-cui/etcdadpt"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -91,8 +91,9 @@ func TestSchema_Create(t *testing.T) {
 			ServiceId: serviceIdDev,
 			Schemas:   schemas,
 		})
-		assert.NoError(t, err)
-		assert.Equal(t, pb.ErrNotEnoughQuota, resp.Response.GetCode())
+		testErr := err.(*errsvc.Error)
+		assert.Error(t, testErr)
+		assert.Equal(t, pb.ErrNotEnoughQuota, testErr.Code)
 
 		log.Info("batch modify schemas 2")
 		resp, err = datasource.GetMetadataManager().ModifySchemas(getContext(), &pb.ModifySchemasRequest{
@@ -107,8 +108,9 @@ func TestSchema_Create(t *testing.T) {
 			ServiceId: serviceIdDev,
 			Schemas:   schemas,
 		})
-		assert.NoError(t, err)
-		assert.Equal(t, pb.ErrNotEnoughQuota, resp.Response.GetCode())
+		testErr = err.(*errsvc.Error)
+		assert.Error(t, testErr)
+		assert.Equal(t, pb.ErrNotEnoughQuota, testErr.Code)
 	})
 
 	t.Run("modify schemas, should pass", func(t *testing.T) {
@@ -431,8 +433,9 @@ func TestSchema_Create(t *testing.T) {
 			ServiceId: serviceIdPro1,
 			Schemas:   schemas,
 		})
-		assert.NoError(t, err)
-		assert.Equal(t, pb.ErrUndefinedSchemaID, respModifySchemas.Response.GetCode())
+		testErr := err.(*errsvc.Error)
+		assert.Error(t, testErr)
+		assert.Equal(t, pb.ErrUndefinedSchemaID, testErr.Code)
 
 		log.Info("schema edit allowed, add a schema with new schemaId, should pass")
 		localMicroServiceDs = genLocalDatasource(true).MetadataManager()
@@ -492,8 +495,9 @@ func TestSchema_Create(t *testing.T) {
 			Summary:   schemas[0].Summary,
 			Schema:    schemas[0].SchemaId,
 		})
-		assert.NoError(t, err)
-		assert.Equal(t, pb.ErrModifySchemaNotAllow, respModifySchema.Response.GetCode())
+		testErr := err.(*errsvc.Error)
+		assert.Error(t, testErr)
+		assert.Equal(t, pb.ErrModifySchemaNotAllow, testErr.Code)
 
 		log.Info("schema edit allowed, add a schema with new schemaId, should pass")
 		localMicroServiceDs = genLocalDatasource(true).MetadataManager()
@@ -700,26 +704,29 @@ func TestSchema_Get(t *testing.T) {
 
 	t.Run("test get when request is invalid", func(t *testing.T) {
 		log.Info("service does not exist")
-		respGetSchema, err := datasource.GetMetadataManager().GetSchema(getContext(), &pb.GetSchemaRequest{
+		_, err := datasource.GetMetadataManager().GetSchema(getContext(), &pb.GetSchemaRequest{
 			ServiceId: "none_exist_service",
 			SchemaId:  "com.huawei.test",
 		})
-		assert.NoError(t, err)
-		assert.Equal(t, pb.ErrServiceNotExists, respGetSchema.Response.GetCode())
+		testErr := err.(*errsvc.Error)
+		assert.Error(t, testErr)
+		assert.Equal(t, pb.ErrServiceNotExists, testErr.Code)
 
-		respGetAllSchemas, err := datasource.GetMetadataManager().GetAllSchemas(getContext(), &pb.GetAllSchemaRequest{
+		_, err = datasource.GetMetadataManager().GetAllSchemas(getContext(), &pb.GetAllSchemaRequest{
 			ServiceId: "none_exist_service",
 		})
-		assert.NoError(t, err)
-		assert.Equal(t, pb.ErrServiceNotExists, respGetAllSchemas.Response.GetCode())
+		testErr = err.(*errsvc.Error)
+		assert.Error(t, testErr)
+		assert.Equal(t, pb.ErrServiceNotExists, testErr.Code)
 
 		log.Info("schema id doest not exist")
-		respGetSchema, err = datasource.GetMetadataManager().GetSchema(getContext(), &pb.GetSchemaRequest{
+		_, err = datasource.GetMetadataManager().GetSchema(getContext(), &pb.GetSchemaRequest{
 			ServiceId: serviceId,
 			SchemaId:  "none_exist_schema",
 		})
-		assert.NoError(t, err)
-		assert.Equal(t, pb.ErrSchemaNotExists, respGetSchema.Response.GetCode())
+		testErr = err.(*errsvc.Error)
+		assert.Error(t, testErr)
+		assert.Equal(t, pb.ErrSchemaNotExists, testErr.Code)
 	})
 
 	t.Run("test get when request is valid", func(t *testing.T) {
@@ -766,44 +773,47 @@ func TestSchema_Delete(t *testing.T) {
 
 	t.Run("test delete when request is invalid", func(t *testing.T) {
 		log.Info("schema id does not exist")
-		resp, err := datasource.GetMetadataManager().DeleteSchema(getContext(), &pb.DeleteSchemaRequest{
+		_, err := datasource.GetMetadataManager().DeleteSchema(getContext(), &pb.DeleteSchemaRequest{
 			ServiceId: serviceId,
 			SchemaId:  "none_exist_schema",
 		})
-		assert.NoError(t, err)
-		assert.NotEqual(t, pb.ResponseSuccess, resp.Response.GetCode())
+		testErr := err.(*errsvc.Error)
+		assert.Error(t, testErr)
+		assert.Equal(t, pb.ErrSchemaNotExists, testErr.Code)
 
 		log.Info("service id does not exist")
-		resp, err = datasource.GetMetadataManager().DeleteSchema(getContext(), &pb.DeleteSchemaRequest{
+		_, err = datasource.GetMetadataManager().DeleteSchema(getContext(), &pb.DeleteSchemaRequest{
 			ServiceId: "not_exist_service",
 			SchemaId:  "com.huawei.test.ms",
 		})
-		assert.NoError(t, err)
-		assert.NotEqual(t, pb.ResponseSuccess, resp.Response.GetCode())
+		testErr = err.(*errsvc.Error)
+		assert.Error(t, testErr)
+		assert.Equal(t, pb.ErrServiceNotExists, testErr.Code)
 	})
 
 	t.Run("test delete when request is valid", func(t *testing.T) {
-		resp, err := datasource.GetMetadataManager().DeleteSchema(getContext(), &pb.DeleteSchemaRequest{
+		_, err := datasource.GetMetadataManager().DeleteSchema(getContext(), &pb.DeleteSchemaRequest{
 			ServiceId: serviceId,
 			SchemaId:  "com.huawei.test.ms",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
-		respGet, err := datasource.GetMetadataManager().GetSchema(getContext(), &pb.GetSchemaRequest{
+		_, err = datasource.GetMetadataManager().GetSchema(getContext(), &pb.GetSchemaRequest{
 			ServiceId: serviceId,
 			SchemaId:  "com.huawei.test.ms",
 		})
-		assert.NoError(t, err)
-		assert.Equal(t, pb.ErrSchemaNotExists, respGet.Response.GetCode())
+		testErr := err.(*errsvc.Error)
+		assert.Error(t, testErr)
+		assert.Equal(t, pb.ErrSchemaNotExists, testErr.Code)
 
-		respExist, err := datasource.GetMetadataManager().ExistSchema(getContext(), &pb.GetExistenceRequest{
+		_, err = datasource.GetMetadataManager().ExistSchema(getContext(), &pb.GetExistenceRequest{
 			Type:      "schema",
 			ServiceId: serviceId,
 			SchemaId:  "com.huawei.test.ms",
 		})
-		assert.NoError(t, err)
-		assert.Equal(t, pb.ErrSchemaNotExists, respExist.Response.GetCode())
+		testErr = err.(*errsvc.Error)
+		assert.Error(t, testErr)
+		assert.Equal(t, pb.ErrSchemaNotExists, testErr.Code)
 	})
 }
 

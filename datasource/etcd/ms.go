@@ -1333,23 +1333,16 @@ func (ds *MetadataManager) ModifySchemas(ctx context.Context, request *pb.Modify
 		if errors.Is(err, datasource.ErrNoData) {
 			log.Debug(fmt.Sprintf("modify service[%s] schemas failed, service does not exist in db, operator: %s",
 				serviceID, remoteIP))
-			return &pb.ModifySchemasResponse{
-				Response: pb.CreateResponse(pb.ErrServiceNotExists, "Service does not exist."),
-			}, nil
+			return nil, pb.NewError(pb.ErrServiceNotExists, "Service does not exist.")
 		}
 		log.Error(fmt.Sprintf("modify service[%s] schemas failed, get service failed, operator: %s",
 			serviceID, remoteIP), err)
-		return &pb.ModifySchemasResponse{
-			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
-		}, err
+		return nil, pb.NewError(pb.ErrInternal, err.Error())
 	}
 
 	if respErr := ds.modifySchemas(ctx, domainProject, serviceInfo, request.Schemas); respErr != nil {
 		log.Error(fmt.Sprintf("modify service[%s] schemas failed, operator: %s", serviceID, remoteIP), respErr)
-		response, err := datasource.WrapErrResponse(respErr)
-		return &pb.ModifySchemasResponse{
-			Response: response,
-		}, err
+		return nil, respErr
 	}
 
 	return &pb.ModifySchemasResponse{
@@ -1371,13 +1364,7 @@ func (ds *MetadataManager) ModifySchema(ctx context.Context, request *pb.ModifyS
 	err := ds.modifySchema(ctx, serviceID, &schema)
 	if err != nil {
 		log.Error(fmt.Sprintf("modify schema[%s/%s] failed, operator: %s", serviceID, schemaID, remoteIP), err)
-		resp := &pb.ModifySchemaResponse{
-			Response: pb.CreateResponseWithSCErr(err),
-		}
-		if err.InternalError() {
-			return resp, err
-		}
-		return resp, nil
+		return nil, err
 	}
 
 	log.Info(fmt.Sprintf("modify schema[%s/%s] successfully, operator: %s", serviceID, schemaID, remoteIP))
@@ -1392,32 +1379,24 @@ func (ds *MetadataManager) ExistSchema(ctx context.Context, request *pb.GetExist
 
 	if !serviceUtil.ServiceExist(ctx, domainProject, request.ServiceId) {
 		log.Warn(fmt.Sprintf("schema[%s/%s] exist failed, service does not exist", request.ServiceId, request.SchemaId))
-		return &pb.GetExistenceResponse{
-			Response: pb.CreateResponse(pb.ErrServiceNotExists, "service does not exist."),
-		}, nil
+		return nil, pb.NewError(pb.ErrServiceNotExists, "service does not exist.")
 	}
 
 	key := path.GenerateServiceSchemaKey(domainProject, request.ServiceId, request.SchemaId)
 	exist, err := checkSchemaInfoExist(ctx, key)
 	if err != nil {
 		log.Error(fmt.Sprintf("schema[%s/%s] exist failed, get schema failed", request.ServiceId, request.SchemaId), err)
-		return &pb.GetExistenceResponse{
-			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
-		}, err
+		return nil, pb.NewError(pb.ErrInternal, err.Error())
 	}
 	if !exist {
 		log.Info(fmt.Sprintf("schema[%s/%s] exist failed, schema does not exist", request.ServiceId, request.SchemaId))
-		return &pb.GetExistenceResponse{
-			Response: pb.CreateResponse(pb.ErrSchemaNotExists, "schema does not exist."),
-		}, nil
+		return nil, pb.NewError(pb.ErrSchemaNotExists, "schema does not exist.")
 	}
 	schemaSummary, err := getSchemaSummary(ctx, domainProject, request.ServiceId, request.SchemaId)
 	if err != nil {
 		log.Error(fmt.Sprintf("schema[%s/%s] exist failed, get schema summary failed",
 			request.ServiceId, request.SchemaId), err)
-		return &pb.GetExistenceResponse{
-			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
-		}, err
+		return nil, pb.NewError(pb.ErrInternal, err.Error())
 	}
 	return &pb.GetExistenceResponse{
 		Response: pb.CreateResponse(pb.ResponseSuccess, "Schema exist."),
@@ -1432,9 +1411,7 @@ func (ds *MetadataManager) GetSchema(ctx context.Context, request *pb.GetSchemaR
 	if !serviceUtil.ServiceExist(ctx, domainProject, request.ServiceId) {
 		log.Error(fmt.Sprintf("get schema[%s/%s] failed, service does not exist",
 			request.ServiceId, request.SchemaId), nil)
-		return &pb.GetSchemaResponse{
-			Response: pb.CreateResponse(pb.ErrServiceNotExists, "Service does not exist."),
-		}, nil
+		return nil, pb.NewError(pb.ErrServiceNotExists, "Service does not exist.")
 	}
 
 	key := path.GenerateServiceSchemaKey(domainProject, request.ServiceId, request.SchemaId)
@@ -1442,25 +1419,19 @@ func (ds *MetadataManager) GetSchema(ctx context.Context, request *pb.GetSchemaR
 	resp, errDo := sd.Schema().Search(ctx, opts...)
 	if errDo != nil {
 		log.Error(fmt.Sprintf("get schema[%s/%s] failed", request.ServiceId, request.SchemaId), errDo)
-		return &pb.GetSchemaResponse{
-			Response: pb.CreateResponse(pb.ErrUnavailableBackend, errDo.Error()),
-		}, errDo
+		return nil, pb.NewError(pb.ErrUnavailableBackend, errDo.Error())
 	}
 	if resp.Count == 0 {
 		log.Error(fmt.Sprintf("get schema[%s/%s] failed, schema does not exists",
 			request.ServiceId, request.SchemaId), errDo)
-		return &pb.GetSchemaResponse{
-			Response: pb.CreateResponse(pb.ErrSchemaNotExists, "Do not have this schema info."),
-		}, nil
+		return nil, pb.NewError(pb.ErrSchemaNotExists, "Do not have this schema info.")
 	}
 
 	schemaSummary, err := getSchemaSummary(ctx, domainProject, request.ServiceId, request.SchemaId)
 	if err != nil {
 		log.Error(fmt.Sprintf("get schema[%s/%s] failed, get schema summary failed",
 			request.ServiceId, request.SchemaId), err)
-		return &pb.GetSchemaResponse{
-			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
-		}, err
+		return nil, pb.NewError(pb.ErrInternal, err.Error())
 	}
 
 	return &pb.GetSchemaResponse{
@@ -1478,14 +1449,10 @@ func (ds *MetadataManager) GetAllSchemas(ctx context.Context, request *pb.GetAll
 	if err != nil {
 		if errors.Is(err, datasource.ErrNoData) {
 			log.Debug(fmt.Sprintf("get service[%s] all schemas failed, service does not exist in db", request.ServiceId))
-			return &pb.GetAllSchemaResponse{
-				Response: pb.CreateResponse(pb.ErrServiceNotExists, "Service does not exist."),
-			}, nil
+			return nil, pb.NewError(pb.ErrServiceNotExists, "Service does not exist.")
 		}
 		log.Error(fmt.Sprintf("get service[%s] all schemas failed, get service failed", request.ServiceId), err)
-		return &pb.GetAllSchemaResponse{
-			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
-		}, err
+		return nil, pb.NewError(pb.ErrInternal, err.Error())
 	}
 
 	schemasList := service.Schemas
@@ -1501,9 +1468,7 @@ func (ds *MetadataManager) GetAllSchemas(ctx context.Context, request *pb.GetAll
 	resp, errDo := sd.SchemaSummary().Search(ctx, opts...)
 	if errDo != nil {
 		log.Error(fmt.Sprintf("get service[%s] all schema summaries failed", request.ServiceId), errDo)
-		return &pb.GetAllSchemaResponse{
-			Response: pb.CreateResponse(pb.ErrUnavailableBackend, errDo.Error()),
-		}, errDo
+		return nil, pb.NewError(pb.ErrUnavailableBackend, errDo.Error())
 	}
 
 	respWithSchema := &kvstore.Response{}
@@ -1513,9 +1478,7 @@ func (ds *MetadataManager) GetAllSchemas(ctx context.Context, request *pb.GetAll
 		respWithSchema, errDo = sd.Schema().Search(ctx, opts...)
 		if errDo != nil {
 			log.Error(fmt.Sprintf("get service[%s] all schemas failed", request.ServiceId), errDo)
-			return &pb.GetAllSchemaResponse{
-				Response: pb.CreateResponse(pb.ErrUnavailableBackend, errDo.Error()),
-			}, errDo
+			return nil, pb.NewError(pb.ErrUnavailableBackend, errDo.Error())
 		}
 	}
 
@@ -1553,9 +1516,7 @@ func (ds *MetadataManager) DeleteSchema(ctx context.Context, request *pb.DeleteS
 	if !serviceUtil.ServiceExist(ctx, domainProject, request.ServiceId) {
 		log.Error(fmt.Sprintf("delete schema[%s/%s] failed, service does not exist, operator: %s",
 			request.ServiceId, request.SchemaId, remoteIP), nil)
-		return &pb.DeleteSchemaResponse{
-			Response: pb.CreateResponse(pb.ErrServiceNotExists, "Service does not exist."),
-		}, nil
+		return nil, pb.NewError(pb.ErrServiceNotExists, "Service does not exist.")
 	}
 
 	key := path.GenerateServiceSchemaKey(domainProject, request.ServiceId, request.SchemaId)
@@ -1563,16 +1524,12 @@ func (ds *MetadataManager) DeleteSchema(ctx context.Context, request *pb.DeleteS
 	if err != nil {
 		log.Error(fmt.Sprintf("delete schema[%s/%s] failed, operator: %s",
 			request.ServiceId, request.SchemaId, remoteIP), err)
-		return &pb.DeleteSchemaResponse{
-			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
-		}, err
+		return nil, pb.NewError(pb.ErrInternal, err.Error())
 	}
 	if !exist {
 		log.Error(fmt.Sprintf("delete schema[%s/%s] failed, schema does not exist, operator: %s",
 			request.ServiceId, request.SchemaId, remoteIP), nil)
-		return &pb.DeleteSchemaResponse{
-			Response: pb.CreateResponse(pb.ErrSchemaNotExists, "Schema info does not exist."),
-		}, nil
+		return nil, pb.NewError(pb.ErrSchemaNotExists, "Schema info does not exist.")
 	}
 	epSummaryKey := path.GenerateServiceSchemaSummaryKey(domainProject, request.ServiceId, request.SchemaId)
 	resp, errDo := etcdadpt.TxnWithCmp(ctx,
@@ -1585,16 +1542,12 @@ func (ds *MetadataManager) DeleteSchema(ctx context.Context, request *pb.DeleteS
 	if errDo != nil {
 		log.Error(fmt.Sprintf("delete schema[%s/%s] failed, operator: %s",
 			request.ServiceId, request.SchemaId, remoteIP), errDo)
-		return &pb.DeleteSchemaResponse{
-			Response: pb.CreateResponse(pb.ErrUnavailableBackend, errDo.Error()),
-		}, errDo
+		return nil, pb.NewError(pb.ErrUnavailableBackend, errDo.Error())
 	}
 	if !resp.Succeeded {
 		log.Error(fmt.Sprintf("delete schema[%s/%s] failed, service does not exist, operator: %s",
 			request.ServiceId, request.SchemaId, remoteIP), nil)
-		return &pb.DeleteSchemaResponse{
-			Response: pb.CreateResponse(pb.ErrServiceNotExists, "Service does not exist."),
-		}, nil
+		return nil, pb.NewError(pb.ErrServiceNotExists, "Service does not exist.")
 	}
 
 	log.Info(fmt.Sprintf("delete schema[%s/%s] info successfully, operator: %s",

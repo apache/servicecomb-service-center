@@ -33,9 +33,9 @@ import (
 
 var serviceResource proto.ServiceCtrlServer
 
-var _ = BeforeSuite(func() {
+func init() {
 	serviceResource = disco.AssembleResources()
-})
+}
 
 func getContext() context.Context {
 	return util.WithNoCache(util.SetDomainProject(context.Background(), "default", "default"))

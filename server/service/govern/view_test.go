@@ -125,7 +125,7 @@ var _ = Describe("'Govern' service", func() {
 			Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 			serviceId = resp.ServiceId
 
-			core.ServiceAPI.ModifySchema(getContext(), &pb.ModifySchemaRequest{
+			disco.PutSchema(getContext(), &pb.ModifySchemaRequest{
 				ServiceId: serviceId,
 				SchemaId:  "schemaId",
 				Schema:    "detail",
