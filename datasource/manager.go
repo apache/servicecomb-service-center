@@ -20,6 +20,7 @@ package datasource
 import (
 	"fmt"
 
+	"github.com/apache/servicecomb-service-center/datasource/schema"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
@@ -42,6 +43,21 @@ func Init(opts Options) error {
 		return nil
 	}
 
+	err := initDatasource(opts)
+	if err != nil {
+		return err
+	}
+
+	err = schema.Init(schema.Options{
+		Kind: opts.Kind,
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func initDatasource(opts Options) error {
 	dataSourceEngine, ok := plugins[opts.Kind]
 	if !ok {
 		return fmt.Errorf("plugin implement not supported [%s]", opts.Kind)
