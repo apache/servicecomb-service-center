@@ -2,19 +2,19 @@ syntax = "proto3";
 package api.sync.v1;
 option go_package="github.com/apache/servicecomb-service-center/api/auth/v1;v1";
 
-message CheckPermRequest {
-  string verb = 1;      //create,update,delete,get
-  string token = 2;  //account token
-  string resourceType = 3; // resource type such as service, config
-  map<string, string> resourceLabels = 4;
+message Permission {
+  string id = 1;
+  string name = 2;
 }
-message ResourceLabels {
-  map<string, string> labels = 1;
+message Role {
+  string id = 1;
+  string name = 2;
+  repeated Permission perms =3;
 }
-message CheckPermReply {
-  bool   allow = 1;
-  repeated ResourceLabels resourceLabels = 2;// partial resource's labels
+message RoleReply {
+  repeated Role roles = 1;
 }
+
 service PolicyService {
-  rpc HasPerm(CheckPermRequest) returns (CheckPermReply) {}
+  rpc GetAllRoles(google.protobuf.Empty) returns (RoleReply) {}
 }

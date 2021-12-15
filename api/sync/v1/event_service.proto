@@ -2,7 +2,7 @@ syntax = "proto3";
 package api.sync.v1;
 option go_package="github.com/apache/servicecomb-service-center/api/sync/v1;v1";
 message EventList {
-  repeated Event Events= 1;
+  repeated Event events= 1;
 }
 message Event {
   string id = 1;      //entity id
