@@ -1,0 +1,73 @@
+{
+  "name": "ISVa",
+  "perms": [
+    {
+      "resources": [
+        {
+          "type": "service"
+        }
+      ],
+      "verbs": [
+        "get"
+      ]
+    },
+    {
+      "resources": [
+        {
+          "type": "service",
+          "labels": {
+            "serviceName": "order-service",
+            "app": "mall"
+          }
+        }
+      ],
+      "verbs": [
+        "update",
+        "delete"
+      ]
+    },
+    {
+      "resources": [
+        {
+          "type": "config",
+          "match": "any",
+          "labels": {
+            "serviceName": "order-service",
+            "app": "mall"
+          }
+        }
+      ],
+      "verbs": [
+        "*"
+      ]
+    },
+    {
+      "resources": [
+        {
+          "type": "config",
+          "match": "exact", //default is "any"
+          "labels": {
+            "app": "mall"
+          }
+        }
+      ],
+      "verbs": [
+        "get"
+      ]
+    },    {
+      "resources": [
+        {
+          "type": "config",
+          "match": "exact", //default is "any"
+          "labels": {
+            "environment": "testing",
+            "app": "mall"
+          }
+        }
+      ],
+      "verbs": [
+        "*"
+      ]
+    }
+  ]
+}

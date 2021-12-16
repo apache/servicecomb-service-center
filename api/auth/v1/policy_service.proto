@@ -1,0 +1,20 @@
+syntax = "proto3";
+package api.sync.v1;
+option go_package="github.com/apache/servicecomb-service-center/api/auth/v1;v1";
+
+message Permission {
+  string id = 1;
+  string name = 2;
+}
+message Role {
+  string id = 1;
+  string name = 2;
+  repeated Permission perms =3;
+}
+message RoleReply {
+  repeated Role roles = 1;
+}
+
+service PolicyService {
+  rpc GetAllRoles(google.protobuf.Empty) returns (RoleReply) {}
+}
