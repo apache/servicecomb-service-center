@@ -66,15 +66,16 @@ func (s *SchemaResource) GetSchema(w http.ResponseWriter, r *http.Request) {
 		ServiceId: query.Get(":serviceId"),
 		SchemaId:  query.Get(":schemaId"),
 	}
-	resp, err := discosvc.GetSchema(r.Context(), request)
+	schema, err := discosvc.GetSchema(r.Context(), request)
 	if err != nil {
 		log.Error("get schema failed", err)
 		rest.WriteServiceError(w, err)
 		return
 	}
-	w.Header().Add("X-Schema-Summary", resp.SchemaSummary)
-	resp.SchemaSummary = ""
-	rest.WriteResponse(w, r, nil, resp)
+	w.Header().Add("X-Schema-Summary", schema.Summary)
+	schema.SchemaId = ""
+	schema.Summary = ""
+	rest.WriteResponse(w, r, nil, schema)
 }
 
 func (s *SchemaResource) PutSchema(w http.ResponseWriter, r *http.Request) {
@@ -95,7 +96,7 @@ func (s *SchemaResource) PutSchema(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	request.ServiceId = query.Get(":serviceId")
 	request.SchemaId = query.Get(":schemaId")
-	_, svcErr := discosvc.PutSchema(r.Context(), request)
+	svcErr := discosvc.PutSchema(r.Context(), request)
 	if svcErr != nil {
 		log.Error("put schema failed", svcErr)
 		rest.WriteServiceError(w, svcErr)
@@ -120,7 +121,7 @@ func (s *SchemaResource) PutSchemas(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	request.ServiceId = serviceID
-	_, svcErr := discosvc.PutSchemas(r.Context(), request)
+	svcErr := discosvc.PutSchemas(r.Context(), request)
 	if svcErr != nil {
 		log.Error("put all schemas failed", svcErr)
 		rest.WriteServiceError(w, svcErr)
@@ -135,7 +136,7 @@ func (s *SchemaResource) DeleteSchema(w http.ResponseWriter, r *http.Request) {
 		ServiceId: query.Get(":serviceId"),
 		SchemaId:  query.Get(":schemaId"),
 	}
-	_, err := discosvc.DeleteSchema(r.Context(), request)
+	err := discosvc.DeleteSchema(r.Context(), request)
 	if err != nil {
 		log.Error("delete schema failed", err)
 		rest.WriteServiceError(w, err)
@@ -156,11 +157,13 @@ func (s *SchemaResource) ListSchema(w http.ResponseWriter, r *http.Request) {
 		ServiceId:  serviceID,
 		WithSchema: withSchema == "1",
 	}
-	resp, err := discosvc.ListSchema(r.Context(), request)
+	schemas, err := discosvc.ListSchema(r.Context(), request)
 	if err != nil {
 		log.Error("list schema failed", err)
 		rest.WriteServiceError(w, err)
 		return
 	}
-	rest.WriteResponse(w, r, nil, resp)
+	rest.WriteResponse(w, r, nil, &pb.GetAllSchemaResponse{
+		Schemas: schemas,
+	})
 }

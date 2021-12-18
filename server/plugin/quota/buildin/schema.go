@@ -20,17 +20,17 @@ package buildin
 import (
 	"context"
 
-	"github.com/apache/servicecomb-service-center/datasource"
+	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
 	"github.com/go-chassis/cari/discovery"
 )
 
 func SchemaUsage(ctx context.Context, serviceID string) (int64, error) {
-	resp, err := datasource.GetMetadataManager().GetAllSchemas(ctx, &discovery.GetAllSchemaRequest{
+	schemas, err := discosvc.ListSchema(ctx, &discovery.GetAllSchemaRequest{
 		ServiceId:  serviceID,
 		WithSchema: false,
 	})
 	if err != nil {
 		return 0, err
 	}
-	return int64(len(resp.Schemas)), nil
+	return int64(len(schemas)), nil
 }

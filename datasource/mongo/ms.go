@@ -35,6 +35,7 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/heartbeat"
 	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
+	"github.com/apache/servicecomb-service-center/datasource/schema"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
@@ -653,17 +654,17 @@ func (ds *MetadataManager) GetSchema(ctx context.Context, request *discovery.Get
 		return nil, discovery.NewError(discovery.ErrServiceNotExists, "GetSchema service does not exist.")
 	}
 	filter := mutil.NewBasicFilter(ctx, mutil.ServiceID(request.ServiceId), mutil.SchemaID(request.SchemaId))
-	schema, err := dao.GetSchema(ctx, filter)
+	resp, err := dao.GetSchema(ctx, filter)
 	if err != nil {
 		return nil, discovery.NewError(discovery.ErrInternal, "GetSchema failed from mongodb.")
 	}
-	if schema == nil {
-		return nil, discovery.NewError(discovery.ErrSchemaNotExists, "Do not have this schema info.")
+	if resp == nil {
+		return nil, schema.ErrSchemaNotExist
 	}
 	return &discovery.GetSchemaResponse{
 		Response:      discovery.CreateResponse(discovery.ResponseSuccess, "Get schema info successfully."),
-		Schema:        schema.Schema,
-		SchemaSummary: schema.SchemaSummary,
+		Schema:        resp.Schema,
+		SchemaSummary: resp.SchemaSummary,
 	}, nil
 }
 
@@ -726,7 +727,7 @@ func (ds *MetadataManager) ExistSchema(ctx context.Context, request *discovery.G
 		return nil, discovery.NewError(discovery.ErrInternal, "ExistSchema failed for get schema failed.")
 	}
 	if Schema == nil {
-		return nil, discovery.NewError(discovery.ErrSchemaNotExists, "ExistSchema failed for schema not exist.")
+		return nil, schema.ErrSchemaNotExist
 	}
 	return &discovery.GetExistenceResponse{
 		Response:  discovery.CreateResponse(discovery.ResponseSuccess, "Schema exist."),
@@ -739,10 +740,10 @@ func (ds *MetadataManager) ExistSchema(ctx context.Context, request *discovery.G
 func (ds *MetadataManager) DeleteSchema(ctx context.Context, request *discovery.DeleteSchemaRequest) (*discovery.DeleteSchemaResponse, error) {
 	exist, err := ServiceExistID(ctx, request.ServiceId)
 	if err != nil {
-		return nil, discovery.NewError(discovery.ErrServiceNotExists, "DeleteSchema failed for get service failed.")
+		return nil, discovery.NewError(discovery.ErrUnavailableBackend, "DeleteSchema failed for get service failed.")
 	}
 	if !exist {
-		return nil, discovery.NewError(discovery.ErrServiceNotExists, "DeleteSchema failed for service not exist.")
+		return nil, discovery.NewError(discovery.ErrSchemaNotExists, "DeleteSchema failed for service not exist.")
 	}
 	filter := mutil.NewBasicFilter(ctx, mutil.ServiceID(request.ServiceId), mutil.SchemaID(request.SchemaId))
 	res, err := client.GetMongoClient().DocDelete(ctx, model.CollectionSchema, filter)
@@ -750,7 +751,7 @@ func (ds *MetadataManager) DeleteSchema(ctx context.Context, request *discovery.
 		return nil, discovery.NewError(discovery.ErrUnavailableBackend, "DeleteSchema failed for delete schema failed.")
 	}
 	if !res {
-		return nil, discovery.NewError(discovery.ErrSchemaNotExists, "DeleteSchema failed for schema not exist.")
+		return nil, schema.ErrSchemaNotExist
 	}
 	return &discovery.DeleteSchemaResponse{
 		Response: discovery.CreateResponse(discovery.ResponseSuccess, "Delete schema info successfully."),

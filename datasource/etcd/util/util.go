@@ -36,3 +36,7 @@ func FromContext(ctx context.Context) []etcdadpt.OpOption {
 	}
 	return opts
 }
+
+func ContextOptions(ctx context.Context, opts ...etcdadpt.OpOption) []etcdadpt.OpOption {
+	return append(FromContext(ctx), opts...)
+}

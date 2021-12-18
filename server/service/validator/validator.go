@@ -79,15 +79,6 @@ func Validate(v interface{}) error {
 		return UpdateTagReqValidator().Validate(v)
 	case *pb.DeleteServiceTagsRequest:
 		return DeleteTagReqValidator().Validate(v)
-	case *pb.GetAllSchemaRequest:
-		return GetSchemaReqValidator().Validate(v)
-	case *pb.GetSchemaRequest,
-		*pb.DeleteSchemaRequest:
-		return GetSchemaReqValidator().Validate(v)
-	case *pb.ModifySchemaRequest:
-		return ModifySchemaReqValidator().Validate(v)
-	case *pb.ModifySchemasRequest:
-		return ModifySchemasReqValidator().Validate(v)
 	case *pb.GetOneInstanceRequest,
 		*pb.GetInstancesRequest:
 		return GetInstanceReqValidator().Validate(v)

@@ -22,13 +22,11 @@ import (
 )
 
 func Service() state.State         { return state.Get(TypeService) }
-func SchemaSummary() state.State   { return state.Get(TypeSchemaSummary) }
 func Instance() state.State        { return state.Get(TypeInstance) }
 func Lease() state.State           { return state.Get(TypeLease) }
 func ServiceIndex() state.State    { return state.Get(TypeServiceIndex) }
 func ServiceAlias() state.State    { return state.Get(TypeServiceAlias) }
 func ServiceTag() state.State      { return state.Get(TypeServiceTag) }
-func Schema() state.State          { return state.Get(TypeSchema) }
 func DependencyRule() state.State  { return state.Get(TypeDependencyRule) }
 func DependencyQueue() state.State { return state.Get(TypeDependencyQueue) }
 func Domain() state.State          { return state.Get(TypeDomain) }

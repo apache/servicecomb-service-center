@@ -20,7 +20,9 @@ package mongo
 import (
 	"context"
 
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/schema"
+	"github.com/go-chassis/cari/discovery"
 )
 
 func init() {
@@ -33,34 +35,63 @@ func NewSchemaDAO(opts schema.Options) (schema.DAO, error) {
 
 type SchemaDAO struct{}
 
-func (SchemaDAO) GetRef(ctx context.Context, ref *schema.Ref) (*schema.Ref, error) {
+func (s *SchemaDAO) GetRef(ctx context.Context, refRequest *schema.RefRequest) (*schema.Ref, error) {
+	return nil, schema.ErrSchemaNotExist
+}
+
+func (s *SchemaDAO) ListRef(ctx context.Context, refRequest *schema.RefRequest) ([]*schema.Ref, error) {
+	return nil, nil
+}
+
+func (s *SchemaDAO) DeleteRef(ctx context.Context, refRequest *schema.RefRequest) error {
+	return schema.ErrSchemaNotExist
+}
+
+func (s *SchemaDAO) GetContent(ctx context.Context, contentRequest *schema.ContentRequest) (*schema.Content, error) {
+	return nil, schema.ErrSchemaNotExist
+}
+
+func (s *SchemaDAO) PutContent(ctx context.Context, contentRequest *schema.PutContentRequest) error {
+	_, err := datasource.GetMetadataManager().ModifySchema(ctx, &discovery.ModifySchemaRequest{
+		ServiceId: contentRequest.ServiceID,
+		SchemaId:  contentRequest.SchemaID,
+		Schema:    contentRequest.Content.Content,
+		Summary:   contentRequest.Content.Summary,
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SchemaDAO) PutManyContent(ctx context.Context, contentRequest *schema.PutManyContentRequest) error {
+	var schemas []*discovery.Schema
+	for i, item := range contentRequest.Contents {
+		schemaID := contentRequest.SchemaIDs[i]
+		schemas = append(schemas, &discovery.Schema{
+			SchemaId: schemaID,
+			Summary:  item.Summary,
+			Schema:   item.Content,
+		})
+	}
+	_, err := datasource.GetMetadataManager().ModifySchemas(ctx, &discovery.ModifySchemasRequest{
+		ServiceId: contentRequest.ServiceID,
+		Schemas:   schemas,
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SchemaDAO) DeleteContent(ctx context.Context, contentRequest *schema.ContentRequest) error {
+	return schema.ErrSchemaContentNotFound
+}
+
+func (s *SchemaDAO) ListHash(ctx context.Context) ([]*schema.Content, error) {
 	panic("implement me")
 }
 
-func (SchemaDAO) PutRef(ctx context.Context, ref *schema.Ref) error {
-	panic("implement me")
-}
-
-func (SchemaDAO) DeleteRef(ctx context.Context, ref ...*schema.Ref) error {
-	panic("implement me")
-}
-
-func (SchemaDAO) GetContent(ctx context.Context, hash *schema.ContentRequest) (string, error) {
-	panic("implement me")
-}
-
-func (SchemaDAO) PutContent(ctx context.Context, content *schema.Content) error {
-	panic("implement me")
-}
-
-func (SchemaDAO) DeleteContent(ctx context.Context, hash ...*schema.ContentRequest) error {
-	panic("implement me")
-}
-
-func (SchemaDAO) ListHash(ctx context.Context) ([]*schema.Content, error) {
-	panic("implement me")
-}
-
-func (SchemaDAO) ExistRef(ctx context.Context, hash *schema.ContentRequest) (*schema.Ref, error) {
+func (s *SchemaDAO) ExistRef(ctx context.Context, contentRequest *schema.ContentRequest) (*schema.Ref, error) {
 	panic("implement me")
 }
