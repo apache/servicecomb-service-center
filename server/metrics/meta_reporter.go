@@ -24,7 +24,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	metricsvc "github.com/apache/servicecomb-service-center/pkg/metrics"
 	promutil "github.com/apache/servicecomb-service-center/pkg/prometheus"
-	"github.com/apache/servicecomb-service-center/server/plugin/quota"
+	quotasvc "github.com/apache/servicecomb-service-center/server/service/quota"
 	"github.com/go-chassis/go-chassis/v2/pkg/metrics"
 )
 
@@ -61,7 +61,7 @@ func (m *MetaReporter) ServiceUsageSet() {
 		"instance": instance,
 	}
 	used := promutil.GaugeValue(KeyServiceTotal, labels)
-	total := float64(quota.DefaultServiceQuota)
+	total := float64(quotasvc.ServiceQuota())
 	if total <= 0 {
 		return
 	}
@@ -88,7 +88,7 @@ func (m *MetaReporter) InstanceUsageSet() {
 		"instance": instance,
 	}
 	used := promutil.GaugeValue(KeyInstanceTotal, labels)
-	total := float64(quota.DefaultInstanceQuota)
+	total := float64(quotasvc.InstanceQuota())
 	if total <= 0 {
 		return
 	}

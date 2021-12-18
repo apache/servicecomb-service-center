@@ -30,7 +30,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/config"
-	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/little-cui/etcdadpt"
 )
@@ -236,14 +235,6 @@ func GetAllServiceUtil(ctx context.Context) ([]*pb.MicroService, error) {
 		return nil, err
 	}
 	return services, nil
-}
-
-func RemandServiceQuota(ctx context.Context) {
-	quota.Remand(ctx, quota.TypeService)
-}
-
-func RemandInstanceQuota(ctx context.Context) {
-	quota.Remand(ctx, quota.TypeInstance)
 }
 
 func UpdateService(domainProject string, serviceID string, service *pb.MicroService) (opt etcdadpt.OpOptions, err error) {

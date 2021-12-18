@@ -24,7 +24,7 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/plugin/quota"
+	quotasvc "github.com/apache/servicecomb-service-center/server/service/quota"
 	"github.com/apache/servicecomb-service-center/server/service/validator"
 	pb "github.com/go-chassis/cari/discovery"
 )
@@ -117,8 +117,7 @@ func canModifySchema(ctx context.Context, domainProject string, in *pb.ModifySch
 		return pb.NewError(pb.ErrInvalidParams, err.Error())
 	}
 
-	res := quota.NewApplyQuotaResource(quota.TypeSchema, domainProject, serviceID, 1)
-	if errQuota := quota.Apply(ctx, res); errQuota != nil {
+	if errQuota := quotasvc.ApplySchema(ctx, serviceID, 1); errQuota != nil {
 		log.Error(fmt.Sprintf("update schema[%s/%s] failed, operator: %s", serviceID, schemaID, remoteIP), errQuota)
 		return errQuota
 	}

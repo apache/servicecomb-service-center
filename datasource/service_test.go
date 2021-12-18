@@ -24,19 +24,19 @@ import (
 	"testing"
 	"time"
 
+	quotasvc "github.com/apache/servicecomb-service-center/server/service/quota"
 	"github.com/go-chassis/cari/pkg/errsvc"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestService_Register(t *testing.T) {
 	t.Run("Register service after init & install, should pass", func(t *testing.T) {
-		size := quota.DefaultSchemaQuota + 1
+		size := int(quotasvc.SchemaQuota()) + 1
 		paths := make([]*pb.ServicePath, 0, size)
 		properties := make(map[string]string, size)
 		for i := 0; i < size; i++ {

@@ -24,8 +24,8 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	"github.com/apache/servicecomb-service-center/server/service/disco"
+	quotasvc "github.com/apache/servicecomb-service-center/server/service/quota"
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/cari/pkg/errsvc"
 )
@@ -55,7 +55,7 @@ var _ = Describe("'Micro-service' service", func() {
 
 		Context("all max", func() {
 			It("should be passed", func() {
-				size := quota.DefaultSchemaQuota + 1
+				size := int(quotasvc.SchemaQuota()) + 1
 				paths := make([]*pb.ServicePath, 0, size)
 				properties := make(map[string]string, size)
 				for i := 0; i < size; i++ {

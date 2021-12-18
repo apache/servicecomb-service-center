@@ -15,28 +15,25 @@
  * limitations under the License.
  */
 
-package quota_test
+package buildin_test
 
 import (
-	_ "github.com/apache/servicecomb-service-center/test"
-
 	"context"
 	"testing"
 
+	_ "github.com/apache/servicecomb-service-center/test"
+
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/plugin/quota/buildin"
 	"github.com/apache/servicecomb-service-center/server/service/disco"
 	"github.com/apache/servicecomb-service-center/server/service/quota"
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/stretchr/testify/assert"
 )
 
-func getContext() context.Context {
-	return util.WithNoCache(util.SetDomainProject(context.Background(), "default", "default"))
-}
-
 func TestServiceUsage(t *testing.T) {
 	t.Run("get domain/project without service usage, should return 0", func(t *testing.T) {
-		usage, err := quota.ServiceUsage(context.Background(), &pb.GetServiceCountRequest{
+		usage, err := buildin.ServiceUsage(context.Background(), &pb.GetServiceCountRequest{
 			Domain:  "domain_without_service",
 			Project: "project_without_service",
 		})
@@ -53,7 +50,7 @@ func TestServiceUsage(t *testing.T) {
 		})
 		assert.NoError(t, err)
 
-		usage, err := quota.ServiceUsage(context.Background(), &pb.GetServiceCountRequest{
+		usage, err := buildin.ServiceUsage(context.Background(), &pb.GetServiceCountRequest{
 			Domain:  "domain_with_service",
 			Project: "project_with_service",
 		})
@@ -65,39 +62,7 @@ func TestServiceUsage(t *testing.T) {
 	})
 }
 
-func TestInstanceUsage(t *testing.T) {
-	t.Run("get domain/project without instance usage, should return 0", func(t *testing.T) {
-		usage, err := quota.InstanceUsage(context.Background(), &pb.GetServiceCountRequest{
-			Domain:  "domain_without_service",
-			Project: "project_without_service",
-		})
-		assert.NoError(t, err)
-		assert.Equal(t, int64(0), usage)
-	})
-
-	t.Run("get domain/project with 1 instance usage, should return 1", func(t *testing.T) {
-		ctx := util.SetDomainProject(context.Background(), "domain_with_service", "project_with_service")
-		service, err := disco.RegisterService(ctx, &pb.CreateServiceRequest{
-			Service: &pb.MicroService{
-				ServiceName: "test",
-			},
-		})
-		assert.NoError(t, err)
-
-		_, err = disco.RegisterInstance(ctx, &pb.RegisterInstanceRequest{Instance: &pb.MicroServiceInstance{
-			ServiceId: service.ServiceId,
-			HostName:  "test",
-		}})
-		assert.NoError(t, err)
-
-		usage, err := quota.InstanceUsage(context.Background(), &pb.GetServiceCountRequest{
-			Domain:  "domain_with_service",
-			Project: "project_with_service",
-		})
-		assert.NoError(t, err)
-		assert.Equal(t, int64(1), usage)
-
-		_, err = disco.UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: service.ServiceId, Force: true})
-		assert.NoError(t, err)
-	})
+func TestRemandQuota(t *testing.T) {
+	quota.RemandService(context.Background())
+	quota.RemandInstance(context.Background())
 }

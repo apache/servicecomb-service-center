@@ -23,9 +23,11 @@ import (
 	_ "github.com/apache/servicecomb-service-center/test"
 
 	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/pkg/plugin"
 	promutil "github.com/apache/servicecomb-service-center/pkg/prometheus"
 	"github.com/apache/servicecomb-service-center/server/metrics"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
+	"github.com/apache/servicecomb-service-center/server/plugin/quota/buildin"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -35,20 +37,21 @@ func TestMetaReporter_ServiceUsageSet(t *testing.T) {
 	reporter := metrics.MetaReporter{}
 	assert.Equal(t, float64(0), promutil.GaugeValue(metrics.KeyServiceUsage, labels))
 
-	old := quota.DefaultServiceQuota
-	quota.DefaultServiceQuota = 0
+	inst := plugin.Plugins().Instance(quota.QUOTA).(*buildin.Quota)
+	old := inst.ServiceQuota
+	inst.ServiceQuota = 0
 	reporter.ServiceUsageSet()
 	assert.Equal(t, float64(0), promutil.GaugeValue(metrics.KeyServiceUsage, labels))
-	quota.DefaultServiceQuota = old
+	inst.ServiceQuota = old
 
 	reporter.ServiceAdd(1, datasource.MetricsLabels{Domain: "D1", Project: "P1"})
 	reporter.ServiceUsageSet()
-	assert.Equal(t, 1/float64(quota.DefaultServiceQuota), promutil.GaugeValue(metrics.KeyServiceUsage, labels))
+	assert.Equal(t, 1/float64(inst.ServiceQuota), promutil.GaugeValue(metrics.KeyServiceUsage, labels))
 
 	reporter.ServiceAdd(1, datasource.MetricsLabels{Domain: "D1", Project: "P2"})
 	reporter.ServiceAdd(1, datasource.MetricsLabels{Domain: "D2", Project: "P3"})
 	reporter.ServiceUsageSet()
-	assert.Equal(t, 3/float64(quota.DefaultServiceQuota), promutil.GaugeValue(metrics.KeyServiceUsage, labels))
+	assert.Equal(t, 3/float64(inst.ServiceQuota), promutil.GaugeValue(metrics.KeyServiceUsage, labels))
 }
 
 func TestMetaReporter_InstanceUsageSet(t *testing.T) {
@@ -57,18 +60,19 @@ func TestMetaReporter_InstanceUsageSet(t *testing.T) {
 	reporter := metrics.MetaReporter{}
 	assert.Equal(t, float64(0), promutil.GaugeValue(metrics.KeyInstanceUsage, labels))
 
-	old := quota.DefaultInstanceQuota
-	quota.DefaultInstanceQuota = 0
+	inst := plugin.Plugins().Instance(quota.QUOTA).(*buildin.Quota)
+	old := inst.InstanceQuota
+	inst.InstanceQuota = 0
 	reporter.InstanceUsageSet()
 	assert.Equal(t, float64(0), promutil.GaugeValue(metrics.KeyInstanceUsage, labels))
-	quota.DefaultInstanceQuota = old
+	inst.InstanceQuota = old
 
 	reporter.InstanceAdd(1, datasource.MetricsLabels{Domain: "D1", Project: "P1"})
 	reporter.InstanceUsageSet()
-	assert.Equal(t, 1/float64(quota.DefaultInstanceQuota), promutil.GaugeValue(metrics.KeyInstanceUsage, labels))
+	assert.Equal(t, 1/float64(inst.InstanceQuota), promutil.GaugeValue(metrics.KeyInstanceUsage, labels))
 
 	reporter.InstanceAdd(1, datasource.MetricsLabels{Domain: "D1", Project: "P2"})
 	reporter.InstanceAdd(1, datasource.MetricsLabels{Domain: "D2", Project: "P3"})
 	reporter.InstanceUsageSet()
-	assert.Equal(t, 3/float64(quota.DefaultInstanceQuota), promutil.GaugeValue(metrics.KeyInstanceUsage, labels))
+	assert.Equal(t, 3/float64(inst.InstanceQuota), promutil.GaugeValue(metrics.KeyInstanceUsage, labels))
 }

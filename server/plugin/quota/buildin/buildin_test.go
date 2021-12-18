@@ -19,36 +19,21 @@ import (
 	"context"
 	"testing"
 
-	_ "github.com/apache/servicecomb-service-center/server/init"
+	_ "github.com/apache/servicecomb-service-center/test"
 
-	_ "github.com/apache/servicecomb-service-center/server/bootstrap"
-
-	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
+	quotasvc "github.com/apache/servicecomb-service-center/server/service/quota"
 	pb "github.com/go-chassis/cari/discovery"
-	"github.com/go-chassis/go-archaius"
-	"github.com/little-cui/etcdadpt"
 	"github.com/stretchr/testify/assert"
 )
 
-func init() {
-	archaius.Set("registry.cache.mode", 0)
-	archaius.Set("discovery.kind", "etcd")
-	archaius.Set("registry.kind", "etcd")
-	err := datasource.Init(datasource.Options{Config: etcdadpt.Config{Kind: "etcd"}})
-	if err != nil {
-		panic(err)
-	}
-}
 func TestGetResourceLimit(t *testing.T) {
 	//var id string
 	ctx := context.TODO()
 	ctx = util.SetDomainProject(ctx, "quota", "quota")
 	t.Run("create service,should success", func(t *testing.T) {
-		res := quota.NewApplyQuotaResource(quota.TypeService, "quota/quota", "", 1)
-		err := quota.Apply(ctx, res)
+		err := quotasvc.ApplyService(ctx, 1)
 		assert.Nil(t, err)
 	})
 	t.Run("create 1 instance,should success", func(t *testing.T) {
@@ -60,14 +45,13 @@ func TestGetResourceLimit(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
-		res := quota.NewApplyQuotaResource(quota.TypeInstance, "quota/quota", resp.ServiceId, 1)
-		err = quota.Apply(ctx, res)
+		err = quotasvc.ApplyInstance(ctx, 1)
 		assert.Nil(t, err)
 
-		res = quota.NewApplyQuotaResource(quota.TypeInstance, "quota/quota", resp.ServiceId, 150001)
-		err = quota.Apply(ctx, res)
+		err = quotasvc.ApplyInstance(ctx, 150001)
 		assert.NotNil(t, err)
 	})
+
 	t.Run("create 150001 instance,should failed", func(t *testing.T) {
 		resp, err := discosvc.RegisterService(ctx, &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
@@ -77,9 +61,7 @@ func TestGetResourceLimit(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
-		res := quota.NewApplyQuotaResource(quota.TypeInstance, "quota/quota", resp.ServiceId, 150001)
-		err = quota.Apply(ctx, res)
+		err = quotasvc.ApplyInstance(ctx, 150001)
 		assert.NotNil(t, err)
 	})
-
 }

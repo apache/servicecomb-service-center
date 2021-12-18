@@ -25,8 +25,7 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource"
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/plugin/quota"
+	quotasvc "github.com/apache/servicecomb-service-center/server/service/quota"
 	"github.com/apache/servicecomb-service-center/server/service/validator"
 	"github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/cari/rbac"
@@ -34,8 +33,7 @@ import (
 
 //CreateAccount save account info
 func CreateAccount(ctx context.Context, a *rbac.Account) error {
-	quotaErr := quota.Apply(ctx, quota.NewApplyQuotaResource(quota.TypeAccount,
-		util.ParseDomainProject(ctx), "", 1))
+	quotaErr := quotasvc.ApplyAccount(ctx, 1)
 	if quotaErr != nil {
 		return rbac.NewError(rbac.ErrAccountNoQuota, quotaErr.Error())
 	}

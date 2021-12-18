@@ -25,7 +25,7 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd"
 	"github.com/apache/servicecomb-service-center/datasource/mongo"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/server/plugin/quota"
+	quotasvc "github.com/apache/servicecomb-service-center/server/service/quota"
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/cari/pkg/errsvc"
 	"github.com/go-chassis/go-archaius"
@@ -72,7 +72,8 @@ func TestSchema_Create(t *testing.T) {
 
 	t.Run("create schemas out of gauge", func(t *testing.T) {
 		log.Info("create schemas out of gauge")
-		size := quota.DefaultSchemaQuota + 1
+		max := int(quotasvc.SchemaQuota())
+		size := max + 1
 		schemaIds := make([]string, 0, size)
 		schemas := make([]*pb.Schema, 0, size)
 		for i := 0; i < size; i++ {
@@ -98,7 +99,7 @@ func TestSchema_Create(t *testing.T) {
 		log.Info("batch modify schemas 2")
 		resp, err = datasource.GetMetadataManager().ModifySchemas(getContext(), &pb.ModifySchemasRequest{
 			ServiceId: serviceIdDev,
-			Schemas:   schemas[:quota.DefaultSchemaQuota],
+			Schemas:   schemas[:max],
 		})
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())

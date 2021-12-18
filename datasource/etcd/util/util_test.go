@@ -169,8 +169,3 @@ func TestFromContext(t *testing.T) {
 		t.Fatalf("TestFromContext failed")
 	}
 }
-
-func TestRemandQuota(t *testing.T) {
-	serviceUtil.RemandServiceQuota(context.Background())
-	serviceUtil.RemandInstanceQuota(context.Background())
-}

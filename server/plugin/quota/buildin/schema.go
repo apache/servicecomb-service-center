@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package quota
+package buildin
 
 import (
 	"context"
@@ -23,22 +23,6 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/go-chassis/cari/discovery"
 )
-
-func ServiceUsage(ctx context.Context, request *discovery.GetServiceCountRequest) (int64, error) {
-	resp, err := datasource.GetMetadataManager().GetServiceCount(ctx, request)
-	if err != nil {
-		return 0, err
-	}
-	return resp.Count, nil
-}
-
-func InstanceUsage(ctx context.Context, request *discovery.GetServiceCountRequest) (int64, error) {
-	resp, err := datasource.GetMetadataManager().GetInstanceCount(ctx, request)
-	if err != nil {
-		return 0, err
-	}
-	return resp.Count, nil
-}
 
 func SchemaUsage(ctx context.Context, serviceID string) (int64, error) {
 	resp, err := datasource.GetMetadataManager().GetAllSchemas(ctx, &discovery.GetAllSchemaRequest{
@@ -49,20 +33,4 @@ func SchemaUsage(ctx context.Context, serviceID string) (int64, error) {
 		return 0, err
 	}
 	return int64(len(resp.Schemas)), nil
-}
-
-func RoleUsage(ctx context.Context) (int64, error) {
-	_, used, err := datasource.GetRoleManager().ListRole(ctx)
-	if err != nil {
-		return 0, err
-	}
-	return used, nil
-}
-
-func AccountUsage(ctx context.Context) (int64, error) {
-	_, used, err := datasource.GetAccountManager().ListAccount(ctx)
-	if err != nil {
-		return 0, err
-	}
-	return used, nil
 }

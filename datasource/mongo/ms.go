@@ -38,8 +38,8 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
+	quotasvc "github.com/apache/servicecomb-service-center/server/service/quota"
 	"github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/cari/pkg/errsvc"
 	"github.com/go-chassis/foundation/gopool"
@@ -376,23 +376,6 @@ func (ds *MetadataManager) UpdateService(ctx context.Context, request *discovery
 	return &discovery.UpdateServicePropsResponse{
 		Response: discovery.CreateResponse(discovery.ResponseSuccess, "Update service successfully."),
 	}, nil
-}
-
-func (ds *MetadataManager) GetDeleteServiceFunc(ctx context.Context, serviceID string, force bool, serviceRespChan chan<- *discovery.DelServicesRspInfo) func(context.Context) {
-	return func(_ context.Context) {
-		serviceRst := &discovery.DelServicesRspInfo{
-			ServiceId:  serviceID,
-			ErrMessage: "",
-		}
-		resp, err := ds.DelServicePri(ctx, serviceID, force)
-		if err != nil {
-			serviceRst.ErrMessage = err.Error()
-		} else if resp.GetCode() != discovery.ResponseSuccess {
-			serviceRst.ErrMessage = resp.GetMessage()
-		}
-
-		serviceRespChan <- serviceRst
-	}
 }
 
 func (ds *MetadataManager) GetServiceDetail(ctx context.Context, request *discovery.GetServiceRequest) (
@@ -831,8 +814,7 @@ func (ds *MetadataManager) modifySchemas(ctx context.Context, service *discovery
 	var serviceOps []mongo.WriteModel
 	if !ds.isSchemaEditable() {
 		if len(service.Schemas) == 0 {
-			res := quota.NewApplyQuotaResource(quota.TypeSchema, util.ParseDomainProject(ctx), serviceID, int64(len(nonExistSchemaIds)))
-			errQuota := quota.Apply(ctx, res)
+			errQuota := quotasvc.ApplySchema(ctx, serviceID, int64(len(nonExistSchemaIds)))
 			if errQuota != nil {
 				log.Error(fmt.Sprintf("modify service[%s] schemas failed, operator: %s", serviceID, remoteIP), errQuota)
 				return errQuota
@@ -883,8 +865,7 @@ func (ds *MetadataManager) modifySchemas(ctx context.Context, service *discovery
 	} else {
 		quotaSize := len(needAddSchemas) - len(needDeleteSchemas)
 		if quotaSize > 0 {
-			res := quota.NewApplyQuotaResource(quota.TypeSchema, util.ParseDomainProject(ctx), serviceID, int64(quotaSize))
-			errQuota := quota.Apply(ctx, res)
+			errQuota := quotasvc.ApplySchema(ctx, serviceID, int64(quotaSize))
 			if errQuota != nil {
 				log.Error(fmt.Sprintf("modify service[%s] schemas failed, operator: %s", serviceID, remoteIP), errQuota)
 				return errQuota

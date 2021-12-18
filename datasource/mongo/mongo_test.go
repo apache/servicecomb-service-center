@@ -20,23 +20,12 @@ package mongo_test
 // initialize
 import (
 	"context"
-	"testing"
-	"time"
 
 	_ "github.com/apache/servicecomb-service-center/test"
 
-	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
-var timeLimit = 2 * time.Second
-
 func getContext() context.Context {
 	return util.WithNoCache(util.SetDomainProject(context.Background(), "default", "default"))
-}
-
-func TestMongo(t *testing.T) {
-	//clear service created in last test
-	time.Sleep(timeLimit)
-	_ = datasource.GetSCManager().ClearNoInstanceServices(getContext(), timeLimit)
 }
