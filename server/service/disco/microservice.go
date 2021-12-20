@@ -25,7 +25,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/plugin/quota"
+	quotasvc "github.com/apache/servicecomb-service-center/server/service/quota"
 	"github.com/apache/servicecomb-service-center/server/service/validator"
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/foundation/gopool"
@@ -61,8 +61,6 @@ func (s *MicroServiceService) CreateServicePri(ctx context.Context, in *pb.Creat
 	service := in.Service
 	serviceFlag := util.StringJoin([]string{
 		service.Environment, service.AppId, service.ServiceName, service.Version}, "/")
-	domainProject := util.ParseDomainProject(ctx)
-
 	datasource.SetServiceDefaultValue(service)
 	if err := validator.Validate(in); err != nil {
 		log.Error(fmt.Sprintf("create micro-service[%s] failed, operator: %s",
@@ -71,7 +69,7 @@ func (s *MicroServiceService) CreateServicePri(ctx context.Context, in *pb.Creat
 			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
 		}, nil
 	}
-	if quotaErr := checkServiceQuota(ctx, domainProject); quotaErr != nil {
+	if quotaErr := checkServiceQuota(ctx); quotaErr != nil {
 		log.Error(fmt.Sprintf("create micro-service[%s] failed, operator: %s",
 			serviceFlag, remoteIP), quotaErr)
 		response, err := datasource.WrapErrResponse(quotaErr)
@@ -334,11 +332,10 @@ func (s *MicroServiceService) isCreateServiceEx(in *pb.CreateServiceRequest) boo
 	return true
 }
 
-func checkServiceQuota(ctx context.Context, domainProject string) error {
+func checkServiceQuota(ctx context.Context) error {
 	if core.IsSCInstance(ctx) {
 		log.Debug("skip quota check")
 		return nil
 	}
-	res := quota.NewApplyQuotaResource(quota.TypeService, domainProject, "", 1)
-	return quota.Apply(ctx, res)
+	return quotasvc.ApplyService(ctx, 1)
 }

@@ -21,12 +21,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/apache/servicecomb-service-center/server/service/disco"
-
-	"github.com/apache/servicecomb-service-center/server/plugin/quota"
-	pb "github.com/go-chassis/cari/discovery"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	"github.com/apache/servicecomb-service-center/server/service/disco"
+	quotasvc "github.com/apache/servicecomb-service-center/server/service/quota"
+	pb "github.com/go-chassis/cari/discovery"
 )
 
 var (
@@ -34,6 +34,8 @@ var (
 )
 
 var _ = Describe("'Tag' service", func() {
+	max := int(quotasvc.TagQuota())
+
 	Describe("execute 'create' operation", func() {
 		var (
 			serviceId1 string
@@ -102,9 +104,8 @@ var _ = Describe("'Tag' service", func() {
 		Context("when request is valid", func() {
 			It("should be passed", func() {
 				By("all max")
-				size := quota.DefaultTagQuota
-				tags := make(map[string]string, size)
-				for i := 0; i < size; i++ {
+				tags := make(map[string]string, max)
+				for i := 0; i < max; i++ {
 					s := "tag" + strconv.Itoa(i)
 					tags[s] = s
 				}
@@ -128,7 +129,7 @@ var _ = Describe("'Tag' service", func() {
 
 		Context("when create tag out of gauge", func() {
 			It("should be failed", func() {
-				size := quota.DefaultTagQuota + 1
+				size := max + 1
 				tags := make(map[string]string, size)
 				for i := 0; i < size; i++ {
 					s := "tag" + strconv.Itoa(i)
@@ -141,9 +142,8 @@ var _ = Describe("'Tag' service", func() {
 				Expect(err).To(BeNil())
 				Expect(respAddTags.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
-				size = quota.DefaultTagQuota
-				tags = make(map[string]string, size)
-				for i := 0; i < size; i++ {
+				tags = make(map[string]string, max)
+				for i := 0; i < max; i++ {
 					s := "tag" + strconv.Itoa(i)
 					tags[s] = s
 				}
@@ -468,7 +468,7 @@ var _ = Describe("'Tag' service", func() {
 				Expect(respAddTags.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
 
 				var arr []string
-				for i := 0; i < quota.DefaultTagQuota+1; i++ {
+				for i := 0; i < int(max)+1; i++ {
 					arr = append(arr, strconv.Itoa(i))
 				}
 				respAddTags, err = serviceResource.DeleteTags(getContext(), &pb.DeleteServiceTagsRequest{

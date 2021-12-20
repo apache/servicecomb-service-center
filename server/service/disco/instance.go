@@ -30,7 +30,7 @@ import (
 	"github.com/apache/servicecomb-service-center/server/config"
 	apt "github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/health"
-	"github.com/apache/servicecomb-service-center/server/plugin/quota"
+	quotasvc "github.com/apache/servicecomb-service-center/server/service/quota"
 	"github.com/apache/servicecomb-service-center/server/service/validator"
 	pb "github.com/go-chassis/cari/discovery"
 )
@@ -49,8 +49,7 @@ func RegisterInstance(ctx context.Context, in *pb.RegisterInstanceRequest) (*pb.
 		}, nil
 	}
 	remoteIP := util.GetIPFromContext(ctx)
-	domainProject := util.ParseDomainProject(ctx)
-	if quotaErr := checkInstanceQuota(ctx, domainProject, in.Instance.ServiceId); quotaErr != nil {
+	if quotaErr := checkInstanceQuota(ctx); quotaErr != nil {
 		log.Error(fmt.Sprintf("register instance failed, endpoints %v, host '%s', serviceID %s, operator %s",
 			in.Instance.Endpoints, in.Instance.HostName, in.Instance.ServiceId, remoteIP), quotaErr)
 		response, err := datasource.WrapErrResponse(quotaErr)
@@ -269,11 +268,9 @@ func ClusterHealth(ctx context.Context) (*pb.GetInstancesResponse, error) {
 	}, nil
 }
 
-func checkInstanceQuota(ctx context.Context, domainProject string, serviceID string) error {
+func checkInstanceQuota(ctx context.Context) error {
 	if !apt.IsSCInstance(ctx) {
-		res := quota.NewApplyQuotaResource(quota.TypeInstance,
-			domainProject, serviceID, 1)
-		return quota.Apply(ctx, res)
+		return quotasvc.ApplyInstance(ctx, 1)
 	}
 	return nil
 }

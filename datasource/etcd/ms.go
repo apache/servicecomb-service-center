@@ -34,8 +34,8 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
-	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
+	quotasvc "github.com/apache/servicecomb-service-center/server/service/quota"
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/cari/pkg/errsvc"
 	"github.com/go-chassis/foundation/gopool"
@@ -1759,8 +1759,7 @@ func (ds *MetadataManager) modifySchemas(ctx context.Context, domainProject stri
 	pluginOps := make([]etcdadpt.OpOptions, 0)
 	if !ds.isSchemaEditable() {
 		if len(service.Schemas) == 0 {
-			res := quota.NewApplyQuotaResource(quota.TypeSchema, domainProject, serviceID, int64(len(nonExistSchemaIds)))
-			errQuota := quota.Apply(ctx, res)
+			errQuota := quotasvc.ApplySchema(ctx, serviceID, int64(len(nonExistSchemaIds)))
 			if errQuota != nil {
 				log.Error(fmt.Sprintf("modify service[%s] schemas failed, operator: %s", serviceID, remoteIP), errQuota)
 				return errQuota
@@ -1803,8 +1802,7 @@ func (ds *MetadataManager) modifySchemas(ctx context.Context, domainProject stri
 	} else {
 		quotaSize := len(needAddSchemas) - len(needDeleteSchemas)
 		if quotaSize > 0 {
-			res := quota.NewApplyQuotaResource(quota.TypeSchema, domainProject, serviceID, int64(quotaSize))
-			errQuota := quota.Apply(ctx, res)
+			errQuota := quotasvc.ApplySchema(ctx, serviceID, int64(quotaSize))
 			if errQuota != nil {
 				log.Error(fmt.Sprintf("modify service[%s] schemas failed, operator: %s", serviceID, remoteIP), errQuota)
 				return errQuota
@@ -2073,26 +2071,8 @@ func (ds *MetadataManager) DeleteServicePri(ctx context.Context, serviceID strin
 		return pb.CreateResponse(pb.ErrServiceNotExists, "Service does not exist."), nil
 	}
 
-	serviceUtil.RemandServiceQuota(ctx)
+	quotasvc.RemandService(ctx)
 
 	log.Info(fmt.Sprintf("%s micro-service[%s] successfully, operator: %s", title, serviceID, remoteIP))
 	return pb.CreateResponse(pb.ResponseSuccess, "Unregister service successfully."), nil
-}
-
-func (ds *MetadataManager) GetDeleteServiceFunc(ctx context.Context, serviceID string, force bool,
-	serviceRespChan chan<- *pb.DelServicesRspInfo) func(context.Context) {
-	return func(_ context.Context) {
-		serviceRst := &pb.DelServicesRspInfo{
-			ServiceId:  serviceID,
-			ErrMessage: "",
-		}
-		resp, err := ds.DeleteServicePri(ctx, serviceID, force)
-		if err != nil {
-			serviceRst.ErrMessage = err.Error()
-		} else if resp.GetCode() != pb.ResponseSuccess {
-			serviceRst.ErrMessage = resp.GetMessage()
-		}
-
-		serviceRespChan <- serviceRst
-	}
 }

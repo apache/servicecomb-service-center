@@ -14,27 +14,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package etcd_test
 
-// initialize
+package quota
+
 import (
 	"context"
-	"testing"
-
-	_ "github.com/apache/servicecomb-service-center/test"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/onsi/ginkgo/reporters"
+	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 )
 
-func TestEtcd(t *testing.T) {
-	RegisterFailHandler(Fail)
-	junitReporter := reporters.NewJUnitReporter("etcd.junit.xml")
-	RunSpecsWithDefaultAndCustomReporters(t, "etcd Suite", []Reporter{junitReporter})
+const TypeSchema quota.ResourceType = "SCHEMA"
+
+func SchemaQuota() int64 {
+	return quota.GetQuota(context.Background(), TypeSchema)
 }
 
-func getContext() context.Context {
-	return util.WithNoCache(util.SetDomainProject(context.Background(), "default", "default"))
+func ApplySchema(ctx context.Context, serviceID string, size int64) error {
+	return quota.Apply(ctx, &quota.Request{
+		QuotaType: TypeSchema,
+		Domain:    util.ParseDomain(ctx),
+		Project:   util.ParseProject(ctx),
+		ServiceID: serviceID,
+		QuotaSize: size,
+	})
 }

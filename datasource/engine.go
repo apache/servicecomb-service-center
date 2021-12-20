@@ -19,7 +19,6 @@ package datasource
 
 import (
 	"context"
-	"time"
 
 	"github.com/little-cui/etcdadpt"
 )
@@ -28,8 +27,6 @@ import (
 type SCManager interface {
 	SelfRegister(ctx context.Context) error
 	SelfUnregister(ctx context.Context) error
-	// OPS
-	ClearNoInstanceServices(ctx context.Context, ttl time.Duration) error
 	UpgradeVersion(ctx context.Context) error
 	GetClusters(ctx context.Context) (etcdadpt.Clusters, error)
 }

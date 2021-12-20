@@ -14,27 +14,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package etcd_test
 
-// initialize
+package quota_test
+
 import (
 	"context"
 	"testing"
 
 	_ "github.com/apache/servicecomb-service-center/test"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/onsi/ginkgo/reporters"
+	quotasvc "github.com/apache/servicecomb-service-center/server/service/quota"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestEtcd(t *testing.T) {
-	RegisterFailHandler(Fail)
-	junitReporter := reporters.NewJUnitReporter("etcd.junit.xml")
-	RunSpecsWithDefaultAndCustomReporters(t, "etcd Suite", []Reporter{junitReporter})
+func TestApplyService(t *testing.T) {
+	//var id string
+	ctx := context.TODO()
+	ctx = util.SetDomainProject(ctx, "quota", "quota")
+	t.Run("create service, should success", func(t *testing.T) {
+		err := quotasvc.ApplyService(ctx, 1)
+		assert.Nil(t, err)
+	})
 }
 
-func getContext() context.Context {
-	return util.WithNoCache(util.SetDomainProject(context.Background(), "default", "default"))
+func TestRemandService(t *testing.T) {
+	quotasvc.RemandService(context.Background())
 }

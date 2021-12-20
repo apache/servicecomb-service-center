@@ -31,6 +31,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/event"
+	quotasvc "github.com/apache/servicecomb-service-center/server/service/quota"
 	"github.com/apache/servicecomb-service-center/server/syncernotify"
 	pb "github.com/go-chassis/cari/discovery"
 )
@@ -68,8 +69,7 @@ func (h *InstanceEventHandler) OnEvent(evt kvstore.Event) {
 
 	if action == pb.EVT_DELETE && !datasource.IsDefaultDomainProject(domainProject) {
 		domain, project := path.SplitDomainProject(domainProject)
-		serviceUtil.RemandInstanceQuota(
-			util.SetDomainProject(context.Background(), domain, project))
+		quotasvc.RemandInstance(util.SetDomainProject(context.Background(), domain, project))
 	}
 
 	// 查询服务版本信息

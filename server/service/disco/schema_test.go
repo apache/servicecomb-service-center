@@ -22,8 +22,8 @@ import (
 	"testing"
 
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 	"github.com/apache/servicecomb-service-center/server/service/disco"
+	quotasvc "github.com/apache/servicecomb-service-center/server/service/quota"
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/cari/pkg/errsvc"
 	"github.com/stretchr/testify/assert"
@@ -226,7 +226,8 @@ func TestPutSchema(t *testing.T) {
 		serviceIdDev = old
 	})
 
-	size := quota.DefaultSchemaQuota + 1
+	max := int(quotasvc.SchemaQuota())
+	size := max + 1
 	schemaIds := make([]string, 0, size)
 	schemas := make([]*pb.Schema, 0, size)
 	for i := 0; i < size; i++ {
@@ -251,11 +252,11 @@ func TestPutSchema(t *testing.T) {
 
 		_, err = disco.PutSchemas(getContext(), &pb.ModifySchemasRequest{
 			ServiceId: serviceIdDev,
-			Schemas:   schemas[:quota.DefaultSchemaQuota],
+			Schemas:   schemas[:max],
 		})
 		assert.NoError(t, err)
 
-		schema := schemas[quota.DefaultSchemaQuota]
+		schema := schemas[max]
 		_, err = disco.PutSchema(getContext(), &pb.ModifySchemaRequest{
 			ServiceId: serviceIdDev,
 			SchemaId:  schema.SchemaId,

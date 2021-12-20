@@ -22,7 +22,7 @@ import (
 
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/pkg/validate"
-	"github.com/apache/servicecomb-service-center/server/plugin/quota"
+	quotasvc "github.com/apache/servicecomb-service-center/server/service/quota"
 	"github.com/go-chassis/cari/discovery"
 )
 
@@ -88,6 +88,8 @@ func GetServiceReqValidator() *validate.Validator {
 
 func CreateServiceReqValidator() *validate.Validator {
 	return createServiceReqValidator.Init(func(v *validate.Validator) {
+		max := int(quotasvc.SchemaQuota())
+
 		var pathValidator validate.Validator
 		pathValidator.AddRule("Path", &validate.Rule{Regexp: pathRegex})
 
@@ -103,7 +105,7 @@ func CreateServiceReqValidator() *validate.Validator {
 		microServiceValidator.AddRule("Description", &validate.Rule{Max: 256})
 		microServiceValidator.AddRule("Level", &validate.Rule{Regexp: levelRegex})
 		microServiceValidator.AddRule("Status", &validate.Rule{Regexp: statusRegex})
-		microServiceValidator.AddRule("Schemas", &validate.Rule{Max: quota.DefaultSchemaQuota, Regexp: schemaIDRegex})
+		microServiceValidator.AddRule("Schemas", &validate.Rule{Max: max, Regexp: schemaIDRegex})
 		microServiceValidator.AddSub("Paths", &pathValidator)
 		microServiceValidator.AddRule("Alias", &validate.Rule{Max: 128, Regexp: aliasRegex})
 		microServiceValidator.AddRule("RegisterBy", &validate.Rule{Max: 64, Regexp: registerByRegex})

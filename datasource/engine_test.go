@@ -20,11 +20,9 @@ package datasource_test
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 
-	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	apt "github.com/apache/servicecomb-service-center/server/core"
 	pb "github.com/go-chassis/cari/discovery"
@@ -98,31 +96,3 @@ func checkServiceCleared(domain string, project string) {
 		Expect(getSvcResp.Response.GetCode() == pb.ResponseSuccess).To(Equal(!v.ShouldClear))
 	}
 }
-
-func serviceClearCheckFunc(domain string, project string) func() {
-	return func() {
-		var err error
-		It("should run clear task success", func() {
-			withInstance := true
-			withNoInstance := false
-			shouldClear := true
-			shouldNotClear := false
-
-			createService(domain, project, "svc1", withNoInstance, shouldClear)
-			createService(domain, project, "svc2", withInstance, shouldNotClear)
-			time.Sleep(2 * time.Second)
-			createService(domain, project, "svc3", withNoInstance, shouldNotClear)
-			createService(domain, project, "svc4", withInstance, shouldNotClear)
-
-			err = datasource.GetSCManager().ClearNoInstanceServices(context.Background(), 2*time.Second)
-			Expect(err).To(BeNil())
-
-			checkServiceCleared(domain, project)
-		})
-	}
-}
-
-var _ = Describe("clear service", func() {
-	Describe("domain project 1", serviceClearCheckFunc("default1", "default"))
-	Describe("domain project 2", serviceClearCheckFunc("default2", "default"))
-})
