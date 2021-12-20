@@ -26,7 +26,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota/buildin"
 	"github.com/apache/servicecomb-service-center/server/service/disco"
-	"github.com/apache/servicecomb-service-center/server/service/quota"
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/stretchr/testify/assert"
 )
@@ -43,12 +42,13 @@ func TestServiceUsage(t *testing.T) {
 
 	t.Run("get domain/project with 1 service usage, should return 1", func(t *testing.T) {
 		ctx := util.SetDomainProject(context.Background(), "domain_with_service", "project_with_service")
-		service, err := disco.RegisterService(ctx, &pb.CreateServiceRequest{
+		resp, err := disco.RegisterService(ctx, &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
 				ServiceName: "test",
 			},
 		})
 		assert.NoError(t, err)
+		defer disco.UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: resp.ServiceId, Force: true})
 
 		usage, err := buildin.ServiceUsage(context.Background(), &pb.GetServiceCountRequest{
 			Domain:  "domain_with_service",
@@ -56,13 +56,5 @@ func TestServiceUsage(t *testing.T) {
 		})
 		assert.NoError(t, err)
 		assert.Equal(t, int64(1), usage)
-
-		_, err = disco.UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: service.ServiceId})
-		assert.NoError(t, err)
 	})
-}
-
-func TestRemandQuota(t *testing.T) {
-	quota.RemandService(context.Background())
-	quota.RemandInstance(context.Background())
 }

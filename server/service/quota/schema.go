@@ -32,9 +32,10 @@ func SchemaQuota() int64 {
 
 func ApplySchema(ctx context.Context, serviceID string, size int64) error {
 	return quota.Apply(ctx, &quota.Request{
-		QuotaType:     TypeSchema,
-		DomainProject: util.ParseDomainProject(ctx),
-		ServiceID:     serviceID,
-		QuotaSize:     size,
+		QuotaType: TypeSchema,
+		Domain:    util.ParseDomain(ctx),
+		Project:   util.ParseProject(ctx),
+		ServiceID: serviceID,
+		QuotaSize: size,
 	})
 }

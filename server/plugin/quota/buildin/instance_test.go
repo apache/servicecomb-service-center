@@ -42,15 +42,16 @@ func TestInstanceUsage(t *testing.T) {
 
 	t.Run("get domain/project with 1 instance usage, should return 1", func(t *testing.T) {
 		ctx := util.SetDomainProject(context.Background(), "domain_with_service", "project_with_service")
-		service, err := disco.RegisterService(ctx, &pb.CreateServiceRequest{
+		resp, err := disco.RegisterService(ctx, &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
 				ServiceName: "test",
 			},
 		})
 		assert.NoError(t, err)
+		defer disco.UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: resp.ServiceId, Force: true})
 
 		_, err = disco.RegisterInstance(ctx, &pb.RegisterInstanceRequest{Instance: &pb.MicroServiceInstance{
-			ServiceId: service.ServiceId,
+			ServiceId: resp.ServiceId,
 			HostName:  "test",
 		}})
 		assert.NoError(t, err)
@@ -61,8 +62,5 @@ func TestInstanceUsage(t *testing.T) {
 		})
 		assert.NoError(t, err)
 		assert.Equal(t, int64(1), usage)
-
-		_, err = disco.UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: service.ServiceId, Force: true})
-		assert.NoError(t, err)
 	})
 }

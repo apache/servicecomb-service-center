@@ -23,10 +23,21 @@ import (
 
 	_ "github.com/apache/servicecomb-service-center/test"
 
-	"github.com/apache/servicecomb-service-center/server/service/quota"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	quotasvc "github.com/apache/servicecomb-service-center/server/service/quota"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestRemandQuota(t *testing.T) {
-	quota.RemandService(context.Background())
-	quota.RemandInstance(context.Background())
+func TestApplyService(t *testing.T) {
+	//var id string
+	ctx := context.TODO()
+	ctx = util.SetDomainProject(ctx, "quota", "quota")
+	t.Run("create service, should success", func(t *testing.T) {
+		err := quotasvc.ApplyService(ctx, 1)
+		assert.Nil(t, err)
+	})
+}
+
+func TestRemandService(t *testing.T) {
+	quotasvc.RemandService(context.Background())
 }

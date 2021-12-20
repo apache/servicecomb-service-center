@@ -20,17 +20,9 @@ package quota
 type ResourceType string
 
 type Request struct {
-	QuotaType     ResourceType
-	DomainProject string
-	ServiceID     string
-	QuotaSize     int64
-}
-
-func NewRequest(quotaType ResourceType, domainProject, serviceID string, quotaSize int64) *Request {
-	return &Request{
-		quotaType,
-		domainProject,
-		serviceID,
-		quotaSize,
-	}
+	QuotaType ResourceType
+	Domain    string
+	Project   string
+	ServiceID string
+	QuotaSize int64
 }

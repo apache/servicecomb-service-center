@@ -20,7 +20,6 @@ package quota
 import (
 	"context"
 
-	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
 )
 
@@ -28,13 +27,4 @@ const TypeTag quota.ResourceType = "TAG"
 
 func TagQuota() int64 {
 	return quota.GetQuota(context.Background(), TypeTag)
-}
-
-func ApplyTag(ctx context.Context, serviceID string, size int64) error {
-	return quota.Apply(ctx, &quota.Request{
-		QuotaType:     TypeTag,
-		DomainProject: util.ParseDomainProject(ctx),
-		ServiceID:     serviceID,
-		QuotaSize:     size,
-	})
 }

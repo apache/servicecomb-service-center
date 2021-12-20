@@ -32,9 +32,10 @@ func InstanceQuota() int64 {
 
 func ApplyInstance(ctx context.Context, size int64) error {
 	return quota.Apply(ctx, &quota.Request{
-		QuotaType:     TypeInstance,
-		DomainProject: util.ParseDomainProject(ctx),
-		QuotaSize:     size,
+		QuotaType: TypeInstance,
+		Domain:    util.ParseDomain(ctx),
+		Project:   util.ParseProject(ctx),
+		QuotaSize: size,
 	})
 }
 

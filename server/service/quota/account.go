@@ -28,8 +28,9 @@ const TypeAccount quota.ResourceType = "ACCOUNT"
 
 func ApplyAccount(ctx context.Context, size int64) error {
 	return quota.Apply(ctx, &quota.Request{
-		QuotaType:     TypeAccount,
-		DomainProject: util.ParseDomainProject(ctx),
-		QuotaSize:     size,
+		QuotaType: TypeAccount,
+		Domain:    util.ParseDomain(ctx),
+		Project:   util.ParseProject(ctx),
+		QuotaSize: size,
 	})
 }

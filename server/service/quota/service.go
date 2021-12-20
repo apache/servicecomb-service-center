@@ -32,9 +32,10 @@ func ServiceQuota() int64 {
 
 func ApplyService(ctx context.Context, size int64) error {
 	return quota.Apply(ctx, &quota.Request{
-		QuotaType:     TypeService,
-		DomainProject: util.ParseDomainProject(ctx),
-		QuotaSize:     size,
+		QuotaType: TypeService,
+		Domain:    util.ParseDomain(ctx),
+		Project:   util.ParseProject(ctx),
+		QuotaSize: size,
 	})
 }
 

@@ -28,8 +28,9 @@ const TypeRole quota.ResourceType = "ROLE"
 
 func ApplyRole(ctx context.Context, size int64) error {
 	return quota.Apply(ctx, &quota.Request{
-		QuotaType:     TypeRole,
-		DomainProject: util.ParseDomainProject(ctx),
-		QuotaSize:     size,
+		QuotaType: TypeRole,
+		Domain:    util.ParseDomain(ctx),
+		Project:   util.ParseProject(ctx),
+		QuotaSize: size,
 	})
 }
