@@ -32,7 +32,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
-	dmongo "servicecomb-service-center/eventbase/datasource/mongo"
+	"github.com/apache/servicecomb-service-center/eventbase/datasource/mongo/model"
 )
 
 const (
@@ -137,7 +137,7 @@ func (mc *MongoClient) newClient(ctx context.Context) (err error) {
 		}
 		return
 	}
-	mc.db = mc.client.Database(dmongo.DBName)
+	mc.db = mc.client.Database(model.DBName)
 	if mc.db == nil {
 		return ErrOpenDbFailed
 	}

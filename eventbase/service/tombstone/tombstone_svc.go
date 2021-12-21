@@ -15,19 +15,31 @@
  * limitations under the License.
  */
 
-package datasource
+package tombstone
 
 import (
 	"context"
 
 	"github.com/go-chassis/cari/sync"
+
+	"github.com/apache/servicecomb-service-center/eventbase/datasource"
+	"github.com/apache/servicecomb-service-center/eventbase/request"
 )
 
-// TaskDao provide api of Task entity
-type TaskDao interface {
-	// Create func is used for ut
-	Create(ctx context.Context, task *sync.Task) (*sync.Task, error)
-	Update(ctx context.Context, task *sync.Task) error
-	Delete(ctx context.Context, tasks ...*sync.Task) error
-	List(ctx context.Context, options ...TaskFindOption) ([]*sync.Task, error)
+func Get(ctx context.Context, req *request.GetTombstoneRequest) (*sync.Tombstone, error) {
+	return datasource.GetTombstoneDao().Get(ctx, req)
+}
+
+func Delete(ctx context.Context, tombstones ...*sync.Tombstone) error {
+	return datasource.GetTombstoneDao().Delete(ctx, tombstones...)
+}
+
+func List(ctx context.Context, request *request.ListTombstoneRequest) ([]*sync.Tombstone, error) {
+	opts := []datasource.TombstoneFindOption{
+		datasource.WithTombstoneDomain(request.Domain),
+		datasource.WithTombstoneProject(request.Project),
+		datasource.WithResourceType(request.ResourceType),
+		datasource.WithBeforeTimestamp(request.BeforeTimestamp),
+	}
+	return datasource.GetTombstoneDao().List(ctx, opts...)
 }

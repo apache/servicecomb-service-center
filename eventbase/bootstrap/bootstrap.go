@@ -15,20 +15,13 @@
  * limitations under the License.
  */
 
-package mongo
+package bootstrap
 
-const (
-	DBName = "servicecomb"
+import (
+	// support embedded etcd
+	_ "github.com/little-cui/etcdadpt/embedded"
+	_ "github.com/little-cui/etcdadpt/remote"
 
-	CollectionTask      = "task"
-	CollectionTombstone = "tombstone"
-	ColumnDomain        = "domain"
-	ColumnProject       = "project"
-	ColumnTaskID        = "task_id"
-	ColumnTimestamp     = "timestamp"
-	ColumnResourceID    = "resource_id"
-	ColumnResourceType  = "resource_type"
-	ColumnStatus        = "status"
-	ColumnAction        = "action"
-	ColumnDataType      = "data_type"
+	_ "github.com/apache/servicecomb-service-center/eventbase/datasource/etcd"
+	_ "github.com/apache/servicecomb-service-center/eventbase/datasource/mongo"
 )

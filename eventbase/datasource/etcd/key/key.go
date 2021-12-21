@@ -43,6 +43,9 @@ func TaskKey(domain, project, taskID string, timestamp int64) string {
 }
 
 func TaskList(domain, project string) string {
+	if len(domain) == 0 {
+		return getSyncRootKey()
+	}
 	if len(project) == 0 {
 		return strings.Join([]string{getSyncRootKey(), domain, ""}, split)
 	}
@@ -50,6 +53,9 @@ func TaskList(domain, project string) string {
 }
 
 func TombstoneList(domain, project string) string {
+	if len(domain) == 0 {
+		return getTombstoneRootKey()
+	}
 	if len(project) == 0 {
 		return strings.Join([]string{getTombstoneRootKey(), domain, ""}, split)
 	}

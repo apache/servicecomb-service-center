@@ -18,12 +18,16 @@
 package datasource
 
 type TaskFindOptions struct {
+	Domain   string
+	Project  string
 	Action   string
 	Status   string
 	DataType string
 }
 
 type TombstoneFindOptions struct {
+	Domain          string
+	Project         string
 	ResourceType    string
 	BeforeTimestamp int64
 }
@@ -38,6 +42,20 @@ func NewTaskFindOptions() TaskFindOptions {
 
 func NewTombstoneFindOptions() TombstoneFindOptions {
 	return TombstoneFindOptions{}
+}
+
+// WithDomain find task with domain
+func WithDomain(domain string) TaskFindOption {
+	return func(options *TaskFindOptions) {
+		options.Domain = domain
+	}
+}
+
+// WithProject find task with project
+func WithProject(project string) TaskFindOption {
+	return func(options *TaskFindOptions) {
+		options.Project = project
+	}
 }
 
 // WithAction find task with action
@@ -58,6 +76,20 @@ func WithStatus(status string) TaskFindOption {
 func WithDataType(dataType string) TaskFindOption {
 	return func(options *TaskFindOptions) {
 		options.DataType = dataType
+	}
+}
+
+// WithTombstoneDomain find tombstone with domain
+func WithTombstoneDomain(domain string) TombstoneFindOption {
+	return func(options *TombstoneFindOptions) {
+		options.Domain = domain
+	}
+}
+
+// WithTombstoneProject find tombstone with project
+func WithTombstoneProject(project string) TombstoneFindOption {
+	return func(options *TombstoneFindOptions) {
+		options.Project = project
 	}
 }
 

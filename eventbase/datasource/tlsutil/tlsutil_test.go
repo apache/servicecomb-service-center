@@ -26,7 +26,7 @@ import (
 	_ "github.com/go-chassis/go-chassis/v2/security/cipher/plugins/plain"
 	"github.com/stretchr/testify/assert"
 
-	"servicecomb-service-center/eventbase/datasource/tlsutil"
+	"github.com/apache/servicecomb-service-center/eventbase/datasource/tlsutil"
 )
 
 const sslRoot = "./../../../examples/service_center/ssl/"

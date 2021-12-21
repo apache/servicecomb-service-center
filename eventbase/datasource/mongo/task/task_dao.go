@@ -26,16 +26,16 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	mopts "go.mongodb.org/mongo-driver/mongo/options"
 
-	"servicecomb-service-center/eventbase/datasource"
-	dmongo "servicecomb-service-center/eventbase/datasource/mongo"
-	"servicecomb-service-center/eventbase/datasource/mongo/client"
+	"github.com/apache/servicecomb-service-center/eventbase/datasource"
+	"github.com/apache/servicecomb-service-center/eventbase/datasource/mongo/client"
+	"github.com/apache/servicecomb-service-center/eventbase/datasource/mongo/model"
 )
 
 type Dao struct {
 }
 
 func (d *Dao) Create(ctx context.Context, task *sync.Task) (*sync.Task, error) {
-	collection := client.GetMongoClient().GetDB().Collection(dmongo.CollectionTask)
+	collection := client.GetMongoClient().GetDB().Collection(model.CollectionTask)
 	_, err := collection.InsertOne(ctx, task)
 	if err != nil {
 		openlog.Error("fail to create task" + err.Error())
@@ -45,11 +45,11 @@ func (d *Dao) Create(ctx context.Context, task *sync.Task) (*sync.Task, error) {
 }
 
 func (d *Dao) Update(ctx context.Context, task *sync.Task) error {
-	collection := client.GetMongoClient().GetDB().Collection(dmongo.CollectionTask)
+	collection := client.GetMongoClient().GetDB().Collection(model.CollectionTask)
 	result, err := collection.UpdateOne(ctx,
-		bson.M{dmongo.ColumnTaskID: task.TaskID, dmongo.ColumnDomain: task.Domain, dmongo.ColumnProject: task.Project, dmongo.ColumnTimestamp: task.Timestamp},
+		bson.M{model.ColumnTaskID: task.TaskID, model.ColumnDomain: task.Domain, model.ColumnProject: task.Project, model.ColumnTimestamp: task.Timestamp},
 		bson.D{{Key: "$set", Value: bson.D{
-			{Key: dmongo.ColumnStatus, Value: task.Status}}},
+			{Key: model.ColumnStatus, Value: task.Status}}},
 		})
 	if err != nil {
 		openlog.Error("fail to update task" + err.Error())
@@ -68,16 +68,16 @@ func (d *Dao) Delete(ctx context.Context, tasks ...*sync.Task) error {
 	for i, task := range tasks {
 		tasksIDs[i] = task.TaskID
 		dFilter := bson.D{
-			{dmongo.ColumnDomain, task.Domain},
-			{dmongo.ColumnProject, task.Project},
-			{dmongo.ColumnTaskID, task.TaskID},
-			{dmongo.ColumnTimestamp, task.Timestamp},
+			{model.ColumnDomain, task.Domain},
+			{model.ColumnProject, task.Project},
+			{model.ColumnTaskID, task.TaskID},
+			{model.ColumnTimestamp, task.Timestamp},
 		}
 		filter = append(filter, dFilter)
 	}
 
 	var deleteFunc = func(sessionContext mongo.SessionContext) error {
-		collection := client.GetMongoClient().GetDB().Collection(dmongo.CollectionTask)
+		collection := client.GetMongoClient().GetDB().Collection(model.CollectionTask)
 		_, err := collection.DeleteMany(sessionContext, bson.M{"$or": filter})
 		return err
 	}
@@ -87,24 +87,30 @@ func (d *Dao) Delete(ctx context.Context, tasks ...*sync.Task) error {
 	}
 	return err
 }
-func (d *Dao) List(ctx context.Context, domain string, project string, options ...datasource.TaskFindOption) ([]*sync.Task, error) {
+func (d *Dao) List(ctx context.Context, options ...datasource.TaskFindOption) ([]*sync.Task, error) {
 	opts := datasource.NewTaskFindOptions()
 	for _, o := range options {
 		o(&opts)
 	}
-	collection := client.GetMongoClient().GetDB().Collection(dmongo.CollectionTask)
-	filter := bson.M{dmongo.ColumnDomain: domain, dmongo.ColumnProject: project}
+	collection := client.GetMongoClient().GetDB().Collection(model.CollectionTask)
+	filter := bson.M{}
+	if opts.Domain != "" {
+		filter[model.ColumnDomain] = opts.Domain
+	}
+	if opts.Project != "" {
+		filter[model.ColumnProject] = opts.Project
+	}
 	if opts.Action != "" {
-		filter[dmongo.ColumnAction] = opts.Action
+		filter[model.ColumnAction] = opts.Action
 	}
 	if opts.DataType != "" {
-		filter[dmongo.ColumnDataType] = opts.DataType
+		filter[model.ColumnDataType] = opts.DataType
 	}
 	if opts.Status != "" {
-		filter[dmongo.ColumnStatus] = opts.Status
+		filter[model.ColumnStatus] = opts.Status
 	}
 	opt := mopts.Find().SetSort(map[string]interface{}{
-		dmongo.ColumnTimestamp: 1,
+		model.ColumnTimestamp: 1,
 	})
 	cur, err := collection.Find(ctx, filter, opt)
 	if err != nil {

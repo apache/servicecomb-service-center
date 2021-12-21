@@ -24,13 +24,11 @@ import (
 	"github.com/go-chassis/cari/db"
 	"github.com/go-chassis/openlog"
 	"github.com/little-cui/etcdadpt"
-	_ "github.com/little-cui/etcdadpt/embedded"
-	_ "github.com/little-cui/etcdadpt/remote"
 
-	"servicecomb-service-center/eventbase/datasource"
-	"servicecomb-service-center/eventbase/datasource/etcd/task"
-	"servicecomb-service-center/eventbase/datasource/etcd/tombstone"
-	"servicecomb-service-center/eventbase/datasource/tlsutil"
+	"github.com/apache/servicecomb-service-center/eventbase/datasource"
+	"github.com/apache/servicecomb-service-center/eventbase/datasource/etcd/task"
+	"github.com/apache/servicecomb-service-center/eventbase/datasource/etcd/tombstone"
+	"github.com/apache/servicecomb-service-center/eventbase/datasource/tlsutil"
 )
 
 type Datasource struct {

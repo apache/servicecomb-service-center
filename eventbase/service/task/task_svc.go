@@ -15,19 +15,36 @@
  * limitations under the License.
  */
 
-package datasource
+package task
 
 import (
 	"context"
 
 	"github.com/go-chassis/cari/sync"
+
+	"github.com/apache/servicecomb-service-center/eventbase/datasource"
+	"github.com/apache/servicecomb-service-center/eventbase/request"
 )
 
-// TaskDao provide api of Task entity
-type TaskDao interface {
-	// Create func is used for ut
-	Create(ctx context.Context, task *sync.Task) (*sync.Task, error)
-	Update(ctx context.Context, task *sync.Task) error
-	Delete(ctx context.Context, tasks ...*sync.Task) error
-	List(ctx context.Context, options ...TaskFindOption) ([]*sync.Task, error)
+func Delete(ctx context.Context, tasks ...*sync.Task) error {
+	return datasource.GetTaskDao().Delete(ctx, tasks...)
+}
+
+func Update(ctx context.Context, task *sync.Task) error {
+	return datasource.GetTaskDao().Update(ctx, task)
+}
+
+func List(ctx context.Context, request *request.ListTaskRequest) ([]*sync.Task, error) {
+	opts := []datasource.TaskFindOption{
+		datasource.WithDomain(request.Domain),
+		datasource.WithProject(request.Project),
+		datasource.WithAction(request.TaskAction),
+		datasource.WithDataType(request.TaskDataType),
+		datasource.WithStatus(request.TaskStatus),
+	}
+	tasks, err := datasource.GetTaskDao().List(ctx, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return tasks, nil
 }
