@@ -1,4 +1,4 @@
-module servicecomb-service-center/eventbase
+module github.com/apache/servicecomb-service-center/eventbase
 
 require (
 	github.com/go-chassis/cari v0.5.1-0.20211208092532-78a52aa9d52e

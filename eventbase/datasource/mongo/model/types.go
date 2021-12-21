@@ -17,10 +17,18 @@
 
 package model
 
-// GetTombstoneRequest contains tombstone get request params
-type GetTombstoneRequest struct {
-	Project      string `json:"project,omitempty" yaml:"project,omitempty"`
-	Domain       string `json:"domain,omitempty" yaml:"domain,omitempty"`
-	ResourceType string `json:"resource_type,omitempty" yaml:"resource_type,omitempty"`
-	ResourceID   string `json:"resource_id,omitempty" yaml:"resource_id,omitempty"`
-}
+const (
+	DBName = "servicecomb"
+
+	CollectionTask      = "task"
+	CollectionTombstone = "tombstone"
+	ColumnDomain        = "domain"
+	ColumnProject       = "project"
+	ColumnTaskID        = "task_id"
+	ColumnTimestamp     = "timestamp"
+	ColumnResourceID    = "resource_id"
+	ColumnResourceType  = "resource_type"
+	ColumnStatus        = "status"
+	ColumnAction        = "action"
+	ColumnDataType      = "data_type"
+)

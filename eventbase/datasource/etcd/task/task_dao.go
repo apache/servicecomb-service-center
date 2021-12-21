@@ -25,8 +25,8 @@ import (
 	"github.com/go-chassis/openlog"
 	"github.com/little-cui/etcdadpt"
 
-	"servicecomb-service-center/eventbase/datasource"
-	"servicecomb-service-center/eventbase/datasource/etcd/key"
+	"github.com/apache/servicecomb-service-center/eventbase/datasource"
+	"github.com/apache/servicecomb-service-center/eventbase/datasource/etcd/key"
 )
 
 type Dao struct {
@@ -89,13 +89,13 @@ func (d *Dao) Delete(ctx context.Context, tasks ...*sync.Task) error {
 	return nil
 }
 
-func (d Dao) List(ctx context.Context, domain string, project string, options ...datasource.TaskFindOption) ([]*sync.Task, error) {
+func (d Dao) List(ctx context.Context, options ...datasource.TaskFindOption) ([]*sync.Task, error) {
 	opts := datasource.NewTaskFindOptions()
 	for _, o := range options {
 		o(&opts)
 	}
 	tasks := make([]*sync.Task, 0)
-	kvs, _, err := etcdadpt.List(ctx, key.TaskList(domain, project))
+	kvs, _, err := etcdadpt.List(ctx, key.TaskList(opts.Domain, opts.Project))
 	if err != nil {
 		openlog.Error("fail to list task" + err.Error())
 		return tasks, err

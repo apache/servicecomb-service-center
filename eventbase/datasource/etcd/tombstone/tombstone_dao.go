@@ -25,15 +25,15 @@ import (
 	"github.com/go-chassis/openlog"
 	"github.com/little-cui/etcdadpt"
 
-	"servicecomb-service-center/eventbase/datasource"
-	"servicecomb-service-center/eventbase/datasource/etcd/key"
-	"servicecomb-service-center/eventbase/model"
+	"github.com/apache/servicecomb-service-center/eventbase/datasource"
+	"github.com/apache/servicecomb-service-center/eventbase/datasource/etcd/key"
+	"github.com/apache/servicecomb-service-center/eventbase/request"
 )
 
 type Dao struct {
 }
 
-func (d *Dao) Get(ctx context.Context, req *model.GetTombstoneRequest) (*sync.Tombstone, error) {
+func (d *Dao) Get(ctx context.Context, req *request.GetTombstoneRequest) (*sync.Tombstone, error) {
 	tombstoneKey := key.TombstoneKey(req.Domain, req.Project, req.ResourceType, req.ResourceID)
 	kv, err := etcdadpt.Get(ctx, tombstoneKey)
 	if err != nil {
@@ -84,13 +84,13 @@ func (d *Dao) Delete(ctx context.Context, tombstones ...*sync.Tombstone) error {
 	return nil
 }
 
-func (d *Dao) List(ctx context.Context, domain string, project string, options ...datasource.TombstoneFindOption) ([]*sync.Tombstone, error) {
+func (d *Dao) List(ctx context.Context, options ...datasource.TombstoneFindOption) ([]*sync.Tombstone, error) {
 	opts := datasource.NewTombstoneFindOptions()
 	for _, o := range options {
 		o(&opts)
 	}
 	tombstones := make([]*sync.Tombstone, 0)
-	kvs, _, err := etcdadpt.List(ctx, key.TombstoneList(domain, project))
+	kvs, _, err := etcdadpt.List(ctx, key.TombstoneList(opts.Domain, opts.Project))
 	if err != nil {
 		openlog.Error("fail to list tombstone" + err.Error())
 		return tombstones, err

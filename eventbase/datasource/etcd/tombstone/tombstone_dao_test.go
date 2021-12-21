@@ -24,11 +24,14 @@ import (
 	"github.com/go-chassis/cari/db"
 	"github.com/go-chassis/cari/sync"
 	"github.com/stretchr/testify/assert"
+	// support embedded etcd
+	_ "github.com/little-cui/etcdadpt/embedded"
+	_ "github.com/little-cui/etcdadpt/remote"
 
-	"servicecomb-service-center/eventbase/datasource"
-	"servicecomb-service-center/eventbase/datasource/etcd"
-	"servicecomb-service-center/eventbase/model"
-	"servicecomb-service-center/eventbase/test"
+	"github.com/apache/servicecomb-service-center/eventbase/datasource"
+	"github.com/apache/servicecomb-service-center/eventbase/datasource/etcd"
+	"github.com/apache/servicecomb-service-center/eventbase/request"
+	"github.com/apache/servicecomb-service-center/eventbase/test"
 )
 
 var ds datasource.DataSource
@@ -72,7 +75,7 @@ func TestTombstone(t *testing.T) {
 
 	t.Run("get tombstone", func(t *testing.T) {
 		t.Run("get one tombstone should pass", func(t *testing.T) {
-			req := model.GetTombstoneRequest{
+			req := request.GetTombstoneRequest{
 				Domain:       tombstoneOne.Domain,
 				Project:      tombstoneOne.Project,
 				ResourceType: tombstoneOne.ResourceType,
@@ -85,12 +88,14 @@ func TestTombstone(t *testing.T) {
 	})
 
 	t.Run("list tombstone", func(t *testing.T) {
-		t.Run("list tombstone with ResourceType and BeforeTimestamp should pass", func(t *testing.T) {
+		t.Run("list tombstone with Domain, Project ,ResourceType and BeforeTimestamp should pass", func(t *testing.T) {
 			opts := []datasource.TombstoneFindOption{
+				datasource.WithTombstoneDomain("default"),
+				datasource.WithTombstoneDomain("default"),
 				datasource.WithResourceType(tombstoneOne.ResourceType),
 				datasource.WithBeforeTimestamp(1638171600),
 			}
-			tombstones, err := ds.TombstoneDao().List(context.Background(), "default", "default", opts...)
+			tombstones, err := ds.TombstoneDao().List(context.Background(), opts...)
 			assert.NoError(t, err)
 			assert.Equal(t, 2, len(tombstones))
 			assert.Equal(t, tombstones[0].Timestamp, tombstoneOne.Timestamp)

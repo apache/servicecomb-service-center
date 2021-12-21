@@ -25,10 +25,11 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"gopkg.in/mgo.v2"
 
-	"servicecomb-service-center/eventbase/datasource"
-	"servicecomb-service-center/eventbase/datasource/mongo/client"
-	"servicecomb-service-center/eventbase/datasource/mongo/task"
-	"servicecomb-service-center/eventbase/datasource/mongo/tombstone"
+	"github.com/apache/servicecomb-service-center/eventbase/datasource"
+	"github.com/apache/servicecomb-service-center/eventbase/datasource/mongo/client"
+	"github.com/apache/servicecomb-service-center/eventbase/datasource/mongo/model"
+	"github.com/apache/servicecomb-service-center/eventbase/datasource/mongo/task"
+	"github.com/apache/servicecomb-service-center/eventbase/datasource/mongo/tombstone"
 )
 
 type Datasource struct {
@@ -110,32 +111,32 @@ func wrapError(err error, skipMsg ...string) {
 }
 
 func ensureTask(session *mgo.Session) {
-	c := session.DB(DBName).C(CollectionTask)
+	c := session.DB(model.DBName).C(model.CollectionTask)
 	err := c.Create(&mgo.CollectionInfo{Validator: bson.M{
-		ColumnTaskID:    bson.M{"$exists": true},
-		ColumnDomain:    bson.M{"$exists": true},
-		ColumnProject:   bson.M{"$exists": true},
-		ColumnTimestamp: bson.M{"$exists": true},
+		model.ColumnTaskID:    bson.M{"$exists": true},
+		model.ColumnDomain:    bson.M{"$exists": true},
+		model.ColumnProject:   bson.M{"$exists": true},
+		model.ColumnTimestamp: bson.M{"$exists": true},
 	}})
 	wrapError(err)
 	err = c.EnsureIndex(mgo.Index{
-		Key:    []string{ColumnDomain, ColumnProject, ColumnTaskID, ColumnTimestamp},
+		Key:    []string{model.ColumnDomain, model.ColumnProject, model.ColumnTaskID, model.ColumnTimestamp},
 		Unique: true,
 	})
 	wrapError(err)
 }
 
 func ensureTombstone(session *mgo.Session) {
-	c := session.DB(DBName).C(CollectionTombstone)
+	c := session.DB(model.DBName).C(model.CollectionTombstone)
 	err := c.Create(&mgo.CollectionInfo{Validator: bson.M{
-		ColumnResourceID:   bson.M{"$exists": true},
-		ColumnDomain:       bson.M{"$exists": true},
-		ColumnProject:      bson.M{"$exists": true},
-		ColumnResourceType: bson.M{"$exists": true},
+		model.ColumnResourceID:   bson.M{"$exists": true},
+		model.ColumnDomain:       bson.M{"$exists": true},
+		model.ColumnProject:      bson.M{"$exists": true},
+		model.ColumnResourceType: bson.M{"$exists": true},
 	}})
 	wrapError(err)
 	err = c.EnsureIndex(mgo.Index{
-		Key:    []string{ColumnDomain, ColumnProject, ColumnResourceID, ColumnResourceType},
+		Key:    []string{model.ColumnDomain, model.ColumnProject, model.ColumnResourceID, model.ColumnResourceType},
 		Unique: true,
 	})
 	wrapError(err)

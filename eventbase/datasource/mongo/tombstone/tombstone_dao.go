@@ -25,18 +25,18 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 
-	"servicecomb-service-center/eventbase/datasource"
-	dmongo "servicecomb-service-center/eventbase/datasource/mongo"
-	"servicecomb-service-center/eventbase/datasource/mongo/client"
-	"servicecomb-service-center/eventbase/model"
+	"github.com/apache/servicecomb-service-center/eventbase/datasource"
+	"github.com/apache/servicecomb-service-center/eventbase/datasource/mongo/client"
+	"github.com/apache/servicecomb-service-center/eventbase/datasource/mongo/model"
+	"github.com/apache/servicecomb-service-center/eventbase/request"
 )
 
 type Dao struct {
 }
 
-func (d *Dao) Get(ctx context.Context, req *model.GetTombstoneRequest) (*sync.Tombstone, error) {
-	collection := client.GetMongoClient().GetDB().Collection(dmongo.CollectionTombstone)
-	filter := bson.M{dmongo.ColumnDomain: req.Domain, dmongo.ColumnProject: req.Project, dmongo.ColumnResourceType: req.ResourceType, dmongo.ColumnResourceID: req.ResourceID}
+func (d *Dao) Get(ctx context.Context, req *request.GetTombstoneRequest) (*sync.Tombstone, error) {
+	collection := client.GetMongoClient().GetDB().Collection(model.CollectionTombstone)
+	filter := bson.M{model.ColumnDomain: req.Domain, model.ColumnProject: req.Project, model.ColumnResourceType: req.ResourceType, model.ColumnResourceID: req.ResourceID}
 	result := collection.FindOne(ctx, filter)
 	if result != nil && result.Err() != nil {
 		openlog.Error("fail to get tombstone" + result.Err().Error())
@@ -57,7 +57,7 @@ func (d *Dao) Get(ctx context.Context, req *model.GetTombstoneRequest) (*sync.To
 }
 
 func (d *Dao) Create(ctx context.Context, tombstone *sync.Tombstone) (*sync.Tombstone, error) {
-	collection := client.GetMongoClient().GetDB().Collection(dmongo.CollectionTombstone)
+	collection := client.GetMongoClient().GetDB().Collection(model.CollectionTombstone)
 	_, err := collection.InsertOne(ctx, tombstone)
 	if err != nil {
 		openlog.Error("fail to create tombstone" + err.Error())
@@ -72,15 +72,15 @@ func (d *Dao) Delete(ctx context.Context, tombstones ...*sync.Tombstone) error {
 	for i, tombstone := range tombstones {
 		tombstonesIDs[i] = tombstone.ResourceID
 		dFilter := bson.D{
-			{dmongo.ColumnResourceID, tombstone.ResourceID},
-			{dmongo.ColumnResourceType, tombstone.ResourceType},
-			{dmongo.ColumnDomain, tombstone.Domain},
-			{dmongo.ColumnProject, tombstone.Project},
+			{model.ColumnResourceID, tombstone.ResourceID},
+			{model.ColumnResourceType, tombstone.ResourceType},
+			{model.ColumnDomain, tombstone.Domain},
+			{model.ColumnProject, tombstone.Project},
 		}
 		filter = append(filter, dFilter)
 	}
 	var deleteFunc = func(sessionContext mongo.SessionContext) error {
-		collection := client.GetMongoClient().GetDB().Collection(dmongo.CollectionTombstone)
+		collection := client.GetMongoClient().GetDB().Collection(model.CollectionTombstone)
 		_, err := collection.DeleteMany(sessionContext, bson.M{"$or": filter})
 		return err
 	}
@@ -91,19 +91,24 @@ func (d *Dao) Delete(ctx context.Context, tombstones ...*sync.Tombstone) error {
 	return err
 }
 
-func (d *Dao) List(ctx context.Context, domain string, project string,
-	options ...datasource.TombstoneFindOption) ([]*sync.Tombstone, error) {
+func (d *Dao) List(ctx context.Context, options ...datasource.TombstoneFindOption) ([]*sync.Tombstone, error) {
 	opts := datasource.NewTombstoneFindOptions()
 	for _, o := range options {
 		o(&opts)
 	}
-	collection := client.GetMongoClient().GetDB().Collection(dmongo.CollectionTombstone)
-	filter := bson.M{dmongo.ColumnDomain: domain, dmongo.ColumnProject: project}
+	collection := client.GetMongoClient().GetDB().Collection(model.CollectionTombstone)
+	filter := bson.M{}
+	if opts.Domain != "" {
+		filter[model.ColumnDomain] = opts.Domain
+	}
+	if opts.Project != "" {
+		filter[model.ColumnProject] = opts.Project
+	}
 	if opts.ResourceType != "" {
-		filter[dmongo.ColumnResourceType] = opts.ResourceType
+		filter[model.ColumnResourceType] = opts.ResourceType
 	}
 	if opts.BeforeTimestamp != 0 {
-		filter[dmongo.ColumnTimestamp] = bson.M{"$lte": opts.BeforeTimestamp}
+		filter[model.ColumnTimestamp] = bson.M{"$lte": opts.BeforeTimestamp}
 	}
 	cur, err := collection.Find(ctx, filter)
 	if err != nil {

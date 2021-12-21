@@ -58,6 +58,7 @@ func Init(c db.Config) error {
 		c.Timeout = DefaultTimeout
 	}
 	dbc := &db.Config{
+		Kind:        c.Kind,
 		URI:         c.URI,
 		PoolSize:    c.PoolSize,
 		SSLEnabled:  c.SSLEnabled,

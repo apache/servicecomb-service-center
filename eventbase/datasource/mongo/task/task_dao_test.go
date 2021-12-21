@@ -26,9 +26,9 @@ import (
 	"github.com/go-chassis/cari/sync"
 	"github.com/stretchr/testify/assert"
 
-	"servicecomb-service-center/eventbase/datasource"
-	"servicecomb-service-center/eventbase/datasource/mongo"
-	"servicecomb-service-center/eventbase/test"
+	"github.com/apache/servicecomb-service-center/eventbase/datasource"
+	"github.com/apache/servicecomb-service-center/eventbase/datasource/mongo"
+	"github.com/apache/servicecomb-service-center/eventbase/test"
 )
 
 var ds datasource.DataSource
@@ -112,19 +112,21 @@ func TestTask(t *testing.T) {
 	})
 
 	t.Run("list task", func(t *testing.T) {
-		t.Run("list task with action ,dataType and status should pass", func(t *testing.T) {
+		t.Run("list task with domain, project, action ,dataType and status should pass", func(t *testing.T) {
 			opts := []datasource.TaskFindOption{
+				datasource.WithDomain(task.Domain),
+				datasource.WithProject(task.Project),
 				datasource.WithAction(task.Action),
 				datasource.WithDataType(task.DataType),
 				datasource.WithStatus(task.Status),
 			}
-			tasks, err := ds.TaskDao().List(context.Background(), task.Domain, task.Project, opts...)
+			tasks, err := ds.TaskDao().List(context.Background(), opts...)
 			assert.NoError(t, err)
 			assert.Equal(t, 1, len(tasks))
 		})
 
 		t.Run("list task without action ,dataType and status should pass", func(t *testing.T) {
-			tasks, err := ds.TaskDao().List(context.Background(), "default", "default")
+			tasks, err := ds.TaskDao().List(context.Background())
 			assert.NoError(t, err)
 			assert.Equal(t, 3, len(tasks))
 			assert.Equal(t, tasks[0].Timestamp, task.Timestamp)

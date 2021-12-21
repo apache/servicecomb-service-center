@@ -23,10 +23,12 @@ import (
 
 	"github.com/go-chassis/cari/db"
 	"github.com/stretchr/testify/assert"
+	// support embedded etcd
+	_ "github.com/little-cui/etcdadpt/embedded"
+	_ "github.com/little-cui/etcdadpt/remote"
 
-	"servicecomb-service-center/eventbase/datasource/etcd"
-	_ "servicecomb-service-center/eventbase/datasource/etcd"
-	"servicecomb-service-center/eventbase/test"
+	"github.com/apache/servicecomb-service-center/eventbase/datasource/etcd"
+	"github.com/apache/servicecomb-service-center/eventbase/test"
 )
 
 func TestNewDatasource(t *testing.T) {
