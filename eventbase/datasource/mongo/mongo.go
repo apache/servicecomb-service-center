@@ -113,14 +113,14 @@ func wrapError(err error, skipMsg ...string) {
 func ensureTask(session *mgo.Session) {
 	c := session.DB(model.DBName).C(model.CollectionTask)
 	err := c.Create(&mgo.CollectionInfo{Validator: bson.M{
-		model.ColumnTaskID:    bson.M{"$exists": true},
+		model.ColumnID:        bson.M{"$exists": true},
 		model.ColumnDomain:    bson.M{"$exists": true},
 		model.ColumnProject:   bson.M{"$exists": true},
 		model.ColumnTimestamp: bson.M{"$exists": true},
 	}})
 	wrapError(err)
 	err = c.EnsureIndex(mgo.Index{
-		Key:    []string{model.ColumnDomain, model.ColumnProject, model.ColumnTaskID, model.ColumnTimestamp},
+		Key:    []string{model.ColumnDomain, model.ColumnProject, model.ColumnID, model.ColumnTimestamp},
 		Unique: true,
 	})
 	wrapError(err)

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package request
+package model
 
 // GetTombstoneRequest contains tombstone get request params
 type GetTombstoneRequest struct {
@@ -29,9 +29,9 @@ type GetTombstoneRequest struct {
 type ListTaskRequest struct {
 	Domain       string `json:"domain,omitempty" yaml:"domain,omitempty"`
 	Project      string `json:"project,omitempty" yaml:"project,omitempty"`
-	TaskAction   string `json:"task_action,omitempty" yaml:"task_action,omitempty"`
-	TaskStatus   string `json:"task_status,omitempty" yaml:"task_status,omitempty"`
-	TaskDataType string `json:"task_data_type,omitempty" yaml:"task_data_type,omitempty"`
+	Action       string `json:"action,omitempty" yaml:"action,omitempty"`
+	Status       string `json:"status,omitempty" yaml:"status,omitempty"`
+	ResourceType string `json:"resource_type,omitempty" yaml:"resource_type,omitempty"`
 }
 
 // ListTombstoneRequest contains tombstone list request params

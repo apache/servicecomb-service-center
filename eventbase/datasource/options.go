@@ -18,11 +18,11 @@
 package datasource
 
 type TaskFindOptions struct {
-	Domain   string
-	Project  string
-	Action   string
-	Status   string
-	DataType string
+	Domain       string
+	Project      string
+	Action       string
+	Status       string
+	ResourceType string
 }
 
 type TombstoneFindOptions struct {
@@ -75,7 +75,7 @@ func WithStatus(status string) TaskFindOption {
 // WithDataType find task with dataType
 func WithDataType(dataType string) TaskFindOption {
 	return func(options *TaskFindOptions) {
-		options.DataType = dataType
+		options.ResourceType = dataType
 	}
 }
 

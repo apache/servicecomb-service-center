@@ -38,7 +38,7 @@ func (d *Dao) Create(ctx context.Context, task *sync.Task) (*sync.Task, error) {
 		openlog.Error("fail to marshal task")
 		return nil, err
 	}
-	ok, err := etcdadpt.InsertBytes(ctx, key.TaskKey(task.Domain, task.Project, task.TaskID, task.Timestamp), taskBytes)
+	ok, err := etcdadpt.InsertBytes(ctx, key.TaskKey(task.Domain, task.Project, task.ID, task.Timestamp), taskBytes)
 	if err != nil {
 		openlog.Error("fail to create task" + err.Error())
 		return nil, err
@@ -51,7 +51,7 @@ func (d *Dao) Create(ctx context.Context, task *sync.Task) (*sync.Task, error) {
 }
 
 func (d *Dao) Update(ctx context.Context, task *sync.Task) error {
-	keyTask := key.TaskKey(task.Domain, task.Project, task.TaskID, task.Timestamp)
+	keyTask := key.TaskKey(task.Domain, task.Project, task.ID, task.Timestamp)
 	resp, err := etcdadpt.Get(ctx, keyTask)
 	if err != nil {
 		openlog.Error("fail to get task" + err.Error())
@@ -79,7 +79,7 @@ func (d *Dao) Update(ctx context.Context, task *sync.Task) error {
 func (d *Dao) Delete(ctx context.Context, tasks ...*sync.Task) error {
 	delOptions := make([]etcdadpt.OpOptions, len(tasks))
 	for i, task := range tasks {
-		delOptions[i] = etcdadpt.OpDel(etcdadpt.WithStrKey(key.TaskKey(task.Domain, task.Project, task.TaskID, task.Timestamp)))
+		delOptions[i] = etcdadpt.OpDel(etcdadpt.WithStrKey(key.TaskKey(task.Domain, task.Project, task.ID, task.Timestamp)))
 	}
 	err := etcdadpt.Txn(ctx, delOptions)
 	if err != nil {
@@ -119,7 +119,7 @@ func filterMatch(task *sync.Task, options datasource.TaskFindOptions) bool {
 	if options.Action != "" && task.Action != options.Action {
 		return false
 	}
-	if options.DataType != "" && task.DataType != options.DataType {
+	if options.ResourceType != "" && task.ResourceType != options.ResourceType {
 		return false
 	}
 	if options.Status != "" && task.Status != options.Status {

@@ -24,11 +24,10 @@ const (
 	CollectionTombstone = "tombstone"
 	ColumnDomain        = "domain"
 	ColumnProject       = "project"
-	ColumnTaskID        = "task_id"
+	ColumnID            = "id"
 	ColumnTimestamp     = "timestamp"
 	ColumnResourceID    = "resource_id"
 	ColumnResourceType  = "resource_type"
 	ColumnStatus        = "status"
 	ColumnAction        = "action"
-	ColumnDataType      = "data_type"
 )

@@ -23,7 +23,7 @@ import (
 	"github.com/go-chassis/cari/sync"
 
 	"github.com/apache/servicecomb-service-center/eventbase/datasource"
-	"github.com/apache/servicecomb-service-center/eventbase/request"
+	"github.com/apache/servicecomb-service-center/eventbase/model"
 )
 
 func Delete(ctx context.Context, tasks ...*sync.Task) error {
@@ -34,13 +34,13 @@ func Update(ctx context.Context, task *sync.Task) error {
 	return datasource.GetTaskDao().Update(ctx, task)
 }
 
-func List(ctx context.Context, request *request.ListTaskRequest) ([]*sync.Task, error) {
+func List(ctx context.Context, request *model.ListTaskRequest) ([]*sync.Task, error) {
 	opts := []datasource.TaskFindOption{
 		datasource.WithDomain(request.Domain),
 		datasource.WithProject(request.Project),
-		datasource.WithAction(request.TaskAction),
-		datasource.WithDataType(request.TaskDataType),
-		datasource.WithStatus(request.TaskStatus),
+		datasource.WithAction(request.Action),
+		datasource.WithDataType(request.ResourceType),
+		datasource.WithStatus(request.Status),
 	}
 	tasks, err := datasource.GetTaskDao().List(ctx, opts...)
 	if err != nil {
