@@ -167,8 +167,7 @@ func TestUnregisterManyService(t *testing.T) {
 		assert.Equal(t, int64(0), i)
 	})
 
-	t.Run("delete inused should failed", func(t *testing.T) {
-		var serviceIDs []*etcd.RotateServiceIDKey
+	t.Run("delete inused without instance, should ok", func(t *testing.T) {
 		service, err := datasource.GetMetadataManager().RegisterService(ctx, &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
 				ServiceId:   serviceIDPrefix + "1",
@@ -176,10 +175,29 @@ func TestUnregisterManyService(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		serviceIDs = append(serviceIDs, &etcd.RotateServiceIDKey{DomainProject: domainProject, ServiceID: service.ServiceId})
-
 		defer datasource.GetMetadataManager().UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: service.ServiceId, Force: true})
 
+		consumer, err := datasource.GetMetadataManager().RegisterService(ctx, &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				ServiceId:   serviceIDPrefix + "2",
+				ServiceName: serviceIDPrefix + "2",
+			},
+		})
+		assert.NoError(t, err)
+		defer datasource.GetMetadataManager().UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: consumer.ServiceId, Force: true})
+
+		_, err = datasource.GetMetadataManager().FindInstances(ctx, &pb.FindInstancesRequest{
+			ConsumerServiceId: consumer.ServiceId,
+			AppId:             "default",
+			ServiceName:       serviceIDPrefix + "1",
+		})
+		assert.NoError(t, err)
+
+		var serviceIDs []*etcd.RotateServiceIDKey
+		serviceIDs = append(serviceIDs,
+			&etcd.RotateServiceIDKey{DomainProject: domainProject, ServiceID: service.ServiceId},
+			&etcd.RotateServiceIDKey{DomainProject: domainProject, ServiceID: consumer.ServiceId},
+		)
 		_, err = datasource.GetMetadataManager().RegisterInstance(ctx, &pb.RegisterInstanceRequest{
 			Instance: &pb.MicroServiceInstance{
 				ServiceId: service.ServiceId,
@@ -189,10 +207,10 @@ func TestUnregisterManyService(t *testing.T) {
 		assert.NoError(t, err)
 
 		deleted := etcd.UnregisterManyService(ctx, serviceIDs)
-		assert.Equal(t, int64(0), deleted)
+		assert.Equal(t, int64(2), deleted)
 
 		_, i, err := etcdadpt.List(ctx, path.GenerateServiceKey(domainProject, serviceIDPrefix))
 		assert.NoError(t, err)
-		assert.Equal(t, int64(1), i)
+		assert.Equal(t, int64(0), i)
 	})
 }
