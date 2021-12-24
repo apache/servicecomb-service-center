@@ -22,6 +22,7 @@ import (
 
 	"github.com/apache/servicecomb-service-center/pkg/validate"
 	quotasvc "github.com/apache/servicecomb-service-center/server/service/quota"
+	pb "github.com/go-chassis/cari/discovery"
 )
 
 var (
@@ -64,4 +65,40 @@ func ModifySchemaReqValidator() *validate.Validator {
 		// forward compatibility: allow empty
 		v.AddRule("Summary", &validate.Rule{Max: 128, Regexp: schemaSummaryRegex})
 	})
+}
+
+func ValidateGetSchema(request *pb.GetSchemaRequest) error {
+	err := baseCheck(request)
+	if err != nil {
+		return err
+	}
+	return GetSchemaReqValidator().Validate(request)
+}
+func ValidateListSchema(request *pb.GetAllSchemaRequest) error {
+	err := baseCheck(request)
+	if err != nil {
+		return err
+	}
+	return GetSchemaReqValidator().Validate(request)
+}
+func ValidatePutSchema(request *pb.ModifySchemaRequest) error {
+	err := baseCheck(request)
+	if err != nil {
+		return err
+	}
+	return ModifySchemaReqValidator().Validate(request)
+}
+func ValidatePutSchemas(request *pb.ModifySchemasRequest) error {
+	err := baseCheck(request)
+	if err != nil {
+		return err
+	}
+	return ModifySchemasReqValidator().Validate(request)
+}
+func ValidateDeleteSchema(request *pb.DeleteSchemaRequest) error {
+	err := baseCheck(request)
+	if err != nil {
+		return err
+	}
+	return GetSchemaReqValidator().Validate(request)
 }

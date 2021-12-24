@@ -23,6 +23,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -136,8 +137,9 @@ func (s *MicroServiceService) GetServices(w http.ResponseWriter, r *http.Request
 
 func (s *MicroServiceService) GetExistence(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
+	checkType := query.Get("type")
 	request := &pb.GetExistenceRequest{
-		Type:        query.Get("type"),
+		Type:        checkType,
 		Environment: query.Get("env"),
 		AppId:       query.Get("appId"),
 		ServiceName: query.Get("serviceName"),
@@ -147,12 +149,14 @@ func (s *MicroServiceService) GetExistence(w http.ResponseWriter, r *http.Reques
 	}
 	resp, err := core.ServiceAPI.Exist(r.Context(), request)
 	if err != nil {
-		log.Error("check service existence failed", err)
-		rest.WriteError(w, pb.ErrInternal, "check service existence failed")
+		log.Error("check resource existence failed", err)
+		rest.WriteServiceError(w, err)
 		return
 	}
-	w.Header().Add("X-Schema-Summary", resp.Summary)
-	resp.Summary = ""
+	if checkType == datasource.ExistTypeSchema {
+		w.Header().Add("X-Schema-Summary", resp.Summary)
+		resp.Summary = ""
+	}
 	rest.WriteResponse(w, r, resp.Response, resp)
 }
 

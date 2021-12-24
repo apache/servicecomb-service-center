@@ -801,11 +801,12 @@ var _ = Describe("'Micro-service' service", func() {
 
 		Context("when type is invalid", func() {
 			It("should be failed", func() {
-				resp, err := serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
+				_, err := serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
 					Type: "nonetype",
 				})
-				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(pb.ErrInvalidParams))
+				testErr := err.(*errsvc.Error)
+				Expect(testErr).To(Not(BeNil()))
+				Expect(testErr.Code).To(Equal(pb.ErrInvalidParams))
 			})
 		})
 

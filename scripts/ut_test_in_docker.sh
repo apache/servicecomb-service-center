@@ -62,6 +62,7 @@ echo "${green}Preparing the env for UT....${reset}"
 if [ ${db_name} == "etcd" ];then
   export TEST_MODE=etcd
   [ $? == 0 ] && ut_for_file datasource
+  [ $? == 0 ] && ut_for_dir datasource/schema
   [ $? == 0 ] && ut_for_dir datasource/etcd
   [ $? == 0 ] && ut_for_dir pkg
   [ $? == 0 ] && ut_for_dir server

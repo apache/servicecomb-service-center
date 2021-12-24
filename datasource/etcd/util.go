@@ -119,24 +119,12 @@ func schemaWithDatabaseOpera(invoke etcdadpt.Operation, domainProject string, se
 func isExistSchemaID(service *pb.MicroService, schemas []*pb.Schema) bool {
 	serviceSchemaIds := service.Schemas
 	for _, schema := range schemas {
-		if !containsValueInSlice(serviceSchemaIds, schema.SchemaId) {
+		if !util.SliceHave(serviceSchemaIds, schema.SchemaId) {
 			log.Error(fmt.Sprintf("schema[%s/%s] does not exist schemaID", service.ServiceId, schema.SchemaId), nil)
 			return false
 		}
 	}
 	return true
-}
-
-func containsValueInSlice(in []string, value string) bool {
-	if in == nil || len(value) == 0 {
-		return false
-	}
-	for _, i := range in {
-		if i == value {
-			return true
-		}
-	}
-	return false
 }
 
 func commitSchemaInfo(domainProject string, serviceID string, schema *pb.Schema) []etcdadpt.OpOptions {

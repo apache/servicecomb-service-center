@@ -35,6 +35,8 @@ const (
 	RegistryProjectKey       = "projects"
 	RegistryAliasKey         = "alias"
 	RegistryTagKey           = "tags"
+	RegistrySchemaRefKey     = "schema-ref"
+	RegistrySchemaContentKey = "schema-content"
 	RegistrySchemaKey        = "schemas"
 	RegistrySchemaSummaryKey = "schema-sum"
 	RegistryLeaseKey         = "leases"
@@ -167,6 +169,24 @@ func GetServiceSchemaRootKey(domainProject string) string {
 	}, SPLIT)
 }
 
+func GetServiceSchemaRefRootKey(domainProject string) string {
+	return util.StringJoin([]string{
+		GetRootKey(),
+		RegistryServiceKey,
+		RegistrySchemaRefKey,
+		domainProject,
+	}, SPLIT)
+}
+
+func GetServiceSchemaContentRootKey(domainProject string) string {
+	return util.StringJoin([]string{
+		GetRootKey(),
+		RegistryServiceKey,
+		RegistrySchemaContentKey,
+		domainProject,
+	}, SPLIT)
+}
+
 func GetInstanceRootKey(domainProject string) string {
 	return util.StringJoin([]string{
 		GetRootKey(),
@@ -209,6 +229,21 @@ func GenerateServiceTagKey(domainProject string, serviceID string) string {
 	return util.StringJoin([]string{
 		GetServiceTagRootKey(domainProject),
 		serviceID,
+	}, SPLIT)
+}
+
+func GenerateServiceSchemaRefKey(domainProject string, serviceID string, schemaID string) string {
+	return util.StringJoin([]string{
+		GetServiceSchemaRefRootKey(domainProject),
+		serviceID,
+		schemaID,
+	}, SPLIT)
+}
+
+func GenerateServiceSchemaContentKey(domainProject string, hash string) string {
+	return util.StringJoin([]string{
+		GetServiceSchemaContentRootKey(domainProject),
+		hash,
 	}, SPLIT)
 }
 

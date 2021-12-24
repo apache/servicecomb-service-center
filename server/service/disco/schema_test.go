@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/datasource/schema"
 	"github.com/apache/servicecomb-service-center/server/service/disco"
 	quotasvc "github.com/apache/servicecomb-service-center/server/service/quota"
 	pb "github.com/go-chassis/cari/discovery"
@@ -39,12 +40,14 @@ var (
 
 func TestPutSchema(t *testing.T) {
 	var (
-		serviceIdDev string
 		serviceId    string
+		serviceIdDev string
+		serviceIdPro string
 	)
+	ctx := getContext()
 
 	t.Run("should be passed, create service", func(t *testing.T) {
-		respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+		respCreateService, err := datasource.GetMetadataManager().RegisterService(ctx, &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
 				AppId:       "create_schema_group",
 				ServiceName: "create_schema_service",
@@ -58,7 +61,7 @@ func TestPutSchema(t *testing.T) {
 		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceIdDev = respCreateService.ServiceId
 
-		respCreateService, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+		respCreateService, err = datasource.GetMetadataManager().RegisterService(ctx, &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
 				AppId:       "create_schema_group",
 				ServiceName: "create_schema_service",
@@ -71,15 +74,34 @@ func TestPutSchema(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceId = respCreateService.ServiceId
+
+		respCreateService, err = datasource.GetMetadataManager().RegisterService(ctx, &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				AppId:       "create_schemas_prod",
+				ServiceName: "create_schemas_service",
+				Version:     "1.0.1",
+				Level:       "FRONT",
+				Schemas: []string{
+					"first_schemaId",
+					"second_schemaId",
+				},
+				Status:      pb.MS_UP,
+				Environment: pb.ENV_PROD,
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
+		serviceIdPro = respCreateService.ServiceId
 	})
 
 	defer func() {
-		serviceResource.Delete(getContext(), &pb.DeleteServiceRequest{ServiceId: serviceIdDev, Force: true})
-		serviceResource.Delete(getContext(), &pb.DeleteServiceRequest{ServiceId: serviceId, Force: true})
+		datasource.GetMetadataManager().UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: serviceIdDev, Force: true})
+		datasource.GetMetadataManager().UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: serviceId, Force: true})
+		datasource.GetMetadataManager().UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: serviceIdPro, Force: true})
 	}()
 
 	f := func() {
-		_, err := disco.PutSchema(getContext(), &pb.ModifySchemaRequest{
+		err := disco.PutSchema(ctx, &pb.ModifySchemaRequest{
 			ServiceId: "",
 			SchemaId:  "com.huawei.test",
 			Schema:    "create schema",
@@ -88,7 +110,7 @@ func TestPutSchema(t *testing.T) {
 		assert.Error(t, testErr)
 		assert.Equal(t, pb.ErrInvalidParams, testErr.Code)
 
-		_, err = disco.PutSchema(getContext(), &pb.ModifySchemaRequest{
+		err = disco.PutSchema(ctx, &pb.ModifySchemaRequest{
 			ServiceId: "notExistService",
 			SchemaId:  "com.huawei.test",
 			Schema:    "create schema",
@@ -97,7 +119,7 @@ func TestPutSchema(t *testing.T) {
 		assert.Error(t, testErr)
 		assert.Equal(t, pb.ErrServiceNotExists, testErr.Code)
 
-		_, err = disco.PutSchema(getContext(), &pb.ModifySchemaRequest{
+		err = disco.PutSchema(ctx, &pb.ModifySchemaRequest{
 			ServiceId: serviceIdDev,
 			SchemaId:  invalidSchemaId,
 			Schema:    "create schema",
@@ -106,7 +128,7 @@ func TestPutSchema(t *testing.T) {
 		assert.Error(t, testErr)
 		assert.Equal(t, pb.ErrInvalidParams, testErr.Code)
 
-		_, err = disco.PutSchema(getContext(), &pb.ModifySchemaRequest{
+		err = disco.PutSchema(ctx, &pb.ModifySchemaRequest{
 			ServiceId: serviceIdDev,
 			SchemaId:  "com.huawei.test",
 			Schema:    "create schema",
@@ -116,7 +138,7 @@ func TestPutSchema(t *testing.T) {
 		assert.Error(t, testErr)
 		assert.Equal(t, pb.ErrInvalidParams, testErr.Code)
 
-		_, err = disco.PutSchema(getContext(), &pb.ModifySchemaRequest{
+		err = disco.PutSchema(ctx, &pb.ModifySchemaRequest{
 			ServiceId: serviceIdDev,
 			SchemaId:  "com.huawei.test",
 			Schema:    "create schema",
@@ -139,14 +161,14 @@ func TestPutSchema(t *testing.T) {
 	})
 
 	f = func() {
-		_, err := disco.PutSchemas(getContext(), &pb.ModifySchemasRequest{
+		err := disco.PutSchemas(ctx, &pb.ModifySchemasRequest{
 			ServiceId: serviceIdDev,
 		})
 		testErr := err.(*errsvc.Error)
 		assert.Error(t, testErr)
 		assert.Equal(t, pb.ErrInvalidParams, testErr.Code)
 
-		_, err = disco.PutSchemas(getContext(), &pb.ModifySchemasRequest{
+		err = disco.PutSchemas(ctx, &pb.ModifySchemasRequest{
 			ServiceId: "",
 			Schemas: []*pb.Schema{
 				{
@@ -160,7 +182,7 @@ func TestPutSchema(t *testing.T) {
 		assert.Error(t, testErr)
 		assert.Equal(t, pb.ErrInvalidParams, testErr.Code)
 
-		_, err = disco.PutSchemas(getContext(), &pb.ModifySchemasRequest{
+		err = disco.PutSchemas(ctx, &pb.ModifySchemasRequest{
 			ServiceId: serviceIdDev,
 			Schemas: []*pb.Schema{
 				{
@@ -174,7 +196,7 @@ func TestPutSchema(t *testing.T) {
 		assert.Error(t, testErr)
 		assert.Equal(t, pb.ErrInvalidParams, testErr.Code)
 
-		_, err = disco.PutSchemas(getContext(), &pb.ModifySchemasRequest{
+		err = disco.PutSchemas(ctx, &pb.ModifySchemasRequest{
 			ServiceId: serviceIdDev,
 			Schemas: []*pb.Schema{
 				{
@@ -187,7 +209,7 @@ func TestPutSchema(t *testing.T) {
 		assert.Error(t, testErr)
 		assert.Equal(t, pb.ErrInvalidParams, testErr.Code)
 
-		_, err = disco.PutSchemas(getContext(), &pb.ModifySchemasRequest{
+		err = disco.PutSchemas(ctx, &pb.ModifySchemasRequest{
 			ServiceId: serviceIdDev,
 			Schemas: []*pb.Schema{
 				{
@@ -200,7 +222,7 @@ func TestPutSchema(t *testing.T) {
 		assert.Error(t, testErr)
 		assert.Equal(t, pb.ErrInvalidParams, testErr.Code)
 
-		_, err = disco.PutSchemas(getContext(), &pb.ModifySchemasRequest{
+		err = disco.PutSchemas(ctx, &pb.ModifySchemasRequest{
 			ServiceId: serviceIdDev,
 			Schemas: []*pb.Schema{
 				{
@@ -232,7 +254,6 @@ func TestPutSchema(t *testing.T) {
 	schemas := make([]*pb.Schema, 0, size)
 	for i := 0; i < size; i++ {
 		s := "ServiceCombTestTheLimitOfSchemas" + strconv.Itoa(i)
-
 		schemaIds = append(schemaIds, s)
 		schemas = append(schemas, &pb.Schema{
 			SchemaId: s,
@@ -241,44 +262,46 @@ func TestPutSchema(t *testing.T) {
 		})
 	}
 
-	t.Run("should be failed in dev env, when create schemas out of gauge", func(t *testing.T) {
-		_, err := disco.PutSchemas(getContext(), &pb.ModifySchemasRequest{
+	t.Run("should be failed, when put schemas out of gauge", func(t *testing.T) {
+		err := disco.PutSchemas(ctx, &pb.ModifySchemasRequest{
 			ServiceId: serviceIdDev,
 			Schemas:   schemas,
 		})
 		testErr := err.(*errsvc.Error)
 		assert.Error(t, testErr)
 		assert.Equal(t, pb.ErrInvalidParams, testErr.Code)
+	})
 
-		_, err = disco.PutSchemas(getContext(), &pb.ModifySchemasRequest{
-			ServiceId: serviceIdDev,
-			Schemas:   schemas[:max],
-		})
-		assert.NoError(t, err)
+	err := disco.PutSchemas(ctx, &pb.ModifySchemasRequest{
+		ServiceId: serviceIdDev,
+		Schemas:   schemas[:max],
+	})
+	assert.NoError(t, err)
 
+	t.Run("should be failed, when put schema out of gauge", func(t *testing.T) {
 		schema := schemas[max]
-		_, err = disco.PutSchema(getContext(), &pb.ModifySchemaRequest{
+		err = disco.PutSchema(ctx, &pb.ModifySchemaRequest{
 			ServiceId: serviceIdDev,
 			SchemaId:  schema.SchemaId,
 			Schema:    schema.Schema,
 		})
-		testErr = err.(*errsvc.Error)
+		testErr := err.(*errsvc.Error)
 		assert.Error(t, testErr)
 		assert.Equal(t, pb.ErrNotEnoughQuota, testErr.Code)
 	})
 
-	t.Run("should be failed in prod env, when create schemas out of gauge", func(t *testing.T) {
-		_, err := disco.PutSchemas(getContext(), &pb.ModifySchemasRequest{
+	t.Run("should be ok, when put a exist schema", func(t *testing.T) {
+		schema := schemas[0]
+		err = disco.PutSchema(ctx, &pb.ModifySchemaRequest{
 			ServiceId: serviceIdDev,
-			Schemas:   schemas,
+			SchemaId:  schema.SchemaId,
+			Schema:    schema.Schema,
 		})
-		testErr := err.(*errsvc.Error)
-		assert.Error(t, testErr)
-		assert.Equal(t, pb.ErrInvalidParams, testErr.Code)
+		assert.NoError(t, err)
 	})
 
-	t.Run("should be failed when create service", func(t *testing.T) {
-		createServiceResponse, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+	t.Run("should be failed when create service with exceed schemaIDs", func(t *testing.T) {
+		createServiceResponse, err := serviceResource.Create(ctx, &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
 				AppId:       "check_schema_group",
 				ServiceName: "check_schema_service",
@@ -292,36 +315,13 @@ func TestPutSchema(t *testing.T) {
 		assert.Equal(t, pb.ErrInvalidParams, createServiceResponse.Response.GetCode())
 	})
 
-	var (
-		serviceIdPro string
-	)
-	respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
-		Service: &pb.MicroService{
-			AppId:       "create_schemas_prod",
-			ServiceName: "create_schemas_service",
-			Version:     "1.0.1",
-			Level:       "FRONT",
-			Schemas: []string{
-				"first_schemaId",
-				"second_schemaId",
-			},
-			Status:      pb.MS_UP,
-			Environment: pb.ENV_PROD,
-		},
-	})
-	assert.NoError(t, err)
-	assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
-	serviceIdPro = respCreateService.ServiceId
-	defer serviceResource.Delete(getContext(), &pb.DeleteServiceRequest{ServiceId: serviceIdPro, Force: true})
-
 	t.Run("should be failed, when modify schema and summary is empty", func(t *testing.T) {
-		respModifySchema, err := disco.PutSchema(getContext(), &pb.ModifySchemaRequest{
+		err := disco.PutSchema(ctx, &pb.ModifySchemaRequest{
 			ServiceId: serviceIdPro,
 			SchemaId:  "first_schemaId",
 			Schema:    "first_schema",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respModifySchema.Response.GetCode())
 
 		schemas := []*pb.Schema{
 			{
@@ -330,15 +330,13 @@ func TestPutSchema(t *testing.T) {
 				Summary:  "first0summary",
 			},
 		}
-		respModifySchemas, err := disco.PutSchemas(getContext(), &pb.ModifySchemasRequest{
+		err = disco.PutSchemas(ctx, &pb.ModifySchemasRequest{
 			ServiceId: serviceIdPro,
 			Schemas:   schemas,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respModifySchemas.Response.GetCode())
 
-		respExist, err := serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
-			Type:      datasource.ExistTypeSchema,
+		respExist, err := disco.ExistSchema(ctx, &pb.GetSchemaRequest{
 			ServiceId: serviceIdPro,
 			SchemaId:  "first_schemaId",
 		})
@@ -352,12 +350,11 @@ func TestPutSchema(t *testing.T) {
 				Summary:  "second0summary",
 			},
 		}
-		respModifySchemas, err = disco.PutSchemas(getContext(), &pb.ModifySchemasRequest{
+		err = disco.PutSchemas(ctx, &pb.ModifySchemasRequest{
 			ServiceId: serviceIdPro,
 			Schemas:   schemas,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respModifySchemas.Response.GetCode())
 	})
 }
 
@@ -366,7 +363,7 @@ func TestPutSchemas(t *testing.T) {
 		serviceIdDev1 string
 		serviceIdDev2 string
 	)
-	respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+	respCreateService, err := datasource.GetMetadataManager().RegisterService(getContext(), &pb.CreateServiceRequest{
 		Service: &pb.MicroService{
 			AppId:       "create_schemas_dev",
 			ServiceName: "create_schemas_service",
@@ -379,9 +376,9 @@ func TestPutSchemas(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 	serviceIdDev1 = respCreateService.ServiceId
-	defer serviceResource.Delete(getContext(), &pb.DeleteServiceRequest{ServiceId: serviceIdDev1, Force: true})
+	defer datasource.GetMetadataManager().UnregisterService(getContext(), &pb.DeleteServiceRequest{ServiceId: serviceIdDev1, Force: true})
 
-	respCreateService, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+	respCreateService, err = datasource.GetMetadataManager().RegisterService(getContext(), &pb.CreateServiceRequest{
 		Service: &pb.MicroService{
 			AppId:       "create_schemas_dev",
 			ServiceName: "create_schemas_service",
@@ -397,7 +394,7 @@ func TestPutSchemas(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 	serviceIdDev2 = respCreateService.ServiceId
-	defer serviceResource.Delete(getContext(), &pb.DeleteServiceRequest{ServiceId: serviceIdDev2, Force: true})
+	defer datasource.GetMetadataManager().UnregisterService(getContext(), &pb.DeleteServiceRequest{ServiceId: serviceIdDev2, Force: true})
 
 	t.Run("should be passed, when create schemas when service schema id set is empty", func(t *testing.T) {
 		schemas := []*pb.Schema{
@@ -406,28 +403,22 @@ func TestPutSchemas(t *testing.T) {
 				Schema:   "first_schema",
 				Summary:  "first0summary",
 			},
-			{
-				SchemaId: "first_schemaId",
-				Schema:   "first_schema",
-				Summary:  "first0summary",
-			},
 		}
-		respCreateService, err := disco.PutSchemas(getContext(), &pb.ModifySchemasRequest{
+		err := disco.PutSchemas(getContext(), &pb.ModifySchemasRequest{
 			ServiceId: serviceIdDev1,
 			Schemas:   schemas,
 		})
 		assert.NoError(t, err)
 		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 
-		respGetAllSchema, err := disco.ListSchema(getContext(), &pb.GetAllSchemaRequest{
+		schemas, err = disco.ListSchema(getContext(), &pb.GetAllSchemaRequest{
 			ServiceId: serviceIdDev1,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respGetAllSchema.Response.GetCode())
-		assert.Equal(t, 1, len(respGetAllSchema.Schemas))
+		assert.Equal(t, 1, len(schemas))
 
 		schemas = []*pb.Schema{}
-		respCreateService, err = disco.PutSchemas(getContext(), &pb.ModifySchemasRequest{
+		err = disco.PutSchemas(getContext(), &pb.ModifySchemasRequest{
 			ServiceId: serviceIdDev2,
 			Schemas:   schemas,
 		})
@@ -442,12 +433,11 @@ func TestPutSchemas(t *testing.T) {
 				Summary:  "first0summary1change",
 			},
 		}
-		respCreateService, err = disco.PutSchemas(getContext(), &pb.ModifySchemasRequest{
+		err = disco.PutSchemas(getContext(), &pb.ModifySchemasRequest{
 			ServiceId: serviceIdDev1,
 			Schemas:   schemas,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 
 		schemas = []*pb.Schema{
 			{
@@ -456,12 +446,11 @@ func TestPutSchemas(t *testing.T) {
 				Summary:  "second0summary",
 			},
 		}
-		respCreateService, err = disco.PutSchemas(getContext(), &pb.ModifySchemasRequest{
+		err = disco.PutSchemas(getContext(), &pb.ModifySchemasRequest{
 			ServiceId: serviceIdDev1,
 			Schemas:   schemas,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 
 		service, err := disco.GetService(getContext(), &pb.GetServiceRequest{
 			ServiceId: serviceIdDev1,
@@ -470,7 +459,7 @@ func TestPutSchemas(t *testing.T) {
 		assert.Equal(t, []string{"second_schemaId"}, service.Schemas)
 
 		schemas = []*pb.Schema{}
-		respCreateService, err = disco.PutSchemas(getContext(), &pb.ModifySchemasRequest{
+		err = disco.PutSchemas(getContext(), &pb.ModifySchemasRequest{
 			ServiceId: serviceIdDev1,
 			Schemas:   schemas,
 		})
@@ -485,12 +474,11 @@ func TestPutSchemas(t *testing.T) {
 				Summary:  "second0summary",
 			},
 		}
-		respCreateService, err = disco.PutSchemas(getContext(), &pb.ModifySchemasRequest{
+		err = disco.PutSchemas(getContext(), &pb.ModifySchemasRequest{
 			ServiceId: serviceIdDev2,
 			Schemas:   schemas,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 
 		service, err = disco.GetService(getContext(), &pb.GetServiceRequest{
 			ServiceId: serviceIdDev2,
@@ -504,7 +492,7 @@ func TestExistSchema(t *testing.T) {
 	var (
 		serviceId string
 	)
-	respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+	respCreateService, err := datasource.GetMetadataManager().RegisterService(getContext(), &pb.CreateServiceRequest{
 		Service: &pb.MicroService{
 			AppId:       "query_schema_group",
 			ServiceName: "query_schema_service",
@@ -517,80 +505,62 @@ func TestExistSchema(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 	serviceId = respCreateService.ServiceId
-	defer serviceResource.Delete(getContext(), &pb.DeleteServiceRequest{ServiceId: serviceId, Force: true})
+	defer datasource.GetMetadataManager().UnregisterService(getContext(), &pb.DeleteServiceRequest{ServiceId: serviceId, Force: true})
 
-	resp, err := disco.PutSchema(getContext(), &pb.ModifySchemaRequest{
+	err = disco.PutSchema(getContext(), &pb.ModifySchemaRequest{
 		ServiceId: serviceId,
 		SchemaId:  "com.huawei.test",
 		Schema:    "query schema",
 		Summary:   "summary",
 	})
 	assert.NoError(t, err)
-	assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
-	resp, err = disco.PutSchema(getContext(), &pb.ModifySchemaRequest{
+	err = disco.PutSchema(getContext(), &pb.ModifySchemaRequest{
 		ServiceId: serviceId,
 		SchemaId:  "com.huawei.test.no.summary",
 		Schema:    "query schema",
 	})
 	assert.NoError(t, err)
-	assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
 	t.Run("should be failed, when request is invalid", func(t *testing.T) {
-		resp, err := serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
-			Type:      "schema",
+		_, err := disco.ExistSchema(getContext(), &pb.GetSchemaRequest{
 			ServiceId: "",
 			SchemaId:  "com.huawei.test",
 		})
-		assert.NoError(t, err)
-		assert.Equal(t, pb.ErrInvalidParams, resp.Response.GetCode())
+		testErr := err.(*errsvc.Error)
+		assert.Error(t, testErr)
+		assert.Equal(t, pb.ErrInvalidParams, testErr.Code)
 
-		resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
-			Type:      "schema",
+		_, err = disco.ExistSchema(getContext(), &pb.GetSchemaRequest{
 			ServiceId: serviceId,
 			SchemaId:  "noneschema",
 		})
-		testErr := err.(*errsvc.Error)
+		testErr = err.(*errsvc.Error)
 		assert.Error(t, testErr)
 		assert.Equal(t, pb.ErrSchemaNotExists, testErr.Code)
 
-		resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
-			Type:      "schema",
+		_, err = disco.ExistSchema(getContext(), &pb.GetSchemaRequest{
 			ServiceId: serviceId,
 			SchemaId:  TOO_LONG_SCHEMAID,
 		})
-		assert.NoError(t, err)
-		assert.Equal(t, pb.ErrInvalidParams, resp.Response.GetCode())
+		testErr = err.(*errsvc.Error)
+		assert.Error(t, testErr)
+		assert.Equal(t, pb.ErrInvalidParams, testErr.Code)
 	})
 
 	t.Run("should be passed, when request is valid", func(t *testing.T) {
-		resp, err := serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
-			Type:      "schema",
+		resp, err := disco.ExistSchema(getContext(), &pb.GetSchemaRequest{
 			ServiceId: serviceId,
 			SchemaId:  "com.huawei.test",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 		assert.Equal(t, "summary", resp.Summary)
 
-		resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
-			Type:        "schema",
-			ServiceId:   serviceId,
-			SchemaId:    "com.huawei.test",
-			AppId:       "()",
-			ServiceName: "",
-			Version:     "()",
-		})
-		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
-
-		resp, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
-			Type:      "schema",
+		resp, err = disco.ExistSchema(getContext(), &pb.GetSchemaRequest{
 			ServiceId: serviceId,
 			SchemaId:  "com.huawei.test.no.summary",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 		assert.Equal(t, "com.huawei.test.no.summary", resp.SchemaId)
 		assert.Equal(t, "", resp.Summary)
 	})
@@ -600,14 +570,14 @@ func TestGetSchema(t *testing.T) {
 	var (
 		serviceId     string
 		serviceId1    string
-		schemaId1     string = "all_schema1"
-		schemaId2     string = "all_schema2"
-		schemaId3     string = "all_schema3"
-		summary       string = "this0is1a2test"
-		schemaContent string = "the content is vary large"
+		schemaId1     = "all_schema1"
+		schemaId2     = "all_schema2"
+		schemaId3     = "all_schema3"
+		summary       = "this0is1a2test"
+		schemaContent = "the content is vary large"
 	)
 
-	respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+	respCreateService, err := datasource.GetMetadataManager().RegisterService(getContext(), &pb.CreateServiceRequest{
 		Service: &pb.MicroService{
 			AppId:       "get_schema_group",
 			ServiceName: "get_schema_service",
@@ -623,9 +593,9 @@ func TestGetSchema(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 	serviceId = respCreateService.ServiceId
-	defer serviceResource.Delete(getContext(), &pb.DeleteServiceRequest{ServiceId: serviceId, Force: true})
+	defer datasource.GetMetadataManager().UnregisterService(getContext(), &pb.DeleteServiceRequest{ServiceId: serviceId, Force: true})
 
-	respCreateService, err = serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+	respCreateService, err = datasource.GetMetadataManager().RegisterService(getContext(), &pb.CreateServiceRequest{
 		Service: &pb.MicroService{
 			AppId:       "get_all_schema",
 			ServiceName: "get_all_schema",
@@ -642,42 +612,37 @@ func TestGetSchema(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 	serviceId1 = respCreateService.ServiceId
-	defer serviceResource.Delete(getContext(), &pb.DeleteServiceRequest{ServiceId: serviceId1, Force: true})
+	defer datasource.GetMetadataManager().UnregisterService(getContext(), &pb.DeleteServiceRequest{ServiceId: serviceId1, Force: true})
 
-	resp, err := disco.PutSchema(getContext(), &pb.ModifySchemaRequest{
+	err = disco.PutSchema(getContext(), &pb.ModifySchemaRequest{
 		ServiceId: serviceId,
 		SchemaId:  "com.huawei.test",
 		Schema:    "get schema",
 		Summary:   "schema0summary",
 	})
 	assert.NoError(t, err)
-	assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
-	respPutData, err := disco.PutSchema(getContext(), &pb.ModifySchemaRequest{
+	err = disco.PutSchema(getContext(), &pb.ModifySchemaRequest{
 		ServiceId: serviceId1,
 		SchemaId:  schemaId2,
 		Schema:    schemaContent,
 	})
 	assert.NoError(t, err)
-	assert.Equal(t, pb.ResponseSuccess, respPutData.Response.GetCode())
 
-	respPutData, err = disco.PutSchema(getContext(), &pb.ModifySchemaRequest{
+	err = disco.PutSchema(getContext(), &pb.ModifySchemaRequest{
 		ServiceId: serviceId1,
 		SchemaId:  schemaId3,
 		Schema:    schemaContent,
 		Summary:   summary,
 	})
 	assert.NoError(t, err)
-	assert.Equal(t, pb.ResponseSuccess, respPutData.Response.GetCode())
 
 	t.Run("should be pass, when list schema", func(t *testing.T) {
-		respGetAllSchema, err := disco.ListSchema(getContext(), &pb.GetAllSchemaRequest{
+		schemas, err := disco.ListSchema(getContext(), &pb.GetAllSchemaRequest{
 			ServiceId:  serviceId1,
 			WithSchema: false,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respGetAllSchema.Response.GetCode())
-		schemas := respGetAllSchema.Schemas
 		for _, schema := range schemas {
 			if schema.SchemaId == schemaId1 {
 				assert.Empty(t, schema.Summary)
@@ -693,13 +658,11 @@ func TestGetSchema(t *testing.T) {
 			}
 		}
 
-		respGetAllSchema, err = disco.ListSchema(getContext(), &pb.GetAllSchemaRequest{
+		schemas, err = disco.ListSchema(getContext(), &pb.GetAllSchemaRequest{
 			ServiceId:  serviceId1,
 			WithSchema: true,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respGetAllSchema.Response.GetCode())
-		schemas = respGetAllSchema.Schemas
 		for _, schema := range schemas {
 			if schema.SchemaId == schemaId1 {
 				assert.Empty(t, schema.Summary)
@@ -805,14 +768,15 @@ func TestGetSchema(t *testing.T) {
 	})
 
 	t.Run("should be passed, when request is valid", func(t *testing.T) {
-		resp, err := disco.GetSchema(getContext(), &pb.GetSchemaRequest{
+		schema, err := disco.GetSchema(getContext(), &pb.GetSchemaRequest{
 			ServiceId: serviceId,
 			SchemaId:  "com.huawei.test",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respPutData.Response.GetCode())
-		assert.Equal(t, "get schema", resp.Schema)
-		assert.Equal(t, "schema0summary", resp.SchemaSummary)
+		assert.NotNil(t, schema)
+		assert.Equal(t, "com.huawei.test", schema.SchemaId)
+		assert.Equal(t, "get schema", schema.Schema)
+		assert.Equal(t, "schema0summary", schema.Summary)
 	})
 }
 
@@ -820,7 +784,7 @@ func TestDeleteSchema(t *testing.T) {
 	var (
 		serviceId string
 	)
-	respCreateService, err := serviceResource.Create(getContext(), &pb.CreateServiceRequest{
+	respCreateService, err := datasource.GetMetadataManager().RegisterService(getContext(), &pb.CreateServiceRequest{
 		Service: &pb.MicroService{
 			AppId:       "delete_schema_group",
 			ServiceName: "delete_schema_service",
@@ -832,19 +796,18 @@ func TestDeleteSchema(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 	serviceId = respCreateService.ServiceId
-	defer serviceResource.Delete(getContext(), &pb.DeleteServiceRequest{ServiceId: serviceId, Force: true})
+	defer datasource.GetMetadataManager().UnregisterService(getContext(), &pb.DeleteServiceRequest{ServiceId: serviceId, Force: true})
 
-	resp, err := disco.PutSchema(getContext(), &pb.ModifySchemaRequest{
+	err = disco.PutSchema(getContext(), &pb.ModifySchemaRequest{
 		ServiceId: serviceId,
 		SchemaId:  "com.huawei.test",
 		Schema:    "delete schema",
 		Summary:   "summary",
 	})
 	assert.NoError(t, err)
-	assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
 	t.Run("should be failed, when request is invalid", func(t *testing.T) {
-		_, err := disco.DeleteSchema(getContext(), &pb.DeleteSchemaRequest{
+		err := disco.DeleteSchema(getContext(), &pb.DeleteSchemaRequest{
 			ServiceId: serviceId,
 			SchemaId:  "noneschema",
 		})
@@ -852,7 +815,7 @@ func TestDeleteSchema(t *testing.T) {
 		assert.Error(t, testErr)
 		assert.Equal(t, pb.ErrSchemaNotExists, testErr.Code)
 
-		_, err = disco.DeleteSchema(getContext(), &pb.DeleteSchemaRequest{
+		err = disco.DeleteSchema(getContext(), &pb.DeleteSchemaRequest{
 			ServiceId: "",
 			SchemaId:  "com.huawei.test",
 		})
@@ -860,7 +823,7 @@ func TestDeleteSchema(t *testing.T) {
 		assert.Error(t, testErr)
 		assert.Equal(t, pb.ErrInvalidParams, testErr.Code)
 
-		_, err = disco.DeleteSchema(getContext(), &pb.DeleteSchemaRequest{
+		err = disco.DeleteSchema(getContext(), &pb.DeleteSchemaRequest{
 			ServiceId: "noexistservice",
 			SchemaId:  "com.huawei.test",
 		})
@@ -868,7 +831,7 @@ func TestDeleteSchema(t *testing.T) {
 		assert.Error(t, testErr)
 		assert.Equal(t, pb.ErrServiceNotExists, testErr.Code)
 
-		_, err = disco.DeleteSchema(getContext(), &pb.DeleteSchemaRequest{
+		err = disco.DeleteSchema(getContext(), &pb.DeleteSchemaRequest{
 			ServiceId: serviceId,
 			SchemaId:  invalidSchemaId,
 		})
@@ -878,12 +841,11 @@ func TestDeleteSchema(t *testing.T) {
 	})
 
 	t.Run("should be passed, when request is valid", func(t *testing.T) {
-		resp, err := disco.DeleteSchema(getContext(), &pb.DeleteSchemaRequest{
+		err := disco.DeleteSchema(getContext(), &pb.DeleteSchemaRequest{
 			ServiceId: serviceId,
 			SchemaId:  "com.huawei.test",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
 		_, err = disco.GetSchema(getContext(), &pb.GetSchemaRequest{
 			ServiceId: serviceId,
@@ -893,13 +855,225 @@ func TestDeleteSchema(t *testing.T) {
 		assert.Error(t, testErr)
 		assert.Equal(t, pb.ErrSchemaNotExists, testErr.Code)
 
-		_, err = serviceResource.Exist(getContext(), &pb.GetExistenceRequest{
-			Type:      "schema",
+		_, err = disco.ExistSchema(getContext(), &pb.GetSchemaRequest{
 			ServiceId: serviceId,
 			SchemaId:  "com.huawei.test",
 		})
 		testErr = err.(*errsvc.Error)
 		assert.Error(t, testErr)
 		assert.Equal(t, pb.ErrSchemaNotExists, testErr.Code)
+	})
+}
+
+func TestListSchema(t *testing.T) {
+	var serviceID string
+	ctx := getContext()
+
+	respCreateService, err := datasource.GetMetadataManager().RegisterService(ctx, &pb.CreateServiceRequest{
+		Service: &pb.MicroService{
+			ServiceName: "TestListSchema",
+			Schemas: []string{
+				"schemaID_1",
+			},
+		},
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
+	serviceID = respCreateService.ServiceId
+	defer datasource.GetMetadataManager().UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: serviceID, Force: true})
+
+	err = disco.PutSchema(ctx, &pb.ModifySchemaRequest{
+		ServiceId: serviceID,
+		SchemaId:  "schemaID_1",
+		Schema:    "schema_1",
+		Summary:   "summary1",
+	})
+	assert.NoError(t, err)
+
+	t.Run("list schema with invalid request, should failed", func(t *testing.T) {
+		schemas, err := disco.ListSchema(ctx, &pb.GetAllSchemaRequest{})
+		testErr := err.(*errsvc.Error)
+		assert.Error(t, testErr)
+		assert.Equal(t, pb.ErrInvalidParams, testErr.Code)
+		assert.Nil(t, schemas)
+
+		schemas, err = disco.ListSchema(ctx, &pb.GetAllSchemaRequest{
+			ServiceId: "not_exist_id",
+		})
+		testErr = err.(*errsvc.Error)
+		assert.Error(t, testErr)
+		assert.Equal(t, pb.ErrServiceNotExists, testErr.Code)
+		assert.Nil(t, schemas)
+	})
+
+	t.Run("list schema, should ok", func(t *testing.T) {
+		schemas, err := disco.ListSchema(ctx, &pb.GetAllSchemaRequest{
+			ServiceId: serviceID,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, 1, len(schemas))
+
+		schema := schemas[0]
+		assert.Equal(t, "schemaID_1", schema.SchemaId)
+		assert.Equal(t, "summary1", schema.Summary)
+		assert.Empty(t, schema.Schema)
+
+		schemas, err = disco.ListSchema(ctx, &pb.GetAllSchemaRequest{
+			ServiceId:  serviceID,
+			WithSchema: true,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, 1, len(schemas))
+
+		schema = schemas[0]
+		assert.Equal(t, "schemaID_1", schema.SchemaId)
+		assert.Equal(t, "summary1", schema.Summary)
+		assert.Equal(t, "schema_1", schema.Schema)
+	})
+}
+
+func TestCompatibleOperateSchema(t *testing.T) {
+	var serviceID string
+	ctx := getContext()
+
+	respCreateService, err := datasource.GetMetadataManager().RegisterService(ctx, &pb.CreateServiceRequest{
+		Service: &pb.MicroService{
+			ServiceName: "TestListSchema",
+			Schemas: []string{
+				"schemaID_1",
+			},
+		},
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
+	serviceID = respCreateService.ServiceId
+	defer schema.Instance().DeleteContent(ctx, &schema.ContentRequest{
+		Hash: schema.Hash("schemaID_1", "schema_1"),
+	})
+	defer schema.Instance().DeleteContent(ctx, &schema.ContentRequest{
+		Hash: schema.Hash("schemaID_2", "schema_2"),
+	})
+	defer datasource.GetMetadataManager().UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: serviceID, Force: true})
+
+	t.Run("get/list schema with old content, should ok", func(t *testing.T) {
+		_, err := datasource.GetMetadataManager().ModifySchema(ctx, &pb.ModifySchemaRequest{
+			ServiceId: serviceID,
+			SchemaId:  "schemaID_1",
+			Schema:    "schema_1",
+			Summary:   "summary1",
+		})
+		assert.NoError(t, err)
+
+		schema, err := disco.GetSchema(ctx, &pb.GetSchemaRequest{
+			ServiceId: serviceID,
+			SchemaId:  "schemaID_1",
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, "schema_1", schema.Schema)
+		assert.Equal(t, "summary1", schema.Summary)
+
+		schemas, err := disco.ListSchema(ctx, &pb.GetAllSchemaRequest{
+			ServiceId:  serviceID,
+			WithSchema: true,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, 1, len(schemas))
+		schema = schemas[0]
+		assert.Equal(t, "schema_1", schema.Schema)
+		assert.Equal(t, "summary1", schema.Summary)
+	})
+
+	t.Run("put schema overwrite old content, should ok", func(t *testing.T) {
+		_, err := datasource.GetMetadataManager().ModifySchema(ctx, &pb.ModifySchemaRequest{
+			ServiceId: serviceID,
+			SchemaId:  "schemaID_2",
+			Schema:    "schema_2",
+			Summary:   "summary2",
+		})
+		assert.NoError(t, err)
+
+		err = disco.PutSchema(ctx, &pb.ModifySchemaRequest{
+			ServiceId: serviceID,
+			SchemaId:  "schemaID_2",
+			Schema:    "schema_2",
+			Summary:   "summary2",
+		})
+		assert.NoError(t, err)
+
+		schema, err := disco.GetSchema(ctx, &pb.GetSchemaRequest{
+			ServiceId: serviceID,
+			SchemaId:  "schemaID_2",
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, "schema_2", schema.Schema)
+		assert.Equal(t, "summary2", schema.Summary)
+
+		schemas, err := disco.ListSchema(ctx, &pb.GetAllSchemaRequest{
+			ServiceId:  serviceID,
+			WithSchema: true,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, 2, len(schemas))
+		schema = schemas[1]
+		assert.Equal(t, "schema_2", schema.Schema)
+		assert.Equal(t, "summary2", schema.Summary)
+	})
+
+	t.Run("delete schema with old content, should ok", func(t *testing.T) {
+		err := disco.DeleteSchema(ctx, &pb.DeleteSchemaRequest{
+			ServiceId: serviceID,
+			SchemaId:  "schemaID_1",
+		})
+		assert.NoError(t, err)
+
+		schema, err := disco.GetSchema(ctx, &pb.GetSchemaRequest{
+			ServiceId: serviceID,
+			SchemaId:  "schemaID_1",
+		})
+		testErr := err.(*errsvc.Error)
+		assert.Error(t, testErr)
+		assert.Equal(t, pb.ErrSchemaNotExists, testErr.Code)
+
+		schemas, err := disco.ListSchema(ctx, &pb.GetAllSchemaRequest{
+			ServiceId:  serviceID,
+			WithSchema: true,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, 2, len(schemas))
+		schema = schemas[0]
+		assert.Empty(t, schema.Schema)
+		assert.Empty(t, schema.Summary)
+		schema = schemas[1]
+		assert.Equal(t, "schema_2", schema.Schema)
+		assert.Equal(t, "summary2", schema.Summary)
+	})
+
+	t.Run("delete schema with new/old content, should ok", func(t *testing.T) {
+		err := disco.DeleteSchema(ctx, &pb.DeleteSchemaRequest{
+			ServiceId: serviceID,
+			SchemaId:  "schemaID_2",
+		})
+		assert.NoError(t, err)
+
+		schema, err := disco.GetSchema(ctx, &pb.GetSchemaRequest{
+			ServiceId: serviceID,
+			SchemaId:  "schemaID_2",
+		})
+		testErr := err.(*errsvc.Error)
+		assert.Error(t, testErr)
+		assert.Equal(t, pb.ErrSchemaNotExists, testErr.Code)
+
+		schemas, err := disco.ListSchema(ctx, &pb.GetAllSchemaRequest{
+			ServiceId:  serviceID,
+			WithSchema: true,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, 2, len(schemas))
+		schema = schemas[0]
+		assert.Empty(t, schema.Schema)
+		assert.Empty(t, schema.Summary)
+		schema = schemas[1]
+		assert.Empty(t, schema.Schema)
+		assert.Empty(t, schema.Summary)
 	})
 }

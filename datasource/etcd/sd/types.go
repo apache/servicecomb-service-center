@@ -44,8 +44,6 @@ var (
 	TypeServiceTag      kvstore.Type
 	TypeDependencyRule  kvstore.Type
 	TypeDependencyQueue kvstore.Type
-	TypeSchema          kvstore.Type
-	TypeSchemaSummary   kvstore.Type
 	TypeInstance        kvstore.Type
 	TypeLease           kvstore.Type
 )
@@ -59,11 +57,6 @@ func RegisterInnerTypes() {
 		state.WithParser(value.InstanceParser),
 		state.WithDeferHandler(NewInstanceEventDeferHandler()))
 	TypeDomain = state.MustRegister("DOMAIN", path.GenerateDomainKey(""),
-		state.WithInitSize(100),
-		state.WithParser(parser.StringParser))
-	TypeSchema = state.MustRegister("SCHEMA", path.GetServiceSchemaRootKey(""),
-		state.WithInitSize(0))
-	TypeSchemaSummary = state.MustRegister("SCHEMA_SUMMARY", path.GetServiceSchemaSummaryRootKey(""),
 		state.WithInitSize(100),
 		state.WithParser(parser.StringParser))
 	TypeLease = state.MustRegister("LEASE", path.GetInstanceLeaseRootKey(""),

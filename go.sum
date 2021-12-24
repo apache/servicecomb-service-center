@@ -187,6 +187,8 @@ github.com/go-chassis/foundation v0.3.0/go.mod h1:2PjwqpVwYEVaAldl5A58a08viH8p27
 github.com/go-chassis/foundation v0.3.1-0.20210806081520-3bd92d1ef787/go.mod h1:6NsIUaHghTFRGfCBcZN011zl196F6OR5QvD9N+P4oWU=
 github.com/go-chassis/foundation v0.3.1-0.20210811025651-7f4d2b2b906c h1:6ooUyysnayGgoJHV++NLEcnnnXzsw3ud4VydjISGBqI=
 github.com/go-chassis/foundation v0.3.1-0.20210811025651-7f4d2b2b906c/go.mod h1:6NsIUaHghTFRGfCBcZN011zl196F6OR5QvD9N+P4oWU=
+github.com/go-chassis/foundation v0.4.0 h1:z0xETnSxF+vRXWjoIhOdzt6rywjZ4sB++utEl4YgWEY=
+github.com/go-chassis/foundation v0.4.0/go.mod h1:6NsIUaHghTFRGfCBcZN011zl196F6OR5QvD9N+P4oWU=
 github.com/go-chassis/go-archaius v1.5.1 h1:1FrNyzzmD6o6BIjPF8uQ4Cc+u7qYIgQTpDk8uopBqfo=
 github.com/go-chassis/go-archaius v1.5.1/go.mod h1:QPwvvtBxvwiC48rmydoAqxopqOr93RCQ6syWsIkXPXQ=
 github.com/go-chassis/go-chassis-extension/protocol/grpc v0.0.0-20210902082902-eb5df922afcd h1:RqGW+mW6U0+3QkvGXiDZfMwRb8PwW8bb1rI9tlm/jzo=
@@ -436,6 +438,12 @@ github.com/leodido/go-urn v1.2.1/go.mod h1:zt4jvISO2HfUBqxjfIshjdMTYS56ZS/qv49ic
 github.com/lib/pq v1.0.0/go.mod h1:5WUZQaWbwv1U+lTReE5YruASi9Al49XbQIvNi/34Woo=
 github.com/little-cui/etcdadpt v0.2.1 h1:eT1A+BV1/2/dmmZA2Nl+cc7uTMuwd6T6DD+JrXr8xcA=
 github.com/little-cui/etcdadpt v0.2.1/go.mod h1:727wftF2FS4vfkgFLmIvQue1XH+9u4lK2/hd6L7OAC8=
+github.com/little-cui/etcdadpt v0.2.2-0.20211218040008-804e734f410b h1:GeNmlkSJKu1B8pNM18g+u8O/7BJNd9TP6KrfePy7Z6w=
+github.com/little-cui/etcdadpt v0.2.2-0.20211218040008-804e734f410b/go.mod h1:HnRRpIrVEVNWobkiCvG2EHLWKKZ+L047EcI29ma2zA4=
+github.com/little-cui/etcdadpt v0.2.2-0.20211222115540-fc5b1296d8b5 h1:SlD/2mPGjzkg2oj4ndoR9u/yadPcyE8om3njQEI65bE=
+github.com/little-cui/etcdadpt v0.2.2-0.20211222115540-fc5b1296d8b5/go.mod h1:HnRRpIrVEVNWobkiCvG2EHLWKKZ+L047EcI29ma2zA4=
+github.com/little-cui/etcdadpt v0.3.1 h1:lAPIffcOR6jROu/mWf+zHscV8urIu1qbsJvwvziLWDY=
+github.com/little-cui/etcdadpt v0.3.1/go.mod h1:HnRRpIrVEVNWobkiCvG2EHLWKKZ+L047EcI29ma2zA4=
 github.com/magiconair/properties v1.8.1/go.mod h1:PppfXfuXeibc/6YijjN8zIbojt8czPbwD3XqdrwzmxQ=
 github.com/mailru/easyjson v0.0.0-20160728113105-d5b7844b561a/go.mod h1:C1wdFJiN94OJF2b5HbByQZoLdCWB1Yqtg26g4irojpc=
 github.com/mailru/easyjson v0.0.0-20190614124828-94de47d64c63/go.mod h1:C1wdFJiN94OJF2b5HbByQZoLdCWB1Yqtg26g4irojpc=

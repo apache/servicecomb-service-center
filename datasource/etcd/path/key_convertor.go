@@ -102,6 +102,10 @@ func GetInfoFromSvcAliasKV(key []byte) *discovery.MicroServiceKey {
 	return GetInfoFromSvcIndexKV(key)
 }
 
+func GetInfoFromSchemaRefKV(key []byte) (domainProject, serviceID, schemaID string) {
+	return GetInfoFromSchemaSummaryKV(key)
+}
+
 func GetInfoFromSchemaSummaryKV(key []byte) (domainProject, serviceID, schemaID string) {
 	keys := ToResponse(key)
 	l := len(keys)

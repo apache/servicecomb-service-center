@@ -125,15 +125,14 @@ var _ = Describe("'Govern' service", func() {
 			Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 			serviceId = resp.ServiceId
 
-			disco.PutSchema(getContext(), &pb.ModifySchemaRequest{
+			err = disco.PutSchema(getContext(), &pb.ModifySchemaRequest{
 				ServiceId: serviceId,
 				SchemaId:  "schemaId",
 				Schema:    "detail",
 			})
 			Expect(err).To(BeNil())
-			Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
-			disco.RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
+			respI, err := disco.RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
 				Instance: &pb.MicroServiceInstance{
 					ServiceId: serviceId,
 					Endpoints: []string{
@@ -144,7 +143,7 @@ var _ = Describe("'Govern' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
+			Expect(respI.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 		})
 
 		Context("when get invalid service detail", func() {

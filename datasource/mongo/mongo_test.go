@@ -17,7 +17,6 @@
 
 package mongo_test
 
-// initialize
 import (
 	"context"
 

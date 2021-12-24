@@ -31,6 +31,7 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
+	"github.com/apache/servicecomb-service-center/datasource/schema"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
@@ -104,27 +105,24 @@ func (ds *MetadataManager) RegisterService(ctx context.Context, request *pb.Crea
 	}
 
 	key := path.GenerateServiceKey(domainProject, service.ServiceId)
-	keyBytes := util.StringToBytesWithNoCopy(key)
-	indexBytes := util.StringToBytesWithNoCopy(index)
-	aliasBytes := util.StringToBytesWithNoCopy(path.GenerateServiceAliasKey(serviceKey))
+	alias := path.GenerateServiceAliasKey(serviceKey)
 
 	opts := []etcdadpt.OpOptions{
-		etcdadpt.OpPut(etcdadpt.WithKey(keyBytes), etcdadpt.WithValue(data)),
-		etcdadpt.OpPut(etcdadpt.WithKey(indexBytes), etcdadpt.WithStrValue(service.ServiceId)),
+		etcdadpt.OpPut(etcdadpt.WithStrKey(key), etcdadpt.WithValue(data)),
+		etcdadpt.OpPut(etcdadpt.WithStrKey(index), etcdadpt.WithStrValue(service.ServiceId)),
 	}
 	uniqueCmpOpts := []etcdadpt.CmpOptions{
-		etcdadpt.OpCmp(etcdadpt.CmpVer(indexBytes), etcdadpt.CmpEqual, 0),
-		etcdadpt.OpCmp(etcdadpt.CmpVer(keyBytes), etcdadpt.CmpEqual, 0),
+		etcdadpt.NotExistKey(key),
+		etcdadpt.NotExistKey(index),
 	}
 	failOpts := []etcdadpt.OpOptions{
-		etcdadpt.OpGet(etcdadpt.WithKey(indexBytes)),
+		etcdadpt.OpGet(etcdadpt.WithStrKey(index)),
 	}
 
 	if len(serviceKey.Alias) > 0 {
-		opts = append(opts, etcdadpt.OpPut(etcdadpt.WithKey(aliasBytes), etcdadpt.WithStrValue(service.ServiceId)))
-		uniqueCmpOpts = append(uniqueCmpOpts,
-			etcdadpt.OpCmp(etcdadpt.CmpVer(aliasBytes), etcdadpt.CmpEqual, 0))
-		failOpts = append(failOpts, etcdadpt.OpGet(etcdadpt.WithKey(aliasBytes)))
+		opts = append(opts, etcdadpt.OpPut(etcdadpt.WithStrKey(alias), etcdadpt.WithStrValue(service.ServiceId)))
+		uniqueCmpOpts = append(uniqueCmpOpts, etcdadpt.NotExistKey(alias))
+		failOpts = append(failOpts, etcdadpt.OpGet(etcdadpt.WithStrKey(alias)))
 	}
 
 	resp, err := etcdadpt.TxnWithCmp(ctx, opts, uniqueCmpOpts, failOpts)
@@ -1390,7 +1388,7 @@ func (ds *MetadataManager) ExistSchema(ctx context.Context, request *pb.GetExist
 	}
 	if !exist {
 		log.Info(fmt.Sprintf("schema[%s/%s] exist failed, schema does not exist", request.ServiceId, request.SchemaId))
-		return nil, pb.NewError(pb.ErrSchemaNotExists, "schema does not exist.")
+		return nil, schema.ErrSchemaNotFound
 	}
 	schemaSummary, err := getSchemaSummary(ctx, domainProject, request.ServiceId, request.SchemaId)
 	if err != nil {
@@ -1424,7 +1422,7 @@ func (ds *MetadataManager) GetSchema(ctx context.Context, request *pb.GetSchemaR
 	if resp.Count == 0 {
 		log.Error(fmt.Sprintf("get schema[%s/%s] failed, schema does not exists",
 			request.ServiceId, request.SchemaId), errDo)
-		return nil, pb.NewError(pb.ErrSchemaNotExists, "Do not have this schema info.")
+		return nil, schema.ErrSchemaNotFound
 	}
 
 	schemaSummary, err := getSchemaSummary(ctx, domainProject, request.ServiceId, request.SchemaId)
@@ -1513,12 +1511,6 @@ func (ds *MetadataManager) DeleteSchema(ctx context.Context, request *pb.DeleteS
 	remoteIP := util.GetIPFromContext(ctx)
 	domainProject := util.ParseDomainProject(ctx)
 
-	if !serviceUtil.ServiceExist(ctx, domainProject, request.ServiceId) {
-		log.Error(fmt.Sprintf("delete schema[%s/%s] failed, service does not exist, operator: %s",
-			request.ServiceId, request.SchemaId, remoteIP), nil)
-		return nil, pb.NewError(pb.ErrServiceNotExists, "Service does not exist.")
-	}
-
 	key := path.GenerateServiceSchemaKey(domainProject, request.ServiceId, request.SchemaId)
 	exist, err := serviceUtil.CheckSchemaInfoExist(ctx, key)
 	if err != nil {
@@ -1529,7 +1521,7 @@ func (ds *MetadataManager) DeleteSchema(ctx context.Context, request *pb.DeleteS
 	if !exist {
 		log.Error(fmt.Sprintf("delete schema[%s/%s] failed, schema does not exist, operator: %s",
 			request.ServiceId, request.SchemaId, remoteIP), nil)
-		return nil, pb.NewError(pb.ErrSchemaNotExists, "Schema info does not exist.")
+		return nil, schema.ErrSchemaNotFound
 	}
 	epSummaryKey := path.GenerateServiceSchemaSummaryKey(domainProject, request.ServiceId, request.SchemaId)
 	resp, errDo := etcdadpt.TxnWithCmp(ctx,
@@ -2038,6 +2030,9 @@ func (ds *MetadataManager) DeleteServicePri(ctx context.Context, serviceID strin
 		etcdadpt.WithPrefix()))
 	opts = append(opts, etcdadpt.OpDel(
 		etcdadpt.WithStrKey(path.GenerateServiceSchemaSummaryKey(domainProject, serviceID, "")),
+		etcdadpt.WithPrefix()))
+	opts = append(opts, etcdadpt.OpDel(
+		etcdadpt.WithStrKey(path.GenerateServiceSchemaRefKey(domainProject, serviceID, "")),
 		etcdadpt.WithPrefix()))
 
 	//删除tags

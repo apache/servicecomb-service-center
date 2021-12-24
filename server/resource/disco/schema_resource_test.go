@@ -26,10 +26,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/apache/servicecomb-service-center/pkg/util"
 	_ "github.com/apache/servicecomb-service-center/test"
 
 	"github.com/apache/servicecomb-service-center/pkg/rest"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/resource/disco"
 	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
 	pb "github.com/go-chassis/cari/discovery"
@@ -264,5 +264,79 @@ func TestSchemaRouter_PutSchemas(t *testing.T) {
 		w := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w, r)
 		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+}
+
+func TestSchemaRouter_ListSchema(t *testing.T) {
+	ctx := context.TODO()
+
+	service, err := discosvc.RegisterService(ctx, &pb.CreateServiceRequest{Service: &pb.MicroService{
+		ServiceName: "TestSchemaRouter_ListSchema",
+		Schemas:     []string{"schemaID_1"},
+	}})
+	assert.NoError(t, err)
+	serviceID := service.ServiceId
+	defer discosvc.UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: serviceID})
+
+	t.Run("list schemas before upload content, should return only schemaID", func(t *testing.T) {
+		r, _ := http.NewRequest(http.MethodGet, "/v4/default/registry/microservices/"+serviceID+"/schemas", nil)
+		w := httptest.NewRecorder()
+		rest.GetRouter().ServeHTTP(w, r)
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		var resp pb.GetAllSchemaResponse
+		body, _ := ioutil.ReadAll(w.Body)
+		err := json.Unmarshal(body, &resp)
+		assert.NoError(t, err)
+		assert.Equal(t, 1, len(resp.Schemas))
+		assert.Equal(t, "schemaID_1", resp.Schemas[0].SchemaId)
+		assert.Empty(t, resp.Schemas[0].Schema)
+	})
+
+	t.Run("list schema after put schemas, should ok", func(t *testing.T) {
+		requestBody := `{
+  "schemas": [
+    {
+      "schemaId": "schemaID_2",
+      "schema": "schema_2",
+      "summary": "summary2"
+    }
+  ]
+}`
+		r, _ := http.NewRequest(http.MethodPost, "/v4/default/registry/microservices/"+serviceID+"/schemas", bytes.NewBufferString(requestBody))
+		w := httptest.NewRecorder()
+		rest.GetRouter().ServeHTTP(w, r)
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		r, _ = http.NewRequest(http.MethodGet, "/v4/default/registry/microservices/"+serviceID+"/schemas", nil)
+		w = httptest.NewRecorder()
+		rest.GetRouter().ServeHTTP(w, r)
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		var resp pb.GetAllSchemaResponse
+		body, _ := ioutil.ReadAll(w.Body)
+		err := json.Unmarshal(body, &resp)
+		assert.NoError(t, err)
+		assert.Equal(t, 1, len(resp.Schemas))
+
+		schema := resp.Schemas[0]
+		assert.Equal(t, "schemaID_2", schema.SchemaId)
+		assert.Equal(t, "summary2", schema.Summary)
+		assert.Empty(t, schema.Schema)
+
+		r, _ = http.NewRequest(http.MethodGet, "/v4/default/registry/microservices/"+serviceID+"/schemas?withSchema=1", nil)
+		w = httptest.NewRecorder()
+		rest.GetRouter().ServeHTTP(w, r)
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		body, _ = ioutil.ReadAll(w.Body)
+		err = json.Unmarshal(body, &resp)
+		assert.NoError(t, err)
+		assert.Equal(t, 1, len(resp.Schemas))
+
+		schema = resp.Schemas[0]
+		assert.Equal(t, "schemaID_2", schema.SchemaId)
+		assert.Equal(t, "summary2", schema.Summary)
+		assert.Equal(t, "schema_2", schema.Schema)
 	})
 }

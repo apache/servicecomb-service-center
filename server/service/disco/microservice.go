@@ -237,17 +237,23 @@ func (s *MicroServiceService) Exist(ctx context.Context, in *pb.GetExistenceRequ
 		err := validator.GetSchemaReqValidator().Validate(in)
 		if err != nil {
 			log.Error(fmt.Sprintf("schema[%s/%s] exist failed", in.ServiceId, in.SchemaId), err)
-			return &pb.GetExistenceResponse{
-				Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
-			}, nil
+			return nil, pb.NewError(pb.ErrInvalidParams, err.Error())
 		}
-
-		return datasource.GetMetadataManager().ExistSchema(ctx, in)
+		schema, err := ExistSchema(ctx, &pb.GetSchemaRequest{
+			ServiceId: in.ServiceId,
+			SchemaId:  in.SchemaId,
+		})
+		if err != nil {
+			return nil, err
+		}
+		return &pb.GetExistenceResponse{
+			ServiceId: in.ServiceId,
+			SchemaId:  schema.SchemaId,
+			Summary:   schema.Summary,
+		}, nil
 	default:
 		log.Warn(fmt.Sprintf("unexpected type '%s' for existence query.", in.Type))
-		return &pb.GetExistenceResponse{
-			Response: pb.CreateResponse(pb.ErrInvalidParams, "Only micro-service and schema can be used as type."),
-		}, nil
+		return nil, pb.NewError(pb.ErrInvalidParams, "Only micro-service and schema can be used as type.")
 	}
 }
 

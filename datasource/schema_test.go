@@ -33,6 +33,25 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func genLocalDatasource(editable bool) datasource.DataSource {
+	t := archaius.Get("TEST_MODE")
+	if t == nil {
+		t = "etcd"
+	}
+	if t == "etcd" {
+		ds, _ := etcd.NewDataSource(datasource.Options{
+			Config:            etcdadpt.Config{Kind: "etcd"},
+			SchemaNotEditable: !editable,
+		})
+
+		return ds
+	}
+	ds, _ := mongo.NewDataSource(datasource.Options{
+		SchemaNotEditable: !editable,
+	})
+	return ds
+}
+
 func TestSchema_Create(t *testing.T) {
 	var (
 		serviceIdDev string
@@ -789,7 +808,7 @@ func TestSchema_Delete(t *testing.T) {
 		})
 		testErr = err.(*errsvc.Error)
 		assert.Error(t, testErr)
-		assert.Equal(t, pb.ErrServiceNotExists, testErr.Code)
+		assert.Equal(t, pb.ErrSchemaNotExists, testErr.Code)
 	})
 
 	t.Run("test delete when request is valid", func(t *testing.T) {
@@ -816,23 +835,4 @@ func TestSchema_Delete(t *testing.T) {
 		assert.Error(t, testErr)
 		assert.Equal(t, pb.ErrSchemaNotExists, testErr.Code)
 	})
-}
-
-func genLocalDatasource(editable bool) datasource.DataSource {
-	t := archaius.Get("TEST_MODE")
-	if t == nil {
-		t = "etcd"
-	}
-	if t == "etcd" {
-		ds, _ := etcd.NewDataSource(datasource.Options{
-			Config:            etcdadpt.Config{Kind: "etcd"},
-			SchemaNotEditable: !editable,
-		})
-
-		return ds
-	}
-	ds, _ := mongo.NewDataSource(datasource.Options{
-		SchemaNotEditable: !editable,
-	})
-	return ds
 }
