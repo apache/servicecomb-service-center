@@ -149,7 +149,7 @@ func UnregisterManyService(ctx context.Context, serviceIDKeys []*RotateServiceID
 		serviceID := key.ServiceID
 		pool.Do(func(ctx context.Context) {
 			resp, err := datasource.GetMetadataManager().UnregisterService(util.SetDomainProjectString(ctx, domainProject),
-				&pb.DeleteServiceRequest{ServiceId: serviceID})
+				&pb.DeleteServiceRequest{ServiceId: serviceID, Force: true})
 			if err == nil && resp.Response.IsSucceed() {
 				atomic.AddInt64(&deleted, 1)
 			}
