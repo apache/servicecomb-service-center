@@ -36,7 +36,7 @@ func NewSchemaDAO(opts schema.Options) (schema.DAO, error) {
 type SchemaDAO struct{}
 
 func (s *SchemaDAO) GetRef(ctx context.Context, refRequest *schema.RefRequest) (*schema.Ref, error) {
-	return nil, schema.ErrSchemaNotExist
+	return nil, schema.ErrSchemaNotFound
 }
 
 func (s *SchemaDAO) ListRef(ctx context.Context, refRequest *schema.RefRequest) ([]*schema.Ref, error) {
@@ -44,11 +44,11 @@ func (s *SchemaDAO) ListRef(ctx context.Context, refRequest *schema.RefRequest) 
 }
 
 func (s *SchemaDAO) DeleteRef(ctx context.Context, refRequest *schema.RefRequest) error {
-	return schema.ErrSchemaNotExist
+	return schema.ErrSchemaNotFound
 }
 
 func (s *SchemaDAO) GetContent(ctx context.Context, contentRequest *schema.ContentRequest) (*schema.Content, error) {
-	return nil, schema.ErrSchemaNotExist
+	return nil, schema.ErrSchemaNotFound
 }
 
 func (s *SchemaDAO) PutContent(ctx context.Context, contentRequest *schema.PutContentRequest) error {

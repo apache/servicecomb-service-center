@@ -60,7 +60,7 @@ func (dao *SchemaDAO) GetRef(ctx context.Context, refRequest *schema.RefRequest)
 		return nil, err
 	}
 	if len(refResp.Kvs) == 0 {
-		return nil, schema.ErrSchemaNotExist
+		return nil, schema.ErrSchemaNotFound
 	}
 
 	summary, err := getSummary(ctx, serviceID, schemaID)
@@ -162,7 +162,7 @@ func (dao *SchemaDAO) DeleteRef(ctx context.Context, refRequest *schema.RefReque
 	}
 	if !cmp.Succeeded {
 		log.Error(fmt.Sprintf("service[%s] schema-ref[%s] does not exist", serviceID, schemaID), nil)
-		return schema.ErrSchemaNotExist
+		return schema.ErrSchemaNotFound
 	}
 	return nil
 }

@@ -49,7 +49,7 @@ func ExistSchema(ctx context.Context, request *pb.GetSchemaRequest) (*pb.Schema,
 		SchemaID:  schemaID,
 	})
 	if err != nil {
-		if errors.Is(err, schema.ErrSchemaNotExist) {
+		if errors.Is(err, schema.ErrSchemaNotFound) {
 			return existOldSchema(ctx, request)
 		}
 		log.Error(fmt.Sprintf("get service[%s] schema-ref[%s] failed, operator: %s",
@@ -93,7 +93,7 @@ func GetSchema(ctx context.Context, request *pb.GetSchemaRequest) (*pb.Schema, e
 		SchemaID:  schemaID,
 	})
 	if err != nil {
-		if errors.Is(err, schema.ErrSchemaNotExist) {
+		if errors.Is(err, schema.ErrSchemaNotFound) {
 			return getOldSchema(ctx, request)
 		}
 		log.Error(fmt.Sprintf("get service[%s] schema-ref[%s] failed, operator: %s",
@@ -153,7 +153,7 @@ func ListSchema(ctx context.Context, request *pb.GetAllSchemaRequest) ([]*pb.Sch
 	schemas := make([]*pb.Schema, 0, len(requests))
 	for _, req := range requests {
 		tmp, err := getSchema(ctx, req, request.WithSchema)
-		if err != nil && !errors.Is(err, schema.ErrSchemaNotExist) {
+		if err != nil && !errors.Is(err, schema.ErrSchemaNotFound) {
 			return nil, err
 		}
 
@@ -238,7 +238,7 @@ func DeleteSchema(ctx context.Context, request *pb.DeleteSchemaRequest) error {
 		SchemaID:  request.SchemaId,
 	})
 	if err != nil {
-		if errors.Is(err, schema.ErrSchemaNotExist) {
+		if errors.Is(err, schema.ErrSchemaNotFound) {
 			return deleteOldSchema(ctx, request)
 		}
 		log.Error(fmt.Sprintf("delete service[%s] schema[%s] failed, operator: %s",
@@ -248,7 +248,7 @@ func DeleteSchema(ctx context.Context, request *pb.DeleteSchemaRequest) error {
 	log.Info(fmt.Sprintf("delete service[%s] schema[%s], operator: %s", request.ServiceId, request.SchemaId, remoteIP))
 
 	err = deleteOldSchema(ctx, request)
-	if err != nil && !errors.Is(err, schema.ErrSchemaNotExist) {
+	if err != nil && !errors.Is(err, schema.ErrSchemaNotFound) {
 		log.Error(fmt.Sprintf("delete old service[%s] schema[%s] failed, operator: %s",
 			request.ServiceId, request.SchemaId, remoteIP), svcErr)
 		return err

@@ -659,7 +659,7 @@ func (ds *MetadataManager) GetSchema(ctx context.Context, request *discovery.Get
 		return nil, discovery.NewError(discovery.ErrInternal, "GetSchema failed from mongodb.")
 	}
 	if resp == nil {
-		return nil, schema.ErrSchemaNotExist
+		return nil, schema.ErrSchemaNotFound
 	}
 	return &discovery.GetSchemaResponse{
 		Response:      discovery.CreateResponse(discovery.ResponseSuccess, "Get schema info successfully."),
@@ -727,7 +727,7 @@ func (ds *MetadataManager) ExistSchema(ctx context.Context, request *discovery.G
 		return nil, discovery.NewError(discovery.ErrInternal, "ExistSchema failed for get schema failed.")
 	}
 	if Schema == nil {
-		return nil, schema.ErrSchemaNotExist
+		return nil, schema.ErrSchemaNotFound
 	}
 	return &discovery.GetExistenceResponse{
 		Response:  discovery.CreateResponse(discovery.ResponseSuccess, "Schema exist."),
@@ -751,7 +751,7 @@ func (ds *MetadataManager) DeleteSchema(ctx context.Context, request *discovery.
 		return nil, discovery.NewError(discovery.ErrUnavailableBackend, "DeleteSchema failed for delete schema failed.")
 	}
 	if !res {
-		return nil, schema.ErrSchemaNotExist
+		return nil, schema.ErrSchemaNotFound
 	}
 	return &discovery.DeleteSchemaResponse{
 		Response: discovery.CreateResponse(discovery.ResponseSuccess, "Delete schema info successfully."),

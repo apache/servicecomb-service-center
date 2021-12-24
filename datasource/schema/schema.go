@@ -26,8 +26,8 @@ import (
 )
 
 var (
-	ErrSchemaNotExist        = discovery.NewError(discovery.ErrSchemaNotExists, "Schema ref not found.")
-	ErrSchemaContentNotFound = discovery.NewError(discovery.ErrSchemaNotExists, "Schema content not found.")
+	ErrSchemaNotFound        = discovery.NewError(discovery.ErrSchemaNotExists, "schema ref not found.")
+	ErrSchemaContentNotFound = discovery.NewError(discovery.ErrSchemaNotExists, "schema content not found.")
 )
 
 type RefRequest struct {

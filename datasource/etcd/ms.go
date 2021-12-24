@@ -1388,7 +1388,7 @@ func (ds *MetadataManager) ExistSchema(ctx context.Context, request *pb.GetExist
 	}
 	if !exist {
 		log.Info(fmt.Sprintf("schema[%s/%s] exist failed, schema does not exist", request.ServiceId, request.SchemaId))
-		return nil, schema.ErrSchemaNotExist
+		return nil, schema.ErrSchemaNotFound
 	}
 	schemaSummary, err := getSchemaSummary(ctx, domainProject, request.ServiceId, request.SchemaId)
 	if err != nil {
@@ -1422,7 +1422,7 @@ func (ds *MetadataManager) GetSchema(ctx context.Context, request *pb.GetSchemaR
 	if resp.Count == 0 {
 		log.Error(fmt.Sprintf("get schema[%s/%s] failed, schema does not exists",
 			request.ServiceId, request.SchemaId), errDo)
-		return nil, schema.ErrSchemaNotExist
+		return nil, schema.ErrSchemaNotFound
 	}
 
 	schemaSummary, err := getSchemaSummary(ctx, domainProject, request.ServiceId, request.SchemaId)
@@ -1521,7 +1521,7 @@ func (ds *MetadataManager) DeleteSchema(ctx context.Context, request *pb.DeleteS
 	if !exist {
 		log.Error(fmt.Sprintf("delete schema[%s/%s] failed, schema does not exist, operator: %s",
 			request.ServiceId, request.SchemaId, remoteIP), nil)
-		return nil, schema.ErrSchemaNotExist
+		return nil, schema.ErrSchemaNotFound
 	}
 	epSummaryKey := path.GenerateServiceSchemaSummaryKey(domainProject, request.ServiceId, request.SchemaId)
 	resp, errDo := etcdadpt.TxnWithCmp(ctx,
