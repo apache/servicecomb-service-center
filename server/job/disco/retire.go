@@ -20,49 +20,45 @@ package disco
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
 	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
-	"github.com/go-chassis/foundation/gopool"
+	"github.com/robfig/cron/v3"
 )
 
 const (
-	defaultRetireMicroserviceInterval = 12 * time.Hour
-	defaultReserveVersionCount        = 3
+	defaultRetireMicroserviceCron = "0 1 * * *"
+	defaultReserveVersionCount    = 3
 )
 
 func init() {
-	startRetireServiceJob()
-}
-
-func startRetireServiceJob() {
 	disable := config.GetBool("registry.service.retire.disable", false)
 	if disable {
 		return
 	}
+	startRetireServiceJob()
+}
 
+func startRetireServiceJob() {
 	localPlan := &datasource.RetirePlan{
-		Interval: config.GetDuration("registry.service.retire.interval", defaultRetireMicroserviceInterval),
-		Reserve:  config.GetInt("registry.service.retire.reserve", defaultReserveVersionCount),
+		Cron:    config.GetString("registry.service.retire.cron", defaultRetireMicroserviceCron),
+		Reserve: config.GetInt("registry.service.retire.reserve", defaultReserveVersionCount),
 	}
-
 	log.Info(fmt.Sprintf("start retire microservice job, plan is %v", localPlan))
-	gopool.Go(func(ctx context.Context) {
-		tick := time.NewTicker(localPlan.Interval)
-		defer tick.Stop()
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-tick.C:
-				err := discosvc.RetireService(ctx, localPlan)
-				if err != nil {
-					log.Error("retire microservice failed", err)
-				}
-			}
+
+	c := cron.New()
+	_, err := c.AddFunc(localPlan.Cron, func() {
+		//TODO use DLock
+		err := discosvc.RetireService(context.Background(), localPlan)
+		if err != nil {
+			log.Error("retire microservice failed", err)
 		}
 	})
+	if err != nil {
+		log.Error("cron add func failed", err)
+		return
+	}
+	c.Start()
 }

@@ -17,28 +17,26 @@
 package integrationtest_test
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
-	"net/http"
-	"strings"
-	"sync"
-
-	"github.com/go-chassis/cari/discovery"
-	"github.com/gorilla/websocket"
-	"github.com/stretchr/testify/assert"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	"github.com/widuu/gojson"
-
-	"bytes"
 	"io/ioutil"
 	"math/rand"
+	"net/http"
 	"strconv"
+	"strings"
+	"sync"
 	"testing"
 	"time"
 
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
 	. "github.com/apache/servicecomb-service-center/integration"
+	"github.com/go-chassis/cari/discovery"
+	"github.com/gorilla/websocket"
+	"github.com/stretchr/testify/assert"
+	"github.com/widuu/gojson"
 )
 
 var _ = Describe("MicroService Api Test", func() {
@@ -395,7 +393,7 @@ var _ = Describe("MicroService Api Test", func() {
 			})
 
 			It("Find Micro-service Info by alias", func() {
-				req, _ := http.NewRequest(GET, SCURL+FINDINSTANCE+"?appId="+serviceAppId+"&serviceName="+alias+"&version="+serviceVersion, nil)
+				req, _ := http.NewRequest(GET, SCURL+FINDINSTANCE+"?noCache=true&appId="+serviceAppId+"&serviceName="+alias+"&version="+serviceVersion, nil)
 				req.Header.Set("X-Domain-Name", "default")
 				req.Header.Set("X-ConsumerId", consumerID)
 				resp, _ := scclient.Do(req)

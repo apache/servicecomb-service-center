@@ -17,14 +17,7 @@
 
 package datasource
 
-import "time"
-
 type RetirePlan struct {
-	Interval  time.Duration `json:"interval,omitempty"`
-	Reserve   int           `json:"reserve,omitempty"`
-	LastRunAt int64         `json:"lastRunAt,omitempty" bson:"last_run_at"`
-}
-
-func (r *RetirePlan) ShouldRetire() bool {
-	return time.Now().Add(-r.Interval).Unix() >= r.LastRunAt
+	Cron    string `json:"cron,omitempty"`
+	Reserve int    `json:"reserve,omitempty"`
 }

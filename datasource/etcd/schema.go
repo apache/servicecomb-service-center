@@ -32,6 +32,7 @@ import (
 	mapset "github.com/deckarep/golang-set"
 	"github.com/go-chassis/cari/discovery"
 	"github.com/little-cui/etcdadpt"
+	"go.etcd.io/etcd/api/v3/mvccpb"
 )
 
 func init() {
@@ -352,10 +353,55 @@ func getContentHashMap(ctx context.Context) (map[string]struct{}, error) {
 	return refMap, nil
 }
 
-func (dao *SchemaDAO) ListHash(ctx context.Context) ([]*schema.Content, error) {
-	panic("implement me")
+func (dao *SchemaDAO) DeleteNoRefContents(ctx context.Context) (int, error) {
+	contentPrefixKey := path.GetServiceSchemaContentRootKey("")
+	kvs, _, err := etcdadpt.List(ctx, contentPrefixKey, etcdadpt.WithKeyOnly())
+	if err != nil {
+		log.Error("list contents failed", err)
+		return 0, err
+	}
+	if len(kvs) == 0 {
+		return 0, nil
+	}
+
+	set, err := filterNoRefContentHashes(ctx, kvs)
+	if err != nil {
+		log.Error("filter no ref content hashes failed", err)
+		return 0, err
+	}
+	if set.Cardinality() == 0 {
+		return 0, nil
+	}
+
+	var ops []etcdadpt.OpOptions
+	for item := range set.Iter() {
+		ops = append(ops, etcdadpt.OpDel(etcdadpt.WithStrKey(contentPrefixKey+item.(string))))
+	}
+	err = etcdadpt.Txn(ctx, ops)
+	if err != nil {
+		log.Error("txn delete failed", err)
+		return 0, err
+	}
+	return len(ops), nil
 }
 
-func (dao *SchemaDAO) ExistRef(ctx context.Context, hash *schema.ContentRequest) (*schema.Ref, error) {
-	panic("implement me")
+func filterNoRefContentHashes(ctx context.Context, kvs []*mvccpb.KeyValue) (mapset.Set, error) {
+	set := mapset.NewThreadUnsafeSet()
+	for _, kv := range kvs {
+		domainProject, hash := path.GetInfoFromSchemaContentKV(kv.Key)
+		set.Add(domainProject + path.SPLIT + hash)
+	}
+
+	refPrefixKey := path.GetServiceSchemaRefRootKey("")
+	resp, err := sd.SchemaRef().Search(ctx, serviceUtil.ContextOptions(ctx,
+		etcdadpt.WithStrKey(refPrefixKey), etcdadpt.WithPrefix())...)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, kv := range resp.Kvs {
+		domainProject, _, _ := path.GetInfoFromSchemaRefKV(kv.Key)
+		set.Remove(domainProject + path.SPLIT + kv.Value.(string))
+	}
+	return set, nil
 }

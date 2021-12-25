@@ -19,19 +19,14 @@ package etcd
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
 	"fmt"
 	"sync/atomic"
-	"time"
 
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/mux"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
-	"github.com/apache/servicecomb-service-center/pkg/etcdsync"
 	"github.com/apache/servicecomb-service-center/pkg/goutil"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -40,30 +35,14 @@ import (
 	"github.com/little-cui/etcdadpt"
 )
 
-const (
-	poolSizeOfRotation        = 5
-	retirementLockID   mux.ID = "/cse-sr/lock/retirement"
-)
-
-var ErrAlreadyRetire = errors.New("already retired by other SC")
+const poolSizeOfRotation = 5
 
 type RotateServiceIDKey struct {
 	DomainProject string
 	ServiceID     string
 }
 
-func (ds *MetadataManager) RetireService(ctx context.Context, localPlan *datasource.RetirePlan) error {
-	lock, err := getRetirementLock()
-	if err != nil {
-		return err
-	}
-	defer releaseRetirementLock(lock)
-
-	plan, err := ds.getRetirePlan(ctx, localPlan)
-	if err != nil || !plan.ShouldRetire() {
-		return err
-	}
-
+func (ds *MetadataManager) RetireService(ctx context.Context, plan *datasource.RetirePlan) error {
 	key := path.GetServiceIndexRootKey("")
 	indexesResp, err := sd.ServiceIndex().Search(ctx, etcdadpt.WithStrKey(key), etcdadpt.WithPrefix())
 	if err != nil {
@@ -84,41 +63,7 @@ func (ds *MetadataManager) RetireService(ctx context.Context, localPlan *datasou
 	if n > 0 {
 		log.Warn(fmt.Sprintf("%d microservices retired", n))
 	}
-
-	plan.LastRunAt = time.Now().Unix()
-	return ds.UpsertRetirePlan(ctx, plan)
-}
-
-func releaseRetirementLock(lock *etcdsync.DLock) {
-	err := lock.Unlock()
-	if err != nil {
-		log.Error("", err)
-	}
-}
-
-func getRetirementLock() (*etcdsync.DLock, error) {
-	lock, err := mux.Try(retirementLockID)
-	if err != nil {
-		return nil, err
-	}
-	if lock == nil {
-		return nil, ErrAlreadyRetire
-	}
-	return lock, nil
-}
-
-func (ds *MetadataManager) getRetirePlan(ctx context.Context, localPlan *datasource.RetirePlan) (*datasource.RetirePlan, error) {
-	plan, err := ds.GetRetirePlan(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if plan == nil {
-		plan = localPlan
-	} else {
-		plan.Interval = localPlan.Interval
-		plan.Reserve = localPlan.Reserve
-	}
-	return plan, nil
+	return nil
 }
 
 func FilterNoInstance(ctx context.Context, serviceIDKeys []*RotateServiceIDKey) []*RotateServiceIDKey {
@@ -197,31 +142,4 @@ func GetRetireServiceIDs(indexesResp *kvstore.Response, reserveVersionCount int)
 		}
 	}
 	return serviceIDs
-}
-
-func (ds *MetadataManager) GetRetirePlan(ctx context.Context) (*datasource.RetirePlan, error) {
-	kv, err := etcdadpt.Get(ctx, path.GenerateRetirePlanKey())
-	if err != nil {
-		log.Error("", err)
-		return nil, err
-	}
-	if kv == nil {
-		return nil, nil
-	}
-	var plan datasource.RetirePlan
-	err = json.Unmarshal(kv.Value, &plan)
-	if err != nil {
-		log.Error("decode retire plan failed", err)
-		return nil, err
-	}
-	return &plan, nil
-}
-
-func (ds *MetadataManager) UpsertRetirePlan(ctx context.Context, plan *datasource.RetirePlan) error {
-	bytes, err := json.Marshal(plan)
-	if err != nil {
-		log.Error("encode retire plan failed", err)
-		return err
-	}
-	return etcdadpt.PutBytes(ctx, path.GenerateRetirePlanKey(), bytes)
 }

@@ -82,9 +82,7 @@ type DAO interface {
 	PutContent(ctx context.Context, contentRequest *PutContentRequest) error
 	PutManyContent(ctx context.Context, contentRequest *PutManyContentRequest) error
 	DeleteContent(ctx context.Context, contentRequest *ContentRequest) error
-	// ListHash return Content list without content
-	ListHash(ctx context.Context) ([]*Content, error)
-	ExistRef(ctx context.Context, contentRequest *ContentRequest) (*Ref, error)
+	DeleteNoRefContents(ctx context.Context) (int, error)
 }
 
 func Hash(schemaID, content string) string {

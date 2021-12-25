@@ -24,5 +24,5 @@ import (
 )
 
 func (ds *MetadataManager) RetireService(ctx context.Context, plan *datasource.RetirePlan) error {
-	panic("implement me")
+	return nil
 }
