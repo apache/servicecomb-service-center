@@ -6,6 +6,7 @@ replace (
 )
 
 require (
+	github.com/robfig/cron/v3 v3.0.1
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/apache/servicecomb-service-center/api v0.0.0
 	github.com/astaxie/beego v1.12.2

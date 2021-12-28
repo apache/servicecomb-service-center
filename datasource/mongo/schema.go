@@ -88,10 +88,6 @@ func (s *SchemaDAO) DeleteContent(ctx context.Context, contentRequest *schema.Co
 	return schema.ErrSchemaContentNotFound
 }
 
-func (s *SchemaDAO) ListHash(ctx context.Context) ([]*schema.Content, error) {
-	panic("implement me")
-}
-
-func (s *SchemaDAO) ExistRef(ctx context.Context, contentRequest *schema.ContentRequest) (*schema.Ref, error) {
-	panic("implement me")
+func (s *SchemaDAO) DeleteNoRefContents(ctx context.Context) (int, error) {
+	return 0, nil
 }

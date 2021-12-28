@@ -1014,7 +1014,8 @@ func TestCompatibleOperateSchema(t *testing.T) {
 		})
 		assert.NoError(t, err)
 		assert.Equal(t, 2, len(schemas))
-		schema = schemas[1]
+		schema = findSchemaBySchemaID(schemas, "schemaID_2")
+		assert.NotNil(t, schema)
 		assert.Equal(t, "schema_2", schema.Schema)
 		assert.Equal(t, "summary2", schema.Summary)
 	})
@@ -1040,10 +1041,14 @@ func TestCompatibleOperateSchema(t *testing.T) {
 		})
 		assert.NoError(t, err)
 		assert.Equal(t, 2, len(schemas))
-		schema = schemas[0]
+
+		schema = findSchemaBySchemaID(schemas, "schemaID_1")
+		assert.NotNil(t, schema)
 		assert.Empty(t, schema.Schema)
 		assert.Empty(t, schema.Summary)
-		schema = schemas[1]
+
+		schema = findSchemaBySchemaID(schemas, "schemaID_2")
+		assert.NotNil(t, schema)
 		assert.Equal(t, "schema_2", schema.Schema)
 		assert.Equal(t, "summary2", schema.Summary)
 	})
@@ -1069,11 +1074,24 @@ func TestCompatibleOperateSchema(t *testing.T) {
 		})
 		assert.NoError(t, err)
 		assert.Equal(t, 2, len(schemas))
-		schema = schemas[0]
+
+		schema = findSchemaBySchemaID(schemas, "schemaID_1")
+		assert.NotNil(t, schema)
 		assert.Empty(t, schema.Schema)
 		assert.Empty(t, schema.Summary)
-		schema = schemas[1]
+
+		schema = findSchemaBySchemaID(schemas, "schemaID_2")
+		assert.NotNil(t, schema)
 		assert.Empty(t, schema.Schema)
 		assert.Empty(t, schema.Summary)
 	})
+}
+
+func findSchemaBySchemaID(schemas []*pb.Schema, schemaID string) *pb.Schema {
+	for _, schema := range schemas {
+		if schema.SchemaId == schemaID {
+			return schema
+		}
+	}
+	return nil
 }

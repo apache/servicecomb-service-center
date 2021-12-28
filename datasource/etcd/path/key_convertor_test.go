@@ -43,7 +43,7 @@ func TestGetInfoFromKV(t *testing.T) {
 	assert.False(t, d != "a")
 
 	d = path.GetInfoFromDomainKV([]byte("sdf"))
-	assert.False(t, d != "")
+	assert.False(t, d != "sdf")
 
 	p := ""
 	d, p = path.GetInfoFromProjectKV([]byte(path.GenerateProjectKey("a", "b")))
@@ -87,6 +87,12 @@ func TestGetInfoFromKV(t *testing.T) {
 
 	d, s, m = path.GetInfoFromSchemaKV([]byte("sdf"))
 	assert.False(t, m != "" || s != "" || d != "")
+
+	d, h := path.GetInfoFromSchemaContentKV([]byte(path.GenerateServiceSchemaContentKey("a/b", "c")))
+	assert.False(t, h != "c" || d != "a/b")
+
+	d, h = path.GetInfoFromSchemaContentKV([]byte("sdf"))
+	assert.False(t, h != "" || d != "")
 
 	u := ""
 	s, d, u = path.GetInfoFromDependencyQueueKV([]byte(path.GenerateConsumerDependencyQueueKey("a/b", "c", "d")))

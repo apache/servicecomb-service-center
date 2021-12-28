@@ -151,7 +151,7 @@ registry:
     # delete other versions which doesn't register any instances.
     retire:
       disable: false
-      interval: 12h
+      cron: '0 1 * * *'
       reserve: 3
   instance:
     # By default, instance TTL = (times + 1) * interval
@@ -168,7 +168,7 @@ registry:
     notEditable: false
     # remove the schema without refs every 7d
     retire:
-      interval: 7d
+      cron: '0 2 * * *'
   # enable to register sc itself when startup
   selfRegister: 1
 

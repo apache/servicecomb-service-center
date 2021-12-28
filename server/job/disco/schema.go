@@ -21,23 +21,30 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/datasource/schema"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/server/config"
+	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
+	"github.com/robfig/cron/v3"
 )
 
-func RetireService(ctx context.Context, plan *datasource.RetirePlan) error {
-	return datasource.GetMetadataManager().RetireService(ctx, plan)
-}
+const (
+	defaultRetireSchemaCron = "0 2 * * *"
+)
 
-func RetireSchema(ctx context.Context) error {
-	n, err := schema.Instance().DeleteNoRefContents(ctx)
+func init() {
+	cronExpr := config.GetString("registry.schema.retire.cron", defaultRetireSchemaCron)
+	log.Info(fmt.Sprintf("start retire schema job, plan is %v", cronExpr))
+	c := cron.New()
+	_, err := c.AddFunc(cronExpr, func() {
+		//TODO use DLock
+		err := discosvc.RetireSchema(context.Background())
+		if err != nil {
+			log.Error("retire schema failed", err)
+		}
+	})
 	if err != nil {
-		log.Error("delete no ref contents failed", err)
-		return err
+		log.Error("cron add func failed", err)
+		return
 	}
-	if n > 0 {
-		log.Warn(fmt.Sprintf("%d schema-contents retired", n))
-	}
-	return nil
+	c.Start()
 }
