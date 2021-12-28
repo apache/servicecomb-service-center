@@ -44,8 +44,6 @@ if [ ${db_name} == "etcd" ];then
   done
   echo "${green}Etcd is running......${reset}"
 elif [ ${db_name} == "mongo" ];then
-  echo "${green}Starting mongo in docker${reset}"
-  docker run -d -p 27017:27017 --name mongo mongo
   while ! nc -z 127.0.0.1 27017; do
     echo "Waiting mongo to launch on 27017..."
     sleep 1
