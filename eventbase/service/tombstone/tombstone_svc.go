@@ -23,10 +23,10 @@ import (
 	"github.com/go-chassis/cari/sync"
 
 	"github.com/apache/servicecomb-service-center/eventbase/datasource"
-	"github.com/apache/servicecomb-service-center/eventbase/request"
+	"github.com/apache/servicecomb-service-center/eventbase/model"
 )
 
-func Get(ctx context.Context, req *request.GetTombstoneRequest) (*sync.Tombstone, error) {
+func Get(ctx context.Context, req *model.GetTombstoneRequest) (*sync.Tombstone, error) {
 	return datasource.GetTombstoneDao().Get(ctx, req)
 }
 
@@ -34,7 +34,7 @@ func Delete(ctx context.Context, tombstones ...*sync.Tombstone) error {
 	return datasource.GetTombstoneDao().Delete(ctx, tombstones...)
 }
 
-func List(ctx context.Context, request *request.ListTombstoneRequest) ([]*sync.Tombstone, error) {
+func List(ctx context.Context, request *model.ListTombstoneRequest) ([]*sync.Tombstone, error) {
 	opts := []datasource.TombstoneFindOption{
 		datasource.WithTombstoneDomain(request.Domain),
 		datasource.WithTombstoneProject(request.Project),

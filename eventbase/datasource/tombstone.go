@@ -22,12 +22,12 @@ import (
 
 	"github.com/go-chassis/cari/sync"
 
-	"github.com/apache/servicecomb-service-center/eventbase/request"
+	"github.com/apache/servicecomb-service-center/eventbase/model"
 )
 
 // TombstoneDao provide api of Tombstone entity
 type TombstoneDao interface {
-	Get(ctx context.Context, req *request.GetTombstoneRequest) (*sync.Tombstone, error)
+	Get(ctx context.Context, req *model.GetTombstoneRequest) (*sync.Tombstone, error)
 	// Create func is used for ut
 	Create(ctx context.Context, tombstone *sync.Tombstone) (*sync.Tombstone, error)
 	Delete(ctx context.Context, tombstones ...*sync.Tombstone) error

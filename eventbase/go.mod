@@ -1,7 +1,7 @@
 module github.com/apache/servicecomb-service-center/eventbase
 
 require (
-	github.com/go-chassis/cari v0.5.1-0.20211208092532-78a52aa9d52e
+	github.com/go-chassis/cari v0.5.1-0.20211227133501-53aa20cf7a44
 	github.com/go-chassis/foundation v0.4.0
 	github.com/go-chassis/go-archaius v1.5.1
 	github.com/go-chassis/go-chassis/v2 v2.3.0
@@ -25,6 +25,7 @@ require (
 	github.com/form3tech-oss/jwt-go v3.2.3+incompatible // indirect
 	github.com/fsnotify/fsnotify v1.4.7 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
+	github.com/gofrs/uuid v4.0.0+incompatible // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.1 // indirect

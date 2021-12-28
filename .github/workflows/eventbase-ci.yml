@@ -1,0 +1,45 @@
+name: eventbase merge check
+on: [ push, pull_request ]
+jobs:
+  mongo-storage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Go
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.16
+        id: go
+      - name: Start MongoDB
+        uses: supercharge/mongodb-github-action@1.7.0
+        with:
+          mongodb-version: 4.2
+          mongodb-replica-set: test-rs
+          mongodb-port: 27017
+      - name: Check out source code
+        uses: actions/checkout@v1
+      - name: UT test
+        run: |
+          export TEST_DB_MODE=mongo
+          export TEST_DB_URI=mongodb://127.0.0.1:27017
+          cd eventbase
+          go test -short -covermode=atomic $(go list ./... | grep -v etcd | grep -v third_party | grep -v examples)
+  etcd-storage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Go
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.16
+        id: go
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v1
+      - name: UT for etcd
+        run: |
+          time docker run -d -p 2379:2379 --name etcd quay.io/coreos/etcd etcd -name etcd --advertise-client-urls http://0.0.0.0:2379 --listen-client-urls http://0.0.0.0:2379
+          while ! nc -z 127.0.0.1 2379; do
+            sleep 1
+          done
+          export TEST_DB_MODE=etcd
+          export TEST_DB_URI=http://127.0.0.1:2379
+          cd eventbase
+          time go test -short -covermode=atomic $(go list ./... | grep -v mongo | grep -v third_party | grep -v examples)

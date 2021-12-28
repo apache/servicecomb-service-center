@@ -28,15 +28,16 @@ import (
 	"github.com/apache/servicecomb-service-center/eventbase/datasource"
 	"github.com/apache/servicecomb-service-center/eventbase/datasource/mongo/client"
 	"github.com/apache/servicecomb-service-center/eventbase/datasource/mongo/model"
-	"github.com/apache/servicecomb-service-center/eventbase/request"
+	emodel "github.com/apache/servicecomb-service-center/eventbase/model"
 )
 
 type Dao struct {
 }
 
-func (d *Dao) Get(ctx context.Context, req *request.GetTombstoneRequest) (*sync.Tombstone, error) {
+func (d *Dao) Get(ctx context.Context, req *emodel.GetTombstoneRequest) (*sync.Tombstone, error) {
 	collection := client.GetMongoClient().GetDB().Collection(model.CollectionTombstone)
-	filter := bson.M{model.ColumnDomain: req.Domain, model.ColumnProject: req.Project, model.ColumnResourceType: req.ResourceType, model.ColumnResourceID: req.ResourceID}
+	filter := bson.M{model.ColumnDomain: req.Domain, model.ColumnProject: req.Project,
+		model.ColumnResourceType: req.ResourceType, model.ColumnResourceID: req.ResourceID}
 	result := collection.FindOne(ctx, filter)
 	if result != nil && result.Err() != nil {
 		openlog.Error("fail to get tombstone" + result.Err().Error())

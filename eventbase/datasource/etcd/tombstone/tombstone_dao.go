@@ -27,13 +27,13 @@ import (
 
 	"github.com/apache/servicecomb-service-center/eventbase/datasource"
 	"github.com/apache/servicecomb-service-center/eventbase/datasource/etcd/key"
-	"github.com/apache/servicecomb-service-center/eventbase/request"
+	"github.com/apache/servicecomb-service-center/eventbase/model"
 )
 
 type Dao struct {
 }
 
-func (d *Dao) Get(ctx context.Context, req *request.GetTombstoneRequest) (*sync.Tombstone, error) {
+func (d *Dao) Get(ctx context.Context, req *model.GetTombstoneRequest) (*sync.Tombstone, error) {
 	tombstoneKey := key.TombstoneKey(req.Domain, req.Project, req.ResourceType, req.ResourceID)
 	kv, err := etcdadpt.Get(ctx, tombstoneKey)
 	if err != nil {

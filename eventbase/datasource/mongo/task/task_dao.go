@@ -47,7 +47,7 @@ func (d *Dao) Create(ctx context.Context, task *sync.Task) (*sync.Task, error) {
 func (d *Dao) Update(ctx context.Context, task *sync.Task) error {
 	collection := client.GetMongoClient().GetDB().Collection(model.CollectionTask)
 	result, err := collection.UpdateOne(ctx,
-		bson.M{model.ColumnTaskID: task.TaskID, model.ColumnDomain: task.Domain, model.ColumnProject: task.Project, model.ColumnTimestamp: task.Timestamp},
+		bson.M{model.ColumnID: task.ID, model.ColumnDomain: task.Domain, model.ColumnProject: task.Project, model.ColumnTimestamp: task.Timestamp},
 		bson.D{{Key: "$set", Value: bson.D{
 			{Key: model.ColumnStatus, Value: task.Status}}},
 		})
@@ -66,11 +66,11 @@ func (d *Dao) Delete(ctx context.Context, tasks ...*sync.Task) error {
 	tasksIDs := make([]string, len(tasks))
 	filter := bson.A{}
 	for i, task := range tasks {
-		tasksIDs[i] = task.TaskID
+		tasksIDs[i] = task.ID
 		dFilter := bson.D{
 			{model.ColumnDomain, task.Domain},
 			{model.ColumnProject, task.Project},
-			{model.ColumnTaskID, task.TaskID},
+			{model.ColumnID, task.ID},
 			{model.ColumnTimestamp, task.Timestamp},
 		}
 		filter = append(filter, dFilter)
@@ -103,8 +103,8 @@ func (d *Dao) List(ctx context.Context, options ...datasource.TaskFindOption) ([
 	if opts.Action != "" {
 		filter[model.ColumnAction] = opts.Action
 	}
-	if opts.DataType != "" {
-		filter[model.ColumnDataType] = opts.DataType
+	if opts.ResourceType != "" {
+		filter[model.ColumnResourceType] = opts.ResourceType
 	}
 	if opts.Status != "" {
 		filter[model.ColumnStatus] = opts.Status
