@@ -9,16 +9,12 @@ jobs:
         with:
           go-version: 1.16
         id: go
-      - name: Start MongoDB
-        uses: supercharge/mongodb-github-action@1.7.0
-        with:
-          mongodb-version: 4.2
-          mongodb-replica-set: test-rs
-          mongodb-port: 27017
       - name: Check out source code
         uses: actions/checkout@v1
       - name: UT test
         run: |
+          sudo docker-compose -f ./scripts/docker-compose.yaml up -d
+          sleep 20
           export TEST_DB_MODE=mongo
           export TEST_DB_URI=mongodb://127.0.0.1:27017
           cd eventbase
@@ -31,7 +27,7 @@ jobs:
         with:
           go-version: 1.16
         id: go
-      - name: Check out code into the Go module directory
+      - name: Check out source code
         uses: actions/checkout@v1
       - name: UT for etcd
         run: |
