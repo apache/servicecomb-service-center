@@ -22,7 +22,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/apache/servicecomb-service-center/datasource"
+	dao "github.com/apache/servicecomb-service-center/datasource/rbac"
 	"github.com/apache/servicecomb-service-center/server/resource/rbac"
 	accountsvc "github.com/apache/servicecomb-service-center/server/service/account"
 	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
@@ -61,9 +61,9 @@ func TestCountFailure(t *testing.T) {
 		assert.False(t, rbacsvc.IsBanned(key2))
 
 		_, err := accountsvc.GetLock(context.Background(), key1)
-		assert.ErrorIs(t, datasource.ErrAccountLockNotExist, err)
+		assert.ErrorIs(t, dao.ErrAccountLockNotExist, err)
 		_, err = accountsvc.GetLock(context.Background(), key2)
-		assert.ErrorIs(t, datasource.ErrAccountLockNotExist, err)
+		assert.ErrorIs(t, dao.ErrAccountLockNotExist, err)
 	})
 }
 
@@ -75,7 +75,7 @@ func TestTryLockAccount(t *testing.T) {
 
 		lock, err := accountsvc.GetLock(context.Background(), key1)
 		assert.NoError(t, err)
-		assert.Equal(t, datasource.StatusAttempted, lock.Status)
+		assert.Equal(t, dao.StatusAttempted, lock.Status)
 
 		assert.False(t, rbacsvc.IsBanned(key1))
 
@@ -89,7 +89,7 @@ func TestTryLockAccount(t *testing.T) {
 
 		lock, err := accountsvc.GetLock(context.Background(), key1)
 		assert.NoError(t, err)
-		assert.Equal(t, datasource.StatusAttempted, lock.Status)
+		assert.Equal(t, dao.StatusAttempted, lock.Status)
 		assert.Less(t, oldReleaseAt, lock.ReleaseAt)
 
 		assert.False(t, rbacsvc.IsBanned(key1))

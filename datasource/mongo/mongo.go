@@ -37,30 +37,15 @@ func init() {
 }
 
 type DataSource struct {
-	accountLockManager datasource.AccountLockManager
-	accountManager     datasource.AccountManager
-	metadataManager    datasource.MetadataManager
-	roleManager        datasource.RoleManager
-	sysManager         datasource.SystemManager
-	depManager         datasource.DependencyManager
-	scManager          datasource.SCManager
-	metricsManager     datasource.MetricsManager
-}
-
-func (ds *DataSource) AccountLockManager() datasource.AccountLockManager {
-	return ds.accountLockManager
+	metadataManager datasource.MetadataManager
+	sysManager      datasource.SystemManager
+	depManager      datasource.DependencyManager
+	scManager       datasource.SCManager
+	metricsManager  datasource.MetricsManager
 }
 
 func (ds *DataSource) SystemManager() datasource.SystemManager {
 	return ds.sysManager
-}
-
-func (ds *DataSource) AccountManager() datasource.AccountManager {
-	return ds.accountManager
-}
-
-func (ds *DataSource) RoleManager() datasource.RoleManager {
-	return ds.roleManager
 }
 
 func (ds *DataSource) DependencyManager() datasource.DependencyManager {
@@ -89,10 +74,7 @@ func NewDataSource(opts datasource.Options) (datasource.DataSource, error) {
 	inst.scManager = &SCManager{}
 	inst.depManager = &DepManager{}
 	inst.sysManager = &SysManager{}
-	inst.roleManager = &RoleManager{}
 	inst.metadataManager = &MetadataManager{SchemaNotEditable: opts.SchemaNotEditable, InstanceTTL: opts.InstanceTTL}
-	inst.accountManager = &AccountManager{}
-	inst.accountLockManager = NewAccountLockManager()
 	inst.metricsManager = &MetricsManager{}
 	return inst, nil
 }

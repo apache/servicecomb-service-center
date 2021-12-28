@@ -23,10 +23,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/go-chassis/cari/rbac"
+	"github.com/apache/servicecomb-service-center/datasource/rbac"
+	rbacmodel "github.com/go-chassis/cari/rbac"
 	"go.mongodb.org/mongo-driver/mongo"
 
-	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
 	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
@@ -35,10 +35,18 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
-type AccountManager struct {
+func init() {
+	rbac.Install("mongo", NewRbacDAO)
 }
 
-func (ds *AccountManager) CreateAccount(ctx context.Context, a *rbac.Account) error {
+func NewRbacDAO(opts rbac.Options) (rbac.DAO, error) {
+	return &RbacDAO{}, nil
+}
+
+type RbacDAO struct {
+}
+
+func (ds *RbacDAO) CreateAccount(ctx context.Context, a *rbacmodel.Account) error {
 	exist, err := ds.AccountExist(ctx, a.Name)
 	if err != nil {
 		msg := fmt.Sprintf("failed to query account, account name %s", a.Name)
@@ -46,7 +54,7 @@ func (ds *AccountManager) CreateAccount(ctx context.Context, a *rbac.Account) er
 		return err
 	}
 	if exist {
-		return datasource.ErrAccountDuplicated
+		return rbac.ErrAccountDuplicated
 	}
 	a.Password, err = privacy.ScryptPassword(a.Password)
 	if err != nil {
@@ -62,7 +70,7 @@ func (ds *AccountManager) CreateAccount(ctx context.Context, a *rbac.Account) er
 	_, err = client.GetMongoClient().Insert(ctx, model.CollectionAccount, a)
 	if err != nil {
 		if client.IsDuplicateKey(err) {
-			return datasource.ErrAccountDuplicated
+			return rbac.ErrAccountDuplicated
 		}
 		return err
 	}
@@ -70,7 +78,7 @@ func (ds *AccountManager) CreateAccount(ctx context.Context, a *rbac.Account) er
 	return nil
 }
 
-func (ds *AccountManager) AccountExist(ctx context.Context, name string) (bool, error) {
+func (ds *RbacDAO) AccountExist(ctx context.Context, name string) (bool, error) {
 	filter := mutil.NewFilter(mutil.AccountName(name))
 	count, err := client.GetMongoClient().Count(ctx, model.CollectionAccount, filter)
 	if err != nil {
@@ -82,7 +90,7 @@ func (ds *AccountManager) AccountExist(ctx context.Context, name string) (bool, 
 	return true, nil
 }
 
-func (ds *AccountManager) GetAccount(ctx context.Context, name string) (*rbac.Account, error) {
+func (ds *RbacDAO) GetAccount(ctx context.Context, name string) (*rbacmodel.Account, error) {
 	filter := mutil.NewFilter(mutil.AccountName(name))
 	result, err := client.GetMongoClient().FindOne(ctx, model.CollectionAccount, filter)
 	if err != nil {
@@ -92,13 +100,13 @@ func (ds *AccountManager) GetAccount(ctx context.Context, name string) (*rbac.Ac
 	}
 	if err = result.Err(); err != nil {
 		if err == mongo.ErrNoDocuments {
-			return nil, datasource.ErrAccountNotExist
+			return nil, rbac.ErrAccountNotExist
 		}
 		msg := fmt.Sprintf("failed to query account, account name %s", name)
 		log.Error(msg, result.Err())
-		return nil, datasource.ErrQueryAccountFailed
+		return nil, rbac.ErrQueryAccountFailed
 	}
-	var account rbac.Account
+	var account rbacmodel.Account
 	err = result.Decode(&account)
 	if err != nil {
 		log.Error("failed to decode account", err)
@@ -107,16 +115,16 @@ func (ds *AccountManager) GetAccount(ctx context.Context, name string) (*rbac.Ac
 	return &account, nil
 }
 
-func (ds *AccountManager) ListAccount(ctx context.Context) ([]*rbac.Account, int64, error) {
+func (ds *RbacDAO) ListAccount(ctx context.Context) ([]*rbacmodel.Account, int64, error) {
 	filter := mutil.NewFilter()
 	cursor, err := client.GetMongoClient().Find(ctx, model.CollectionAccount, filter)
 	if err != nil {
 		return nil, 0, err
 	}
-	var accounts []*rbac.Account
+	var accounts []*rbacmodel.Account
 	defer cursor.Close(ctx)
 	for cursor.Next(ctx) {
-		var account rbac.Account
+		var account rbacmodel.Account
 		err = cursor.Decode(&account)
 		if err != nil {
 			log.Error("failed to decode account", err)
@@ -128,7 +136,7 @@ func (ds *AccountManager) ListAccount(ctx context.Context) ([]*rbac.Account, int
 	return accounts, int64(len(accounts)), nil
 }
 
-func (ds *AccountManager) DeleteAccount(ctx context.Context, names []string) (bool, error) {
+func (ds *RbacDAO) DeleteAccount(ctx context.Context, names []string) (bool, error) {
 	if len(names) == 0 {
 		return false, nil
 	}
@@ -144,7 +152,7 @@ func (ds *AccountManager) DeleteAccount(ctx context.Context, names []string) (bo
 	return true, nil
 }
 
-func (ds *AccountManager) UpdateAccount(ctx context.Context, name string, account *rbac.Account) error {
+func (ds *RbacDAO) UpdateAccount(ctx context.Context, name string, account *rbacmodel.Account) error {
 	filter := mutil.NewFilter(mutil.AccountName(name))
 	setFilter := mutil.NewFilter(
 		mutil.ID(account.ID),

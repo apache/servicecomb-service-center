@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package datasource_test
+package rbac_test
 
 import (
 	"context"
@@ -23,27 +23,25 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-chassis/cari/rbac"
-
+	"github.com/apache/servicecomb-service-center/datasource/rbac"
+	rbacmodel "github.com/go-chassis/cari/rbac"
 	"github.com/stretchr/testify/assert"
-
-	"github.com/apache/servicecomb-service-center/datasource"
 )
 
 var (
-	r1 = rbac.Role{
+	r1 = rbacmodel.Role{
 		ID:    "11111-22222-33333",
 		Name:  "test-role",
 		Perms: nil,
 	}
 
-	r2 = rbac.Role{
+	r2 = rbacmodel.Role{
 		ID:    "11111-22222-33333-44444",
 		Name:  "test-role-ex",
 		Perms: nil,
 	}
 
-	a = rbac.Account{
+	a = rbacmodel.Account{
 		Name:     "account-role-test",
 		Password: "abc",
 		Roles:    []string{"test-role"},
@@ -52,9 +50,9 @@ var (
 
 func TestRole(t *testing.T) {
 	t.Run("create role should success", func(t *testing.T) {
-		err := datasource.GetRoleManager().CreateRole(context.Background(), &r1)
+		err := rbac.Instance().CreateRole(context.Background(), &r1)
 		assert.NoError(t, err)
-		r, err := datasource.GetRoleManager().GetRole(context.Background(), "test-role")
+		r, err := rbac.Instance().GetRole(context.Background(), "test-role")
 		assert.NoError(t, err)
 		assert.Equal(t, r1, *r)
 		dt, _ := strconv.Atoi(r.CreateTime)
@@ -62,27 +60,27 @@ func TestRole(t *testing.T) {
 		assert.Equal(t, r.CreateTime, r.UpdateTime)
 	})
 	t.Run("role should exist", func(t *testing.T) {
-		exist, err := datasource.GetRoleManager().RoleExist(context.Background(), "test-role")
+		exist, err := rbac.Instance().RoleExist(context.Background(), "test-role")
 		assert.NoError(t, err)
 		assert.True(t, exist)
 	})
 
 	t.Run("repeated create role should failed", func(t *testing.T) {
-		err := datasource.GetRoleManager().CreateRole(context.Background(), &r1)
+		err := rbac.Instance().CreateRole(context.Background(), &r1)
 		assert.Error(t, err)
 	})
 
 	t.Run("update role should success", func(t *testing.T) {
-		r, err := datasource.GetRoleManager().GetRole(context.Background(), "test-role")
+		r, err := rbac.Instance().GetRole(context.Background(), "test-role")
 		assert.NoError(t, err)
 		old, _ := strconv.Atoi(r.UpdateTime)
 
 		time.Sleep(time.Second)
 		r1.ID = "11111-22222-33333-4"
-		err = datasource.GetRoleManager().UpdateRole(context.Background(), "test-role", &r1)
+		err = rbac.Instance().UpdateRole(context.Background(), "test-role", &r1)
 		assert.NoError(t, err)
 
-		r, err = datasource.GetRoleManager().GetRole(context.Background(), "test-role")
+		r, err = rbac.Instance().GetRole(context.Background(), "test-role")
 		assert.NoError(t, err)
 		last, _ := strconv.Atoi(r.UpdateTime)
 		assert.Less(t, old, last)
@@ -90,39 +88,39 @@ func TestRole(t *testing.T) {
 	})
 
 	t.Run("add new role should success", func(t *testing.T) {
-		err := datasource.GetRoleManager().CreateRole(context.Background(), &r2)
+		err := rbac.Instance().CreateRole(context.Background(), &r2)
 		assert.NoError(t, err)
-		_, n, err := datasource.GetRoleManager().ListRole(context.Background())
+		_, n, err := rbac.Instance().ListRole(context.Background())
 		assert.NoError(t, err)
 		assert.Equal(t, int64(2), n)
 	})
 
 	t.Run("delete role bind to user should failed", func(t *testing.T) {
-		err := datasource.GetAccountManager().CreateAccount(context.Background(), &a)
+		err := rbac.Instance().CreateAccount(context.Background(), &a)
 		assert.NoError(t, err)
 
-		_, err = datasource.GetRoleManager().DeleteRole(context.Background(), "test-role")
+		_, err = rbac.Instance().DeleteRole(context.Background(), "test-role")
 		assert.Error(t, err)
 	})
 
 	t.Run("update account role and delete old role should success", func(t *testing.T) {
 		a.Roles = []string{"test-role-ex"}
-		err := datasource.GetAccountManager().UpdateAccount(context.Background(), "account-role-test", &a)
+		err := rbac.Instance().UpdateAccount(context.Background(), "account-role-test", &a)
 		assert.NoError(t, err)
 
-		_, err = datasource.GetRoleManager().DeleteRole(context.Background(), "test-role")
+		_, err = rbac.Instance().DeleteRole(context.Background(), "test-role")
 		assert.NoError(t, err)
 	})
 
 	t.Run("delete role should success", func(t *testing.T) {
-		b, err := datasource.GetAccountManager().DeleteAccount(context.Background(), []string{"account-role-test"})
+		b, err := rbac.Instance().DeleteAccount(context.Background(), []string{"account-role-test"})
 		assert.True(t, b)
 		assert.NoError(t, err)
 
-		_, err = datasource.GetRoleManager().DeleteRole(context.Background(), "test-role-ex")
+		_, err = rbac.Instance().DeleteRole(context.Background(), "test-role-ex")
 		assert.NoError(t, err)
 
-		_, n, err := datasource.GetRoleManager().ListRole(context.Background())
+		_, n, err := rbac.Instance().ListRole(context.Background())
 		assert.NoError(t, err)
 		assert.Equal(t, int64(0), n)
 	})

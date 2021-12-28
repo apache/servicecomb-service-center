@@ -20,11 +20,11 @@ package buildin
 import (
 	"context"
 
-	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/datasource/rbac"
 )
 
 func AccountUsage(ctx context.Context) (int64, error) {
-	_, used, err := datasource.GetAccountManager().ListAccount(ctx)
+	_, used, err := rbac.Instance().ListAccount(ctx)
 	if err != nil {
 		return 0, err
 	}

@@ -24,19 +24,16 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
+	"github.com/apache/servicecomb-service-center/datasource/rbac"
 	"github.com/apache/servicecomb-service-center/pkg/etcdsync"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/go-chassis/cari/rbac"
+	rbacmodel "github.com/go-chassis/cari/rbac"
 	"github.com/little-cui/etcdadpt"
 )
 
-type RoleManager struct {
-}
-
-func (rm *RoleManager) CreateRole(ctx context.Context, r *rbac.Role) error {
+func (rm *RbacDAO) CreateRole(ctx context.Context, r *rbacmodel.Role) error {
 	lock, err := etcdsync.Lock("/role-creating/"+r.Name, -1, false)
 	if err != nil {
 		return fmt.Errorf("role %s is creating", r.Name)
@@ -54,7 +51,7 @@ func (rm *RoleManager) CreateRole(ctx context.Context, r *rbac.Role) error {
 		return err
 	}
 	if exist {
-		return datasource.ErrRoleDuplicated
+		return rbac.ErrRoleDuplicated
 	}
 	r.ID = util.GenerateUUID()
 	r.CreateTime = strconv.FormatInt(time.Now().Unix(), 10)
@@ -73,19 +70,19 @@ func (rm *RoleManager) CreateRole(ctx context.Context, r *rbac.Role) error {
 	return nil
 }
 
-func (rm *RoleManager) RoleExist(ctx context.Context, name string) (bool, error) {
+func (rm *RbacDAO) RoleExist(ctx context.Context, name string) (bool, error) {
 	return etcdadpt.Exist(ctx, path.GenerateRBACRoleKey(name))
 }
 
-func (rm *RoleManager) GetRole(ctx context.Context, name string) (*rbac.Role, error) {
+func (rm *RbacDAO) GetRole(ctx context.Context, name string) (*rbacmodel.Role, error) {
 	kv, err := etcdadpt.Get(ctx, path.GenerateRBACRoleKey(name))
 	if err != nil {
 		return nil, err
 	}
 	if kv == nil {
-		return nil, datasource.ErrRoleNotExist
+		return nil, rbac.ErrRoleNotExist
 	}
-	role := &rbac.Role{}
+	role := &rbacmodel.Role{}
 	err = json.Unmarshal(kv.Value, role)
 	if err != nil {
 		log.Error("role info format invalid", err)
@@ -93,14 +90,14 @@ func (rm *RoleManager) GetRole(ctx context.Context, name string) (*rbac.Role, er
 	}
 	return role, nil
 }
-func (rm *RoleManager) ListRole(ctx context.Context) ([]*rbac.Role, int64, error) {
+func (rm *RbacDAO) ListRole(ctx context.Context) ([]*rbacmodel.Role, int64, error) {
 	kvs, n, err := etcdadpt.List(ctx, path.GenerateRBACRoleKey(""))
 	if err != nil {
 		return nil, 0, err
 	}
-	roles := make([]*rbac.Role, 0, n)
+	roles := make([]*rbacmodel.Role, 0, n)
 	for _, v := range kvs {
-		r := &rbac.Role{}
+		r := &rbacmodel.Role{}
 		err = json.Unmarshal(v.Value, r)
 		if err != nil {
 			log.Error("role info format invalid:", err)
@@ -111,14 +108,14 @@ func (rm *RoleManager) ListRole(ctx context.Context) ([]*rbac.Role, int64, error
 	}
 	return roles, n, nil
 }
-func (rm *RoleManager) DeleteRole(ctx context.Context, name string) (bool, error) {
+func (rm *RbacDAO) DeleteRole(ctx context.Context, name string) (bool, error) {
 	exists, err := RoleBindingExists(ctx, name)
 	if err != nil {
 		log.Error("", err)
 		return false, err
 	}
 	if exists {
-		return false, datasource.ErrRoleBindingExist
+		return false, rbac.ErrRoleBindingExist
 	}
 	del, err := etcdadpt.Delete(ctx, path.GenerateRBACRoleKey(name))
 	if err != nil {
@@ -134,7 +131,7 @@ func RoleBindingExists(ctx context.Context, role string) (bool, error) {
 	}
 	return total > 0, nil
 }
-func (rm *RoleManager) UpdateRole(ctx context.Context, name string, role *rbac.Role) error {
+func (rm *RbacDAO) UpdateRole(ctx context.Context, name string, role *rbacmodel.Role) error {
 	role.UpdateTime = strconv.FormatInt(time.Now().Unix(), 10)
 	value, err := json.Marshal(role)
 	if err != nil {

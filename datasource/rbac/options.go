@@ -15,27 +15,9 @@
  * limitations under the License.
  */
 
-package datasource
+package rbac
 
-import (
-	"context"
-	"errors"
-
-	"github.com/go-chassis/cari/rbac"
-)
-
-var (
-	ErrRoleDuplicated = errors.New("role is duplicated")
-	ErrRoleCanNotEdit = errors.New("role can not be edited")
-	ErrRoleNotExist   = errors.New("role not exist")
-)
-
-// RoleManager contains the RBAC CRUD
-type RoleManager interface {
-	CreateRole(ctx context.Context, r *rbac.Role) error
-	RoleExist(ctx context.Context, name string) (bool, error)
-	GetRole(ctx context.Context, name string) (*rbac.Role, error)
-	ListRole(ctx context.Context) ([]*rbac.Role, int64, error)
-	DeleteRole(ctx context.Context, name string) (bool, error)
-	UpdateRole(ctx context.Context, name string, role *rbac.Role) error
+//Options contains configuration for plugins
+type Options struct {
+	Kind string
 }

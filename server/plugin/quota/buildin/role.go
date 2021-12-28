@@ -20,11 +20,11 @@ package buildin
 import (
 	"context"
 
-	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/datasource/rbac"
 )
 
 func RoleUsage(ctx context.Context) (int64, error) {
-	_, used, err := datasource.GetRoleManager().ListRole(ctx)
+	_, used, err := rbac.Instance().ListRole(ctx)
 	if err != nil {
 		return 0, err
 	}

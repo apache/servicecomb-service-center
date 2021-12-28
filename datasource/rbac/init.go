@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package schema
+package rbac
 
 import (
 	"fmt"
@@ -52,7 +52,7 @@ func Init(opts Options) error {
 	if err != nil {
 		return err
 	}
-	log.Info(fmt.Sprintf("schema plugin [%s] enabled", opts.Kind))
+	log.Info(fmt.Sprintf("rbac plugin [%s] enabled", opts.Kind))
 
 	return nil
 }

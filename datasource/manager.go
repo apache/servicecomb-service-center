@@ -20,6 +20,7 @@ package datasource
 import (
 	"fmt"
 
+	"github.com/apache/servicecomb-service-center/datasource/rbac"
 	"github.com/apache/servicecomb-service-center/datasource/schema"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 )
@@ -47,10 +48,11 @@ func Init(opts Options) error {
 	if err != nil {
 		return err
 	}
-
-	err = schema.Init(schema.Options{
-		Kind: opts.Kind,
-	})
+	err = schema.Init(schema.Options{Kind: opts.Kind})
+	if err != nil {
+		return err
+	}
+	err = rbac.Init(rbac.Options{Kind: opts.Kind})
 	if err != nil {
 		return err
 	}
@@ -79,15 +81,6 @@ func GetMetadataManager() MetadataManager {
 }
 func GetSystemManager() SystemManager {
 	return dataSourceInst.SystemManager()
-}
-func GetRoleManager() RoleManager {
-	return dataSourceInst.RoleManager()
-}
-func GetAccountManager() AccountManager {
-	return dataSourceInst.AccountManager()
-}
-func GetAccountLockManager() AccountLockManager {
-	return dataSourceInst.AccountLockManager()
 }
 func GetDependencyManager() DependencyManager {
 	return dataSourceInst.DependencyManager()

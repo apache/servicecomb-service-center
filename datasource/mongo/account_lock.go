@@ -19,19 +19,16 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
 	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
+	"github.com/apache/servicecomb-service-center/datasource/rbac"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type AccountLockManager struct {
-}
-
-func (al *AccountLockManager) UpsertLock(ctx context.Context, lock *datasource.AccountLock) error {
+func (al *RbacDAO) UpsertLock(ctx context.Context, lock *rbac.Lock) error {
 	key := lock.Key
 	releaseAt := lock.ReleaseAt
 	filter := mutil.NewFilter(mutil.AccountLockKey(key))
@@ -54,7 +51,7 @@ func (al *AccountLockManager) UpsertLock(ctx context.Context, lock *datasource.A
 	return nil
 }
 
-func (al *AccountLockManager) GetLock(ctx context.Context, key string) (*datasource.AccountLock, error) {
+func (al *RbacDAO) GetLock(ctx context.Context, key string) (*rbac.Lock, error) {
 	filter := mutil.NewFilter(mutil.AccountLockKey(key))
 	result, err := client.GetMongoClient().FindOne(ctx, model.CollectionAccountLock, filter)
 	if err != nil {
@@ -62,13 +59,13 @@ func (al *AccountLockManager) GetLock(ctx context.Context, key string) (*datasou
 	}
 	if err = result.Err(); err != nil {
 		if err == mongo.ErrNoDocuments {
-			return nil, datasource.ErrAccountLockNotExist
+			return nil, rbac.ErrAccountLockNotExist
 		}
 		msg := fmt.Sprintf("failed to query account lock, key %s", key)
 		log.Error(msg, result.Err())
-		return nil, datasource.ErrQueryAccountLockFailed
+		return nil, rbac.ErrQueryAccountLockFailed
 	}
-	var lock datasource.AccountLock
+	var lock rbac.Lock
 	err = result.Decode(&lock)
 	if err != nil {
 		log.Error(fmt.Sprintf("failed to decode account lock %s", key), err)
@@ -77,16 +74,16 @@ func (al *AccountLockManager) GetLock(ctx context.Context, key string) (*datasou
 	return &lock, nil
 }
 
-func (al *AccountLockManager) ListLock(ctx context.Context) ([]*datasource.AccountLock, int64, error) {
+func (al *RbacDAO) ListLock(ctx context.Context) ([]*rbac.Lock, int64, error) {
 	filter := mutil.NewFilter()
 	cursor, err := client.GetMongoClient().Find(ctx, model.CollectionAccountLock, filter)
 	if err != nil {
 		return nil, 0, err
 	}
-	var locks []*datasource.AccountLock
+	var locks []*rbac.Lock
 	defer cursor.Close(ctx)
 	for cursor.Next(ctx) {
-		var lock datasource.AccountLock
+		var lock rbac.Lock
 		err = cursor.Decode(&lock)
 		if err != nil {
 			log.Error("failed to decode account lock", err)
@@ -97,18 +94,18 @@ func (al *AccountLockManager) ListLock(ctx context.Context) ([]*datasource.Accou
 	return locks, int64(len(locks)), nil
 }
 
-func (al *AccountLockManager) DeleteLock(ctx context.Context, key string) error {
+func (al *RbacDAO) DeleteLock(ctx context.Context, key string) error {
 	filter := mutil.NewFilter(mutil.AccountLockKey(key))
 	_, err := client.GetMongoClient().Delete(ctx, model.CollectionAccountLock, filter)
 	if err != nil {
 		log.Error(fmt.Sprintf("remove lock %s failed", key), err)
-		return datasource.ErrCannotReleaseLock
+		return rbac.ErrCannotReleaseLock
 	}
 	log.Info(fmt.Sprintf("%s is released", key))
 	return nil
 }
 
-func (al *AccountLockManager) DeleteLockList(ctx context.Context, keys []string) error {
+func (al *RbacDAO) DeleteLockList(ctx context.Context, keys []string) error {
 	var delKeys []mongo.WriteModel
 	for _, key := range keys {
 		delKeys = append(delKeys, mongo.NewDeleteOneModel().SetFilter(mutil.NewFilter(mutil.AccountLockKey(key))))
@@ -119,12 +116,8 @@ func (al *AccountLockManager) DeleteLockList(ctx context.Context, keys []string)
 	_, err := client.GetMongoClient().BatchDelete(ctx, model.CollectionAccountLock, delKeys)
 	if err != nil {
 		log.Error(fmt.Sprintf("remove locks %v failed", keys), err)
-		return datasource.ErrCannotReleaseLock
+		return rbac.ErrCannotReleaseLock
 	}
 	log.Info(fmt.Sprintf("%v are released", keys))
 	return nil
-}
-
-func NewAccountLockManager() datasource.AccountLockManager {
-	return &AccountLockManager{}
 }

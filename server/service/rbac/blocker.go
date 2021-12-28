@@ -23,7 +23,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/datasource/rbac"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	accountsvc "github.com/apache/servicecomb-service-center/server/service/account"
 	"golang.org/x/time/rate"
@@ -59,9 +59,9 @@ func TryLockAccount(key string) {
 	}
 
 	allow := l.limiter.AllowN(time.Now(), 1)
-	status := datasource.StatusAttempted
+	status := rbac.StatusAttempted
 	if !allow {
-		status = datasource.StatusBanned
+		status = rbac.StatusBanned
 	}
 	err := accountsvc.Lock(context.Background(), key, status)
 	if err != nil {

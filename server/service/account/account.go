@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/datasource/rbac"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
 )
@@ -18,7 +18,7 @@ const (
 func IsBanned(ctx context.Context, key string) (bool, error) {
 	lock, err := GetLock(ctx, key)
 	if err != nil {
-		if err == datasource.ErrAccountLockNotExist {
+		if err == rbac.ErrAccountLockNotExist {
 			return false, nil
 		}
 		return false, err
@@ -27,46 +27,46 @@ func IsBanned(ctx context.Context, key string) (bool, error) {
 		err = DeleteLock(ctx, key)
 		if err != nil {
 			log.Error("remove lock failed", err)
-			return false, datasource.ErrCannotReleaseLock
+			return false, rbac.ErrCannotReleaseLock
 		}
 		log.Info(fmt.Sprintf("release lock for %s", key))
 		return false, nil
 	}
-	if lock.Status == datasource.StatusBanned {
+	if lock.Status == rbac.StatusBanned {
 		return true, nil
 	}
 	return false, nil
 }
 
 func Ban(ctx context.Context, key string) error {
-	return Lock(ctx, key, datasource.StatusBanned)
+	return Lock(ctx, key, rbac.StatusBanned)
 }
 
 func Lock(ctx context.Context, key, status string) error {
 	duration := config.GetDuration("rbac.retainLockHistoryFor", defaultRetainLockHistoryFor)
-	if status == datasource.StatusBanned {
+	if status == rbac.StatusBanned {
 		duration = config.GetDuration("rbac.releaseLockAfter", defaultReleaseLockAfter)
 	}
-	lock := &datasource.AccountLock{
+	lock := &rbac.Lock{
 		Key:       key,
 		Status:    status,
 		ReleaseAt: time.Now().Add(duration).Unix(),
 	}
-	return datasource.GetAccountLockManager().UpsertLock(ctx, lock)
+	return rbac.Instance().UpsertLock(ctx, lock)
 }
 
-func GetLock(ctx context.Context, key string) (*datasource.AccountLock, error) {
-	return datasource.GetAccountLockManager().GetLock(ctx, key)
+func GetLock(ctx context.Context, key string) (*rbac.Lock, error) {
+	return rbac.Instance().GetLock(ctx, key)
 }
 
-func ListLock(ctx context.Context) ([]*datasource.AccountLock, int64, error) {
-	return datasource.GetAccountLockManager().ListLock(ctx)
+func ListLock(ctx context.Context) ([]*rbac.Lock, int64, error) {
+	return rbac.Instance().ListLock(ctx)
 }
 
 func DeleteLock(ctx context.Context, key string) error {
-	return datasource.GetAccountLockManager().DeleteLock(ctx, key)
+	return rbac.Instance().DeleteLock(ctx, key)
 }
 
 func DeleteLockList(ctx context.Context, keys []string) error {
-	return datasource.GetAccountLockManager().DeleteLockList(ctx, keys)
+	return rbac.Instance().DeleteLockList(ctx, keys)
 }

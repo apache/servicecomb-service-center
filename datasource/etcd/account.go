@@ -22,21 +22,31 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
+	"github.com/apache/servicecomb-service-center/datasource/rbac"
 	"github.com/apache/servicecomb-service-center/pkg/etcdsync"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/privacy"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/go-chassis/cari/rbac"
+	rbacmodel "github.com/go-chassis/cari/rbac"
 	"github.com/go-chassis/foundation/stringutil"
 	"github.com/little-cui/etcdadpt"
 )
 
-type AccountManager struct {
+func init() {
+	rbac.Install("etcd", NewRbacDAO)
+	rbac.Install("embeded_etcd", NewRbacDAO)
+	rbac.Install("embedded_etcd", NewRbacDAO)
 }
 
-func (ds *AccountManager) CreateAccount(ctx context.Context, a *rbac.Account) error {
+func NewRbacDAO(opts rbac.Options) (rbac.DAO, error) {
+	return &RbacDAO{}, nil
+}
+
+type RbacDAO struct {
+}
+
+func (ds *RbacDAO) CreateAccount(ctx context.Context, a *rbacmodel.Account) error {
 	lock, err := etcdsync.Lock("/account-creating/"+a.Name, -1, false)
 	if err != nil {
 		return fmt.Errorf("account %s is creating", a.Name)
@@ -53,7 +63,7 @@ func (ds *AccountManager) CreateAccount(ctx context.Context, a *rbac.Account) er
 		return err
 	}
 	if exist {
-		return datasource.ErrAccountDuplicated
+		return rbac.ErrAccountDuplicated
 	}
 	a.Password, err = privacy.ScryptPassword(a.Password)
 	if err != nil {
@@ -78,7 +88,7 @@ func (ds *AccountManager) CreateAccount(ctx context.Context, a *rbac.Account) er
 	log.Info("create new account: " + a.ID)
 	return nil
 }
-func GenAccountOpts(a *rbac.Account, action etcdadpt.Action) ([]etcdadpt.OpOptions, error) {
+func GenAccountOpts(a *rbacmodel.Account, action etcdadpt.Action) ([]etcdadpt.OpOptions, error) {
 	opts := make([]etcdadpt.OpOptions, 0)
 	value, err := json.Marshal(a)
 	if err != nil {
@@ -100,18 +110,18 @@ func GenAccountOpts(a *rbac.Account, action etcdadpt.Action) ([]etcdadpt.OpOptio
 
 	return opts, nil
 }
-func (ds *AccountManager) AccountExist(ctx context.Context, name string) (bool, error) {
+func (ds *RbacDAO) AccountExist(ctx context.Context, name string) (bool, error) {
 	return etcdadpt.Exist(ctx, path.GenerateRBACAccountKey(name))
 }
-func (ds *AccountManager) GetAccount(ctx context.Context, name string) (*rbac.Account, error) {
+func (ds *RbacDAO) GetAccount(ctx context.Context, name string) (*rbacmodel.Account, error) {
 	kv, err := etcdadpt.Get(ctx, path.GenerateRBACAccountKey(name))
 	if err != nil {
 		return nil, err
 	}
 	if kv == nil {
-		return nil, datasource.ErrAccountNotExist
+		return nil, rbac.ErrAccountNotExist
 	}
-	account := &rbac.Account{}
+	account := &rbacmodel.Account{}
 	err = json.Unmarshal(kv.Value, account)
 	if err != nil {
 		log.Error("account info format invalid", err)
@@ -121,7 +131,7 @@ func (ds *AccountManager) GetAccount(ctx context.Context, name string) (*rbac.Ac
 	return account, nil
 }
 
-func (ds *AccountManager) compatibleOldVersionAccount(a *rbac.Account) {
+func (ds *RbacDAO) compatibleOldVersionAccount(a *rbacmodel.Account) {
 	// old version use Role, now use Roles
 	// Role/Roles will not exist at the same time
 	if len(a.Role) == 0 {
@@ -131,14 +141,14 @@ func (ds *AccountManager) compatibleOldVersionAccount(a *rbac.Account) {
 	a.Role = ""
 }
 
-func (ds *AccountManager) ListAccount(ctx context.Context) ([]*rbac.Account, int64, error) {
+func (ds *RbacDAO) ListAccount(ctx context.Context) ([]*rbacmodel.Account, int64, error) {
 	kvs, n, err := etcdadpt.List(ctx, path.GenerateRBACAccountKey(""))
 	if err != nil {
 		return nil, 0, err
 	}
-	accounts := make([]*rbac.Account, 0, n)
+	accounts := make([]*rbacmodel.Account, 0, n)
 	for _, v := range kvs {
-		a := &rbac.Account{}
+		a := &rbacmodel.Account{}
 		err = json.Unmarshal(v.Value, a)
 		if err != nil {
 			log.Error("account info format invalid:", err)
@@ -150,7 +160,7 @@ func (ds *AccountManager) ListAccount(ctx context.Context) ([]*rbac.Account, int
 	}
 	return accounts, n, nil
 }
-func (ds *AccountManager) DeleteAccount(ctx context.Context, names []string) (bool, error) {
+func (ds *RbacDAO) DeleteAccount(ctx context.Context, names []string) (bool, error) {
 	if len(names) == 0 {
 		return false, nil
 	}
@@ -172,13 +182,13 @@ func (ds *AccountManager) DeleteAccount(ctx context.Context, names []string) (bo
 		}
 		err = etcdadpt.Txn(ctx, opts)
 		if err != nil {
-			log.Error(datasource.ErrDeleteAccountFailed.Error(), err)
+			log.Error(rbac.ErrDeleteAccountFailed.Error(), err)
 			return false, err
 		}
 	}
 	return true, nil
 }
-func (ds *AccountManager) UpdateAccount(ctx context.Context, name string, account *rbac.Account) error {
+func (ds *RbacDAO) UpdateAccount(ctx context.Context, name string, account *rbacmodel.Account) error {
 	var (
 		opts []etcdadpt.OpOptions
 		err  error
@@ -216,7 +226,7 @@ func (ds *AccountManager) UpdateAccount(ctx context.Context, name string, accoun
 	return err
 }
 
-func hasRole(account *rbac.Account, r string) bool {
+func hasRole(account *rbacmodel.Account, r string) bool {
 	for _, n := range account.Roles {
 		if r == n {
 			return true

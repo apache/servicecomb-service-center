@@ -15,48 +15,10 @@
  * limitations under the License.
  */
 
-package schema
+package rbac
 
-import (
-	"fmt"
-
-	"github.com/apache/servicecomb-service-center/pkg/log"
-)
-
-type initFunc func(opts Options) (DAO, error)
-
-var (
-	plugins  = make(map[string]initFunc)
-	instance DAO
-)
-
-// Install load plugins configuration into plugins
-func Install(pluginImplName string, f initFunc) {
-	plugins[pluginImplName] = f
-}
-
-// Init construct storage plugin instance
-// invoked by sc main process.
-func Init(opts Options) error {
-	if opts.Kind == "" {
-		return nil
-	}
-
-	engineFunc, ok := plugins[opts.Kind]
-	if !ok {
-		return fmt.Errorf("plugin implement not supported [%s]", opts.Kind)
-	}
-
-	var err error
-	instance, err = engineFunc(opts)
-	if err != nil {
-		return err
-	}
-	log.Info(fmt.Sprintf("schema plugin [%s] enabled", opts.Kind))
-
-	return nil
-}
-
-func Instance() DAO {
-	return instance
+type DAO interface {
+	AccountManager
+	RoleManager
+	LockManager
 }

@@ -22,7 +22,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/datasource/rbac"
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
@@ -30,7 +30,7 @@ import (
 	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 	"github.com/apache/servicecomb-service-center/server/service/validator"
 	"github.com/go-chassis/cari/discovery"
-	"github.com/go-chassis/cari/rbac"
+	rbacmodel "github.com/go-chassis/cari/rbac"
 	"github.com/go-chassis/go-chassis/v2/security/authr"
 )
 
@@ -61,7 +61,7 @@ func (ar *AuthResource) CreateAccount(w http.ResponseWriter, req *http.Request) 
 		rest.WriteError(w, discovery.ErrInternal, err.Error())
 		return
 	}
-	a := &rbac.Account{}
+	a := &rbacmodel.Account{}
 	if err = json.Unmarshal(body, a); err != nil {
 		log.Error("json err", err)
 		rest.WriteError(w, discovery.ErrInvalidParams, err.Error())
@@ -95,7 +95,7 @@ func (ar *AuthResource) UpdateAccount(w http.ResponseWriter, req *http.Request) 
 		rest.WriteError(w, discovery.ErrInternal, err.Error())
 		return
 	}
-	a := &rbac.Account{}
+	a := &rbacmodel.Account{}
 	if err = json.Unmarshal(body, a); err != nil {
 		log.Error("json err", err)
 		rest.WriteError(w, discovery.ErrInvalidParams, err.Error())
@@ -118,7 +118,7 @@ func (ar *AuthResource) ListAccount(w http.ResponseWriter, r *http.Request) {
 		rest.WriteError(w, discovery.ErrInternal, errorsEx.MsgGetAccountFailed)
 		return
 	}
-	resp := &rbac.AccountResponse{
+	resp := &rbacmodel.AccountResponse{
 		Total:    n,
 		Accounts: as,
 	}
@@ -143,7 +143,7 @@ func (ar *AuthResource) ChangePassword(w http.ResponseWriter, req *http.Request)
 		rest.WriteError(w, discovery.ErrInternal, err.Error())
 		return
 	}
-	a := &rbac.Account{}
+	a := &rbacmodel.Account{}
 	if err = json.Unmarshal(body, a); err != nil {
 		log.Error("json err", err)
 		rest.WriteError(w, discovery.ErrInvalidParams, errorsEx.MsgJSON)
@@ -166,7 +166,7 @@ func (ar *AuthResource) Login(w http.ResponseWriter, r *http.Request) {
 		rest.WriteError(w, discovery.ErrInternal, err.Error())
 		return
 	}
-	a := &rbac.Account{}
+	a := &rbacmodel.Account{}
 	if err = json.Unmarshal(body, a); err != nil {
 		log.Error("json err", err)
 		rest.WriteError(w, discovery.ErrInvalidParams, err.Error())
@@ -187,7 +187,7 @@ func (ar *AuthResource) Login(w http.ResponseWriter, r *http.Request) {
 		rest.WriteServiceError(w, err)
 		return
 	}
-	rest.WriteResponse(w, r, nil, &rbac.Token{TokenStr: t})
+	rest.WriteResponse(w, r, nil, &rbacmodel.Token{TokenStr: t})
 }
 
 func (ar *AuthResource) ListSelfPerms(w http.ResponseWriter, r *http.Request) {
@@ -197,7 +197,7 @@ func (ar *AuthResource) ListSelfPerms(w http.ResponseWriter, r *http.Request) {
 		rest.WriteServiceError(w, err)
 		return
 	}
-	resp := &rbac.SelfPermissionResponse{
+	resp := &rbacmodel.SelfPermissionResponse{
 		Perms: perms,
 	}
 	rest.WriteResponse(w, r, nil, resp)
@@ -211,9 +211,9 @@ func (ar *AuthResource) ListLock(w http.ResponseWriter, r *http.Request) {
 		rest.WriteServiceError(w, err)
 		return
 	}
-	resp := &datasource.AccountLockResponse{
-		Total:       n,
-		AccountLock: al,
+	resp := &rbac.LockResponse{
+		Total: n,
+		Locks: al,
 	}
 	rest.WriteResponse(w, r, nil, resp)
 }

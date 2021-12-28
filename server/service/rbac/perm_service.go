@@ -20,24 +20,24 @@ package rbac
 import (
 	"context"
 
-	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/datasource/rbac"
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
-	"github.com/go-chassis/cari/rbac"
+	rbacmodel "github.com/go-chassis/cari/rbac"
 )
 
 // ListSelfPerms list the user permission from ctx
-func ListSelfPerms(ctx context.Context) ([]*rbac.Permission, error) {
+func ListSelfPerms(ctx context.Context) ([]*rbacmodel.Permission, error) {
 	user := UserFromContext(ctx)
 	if len(user) == 0 {
-		return nil, rbac.NewError(rbac.ErrUnauthorized, errorsEx.MsgListSelfPermsFailed)
+		return nil, rbacmodel.NewError(rbacmodel.ErrUnauthorized, errorsEx.MsgListSelfPermsFailed)
 	}
-	account, err := datasource.GetAccountManager().GetAccount(ctx, user)
+	account, err := rbac.Instance().GetAccount(ctx, user)
 	if err != nil {
 		return nil, err
 	}
-	var perms []*rbac.Permission
+	var perms []*rbacmodel.Permission
 	for _, roleName := range account.Roles {
-		role, err := datasource.GetRoleManager().GetRole(ctx, roleName)
+		role, err := rbac.Instance().GetRole(ctx, roleName)
 		if err != nil {
 			return nil, err
 		}
