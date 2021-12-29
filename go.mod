@@ -6,7 +6,6 @@ replace (
 )
 
 require (
-	github.com/robfig/cron/v3 v3.0.1
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/apache/servicecomb-service-center/api v0.0.0
 	github.com/astaxie/beego v1.12.2
@@ -38,6 +37,7 @@ require (
 	github.com/prometheus/client_golang v1.11.0
 	github.com/prometheus/client_model v0.2.0
 	github.com/prometheus/procfs v0.6.0
+	github.com/robfig/cron/v3 v3.0.1
 	github.com/rs/cors v1.7.0 // v1.1
 	github.com/satori/go.uuid v1.1.0
 	github.com/spf13/cobra v1.1.3
