@@ -188,7 +188,6 @@ func TestUnregisterManyService(t *testing.T) {
 
 		_, err = datasource.GetMetadataManager().FindInstances(ctx, &pb.FindInstancesRequest{
 			ConsumerServiceId: consumer.ServiceId,
-			AppId:             "default",
 			ServiceName:       serviceIDPrefix + "1",
 		})
 		assert.NoError(t, err)

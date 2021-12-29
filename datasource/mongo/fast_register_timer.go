@@ -136,7 +136,7 @@ func (rt *FastRegisterTimeTask) RegisterInstancesAsync(events []*InstanceRegiste
 	ctx, cancel := context.WithTimeout(context.Background(), ctxCancelTimeOut)
 	defer cancel()
 
-	_, err := RegisterInstanceBatch(ctx, events)
+	err := RegisterInstanceBatch(ctx, events)
 
 	count := <-failedCount
 
@@ -161,7 +161,6 @@ func (rt *FastRegisterTimeTask) RegisterInstance(event *InstanceRegisterEvent, b
 	defer cancel()
 
 	_, err := RegisterInstanceSingle(event.Ctx, event.Request, event.isCustomID)
-
 	if err != nil {
 		log.Error(fmt.Sprintf("register instance:%s failed again, failed times:%d",
 			event.Request.Instance.InstanceId, event.failedTime), err)

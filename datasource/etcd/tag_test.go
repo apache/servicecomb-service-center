@@ -76,7 +76,7 @@ func TestSyncTag(t *testing.T) {
 
 	t.Run("add tags", func(t *testing.T) {
 		t.Run("add tags for a service will create a task should pass", func(t *testing.T) {
-			respAddTages, err := datasource.GetMetadataManager().AddTags(tagContext(), &pb.AddServiceTagsRequest{
+			err := datasource.GetMetadataManager().PutManyTags(tagContext(), &pb.AddServiceTagsRequest{
 				ServiceId: serviceID,
 				Tags: map[string]string{
 					"a": "test",
@@ -84,7 +84,7 @@ func TestSyncTag(t *testing.T) {
 				},
 			})
 			assert.NoError(t, err)
-			assert.Equal(t, pb.ResponseSuccess, respAddTages.Response.GetCode())
+
 			listTaskReq := model.ListTaskRequest{
 				Domain:       "sync-tag",
 				Project:      "sync-tag",
@@ -105,13 +105,13 @@ func TestSyncTag(t *testing.T) {
 
 	t.Run("update a tag", func(t *testing.T) {
 		t.Run("update a service tag will create a task should pass", func(t *testing.T) {
-			resp, err := datasource.GetMetadataManager().UpdateTag(tagContext(), &pb.UpdateServiceTagRequest{
+			err := datasource.GetMetadataManager().PutTag(tagContext(), &pb.UpdateServiceTagRequest{
 				ServiceId: serviceID,
 				Key:       "a",
 				Value:     "update",
 			})
 			assert.NoError(t, err)
-			assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
+
 			listTaskReq := model.ListTaskRequest{
 				Domain:       "sync-tag",
 				Project:      "sync-tag",
@@ -132,17 +132,17 @@ func TestSyncTag(t *testing.T) {
 
 	t.Run("delete tags", func(t *testing.T) {
 		t.Run("delete a service's tags will create a task and a tombstone should pass", func(t *testing.T) {
-			resp, err := datasource.GetMetadataManager().DeleteTags(tagContext(), &pb.DeleteServiceTagsRequest{
+			err := datasource.GetMetadataManager().DeleteManyTags(tagContext(), &pb.DeleteServiceTagsRequest{
 				ServiceId: serviceID,
 				Keys:      []string{"a", "b"},
 			})
 			assert.NoError(t, err)
-			assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
-			respGetTags, err := datasource.GetMetadataManager().GetTags(tagContext(), &pb.GetServiceTagsRequest{
+
+			respGetTags, err := datasource.GetMetadataManager().ListTag(tagContext(), &pb.GetServiceTagsRequest{
 				ServiceId: serviceID,
 			})
 			assert.NoError(t, err)
-			assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
+
 			assert.Equal(t, "", respGetTags.Tags["a"])
 			assert.Equal(t, "", respGetTags.Tags["b"])
 			listTaskReq := model.ListTaskRequest{
@@ -175,13 +175,12 @@ func TestSyncTag(t *testing.T) {
 
 	t.Run("unregister service", func(t *testing.T) {
 		t.Run("unregister a service will create a task and a tombstone should pass", func(t *testing.T) {
-			resp, err := datasource.GetMetadataManager().UnregisterService(tagContext(), &pb.DeleteServiceRequest{
+			err := datasource.GetMetadataManager().UnregisterService(tagContext(), &pb.DeleteServiceRequest{
 				ServiceId: serviceID,
 				Force:     true,
 			})
-			assert.NotNil(t, resp)
 			assert.NoError(t, err)
-			assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
+
 			listTaskReq := model.ListTaskRequest{
 				Domain:       "sync-tag",
 				Project:      "sync-tag",

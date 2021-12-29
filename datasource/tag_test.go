@@ -24,6 +24,7 @@ import (
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	quotasvc "github.com/apache/servicecomb-service-center/server/service/quota"
+	"github.com/go-chassis/cari/pkg/errsvc"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pb "github.com/go-chassis/cari/discovery"
@@ -34,6 +35,8 @@ func TestTags_Add(t *testing.T) {
 	var (
 		serviceId1 string
 	)
+	ctx := getContext()
+	defer datasource.GetMetadataManager().UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: serviceId1, Force: true})
 
 	// create service
 	t.Run("create service", func(t *testing.T) {
@@ -44,7 +47,7 @@ func TestTags_Add(t *testing.T) {
 			Level:       "FRONT",
 			Status:      pb.MS_UP,
 		}
-		resp, err := datasource.GetMetadataManager().RegisterService(getContext(), &pb.CreateServiceRequest{
+		resp, err := datasource.GetMetadataManager().RegisterService(ctx, &pb.CreateServiceRequest{
 			Service: svc1,
 		})
 		assert.NoError(t, err)
@@ -53,15 +56,15 @@ func TestTags_Add(t *testing.T) {
 	})
 
 	t.Run("the request is invalid", func(t *testing.T) {
-		log.Info("service does not exist")
-		resp, err := datasource.GetMetadataManager().AddTags(getContext(), &pb.AddServiceTagsRequest{
+		err := datasource.GetMetadataManager().PutManyTags(ctx, &pb.AddServiceTagsRequest{
 			ServiceId: "noServiceTest",
 			Tags: map[string]string{
 				"a": "test",
 			},
 		})
-		assert.NoError(t, err)
-		assert.Equal(t, pb.ErrServiceNotExists, resp.Response.GetCode())
+		testErr := err.(*errsvc.Error)
+		assert.Error(t, testErr)
+		assert.Equal(t, pb.ErrServiceNotExists, testErr.Code)
 	})
 
 	t.Run("the request is valid", func(t *testing.T) {
@@ -72,17 +75,19 @@ func TestTags_Add(t *testing.T) {
 			s := "tag" + strconv.Itoa(i)
 			tags[s] = s
 		}
-		resp, err := datasource.GetMetadataManager().AddTags(getContext(), &pb.AddServiceTagsRequest{
+		err := datasource.GetMetadataManager().PutManyTags(ctx, &pb.AddServiceTagsRequest{
 			ServiceId: serviceId1,
 			Tags:      tags,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 	})
 }
 
 func TestTags_Get(t *testing.T) {
 	var serviceId string
+	ctx := getContext()
+	defer datasource.GetMetadataManager().UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: serviceId, Force: true})
+
 	t.Run("create service and add tags", func(t *testing.T) {
 		svc := &pb.MicroService{
 			AppId:       "get_tag_group_ms",
@@ -91,15 +96,14 @@ func TestTags_Get(t *testing.T) {
 			Level:       "FRONT",
 			Status:      pb.MS_UP,
 		}
-		resp, err := datasource.GetMetadataManager().RegisterService(getContext(), &pb.CreateServiceRequest{
+		resp, err := datasource.GetMetadataManager().RegisterService(ctx, &pb.CreateServiceRequest{
 			Service: svc,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 		serviceId = resp.ServiceId
 
 		log.Info("add tags should be passed")
-		respAddTags, err := datasource.GetMetadataManager().AddTags(getContext(), &pb.AddServiceTagsRequest{
+		err = datasource.GetMetadataManager().PutManyTags(ctx, &pb.AddServiceTagsRequest{
 			ServiceId: serviceId,
 			Tags: map[string]string{
 				"a": "test",
@@ -107,33 +111,36 @@ func TestTags_Get(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respAddTags.Response.GetCode())
 	})
 
 	t.Run("the request is invalid", func(t *testing.T) {
 		log.Info("service does not exists")
-		resp, err := datasource.GetMetadataManager().GetTags(getContext(), &pb.GetServiceTagsRequest{
+		_, err := datasource.GetMetadataManager().ListTag(ctx, &pb.GetServiceTagsRequest{
 			ServiceId: "noThisService",
 		})
-		assert.NoError(t, err)
-		assert.Equal(t, pb.ErrServiceNotExists, resp.Response.GetCode())
+		testErr := err.(*errsvc.Error)
+		assert.Error(t, testErr)
+		assert.Equal(t, pb.ErrServiceNotExists, testErr.Code)
 
 		log.Info("service's id is empty")
-		resp, err = datasource.GetMetadataManager().GetTags(getContext(), &pb.GetServiceTagsRequest{
+		_, err = datasource.GetMetadataManager().ListTag(ctx, &pb.GetServiceTagsRequest{
 			ServiceId: "",
 		})
-		assert.NoError(t, err)
-		assert.Equal(t, pb.ErrServiceNotExists, resp.Response.GetCode())
+		testErr = err.(*errsvc.Error)
+		assert.Error(t, testErr)
+		assert.Equal(t, pb.ErrServiceNotExists, testErr.Code)
 
 		log.Info("service's id is invalid")
-		resp, err = datasource.GetMetadataManager().GetTags(getContext(), &pb.GetServiceTagsRequest{
+		_, err = datasource.GetMetadataManager().ListTag(ctx, &pb.GetServiceTagsRequest{
 			ServiceId: strings.Repeat("x", 65),
 		})
-		assert.Equal(t, pb.ErrServiceNotExists, resp.Response.GetCode())
+		testErr = err.(*errsvc.Error)
+		assert.Error(t, testErr)
+		assert.Equal(t, pb.ErrServiceNotExists, testErr.Code)
 	})
 
 	t.Run("the request is valid", func(t *testing.T) {
-		resp, err := datasource.GetMetadataManager().GetTags(getContext(), &pb.GetServiceTagsRequest{
+		resp, err := datasource.GetMetadataManager().ListTag(ctx, &pb.GetServiceTagsRequest{
 			ServiceId: serviceId,
 		})
 		assert.NoError(t, err)
@@ -144,6 +151,9 @@ func TestTags_Get(t *testing.T) {
 
 func TestTag_Update(t *testing.T) {
 	var serviceId string
+	ctx := getContext()
+	defer datasource.GetMetadataManager().UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: serviceId, Force: true})
+
 	t.Run("add service and add tags", func(t *testing.T) {
 		svc := &pb.MicroService{
 			AppId:       "update_tag_group_ms",
@@ -152,15 +162,14 @@ func TestTag_Update(t *testing.T) {
 			Level:       "FRONT",
 			Status:      pb.MS_UP,
 		}
-		resp, err := datasource.GetMetadataManager().RegisterService(getContext(), &pb.CreateServiceRequest{
+		resp, err := datasource.GetMetadataManager().RegisterService(ctx, &pb.CreateServiceRequest{
 			Service: svc,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 		serviceId = resp.ServiceId
 
 		log.Info("add tags")
-		respAddTags, err := datasource.GetMetadataManager().AddTags(getContext(), &pb.AddServiceTagsRequest{
+		err = datasource.GetMetadataManager().PutManyTags(ctx, &pb.AddServiceTagsRequest{
 			ServiceId: serviceId,
 			Tags: map[string]string{
 				"a": "test",
@@ -168,52 +177,52 @@ func TestTag_Update(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respAddTags.Response.GetCode())
 	})
 
 	t.Run("the request is invalid", func(t *testing.T) {
-
 		log.Info("service does not exists")
-		resp, err := datasource.GetMetadataManager().UpdateTag(getContext(), &pb.UpdateServiceTagRequest{
+		err := datasource.GetMetadataManager().PutTag(ctx, &pb.UpdateServiceTagRequest{
 			ServiceId: "noneservice",
 			Key:       "a",
 			Value:     "update",
 		})
-		assert.NoError(t, err)
-		assert.Equal(t, pb.ErrServiceNotExists, resp.Response.GetCode())
+		testErr := err.(*errsvc.Error)
+		assert.Error(t, testErr)
+		assert.Equal(t, pb.ErrServiceNotExists, testErr.Code)
 
 		log.Info("tag key does not exist")
-		resp, err = datasource.GetMetadataManager().UpdateTag(getContext(), &pb.UpdateServiceTagRequest{
+		err = datasource.GetMetadataManager().PutTag(ctx, &pb.UpdateServiceTagRequest{
 			ServiceId: serviceId,
 			Key:       "notexisttag",
 			Value:     "update",
 		})
-		assert.NoError(t, err)
-		assert.Equal(t, pb.ErrTagNotExists, resp.Response.GetCode())
+		testErr = err.(*errsvc.Error)
+		assert.Error(t, testErr)
+		assert.Equal(t, pb.ErrTagNotExists, testErr.Code)
 
 		log.Info("tag key is invalid")
-		resp, err = datasource.GetMetadataManager().UpdateTag(getContext(), &pb.UpdateServiceTagRequest{
+		err = datasource.GetMetadataManager().PutTag(ctx, &pb.UpdateServiceTagRequest{
 			ServiceId: serviceId,
 			Key:       strings.Repeat("x", 65),
 			Value:     "v",
 		})
-		assert.NoError(t, err)
-		assert.Equal(t, pb.ErrTagNotExists, resp.Response.GetCode())
+		testErr = err.(*errsvc.Error)
+		assert.Error(t, testErr)
+		assert.Equal(t, pb.ErrTagNotExists, testErr.Code)
 	})
 
 	t.Run("the request is valid", func(t *testing.T) {
-		resp, err := datasource.GetMetadataManager().UpdateTag(getContext(), &pb.UpdateServiceTagRequest{
+		err := datasource.GetMetadataManager().PutTag(ctx, &pb.UpdateServiceTagRequest{
 			ServiceId: serviceId,
 			Key:       "a",
 			Value:     "update",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 	})
 
 	t.Run("find instance, contain tag", func(t *testing.T) {
 		log.Info("create consumer")
-		resp, err := datasource.GetMetadataManager().RegisterService(getContext(), &pb.CreateServiceRequest{
+		resp, err := datasource.GetMetadataManager().RegisterService(ctx, &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
 				AppId:       "find_inst_tag_group_ms",
 				ServiceName: "find_inst_tag_consumer_ms",
@@ -223,11 +232,11 @@ func TestTag_Update(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 		consumerId := resp.ServiceId
+		defer datasource.GetMetadataManager().UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: consumerId, Force: true})
 
 		log.Info("create provider")
-		resp, err = datasource.GetMetadataManager().RegisterService(getContext(), &pb.CreateServiceRequest{
+		resp, err = datasource.GetMetadataManager().RegisterService(ctx, &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
 				AppId:       "find_inst_tag_group_ms",
 				ServiceName: "find_inst_tag_provider_ms",
@@ -237,19 +246,18 @@ func TestTag_Update(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 		providerId := resp.ServiceId
+		defer datasource.GetMetadataManager().UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: providerId, Force: true})
 
 		log.Info("tag the provider")
-		addTagsResp, err := datasource.GetMetadataManager().AddTags(getContext(), &pb.AddServiceTagsRequest{
+		err = datasource.GetMetadataManager().PutManyTags(ctx, &pb.AddServiceTagsRequest{
 			ServiceId: providerId,
 			Tags:      map[string]string{"filter_tag": "filter"},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, addTagsResp.Response.GetCode())
 
 		log.Info("add instance to provider")
-		instanceResp, err := datasource.GetMetadataManager().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
+		instanceResp, err := datasource.GetMetadataManager().RegisterInstance(ctx, &pb.RegisterInstanceRequest{
 			Instance: &pb.MicroServiceInstance{
 				ServiceId: providerId,
 				Endpoints: []string{
@@ -260,54 +268,52 @@ func TestTag_Update(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, instanceResp.Response.GetCode())
 
 		log.Info("find instance")
-		findResp, err := datasource.GetMetadataManager().FindInstances(getContext(), &pb.FindInstancesRequest{
+		findResp, err := datasource.GetMetadataManager().FindInstances(ctx, &pb.FindInstancesRequest{
 			ConsumerServiceId: consumerId,
 			AppId:             "find_inst_tag_group_ms",
 			ServiceName:       "find_inst_tag_provider_ms",
 			Tags:              []string{"not-exist-tag"},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, findResp.Response.GetCode())
 		assert.Equal(t, 0, len(findResp.Instances))
 
-		findResp, err = datasource.GetMetadataManager().FindInstances(getContext(), &pb.FindInstancesRequest{
+		findResp, err = datasource.GetMetadataManager().FindInstances(ctx, &pb.FindInstancesRequest{
 			ConsumerServiceId: consumerId,
 			AppId:             "find_inst_tag_group_ms",
 			ServiceName:       "find_inst_tag_provider_ms",
 			Tags:              []string{"filter_tag"},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, findResp.Response.GetCode())
 		assert.Equal(t, instanceResp.InstanceId, findResp.Instances[0].InstanceId)
 
 		// no add rules
 
 		log.Info("add tags")
-		addTagsResp, err = datasource.GetMetadataManager().AddTags(getContext(), &pb.AddServiceTagsRequest{
+		err = datasource.GetMetadataManager().PutManyTags(ctx, &pb.AddServiceTagsRequest{
 			ServiceId: consumerId,
 			Tags:      map[string]string{"consumer_tag": "filter"},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, addTagsResp.Response.GetCode())
 
-		findResp, err = datasource.GetMetadataManager().FindInstances(getContext(), &pb.FindInstancesRequest{
+		findResp, err = datasource.GetMetadataManager().FindInstances(ctx, &pb.FindInstancesRequest{
 			ConsumerServiceId: consumerId,
 			AppId:             "find_inst_tag_group_ms",
 			ServiceName:       "find_inst_tag_provider_ms",
 			Tags:              []string{"filter_tag"},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, findResp.Response.GetCode())
 	})
 }
 
 func TestTags_Delete(t *testing.T) {
 	var serviceId string
+	ctx := getContext()
+	defer datasource.GetMetadataManager().UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: serviceId, Force: true})
+
 	t.Run("create service and add tags", func(t *testing.T) {
-		resp, err := datasource.GetMetadataManager().RegisterService(getContext(), &pb.CreateServiceRequest{
+		resp, err := datasource.GetMetadataManager().RegisterService(ctx, &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
 				AppId:       "delete_tag_group_ms",
 				ServiceName: "delete_tag_service_ms",
@@ -317,10 +323,9 @@ func TestTags_Delete(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 		serviceId = resp.ServiceId
 
-		respAddTages, err := datasource.GetMetadataManager().AddTags(getContext(), &pb.AddServiceTagsRequest{
+		err = datasource.GetMetadataManager().PutManyTags(ctx, &pb.AddServiceTagsRequest{
 			ServiceId: serviceId,
 			Tags: map[string]string{
 				"a": "test",
@@ -328,40 +333,39 @@ func TestTags_Delete(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respAddTages.Response.GetCode())
 	})
 
 	t.Run("the request is invalid", func(t *testing.T) {
 		log.Info("service does not exits")
-		resp, err := datasource.GetMetadataManager().DeleteTags(getContext(), &pb.DeleteServiceTagsRequest{
+		err := datasource.GetMetadataManager().DeleteManyTags(ctx, &pb.DeleteServiceTagsRequest{
 			ServiceId: "noneservice",
 			Keys:      []string{"a", "b"},
 		})
-		assert.NoError(t, err)
-		assert.Equal(t, pb.ErrServiceNotExists, resp.Response.GetCode())
+		testErr := err.(*errsvc.Error)
+		assert.Error(t, testErr)
+		assert.Equal(t, pb.ErrServiceNotExists, testErr.Code)
 
 		log.Info("tag key does not exits")
-		resp, err = datasource.GetMetadataManager().DeleteTags(getContext(), &pb.DeleteServiceTagsRequest{
+		err = datasource.GetMetadataManager().DeleteManyTags(ctx, &pb.DeleteServiceTagsRequest{
 			ServiceId: serviceId,
 			Keys:      []string{"c"},
 		})
-		assert.NoError(t, err)
-		assert.Equal(t, pb.ErrTagNotExists, resp.Response.GetCode())
+		testErr = err.(*errsvc.Error)
+		assert.Error(t, testErr)
+		assert.Equal(t, pb.ErrTagNotExists, testErr.Code)
 	})
 
 	t.Run("the request is valid", func(t *testing.T) {
-		resp, err := datasource.GetMetadataManager().DeleteTags(getContext(), &pb.DeleteServiceTagsRequest{
+		err := datasource.GetMetadataManager().DeleteManyTags(ctx, &pb.DeleteServiceTagsRequest{
 			ServiceId: serviceId,
 			Keys:      []string{"a", "b"},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
-		respGetTags, err := datasource.GetMetadataManager().GetTags(getContext(), &pb.GetServiceTagsRequest{
+		respGetTags, err := datasource.GetMetadataManager().ListTag(ctx, &pb.GetServiceTagsRequest{
 			ServiceId: serviceId,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 		assert.Equal(t, "", respGetTags.Tags["a"])
 	})
 }

@@ -19,15 +19,14 @@ package registry
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
-	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/core"
 	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
 	pb "github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/cari/pkg/errsvc"
 	"github.com/go-chassis/foundation/gopool"
 )
 
@@ -52,30 +51,29 @@ func selfRegister(pCtx context.Context) error {
 }
 
 func registerService(ctx context.Context) error {
-	respE, err := core.ServiceAPI.Exist(ctx, core.GetExistenceRequest())
+	serviceID, err := discosvc.ExistService(ctx, core.GetExistenceRequest())
 	if err != nil {
 		log.Error("query service center existence failed", err)
-		return err
-	}
-	if respE.Response.GetCode() == pb.ResponseSuccess {
-		log.Warn(fmt.Sprintf("service center service[%s] already registered", respE.ServiceId))
-		respG, err := core.ServiceAPI.GetOne(ctx, core.GetServiceRequest(respE.ServiceId))
-		if respG.Response.GetCode() != pb.ResponseSuccess {
-			log.Error(fmt.Sprintf("query service center service[%s] info failed", respE.ServiceId), err)
-			return datasource.ErrServiceNotExists
+		if !errsvc.IsErrEqualCode(err, pb.ErrServiceNotExists) {
+			return err
 		}
-		core.Service = respG.Service
-		return nil
+		return registerNewService(ctx)
 	}
 
-	respS, err := core.ServiceAPI.Create(ctx, core.CreateServiceRequest())
+	log.Warn(fmt.Sprintf("service center service[%s] already registered", serviceID))
+	core.Service, err = discosvc.GetService(ctx, core.GetServiceRequest(serviceID))
+	if err != nil {
+		log.Error(fmt.Sprintf("query service center service[%s] info failed", serviceID), err)
+		return err
+	}
+	return nil
+}
+
+func registerNewService(ctx context.Context) error {
+	respS, err := discosvc.RegisterService(ctx, core.CreateServiceRequest())
 	if err != nil {
 		log.Error("register service center failed", err)
 		return err
-	}
-	if respS.Response.GetCode() != pb.ResponseSuccess {
-		log.Error("register service center failed, msg: "+respS.Response.GetMessage(), nil)
-		return errors.New(respS.Response.GetMessage())
 	}
 	core.Service.ServiceId = respS.ServiceId
 	log.Info(fmt.Sprintf("register service center service[%s]", respS.ServiceId))
@@ -90,11 +88,6 @@ func registerInstance(ctx context.Context) error {
 		log.Error("register failed", err)
 		return err
 	}
-	if respI.Response.GetCode() != pb.ResponseSuccess {
-		log.Error(fmt.Sprintf("register service center[%s] instance failed, %s",
-			core.Instance.ServiceId, respI.Response.GetMessage()), nil)
-		return errors.New(respI.Response.GetMessage())
-	}
 	core.Instance.InstanceId = respI.InstanceId
 	log.Info(fmt.Sprintf("register service center instance[%s/%s], endpoints is %s",
 		core.Service.ServiceId, respI.InstanceId, core.Instance.Endpoints))
@@ -103,20 +96,14 @@ func registerInstance(ctx context.Context) error {
 
 func selfHeartBeat(pCtx context.Context) error {
 	ctx := core.AddDefaultContextValue(pCtx)
-	respI, err := discosvc.Heartbeat(ctx, core.HeartbeatRequest())
+	err := discosvc.SendHeartbeat(ctx, core.HeartbeatRequest())
 	if err != nil {
 		log.Error("send heartbeat failed", err)
 		return err
 	}
-	if respI.Response.GetCode() == pb.ResponseSuccess {
-		log.Debug(fmt.Sprintf("update service center instance[%s/%s] heartbeat",
-			core.Instance.ServiceId, core.Instance.InstanceId))
-		return nil
-	}
-	err = fmt.Errorf(respI.Response.GetMessage())
-	log.Error(fmt.Sprintf("update service center instance[%s/%s] heartbeat failed",
-		core.Instance.ServiceId, core.Instance.InstanceId), err)
-	return err
+	log.Debug(fmt.Sprintf("update service center instance[%s/%s] heartbeat",
+		core.Instance.ServiceId, core.Instance.InstanceId))
+	return nil
 }
 
 func autoSelfHeartBeat() {
@@ -146,15 +133,10 @@ func SelfUnregister(pCtx context.Context) error {
 		return nil
 	}
 	ctx := core.AddDefaultContextValue(pCtx)
-	respI, err := discosvc.UnregisterInstance(ctx, core.UnregisterInstanceRequest())
+	err := discosvc.UnregisterInstance(ctx, core.UnregisterInstanceRequest())
 	if err != nil {
-		log.Error("unregister failed", err)
-		return err
-	}
-	if respI.Response.GetCode() != pb.ResponseSuccess {
-		err = fmt.Errorf("unregister service center instance[%s/%s] failed, %s",
-			core.Instance.ServiceId, core.Instance.InstanceId, respI.Response.GetMessage())
-		log.Error(err.Error(), nil)
+		log.Error(fmt.Sprintf("unregister service center instance[%s/%s] failed",
+			core.Instance.ServiceId, core.Instance.InstanceId), err)
 		return err
 	}
 	log.Warn(fmt.Sprintf("unregister service center instance[%s/%s]",

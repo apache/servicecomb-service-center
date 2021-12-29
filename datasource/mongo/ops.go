@@ -26,7 +26,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func (ds *MetadataManager) GetServiceCount(ctx context.Context, request *pb.GetServiceCountRequest) (
+func (ds *MetadataManager) CountService(ctx context.Context, request *pb.GetServiceCountRequest) (
 	*pb.GetServiceCountResponse, error) {
 	options := []mutil.Option{mutil.NotGlobal(), mutil.Domain(request.Domain)}
 	if request.Project != "" {
@@ -37,12 +37,11 @@ func (ds *MetadataManager) GetServiceCount(ctx context.Context, request *pb.GetS
 		return nil, err
 	}
 	return &pb.GetServiceCountResponse{
-		Response: pb.CreateResponse(pb.ResponseSuccess, "Get instance count by domain/project successfully"),
-		Count:    count,
+		Count: count,
 	}, nil
 }
 
-func (ds *MetadataManager) GetInstanceCount(ctx context.Context, request *pb.GetServiceCountRequest) (
+func (ds *MetadataManager) CountInstance(ctx context.Context, request *pb.GetServiceCountRequest) (
 	*pb.GetServiceCountResponse, error) {
 	inFilter, err := ds.getNotGlobalServiceFilter(ctx)
 	if err != nil {
@@ -58,8 +57,7 @@ func (ds *MetadataManager) GetInstanceCount(ctx context.Context, request *pb.Get
 		return nil, err
 	}
 	return &pb.GetServiceCountResponse{
-		Response: pb.CreateResponse(pb.ResponseSuccess, "Get instance count by domain/project successfully"),
-		Count:    count,
+		Count: count,
 	}, nil
 }
 

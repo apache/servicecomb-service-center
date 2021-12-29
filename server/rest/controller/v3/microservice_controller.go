@@ -20,21 +20,26 @@ import (
 	"net/http"
 
 	"github.com/apache/servicecomb-service-center/pkg/rest"
-	v4 "github.com/apache/servicecomb-service-center/server/rest/controller/v4"
+	v4 "github.com/apache/servicecomb-service-center/server/resource/disco"
 )
 
 type MicroServiceService struct {
-	v4.MicroServiceService
+	v4.ServiceResource
 }
 
 func (this *MicroServiceService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{http.MethodGet, "/registry/v3/existence", this.GetExistence},
-		{http.MethodGet, "/registry/v3/microservices", this.GetServices},
-		{http.MethodGet, "/registry/v3/microservices/:serviceId", this.GetServiceOne},
-		{http.MethodPost, "/registry/v3/microservices", this.Register},
-		{http.MethodPut, "/registry/v3/microservices/:serviceId/properties", this.Update},
-		{http.MethodDelete, "/registry/v3/microservices/:serviceId", this.Unregister},
-		{http.MethodDelete, "/registry/v3/microservices", this.UnregisterServices},
+		{http.MethodGet, "/registry/v3/existence", this.ResourceExist},
+		{http.MethodGet, "/registry/v3/microservices", this.ListService},
+		{http.MethodGet, "/registry/v3/microservices/:serviceId", this.GetService},
+		{http.MethodPost, "/registry/v3/microservices", this.RegisterService},
+		{http.MethodPut, "/registry/v3/microservices/:serviceId/properties", this.PutServiceProperties},
+		{http.MethodDelete, "/registry/v3/microservices/:serviceId", this.UnregisterService},
+		{http.MethodDelete, "/registry/v3/microservices", this.UnregisterManyService},
+		// tags
+		{http.MethodPost, "/registry/v3/microservices/:serviceId/tags", this.PutManyTags},
+		{http.MethodPut, "/registry/v3/microservices/:serviceId/tags/:key", this.PutTag},
+		{http.MethodGet, "/registry/v3/microservices/:serviceId/tags", this.ListTag},
+		{http.MethodDelete, "/registry/v3/microservices/:serviceId/tags/:key", this.DeleteManyTags},
 	}
 }

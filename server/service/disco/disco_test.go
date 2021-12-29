@@ -14,18 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package datasource_test
+package disco_test
 
 import (
-	"testing"
+	"context"
 
-	"github.com/apache/servicecomb-service-center/datasource"
+	_ "github.com/apache/servicecomb-service-center/test"
+
+	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
-func TestBadParamsResponse(t *testing.T) {
-	p := datasource.BadParamsResponse("a")
-	if p == nil {
-		t.Fatalf(`BadParamsResponse failed`)
-	}
+func getContext() context.Context {
+	return util.WithNoCache(util.SetDomainProject(context.Background(), "default", "default"))
 }

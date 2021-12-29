@@ -57,7 +57,7 @@ func FindInstanceReqValidator() *validate.Validator {
 	})
 }
 
-func BatchFindInstanceReqValidator() *validate.Validator {
+func FindManyInstanceReqValidator() *validate.Validator {
 	return batchFindInstanceReqValidator.Init(func(v *validate.Validator) {
 		var findServiceValidator validate.Validator
 		findServiceValidator.AddRule("Service", &validate.Rule{Min: 1})
@@ -127,4 +127,32 @@ func RegisterInstanceReqValidator() *validate.Validator {
 		v.AddRule("Instance", &validate.Rule{Min: 1})
 		v.AddSub("Instance", &microServiceInstanceValidator)
 	})
+}
+
+func ValidateRegisterInstanceRequest(in *discovery.RegisterInstanceRequest) error {
+	return RegisterInstanceReqValidator().Validate(in)
+}
+func ValidateUnregisterInstanceRequest(in *discovery.UnregisterInstanceRequest) error {
+	return HeartbeatReqValidator().Validate(in)
+}
+func ValidateHeartbeatRequest(in *discovery.HeartbeatRequest) error {
+	return HeartbeatReqValidator().Validate(in)
+}
+func ValidateGetOneInstanceRequest(in *discovery.GetOneInstanceRequest) error {
+	return GetInstanceReqValidator().Validate(in)
+}
+func ValidateGetInstancesRequest(in *discovery.GetInstancesRequest) error {
+	return GetInstanceReqValidator().Validate(in)
+}
+func ValidateFindInstancesRequest(in *discovery.FindInstancesRequest) error {
+	return FindInstanceReqValidator().Validate(in)
+}
+func ValidateFindManyInstancesRequest(in *discovery.BatchFindInstancesRequest) error {
+	return FindManyInstanceReqValidator().Validate(in)
+}
+func ValidateUpdateInstanceStatusRequest(in *discovery.UpdateInstanceStatusRequest) error {
+	return UpdateInstanceReqValidator().Validate(in)
+}
+func ValidateUpdateInstancePropsRequest(in *discovery.UpdateInstancePropsRequest) error {
+	return UpdateInstancePropsReqValidator().Validate(in)
 }

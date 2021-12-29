@@ -58,7 +58,6 @@ func TestSyncAddOrUpdateDependencies(t *testing.T) {
 			})
 			assert.NotNil(t, resp)
 			assert.NoError(t, err)
-			assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 			consumerId = resp.ServiceId
 			listTaskReq := model.ListTaskRequest{
 				Domain:       "sync-dep",
@@ -88,7 +87,6 @@ func TestSyncAddOrUpdateDependencies(t *testing.T) {
 			})
 			assert.NotNil(t, resp)
 			assert.NoError(t, err)
-			assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 			providerId1 = resp.ServiceId
 
 			resp, err = datasource.GetMetadataManager().RegisterService(depGetContext(), &pb.CreateServiceRequest{
@@ -102,7 +100,6 @@ func TestSyncAddOrUpdateDependencies(t *testing.T) {
 			})
 			assert.NotNil(t, resp)
 			assert.NoError(t, err)
-			assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 			providerId2 = resp.ServiceId
 			listTaskReq := model.ListTaskRequest{
 				Domain:       "sync-dep",
@@ -129,7 +126,7 @@ func TestSyncAddOrUpdateDependencies(t *testing.T) {
 				AppId:       "sync_dep_group",
 				Version:     "1.0.0",
 			}
-			resp, err := datasource.GetDependencyManager().AddOrUpdateDependencies(depGetContext(), []*pb.ConsumerDependency{
+			err := datasource.GetDependencyManager().PutDependencies(depGetContext(), []*pb.ConsumerDependency{
 				{
 					Consumer: consumer,
 					Providers: []*pb.MicroServiceKey{
@@ -140,9 +137,8 @@ func TestSyncAddOrUpdateDependencies(t *testing.T) {
 					},
 				},
 			}, true)
-			assert.NotNil(t, resp)
 			assert.NoError(t, err)
-			assert.Equal(t, pb.ResponseSuccess, resp.GetCode())
+
 			listTaskReq := model.ListTaskRequest{
 				Domain:       "sync-dep",
 				Project:      "sync-dep",
@@ -168,7 +164,7 @@ func TestSyncAddOrUpdateDependencies(t *testing.T) {
 				AppId:       "sync_dep_group",
 				Version:     "1.0.0",
 			}
-			resp, err := datasource.GetDependencyManager().AddOrUpdateDependencies(depGetContext(), []*pb.ConsumerDependency{
+			err := datasource.GetDependencyManager().PutDependencies(depGetContext(), []*pb.ConsumerDependency{
 				{
 					Consumer: consumer,
 					Providers: []*pb.MicroServiceKey{
@@ -179,9 +175,8 @@ func TestSyncAddOrUpdateDependencies(t *testing.T) {
 					},
 				},
 			}, false)
-			assert.NotNil(t, resp)
 			assert.NoError(t, err)
-			assert.Equal(t, pb.ResponseSuccess, resp.GetCode())
+
 			listTaskReq := model.ListTaskRequest{
 				Domain:       "sync-dep",
 				Project:      "sync-dep",
@@ -202,26 +197,20 @@ func TestSyncAddOrUpdateDependencies(t *testing.T) {
 
 	t.Run("unregister consumer and provider", func(t *testing.T) {
 		t.Run("unregister consumer and providers will 3 tasks and 3 tombstones should pass", func(t *testing.T) {
-			respDelP, err := datasource.GetMetadataManager().UnregisterService(depGetContext(), &pb.DeleteServiceRequest{
+			err := datasource.GetMetadataManager().UnregisterService(depGetContext(), &pb.DeleteServiceRequest{
 				ServiceId: consumerId, Force: true,
 			})
-			assert.NotNil(t, respDelP)
 			assert.NoError(t, err)
-			assert.Equal(t, pb.ResponseSuccess, respDelP.Response.GetCode())
 
-			respDelP, err = datasource.GetMetadataManager().UnregisterService(depGetContext(), &pb.DeleteServiceRequest{
+			err = datasource.GetMetadataManager().UnregisterService(depGetContext(), &pb.DeleteServiceRequest{
 				ServiceId: providerId1, Force: true,
 			})
-			assert.NotNil(t, respDelP)
 			assert.NoError(t, err)
-			assert.Equal(t, pb.ResponseSuccess, respDelP.Response.GetCode())
 
-			respDelP, err = datasource.GetMetadataManager().UnregisterService(depGetContext(), &pb.DeleteServiceRequest{
+			err = datasource.GetMetadataManager().UnregisterService(depGetContext(), &pb.DeleteServiceRequest{
 				ServiceId: providerId2, Force: true,
 			})
-			assert.NotNil(t, respDelP)
 			assert.NoError(t, err)
-			assert.Equal(t, pb.ResponseSuccess, respDelP.Response.GetCode())
 
 			listTaskReq := model.ListTaskRequest{
 				Domain:       "sync-dep",

@@ -22,6 +22,7 @@ import (
 
 	"github.com/apache/servicecomb-service-center/pkg/validate"
 	quotasvc "github.com/apache/servicecomb-service-center/server/service/quota"
+	"github.com/go-chassis/cari/discovery"
 )
 
 var (
@@ -64,4 +65,17 @@ func DeleteTagReqValidator() *validate.Validator {
 		v.AddRule("ServiceId", GetServiceReqValidator().GetRule("ServiceId"))
 		v.AddRule("Keys", &validate.Rule{Min: 1, Max: max, Regexp: tagRegex})
 	})
+}
+
+func ValidateAddServiceTagsRequest(v *discovery.AddServiceTagsRequest) error {
+	return AddTagsReqValidator().Validate(v)
+}
+func ValidateUpdateServiceTagRequest(v *discovery.UpdateServiceTagRequest) error {
+	return UpdateTagReqValidator().Validate(v)
+}
+func ValidateDeleteServiceTagsRequest(v *discovery.DeleteServiceTagsRequest) error {
+	return DeleteTagReqValidator().Validate(v)
+}
+func ValidateGetServiceTagsRequest(v *discovery.GetServiceTagsRequest) error {
+	return GetTagsReqValidator().Validate(v)
 }

@@ -90,7 +90,6 @@ func PublishInstanceEvent(evt sd.MongoEvent, serviceKey *discovery.MicroServiceK
 		return
 	}
 	response := &discovery.WatchInstanceResponse{
-		Response: discovery.CreateResponse(discovery.ResponseSuccess, "Watch instance successfully."),
 		Action:   string(evt.Type),
 		Key:      serviceKey,
 		Instance: evt.Value.(model.Instance).Instance,

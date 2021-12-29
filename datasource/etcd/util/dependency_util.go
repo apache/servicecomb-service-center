@@ -281,16 +281,6 @@ func ContainServiceDependency(services []*pb.MicroServiceKey, service *pb.MicroS
 	return false, nil
 }
 
-func BadParamsResponse(detailErr string) *pb.CreateDependenciesResponse {
-	log.Error(fmt.Sprintf("request params is invalid. %s", detailErr), nil)
-	if len(detailErr) == 0 {
-		detailErr = "Request params is invalid."
-	}
-	return &pb.CreateDependenciesResponse{
-		Response: pb.CreateResponse(pb.ErrInvalidParams, detailErr),
-	}
-}
-
 func DeleteDependencyForDeleteService(domainProject string, serviceID string, service *pb.MicroServiceKey) (etcdadpt.OpOptions, error) {
 	key := path.GenerateConsumerDependencyQueueKey(domainProject, serviceID, path.DepsQueueUUID)
 	conDep := new(pb.ConsumerDependency)

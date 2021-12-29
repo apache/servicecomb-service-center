@@ -45,6 +45,9 @@ func TestPutSchema(t *testing.T) {
 		serviceIdPro string
 	)
 	ctx := getContext()
+	defer disco.UnregisterManyService(ctx, &pb.DelServicesRequest{
+		ServiceIds: []string{serviceId, serviceIdDev, serviceIdPro}, Force: true,
+	})
 
 	t.Run("should be passed, create service", func(t *testing.T) {
 		respCreateService, err := datasource.GetMetadataManager().RegisterService(ctx, &pb.CreateServiceRequest{
@@ -58,7 +61,6 @@ func TestPutSchema(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceIdDev = respCreateService.ServiceId
 
 		respCreateService, err = datasource.GetMetadataManager().RegisterService(ctx, &pb.CreateServiceRequest{
@@ -72,7 +74,6 @@ func TestPutSchema(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceId = respCreateService.ServiceId
 
 		respCreateService, err = datasource.GetMetadataManager().RegisterService(ctx, &pb.CreateServiceRequest{
@@ -90,7 +91,6 @@ func TestPutSchema(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceIdPro = respCreateService.ServiceId
 	})
 
@@ -301,7 +301,7 @@ func TestPutSchema(t *testing.T) {
 	})
 
 	t.Run("should be failed when create service with exceed schemaIDs", func(t *testing.T) {
-		createServiceResponse, err := serviceResource.Create(ctx, &pb.CreateServiceRequest{
+		_, err := disco.RegisterService(ctx, &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
 				AppId:       "check_schema_group",
 				ServiceName: "check_schema_service",
@@ -311,8 +311,9 @@ func TestPutSchema(t *testing.T) {
 				Status:      pb.MS_UP,
 			},
 		})
-		assert.NoError(t, err)
-		assert.Equal(t, pb.ErrInvalidParams, createServiceResponse.Response.GetCode())
+		testErr := err.(*errsvc.Error)
+		assert.Error(t, testErr)
+		assert.Equal(t, pb.ErrInvalidParams, testErr.Code)
 	})
 
 	t.Run("should be failed, when modify schema and summary is empty", func(t *testing.T) {
@@ -374,7 +375,6 @@ func TestPutSchemas(t *testing.T) {
 		},
 	})
 	assert.NoError(t, err)
-	assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 	serviceIdDev1 = respCreateService.ServiceId
 	defer datasource.GetMetadataManager().UnregisterService(getContext(), &pb.DeleteServiceRequest{ServiceId: serviceIdDev1, Force: true})
 
@@ -392,7 +392,6 @@ func TestPutSchemas(t *testing.T) {
 		},
 	})
 	assert.NoError(t, err)
-	assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 	serviceIdDev2 = respCreateService.ServiceId
 	defer datasource.GetMetadataManager().UnregisterService(getContext(), &pb.DeleteServiceRequest{ServiceId: serviceIdDev2, Force: true})
 
@@ -503,7 +502,6 @@ func TestExistSchema(t *testing.T) {
 		},
 	})
 	assert.NoError(t, err)
-	assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 	serviceId = respCreateService.ServiceId
 	defer datasource.GetMetadataManager().UnregisterService(getContext(), &pb.DeleteServiceRequest{ServiceId: serviceId, Force: true})
 
@@ -591,7 +589,6 @@ func TestGetSchema(t *testing.T) {
 		},
 	})
 	assert.NoError(t, err)
-	assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 	serviceId = respCreateService.ServiceId
 	defer datasource.GetMetadataManager().UnregisterService(getContext(), &pb.DeleteServiceRequest{ServiceId: serviceId, Force: true})
 
@@ -610,7 +607,6 @@ func TestGetSchema(t *testing.T) {
 		},
 	})
 	assert.NoError(t, err)
-	assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 	serviceId1 = respCreateService.ServiceId
 	defer datasource.GetMetadataManager().UnregisterService(getContext(), &pb.DeleteServiceRequest{ServiceId: serviceId1, Force: true})
 
@@ -794,7 +790,6 @@ func TestDeleteSchema(t *testing.T) {
 		},
 	})
 	assert.NoError(t, err)
-	assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 	serviceId = respCreateService.ServiceId
 	defer datasource.GetMetadataManager().UnregisterService(getContext(), &pb.DeleteServiceRequest{ServiceId: serviceId, Force: true})
 
@@ -878,7 +873,6 @@ func TestListSchema(t *testing.T) {
 		},
 	})
 	assert.NoError(t, err)
-	assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 	serviceID = respCreateService.ServiceId
 	defer datasource.GetMetadataManager().UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: serviceID, Force: true})
 
@@ -945,7 +939,6 @@ func TestCompatibleOperateSchema(t *testing.T) {
 		},
 	})
 	assert.NoError(t, err)
-	assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 	serviceID = respCreateService.ServiceId
 	defer schema.Instance().DeleteContent(ctx, &schema.ContentRequest{
 		Hash: schema.Hash("schemaID_1", "schema_1"),

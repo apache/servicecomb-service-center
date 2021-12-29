@@ -82,9 +82,9 @@ func TestSyncMicroService(t *testing.T) {
 				Properties: make(map[string]string),
 			}
 			request.Properties["sync-test"] = "sync-test"
-			resp, err := datasource.GetMetadataManager().UpdateService(microServiceGetContext(), request)
+			err := datasource.GetMetadataManager().PutServiceProperties(microServiceGetContext(), request)
 			assert.NoError(t, err)
-			assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
+
 			listTaskReq := model.ListTaskRequest{
 				Domain:       "sync-micro-service",
 				Project:      "sync-micro-service",
@@ -105,13 +105,12 @@ func TestSyncMicroService(t *testing.T) {
 
 	t.Run("unregister micro-service", func(t *testing.T) {
 		t.Run("unregister a micro service will create a task and a tombstone should pass", func(t *testing.T) {
-			resp, err := datasource.GetMetadataManager().UnregisterService(microServiceGetContext(), &pb.DeleteServiceRequest{
+			err := datasource.GetMetadataManager().UnregisterService(microServiceGetContext(), &pb.DeleteServiceRequest{
 				ServiceId: serviceID,
 				Force:     true,
 			})
-			assert.NotNil(t, resp)
 			assert.NoError(t, err)
-			assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
+
 			listTaskReq := model.ListTaskRequest{
 				Domain:       "sync-micro-service",
 				Project:      "sync-micro-service",

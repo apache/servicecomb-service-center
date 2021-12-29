@@ -20,23 +20,23 @@ import (
 	"net/http"
 
 	"github.com/apache/servicecomb-service-center/pkg/rest"
-	v4 "github.com/apache/servicecomb-service-center/server/rest/controller/v4"
+	v4 "github.com/apache/servicecomb-service-center/server/resource/disco"
 )
 
 type MicroServiceInstanceService struct {
-	v4.MicroServiceInstanceService
+	v4.InstanceResource
 }
 
 func (this *MicroServiceInstanceService) URLPatterns() []rest.Route {
 	return []rest.Route{
 		{http.MethodGet, "/registry/v3/instances", this.FindInstances},
-		{http.MethodGet, "/registry/v3/microservices/:serviceId/instances", this.GetInstances},
-		{http.MethodGet, "/registry/v3/microservices/:serviceId/instances/:instanceId", this.GetOneInstance},
+		{http.MethodGet, "/registry/v3/microservices/:serviceId/instances", this.ListInstance},
+		{http.MethodGet, "/registry/v3/microservices/:serviceId/instances/:instanceId", this.GetInstance},
 		{http.MethodPost, "/registry/v3/microservices/:serviceId/instances", this.RegisterInstance},
 		{http.MethodDelete, "/registry/v3/microservices/:serviceId/instances/:instanceId", this.UnregisterInstance},
-		{http.MethodPut, "/registry/v3/microservices/:serviceId/instances/:instanceId/properties", this.UpdateMetadata},
-		{http.MethodPut, "/registry/v3/microservices/:serviceId/instances/:instanceId/status", this.UpdateStatus},
-		{http.MethodPut, "/registry/v3/microservices/:serviceId/instances/:instanceId/heartbeat", this.Heartbeat},
-		{http.MethodPut, "/registry/v3/heartbeats", this.HeartbeatSet},
+		{http.MethodPut, "/registry/v3/microservices/:serviceId/instances/:instanceId/properties", this.PutInstanceProperties},
+		{http.MethodPut, "/registry/v3/microservices/:serviceId/instances/:instanceId/status", this.PutInstanceStatus},
+		{http.MethodPut, "/registry/v3/microservices/:serviceId/instances/:instanceId/heartbeat", this.SendHeartbeat},
+		{http.MethodPut, "/registry/v3/heartbeats", this.SendManyHeartbeat},
 	}
 }

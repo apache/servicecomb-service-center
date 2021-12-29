@@ -29,7 +29,7 @@ type DependencyService struct {
 
 func (this *DependencyService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{http.MethodGet, "/registry/v3/microservices/:consumerId/providers", this.GetConProDependencies},
-		{http.MethodGet, "/registry/v3/microservices/:providerId/consumers", this.GetProConDependencies},
+		{http.MethodGet, "/registry/v3/microservices/:consumerId/providers", this.ListProviders},
+		{http.MethodGet, "/registry/v3/microservices/:providerId/consumers", this.ListConsumers},
 	}
 }

@@ -35,9 +35,9 @@ type Resource struct {
 // URLPatterns 路由
 func (res *Resource) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{Method: http.MethodGet, Path: "/v4/:project/govern/microservices/:serviceId", Func: res.GetServiceDetail},
+		{Method: http.MethodGet, Path: "/v4/:project/govern/microservices/:serviceId", Func: res.GetService},
 		{Method: http.MethodGet, Path: "/v4/:project/govern/relations", Func: res.Draw},
-		{Method: http.MethodGet, Path: "/v4/:project/govern/microservices", Func: res.ListServiceDetail},
+		{Method: http.MethodGet, Path: "/v4/:project/govern/microservices", Func: res.ListService},
 		{Method: http.MethodGet, Path: "/v4/:project/govern/apps", Func: res.ListApp},
 		{Method: http.MethodGet, Path: "/v4/:project/govern/statistics", Func: res.GetOverview},
 	}
@@ -53,8 +53,8 @@ func (res *Resource) Draw(w http.ResponseWriter, r *http.Request) {
 	rest.WriteResponse(w, r, nil, graph)
 }
 
-// GetServiceDetail 查询服务详细信息
-func (res *Resource) GetServiceDetail(w http.ResponseWriter, r *http.Request) {
+// GetService 查询服务详细信息
+func (res *Resource) GetService(w http.ResponseWriter, r *http.Request) {
 	serviceID := r.URL.Query().Get(":serviceId")
 	request := &pb.GetServiceRequest{
 		ServiceId: serviceID,
@@ -68,7 +68,7 @@ func (res *Resource) GetServiceDetail(w http.ResponseWriter, r *http.Request) {
 	rest.WriteResponse(w, r, nil, &pb.GetServiceDetailResponse{Service: serviceDetail})
 }
 
-func (res *Resource) ListServiceDetail(w http.ResponseWriter, r *http.Request) {
+func (res *Resource) ListService(w http.ResponseWriter, r *http.Request) {
 	request := &pb.GetServicesInfoRequest{}
 	ctx := r.Context()
 	query := r.URL.Query()

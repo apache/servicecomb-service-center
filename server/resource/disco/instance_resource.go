@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package v4
+package disco
 
 import (
 	"encoding/json"
@@ -32,25 +32,25 @@ import (
 	pb "github.com/go-chassis/cari/discovery"
 )
 
-type MicroServiceInstanceService struct {
+type InstanceResource struct {
 	//
 }
 
-func (s *MicroServiceInstanceService) URLPatterns() []rest.Route {
+func (s *InstanceResource) URLPatterns() []rest.Route {
 	return []rest.Route{
 		{Method: http.MethodGet, Path: "/v4/:project/registry/instances", Func: s.FindInstances},
 		{Method: http.MethodPost, Path: "/v4/:project/registry/instances/action", Func: s.InstancesAction},
-		{Method: http.MethodGet, Path: "/v4/:project/registry/microservices/:serviceId/instances", Func: s.GetInstances},
-		{Method: http.MethodGet, Path: "/v4/:project/registry/microservices/:serviceId/instances/:instanceId", Func: s.GetOneInstance},
+		{Method: http.MethodGet, Path: "/v4/:project/registry/microservices/:serviceId/instances", Func: s.ListInstance},
+		{Method: http.MethodGet, Path: "/v4/:project/registry/microservices/:serviceId/instances/:instanceId", Func: s.GetInstance},
 		{Method: http.MethodPost, Path: "/v4/:project/registry/microservices/:serviceId/instances", Func: s.RegisterInstance},
 		{Method: http.MethodDelete, Path: "/v4/:project/registry/microservices/:serviceId/instances/:instanceId", Func: s.UnregisterInstance},
-		{Method: http.MethodPut, Path: "/v4/:project/registry/microservices/:serviceId/instances/:instanceId/properties", Func: s.UpdateMetadata},
-		{Method: http.MethodPut, Path: "/v4/:project/registry/microservices/:serviceId/instances/:instanceId/status", Func: s.UpdateStatus},
-		{Method: http.MethodPut, Path: "/v4/:project/registry/microservices/:serviceId/instances/:instanceId/heartbeat", Func: s.Heartbeat},
-		{Method: http.MethodPut, Path: "/v4/:project/registry/heartbeats", Func: s.HeartbeatSet},
+		{Method: http.MethodPut, Path: "/v4/:project/registry/microservices/:serviceId/instances/:instanceId/properties", Func: s.PutInstanceProperties},
+		{Method: http.MethodPut, Path: "/v4/:project/registry/microservices/:serviceId/instances/:instanceId/status", Func: s.PutInstanceStatus},
+		{Method: http.MethodPut, Path: "/v4/:project/registry/microservices/:serviceId/instances/:instanceId/heartbeat", Func: s.SendHeartbeat},
+		{Method: http.MethodPut, Path: "/v4/:project/registry/heartbeats", Func: s.SendManyHeartbeat},
 	}
 }
-func (s *MicroServiceInstanceService) RegisterInstance(w http.ResponseWriter, r *http.Request) {
+func (s *InstanceResource) RegisterInstance(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
@@ -72,24 +72,27 @@ func (s *MicroServiceInstanceService) RegisterInstance(w http.ResponseWriter, r 
 	resp, err := discosvc.RegisterInstance(r.Context(), request)
 	if err != nil {
 		log.Error("register instance failed", err)
-		rest.WriteError(w, pb.ErrInternal, "register instance failed")
+		rest.WriteServiceError(w, err)
 		return
 	}
-	rest.WriteResponse(w, r, resp.Response, resp)
+	rest.WriteResponse(w, r, nil, resp)
 }
 
-//TODO 什么样的服务允许更新服务心跳，只能是本服务才可以更新自己，如何屏蔽其他服务伪造的心跳更新？
-func (s *MicroServiceInstanceService) Heartbeat(w http.ResponseWriter, r *http.Request) {
+func (s *InstanceResource) SendHeartbeat(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	request := &pb.HeartbeatRequest{
 		ServiceId:  query.Get(":serviceId"),
 		InstanceId: query.Get(":instanceId"),
 	}
-	resp, _ := discosvc.Heartbeat(r.Context(), request)
-	rest.WriteResponse(w, r, resp.Response, nil)
+	err := discosvc.SendHeartbeat(r.Context(), request)
+	if err != nil {
+		rest.WriteServiceError(w, err)
+		return
+	}
+	rest.WriteResponse(w, r, nil, nil)
 }
 
-func (s *MicroServiceInstanceService) HeartbeatSet(w http.ResponseWriter, r *http.Request) {
+func (s *InstanceResource) SendManyHeartbeat(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
@@ -104,21 +107,30 @@ func (s *MicroServiceInstanceService) HeartbeatSet(w http.ResponseWriter, r *htt
 		rest.WriteError(w, pb.ErrInvalidParams, "Unmarshal error")
 		return
 	}
-	resp, _ := discosvc.HeartbeatSet(r.Context(), request)
-	rest.WriteResponse(w, r, resp.Response, nil)
+	resp, err := discosvc.SendManyHeartbeat(r.Context(), request)
+	if err != nil {
+		rest.WriteServiceError(w, err)
+		return
+	}
+	rest.WriteResponse(w, r, nil, resp)
 }
 
-func (s *MicroServiceInstanceService) UnregisterInstance(w http.ResponseWriter, r *http.Request) {
+func (s *InstanceResource) UnregisterInstance(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	request := &pb.UnregisterInstanceRequest{
 		ServiceId:  query.Get(":serviceId"),
 		InstanceId: query.Get(":instanceId"),
 	}
-	resp, _ := discosvc.UnregisterInstance(r.Context(), request)
-	rest.WriteResponse(w, r, resp.Response, nil)
+	err := discosvc.UnregisterInstance(r.Context(), request)
+	if err != nil {
+		log.Error("unregister instance failed", err)
+		rest.WriteServiceError(w, err)
+		return
+	}
+	rest.WriteResponse(w, r, nil, nil)
 }
 
-func (s *MicroServiceInstanceService) FindInstances(w http.ResponseWriter, r *http.Request) {
+func (s *InstanceResource) FindInstances(w http.ResponseWriter, r *http.Request) {
 	var ids []string
 	query := r.URL.Query()
 	keys := query.Get("tags")
@@ -137,9 +149,12 @@ func (s *MicroServiceInstanceService) FindInstances(w http.ResponseWriter, r *ht
 
 	ctx := util.SetTargetDomainProject(r.Context(), r.Header.Get("X-Domain-Name"), query.Get(":project"))
 
-	resp, _ := discosvc.FindInstances(ctx, request)
-	respInternal := resp.Response
-	resp.Response = nil
+	resp, err := discosvc.FindInstances(ctx, request)
+	if err != nil {
+		log.Error("find instances failed", err)
+		rest.WriteServiceError(w, err)
+		return
+	}
 
 	iv, _ := ctx.Value(util.CtxRequestRevision).(string)
 	ov, _ := ctx.Value(util.CtxResponseRevision).(string)
@@ -148,10 +163,10 @@ func (s *MicroServiceInstanceService) FindInstances(w http.ResponseWriter, r *ht
 		w.WriteHeader(http.StatusNotModified)
 		return
 	}
-	rest.WriteResponse(w, r, respInternal, resp)
+	rest.WriteResponse(w, r, nil, resp)
 }
 
-func (s *MicroServiceInstanceService) InstancesAction(w http.ResponseWriter, r *http.Request) {
+func (s *InstanceResource) InstancesAction(w http.ResponseWriter, r *http.Request) {
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
@@ -162,17 +177,7 @@ func (s *MicroServiceInstanceService) InstancesAction(w http.ResponseWriter, r *
 	action := query.Get("type")
 	switch action {
 	case "query":
-		request := &pb.BatchFindInstancesRequest{}
-		err = json.Unmarshal(message, request)
-		if err != nil {
-			log.Error(fmt.Sprintf("invalid json: %s", util.BytesToStringWithNoCopy(message)), err)
-			rest.WriteError(w, pb.ErrInvalidParams, "Unmarshal error")
-			return
-		}
-		request.ConsumerServiceId = r.Header.Get("X-ConsumerId")
-		ctx := util.SetTargetDomainProject(r.Context(), r.Header.Get("X-Domain-Name"), r.URL.Query().Get(":project"))
-		resp, _ := discosvc.BatchFindInstances(ctx, request)
-		rest.WriteResponse(w, r, resp.Response, resp)
+		findManyInstances(w, r, message)
 	default:
 		err = fmt.Errorf("Invalid action: %s", action)
 		log.Error("invalid request", err)
@@ -180,7 +185,27 @@ func (s *MicroServiceInstanceService) InstancesAction(w http.ResponseWriter, r *
 	}
 }
 
-func (s *MicroServiceInstanceService) GetOneInstance(w http.ResponseWriter, r *http.Request) {
+func findManyInstances(w http.ResponseWriter, r *http.Request, body []byte) {
+	request := &pb.BatchFindInstancesRequest{}
+	err := json.Unmarshal(body, request)
+	if err != nil {
+		log.Error(fmt.Sprintf("invalid json: %s", util.BytesToStringWithNoCopy(body)), err)
+		rest.WriteError(w, pb.ErrInvalidParams, "Unmarshal error")
+		return
+	}
+	request.ConsumerServiceId = r.Header.Get("X-ConsumerId")
+
+	ctx := util.SetTargetDomainProject(r.Context(), r.Header.Get("X-Domain-Name"), r.URL.Query().Get(":project"))
+	resp, err := discosvc.FindManyInstances(ctx, request)
+	if err != nil {
+		log.Error("find many instances failed", err)
+		rest.WriteServiceError(w, err)
+		return
+	}
+	rest.WriteResponse(w, r, resp.Response, resp)
+}
+
+func (s *InstanceResource) GetInstance(w http.ResponseWriter, r *http.Request) {
 	var ids []string
 	query := r.URL.Query()
 	keys := query.Get("tags")
@@ -194,9 +219,12 @@ func (s *MicroServiceInstanceService) GetOneInstance(w http.ResponseWriter, r *h
 		Tags:               ids,
 	}
 
-	resp, _ := discosvc.GetOneInstance(r.Context(), request)
-	respInternal := resp.Response
-	resp.Response = nil
+	resp, err := discosvc.GetInstance(r.Context(), request)
+	if err != nil {
+		log.Error("get instance failed", err)
+		rest.WriteServiceError(w, err)
+		return
+	}
 
 	iv, _ := r.Context().Value(util.CtxRequestRevision).(string)
 	ov, _ := r.Context().Value(util.CtxResponseRevision).(string)
@@ -205,10 +233,10 @@ func (s *MicroServiceInstanceService) GetOneInstance(w http.ResponseWriter, r *h
 		w.WriteHeader(http.StatusNotModified)
 		return
 	}
-	rest.WriteResponse(w, r, respInternal, resp)
+	rest.WriteResponse(w, r, nil, resp)
 }
 
-func (s *MicroServiceInstanceService) GetInstances(w http.ResponseWriter, r *http.Request) {
+func (s *InstanceResource) ListInstance(w http.ResponseWriter, r *http.Request) {
 	var ids []string
 	query := r.URL.Query()
 	keys := query.Get("tags")
@@ -220,9 +248,12 @@ func (s *MicroServiceInstanceService) GetInstances(w http.ResponseWriter, r *htt
 		ProviderServiceId: query.Get(":serviceId"),
 		Tags:              ids,
 	}
-	resp, _ := discosvc.GetInstances(r.Context(), request)
-	respInternal := resp.Response
-	resp.Response = nil
+	resp, err := discosvc.ListInstance(r.Context(), request)
+	if err != nil {
+		log.Error("list instance failed", err)
+		rest.WriteServiceError(w, err)
+		return
+	}
 
 	iv, _ := r.Context().Value(util.CtxRequestRevision).(string)
 	ov, _ := r.Context().Value(util.CtxResponseRevision).(string)
@@ -231,10 +262,10 @@ func (s *MicroServiceInstanceService) GetInstances(w http.ResponseWriter, r *htt
 		w.WriteHeader(http.StatusNotModified)
 		return
 	}
-	rest.WriteResponse(w, r, respInternal, resp)
+	rest.WriteResponse(w, r, nil, resp)
 }
 
-func (s *MicroServiceInstanceService) UpdateStatus(w http.ResponseWriter, r *http.Request) {
+func (s *InstanceResource) PutInstanceStatus(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	status := query.Get("value")
 	request := &pb.UpdateInstanceStatusRequest{
@@ -242,11 +273,16 @@ func (s *MicroServiceInstanceService) UpdateStatus(w http.ResponseWriter, r *htt
 		InstanceId: query.Get(":instanceId"),
 		Status:     status,
 	}
-	resp, _ := discosvc.UpdateInstanceStatus(r.Context(), request)
-	rest.WriteResponse(w, r, resp.Response, nil)
+	err := discosvc.PutInstanceStatus(r.Context(), request)
+	if err != nil {
+		log.Error("update instance status failed", err)
+		rest.WriteServiceError(w, err)
+		return
+	}
+	rest.WriteResponse(w, r, nil, nil)
 }
 
-func (s *MicroServiceInstanceService) UpdateMetadata(w http.ResponseWriter, r *http.Request) {
+func (s *InstanceResource) PutInstanceProperties(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	message, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -264,10 +300,11 @@ func (s *MicroServiceInstanceService) UpdateMetadata(w http.ResponseWriter, r *h
 		rest.WriteError(w, pb.ErrInvalidParams, "Unmarshal error")
 		return
 	}
-	resp, err := discosvc.UpdateInstanceProperties(r.Context(), request)
+	err = discosvc.PutInstanceProperties(r.Context(), request)
 	if err != nil {
-		log.Error("can not update instance", err)
-		rest.WriteError(w, pb.ErrInternal, "can not update instance")
+		log.Error("can not update instance properties", err)
+		rest.WriteServiceError(w, err)
+		return
 	}
-	rest.WriteResponse(w, r, resp.Response, nil)
+	rest.WriteResponse(w, r, nil, nil)
 }

@@ -19,58 +19,58 @@ package disco
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/service/validator"
 	pb "github.com/go-chassis/cari/discovery"
 )
 
-func (s *MicroServiceService) AddDependenciesForMicroServices(ctx context.Context,
-	in *pb.AddDependenciesRequest) (*pb.AddDependenciesResponse, error) {
-	if err := validator.Validate(in); err != nil {
-		return &pb.AddDependenciesResponse{
-			Response: datasource.BadParamsResponse(err.Error()).Response,
-		}, nil
-	}
-
-	resp, err := datasource.GetDependencyManager().AddOrUpdateDependencies(ctx, in.Dependencies, false)
-	return &pb.AddDependenciesResponse{Response: resp}, err
+type MicroServiceService struct {
 }
 
-func (s *MicroServiceService) CreateDependenciesForMicroServices(ctx context.Context,
-	in *pb.CreateDependenciesRequest) (*pb.CreateDependenciesResponse, error) {
-	if err := validator.Validate(in); err != nil {
-		return &pb.CreateDependenciesResponse{
-			Response: datasource.BadParamsResponse(err.Error()).Response,
-		}, nil
+func AddDependencies(ctx context.Context, in *pb.AddDependenciesRequest) error {
+	remoteIP := util.GetIPFromContext(ctx)
+
+	if err := validator.ValidateAddDependenciesRequest(in); err != nil {
+		log.Error(fmt.Sprintf("AddDependencies failed, operator: %s", remoteIP), err)
+		return pb.NewError(pb.ErrInvalidParams, err.Error())
 	}
 
-	resp, err := datasource.GetDependencyManager().AddOrUpdateDependencies(ctx, in.Dependencies, true)
-	return &pb.CreateDependenciesResponse{Response: resp}, err
+	return datasource.GetDependencyManager().PutDependencies(ctx, in.Dependencies, false)
 }
 
-func (s *MicroServiceService) GetProviderDependencies(ctx context.Context,
-	in *pb.GetDependenciesRequest) (*pb.GetProDependenciesResponse, error) {
-	err := validator.Validate(in)
-	if err != nil {
-		log.Error("GetProviderDependencies failed for validating parameters failed", err)
-		return &pb.GetProDependenciesResponse{
-			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
-		}, nil
+func PutDependencies(ctx context.Context, in *pb.CreateDependenciesRequest) error {
+	remoteIP := util.GetIPFromContext(ctx)
+
+	if err := validator.ValidateCreateDependenciesRequest(in); err != nil {
+		log.Error(fmt.Sprintf("PutDependencies failed, operator: %s", remoteIP), err)
+		return pb.NewError(pb.ErrInvalidParams, err.Error())
 	}
 
-	return datasource.GetDependencyManager().SearchProviderDependency(ctx, in)
+	return datasource.GetDependencyManager().PutDependencies(ctx, in.Dependencies, true)
 }
 
-func (s *MicroServiceService) GetConsumerDependencies(ctx context.Context, in *pb.GetDependenciesRequest) (*pb.GetConDependenciesResponse, error) {
-	err := validator.Validate(in)
-	if err != nil {
-		log.Error("GetConsumerDependencies failed for validating parameters failed", err)
-		return &pb.GetConDependenciesResponse{
-			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
-		}, nil
+func ListConsumers(ctx context.Context, in *pb.GetDependenciesRequest) (*pb.GetProDependenciesResponse, error) {
+	remoteIP := util.GetIPFromContext(ctx)
+
+	if err := validator.ValidateGetDependenciesRequest(in); err != nil {
+		log.Error(fmt.Sprintf("ListConsumers failed for validating parameters failed, operator: %s", remoteIP), err)
+		return nil, pb.NewError(pb.ErrInvalidParams, err.Error())
 	}
 
-	return datasource.GetDependencyManager().SearchConsumerDependency(ctx, in)
+	return datasource.GetDependencyManager().ListConsumers(ctx, in)
+}
+
+func ListProviders(ctx context.Context, in *pb.GetDependenciesRequest) (*pb.GetConDependenciesResponse, error) {
+	remoteIP := util.GetIPFromContext(ctx)
+
+	if err := validator.ValidateGetDependenciesRequest(in); err != nil {
+		log.Error(fmt.Sprintf("ListProviders failed for validating parameters failed, operator: %s", remoteIP), err)
+		return nil, pb.NewError(pb.ErrInvalidParams, err.Error())
+	}
+
+	return datasource.GetDependencyManager().ListProviders(ctx, in)
 }

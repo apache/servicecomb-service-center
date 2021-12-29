@@ -33,6 +33,7 @@ import (
 	quotasvc "github.com/apache/servicecomb-service-center/server/service/quota"
 	"github.com/apache/servicecomb-service-center/server/service/validator"
 	pb "github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/cari/pkg/errsvc"
 )
 
 const (
@@ -41,27 +42,21 @@ const (
 )
 
 func RegisterInstance(ctx context.Context, in *pb.RegisterInstanceRequest) (*pb.RegisterInstanceResponse, error) {
-	if err := validator.Validate(in); err != nil {
-		remoteIP := util.GetIPFromContext(ctx)
-		log.Error(fmt.Sprintf("register instance failed, invalid parameters, operator %s", remoteIP), err)
-		return &pb.RegisterInstanceResponse{
-			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
-		}, nil
-	}
 	remoteIP := util.GetIPFromContext(ctx)
+
+	if err := validator.ValidateRegisterInstanceRequest(in); err != nil {
+		log.Error(fmt.Sprintf("register instance failed, invalid parameters, operator %s", remoteIP), err)
+		return nil, pb.NewError(pb.ErrInvalidParams, err.Error())
+	}
+
 	if quotaErr := checkInstanceQuota(ctx); quotaErr != nil {
 		log.Error(fmt.Sprintf("register instance failed, endpoints %v, host '%s', serviceID %s, operator %s",
 			in.Instance.Endpoints, in.Instance.HostName, in.Instance.ServiceId, remoteIP), quotaErr)
-		response, err := datasource.WrapErrResponse(quotaErr)
-		return &pb.RegisterInstanceResponse{
-			Response: response,
-		}, err
+		return nil, quotaErr
 	}
+
 	if popErr := populateInstanceDefaultValue(ctx, in.Instance); popErr != nil {
-		response, err := datasource.WrapErrResponse(popErr)
-		return &pb.RegisterInstanceResponse{
-			Response: response,
-		}, err
+		return nil, popErr
 	}
 	return datasource.GetMetadataManager().RegisterInstance(ctx, in)
 }
@@ -105,165 +100,273 @@ func populateInstanceDefaultValue(ctx context.Context, instance *pb.MicroService
 	return nil
 }
 
-func UnregisterInstance(ctx context.Context,
-	in *pb.UnregisterInstanceRequest) (*pb.UnregisterInstanceResponse, error) {
-	if err := validator.Validate(in); err != nil {
-		remoteIP := util.GetIPFromContext(ctx)
+func UnregisterInstance(ctx context.Context, in *pb.UnregisterInstanceRequest) error {
+	remoteIP := util.GetIPFromContext(ctx)
+
+	if err := validator.ValidateUnregisterInstanceRequest(in); err != nil {
 		log.Error(fmt.Sprintf("unregister instance failed, invalid parameters, operator %s", remoteIP), err)
-		return &pb.UnregisterInstanceResponse{
-			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
-		}, nil
+		return pb.NewError(pb.ErrInvalidParams, err.Error())
 	}
 
 	return datasource.GetMetadataManager().UnregisterInstance(ctx, in)
 }
 
-func Heartbeat(ctx context.Context, in *pb.HeartbeatRequest) (*pb.HeartbeatResponse, error) {
-	if err := validator.Validate(in); err != nil {
-		remoteIP := util.GetIPFromContext(ctx)
+func SendHeartbeat(ctx context.Context, in *pb.HeartbeatRequest) error {
+	remoteIP := util.GetIPFromContext(ctx)
+
+	if err := validator.ValidateHeartbeatRequest(in); err != nil {
 		log.Error(fmt.Sprintf("heartbeat failed, invalid parameters, operator %s", remoteIP), err)
-		return &pb.HeartbeatResponse{
-			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
-		}, nil
+		return pb.NewError(pb.ErrInvalidParams, err.Error())
 	}
 
-	return datasource.GetMetadataManager().Heartbeat(ctx, in)
+	return datasource.GetMetadataManager().SendHeartbeat(ctx, in)
 }
 
-func HeartbeatSet(ctx context.Context,
-	in *pb.HeartbeatSetRequest) (*pb.HeartbeatSetResponse, error) {
+func SendManyHeartbeat(ctx context.Context, in *pb.HeartbeatSetRequest) (*pb.HeartbeatSetResponse, error) {
+	remoteIP := util.GetIPFromContext(ctx)
+
 	if len(in.Instances) == 0 {
-		log.Error("heartbeats failed, invalid request. Body not contain Instances or is empty", nil)
-		return &pb.HeartbeatSetResponse{
-			Response: pb.CreateResponse(pb.ErrInvalidParams, "Request format invalid."),
-		}, nil
+		log.Error(fmt.Sprintf("invalid heartbeat set request. instances is empty, operator: %s", remoteIP), nil)
+		return nil, pb.NewError(pb.ErrInvalidParams, "Request format invalid.")
 	}
-	return datasource.GetMetadataManager().HeartbeatSet(ctx, in)
+	return datasource.GetMetadataManager().SendManyHeartbeat(ctx, in)
 }
 
-func GetOneInstance(ctx context.Context,
-	in *pb.GetOneInstanceRequest) (*pb.GetOneInstanceResponse, error) {
-	err := validator.Validate(in)
-	if err != nil {
-		log.Error("get instance failed: invalid parameters", err)
-		return &pb.GetOneInstanceResponse{
-			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
-		}, nil
+func GetInstance(ctx context.Context, in *pb.GetOneInstanceRequest) (*pb.GetOneInstanceResponse, error) {
+	remoteIP := util.GetIPFromContext(ctx)
+
+	if err := validator.ValidateGetOneInstanceRequest(in); err != nil {
+		log.Error(fmt.Sprintf("get instance failed: invalid parameters, operator: %s", remoteIP), err)
+		return nil, pb.NewError(pb.ErrInvalidParams, err.Error())
 	}
 
 	return datasource.GetMetadataManager().GetInstance(ctx, in)
 }
 
-func GetInstances(ctx context.Context, in *pb.GetInstancesRequest) (*pb.GetInstancesResponse, error) {
-	err := validator.Validate(in)
-	if err != nil {
-		log.Error("get instances failed: invalid parameters", err)
-		return &pb.GetInstancesResponse{
-			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
-		}, nil
+func ListInstance(ctx context.Context, in *pb.GetInstancesRequest) (*pb.GetInstancesResponse, error) {
+	remoteIP := util.GetIPFromContext(ctx)
+
+	if err := validator.ValidateGetInstancesRequest(in); err != nil {
+		log.Error(fmt.Sprintf("get instances failed: invalid parameters, operator: %s", remoteIP), err)
+		return nil, pb.NewError(pb.ErrInvalidParams, err.Error())
 	}
 
-	return datasource.GetMetadataManager().GetInstances(ctx, in)
+	return datasource.GetMetadataManager().ListInstance(ctx, in)
 }
 
 func FindInstances(ctx context.Context, in *pb.FindInstancesRequest) (*pb.FindInstancesResponse, error) {
-	err := validator.Validate(in)
-	if err != nil {
-		log.Error("find instance failed: invalid parameters", err)
-		return &pb.FindInstancesResponse{
-			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
-		}, nil
+	remoteIP := util.GetIPFromContext(ctx)
+
+	if err := validator.ValidateFindInstancesRequest(in); err != nil {
+		log.Error(fmt.Sprintf("find instance failed: invalid parameters, operator: %s", remoteIP), err)
+		return nil, pb.NewError(pb.ErrInvalidParams, err.Error())
 	}
 
 	return datasource.GetMetadataManager().FindInstances(ctx, in)
 }
 
-func BatchFindInstances(ctx context.Context, in *pb.BatchFindInstancesRequest) (*pb.BatchFindInstancesResponse, error) {
-	if len(in.Services) == 0 && len(in.Instances) == 0 {
+func FindManyInstances(ctx context.Context, request *pb.BatchFindInstancesRequest) (*pb.BatchFindInstancesResponse, error) {
+	remoteIP := util.GetIPFromContext(ctx)
+
+	if len(request.Services) == 0 && len(request.Instances) == 0 {
 		err := errors.New("Required services or instances")
-		log.Error("batch find instance failed: invalid parameters", err)
-		return &pb.BatchFindInstancesResponse{
-			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
-		}, nil
+		log.Error(fmt.Sprintf("batch find instance failed: invalid parameters, operator: %s", remoteIP), err)
+		return nil, pb.NewError(pb.ErrInvalidParams, err.Error())
 	}
 
-	err := validator.Validate(in)
+	if err := validator.ValidateFindManyInstancesRequest(request); err != nil {
+		log.Error(fmt.Sprintf("batch find instance failed: invalid parameters, operator: %s", remoteIP), err)
+		return nil, pb.NewError(pb.ErrInvalidParams, err.Error())
+	}
+
+	response := &pb.BatchFindInstancesResponse{}
+
+	var err error
+	// find services
+	response.Services, err = batchFindServices(ctx, request)
 	if err != nil {
-		log.Error("batch find instance failed: invalid parameters", err)
-		return &pb.BatchFindInstancesResponse{
-			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
-		}, nil
+		log.Error(fmt.Sprintf("batch find instance failed, operator: %s", remoteIP), err)
+		return nil, pb.NewError(pb.ErrInternal, err.Error())
 	}
 
-	return datasource.GetMetadataManager().BatchFind(ctx, in)
+	// find instance
+	response.Instances, err = batchFindInstances(ctx, request)
+	if err != nil {
+		log.Error(fmt.Sprintf("batch find instance failed, operator: %s", remoteIP), err)
+		return nil, pb.NewError(pb.ErrInternal, err.Error())
+	}
+
+	return response, nil
 }
 
-func UpdateInstanceStatus(ctx context.Context, in *pb.UpdateInstanceStatusRequest) (*pb.UpdateInstanceStatusResponse, error) {
-	if err := validator.Validate(in); err != nil {
+func batchFindServices(ctx context.Context, request *pb.BatchFindInstancesRequest) (*pb.BatchFindResult, error) {
+	if len(request.Services) == 0 {
+		return nil, nil
+	}
+	cloneCtx := util.CloneContext(ctx)
+
+	result := &pb.BatchFindResult{}
+	failedResult := make(map[int32]*pb.FindFailedResult)
+	for index, key := range request.Services {
+		findCtx := util.WithRequestRev(cloneCtx, key.Rev)
+		resp, err := FindInstances(findCtx, &pb.FindInstancesRequest{
+			ConsumerServiceId: request.ConsumerServiceId,
+			AppId:             key.Service.AppId,
+			ServiceName:       key.Service.ServiceName,
+			Environment:       key.Service.Environment,
+		})
+		errCode, errMsg, internalErr := parseError(err)
+		if internalErr != nil {
+			return nil, internalErr
+		}
+
+		var instances []*pb.MicroServiceInstance
+		if resp != nil {
+			instances = resp.Instances
+		}
+
+		failed, ok := failedResult[errCode]
+		AppendFindResponse(findCtx, int64(index),
+			pb.CreateResponse(errCode, errMsg),
+			instances,
+			&result.Updated, &result.NotModified, &failed)
+		if !ok && failed != nil {
+			failedResult[errCode] = failed
+		}
+	}
+	for _, rs := range failedResult {
+		result.Failed = append(result.Failed, rs)
+	}
+	return result, nil
+}
+
+func batchFindInstances(ctx context.Context, request *pb.BatchFindInstancesRequest) (*pb.BatchFindResult, error) {
+	if len(request.Instances) == 0 {
+		return nil, nil
+	}
+	cloneCtx := util.CloneContext(ctx)
+	// can not find the shared provider instances
+	cloneCtx = util.SetTargetDomainProject(cloneCtx, util.ParseDomain(ctx), util.ParseProject(ctx))
+
+	result := &pb.BatchFindResult{}
+	failedResult := make(map[int32]*pb.FindFailedResult)
+	for index, key := range request.Instances {
+		getCtx := util.WithRequestRev(cloneCtx, key.Rev)
+		resp, err := GetInstance(getCtx, &pb.GetOneInstanceRequest{
+			ConsumerServiceId:  request.ConsumerServiceId,
+			ProviderServiceId:  key.Instance.ServiceId,
+			ProviderInstanceId: key.Instance.InstanceId,
+		})
+		errCode, errMsg, internalErr := parseError(err)
+		if internalErr != nil {
+			return nil, internalErr
+		}
+
+		var instances []*pb.MicroServiceInstance
+		if resp != nil {
+			instances = append(instances, resp.Instance)
+		}
+
+		failed, ok := failedResult[errCode]
+		AppendFindResponse(getCtx, int64(index),
+			pb.CreateResponse(errCode, errMsg),
+			instances,
+			&result.Updated, &result.NotModified, &failed)
+		if !ok && failed != nil {
+			failedResult[errCode] = failed
+		}
+	}
+	for _, rs := range failedResult {
+		result.Failed = append(result.Failed, rs)
+	}
+	return result, nil
+}
+
+func parseError(err error) (int32, string, error) {
+	testErr, ok := err.(*errsvc.Error)
+	if !ok || testErr.InternalError() {
+		return 0, "", err
+	}
+	return testErr.Code, testErr.Error(), nil
+}
+
+func AppendFindResponse(ctx context.Context, index int64, resp *pb.Response, instances []*pb.MicroServiceInstance,
+	updatedResult *[]*pb.FindResult, notModifiedResult *[]int64, failedResult **pb.FindFailedResult) {
+	if code := resp.GetCode(); code != pb.ResponseSuccess {
+		if *failedResult == nil {
+			*failedResult = &pb.FindFailedResult{
+				Error: pb.NewError(code, resp.GetMessage()),
+			}
+		}
+		(*failedResult).Indexes = append((*failedResult).Indexes, index)
+		return
+	}
+	iv, _ := ctx.Value(util.CtxRequestRevision).(string)
+	ov, _ := ctx.Value(util.CtxResponseRevision).(string)
+	if len(iv) > 0 && iv == ov {
+		*notModifiedResult = append(*notModifiedResult, index)
+		return
+	}
+	*updatedResult = append(*updatedResult, &pb.FindResult{
+		Index:     index,
+		Instances: instances,
+		Rev:       ov,
+	})
+}
+
+func PutInstanceStatus(ctx context.Context, in *pb.UpdateInstanceStatusRequest) error {
+	remoteIP := util.GetIPFromContext(ctx)
+
+	if err := validator.ValidateUpdateInstanceStatusRequest(in); err != nil {
 		updateStatusFlag := util.StringJoin([]string{in.ServiceId, in.InstanceId, in.Status}, "/")
-		log.Error(fmt.Sprintf("update instance[%s] status failed", updateStatusFlag), nil)
-		return &pb.UpdateInstanceStatusResponse{
-			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
-		}, nil
+		log.Error(fmt.Sprintf("update instance[%s] status failed, operator: %s", updateStatusFlag, remoteIP), nil)
+		return pb.NewError(pb.ErrInvalidParams, err.Error())
 	}
 
-	return datasource.GetMetadataManager().UpdateInstanceStatus(ctx, in)
+	return datasource.GetMetadataManager().PutInstanceStatus(ctx, in)
 }
 
-func UpdateInstanceProperties(ctx context.Context, in *pb.UpdateInstancePropsRequest) (*pb.UpdateInstancePropsResponse, error) {
-	if err := validator.Validate(in); err != nil {
+func PutInstanceProperties(ctx context.Context, in *pb.UpdateInstancePropsRequest) error {
+	remoteIP := util.GetIPFromContext(ctx)
+
+	if err := validator.ValidateUpdateInstancePropsRequest(in); err != nil {
 		instanceFlag := util.StringJoin([]string{in.ServiceId, in.InstanceId}, "/")
-		log.Error(fmt.Sprintf("update instance[%s] properties failed", instanceFlag), nil)
-		return &pb.UpdateInstancePropsResponse{
-			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
-		}, nil
+		log.Error(fmt.Sprintf("update instance[%s] properties failed, operator: %s", instanceFlag, remoteIP), nil)
+		return pb.NewError(pb.ErrInvalidParams, err.Error())
 	}
 
-	return datasource.GetMetadataManager().UpdateInstanceProperties(ctx, in)
+	return datasource.GetMetadataManager().PutInstanceProperties(ctx, in)
 }
 
 func ClusterHealth(ctx context.Context) (*pb.GetInstancesResponse, error) {
+	remoteIP := util.GetIPFromContext(ctx)
+
 	if err := health.GlobalHealthChecker().Healthy(); err != nil {
-		return &pb.GetInstancesResponse{
-			Response: pb.CreateResponse(pb.ErrUnhealthy, err.Error()),
-		}, nil
+		return nil, pb.NewError(pb.ErrUnhealthy, err.Error())
 	}
 	cloneContext := util.SetDomainProject(util.CloneContext(ctx), datasource.RegistryDomain, datasource.RegistryProject)
-	svcResp, err := datasource.GetMetadataManager().ExistService(cloneContext, &pb.GetExistenceRequest{
+	serviceID, err := datasource.GetMetadataManager().ExistService(cloneContext, &pb.GetExistenceRequest{
 		Type:        pb.ExistenceMicroservice,
 		AppId:       apt.Service.AppId,
 		Environment: apt.Service.Environment,
 		ServiceName: apt.Service.ServiceName,
 		Version:     apt.Service.Version,
 	})
-
 	if err != nil {
-		log.Error(fmt.Sprintf("health check failed: get service center[%s/%s/%s/%s]'s serviceID failed",
-			apt.Service.Environment, apt.Service.AppId, apt.Service.ServiceName, apt.Service.Version), err)
-		return &pb.GetInstancesResponse{
-			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
-		}, err
-	}
-	if len(svcResp.ServiceId) == 0 {
-		log.Error(fmt.Sprintf("health check failed: service center[%s/%s/%s/%s]'s serviceID does not exist",
-			apt.Service.Environment, apt.Service.AppId, apt.Service.ServiceName, apt.Service.Version), nil)
-		return &pb.GetInstancesResponse{
-			Response: pb.CreateResponse(pb.ErrServiceNotExists, "ServiceCenter's serviceID not exist."),
-		}, nil
+		log.Error(fmt.Sprintf("health check failed: get service center[%s/%s/%s/%s]'s serviceID failed, operator: %s",
+			apt.Service.Environment, apt.Service.AppId, apt.Service.ServiceName, apt.Service.Version, remoteIP), err)
+		return nil, err
 	}
 
-	instResp, err := datasource.GetMetadataManager().GetInstances(cloneContext, &pb.GetInstancesRequest{
-		ProviderServiceId: svcResp.ServiceId,
+	instResp, err := datasource.GetMetadataManager().ListInstance(cloneContext, &pb.GetInstancesRequest{
+		ProviderServiceId: serviceID,
 	})
 	if err != nil {
-		log.Error(fmt.Sprintf("health check failed: get service center[%s][%s/%s/%s/%s]'s instances failed",
-			svcResp.ServiceId, apt.Service.Environment, apt.Service.AppId, apt.Service.ServiceName, apt.Service.Version), err)
-		return &pb.GetInstancesResponse{
-			Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
-		}, err
+		log.Error(fmt.Sprintf("health check failed: get service center[%s][%s/%s/%s/%s]'s instances failed, operator: %s",
+			serviceID, apt.Service.Environment, apt.Service.AppId, apt.Service.ServiceName, apt.Service.Version, remoteIP), err)
+		return nil, err
 	}
 	return &pb.GetInstancesResponse{
-		Response:  pb.CreateResponse(pb.ResponseSuccess, "Health check successfully."),
 		Instances: instResp.Instances,
 	}, nil
 }
