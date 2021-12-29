@@ -23,9 +23,6 @@ import (
 	"net"
 	"time"
 
-	"github.com/apache/servicecomb-service-center/server/service/disco"
-
-	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/grace"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
@@ -33,6 +30,8 @@ import (
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/metrics"
 	rs "github.com/apache/servicecomb-service-center/server/rest"
+	"github.com/apache/servicecomb-service-center/server/service/disco"
+	"github.com/apache/servicecomb-service-center/server/service/registry"
 	"github.com/go-chassis/foundation/gopool"
 )
 
@@ -165,7 +164,7 @@ func (s *APIServer) Stop() {
 }
 
 func (s *APIServer) selfRegister() {
-	err := datasource.GetSCManager().SelfRegister(context.Background())
+	err := registry.SelfRegister(context.Background())
 	if err != nil {
 		s.err <- err
 		return
@@ -177,7 +176,7 @@ func (s *APIServer) selfRegister() {
 func (s *APIServer) selfUnregister() {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-	if err := datasource.GetSCManager().SelfUnregister(ctx); err != nil {
+	if err := registry.SelfUnregister(ctx); err != nil {
 		log.Error("stop registry engine failed", err)
 	}
 }
