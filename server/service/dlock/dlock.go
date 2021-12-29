@@ -19,7 +19,10 @@
 package dlock
 
 import (
+	"fmt"
+
 	"github.com/apache/servicecomb-service-center/datasource/dlock"
+	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
 func Lock(key string, ttl int64) error {
@@ -38,6 +41,9 @@ func IsHoldLock(key string) bool {
 	return dlock.Instance().IsHoldLock(key)
 }
 
-func Unlock(key string) error {
-	return dlock.Instance().Unlock(key)
+func Unlock(key string) {
+	err := dlock.Instance().Unlock(key)
+	if err != nil {
+		log.Error(fmt.Sprintf("unlock key %s failed", key), err)
+	}
 }

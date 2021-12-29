@@ -87,8 +87,9 @@ func TestDLock(t *testing.T) {
 		t.Run("unlock the unlock key should pass", func(t *testing.T) {
 			err := dlock.Lock("unlock", 5)
 			assert.Nil(t, err)
-			err = dlock.Unlock("unlock")
-			assert.Nil(t, err)
+			dlock.Unlock("unlock")
+			lock := dlock.IsHoldLock("unlock")
+			assert.False(t, lock)
 		})
 	})
 }

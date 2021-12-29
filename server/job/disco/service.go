@@ -25,12 +25,15 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
 	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
+	"github.com/apache/servicecomb-service-center/server/service/dlock"
 	"github.com/robfig/cron/v3"
 )
 
 const (
 	defaultRetireMicroserviceCron = "0 1 * * *"
 	defaultReserveVersionCount    = 3
+	retireServiceLockTTL          = 60
+	retireServiceLockKey          = "retire-service-job"
 )
 
 func init() {
@@ -50,15 +53,26 @@ func startRetireServiceJob() {
 
 	c := cron.New()
 	_, err := c.AddFunc(localPlan.Cron, func() {
-		//TODO use DLock
-		err := discosvc.RetireService(context.Background(), localPlan)
-		if err != nil {
-			log.Error("retire microservice failed", err)
-		}
+		retireService(localPlan)
 	})
 	if err != nil {
 		log.Error("cron add func failed", err)
 		return
 	}
 	c.Start()
+}
+
+func retireService(localPlan *datasource.RetirePlan) {
+	err := dlock.TryLock(retireServiceLockKey, retireServiceLockTTL)
+	if err != nil {
+		log.Error(fmt.Sprintf("try lock %s failed", retireServiceLockKey), err)
+		return
+	}
+	defer dlock.Unlock(retireServiceLockKey)
+
+	log.Info("start retire microservice")
+	err = discosvc.RetireService(context.Background(), localPlan)
+	if err != nil {
+		log.Error("retire microservice failed", err)
+	}
 }
