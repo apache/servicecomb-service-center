@@ -25,8 +25,6 @@ import (
 
 // SCManager contains the APIs of registration of SC itself
 type SCManager interface {
-	SelfRegister(ctx context.Context) error
-	SelfUnregister(ctx context.Context) error
 	UpgradeVersion(ctx context.Context) error
 	GetClusters(ctx context.Context) (etcdadpt.Clusters, error)
 }
