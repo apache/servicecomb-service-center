@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package datasource
+package rbac
 
 import (
 	"context"
@@ -52,20 +52,20 @@ type AccountManager interface {
 	UpdateAccount(ctx context.Context, name string, account *rbac.Account) error
 }
 
-// AccountLockManager saves login failure status
-type AccountLockManager interface {
-	UpsertLock(ctx context.Context, lock *AccountLock) error
-	GetLock(ctx context.Context, key string) (*AccountLock, error)
-	ListLock(ctx context.Context) ([]*AccountLock, int64, error)
+// LockManager saves login failure status
+type LockManager interface {
+	UpsertLock(ctx context.Context, lock *Lock) error
+	GetLock(ctx context.Context, key string) (*Lock, error)
+	ListLock(ctx context.Context) ([]*Lock, int64, error)
 	DeleteLock(ctx context.Context, key string) error
 	DeleteLockList(ctx context.Context, keys []string) error
 }
-type AccountLock struct {
+type Lock struct {
 	Key       string `json:"key,omitempty"`
 	Status    string `json:"status,omitempty"`
 	ReleaseAt int64  `json:"releaseAt,omitempty" bson:"release_at"`
 }
-type AccountLockResponse struct {
-	Total       int64          `json:"total"`
-	AccountLock []*AccountLock `json:"data"`
+type LockResponse struct {
+	Total int64   `json:"total"`
+	Locks []*Lock `json:"data"`
 }

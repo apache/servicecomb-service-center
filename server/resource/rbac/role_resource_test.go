@@ -20,31 +20,29 @@
 package rbac_test
 
 import (
-	"strings"
-
-	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
-	_ "github.com/apache/servicecomb-service-center/test"
-	"github.com/go-chassis/cari/rbac"
-
 	"bytes"
 	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
+	_ "github.com/apache/servicecomb-service-center/test"
+
 	"github.com/apache/servicecomb-service-center/pkg/rest"
+	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 	rbacmodel "github.com/go-chassis/cari/rbac"
 	"github.com/go-chassis/go-chassis/v2/server/restful"
 	"github.com/stretchr/testify/assert"
 )
 
-func newRole(name string) *rbac.Role {
-	return &rbac.Role{
+func newRole(name string) *rbacmodel.Role {
+	return &rbacmodel.Role{
 		Name: name,
-		Perms: []*rbac.Permission{
+		Perms: []*rbacmodel.Permission{
 			{
-				Resources: []*rbac.Resource{
+				Resources: []*rbacmodel.Resource{
 					{
 						Type: rbacsvc.ResourceService,
 					},
@@ -60,11 +58,11 @@ const (
 	testPwd1 = "Ab@11111"
 )
 
-func newAccount(name string) *rbac.Account {
-	return &rbac.Account{
+func newAccount(name string) *rbacmodel.Account {
+	return &rbacmodel.Account{
 		Name:     name,
 		Password: testPwd0,
-		Roles:    []string{rbac.RoleAdmin},
+		Roles:    []string{rbacmodel.RoleAdmin},
 		Status:   "active",
 	}
 }
@@ -115,7 +113,7 @@ func TestRoleResource_CreateOrUpdateRole(t *testing.T) {
 		assert.Equal(t, http.StatusOK, w3.Code)
 
 		newTestRole := newRole(testRole.Name)
-		newTestRole.Perms = []*rbac.Permission{
+		newTestRole.Perms = []*rbacmodel.Permission{
 			{
 				Resources: []*rbacmodel.Resource{{Type: rbacsvc.ResourceAccount}},
 				Verbs:     []string{"*"},

@@ -29,7 +29,7 @@ import (
 
 	_ "github.com/apache/servicecomb-service-center/test"
 
-	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/datasource/rbac"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/config"
 	v4 "github.com/apache/servicecomb-service-center/server/resource/rbac"
@@ -442,7 +442,7 @@ func TestAuthResource_ListLock(t *testing.T) {
 		w3 := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w3, r3)
 		assert.Equal(t, http.StatusOK, w3.Code)
-		resp := &datasource.AccountLockResponse{}
+		resp := &rbac.LockResponse{}
 		err := json.Unmarshal(w.Body.Bytes(), resp)
 		assert.NoError(t, err)
 	})

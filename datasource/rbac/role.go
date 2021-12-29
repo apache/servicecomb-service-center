@@ -15,48 +15,27 @@
  * limitations under the License.
  */
 
-package schema
+package rbac
 
 import (
-	"fmt"
+	"context"
+	"errors"
 
-	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/go-chassis/cari/rbac"
 )
-
-type initFunc func(opts Options) (DAO, error)
 
 var (
-	plugins  = make(map[string]initFunc)
-	instance DAO
+	ErrRoleDuplicated = errors.New("role is duplicated")
+	ErrRoleCanNotEdit = errors.New("role can not be edited")
+	ErrRoleNotExist   = errors.New("role not exist")
 )
 
-// Install load plugins configuration into plugins
-func Install(pluginImplName string, f initFunc) {
-	plugins[pluginImplName] = f
-}
-
-// Init construct storage plugin instance
-// invoked by sc main process.
-func Init(opts Options) error {
-	if opts.Kind == "" {
-		return nil
-	}
-
-	engineFunc, ok := plugins[opts.Kind]
-	if !ok {
-		return fmt.Errorf("plugin implement not supported [%s]", opts.Kind)
-	}
-
-	var err error
-	instance, err = engineFunc(opts)
-	if err != nil {
-		return err
-	}
-	log.Info(fmt.Sprintf("schema plugin [%s] enabled", opts.Kind))
-
-	return nil
-}
-
-func Instance() DAO {
-	return instance
+// RoleManager contains the RBAC CRUD
+type RoleManager interface {
+	CreateRole(ctx context.Context, r *rbac.Role) error
+	RoleExist(ctx context.Context, name string) (bool, error)
+	GetRole(ctx context.Context, name string) (*rbac.Role, error)
+	ListRole(ctx context.Context) ([]*rbac.Role, int64, error)
+	DeleteRole(ctx context.Context, name string) (bool, error)
+	UpdateRole(ctx context.Context, name string, role *rbac.Role) error
 }

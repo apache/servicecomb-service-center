@@ -20,16 +20,13 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
+	"github.com/apache/servicecomb-service-center/datasource/rbac"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/little-cui/etcdadpt"
 )
 
-type AccountLockManager struct {
-}
-
-func (al AccountLockManager) UpsertLock(ctx context.Context, lock *datasource.AccountLock) error {
+func (al *RbacDAO) UpsertLock(ctx context.Context, lock *rbac.Lock) error {
 	value, err := json.Marshal(lock)
 	if err != nil {
 		log.Error("account lock is invalid", err)
@@ -46,15 +43,15 @@ func (al AccountLockManager) UpsertLock(ctx context.Context, lock *datasource.Ac
 	return nil
 }
 
-func (al AccountLockManager) GetLock(ctx context.Context, key string) (*datasource.AccountLock, error) {
+func (al *RbacDAO) GetLock(ctx context.Context, key string) (*rbac.Lock, error) {
 	kv, err := etcdadpt.Get(ctx, path.GenerateAccountLockKey(key))
 	if err != nil {
 		return nil, err
 	}
 	if kv == nil {
-		return nil, datasource.ErrAccountLockNotExist
+		return nil, rbac.ErrAccountLockNotExist
 	}
-	lock := &datasource.AccountLock{}
+	lock := &rbac.Lock{}
 	err = json.Unmarshal(kv.Value, lock)
 	if err != nil {
 		log.Error(fmt.Sprintf("key %s format invalid", key), err)
@@ -63,14 +60,14 @@ func (al AccountLockManager) GetLock(ctx context.Context, key string) (*datasour
 	return lock, nil
 }
 
-func (al AccountLockManager) ListLock(ctx context.Context) ([]*datasource.AccountLock, int64, error) {
+func (al *RbacDAO) ListLock(ctx context.Context) ([]*rbac.Lock, int64, error) {
 	kvs, n, err := etcdadpt.List(ctx, path.GenerateAccountLockKey(""))
 	if err != nil {
 		return nil, 0, err
 	}
-	locks := make([]*datasource.AccountLock, 0, n)
+	locks := make([]*rbac.Lock, 0, n)
 	for _, v := range kvs {
-		lock := &datasource.AccountLock{}
+		lock := &rbac.Lock{}
 		err = json.Unmarshal(v.Value, lock)
 		if err != nil {
 			log.Error("account lock info format invalid:", err)
@@ -81,17 +78,17 @@ func (al AccountLockManager) ListLock(ctx context.Context) ([]*datasource.Accoun
 	return locks, n, nil
 }
 
-func (al AccountLockManager) DeleteLock(ctx context.Context, key string) error {
+func (al *RbacDAO) DeleteLock(ctx context.Context, key string) error {
 	_, err := etcdadpt.Delete(ctx, path.GenerateAccountLockKey(key))
 	if err != nil {
 		log.Error(fmt.Sprintf("remove lock %s failed", key), err)
-		return datasource.ErrCannotReleaseLock
+		return rbac.ErrCannotReleaseLock
 	}
 	log.Info(fmt.Sprintf("%s is released", key))
 	return nil
 }
 
-func (al AccountLockManager) DeleteLockList(ctx context.Context, keys []string) error {
+func (al *RbacDAO) DeleteLockList(ctx context.Context, keys []string) error {
 	var opts []etcdadpt.OpOptions
 	for _, key := range keys {
 		opts = append(opts, etcdadpt.OpDel(etcdadpt.WithStrKey(path.GenerateAccountLockKey(key))))
@@ -102,12 +99,8 @@ func (al AccountLockManager) DeleteLockList(ctx context.Context, keys []string) 
 	err := etcdadpt.Txn(ctx, opts)
 	if err != nil {
 		log.Error(fmt.Sprintf("remove locks %v failed", keys), err)
-		return datasource.ErrCannotReleaseLock
+		return rbac.ErrCannotReleaseLock
 	}
 	log.Info(fmt.Sprintf("%v are released", keys))
 	return nil
-}
-
-func NewAccountLockManager() datasource.AccountLockManager {
-	return &AccountLockManager{}
 }

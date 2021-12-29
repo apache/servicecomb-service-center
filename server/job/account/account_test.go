@@ -24,7 +24,7 @@ import (
 
 	_ "github.com/apache/servicecomb-service-center/test"
 
-	"github.com/apache/servicecomb-service-center/datasource"
+	dao "github.com/apache/servicecomb-service-center/datasource/rbac"
 	"github.com/apache/servicecomb-service-center/server/job/account"
 	"github.com/stretchr/testify/assert"
 )
@@ -32,9 +32,9 @@ import (
 func TestCleanupReleasedLockHistory(t *testing.T) {
 	t.Run("have a released lock, should be cleanup", func(t *testing.T) {
 		const key = "TestCleanupReleasedLockHistory1"
-		err := datasource.GetAccountLockManager().UpsertLock(context.Background(), &datasource.AccountLock{
+		err := dao.Instance().UpsertLock(context.Background(), &dao.Lock{
 			Key:       key,
-			Status:    datasource.StatusBanned,
+			Status:    dao.StatusBanned,
 			ReleaseAt: time.Now().Add(-time.Second).Unix(),
 		})
 		assert.NoError(t, err)
@@ -42,14 +42,14 @@ func TestCleanupReleasedLockHistory(t *testing.T) {
 		err = account.CleanupReleasedLockHistory(context.Background())
 		assert.NoError(t, err)
 
-		_, err = datasource.GetAccountLockManager().GetLock(context.Background(), key)
-		assert.Equal(t, datasource.ErrAccountLockNotExist, err)
+		_, err = dao.Instance().GetLock(context.Background(), key)
+		assert.Equal(t, dao.ErrAccountLockNotExist, err)
 	})
 	t.Run("have an unreleased lock, should NOT be cleanup", func(t *testing.T) {
 		const key = "TestCleanupReleasedLockHistory2"
-		err := datasource.GetAccountLockManager().UpsertLock(context.Background(), &datasource.AccountLock{
+		err := dao.Instance().UpsertLock(context.Background(), &dao.Lock{
 			Key:       key,
-			Status:    datasource.StatusBanned,
+			Status:    dao.StatusBanned,
 			ReleaseAt: time.Now().Add(time.Minute).Unix(),
 		})
 		assert.NoError(t, err)
@@ -57,11 +57,11 @@ func TestCleanupReleasedLockHistory(t *testing.T) {
 		err = account.CleanupReleasedLockHistory(context.Background())
 		assert.NoError(t, err)
 
-		lock, err := datasource.GetAccountLockManager().GetLock(context.Background(), key)
+		lock, err := dao.Instance().GetLock(context.Background(), key)
 		assert.NoError(t, err)
 		assert.NotNil(t, lock)
 
-		err = datasource.GetAccountLockManager().DeleteLock(context.Background(), key)
+		err = dao.Instance().DeleteLock(context.Background(), key)
 		assert.NoError(t, err)
 	})
 }
