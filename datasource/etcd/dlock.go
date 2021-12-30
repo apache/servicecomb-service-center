@@ -18,12 +18,12 @@
 package etcd
 
 import (
+	"fmt"
 	"sync"
 
-	"github.com/go-chassis/openlog"
-	"github.com/little-cui/etcdadpt"
-
 	"github.com/apache/servicecomb-service-center/datasource/dlock"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/little-cui/etcdadpt"
 )
 
 func init() {
@@ -60,7 +60,7 @@ func (d *DB) Renew(key string) error {
 	if lock, ok := d.lockMap.Load(key); ok {
 		err := lock.(*etcdadpt.DLock).Refresh()
 		if err != nil {
-			openlog.Error("fail to renew key")
+			log.Error(fmt.Sprintf("fail to renew key %s", key), err)
 			d.lockMap.Delete(key)
 		}
 		return err
@@ -81,7 +81,7 @@ func (d *DB) Unlock(key string) error {
 	if lock, ok := d.lockMap.Load(key); ok {
 		err := lock.(*etcdadpt.DLock).Unlock()
 		if err != nil {
-			openlog.Error("fail to unlock")
+			log.Error(fmt.Sprintf("fail to unlock %s", key), err)
 		}
 		d.lockMap.Delete(key)
 		return err

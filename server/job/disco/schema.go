@@ -24,11 +24,14 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
 	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
+	"github.com/apache/servicecomb-service-center/server/service/dlock"
 	"github.com/robfig/cron/v3"
 )
 
 const (
 	defaultRetireSchemaCron = "0 2 * * *"
+	retireSchemaLockTTL     = 60
+	retireSchemaLockKey     = "retire-schema-job"
 )
 
 func init() {
@@ -36,15 +39,26 @@ func init() {
 	log.Info(fmt.Sprintf("start retire schema job, plan is %v", cronExpr))
 	c := cron.New()
 	_, err := c.AddFunc(cronExpr, func() {
-		//TODO use DLock
-		err := discosvc.RetireSchema(context.Background())
-		if err != nil {
-			log.Error("retire schema failed", err)
-		}
+		retireSchema()
 	})
 	if err != nil {
 		log.Error("cron add func failed", err)
 		return
 	}
 	c.Start()
+}
+
+func retireSchema() {
+	err := dlock.TryLock(retireSchemaLockKey, retireSchemaLockTTL)
+	if err != nil {
+		log.Error(fmt.Sprintf("try lock %s failed", retireSchemaLockKey), err)
+		return
+	}
+	defer dlock.Unlock(retireSchemaLockKey)
+
+	log.Info("start retire schema")
+	err = discosvc.RetireSchema(context.Background())
+	if err != nil {
+		log.Error("retire schema failed", err)
+	}
 }
