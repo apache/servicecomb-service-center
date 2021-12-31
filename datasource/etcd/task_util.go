@@ -15,35 +15,27 @@
  * limitations under the License.
  */
 
-package datasource
+package etcd
 
 import (
-	pb "github.com/go-chassis/cari/discovery"
-	"github.com/go-chassis/cari/pkg/errsvc"
+	"encoding/json"
+
+	"github.com/go-chassis/cari/sync"
+	"github.com/little-cui/etcdadpt"
+
+	"github.com/apache/servicecomb-service-center/eventbase/datasource/etcd/key"
 )
 
-const (
-	SPLIT                 = "/"
-	ServiceKeyPrefix      = "/cse-sr/ms/files"
-	InstanceKeyPrefix     = "/cse-sr/inst/files"
-	RegistryDomain        = "default"
-	RegistryProject       = "default"
-	RegistryDomainProject = "default/default"
-	RegistryAppID         = "default"
-	Provider              = "p"
-
-	ResourceAccount = "account"
-)
-
-// WrapErrResponse is temp func here to wait finish to refact the discosvc pkg
-func WrapErrResponse(respErr error) (*pb.Response, error) {
-	err, ok := respErr.(*errsvc.Error)
-	if !ok {
-		return pb.CreateResponse(pb.ErrInternal, err.Error()), err
+func GenTaskOpts(domain, project, action, resourceType string, resource interface{}) (etcdadpt.OpOptions, error) {
+	task, err := sync.NewTask(domain, project, action, resourceType, resource)
+	if err != nil {
+		return etcdadpt.OpOptions{}, err
 	}
-	resp := pb.CreateResponseWithSCErr(err)
-	if err.InternalError() {
-		return resp, err
+	taskBytes, err := json.Marshal(task)
+	if err != nil {
+		return etcdadpt.OpOptions{}, err
 	}
-	return resp, nil
+	taskOpPut := etcdadpt.OpPut(etcdadpt.WithStrKey(key.TaskKey(domain, project,
+		task.ID, task.Timestamp)), etcdadpt.WithValue(taskBytes))
+	return taskOpPut, nil
 }

@@ -22,24 +22,30 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"time"
+
+	"github.com/go-chassis/cari/db"
+	"github.com/go-chassis/go-archaius"
+	"github.com/little-cui/etcdadpt"
 
 	_ "github.com/apache/servicecomb-service-center/server/init"
 
+	_ "github.com/apache/servicecomb-service-center/eventbase/bootstrap"
 	_ "github.com/apache/servicecomb-service-center/server/bootstrap"
 	//grpc plugin
 	_ "github.com/go-chassis/go-chassis-extension/protocol/grpc/server"
 
 	"github.com/apache/servicecomb-service-center/datasource"
+	edatasource "github.com/apache/servicecomb-service-center/eventbase/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/metrics"
 	"github.com/apache/servicecomb-service-center/server/service/disco"
-	"github.com/go-chassis/go-archaius"
-	"github.com/little-cui/etcdadpt"
 )
 
 func init() {
 	var kind = "etcd"
+	var uri = "http://127.0.0.1:2379"
 	_ = archaius.Set("rbac.releaseLockAfter", "3s")
 	if IsETCD() {
 		_ = archaius.Set("registry.cache.mode", 0)
@@ -57,6 +63,19 @@ func init() {
 	_ = metrics.Init(metrics.Options{})
 
 	core.ServiceAPI = disco.AssembleResources()
+
+	if kind == "mongo" {
+		uri = "mongodb://127.0.0.1:27017"
+	}
+
+	err := edatasource.Init(db.Config{
+		Kind:    kind,
+		URI:     uri,
+		Timeout: 10 * time.Second,
+	})
+	if err != nil {
+		panic(err)
+	}
 }
 func createChassisConfig() {
 	b := []byte(`
