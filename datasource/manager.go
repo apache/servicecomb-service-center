@@ -31,6 +31,7 @@ type dataSourceEngine func(opts Options) (DataSource, error)
 var (
 	plugins        = make(map[string]dataSourceEngine)
 	dataSourceInst DataSource
+	EnableSync     bool
 )
 
 // load plugins configuration into plugins

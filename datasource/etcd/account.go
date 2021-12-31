@@ -22,15 +22,18 @@ import (
 	"strconv"
 	"time"
 
+	rbacmodel "github.com/go-chassis/cari/rbac"
+	"github.com/go-chassis/cari/sync"
+	"github.com/go-chassis/foundation/stringutil"
+	"github.com/little-cui/etcdadpt"
+
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/rbac"
 	"github.com/apache/servicecomb-service-center/pkg/etcdsync"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/privacy"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	rbacmodel "github.com/go-chassis/cari/rbac"
-	"github.com/go-chassis/foundation/stringutil"
-	"github.com/little-cui/etcdadpt"
 )
 
 func init() {
@@ -80,6 +83,14 @@ func (ds *RbacDAO) CreateAccount(ctx context.Context, a *rbacmodel.Account) erro
 		log.Error("", err)
 		return err
 	}
+	if datasource.EnableSync {
+		op, err := GenTaskOpts("", "", sync.CreateAction, datasource.ResourceAccount, a)
+		if err != nil {
+			log.Error("", err)
+			return err
+		}
+		opts = append(opts, op)
+	}
 	err = etcdadpt.Txn(ctx, opts)
 	if err != nil {
 		log.Error("can not save account info", err)
@@ -88,6 +99,7 @@ func (ds *RbacDAO) CreateAccount(ctx context.Context, a *rbacmodel.Account) erro
 	log.Info("create new account: " + a.ID)
 	return nil
 }
+
 func GenAccountOpts(a *rbacmodel.Account, action etcdadpt.Action) ([]etcdadpt.OpOptions, error) {
 	opts := make([]etcdadpt.OpOptions, 0)
 	value, err := json.Marshal(a)
@@ -110,6 +122,7 @@ func GenAccountOpts(a *rbacmodel.Account, action etcdadpt.Action) ([]etcdadpt.Op
 
 	return opts, nil
 }
+
 func (ds *RbacDAO) AccountExist(ctx context.Context, name string) (bool, error) {
 	return etcdadpt.Exist(ctx, path.GenerateRBACAccountKey(name))
 }
@@ -164,6 +177,7 @@ func (ds *RbacDAO) DeleteAccount(ctx context.Context, names []string) (bool, err
 	if len(names) == 0 {
 		return false, nil
 	}
+	var allOpts []etcdadpt.OpOptions
 	for _, name := range names {
 		a, err := ds.GetAccount(ctx, name)
 		if err != nil {
@@ -180,14 +194,29 @@ func (ds *RbacDAO) DeleteAccount(ctx context.Context, names []string) (bool, err
 			continue //do not fail if some account is invalid
 
 		}
-		err = etcdadpt.Txn(ctx, opts)
-		if err != nil {
-			log.Error(rbac.ErrDeleteAccountFailed.Error(), err)
-			return false, err
+		if datasource.EnableSync {
+			taskOpt, err := GenTaskOpts("", "", sync.DeleteAction, datasource.ResourceAccount, a)
+			if err != nil {
+				log.Error("", err)
+				return false, err
+			}
+			tombstoneOpt, err := GenTombstoneOpts("", "", datasource.ResourceAccount, a.Name)
+			if err != nil {
+				log.Error("", err)
+				return false, err
+			}
+			opts = append(opts, tombstoneOpt, taskOpt)
 		}
+		allOpts = append(allOpts, opts...)
+	}
+	err := etcdadpt.Txn(ctx, allOpts)
+	if err != nil {
+		log.Error(rbac.ErrDeleteAccountFailed.Error(), err)
+		return false, err
 	}
 	return true, nil
 }
+
 func (ds *RbacDAO) UpdateAccount(ctx context.Context, name string, account *rbacmodel.Account) error {
 	var (
 		opts []etcdadpt.OpOptions
@@ -218,7 +247,14 @@ func (ds *RbacDAO) UpdateAccount(ctx context.Context, name string, account *rbac
 		}
 		opts = append(opts, opt)
 	}
-
+	if datasource.EnableSync {
+		op, err := GenTaskOpts("", "", sync.UpdateAction, datasource.ResourceAccount, account)
+		if err != nil {
+			log.Error("", err)
+			return err
+		}
+		opts = append(opts, op)
+	}
 	err = etcdadpt.Txn(ctx, opts)
 	if err != nil {
 		log.Error("BatchCommit failed", err)

@@ -2,6 +2,7 @@ module github.com/apache/servicecomb-service-center
 
 replace (
 	github.com/apache/servicecomb-service-center/api => ./api
+	github.com/apache/servicecomb-service-center/eventbase => ./eventbase
 	github.com/apache/thrift => github.com/apache/thrift v0.0.0-20180125231006-3d556248a8b9
 )
 
@@ -13,7 +14,7 @@ require (
 	github.com/deckarep/golang-set v1.7.1
 	github.com/elithrar/simple-scrypt v1.3.0
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-chassis/cari v0.5.1-0.20211208092532-78a52aa9d52e
+	github.com/go-chassis/cari v0.5.1-0.20211229072151-7fa40d0919c6
 	github.com/go-chassis/foundation v0.4.0
 	github.com/go-chassis/go-archaius v1.5.1
 	github.com/go-chassis/go-chassis-extension/protocol/grpc v0.0.0-20210902082902-eb5df922afcd
@@ -59,6 +60,8 @@ require (
 	k8s.io/kube-openapi v0.0.0-20210527164424-3c818078ee3d
 )
 
+require github.com/apache/servicecomb-service-center/eventbase v0.0.0-00010101000000-000000000000
+
 require (
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
@@ -93,6 +96,7 @@ require (
 	github.com/go-openapi/jsonreference v0.19.3 // indirect
 	github.com/go-openapi/swag v0.19.5 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
+	github.com/gofrs/uuid v4.0.0+incompatible // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.1 // indirect
@@ -169,6 +173,7 @@ require (
 	google.golang.org/protobuf v1.27.1 // indirect
 	gopkg.in/cheggaaa/pb.v1 v1.0.25 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
+	gopkg.in/mgo.v2 v2.0.0-20190816093944-a6b53ec6cb22 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect

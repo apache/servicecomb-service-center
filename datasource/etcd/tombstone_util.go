@@ -15,35 +15,24 @@
  * limitations under the License.
  */
 
-package datasource
+package etcd
 
 import (
-	pb "github.com/go-chassis/cari/discovery"
-	"github.com/go-chassis/cari/pkg/errsvc"
+	"encoding/json"
+
+	"github.com/go-chassis/cari/sync"
+	"github.com/little-cui/etcdadpt"
+
+	"github.com/apache/servicecomb-service-center/eventbase/datasource/etcd/key"
 )
 
-const (
-	SPLIT                 = "/"
-	ServiceKeyPrefix      = "/cse-sr/ms/files"
-	InstanceKeyPrefix     = "/cse-sr/inst/files"
-	RegistryDomain        = "default"
-	RegistryProject       = "default"
-	RegistryDomainProject = "default/default"
-	RegistryAppID         = "default"
-	Provider              = "p"
-
-	ResourceAccount = "account"
-)
-
-// WrapErrResponse is temp func here to wait finish to refact the discosvc pkg
-func WrapErrResponse(respErr error) (*pb.Response, error) {
-	err, ok := respErr.(*errsvc.Error)
-	if !ok {
-		return pb.CreateResponse(pb.ErrInternal, err.Error()), err
+func GenTombstoneOpts(domain, project, resourceType, resourceID string) (etcdadpt.OpOptions, error) {
+	tombstone := sync.NewTombstone(domain, project, resourceType, resourceID)
+	tombstoneBytes, err := json.Marshal(tombstone)
+	if err != nil {
+		return etcdadpt.OpOptions{}, err
 	}
-	resp := pb.CreateResponseWithSCErr(err)
-	if err.InternalError() {
-		return resp, err
-	}
-	return resp, nil
+	tombstoneOpPut := etcdadpt.OpPut(etcdadpt.WithStrKey(key.TombstoneKey(domain, project, tombstone.ResourceType,
+		tombstone.ResourceID)), etcdadpt.WithValue(tombstoneBytes))
+	return tombstoneOpPut, nil
 }
