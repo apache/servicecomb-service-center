@@ -15,18 +15,16 @@
  * limitations under the License.
  */
 
-package main
+package config_test
 
 import (
-	_ "github.com/apache/servicecomb-service-center/server/init"
-	_ "github.com/apache/servicecomb-service-center/syncer/init"
+	"testing"
 
-	_ "github.com/apache/servicecomb-service-center/server/bootstrap"
-	_ "github.com/apache/servicecomb-service-center/syncer/bootstrap"
-
-	"github.com/apache/servicecomb-service-center/server"
+	"github.com/apache/servicecomb-service-center/syncer/config"
+	"github.com/stretchr/testify/assert"
 )
 
-func main() {
-	server.Run()
+func TestGetConfig(t *testing.T) {
+	assert.NoError(t, config.Init())
+	assert.NotNil(t, config.GetConfig().Sync)
 }

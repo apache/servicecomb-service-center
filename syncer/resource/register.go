@@ -15,18 +15,17 @@
  * limitations under the License.
  */
 
-package main
+package resource
 
 import (
-	_ "github.com/apache/servicecomb-service-center/server/init"
-	_ "github.com/apache/servicecomb-service-center/syncer/init"
-
-	_ "github.com/apache/servicecomb-service-center/server/bootstrap"
-	_ "github.com/apache/servicecomb-service-center/syncer/bootstrap"
-
-	"github.com/apache/servicecomb-service-center/server"
+	"github.com/apache/servicecomb-service-center/pkg/rest"
+	"github.com/apache/servicecomb-service-center/syncer/resource/admin"
 )
 
-func main() {
-	server.Run()
+func init() {
+	initRouter()
+}
+
+func initRouter() {
+	rest.RegisterServant(&admin.Resource{})
 }

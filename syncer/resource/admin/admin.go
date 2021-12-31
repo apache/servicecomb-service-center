@@ -15,18 +15,25 @@
  * limitations under the License.
  */
 
-package main
+package admin
 
 import (
-	_ "github.com/apache/servicecomb-service-center/server/init"
-	_ "github.com/apache/servicecomb-service-center/syncer/init"
+	"net/http"
 
-	_ "github.com/apache/servicecomb-service-center/server/bootstrap"
-	_ "github.com/apache/servicecomb-service-center/syncer/bootstrap"
-
-	"github.com/apache/servicecomb-service-center/server"
+	"github.com/apache/servicecomb-service-center/pkg/rest"
 )
 
-func main() {
-	server.Run()
+type Resource struct {
+}
+
+// URLPatterns 路由
+func (res *Resource) URLPatterns() []rest.Route {
+	return []rest.Route{
+		{Method: http.MethodGet, Path: "/v1/syncer/health", Func: res.HealthCheck},
+	}
+}
+
+func (res *Resource) HealthCheck(w http.ResponseWriter, r *http.Request) {
+	// TODO call health service
+	rest.WriteResponse(w, r, nil, nil)
 }

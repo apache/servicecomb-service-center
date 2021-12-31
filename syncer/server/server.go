@@ -15,18 +15,9 @@
  * limitations under the License.
  */
 
-package main
+package server
 
-import (
-	_ "github.com/apache/servicecomb-service-center/server/init"
-	_ "github.com/apache/servicecomb-service-center/syncer/init"
-
-	_ "github.com/apache/servicecomb-service-center/server/bootstrap"
-	_ "github.com/apache/servicecomb-service-center/syncer/bootstrap"
-
-	"github.com/apache/servicecomb-service-center/server"
-)
-
-func main() {
-	server.Run()
+func Start() error {
+	// TODO
+	return nil
 }
