@@ -55,13 +55,15 @@ func TestSyncAccount(t *testing.T) {
 				_, err = rbac.Instance().DeleteAccount(context.Background(), []string{a1.Name})
 				assert.NoError(t, err)
 				listTaskReq := model.ListTaskRequest{
-					Domain:  "",
-					Project: "",
+					Domain:       "",
+					Project:      "",
+					ResourceType: datasource.ResourceAccount,
 				}
 				tasks, err := task.List(context.Background(), &listTaskReq)
 				assert.NoError(t, err)
 				assert.Equal(t, 2, len(tasks))
-				task.Delete(context.Background(), tasks...)
+				err = task.Delete(context.Background(), tasks...)
+				assert.NoError(t, err)
 				tombstoneListReq := model.ListTombstoneRequest{
 					ResourceType: datasource.ResourceAccount,
 				}
@@ -105,13 +107,15 @@ func TestSyncAccount(t *testing.T) {
 				_, err = rbac.Instance().DeleteAccount(context.Background(), []string{a2.Name, a3.Name})
 				assert.NoError(t, err)
 				listTaskReq := model.ListTaskRequest{
-					Domain:  "",
-					Project: "",
+					Domain:       "",
+					Project:      "",
+					ResourceType: datasource.ResourceAccount,
 				}
 				tasks, err := task.List(context.Background(), &listTaskReq)
 				assert.NoError(t, err)
 				assert.Equal(t, 6, len(tasks))
-				task.Delete(context.Background(), tasks...)
+				err = task.Delete(context.Background(), tasks...)
+				assert.NoError(t, err)
 				tombstoneListReq := model.ListTombstoneRequest{
 					ResourceType: datasource.ResourceAccount,
 				}

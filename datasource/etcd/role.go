@@ -24,13 +24,16 @@ import (
 	"strconv"
 	"time"
 
+	rbacmodel "github.com/go-chassis/cari/rbac"
+	"github.com/go-chassis/cari/sync"
+	"github.com/little-cui/etcdadpt"
+
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/rbac"
 	"github.com/apache/servicecomb-service-center/pkg/etcdsync"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	rbacmodel "github.com/go-chassis/cari/rbac"
-	"github.com/little-cui/etcdadpt"
 )
 
 func (rm *RbacDAO) CreateRole(ctx context.Context, r *rbacmodel.Role) error {
@@ -61,7 +64,18 @@ func (rm *RbacDAO) CreateRole(ctx context.Context, r *rbacmodel.Role) error {
 		log.Error("role info is invalid", err)
 		return err
 	}
-	err = etcdadpt.PutBytes(ctx, key, value)
+	opts := []etcdadpt.OpOptions{
+		etcdadpt.OpPut(etcdadpt.WithStrKey(key), etcdadpt.WithValue(value)),
+	}
+	if datasource.EnableSync {
+		taskOpt, err := GenTaskOpts("", "", sync.CreateAction, datasource.ResourceRole, r)
+		if err != nil {
+			log.Error("", err)
+			return err
+		}
+		opts = append(opts, taskOpt)
+	}
+	err = etcdadpt.Txn(ctx, opts)
 	if err != nil {
 		log.Error("can not save account info", err)
 		return err
@@ -117,11 +131,25 @@ func (rm *RbacDAO) DeleteRole(ctx context.Context, name string) (bool, error) {
 	if exists {
 		return false, rbac.ErrRoleBindingExist
 	}
-	del, err := etcdadpt.Delete(ctx, path.GenerateRBACRoleKey(name))
+	opts := []etcdadpt.OpOptions{etcdadpt.OpDel(etcdadpt.WithStrKey(path.GenerateRBACRoleKey(name)))}
+	if datasource.EnableSync {
+		taskOpt, err := GenTaskOpts("", "", sync.DeleteAction, datasource.ResourceRole, name)
+		if err != nil {
+			log.Error("", err)
+			return false, err
+		}
+		tombstoneOpt, err := GenTombstoneOpts("", "", datasource.ResourceRole, name)
+		if err != nil {
+			log.Error("", err)
+			return false, err
+		}
+		opts = append(opts, taskOpt, tombstoneOpt)
+	}
+	err = etcdadpt.Txn(ctx, opts)
 	if err != nil {
 		return false, err
 	}
-	return del, nil
+	return true, nil
 }
 func RoleBindingExists(ctx context.Context, role string) (bool, error) {
 	_, total, err := etcdadpt.List(ctx, path.GenRoleAccountPrefixIdxKey(role))
@@ -138,5 +166,16 @@ func (rm *RbacDAO) UpdateRole(ctx context.Context, name string, role *rbacmodel.
 		log.Error("role info is invalid", err)
 		return err
 	}
-	return etcdadpt.PutBytes(ctx, path.GenerateRBACRoleKey(name), value)
+	opts := []etcdadpt.OpOptions{
+		etcdadpt.OpPut(etcdadpt.WithStrKey(path.GenerateRBACRoleKey(name)), etcdadpt.WithValue(value)),
+	}
+	if datasource.EnableSync {
+		taskOpt, err := GenTaskOpts("", "", sync.UpdateAction, datasource.ResourceRole, role)
+		if err != nil {
+			log.Error("", err)
+			return err
+		}
+		opts = append(opts, taskOpt)
+	}
+	return etcdadpt.Txn(ctx, opts)
 }
