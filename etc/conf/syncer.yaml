@@ -1,56 +1,16 @@
-# run mode, supports (single, cluster)
-mode: signle
-# node name, must be unique on the network
-node: syncer-node
-# Cluster name, clustering by this name
-cluster: syncer-cluster
-dataDir: ./syncer-data/
-listener:
-  # Address used to network with other Syncers in LAN
-  bindAddr: 0.0.0.0:30190
-  # Address used to network with other Syncers in WAN
-  advertiseAddr: ""
-  # Address used to synchronize data with other Syncers
-  rpcAddr: 0.0.0.0:30191
-  # Address used to communicate with other cluster peers
-  peerAddr: 127.0.0.1:30192
-  tlsMount:
-    enabled: false
-    name: syncer
-join:
-  enabled: false
-  # Address to join the network by specifying at least one existing member
-  address: 127.0.0.1:30190
-  # Limit the maximum of RetryJoin, default is 0, means no limit
-  retryMax: 3
-  retryInterval: 30s
-task:
-  kind: ticker
-  params:
-    # Time interval between timing tasks, default is 30s
-    - key: interval
-      value: 30s
-registry:
-  plugin: servicecenter
-  address: http://127.0.0.1:30100
-  tlsMount:
-    enabled: false
-    name: servicecenter
-tlsConfigs:
-  - name: syncer
-    verifyPeer: true
-    minVersion: TLSv1.2
-    caFile: ./certs/trust.cer
-    certFile: ./certs/server.cer
-    keyFile: ./certs/server_key.pem
-    passphrase: ""
-    ciphers:
-      - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-      - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
-      - TLS_RSA_WITH_AES_256_GCM_SHA384
-      - TLS_RSA_WITH_AES_128_GCM_SHA256
-  - name: servicecenter
-    verifyPeer: false
-    caFile: ./certs/trust.cer
-    certFile: ./certs/server.cer
-    keyFile: ./certs/server_key.pem
+sync:
+  datacenter:
+    name: dc1
+  peers:
+    - name: dc2
+      kind: servicecomb
+      endpoints: [ "https://127.0.0.1:30100" ]
+      # only allow mode implemented in incremental approach like push, watch(such as pub/sub, long polling)
+      mode: [ push ]
+      caFile: certs/ca.crt
+      revision: 100
+    - name: dc3
+      kind: consul
+      # since consul will not push data to servcecomb, if we need set push and watch mode to achieve two direction sync
+      mode: [ push, watch ]
+      revison: 200

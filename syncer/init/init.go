@@ -15,18 +15,15 @@
  * limitations under the License.
  */
 
-package main
+package init
 
 import (
-	_ "github.com/apache/servicecomb-service-center/server/init"
-	_ "github.com/apache/servicecomb-service-center/syncer/init"
-
-	_ "github.com/apache/servicecomb-service-center/server/bootstrap"
-	_ "github.com/apache/servicecomb-service-center/syncer/bootstrap"
-
-	"github.com/apache/servicecomb-service-center/server"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/syncer/config"
 )
 
-func main() {
-	server.Run()
+func init() {
+	if err := config.Init(); err != nil {
+		log.Error("syncer config init failed", err)
+	}
 }
