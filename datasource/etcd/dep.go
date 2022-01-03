@@ -23,6 +23,10 @@ import (
 	"errors"
 	"fmt"
 
+	pb "github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/cari/sync"
+	"github.com/little-cui/etcdadpt"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/event"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
@@ -30,8 +34,6 @@ import (
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	pb "github.com/go-chassis/cari/discovery"
-	"github.com/little-cui/etcdadpt"
 )
 
 type DepManager struct {
@@ -162,6 +164,14 @@ func (dm *DepManager) AddOrUpdateDependencies(ctx context.Context, dependencyInf
 		opts = append(opts, etcdadpt.OpPut(etcdadpt.WithStrKey(key), etcdadpt.WithValue(data)))
 	}
 
+	if datasource.EnableSync {
+		taskOpt, err := GenTaskOpts("", "", sync.UpdateAction, datasource.ResourceDependency, dependencyInfos)
+		if err != nil {
+			log.Error("", err)
+			return pb.CreateResponse(pb.ErrInternal, err.Error()), err
+		}
+		opts = append(opts, taskOpt)
+	}
 	err := etcdadpt.Txn(ctx, opts)
 	if err != nil {
 		log.Error(fmt.Sprintf("put request into dependency queue failed, override: %t, %v",
