@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	pb "github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/cari/sync"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/apache/servicecomb-service-center/datasource"
@@ -38,8 +39,9 @@ func depGetContext() context.Context {
 func TestSyncAddOrUpdateDependencies(t *testing.T) {
 	datasource.EnableSync = true
 	var (
-		consumerId string
-		providerId string
+		consumerId  string
+		providerId1 string
+		providerId2 string
 	)
 
 	t.Run("register service", func(t *testing.T) {
@@ -58,7 +60,7 @@ func TestSyncAddOrUpdateDependencies(t *testing.T) {
 			assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 			consumerId = resp.ServiceId
 		})
-		t.Run("create a provider service should pass", func(t *testing.T) {
+		t.Run("create two provider services should pass", func(t *testing.T) {
 			resp, err := datasource.GetMetadataManager().RegisterService(depGetContext(), &pb.CreateServiceRequest{
 				Service: &pb.MicroService{
 					AppId:       "sync_dep_group",
@@ -71,12 +73,26 @@ func TestSyncAddOrUpdateDependencies(t *testing.T) {
 			assert.NotNil(t, resp)
 			assert.NoError(t, err)
 			assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
-			providerId = resp.ServiceId
+			providerId1 = resp.ServiceId
+
+			resp, err = datasource.GetMetadataManager().RegisterService(depGetContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "sync_dep_group",
+					ServiceName: "sync_dep_provider_other",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
+				},
+			})
+			assert.NotNil(t, resp)
+			assert.NoError(t, err)
+			assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
+			providerId2 = resp.ServiceId
 		})
 	})
 
-	t.Run("AddOrUpdateDependencies", func(t *testing.T) {
-		t.Run("add dependencies should pass", func(t *testing.T) {
+	t.Run("create dependencies", func(t *testing.T) {
+		t.Run("create dependencies for microServices should pass", func(t *testing.T) {
 			consumer := &pb.MicroServiceKey{
 				ServiceName: "sync_dep_consumer",
 				AppId:       "sync_dep_group",
@@ -92,14 +108,55 @@ func TestSyncAddOrUpdateDependencies(t *testing.T) {
 						},
 					},
 				},
+			}, true)
+			assert.NotNil(t, resp)
+			assert.NoError(t, err)
+			assert.Equal(t, pb.ResponseSuccess, resp.GetCode())
+			listTaskReq := model.ListTaskRequest{
+				Domain:       "sync-dep",
+				Project:      "sync-dep",
+				ResourceType: datasource.ResourceDependency,
+				Action:       sync.CreateAction,
+				Status:       sync.PendingStatus,
+			}
+			tasks, err := task.List(context.Background(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 1, len(tasks))
+			err = task.Delete(context.Background(), tasks...)
+			assert.NoError(t, err)
+			tasks, err = task.List(context.Background(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tasks))
+		})
+	})
+
+	t.Run("add dependencies", func(t *testing.T) {
+		t.Run("add dependencies for microServices should pass", func(t *testing.T) {
+			consumer := &pb.MicroServiceKey{
+				ServiceName: "sync_dep_consumer",
+				AppId:       "sync_dep_group",
+				Version:     "1.0.0",
+			}
+			resp, err := datasource.GetDependencyManager().AddOrUpdateDependencies(depGetContext(), []*pb.ConsumerDependency{
+				{
+					Consumer: consumer,
+					Providers: []*pb.MicroServiceKey{
+						{
+							AppId:       "sync_dep_group",
+							ServiceName: "sync_dep_provider_other",
+						},
+					},
+				},
 			}, false)
 			assert.NotNil(t, resp)
 			assert.NoError(t, err)
 			assert.Equal(t, pb.ResponseSuccess, resp.GetCode())
 			listTaskReq := model.ListTaskRequest{
-				Domain:       "",
-				Project:      "",
+				Domain:       "sync-dep",
+				Project:      "sync-dep",
 				ResourceType: datasource.ResourceDependency,
+				Action:       sync.UpdateAction,
+				Status:       sync.PendingStatus,
 			}
 			tasks, err := task.List(context.Background(), &listTaskReq)
 			assert.NoError(t, err)
@@ -113,7 +170,7 @@ func TestSyncAddOrUpdateDependencies(t *testing.T) {
 	})
 
 	t.Run("unregister consumer and provider", func(t *testing.T) {
-		t.Run("unregister consumer and provider should pass", func(t *testing.T) {
+		t.Run("unregister consumer and providers should pass", func(t *testing.T) {
 			respDelP, err := datasource.GetMetadataManager().UnregisterService(depGetContext(), &pb.DeleteServiceRequest{
 				ServiceId: consumerId, Force: true,
 			})
@@ -122,7 +179,14 @@ func TestSyncAddOrUpdateDependencies(t *testing.T) {
 			assert.Equal(t, pb.ResponseSuccess, respDelP.Response.GetCode())
 
 			respDelP, err = datasource.GetMetadataManager().UnregisterService(depGetContext(), &pb.DeleteServiceRequest{
-				ServiceId: providerId, Force: true,
+				ServiceId: providerId1, Force: true,
+			})
+			assert.NotNil(t, respDelP)
+			assert.NoError(t, err)
+			assert.Equal(t, pb.ResponseSuccess, respDelP.Response.GetCode())
+
+			respDelP, err = datasource.GetMetadataManager().UnregisterService(depGetContext(), &pb.DeleteServiceRequest{
+				ServiceId: providerId2, Force: true,
 			})
 			assert.NotNil(t, respDelP)
 			assert.NoError(t, err)
