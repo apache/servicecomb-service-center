@@ -165,9 +165,15 @@ func (dm *DepManager) AddOrUpdateDependencies(ctx context.Context, dependencyInf
 	}
 
 	if datasource.EnableSync {
-		taskOpt, err := GenTaskOpts("", "", sync.UpdateAction, datasource.ResourceDependency, dependencyInfos)
+		action := sync.UpdateAction
+		if override {
+			action = sync.CreateAction
+		}
+		domain := util.ParseDomain(ctx)
+		project := util.ParseProject(ctx)
+		taskOpt, err := GenTaskOpts(domain, project, action, datasource.ResourceDependency, dependencyInfos)
 		if err != nil {
-			log.Error("", err)
+			log.Error("fail to create task", err)
 			return pb.CreateResponse(pb.ErrInternal, err.Error()), err
 		}
 		opts = append(opts, taskOpt)
