@@ -25,6 +25,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/go-chassis/cari/sync"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/cache"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
@@ -123,6 +125,19 @@ func (ds *MetadataManager) RegisterService(ctx context.Context, request *pb.Crea
 		opts = append(opts, etcdadpt.OpPut(etcdadpt.WithStrKey(alias), etcdadpt.WithStrValue(service.ServiceId)))
 		uniqueCmpOpts = append(uniqueCmpOpts, etcdadpt.NotExistKey(alias))
 		failOpts = append(failOpts, etcdadpt.OpGet(etcdadpt.WithStrKey(alias)))
+	}
+
+	if datasource.EnableSync {
+		domain := util.ParseDomain(ctx)
+		project := util.ParseProject(ctx)
+		taskOpt, err := GenTaskOpts(domain, project, sync.CreateAction, datasource.ResourceService, request)
+		if err != nil {
+			log.Error("fail to create task", err)
+			return &pb.CreateServiceResponse{
+				Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
+			}, err
+		}
+		opts = append(opts, taskOpt)
 	}
 
 	resp, err := etcdadpt.TxnWithCmp(ctx, opts, uniqueCmpOpts, failOpts)
@@ -472,11 +487,24 @@ func (ds *MetadataManager) UpdateService(ctx context.Context, request *pb.Update
 		}, err
 	}
 
+	opts := []etcdadpt.OpOptions{
+		etcdadpt.OpPut(etcdadpt.WithStrKey(key), etcdadpt.WithValue(data)),
+	}
+	if datasource.EnableSync {
+		domain := util.ParseDomain(ctx)
+		project := util.ParseProject(ctx)
+		taskOpt, err := GenTaskOpts(domain, project, sync.UpdateAction, datasource.ResourceService, request)
+		if err != nil {
+			log.Error("fail to create task", err)
+			return &pb.UpdateServicePropsResponse{
+				Response: pb.CreateResponse(pb.ErrInternal, err.Error()),
+			}, err
+		}
+		opts = append(opts, taskOpt)
+	}
+
 	// Set key file
-	resp, err := etcdadpt.TxnWithCmp(ctx,
-		etcdadpt.Ops(etcdadpt.OpPut(etcdadpt.WithStrKey(key), etcdadpt.WithValue(data))),
-		etcdadpt.If(etcdadpt.NotEqualVer(key, 0)),
-		nil)
+	resp, err := etcdadpt.TxnWithCmp(ctx, opts, etcdadpt.If(etcdadpt.NotEqualVer(key, 0)), nil)
 	if err != nil {
 		log.Error(fmt.Sprintf("update service[%s] properties failed, operator: %s", request.ServiceId, remoteIP), err)
 		return &pb.UpdateServicePropsResponse{
@@ -2013,6 +2041,23 @@ func (ds *MetadataManager) DeleteServicePri(ctx context.Context, serviceID strin
 		etcdadpt.OpDel(etcdadpt.WithStrKey(path.GenerateServiceIndexKey(serviceKey))),
 		etcdadpt.OpDel(etcdadpt.WithStrKey(path.GenerateServiceAliasKey(serviceKey))),
 		etcdadpt.OpDel(etcdadpt.WithStrKey(serviceIDKey)),
+	}
+
+	if datasource.EnableSync {
+		domain := util.ParseDomain(ctx)
+		project := util.ParseProject(ctx)
+		taskOpt, err := GenTaskOpts(domain, project, sync.DeleteAction, datasource.ResourceService,
+			&pb.DeleteServiceRequest{ServiceId: serviceID, Force: force})
+		if err != nil {
+			log.Error("fail to create task", err)
+			return pb.CreateResponse(pb.ErrInternal, err.Error()), err
+		}
+		tombstoneOpt, err := GenTombstoneOpts(domain, project, datasource.ResourceService, serviceID)
+		if err != nil {
+			log.Error("fail to create tombstone", err)
+			return pb.CreateResponse(pb.ErrInternal, err.Error()), err
+		}
+		opts = append(opts, taskOpt, tombstoneOpt)
 	}
 
 	//删除依赖规则
