@@ -22,12 +22,15 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
-	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/cari/pkg/errsvc"
 	"github.com/little-cui/etcdadpt"
+
+	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	esync "github.com/apache/servicecomb-service-center/datasource/etcd/sync"
+	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
 func AddTagIntoETCD(ctx context.Context, domainProject string, serviceID string, dataTags map[string]string) *errsvc.Error {
@@ -37,10 +40,14 @@ func AddTagIntoETCD(ctx context.Context, domainProject string, serviceID string,
 		return discovery.NewError(discovery.ErrInternal, err.Error())
 	}
 
-	resp, err := etcdadpt.TxnWithCmp(ctx,
-		etcdadpt.Ops(etcdadpt.OpPut(etcdadpt.WithStrKey(key), etcdadpt.WithValue(data))),
-		etcdadpt.If(etcdadpt.NotEqualVer(path.GenerateServiceKey(domainProject, serviceID), 0)),
-		nil)
+	opts := etcdadpt.Ops(etcdadpt.OpPut(etcdadpt.WithStrKey(key), etcdadpt.WithValue(data)))
+	syncOpts, err := esync.GenUpdateOpts(ctx, datasource.ResourceKV, data, esync.WithOpts(map[string]string{"key": key}))
+	if err != nil {
+		return discovery.NewError(discovery.ErrInternal, err.Error())
+	}
+	opts = append(opts, syncOpts...)
+	resp, err := etcdadpt.TxnWithCmp(ctx, opts,
+		etcdadpt.If(etcdadpt.NotEqualVer(path.GenerateServiceKey(domainProject, serviceID), 0)), nil)
 	if err != nil {
 		return discovery.NewError(discovery.ErrUnavailableBackend, err.Error())
 	}

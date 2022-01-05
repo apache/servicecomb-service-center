@@ -22,13 +22,13 @@ import (
 	"strconv"
 	"time"
 
-	rbacmodel "github.com/go-chassis/cari/rbac"
-	"github.com/go-chassis/cari/sync"
+	crbac "github.com/go-chassis/cari/rbac"
 	"github.com/go-chassis/foundation/stringutil"
 	"github.com/little-cui/etcdadpt"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
+	esync "github.com/apache/servicecomb-service-center/datasource/etcd/sync"
 	"github.com/apache/servicecomb-service-center/datasource/rbac"
 	"github.com/apache/servicecomb-service-center/pkg/etcdsync"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -49,7 +49,7 @@ func NewRbacDAO(opts rbac.Options) (rbac.DAO, error) {
 type RbacDAO struct {
 }
 
-func (ds *RbacDAO) CreateAccount(ctx context.Context, a *rbacmodel.Account) error {
+func (ds *RbacDAO) CreateAccount(ctx context.Context, a *crbac.Account) error {
 	lock, err := etcdsync.Lock("/account-creating/"+a.Name, -1, false)
 	if err != nil {
 		return fmt.Errorf("account %s is creating", a.Name)
@@ -83,14 +83,12 @@ func (ds *RbacDAO) CreateAccount(ctx context.Context, a *rbacmodel.Account) erro
 		log.Error("", err)
 		return err
 	}
-	if datasource.EnableSync {
-		op, err := GenTaskOpts("", "", sync.CreateAction, datasource.ResourceAccount, a)
-		if err != nil {
-			log.Error("", err)
-			return err
-		}
-		opts = append(opts, op)
+	syncOpts, err := esync.GenCreateOpts(ctx, datasource.ResourceAccount, a)
+	if err != nil {
+		log.Error("fail to create sync opts", err)
+		return err
 	}
+	opts = append(opts, syncOpts...)
 	err = etcdadpt.Txn(ctx, opts)
 	if err != nil {
 		log.Error("can not save account info", err)
@@ -100,7 +98,7 @@ func (ds *RbacDAO) CreateAccount(ctx context.Context, a *rbacmodel.Account) erro
 	return nil
 }
 
-func GenAccountOpts(a *rbacmodel.Account, action etcdadpt.Action) ([]etcdadpt.OpOptions, error) {
+func GenAccountOpts(a *crbac.Account, action etcdadpt.Action) ([]etcdadpt.OpOptions, error) {
 	opts := make([]etcdadpt.OpOptions, 0)
 	value, err := json.Marshal(a)
 	if err != nil {
@@ -126,7 +124,7 @@ func GenAccountOpts(a *rbacmodel.Account, action etcdadpt.Action) ([]etcdadpt.Op
 func (ds *RbacDAO) AccountExist(ctx context.Context, name string) (bool, error) {
 	return etcdadpt.Exist(ctx, path.GenerateRBACAccountKey(name))
 }
-func (ds *RbacDAO) GetAccount(ctx context.Context, name string) (*rbacmodel.Account, error) {
+func (ds *RbacDAO) GetAccount(ctx context.Context, name string) (*crbac.Account, error) {
 	kv, err := etcdadpt.Get(ctx, path.GenerateRBACAccountKey(name))
 	if err != nil {
 		return nil, err
@@ -134,7 +132,7 @@ func (ds *RbacDAO) GetAccount(ctx context.Context, name string) (*rbacmodel.Acco
 	if kv == nil {
 		return nil, rbac.ErrAccountNotExist
 	}
-	account := &rbacmodel.Account{}
+	account := &crbac.Account{}
 	err = json.Unmarshal(kv.Value, account)
 	if err != nil {
 		log.Error("account info format invalid", err)
@@ -144,7 +142,7 @@ func (ds *RbacDAO) GetAccount(ctx context.Context, name string) (*rbacmodel.Acco
 	return account, nil
 }
 
-func (ds *RbacDAO) compatibleOldVersionAccount(a *rbacmodel.Account) {
+func (ds *RbacDAO) compatibleOldVersionAccount(a *crbac.Account) {
 	// old version use Role, now use Roles
 	// Role/Roles will not exist at the same time
 	if len(a.Role) == 0 {
@@ -154,14 +152,14 @@ func (ds *RbacDAO) compatibleOldVersionAccount(a *rbacmodel.Account) {
 	a.Role = ""
 }
 
-func (ds *RbacDAO) ListAccount(ctx context.Context) ([]*rbacmodel.Account, int64, error) {
+func (ds *RbacDAO) ListAccount(ctx context.Context) ([]*crbac.Account, int64, error) {
 	kvs, n, err := etcdadpt.List(ctx, path.GenerateRBACAccountKey(""))
 	if err != nil {
 		return nil, 0, err
 	}
-	accounts := make([]*rbacmodel.Account, 0, n)
+	accounts := make([]*crbac.Account, 0, n)
 	for _, v := range kvs {
-		a := &rbacmodel.Account{}
+		a := &crbac.Account{}
 		err = json.Unmarshal(v.Value, a)
 		if err != nil {
 			log.Error("account info format invalid:", err)
@@ -194,20 +192,13 @@ func (ds *RbacDAO) DeleteAccount(ctx context.Context, names []string) (bool, err
 			continue //do not fail if some account is invalid
 
 		}
-		if datasource.EnableSync {
-			taskOpt, err := GenTaskOpts("", "", sync.DeleteAction, datasource.ResourceAccount, a)
-			if err != nil {
-				log.Error("", err)
-				return false, err
-			}
-			tombstoneOpt, err := GenTombstoneOpts("", "", datasource.ResourceAccount, a.Name)
-			if err != nil {
-				log.Error("", err)
-				return false, err
-			}
-			opts = append(opts, tombstoneOpt, taskOpt)
+		syncOpts, err := esync.GenDeleteOpts(ctx, datasource.ResourceAccount, a.Name, a)
+		if err != nil {
+			log.Error("fail to create sync opts", err)
+			return false, err
 		}
 		allOpts = append(allOpts, opts...)
+		allOpts = append(allOpts, syncOpts...)
 	}
 	err := etcdadpt.Txn(ctx, allOpts)
 	if err != nil {
@@ -217,7 +208,7 @@ func (ds *RbacDAO) DeleteAccount(ctx context.Context, names []string) (bool, err
 	return true, nil
 }
 
-func (ds *RbacDAO) UpdateAccount(ctx context.Context, name string, account *rbacmodel.Account) error {
+func (ds *RbacDAO) UpdateAccount(ctx context.Context, name string, account *crbac.Account) error {
 	var (
 		opts []etcdadpt.OpOptions
 		err  error
@@ -247,14 +238,12 @@ func (ds *RbacDAO) UpdateAccount(ctx context.Context, name string, account *rbac
 		}
 		opts = append(opts, opt)
 	}
-	if datasource.EnableSync {
-		op, err := GenTaskOpts("", "", sync.UpdateAction, datasource.ResourceAccount, account)
-		if err != nil {
-			log.Error("", err)
-			return err
-		}
-		opts = append(opts, op)
+	syncOpts, err := esync.GenUpdateOpts(ctx, datasource.ResourceAccount, account)
+	if err != nil {
+		log.Error("fail to create sync opts", err)
+		return err
 	}
+	opts = append(opts, syncOpts...)
 	err = etcdadpt.Txn(ctx, opts)
 	if err != nil {
 		log.Error("BatchCommit failed", err)
@@ -262,7 +251,7 @@ func (ds *RbacDAO) UpdateAccount(ctx context.Context, name string, account *rbac
 	return err
 }
 
-func hasRole(account *rbacmodel.Account, r string) bool {
+func hasRole(account *crbac.Account, r string) bool {
 	for _, n := range account.Roles {
 		if r == n {
 			return true

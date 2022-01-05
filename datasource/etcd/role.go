@@ -24,19 +24,19 @@ import (
 	"strconv"
 	"time"
 
-	rbacmodel "github.com/go-chassis/cari/rbac"
-	"github.com/go-chassis/cari/sync"
+	crbac "github.com/go-chassis/cari/rbac"
 	"github.com/little-cui/etcdadpt"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
+	esync "github.com/apache/servicecomb-service-center/datasource/etcd/sync"
 	"github.com/apache/servicecomb-service-center/datasource/rbac"
 	"github.com/apache/servicecomb-service-center/pkg/etcdsync"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
-func (rm *RbacDAO) CreateRole(ctx context.Context, r *rbacmodel.Role) error {
+func (rm *RbacDAO) CreateRole(ctx context.Context, r *crbac.Role) error {
 	lock, err := etcdsync.Lock("/role-creating/"+r.Name, -1, false)
 	if err != nil {
 		return fmt.Errorf("role %s is creating", r.Name)
@@ -67,14 +67,12 @@ func (rm *RbacDAO) CreateRole(ctx context.Context, r *rbacmodel.Role) error {
 	opts := []etcdadpt.OpOptions{
 		etcdadpt.OpPut(etcdadpt.WithStrKey(key), etcdadpt.WithValue(value)),
 	}
-	if datasource.EnableSync {
-		taskOpt, err := GenTaskOpts("", "", sync.CreateAction, datasource.ResourceRole, r)
-		if err != nil {
-			log.Error("", err)
-			return err
-		}
-		opts = append(opts, taskOpt)
+	syncOpts, err := esync.GenCreateOpts(ctx, datasource.ResourceRole, r)
+	if err != nil {
+		log.Error("fail to create sync opts", err)
+		return err
 	}
+	opts = append(opts, syncOpts...)
 	err = etcdadpt.Txn(ctx, opts)
 	if err != nil {
 		log.Error("can not save account info", err)
@@ -88,7 +86,7 @@ func (rm *RbacDAO) RoleExist(ctx context.Context, name string) (bool, error) {
 	return etcdadpt.Exist(ctx, path.GenerateRBACRoleKey(name))
 }
 
-func (rm *RbacDAO) GetRole(ctx context.Context, name string) (*rbacmodel.Role, error) {
+func (rm *RbacDAO) GetRole(ctx context.Context, name string) (*crbac.Role, error) {
 	kv, err := etcdadpt.Get(ctx, path.GenerateRBACRoleKey(name))
 	if err != nil {
 		return nil, err
@@ -96,7 +94,7 @@ func (rm *RbacDAO) GetRole(ctx context.Context, name string) (*rbacmodel.Role, e
 	if kv == nil {
 		return nil, rbac.ErrRoleNotExist
 	}
-	role := &rbacmodel.Role{}
+	role := &crbac.Role{}
 	err = json.Unmarshal(kv.Value, role)
 	if err != nil {
 		log.Error("role info format invalid", err)
@@ -104,14 +102,14 @@ func (rm *RbacDAO) GetRole(ctx context.Context, name string) (*rbacmodel.Role, e
 	}
 	return role, nil
 }
-func (rm *RbacDAO) ListRole(ctx context.Context) ([]*rbacmodel.Role, int64, error) {
+func (rm *RbacDAO) ListRole(ctx context.Context) ([]*crbac.Role, int64, error) {
 	kvs, n, err := etcdadpt.List(ctx, path.GenerateRBACRoleKey(""))
 	if err != nil {
 		return nil, 0, err
 	}
-	roles := make([]*rbacmodel.Role, 0, n)
+	roles := make([]*crbac.Role, 0, n)
 	for _, v := range kvs {
-		r := &rbacmodel.Role{}
+		r := &crbac.Role{}
 		err = json.Unmarshal(v.Value, r)
 		if err != nil {
 			log.Error("role info format invalid:", err)
@@ -132,19 +130,12 @@ func (rm *RbacDAO) DeleteRole(ctx context.Context, name string) (bool, error) {
 		return false, rbac.ErrRoleBindingExist
 	}
 	opts := []etcdadpt.OpOptions{etcdadpt.OpDel(etcdadpt.WithStrKey(path.GenerateRBACRoleKey(name)))}
-	if datasource.EnableSync {
-		taskOpt, err := GenTaskOpts("", "", sync.DeleteAction, datasource.ResourceRole, name)
-		if err != nil {
-			log.Error("", err)
-			return false, err
-		}
-		tombstoneOpt, err := GenTombstoneOpts("", "", datasource.ResourceRole, name)
-		if err != nil {
-			log.Error("", err)
-			return false, err
-		}
-		opts = append(opts, taskOpt, tombstoneOpt)
+	syncOpts, err := esync.GenDeleteOpts(ctx, datasource.ResourceRole, name, name)
+	if err != nil {
+		log.Error("fail to create sync opts", err)
+		return false, err
 	}
+	opts = append(opts, syncOpts...)
 	err = etcdadpt.Txn(ctx, opts)
 	if err != nil {
 		return false, err
@@ -159,7 +150,7 @@ func RoleBindingExists(ctx context.Context, role string) (bool, error) {
 	}
 	return total > 0, nil
 }
-func (rm *RbacDAO) UpdateRole(ctx context.Context, name string, role *rbacmodel.Role) error {
+func (rm *RbacDAO) UpdateRole(ctx context.Context, name string, role *crbac.Role) error {
 	role.UpdateTime = strconv.FormatInt(time.Now().Unix(), 10)
 	value, err := json.Marshal(role)
 	if err != nil {
@@ -169,13 +160,11 @@ func (rm *RbacDAO) UpdateRole(ctx context.Context, name string, role *rbacmodel.
 	opts := []etcdadpt.OpOptions{
 		etcdadpt.OpPut(etcdadpt.WithStrKey(path.GenerateRBACRoleKey(name)), etcdadpt.WithValue(value)),
 	}
-	if datasource.EnableSync {
-		taskOpt, err := GenTaskOpts("", "", sync.UpdateAction, datasource.ResourceRole, role)
-		if err != nil {
-			log.Error("", err)
-			return err
-		}
-		opts = append(opts, taskOpt)
+	syncOpts, err := esync.GenUpdateOpts(ctx, datasource.ResourceRole, role)
+	if err != nil {
+		log.Error("fail to create sync opts", err)
+		return err
 	}
+	opts = append(opts, syncOpts...)
 	return etcdadpt.Txn(ctx, opts)
 }

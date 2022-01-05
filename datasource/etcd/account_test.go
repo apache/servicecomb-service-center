@@ -21,7 +21,7 @@ import (
 	"context"
 	"testing"
 
-	rbacmodel "github.com/go-chassis/cari/rbac"
+	crbac "github.com/go-chassis/cari/rbac"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/apache/servicecomb-service-center/datasource"
@@ -39,7 +39,7 @@ func TestSyncAccount(t *testing.T) {
 	t.Run("create account", func(t *testing.T) {
 		t.Run("creating a account then delete it will create two tasks and a tombstone should pass",
 			func(t *testing.T) {
-				a1 := rbacmodel.Account{
+				a1 := crbac.Account{
 					ID:                  "sync-create-11111",
 					Name:                "sync-create-account1",
 					Password:            "tnuocca-tset",
@@ -78,7 +78,7 @@ func TestSyncAccount(t *testing.T) {
 	t.Run("update account", func(t *testing.T) {
 		t.Run("creating two accounts then update them,finally delete them, will create six tasks and two tombstones should pass",
 			func(t *testing.T) {
-				a2 := rbacmodel.Account{
+				a2 := crbac.Account{
 					ID:                  "sync-update-22222",
 					Name:                "sync-update-account2",
 					Password:            "tnuocca-tset",
@@ -86,7 +86,7 @@ func TestSyncAccount(t *testing.T) {
 					TokenExpirationTime: "2020-12-30",
 					CurrentPassword:     "tnuocca-tset",
 				}
-				a3 := rbacmodel.Account{
+				a3 := crbac.Account{
 					ID:                  "sync-update-33333",
 					Name:                "sync-update-account3",
 					Password:            "tnuocca-tset",

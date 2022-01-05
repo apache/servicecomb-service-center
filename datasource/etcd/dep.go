@@ -24,14 +24,14 @@ import (
 	"fmt"
 
 	pb "github.com/go-chassis/cari/discovery"
-	"github.com/go-chassis/cari/sync"
 	"github.com/little-cui/etcdadpt"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/event"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
-	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
+	esync "github.com/apache/servicecomb-service-center/datasource/etcd/sync"
+	eutil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
@@ -42,7 +42,7 @@ type DepManager struct {
 func (dm *DepManager) SearchProviderDependency(ctx context.Context, request *pb.GetDependenciesRequest) (*pb.GetProDependenciesResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
 	providerServiceID := request.ServiceId
-	provider, err := serviceUtil.GetService(ctx, domainProject, providerServiceID)
+	provider, err := eutil.GetService(ctx, domainProject, providerServiceID)
 
 	if err != nil {
 		if errors.Is(err, datasource.ErrNoData) {
@@ -55,7 +55,7 @@ func (dm *DepManager) SearchProviderDependency(ctx context.Context, request *pb.
 		return nil, err
 	}
 
-	services, err := serviceUtil.GetConsumers(ctx, domainProject, provider, toDependencyFilterOptions(request)...)
+	services, err := eutil.GetConsumers(ctx, domainProject, provider, toDependencyFilterOptions(request)...)
 	if err != nil {
 		log.Error(fmt.Sprintf("query provider failed, provider is %s/%s/%s/%s",
 			provider.Environment, provider.AppId, provider.ServiceName, provider.Version), err)
@@ -73,7 +73,7 @@ func (dm *DepManager) SearchProviderDependency(ctx context.Context, request *pb.
 func (dm *DepManager) SearchConsumerDependency(ctx context.Context, request *pb.GetDependenciesRequest) (*pb.GetConDependenciesResponse, error) {
 	consumerID := request.ServiceId
 	domainProject := util.ParseDomainProject(ctx)
-	consumer, err := serviceUtil.GetService(ctx, domainProject, consumerID)
+	consumer, err := eutil.GetService(ctx, domainProject, consumerID)
 
 	if err != nil {
 		if errors.Is(err, datasource.ErrNoData) {
@@ -86,7 +86,7 @@ func (dm *DepManager) SearchConsumerDependency(ctx context.Context, request *pb.
 		return nil, err
 	}
 
-	services, err := serviceUtil.GetProviders(ctx, domainProject, consumer, toDependencyFilterOptions(request)...)
+	services, err := eutil.GetProviders(ctx, domainProject, consumer, toDependencyFilterOptions(request)...)
 	if err != nil {
 		log.Error(fmt.Sprintf("query consumer failed, consumer is %s/%s/%s/%s",
 			consumer.Environment, consumer.AppId, consumer.ServiceName, consumer.Version), err)
@@ -136,7 +136,7 @@ func (dm *DepManager) AddOrUpdateDependencies(ctx context.Context, dependencyInf
 			return rsp.Response, nil
 		}
 
-		consumerID, err := serviceUtil.GetServiceID(ctx, consumerInfo)
+		consumerID, err := eutil.GetServiceID(ctx, consumerInfo)
 		if err != nil {
 			log.Error(fmt.Sprintf("put request into dependency queue failed, override: %t, get consumer[%s] id failed",
 				override, consumerFlag), err)
@@ -164,21 +164,17 @@ func (dm *DepManager) AddOrUpdateDependencies(ctx context.Context, dependencyInf
 		opts = append(opts, etcdadpt.OpPut(etcdadpt.WithStrKey(key), etcdadpt.WithValue(data)))
 	}
 
-	if datasource.EnableSync {
-		action := sync.UpdateAction
-		if override {
-			action = sync.CreateAction
-		}
-		domain := util.ParseDomain(ctx)
-		project := util.ParseProject(ctx)
-		taskOpt, err := GenTaskOpts(domain, project, action, datasource.ResourceDependency, dependencyInfos)
-		if err != nil {
-			log.Error("fail to create task", err)
-			return pb.CreateResponse(pb.ErrInternal, err.Error()), err
-		}
-		opts = append(opts, taskOpt)
+	syncOpts, err := esync.GenCreateOpts(ctx, datasource.ResourceDependency, dependencyInfos)
+	if !override {
+		syncOpts, err = esync.GenUpdateOpts(ctx, datasource.ResourceDependency, dependencyInfos)
 	}
-	err := etcdadpt.Txn(ctx, opts)
+	if err != nil {
+		log.Error("fail to create sync opts", err)
+		return pb.CreateResponse(pb.ErrInternal, err.Error()), err
+	}
+	opts = append(opts, syncOpts...)
+
+	err = etcdadpt.Txn(ctx, opts)
 	if err != nil {
 		log.Error(fmt.Sprintf("put request into dependency queue failed, override: %t, %v",
 			override, dependencyInfos), err)
