@@ -33,27 +33,34 @@ type Config struct {
 }
 
 type Sync struct {
-	Peers []*Peer `yaml:"peers"`
+	EnableOnStart bool    `yaml:"enableOnStart"`
+	Peers         []*Peer `yaml:"peers"`
 }
 
 type Peer struct {
-	// TODO
+	Name      string   `yaml:"name"`
+	Kind      string   `yaml:"kind"`
+	Endpoints []string `yaml:"endpoints"`
+	Mode      []string `yaml:"mode"`
 }
 
 func Init() error {
 	err := archaius.Init(archaius.WithMemorySource(), archaius.WithENVSource())
 	if err != nil {
 		log.Fatal("can not init archaius", err)
+		return err
 	}
 
 	err = archaius.AddFile(filepath.Join(util.GetAppRoot(), "conf", "syncer.yaml"))
 	if err != nil {
 		log.Warn(fmt.Sprintf("can not add syncer config file source, error: %s", err))
+		return err
 	}
 
 	err = Reload()
 	if err != nil {
 		log.Fatal("reload syncer configs failed", err)
+		return err
 	}
 	return nil
 }
@@ -70,4 +77,9 @@ func Reload() error {
 // GetConfig return the syncer full configurations
 func GetConfig() Config {
 	return config
+}
+
+// SetConfig for UT
+func SetConfig(c Config) {
+	config = c
 }

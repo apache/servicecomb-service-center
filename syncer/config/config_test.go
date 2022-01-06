@@ -18,6 +18,9 @@
 package config_test
 
 import (
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/apache/servicecomb-service-center/syncer/config"
@@ -25,6 +28,14 @@ import (
 )
 
 func TestGetConfig(t *testing.T) {
+	changeConfigPath()
 	assert.NoError(t, config.Init())
 	assert.NotNil(t, config.GetConfig().Sync)
+}
+
+func changeConfigPath() {
+	workDir, _ := os.Getwd()
+	replacePath := filepath.Join("syncer", "config")
+	workDir = strings.ReplaceAll(workDir, replacePath, "etc")
+	os.Setenv("APP_ROOT", workDir)
 }
