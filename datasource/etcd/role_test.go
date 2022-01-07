@@ -22,7 +22,7 @@ import (
 	"strconv"
 	"testing"
 
-	rbacmodel "github.com/go-chassis/cari/rbac"
+	crbac "github.com/go-chassis/cari/rbac"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/apache/servicecomb-service-center/datasource"
@@ -39,7 +39,7 @@ func TestSyncRole(t *testing.T) {
 
 	t.Run("create role", func(t *testing.T) {
 		t.Run("creating a role and delete it will create two tasks and a tombstone should pass", func(t *testing.T) {
-			r1 := rbacmodel.Role{
+			r1 := crbac.Role{
 				ID:    "create-11111",
 				Name:  "create-role",
 				Perms: nil,
@@ -78,12 +78,12 @@ func TestSyncRole(t *testing.T) {
 	t.Run("update role", func(t *testing.T) {
 		t.Run("create two roles ,then update them, finally delete them, will create six tasks and two tombstones should pass",
 			func(t *testing.T) {
-				r2 := rbacmodel.Role{
+				r2 := crbac.Role{
 					ID:    "update-22222",
 					Name:  "update-role-22222",
 					Perms: nil,
 				}
-				r3 := rbacmodel.Role{
+				r3 := crbac.Role{
 					ID:    "update-33333",
 					Name:  "update-role-33333",
 					Perms: nil,

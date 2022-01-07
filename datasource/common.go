@@ -36,6 +36,7 @@ const (
 	ResourceRole       = "role"
 	ResourceDependency = "dependency"
 	ResourceService    = "service"
+	ResourceKV         = "kv"
 )
 
 // WrapErrResponse is temp func here to wait finish to refact the discosvc pkg
