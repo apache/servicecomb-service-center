@@ -22,17 +22,19 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
-	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
-	"github.com/apache/servicecomb-service-center/datasource/schema"
-	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/util"
 	mapset "github.com/deckarep/golang-set"
 	"github.com/go-chassis/cari/discovery"
 	"github.com/little-cui/etcdadpt"
 	"go.etcd.io/etcd/api/v3/mvccpb"
+
+	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sync"
+	eutil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
+	"github.com/apache/servicecomb-service-center/datasource/schema"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
 func init() {
@@ -55,7 +57,7 @@ func (dao *SchemaDAO) GetRef(ctx context.Context, refRequest *schema.RefRequest)
 	schemaID := refRequest.SchemaID
 
 	refKey := path.GenerateServiceSchemaRefKey(domainProject, serviceID, schemaID)
-	refResp, err := sd.SchemaRef().Search(ctx, serviceUtil.ContextOptions(ctx, etcdadpt.WithStrKey(refKey))...)
+	refResp, err := sd.SchemaRef().Search(ctx, eutil.ContextOptions(ctx, etcdadpt.WithStrKey(refKey))...)
 	if err != nil {
 		log.Error(fmt.Sprintf("get service[%s] schema-ref[%s] failed", serviceID, schemaID), err)
 		return nil, err
@@ -83,7 +85,7 @@ func (dao *SchemaDAO) GetRef(ctx context.Context, refRequest *schema.RefRequest)
 func getSummary(ctx context.Context, serviceID string, schemaID string) (string, error) {
 	domainProject := util.ParseDomainProject(ctx)
 	summaryKey := path.GenerateServiceSchemaSummaryKey(domainProject, serviceID, schemaID)
-	summaryResp, err := sd.SchemaSummary().Search(ctx, serviceUtil.ContextOptions(ctx, etcdadpt.WithStrKey(summaryKey))...)
+	summaryResp, err := sd.SchemaSummary().Search(ctx, eutil.ContextOptions(ctx, etcdadpt.WithStrKey(summaryKey))...)
 	if err != nil {
 		return "", err
 	}
@@ -101,7 +103,7 @@ func (dao *SchemaDAO) ListRef(ctx context.Context, refRequest *schema.RefRequest
 	serviceID := refRequest.ServiceID
 
 	refPrefixKey := path.GenerateServiceSchemaRefKey(domainProject, serviceID, "")
-	refResp, err := sd.SchemaRef().Search(ctx, serviceUtil.ContextOptions(ctx,
+	refResp, err := sd.SchemaRef().Search(ctx, eutil.ContextOptions(ctx,
 		etcdadpt.WithStrKey(refPrefixKey), etcdadpt.WithPrefix())...)
 	if err != nil {
 		log.Error(fmt.Sprintf("get service[%s] schema-refs failed", serviceID), err)
@@ -132,7 +134,7 @@ func (dao *SchemaDAO) ListRef(ctx context.Context, refRequest *schema.RefRequest
 func getSummaryMap(ctx context.Context, serviceID string) (map[string]string, error) {
 	domainProject := util.ParseDomainProject(ctx)
 	summaryPrefixKey := path.GenerateServiceSchemaSummaryKey(domainProject, serviceID, "")
-	summaryResp, err := sd.SchemaSummary().Search(ctx, serviceUtil.ContextOptions(ctx,
+	summaryResp, err := sd.SchemaSummary().Search(ctx, eutil.ContextOptions(ctx,
 		etcdadpt.WithStrKey(summaryPrefixKey), etcdadpt.WithPrefix())...)
 	if err != nil {
 		return nil, err
@@ -156,6 +158,19 @@ func (dao *SchemaDAO) DeleteRef(ctx context.Context, refRequest *schema.RefReque
 		etcdadpt.OpDel(etcdadpt.WithStrKey(refKey)),
 		etcdadpt.OpDel(etcdadpt.WithStrKey(summaryKey)),
 	}
+	refOpts, err := sync.GenDeleteOpts(ctx, datasource.ResourceKV, refKey, refKey)
+	if err != nil {
+		log.Error("fail to create delete opts", err)
+		return err
+	}
+	options = append(options, refOpts...)
+	summaryOpts, err := sync.GenDeleteOpts(ctx, datasource.ResourceKV, summaryKey, summaryKey)
+	if err != nil {
+		log.Error("fail to create delete opts", err)
+		return err
+	}
+	options = append(options, summaryOpts...)
+
 	cmp, err := etcdadpt.TxnWithCmp(ctx, options, etcdadpt.If(etcdadpt.ExistKey(refKey)), options)
 	if err != nil {
 		log.Error(fmt.Sprintf("delete service[%s] schema-ref[%s] failed", serviceID, schemaID), err)
@@ -213,6 +228,18 @@ func (dao *SchemaDAO) PutContent(ctx context.Context, contentRequest *schema.Put
 		etcdadpt.OpPut(etcdadpt.WithStrKey(refKey), etcdadpt.WithStrValue(content.Hash)),
 		etcdadpt.OpPut(etcdadpt.WithStrKey(summaryKey), etcdadpt.WithStrValue(content.Summary)),
 	}
+	refOpts, err := sync.GenUpdateOpts(ctx, datasource.ResourceKV, content.Hash, sync.WithOpts(map[string]string{"key": refKey}))
+	if err != nil {
+		log.Error("fail to create update opts", err)
+		return err
+	}
+	summaryOpts, err := sync.GenUpdateOpts(ctx, datasource.ResourceKV, content.Summary, sync.WithOpts(map[string]string{"key": summaryKey}))
+	if err != nil {
+		log.Error("fail to create update opts", err)
+		return err
+	}
+	existContentOptions = append(existContentOptions, refOpts...)
+	existContentOptions = append(existContentOptions, summaryOpts...)
 
 	// append the schemaID into service.Schemas if schemaID is new
 	if !util.SliceHave(service.Schemas, schemaID) {
@@ -230,6 +257,13 @@ func (dao *SchemaDAO) PutContent(ctx context.Context, contentRequest *schema.Put
 	newContentOptions := append(existContentOptions,
 		etcdadpt.OpPut(etcdadpt.WithStrKey(contentKey), etcdadpt.WithStrValue(content.Content)),
 	)
+	contentOpts, err := sync.GenUpdateOpts(ctx, datasource.ResourceKV, content.Content, sync.WithOpts(map[string]string{"key": contentKey}))
+	if err != nil {
+		log.Error("fail to create update opts", err)
+		return err
+	}
+	newContentOptions = append(newContentOptions, contentOpts...)
+
 	cmp, err := etcdadpt.TxnWithCmp(ctx, newContentOptions, etcdadpt.If(etcdadpt.NotExistKey(contentKey)), existContentOptions)
 	if err != nil {
 		log.Error(fmt.Sprintf("put kv[%s] failed", refKey), err)
@@ -261,7 +295,7 @@ func (dao *SchemaDAO) PutManyContent(ctx context.Context, contentRequest *schema
 	}
 
 	// unsafe!
-	schemaIDs, options := transformSchemaIDsAndOptions(domainProject, serviceID, service.Schemas, contentRequest)
+	schemaIDs, options := transformSchemaIDsAndOptions(ctx, domainProject, serviceID, service.Schemas, contentRequest)
 
 	// should update service.Schemas
 	service.Schemas = schemaIDs
@@ -272,10 +306,18 @@ func (dao *SchemaDAO) PutManyContent(ctx context.Context, contentRequest *schema
 	}
 	serviceKey := path.GenerateServiceKey(domainProject, serviceID)
 	options = append(options, etcdadpt.OpPut(etcdadpt.WithStrKey(serviceKey), etcdadpt.WithValue(body)))
+	// update service task
+	serviceOpts, err := sync.GenUpdateOpts(ctx, datasource.ResourceKV, body, sync.WithOpts(map[string]string{"key": serviceKey}))
+	if err != nil {
+		log.Error("fail to create update opts", err)
+	}
+	options = append(options, serviceOpts...)
+
 	return etcdadpt.Txn(ctx, options)
 }
 
-func transformSchemaIDsAndOptions(domainProject string, serviceID string, oldSchemaIDs []string, contentRequest *schema.PutManyContentRequest) ([]string, []etcdadpt.OpOptions) {
+func transformSchemaIDsAndOptions(ctx context.Context, domainProject string, serviceID string,
+	oldSchemaIDs []string, contentRequest *schema.PutManyContentRequest) ([]string, []etcdadpt.OpOptions) {
 	pendingDeleteSchemaIDs := mapset.NewSet()
 	for _, schemaID := range oldSchemaIDs {
 		pendingDeleteSchemaIDs.Add(schemaID)
@@ -293,6 +335,22 @@ func transformSchemaIDsAndOptions(domainProject string, serviceID string, oldSch
 			etcdadpt.OpPut(etcdadpt.WithStrKey(contentKey), etcdadpt.WithStrValue(content.Content)),
 			etcdadpt.OpPut(etcdadpt.WithStrKey(summaryKey), etcdadpt.WithStrValue(content.Summary)),
 		)
+		refOpts, err := sync.GenUpdateOpts(ctx, datasource.ResourceKV, content.Hash, sync.WithOpts(map[string]string{"key": refKey}))
+		if err != nil {
+			log.Error("fail to create update opts", err)
+		}
+		options = append(options, refOpts...)
+		contentOpts, err := sync.GenUpdateOpts(ctx, datasource.ResourceKV, content.Content, sync.WithOpts(map[string]string{"key": contentKey}))
+		if err != nil {
+			log.Error("fail to create update opts", err)
+		}
+		options = append(options, contentOpts...)
+		summaryOpts, err := sync.GenUpdateOpts(ctx, datasource.ResourceKV, content.Summary, sync.WithOpts(map[string]string{"key": summaryKey}))
+		if err != nil {
+			log.Error("fail to create update opts", err)
+		}
+		options = append(options, summaryOpts...)
+
 		schemaIDs = append(schemaIDs, schemaID)
 		pendingDeleteSchemaIDs.Remove(schemaID)
 	}
@@ -305,6 +363,16 @@ func transformSchemaIDsAndOptions(domainProject string, serviceID string, oldSch
 			etcdadpt.OpDel(etcdadpt.WithStrKey(refKey)),
 			etcdadpt.OpDel(etcdadpt.WithStrKey(summaryKey)),
 		)
+		refOpts, err := sync.GenDeleteOpts(ctx, datasource.ResourceKV, refKey, refKey)
+		if err != nil {
+			log.Error("fail to create update opts", err)
+		}
+		options = append(options, refOpts...)
+		summaryOpt, err := sync.GenDeleteOpts(ctx, datasource.ResourceKV, summaryKey, summaryKey)
+		if err != nil {
+			log.Error("fail to create update opts", err)
+		}
+		options = append(options, summaryOpt...)
 	}
 	return schemaIDs, options
 }
@@ -341,7 +409,7 @@ func (dao *SchemaDAO) DeleteContent(ctx context.Context, contentRequest *schema.
 func getContentHashMap(ctx context.Context) (map[string]struct{}, error) {
 	domainProject := util.ParseDomainProject(ctx)
 	refPrefixKey := path.GetServiceSchemaRefRootKey(domainProject) + path.SPLIT
-	refResp, err := sd.SchemaRef().Search(ctx, serviceUtil.ContextOptions(ctx,
+	refResp, err := sd.SchemaRef().Search(ctx, eutil.ContextOptions(ctx,
 		etcdadpt.WithStrKey(refPrefixKey), etcdadpt.WithPrefix())...)
 	if err != nil {
 		return nil, err
@@ -393,7 +461,7 @@ func filterNoRefContentHashes(ctx context.Context, kvs []*mvccpb.KeyValue) (maps
 	}
 
 	refPrefixKey := path.GetServiceSchemaRefRootKey("")
-	resp, err := sd.SchemaRef().Search(ctx, serviceUtil.ContextOptions(ctx,
+	resp, err := sd.SchemaRef().Search(ctx, eutil.ContextOptions(ctx,
 		etcdadpt.WithStrKey(refPrefixKey), etcdadpt.WithPrefix())...)
 	if err != nil {
 		return nil, err

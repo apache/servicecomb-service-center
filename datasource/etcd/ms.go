@@ -1544,13 +1544,24 @@ func (ds *MetadataManager) DeleteSchema(ctx context.Context, request *pb.DeleteS
 		return nil, schema.ErrSchemaNotFound
 	}
 	epSummaryKey := path.GenerateServiceSchemaSummaryKey(domainProject, request.ServiceId, request.SchemaId)
-	resp, errDo := etcdadpt.TxnWithCmp(ctx,
-		etcdadpt.Ops(
-			etcdadpt.OpDel(etcdadpt.WithStrKey(epSummaryKey)),
-			etcdadpt.OpDel(etcdadpt.WithStrKey(key)),
-		),
+	opts := []etcdadpt.OpOptions{etcdadpt.OpDel(etcdadpt.WithStrKey(epSummaryKey)), etcdadpt.OpDel(etcdadpt.WithStrKey(key))}
+	schemaKeyOpt, err := esync.GenDeleteOpts(ctx, datasource.ResourceKV, key, key)
+	if err != nil {
+		log.Error("fail to create delete opts", err)
+		return nil, err
+	}
+	opts = append(opts, schemaKeyOpt...)
+	schemaSummaryKeyOpt, err := esync.GenDeleteOpts(ctx, datasource.ResourceKV, epSummaryKey, epSummaryKey)
+	if err != nil {
+		log.Error("fail to create delete opts", err)
+		return nil, err
+	}
+	opts = append(opts, schemaSummaryKeyOpt...)
+
+	resp, errDo := etcdadpt.TxnWithCmp(ctx, opts,
 		etcdadpt.If(etcdadpt.NotEqualVer(path.GenerateServiceKey(domainProject, request.ServiceId), 0)),
 		nil)
+
 	if errDo != nil {
 		log.Error(fmt.Sprintf("delete schema[%s/%s] failed, operator: %s",
 			request.ServiceId, request.SchemaId, remoteIP), errDo)
