@@ -6,15 +6,21 @@ import (
 
 	v1sync "github.com/apache/servicecomb-service-center/api/sync/v1"
 	"github.com/apache/servicecomb-service-center/client"
+	"github.com/apache/servicecomb-service-center/pkg/rpc"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNewSetForConfig(t *testing.T) {
-	cs, err := client.NewSetForConfig(client.SetConfig{
-		Addr: "127.0.0.1:30105",
-	})
+	conn, err := rpc.GetPickFirstLbConn(
+		&rpc.Config{
+			Addrs:       []string{"127.0.0.1:30105"},
+			Scheme:      "test",
+			ServiceName: "serviceName",
+		})
 	assert.NoError(t, err)
-	_, err = cs.EventServiceClient.Sync(context.TODO(), &v1sync.EventList{Events: []*v1sync.Event{
+	defer conn.Close()
+	set := client.NewSet(conn)
+	_, err = set.EventServiceClient.Sync(context.TODO(), &v1sync.EventList{Events: []*v1sync.Event{
 		{Action: "create"},
 	}})
 	assert.NoError(t, err)

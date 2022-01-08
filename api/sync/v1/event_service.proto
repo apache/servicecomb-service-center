@@ -18,6 +18,14 @@ message Result {
   int32  code  = 1; //reuse standard http code
   string message = 2;
 }
+
+message HealthRequest {
+}
+message HealthReply {
+  string status = 1;
+}
+
 service EventService {
   rpc Sync(EventList) returns (Results) {}
+  rpc Health(HealthRequest) returns (HealthReply) {}
 }

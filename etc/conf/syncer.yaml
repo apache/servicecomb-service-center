@@ -1,17 +1,14 @@
 sync:
-  enableOnStart: false
-  datacenter:
-    name: dc1
+  enableOnStart: true
   peers:
     - name: dc2
       kind: servicecomb
-      endpoints: ["https://127.0.0.1:30100"]
+      endpoints: ["127.0.0.1:30105"]
       # only allow mode implemented in incremental approach like push, watch(such as pub/sub, long polling)
       mode: [push]
-      caFile: certs/ca.crt
       revision: 100
     - name: dc3
       kind: consul
+      endpoints: []
       # since consul will not push data to servcecomb, if we need set push and watch mode to achieve two direction sync
       mode: [push,watch]
-      revison: 200
