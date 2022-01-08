@@ -74,6 +74,17 @@ func InitRegistration() {
 			Times:    RegistryDefaultLeaseRetryTimes,
 		},
 	}
+
+	name := config.GetString("registry.instance.datacenter.name", " ")
+	region := config.GetString("registry.instance.datacenter.region", " ")
+	availableZone := config.GetString("registry.instance.datacenter.availableZone", " ")
+	if len(name) > 0 && len(region) > 0 && len(availableZone) > 0 {
+		Instance.DataCenterInfo = &discovery.DataCenterInfo{
+			Name:          name,
+			Region:        region,
+			AvailableZone: availableZone,
+		}
+	}
 }
 
 func AddDefaultContextValue(ctx context.Context) context.Context {
