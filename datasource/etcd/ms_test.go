@@ -64,12 +64,12 @@ func TestSyncMicroService(t *testing.T) {
 				Action:       sync.CreateAction,
 				Status:       sync.PendingStatus,
 			}
-			tasks, err := task.List(context.Background(), &listTaskReq)
+			tasks, err := task.List(microServiceGetContext(), &listTaskReq)
 			assert.NoError(t, err)
 			assert.Equal(t, 1, len(tasks))
-			err = task.Delete(context.Background(), tasks...)
+			err = task.Delete(microServiceGetContext(), tasks...)
 			assert.NoError(t, err)
-			tasks, err = task.List(context.Background(), &listTaskReq)
+			tasks, err = task.List(microServiceGetContext(), &listTaskReq)
 			assert.NoError(t, err)
 			assert.Equal(t, 0, len(tasks))
 		})
@@ -92,12 +92,12 @@ func TestSyncMicroService(t *testing.T) {
 				Action:       sync.UpdateAction,
 				Status:       sync.PendingStatus,
 			}
-			tasks, err := task.List(context.Background(), &listTaskReq)
+			tasks, err := task.List(microServiceGetContext(), &listTaskReq)
 			assert.NoError(t, err)
 			assert.Equal(t, 1, len(tasks))
-			err = task.Delete(context.Background(), tasks...)
+			err = task.Delete(microServiceGetContext(), tasks...)
 			assert.NoError(t, err)
-			tasks, err = task.List(context.Background(), &listTaskReq)
+			tasks, err = task.List(microServiceGetContext(), &listTaskReq)
 			assert.NoError(t, err)
 			assert.Equal(t, 0, len(tasks))
 		})
@@ -119,12 +119,12 @@ func TestSyncMicroService(t *testing.T) {
 				Action:       sync.DeleteAction,
 				Status:       sync.PendingStatus,
 			}
-			tasks, err := task.List(context.Background(), &listTaskReq)
+			tasks, err := task.List(microServiceGetContext(), &listTaskReq)
 			assert.NoError(t, err)
 			assert.Equal(t, 1, len(tasks))
-			err = task.Delete(context.Background(), tasks...)
+			err = task.Delete(microServiceGetContext(), tasks...)
 			assert.NoError(t, err)
-			tasks, err = task.List(context.Background(), &listTaskReq)
+			tasks, err = task.List(microServiceGetContext(), &listTaskReq)
 			assert.NoError(t, err)
 			assert.Equal(t, 0, len(tasks))
 			tombstoneListReq := model.ListTombstoneRequest{
@@ -135,7 +135,7 @@ func TestSyncMicroService(t *testing.T) {
 			tombstones, err := tombstone.List(context.Background(), &tombstoneListReq)
 			assert.NoError(t, err)
 			assert.Equal(t, 1, len(tombstones))
-			err = tombstone.Delete(context.Background(), tombstones...)
+			err = tombstone.Delete(microServiceGetContext(), tombstones...)
 			assert.NoError(t, err)
 		})
 	})
