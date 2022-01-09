@@ -23,7 +23,7 @@ import (
 	"fmt"
 	"log"
 
-	uuid "github.com/satori/go.uuid"
+	"github.com/gofrs/uuid"
 
 	"github.com/apache/servicecomb-service-center/pkg/gov"
 	"github.com/apache/servicecomb-service-center/server/config"
@@ -40,7 +40,8 @@ const MatchGroup = "match-group"
 var PolicyNames = []string{"retry", "rateLimiting", "circuitBreaker", "bulkhead"}
 
 func (d *Distributor) Create(ctx context.Context, kind, project string, p *gov.Policy) ([]byte, error) {
-	p.ID = uuid.NewV4().String()
+	id, _ := uuid.NewV4()
+	p.ID = id.String()
 	p.Kind = kind
 	log.Println(fmt.Sprintf("create %v", &p))
 	d.lbPolicies[p.GovernancePolicy.ID] = p

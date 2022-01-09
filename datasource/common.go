@@ -32,11 +32,14 @@ const (
 	RegistryAppID         = "default"
 	Provider              = "p"
 
-	ResourceAccount    = "account"
-	ResourceRole       = "role"
-	ResourceDependency = "dependency"
-	ResourceService    = "service"
-	ResourceKV         = "kv"
+	ResourceAccount      = "account"
+	ResourceRole         = "role"
+	ResourceDependency   = "dependency"
+	ResourceService      = "service"
+	ResourceKV           = "kv"
+	ResourceInstance     = "instance"
+	ResourceHeartbeat    = "heartbeat"
+	ResourceHeartbeatSet = "heartbeatSet"
 )
 
 // WrapErrResponse is temp func here to wait finish to refact the discosvc pkg

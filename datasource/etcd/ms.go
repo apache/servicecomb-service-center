@@ -27,6 +27,7 @@ import (
 
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/cari/pkg/errsvc"
+	"github.com/go-chassis/cari/sync"
 	"github.com/go-chassis/foundation/gopool"
 	"github.com/jinzhu/copier"
 	"github.com/little-cui/etcdadpt"
@@ -44,6 +45,7 @@ import (
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
 	quotasvc "github.com/apache/servicecomb-service-center/server/service/quota"
+	"github.com/apache/servicecomb-service-center/syncer/service/event"
 )
 
 var (
@@ -599,10 +601,17 @@ func (ds *MetadataManager) registerInstance(ctx context.Context, request *pb.Reg
 			instanceFlag, instanceID, remoteIP), nil)
 		return "", pb.NewError(pb.ErrServiceNotExists, "Service does not exist.")
 	}
-
+	sendEvent(sync.CreateAction, datasource.ResourceInstance, request)
 	log.Info(fmt.Sprintf("register instance %s, instanceID %s, operator %s",
 		instanceFlag, instanceID, remoteIP))
 	return instanceID, nil
+}
+
+func sendEvent(action string, resourceType string, resource interface{}) {
+	if !datasource.EnableSync {
+		return
+	}
+	event.Publish(action, resourceType, resource)
 }
 
 func (ds *MetadataManager) calcInstanceTTL(instance *pb.MicroServiceInstance) int64 {
@@ -1074,6 +1083,7 @@ func (ds *MetadataManager) UpdateInstanceStatus(ctx context.Context, request *pb
 		return resp, nil
 	}
 
+	sendEvent(sync.UpdateAction, datasource.ResourceInstance, copyInstanceRef)
 	log.Info(fmt.Sprintf("update instance[%s] status successfully", updateStatusFlag))
 	return &pb.UpdateInstanceStatusResponse{
 		Response: pb.CreateResponse(pb.ResponseSuccess, "Update service instance status successfully."),
@@ -1113,6 +1123,7 @@ func (ds *MetadataManager) UpdateInstanceProperties(ctx context.Context, request
 		return resp, nil
 	}
 
+	sendEvent(sync.UpdateAction, datasource.ResourceInstance, copyInstanceRef)
 	log.Info(fmt.Sprintf("update instance[%s] properties successfully", instanceFlag))
 	return &pb.UpdateInstancePropsResponse{
 		Response: pb.CreateResponse(pb.ResponseSuccess, "Update service instance properties successfully."),
@@ -1160,6 +1171,7 @@ func (ds *MetadataManager) HeartbeatSet(ctx context.Context, request *pb.Heartbe
 			Instances: instanceHbRstArr,
 		}, nil
 	}
+	sendEvent(sync.UpdateAction, datasource.ResourceHeartbeatSet, request)
 	log.Error(fmt.Sprintf("batch update heartbeats failed, %v", request.Instances), nil)
 	return &pb.HeartbeatSetResponse{
 		Response:  pb.CreateResponse(pb.ErrInstanceNotExists, "Heartbeat set failed."),
@@ -1280,7 +1292,7 @@ func (ds *MetadataManager) UnregisterInstance(ctx context.Context, request *pb.U
 		}
 		return resp, nil
 	}
-
+	sendEvent(sync.DeleteAction, datasource.ResourceInstance, request)
 	log.Info(fmt.Sprintf("unregister instance[%s], operator %s", instanceFlag, remoteIP))
 	return &pb.UnregisterInstanceResponse{
 		Response: pb.CreateResponse(pb.ResponseSuccess, "Unregister service instance successfully."),
@@ -1312,6 +1324,7 @@ func (ds *MetadataManager) Heartbeat(ctx context.Context, request *pb.HeartbeatR
 		log.Info(fmt.Sprintf("heartbeat successful, renew instance[%s] ttl to %d. operator %s",
 			instanceFlag, ttl, remoteIP))
 	}
+	sendEvent(sync.UpdateAction, datasource.ResourceHeartbeat, request)
 	return &pb.HeartbeatResponse{
 		Response: pb.CreateResponse(pb.ResponseSuccess,
 			"Update service instance heartbeat successfully."),
