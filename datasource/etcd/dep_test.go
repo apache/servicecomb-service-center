@@ -28,6 +28,7 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/eventbase/model"
 	"github.com/apache/servicecomb-service-center/eventbase/service/task"
+	"github.com/apache/servicecomb-service-center/eventbase/service/tombstone"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	_ "github.com/apache/servicecomb-service-center/test"
 )
@@ -45,7 +46,7 @@ func TestSyncAddOrUpdateDependencies(t *testing.T) {
 	)
 
 	t.Run("register service", func(t *testing.T) {
-		t.Run("create a consumer service should pass", func(t *testing.T) {
+		t.Run("create a consumer service will create a service task should pass", func(t *testing.T) {
 			resp, err := datasource.GetMetadataManager().RegisterService(depGetContext(), &pb.CreateServiceRequest{
 				Service: &pb.MicroService{
 					AppId:       "sync_dep_group",
@@ -59,8 +60,23 @@ func TestSyncAddOrUpdateDependencies(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 			consumerId = resp.ServiceId
+			listTaskReq := model.ListTaskRequest{
+				Domain:       "sync-dep",
+				Project:      "sync-dep",
+				ResourceType: datasource.ResourceService,
+				Action:       sync.CreateAction,
+				Status:       sync.PendingStatus,
+			}
+			tasks, err := task.List(depGetContext(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 1, len(tasks))
+			err = task.Delete(depGetContext(), tasks...)
+			assert.NoError(t, err)
+			tasks, err = task.List(depGetContext(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tasks))
 		})
-		t.Run("create two provider services should pass", func(t *testing.T) {
+		t.Run("create two provider services will create two service task should pass", func(t *testing.T) {
 			resp, err := datasource.GetMetadataManager().RegisterService(depGetContext(), &pb.CreateServiceRequest{
 				Service: &pb.MicroService{
 					AppId:       "sync_dep_group",
@@ -88,11 +104,26 @@ func TestSyncAddOrUpdateDependencies(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 			providerId2 = resp.ServiceId
+			listTaskReq := model.ListTaskRequest{
+				Domain:       "sync-dep",
+				Project:      "sync-dep",
+				ResourceType: datasource.ResourceService,
+				Action:       sync.CreateAction,
+				Status:       sync.PendingStatus,
+			}
+			tasks, err := task.List(depGetContext(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 2, len(tasks))
+			err = task.Delete(depGetContext(), tasks...)
+			assert.NoError(t, err)
+			tasks, err = task.List(depGetContext(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tasks))
 		})
 	})
 
 	t.Run("create dependencies", func(t *testing.T) {
-		t.Run("create dependencies for microServices should pass", func(t *testing.T) {
+		t.Run("create dependencies for microServices will create a dependency task should pass", func(t *testing.T) {
 			consumer := &pb.MicroServiceKey{
 				ServiceName: "sync_dep_consumer",
 				AppId:       "sync_dep_group",
@@ -131,7 +162,7 @@ func TestSyncAddOrUpdateDependencies(t *testing.T) {
 	})
 
 	t.Run("add dependencies", func(t *testing.T) {
-		t.Run("add dependencies for microServices should pass", func(t *testing.T) {
+		t.Run("add dependencies for microServices will create a dependency task should pass", func(t *testing.T) {
 			consumer := &pb.MicroServiceKey{
 				ServiceName: "sync_dep_consumer",
 				AppId:       "sync_dep_group",
@@ -170,7 +201,7 @@ func TestSyncAddOrUpdateDependencies(t *testing.T) {
 	})
 
 	t.Run("unregister consumer and provider", func(t *testing.T) {
-		t.Run("unregister consumer and providers should pass", func(t *testing.T) {
+		t.Run("unregister consumer and providers will 3 tasks and 3 tombstones should pass", func(t *testing.T) {
 			respDelP, err := datasource.GetMetadataManager().UnregisterService(depGetContext(), &pb.DeleteServiceRequest{
 				ServiceId: consumerId, Force: true,
 			})
@@ -192,6 +223,34 @@ func TestSyncAddOrUpdateDependencies(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, pb.ResponseSuccess, respDelP.Response.GetCode())
 
+			listTaskReq := model.ListTaskRequest{
+				Domain:       "sync-dep",
+				Project:      "sync-dep",
+				ResourceType: datasource.ResourceService,
+				Action:       sync.DeleteAction,
+				Status:       sync.PendingStatus,
+			}
+			tasks, err := task.List(depGetContext(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 3, len(tasks))
+			err = task.Delete(depGetContext(), tasks...)
+			assert.NoError(t, err)
+			tasks, err = task.List(depGetContext(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tasks))
+			tombstoneListReq := model.ListTombstoneRequest{
+				Domain:       "sync-dep",
+				Project:      "sync-dep",
+				ResourceType: datasource.ResourceService,
+			}
+			tombstones, err := tombstone.List(context.Background(), &tombstoneListReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 3, len(tombstones))
+			err = tombstone.Delete(context.Background(), tombstones...)
+			assert.NoError(t, err)
+			tombstones, err = tombstone.List(context.Background(), &tombstoneListReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tombstones))
 		})
 	})
 	datasource.EnableSync = false
