@@ -144,6 +144,10 @@ registry:
     # the allowable minimum value of instance heartbeat interval
     # if interval < minInterval, instance TTL still set with minInterval
     minInterval: 5s
+    datacenter:
+      name:
+      region:
+      availableZone:
 
   schema:
     # if want disable Test Schema, SchemaDisable set true
