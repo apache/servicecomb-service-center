@@ -21,6 +21,7 @@ require (
 	github.com/go-chassis/go-chassis/v2 v2.3.0
 	github.com/go-chassis/kie-client v0.1.1-0.20210926011742-97eed4281056
 	github.com/go-chassis/openlog v1.1.3
+	github.com/gofrs/uuid v4.0.0+incompatible
 	github.com/golang-jwt/jwt v3.2.1+incompatible
 	github.com/gorilla/websocket v1.4.3-0.20210424162022-e8629af678b7
 	github.com/iancoleman/strcase v0.1.2
@@ -40,7 +41,6 @@ require (
 	github.com/prometheus/procfs v0.6.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rs/cors v1.7.0 // v1.1
-	github.com/satori/go.uuid v1.1.0
 	github.com/spf13/cobra v1.1.3
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.7.0
@@ -96,7 +96,6 @@ require (
 	github.com/go-openapi/jsonreference v0.19.3 // indirect
 	github.com/go-openapi/swag v0.19.5 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
-	github.com/gofrs/uuid v4.0.0+incompatible // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.1 // indirect

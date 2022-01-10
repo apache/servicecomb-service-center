@@ -260,11 +260,11 @@ For details, see https://github.com/beorn7/perks
 You can find a copy of the License at licenses/LICENSE-beorn7-perks
 
 ================================================================
-For satori/go.uuid (879c5887cd475cd7864858769793b2ceb0d44feb)
+For gofrs/uuid (028e8409cdd0ed11a2b5bb3feb1ae2285ebb94fa)
 ================================================================
-This product bundles satori/go.uuid which is licensed under the MIT License.
-For details, see https://github.com/satori/go.uuid
-You can find a copy of the License at licenses/LICENSE-satori-go.uuid
+This product bundles gofrs/uuid which is licensed under the MIT License.
+For details, see https://github.com/gofrs/uuid
+You can find a copy of the License at licenses/LICENSE-gofrs-uuid
 
 ================================================================
 For rs/cors (8dd4211afb5d08dbb39a533b9bb9e4b486351df6)

@@ -15,17 +15,35 @@
  * limitations under the License.
  */
 
-package util
+package event
 
 import (
-	"strings"
+	"encoding/json"
+	"fmt"
 
-	"github.com/gofrs/uuid"
+	guuid "github.com/gofrs/uuid"
+
+	v1 "github.com/apache/servicecomb-service-center/api/sync/v1"
+	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
-const DASH = "-"
-
-func GenerateUUID() string {
-	id, _ := uuid.NewV4()
-	return strings.Replace(id.String(), string(DASH), "", -1)
+func Publish(action string, resourceType string, resource interface{}) {
+	eventID, err := guuid.NewV4()
+	if err != nil {
+		log.Error("fail to create eventID", err)
+		return
+	}
+	resourceValue, err := json.Marshal(resource)
+	if err != nil {
+		log.Error("fail to marshal the resource", err)
+		return
+	}
+	event := v1.Event{
+		Id:      eventID.String(),
+		Action:  action,
+		Subject: resourceType,
+		Value:   resourceValue,
+	}
+	log.Info(fmt.Sprintf("success to send event %s", event.Subject))
+	// TODO to send event
 }
