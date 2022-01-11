@@ -136,3 +136,11 @@ func illegalRoleCheck(role string) error {
 	}
 	return nil
 }
+
+func RoleUsage(ctx context.Context) (int64, error) {
+	_, used, err := rbac.Instance().ListRole(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return used, nil
+}

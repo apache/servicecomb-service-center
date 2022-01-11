@@ -198,7 +198,7 @@ func TestListTag(t *testing.T) {
 		assert.Equal(t, pb.ErrInvalidParams, testErr.Code)
 
 		_, err = disco.ListTag(ctx, &pb.GetServiceTagsRequest{
-			ServiceId: TOO_LONG_SERVICEID,
+			ServiceId: TooLongServiceID,
 		})
 		testErr = err.(*errsvc.Error)
 		assert.Error(t, testErr)

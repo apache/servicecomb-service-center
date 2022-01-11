@@ -18,10 +18,12 @@
 package disco_test
 
 import (
+	"context"
 	"strconv"
 	"strings"
 	"testing"
 
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/service/disco"
 	quotasvc "github.com/apache/servicecomb-service-center/server/service/quota"
@@ -31,14 +33,14 @@ import (
 )
 
 var (
-	TOO_LONG_APPID       = strings.Repeat("x", 161)
-	TOO_LONG_SCHEMAID    = strings.Repeat("x", 161)
-	TOO_LONG_SERVICEID   = strings.Repeat("x", 65)
-	TOO_LONG_SERVICENAME = strings.Repeat("x", 129)
-	TOO_LONG_EXISTENCE   = strings.Repeat("x", 128+160+2)
-	TOO_LONG_ALIAS       = strings.Repeat("x", 129)
-	TOO_LONG_FRAMEWORK   = strings.Repeat("x", 65)
-	TOO_LONG_DESCRIPTION = strings.Repeat("x", 257)
+	TooLongAppID       = strings.Repeat("x", 161)
+	TooLongSchemaID    = strings.Repeat("x", 161)
+	TooLongServiceID   = strings.Repeat("x", 65)
+	TooLongServiceName = strings.Repeat("x", 129)
+	TooLongExistence   = strings.Repeat("x", 128+160+2)
+	TooLongAlias       = strings.Repeat("x", 129)
+	TooLongFramework   = strings.Repeat("x", 65)
+	TooLongDescription = strings.Repeat("x", 257)
 )
 
 func TestRegisterService(t *testing.T) {
@@ -64,18 +66,18 @@ func TestRegisterService(t *testing.T) {
 		}
 		r := &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
-				AppId:       TOO_LONG_APPID[:len(TOO_LONG_APPID)-1],
-				ServiceName: TOO_LONG_SERVICENAME[:len(TOO_LONG_SERVICENAME)-1],
+				AppId:       TooLongAppID[:len(TooLongAppID)-1],
+				ServiceName: TooLongServiceName[:len(TooLongServiceName)-1],
 				Version:     "32767.32767.32767.32767",
-				Alias:       TOO_LONG_ALIAS[:len(TOO_LONG_ALIAS)-1],
+				Alias:       TooLongAlias[:len(TooLongAlias)-1],
 				Level:       "BACK",
 				Status:      "UP",
-				Schemas:     []string{TOO_LONG_SCHEMAID[:len(TOO_LONG_SCHEMAID)-1]},
+				Schemas:     []string{TooLongSchemaID[:len(TooLongSchemaID)-1]},
 				Paths:       paths,
 				Properties:  properties,
 				Framework: &pb.FrameWork{
-					Name:    TOO_LONG_FRAMEWORK[:len(TOO_LONG_FRAMEWORK)-1],
-					Version: TOO_LONG_FRAMEWORK[:len(TOO_LONG_FRAMEWORK)-1],
+					Name:    TooLongFramework[:len(TooLongFramework)-1],
+					Version: TooLongFramework[:len(TooLongFramework)-1],
 				},
 				RegisterBy: "SDK",
 			},
@@ -440,7 +442,7 @@ func TestRegisterService(t *testing.T) {
 
 		r = &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
-				AppId:       TOO_LONG_APPID,
+				AppId:       TooLongAppID,
 				ServiceName: "service-validate",
 				Version:     "1.0.0",
 				Level:       "BACK",
@@ -569,7 +571,7 @@ func TestRegisterService(t *testing.T) {
 			Service: &pb.MicroService{
 				AppId:       "default",
 				ServiceName: "service-validate-alias",
-				Alias:       TOO_LONG_ALIAS,
+				Alias:       TooLongAlias,
 				Version:     "1.0.0",
 				Level:       "BACK",
 				Status:      "UP",
@@ -587,7 +589,7 @@ func TestRegisterService(t *testing.T) {
 				Version:     "1.0.4",
 				Level:       "BACK",
 				Framework: &pb.FrameWork{
-					Version: TOO_LONG_FRAMEWORK,
+					Version: TooLongFramework,
 				},
 				Properties: make(map[string]string),
 				Status:     "UP",
@@ -605,7 +607,7 @@ func TestRegisterService(t *testing.T) {
 				Version:     "1.0.5",
 				Level:       "BACK",
 				Framework: &pb.FrameWork{
-					Name: TOO_LONG_FRAMEWORK,
+					Name: TooLongFramework,
 				},
 				Properties: make(map[string]string),
 				Status:     "UP",
@@ -656,7 +658,7 @@ func TestRegisterService(t *testing.T) {
 				Version:     "1.0.6",
 				Level:       "BACK",
 				Status:      "UP",
-				Description: TOO_LONG_DESCRIPTION,
+				Description: TooLongDescription,
 			},
 		}
 		_, err = disco.RegisterService(ctx, r)
@@ -670,7 +672,7 @@ func TestRegisterService(t *testing.T) {
 				ServiceName: "schema-test",
 				Level:       "BACK",
 				Status:      "UP",
-				Schemas:     []string{TOO_LONG_SCHEMAID},
+				Schemas:     []string{TooLongSchemaID},
 			},
 		}
 		_, err = disco.RegisterService(ctx, r)
@@ -806,7 +808,7 @@ func TestUnregisterService(t *testing.T) {
 		assert.Equal(t, pb.ErrInvalidParams, testErr.Code)
 
 		err = disco.UnregisterService(ctx, &pb.DeleteServiceRequest{
-			ServiceId: TOO_LONG_SERVICEID,
+			ServiceId: TooLongServiceID,
 			Force:     true,
 		})
 		testErr = err.(*errsvc.Error)
@@ -939,7 +941,7 @@ func TestUnregisterManyService(t *testing.T) {
 		assert.Equal(t, pb.ErrInvalidParams, testErr.Code)
 
 		_, err = disco.UnregisterManyService(getContext(), &pb.DelServicesRequest{
-			ServiceIds: []string{TOO_LONG_SERVICEID},
+			ServiceIds: []string{TooLongServiceID},
 			Force:      false,
 		})
 		testErr = err.(*errsvc.Error)
@@ -1056,7 +1058,7 @@ func TestExistService(t *testing.T) {
 	t.Run("when param is invalid, should be failed", func(t *testing.T) {
 		_, err := disco.ExistService(ctx, &pb.GetExistenceRequest{
 			Type:        "microservice",
-			ServiceName: TOO_LONG_EXISTENCE,
+			ServiceName: TooLongExistence,
 			Version:     "1.0.0",
 			AppId:       "exist_appId",
 		})
@@ -1076,7 +1078,7 @@ func TestExistService(t *testing.T) {
 
 		_, err = disco.ExistService(ctx, &pb.GetExistenceRequest{
 			Type:        "microservice",
-			AppId:       TOO_LONG_APPID,
+			AppId:       TooLongAppID,
 			ServiceName: "exist-invalid-appid",
 			Version:     "3.0.0",
 		})
@@ -1316,7 +1318,7 @@ func TestUpdateService(t *testing.T) {
 
 	t.Run("when request is invalid, should be failed", func(t *testing.T) {
 		r := &pb.UpdateServicePropsRequest{
-			ServiceId:  TOO_LONG_SERVICEID,
+			ServiceId:  TooLongServiceID,
 			Properties: map[string]string{},
 		}
 		err := disco.PutServiceProperties(ctx, r)
@@ -1351,11 +1353,40 @@ func TestListService(t *testing.T) {
 		assert.Nil(t, service)
 
 		service, err = disco.GetService(getContext(), &pb.GetServiceRequest{
-			ServiceId: TOO_LONG_SERVICEID,
+			ServiceId: TooLongServiceID,
 		})
 		testErr = err.(*errsvc.Error)
 		assert.Error(t, testErr)
 		assert.Equal(t, pb.ErrInvalidParams, testErr.Code)
 		assert.Nil(t, service)
+	})
+}
+
+func TestServiceUsage(t *testing.T) {
+	t.Run("get domain/project without service usage, should return 0", func(t *testing.T) {
+		usage, err := disco.ServiceUsage(context.Background(), &pb.GetServiceCountRequest{
+			Domain:  "domain_without_service",
+			Project: "project_without_service",
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, int64(0), usage)
+	})
+
+	t.Run("get domain/project with 1 service usage, should return 1", func(t *testing.T) {
+		ctx := util.SetDomainProject(context.Background(), "domain_with_service", "project_with_service")
+		resp, err := disco.RegisterService(ctx, &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				ServiceName: "test",
+			},
+		})
+		assert.NoError(t, err)
+		defer disco.UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: resp.ServiceId, Force: true})
+
+		usage, err := disco.ServiceUsage(context.Background(), &pb.GetServiceCountRequest{
+			Domain:  "domain_with_service",
+			Project: "project_with_service",
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, int64(1), usage)
 	})
 }
