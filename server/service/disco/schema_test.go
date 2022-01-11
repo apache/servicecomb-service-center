@@ -17,12 +17,14 @@
 package disco_test
 
 import (
+	"context"
 	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/schema"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/service/disco"
 	quotasvc "github.com/apache/servicecomb-service-center/server/service/quota"
 	pb "github.com/go-chassis/cari/discovery"
@@ -35,7 +37,7 @@ const (
 )
 
 var (
-	TOO_LONG_SUMMARY = strings.Repeat("x", 129)
+	TooLongSummary = strings.Repeat("x", 129)
 )
 
 func TestPutSchema(t *testing.T) {
@@ -132,7 +134,7 @@ func TestPutSchema(t *testing.T) {
 			ServiceId: serviceIdDev,
 			SchemaId:  "com.huawei.test",
 			Schema:    "create schema",
-			Summary:   TOO_LONG_SUMMARY,
+			Summary:   TooLongSummary,
 		})
 		testErr = err.(*errsvc.Error)
 		assert.Error(t, testErr)
@@ -228,7 +230,7 @@ func TestPutSchema(t *testing.T) {
 				{
 					SchemaId: "com.huawei.test",
 					Schema:   "create schema",
-					Summary:  TOO_LONG_SUMMARY,
+					Summary:  TooLongSummary,
 				},
 			},
 		})
@@ -539,7 +541,7 @@ func TestExistSchema(t *testing.T) {
 
 		_, err = disco.ExistSchema(getContext(), &pb.GetSchemaRequest{
 			ServiceId: serviceId,
-			SchemaId:  TOO_LONG_SCHEMAID,
+			SchemaId:  TooLongSchemaID,
 		})
 		testErr = err.(*errsvc.Error)
 		assert.Error(t, testErr)
@@ -708,7 +710,7 @@ func TestGetSchema(t *testing.T) {
 		assert.Equal(t, pb.ErrInvalidParams, testErr.Code)
 
 		_, err = disco.GetSchema(getContext(), &pb.GetSchemaRequest{
-			ServiceId: TOO_LONG_SERVICEID,
+			ServiceId: TooLongServiceID,
 			SchemaId:  "com.huawei.test",
 		})
 		testErr = err.(*errsvc.Error)
@@ -716,7 +718,7 @@ func TestGetSchema(t *testing.T) {
 		assert.Equal(t, pb.ErrInvalidParams, testErr.Code)
 
 		_, err = disco.ListSchema(getContext(), &pb.GetAllSchemaRequest{
-			ServiceId: TOO_LONG_SERVICEID,
+			ServiceId: TooLongServiceID,
 		})
 		testErr = err.(*errsvc.Error)
 		assert.Error(t, testErr)
@@ -740,7 +742,7 @@ func TestGetSchema(t *testing.T) {
 
 		_, err = disco.GetSchema(getContext(), &pb.GetSchemaRequest{
 			ServiceId: serviceId,
-			SchemaId:  TOO_LONG_SCHEMAID,
+			SchemaId:  TooLongSchemaID,
 		})
 		testErr = err.(*errsvc.Error)
 		assert.Error(t, testErr)
@@ -1087,4 +1089,43 @@ func findSchemaBySchemaID(schemas []*pb.Schema, schemaID string) *pb.Schema {
 		}
 	}
 	return nil
+}
+
+func TestSchemaUsage(t *testing.T) {
+	ctx := util.WithNoCache(util.SetDomainProject(context.Background(), "default", "default"))
+
+	resp, err := disco.RegisterService(ctx, &pb.CreateServiceRequest{
+		Service: &pb.MicroService{
+			ServiceName: "TestSchemaUsage",
+		},
+	})
+	assert.NoError(t, err)
+	serviceID := resp.ServiceId
+	defer disco.UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: serviceID, Force: true})
+
+	t.Run("get not exist service schema usage, should failed", func(t *testing.T) {
+		_, err := disco.Usage(ctx, "note_exist_service_id")
+		testErr := err.(*errsvc.Error)
+		assert.Error(t, testErr)
+		assert.Equal(t, pb.ErrServiceNotExists, testErr.Code)
+	})
+
+	t.Run("get usage without schemas, should return 0", func(t *testing.T) {
+		usage, err := disco.Usage(ctx, serviceID)
+		assert.NoError(t, err)
+		assert.Equal(t, int64(0), usage)
+	})
+
+	t.Run("get usage with schemas, should return 1", func(t *testing.T) {
+		err := disco.PutSchema(ctx, &pb.ModifySchemaRequest{
+			ServiceId: serviceID,
+			SchemaId:  "schemaID_1",
+			Schema:    "schema_1",
+		})
+		assert.NoError(t, err)
+
+		usage, err := disco.Usage(ctx, serviceID)
+		assert.NoError(t, err)
+		assert.Equal(t, int64(1), usage)
+	})
 }

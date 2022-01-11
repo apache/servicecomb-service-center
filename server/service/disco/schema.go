@@ -358,3 +358,14 @@ func checkSchemaQuota(ctx context.Context, serviceID string, schemaID string) er
 	}
 	return nil
 }
+
+func Usage(ctx context.Context, serviceID string) (int64, error) {
+	schemas, err := ListSchema(ctx, &pb.GetAllSchemaRequest{
+		ServiceId:  serviceID,
+		WithSchema: false,
+	})
+	if err != nil {
+		return 0, err
+	}
+	return int64(len(schemas)), nil
+}

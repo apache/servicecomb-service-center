@@ -26,7 +26,9 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/plugin/quota"
+	"github.com/apache/servicecomb-service-center/server/service/disco"
 	quotasvc "github.com/apache/servicecomb-service-center/server/service/quota"
+	"github.com/apache/servicecomb-service-center/server/service/rbac"
 	pb "github.com/go-chassis/cari/discovery"
 )
 
@@ -99,24 +101,24 @@ func (q *Quota) RemandQuotas(ctx context.Context, resourceType quota.ResourceTyp
 func (q *Quota) Usage(ctx context.Context, req *quota.Request) (int64, error) {
 	switch req.QuotaType {
 	case quotasvc.TypeInstance:
-		return InstanceUsage(ctx, &pb.GetServiceCountRequest{
+		return disco.InstanceUsage(ctx, &pb.GetServiceCountRequest{
 			Domain:  util.ParseDomain(ctx),
 			Project: util.ParseProject(ctx),
 		})
 	case quotasvc.TypeService:
-		return ServiceUsage(ctx, &pb.GetServiceCountRequest{
+		return disco.ServiceUsage(ctx, &pb.GetServiceCountRequest{
 			Domain:  util.ParseDomain(ctx),
 			Project: util.ParseProject(ctx),
 		})
 	case quotasvc.TypeSchema:
-		return SchemaUsage(ctx, req.ServiceID)
+		return disco.Usage(ctx, req.ServiceID)
 	case quotasvc.TypeTag:
 		// always re-create the service old tags
 		return 0, nil
 	case quotasvc.TypeAccount:
-		return AccountUsage(ctx)
+		return rbac.AccountUsage(ctx)
 	case quotasvc.TypeRole:
-		return RoleUsage(ctx)
+		return rbac.RoleUsage(ctx)
 	default:
 		return 0, nil
 	}

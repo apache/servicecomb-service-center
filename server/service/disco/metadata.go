@@ -243,3 +243,11 @@ func PutServiceProperties(ctx context.Context, request *pb.UpdateServicePropsReq
 
 	return datasource.GetMetadataManager().PutServiceProperties(ctx, request)
 }
+
+func ServiceUsage(ctx context.Context, request *pb.GetServiceCountRequest) (int64, error) {
+	resp, err := datasource.GetMetadataManager().CountService(ctx, request)
+	if err != nil {
+		return 0, err
+	}
+	return resp.Count, nil
+}

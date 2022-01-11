@@ -377,3 +377,11 @@ func checkInstanceQuota(ctx context.Context) error {
 	}
 	return nil
 }
+
+func InstanceUsage(ctx context.Context, request *pb.GetServiceCountRequest) (int64, error) {
+	resp, err := datasource.GetMetadataManager().CountInstance(ctx, request)
+	if err != nil {
+		return 0, err
+	}
+	return resp.Count, nil
+}

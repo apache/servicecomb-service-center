@@ -181,3 +181,11 @@ func illegalAccountCheck(ctx context.Context, target string) error {
 	}
 	return nil
 }
+
+func AccountUsage(ctx context.Context) (int64, error) {
+	_, used, err := rbac.Instance().ListAccount(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return used, nil
+}
