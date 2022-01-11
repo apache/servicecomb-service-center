@@ -33,8 +33,9 @@ type Config struct {
 }
 
 type Sync struct {
-	EnableOnStart bool    `yaml:"enableOnStart"`
-	Peers         []*Peer `yaml:"peers"`
+	EnableOnStart bool       `yaml:"enableOnStart"`
+	Tombstone     *Tombstone `yaml:"tombstone"`
+	Peers         []*Peer    `yaml:"peers"`
 }
 
 type Peer struct {
@@ -42,6 +43,11 @@ type Peer struct {
 	Kind      string   `yaml:"kind"`
 	Endpoints []string `yaml:"endpoints"`
 	Mode      []string `yaml:"mode"`
+}
+
+type Tombstone struct {
+	Cron       string `yaml:"cron"`
+	ExpireTime string `yaml:"expireTime"`
 }
 
 func Init() error {
