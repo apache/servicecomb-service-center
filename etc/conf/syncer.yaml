@@ -1,5 +1,9 @@
 sync:
   enableOnStart: true
+  tombstone:
+    # use linux crontab not Quartz cron
+    cron: 0 0 * * *
+    expireTime: 24h
   peers:
     - name: dc2
       kind: servicecomb
