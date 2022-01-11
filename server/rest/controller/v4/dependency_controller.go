@@ -26,7 +26,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/core"
+	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
 	pb "github.com/go-chassis/cari/discovery"
 )
 
@@ -35,15 +35,15 @@ type DependencyService struct {
 
 func (s *DependencyService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{Method: http.MethodPost, Path: "/v4/:project/registry/dependencies", Func: s.AddDependenciesForMicroServices},
-		{Method: http.MethodPut, Path: "/v4/:project/registry/dependencies", Func: s.CreateDependenciesForMicroServices},
-		{Method: http.MethodGet, Path: "/v4/:project/registry/microservices/:consumerId/providers", Func: s.GetConProDependencies},
-		{Method: http.MethodGet, Path: "/v4/:project/registry/microservices/:providerId/consumers", Func: s.GetProConDependencies},
+		{Method: http.MethodPost, Path: "/v4/:project/registry/dependencies", Func: s.AddDependencies},
+		{Method: http.MethodPut, Path: "/v4/:project/registry/dependencies", Func: s.PutDependencies},
+		{Method: http.MethodGet, Path: "/v4/:project/registry/microservices/:consumerId/providers", Func: s.ListProviders},
+		{Method: http.MethodGet, Path: "/v4/:project/registry/microservices/:providerId/consumers", Func: s.ListConsumers},
 	}
 }
 
 //Deprecated
-func (s *DependencyService) AddDependenciesForMicroServices(w http.ResponseWriter, r *http.Request) {
+func (s *DependencyService) AddDependencies(w http.ResponseWriter, r *http.Request) {
 	requestBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
@@ -58,16 +58,17 @@ func (s *DependencyService) AddDependenciesForMicroServices(w http.ResponseWrite
 		return
 	}
 
-	resp, err := core.ServiceAPI.AddDependenciesForMicroServices(r.Context(), request)
+	err = discosvc.AddDependencies(r.Context(), request)
 	if err != nil {
-		rest.WriteError(w, pb.ErrInternal, err.Error())
+		rest.WriteServiceError(w, err)
+		return
 	}
 	w.Header().Add("Deprecation", "version=\"v4\"")
-	rest.WriteResponse(w, r, resp.Response, nil)
+	rest.WriteResponse(w, r, nil, nil)
 }
 
 //Deprecated
-func (s *DependencyService) CreateDependenciesForMicroServices(w http.ResponseWriter, r *http.Request) {
+func (s *DependencyService) PutDependencies(w http.ResponseWriter, r *http.Request) {
 	requestBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
@@ -82,32 +83,41 @@ func (s *DependencyService) CreateDependenciesForMicroServices(w http.ResponseWr
 		return
 	}
 
-	resp, err := core.ServiceAPI.CreateDependenciesForMicroServices(r.Context(), request)
+	err = discosvc.PutDependencies(r.Context(), request)
 	if err != nil {
-		rest.WriteError(w, pb.ErrInternal, err.Error())
+		rest.WriteServiceError(w, err)
+		return
 	}
 	w.Header().Add("Deprecation", "version=\"v4\"")
-	rest.WriteResponse(w, r, resp.Response, nil)
+	rest.WriteResponse(w, r, nil, nil)
 }
 
-func (s *DependencyService) GetConProDependencies(w http.ResponseWriter, r *http.Request) {
+func (s *DependencyService) ListProviders(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	request := &pb.GetDependenciesRequest{
 		ServiceId:  query.Get(":consumerId"),
 		SameDomain: query.Get("sameDomain") == "1",
 		NoSelf:     query.Get("noSelf") == "1",
 	}
-	resp, _ := core.ServiceAPI.GetConsumerDependencies(r.Context(), request)
-	rest.WriteResponse(w, r, resp.Response, resp)
+	resp, err := discosvc.ListProviders(r.Context(), request)
+	if err != nil {
+		rest.WriteServiceError(w, err)
+		return
+	}
+	rest.WriteResponse(w, r, nil, resp)
 }
 
-func (s *DependencyService) GetProConDependencies(w http.ResponseWriter, r *http.Request) {
+func (s *DependencyService) ListConsumers(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	request := &pb.GetDependenciesRequest{
 		ServiceId:  query.Get(":providerId"),
 		SameDomain: query.Get("sameDomain") == "1",
 		NoSelf:     query.Get("noSelf") == "1",
 	}
-	resp, _ := core.ServiceAPI.GetProviderDependencies(r.Context(), request)
-	rest.WriteResponse(w, r, resp.Response, resp)
+	resp, err := discosvc.ListConsumers(r.Context(), request)
+	if err != nil {
+		rest.WriteServiceError(w, err)
+		return
+	}
+	rest.WriteResponse(w, r, nil, resp)
 }

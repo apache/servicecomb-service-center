@@ -117,7 +117,6 @@ func PublishInstanceEvent(evt kvstore.Event, serviceKey *pb.MicroServiceKey, sub
 	}
 
 	response := &pb.WatchInstanceResponse{
-		Response: pb.CreateResponse(pb.ResponseSuccess, "Watch instance successfully."),
 		Action:   string(evt.Type),
 		Key:      serviceKey,
 		Instance: evt.KV.Value.(*pb.MicroServiceInstance),

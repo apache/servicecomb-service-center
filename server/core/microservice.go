@@ -22,7 +22,6 @@ import (
 	"strings"
 
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/pkg/proto"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/version"
@@ -30,9 +29,8 @@ import (
 )
 
 var (
-	ServiceAPI proto.ServiceCtrlServer
-	Service    = &discovery.MicroService{}
-	Instance   = &discovery.MicroServiceInstance{}
+	Service  = &discovery.MicroService{}
+	Instance = &discovery.MicroServiceInstance{}
 )
 
 const (
@@ -67,7 +65,8 @@ func InitRegistration() {
 	}
 
 	Instance = &discovery.MicroServiceInstance{
-		Status: discovery.MSI_UP,
+		Status:   discovery.MSI_UP,
+		HostName: util.HostName(),
 		HealthCheck: &discovery.HealthCheck{
 			Mode:     discovery.CHECK_BY_HEARTBEAT,
 			Interval: RegistryDefaultLeaseRenewalInterval,

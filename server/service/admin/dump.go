@@ -32,13 +32,9 @@ import (
 func Dump(ctx context.Context, in *dump.Request) (*dump.Response, error) {
 	domainProject := util.ParseDomainProject(ctx)
 	if !datasource.IsDefaultDomainProject(domainProject) {
-		return &dump.Response{
-			Response: discovery.CreateResponse(discovery.ErrForbidden, "Required admin permission"),
-		}, nil
+		return nil, discovery.NewError(discovery.ErrForbidden, "Required admin permission")
 	}
-	resp := &dump.Response{
-		Response: discovery.CreateResponse(discovery.ResponseSuccess, "Admin dump successfully"),
-	}
+	resp := &dump.Response{}
 	set := toSet(in.Options)
 	if set.Cardinality() == 0 {
 		appendData(ctx, "cache", resp)

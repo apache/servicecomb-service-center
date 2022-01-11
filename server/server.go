@@ -32,11 +32,9 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/plugin"
 	"github.com/apache/servicecomb-service-center/pkg/signal"
-	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/alarm"
 	"github.com/apache/servicecomb-service-center/server/command"
 	"github.com/apache/servicecomb-service-center/server/config"
-	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/event"
 	"github.com/apache/servicecomb-service-center/server/metrics"
 	"github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf"
@@ -241,7 +239,6 @@ func (s *ServiceCenterServer) startServices() {
 }
 
 func (s *ServiceCenterServer) startAPIService() {
-	core.Instance.HostName = util.HostName()
 	s.APIServer.Listen(s.Endpoint.Host, s.Endpoint.Port)
 	s.APIServer.Start()
 }

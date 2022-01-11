@@ -23,13 +23,9 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	v4 "github.com/apache/servicecomb-service-center/server/rest/controller/v4"
 	"github.com/apache/servicecomb-service-center/version"
-	pb "github.com/go-chassis/cari/discovery"
 )
 
-var (
-	versionJsonCache []byte
-	versionResp      *pb.Response
-)
+var versionJsonCache []byte
 
 const APIVersion = "3.0.0"
 
@@ -39,7 +35,6 @@ func init() {
 		APIVersion: APIVersion,
 	}
 	versionJsonCache, _ = json.Marshal(result)
-	versionResp = pb.CreateResponse(pb.ResponseSuccess, "get version successfully")
 }
 
 type MainService struct {
@@ -54,5 +49,5 @@ func (s *MainService) URLPatterns() []rest.Route {
 }
 
 func (s *MainService) GetVersion(w http.ResponseWriter, r *http.Request) {
-	rest.WriteResponse(w, r, versionResp, versionJsonCache)
+	rest.WriteResponse(w, r, nil, versionJsonCache)
 }

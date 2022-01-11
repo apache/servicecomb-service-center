@@ -30,7 +30,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/metrics"
 	rs "github.com/apache/servicecomb-service-center/server/rest"
-	"github.com/apache/servicecomb-service-center/server/service/disco"
 	"github.com/apache/servicecomb-service-center/server/service/registry"
 	"github.com/go-chassis/foundation/gopool"
 )
@@ -38,17 +37,11 @@ import (
 var apiServer *APIServer
 
 func init() {
-	InitAPI()
-
 	apiServer = &APIServer{
 		isClose:   true,
 		err:       make(chan error, 1),
 		goroutine: gopool.New(gopool.Configure().Workers(5)),
 	}
-}
-
-func InitAPI() {
-	core.ServiceAPI = disco.AssembleResources()
 }
 
 type APIServer struct {

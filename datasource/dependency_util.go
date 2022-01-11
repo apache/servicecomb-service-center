@@ -40,32 +40,22 @@ type Dependency struct {
 	CreateDependencyRuleList []*discovery.MicroServiceKey
 }
 
-func ParamsChecker(consumerInfo *discovery.MicroServiceKey, providersInfo []*discovery.MicroServiceKey) *discovery.CreateDependenciesResponse {
+func ParamsChecker(consumerInfo *discovery.MicroServiceKey, providersInfo []*discovery.MicroServiceKey) error {
 	flag := make(map[string]bool, len(providersInfo))
 	for _, providerInfo := range providersInfo {
 		if len(providerInfo.ServiceName) == 0 {
-			return BadParamsResponse("Required provider serviceName")
+			return discovery.NewError(discovery.ErrInvalidParams, "Required provider serviceName")
 		}
 		if len(providerInfo.AppId) == 0 {
 			providerInfo.AppId = consumerInfo.AppId
 		}
 		providerInfo.Version = AllVersions
 		if _, ok := flag[toString(providerInfo)]; ok {
-			return BadParamsResponse("Invalid request body for provider info.Duplicate provider or (serviceName and appId is same).")
+			return discovery.NewError(discovery.ErrInvalidParams, "Invalid request body for provider info.Duplicate provider or (serviceName and appId is same).")
 		}
 		flag[toString(providerInfo)] = true
 	}
 	return nil
-}
-
-func BadParamsResponse(detailErr string) *discovery.CreateDependenciesResponse {
-	log.Error(fmt.Sprintf("request params is invalid. %s", detailErr), nil)
-	if len(detailErr) == 0 {
-		detailErr = "Request params is invalid."
-	}
-	return &discovery.CreateDependenciesResponse{
-		Response: discovery.CreateResponse(discovery.ErrInvalidParams, detailErr),
-	}
 }
 
 func toString(in *discovery.MicroServiceKey) string {

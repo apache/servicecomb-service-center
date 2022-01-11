@@ -38,79 +38,65 @@ import (
 type DepManager struct {
 }
 
-func (ds *DepManager) SearchProviderDependency(ctx context.Context, request *discovery.GetDependenciesRequest) (*discovery.GetProDependenciesResponse, error) {
+func (ds *DepManager) ListConsumers(ctx context.Context, request *discovery.GetDependenciesRequest) (*discovery.GetProDependenciesResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
 	providerServiceID := request.ServiceId
 	provider, err := GetServiceByID(ctx, providerServiceID)
 	if err != nil {
 		if errors.Is(err, datasource.ErrNoData) {
 			log.Debug(fmt.Sprintf("query provider service failed, there is no provider %s in db", providerServiceID))
-			return &discovery.GetProDependenciesResponse{
-				Response: discovery.CreateResponse(discovery.ErrServiceNotExists, "Provider does not exist"),
-			}, nil
+			return nil, discovery.NewError(discovery.ErrServiceNotExists, "Provider does not exist")
 		}
 		log.Error(fmt.Sprintf("query provider from db error, provider is %s", providerServiceID), err)
 		return nil, err
 	}
 	if provider == nil {
-		log.Error(fmt.Sprintf("GetProviderDependencies failed for provider %s", providerServiceID), err)
-		return &discovery.GetProDependenciesResponse{
-			Response: discovery.CreateResponse(discovery.ErrServiceNotExists, "Provider does not exist"),
-		}, nil
+		log.Error(fmt.Sprintf("ListConsumers failed for provider %s", providerServiceID), err)
+		return nil, discovery.NewError(discovery.ErrServiceNotExists, "Provider does not exist")
 	}
 
 	services, err := GetConsumers(ctx, domainProject, provider.Service, ToDependencyFilterOptions(request)...)
 	if err != nil {
-		log.Error(fmt.Sprintf("GetProviderDependencies failed, provider is %s/%s/%s/%s",
+		log.Error(fmt.Sprintf("ListConsumers failed, provider is %s/%s/%s/%s",
 			provider.Service.Environment, provider.Service.AppId, provider.Service.ServiceName, provider.Service.Version), err)
-		return &discovery.GetProDependenciesResponse{
-			Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
-		}, err
+		return nil, discovery.NewError(discovery.ErrInternal, err.Error())
 	}
 
 	return &discovery.GetProDependenciesResponse{
-		Response:  discovery.CreateResponse(discovery.ResponseSuccess, "Get all consumers successful."),
 		Consumers: services,
 	}, nil
 }
 
-func (ds *DepManager) SearchConsumerDependency(ctx context.Context, request *discovery.GetDependenciesRequest) (*discovery.GetConDependenciesResponse, error) {
+func (ds *DepManager) ListProviders(ctx context.Context, request *discovery.GetDependenciesRequest) (*discovery.GetConDependenciesResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
 	consumerID := request.ServiceId
 	consumer, err := GetServiceByID(ctx, consumerID)
 	if err != nil {
 		if errors.Is(err, datasource.ErrNoData) {
 			log.Debug(fmt.Sprintf("query consumer service failed, there is no consumer %s in db", consumerID))
-			return &discovery.GetConDependenciesResponse{
-				Response: discovery.CreateResponse(discovery.ErrServiceNotExists, "Consumer does not exist"),
-			}, nil
+			return nil, discovery.NewError(discovery.ErrServiceNotExists, "Consumer does not exist")
 		}
 		log.Error(fmt.Sprintf("query consumer from db error, consumer is %s", consumerID), err)
 		return nil, err
 	}
 	if consumer == nil {
-		log.Error(fmt.Sprintf("GetConsumerDependencies failed for consumer %s does not exist", consumerID), err)
-		return &discovery.GetConDependenciesResponse{
-			Response: discovery.CreateResponse(discovery.ErrServiceNotExists, "Consumer does not exist"),
-		}, nil
+		log.Error(fmt.Sprintf("ListProviders failed for consumer %s does not exist", consumerID), err)
+		return nil, discovery.NewError(discovery.ErrServiceNotExists, "Consumer does not exist")
 	}
 
 	services, err := GetProviders(ctx, domainProject, consumer.Service, ToDependencyFilterOptions(request)...)
 	if err != nil {
 		log.Error(fmt.Sprintf("query consumer failed, consumer is %s/%s/%s/%s",
 			consumer.Service.Environment, consumer.Service.AppId, consumer.Service.ServiceName, consumer.Service.Version), err)
-		return &discovery.GetConDependenciesResponse{
-			Response: discovery.CreateResponse(discovery.ErrInternal, err.Error()),
-		}, err
+		return nil, discovery.NewError(discovery.ErrInternal, err.Error())
 	}
 
 	return &discovery.GetConDependenciesResponse{
-		Response:  discovery.CreateResponse(discovery.ResponseSuccess, "Get all providers successfully."),
 		Providers: services,
 	}, nil
 }
 
-func (ds *DepManager) AddOrUpdateDependencies(ctx context.Context, dependencys []*discovery.ConsumerDependency, override bool) (*discovery.Response, error) {
+func (ds *DepManager) PutDependencies(ctx context.Context, dependencys []*discovery.ConsumerDependency, override bool) error {
 	domainProject := util.ParseDomainProject(ctx)
 	for _, dependency := range dependencys {
 		consumerFlag := util.StringJoin([]string{
@@ -121,23 +107,22 @@ func (ds *DepManager) AddOrUpdateDependencies(ctx context.Context, dependencys [
 		consumerInfo := discovery.DependenciesToKeys([]*discovery.MicroServiceKey{dependency.Consumer}, domainProject)[0]
 		providersInfo := discovery.DependenciesToKeys(dependency.Providers, domainProject)
 
-		rsp := datasource.ParamsChecker(consumerInfo, providersInfo)
-		if rsp != nil {
-			log.Error(fmt.Sprintf("put request into dependency queue failed, override: %t consumer is %s %s",
-				override, consumerFlag, rsp.Response.GetMessage()), nil)
-			return rsp.Response, nil
+		if err := datasource.ParamsChecker(consumerInfo, providersInfo); err != nil {
+			log.Error(fmt.Sprintf("put request into dependency queue failed, override: %t consumer is %s",
+				override, consumerFlag), nil)
+			return err
 		}
 
 		consumerID, err := GetServiceID(ctx, consumerInfo)
 		if err != nil && !errors.Is(err, datasource.ErrNoData) {
 			log.Error(fmt.Sprintf("put request into dependency queue failed, override: %t, get consumer %s id failed",
 				override, consumerFlag), err)
-			return discovery.CreateResponse(discovery.ErrInternal, err.Error()), err
+			return discovery.NewError(discovery.ErrInternal, err.Error())
 		}
 		if len(consumerID) == 0 {
 			log.Error(fmt.Sprintf("put request into dependency queue failed, override: %t consumer %s does not exist",
 				override, consumerFlag), err)
-			return discovery.CreateResponse(discovery.ErrServiceNotExists, fmt.Sprintf("Consumer %s does not exist.", consumerFlag)), nil
+			return discovery.NewError(discovery.ErrServiceNotExists, fmt.Sprintf("Consumer %s does not exist.", consumerFlag))
 		}
 
 		dependency.Override = override
@@ -156,16 +141,16 @@ func (ds *DepManager) AddOrUpdateDependencies(ctx context.Context, dependencys [
 			insertRes, err := client.GetMongoClient().Insert(ctx, model.CollectionDep, data)
 			if err != nil {
 				log.Error("failed to insert dep to mongodb", err)
-				return discovery.CreateResponse(discovery.ErrInternal, err.Error()), err
+				return discovery.NewError(discovery.ErrInternal, err.Error())
 			}
 			log.Info(fmt.Sprintf("insert dep to mongodb success %s", insertRes.InsertedID))
 		}
 		err = syncDependencyRule(ctx, domainProject, dependency)
 		if err != nil {
-			return nil, err
+			return err
 		}
 	}
-	return discovery.CreateResponse(discovery.ResponseSuccess, "Create dependency successfully."), nil
+	return nil
 }
 
 func (ds *DepManager) DependencyHandle(ctx context.Context) (err error) {

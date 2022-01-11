@@ -136,8 +136,7 @@ func initFirstTime() {
 		log.Info("root account init success")
 		return
 	}
-	svcErr, ok := err.(*errsvc.Error)
-	if ok && svcErr.Code == rbac.ErrAccountConflict {
+	if errsvc.IsErrEqualCode(err, rbac.ErrAccountConflict) {
 		log.Info("root account already exist")
 		return
 	}

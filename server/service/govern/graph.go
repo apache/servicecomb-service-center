@@ -24,7 +24,7 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/core"
+	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
 	"github.com/go-chassis/cari/discovery"
 )
 
@@ -65,9 +65,9 @@ type Graph struct {
 func Draw(ctx context.Context, withShared bool) (*Graph, error) {
 	var graph Graph
 
-	resp, err := core.ServiceAPI.GetServices(ctx, &discovery.GetServicesRequest{WithShared: withShared})
+	resp, err := discosvc.ListService(ctx, &discovery.GetServicesRequest{WithShared: withShared})
 	if err != nil {
-		return nil, discovery.NewError(discovery.ErrInternal, err.Error())
+		return nil, err
 	}
 	services := resp.Services
 	if len(services) <= 0 {
@@ -89,7 +89,7 @@ func Draw(ctx context.Context, withShared bool) (*Graph, error) {
 			SameDomain: true,
 			NoSelf:     true,
 		}
-		proResp, err := core.ServiceAPI.GetConsumerDependencies(ctx, proRequest)
+		proResp, err := discosvc.ListProviders(ctx, proRequest)
 		if err != nil {
 			log.Error(fmt.Sprintf("get service[%s/%s/%s/%s]'s providers failed",
 				service.Environment, service.AppId, service.ServiceName, service.Version), err)

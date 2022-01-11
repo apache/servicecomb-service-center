@@ -19,28 +19,22 @@
 package test
 
 import (
-	"io"
-	"os"
-	"path/filepath"
+	"context"
 	"time"
-
-	"github.com/go-chassis/cari/db"
-	"github.com/go-chassis/go-archaius"
-	"github.com/little-cui/etcdadpt"
 
 	_ "github.com/apache/servicecomb-service-center/server/init"
 
 	_ "github.com/apache/servicecomb-service-center/eventbase/bootstrap"
 	_ "github.com/apache/servicecomb-service-center/server/bootstrap"
-	//grpc plugin
 	_ "github.com/go-chassis/go-chassis-extension/protocol/grpc/server"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	edatasource "github.com/apache/servicecomb-service-center/eventbase/datasource"
-	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/metrics"
-	"github.com/apache/servicecomb-service-center/server/service/disco"
+	"github.com/apache/servicecomb-service-center/server/service/registry"
+	"github.com/go-chassis/cari/db"
+	"github.com/go-chassis/go-archaius"
+	"github.com/little-cui/etcdadpt"
 )
 
 func init() {
@@ -62,8 +56,6 @@ func init() {
 	})
 	_ = metrics.Init(metrics.Options{})
 
-	core.ServiceAPI = disco.AssembleResources()
-
 	if kind == "mongo" {
 		uri = "mongodb://127.0.0.1:27017"
 	}
@@ -76,33 +68,13 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-}
-func createChassisConfig() {
-	b := []byte(`
-servicecomb:
-  registry:
-    disabled: true
-  protocols:
-    grpc:
-      listenAddress: 127.0.0.1:30105
-`)
-	dir := filepath.Join(util.GetAppRoot(), "conf")
-	os.Mkdir(dir, 0700)
-	file := filepath.Join(dir, "chassis.yaml")
-	f1, _ := os.Create(file)
-	_, _ = io.WriteString(f1, string(b))
 
-	b2 := []byte(`
-servicecomb:
-  service:
-    name: service-center
-    app: servicecomb
-    version: 2.0.0
-`)
-	file2 := filepath.Join(dir, "chassis.yaml")
-	f2, _ := os.Create(file2)
-	_, _ = io.WriteString(f2, string(b2))
+	err = registry.SelfRegister(context.Background())
+	if err != nil {
+		panic(err)
+	}
 }
+
 func IsETCD() bool {
 	t := archaius.Get("TEST_MODE")
 	if t == nil {

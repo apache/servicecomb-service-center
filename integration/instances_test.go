@@ -340,7 +340,7 @@ var _ = Describe("MicroService Api Test", func() {
 
 			It("Find Micro-Service Instance by ServiceID", func() {
 				url := strings.Replace(GETINSTANCE, ":serviceId", providerID, 1)
-				req, _ := http.NewRequest(GET, SCURL+url, nil)
+				req, _ := http.NewRequest(GET, SCURL+url+"?noCache=true", nil)
 				req.Header.Set("X-Domain-Name", "default")
 				req.Header.Set("X-ConsumerId", consumerID)
 				resp, _ := scclient.Do(req)

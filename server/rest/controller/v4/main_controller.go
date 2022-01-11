@@ -26,12 +26,10 @@ import (
 
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/version"
-	pb "github.com/go-chassis/cari/discovery"
 )
 
 var (
 	versionJSONCache []byte
-	versionResp      *pb.Response
 	parseVersionOnce sync.Once
 )
 
@@ -54,8 +52,12 @@ func (s *MainService) URLPatterns() []rest.Route {
 }
 
 func (s *MainService) ClusterHealth(w http.ResponseWriter, r *http.Request) {
-	resp, _ := discosvc.ClusterHealth(r.Context())
-	rest.WriteResponse(w, r, resp.Response, resp)
+	resp, err := discosvc.ClusterHealth(r.Context())
+	if err != nil {
+		rest.WriteServiceError(w, err)
+		return
+	}
+	rest.WriteResponse(w, r, nil, resp)
 }
 
 func (s *MainService) GetVersion(w http.ResponseWriter, r *http.Request) {
@@ -65,7 +67,6 @@ func (s *MainService) GetVersion(w http.ResponseWriter, r *http.Request) {
 			APIVersion,
 		}
 		versionJSONCache, _ = json.Marshal(result)
-		versionResp = pb.CreateResponse(pb.ResponseSuccess, "get version successfully")
 	})
-	rest.WriteResponse(w, r, versionResp, versionJSONCache)
+	rest.WriteResponse(w, r, nil, versionJSONCache)
 }

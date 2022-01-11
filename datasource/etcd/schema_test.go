@@ -200,7 +200,7 @@ func TestSyncSchema(t *testing.T) {
 				SchemaID:  "schemaID_2",
 			})
 			assert.NoError(t, err)
-			_, err = datasource.GetMetadataManager().DeleteSchema(schemaContext(), &pb.DeleteSchemaRequest{
+			err = datasource.GetMetadataManager().DeleteSchema(schemaContext(), &pb.DeleteSchemaRequest{
 				ServiceId: serviceID,
 				SchemaId:  "schemaID_2",
 			})
@@ -210,7 +210,7 @@ func TestSyncSchema(t *testing.T) {
 				SchemaID:  "schemaID_3",
 			})
 			assert.NoError(t, err)
-			_, err = datasource.GetMetadataManager().DeleteSchema(schemaContext(), &pb.DeleteSchemaRequest{
+			err = datasource.GetMetadataManager().DeleteSchema(schemaContext(), &pb.DeleteSchemaRequest{
 				ServiceId: serviceID,
 				SchemaId:  "schemaID_3",
 			})
@@ -242,13 +242,12 @@ func TestSyncSchema(t *testing.T) {
 
 	t.Run("unregister micro-service", func(t *testing.T) {
 		t.Run("unregister a micro service will create a task and a tombstone should pass", func(t *testing.T) {
-			resp, err := datasource.GetMetadataManager().UnregisterService(schemaContext(), &pb.DeleteServiceRequest{
+			err := datasource.GetMetadataManager().UnregisterService(schemaContext(), &pb.DeleteServiceRequest{
 				ServiceId: serviceID,
 				Force:     true,
 			})
-			assert.NotNil(t, resp)
 			assert.NoError(t, err)
-			assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
+
 			listTaskReq := model.ListTaskRequest{
 				Domain:       "sync-schema",
 				Project:      "sync-schema",
