@@ -25,7 +25,7 @@ import (
 )
 
 func InstanceUsage(ctx context.Context, request *pb.GetServiceCountRequest) (int64, error) {
-	resp, err := datasource.GetMetadataManager().GetInstanceCount(ctx, request)
+	resp, err := datasource.GetMetadataManager().CountInstance(ctx, request)
 	if err != nil {
 		return 0, err
 	}

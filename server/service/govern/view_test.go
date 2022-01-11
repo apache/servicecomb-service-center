@@ -25,7 +25,6 @@ import (
 	_ "github.com/apache/servicecomb-service-center/test"
 
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/service/disco"
 	"github.com/apache/servicecomb-service-center/server/service/govern"
 	pb "github.com/go-chassis/cari/discovery"
@@ -87,7 +86,7 @@ var _ = Describe("'Govern' service", func() {
 
 		Context("when get top graph", func() {
 			It("should be passed", func() {
-				respC, err := core.ServiceAPI.Create(getContext(), &pb.CreateServiceRequest{
+				respC, err := disco.RegisterService(getContext(), &pb.CreateServiceRequest{
 					Service: &pb.MicroService{
 						AppId:       "govern_service_group",
 						ServiceName: "govern_service_graph",
@@ -112,7 +111,7 @@ var _ = Describe("'Govern' service", func() {
 		)
 
 		It("should be passed", func() {
-			resp, err := core.ServiceAPI.Create(getContext(), &pb.CreateServiceRequest{
+			resp, err := disco.RegisterService(getContext(), &pb.CreateServiceRequest{
 				Service: &pb.MicroService{
 					AppId:       "govern_service_group",
 					ServiceName: "govern_service_name",
@@ -132,7 +131,7 @@ var _ = Describe("'Govern' service", func() {
 			})
 			Expect(err).To(BeNil())
 
-			respI, err := disco.RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
+			_, err = disco.RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
 				Instance: &pb.MicroServiceInstance{
 					ServiceId: serviceId,
 					Endpoints: []string{
@@ -143,7 +142,6 @@ var _ = Describe("'Govern' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(respI.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 		})
 
 		Context("when get invalid service detail", func() {
@@ -164,12 +162,11 @@ var _ = Describe("'Govern' service", func() {
 				Expect(err).To(BeNil())
 				Expect(respGetServiceDetail).ToNot(BeNil())
 
-				respDelete, err := core.ServiceAPI.Delete(getContext(), &pb.DeleteServiceRequest{
+				err = disco.UnregisterService(getContext(), &pb.DeleteServiceRequest{
 					ServiceId: serviceId,
 					Force:     true,
 				})
 				Expect(err).To(BeNil())
-				Expect(respDelete.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 
 				respGetServiceDetail, err = govern.GetServiceDetail(getContext(), &pb.GetServiceRequest{
 					ServiceId: serviceId,

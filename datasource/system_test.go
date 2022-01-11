@@ -27,11 +27,14 @@ import (
 )
 
 func TestDumpCache(t *testing.T) {
+	var serviceID string
 	var store = &sd.TypeStore{}
 	store.Initialize()
+	ctx := getContext()
+	defer datasource.GetMetadataManager().UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: serviceID, Force: true})
+
 	t.Run("Register service && instance, check dump, should pass", func(t *testing.T) {
-		var serviceID string
-		service, err := datasource.GetMetadataManager().RegisterService(getContext(), &pb.CreateServiceRequest{
+		service, err := datasource.GetMetadataManager().RegisterService(ctx, &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
 				ServiceName: "create_service_test",
 				AppId:       "create_service_appId",
@@ -41,10 +44,9 @@ func TestDumpCache(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, service.Response.GetCode())
 		serviceID = service.ServiceId
 
-		instance, err := datasource.GetMetadataManager().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
+		_, err = datasource.GetMetadataManager().RegisterInstance(ctx, &pb.RegisterInstanceRequest{
 			Instance: &pb.MicroServiceInstance{
 				ServiceId: serviceID,
 				Endpoints: []string{
@@ -55,9 +57,8 @@ func TestDumpCache(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, instance.Response.GetCode())
 
-		cache := datasource.GetSystemManager().DumpCache(getContext())
+		cache := datasource.GetSystemManager().DumpCache(ctx)
 		assert.NotNil(t, cache)
 	})
 }

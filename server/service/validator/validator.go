@@ -19,12 +19,8 @@ package validator
 
 import (
 	"errors"
-	"fmt"
 	"reflect"
 
-	pb "github.com/go-chassis/cari/discovery"
-
-	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/validate"
 )
 
@@ -50,56 +46,6 @@ func init() {
 	changePWDValidator.AddRule("Name", &validate.Rule{Regexp: nameRegex})
 
 	accountLoginValidator.AddRule("TokenExpirationTime", &validate.Rule{Regexp: &validate.TokenExpirationTimeChecker{}})
-}
-
-// deprecated use the ValidateXXX func instead, e.g. rbac_validator.go
-func Validate(v interface{}) error {
-	err := baseCheck(v)
-	if err != nil {
-		return err
-	}
-	switch t := v.(type) {
-	case *pb.CreateServiceRequest:
-		return CreateServiceReqValidator().Validate(v)
-	case *pb.GetServiceRequest,
-		*pb.DeleteServiceRequest,
-		*pb.GetDependenciesRequest:
-		return GetServiceReqValidator().Validate(v)
-	case *pb.CreateDependenciesRequest:
-		return CreateDependenciesReqValidator().Validate(v)
-	case *pb.AddDependenciesRequest:
-		return AddDependenciesReqValidator().Validate(v)
-	case *pb.UpdateServicePropsRequest:
-		return UpdateServicePropsReqValidator().Validate(v)
-	case *pb.GetServiceTagsRequest:
-		return GetTagsReqValidator().Validate(v)
-	case *pb.AddServiceTagsRequest:
-		return AddTagsReqValidator().Validate(v)
-	case *pb.UpdateServiceTagRequest:
-		return UpdateTagReqValidator().Validate(v)
-	case *pb.DeleteServiceTagsRequest:
-		return DeleteTagReqValidator().Validate(v)
-	case *pb.GetOneInstanceRequest,
-		*pb.GetInstancesRequest:
-		return GetInstanceReqValidator().Validate(v)
-	case *pb.UpdateInstanceStatusRequest:
-		return UpdateInstanceReqValidator().Validate(v)
-	case *pb.RegisterInstanceRequest:
-		return RegisterInstanceReqValidator().Validate(v)
-	case *pb.FindInstancesRequest:
-		return FindInstanceReqValidator().Validate(v)
-	case *pb.BatchFindInstancesRequest:
-		return BatchFindInstanceReqValidator().Validate(v)
-	case *pb.HeartbeatRequest, *pb.UnregisterInstanceRequest:
-		return HeartbeatReqValidator().Validate(v)
-	case *pb.UpdateInstancePropsRequest:
-		return UpdateInstancePropsReqValidator().Validate(v)
-	case *pb.GetAppsRequest:
-		return MicroServiceKeyValidator().Validate(v)
-	default:
-		log.Warn(fmt.Sprintf("No validator for %T.", t))
-		return nil
-	}
 }
 
 func baseCheck(v interface{}) error {

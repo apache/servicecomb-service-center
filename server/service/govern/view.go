@@ -42,8 +42,7 @@ func GetServiceDetail(ctx context.Context, in *pb.GetServiceRequest) (*pb.Servic
 }
 
 func ListApp(ctx context.Context, in *pb.GetAppsRequest) (*pb.GetAppsResponse, error) {
-	err := validator.Validate(in)
-	if err != nil {
+	if err := validator.ValidateGetAppsRequest(in); err != nil {
 		return nil, pb.NewError(pb.ErrInvalidParams, err.Error())
 	}
 

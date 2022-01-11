@@ -14,24 +14,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package v3
+
+package event
 
 import (
-	"net/http"
+	"encoding/json"
+	"fmt"
 
-	"github.com/apache/servicecomb-service-center/pkg/rest"
-	v4 "github.com/apache/servicecomb-service-center/server/rest/controller/v4"
+	guuid "github.com/gofrs/uuid"
+
+	v1 "github.com/apache/servicecomb-service-center/api/sync/v1"
+	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
-type TagService struct {
-	v4.TagService
-}
-
-func (this *TagService) URLPatterns() []rest.Route {
-	return []rest.Route{
-		{http.MethodPost, "/registry/v3/microservices/:serviceId/tags", this.AddTags},
-		{http.MethodPut, "/registry/v3/microservices/:serviceId/tags/:key", this.UpdateTag},
-		{http.MethodGet, "/registry/v3/microservices/:serviceId/tags", this.GetTags},
-		{http.MethodDelete, "/registry/v3/microservices/:serviceId/tags/:key", this.DeleteTags},
+func Publish(action string, resourceType string, resource interface{}) {
+	eventID, err := guuid.NewV4()
+	if err != nil {
+		log.Error("fail to create eventID", err)
+		return
 	}
+	resourceValue, err := json.Marshal(resource)
+	if err != nil {
+		log.Error("fail to marshal the resource", err)
+		return
+	}
+	event := v1.Event{
+		Id:      eventID.String(),
+		Action:  action,
+		Subject: resourceType,
+		Value:   resourceValue,
+	}
+	log.Info(fmt.Sprintf("success to send event %s", event.Subject))
+	// TODO to send event
 }

@@ -257,11 +257,7 @@ func DeleteSchema(ctx context.Context, request *pb.DeleteSchemaRequest) error {
 }
 
 func deleteOldSchema(ctx context.Context, request *pb.DeleteSchemaRequest) error {
-	_, err := datasource.GetMetadataManager().DeleteSchema(ctx, request)
-	if err != nil {
-		return err
-	}
-	return nil
+	return datasource.GetMetadataManager().DeleteSchema(ctx, request)
 }
 
 // PutSchemas covers all the schemas of a service.

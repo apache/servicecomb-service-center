@@ -199,27 +199,3 @@ func UpdateInstance(ctx context.Context, domainProject string, instance *pb.Micr
 	}
 	return nil
 }
-
-func AppendFindResponse(ctx context.Context, index int64, resp *pb.Response, instances []*pb.MicroServiceInstance,
-	updatedResult *[]*pb.FindResult, notModifiedResult *[]int64, failedResult **pb.FindFailedResult) {
-	if code := resp.GetCode(); code != pb.ResponseSuccess {
-		if *failedResult == nil {
-			*failedResult = &pb.FindFailedResult{
-				Error: pb.NewError(code, resp.GetMessage()),
-			}
-		}
-		(*failedResult).Indexes = append((*failedResult).Indexes, index)
-		return
-	}
-	iv, _ := ctx.Value(util.CtxRequestRevision).(string)
-	ov, _ := ctx.Value(util.CtxResponseRevision).(string)
-	if len(iv) > 0 && iv == ov {
-		*notModifiedResult = append(*notModifiedResult, index)
-		return
-	}
-	*updatedResult = append(*updatedResult, &pb.FindResult{
-		Index:     index,
-		Instances: instances,
-		Rev:       ov,
-	})
-}

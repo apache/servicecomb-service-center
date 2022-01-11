@@ -33,6 +33,7 @@ var (
 	getServiceReqValidator         validate.Validator
 	createServiceReqValidator      validate.Validator
 	updateServicePropsReqValidator validate.Validator
+	unregisterManyServiceValidator validate.Validator
 )
 
 var (
@@ -41,17 +42,17 @@ var (
 	// find 支持alias，多个:
 	serviceNameForFindRegex, _ = regexp.Compile(`^[a-zA-Z0-9]*$|^[a-zA-Z0-9][a-zA-Z0-9_\-.:]*[a-zA-Z0-9]$`)
 	// version規則: x[.y[.z]]
-	versionRegex       = validate.NewVersionRegexp(false)
-	pathRegex, _       = regexp.Compile(`^[A-Za-z0-9.,?'\\/+&amp;%$#=~_\-@{}]*$`)
-	levelRegex, _      = regexp.Compile(`^(FRONT|MIDDLE|BACK)$`)
-	statusRegex, _     = regexp.Compile("^(" + discovery.MS_UP + "|" + discovery.MS_DOWN + ")?$")
-	serviceIDRegex, _  = regexp.Compile(`^\S*$`)
-	aliasRegex, _      = regexp.Compile(`^[a-zA-Z0-9_\-.:]*$`)
-	registerByRegex, _ = regexp.Compile("^(" + util.StringJoin([]string{discovery.REGISTERBY_SDK, discovery.REGISTERBY_SIDECAR, discovery.REGISTERBY_PLATFORM}, "|") + ")*$")
-	envRegex, _        = regexp.Compile("^(" + util.StringJoin([]string{
+	versionRegex           = validate.NewVersionRegexp(false)
+	pathRegex, _           = regexp.Compile(`^[A-Za-z0-9.,?'\\/+&amp;%$#=~_\-@{}]*$`)
+	levelRegex, _          = regexp.Compile(`^(FRONT|MIDDLE|BACK)$`)
+	statusRegex, _         = regexp.Compile("^(" + discovery.MS_UP + "|" + discovery.MS_DOWN + ")?$")
+	serviceIDRegex, _      = regexp.Compile(`^\S*$`)
+	serviceIDRangeRegex, _ = regexp.Compile(`^\S{1,64}$`)
+	aliasRegex, _          = regexp.Compile(`^[a-zA-Z0-9_\-.:]*$`)
+	registerByRegex, _     = regexp.Compile("^(" + util.StringJoin([]string{discovery.REGISTERBY_SDK, discovery.REGISTERBY_SIDECAR, discovery.REGISTERBY_PLATFORM}, "|") + ")*$")
+	envRegex, _            = regexp.Compile("^(" + util.StringJoin([]string{
 		discovery.ENV_DEV, discovery.ENV_TEST, discovery.ENV_ACCEPT, discovery.ENV_PROD}, "|") + ")*$")
-	schemaIDRegex, _ = regexp.Compile(`^[a-zA-Z0-9]{1,160}$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]{0,158}[a-zA-Z0-9]$`)
-
+	schemaIDRegex, _      = regexp.Compile(`^[a-zA-Z0-9]{1,160}$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]{0,158}[a-zA-Z0-9]$`)
 	accountStatusRegex, _ = regexp.Compile(`^(active|inactive)$|^$`)
 )
 
@@ -70,13 +71,6 @@ func MicroServiceSearchKeyValidator() *validate.Validator {
 		v.AddRule("AppId", &validate.Rule{Min: 1, Max: 160, Regexp: nameRegex})
 		// support name or alias
 		v.AddRule("ServiceName", &validate.Rule{Min: 1, Max: 160 + 1 + 128, Regexp: serviceNameForFindRegex})
-	})
-}
-
-func ExistenceReqValidator() *validate.Validator {
-	return existenceReqValidator.Init(func(v *validate.Validator) {
-		v.AddRules(MicroServiceSearchKeyValidator().GetRules())
-		v.AddRule("Version", &validate.Rule{Min: 1, Max: 64, Regexp: versionRegex})
 	})
 }
 
@@ -114,11 +108,41 @@ func CreateServiceReqValidator() *validate.Validator {
 		v.AddRule("Service", &validate.Rule{Min: 1})
 		v.AddSub("Service", &microServiceValidator)
 	})
-
 }
 
 func UpdateServicePropsReqValidator() *validate.Validator {
 	return updateServicePropsReqValidator.Init(func(v *validate.Validator) {
 		v.AddRule("ServiceId", GetServiceReqValidator().GetRule("ServiceId"))
 	})
+}
+
+func ValidateCreateServiceRequest(v *discovery.CreateServiceRequest) error {
+	return CreateServiceReqValidator().Validate(v)
+}
+func ValidateUnregisterManyService(in *discovery.DelServicesRequest) error {
+	return unregisterManyServiceValidator.
+		Init(func(v *validate.Validator) {
+			v.AddRule("ServiceIds", &validate.Rule{Min: 1, Regexp: serviceIDRangeRegex})
+		}).
+		Validate(in)
+}
+func ValidateGetServiceExistenceRequest(in *discovery.GetExistenceRequest) error {
+	return existenceReqValidator.
+		Init(func(v *validate.Validator) {
+			v.AddRules(MicroServiceSearchKeyValidator().GetRules())
+			v.AddRule("Version", &validate.Rule{Min: 1, Max: 64, Regexp: versionRegex})
+		}).
+		Validate(in)
+}
+func ValidateUpdateServicePropsRequest(request *discovery.UpdateServicePropsRequest) error {
+	return UpdateServicePropsReqValidator().Validate(request)
+}
+func ValidateDeleteServiceRequest(request *discovery.DeleteServiceRequest) error {
+	return GetServiceReqValidator().Validate(request)
+}
+func ValidateGetServiceRequest(request *discovery.GetServiceRequest) error {
+	return GetServiceReqValidator().Validate(request)
+}
+func ValidateGetAppsRequest(v *discovery.GetAppsRequest) error {
+	return MicroServiceKeyValidator().Validate(v)
 }

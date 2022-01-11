@@ -35,7 +35,9 @@ func initRouter() {
 		roa.RegisterServant(&rbac.AuthResource{})
 		roa.RegisterServant(&rbac.RoleResource{})
 	}
+	roa.RegisterServant(&disco.ServiceResource{})
 	roa.RegisterServant(&disco.SchemaResource{})
+	roa.RegisterServant(&disco.InstanceResource{})
 	roa.RegisterServant(&gov.Governance{})
 	roa.RegisterServant(&govern.Resource{})
 }

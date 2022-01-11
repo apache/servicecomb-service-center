@@ -25,7 +25,7 @@ import (
 )
 
 func ServiceUsage(ctx context.Context, request *pb.GetServiceCountRequest) (int64, error) {
-	resp, err := datasource.GetMetadataManager().GetServiceCount(ctx, request)
+	resp, err := datasource.GetMetadataManager().CountService(ctx, request)
 	if err != nil {
 		return 0, err
 	}

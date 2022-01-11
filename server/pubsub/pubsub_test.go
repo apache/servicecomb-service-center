@@ -57,7 +57,6 @@ var _ = Describe("'Instance' service", func() {
 				},
 			})
 			Expect(err).To(BeNil())
-			Expect(respCreate.Response.GetCode()).To(Equal(pb.ResponseSuccess))
 			serviceId = respCreate.ServiceId
 		})
 

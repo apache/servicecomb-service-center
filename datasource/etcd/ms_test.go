@@ -64,12 +64,12 @@ func TestSyncMicroService(t *testing.T) {
 				Action:       sync.CreateAction,
 				Status:       sync.PendingStatus,
 			}
-			tasks, err := task.List(context.Background(), &listTaskReq)
+			tasks, err := task.List(microServiceGetContext(), &listTaskReq)
 			assert.NoError(t, err)
 			assert.Equal(t, 1, len(tasks))
-			err = task.Delete(context.Background(), tasks...)
+			err = task.Delete(microServiceGetContext(), tasks...)
 			assert.NoError(t, err)
-			tasks, err = task.List(context.Background(), &listTaskReq)
+			tasks, err = task.List(microServiceGetContext(), &listTaskReq)
 			assert.NoError(t, err)
 			assert.Equal(t, 0, len(tasks))
 		})
@@ -82,9 +82,9 @@ func TestSyncMicroService(t *testing.T) {
 				Properties: make(map[string]string),
 			}
 			request.Properties["sync-test"] = "sync-test"
-			resp, err := datasource.GetMetadataManager().UpdateService(microServiceGetContext(), request)
+			err := datasource.GetMetadataManager().PutServiceProperties(microServiceGetContext(), request)
 			assert.NoError(t, err)
-			assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
+
 			listTaskReq := model.ListTaskRequest{
 				Domain:       "sync-micro-service",
 				Project:      "sync-micro-service",
@@ -92,12 +92,12 @@ func TestSyncMicroService(t *testing.T) {
 				Action:       sync.UpdateAction,
 				Status:       sync.PendingStatus,
 			}
-			tasks, err := task.List(context.Background(), &listTaskReq)
+			tasks, err := task.List(microServiceGetContext(), &listTaskReq)
 			assert.NoError(t, err)
 			assert.Equal(t, 1, len(tasks))
-			err = task.Delete(context.Background(), tasks...)
+			err = task.Delete(microServiceGetContext(), tasks...)
 			assert.NoError(t, err)
-			tasks, err = task.List(context.Background(), &listTaskReq)
+			tasks, err = task.List(microServiceGetContext(), &listTaskReq)
 			assert.NoError(t, err)
 			assert.Equal(t, 0, len(tasks))
 		})
@@ -105,13 +105,12 @@ func TestSyncMicroService(t *testing.T) {
 
 	t.Run("unregister micro-service", func(t *testing.T) {
 		t.Run("unregister a micro service will create a task and a tombstone should pass", func(t *testing.T) {
-			resp, err := datasource.GetMetadataManager().UnregisterService(microServiceGetContext(), &pb.DeleteServiceRequest{
+			err := datasource.GetMetadataManager().UnregisterService(microServiceGetContext(), &pb.DeleteServiceRequest{
 				ServiceId: serviceID,
 				Force:     true,
 			})
-			assert.NotNil(t, resp)
 			assert.NoError(t, err)
-			assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
+
 			listTaskReq := model.ListTaskRequest{
 				Domain:       "sync-micro-service",
 				Project:      "sync-micro-service",
@@ -119,12 +118,12 @@ func TestSyncMicroService(t *testing.T) {
 				Action:       sync.DeleteAction,
 				Status:       sync.PendingStatus,
 			}
-			tasks, err := task.List(context.Background(), &listTaskReq)
+			tasks, err := task.List(microServiceGetContext(), &listTaskReq)
 			assert.NoError(t, err)
 			assert.Equal(t, 1, len(tasks))
-			err = task.Delete(context.Background(), tasks...)
+			err = task.Delete(microServiceGetContext(), tasks...)
 			assert.NoError(t, err)
-			tasks, err = task.List(context.Background(), &listTaskReq)
+			tasks, err = task.List(microServiceGetContext(), &listTaskReq)
 			assert.NoError(t, err)
 			assert.Equal(t, 0, len(tasks))
 			tombstoneListReq := model.ListTombstoneRequest{
@@ -135,7 +134,7 @@ func TestSyncMicroService(t *testing.T) {
 			tombstones, err := tombstone.List(context.Background(), &tombstoneListReq)
 			assert.NoError(t, err)
 			assert.Equal(t, 1, len(tombstones))
-			err = tombstone.Delete(context.Background(), tombstones...)
+			err = tombstone.Delete(microServiceGetContext(), tombstones...)
 			assert.NoError(t, err)
 		})
 	})

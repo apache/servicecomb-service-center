@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	_ "github.com/apache/servicecomb-service-center/test"
+	"github.com/go-chassis/cari/pkg/errsvc"
 
 	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -35,15 +36,16 @@ func init() {
 }
 func TestAdminService_Dump(t *testing.T) {
 	t.Log("execute 'dump' operation,when get all,should be passed")
-	resp, err := adminsvc.Dump(getContext(), &dump.Request{})
+	_, err := adminsvc.Dump(getContext(), &dump.Request{})
 	assert.NoError(t, err)
-	assert.Equal(t, discovery.ResponseSuccess, resp.Response.GetCode())
+
 	t.Log("execute 'dump' operation,when get by domain project,should be passed")
-	resp, err = adminsvc.Dump(
+	_, err = adminsvc.Dump(
 		util.SetDomainProject(context.Background(), "x", "x"),
 		&dump.Request{})
-	assert.NoError(t, err)
-	assert.Equal(t, discovery.ErrForbidden, resp.Response.GetCode())
+	testErr := err.(*errsvc.Error)
+	assert.Error(t, testErr)
+	assert.Equal(t, discovery.ErrForbidden, testErr.Code)
 }
 
 func getContext() context.Context {

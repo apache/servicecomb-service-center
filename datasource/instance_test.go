@@ -29,14 +29,17 @@ import (
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/core"
 	pb "github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/cari/pkg/errsvc"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestInstance_Create(t *testing.T) {
 	var serviceID string
+	ctx := getContext()
+	defer datasource.GetMetadataManager().UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: serviceID, Force: true})
 
 	t.Run("create service", func(t *testing.T) {
-		respCreateService, err := datasource.GetMetadataManager().RegisterService(getContext(), &pb.CreateServiceRequest{
+		respCreateService, err := datasource.GetMetadataManager().RegisterService(ctx, &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
 				ServiceName: "create_instance_service_ms",
 				AppId:       "create_instance_ms",
@@ -47,12 +50,11 @@ func TestInstance_Create(t *testing.T) {
 		})
 
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceID = respCreateService.ServiceId
 	})
 
 	t.Run("register instance", func(t *testing.T) {
-		respCreateInst, err := datasource.GetMetadataManager().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
+		respCreateInst, err := datasource.GetMetadataManager().RegisterInstance(ctx, &pb.RegisterInstanceRequest{
 			Instance: &pb.MicroServiceInstance{
 				ServiceId: serviceID,
 				Endpoints: []string{
@@ -63,10 +65,9 @@ func TestInstance_Create(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respCreateInst.Response.GetCode())
 		assert.NotEqual(t, "", respCreateInst.InstanceId)
 
-		respCreateInst, err = datasource.GetMetadataManager().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
+		respCreateInst, err = datasource.GetMetadataManager().RegisterInstance(ctx, &pb.RegisterInstanceRequest{
 			Instance: &pb.MicroServiceInstance{
 				InstanceId: "customId_ms",
 				ServiceId:  serviceID,
@@ -78,7 +79,6 @@ func TestInstance_Create(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respCreateInst.Response.GetCode())
 		assert.Equal(t, "customId_ms", respCreateInst.InstanceId)
 	})
 
@@ -91,17 +91,15 @@ func TestInstance_Create(t *testing.T) {
 			HostName: "UT-HOST",
 			Status:   pb.MSI_UP,
 		}
-		resp, err := datasource.GetMetadataManager().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
+		resp, err := datasource.GetMetadataManager().RegisterInstance(ctx, &pb.RegisterInstanceRequest{
 			Instance: instance,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
-		resp, err = datasource.GetMetadataManager().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
+		resp, err = datasource.GetMetadataManager().RegisterInstance(ctx, &pb.RegisterInstanceRequest{
 			Instance: instance,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 		assert.Equal(t, instance.InstanceId, resp.InstanceId)
 	})
 }
@@ -112,10 +110,12 @@ func TestInstance_HeartBeat(t *testing.T) {
 		instanceID1 string
 		instanceID2 string
 	)
+	ctx := getContext()
+	defer datasource.GetMetadataManager().UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: serviceID, Force: true})
 
 	t.Run("register service and instance, should pass", func(t *testing.T) {
 		log.Info("register service")
-		respCreateService, err := datasource.GetMetadataManager().RegisterService(getContext(), &pb.CreateServiceRequest{
+		respCreateService, err := datasource.GetMetadataManager().RegisterService(ctx, &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
 				ServiceName: "heartbeat_service_ms",
 				AppId:       "heartbeat_service_ms",
@@ -125,10 +125,9 @@ func TestInstance_HeartBeat(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceID = respCreateService.ServiceId
 
-		respCreateInstance, err := datasource.GetMetadataManager().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
+		respCreateInstance, err := datasource.GetMetadataManager().RegisterInstance(ctx, &pb.RegisterInstanceRequest{
 			Instance: &pb.MicroServiceInstance{
 				ServiceId: serviceID,
 				HostName:  "UT-HOST-MS",
@@ -139,10 +138,9 @@ func TestInstance_HeartBeat(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respCreateInstance.Response.GetCode())
 		instanceID1 = respCreateInstance.InstanceId
 
-		respCreateInstance, err = datasource.GetMetadataManager().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
+		respCreateInstance, err = datasource.GetMetadataManager().RegisterInstance(ctx, &pb.RegisterInstanceRequest{
 			Instance: &pb.MicroServiceInstance{
 				ServiceId: serviceID,
 				HostName:  "UT-HOST-MS",
@@ -153,39 +151,39 @@ func TestInstance_HeartBeat(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respCreateInstance.Response.GetCode())
 		instanceID2 = respCreateInstance.InstanceId
 	})
 
 	t.Run("update a lease", func(t *testing.T) {
 		log.Info("valid instance")
-		resp, err := datasource.GetMetadataManager().Heartbeat(getContext(), &pb.HeartbeatRequest{
+		err := datasource.GetMetadataManager().SendHeartbeat(ctx, &pb.HeartbeatRequest{
 			ServiceId:  serviceID,
 			InstanceId: instanceID1,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 
 		log.Info("serviceId does not exist")
-		resp, err = datasource.GetMetadataManager().Heartbeat(getContext(), &pb.HeartbeatRequest{
+		err = datasource.GetMetadataManager().SendHeartbeat(ctx, &pb.HeartbeatRequest{
 			ServiceId:  "100000000000",
 			InstanceId: instanceID1,
 		})
-		assert.NoError(t, err)
-		assert.NotEqual(t, pb.ResponseSuccess, resp.Response.GetCode())
+		testErr := err.(*errsvc.Error)
+		assert.Error(t, testErr)
+		assert.Equal(t, pb.ErrInstanceNotExists, testErr.Code)
 
 		log.Info("instance does not exist")
-		resp, err = datasource.GetMetadataManager().Heartbeat(getContext(), &pb.HeartbeatRequest{
+		err = datasource.GetMetadataManager().SendHeartbeat(ctx, &pb.HeartbeatRequest{
 			ServiceId:  serviceID,
 			InstanceId: "not-exist-ins",
 		})
-		assert.NoError(t, err)
-		assert.NotEqual(t, pb.ResponseSuccess, resp.Response.GetCode())
+		testErr = err.(*errsvc.Error)
+		assert.Error(t, testErr)
+		assert.Equal(t, pb.ErrInstanceNotExists, testErr.Code)
 	})
 
 	t.Run("batch update lease", func(t *testing.T) {
 		log.Info("request contains at least 1 instances")
-		resp, err := datasource.GetMetadataManager().HeartbeatSet(getContext(), &pb.HeartbeatSetRequest{
+		resp, err := datasource.GetMetadataManager().SendManyHeartbeat(ctx, &pb.HeartbeatSetRequest{
 			Instances: []*pb.HeartbeatSetElement{
 				{
 					ServiceId:  serviceID,
@@ -198,7 +196,7 @@ func TestInstance_HeartBeat(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
+		assert.Equal(t, 2, len(resp.Instances))
 	})
 }
 
@@ -207,10 +205,12 @@ func TestInstance_Update(t *testing.T) {
 		serviceID  string
 		instanceID string
 	)
+	ctx := getContext()
+	defer datasource.GetMetadataManager().UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: serviceID, Force: true})
 
 	t.Run("register service and instance, should pass", func(t *testing.T) {
 		log.Info("register service")
-		respCreateService, err := datasource.GetMetadataManager().RegisterService(getContext(), &pb.CreateServiceRequest{
+		respCreateService, err := datasource.GetMetadataManager().RegisterService(ctx, &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
 				ServiceName: "update_instance_service_ms",
 				AppId:       "update_instance_service_ms",
@@ -220,11 +220,10 @@ func TestInstance_Update(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceID = respCreateService.ServiceId
 
 		log.Info("create instance")
-		respCreateInstance, err := datasource.GetMetadataManager().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
+		respCreateInstance, err := datasource.GetMetadataManager().RegisterInstance(ctx, &pb.RegisterInstanceRequest{
 			Instance: &pb.MicroServiceInstance{
 				ServiceId: serviceID,
 				Endpoints: []string{
@@ -236,69 +235,64 @@ func TestInstance_Update(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respCreateInstance.Response.GetCode())
 		instanceID = respCreateInstance.InstanceId
 	})
 
 	t.Run("update instance status", func(t *testing.T) {
 		log.Info("update instance status to DOWN")
-		respUpdateStatus, err := datasource.GetMetadataManager().UpdateInstanceStatus(getContext(), &pb.UpdateInstanceStatusRequest{
+		err := datasource.GetMetadataManager().PutInstanceStatus(ctx, &pb.UpdateInstanceStatusRequest{
 			ServiceId:  serviceID,
 			InstanceId: instanceID,
 			Status:     pb.MSI_DOWN,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respUpdateStatus.Response.GetCode())
 
 		log.Info("update instance status to OUTOFSERVICE")
-		respUpdateStatus, err = datasource.GetMetadataManager().UpdateInstanceStatus(getContext(), &pb.UpdateInstanceStatusRequest{
+		err = datasource.GetMetadataManager().PutInstanceStatus(ctx, &pb.UpdateInstanceStatusRequest{
 			ServiceId:  serviceID,
 			InstanceId: instanceID,
 			Status:     pb.MSI_OUTOFSERVICE,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respUpdateStatus.Response.GetCode())
 
 		log.Info("update instance status to STARTING")
-		respUpdateStatus, err = datasource.GetMetadataManager().UpdateInstanceStatus(getContext(), &pb.UpdateInstanceStatusRequest{
+		err = datasource.GetMetadataManager().PutInstanceStatus(ctx, &pb.UpdateInstanceStatusRequest{
 			ServiceId:  serviceID,
 			InstanceId: instanceID,
 			Status:     pb.MSI_STARTING,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respUpdateStatus.Response.GetCode())
 
 		log.Info("update instance status to TESTING")
-		respUpdateStatus, err = datasource.GetMetadataManager().UpdateInstanceStatus(getContext(), &pb.UpdateInstanceStatusRequest{
+		err = datasource.GetMetadataManager().PutInstanceStatus(ctx, &pb.UpdateInstanceStatusRequest{
 			ServiceId:  serviceID,
 			InstanceId: instanceID,
 			Status:     pb.MSI_TESTING,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respUpdateStatus.Response.GetCode())
 
 		log.Info("update instance status to UP")
-		respUpdateStatus, err = datasource.GetMetadataManager().UpdateInstanceStatus(getContext(), &pb.UpdateInstanceStatusRequest{
+		err = datasource.GetMetadataManager().PutInstanceStatus(ctx, &pb.UpdateInstanceStatusRequest{
 			ServiceId:  serviceID,
 			InstanceId: instanceID,
 			Status:     pb.MSI_UP,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respUpdateStatus.Response.GetCode())
 
 		log.Info("update instance status with a not exist instance")
-		respUpdateStatus, err = datasource.GetMetadataManager().UpdateInstanceStatus(getContext(), &pb.UpdateInstanceStatusRequest{
+		err = datasource.GetMetadataManager().PutInstanceStatus(ctx, &pb.UpdateInstanceStatusRequest{
 			ServiceId:  serviceID,
 			InstanceId: "notexistins",
 			Status:     pb.MSI_STARTING,
 		})
-		assert.NoError(t, err)
-		assert.NotEqual(t, pb.ResponseSuccess, respUpdateStatus.Response.GetCode())
+		testErr := err.(*errsvc.Error)
+		assert.Error(t, testErr)
+		assert.Equal(t, pb.ErrInstanceNotExists, testErr.Code)
 	})
 
 	t.Run("update instance properties", func(t *testing.T) {
 		log.Info("update one properties")
-		respUpdateProperties, err := datasource.GetMetadataManager().UpdateInstanceProperties(getContext(),
+		err := datasource.GetMetadataManager().PutInstanceProperties(ctx,
 			&pb.UpdateInstancePropsRequest{
 				ServiceId:  serviceID,
 				InstanceId: instanceID,
@@ -307,7 +301,6 @@ func TestInstance_Update(t *testing.T) {
 				},
 			})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respUpdateProperties.Response.GetCode())
 
 		log.Info("all max properties updated")
 		size := 1000
@@ -316,17 +309,16 @@ func TestInstance_Update(t *testing.T) {
 			s := strconv.Itoa(i) + strings.Repeat("x", 253)
 			properties[s] = s
 		}
-		respUpdateProperties, err = datasource.GetMetadataManager().UpdateInstanceProperties(getContext(),
+		err = datasource.GetMetadataManager().PutInstanceProperties(ctx,
 			&pb.UpdateInstancePropsRequest{
 				ServiceId:  serviceID,
 				InstanceId: instanceID,
 				Properties: properties,
 			})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respUpdateProperties.Response.GetCode())
 
 		log.Info("update instance that does not exist")
-		respUpdateProperties, err = datasource.GetMetadataManager().UpdateInstanceProperties(getContext(),
+		err = datasource.GetMetadataManager().PutInstanceProperties(ctx,
 			&pb.UpdateInstancePropsRequest{
 				ServiceId:  serviceID,
 				InstanceId: "not_exist_ins",
@@ -334,20 +326,20 @@ func TestInstance_Update(t *testing.T) {
 					"test": "test",
 				},
 			})
-		assert.NoError(t, err)
-		assert.NotEqual(t, pb.ResponseSuccess, respUpdateProperties.Response.GetCode())
+		testErr := err.(*errsvc.Error)
+		assert.Error(t, testErr)
+		assert.Equal(t, pb.ErrInstanceNotExists, testErr.Code)
 
 		log.Info("remove properties")
-		respUpdateProperties, err = datasource.GetMetadataManager().UpdateInstanceProperties(getContext(),
+		err = datasource.GetMetadataManager().PutInstanceProperties(ctx,
 			&pb.UpdateInstancePropsRequest{
 				ServiceId:  serviceID,
 				InstanceId: instanceID,
 			})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respUpdateProperties.Response.GetCode())
 
 		log.Info("update service that does not exist")
-		respUpdateProperties, err = datasource.GetMetadataManager().UpdateInstanceProperties(getContext(),
+		err = datasource.GetMetadataManager().PutInstanceProperties(ctx,
 			&pb.UpdateInstancePropsRequest{
 				ServiceId:  "not_exist_service",
 				InstanceId: instanceID,
@@ -355,8 +347,9 @@ func TestInstance_Update(t *testing.T) {
 					"test": "test",
 				},
 			})
-		assert.NoError(t, err)
-		assert.NotEqual(t, pb.ResponseSuccess, respUpdateProperties.Response.GetCode())
+		testErr = err.(*errsvc.Error)
+		assert.Error(t, testErr)
+		assert.Equal(t, pb.ErrInstanceNotExists, testErr.Code)
 	})
 }
 
@@ -370,17 +363,27 @@ func TestInstance_Query(t *testing.T) {
 		serviceID6  string
 		serviceID7  string
 		serviceID8  string
-		serviceID9  string
 		instanceID1 string
 		instanceID2 string
 		instanceID4 string
 		instanceID5 string
 		instanceID8 string
-		instanceID9 string
 	)
+	ctx := getContext()
+
+	defer func() {
+		datasource.GetMetadataManager().UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: serviceID1, Force: true})
+		datasource.GetMetadataManager().UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: serviceID2, Force: true})
+		datasource.GetMetadataManager().UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: serviceID3, Force: true})
+		datasource.GetMetadataManager().UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: serviceID4, Force: true})
+		datasource.GetMetadataManager().UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: serviceID5, Force: true})
+		datasource.GetMetadataManager().UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: serviceID6, Force: true})
+		datasource.GetMetadataManager().UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: serviceID7, Force: true})
+		datasource.GetMetadataManager().UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: serviceID8, Force: true})
+	}()
 
 	t.Run("register services and instances for testInstance_query", func(t *testing.T) {
-		respCreateService, err := datasource.GetMetadataManager().RegisterService(getContext(), &pb.CreateServiceRequest{
+		respCreateService, err := datasource.GetMetadataManager().RegisterService(ctx, &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
 				AppId:       "query_instance_ms",
 				ServiceName: "query_instance_service_ms",
@@ -390,10 +393,9 @@ func TestInstance_Query(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceID1 = respCreateService.ServiceId
 
-		respCreateService, err = datasource.GetMetadataManager().RegisterService(getContext(), &pb.CreateServiceRequest{
+		respCreateService, err = datasource.GetMetadataManager().RegisterService(ctx, &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
 				AppId:       "query_instance_ms",
 				ServiceName: "query_instance_service_ms",
@@ -403,10 +405,9 @@ func TestInstance_Query(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceID2 = respCreateService.ServiceId
 
-		respCreateService, err = datasource.GetMetadataManager().RegisterService(getContext(), &pb.CreateServiceRequest{
+		respCreateService, err = datasource.GetMetadataManager().RegisterService(ctx, &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
 				AppId:       "query_instance_diff_app_ms",
 				ServiceName: "query_instance_service_ms",
@@ -416,10 +417,9 @@ func TestInstance_Query(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceID3 = respCreateService.ServiceId
 
-		respCreateService, err = datasource.GetMetadataManager().RegisterService(getContext(), &pb.CreateServiceRequest{
+		respCreateService, err = datasource.GetMetadataManager().RegisterService(ctx, &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
 				Environment: pb.ENV_PROD,
 				AppId:       "query_instance_ms",
@@ -430,10 +430,9 @@ func TestInstance_Query(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceID4 = respCreateService.ServiceId
 
-		respCreateService, err = datasource.GetMetadataManager().RegisterService(getContext(), &pb.CreateServiceRequest{
+		respCreateService, err = datasource.GetMetadataManager().RegisterService(ctx, &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
 				Environment: pb.ENV_PROD,
 				AppId:       "default",
@@ -447,11 +446,10 @@ func TestInstance_Query(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceID5 = respCreateService.ServiceId
 
 		respCreateService, err = datasource.GetMetadataManager().RegisterService(
-			util.SetDomainProject(util.CloneContext(getContext()), "user", "user"),
+			util.SetDomainProject(util.CloneContext(ctx), "user", "user"),
 			&pb.CreateServiceRequest{
 				Service: &pb.MicroService{
 					AppId:       "default",
@@ -462,10 +460,9 @@ func TestInstance_Query(t *testing.T) {
 				},
 			})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceID6 = respCreateService.ServiceId
 
-		respCreateService, err = datasource.GetMetadataManager().RegisterService(getContext(), &pb.CreateServiceRequest{
+		respCreateService, err = datasource.GetMetadataManager().RegisterService(ctx, &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
 				AppId:       "default",
 				ServiceName: "query_instance_shared_consumer_ms",
@@ -475,10 +472,9 @@ func TestInstance_Query(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceID7 = respCreateService.ServiceId
 
-		respCreateService, err = datasource.GetMetadataManager().RegisterService(getContext(), &pb.CreateServiceRequest{
+		respCreateService, err = datasource.GetMetadataManager().RegisterService(ctx, &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
 				AppId:       "query_instance_ms",
 				ServiceName: "query_instance_with_rev_ms",
@@ -488,23 +484,9 @@ func TestInstance_Query(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceID8 = respCreateService.ServiceId
 
-		respCreateService, err = datasource.GetMetadataManager().RegisterService(getContext(), &pb.CreateServiceRequest{
-			Service: &pb.MicroService{
-				AppId:       "query_instance_ms",
-				ServiceName: "batch_query_instance_with_rev_ms",
-				Version:     "1.0.0",
-				Level:       "FRONT",
-				Status:      pb.MS_UP,
-			},
-		})
-		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
-		serviceID9 = respCreateService.ServiceId
-
-		respCreateInstance, err := datasource.GetMetadataManager().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
+		respCreateInstance, err := datasource.GetMetadataManager().RegisterInstance(ctx, &pb.RegisterInstanceRequest{
 			Instance: &pb.MicroServiceInstance{
 				ServiceId: serviceID1,
 				HostName:  "UT-HOST-MS",
@@ -515,10 +497,9 @@ func TestInstance_Query(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respCreateInstance.Response.GetCode())
 		instanceID1 = respCreateInstance.InstanceId
 
-		respCreateInstance, err = datasource.GetMetadataManager().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
+		respCreateInstance, err = datasource.GetMetadataManager().RegisterInstance(ctx, &pb.RegisterInstanceRequest{
 			Instance: &pb.MicroServiceInstance{
 				ServiceId: serviceID2,
 				HostName:  "UT-HOST-MS",
@@ -529,10 +510,9 @@ func TestInstance_Query(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respCreateInstance.Response.GetCode())
 		instanceID2 = respCreateInstance.InstanceId
 
-		respCreateInstance, err = datasource.GetMetadataManager().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
+		respCreateInstance, err = datasource.GetMetadataManager().RegisterInstance(ctx, &pb.RegisterInstanceRequest{
 			Instance: &pb.MicroServiceInstance{
 				ServiceId: serviceID4,
 				HostName:  "UT-HOST-MS",
@@ -543,10 +523,9 @@ func TestInstance_Query(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respCreateInstance.Response.GetCode())
 		instanceID4 = respCreateInstance.InstanceId
 
-		respCreateInstance, err = datasource.GetMetadataManager().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
+		respCreateInstance, err = datasource.GetMetadataManager().RegisterInstance(ctx, &pb.RegisterInstanceRequest{
 			Instance: &pb.MicroServiceInstance{
 				ServiceId: serviceID5,
 				HostName:  "UT-HOST-MS",
@@ -557,10 +536,9 @@ func TestInstance_Query(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respCreateInstance.Response.GetCode())
 		instanceID5 = respCreateInstance.InstanceId
 
-		respCreateInstance, err = datasource.GetMetadataManager().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
+		respCreateInstance, err = datasource.GetMetadataManager().RegisterInstance(ctx, &pb.RegisterInstanceRequest{
 			Instance: &pb.MicroServiceInstance{
 				ServiceId: serviceID8,
 				HostName:  "UT-HOST-MS",
@@ -571,77 +549,59 @@ func TestInstance_Query(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respCreateInstance.Response.GetCode())
 		instanceID8 = respCreateInstance.InstanceId
-
-		respCreateInstance, err = datasource.GetMetadataManager().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
-			Instance: &pb.MicroServiceInstance{
-				ServiceId: serviceID9,
-				HostName:  "UT-HOST-MS",
-				Endpoints: []string{
-					"find:127.0.0.9:8080",
-				},
-				Status: pb.MSI_UP,
-			},
-		})
-		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respCreateInstance.Response.GetCode())
-		instanceID9 = respCreateInstance.InstanceId
 	})
 
 	t.Run("query instance, should ok", func(t *testing.T) {
-		respFind, err := datasource.GetMetadataManager().FindInstances(getContext(), &pb.FindInstancesRequest{
+		respFind, err := datasource.GetMetadataManager().FindInstances(ctx, &pb.FindInstancesRequest{
 			ConsumerServiceId: serviceID1,
 			AppId:             "query_instance_ms",
 			ServiceName:       "query_instance_service_ms",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
 		assertInstancesContain(t, respFind.Instances, instanceID1)
 		assertInstancesContain(t, respFind.Instances, instanceID2)
 	})
 
 	t.Run("query not exist service instance, should failed", func(t *testing.T) {
-		respFind, err := datasource.GetMetadataManager().FindInstances(getContext(), &pb.FindInstancesRequest{
+		_, err := datasource.GetMetadataManager().FindInstances(ctx, &pb.FindInstancesRequest{
 			ConsumerServiceId: serviceID1,
 			AppId:             "query_instance_ms",
 			ServiceName:       "not-exist",
 		})
-		assert.NoError(t, err)
-		assert.Equal(t, pb.ErrServiceNotExists, respFind.Response.GetCode())
+		testErr := err.(*errsvc.Error)
+		assert.Error(t, testErr)
+		assert.Equal(t, pb.ErrServiceNotExists, testErr.Code)
 	})
 
 	t.Run("query instance when with consumerID or specify env without consumerID, should ok", func(t *testing.T) {
-		respFind, err := datasource.GetMetadataManager().FindInstances(getContext(), &pb.FindInstancesRequest{
+		respFind, err := datasource.GetMetadataManager().FindInstances(ctx, &pb.FindInstancesRequest{
 			ConsumerServiceId: serviceID4,
 			AppId:             "query_instance_ms",
 			ServiceName:       "query_instance_diff_env_service_ms",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
 		assert.Equal(t, 1, len(respFind.Instances))
 		assertInstancesContain(t, respFind.Instances, instanceID4)
 
-		respFind, err = datasource.GetMetadataManager().FindInstances(getContext(), &pb.FindInstancesRequest{
+		respFind, err = datasource.GetMetadataManager().FindInstances(ctx, &pb.FindInstancesRequest{
 			Environment: pb.ENV_PROD,
 			AppId:       "query_instance_ms",
 			ServiceName: "query_instance_diff_env_service_ms",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
 		assert.Equal(t, 1, len(respFind.Instances))
 		assertInstancesContain(t, respFind.Instances, instanceID4)
 	})
 
 	t.Run("query instance with revision, should ok", func(t *testing.T) {
-		ctx := util.SetContext(getContext(), util.CtxNocache, "")
+		ctx := util.SetContext(ctx, util.CtxNocache, "")
 		respFind, err := datasource.GetMetadataManager().FindInstances(ctx, &pb.FindInstancesRequest{
 			ConsumerServiceId: serviceID8,
 			AppId:             "query_instance_ms",
 			ServiceName:       "query_instance_with_rev_ms",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
 		rev, _ := ctx.Value(util.CtxResponseRevision).(string)
 		assert.NotEqual(t, 0, len(rev))
 		assertInstancesContain(t, respFind.Instances, instanceID8)
@@ -653,31 +613,28 @@ func TestInstance_Query(t *testing.T) {
 			ServiceName:       "query_instance_with_rev_ms",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
 		assert.Equal(t, ctx.Value(util.CtxResponseRevision), rev)
 		assertInstancesContain(t, respFind.Instances, instanceID8)
 	})
 
 	t.Run("find should return 200 if consumer is diff apps, should ok", func(t *testing.T) {
-		respFind, err := datasource.GetMetadataManager().FindInstances(getContext(), &pb.FindInstancesRequest{
+		respFind, err := datasource.GetMetadataManager().FindInstances(ctx, &pb.FindInstancesRequest{
 			ConsumerServiceId: serviceID3,
 			AppId:             "query_instance_ms",
 			ServiceName:       "query_instance_service_ms",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
 		assert.Equal(t, 0, len(respFind.Instances))
 	})
 
 	t.Run("find provider instance but specify tag does not exist, should ok", func(t *testing.T) {
-		respFind, err := datasource.GetMetadataManager().FindInstances(getContext(), &pb.FindInstancesRequest{
+		respFind, err := datasource.GetMetadataManager().FindInstances(ctx, &pb.FindInstancesRequest{
 			ConsumerServiceId: serviceID1,
 			AppId:             "query_instance_ms",
 			ServiceName:       "query_instance_service_ms",
 			Tags:              []string{"not_exist_tag"},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
 		assert.Equal(t, 0, len(respFind.Instances))
 	})
 
@@ -687,7 +644,7 @@ func TestInstance_Query(t *testing.T) {
 		core.Service.Environment = pb.ENV_PROD
 		respFind, err := datasource.GetMetadataManager().FindInstances(
 			util.SetTargetDomainProject(
-				util.SetDomainProject(util.CloneContext(getContext()), "user", "user"),
+				util.SetDomainProject(util.CloneContext(ctx), "user", "user"),
 				"default", "default"),
 			&pb.FindInstancesRequest{
 				ConsumerServiceId: serviceID6,
@@ -695,278 +652,20 @@ func TestInstance_Query(t *testing.T) {
 				ServiceName:       "query_instance_shared_provider_ms",
 			})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
 		assert.Equal(t, 1, len(respFind.Instances))
 		assertInstancesContain(t, respFind.Instances, instanceID5)
 
-		respFind, err = datasource.GetMetadataManager().FindInstances(getContext(), &pb.FindInstancesRequest{
+		respFind, err = datasource.GetMetadataManager().FindInstances(ctx, &pb.FindInstancesRequest{
 			ConsumerServiceId: serviceID7,
 			AppId:             "default",
 			ServiceName:       "query_instance_shared_provider_ms",
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
 		assert.Equal(t, 1, len(respFind.Instances))
 		assertInstancesContain(t, respFind.Instances, instanceID5)
 
 		log.Info("query same domain deps")
-		// todo finish ut after implementing GetConsumerDependencies interface
-
-		core.Service.Environment = pb.ENV_DEV
-	})
-
-	t.Run("batch query instances, should ok", func(t *testing.T) {
-		respFind, err := datasource.GetMetadataManager().BatchFind(getContext(), &pb.BatchFindInstancesRequest{
-			ConsumerServiceId: serviceID1,
-			Services: []*pb.FindService{
-				{
-					Service: &pb.MicroServiceKey{
-						AppId:       "query_instance_ms",
-						ServiceName: "query_instance_service_ms",
-					},
-				},
-				{
-					Service: &pb.MicroServiceKey{
-						AppId:       "query_instance_ms",
-						ServiceName: "query_instance_diff_env_service_ms",
-					},
-				},
-				{
-					Service: &pb.MicroServiceKey{
-						AppId:       "query_instance_diff_app_ms",
-						ServiceName: "query_instance_service_ms",
-					},
-				},
-				{
-					Service: &pb.MicroServiceKey{
-						ServiceName: "not-exists",
-					},
-				},
-			},
-		})
-		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
-		assert.Equal(t, int64(0), respFind.Services.Updated[0].Index)
-		assertInstancesContain(t, respFind.Services.Updated[0].Instances, instanceID1)
-		assertInstancesContain(t, respFind.Services.Updated[0].Instances, instanceID2)
-		assert.Equal(t, int64(2), respFind.Services.Updated[1].Index)
-		assert.Empty(t, respFind.Services.Updated[1].Instances)
-		assert.Equal(t, 2, len(respFind.Services.Failed[0].Indexes))
-		assert.Equal(t, pb.ErrServiceNotExists, respFind.Services.Failed[0].Error.Code)
-	})
-
-	t.Run("batch query instances without specify env, should ok", func(t *testing.T) {
-		respFind, err := datasource.GetMetadataManager().BatchFind(getContext(), &pb.BatchFindInstancesRequest{
-			ConsumerServiceId: serviceID4,
-			Services: []*pb.FindService{
-				{
-					Service: &pb.MicroServiceKey{
-						AppId:       "query_instance_ms",
-						ServiceName: "query_instance_diff_env_service_ms",
-					},
-				},
-			},
-		})
-		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
-		assert.Equal(t, 1, len(respFind.Services.Updated[0].Instances))
-		assert.Equal(t, instanceID4, respFind.Services.Updated[0].Instances[0].InstanceId)
-	})
-
-	t.Run("batch query instances with revision, should ok", func(t *testing.T) {
-		ctx := util.SetContext(getContext(), util.CtxNocache, "")
-		respFind, err := datasource.GetMetadataManager().BatchFind(ctx, &pb.BatchFindInstancesRequest{
-			ConsumerServiceId: serviceID8,
-			Services: []*pb.FindService{
-				{
-					Service: &pb.MicroServiceKey{
-						AppId:       "query_instance_ms",
-						ServiceName: "query_instance_with_rev_ms",
-					},
-				},
-				{
-					Service: &pb.MicroServiceKey{
-						AppId:       "query_instance_ms",
-						ServiceName: "batch_query_instance_with_rev_ms",
-					},
-				},
-			},
-			Instances: []*pb.FindInstance{
-				{
-					Instance: &pb.HeartbeatSetElement{
-						ServiceId:  serviceID9,
-						InstanceId: instanceID9,
-					},
-				},
-				{
-					Instance: &pb.HeartbeatSetElement{
-						ServiceId:  serviceID8,
-						InstanceId: instanceID8,
-					},
-				},
-			},
-		})
-		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
-		rev := respFind.Services.Updated[0].Rev
-		assert.Equal(t, int64(0), respFind.Services.Updated[0].Index)
-		assert.Equal(t, int64(1), respFind.Services.Updated[1].Index)
-		assert.Equal(t, instanceID8, respFind.Services.Updated[0].Instances[0].InstanceId)
-		assert.Equal(t, instanceID9, respFind.Services.Updated[1].Instances[0].InstanceId)
-		assert.NotEqual(t, 0, len(rev))
-		instanceRev := respFind.Instances.Updated[0].Rev
-		assert.Equal(t, int64(0), respFind.Instances.Updated[0].Index)
-		assert.Equal(t, int64(1), respFind.Instances.Updated[1].Index)
-		assert.Equal(t, instanceID9, respFind.Instances.Updated[0].Instances[0].InstanceId)
-		assert.Equal(t, instanceID8, respFind.Instances.Updated[1].Instances[0].InstanceId)
-		assert.NotEqual(t, 0, len(instanceRev))
-
-		respFind, err = datasource.GetMetadataManager().BatchFind(ctx, &pb.BatchFindInstancesRequest{
-			ConsumerServiceId: serviceID8,
-			Services: []*pb.FindService{
-				{
-					Service: &pb.MicroServiceKey{
-						AppId:       "query_instance_ms",
-						ServiceName: "query_instance_with_rev_ms",
-					},
-					Rev: "x",
-				},
-			},
-			Instances: []*pb.FindInstance{
-				{
-					Instance: &pb.HeartbeatSetElement{
-						ServiceId:  serviceID9,
-						InstanceId: instanceID9,
-					},
-					Rev: "x",
-				},
-			},
-		})
-		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
-		assert.Equal(t, instanceID8, respFind.Services.Updated[0].Instances[0].InstanceId)
-		assert.Equal(t, respFind.Services.Updated[0].Rev, rev)
-		assert.Equal(t, instanceID9, respFind.Instances.Updated[0].Instances[0].InstanceId)
-		assert.Equal(t, instanceRev, respFind.Instances.Updated[0].Rev)
-
-		respFind, err = datasource.GetMetadataManager().BatchFind(ctx, &pb.BatchFindInstancesRequest{
-			ConsumerServiceId: serviceID8,
-			Services: []*pb.FindService{
-				{
-					Service: &pb.MicroServiceKey{
-						AppId:       "query_instance_ms",
-						ServiceName: "query_instance_with_rev_ms",
-					},
-					Rev: rev,
-				},
-			},
-			Instances: []*pb.FindInstance{
-				{
-					Instance: &pb.HeartbeatSetElement{
-						ServiceId:  serviceID9,
-						InstanceId: instanceID9,
-					},
-					Rev: instanceRev,
-				},
-			},
-		})
-		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
-		assert.Equal(t, int64(0), respFind.Services.NotModified[0])
-		assert.Equal(t, int64(0), respFind.Instances.NotModified[0])
-	})
-
-	t.Run("find should return 200 even if consumer is diff apps, should ok", func(t *testing.T) {
-		respFind, err := datasource.GetMetadataManager().BatchFind(getContext(), &pb.BatchFindInstancesRequest{
-			ConsumerServiceId: serviceID3,
-			Services: []*pb.FindService{
-				{
-					Service: &pb.MicroServiceKey{
-						AppId:       "query_instance_ms",
-						ServiceName: "query_instance_service_ms",
-						Version:     "1.0.5",
-					},
-				},
-			},
-		})
-		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
-		assert.Equal(t, 0, len(respFind.Services.Updated[0].Instances))
-	})
-
-	t.Run("find shared service discovery, should ok", func(t *testing.T) {
-		config.Server.Config.GlobalVisible = "query_instance_shared_provider_ms"
-		core.RegisterGlobalServices()
-		core.Service.Environment = pb.ENV_PROD
-		respFind, err := datasource.GetMetadataManager().BatchFind(
-			util.SetTargetDomainProject(
-				util.SetDomainProject(util.CloneContext(getContext()), "user", "user"),
-				"default", "default"),
-			&pb.BatchFindInstancesRequest{
-				ConsumerServiceId: serviceID6,
-				Services: []*pb.FindService{
-					{
-						Service: &pb.MicroServiceKey{
-							AppId:       "default",
-							ServiceName: "query_instance_shared_provider_ms",
-						},
-					},
-				},
-			})
-		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
-		assert.Equal(t, 1, len(respFind.Services.Updated[0].Instances))
-		assert.Equal(t, instanceID5, respFind.Services.Updated[0].Instances[0].InstanceId)
-
-		respFind, err = datasource.GetMetadataManager().BatchFind(getContext(), &pb.BatchFindInstancesRequest{
-			ConsumerServiceId: serviceID7,
-			Services: []*pb.FindService{
-				{
-					Service: &pb.MicroServiceKey{
-						AppId:       "default",
-						ServiceName: "query_instance_shared_provider_ms",
-					},
-				},
-			},
-		})
-		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
-		assert.Equal(t, 1, len(respFind.Services.Updated[0].Instances))
-		assert.Equal(t, instanceID5, respFind.Services.Updated[0].Instances[0].InstanceId)
-
-		respFind, err = datasource.GetMetadataManager().BatchFind(util.SetTargetDomainProject(
-			util.SetDomainProject(util.CloneContext(getContext()), "user", "user"),
-			"default", "default"),
-			&pb.BatchFindInstancesRequest{
-				ConsumerServiceId: serviceID6,
-				Instances: []*pb.FindInstance{
-					{
-						Instance: &pb.HeartbeatSetElement{
-							ServiceId:  serviceID5,
-							InstanceId: instanceID5,
-						},
-					},
-				},
-			})
-		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
-		assert.Equal(t, pb.ErrServiceNotExists, respFind.Instances.Failed[0].Error.Code)
-
-		respFind, err = datasource.GetMetadataManager().BatchFind(getContext(), &pb.BatchFindInstancesRequest{
-			ConsumerServiceId: serviceID7,
-			Instances: []*pb.FindInstance{
-				{
-					Instance: &pb.HeartbeatSetElement{
-						ServiceId:  serviceID5,
-						InstanceId: instanceID5,
-					},
-				},
-			},
-		})
-		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respFind.Response.GetCode())
-		assert.Equal(t, 1, len(respFind.Instances.Updated[0].Instances))
-		assert.Equal(t, instanceID5, respFind.Instances.Updated[0].Instances[0].InstanceId)
+		// todo finish ut after implementing ListProviders interface
 
 		core.Service.Environment = pb.ENV_DEV
 	})
@@ -974,12 +673,17 @@ func TestInstance_Query(t *testing.T) {
 	t.Run("query instances between diff dimensions", func(t *testing.T) {
 		log.Info("diff appId")
 		UTFunc := func(consumerId string, code int32) {
-			respFind, err := datasource.GetMetadataManager().GetInstances(getContext(), &pb.GetInstancesRequest{
+			_, err := datasource.GetMetadataManager().ListInstance(ctx, &pb.GetInstancesRequest{
 				ConsumerServiceId: consumerId,
 				ProviderServiceId: serviceID2,
 			})
-			assert.NoError(t, err)
-			assert.Equal(t, code, respFind.Response.GetCode())
+			if code == pb.ResponseSuccess {
+				assert.NoError(t, err)
+				return
+			}
+			testErr := err.(*errsvc.Error)
+			assert.Error(t, testErr)
+			assert.Equal(t, code, testErr.Code)
 		}
 
 		UTFunc(serviceID3, pb.ErrServiceNotExists)
@@ -987,12 +691,13 @@ func TestInstance_Query(t *testing.T) {
 		UTFunc(serviceID1, pb.ResponseSuccess)
 
 		log.Info("diff env")
-		respFind, err := datasource.GetMetadataManager().GetInstances(getContext(), &pb.GetInstancesRequest{
+		_, err := datasource.GetMetadataManager().ListInstance(ctx, &pb.GetInstancesRequest{
 			ConsumerServiceId: serviceID4,
 			ProviderServiceId: serviceID2,
 		})
-		assert.NoError(t, err)
-		assert.NotEqual(t, pb.ResponseSuccess, respFind.Response.GetCode())
+		testErr := err.(*errsvc.Error)
+		assert.Error(t, testErr)
+		assert.Equal(t, pb.ErrServiceNotExists, testErr.Code)
 	})
 }
 
@@ -1013,7 +718,6 @@ func TestServicesStatistics_Get(t *testing.T) {
 	var serviceId2 string
 
 	t.Run("register services and instances for TestServicesStatistics_Get", func(t *testing.T) {
-
 		//service1
 		ctx = util.WithNoCache(util.SetDomainProject(context.Background(), "default", "Project1"))
 		respCreateService, err := datasource.GetMetadataManager().RegisterService(ctx, &pb.CreateServiceRequest{
@@ -1026,10 +730,9 @@ func TestServicesStatistics_Get(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceId1 = respCreateService.ServiceId
 
-		respCreateInstance, err := datasource.GetMetadataManager().RegisterInstance(ctx, &pb.RegisterInstanceRequest{
+		_, err = datasource.GetMetadataManager().RegisterInstance(ctx, &pb.RegisterInstanceRequest{
 			Instance: &pb.MicroServiceInstance{
 				ServiceId: serviceId1,
 				HostName:  "UT-HOST-MS1",
@@ -1040,9 +743,8 @@ func TestServicesStatistics_Get(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respCreateInstance.Response.GetCode())
 
-		respCreateInstance, err = datasource.GetMetadataManager().RegisterInstance(ctx, &pb.RegisterInstanceRequest{
+		_, err = datasource.GetMetadataManager().RegisterInstance(ctx, &pb.RegisterInstanceRequest{
 			Instance: &pb.MicroServiceInstance{
 				ServiceId: serviceId1,
 				HostName:  "UT-HOST-MS2",
@@ -1053,7 +755,6 @@ func TestServicesStatistics_Get(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respCreateInstance.Response.GetCode())
 
 		//service2
 		ctx = util.WithNoCache(util.SetDomainProject(context.Background(), "DomainTest1", "Project1"))
@@ -1067,10 +768,9 @@ func TestServicesStatistics_Get(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceId2 = respCreateService.ServiceId
 
-		respCreateInstance, err = datasource.GetMetadataManager().RegisterInstance(ctx, &pb.RegisterInstanceRequest{
+		_, err = datasource.GetMetadataManager().RegisterInstance(ctx, &pb.RegisterInstanceRequest{
 			Instance: &pb.MicroServiceInstance{
 				ServiceId: serviceId2,
 				HostName:  "UT-HOST-MS1",
@@ -1081,7 +781,6 @@ func TestServicesStatistics_Get(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respCreateInstance.Response.GetCode())
 	})
 
 	t.Run("query services statistics", func(t *testing.T) {
@@ -1100,20 +799,18 @@ func TestServicesStatistics_Get(t *testing.T) {
 
 	t.Run("delete a service ", func(t *testing.T) {
 		ctx = util.WithNoCache(util.SetDomainProject(context.Background(), "default", "Project1"))
-		resp, err := datasource.GetMetadataManager().UnregisterService(ctx, &pb.DeleteServiceRequest{
+		err := datasource.GetMetadataManager().UnregisterService(ctx, &pb.DeleteServiceRequest{
 			ServiceId: serviceId1,
-			Force:     false,
+			Force:     true,
 		})
 		assert.NoError(t, err)
-		assert.NotEqual(t, pb.ResponseSuccess, resp.Response.GetCode())
 
 		ctx = util.WithNoCache(util.SetDomainProject(context.Background(), "DomainTest1", "Project1"))
-		resp, err = datasource.GetMetadataManager().UnregisterService(ctx, &pb.DeleteServiceRequest{
+		err = datasource.GetMetadataManager().UnregisterService(ctx, &pb.DeleteServiceRequest{
 			ServiceId: serviceId2,
-			Force:     false,
+			Force:     true,
 		})
 		assert.NoError(t, err)
-		assert.NotEqual(t, pb.ResponseSuccess, resp.Response.GetCode())
 	})
 }
 
@@ -1124,126 +821,12 @@ func TestInstance_GetOne(t *testing.T) {
 		serviceId3  string
 		instanceId2 string
 	)
+	ctx := getContext()
+	defer datasource.GetMetadataManager().UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: serviceId1, Force: true})
+	defer datasource.GetMetadataManager().UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: serviceId2, Force: true})
+	defer datasource.GetMetadataManager().UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: serviceId3, Force: true})
 
 	t.Run("register service and instances", func(t *testing.T) {
-		respCreateService, err := datasource.GetMetadataManager().RegisterService(getContext(), &pb.CreateServiceRequest{
-			Service: &pb.MicroService{
-				AppId:       "get_instance_ms",
-				ServiceName: "get_instance_service_ms",
-				Version:     "1.0.0",
-				Level:       "FRONT",
-				Status:      pb.MS_UP,
-			},
-		})
-		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
-		serviceId1 = respCreateService.ServiceId
-
-		respCreateService, err = datasource.GetMetadataManager().RegisterService(getContext(), &pb.CreateServiceRequest{
-			Service: &pb.MicroService{
-				AppId:       "get_instance_ms",
-				ServiceName: "get_instance_service_ms",
-				Version:     "1.0.5",
-				Level:       "FRONT",
-				Status:      pb.MS_UP,
-			},
-		})
-		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
-		serviceId2 = respCreateService.ServiceId
-
-		respCreateInstance, err := datasource.GetMetadataManager().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
-			Instance: &pb.MicroServiceInstance{
-				ServiceId: serviceId2,
-				HostName:  "UT-HOST-MS",
-				Endpoints: []string{
-					"get:127.0.0.2:8080",
-				},
-				Status: pb.MSI_UP,
-			},
-		})
-		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
-		instanceId2 = respCreateInstance.InstanceId
-
-		respCreateService, err = datasource.GetMetadataManager().RegisterService(getContext(), &pb.CreateServiceRequest{
-			Service: &pb.MicroService{
-				AppId:       "get_instance_cross_ms",
-				ServiceName: "get_instance_service_ms",
-				Version:     "1.0.0",
-				Level:       "FRONT",
-				Status:      pb.MS_UP,
-			},
-		})
-		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
-		serviceId3 = respCreateService.ServiceId
-	})
-
-	t.Run("get one instance when invalid request", func(t *testing.T) {
-		log.Info("find service itself")
-		resp, err := datasource.GetMetadataManager().GetInstance(getContext(), &pb.GetOneInstanceRequest{
-			ConsumerServiceId:  serviceId2,
-			ProviderServiceId:  serviceId2,
-			ProviderInstanceId: instanceId2,
-		})
-		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
-
-		log.Info("consumer does not exist")
-		resp, err = datasource.GetMetadataManager().GetInstance(getContext(), &pb.GetOneInstanceRequest{
-			ConsumerServiceId:  "not-exist-id-ms",
-			ProviderServiceId:  serviceId2,
-			ProviderInstanceId: instanceId2,
-		})
-		assert.NoError(t, err)
-		assert.NotEqual(t, pb.ResponseSuccess, resp.Response.GetCode())
-	})
-
-	t.Run("get between diff apps", func(t *testing.T) {
-		resp, err := datasource.GetMetadataManager().GetInstance(getContext(), &pb.GetOneInstanceRequest{
-			ConsumerServiceId:  serviceId3,
-			ProviderServiceId:  serviceId2,
-			ProviderInstanceId: instanceId2,
-		})
-		assert.NoError(t, err)
-		assert.Equal(t, pb.ErrInstanceNotExists, resp.Response.GetCode())
-
-		respAll, err := datasource.GetMetadataManager().GetInstances(getContext(), &pb.GetInstancesRequest{
-			ConsumerServiceId: serviceId3,
-			ProviderServiceId: serviceId2,
-		})
-		assert.NoError(t, err)
-		assert.NotEqual(t, pb.ResponseSuccess, respAll.Response.GetCode())
-	})
-
-	t.Run("get instances when request is invalid", func(t *testing.T) {
-		log.Info("consumer does not exist")
-		resp, err := datasource.GetMetadataManager().GetInstances(getContext(), &pb.GetInstancesRequest{
-			ConsumerServiceId: "not-exist-service-ms",
-			ProviderServiceId: serviceId2,
-		})
-		assert.NoError(t, err)
-		assert.NotEqual(t, pb.ResponseSuccess, resp.Response.GetCode())
-
-		log.Info("consumer does not exist")
-		resp, err = datasource.GetMetadataManager().GetInstances(getContext(), &pb.GetInstancesRequest{
-			ConsumerServiceId: serviceId1,
-			ProviderServiceId: serviceId2,
-		})
-		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
-	})
-}
-
-func TestInstance_GetAll(t *testing.T) {
-
-	t.Run("register 2 instances, get all instances count should return 2", func(t *testing.T) {
-		var (
-			serviceId1 string
-			serviceId2 string
-		)
-		ctx := util.WithNoCache(util.SetDomainProject(context.Background(), "TestInstance_GetAll", "1"))
 		respCreateService, err := datasource.GetMetadataManager().RegisterService(ctx, &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
 				AppId:       "get_instance_ms",
@@ -1254,7 +837,6 @@ func TestInstance_GetAll(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceId1 = respCreateService.ServiceId
 
 		respCreateService, err = datasource.GetMetadataManager().RegisterService(ctx, &pb.CreateServiceRequest{
@@ -1267,10 +849,129 @@ func TestInstance_GetAll(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceId2 = respCreateService.ServiceId
 
 		respCreateInstance, err := datasource.GetMetadataManager().RegisterInstance(ctx, &pb.RegisterInstanceRequest{
+			Instance: &pb.MicroServiceInstance{
+				ServiceId: serviceId2,
+				HostName:  "UT-HOST-MS",
+				Endpoints: []string{
+					"get:127.0.0.2:8080",
+				},
+				Status: pb.MSI_UP,
+			},
+		})
+		assert.NoError(t, err)
+		instanceId2 = respCreateInstance.InstanceId
+
+		respCreateService, err = datasource.GetMetadataManager().RegisterService(ctx, &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				AppId:       "get_instance_cross_ms",
+				ServiceName: "get_instance_service_ms",
+				Version:     "1.0.0",
+				Level:       "FRONT",
+				Status:      pb.MS_UP,
+			},
+		})
+		assert.NoError(t, err)
+		serviceId3 = respCreateService.ServiceId
+	})
+
+	t.Run("get one instance when invalid request", func(t *testing.T) {
+		log.Info("find service itself")
+		resp, err := datasource.GetMetadataManager().GetInstance(ctx, &pb.GetOneInstanceRequest{
+			ConsumerServiceId:  serviceId2,
+			ProviderServiceId:  serviceId2,
+			ProviderInstanceId: instanceId2,
+		})
+		assert.NoError(t, err)
+		assert.NotNil(t, resp.Instance)
+
+		log.Info("consumer does not exist")
+		_, err = datasource.GetMetadataManager().GetInstance(ctx, &pb.GetOneInstanceRequest{
+			ConsumerServiceId:  "not-exist-id-ms",
+			ProviderServiceId:  serviceId2,
+			ProviderInstanceId: instanceId2,
+		})
+		testErr := err.(*errsvc.Error)
+		assert.Error(t, testErr)
+		assert.Equal(t, pb.ErrServiceNotExists, testErr.Code)
+	})
+
+	t.Run("get between diff apps", func(t *testing.T) {
+		_, err := datasource.GetMetadataManager().GetInstance(ctx, &pb.GetOneInstanceRequest{
+			ConsumerServiceId:  serviceId3,
+			ProviderServiceId:  serviceId2,
+			ProviderInstanceId: instanceId2,
+		})
+		testErr := err.(*errsvc.Error)
+		assert.Error(t, testErr)
+		assert.Equal(t, pb.ErrInstanceNotExists, testErr.Code)
+
+		_, err = datasource.GetMetadataManager().ListInstance(ctx, &pb.GetInstancesRequest{
+			ConsumerServiceId: serviceId3,
+			ProviderServiceId: serviceId2,
+		})
+		testErr = err.(*errsvc.Error)
+		assert.Error(t, testErr)
+		assert.Equal(t, pb.ErrServiceNotExists, testErr.Code)
+	})
+
+	t.Run("get instances when request is invalid", func(t *testing.T) {
+		log.Info("consumer does not exist")
+		resp, err := datasource.GetMetadataManager().ListInstance(ctx, &pb.GetInstancesRequest{
+			ConsumerServiceId: "not-exist-service-ms",
+			ProviderServiceId: serviceId2,
+		})
+		testErr := err.(*errsvc.Error)
+		assert.Error(t, testErr)
+		assert.Equal(t, pb.ErrServiceNotExists, testErr.Code)
+
+		log.Info("consumer does not exist")
+		resp, err = datasource.GetMetadataManager().ListInstance(ctx, &pb.GetInstancesRequest{
+			ConsumerServiceId: serviceId1,
+			ProviderServiceId: serviceId2,
+		})
+		assert.NoError(t, err)
+		assert.NotNil(t, resp)
+	})
+}
+
+func TestInstance_GetAll(t *testing.T) {
+	t.Run("register 2 instances, get all instances count should return 2", func(t *testing.T) {
+		var (
+			serviceId1 string
+			serviceId2 string
+		)
+		ctx := util.WithNoCache(util.SetDomainProject(context.Background(), "TestInstance_GetAll", "1"))
+
+		respCreateService, err := datasource.GetMetadataManager().RegisterService(ctx, &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				AppId:       "get_instance_ms",
+				ServiceName: "get_instance_service_ms",
+				Version:     "1.0.0",
+				Level:       "FRONT",
+				Status:      pb.MS_UP,
+			},
+		})
+		assert.NoError(t, err)
+		serviceId1 = respCreateService.ServiceId
+		defer datasource.GetMetadataManager().UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: serviceId1, Force: true})
+
+		respCreateService, err = datasource.GetMetadataManager().RegisterService(ctx, &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				AppId:       "get_instance_ms",
+				ServiceName: "get_instance_service_ms",
+				Version:     "1.0.5",
+				Level:       "FRONT",
+				Status:      pb.MS_UP,
+			},
+		})
+		assert.NoError(t, err)
+		serviceId2 = respCreateService.ServiceId
+		defer datasource.GetMetadataManager().UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: serviceId2, Force: true})
+
+		_, err = datasource.GetMetadataManager().RegisterInstance(ctx, &pb.RegisterInstanceRequest{
 			Instance: &pb.MicroServiceInstance{
 				ServiceId: serviceId1,
 				HostName:  "UT-HOST-MS",
@@ -1281,9 +982,8 @@ func TestInstance_GetAll(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respCreateInstance.Response.GetCode())
 
-		respCreateInstance, err = datasource.GetMetadataManager().RegisterInstance(ctx, &pb.RegisterInstanceRequest{
+		_, err = datasource.GetMetadataManager().RegisterInstance(ctx, &pb.RegisterInstanceRequest{
 			Instance: &pb.MicroServiceInstance{
 				ServiceId: serviceId2,
 				HostName:  "UT-HOST-MS",
@@ -1294,19 +994,16 @@ func TestInstance_GetAll(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respCreateInstance.Response.GetCode())
 
-		respAll, err := datasource.GetMetadataManager().GetAllInstances(ctx, &pb.GetAllInstancesRequest{})
+		respAll, err := datasource.GetMetadataManager().ListManyInstances(ctx, &pb.GetAllInstancesRequest{})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respAll.Response.GetCode())
 		assert.Equal(t, 2, len(respAll.Instances))
 	})
 
 	t.Run("domain contain no instances, get all instances should be pass, return 0 instance", func(t *testing.T) {
 		ctx := util.WithNoCache(util.SetDomainProject(context.Background(), "TestInstance_GetAll", "2"))
-		respAll, err := datasource.GetMetadataManager().GetAllInstances(ctx, &pb.GetAllInstancesRequest{})
+		respAll, err := datasource.GetMetadataManager().ListManyInstances(ctx, &pb.GetAllInstancesRequest{})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respAll.Response.GetCode())
 		assert.Equal(t, 0, len(respAll.Instances))
 	})
 }
@@ -1316,9 +1013,11 @@ func TestInstance_Unregister(t *testing.T) {
 		serviceId  string
 		instanceId string
 	)
+	ctx := getContext()
+	defer datasource.GetMetadataManager().UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: serviceId, Force: true})
 
 	t.Run("register service and instances", func(t *testing.T) {
-		respCreateService, err := datasource.GetMetadataManager().RegisterService(getContext(), &pb.CreateServiceRequest{
+		respCreateService, err := datasource.GetMetadataManager().RegisterService(ctx, &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
 				AppId:       "unregister_instance_ms",
 				ServiceName: "unregister_instance_service_ms",
@@ -1331,10 +1030,9 @@ func TestInstance_Unregister(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceId = respCreateService.ServiceId
 
-		respCreateInstance, err := datasource.GetMetadataManager().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
+		respCreateInstance, err := datasource.GetMetadataManager().RegisterInstance(ctx, &pb.RegisterInstanceRequest{
 			Instance: &pb.MicroServiceInstance{
 				ServiceId: serviceId,
 				HostName:  "UT-HOST-MS",
@@ -1345,35 +1043,35 @@ func TestInstance_Unregister(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respCreateInstance.Response.GetCode())
 		instanceId = respCreateInstance.InstanceId
 	})
 
 	t.Run("unregister instance", func(t *testing.T) {
-		resp, err := datasource.GetMetadataManager().UnregisterInstance(getContext(), &pb.UnregisterInstanceRequest{
+		err := datasource.GetMetadataManager().UnregisterInstance(ctx, &pb.UnregisterInstanceRequest{
 			ServiceId:  serviceId,
 			InstanceId: instanceId,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 	})
 
 	t.Run("unregister instance when request is invalid", func(t *testing.T) {
 		log.Info("service id does not exist")
-		resp, err := datasource.GetMetadataManager().UnregisterInstance(getContext(), &pb.UnregisterInstanceRequest{
+		err := datasource.GetMetadataManager().UnregisterInstance(ctx, &pb.UnregisterInstanceRequest{
 			ServiceId:  "not-exist-id-ms",
 			InstanceId: instanceId,
 		})
-		assert.NoError(t, err)
-		assert.NotEqual(t, pb.ResponseSuccess, resp.Response.GetCode())
+		testErr := err.(*errsvc.Error)
+		assert.Error(t, testErr)
+		assert.Equal(t, pb.ErrInstanceNotExists, testErr.Code)
 
 		log.Info("instance id does not exist")
-		resp, err = datasource.GetMetadataManager().UnregisterInstance(getContext(), &pb.UnregisterInstanceRequest{
+		err = datasource.GetMetadataManager().UnregisterInstance(ctx, &pb.UnregisterInstanceRequest{
 			ServiceId:  serviceId,
 			InstanceId: "not-exist-id-ms",
 		})
-		assert.NoError(t, err)
-		assert.NotEqual(t, pb.ResponseSuccess, resp.Response.GetCode())
+		testErr = err.(*errsvc.Error)
+		assert.Error(t, testErr)
+		assert.Equal(t, pb.ErrInstanceNotExists, testErr.Code)
 	})
 }
 
@@ -1382,9 +1080,11 @@ func TestInstance_Exist(t *testing.T) {
 		serviceId  string
 		instanceId string
 	)
+	ctx := getContext()
+	defer datasource.GetMetadataManager().UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: serviceId, Force: true})
 
 	t.Run("register service and instance", func(t *testing.T) {
-		respCreateService, err := datasource.GetMetadataManager().RegisterService(getContext(), &pb.CreateServiceRequest{
+		respCreateService, err := datasource.GetMetadataManager().RegisterService(ctx, &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
 				AppId:       "check_exist_instance_ms",
 				ServiceName: "check_exist_instance_service_ms",
@@ -1397,10 +1097,9 @@ func TestInstance_Exist(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceId = respCreateService.ServiceId
 
-		respCreateInstance, err := datasource.GetMetadataManager().RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
+		respCreateInstance, err := datasource.GetMetadataManager().RegisterInstance(ctx, &pb.RegisterInstanceRequest{
 			Instance: &pb.MicroServiceInstance{
 				ServiceId: serviceId,
 				HostName:  "UT-HOST-MS",
@@ -1411,42 +1110,39 @@ func TestInstance_Exist(t *testing.T) {
 			},
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respCreateInstance.Response.GetCode())
 		instanceId = respCreateInstance.InstanceId
 	})
 
 	t.Run("the check instance should exist", func(t *testing.T) {
-		respCheckInstance, err := datasource.GetMetadataManager().ExistInstanceByID(getContext(), &pb.MicroServiceInstanceKey{
+		respCheckInstance, err := datasource.GetMetadataManager().ExistInstance(ctx, &pb.MicroServiceInstanceKey{
 			ServiceId:  serviceId,
 			InstanceId: instanceId,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respCheckInstance.Response.GetCode())
+		assert.True(t, respCheckInstance.Exist)
 	})
 
 	t.Run("unregister instance", func(t *testing.T) {
-		resp, err := datasource.GetMetadataManager().UnregisterInstance(getContext(), &pb.UnregisterInstanceRequest{
+		err := datasource.GetMetadataManager().UnregisterInstance(ctx, &pb.UnregisterInstanceRequest{
 			ServiceId:  serviceId,
 			InstanceId: instanceId,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 	})
 
 	t.Run("The check instance should not exist", func(t *testing.T) {
-		resp, err := datasource.GetMetadataManager().ExistInstanceByID(getContext(), &pb.MicroServiceInstanceKey{
+		resp, err := datasource.GetMetadataManager().ExistInstance(ctx, &pb.MicroServiceInstanceKey{
 			ServiceId:  serviceId,
 			InstanceId: instanceId,
 		})
-		assert.NotNil(t, err)
-		assert.Equal(t, pb.ErrInstanceNotExists, resp.Response.GetCode())
+		assert.NoError(t, err)
+		assert.False(t, resp.Exist)
 	})
 
 	t.Run("unregister service", func(t *testing.T) {
-		resp, err := datasource.GetMetadataManager().UnregisterService(getContext(), &pb.DeleteServiceRequest{
+		err := datasource.GetMetadataManager().UnregisterService(ctx, &pb.DeleteServiceRequest{
 			ServiceId: serviceId,
 		})
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 	})
 }

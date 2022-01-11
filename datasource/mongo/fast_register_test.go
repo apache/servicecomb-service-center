@@ -32,6 +32,8 @@ import (
 
 func TestInstance_BatchCreate(t *testing.T) {
 	var serviceID string
+	ctx := getContext()
+	defer datasource.GetMetadataManager().UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: serviceID, Force: true})
 
 	mongo.FastRegConfiguration().QueueSize = 100
 	fastRegisterService := mongo.NewFastRegisterInstanceService()
@@ -41,7 +43,7 @@ func TestInstance_BatchCreate(t *testing.T) {
 	fastRegisterTimeTask.Start()
 
 	t.Run("given service to register instance expect register success", func(t *testing.T) {
-		respCreateService, err := datasource.GetMetadataManager().RegisterService(getContext(), &pb.CreateServiceRequest{
+		respCreateService, err := datasource.GetMetadataManager().RegisterService(ctx, &pb.CreateServiceRequest{
 			Service: &pb.MicroService{
 				ServiceName: "create_instance_service_ms",
 				AppId:       "create_instance_ms",
@@ -52,9 +54,7 @@ func TestInstance_BatchCreate(t *testing.T) {
 		})
 
 		assert.NoError(t, err)
-		assert.Equal(t, pb.ResponseSuccess, respCreateService.Response.GetCode())
 		serviceID = respCreateService.ServiceId
-
 	})
 
 	t.Run("when instance request is 3 expect batch register success", func(t *testing.T) {
@@ -73,13 +73,13 @@ func TestInstance_BatchCreate(t *testing.T) {
 			ProviderServiceId: serviceID,
 		}
 
-		getInstsResp, err := datasource.GetMetadataManager().GetInstances(getContext(), getInstsReq)
+		getInstsResp, err := datasource.GetMetadataManager().ListInstance(ctx, getInstsReq)
 		assert.NoError(t, err)
 		beforLen := len(getInstsResp.Instances)
 
 		instanceBatchLen := 3
 		for i := 0; i < instanceBatchLen; i++ {
-			event := &mongo.InstanceRegisterEvent{Ctx: getContext(), Request: request}
+			event := &mongo.InstanceRegisterEvent{Ctx: ctx, Request: request}
 			fastRegisterService.AddEvent(event)
 		}
 		assert.Equal(t, instanceBatchLen, len(mongo.GetFastRegisterInstanceService().InstEventCh))
@@ -91,7 +91,7 @@ func TestInstance_BatchCreate(t *testing.T) {
 		//if mongo is not replSet, batch register will failed, should wait failed instance register
 		time.Sleep(5 * time.Second)
 
-		getInstsResp, err = datasource.GetMetadataManager().GetInstances(getContext(), getInstsReq)
+		getInstsResp, err = datasource.GetMetadataManager().ListInstance(ctx, getInstsReq)
 		assert.NoError(t, err)
 		afterLen := len(getInstsResp.Instances)
 		assert.Equal(t, instanceBatchLen, afterLen-beforLen)

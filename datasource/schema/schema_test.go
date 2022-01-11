@@ -238,7 +238,7 @@ func TestDeleteContent(t *testing.T) {
 	})
 
 	t.Run("delete content without ref, should ok", func(t *testing.T) {
-		_, err := datasource.GetMetadataManager().UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: serviceID, Force: true})
+		err := datasource.GetMetadataManager().UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: serviceID, Force: true})
 		assert.NoError(t, err)
 
 		err = schema.Instance().DeleteContent(ctx, &schema.ContentRequest{

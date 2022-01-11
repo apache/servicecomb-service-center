@@ -21,6 +21,7 @@ import (
 	"regexp"
 
 	"github.com/apache/servicecomb-service-center/pkg/validate"
+	"github.com/go-chassis/cari/discovery"
 )
 
 var (
@@ -67,4 +68,14 @@ func CreateDependenciesReqValidator() *validate.Validator {
 		v.AddRule("Dependencies", &validate.Rule{Min: 1, Max: 100})
 		v.AddSub("Dependencies", defaultDependencyValidator())
 	})
+}
+
+func ValidateGetDependenciesRequest(v *discovery.GetDependenciesRequest) error {
+	return GetServiceReqValidator().Validate(v)
+}
+func ValidateCreateDependenciesRequest(v *discovery.CreateDependenciesRequest) error {
+	return CreateDependenciesReqValidator().Validate(v)
+}
+func ValidateAddDependenciesRequest(v *discovery.AddDependenciesRequest) error {
+	return AddDependenciesReqValidator().Validate(v)
 }

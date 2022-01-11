@@ -29,54 +29,47 @@ import (
 	"github.com/apache/servicecomb-service-center/server/service/validator"
 )
 
-func (s *MicroServiceService) AddTags(ctx context.Context, in *pb.AddServiceTagsRequest) (*pb.AddServiceTagsResponse, error) {
-	err := validator.Validate(in)
-	if err != nil {
-		remoteIP := util.GetIPFromContext(ctx)
+func PutManyTags(ctx context.Context, in *pb.AddServiceTagsRequest) error {
+	remoteIP := util.GetIPFromContext(ctx)
+
+	if err := validator.ValidateAddServiceTagsRequest(in); err != nil {
 		log.Error(fmt.Sprintf("add service[%s]'s tags %v failed, operator: %s", in.ServiceId, in.Tags, remoteIP), err)
-		return &pb.AddServiceTagsResponse{
-			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
-		}, nil
+		return pb.NewError(pb.ErrInvalidParams, err.Error())
 	}
 
-	return datasource.GetMetadataManager().AddTags(ctx, in)
+	return datasource.GetMetadataManager().PutManyTags(ctx, in)
 }
 
-func (s *MicroServiceService) UpdateTag(ctx context.Context, in *pb.UpdateServiceTagRequest) (*pb.UpdateServiceTagResponse, error) {
-	err := validator.Validate(in)
-	if err != nil {
-		remoteIP := util.GetIPFromContext(ctx)
+func PutTag(ctx context.Context, in *pb.UpdateServiceTagRequest) error {
+	remoteIP := util.GetIPFromContext(ctx)
+
+	if err := validator.ValidateUpdateServiceTagRequest(in); err != nil {
 		tagFlag := util.StringJoin([]string{in.Key, in.Value}, "/")
 		log.Error(fmt.Sprintf("update service[%s]'s tag[%s] failed, operator: %s", in.ServiceId, tagFlag, remoteIP), err)
-		return &pb.UpdateServiceTagResponse{
-			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
-		}, nil
+		return pb.NewError(pb.ErrInvalidParams, err.Error())
 	}
 
-	return datasource.GetMetadataManager().UpdateTag(ctx, in)
+	return datasource.GetMetadataManager().PutTag(ctx, in)
 }
 
-func (s *MicroServiceService) DeleteTags(ctx context.Context, in *pb.DeleteServiceTagsRequest) (*pb.DeleteServiceTagsResponse, error) {
-	err := validator.Validate(in)
-	if err != nil {
-		remoteIP := util.GetIPFromContext(ctx)
+func DeleteManyTags(ctx context.Context, in *pb.DeleteServiceTagsRequest) error {
+	remoteIP := util.GetIPFromContext(ctx)
+
+	if err := validator.ValidateDeleteServiceTagsRequest(in); err != nil {
 		log.Error(fmt.Sprintf("delete service[%s]'s tags %v failed, operator: %s", in.ServiceId, in.Keys, remoteIP), err)
-		return &pb.DeleteServiceTagsResponse{
-			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
-		}, nil
+		return pb.NewError(pb.ErrInvalidParams, err.Error())
 	}
 
-	return datasource.GetMetadataManager().DeleteTags(ctx, in)
+	return datasource.GetMetadataManager().DeleteManyTags(ctx, in)
 }
 
-func (s *MicroServiceService) GetTags(ctx context.Context, in *pb.GetServiceTagsRequest) (*pb.GetServiceTagsResponse, error) {
-	err := validator.Validate(in)
-	if err != nil {
-		log.Error(fmt.Sprintf("get service[%s]'s tags failed", in.ServiceId), err)
-		return &pb.GetServiceTagsResponse{
-			Response: pb.CreateResponse(pb.ErrInvalidParams, err.Error()),
-		}, nil
+func ListTag(ctx context.Context, in *pb.GetServiceTagsRequest) (*pb.GetServiceTagsResponse, error) {
+	remoteIP := util.GetIPFromContext(ctx)
+
+	if err := validator.ValidateGetServiceTagsRequest(in); err != nil {
+		log.Error(fmt.Sprintf("get service[%s]'s tags failed, operator: %s", in.ServiceId, remoteIP), err)
+		return nil, pb.NewError(pb.ErrInvalidParams, err.Error())
 	}
 
-	return datasource.GetMetadataManager().GetTags(ctx, in)
+	return datasource.GetMetadataManager().ListTag(ctx, in)
 }

@@ -25,6 +25,7 @@ import (
 	"time"
 
 	pb "github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/cari/pkg/errsvc"
 	"github.com/gorilla/websocket"
 
 	"github.com/apache/servicecomb-service-center/datasource"
@@ -124,8 +125,8 @@ func (c *client) handleMessage() {
 			ServiceId:  c.serviceID,
 			InstanceId: c.instanceID,
 		}
-		resp, err := discosvc.Heartbeat(c.cxt, request)
-		if resp != nil && resp.Response.GetCode() == pb.ErrInstanceNotExists {
+		err = discosvc.SendHeartbeat(c.cxt, request)
+		if err != nil && errsvc.IsErrEqualCode(err, pb.ErrInstanceNotExists) {
 			log.Error("instance heartbeat report failed ", err)
 			closeMessage := "heartbeat reporting failed because the instance does not exist"
 			if err := c.conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(pb.ErrWebsocketInstanceNotExists,
@@ -186,7 +187,7 @@ func preOp(ctx context.Context, in *pb.HeartbeatRequest) error {
 	if in == nil || len(in.ServiceId) == 0 || len(in.InstanceId) == 0 {
 		return errors.New("request format invalid")
 	}
-	resp, err := datasource.GetMetadataManager().ExistInstanceByID(ctx, &pb.MicroServiceInstanceKey{
+	resp, err := datasource.GetMetadataManager().ExistInstance(ctx, &pb.MicroServiceInstanceKey{
 		ServiceId:  in.ServiceId,
 		InstanceId: in.InstanceId,
 	})

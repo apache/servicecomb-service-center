@@ -29,7 +29,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/service/gov"
 	"github.com/apache/servicecomb-service-center/server/service/gov/kie"
 	"github.com/go-chassis/cari/discovery"
-	"github.com/go-chassis/cari/pkg/errsvc"
 )
 
 type Governance struct {
@@ -173,12 +172,7 @@ func (t *Governance) Delete(w http.ResponseWriter, r *http.Request) {
 
 func processError(w http.ResponseWriter, err error, msg string) {
 	log.Error(msg, err)
-	formatErr, ok := err.(*errsvc.Error)
-	if ok {
-		rest.WriteError(w, formatErr.Code, formatErr.Message)
-		return
-	}
-	rest.WriteError(w, discovery.ErrInternal, err.Error())
+	rest.WriteServiceError(w, err)
 }
 
 func (t *Governance) URLPatterns() []rest.Route {

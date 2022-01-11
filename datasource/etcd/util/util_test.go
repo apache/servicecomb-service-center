@@ -39,6 +39,7 @@ func getContextWith(domain string, project string) context.Context {
 
 func TestFindServiceIds(t *testing.T) {
 	ctx := getContextWith("default", "default")
+
 	t.Run("no service, should return empty", func(t *testing.T) {
 		ids, exist, err := serviceUtil.FindServiceIds(ctx, &proto.MicroServiceKey{}, false)
 		assert.NoError(t, err)
