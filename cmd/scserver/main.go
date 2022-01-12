@@ -18,15 +18,24 @@
 package main
 
 import (
-	_ "github.com/apache/servicecomb-service-center/server/init"
+	"context"
+
 	_ "github.com/apache/servicecomb-service-center/syncer/init"
 
-	_ "github.com/apache/servicecomb-service-center/server/bootstrap"
 	_ "github.com/apache/servicecomb-service-center/syncer/bootstrap"
 
+	_ "github.com/apache/servicecomb-service-center/server/init"
+
+	_ "github.com/apache/servicecomb-service-center/server/bootstrap"
+
 	"github.com/apache/servicecomb-service-center/server"
+	syncsvr "github.com/apache/servicecomb-service-center/syncer/server"
+	"github.com/go-chassis/foundation/gopool"
 )
 
 func main() {
+	gopool.Go(func(_ context.Context) {
+		syncsvr.Run()
+	})
 	server.Run()
 }

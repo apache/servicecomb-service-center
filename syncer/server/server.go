@@ -17,7 +17,19 @@
 
 package server
 
-func Start() error {
-	// TODO
-	return nil
+import (
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/syncer/config"
+	"github.com/go-chassis/go-chassis/v2"
+)
+
+func Run() {
+	if !config.GetConfig().Sync.EnableOnStart {
+		log.Warn("syncer is disabled")
+		return
+	}
+
+	if err := chassis.Run(); err != nil {
+		log.Warn(err.Error())
+	}
 }
