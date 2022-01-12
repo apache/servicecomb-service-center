@@ -1,0 +1,8 @@
+#logWriters: file
+logLevel: DEBUG
+#logFile: ./syncer.log
+logFormatText: true
+logRotateCompress: true
+logRotateSize: 20
+logBackupCount: 100
+#accessLogFile: ./access.log

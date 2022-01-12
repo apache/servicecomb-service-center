@@ -8,7 +8,7 @@ servicecomb:
   handler:
     chain:
       Provider:
-        default: access-log,ratelimiter-provider,monitoring
+        default: ratelimiter-provider,monitoring
 # ssl:
 #   Provider.cipherPlugin: default
 #   Provider.verifyPeer: false

@@ -34,11 +34,11 @@ import (
 )
 
 func depGetContext() context.Context {
-	return util.WithNoCache(util.SetDomainProject(context.Background(), "sync-dep", "sync-dep"))
+	ctx := util.WithNoCache(util.SetDomainProject(context.Background(), "sync-dep", "sync-dep"))
+	return util.WithNoCache(util.SetContext(ctx, util.CtxEnableSync, "1"))
 }
 
 func TestSyncAddOrUpdateDependencies(t *testing.T) {
-	datasource.EnableSync = true
 	var (
 		consumerId  string
 		providerId1 string
@@ -242,5 +242,4 @@ func TestSyncAddOrUpdateDependencies(t *testing.T) {
 			assert.Equal(t, 0, len(tombstones))
 		})
 	})
-	datasource.EnableSync = false
 }

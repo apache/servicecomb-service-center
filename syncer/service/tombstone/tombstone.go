@@ -59,7 +59,7 @@ func DeleteExpireTombStone() error {
 func getExpireTime() time.Duration {
 	reserve := config.GetString("sync.tombstone.retire.reserve", "")
 	if len(reserve) <= 0 {
-		log.Warn("tombstone expireTime is empty")
+		log.Warn("tombstone reserve is empty")
 		return defaultExpireTime
 	}
 

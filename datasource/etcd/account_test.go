@@ -29,12 +29,15 @@ import (
 	"github.com/apache/servicecomb-service-center/eventbase/model"
 	"github.com/apache/servicecomb-service-center/eventbase/service/task"
 	"github.com/apache/servicecomb-service-center/eventbase/service/tombstone"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	_ "github.com/apache/servicecomb-service-center/test"
 )
 
-func TestSyncAccount(t *testing.T) {
+func accountContext() context.Context {
+	return util.WithNoCache(util.SetContext(context.Background(), util.CtxEnableSync, "1"))
+}
 
-	datasource.EnableSync = true
+func TestSyncAccount(t *testing.T) {
 
 	t.Run("create account", func(t *testing.T) {
 		t.Run("creating a account then delete it will create two tasks and a tombstone should pass",
@@ -47,30 +50,30 @@ func TestSyncAccount(t *testing.T) {
 					TokenExpirationTime: "2020-12-30",
 					CurrentPassword:     "tnuocca-tset1",
 				}
-				err := rbac.Instance().CreateAccount(context.Background(), &a1)
+				err := rbac.Instance().CreateAccount(accountContext(), &a1)
 				assert.NoError(t, err)
-				r, err := rbac.Instance().GetAccount(context.Background(), a1.Name)
+				r, err := rbac.Instance().GetAccount(accountContext(), a1.Name)
 				assert.NoError(t, err)
 				assert.Equal(t, a1, *r)
-				_, err = rbac.Instance().DeleteAccount(context.Background(), []string{a1.Name})
+				_, err = rbac.Instance().DeleteAccount(accountContext(), []string{a1.Name})
 				assert.NoError(t, err)
 				listTaskReq := model.ListTaskRequest{
 					Domain:       "",
 					Project:      "",
 					ResourceType: datasource.ResourceAccount,
 				}
-				tasks, err := task.List(context.Background(), &listTaskReq)
+				tasks, err := task.List(accountContext(), &listTaskReq)
 				assert.NoError(t, err)
 				assert.Equal(t, 2, len(tasks))
-				err = task.Delete(context.Background(), tasks...)
+				err = task.Delete(accountContext(), tasks...)
 				assert.NoError(t, err)
 				tombstoneListReq := model.ListTombstoneRequest{
 					ResourceType: datasource.ResourceAccount,
 				}
-				tombstones, err := tombstone.List(context.Background(), &tombstoneListReq)
+				tombstones, err := tombstone.List(accountContext(), &tombstoneListReq)
 				assert.NoError(t, err)
 				assert.Equal(t, 1, len(tombstones))
-				err = tombstone.Delete(context.Background(), tombstones...)
+				err = tombstone.Delete(accountContext(), tombstones...)
 				assert.NoError(t, err)
 			})
 	})
@@ -94,38 +97,37 @@ func TestSyncAccount(t *testing.T) {
 					TokenExpirationTime: "2020-12-30",
 					CurrentPassword:     "tnuocca-tset",
 				}
-				err := rbac.Instance().CreateAccount(context.Background(), &a2)
+				err := rbac.Instance().CreateAccount(accountContext(), &a2)
 				assert.NoError(t, err)
-				err = rbac.Instance().CreateAccount(context.Background(), &a3)
+				err = rbac.Instance().CreateAccount(accountContext(), &a3)
 				assert.NoError(t, err)
 				a2.Password = "new-password"
-				err = rbac.Instance().UpdateAccount(context.Background(), a2.Name, &a2)
+				err = rbac.Instance().UpdateAccount(accountContext(), a2.Name, &a2)
 				assert.NoError(t, err)
 				a3.Password = "new-password"
-				err = rbac.Instance().UpdateAccount(context.Background(), a3.Name, &a3)
+				err = rbac.Instance().UpdateAccount(accountContext(), a3.Name, &a3)
 				assert.NoError(t, err)
-				_, err = rbac.Instance().DeleteAccount(context.Background(), []string{a2.Name, a3.Name})
+				_, err = rbac.Instance().DeleteAccount(accountContext(), []string{a2.Name, a3.Name})
 				assert.NoError(t, err)
 				listTaskReq := model.ListTaskRequest{
 					Domain:       "",
 					Project:      "",
 					ResourceType: datasource.ResourceAccount,
 				}
-				tasks, err := task.List(context.Background(), &listTaskReq)
+				tasks, err := task.List(accountContext(), &listTaskReq)
 				assert.NoError(t, err)
 				assert.Equal(t, 6, len(tasks))
-				err = task.Delete(context.Background(), tasks...)
+				err = task.Delete(accountContext(), tasks...)
 				assert.NoError(t, err)
 				tombstoneListReq := model.ListTombstoneRequest{
 					ResourceType: datasource.ResourceAccount,
 				}
-				tombstones, err := tombstone.List(context.Background(), &tombstoneListReq)
+				tombstones, err := tombstone.List(accountContext(), &tombstoneListReq)
 				assert.NoError(t, err)
 				assert.Equal(t, 2, len(tombstones))
-				err = tombstone.Delete(context.Background(), tombstones...)
+				err = tombstone.Delete(accountContext(), tombstones...)
 				assert.NoError(t, err)
 
 			})
 	})
-	datasource.EnableSync = false
 }

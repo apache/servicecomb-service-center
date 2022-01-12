@@ -20,11 +20,6 @@ package core
 import (
 	"os"
 
-	"github.com/go-chassis/go-chassis/v2"
-
-	//grpc plugin
-	_ "github.com/go-chassis/go-chassis-extension/protocol/grpc/server"
-
 	// import the grace package and parse grace cmd line
 	_ "github.com/apache/servicecomb-service-center/pkg/grace"
 
@@ -34,9 +29,6 @@ import (
 )
 
 func Initialize() {
-	if err := chassis.Init(); err != nil {
-		log.Warn(err.Error())
-	}
 	// initialize configuration
 	config.Init()
 	// Logging

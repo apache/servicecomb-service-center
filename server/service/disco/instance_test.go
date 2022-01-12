@@ -121,9 +121,9 @@ func TestRegisterInstance(t *testing.T) {
 					Url:      TOO_LONG_URL[:len(TOO_LONG_URL)-1],
 				},
 				DataCenterInfo: &pb.DataCenterInfo{
-					Name:          TOO_LONG_SERVICENAME[:len(TOO_LONG_SERVICENAME)-1],
-					Region:        TOO_LONG_SERVICENAME[:len(TOO_LONG_SERVICENAME)-1],
-					AvailableZone: TOO_LONG_SERVICENAME[:len(TOO_LONG_SERVICENAME)-1],
+					Name:          TooLongServiceName[:len(TooLongServiceName)-1],
+					Region:        TooLongServiceName[:len(TooLongServiceName)-1],
+					AvailableZone: TooLongServiceName[:len(TooLongServiceName)-1],
 				},
 			},
 		})
@@ -674,7 +674,7 @@ func TestFindManyInstances(t *testing.T) {
 			Services: []*pb.FindService{
 				{
 					Service: &pb.MicroServiceKey{
-						AppId:       TOO_LONG_APPID,
+						AppId:       TooLongAppID,
 						ServiceName: "query_instance_service",
 					},
 				},
@@ -720,7 +720,7 @@ func TestFindManyInstances(t *testing.T) {
 				{
 					Service: &pb.MicroServiceKey{
 						AppId:       "query_instance",
-						ServiceName: TOO_LONG_EXISTENCE,
+						ServiceName: TooLongExistence,
 					},
 				},
 			},
@@ -1345,7 +1345,7 @@ func TestFindInstances(t *testing.T) {
 	t.Run("when query invalid parameters, should be failed", func(t *testing.T) {
 		_, err := discosvc.FindInstances(ctx, &pb.FindInstancesRequest{
 			ConsumerServiceId: serviceId1,
-			AppId:             TOO_LONG_APPID,
+			AppId:             TooLongAppID,
 			ServiceName:       "query_instance_service",
 		})
 		testErr := err.(*errsvc.Error)
@@ -1373,7 +1373,7 @@ func TestFindInstances(t *testing.T) {
 		_, err = discosvc.FindInstances(ctx, &pb.FindInstancesRequest{
 			ConsumerServiceId: serviceId1,
 			AppId:             "query_instance",
-			ServiceName:       TOO_LONG_EXISTENCE,
+			ServiceName:       TooLongExistence,
 		})
 		testErr = err.(*errsvc.Error)
 		assert.Error(t, testErr)
@@ -1740,7 +1740,7 @@ func TestUnregisterInstance(t *testing.T) {
 		assert.Equal(t, pb.ErrInvalidParams, testErr.Code)
 
 		err = discosvc.UnregisterInstance(ctx, &pb.UnregisterInstanceRequest{
-			ServiceId:  TOO_LONG_SERVICEID,
+			ServiceId:  TooLongServiceID,
 			InstanceId: instanceId,
 		})
 		testErr = err.(*errsvc.Error)
@@ -1773,7 +1773,7 @@ func TestUnregisterInstance(t *testing.T) {
 
 		err = discosvc.UnregisterInstance(ctx, &pb.UnregisterInstanceRequest{
 			ServiceId:  serviceId,
-			InstanceId: TOO_LONG_SERVICEID,
+			InstanceId: TooLongServiceID,
 		})
 		testErr = err.(*errsvc.Error)
 		assert.Error(t, testErr)
@@ -1855,7 +1855,7 @@ func TestSendHeartbeat(t *testing.T) {
 		assert.Equal(t, pb.ErrInvalidParams, testErr.Code)
 
 		err = discosvc.SendHeartbeat(ctx, &pb.HeartbeatRequest{
-			ServiceId:  TOO_LONG_SERVICEID,
+			ServiceId:  TooLongServiceID,
 			InstanceId: instanceId1,
 		})
 		testErr = err.(*errsvc.Error)
@@ -1880,7 +1880,7 @@ func TestSendHeartbeat(t *testing.T) {
 
 		err = discosvc.SendHeartbeat(ctx, &pb.HeartbeatRequest{
 			ServiceId:  serviceId,
-			InstanceId: TOO_LONG_SERVICEID,
+			InstanceId: TooLongServiceID,
 		})
 		testErr = err.(*errsvc.Error)
 		assert.Error(t, testErr)
@@ -2132,7 +2132,7 @@ func TestUpdateInstance(t *testing.T) {
 		assert.Equal(t, pb.ErrInvalidParams, testErr.Code)
 
 		err = discosvc.PutInstanceProperties(ctx, &pb.UpdateInstancePropsRequest{
-			ServiceId:  TOO_LONG_SERVICEID,
+			ServiceId:  TooLongServiceID,
 			InstanceId: instanceId,
 			Properties: map[string]string{
 				"test": "test",
@@ -2166,7 +2166,7 @@ func TestUpdateInstance(t *testing.T) {
 
 		err = discosvc.PutInstanceProperties(ctx, &pb.UpdateInstancePropsRequest{
 			ServiceId:  serviceId,
-			InstanceId: TOO_LONG_SERVICEID,
+			InstanceId: TooLongServiceID,
 			Properties: map[string]string{
 				"test": "test",
 			},
@@ -2203,4 +2203,39 @@ func assertInstanceContain(t *testing.T, instances []*pb.MicroServiceInstance, i
 		}
 	}
 	assert.True(t, found)
+}
+
+func TestInstanceUsage(t *testing.T) {
+	t.Run("get domain/project without instance usage, should return 0", func(t *testing.T) {
+		usage, err := discosvc.InstanceUsage(context.Background(), &pb.GetServiceCountRequest{
+			Domain:  "domain_without_service",
+			Project: "project_without_service",
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, int64(0), usage)
+	})
+
+	t.Run("get domain/project with 1 instance usage, should return 1", func(t *testing.T) {
+		ctx := util.SetDomainProject(context.Background(), "domain_with_service", "project_with_service")
+		resp, err := discosvc.RegisterService(ctx, &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				ServiceName: "test",
+			},
+		})
+		assert.NoError(t, err)
+		defer discosvc.UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: resp.ServiceId, Force: true})
+
+		_, err = discosvc.RegisterInstance(ctx, &pb.RegisterInstanceRequest{Instance: &pb.MicroServiceInstance{
+			ServiceId: resp.ServiceId,
+			HostName:  "test",
+		}})
+		assert.NoError(t, err)
+
+		usage, err := discosvc.InstanceUsage(context.Background(), &pb.GetServiceCountRequest{
+			Domain:  "domain_with_service",
+			Project: "project_with_service",
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, int64(1), usage)
+	})
 }

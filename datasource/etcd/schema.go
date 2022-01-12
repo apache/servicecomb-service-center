@@ -158,6 +158,7 @@ func (dao *SchemaDAO) DeleteRef(ctx context.Context, refRequest *schema.RefReque
 		etcdadpt.OpDel(etcdadpt.WithStrKey(refKey)),
 		etcdadpt.OpDel(etcdadpt.WithStrKey(summaryKey)),
 	}
+
 	refOpts, err := sync.GenDeleteOpts(ctx, datasource.ResourceKV, refKey, refKey)
 	if err != nil {
 		log.Error("fail to create delete opts", err)
@@ -253,10 +254,8 @@ func (dao *SchemaDAO) PutContent(ctx context.Context, contentRequest *schema.Put
 		existContentOptions = append(existContentOptions,
 			etcdadpt.OpPut(etcdadpt.WithStrKey(serviceKey), etcdadpt.WithValue(body)))
 	}
-
 	newContentOptions := append(existContentOptions,
-		etcdadpt.OpPut(etcdadpt.WithStrKey(contentKey), etcdadpt.WithStrValue(content.Content)),
-	)
+		etcdadpt.OpPut(etcdadpt.WithStrKey(contentKey), etcdadpt.WithStrValue(content.Content)))
 	contentOpts, err := sync.GenUpdateOpts(ctx, datasource.ResourceKV, content.Content, sync.WithOpts(map[string]string{"key": contentKey}))
 	if err != nil {
 		log.Error("fail to create update opts", err)
@@ -350,7 +349,6 @@ func transformSchemaIDsAndOptions(ctx context.Context, domainProject string, ser
 			log.Error("fail to create update opts", err)
 		}
 		options = append(options, summaryOpts...)
-
 		schemaIDs = append(schemaIDs, schemaID)
 		pendingDeleteSchemaIDs.Remove(schemaID)
 	}
