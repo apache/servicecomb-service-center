@@ -18,11 +18,28 @@
 package init
 
 import (
+	// handlers
+	_ "github.com/go-chassis/go-chassis/v2/middleware/monitoring"
+	_ "github.com/go-chassis/go-chassis/v2/middleware/ratelimiter"
+
+	//grpc plugin
+	_ "github.com/go-chassis/go-chassis-extension/protocol/grpc/server"
+
+	syncv1 "github.com/apache/servicecomb-service-center/api/sync/v1"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/syncer/config"
+	"github.com/apache/servicecomb-service-center/syncer/rpc"
+	"github.com/go-chassis/go-chassis/v2"
+	chassisServer "github.com/go-chassis/go-chassis/v2/core/server"
 )
 
 func init() {
+	chassis.RegisterSchema("grpc", &rpc.Server{},
+		chassisServer.WithRPCServiceDesc(&syncv1.EventService_ServiceDesc))
+
+	if err := chassis.Init(); err != nil {
+		log.Warn(err.Error())
+	}
 	if err := config.Init(); err != nil {
 		log.Error("syncer config init failed", err)
 	}

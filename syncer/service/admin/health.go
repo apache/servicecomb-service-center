@@ -23,9 +23,9 @@ import (
 
 	v1sync "github.com/apache/servicecomb-service-center/api/sync/v1"
 	"github.com/apache/servicecomb-service-center/client"
-	"github.com/apache/servicecomb-service-center/pkg/rpc"
-	"github.com/apache/servicecomb-service-center/server/rpc/sync"
+	grpc "github.com/apache/servicecomb-service-center/pkg/rpc"
 	"github.com/apache/servicecomb-service-center/syncer/config"
+	"github.com/apache/servicecomb-service-center/syncer/rpc"
 )
 
 const (
@@ -80,16 +80,16 @@ func Health() (*Resp, error) {
 }
 
 func getPeerStatus(endpoints []string) string {
-	conn, err := rpc.GetRoundRobinLbConn(&rpc.Config{Addrs: endpoints, Scheme: scheme, ServiceName: serviceName})
+	conn, err := grpc.GetRoundRobinLbConn(&grpc.Config{Addrs: endpoints, Scheme: scheme, ServiceName: serviceName})
 	if err != nil || conn == nil {
-		return sync.HealthStatusAbnormal
+		return rpc.HealthStatusAbnormal
 	}
 	defer conn.Close()
 
 	set := client.NewSet(conn)
 	reply, err := set.EventServiceClient.Health(context.Background(), &v1sync.HealthRequest{})
 	if err != nil || reply == nil {
-		return sync.HealthStatusAbnormal
+		return rpc.HealthStatusAbnormal
 	}
 	return reply.Status
 }
