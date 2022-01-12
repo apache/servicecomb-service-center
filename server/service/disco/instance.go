@@ -314,6 +314,17 @@ func AppendFindResponse(ctx context.Context, index int64, resp *pb.Response, ins
 	})
 }
 
+func PutInstance(ctx context.Context, in *pb.RegisterInstanceRequest) error {
+	remoteIP := util.GetIPFromContext(ctx)
+
+	if err := validator.ValidateRegisterInstanceRequest(in); err != nil {
+		log.Error(fmt.Sprintf("update instance failed, invalid parameters, operator %s", remoteIP), err)
+		return pb.NewError(pb.ErrInvalidParams, err.Error())
+	}
+
+	return datasource.GetMetadataManager().PutInstance(ctx, in)
+}
+
 func PutInstanceStatus(ctx context.Context, in *pb.UpdateInstanceStatusRequest) error {
 	remoteIP := util.GetIPFromContext(ctx)
 

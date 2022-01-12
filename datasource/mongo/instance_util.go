@@ -37,15 +37,6 @@ func ExistInstance(ctx context.Context, serviceID string, instanceID string) (bo
 	return dao.ExistInstance(ctx, serviceID, instanceID)
 }
 
-func GetInstance(ctx context.Context, serviceID string, instanceID string) (*model.Instance, error) {
-	inst, ok := cache.GetInstance(ctx, serviceID, instanceID)
-	if ok && inst != nil {
-		return inst, nil
-	}
-	filter := mutil.NewBasicFilter(ctx, mutil.InstanceServiceID(serviceID), mutil.InstanceInstanceID(instanceID))
-	return dao.GetInstance(ctx, filter)
-}
-
 func GetInstances(ctx context.Context) ([]*model.Instance, error) {
 	insts, ok := cache.GetInstances(ctx)
 	if ok {

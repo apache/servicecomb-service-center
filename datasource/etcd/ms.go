@@ -599,7 +599,7 @@ func (ds *MetadataManager) sendHeartbeatInstead(ctx context.Context, instance *p
 
 func (ds *MetadataManager) ExistInstance(ctx context.Context, request *pb.MicroServiceInstanceKey) (*pb.GetExistenceByIDResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
-	exist, err := eutil.InstanceExist(ctx, domainProject, request.ServiceId, request.InstanceId)
+	exist, err := eutil.ExistInstance(ctx, domainProject, request.ServiceId, request.InstanceId)
 	if err != nil {
 		return nil, pb.NewError(pb.ErrInternal, err.Error())
 	}
@@ -883,6 +883,31 @@ func (ds *MetadataManager) reshapeProviderKey(ctx context.Context, provider *pb.
 	return provider, nil
 }
 
+func (ds *MetadataManager) PutInstance(ctx context.Context, request *pb.RegisterInstanceRequest) error {
+	domainProject := util.ParseDomainProject(ctx)
+	instance := request.Instance
+	serviceID := instance.ServiceId
+	instanceID := instance.InstanceId
+	exist, err := eutil.ExistInstance(ctx, domainProject, serviceID, instanceID)
+	if err != nil {
+		log.Error(fmt.Sprintf("update instance[%s/%s] failed", serviceID, instanceID), err)
+		return pb.NewError(pb.ErrInternal, err.Error())
+	}
+	if !exist {
+		log.Error(fmt.Sprintf("update instance[%s/%s] failed, instance does not exist",
+			serviceID, instanceID), nil)
+		return pb.NewError(pb.ErrInstanceNotExists, "Service instance does not exist.")
+	}
+
+	if err := eutil.UpdateInstance(ctx, domainProject, instance); err != nil {
+		log.Error(fmt.Sprintf("update instance[%s/%s] failed", serviceID, instanceID), err)
+		return err
+	}
+	sendEvent(ctx, sync.UpdateAction, datasource.ResourceInstance, instance)
+	log.Info(fmt.Sprintf("update instance[%s/%s] successfully", serviceID, instanceID))
+	return nil
+}
+
 func (ds *MetadataManager) PutInstanceStatus(ctx context.Context, request *pb.UpdateInstanceStatusRequest) error {
 	domainProject := util.ParseDomainProject(ctx)
 	updateStatusFlag := util.StringJoin([]string{request.ServiceId, request.InstanceId, request.Status}, path.SPLIT)
@@ -899,6 +924,7 @@ func (ds *MetadataManager) PutInstanceStatus(ctx context.Context, request *pb.Up
 
 	copyInstanceRef := *instance
 	copyInstanceRef.Status = request.Status
+	copyInstanceRef.ModTimestamp = strconv.FormatInt(time.Now().Unix(), 10)
 
 	if err := eutil.UpdateInstance(ctx, domainProject, &copyInstanceRef); err != nil {
 		log.Error(fmt.Sprintf("update instance[%s] status failed", updateStatusFlag), err)
@@ -925,6 +951,7 @@ func (ds *MetadataManager) PutInstanceProperties(ctx context.Context, request *p
 
 	copyInstanceRef := *instance
 	copyInstanceRef.Properties = request.Properties
+	copyInstanceRef.ModTimestamp = strconv.FormatInt(time.Now().Unix(), 10)
 
 	if err := eutil.UpdateInstance(ctx, domainProject, &copyInstanceRef); err != nil {
 		log.Error(fmt.Sprintf("update instance[%s] properties failed", instanceFlag), err)

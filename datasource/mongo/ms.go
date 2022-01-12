@@ -1312,26 +1312,53 @@ func (ds *MetadataManager) FindInstances(ctx context.Context, request *discovery
 	return ds.findInstance(ctx, request, provider, rev)
 }
 
+func (ds *MetadataManager) PutInstance(ctx context.Context, request *discovery.RegisterInstanceRequest) error {
+	instance := request.Instance
+	serviceID := instance.ServiceId
+	instanceID := instance.InstanceId
+	filter := mutil.NewBasicFilter(ctx, mutil.InstanceServiceID(serviceID), mutil.InstanceInstanceID(instanceID))
+	exist, err := ExistInstance(ctx, serviceID, instanceID)
+	if err != nil {
+		log.Error(fmt.Sprintf("update instance %s/%s failed", serviceID, instanceID), err)
+		return discovery.NewError(discovery.ErrInternal, err.Error())
+	}
+	if !exist {
+		log.Error(fmt.Sprintf("update instance %s/%s failed, instance does not exist",
+			serviceID, instanceID), err)
+		return discovery.NewError(discovery.ErrInstanceNotExists, "Service instance does not exist.")
+	}
+
+	setFilter := mutil.NewFilter(
+		mutil.Instance(instance),
+	)
+	updateFilter := mutil.NewFilter(mutil.Set(setFilter))
+	if err := dao.UpdateInstance(ctx, filter, updateFilter); err != nil {
+		log.Error(fmt.Sprintf("update instance %s/%s failed", serviceID, instanceID), err)
+		return err
+	}
+
+	log.Info(fmt.Sprintf("update instance[%s/%s] successfully", serviceID, instanceID))
+	return nil
+}
+
 func (ds *MetadataManager) PutInstanceStatus(ctx context.Context, request *discovery.UpdateInstanceStatusRequest) error {
 	updateStatusFlag := util.StringJoin([]string{request.ServiceId, request.InstanceId, request.Status}, "/")
 
 	// todo finish get instance
 	filter := mutil.NewBasicFilter(ctx, mutil.InstanceServiceID(request.ServiceId), mutil.InstanceInstanceID(request.InstanceId))
-	instance, err := GetInstance(ctx, request.ServiceId, request.InstanceId)
+	exist, err := ExistInstance(ctx, request.ServiceId, request.InstanceId)
 	if err != nil {
 		log.Error(fmt.Sprintf("update instance %s status failed", updateStatusFlag), err)
 		return discovery.NewError(discovery.ErrInternal, err.Error())
 	}
-	if instance == nil {
+	if !exist {
 		log.Error(fmt.Sprintf("update instance %s status failed, instance does not exist", updateStatusFlag), err)
 		return discovery.NewError(discovery.ErrInstanceNotExists, "Service instance does not exist.")
 	}
 
-	copyInstanceRef := *instance
-	copyInstanceRef.Instance.Status = request.Status
 	setFilter := mutil.NewFilter(
 		mutil.InstanceModTime(strconv.FormatInt(time.Now().Unix(), baseTen)),
-		mutil.InstanceStatus(copyInstanceRef.Instance.Status),
+		mutil.InstanceStatus(request.Status),
 	)
 	updateFilter := mutil.NewFilter(mutil.Set(setFilter))
 	if err := dao.UpdateInstance(ctx, filter, updateFilter); err != nil {
@@ -1347,24 +1374,20 @@ func (ds *MetadataManager) PutInstanceProperties(ctx context.Context, request *d
 	instanceFlag := util.StringJoin([]string{request.ServiceId, request.InstanceId}, "/")
 	domain := util.ParseDomain(ctx)
 	project := util.ParseProject(ctx)
-	instance, err := GetInstance(ctx, request.ServiceId, request.InstanceId)
+	exist, err := ExistInstance(ctx, request.ServiceId, request.InstanceId)
 	if err != nil {
 		log.Error(fmt.Sprintf("update instance %s properties failed", instanceFlag), err)
 		return discovery.NewError(discovery.ErrInternal, err.Error())
 	}
-	if instance == nil {
+	if !exist {
 		log.Error(fmt.Sprintf("update instance %s properties failed, instance does not exist", instanceFlag), err)
 		return discovery.NewError(discovery.ErrInstanceNotExists, "Service instance does not exist.")
 	}
 
-	copyInstanceRef := *instance
-	copyInstanceRef.Instance.Properties = request.Properties
-
-	// todo finish update instance
 	filter := mutil.NewDomainProjectFilter(domain, project, mutil.InstanceServiceID(request.ServiceId), mutil.InstanceInstanceID(request.InstanceId))
 	setFilter := mutil.NewFilter(
 		mutil.InstanceModTime(strconv.FormatInt(time.Now().Unix(), baseTen)),
-		mutil.InstanceProperties(copyInstanceRef.Instance.Properties),
+		mutil.InstanceProperties(request.Properties),
 	)
 	updateFilter := mutil.NewFilter(mutil.Set(setFilter))
 	if err := dao.UpdateInstance(ctx, filter, updateFilter); err != nil {

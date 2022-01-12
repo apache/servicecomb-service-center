@@ -208,35 +208,33 @@ func TestInstance_Update(t *testing.T) {
 	ctx := getContext()
 	defer datasource.GetMetadataManager().UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: serviceID, Force: true})
 
-	t.Run("register service and instance, should pass", func(t *testing.T) {
-		log.Info("register service")
-		respCreateService, err := datasource.GetMetadataManager().RegisterService(ctx, &pb.CreateServiceRequest{
-			Service: &pb.MicroService{
-				ServiceName: "update_instance_service_ms",
-				AppId:       "update_instance_service_ms",
-				Version:     "1.0.0",
-				Level:       "FRONT",
-				Status:      pb.MS_UP,
-			},
-		})
-		assert.NoError(t, err)
-		serviceID = respCreateService.ServiceId
-
-		log.Info("create instance")
-		respCreateInstance, err := datasource.GetMetadataManager().RegisterInstance(ctx, &pb.RegisterInstanceRequest{
-			Instance: &pb.MicroServiceInstance{
-				ServiceId: serviceID,
-				Endpoints: []string{
-					"updateInstance:127.0.0.1:8080",
-				},
-				HostName:   "UT-HOST-MS",
-				Status:     pb.MSI_UP,
-				Properties: map[string]string{"nodeIP": "test"},
-			},
-		})
-		assert.NoError(t, err)
-		instanceID = respCreateInstance.InstanceId
+	respCreateService, err := datasource.GetMetadataManager().RegisterService(ctx, &pb.CreateServiceRequest{
+		Service: &pb.MicroService{
+			ServiceName: "update_instance_service_ms",
+			AppId:       "update_instance_service_ms",
+			Version:     "1.0.0",
+			Level:       "FRONT",
+			Status:      pb.MS_UP,
+		},
 	})
+	assert.NoError(t, err)
+	serviceID = respCreateService.ServiceId
+
+	registerInstanceRequest := &pb.RegisterInstanceRequest{
+		Instance: &pb.MicroServiceInstance{
+			ServiceId: serviceID,
+			Endpoints: []string{
+				"updateInstance:127.0.0.1:8080",
+			},
+			HostName:   "UT-HOST-MS",
+			Status:     pb.MSI_UP,
+			Properties: map[string]string{"nodeIP": "test"},
+		},
+	}
+
+	respCreateInstance, err := datasource.GetMetadataManager().RegisterInstance(ctx, registerInstanceRequest)
+	assert.NoError(t, err)
+	instanceID = respCreateInstance.InstanceId
 
 	t.Run("update instance status", func(t *testing.T) {
 		log.Info("update instance status to DOWN")
@@ -350,6 +348,28 @@ func TestInstance_Update(t *testing.T) {
 		testErr = err.(*errsvc.Error)
 		assert.Error(t, testErr)
 		assert.Equal(t, pb.ErrInstanceNotExists, testErr.Code)
+	})
+
+	t.Run("update instance with valid request, should be ok", func(t *testing.T) {
+		registerInstanceRequest.Instance.HostName = "updated"
+		err := datasource.GetMetadataManager().PutInstance(ctx, registerInstanceRequest)
+		assert.NoError(t, err)
+
+		resp, err := datasource.GetMetadataManager().GetInstance(ctx, &pb.GetOneInstanceRequest{
+			ProviderServiceId: serviceID, ProviderInstanceId: instanceID,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, "updated", resp.Instance.HostName)
+	})
+
+	t.Run("update instance with invalid request, should be failed", func(t *testing.T) {
+		err := datasource.GetMetadataManager().PutInstance(ctx, &pb.RegisterInstanceRequest{
+			Instance: &pb.MicroServiceInstance{
+				ServiceId:  "not-exit-ms",
+				InstanceId: "not-exist-inst",
+			},
+		})
+		assert.True(t, errsvc.IsErrEqualCode(err, pb.ErrInstanceNotExists))
 	})
 }
 

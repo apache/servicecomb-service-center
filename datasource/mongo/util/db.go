@@ -20,6 +20,7 @@ package util
 import (
 	"context"
 
+	"github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/cari/rbac"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -328,9 +329,15 @@ func Tags(tags map[string]string) Option {
 	}
 }
 
+func Instance(instance *discovery.MicroServiceInstance) Option {
+	return func(filter bson.M) {
+		filter[model.ColumnInstance] = instance
+	}
+}
+
 func InstanceModTime(modTime string) Option {
 	return func(filter bson.M) {
-		filter[ConnectWithDot([]string{model.ColumnService, model.ColumnModTime})] = modTime
+		filter[ConnectWithDot([]string{model.ColumnInstance, model.ColumnModTime})] = modTime
 	}
 }
 

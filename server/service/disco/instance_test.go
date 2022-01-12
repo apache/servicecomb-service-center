@@ -1985,33 +1985,33 @@ func TestUpdateInstance(t *testing.T) {
 	ctx := getContext()
 	defer discosvc.UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: serviceId, Force: true})
 
-	t.Run("prepare data, should be passed", func(t *testing.T) {
-		respCreate, err := discosvc.RegisterService(ctx, &pb.CreateServiceRequest{
-			Service: &pb.MicroService{
-				ServiceName: "update_instance_service",
-				AppId:       "update_instance_service",
-				Version:     "1.0.0",
-				Level:       "FRONT",
-				Status:      pb.MS_UP,
-			},
-		})
-		assert.NoError(t, err)
-		serviceId = respCreate.ServiceId
-
-		resp, err := discosvc.RegisterInstance(ctx, &pb.RegisterInstanceRequest{
-			Instance: &pb.MicroServiceInstance{
-				ServiceId: serviceId,
-				Endpoints: []string{
-					"updateInstance:127.0.0.1:8080",
-				},
-				HostName:   "UT-HOST",
-				Status:     pb.MSI_UP,
-				Properties: map[string]string{"nodeIP": "test"},
-			},
-		})
-		assert.NoError(t, err)
-		instanceId = resp.InstanceId
+	respCreate, err := discosvc.RegisterService(ctx, &pb.CreateServiceRequest{
+		Service: &pb.MicroService{
+			ServiceName: "update_instance_service",
+			AppId:       "update_instance_service",
+			Version:     "1.0.0",
+			Level:       "FRONT",
+			Status:      pb.MS_UP,
+		},
 	})
+	assert.NoError(t, err)
+	serviceId = respCreate.ServiceId
+
+	registerInstanceRequest := &pb.RegisterInstanceRequest{
+		Instance: &pb.MicroServiceInstance{
+			ServiceId: serviceId,
+			Endpoints: []string{
+				"updateInstance:127.0.0.1:8080",
+			},
+			HostName:   "UT-HOST",
+			Status:     pb.MSI_UP,
+			Properties: map[string]string{"nodeIP": "test"},
+		},
+	}
+
+	resp, err := discosvc.RegisterInstance(ctx, registerInstanceRequest)
+	assert.NoError(t, err)
+	instanceId = resp.InstanceId
 
 	t.Run("when update instance status, should be passed", func(t *testing.T) {
 		err := discosvc.PutInstanceStatus(ctx, &pb.UpdateInstanceStatusRequest{
@@ -2191,6 +2191,32 @@ func TestUpdateInstance(t *testing.T) {
 		testErr = err.(*errsvc.Error)
 		assert.Error(t, testErr)
 		assert.Equal(t, pb.ErrInstanceNotExists, testErr.Code)
+	})
+
+	t.Run("when update instance with valid request, should be passed", func(t *testing.T) {
+		registerInstanceRequest.Instance.HostName = "updated"
+		err := discosvc.PutInstance(ctx, registerInstanceRequest)
+		assert.NoError(t, err)
+
+		resp, err := discosvc.GetInstance(ctx, &pb.GetOneInstanceRequest{
+			ProviderServiceId: serviceId, ProviderInstanceId: instanceId,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, "updated", resp.Instance.HostName)
+	})
+
+	t.Run("when update instance with invalid request, should be failed", func(t *testing.T) {
+		err = discosvc.PutInstance(ctx, &pb.RegisterInstanceRequest{})
+		testErr := err.(*errsvc.Error)
+		assert.Error(t, testErr)
+		assert.Equal(t, pb.ErrInvalidParams, testErr.Code)
+
+		err = discosvc.PutInstance(ctx, &pb.RegisterInstanceRequest{
+			Instance: &pb.MicroServiceInstance{},
+		})
+		testErr = err.(*errsvc.Error)
+		assert.Error(t, testErr)
+		assert.Equal(t, pb.ErrInvalidParams, testErr.Code)
 	})
 }
 
