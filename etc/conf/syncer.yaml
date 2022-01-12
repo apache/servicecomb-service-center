@@ -6,3 +6,8 @@ sync:
       endpoints: ["127.0.0.1:30105"]
       # only allow mode implemented in incremental approach like push, watch(such as pub/sub, long polling)
       mode: [push]
+  tombstone:
+    retire:
+      # use linux crontab not Quartz cron
+      cron:
+      reserve: 24h
