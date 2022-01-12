@@ -192,12 +192,12 @@ func (ds *RbacDAO) DeleteAccount(ctx context.Context, names []string) (bool, err
 			continue //do not fail if some account is invalid
 
 		}
+		allOpts = append(allOpts, opts...)
 		syncOpts, err := esync.GenDeleteOpts(ctx, datasource.ResourceAccount, a.Name, a)
 		if err != nil {
 			log.Error("fail to create sync opts", err)
 			return false, err
 		}
-		allOpts = append(allOpts, opts...)
 		allOpts = append(allOpts, syncOpts...)
 	}
 	err := etcdadpt.Txn(ctx, allOpts)

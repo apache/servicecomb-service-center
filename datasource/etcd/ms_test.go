@@ -33,13 +33,12 @@ import (
 )
 
 func microServiceGetContext() context.Context {
-	return util.WithNoCache(util.SetDomainProject(context.Background(), "sync-micro-service",
+	ctx := util.WithNoCache(util.SetDomainProject(context.Background(), "sync-micro-service",
 		"sync-micro-service"))
+	return util.WithNoCache(util.SetContext(ctx, util.CtxEnableSync, "1"))
 }
 
 func TestSyncMicroService(t *testing.T) {
-	datasource.EnableSync = true
-
 	var serviceID string
 
 	t.Run("register micro-service", func(t *testing.T) {
@@ -138,6 +137,4 @@ func TestSyncMicroService(t *testing.T) {
 			assert.NoError(t, err)
 		})
 	})
-
-	datasource.EnableSync = false
 }

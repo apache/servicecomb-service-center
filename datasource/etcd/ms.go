@@ -543,14 +543,14 @@ func (ds *MetadataManager) registerInstance(ctx context.Context, request *pb.Reg
 			instanceFlag, instanceID, remoteIP), nil)
 		return "", pb.NewError(pb.ErrServiceNotExists, "Service does not exist.")
 	}
-	sendEvent(sync.CreateAction, datasource.ResourceInstance, request)
+	sendEvent(ctx, sync.CreateAction, datasource.ResourceInstance, request)
 	log.Info(fmt.Sprintf("register instance %s, instanceID %s, operator %s",
 		instanceFlag, instanceID, remoteIP))
 	return instanceID, nil
 }
 
-func sendEvent(action string, resourceType string, resource interface{}) {
-	if !datasource.EnableSync {
+func sendEvent(ctx context.Context, action string, resourceType string, resource interface{}) {
+	if !util.EnableSync(ctx) {
 		return
 	}
 	event.Publish(action, resourceType, resource)
@@ -904,8 +904,7 @@ func (ds *MetadataManager) PutInstanceStatus(ctx context.Context, request *pb.Up
 		log.Error(fmt.Sprintf("update instance[%s] status failed", updateStatusFlag), err)
 		return err
 	}
-
-	sendEvent(sync.UpdateAction, datasource.ResourceInstance, copyInstanceRef)
+	sendEvent(ctx, sync.UpdateAction, datasource.ResourceInstance, copyInstanceRef)
 	log.Info(fmt.Sprintf("update instance[%s] status successfully", updateStatusFlag))
 	return nil
 }
@@ -932,7 +931,7 @@ func (ds *MetadataManager) PutInstanceProperties(ctx context.Context, request *p
 		return err
 	}
 
-	sendEvent(sync.UpdateAction, datasource.ResourceInstance, copyInstanceRef)
+	sendEvent(ctx, sync.UpdateAction, datasource.ResourceInstance, copyInstanceRef)
 	log.Info(fmt.Sprintf("update instance[%s] properties successfully", instanceFlag))
 	return nil
 }
@@ -965,7 +964,7 @@ func (ds *MetadataManager) SendManyHeartbeat(ctx context.Context, request *pb.He
 		}
 	}
 	log.Info(fmt.Sprintf("batch update heartbeats, %v", instanceHbRstArr))
-	sendEvent(sync.UpdateAction, datasource.ResourceHeartbeatSet, request)
+	sendEvent(ctx, sync.UpdateAction, datasource.ResourceHeartbeatSet, request)
 	return &pb.HeartbeatSetResponse{
 		Instances: instanceHbRstArr,
 	}, nil
@@ -985,7 +984,7 @@ func (ds *MetadataManager) UnregisterInstance(ctx context.Context, request *pb.U
 			instanceFlag, remoteIP), err)
 		return err
 	}
-	sendEvent(sync.DeleteAction, datasource.ResourceInstance, request)
+	sendEvent(ctx, sync.DeleteAction, datasource.ResourceInstance, request)
 	log.Info(fmt.Sprintf("unregister instance[%s], operator %s", instanceFlag, remoteIP))
 	return nil
 }
@@ -1009,7 +1008,7 @@ func (ds *MetadataManager) SendHeartbeat(ctx context.Context, request *pb.Heartb
 		log.Info(fmt.Sprintf("heartbeat successful, renew instance[%s] ttl to %d. operator %s",
 			instanceFlag, ttl, remoteIP))
 	}
-	sendEvent(sync.UpdateAction, datasource.ResourceHeartbeat, request)
+	sendEvent(ctx, sync.UpdateAction, datasource.ResourceHeartbeat, request)
 	return nil
 }
 

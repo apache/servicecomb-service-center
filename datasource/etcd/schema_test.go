@@ -35,12 +35,12 @@ import (
 )
 
 func schemaContext() context.Context {
-	return util.WithNoCache(util.SetDomainProject(context.Background(), "sync-schema", "sync-schema"))
+	ctx := util.WithNoCache(util.SetDomainProject(context.Background(), "sync-schema", "sync-schema"))
+	return util.WithNoCache(util.SetContext(ctx, util.CtxEnableSync, "1"))
 }
 
 func TestSyncSchema(t *testing.T) {
 
-	datasource.EnableSync = true
 	var serviceID string
 
 	defer schema.Instance().DeleteContent(schemaContext(), &schema.ContentRequest{
@@ -111,10 +111,10 @@ func TestSyncSchema(t *testing.T) {
 				ResourceType: datasource.ResourceKV,
 				Status:       csync.PendingStatus,
 			}
-			tasks, err := task.List(context.Background(), &listTaskReq)
+			tasks, err := task.List(schemaContext(), &listTaskReq)
 			assert.NoError(t, err)
 			assert.Equal(t, 3, len(tasks))
-			err = task.Delete(context.Background(), tasks...)
+			err = task.Delete(schemaContext(), tasks...)
 			assert.NoError(t, err)
 		})
 	})
@@ -162,10 +162,10 @@ func TestSyncSchema(t *testing.T) {
 				ResourceType: datasource.ResourceKV,
 				Status:       csync.PendingStatus,
 			}
-			tasks, err := task.List(context.Background(), &listTaskReq)
+			tasks, err := task.List(schemaContext(), &listTaskReq)
 			assert.NoError(t, err)
 			assert.Equal(t, 7, len(tasks))
-			err = task.Delete(context.Background(), tasks...)
+			err = task.Delete(schemaContext(), tasks...)
 			assert.NoError(t, err)
 			listTaskReq = model.ListTaskRequest{
 				Domain:       "sync-schema",
@@ -174,20 +174,20 @@ func TestSyncSchema(t *testing.T) {
 				ResourceType: datasource.ResourceKV,
 				Status:       csync.PendingStatus,
 			}
-			tasks, err = task.List(context.Background(), &listTaskReq)
+			tasks, err = task.List(schemaContext(), &listTaskReq)
 			assert.NoError(t, err)
 			assert.Equal(t, 2, len(tasks))
-			err = task.Delete(context.Background(), tasks...)
+			err = task.Delete(schemaContext(), tasks...)
 			assert.NoError(t, err)
 			tombstoneListReq := model.ListTombstoneRequest{
 				Domain:       "sync-schema",
 				Project:      "sync-schema",
 				ResourceType: datasource.ResourceKV,
 			}
-			tombstones, err := tombstone.List(context.Background(), &tombstoneListReq)
+			tombstones, err := tombstone.List(schemaContext(), &tombstoneListReq)
 			assert.NoError(t, err)
 			assert.Equal(t, 2, len(tombstones))
-			err = tombstone.Delete(context.Background(), tombstones...)
+			err = tombstone.Delete(schemaContext(), tombstones...)
 			assert.NoError(t, err)
 		})
 	})
@@ -275,6 +275,4 @@ func TestSyncSchema(t *testing.T) {
 			assert.NoError(t, err)
 		})
 	})
-
-	datasource.EnableSync = false
 }

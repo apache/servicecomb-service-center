@@ -24,7 +24,6 @@ import (
 	"github.com/go-chassis/cari/sync"
 	"github.com/little-cui/etcdadpt"
 
-	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/eventbase/datasource/etcd/key"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
@@ -71,7 +70,7 @@ func GenDeleteOpts(ctx context.Context, resourceType, resourceID string, resourc
 
 func genOpts(ctx context.Context, action string, resourceType string, resource interface{},
 	options ...Option) ([]etcdadpt.OpOptions, error) {
-	if !datasource.EnableSync {
+	if !util.EnableSync(ctx) {
 		return nil, nil
 	}
 	syncOpts := NewSyncOptions()

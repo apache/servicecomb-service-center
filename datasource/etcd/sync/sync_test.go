@@ -30,13 +30,12 @@ import (
 )
 
 func optsContext() context.Context {
-	return util.WithNoCache(util.SetDomainProject(context.Background(), "sync-opts",
+	ctx := util.WithNoCache(util.SetDomainProject(context.Background(), "sync-opts",
 		"sync-opts"))
+	return util.WithNoCache(util.SetContext(ctx, util.CtxEnableSync, "1"))
 }
 
 func TestOpts(t *testing.T) {
-	datasource.EnableSync = true
-
 	t.Run("create func will create a task opt should pass", func(t *testing.T) {
 		opts, err := sync.GenCreateOpts(optsContext(), datasource.ResourceService, &pb.CreateServiceRequest{})
 		assert.Nil(t, err)
@@ -54,5 +53,4 @@ func TestOpts(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, 2, len(opts))
 	})
-	datasource.EnableSync = false
 }
