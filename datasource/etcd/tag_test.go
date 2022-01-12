@@ -34,13 +34,12 @@ import (
 )
 
 func tagContext() context.Context {
-	return util.WithNoCache(util.SetDomainProject(context.Background(), "sync-tag",
-		"sync-tag"))
+	ctx := util.WithNoCache(util.SetDomainProject(context.Background(), "sync-tag", "sync-tag"))
+	return util.WithNoCache(util.SetContext(ctx, util.CtxEnableSync, "1"))
 }
 
 func TestSyncTag(t *testing.T) {
 	var serviceID string
-	datasource.EnableSync = true
 	t.Run("create service", func(t *testing.T) {
 		t.Run("register a micro service will create a task should pass", func(t *testing.T) {
 			resp, err := datasource.GetMetadataManager().RegisterService(tagContext(), &pb.CreateServiceRequest{
@@ -208,6 +207,4 @@ func TestSyncTag(t *testing.T) {
 			assert.NoError(t, err)
 		})
 	})
-
-	datasource.EnableSync = false
 }

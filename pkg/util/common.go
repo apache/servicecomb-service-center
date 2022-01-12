@@ -28,6 +28,7 @@ const (
 	CtxCacheOnly        CtxKey = "cacheOnly"
 	CtxRequestRevision  CtxKey = "requestRev"
 	CtxResponseRevision CtxKey = "responseRev"
+	CtxEnableSync       CtxKey = "enableSync"
 )
 
 func GetAppRoot() string {

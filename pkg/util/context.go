@@ -217,6 +217,10 @@ func Global(ctx context.Context) bool {
 	return ctx.Value(CtxGlobal) == "1"
 }
 
+func EnableSync(ctx context.Context) bool {
+	return ctx.Value(CtxEnableSync) == "1"
+}
+
 func WithRequestRev(ctx context.Context, rev string) context.Context {
 	return SetContext(ctx, CtxRequestRevision, rev)
 }

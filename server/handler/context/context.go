@@ -20,6 +20,7 @@ package context
 import (
 	"net/http"
 
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/chain"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -46,6 +47,10 @@ func (c *Handler) Handle(i *chain.Invocation) {
 		v3.Write(r)
 	case v4.IsMatch(r):
 		v4.Write(r)
+	}
+
+	if datasource.EnableSync {
+		i.WithContext(util.CtxEnableSync, "1")
 	}
 
 	c.commonQueryToContext(i)
