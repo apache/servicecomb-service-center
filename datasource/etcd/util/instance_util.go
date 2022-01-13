@@ -65,7 +65,7 @@ func GetInstance(ctx context.Context, domainProject string, serviceID string, in
 	return resp.Kvs[0].Value.(*pb.MicroServiceInstance), nil
 }
 
-func InstanceExist(ctx context.Context, domainProject string, serviceID string, instanceID string) (bool, error) {
+func ExistInstance(ctx context.Context, domainProject string, serviceID string, instanceID string) (bool, error) {
 	key := path.GenerateInstanceKey(domainProject, serviceID, instanceID)
 	opts := append(FromContext(ctx), etcdadpt.WithStrKey(key))
 	resp, err := sd.Instance().Search(ctx, opts...)

@@ -20,33 +20,7 @@ package validator
 import (
 	"errors"
 	"reflect"
-
-	"github.com/apache/servicecomb-service-center/pkg/validate"
 )
-
-var createAccountValidator = &validate.Validator{}
-var updateAccountValidator = &validate.Validator{}
-var createRoleValidator = &validate.Validator{}
-
-var changePWDValidator = &validate.Validator{}
-var accountLoginValidator = &validate.Validator{}
-
-func init() {
-	createAccountValidator.AddRule("Name", &validate.Rule{Max: 64, Regexp: nameRegex})
-	createAccountValidator.AddRule("Roles", &validate.Rule{Min: 1, Max: 5, Regexp: nameRegex})
-	createAccountValidator.AddRule("Password", &validate.Rule{Regexp: &validate.PasswordChecker{}})
-	createAccountValidator.AddRule("Status", &validate.Rule{Regexp: accountStatusRegex})
-
-	updateAccountValidator.AddRule("Roles", createAccountValidator.GetRule("Roles"))
-	updateAccountValidator.AddRule("Status", createAccountValidator.GetRule("Status"))
-
-	createRoleValidator.AddRule("Name", &validate.Rule{Max: 64, Regexp: nameRegex})
-
-	changePWDValidator.AddRule("Password", &validate.Rule{Regexp: &validate.PasswordChecker{}})
-	changePWDValidator.AddRule("Name", &validate.Rule{Regexp: nameRegex})
-
-	accountLoginValidator.AddRule("TokenExpirationTime", &validate.Rule{Regexp: &validate.TokenExpirationTimeChecker{}})
-}
 
 func baseCheck(v interface{}) error {
 	if v == nil {

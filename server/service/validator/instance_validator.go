@@ -87,16 +87,16 @@ func HeartbeatReqValidator() *validate.Validator {
 	})
 }
 
-func UpdateInstanceReqValidator() *validate.Validator {
+func UpdateInstanceStatusReqValidator() *validate.Validator {
 	return updateInstanceReqValidator.Init(func(v *validate.Validator) {
-		v.AddRules(heartbeatReqValidator.GetRules())
+		v.AddRules(HeartbeatReqValidator().GetRules())
 		v.AddRule("Status", &validate.Rule{Regexp: updateInstStatusRegex})
 	})
 }
 
 func UpdateInstancePropsReqValidator() *validate.Validator {
 	return updateInstancePropsReqValidator.Init(func(v *validate.Validator) {
-		v.AddRules(heartbeatReqValidator.GetRules())
+		v.AddRules(HeartbeatReqValidator().GetRules())
 	})
 }
 
@@ -151,7 +151,7 @@ func ValidateFindManyInstancesRequest(in *discovery.BatchFindInstancesRequest) e
 	return FindManyInstanceReqValidator().Validate(in)
 }
 func ValidateUpdateInstanceStatusRequest(in *discovery.UpdateInstanceStatusRequest) error {
-	return UpdateInstanceReqValidator().Validate(in)
+	return UpdateInstanceStatusReqValidator().Validate(in)
 }
 func ValidateUpdateInstancePropsRequest(in *discovery.UpdateInstancePropsRequest) error {
 	return UpdateInstancePropsReqValidator().Validate(in)

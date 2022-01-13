@@ -30,23 +30,6 @@ import (
 	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
 )
 
-func GetInstance(ctx context.Context, filter interface{}) (*model.Instance, error) {
-	findRes, err := client.GetMongoClient().FindOne(ctx, model.CollectionInstance, filter)
-	if err != nil {
-		return nil, err
-	}
-	var instance *model.Instance
-	if findRes.Err() != nil {
-		//not get any service,not db err
-		return nil, nil
-	}
-	err = findRes.Decode(&instance)
-	if err != nil {
-		return nil, err
-	}
-	return instance, nil
-}
-
 func GetInstances(ctx context.Context, filter interface{}) ([]*model.Instance, error) {
 	res, err := client.GetMongoClient().Find(ctx, model.CollectionInstance, filter)
 	if err != nil {

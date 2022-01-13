@@ -65,6 +65,7 @@ type MetadataManager interface {
 	ListInstance(ctx context.Context, request *pb.GetInstancesRequest) (*pb.GetInstancesResponse, error)
 	// FindInstances returns instances under the specified domain
 	FindInstances(ctx context.Context, request *pb.FindInstancesRequest) (*pb.FindInstancesResponse, error)
+	PutInstance(ctx context.Context, request *pb.RegisterInstanceRequest) error
 	PutInstanceStatus(ctx context.Context, request *pb.UpdateInstanceStatusRequest) error
 	PutInstanceProperties(ctx context.Context, request *pb.UpdateInstancePropsRequest) error
 	UnregisterInstance(ctx context.Context, request *pb.UnregisterInstanceRequest) error
