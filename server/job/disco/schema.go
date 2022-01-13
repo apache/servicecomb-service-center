@@ -21,10 +21,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/apache/servicecomb-service-center/eventbase/service/dlock"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
 	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
-	"github.com/apache/servicecomb-service-center/server/service/dlock"
 	"github.com/robfig/cron/v3"
 )
 

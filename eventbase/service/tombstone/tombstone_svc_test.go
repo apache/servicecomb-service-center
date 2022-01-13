@@ -27,15 +27,8 @@ import (
 	"github.com/apache/servicecomb-service-center/eventbase/datasource"
 	"github.com/apache/servicecomb-service-center/eventbase/model"
 	"github.com/apache/servicecomb-service-center/eventbase/service/tombstone"
-	"github.com/apache/servicecomb-service-center/eventbase/test"
+	_ "github.com/apache/servicecomb-service-center/eventbase/test"
 )
-
-func init() {
-	err := datasource.Init(test.DbCfg)
-	if err != nil {
-		panic(err)
-	}
-}
 
 func TestTombstoneService(t *testing.T) {
 	tombstoneOne := sync.NewTombstone("tombstone", "tombstone", "config", "111111")

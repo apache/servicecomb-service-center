@@ -15,35 +15,42 @@
  * limitations under the License.
  */
 
-// Package dlock provide distributed lock function
 package dlock
 
 import (
 	"fmt"
 
-	"github.com/apache/servicecomb-service-center/datasource/dlock"
-	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/go-chassis/openlog"
 )
 
-func Lock(key string, ttl int64) error {
-	return dlock.Instance().Lock(key, ttl)
+type initFunc func(opts Options) (DLock, error)
+
+var (
+	plugins  = make(map[string]initFunc)
+	instance DLock
+)
+
+func Install(pluginImplName string, f initFunc) {
+	plugins[pluginImplName] = f
 }
 
-func TryLock(key string, ttl int64) error {
-	return dlock.Instance().TryLock(key, ttl)
-}
-
-func Renew(key string) error {
-	return dlock.Instance().Renew(key)
-}
-
-func IsHoldLock(key string) bool {
-	return dlock.Instance().IsHoldLock(key)
-}
-
-func Unlock(key string) {
-	err := dlock.Instance().Unlock(key)
-	if err != nil {
-		log.Error(fmt.Sprintf("unlock key %s failed", key), err)
+func Init(opts Options) error {
+	if opts.Kind == "" {
+		return nil
 	}
+	engineFunc, ok := plugins[opts.Kind]
+	if !ok {
+		return fmt.Errorf("plugin implement not supported [%s]", opts.Kind)
+	}
+	var err error
+	instance, err = engineFunc(opts)
+	if err != nil {
+		return err
+	}
+	openlog.Info(fmt.Sprintf("dlock plugin [%s] enabled", opts.Kind))
+	return nil
+}
+
+func Instance() DLock {
+	return instance
 }

@@ -20,9 +20,9 @@ package tombstone
 import (
 	"fmt"
 
+	"github.com/apache/servicecomb-service-center/eventbase/service/dlock"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
-	"github.com/apache/servicecomb-service-center/server/service/dlock"
 	"github.com/apache/servicecomb-service-center/syncer/service/tombstone"
 	"github.com/robfig/cron/v3"
 )

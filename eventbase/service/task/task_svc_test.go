@@ -28,15 +28,8 @@ import (
 	"github.com/apache/servicecomb-service-center/eventbase/datasource"
 	"github.com/apache/servicecomb-service-center/eventbase/model"
 	"github.com/apache/servicecomb-service-center/eventbase/service/task"
-	"github.com/apache/servicecomb-service-center/eventbase/test"
+	_ "github.com/apache/servicecomb-service-center/eventbase/test"
 )
-
-func init() {
-	err := datasource.Init(test.DbCfg)
-	if err != nil {
-		panic(err)
-	}
-}
 
 func TestTaskService(t *testing.T) {
 	taskOne, _ := sync.NewTask("task", "task", sync.CreateAction, "service",

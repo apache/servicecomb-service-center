@@ -21,9 +21,10 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/apache/servicecomb-service-center/datasource/dlock"
-	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/go-chassis/openlog"
 	"github.com/little-cui/etcdadpt"
+
+	"github.com/apache/servicecomb-service-center/eventbase/datasource/dlock"
 )
 
 func init() {
@@ -60,7 +61,7 @@ func (d *DB) Renew(key string) error {
 	if lock, ok := d.lockMap.Load(key); ok {
 		err := lock.(*etcdadpt.DLock).Refresh()
 		if err != nil {
-			log.Error(fmt.Sprintf("fail to renew key %s", key), err)
+			openlog.Error(fmt.Sprintf("fail to renew key %s,err: %s", key, err.Error()))
 			d.lockMap.Delete(key)
 		}
 		return err
@@ -81,7 +82,7 @@ func (d *DB) Unlock(key string) error {
 	if lock, ok := d.lockMap.Load(key); ok {
 		err := lock.(*etcdadpt.DLock).Unlock()
 		if err != nil {
-			log.Error(fmt.Sprintf("fail to unlock %s", key), err)
+			openlog.Error(fmt.Sprintf("fail to unlock %s err: %s", key, err.Error()))
 		}
 		d.lockMap.Delete(key)
 		return err

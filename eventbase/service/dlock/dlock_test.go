@@ -23,68 +23,72 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/apache/servicecomb-service-center/datasource/dlock"
-	_ "github.com/apache/servicecomb-service-center/test"
+	"github.com/apache/servicecomb-service-center/eventbase/service/dlock"
+	"github.com/apache/servicecomb-service-center/eventbase/test"
 )
 
 func TestDLock(t *testing.T) {
+	if !test.IsETCD() {
+		return
+	}
 	t.Run("test lock", func(t *testing.T) {
 		t.Run("lock the global key for 5s should pass", func(t *testing.T) {
-			err := dlock.Instance().Lock("global", 5)
+			err := dlock.Lock("global", 5)
 			assert.Nil(t, err)
-			isHold := dlock.Instance().IsHoldLock("global")
+			isHold := dlock.IsHoldLock("global")
 			assert.Equal(t, true, isHold)
 		})
 		t.Run("two locks fight for the same lock 5s, one lock should pass, another lock should fail", func(t *testing.T) {
-			err := dlock.Instance().Lock("same-lock", 5)
+			err := dlock.Lock("same-lock", 5)
 			assert.Nil(t, err)
-			isHold := dlock.Instance().IsHoldLock("same-lock")
+			isHold := dlock.IsHoldLock("same-lock")
 			assert.Equal(t, true, isHold)
-			err = dlock.Instance().TryLock("same-lock", 5)
+			err = dlock.TryLock("same-lock", 5)
 			assert.NotNil(t, err)
 		})
 	})
 	t.Run("test try lock", func(t *testing.T) {
 		t.Run("try lock the try key for 5s should pass", func(t *testing.T) {
-			err := dlock.Instance().TryLock("try-lock", 5)
+			err := dlock.TryLock("try-lock", 5)
 			assert.Nil(t, err)
-			isHold := dlock.Instance().IsHoldLock("try-lock")
+			isHold := dlock.IsHoldLock("try-lock")
 			assert.Equal(t, true, isHold)
-			err = dlock.Instance().TryLock("try-lock", 5)
+			err = dlock.TryLock("try-lock", 5)
 			assert.NotNil(t, err)
 		})
 	})
 	t.Run("test renew", func(t *testing.T) {
 		t.Run("renew the renew key for 5s should pass", func(t *testing.T) {
-			err := dlock.Instance().Lock("renew", 5)
+			err := dlock.Lock("renew", 5)
 			assert.Nil(t, err)
-			isHold := dlock.Instance().IsHoldLock("renew")
+			isHold := dlock.IsHoldLock("renew")
 			assert.Equal(t, true, isHold)
 			time.Sleep(3 * time.Second)
-			err = dlock.Instance().Renew("renew")
+			err = dlock.Renew("renew")
 			time.Sleep(2 * time.Second)
-			err = dlock.Instance().TryLock("renew", 5)
+			err = dlock.TryLock("renew", 5)
 			assert.NotNil(t, err)
 		})
 	})
 	t.Run("test isHoldLock", func(t *testing.T) {
 		t.Run("already owns the lock should pass", func(t *testing.T) {
-			err := dlock.Instance().Lock("hold-lock", 5)
+			err := dlock.Lock("hold-lock", 5)
 			assert.Nil(t, err)
-			isHold := dlock.Instance().IsHoldLock("hold-lock")
+			isHold := dlock.IsHoldLock("hold-lock")
 			assert.Equal(t, true, isHold)
 		})
 		t.Run("key does not exist should fail", func(t *testing.T) {
-			isHold := dlock.Instance().IsHoldLock("not-exist")
+			isHold := dlock.IsHoldLock("not-exist")
 			assert.Equal(t, false, isHold)
 		})
 	})
 	t.Run("test unlock", func(t *testing.T) {
 		t.Run("unlock the unlock key should pass", func(t *testing.T) {
-			err := dlock.Instance().Lock("unlock", 5)
+			err := dlock.Lock("unlock", 5)
 			assert.Nil(t, err)
-			err = dlock.Instance().Unlock("unlock")
-			assert.Nil(t, err)
+			dlock.Unlock("unlock")
+			lock := dlock.IsHoldLock("unlock")
+			assert.False(t, lock)
 		})
 	})
 }

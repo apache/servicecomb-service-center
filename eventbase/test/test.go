@@ -23,6 +23,9 @@ import (
 	"github.com/go-chassis/cari/db"
 	"github.com/go-chassis/go-archaius"
 
+	"github.com/apache/servicecomb-service-center/eventbase/datasource"
+	"github.com/apache/servicecomb-service-center/eventbase/datasource/dlock"
+
 	_ "github.com/apache/servicecomb-service-center/eventbase/bootstrap"
 )
 
@@ -53,4 +56,19 @@ func init() {
 	DbCfg.Kind = DefaultTestDB
 	DbCfg.URI = DefaultTestDBURI
 	DbCfg.Timeout = 10 * time.Second
+	err = datasource.Init(DbCfg)
+	if err != nil {
+		panic(err)
+	}
+	_ = dlock.Init(dlock.Options{
+		Kind: DbCfg.Kind,
+	})
+}
+
+func IsETCD() bool {
+	t := archaius.Get("TEST_DB_MODE")
+	if t == nil {
+		t = "etcd"
+	}
+	return t == "etcd"
 }
