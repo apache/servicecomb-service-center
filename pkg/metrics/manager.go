@@ -22,9 +22,8 @@ import (
 )
 
 const (
-	FamilyName       = "service_center"
-	familyNamePrefix = FamilyName + "_"
-	bufferSize       = 1024
+	FamilyName = "service_center"
+	bufferSize = 1024
 )
 
 var (

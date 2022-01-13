@@ -20,6 +20,7 @@ package server
 import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/syncer/config"
+	"github.com/apache/servicecomb-service-center/syncer/metrics"
 	"github.com/go-chassis/go-chassis/v2"
 )
 
@@ -27,6 +28,10 @@ func Run() {
 	if !config.GetConfig().Sync.EnableOnStart {
 		log.Warn("syncer is disabled")
 		return
+	}
+
+	if err := metrics.Init(); err != nil {
+		log.Error("syncer metrics init failed", err)
 	}
 
 	if err := chassis.Run(); err != nil {
