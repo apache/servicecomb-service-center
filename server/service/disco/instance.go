@@ -22,6 +22,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/apache/servicecomb-service-center/datasource"
@@ -39,6 +40,11 @@ import (
 const (
 	defaultMinInterval = 5 * time.Second
 	defaultMinTimes    = 3
+)
+
+var (
+	once          sync.Once
+	propertiesMap map[string]string
 )
 
 func RegisterInstance(ctx context.Context, in *pb.RegisterInstanceRequest) (*pb.RegisterInstanceResponse, error) {
@@ -97,7 +103,29 @@ func populateInstanceDefaultValue(ctx context.Context, instance *pb.MicroService
 		return pb.NewError(pb.ErrServiceNotExists, "Invalid 'serviceID' in request body.")
 	}
 	instance.Version = microservice.Version
+
+	setPropertiesToInstance(instance)
 	return nil
+}
+
+func setPropertiesToInstance(instance *pb.MicroServiceInstance) {
+	if instance.Properties == nil {
+		instance.Properties = make(map[string]string)
+	}
+
+	once.Do(func() {
+		propertiesMap = config.GetStringMap("registry.instance.properties")
+	})
+
+	if len(propertiesMap) <= 0 {
+		return
+	}
+
+	for k, v := range propertiesMap {
+		if _, ok := instance.Properties[k]; !ok {
+			instance.Properties[k] = v
+		}
+	}
 }
 
 func UnregisterInstance(ctx context.Context, in *pb.UnregisterInstanceRequest) error {

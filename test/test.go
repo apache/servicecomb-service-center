@@ -41,6 +41,8 @@ func init() {
 	var kind = "etcd"
 	var uri = "http://127.0.0.1:2379"
 	_ = archaius.Set("rbac.releaseLockAfter", "3s")
+	_ = archaius.Set("registry.instance.properties.engineID", "test_engineID")
+	_ = archaius.Set("registry.instance.properties.engineName", "test_engineName")
 	if IsETCD() {
 		_ = archaius.Set("registry.cache.mode", 0)
 		_ = archaius.Set("discovery.kind", "etcd")

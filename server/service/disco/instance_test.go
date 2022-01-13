@@ -28,6 +28,7 @@ import (
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/core"
 	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
+	_ "github.com/apache/servicecomb-service-center/test"
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/cari/pkg/errsvc"
 	"github.com/stretchr/testify/assert"
@@ -383,6 +384,27 @@ func TestRegisterInstance(t *testing.T) {
 		testErr = err.(*errsvc.Error)
 		assert.Error(t, testErr)
 		assert.Equal(t, pb.ErrInvalidParams, testErr.Code)
+	})
+
+	t.Run(" register properties info to instance, should be passed", func(t *testing.T) {
+		instance := &pb.MicroServiceInstance{
+			ServiceId: serviceId1,
+			Endpoints: []string{
+				"sameInstance:127.0.0.1:8080",
+			},
+			HostName: "UT-HOST",
+			Status:   pb.MSI_UP,
+		}
+		_, err := discosvc.RegisterInstance(ctx, &pb.RegisterInstanceRequest{
+			Instance: instance,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, 2, len(instance.Properties))
+		engineID, ok1 := instance.Properties["engineID"]
+		engineName, ok2 := instance.Properties["engineName"]
+		assert.Equal(t, true, ok1 && ok2)
+		assert.Equal(t, "test_engineID", engineID)
+		assert.Equal(t, "test_engineName", engineName)
 	})
 }
 
