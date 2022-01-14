@@ -986,12 +986,13 @@ func (ds *MetadataManager) SendManyHeartbeat(ctx context.Context, request *pb.He
 	for heartbeat := range instancesHbRst {
 		count++
 		instanceHbRstArr = append(instanceHbRstArr, heartbeat)
+		sendEvent(ctx, sync.UpdateAction, datasource.ResourceHeartbeat,
+			&pb.HeartbeatRequest{ServiceId: heartbeat.ServiceId, InstanceId: heartbeat.InstanceId})
 		if count == noMultiCounter {
 			close(instancesHbRst)
 		}
 	}
 	log.Info(fmt.Sprintf("batch update heartbeats, %v", instanceHbRstArr))
-	sendEvent(ctx, sync.UpdateAction, datasource.ResourceHeartbeatSet, request)
 	return &pb.HeartbeatSetResponse{
 		Instances: instanceHbRstArr,
 	}, nil
