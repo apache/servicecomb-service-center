@@ -94,7 +94,11 @@ func NewDataSource(opts datasource.Options) (datasource.DataSource, error) {
 	if err := inst.initialize(); err != nil {
 		return nil, err
 	}
-	inst.metadataManager = newMetadataManager(opts.SchemaNotEditable, opts.InstanceTTL)
+	inst.metadataManager = &MetadataManager{
+		SchemaNotEditable:  opts.SchemaNotEditable,
+		InstanceTTL:        opts.InstanceTTL,
+		InstanceProperties: opts.InstanceProperties,
+	}
 	inst.sysManager = newSysManager()
 	inst.depManager = &DepManager{}
 	inst.scManager = &SCManager{}

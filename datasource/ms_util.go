@@ -20,6 +20,7 @@ package datasource
 import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/go-chassis/cari/discovery"
+	"github.com/jinzhu/copier"
 )
 
 var GlobalServiceNames = make(map[string]struct{})
@@ -143,4 +144,32 @@ func RemoveGlobalServices(withShared bool, domainProject string,
 
 func IsDefaultDomainProject(domainProject string) bool {
 	return domainProject == RegistryDomainProject
+}
+
+func NewServiceOverview(serviceDetail *discovery.ServiceDetail, innerProperties map[string]string) (*discovery.ServiceDetail, error) {
+	tmpServiceDetail := &discovery.ServiceDetail{}
+	err := copier.CopyWithOption(tmpServiceDetail, serviceDetail, copier.Option{DeepCopy: true})
+	if err != nil {
+		return nil, discovery.NewError(discovery.ErrInternal, err.Error())
+	}
+	tmpServiceDetail.MicroService.Properties = nil
+	tmpServiceDetail.MicroService.Schemas = nil
+	instances := tmpServiceDetail.Instances
+	for _, instance := range instances {
+		instance.Properties = removeCustomProperties(instance.Properties, innerProperties)
+	}
+	return tmpServiceDetail, nil
+}
+
+func removeCustomProperties(properties, innerProperties map[string]string) map[string]string {
+	if len(innerProperties) == 0 {
+		return nil
+	}
+	props := make(map[string]string)
+	for k, v := range properties {
+		if _, ok := innerProperties[k]; ok {
+			props[k] = v
+		}
+	}
+	return props
 }

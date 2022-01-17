@@ -116,3 +116,65 @@ func hasGlobalService(services []*discovery.MicroService) bool {
 	}
 	return false
 }
+
+func TestNewServiceOverview(t *testing.T) {
+	t.Run("no instances, should be ok", func(t *testing.T) {
+		_, err := datasource.NewServiceOverview(&discovery.ServiceDetail{
+			MicroService: &discovery.MicroService{},
+		}, nil)
+		assert.NoError(t, err)
+
+		_, err = datasource.NewServiceOverview(&discovery.ServiceDetail{
+			MicroService: &discovery.MicroService{},
+			Instances:    []*discovery.MicroServiceInstance{},
+		}, nil)
+		assert.NoError(t, err)
+	})
+
+	t.Run("has schema or service properties, should be ok", func(t *testing.T) {
+		overview, err := datasource.NewServiceOverview(&discovery.ServiceDetail{
+			MicroService: &discovery.MicroService{
+				Schemas:    []string{"test"},
+				Properties: map[string]string{"test": "A"},
+			},
+		}, nil)
+		assert.NoError(t, err)
+		assert.Empty(t, overview.MicroService.Schemas)
+		assert.Empty(t, overview.MicroService.Properties)
+	})
+
+	t.Run("has instance properties, should be ok", func(t *testing.T) {
+		overview, err := datasource.NewServiceOverview(&discovery.ServiceDetail{
+			MicroService: &discovery.MicroService{},
+			Instances: []*discovery.MicroServiceInstance{
+				{
+					Properties: map[string]string{"test": "A"},
+				},
+			},
+		}, nil)
+		assert.NoError(t, err)
+		assert.Empty(t, overview.Instances[0].Properties)
+
+		overview, err = datasource.NewServiceOverview(&discovery.ServiceDetail{
+			MicroService: &discovery.MicroService{},
+			Instances: []*discovery.MicroServiceInstance{
+				{
+					Properties: map[string]string{"test": "A"},
+				},
+			},
+		}, map[string]string{"inner": "B"})
+		assert.NoError(t, err)
+		assert.Empty(t, overview.Instances[0].Properties)
+
+		overview, err = datasource.NewServiceOverview(&discovery.ServiceDetail{
+			MicroService: &discovery.MicroService{},
+			Instances: []*discovery.MicroServiceInstance{
+				{
+					Properties: map[string]string{"test": "A", "inner": "C"},
+				},
+			},
+		}, map[string]string{"inner": "B"})
+		assert.NoError(t, err)
+		assert.Equal(t, "C", overview.Instances[0].Properties["inner"])
+	})
+}

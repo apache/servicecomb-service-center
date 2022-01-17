@@ -29,7 +29,6 @@ import (
 	"github.com/go-chassis/cari/pkg/errsvc"
 	"github.com/go-chassis/cari/sync"
 	"github.com/go-chassis/foundation/gopool"
-	"github.com/jinzhu/copier"
 	"github.com/little-cui/etcdadpt"
 
 	"github.com/apache/servicecomb-service-center/datasource"
@@ -57,14 +56,8 @@ type MetadataManager struct {
 	// SchemaNotEditable determines whether schema modification is not allowed
 	SchemaNotEditable bool
 	// InstanceTTL options
-	InstanceTTL int64
-}
-
-func newMetadataManager(schemaNotEditable bool, instanceTTL int64) datasource.MetadataManager {
-	return &MetadataManager{
-		SchemaNotEditable: schemaNotEditable,
-		InstanceTTL:       instanceTTL,
-	}
+	InstanceTTL        int64
+	InstanceProperties map[string]string
 }
 
 // RegisterService implement:
@@ -299,16 +292,9 @@ func (ds *MetadataManager) ListServiceDetail(ctx context.Context, request *pb.Ge
 			return nil, pb.NewError(pb.ErrInternal, err.Error())
 		}
 		serviceDetail.MicroService = service
-		tmpServiceDetail := &pb.ServiceDetail{}
-		err = copier.CopyWithOption(tmpServiceDetail, serviceDetail, copier.Option{DeepCopy: true})
+		tmpServiceDetail, err := datasource.NewServiceOverview(serviceDetail, ds.InstanceProperties)
 		if err != nil {
-			return nil, pb.NewError(pb.ErrInternal, err.Error())
-		}
-		tmpServiceDetail.MicroService.Properties = nil
-		tmpServiceDetail.MicroService.Schemas = nil
-		instances := tmpServiceDetail.Instances
-		for _, instance := range instances {
-			instance.Properties = nil
+			return nil, err
 		}
 		allServiceDetails = append(allServiceDetails, tmpServiceDetail)
 	}
