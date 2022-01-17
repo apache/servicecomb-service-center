@@ -20,11 +20,13 @@ package admin
 import (
 	"context"
 	"errors"
+	"time"
 
 	v1sync "github.com/apache/servicecomb-service-center/api/sync/v1"
 	"github.com/apache/servicecomb-service-center/client"
 	grpc "github.com/apache/servicecomb-service-center/pkg/rpc"
 	"github.com/apache/servicecomb-service-center/syncer/config"
+	"github.com/apache/servicecomb-service-center/syncer/metrics"
 	"github.com/apache/servicecomb-service-center/syncer/rpc"
 )
 
@@ -68,7 +70,7 @@ func Health() (*Resp, error) {
 			Mode:      c.Mode,
 			Endpoints: c.Endpoints,
 		}
-		p.Status = getPeerStatus(c.Endpoints)
+		p.Status = getPeerStatus(c.Name, c.Endpoints)
 		resp.Peers = append(resp.Peers, p)
 	}
 
@@ -79,17 +81,25 @@ func Health() (*Resp, error) {
 	return resp, nil
 }
 
-func getPeerStatus(endpoints []string) string {
+func getPeerStatus(peerName string, endpoints []string) string {
 	conn, err := grpc.GetRoundRobinLbConn(&grpc.Config{Addrs: endpoints, Scheme: scheme, ServiceName: serviceName})
 	if err != nil || conn == nil {
 		return rpc.HealthStatusAbnormal
 	}
 	defer conn.Close()
 
+	local := time.Now().UnixNano()
 	set := client.NewSet(conn)
 	reply, err := set.EventServiceClient.Health(context.Background(), &v1sync.HealthRequest{})
 	if err != nil || reply == nil {
 		return rpc.HealthStatusAbnormal
 	}
+	reportClockDiff(peerName, local, reply.LocalTimestamp)
 	return reply.Status
+}
+
+func reportClockDiff(peerName string, local int64, resp int64) {
+	curr := time.Now().UnixNano()
+	spent := (curr - local) / 2
+	metrics.PeersClockDiffSet(peerName, local+spent-resp)
 }

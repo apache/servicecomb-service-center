@@ -18,7 +18,11 @@
 package core
 
 import (
+	"fmt"
+	"net"
 	"os"
+	"strings"
+	"time"
 
 	// import the grace package and parse grace cmd line
 	_ "github.com/apache/servicecomb-service-center/pkg/grace"
@@ -26,6 +30,11 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/goutil"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
+	"github.com/apache/servicecomb-service-center/server/metrics"
+)
+
+const (
+	defaultCollectPeriod = 30 * time.Second
 )
 
 func Initialize() {
@@ -39,6 +48,8 @@ func Initialize() {
 	InitRegistration()
 	// Register global services
 	RegisterGlobalServices()
+	// init metrics
+	initMetrics()
 }
 
 func initLogger() {
@@ -49,4 +60,26 @@ func initLogger() {
 		LogRotateSize:  int(config.GetLog().LogRotateSize),
 		LogBackupCount: int(config.GetLog().LogBackupCount),
 	})
+}
+
+func initMetrics() {
+	if !config.GetBool("metrics.enable", false) {
+		return
+	}
+	interval, err := time.ParseDuration(strings.TrimSpace(config.GetString("metrics.interval", defaultCollectPeriod.String())))
+	if err != nil {
+		log.Error(fmt.Sprintf("invalid metrics config[interval], set default %s", defaultCollectPeriod), err)
+	}
+	if interval <= time.Second {
+		interval = defaultCollectPeriod
+	}
+	instance := net.JoinHostPort(config.GetString("server.host", "", config.WithStandby("httpaddr")),
+		config.GetString("server.port", "", config.WithStandby("httpport")))
+
+	if err := metrics.Init(metrics.Options{
+		Interval: interval,
+		Instance: instance,
+	}); err != nil {
+		log.Fatal("init metrics failed", err)
+	}
 }

@@ -25,8 +25,11 @@ import (
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/prometheus"
+	mapset "github.com/deckarep/golang-set"
 	"github.com/go-chassis/foundation/gopool"
 )
+
+var families = mapset.NewSet(FamilyName)
 
 // EmptyGather just active when metrics disabled
 var EmptyGather = &Gather{
@@ -88,14 +91,36 @@ func (mm *Gather) Collect() error {
 
 	records := NewMetrics()
 	for _, mf := range mfs {
-		name := mf.GetName()
-		if _, ok := SysMetrics.Get(name); strings.Index(name, familyNamePrefix) == 0 || ok {
-			if d := Calculate(mf); d != nil {
-				records.put(strings.TrimPrefix(name, familyNamePrefix), d)
-			}
+		name := RecordName(mf.GetName())
+		if d := Calculate(mf); d != nil {
+			records.put(name, d)
 		}
 	}
 	// clean the old cache here
 	mm.Records = records
 	return nil
+}
+
+func RecordName(metricName string) string {
+	_, isSys := SysMetrics.Get(metricName)
+	family := ParseFamily(metricName)
+	if !isSys && len(family) == 0 {
+		return ""
+	}
+	metricName = strings.TrimPrefix(metricName, family+"_")
+	return metricName
+}
+
+func CollectFamily(familyName string) {
+	families.Add(familyName)
+}
+
+func ParseFamily(metricName string) string {
+	for family := range families.Iter() {
+		s := family.(string)
+		if strings.Index(metricName, s+"_") == 0 {
+			return s
+		}
+	}
+	return ""
 }

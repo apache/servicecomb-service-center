@@ -20,6 +20,7 @@ package rpc
 import (
 	"context"
 	"fmt"
+	"time"
 
 	v1sync "github.com/apache/servicecomb-service-center/api/sync/v1"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -42,9 +43,15 @@ func (s *Server) Sync(ctx context.Context, events *v1sync.EventList) (*v1sync.Re
 }
 
 func (s *Server) Health(ctx context.Context, request *v1sync.HealthRequest) (*v1sync.HealthReply, error) {
+	resp := &v1sync.HealthReply{
+		Status:         HealthStatusConnected,
+		LocalTimestamp: time.Now().UnixNano(),
+	}
+	// TODO enable to close syncer
 	syncerEnabled := config.GetBool("sync.enableOnStart", false)
 	if !syncerEnabled {
-		return &v1sync.HealthReply{Status: HealthStatusClose}, nil
+		resp.Status = HealthStatusClose
+		return resp, nil
 	}
-	return &v1sync.HealthReply{Status: HealthStatusConnected}, nil
+	return resp, nil
 }

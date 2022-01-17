@@ -20,11 +20,7 @@ package server
 import (
 	"context"
 	"crypto/tls"
-	"fmt"
-	"net"
 	"os"
-	"strings"
-	"time"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	nf "github.com/apache/servicecomb-service-center/pkg/event"
@@ -35,17 +31,12 @@ import (
 	"github.com/apache/servicecomb-service-center/server/command"
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/event"
-	"github.com/apache/servicecomb-service-center/server/metrics"
 	"github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf"
 	"github.com/apache/servicecomb-service-center/server/service/gov"
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
 	snf "github.com/apache/servicecomb-service-center/server/syncernotify"
 	"github.com/go-chassis/foundation/gopool"
 	"github.com/little-cui/etcdadpt"
-)
-
-const (
-	defaultCollectPeriod = 30 * time.Second
 )
 
 var server ServiceCenterServer
@@ -90,8 +81,6 @@ func (s *ServiceCenterServer) waitForQuit() {
 
 func (s *ServiceCenterServer) initialize() {
 	s.initEndpoints()
-	// Metrics
-	s.initMetrics()
 	// SSL
 	s.initSSL()
 	// Datasource
@@ -148,32 +137,6 @@ func getDatasourceTLSConfig() (*tls.Config, error) {
 		return tlsconf.ClientConfig()
 	}
 	return nil, nil
-}
-
-func (s *ServiceCenterServer) initMetrics() {
-	if !config.GetBool("metrics.enable", false) {
-		return
-	}
-	interval, err := time.ParseDuration(strings.TrimSpace(config.GetString("metrics.interval", defaultCollectPeriod.String())))
-	if err != nil {
-		log.Error(fmt.Sprintf("invalid metrics config[interval], set default %s", defaultCollectPeriod), err)
-	}
-	if interval <= time.Second {
-		interval = defaultCollectPeriod
-	}
-	var instance string
-	if len(s.Endpoint.Host) > 0 {
-		instance = net.JoinHostPort(s.Endpoint.Host, s.Endpoint.Port)
-	} else {
-		log.Fatal("init metrics InstanceName failed", nil)
-	}
-
-	if err := metrics.Init(metrics.Options{
-		Interval: interval,
-		Instance: instance,
-	}); err != nil {
-		log.Fatal("init metrics failed", err)
-	}
 }
 
 func (s *ServiceCenterServer) initSSL() {
