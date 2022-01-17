@@ -18,8 +18,6 @@ package servicecenter_test
 import (
 	"testing"
 
-	"github.com/little-cui/etcdadpt"
-
 	_ "github.com/apache/servicecomb-service-center/test"
 
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd/servicecenter"
@@ -27,14 +25,7 @@ import (
 )
 
 func TestNewSCClientAggregate(t *testing.T) {
-	err := etcdadpt.Init(etcdadpt.Config{
-		Kind:             "etcd",
-		ClusterName:      "sc-0",
-		ClusterAddresses: "sc-0=http://127.0.0.1:2379",
-	})
-	assert.NoError(t, err)
-
 	c := servicecenter.GetOrCreateSCClient()
 	assert.NotNil(t, c)
-	assert.NotEmpty(t, *c)
+	assert.Equal(t, 1, len(*c))
 }

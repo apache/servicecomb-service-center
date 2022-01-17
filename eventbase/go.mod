@@ -6,7 +6,7 @@ require (
 	github.com/go-chassis/go-archaius v1.5.1
 	github.com/go-chassis/go-chassis/v2 v2.3.0
 	github.com/go-chassis/openlog v1.1.3
-	github.com/little-cui/etcdadpt v0.2.1
+	github.com/little-cui/etcdadpt v0.3.2
 	github.com/stretchr/testify v1.7.0
 	go.mongodb.org/mongo-driver v1.4.2
 	gopkg.in/mgo.v2 v2.0.0-20190816093944-a6b53ec6cb22
