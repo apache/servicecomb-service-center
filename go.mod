@@ -28,7 +28,7 @@ require (
 	github.com/jinzhu/copier v0.3.0
 	github.com/karlseguin/ccache v2.0.3-0.20170217060820-3ba9789cfd2c+incompatible
 	github.com/labstack/echo/v4 v4.1.18-0.20201218141459-936c48a17e97
-	github.com/little-cui/etcdadpt v0.3.1
+	github.com/little-cui/etcdadpt v0.3.2
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/onsi/ginkgo v1.15.0
 	github.com/onsi/gomega v1.10.5
@@ -60,7 +60,10 @@ require (
 	k8s.io/kube-openapi v0.0.0-20210527164424-3c818078ee3d
 )
 
-require github.com/apache/servicecomb-service-center/eventbase v0.0.0-00010101000000-000000000000
+require (
+	github.com/apache/servicecomb-service-center/eventbase v0.0.0-00010101000000-000000000000
+	github.com/spf13/cast v1.3.0
+)
 
 require (
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
@@ -136,7 +139,6 @@ require (
 	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect
 	github.com/sirupsen/logrus v1.7.0 // indirect
 	github.com/soheilhy/cmux v0.1.5 // indirect
-	github.com/spf13/cast v1.3.0 // indirect
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20201229170055-e5319fda7802 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.1 // indirect

@@ -47,10 +47,14 @@ func init() {
 		_ = archaius.Set("registry.cache.mode", 0)
 		_ = archaius.Set("discovery.kind", "etcd")
 		_ = archaius.Set("registry.kind", "etcd")
+		_ = archaius.Set("registry.etcd.cluster.name", "sc-0")
+		_ = archaius.Set("registry.etcd.cluster.endpoints", "sc-0="+uri+",sc-1=http://127.0.0.2:2379")
 	} else {
 		_ = archaius.Set("registry.heartbeat.kind", "checker")
 		kind = "mongo"
+		uri = "mongodb://127.0.0.1:27017"
 	}
+
 	_ = datasource.Init(datasource.Options{
 		Config: etcdadpt.Config{
 			Kind: kind,
@@ -58,23 +62,13 @@ func init() {
 	})
 	_ = metrics.Init(metrics.Options{})
 
-	if kind == "mongo" {
-		uri = "mongodb://127.0.0.1:27017"
-	}
-
-	err := edatasource.Init(db.Config{
+	_ = edatasource.Init(db.Config{
 		Kind:    kind,
 		URI:     uri,
 		Timeout: 10 * time.Second,
 	})
-	if err != nil {
-		panic(err)
-	}
 
-	err = registry.SelfRegister(context.Background())
-	if err != nil {
-		panic(err)
-	}
+	_ = registry.SelfRegister(context.Background())
 }
 
 func IsETCD() bool {

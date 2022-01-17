@@ -4,10 +4,10 @@ output
 **/coverage.out
 **/coverage.txt
 **/*.log
-syncer/syncer
 
 #binary
 scserver
+scctl
 main
 
 *.iml
@@ -17,21 +17,13 @@ main
 **/*.tgz
 **/apache-servicecomb-service-center-*
 
-vendor/**
-!vendor/manifest
+vendor
 
 # for local UT
 **/conf/
-data
-syncer-data
 !etc/conf/
-!cmd/syncer/conf/chassis.yaml
-!cmd/syncer/conf/microservice.yaml
-frontend/app/bower_components
-etc/data/
 etc/ssl/
-frontend/bower_components/
-frontend/node_modules/
+data
 tmp/
 servicecomb-service-center
 service-center
@@ -52,5 +44,6 @@ private.key
 rbac.pub
 
 # ux
-ux/node_modules
-ux/dist
+bower_components
+node_modules
+dist

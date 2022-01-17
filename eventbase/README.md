@@ -20,18 +20,20 @@ eventbase provides the crud interface of task and tombstone.
 import (
 	_ "github.com/apache/servicecomb-service-center/eventbase/bootstrap"
 	"github.com/apache/servicecomb-service-center/eventbase/datasource"
-	)
+	tasksvc "github.com/apache/servicecomb-service-center/eventbase/service/task"
+	tombstonesvc "github.com/apache/servicecomb-service-center/eventbase/service/tombstone"
+)
 
 func Init(){
-    dbCfg := db.Config{
-    	Kind: "etcd",
-    	URI: "http://127.0.0.1:2379",
-    	Timeout: 10 * time.Second,
-    }
-    err := datasource.Init(dbCfg)
-    ...
-    datasource.GetDataSource().TaskDao()
-    datasource.GetDataSource().TombstoneDao()
-    ...
+	dbCfg := db.Config{
+		Kind: "etcd",
+		URI: "http://127.0.0.1:2379",
+		Timeout: 10 * time.Second,
+	}
+	err := datasource.Init(dbCfg)
+	...
+	tasksvc.List(...)
+	tombstonesvc.List(...)
+	...
 }
 ```
