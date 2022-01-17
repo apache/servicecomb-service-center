@@ -148,6 +148,8 @@ registry:
       name:
       region:
       availableZone:
+    # properties params for instance
+    properties:
 
   schema:
     # if want disable Test Schema, SchemaDisable set true
