@@ -18,8 +18,6 @@
 package bootstrap
 
 import (
-	_ "github.com/go-chassis/cari/db/bootstrap"
-
 	_ "github.com/apache/servicecomb-service-center/eventbase/datasource/etcd"
 	_ "github.com/apache/servicecomb-service-center/eventbase/datasource/mongo"
 )
