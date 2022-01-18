@@ -74,7 +74,11 @@ func NewDataSource(opts datasource.Options) (datasource.DataSource, error) {
 	inst.scManager = &SCManager{}
 	inst.depManager = &DepManager{}
 	inst.sysManager = &SysManager{}
-	inst.metadataManager = &MetadataManager{SchemaNotEditable: opts.SchemaNotEditable, InstanceTTL: opts.InstanceTTL}
+	inst.metadataManager = &MetadataManager{
+		SchemaNotEditable:  opts.SchemaNotEditable,
+		InstanceTTL:        opts.InstanceTTL,
+		InstanceProperties: opts.InstanceProperties,
+	}
 	inst.metricsManager = &MetricsManager{}
 	return inst, nil
 }

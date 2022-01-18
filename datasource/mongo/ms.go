@@ -44,7 +44,6 @@ import (
 	"github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/cari/pkg/errsvc"
 	"github.com/go-chassis/foundation/gopool"
-	"github.com/jinzhu/copier"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -61,7 +60,8 @@ type MetadataManager struct {
 	// SchemaNotEditable determines whether schema modification is not allowed
 	SchemaNotEditable bool
 	// InstanceTTL options
-	InstanceTTL int64
+	InstanceTTL        int64
+	InstanceProperties map[string]string
 }
 
 func (ds *MetadataManager) RegisterService(ctx context.Context, request *discovery.CreateServiceRequest) (*discovery.CreateServiceResponse, error) {
@@ -417,16 +417,9 @@ func (ds *MetadataManager) ListServiceDetail(ctx context.Context, request *disco
 			return nil, discovery.NewError(discovery.ErrInternal, err.Error())
 		}
 		serviceDetail.MicroService = mgSvc.Service
-		tmpServiceDetail := &discovery.ServiceDetail{}
-		err = copier.CopyWithOption(tmpServiceDetail, serviceDetail, copier.Option{DeepCopy: true})
+		tmpServiceDetail, err := datasource.NewServiceOverview(serviceDetail, ds.InstanceProperties)
 		if err != nil {
-			return nil, discovery.NewError(discovery.ErrInternal, err.Error())
-		}
-		tmpServiceDetail.MicroService.Properties = nil
-		tmpServiceDetail.MicroService.Schemas = nil
-		instances := tmpServiceDetail.Instances
-		for _, instance := range instances {
-			instance.Properties = nil
+			return nil, err
 		}
 		allServiceDetails = append(allServiceDetails, tmpServiceDetail)
 	}
