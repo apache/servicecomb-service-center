@@ -126,35 +126,31 @@ type Operator interface {
 
 func (m *manager) LoadAndHandleTask(ctx context.Context) {
 	gopool.Go(func(goctx context.Context) {
-		m.loadAndHandleTask(ctx, goctx)
-	})
-}
+		m.ticker = time.NewTicker(m.internal)
+		for {
+			select {
+			case _, ok := <-m.ticker.C:
+				if !ok {
+					log.Info("ticker is closed")
+					return
+				}
 
-func (m *manager) loadAndHandleTask(ctx context.Context, goctx context.Context) {
-	m.ticker = time.NewTicker(m.internal)
-	for {
-		select {
-		case _, ok := <-m.ticker.C:
-			if !ok {
-				log.Info("ticker is closed")
+				ts, err := m.operator.ListTasks(ctx)
+				if err != nil {
+					log.Error("load task failed", err)
+					continue
+				}
+
+				m.handleTasks(ts)
+			case <-goctx.Done():
+				m.Close()
+				return
+			case <-ctx.Done():
+				m.Close()
 				return
 			}
-
-			ts, err := m.operator.ListTasks(ctx)
-			if err != nil {
-				log.Error("load task failed", err)
-				continue
-			}
-
-			m.handleTasks(ts)
-		case <-goctx.Done():
-			m.Close()
-			return
-		case <-ctx.Done():
-			m.Close()
-			return
 		}
-	}
+	})
 }
 
 func (m *manager) Close() {

@@ -1,9 +1,12 @@
 package sync
 
 import (
+	_ "github.com/apache/servicecomb-service-center/eventbase/bootstrap"
+)
+
+import (
 	"context"
 
-	_ "github.com/apache/servicecomb-service-center/eventbase/bootstrap"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/syncer/config"
 	"github.com/apache/servicecomb-service-center/syncer/service/event"

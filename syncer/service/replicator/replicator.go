@@ -31,9 +31,7 @@ func Work() error {
 	}
 
 	gopool.Go(func(ctx context.Context) {
-		select {
-		case <-ctx.Done():
-		}
+		<-ctx.Done()
 
 		Close()
 	})

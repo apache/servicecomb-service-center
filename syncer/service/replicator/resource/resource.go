@@ -229,10 +229,9 @@ type inputLoader struct {
 }
 
 func (i *inputLoader) loadInputUtil(value interface{}, callback func()) error {
-	switch value.(type) {
+	switch data := value.(type) {
 	case *string:
-		v := value.(*string)
-		*v = string(i.event.Value)
+		*data = string(i.event.Value)
 	default:
 		err := json.Unmarshal(i.event.Value, value)
 		if err != nil {

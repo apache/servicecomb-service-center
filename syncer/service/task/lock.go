@@ -70,12 +70,3 @@ func (dl *DistributedLock) LockDo() {
 		}
 	})
 }
-
-func (dl *DistributedLock) tryLock() {
-	err := dlock.TryLock(dl.key, dl.ttl)
-	if err != nil {
-		log.Warn(fmt.Sprintf("try lock failed, %s", err.Error()))
-	} else {
-		dl.isLock = true
-	}
-}
