@@ -27,7 +27,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/config"
-	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/metrics"
 	rs "github.com/apache/servicecomb-service-center/server/rest"
 	"github.com/apache/servicecomb-service-center/server/service/registry"
@@ -77,25 +76,12 @@ func (s *APIServer) Listen(ip, port string) {
 	s.HostPort = net.JoinHostPort(ip, port)
 }
 
-func (s *APIServer) populateEndpoint(ipPort string) {
-	if len(ipPort) == 0 {
-		return
-	}
-	address := fmt.Sprintf("rest://%s/", ipPort)
-	if config.GetSSL().SslEnabled {
-		address += "?sslEnabled=true"
-	}
-	core.Instance.Endpoints = append(core.Instance.Endpoints, address)
-}
-
 func (s *APIServer) serve() (err error) {
 	s.HTTPServer, err = rs.NewServer(s.HostPort)
 	if err != nil {
 		return
 	}
 	log.Info(fmt.Sprintf("listen address: rest://%s", s.HTTPServer.Listener.Addr().String()))
-
-	s.populateEndpoint(s.HTTPServer.Listener.Addr().String())
 
 	s.goroutine.Do(func(_ context.Context) {
 		err := s.HTTPServer.Serve()
@@ -113,8 +99,6 @@ func (s *APIServer) Start() {
 		return
 	}
 	s.isClose = false
-
-	core.Instance.Endpoints = nil
 
 	err := s.serve()
 	if err != nil {
