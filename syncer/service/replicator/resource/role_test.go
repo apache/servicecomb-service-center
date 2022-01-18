@@ -15,11 +15,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type forkRole struct {
+type mockRole struct {
 	roles map[string]*rbac.Role
 }
 
-func (f forkRole) GetRole(_ context.Context, name string) (*rbac.Role, error) {
+func (f mockRole) GetRole(_ context.Context, name string) (*rbac.Role, error) {
 	result, ok := f.roles[name]
 	if !ok {
 		return nil, rbacmodel.NewError(rbacmodel.ErrRoleNotExist, "")
@@ -27,7 +27,7 @@ func (f forkRole) GetRole(_ context.Context, name string) (*rbac.Role, error) {
 	return result, nil
 }
 
-func (f forkRole) EditRole(_ context.Context, name string, r *rbac.Role) error {
+func (f mockRole) EditRole(_ context.Context, name string, r *rbac.Role) error {
 	_, ok := f.roles[name]
 	if !ok {
 		return rbacmodel.NewError(rbacmodel.ErrRoleNotExist, "")
@@ -36,7 +36,7 @@ func (f forkRole) EditRole(_ context.Context, name string, r *rbac.Role) error {
 	return nil
 }
 
-func (f forkRole) CreateRole(_ context.Context, r *rbac.Role) error {
+func (f mockRole) CreateRole(_ context.Context, r *rbac.Role) error {
 	_, ok := f.roles[r.Name]
 	if ok {
 		return rbacmodel.NewError(rbacmodel.ErrRoleConflict, "role exist")
@@ -46,7 +46,7 @@ func (f forkRole) CreateRole(_ context.Context, r *rbac.Role) error {
 	return nil
 }
 
-func (f forkRole) DeleteRole(_ context.Context, name string) error {
+func (f mockRole) DeleteRole(_ context.Context, name string) error {
 	_, ok := f.roles[name]
 	if !ok {
 		return rbacmodel.NewError(rbacmodel.ErrRoleNotExist, "")
@@ -86,7 +86,7 @@ func TestOperateRole(t *testing.T) {
 	a := &role{
 		event: e,
 	}
-	a.manager = &forkRole{
+	a.manager = &mockRole{
 		roles: make(map[string]*rbac.Role),
 	}
 	ctx := context.Background()

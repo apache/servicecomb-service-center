@@ -160,11 +160,11 @@ func TestNewInputLoader(t *testing.T) {
 	})
 }
 
-type forkTombstoneLoader struct {
+type mockTombstoneLoader struct {
 	ts *sync.Tombstone
 }
 
-func (f *forkTombstoneLoader) get(_ context.Context, _ *model.GetTombstoneRequest) (*sync.Tombstone, error) {
+func (f *mockTombstoneLoader) get(_ context.Context, _ *model.GetTombstoneRequest) (*sync.Tombstone, error) {
 	if f.ts == nil {
 		return nil, datasource.ErrTombstoneNotExists
 	}
@@ -229,7 +229,7 @@ func TestNeedOperate(t *testing.T) {
 		assert.Nil(t, r)
 
 		c.resourceID = "xxx"
-		c.tombstoneLoader = &forkTombstoneLoader{
+		c.tombstoneLoader = &mockTombstoneLoader{
 			ts: &sync.Tombstone{
 				Timestamp: time.Now().Add(time.Minute).UnixNano(),
 			},
@@ -240,7 +240,7 @@ func TestNeedOperate(t *testing.T) {
 			assert.Equal(t, Skip, r.Status)
 		}
 
-		c.tombstoneLoader = &forkTombstoneLoader{
+		c.tombstoneLoader = &mockTombstoneLoader{
 			ts: &sync.Tombstone{
 				Timestamp: time.Now().Add(-time.Minute).UnixNano(),
 			},

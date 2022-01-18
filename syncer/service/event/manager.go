@@ -91,8 +91,8 @@ type Sender interface {
 type Manager interface {
 	Sender
 
-	HandleResult()
 	HandleEvent()
+	HandleResult()
 }
 
 type eventManager struct {

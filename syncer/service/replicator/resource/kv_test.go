@@ -23,7 +23,7 @@ func TestNewKV(t *testing.T) {
 		Value:     []byte("world"),
 		Timestamp: v1sync.Timestamp(),
 	}
-	fm := &forkKVManager{
+	fm := &mockKVManager{
 		kvs: make(map[string][]byte, 10),
 	}
 	k := &kv{
@@ -60,7 +60,7 @@ func TestNewKV(t *testing.T) {
 		event: e1,
 
 		manager: fm,
-		tombstoneLoader: &forkTombstoneLoader{
+		tombstoneLoader: &mockTombstoneLoader{
 			ts: &sync.Tombstone{
 				ResourceID:   "xxx2",
 				ResourceType: "kv",
@@ -81,7 +81,7 @@ func TestNewKV(t *testing.T) {
 		event: e1,
 
 		manager: fm,
-		tombstoneLoader: &forkTombstoneLoader{
+		tombstoneLoader: &mockTombstoneLoader{
 			ts: nil,
 		},
 	}
@@ -113,7 +113,7 @@ func TestNewKV(t *testing.T) {
 		event: e2,
 
 		manager: fm,
-		tombstoneLoader: &forkTombstoneLoader{
+		tombstoneLoader: &mockTombstoneLoader{
 			ts: nil,
 		},
 	}
@@ -130,11 +130,11 @@ func TestNewKV(t *testing.T) {
 	}
 }
 
-type forkKVManager struct {
+type mockKVManager struct {
 	kvs map[string][]byte
 }
 
-func (f *forkKVManager) Get(_ context.Context, key string) ([]byte, error) {
+func (f *mockKVManager) Get(_ context.Context, key string) ([]byte, error) {
 	result, ok := f.kvs[key]
 	if !ok {
 		return nil, ErrRecordNonExist
@@ -142,17 +142,17 @@ func (f *forkKVManager) Get(_ context.Context, key string) ([]byte, error) {
 	return result, nil
 }
 
-func (f *forkKVManager) Put(_ context.Context, key string, value []byte) error {
+func (f *mockKVManager) Put(_ context.Context, key string, value []byte) error {
 	f.kvs[key] = value
 	return nil
 }
 
-func (f *forkKVManager) Post(_ context.Context, key string, value []byte) error {
+func (f *mockKVManager) Post(_ context.Context, key string, value []byte) error {
 	f.kvs[key] = value
 	return nil
 }
 
-func (f *forkKVManager) Delete(_ context.Context, key string) error {
+func (f *mockKVManager) Delete(_ context.Context, key string) error {
 	_, ok := f.kvs[key]
 	if !ok {
 		return nil

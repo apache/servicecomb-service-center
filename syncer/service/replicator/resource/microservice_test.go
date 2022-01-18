@@ -19,12 +19,12 @@ var (
 	testServiceID = "b03f3c3624ea5c4baeca66a39fbb3bc49973bfc4"
 )
 
-type forkMetadata struct {
+type mockMetadata struct {
 	services  map[string]*pb.MicroService
 	instances map[string]*pb.MicroServiceInstance
 }
 
-func (f forkMetadata) RegisterService(_ context.Context, request *pb.CreateServiceRequest) (*pb.CreateServiceResponse, error) {
+func (f mockMetadata) RegisterService(_ context.Context, request *pb.CreateServiceRequest) (*pb.CreateServiceResponse, error) {
 	serviceID := request.Service.ServiceId
 	_, ok := f.services[serviceID]
 	if ok {
@@ -37,7 +37,7 @@ func (f forkMetadata) RegisterService(_ context.Context, request *pb.CreateServi
 	}, nil
 }
 
-func (f forkMetadata) GetService(_ context.Context, in *pb.GetServiceRequest) (*pb.MicroService, error) {
+func (f mockMetadata) GetService(_ context.Context, in *pb.GetServiceRequest) (*pb.MicroService, error) {
 	serviceID := in.ServiceId
 	result, ok := f.services[serviceID]
 	if !ok {
@@ -46,7 +46,7 @@ func (f forkMetadata) GetService(_ context.Context, in *pb.GetServiceRequest) (*
 	return result, nil
 }
 
-func (f forkMetadata) PutServiceProperties(_ context.Context, in *pb.UpdateServicePropsRequest) error {
+func (f mockMetadata) PutServiceProperties(_ context.Context, in *pb.UpdateServicePropsRequest) error {
 	serviceID := in.ServiceId
 	result, ok := f.services[serviceID]
 	if !ok {
@@ -57,7 +57,7 @@ func (f forkMetadata) PutServiceProperties(_ context.Context, in *pb.UpdateServi
 	return nil
 }
 
-func (f forkMetadata) UnregisterService(_ context.Context, in *pb.DeleteServiceRequest) error {
+func (f mockMetadata) UnregisterService(_ context.Context, in *pb.DeleteServiceRequest) error {
 	serviceID := in.ServiceId
 	_, ok := f.services[serviceID]
 	if !ok {
@@ -68,7 +68,7 @@ func (f forkMetadata) UnregisterService(_ context.Context, in *pb.DeleteServiceR
 	return nil
 }
 
-func (f forkMetadata) RegisterInstance(_ context.Context, in *pb.RegisterInstanceRequest) (*pb.RegisterInstanceResponse, error) {
+func (f mockMetadata) RegisterInstance(_ context.Context, in *pb.RegisterInstanceRequest) (*pb.RegisterInstanceResponse, error) {
 	serviceID := in.Instance.ServiceId
 	_, ok := f.services[serviceID]
 	if !ok {
@@ -82,7 +82,7 @@ func (f forkMetadata) RegisterInstance(_ context.Context, in *pb.RegisterInstanc
 	}, nil
 }
 
-func (f forkMetadata) SendHeartbeat(_ context.Context, in *pb.HeartbeatRequest) error {
+func (f mockMetadata) SendHeartbeat(_ context.Context, in *pb.HeartbeatRequest) error {
 	instanceID := in.InstanceId
 
 	_, ok := f.instances[instanceID]
@@ -92,7 +92,7 @@ func (f forkMetadata) SendHeartbeat(_ context.Context, in *pb.HeartbeatRequest) 
 	return nil
 }
 
-func (f forkMetadata) GetInstance(_ context.Context, in *pb.GetOneInstanceRequest) (*pb.GetOneInstanceResponse, error) {
+func (f mockMetadata) GetInstance(_ context.Context, in *pb.GetOneInstanceRequest) (*pb.GetOneInstanceResponse, error) {
 	serviceID := in.ProviderServiceId
 	_, ok := f.services[serviceID]
 	if !ok {
@@ -109,7 +109,7 @@ func (f forkMetadata) GetInstance(_ context.Context, in *pb.GetOneInstanceReques
 	}, nil
 }
 
-func (f forkMetadata) PutInstance(_ context.Context, in *pb.RegisterInstanceRequest) error {
+func (f mockMetadata) PutInstance(_ context.Context, in *pb.RegisterInstanceRequest) error {
 	instanceID := in.Instance.InstanceId
 	_, ok := f.instances[instanceID]
 	if !ok {
@@ -120,7 +120,7 @@ func (f forkMetadata) PutInstance(_ context.Context, in *pb.RegisterInstanceRequ
 	return nil
 }
 
-func (f forkMetadata) UnregisterInstance(_ context.Context, in *pb.UnregisterInstanceRequest) error {
+func (f mockMetadata) UnregisterInstance(_ context.Context, in *pb.UnregisterInstanceRequest) error {
 	instanceID := in.InstanceId
 	_, ok := f.instances[instanceID]
 	if !ok {
@@ -181,7 +181,7 @@ func testCreateMicroservice(t *testing.T, manager serviceManager) {
 }
 
 func TestOperateMicroService(t *testing.T) {
-	manager := &forkMetadata{
+	manager := &mockMetadata{
 		services: make(map[string]*pb.MicroService),
 	}
 	testCreateMicroservice(t, manager)

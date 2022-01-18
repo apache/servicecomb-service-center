@@ -67,7 +67,7 @@ func testRegisterInstance(t *testing.T, manager metadataManager) {
 }
 
 func TestOperateInstance(t *testing.T) {
-	manager := &forkMetadata{
+	manager := &mockMetadata{
 		services:  make(map[string]*pb.MicroService),
 		instances: make(map[string]*pb.MicroServiceInstance),
 	}

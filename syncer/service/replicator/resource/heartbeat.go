@@ -65,6 +65,7 @@ func (h *heartbeat) Operate(ctx context.Context) *Result {
 	if err == nil {
 		return SuccessResult()
 	}
+
 	log.Warn(fmt.Sprintf("send heartbeat failed, %s, %s",
 		h.input.ServiceId, h.input.InstanceId))
 

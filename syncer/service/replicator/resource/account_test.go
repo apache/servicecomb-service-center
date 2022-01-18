@@ -16,11 +16,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type forkAccount struct {
+type mockAccount struct {
 	accounts map[string]*rbac.Account
 }
 
-func (f forkAccount) CreateAccount(_ context.Context, a *rbac.Account) error {
+func (f mockAccount) CreateAccount(_ context.Context, a *rbac.Account) error {
 	_, ok := f.accounts[a.Name]
 	if ok {
 		return rbacmodel.NewError(rbacmodel.ErrAccountConflict, "account exist")
@@ -30,7 +30,7 @@ func (f forkAccount) CreateAccount(_ context.Context, a *rbac.Account) error {
 	return nil
 }
 
-func (f forkAccount) GetAccount(_ context.Context, name string) (*rbac.Account, error) {
+func (f mockAccount) GetAccount(_ context.Context, name string) (*rbac.Account, error) {
 	result, ok := f.accounts[name]
 	if !ok {
 		msg := fmt.Sprintf("account [%s] not exist", name)
@@ -39,7 +39,7 @@ func (f forkAccount) GetAccount(_ context.Context, name string) (*rbac.Account, 
 	return result, nil
 }
 
-func (f forkAccount) UpdateAccount(_ context.Context, name string, account *rbac.Account) error {
+func (f mockAccount) UpdateAccount(_ context.Context, name string, account *rbac.Account) error {
 	_, ok := f.accounts[name]
 	if !ok {
 		msg := fmt.Sprintf("account [%s] not exist", name)
@@ -49,7 +49,7 @@ func (f forkAccount) UpdateAccount(_ context.Context, name string, account *rbac
 	return nil
 }
 
-func (f forkAccount) DeleteAccount(_ context.Context, name string) error {
+func (f mockAccount) DeleteAccount(_ context.Context, name string) error {
 	_, ok := f.accounts[name]
 	if !ok {
 		msg := fmt.Sprintf("account [%s] not exist", name)
@@ -84,7 +84,7 @@ func TestOperateAccount(t *testing.T) {
 		a := &account{
 			event: e,
 		}
-		a.manager = &forkAccount{
+		a.manager = &mockAccount{
 			accounts: make(map[string]*rbac.Account),
 		}
 		ctx := context.Background()

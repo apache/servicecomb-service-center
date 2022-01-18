@@ -11,7 +11,7 @@ import (
 )
 
 func TestWork(t *testing.T) {
-	r := &forkReplicator{
+	r := &mockReplicator{
 		results: &v1sync.Results{
 			Results: map[string]*v1sync.Result{
 				"xxx1": {
@@ -77,16 +77,16 @@ func TestWork(t *testing.T) {
 	}
 }
 
-type forkReplicator struct {
+type mockReplicator struct {
 	results *v1sync.Results
 	err     error
 }
 
-func (f *forkReplicator) Replicate(_ context.Context, _ *v1sync.EventList) (*v1sync.Results, error) {
+func (f *mockReplicator) Replicate(_ context.Context, _ *v1sync.EventList) (*v1sync.Results, error) {
 	return f.results, f.err
 }
 
-func (f *forkReplicator) Persist(_ context.Context, _ *v1sync.EventList) []*resource.Result {
+func (f *mockReplicator) Persist(_ context.Context, _ *v1sync.EventList) []*resource.Result {
 	return nil
 }
 
@@ -115,6 +115,6 @@ func (f forkResources) FailHandle(_ context.Context, _ int32) (*v1sync.Event, er
 }
 
 func TestNewManager(t *testing.T) {
-	nm := NewManager(ManagerInternal(defaultInternal), Replicator(new(forkReplicator)))
+	nm := NewManager(ManagerInternal(defaultInternal), Replicator(new(mockReplicator)))
 	assert.NotNil(t, nm)
 }
