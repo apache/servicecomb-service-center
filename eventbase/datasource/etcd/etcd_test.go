@@ -19,27 +19,15 @@ package etcd_test
 
 import (
 	"testing"
-	"time"
 
-	"github.com/go-chassis/cari/db"
 	"github.com/stretchr/testify/assert"
-	// support embedded etcd
-	_ "github.com/little-cui/etcdadpt/embedded"
-	_ "github.com/little-cui/etcdadpt/remote"
 
 	"github.com/apache/servicecomb-service-center/eventbase/datasource/etcd"
-	"github.com/apache/servicecomb-service-center/eventbase/test"
 )
 
 func TestNewDatasource(t *testing.T) {
-	t.Run("create etcd datasource should pass with no error", func(t *testing.T) {
-		cfg := &db.Config{
-			Kind:    test.Etcd,
-			URI:     test.EtcdURI,
-			Timeout: 10 * time.Second,
-		}
-		etcdDatasource, err := etcd.NewDatasource(cfg)
-		assert.NoError(t, err)
+	t.Run("create a datasource should pass", func(t *testing.T) {
+		etcdDatasource := etcd.NewDatasource()
 		assert.NotNil(t, etcdDatasource)
 		assert.NotNil(t, etcdDatasource.TaskDao())
 		assert.NotNil(t, etcdDatasource.TombstoneDao())

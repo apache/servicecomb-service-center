@@ -20,13 +20,12 @@ package tombstone
 import (
 	"context"
 
+	dmongo "github.com/go-chassis/cari/db/mongo"
 	"github.com/go-chassis/cari/sync"
-	"github.com/go-chassis/openlog"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/apache/servicecomb-service-center/eventbase/datasource"
-	"github.com/apache/servicecomb-service-center/eventbase/datasource/mongo/client"
 	"github.com/apache/servicecomb-service-center/eventbase/datasource/mongo/model"
 	emodel "github.com/apache/servicecomb-service-center/eventbase/model"
 )
@@ -35,33 +34,29 @@ type Dao struct {
 }
 
 func (d *Dao) Get(ctx context.Context, req *emodel.GetTombstoneRequest) (*sync.Tombstone, error) {
-	collection := client.GetMongoClient().GetDB().Collection(model.CollectionTombstone)
+	collection := dmongo.GetClient().GetDB().Collection(model.CollectionTombstone)
 	filter := bson.M{model.ColumnDomain: req.Domain, model.ColumnProject: req.Project,
 		model.ColumnResourceType: req.ResourceType, model.ColumnResourceID: req.ResourceID}
 	result := collection.FindOne(ctx, filter)
 	if result != nil && result.Err() != nil {
-		openlog.Error("fail to get tombstone" + result.Err().Error())
 		return nil, result.Err()
 	}
 	if result == nil {
-		openlog.Error(datasource.ErrTombstoneNotExists.Error())
 		return nil, datasource.ErrTombstoneNotExists
 	}
 	var tombstone sync.Tombstone
 
 	err := result.Decode(&tombstone)
 	if err != nil {
-		openlog.Error("fail to decode tombstone" + err.Error())
 		return nil, err
 	}
 	return &tombstone, nil
 }
 
 func (d *Dao) Create(ctx context.Context, tombstone *sync.Tombstone) (*sync.Tombstone, error) {
-	collection := client.GetMongoClient().GetDB().Collection(model.CollectionTombstone)
+	collection := dmongo.GetClient().GetDB().Collection(model.CollectionTombstone)
 	_, err := collection.InsertOne(ctx, tombstone)
 	if err != nil {
-		openlog.Error("fail to create tombstone" + err.Error())
 		return nil, err
 	}
 	return tombstone, nil
@@ -81,15 +76,11 @@ func (d *Dao) Delete(ctx context.Context, tombstones ...*sync.Tombstone) error {
 		filter = append(filter, dFilter)
 	}
 	var deleteFunc = func(sessionContext mongo.SessionContext) error {
-		collection := client.GetMongoClient().GetDB().Collection(model.CollectionTombstone)
+		collection := dmongo.GetClient().GetDB().Collection(model.CollectionTombstone)
 		_, err := collection.DeleteMany(sessionContext, bson.M{"$or": filter})
 		return err
 	}
-	err := client.GetMongoClient().ExecTxn(ctx, deleteFunc)
-	if err != nil {
-		openlog.Error(err.Error())
-	}
-	return err
+	return dmongo.GetClient().ExecTxn(ctx, deleteFunc)
 }
 
 func (d *Dao) List(ctx context.Context, options ...datasource.TombstoneFindOption) ([]*sync.Tombstone, error) {
@@ -97,7 +88,7 @@ func (d *Dao) List(ctx context.Context, options ...datasource.TombstoneFindOptio
 	for _, o := range options {
 		o(&opts)
 	}
-	collection := client.GetMongoClient().GetDB().Collection(model.CollectionTombstone)
+	collection := dmongo.GetClient().GetDB().Collection(model.CollectionTombstone)
 	filter := bson.M{}
 	if opts.Domain != "" {
 		filter[model.ColumnDomain] = opts.Domain
@@ -120,7 +111,6 @@ func (d *Dao) List(ctx context.Context, options ...datasource.TombstoneFindOptio
 	for cur.Next(ctx) {
 		tombstone := &sync.Tombstone{}
 		if err := cur.Decode(tombstone); err != nil {
-			openlog.Error("decode to tombstone error: " + err.Error())
 			return nil, err
 		}
 		tombstones = append(tombstones, tombstone)
