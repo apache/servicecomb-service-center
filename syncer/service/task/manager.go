@@ -174,6 +174,8 @@ func (m *manager) ListTasks(ctx context.Context) ([]*carisync.Task, error) {
 		noHandleTasks = append(noHandleTasks, t)
 	}
 
+	log.Info(fmt.Sprintf("load task count %d", len(noHandleTasks)))
+
 	return noHandleTasks, nil
 }
 
@@ -183,7 +185,23 @@ func (m *manager) DeleteTask(ctx context.Context, t *carisync.Task) error {
 
 func (m *manager) UpdateResultTask(ctx context.Context) {
 	gopool.Go(func(goctx context.Context) {
-		m.updateResultTask(ctx, goctx)
+		log.Info("start updateTasks task")
+		for {
+			select {
+			case res := <-m.result:
+				if m.isClosing {
+					m.closeUpdateTasks()
+				}
+
+				m.handleResult(res)
+			case <-ctx.Done():
+				m.isClosing = true
+
+			case <-goctx.Done():
+				log.Info("updateTasks exit")
+				return
+			}
+		}
 	})
 }
 
@@ -232,26 +250,6 @@ func (m *manager) handleResult(res *event.Result) {
 		err := m.operator.DeleteTask(context.TODO(), tk)
 		if err != nil {
 			log.Error("delete task failed", err)
-		}
-	}
-}
-
-func (m *manager) updateResultTask(ctx context.Context, goctx context.Context) {
-	log.Info("start updateTasks task")
-	for {
-		select {
-		case res := <-m.result:
-			if m.isClosing {
-				m.closeUpdateTasks()
-			}
-
-			m.handleResult(res)
-		case <-ctx.Done():
-			m.isClosing = true
-
-		case <-goctx.Done():
-			log.Info("updateTasks exit")
-			return
 		}
 	}
 }
