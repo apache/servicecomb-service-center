@@ -22,6 +22,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/go-chassis/cari/db"
 	"github.com/go-chassis/cari/db/config"
 	"github.com/go-chassis/go-archaius"
 	"github.com/little-cui/etcdadpt"
@@ -30,7 +31,7 @@ import (
 
 	_ "github.com/apache/servicecomb-service-center/eventbase/bootstrap"
 	_ "github.com/apache/servicecomb-service-center/server/bootstrap"
-	_ "github.com/apache/servicecomb-service-center/server/init"
+	_ "github.com/go-chassis/cari/db/bootstrap"
 	_ "github.com/go-chassis/go-chassis-extension/protocol/grpc/server"
 
 	"github.com/apache/servicecomb-service-center/datasource"
@@ -64,11 +65,13 @@ func init() {
 	})
 	_ = metrics.Init(metrics.Options{})
 
-	_ = edatasource.Init(&config.Config{
+	_ = db.Init(&config.Config{
 		Kind:    kind,
 		URI:     uri,
 		Timeout: 10 * time.Second,
 	})
+
+	_ = edatasource.Init(kind)
 
 	_ = registry.SelfRegister(context.Background())
 }

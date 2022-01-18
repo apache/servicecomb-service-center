@@ -28,7 +28,7 @@ import (
 
 func TestInit(t *testing.T) {
 	t.Run("init config should pass with no error", func(t *testing.T) {
-		err := datasource.Init(&test.DbCfg)
+		err := datasource.Init(test.DBKind)
 		assert.Nil(t, err)
 		assert.NotNil(t, datasource.GetDataSource())
 	})
