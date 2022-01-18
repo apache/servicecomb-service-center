@@ -32,7 +32,7 @@ import (
 )
 
 func init() {
-	err := datasource.Init(&test.DbCfg)
+	err := datasource.Init(test.DBKind)
 	if err != nil {
 		panic(err)
 	}

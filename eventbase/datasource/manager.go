@@ -19,15 +19,6 @@ package datasource
 
 import (
 	"fmt"
-	"time"
-
-	"github.com/go-chassis/cari/db"
-	"github.com/go-chassis/cari/db/config"
-)
-
-const (
-	DefaultTimeout = 60 * time.Second
-	DefaultDBKind  = "embedded_etcd"
 )
 
 var (
@@ -45,20 +36,10 @@ func RegisterPlugin(name string, engineFunc dataSourceEngine) {
 	plugins[name] = engineFunc
 }
 
-func Init(c *config.Config) error {
-	if c.Kind == "" {
-		c.Kind = DefaultDBKind
-	}
-	if c.Timeout == 0 {
-		c.Timeout = DefaultTimeout
-	}
-	err := db.Init(c)
-	if err != nil {
-		return err
-	}
-	f, ok := plugins[c.Kind]
+func Init(kind string) error {
+	f, ok := plugins[kind]
 	if !ok {
-		return fmt.Errorf("do not support %s", c.Kind)
+		return fmt.Errorf("do not support %s", kind)
 	}
 	dataSourceInst = f()
 	return nil

@@ -20,10 +20,12 @@ package test
 import (
 	"time"
 
+	"github.com/go-chassis/cari/db"
 	"github.com/go-chassis/cari/db/config"
 	"github.com/go-chassis/go-archaius"
 
 	_ "github.com/apache/servicecomb-service-center/eventbase/bootstrap"
+	_ "github.com/go-chassis/cari/db/bootstrap"
 )
 
 var (
@@ -35,9 +37,10 @@ var (
 	DefaultTestDBURI = "http://127.0.0.1:2379"
 )
 
-var DbCfg = config.Config{}
+var DBKind string
 
 func init() {
+	cfg := config.Config{}
 	err := archaius.Init(archaius.WithMemorySource(), archaius.WithENVSource())
 	if err != nil {
 		panic(err)
@@ -50,7 +53,12 @@ func init() {
 	if ok {
 		DefaultTestDBURI = uri
 	}
-	DbCfg.Kind = DefaultTestDB
-	DbCfg.URI = DefaultTestDBURI
-	DbCfg.Timeout = 10 * time.Second
+	DBKind = DefaultTestDB
+	cfg.Kind = DefaultTestDB
+	cfg.URI = DefaultTestDBURI
+	cfg.Timeout = 10 * time.Second
+	err = db.Init(&cfg)
+	if err != nil {
+		panic(err)
+	}
 }
