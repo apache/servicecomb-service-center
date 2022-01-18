@@ -18,17 +18,16 @@
 package event
 
 import (
+	"context"
 	"encoding/json"
-	"fmt"
 
-	guuid "github.com/gofrs/uuid"
-
-	v1 "github.com/apache/servicecomb-service-center/api/sync/v1"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	v1sync "github.com/apache/servicecomb-service-center/syncer/api/v1"
 )
 
-func Publish(action string, resourceType string, resource interface{}) {
-	eventID, err := guuid.NewV4()
+func Publish(ctx context.Context, action string, resourceType string, resource interface{}) {
+	eventID, err := v1sync.NewEventID()
 	if err != nil {
 		log.Error("fail to create eventID", err)
 		return
@@ -38,12 +37,19 @@ func Publish(action string, resourceType string, resource interface{}) {
 		log.Error("fail to marshal the resource", err)
 		return
 	}
-	event := v1.Event{
-		Id:      eventID.String(),
-		Action:  action,
-		Subject: resourceType,
-		Value:   resourceValue,
+
+	e := &v1sync.Event{
+		Id: eventID,
+		Opts: map[string]string{
+			string(util.CtxDomain):  util.ParseDomain(ctx),
+			string(util.CtxProject): util.ParseProject(ctx),
+		},
+		Subject:   resourceType,
+		Action:    action,
+		Value:     resourceValue,
+		Timestamp: v1sync.Timestamp(),
 	}
-	log.Info(fmt.Sprintf("success to send event %s", event.Subject))
-	// TODO to send event
+	Send(&Event{
+		Event: e,
+	})
 }

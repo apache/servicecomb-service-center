@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	v1sync "github.com/apache/servicecomb-service-center/api/sync/v1"
 	"github.com/apache/servicecomb-service-center/client"
 	"github.com/apache/servicecomb-service-center/pkg/rpc"
+	v1sync "github.com/apache/servicecomb-service-center/syncer/api/v1"
 	"github.com/stretchr/testify/assert"
 )
 

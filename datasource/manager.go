@@ -24,6 +24,7 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/rbac"
 	"github.com/apache/servicecomb-service-center/datasource/schema"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/server/config"
 )
 
 type dataSourceEngine func(opts Options) (DataSource, error)
@@ -66,6 +67,7 @@ func Init(opts Options) error {
 		return err
 	}
 
+	EnableSync = config.GetBool("syncer.enabled", false)
 	return nil
 }
 

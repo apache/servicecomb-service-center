@@ -553,7 +553,7 @@ func sendEvent(ctx context.Context, action string, resourceType string, resource
 	if !util.EnableSync(ctx) {
 		return
 	}
-	event.Publish(action, resourceType, resource)
+	event.Publish(ctx, action, resourceType, resource)
 }
 
 func (ds *MetadataManager) calcInstanceTTL(instance *pb.MicroServiceInstance) int64 {
