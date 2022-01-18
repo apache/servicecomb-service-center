@@ -18,22 +18,14 @@
 package etcd
 
 import (
-	"crypto/tls"
-	"fmt"
-
-	"github.com/go-chassis/cari/db"
-	"github.com/go-chassis/openlog"
-	"github.com/little-cui/etcdadpt"
-
 	"github.com/apache/servicecomb-service-center/eventbase/datasource"
 	"github.com/apache/servicecomb-service-center/eventbase/datasource/etcd/task"
 	"github.com/apache/servicecomb-service-center/eventbase/datasource/etcd/tombstone"
-	"github.com/apache/servicecomb-service-center/eventbase/datasource/tlsutil"
 )
 
 type Datasource struct {
-	taskDao   datasource.TaskDao
-	tombstone datasource.TombstoneDao
+	taskDao      datasource.TaskDao
+	tombstoneDao datasource.TombstoneDao
 }
 
 func (d *Datasource) TaskDao() datasource.TaskDao {
@@ -41,28 +33,11 @@ func (d *Datasource) TaskDao() datasource.TaskDao {
 }
 
 func (d *Datasource) TombstoneDao() datasource.TombstoneDao {
-	return d.tombstone
+	return d.tombstoneDao
 }
 
-func NewDatasource(c *db.Config) (datasource.DataSource, error) {
-	openlog.Info(fmt.Sprintf("use %s as storage", c.Kind))
-	var tlsConfig *tls.Config
-	if c.SSLEnabled {
-		var err error
-		tlsConfig, err = tlsutil.Config(c)
-		if err != nil {
-			return nil, err
-		}
-	}
-	inst := &Datasource{}
-	inst.taskDao = &task.Dao{}
-	inst.tombstone = &tombstone.Dao{}
-	return inst, etcdadpt.Init(etcdadpt.Config{
-		Kind:             c.Kind,
-		ClusterAddresses: c.URI,
-		SslEnabled:       c.SSLEnabled,
-		TLSConfig:        tlsConfig,
-	})
+func NewDatasource() datasource.DataSource {
+	return &Datasource{taskDao: &task.Dao{}, tombstoneDao: &tombstone.Dao{}}
 }
 
 func init() {

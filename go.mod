@@ -14,7 +14,7 @@ require (
 	github.com/deckarep/golang-set v1.7.1
 	github.com/elithrar/simple-scrypt v1.3.0
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-chassis/cari v0.5.1-0.20211229072151-7fa40d0919c6
+	github.com/go-chassis/cari v0.5.1-0.20220117143645-570968c7043d
 	github.com/go-chassis/foundation v0.4.0
 	github.com/go-chassis/go-archaius v1.5.1
 	github.com/go-chassis/go-chassis-extension/protocol/grpc v0.0.0-20210902082902-eb5df922afcd
@@ -174,7 +174,6 @@ require (
 	google.golang.org/protobuf v1.27.1 // indirect
 	gopkg.in/cheggaaa/pb.v1 v1.0.25 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
-	gopkg.in/mgo.v2 v2.0.0-20190816093944-a6b53ec6cb22 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect

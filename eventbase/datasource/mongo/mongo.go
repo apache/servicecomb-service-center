@@ -18,23 +18,24 @@
 package mongo
 
 import (
-	"strings"
-
-	"github.com/go-chassis/cari/db"
-	"github.com/go-chassis/openlog"
+	dmongo "github.com/go-chassis/cari/db/mongo"
 	"go.mongodb.org/mongo-driver/bson"
-	"gopkg.in/mgo.v2"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/x/bsonx"
 
 	"github.com/apache/servicecomb-service-center/eventbase/datasource"
-	"github.com/apache/servicecomb-service-center/eventbase/datasource/mongo/client"
 	"github.com/apache/servicecomb-service-center/eventbase/datasource/mongo/model"
 	"github.com/apache/servicecomb-service-center/eventbase/datasource/mongo/task"
 	"github.com/apache/servicecomb-service-center/eventbase/datasource/mongo/tombstone"
 )
 
+func init() {
+	datasource.RegisterPlugin("mongo", NewDatasource)
+}
+
 type Datasource struct {
-	taskDao   datasource.TaskDao
-	tombstone datasource.TombstoneDao
+	taskDao      datasource.TaskDao
+	tombstoneDao datasource.TombstoneDao
 }
 
 func (d *Datasource) TaskDao() datasource.TaskDao {
@@ -42,102 +43,50 @@ func (d *Datasource) TaskDao() datasource.TaskDao {
 }
 
 func (d *Datasource) TombstoneDao() datasource.TombstoneDao {
-	return d.tombstone
+	return d.tombstoneDao
 }
 
-func NewDatasource(config *db.Config) (datasource.DataSource, error) {
-	inst := &Datasource{}
-	inst.taskDao = &task.Dao{}
-	inst.tombstone = &tombstone.Dao{}
-	return inst, inst.initialize(config)
+func NewDatasource() datasource.DataSource {
+	ensureDB()
+	return &Datasource{taskDao: &task.Dao{}, tombstoneDao: &tombstone.Dao{}}
 }
 
-func (d *Datasource) initialize(config *db.Config) error {
-	err := d.initClient(config)
-	if err != nil {
-		return err
+func ensureDB() {
+	ensureTask()
+	ensureTombstone()
+}
+
+func ensureTask() {
+	jsonSchema := bson.M{
+		"bsonType": "object",
+		"required": []string{model.ColumnID, model.ColumnDomain, model.ColumnProject, model.ColumnTimestamp},
 	}
-	ensureDB(config)
-	return nil
-}
-
-func (d *Datasource) initClient(config *db.Config) error {
-	client.NewMongoClient(config)
-	select {
-	case err := <-client.GetMongoClient().Err():
-		return err
-	case <-client.GetMongoClient().Ready():
-		return nil
+	validator := bson.M{
+		"$jsonSchema": jsonSchema,
 	}
+	dmongo.EnsureCollection(model.CollectionTask, validator, []mongo.IndexModel{buildIndexDoc(
+		model.ColumnDomain, model.ColumnProject, model.ColumnID, model.ColumnTimestamp)})
 }
 
-func init() {
-	datasource.RegisterPlugin("mongo", NewDatasource)
-}
-
-func ensureDB(config *db.Config) {
-	session := openSession(config)
-	defer session.Close()
-	session.SetMode(mgo.Primary, true)
-
-	ensureTask(session)
-	ensureTombstone(session)
-}
-
-func openSession(c *db.Config) *mgo.Session {
-	timeout := c.Timeout
-	var err error
-	session, err := mgo.DialWithTimeout(c.URI, timeout)
-	if err != nil {
-		openlog.Warn("can not dial db, retry once:" + err.Error())
-		session, err = mgo.DialWithTimeout(c.URI, timeout)
-		if err != nil {
-			openlog.Fatal("can not dial db:" + err.Error())
-		}
+func ensureTombstone() {
+	jsonSchema := bson.M{
+		"bsonType": "object",
+		"required": []string{model.ColumnResourceID, model.ColumnDomain, model.ColumnProject, model.ColumnResourceType},
 	}
-	return session
-}
-
-func wrapError(err error, skipMsg ...string) {
-	if err != nil {
-		for _, str := range skipMsg {
-			if strings.Contains(err.Error(), str) {
-				openlog.Debug(err.Error())
-				return
-			}
-		}
-		openlog.Error(err.Error())
+	validator := bson.M{
+		"$jsonSchema": jsonSchema,
 	}
+	dmongo.EnsureCollection(model.CollectionTombstone, validator, []mongo.IndexModel{buildIndexDoc(
+		model.ColumnDomain, model.ColumnProject, model.ColumnResourceID, model.ColumnResourceType)})
 }
 
-func ensureTask(session *mgo.Session) {
-	c := session.DB(model.DBName).C(model.CollectionTask)
-	err := c.Create(&mgo.CollectionInfo{Validator: bson.M{
-		model.ColumnID:        bson.M{"$exists": true},
-		model.ColumnDomain:    bson.M{"$exists": true},
-		model.ColumnProject:   bson.M{"$exists": true},
-		model.ColumnTimestamp: bson.M{"$exists": true},
-	}})
-	wrapError(err)
-	err = c.EnsureIndex(mgo.Index{
-		Key:    []string{model.ColumnDomain, model.ColumnProject, model.ColumnID, model.ColumnTimestamp},
-		Unique: true,
-	})
-	wrapError(err)
-}
-
-func ensureTombstone(session *mgo.Session) {
-	c := session.DB(model.DBName).C(model.CollectionTombstone)
-	err := c.Create(&mgo.CollectionInfo{Validator: bson.M{
-		model.ColumnResourceID:   bson.M{"$exists": true},
-		model.ColumnDomain:       bson.M{"$exists": true},
-		model.ColumnProject:      bson.M{"$exists": true},
-		model.ColumnResourceType: bson.M{"$exists": true},
-	}})
-	wrapError(err)
-	err = c.EnsureIndex(mgo.Index{
-		Key:    []string{model.ColumnDomain, model.ColumnProject, model.ColumnResourceID, model.ColumnResourceType},
-		Unique: true,
-	})
-	wrapError(err)
+func buildIndexDoc(keys ...string) mongo.IndexModel {
+	keysDoc := bsonx.Doc{}
+	for _, key := range keys {
+		keysDoc = keysDoc.Append(key, bsonx.Int32(1))
+	}
+	index := mongo.IndexModel{
+		Keys: keysDoc,
+	}
+	return index
 }

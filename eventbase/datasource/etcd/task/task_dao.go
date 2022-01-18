@@ -22,7 +22,6 @@ import (
 	"encoding/json"
 
 	"github.com/go-chassis/cari/sync"
-	"github.com/go-chassis/openlog"
 	"github.com/little-cui/etcdadpt"
 
 	"github.com/apache/servicecomb-service-center/eventbase/datasource"
@@ -35,16 +34,13 @@ type Dao struct {
 func (d *Dao) Create(ctx context.Context, task *sync.Task) (*sync.Task, error) {
 	taskBytes, err := json.Marshal(task)
 	if err != nil {
-		openlog.Error("fail to marshal task")
 		return nil, err
 	}
 	ok, err := etcdadpt.InsertBytes(ctx, key.TaskKey(task.Domain, task.Project, task.ID, task.Timestamp), taskBytes)
 	if err != nil {
-		openlog.Error("fail to create task" + err.Error())
 		return nil, err
 	}
 	if !ok {
-		openlog.Error("create error" + datasource.ErrTaskAlreadyExists.Error())
 		return nil, datasource.ErrTaskAlreadyExists
 	}
 	return task, nil
@@ -54,7 +50,6 @@ func (d *Dao) Update(ctx context.Context, task *sync.Task) error {
 	keyTask := key.TaskKey(task.Domain, task.Project, task.ID, task.Timestamp)
 	resp, err := etcdadpt.Get(ctx, keyTask)
 	if err != nil {
-		openlog.Error("fail to get task" + err.Error())
 		return err
 	}
 	if resp == nil {
@@ -63,14 +58,12 @@ func (d *Dao) Update(ctx context.Context, task *sync.Task) error {
 	var dbTask sync.Task
 	err = json.Unmarshal(resp.Value, &dbTask)
 	if err != nil {
-		openlog.Error("fail to unmarshal" + err.Error())
 		return err
 	}
 	dbTask.Status = task.Status
 
 	taskBytes, err := json.Marshal(dbTask)
 	if err != nil {
-		openlog.Error("fail to marshal" + err.Error())
 		return err
 	}
 	return etcdadpt.PutBytes(ctx, keyTask, taskBytes)
@@ -83,7 +76,6 @@ func (d *Dao) Delete(ctx context.Context, tasks ...*sync.Task) error {
 	}
 	err := etcdadpt.Txn(ctx, delOptions)
 	if err != nil {
-		openlog.Error("fail to delete task" + err.Error())
 		return err
 	}
 	return nil
@@ -97,14 +89,12 @@ func (d Dao) List(ctx context.Context, options ...datasource.TaskFindOption) ([]
 	tasks := make([]*sync.Task, 0)
 	kvs, _, err := etcdadpt.List(ctx, key.TaskList(opts.Domain, opts.Project))
 	if err != nil {
-		openlog.Error("fail to list task" + err.Error())
 		return tasks, err
 	}
 	for _, kv := range kvs {
 		task := sync.Task{}
 		err := json.Unmarshal(kv.Value, &task)
 		if err != nil {
-			openlog.Error("fail to unmarshal task" + err.Error())
 			continue
 		}
 		if !filterMatch(&task, opts) {

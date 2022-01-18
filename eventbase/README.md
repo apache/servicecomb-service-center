@@ -8,7 +8,7 @@ eventbase provides the crud interface of task and tombstone.
 
 **datasource**: realize the dao operation of etcd and mongo on task and tombstone.
 
-**domain**: task and tombstone request.
+**model**: task and tombstone request.
 
 **service**: Interfaces exposed by task and tombstone.
 
@@ -16,21 +16,32 @@ eventbase provides the crud interface of task and tombstone.
 
 ### how to use
 
+1.First you should import the eventbase's bootstrap
 ```go
 import (
-	_ "github.com/apache/servicecomb-service-center/eventbase/bootstrap"
-	"github.com/apache/servicecomb-service-center/eventbase/datasource"
-	tasksvc "github.com/apache/servicecomb-service-center/eventbase/service/task"
-	tombstonesvc "github.com/apache/servicecomb-service-center/eventbase/service/tombstone"
+    _ "github.com/apache/servicecomb-service-center/eventbase/bootstrap"
+)
+```
+2.Second you should do Init func
+
+```go
+
+import (
+    "github.com/go-chassis/cari/db/config"
+    
+    _ "github.com/apache/servicecomb-service-center/eventbase/bootstrap"
+    "github.com/apache/servicecomb-service-center/eventbase/datasource"
+    "github.com/apache/servicecomb-service-center/eventbase/service/task"
+    "github.com/apache/servicecomb-service-center/eventbase/service/tombstone"
 )
 
-func Init(){
-	dbCfg := db.Config{
+func main(){
+	cfg := config.Config{
 		Kind: "etcd",
 		URI: "http://127.0.0.1:2379",
 		Timeout: 10 * time.Second,
 	}
-	err := datasource.Init(dbCfg)
+	err := datasource.Init(&cfg)
 	...
 	tasksvc.List(...)
 	tombstonesvc.List(...)
