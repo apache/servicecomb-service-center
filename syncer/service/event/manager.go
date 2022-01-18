@@ -7,11 +7,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	v1sync "github.com/apache/servicecomb-service-center/syncer/api/v1"
 	"github.com/apache/servicecomb-service-center/syncer/service/replicator"
 	"github.com/apache/servicecomb-service-center/syncer/service/replicator/resource"
 
-	"github.com/apache/servicecomb-service-center/pkg/log"
-	v1sync "github.com/apache/servicecomb-service-center/syncer/api/v1"
 	"github.com/go-chassis/foundation/gopool"
 )
 

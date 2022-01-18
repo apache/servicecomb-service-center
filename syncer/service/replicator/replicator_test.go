@@ -6,6 +6,7 @@ import (
 
 	v1sync "github.com/apache/servicecomb-service-center/syncer/api/v1"
 	"github.com/apache/servicecomb-service-center/syncer/service/replicator/resource"
+
 	"github.com/stretchr/testify/assert"
 )
 

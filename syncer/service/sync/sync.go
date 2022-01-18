@@ -9,6 +9,7 @@ import (
 	"github.com/apache/servicecomb-service-center/syncer/service/event"
 	"github.com/apache/servicecomb-service-center/syncer/service/replicator"
 	"github.com/apache/servicecomb-service-center/syncer/service/task"
+
 	"github.com/go-chassis/foundation/gopool"
 )
 

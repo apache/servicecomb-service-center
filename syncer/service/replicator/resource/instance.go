@@ -5,6 +5,7 @@ import (
 
 	servicedisco "github.com/apache/servicecomb-service-center/server/service/disco"
 	v1sync "github.com/apache/servicecomb-service-center/syncer/api/v1"
+
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/cari/pkg/errsvc"
 )

@@ -12,6 +12,7 @@ import (
 	"github.com/apache/servicecomb-service-center/eventbase/service/tombstone"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	v1sync "github.com/apache/servicecomb-service-center/syncer/api/v1"
+
 	"github.com/go-chassis/cari/sync"
 )
 

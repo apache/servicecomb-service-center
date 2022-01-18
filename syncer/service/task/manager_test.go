@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/apache/servicecomb-service-center/syncer/service/event"
+
 	"github.com/go-chassis/cari/sync"
 	"github.com/stretchr/testify/assert"
 )

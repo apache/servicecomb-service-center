@@ -5,10 +5,10 @@ import (
 	"fmt"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	v1sync "github.com/apache/servicecomb-service-center/syncer/api/v1"
-	"github.com/go-chassis/cari/pkg/errsvc"
-
 	servicerbac "github.com/apache/servicecomb-service-center/server/service/rbac"
+	v1sync "github.com/apache/servicecomb-service-center/syncer/api/v1"
+
+	"github.com/go-chassis/cari/pkg/errsvc"
 	crbac "github.com/go-chassis/cari/rbac"
 	rbacmodel "github.com/go-chassis/cari/rbac"
 )

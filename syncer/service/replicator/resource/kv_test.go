@@ -6,6 +6,7 @@ import (
 	"time"
 
 	v1sync "github.com/apache/servicecomb-service-center/syncer/api/v1"
+
 	"github.com/go-chassis/cari/sync"
 	"github.com/stretchr/testify/assert"
 )

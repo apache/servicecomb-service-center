@@ -10,6 +10,7 @@ import (
 	"github.com/apache/servicecomb-service-center/eventbase/datasource"
 	"github.com/apache/servicecomb-service-center/eventbase/model"
 	v1sync "github.com/apache/servicecomb-service-center/syncer/api/v1"
+
 	"github.com/go-chassis/cari/sync"
 	"github.com/stretchr/testify/assert"
 )

@@ -9,6 +9,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	serverconfig "github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf"
+
 	dbconfig "github.com/go-chassis/cari/db/config"
 	carisync "github.com/go-chassis/cari/sync"
 )

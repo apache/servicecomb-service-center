@@ -7,6 +7,7 @@ import (
 
 	svcconfig "github.com/apache/servicecomb-service-center/server/config"
 	v1sync "github.com/apache/servicecomb-service-center/syncer/api/v1"
+
 	"github.com/little-cui/etcdadpt"
 )
 

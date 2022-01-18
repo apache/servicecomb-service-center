@@ -4,15 +4,15 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/apache/servicecomb-service-center/syncer/service/replicator/resource"
-	"github.com/go-chassis/foundation/gopool"
-
 	"github.com/apache/servicecomb-service-center/client"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rpc"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	v1sync "github.com/apache/servicecomb-service-center/syncer/api/v1"
 	"github.com/apache/servicecomb-service-center/syncer/config"
+	"github.com/apache/servicecomb-service-center/syncer/service/replicator/resource"
+
+	"github.com/go-chassis/foundation/gopool"
 	"google.golang.org/grpc"
 )
 

@@ -8,6 +8,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	v1sync "github.com/apache/servicecomb-service-center/syncer/api/v1"
+
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/cari/pkg/errsvc"
 	"github.com/go-chassis/cari/sync"
