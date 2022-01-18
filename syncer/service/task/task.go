@@ -9,7 +9,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	serverconfig "github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf"
-	"github.com/go-chassis/cari/db"
+	dbconfig "github.com/go-chassis/cari/db/config"
 	carisync "github.com/go-chassis/cari/sync"
 )
 
@@ -24,7 +24,7 @@ func initDatabase() {
 		return
 	}
 
-	if err := datasource.Init(db.Config{
+	if err := datasource.Init(&dbconfig.Config{
 		Kind:        kind,
 		URI:         endpoint,
 		PoolSize:    5,
