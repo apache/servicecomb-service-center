@@ -18,9 +18,7 @@
 package bootstrap
 
 import (
-	// support embedded etcd
-	_ "github.com/little-cui/etcdadpt/embedded"
-	_ "github.com/little-cui/etcdadpt/remote"
+	_ "github.com/go-chassis/cari/db/bootstrap"
 
 	_ "github.com/apache/servicecomb-service-center/eventbase/datasource/etcd"
 	_ "github.com/apache/servicecomb-service-center/eventbase/datasource/mongo"

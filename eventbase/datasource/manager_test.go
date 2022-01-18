@@ -15,17 +15,21 @@
  * limitations under the License.
  */
 
-package model
+package datasource_test
 
-const (
-	CollectionTask      = "task"
-	CollectionTombstone = "tombstone"
-	ColumnDomain        = "domain"
-	ColumnProject       = "project"
-	ColumnID            = "id"
-	ColumnTimestamp     = "timestamp"
-	ColumnResourceID    = "resource_id"
-	ColumnResourceType  = "resource_type"
-	ColumnStatus        = "status"
-	ColumnAction        = "action"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/apache/servicecomb-service-center/eventbase/datasource"
+	"github.com/apache/servicecomb-service-center/eventbase/test"
 )
+
+func TestInit(t *testing.T) {
+	t.Run("init config should pass with no error", func(t *testing.T) {
+		err := datasource.Init(&test.DbCfg)
+		assert.Nil(t, err)
+		assert.NotNil(t, datasource.GetDataSource())
+	})
+}

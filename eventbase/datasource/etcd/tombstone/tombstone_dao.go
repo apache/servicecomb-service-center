@@ -22,7 +22,6 @@ import (
 	"encoding/json"
 
 	"github.com/go-chassis/cari/sync"
-	"github.com/go-chassis/openlog"
 	"github.com/little-cui/etcdadpt"
 
 	"github.com/apache/servicecomb-service-center/eventbase/datasource"
@@ -37,7 +36,6 @@ func (d *Dao) Get(ctx context.Context, req *model.GetTombstoneRequest) (*sync.To
 	tombstoneKey := key.TombstoneKey(req.Domain, req.Project, req.ResourceType, req.ResourceID)
 	kv, err := etcdadpt.Get(ctx, tombstoneKey)
 	if err != nil {
-		openlog.Error("fail to get tombstone" + err.Error())
 		return nil, err
 	}
 	if kv == nil {
@@ -46,7 +44,6 @@ func (d *Dao) Get(ctx context.Context, req *model.GetTombstoneRequest) (*sync.To
 	tombstone := sync.Tombstone{}
 	err = json.Unmarshal(kv.Value, &tombstone)
 	if err != nil {
-		openlog.Error("fail to unmarshal tombstone" + err.Error())
 		return nil, err
 	}
 	return &tombstone, nil
@@ -55,17 +52,14 @@ func (d *Dao) Get(ctx context.Context, req *model.GetTombstoneRequest) (*sync.To
 func (d *Dao) Create(ctx context.Context, tombstone *sync.Tombstone) (*sync.Tombstone, error) {
 	tombstoneBytes, err := json.Marshal(tombstone)
 	if err != nil {
-		openlog.Error("fail to marshal tombstone")
 		return nil, err
 	}
 	ok, err := etcdadpt.InsertBytes(ctx, key.TombstoneKey(tombstone.Domain, tombstone.Project,
 		tombstone.ResourceType, tombstone.ResourceID), tombstoneBytes)
 	if err != nil {
-		openlog.Error("fail to create tombstone" + err.Error())
 		return nil, err
 	}
 	if !ok {
-		openlog.Error("create error" + datasource.ErrTombstoneAlreadyExists.Error())
 		return nil, datasource.ErrTombstoneAlreadyExists
 	}
 	return tombstone, nil
@@ -74,11 +68,11 @@ func (d *Dao) Create(ctx context.Context, tombstone *sync.Tombstone) (*sync.Tomb
 func (d *Dao) Delete(ctx context.Context, tombstones ...*sync.Tombstone) error {
 	delOptions := make([]etcdadpt.OpOptions, len(tombstones))
 	for i, tombstone := range tombstones {
-		delOptions[i] = etcdadpt.OpDel(etcdadpt.WithStrKey(key.TombstoneKey(tombstone.Domain, tombstone.Project, tombstone.ResourceType, tombstone.ResourceID)))
+		delOptions[i] = etcdadpt.OpDel(etcdadpt.WithStrKey(key.TombstoneKey(tombstone.Domain, tombstone.Project,
+			tombstone.ResourceType, tombstone.ResourceID)))
 	}
 	err := etcdadpt.Txn(ctx, delOptions)
 	if err != nil {
-		openlog.Error("fail to delete tombstone" + err.Error())
 		return err
 	}
 	return nil
@@ -92,14 +86,12 @@ func (d *Dao) List(ctx context.Context, options ...datasource.TombstoneFindOptio
 	tombstones := make([]*sync.Tombstone, 0)
 	kvs, _, err := etcdadpt.List(ctx, key.TombstoneList(opts.Domain, opts.Project))
 	if err != nil {
-		openlog.Error("fail to list tombstone" + err.Error())
 		return tombstones, err
 	}
 	for _, kv := range kvs {
 		tombstone := sync.Tombstone{}
 		err = json.Unmarshal(kv.Value, &tombstone)
 		if err != nil {
-			openlog.Error("fail to unmarshal tombstone" + err.Error())
 			continue
 		}
 		if !filterMatch(&tombstone, opts) {

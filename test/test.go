@@ -22,19 +22,21 @@ import (
 	"context"
 	"time"
 
+	"github.com/go-chassis/cari/db/config"
+	"github.com/go-chassis/go-archaius"
+	"github.com/little-cui/etcdadpt"
+
 	_ "github.com/apache/servicecomb-service-center/server/init"
 
 	_ "github.com/apache/servicecomb-service-center/eventbase/bootstrap"
 	_ "github.com/apache/servicecomb-service-center/server/bootstrap"
+	_ "github.com/apache/servicecomb-service-center/server/init"
 	_ "github.com/go-chassis/go-chassis-extension/protocol/grpc/server"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	edatasource "github.com/apache/servicecomb-service-center/eventbase/datasource"
 	"github.com/apache/servicecomb-service-center/server/metrics"
 	"github.com/apache/servicecomb-service-center/server/service/registry"
-	"github.com/go-chassis/cari/db"
-	"github.com/go-chassis/go-archaius"
-	"github.com/little-cui/etcdadpt"
 )
 
 func init() {
@@ -62,7 +64,7 @@ func init() {
 	})
 	_ = metrics.Init(metrics.Options{})
 
-	_ = edatasource.Init(db.Config{
+	_ = edatasource.Init(&config.Config{
 		Kind:    kind,
 		URI:     uri,
 		Timeout: 10 * time.Second,
