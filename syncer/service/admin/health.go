@@ -22,9 +22,9 @@ import (
 	"errors"
 	"time"
 
-	v1sync "github.com/apache/servicecomb-service-center/api/sync/v1"
 	"github.com/apache/servicecomb-service-center/client"
 	grpc "github.com/apache/servicecomb-service-center/pkg/rpc"
+	v1sync "github.com/apache/servicecomb-service-center/syncer/api/v1"
 	"github.com/apache/servicecomb-service-center/syncer/config"
 	"github.com/apache/servicecomb-service-center/syncer/metrics"
 	"github.com/apache/servicecomb-service-center/syncer/rpc"

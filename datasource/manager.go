@@ -31,7 +31,6 @@ type dataSourceEngine func(opts Options) (DataSource, error)
 var (
 	plugins        = make(map[string]dataSourceEngine)
 	dataSourceInst DataSource
-	EnableSync     bool
 )
 
 // load plugins configuration into plugins
@@ -62,11 +61,8 @@ func Init(opts Options) error {
 	err = dlock.Init(dlock.Options{
 		Kind: opts.Kind,
 	})
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
 }
 
 func initDatasource(opts Options) error {

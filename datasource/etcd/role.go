@@ -123,7 +123,7 @@ func (rm *RbacDAO) ListRole(ctx context.Context) ([]*crbac.Role, int64, error) {
 func (rm *RbacDAO) DeleteRole(ctx context.Context, name string) (bool, error) {
 	exists, err := RoleBindingExists(ctx, name)
 	if err != nil {
-		log.Error("", err)
+		log.Error("check role binding existence failed", err)
 		return false, err
 	}
 	if exists {
@@ -145,7 +145,7 @@ func (rm *RbacDAO) DeleteRole(ctx context.Context, name string) (bool, error) {
 func RoleBindingExists(ctx context.Context, role string) (bool, error) {
 	_, total, err := etcdadpt.List(ctx, path.GenRoleAccountPrefixIdxKey(role))
 	if err != nil {
-		log.Error("", err)
+		log.Error("list role account failed", err)
 		return false, err
 	}
 	return total > 0, nil

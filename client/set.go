@@ -1,7 +1,7 @@
 package client
 
 import (
-	v1sync "github.com/apache/servicecomb-service-center/api/sync/v1"
+	v1sync "github.com/apache/servicecomb-service-center/syncer/api/v1"
 	"google.golang.org/grpc"
 )
 

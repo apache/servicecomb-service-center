@@ -25,8 +25,8 @@ import (
 	//grpc plugin
 	_ "github.com/go-chassis/go-chassis-extension/protocol/grpc/server"
 
-	syncv1 "github.com/apache/servicecomb-service-center/api/sync/v1"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	syncv1 "github.com/apache/servicecomb-service-center/syncer/api/v1"
 	"github.com/apache/servicecomb-service-center/syncer/config"
 	"github.com/apache/servicecomb-service-center/syncer/rpc"
 	"github.com/go-chassis/go-chassis/v2"
@@ -34,7 +34,7 @@ import (
 )
 
 func init() {
-	chassis.RegisterSchema("grpc", &rpc.Server{},
+	chassis.RegisterSchema("grpc", rpc.NewServer(),
 		chassisServer.WithRPCServiceDesc(&syncv1.EventService_ServiceDesc))
 
 	if err := chassis.Init(); err != nil {

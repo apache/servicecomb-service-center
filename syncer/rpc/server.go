@@ -22,9 +22,12 @@ import (
 	"fmt"
 	"time"
 
-	v1sync "github.com/apache/servicecomb-service-center/api/sync/v1"
+	"github.com/apache/servicecomb-service-center/syncer/service/replicator"
+	"github.com/apache/servicecomb-service-center/syncer/service/replicator/resource"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
+	v1sync "github.com/apache/servicecomb-service-center/syncer/api/v1"
 )
 
 const (
@@ -33,16 +36,40 @@ const (
 	HealthStatusClose     = "CLOSE"
 )
 
+func NewServer() *Server {
+	return &Server{
+		replicator: replicator.Manager(),
+	}
+}
+
 type Server struct {
 	v1sync.UnimplementedEventServiceServer
+
+	replicator replicator.Replicator
 }
 
 func (s *Server) Sync(ctx context.Context, events *v1sync.EventList) (*v1sync.Results, error) {
-	log.Info(fmt.Sprintf("Received: %v", events.Events[0].Action))
-	return &v1sync.Results{}, nil
+	log.Info(fmt.Sprintf("start sync: %s", events.Flag()))
+
+	res := s.replicator.Persist(ctx, events)
+
+	return s.toResults(res), nil
 }
 
-func (s *Server) Health(ctx context.Context, request *v1sync.HealthRequest) (*v1sync.HealthReply, error) {
+func (s *Server) toResults(results []*resource.Result) *v1sync.Results {
+	syncResult := make(map[string]*v1sync.Result, len(results))
+	for _, r := range results {
+		syncResult[r.EventID] = &v1sync.Result{
+			Code:    r.Status,
+			Message: r.Message,
+		}
+	}
+	return &v1sync.Results{
+		Results: syncResult,
+	}
+}
+
+func (s *Server) Health(_ context.Context, _ *v1sync.HealthRequest) (*v1sync.HealthReply, error) {
 	resp := &v1sync.HealthReply{
 		Status:         HealthStatusConnected,
 		LocalTimestamp: time.Now().UnixNano(),
