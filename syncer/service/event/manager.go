@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	defaultInternal = 500 * time.Microsecond
+	defaultInternal = 500 * time.Millisecond
 )
 
 var m Manager

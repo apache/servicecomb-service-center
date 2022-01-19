@@ -18,7 +18,7 @@ func TestNewManager(t *testing.T) {
 	}
 	ctx := context.TODO()
 	m := NewManager(
-		ManagerOperator(&forkOperator{
+		ManagerOperator(&mockOperator{
 			tasks: map[string]*sync.Task{
 				"xxx1": {
 					ID:           "xxx1",
@@ -38,11 +38,11 @@ func TestNewManager(t *testing.T) {
 	assert.Equal(t, 1, len(fs.events))
 }
 
-type forkOperator struct {
+type mockOperator struct {
 	tasks map[string]*sync.Task
 }
 
-func (f *forkOperator) ListTasks(_ context.Context) ([]*sync.Task, error) {
+func (f *mockOperator) ListTasks(_ context.Context) ([]*sync.Task, error) {
 	result := make([]*sync.Task, 0, len(f.tasks))
 	for _, task := range f.tasks {
 		result = append(result, task)
@@ -50,7 +50,7 @@ func (f *forkOperator) ListTasks(_ context.Context) ([]*sync.Task, error) {
 	return result, nil
 }
 
-func (f *forkOperator) DeleteTask(_ context.Context, t *sync.Task) error {
+func (f *mockOperator) DeleteTask(_ context.Context, t *sync.Task) error {
 	delete(f.tasks, t.ID)
 	return nil
 }
