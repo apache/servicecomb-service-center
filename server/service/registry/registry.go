@@ -54,7 +54,8 @@ func registerService(ctx context.Context) error {
 	serviceID, err := discosvc.ExistService(ctx, core.GetExistenceRequest())
 	if err != nil {
 		log.Error("query service center existence failed", err)
-		if !errsvc.IsErrEqualCode(err, pb.ErrServiceNotExists) {
+		if !errsvc.IsErrEqualCode(err, pb.ErrServiceNotExists) &&
+			!errsvc.IsErrEqualCode(err, pb.ErrServiceVersionNotExists) {
 			return err
 		}
 		return registerNewService(ctx)

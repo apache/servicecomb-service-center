@@ -138,6 +138,8 @@ registry:
       cron: '0 1 * * *'
       reserve: 3
   instance:
+    # the endpoint as the service-center's endpoint instead of server.host
+    endpoint:
     # By default, instance TTL = (times + 1) * interval
     # if ttl > 0, the instance will always set this value, ignore the API request body
     ttl:

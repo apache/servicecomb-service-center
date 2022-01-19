@@ -15,19 +15,33 @@
  * limitations under the License.
  */
 
-package datasource
+package registry_test
 
 import (
-	"github.com/little-cui/etcdadpt"
+	"context"
+	"math/rand"
+	"strconv"
+	"testing"
+
+	_ "github.com/apache/servicecomb-service-center/test"
+
+	"github.com/apache/servicecomb-service-center/server/core"
+	"github.com/apache/servicecomb-service-center/server/service/registry"
+	"github.com/stretchr/testify/assert"
 )
 
-//Options contains configuration for plugins
-type Options struct {
-	etcdadpt.Config
+func TestSelfRegister(t *testing.T) {
+	t.Run("self register after upgrade sc version, should be ok", func(t *testing.T) {
+		oldServiceID := core.Service.ServiceId
+		oldVersion := core.Service.Version
+		defer func() {
+			core.Service.ServiceId = oldServiceID
+			core.Service.Version = oldVersion
+		}()
 
-	EnableCache       bool
-	SchemaNotEditable bool
-	// InstanceTTL: the default ttl of instance lease
-	InstanceTTL        int64
-	InstanceProperties map[string]string
+		core.Service.ServiceId = ""
+		core.Service.Version = "0.0." + strconv.Itoa(rand.Intn(100))
+		err := registry.SelfRegister(context.Background())
+		assert.NoError(t, err)
+	})
 }
