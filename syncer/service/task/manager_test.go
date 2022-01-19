@@ -12,7 +12,7 @@ import (
 
 func TestNewManager(t *testing.T) {
 	receiver := make(chan struct{}, 1)
-	fs := &forkSender{
+	fs := &mockSender{
 		events:  make(map[string]*event.Event),
 		receive: receiver,
 	}
@@ -55,12 +55,12 @@ func (f *mockOperator) DeleteTask(_ context.Context, t *sync.Task) error {
 	return nil
 }
 
-type forkSender struct {
+type mockSender struct {
 	events  map[string]*event.Event
 	receive chan struct{}
 }
 
-func (f *forkSender) Send(et *event.Event) {
+func (f *mockSender) Send(et *event.Event) {
 	f.events[et.Id] = et
 	f.receive <- struct{}{}
 }

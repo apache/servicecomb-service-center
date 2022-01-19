@@ -46,6 +46,7 @@ func work() {
 	dl.LockDo()
 }
 
+// Manager defines task manager, transfer task to event, and send event to event manager
 type Manager interface {
 	LoadAndHandleTask(ctx context.Context)
 	UpdateResultTask(ctx context.Context)
@@ -119,6 +120,7 @@ type manager struct {
 	eventSender event.Sender
 }
 
+// Operator define task operator, to list tasks and delete task
 type Operator interface {
 	ListTasks(ctx context.Context) ([]*carisync.Task, error)
 	DeleteTask(ctx context.Context, t *carisync.Task) error

@@ -1,6 +1,7 @@
 package task
 
 import (
+	// glint
 	_ "github.com/go-chassis/cari/dlock/bootstrap"
 )
 

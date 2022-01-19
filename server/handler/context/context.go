@@ -33,12 +33,16 @@ const (
 	queryCacheOnly = "cacheOnly"
 )
 
+const (
+	syncEnable = "1"
+)
+
 var enableSync string
 
 func init() {
 	enable := config.GetBool("sync.enableOnStart", false)
 	if enable {
-		enableSync = "1"
+		enableSync = syncEnable
 	}
 	log.Info("enableSync is " + enableSync)
 }

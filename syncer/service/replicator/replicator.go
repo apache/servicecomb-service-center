@@ -68,6 +68,8 @@ func Manager() Replicator {
 	return manager
 }
 
+// Replicator define replicator manager, receive events from event manager
+// and send events to remote syncer
 type Replicator interface {
 	Replicate(ctx context.Context, el *v1sync.EventList) (*v1sync.Results, error)
 	Persist(ctx context.Context, el *v1sync.EventList) []*resource.Result

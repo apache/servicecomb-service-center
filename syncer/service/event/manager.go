@@ -84,10 +84,12 @@ func NewManager(os ...ManagerOption) Manager {
 	return em
 }
 
+// Sender send events
 type Sender interface {
 	Send(et *Event)
 }
 
+// Manager manage events, including send events, handle events and handle result
 type Manager interface {
 	Sender
 
@@ -247,6 +249,7 @@ func (e *eventManager) handle(ctx context.Context, es syncEvents) {
 	}
 }
 
+// Send sends event to replicator
 func Send(e *Event) {
 	log.Info(fmt.Sprintf("send event %s", e.Subject))
 	m.Send(e)
