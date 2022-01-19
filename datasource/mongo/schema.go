@@ -20,9 +20,10 @@ package mongo
 import (
 	"context"
 
+	"github.com/go-chassis/cari/discovery"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/schema"
-	"github.com/go-chassis/cari/discovery"
 )
 
 func init() {

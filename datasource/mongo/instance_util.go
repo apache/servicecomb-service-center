@@ -20,12 +20,13 @@ package mongo
 import (
 	"context"
 
+	"github.com/go-chassis/cari/discovery"
+
 	"github.com/apache/servicecomb-service-center/datasource/cache"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/dao"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/dao"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
 	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/go-chassis/cari/discovery"
 )
 
 func ExistInstance(ctx context.Context, serviceID string, instanceID string) (bool, error) {

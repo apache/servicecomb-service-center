@@ -24,11 +24,12 @@ import (
 	"time"
 
 	"github.com/apache/servicecomb-service-center/datasource/rbac"
+	dmongo "github.com/go-chassis/cari/db/mongo"
 	rbacmodel "github.com/go-chassis/cari/rbac"
 	"go.mongodb.org/mongo-driver/mongo"
 
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/dao"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
 	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/privacy"
@@ -67,9 +68,9 @@ func (ds *RbacDAO) CreateAccount(ctx context.Context, a *rbacmodel.Account) erro
 	a.ID = util.GenerateUUID()
 	a.CreateTime = strconv.FormatInt(time.Now().Unix(), 10)
 	a.UpdateTime = a.CreateTime
-	_, err = client.GetMongoClient().Insert(ctx, model.CollectionAccount, a)
+	_, err = dmongo.GetClient().GetDB().Collection(model.CollectionAccount).InsertOne(ctx, a)
 	if err != nil {
-		if client.IsDuplicateKey(err) {
+		if dao.IsDuplicateKey(err) {
 			return rbac.ErrAccountDuplicated
 		}
 		return err
@@ -80,7 +81,7 @@ func (ds *RbacDAO) CreateAccount(ctx context.Context, a *rbacmodel.Account) erro
 
 func (ds *RbacDAO) AccountExist(ctx context.Context, name string) (bool, error) {
 	filter := mutil.NewFilter(mutil.AccountName(name))
-	count, err := client.GetMongoClient().Count(ctx, model.CollectionAccount, filter)
+	count, err := dmongo.GetClient().GetDB().Collection(model.CollectionAccount).CountDocuments(ctx, filter)
 	if err != nil {
 		return false, err
 	}
@@ -92,13 +93,8 @@ func (ds *RbacDAO) AccountExist(ctx context.Context, name string) (bool, error) 
 
 func (ds *RbacDAO) GetAccount(ctx context.Context, name string) (*rbacmodel.Account, error) {
 	filter := mutil.NewFilter(mutil.AccountName(name))
-	result, err := client.GetMongoClient().FindOne(ctx, model.CollectionAccount, filter)
-	if err != nil {
-		msg := fmt.Sprintf("failed to query account, account name %s", name)
-		log.Error(msg, err)
-		return nil, err
-	}
-	if err = result.Err(); err != nil {
+	result := dmongo.GetClient().GetDB().Collection(model.CollectionAccount).FindOne(ctx, filter)
+	if err := result.Err(); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, rbac.ErrAccountNotExist
 		}
@@ -107,7 +103,7 @@ func (ds *RbacDAO) GetAccount(ctx context.Context, name string) (*rbacmodel.Acco
 		return nil, rbac.ErrQueryAccountFailed
 	}
 	var account rbacmodel.Account
-	err = result.Decode(&account)
+	err := result.Decode(&account)
 	if err != nil {
 		log.Error("failed to decode account", err)
 		return nil, err
@@ -117,7 +113,7 @@ func (ds *RbacDAO) GetAccount(ctx context.Context, name string) (*rbacmodel.Acco
 
 func (ds *RbacDAO) ListAccount(ctx context.Context) ([]*rbacmodel.Account, int64, error) {
 	filter := mutil.NewFilter()
-	cursor, err := client.GetMongoClient().Find(ctx, model.CollectionAccount, filter)
+	cursor, err := dmongo.GetClient().GetDB().Collection(model.CollectionAccount).Find(ctx, filter)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -142,7 +138,7 @@ func (ds *RbacDAO) DeleteAccount(ctx context.Context, names []string) (bool, err
 	}
 	inFilter := mutil.NewFilter(mutil.In(names))
 	filter := mutil.NewFilter(mutil.AccountName(inFilter))
-	result, err := client.GetMongoClient().Delete(ctx, model.CollectionAccount, filter)
+	result, err := dmongo.GetClient().GetDB().Collection(model.CollectionAccount).DeleteMany(ctx, filter)
 	if err != nil {
 		return false, err
 	}
@@ -164,7 +160,7 @@ func (ds *RbacDAO) UpdateAccount(ctx context.Context, name string, account *rbac
 		mutil.AccountUpdateTime(strconv.FormatInt(time.Now().Unix(), 10)),
 	)
 	updateFilter := mutil.NewFilter(mutil.Set(setFilter))
-	res, err := client.GetMongoClient().Update(ctx, model.CollectionAccount, filter, updateFilter)
+	res, err := dmongo.GetClient().GetDB().Collection(model.CollectionAccount).UpdateMany(ctx, filter, updateFilter)
 	if err != nil {
 		return err
 	}

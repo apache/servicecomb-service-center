@@ -24,8 +24,8 @@ import (
 )
 
 type HealthCheck interface {
-	// processing heartbeat request
+	// Heartbeat func is processing heartbeat request
 	Heartbeat(ctx context.Context, request *pb.HeartbeatRequest) (*pb.HeartbeatResponse, error)
-	// processing heartbeat check of instance after registration
+	// CheckInstance func is processing heartbeat check of instance after registration
 	CheckInstance(ctx context.Context, instance *pb.MicroServiceInstance) error
 }

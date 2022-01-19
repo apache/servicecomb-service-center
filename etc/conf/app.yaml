@@ -115,11 +115,6 @@ registry:
   mongo:
     cluster:
       uri: mongodb://127.0.0.1:27017
-      sslEnabled: false
-      rootCAFile: /opt/ssl/ca.pem
-      verifyPeer: false
-      certFile: /opt/ssl/client.crt
-      keyFile: /opt/ssl/client.key
       poolSize: 1000
   fastRegistration:
     # this config is only support in mongo case now

@@ -21,10 +21,11 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
-	"github.com/apache/servicecomb-service-center/datasource/sdcommon"
 	cmap "github.com/orcaman/concurrent-map"
 	"go.mongodb.org/mongo-driver/bson"
+
+	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
+	"github.com/apache/servicecomb-service-center/datasource/sdcommon"
 )
 
 type depStore struct {

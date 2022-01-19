@@ -21,12 +21,13 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-chassis/cari/discovery"
+
 	"github.com/apache/servicecomb-service-center/datasource/cache"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/dao"
-	pb "github.com/go-chassis/cari/discovery"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/dao"
 )
 
-func GetConsumerIDs(ctx context.Context, provider *pb.MicroService) ([]string, error) {
+func GetConsumerIDs(ctx context.Context, provider *discovery.MicroService) ([]string, error) {
 	if provider == nil || len(provider.ServiceId) == 0 {
 		return nil, fmt.Errorf("invalid provider")
 	}
@@ -50,14 +51,14 @@ func GetConsumerIDs(ctx context.Context, provider *pb.MicroService) ([]string, e
 	return consumerIDs, nil
 }
 
-func GetConsumers(ctx context.Context, domainProject string, provider *pb.MicroService,
-	opts ...DependencyRelationFilterOption) ([]*pb.MicroService, error) {
+func GetConsumers(ctx context.Context, domainProject string, provider *discovery.MicroService,
+	opts ...DependencyRelationFilterOption) ([]*discovery.MicroService, error) {
 	dr := NewProviderDependencyRelation(ctx, domainProject, provider)
 	return dr.GetDependencyConsumers(opts...)
 }
 
-func GetProviders(ctx context.Context, domainProject string, consumer *pb.MicroService,
-	opts ...DependencyRelationFilterOption) ([]*pb.MicroService, error) {
+func GetProviders(ctx context.Context, domainProject string, consumer *discovery.MicroService,
+	opts ...DependencyRelationFilterOption) ([]*discovery.MicroService, error) {
 	dr := NewConsumerDependencyRelation(ctx, domainProject, consumer)
 	return dr.GetDependencyProviders(opts...)
 }

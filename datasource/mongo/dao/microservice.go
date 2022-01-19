@@ -21,30 +21,27 @@ import (
 	"context"
 	"errors"
 
-	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
+	"github.com/go-chassis/cari/db/mongo"
 	"github.com/go-chassis/cari/discovery"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/util"
 )
 
 func GetServiceByID(ctx context.Context, serviceID string) (*model.Service, error) {
-	return GetService(ctx, mutil.NewBasicFilter(ctx, mutil.ServiceServiceID(serviceID)))
+	return GetService(ctx, util.NewBasicFilter(ctx, util.ServiceServiceID(serviceID)))
 }
 
 func GetService(ctx context.Context, filter interface{}, opts ...*options.FindOneOptions) (*model.Service, error) {
-	result, err := client.GetMongoClient().FindOne(ctx, model.CollectionService, filter, opts...)
-	if err != nil {
-		return nil, err
-	}
+	result := mongo.GetClient().GetDB().Collection(model.CollectionService).FindOne(ctx, filter, opts...)
 	var svc *model.Service
 	if result.Err() != nil {
 		return nil, datasource.ErrNoData
 	}
-	err = result.Decode(&svc)
+	err := result.Decode(&svc)
 	if err != nil {
 		return nil, err
 	}
@@ -52,24 +49,24 @@ func GetService(ctx context.Context, filter interface{}, opts ...*options.FindOn
 }
 
 func GetServiceID(ctx context.Context, key *discovery.MicroServiceKey) (string, error) {
-	filter := mutil.NewBasicFilter(
+	filter := util.NewBasicFilter(
 		ctx,
-		mutil.ServiceEnv(key.Environment),
-		mutil.ServiceAppID(key.AppId),
-		mutil.ServiceServiceName(key.ServiceName),
-		mutil.ServiceVersion(key.Version),
+		util.ServiceEnv(key.Environment),
+		util.ServiceAppID(key.AppId),
+		util.ServiceServiceName(key.ServiceName),
+		util.ServiceVersion(key.Version),
 	)
 	id, err := getServiceID(ctx, filter)
 	if err != nil && !errors.Is(err, datasource.ErrNoData) {
 		return "", err
 	}
 	if len(id) == 0 && len(key.Alias) != 0 {
-		filter = mutil.NewBasicFilter(
+		filter = util.NewBasicFilter(
 			ctx,
-			mutil.ServiceEnv(key.Environment),
-			mutil.ServiceAppID(key.AppId),
-			mutil.ServiceAlias(key.Alias),
-			mutil.ServiceVersion(key.Version),
+			util.ServiceEnv(key.Environment),
+			util.ServiceAppID(key.AppId),
+			util.ServiceAlias(key.Alias),
+			util.ServiceVersion(key.Version),
 		)
 		return getServiceID(ctx, filter)
 	}
@@ -89,7 +86,7 @@ func getServiceID(ctx context.Context, filter bson.M) (serviceID string, err err
 }
 
 func GetServices(ctx context.Context, filter interface{}, opts ...*options.FindOptions) ([]*model.Service, error) {
-	res, err := client.GetMongoClient().Find(ctx, model.CollectionService, filter, opts...)
+	res, err := mongo.GetClient().GetDB().Collection(model.CollectionService).Find(ctx, filter, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +103,7 @@ func GetServices(ctx context.Context, filter interface{}, opts ...*options.FindO
 }
 
 func GetMicroServices(ctx context.Context, filter interface{}, opts ...*options.FindOptions) ([]*discovery.MicroService, error) {
-	res, err := client.GetMongoClient().Find(ctx, model.CollectionService, filter, opts...)
+	res, err := mongo.GetClient().GetDB().Collection(model.CollectionService).Find(ctx, filter, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -123,19 +120,16 @@ func GetMicroServices(ctx context.Context, filter interface{}, opts ...*options.
 }
 
 func UpdateService(ctx context.Context, filter interface{}, update interface{}, opts ...*options.FindOneAndUpdateOptions) error {
-	res, err := client.GetMongoClient().FindOneAndUpdate(ctx, model.CollectionService, filter, update, opts...)
-	if err != nil {
-		return err
-	}
+	res := mongo.GetClient().GetDB().Collection(model.CollectionService).FindOneAndUpdate(ctx, filter, update, opts...)
 	if res.Err() != nil {
 		// means no doc find, if the operation is update,should return err
-		return client.ErrNoDocuments
+		return ErrNoDocuments
 	}
 	return nil
 }
 
 func GetServicesVersions(ctx context.Context, filter interface{}) ([]string, error) {
-	res, err := client.GetMongoClient().Find(ctx, model.CollectionService, filter)
+	res, err := mongo.GetClient().GetDB().Collection(model.CollectionService).Find(ctx, filter)
 	if err != nil {
 		return nil, nil
 	}
@@ -152,7 +146,7 @@ func GetServicesVersions(ctx context.Context, filter interface{}) ([]string, err
 }
 
 func CountService(ctx context.Context, filter interface{}) (int64, error) {
-	count, err := client.GetMongoClient().Count(ctx, model.CollectionService, filter)
+	count, err := mongo.GetClient().GetDB().Collection(model.CollectionService).CountDocuments(ctx, filter)
 	if err != nil {
 		return 0, err
 	}

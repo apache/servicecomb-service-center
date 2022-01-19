@@ -22,14 +22,16 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
+	"github.com/go-chassis/cari/db/mongo"
+	rbacmodel "github.com/go-chassis/cari/rbac"
+	"go.mongodb.org/mongo-driver/bson"
+
+	"github.com/apache/servicecomb-service-center/datasource/mongo/dao"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
 	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"github.com/apache/servicecomb-service-center/datasource/rbac"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	rbacmodel "github.com/go-chassis/cari/rbac"
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 func (ds *RbacDAO) CreateRole(ctx context.Context, r *rbacmodel.Role) error {
@@ -44,9 +46,9 @@ func (ds *RbacDAO) CreateRole(ctx context.Context, r *rbacmodel.Role) error {
 	r.ID = util.GenerateUUID()
 	r.CreateTime = strconv.FormatInt(time.Now().Unix(), 10)
 	r.UpdateTime = r.CreateTime
-	_, err = client.GetMongoClient().Insert(ctx, model.CollectionRole, r)
+	_, err = mongo.GetClient().GetDB().Collection(model.CollectionRole).InsertOne(ctx, r)
 	if err != nil {
-		if client.IsDuplicateKey(err) {
+		if dao.IsDuplicateKey(err) {
 			return rbac.ErrRoleDuplicated
 		}
 		return err
@@ -57,7 +59,7 @@ func (ds *RbacDAO) CreateRole(ctx context.Context, r *rbacmodel.Role) error {
 
 func (ds *RbacDAO) RoleExist(ctx context.Context, name string) (bool, error) {
 	filter := mutil.NewFilter(mutil.RoleName(name))
-	count, err := client.GetMongoClient().Count(ctx, model.CollectionRole, filter)
+	count, err := mongo.GetClient().GetDB().Collection(model.CollectionRole).CountDocuments(ctx, filter)
 	if err != nil {
 		return false, err
 	}
@@ -69,15 +71,12 @@ func (ds *RbacDAO) RoleExist(ctx context.Context, name string) (bool, error) {
 
 func (ds *RbacDAO) GetRole(ctx context.Context, name string) (*rbacmodel.Role, error) {
 	filter := mutil.NewFilter(mutil.RoleName(name))
-	result, err := client.GetMongoClient().FindOne(ctx, model.CollectionRole, filter)
-	if err != nil {
-		return nil, err
-	}
+	result := mongo.GetClient().GetDB().Collection(model.CollectionRole).FindOne(ctx, filter)
 	if result.Err() != nil {
 		return nil, rbac.ErrRoleNotExist
 	}
 	var role rbacmodel.Role
-	err = result.Decode(&role)
+	err := result.Decode(&role)
 	if err != nil {
 		log.Error("failed to decode role", err)
 		return nil, err
@@ -87,7 +86,7 @@ func (ds *RbacDAO) GetRole(ctx context.Context, name string) (*rbacmodel.Role, e
 
 func (ds *RbacDAO) ListRole(ctx context.Context) ([]*rbacmodel.Role, int64, error) {
 	filter := mutil.NewFilter()
-	cursor, err := client.GetMongoClient().Find(ctx, model.CollectionRole, filter)
+	cursor, err := mongo.GetClient().GetDB().Collection(model.CollectionRole).Find(ctx, filter)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -106,7 +105,8 @@ func (ds *RbacDAO) ListRole(ctx context.Context) ([]*rbacmodel.Role, int64, erro
 }
 
 func (ds *RbacDAO) DeleteRole(ctx context.Context, name string) (bool, error) {
-	n, err := client.Count(ctx, model.CollectionAccount, bson.M{"roles": bson.M{"$in": []string{name}}})
+	n, err := mongo.GetClient().GetDB().Collection(model.CollectionAccount).CountDocuments(ctx,
+		bson.M{"roles": bson.M{"$in": []string{name}}})
 	if err != nil {
 		return false, err
 	}
@@ -114,7 +114,7 @@ func (ds *RbacDAO) DeleteRole(ctx context.Context, name string) (bool, error) {
 		return false, rbac.ErrRoleBindingExist
 	}
 	filter := mutil.NewFilter(mutil.RoleName(name))
-	result, err := client.DeleteDoc(ctx, model.CollectionRole, filter)
+	result, err := mongo.GetClient().GetDB().Collection(model.CollectionRole).DeleteMany(ctx, filter)
 	if err != nil {
 		return false, err
 	}
@@ -133,7 +133,7 @@ func (ds *RbacDAO) UpdateRole(ctx context.Context, name string, role *rbacmodel.
 		mutil.RoleUpdateTime(strconv.FormatInt(time.Now().Unix(), 10)),
 	)
 	updateFilter := mutil.NewFilter(mutil.Set(setFilter))
-	_, err := client.GetMongoClient().Update(ctx, model.CollectionRole, filter, updateFilter)
+	_, err := mongo.GetClient().GetDB().Collection(model.CollectionRole).UpdateMany(ctx, filter, updateFilter)
 	if err != nil {
 		return err
 	}

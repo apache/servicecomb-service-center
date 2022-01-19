@@ -43,28 +43,28 @@ func init() {
 }
 
 type HeartBeatCache struct {
-	cfg *cacheConfig
+	Cfg *CacheConfig
 }
 
-func NewHeartBeatCache(opts heartbeat.Options) (heartbeat.HealthCheck, error) {
-	return &HeartBeatCache{cfg: configuration()}, nil
+func NewHeartBeatCache() (heartbeat.HealthCheck, error) {
+	return &HeartBeatCache{Cfg: Configuration()}, nil
 }
 
 func (h *HeartBeatCache) Heartbeat(ctx context.Context, request *pb.HeartbeatRequest) (*pb.HeartbeatResponse, error) {
-	if ins, ok := h.cfg.instanceHeartbeatStore.Get(request.InstanceId); ok {
+	if ins, ok := h.Cfg.InstanceHeartbeatStore.Get(request.InstanceId); ok {
 		return h.inCacheStrategy(ctx, request, ins)
 	}
 	return h.notInCacheStrategy(ctx, request)
 }
 
-// Add instance related information to the cache
+// CheckInstance func is to add instance related information to the cache
 func (h *HeartBeatCache) CheckInstance(ctx context.Context, instance *pb.MicroServiceInstance) error {
-	return h.cfg.AddHeartbeatTask(instance.ServiceId, instance.InstanceId, instance.HealthCheck.Interval*(instance.HealthCheck.Times+1))
+	return h.Cfg.AddHeartbeatTask(instance.ServiceId, instance.InstanceId, instance.HealthCheck.Interval*(instance.HealthCheck.Times+1))
 }
 
 func (h *HeartBeatCache) inCacheStrategy(ctx context.Context, request *pb.HeartbeatRequest, insHeartbeatInfo interface{}) (*pb.HeartbeatResponse, error) {
 	remoteIP := util.GetIPFromContext(ctx)
-	heartbeatInfo, ok := insHeartbeatInfo.(*instanceHeartbeatInfo)
+	heartbeatInfo, ok := insHeartbeatInfo.(*InstanceHeartbeatInfo)
 	if !ok {
 		log.Error("type conversion failed: %v", ErrHeartbeatConversionFailed)
 		resp := &pb.HeartbeatResponse{
@@ -72,7 +72,7 @@ func (h *HeartBeatCache) inCacheStrategy(ctx context.Context, request *pb.Heartb
 		}
 		return resp, ErrHeartbeatConversionFailed
 	}
-	err := h.cfg.AddHeartbeatTask(request.ServiceId, request.InstanceId, heartbeatInfo.ttl)
+	err := h.Cfg.AddHeartbeatTask(request.ServiceId, request.InstanceId, heartbeatInfo.TTL)
 	if err != nil {
 		log.Error(fmt.Sprintf("heartbeat failed, instance[%s]. operator %s", request.InstanceId, remoteIP), err)
 		resp := &pb.HeartbeatResponse{
@@ -111,7 +111,7 @@ func (h *HeartBeatCache) notInCacheStrategy(ctx context.Context, request *pb.Hea
 	if times > maxTimes || times < minTimes {
 		times = maxTimes
 	}
-	err = h.cfg.AddHeartbeatTask(request.ServiceId, request.InstanceId, interval*(times+1))
+	err = h.Cfg.AddHeartbeatTask(request.ServiceId, request.InstanceId, interval*(times+1))
 	if err != nil {
 		log.Error(fmt.Sprintf("heartbeat failed, instance[%s]. operator %s", request.InstanceId, remoteIP), err)
 		resp := &pb.HeartbeatResponse{
@@ -121,7 +121,7 @@ func (h *HeartBeatCache) notInCacheStrategy(ctx context.Context, request *pb.Hea
 	}
 	err = updateInstance(ctx, request.ServiceId, request.InstanceId)
 	if err != nil {
-		h.cfg.RemoveCacheInstance(request.InstanceId)
+		h.Cfg.RemoveCacheInstance(request.InstanceId)
 		log.Error(fmt.Sprintf("heartbeat failed, instance[%s]. operator %s", request.InstanceId, remoteIP), err)
 		resp := &pb.HeartbeatResponse{
 			Response: pb.CreateResponseWithSCErr(pb.NewError(pb.ErrInstanceNotExists, err.Error())),

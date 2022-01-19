@@ -23,19 +23,17 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
-type healthCheckEngine func(opts Options) (HealthCheck, error)
+type healthCheckEngine func() (HealthCheck, error)
 
 var (
 	plugins             = make(map[ImplName]healthCheckEngine)
 	healthCheckInstance HealthCheck
 )
 
-// load plugins configuration into plugins
 func Install(pluginImplName string, engineFunc healthCheckEngine) {
 	plugins[ImplName(pluginImplName)] = engineFunc
 }
 
-// construct plugin instance
 func Init(opts Options) error {
 	inst, err := New(opts)
 	if err != nil {
@@ -54,7 +52,7 @@ func New(opts Options) (HealthCheck, error) {
 	if !ok {
 		return nil, ErrPluginNotSupport
 	}
-	return f(opts)
+	return f()
 }
 
 // Instance is the instance of HealthCheck
