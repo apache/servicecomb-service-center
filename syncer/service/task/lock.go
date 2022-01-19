@@ -1,11 +1,6 @@
 package task
 
 import (
-	// glint
-	_ "github.com/go-chassis/cari/dlock/bootstrap"
-)
-
-import (
 	"context"
 	"errors"
 	"fmt"
@@ -15,6 +10,7 @@ import (
 	serverconfig "github.com/apache/servicecomb-service-center/server/config"
 	"github.com/go-chassis/cari/dlock"
 
+	_ "github.com/go-chassis/cari/dlock/bootstrap"
 	"github.com/go-chassis/foundation/gopool"
 )
 
