@@ -28,6 +28,7 @@ import (
 	quotasvc "github.com/apache/servicecomb-service-center/server/service/quota"
 	"github.com/apache/servicecomb-service-center/server/service/validator"
 	"github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/cari/dlock"
 	rbacmodel "github.com/go-chassis/cari/rbac"
 )
 
@@ -41,6 +42,18 @@ func CreateRole(ctx context.Context, r *rbacmodel.Role) error {
 	if quotaErr != nil {
 		return rbacmodel.NewError(rbacmodel.ErrRoleNoQuota, quotaErr.Error())
 	}
+
+	lockKey := "/role-creating/" + r.Name
+	if err := dlock.TryLock(lockKey, -1); err != nil {
+		err = fmt.Errorf("role %s is creating, err: %s", r.Name, err.Error())
+		return discovery.NewError(discovery.ErrInvalidParams, err.Error())
+	}
+	defer func() {
+		if err := dlock.Unlock(lockKey); err != nil {
+			log.Error("unlock failed", err)
+		}
+	}()
+
 	err = rbac.Instance().CreateRole(ctx, r)
 	if err == nil {
 		log.Info(fmt.Sprintf("create role [%s] success", r.Name))

@@ -20,7 +20,6 @@ package etcd
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"strconv"
 	"time"
 
@@ -31,22 +30,11 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	esync "github.com/apache/servicecomb-service-center/datasource/etcd/sync"
 	"github.com/apache/servicecomb-service-center/datasource/rbac"
-	"github.com/apache/servicecomb-service-center/pkg/etcdsync"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
 func (rm *RbacDAO) CreateRole(ctx context.Context, r *crbac.Role) error {
-	lock, err := etcdsync.Lock("/role-creating/"+r.Name, -1, false)
-	if err != nil {
-		return fmt.Errorf("role %s is creating", r.Name)
-	}
-	defer func() {
-		err := lock.Unlock()
-		if err != nil {
-			log.Error("can not release role lock", err)
-		}
-	}()
 	key := path.GenerateRBACRoleKey(r.Name)
 	exist, err := rm.RoleExist(ctx, r.Name)
 	if err != nil {

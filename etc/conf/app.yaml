@@ -70,7 +70,7 @@ cipher:
 ssl:
   dir:
   # ssl.mode enable ssl or not, set 1 if enable
-  mode: 0
+  enable: false
   # minimal tls protocol, [TLSv1.0, TLSv1.1, TLSv1.2]
   minVersion: TLSv1.2
   # ssl.verifyClient enable verify client certification CN
