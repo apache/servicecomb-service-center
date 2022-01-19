@@ -17,51 +17,41 @@
  * under the License.
  */
 
-package event
+package event_test
 
 import (
 	"testing"
 
 	"github.com/go-chassis/cari/discovery"
-	"github.com/go-chassis/go-chassis/v2/storage"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/event"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
 	"github.com/apache/servicecomb-service-center/server/syncernotify"
-
-	_ "github.com/apache/servicecomb-service-center/server/init"
-	_ "github.com/apache/servicecomb-service-center/server/plugin/security/cipher/buildin"
+	_ "github.com/apache/servicecomb-service-center/test"
 )
-
-func init() {
-	config := storage.Options{
-		URI: "mongodb://localhost:27017",
-	}
-	client.NewMongoClient(config)
-}
 
 func TestInstanceEventHandler_OnEvent(t *testing.T) {
 
 	t.Run("microservice not nil after query database", func(t *testing.T) {
-		h := InstanceEventHandler{}
+		h := event.InstanceEventHandler{}
 		h.OnEvent(mongoAssign())
 		assert.NotNil(t, discovery.MicroService{})
 	})
 	t.Run("when there is no such a service in database", func(t *testing.T) {
-		h := InstanceEventHandler{}
+		h := event.InstanceEventHandler{}
 		h.OnEvent(mongoEventWronServiceId())
 		assert.Error(t, assert.AnError, "get from db failed")
 	})
 	t.Run("OnEvent test when syncer notify center closed", func(t *testing.T) {
-		h := InstanceEventHandler{}
+		h := event.InstanceEventHandler{}
 		h.OnEvent(mongoAssign())
 		assert.Error(t, assert.AnError)
 	})
 	t.Run("OnEvent test when syncer notify center open", func(t *testing.T) {
 		syncernotify.GetSyncerNotifyCenter().Start()
-		h := InstanceEventHandler{}
+		h := event.InstanceEventHandler{}
 		h.OnEvent(mongoAssign())
 		assert.Equal(t, false, t.Failed(), "add event succeed")
 	})
@@ -71,7 +61,7 @@ func TestNotifySyncerInstanceEvent(t *testing.T) {
 	t.Run("test when data is ok", func(t *testing.T) {
 		mongoEvent := mongoAssign()
 		microService := getMicroService()
-		NotifySyncerInstanceEvent(mongoEvent, microService)
+		event.NotifySyncerInstanceEvent(mongoEvent, microService)
 		assert.Equal(t, false, t.Failed())
 	})
 }

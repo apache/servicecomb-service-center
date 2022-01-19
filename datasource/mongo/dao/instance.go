@@ -20,18 +20,18 @@ package dao
 import (
 	"context"
 
+	"github.com/go-chassis/cari/db/mongo"
 	"github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/cari/pkg/errsvc"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
-	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/util"
 )
 
 func GetInstances(ctx context.Context, filter interface{}) ([]*model.Instance, error) {
-	res, err := client.GetMongoClient().Find(ctx, model.CollectionInstance, filter)
+	res, err := mongo.GetClient().GetDB().Collection(model.CollectionInstance).Find(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -48,13 +48,13 @@ func GetInstances(ctx context.Context, filter interface{}) ([]*model.Instance, e
 }
 
 func GetMicroServiceInstancesByID(ctx context.Context, serviceID string) ([]*discovery.MicroServiceInstance, error) {
-	filter := mutil.NewFilter(mutil.InstanceServiceID(serviceID))
-	option := &options.FindOptions{Sort: bson.M{mutil.ConnectWithDot([]string{model.ColumnInstance, model.ColumnVersion}): -1}}
+	filter := util.NewFilter(util.InstanceServiceID(serviceID))
+	option := &options.FindOptions{Sort: bson.M{util.ConnectWithDot([]string{model.ColumnInstance, model.ColumnVersion}): -1}}
 	return GetMicroServiceInstances(ctx, filter, option)
 }
 
 func GetMicroServiceInstances(ctx context.Context, filter interface{}, opts ...*options.FindOptions) ([]*discovery.MicroServiceInstance, error) {
-	res, err := client.GetMongoClient().Find(ctx, model.CollectionInstance, filter, opts...)
+	res, err := mongo.GetClient().GetDB().Collection(model.CollectionInstance).Find(ctx, filter, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func GetMicroServiceInstances(ctx context.Context, filter interface{}, opts ...*
 }
 
 func CountInstance(ctx context.Context, filter interface{}) (int64, error) {
-	count, err := client.GetMongoClient().Count(ctx, model.CollectionInstance, filter)
+	count, err := mongo.GetClient().GetDB().Collection(model.CollectionInstance).CountDocuments(ctx, filter)
 	if err != nil {
 		return 0, err
 	}
@@ -79,7 +79,7 @@ func CountInstance(ctx context.Context, filter interface{}) (int64, error) {
 }
 
 func UpdateInstance(ctx context.Context, filter interface{}, update interface{}, opts ...*options.UpdateOptions) *errsvc.Error {
-	_, err := client.GetMongoClient().Update(ctx, model.CollectionInstance, filter, update, opts...)
+	_, err := mongo.GetClient().GetDB().Collection(model.CollectionInstance).UpdateMany(ctx, filter, update, opts...)
 	if err != nil {
 		return discovery.NewError(discovery.ErrUnavailableBackend, err.Error())
 	}
@@ -87,6 +87,10 @@ func UpdateInstance(ctx context.Context, filter interface{}, update interface{},
 }
 
 func ExistInstance(ctx context.Context, serviceID string, instanceID string) (bool, error) {
-	filter := mutil.NewBasicFilter(ctx, mutil.InstanceServiceID(serviceID), mutil.InstanceInstanceID(instanceID))
-	return client.GetMongoClient().DocExist(ctx, model.CollectionInstance, filter)
+	filter := util.NewBasicFilter(ctx, util.InstanceServiceID(serviceID), util.InstanceInstanceID(instanceID))
+	result := mongo.GetClient().GetDB().Collection(model.CollectionInstance).FindOne(ctx, filter)
+	if result.Err() != nil {
+		return false, nil
+	}
+	return true, nil
 }

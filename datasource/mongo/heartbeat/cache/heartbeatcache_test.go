@@ -15,23 +15,25 @@
  * limitations under the License.
  */
 
-package heartbeatcache
+package heartbeatcache_test
 
 import (
 	"context"
 	"testing"
 	"time"
 
+	"github.com/go-chassis/cari/db/mongo"
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson"
 
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/heartbeat/cache"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/util"
+	_ "github.com/apache/servicecomb-service-center/test"
 )
 
-var heartBeatCheck = &HeartBeatCache{cfg: configuration()}
+var heartBeatCheck = &heartbeatcache.HeartBeatCache{Cfg: heartbeatcache.Configuration()}
 
 func TestHeartBeatCheck(t *testing.T) {
 	t.Run("heartbeat check: instance does not exist,it should be failed", func(t *testing.T) {
@@ -44,7 +46,7 @@ func TestHeartBeatCheck(t *testing.T) {
 	})
 
 	t.Run("heartbeat check: data exists in the cache,but not in db,it should be failed", func(t *testing.T) {
-		err := heartBeatCheck.cfg.AddHeartbeatTask("not-exist-svc", "not-exist-ins", 30)
+		err := heartBeatCheck.Cfg.AddHeartbeatTask("not-exist-svc", "not-exist-ins", 30)
 		assert.Nil(t, err)
 		resp, err := heartBeatCheck.Heartbeat(context.Background(), &pb.HeartbeatRequest{
 			ServiceId:  "serviceId1",
@@ -69,10 +71,10 @@ func TestHeartBeatCheck(t *testing.T) {
 		filter := bson.M{
 			util.ConnectWithDot([]string{model.ColumnInstance, model.ColumnInstanceID}): instanceDB.Instance.InstanceId,
 		}
-		_, _ = client.GetMongoClient().Delete(context.Background(), model.CollectionInstance, filter)
-		_, err := client.GetMongoClient().Insert(context.Background(), model.CollectionInstance, instanceDB)
+		_, _ = mongo.GetClient().GetDB().Collection(model.CollectionInstance).DeleteOne(context.Background(), filter)
+		_, err := mongo.GetClient().GetDB().Collection(model.CollectionInstance).InsertOne(context.Background(), instanceDB)
 		assert.Equal(t, nil, err)
-		err = heartBeatCheck.cfg.AddHeartbeatTask(instanceDB.Instance.ServiceId, instanceDB.Instance.InstanceId, instanceDB.Instance.HealthCheck.Interval*(instanceDB.Instance.HealthCheck.Times+1))
+		err = heartBeatCheck.Cfg.AddHeartbeatTask(instanceDB.Instance.ServiceId, instanceDB.Instance.InstanceId, instanceDB.Instance.HealthCheck.Interval*(instanceDB.Instance.HealthCheck.Times+1))
 		assert.Equal(t, nil, err)
 		resp, err := heartBeatCheck.Heartbeat(context.Background(), &pb.HeartbeatRequest{
 			ServiceId:  "serviceIdDB",
@@ -80,7 +82,7 @@ func TestHeartBeatCheck(t *testing.T) {
 		})
 		assert.Nil(t, err)
 		assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
-		_, err = client.GetMongoClient().Delete(context.Background(), model.CollectionInstance, filter)
+		_, err = mongo.GetClient().GetDB().Collection(model.CollectionInstance).DeleteOne(context.Background(), filter)
 		assert.Nil(t, err)
 	})
 }

@@ -20,13 +20,13 @@ package dao
 import (
 	"context"
 
-	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
+	"github.com/go-chassis/cari/db/mongo"
+	"github.com/go-chassis/cari/discovery"
 
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
+	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/go-chassis/cari/discovery"
 )
 
 func GetProviderDeps(ctx context.Context, provider *discovery.MicroService) (*discovery.MicroServiceDependency, error) {
@@ -49,15 +49,13 @@ func getServiceOfDeps(ctx context.Context, ruleType string, provider *discovery.
 }
 
 func getDeps(ctx context.Context, filter interface{}) (*model.DependencyRule, error) {
-	findRes, err := client.GetMongoClient().FindOne(ctx, model.CollectionDep, filter)
-	if err != nil {
-		return nil, err
-	}
+	findRes := mongo.GetClient().GetDB().Collection(model.CollectionDep).FindOne(ctx, filter)
+
 	var depRule *model.DependencyRule
 	if findRes.Err() != nil {
 		return nil, datasource.ErrNoData
 	}
-	err = findRes.Decode(&depRule)
+	err := findRes.Decode(&depRule)
 	if err != nil {
 		return nil, err
 	}

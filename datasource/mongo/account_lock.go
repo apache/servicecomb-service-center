@@ -1,17 +1,19 @@
-// Licensed to the Apache Software Foundation (ASF) under one or more
-// contributor license agreements.  See the NOTICE file distributed with
-// this work for additional information regarding copyright ownership.
-// The ASF licenses this file to You under the Apache License, Version 2.0
-// (the "License"); you may not use this file except in compliance with
-// the License.  You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package mongo
 
@@ -19,13 +21,14 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
+	dmongo "github.com/go-chassis/cari/db/mongo"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+
+	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
 	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"github.com/apache/servicecomb-service-center/datasource/rbac"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func (al *RbacDAO) UpsertLock(ctx context.Context, lock *rbac.Lock) error {
@@ -37,12 +40,8 @@ func (al *RbacDAO) UpsertLock(ctx context.Context, lock *rbac.Lock) error {
 		mutil.AccountLockStatus(lock.Status),
 		mutil.AccountLockReleaseAt(releaseAt),
 	)))
-	result, err := client.GetMongoClient().FindOneAndUpdate(ctx, model.CollectionAccountLock, filter, updateFilter,
+	result := dmongo.GetClient().GetDB().Collection(model.CollectionAccountLock).FindOneAndUpdate(ctx, filter, updateFilter,
 		options.FindOneAndUpdate().SetUpsert(true))
-	if err != nil {
-		log.Error(fmt.Sprintf("can not save account lock %s", key), err)
-		return err
-	}
 	if result.Err() != nil && result.Err() != mongo.ErrNoDocuments {
 		log.Error(fmt.Sprintf("can not save account lock %s", key), result.Err())
 		return result.Err()
@@ -53,11 +52,8 @@ func (al *RbacDAO) UpsertLock(ctx context.Context, lock *rbac.Lock) error {
 
 func (al *RbacDAO) GetLock(ctx context.Context, key string) (*rbac.Lock, error) {
 	filter := mutil.NewFilter(mutil.AccountLockKey(key))
-	result, err := client.GetMongoClient().FindOne(ctx, model.CollectionAccountLock, filter)
-	if err != nil {
-		return nil, err
-	}
-	if err = result.Err(); err != nil {
+	result := dmongo.GetClient().GetDB().Collection(model.CollectionAccountLock).FindOne(ctx, filter)
+	if err := result.Err(); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, rbac.ErrAccountLockNotExist
 		}
@@ -66,7 +62,7 @@ func (al *RbacDAO) GetLock(ctx context.Context, key string) (*rbac.Lock, error) 
 		return nil, rbac.ErrQueryAccountLockFailed
 	}
 	var lock rbac.Lock
-	err = result.Decode(&lock)
+	err := result.Decode(&lock)
 	if err != nil {
 		log.Error(fmt.Sprintf("failed to decode account lock %s", key), err)
 		return nil, err
@@ -76,7 +72,7 @@ func (al *RbacDAO) GetLock(ctx context.Context, key string) (*rbac.Lock, error) 
 
 func (al *RbacDAO) ListLock(ctx context.Context) ([]*rbac.Lock, int64, error) {
 	filter := mutil.NewFilter()
-	cursor, err := client.GetMongoClient().Find(ctx, model.CollectionAccountLock, filter)
+	cursor, err := dmongo.GetClient().GetDB().Collection(model.CollectionAccountLock).Find(ctx, filter)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -96,7 +92,7 @@ func (al *RbacDAO) ListLock(ctx context.Context) ([]*rbac.Lock, int64, error) {
 
 func (al *RbacDAO) DeleteLock(ctx context.Context, key string) error {
 	filter := mutil.NewFilter(mutil.AccountLockKey(key))
-	_, err := client.GetMongoClient().Delete(ctx, model.CollectionAccountLock, filter)
+	_, err := dmongo.GetClient().GetDB().Collection(model.CollectionAccountLock).DeleteMany(ctx, filter)
 	if err != nil {
 		log.Error(fmt.Sprintf("remove lock %s failed", key), err)
 		return rbac.ErrCannotReleaseLock
@@ -113,7 +109,7 @@ func (al *RbacDAO) DeleteLockList(ctx context.Context, keys []string) error {
 	if len(delKeys) == 0 {
 		return nil
 	}
-	_, err := client.GetMongoClient().BatchDelete(ctx, model.CollectionAccountLock, delKeys)
+	_, err := dmongo.GetClient().GetDB().Collection(model.CollectionAccountLock).BulkWrite(ctx, delKeys)
 	if err != nil {
 		log.Error(fmt.Sprintf("remove locks %v failed", keys), err)
 		return rbac.ErrCannotReleaseLock

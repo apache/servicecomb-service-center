@@ -20,7 +20,7 @@ package model
 import (
 	"time"
 
-	pb "github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/cari/discovery"
 )
 
 const (
@@ -77,10 +77,10 @@ const (
 )
 
 type Service struct {
-	Domain  string            `json:"domain,omitempty"`
-	Project string            `json:"project,omitempty"`
-	Tags    map[string]string `json:"tags,omitempty"`
-	Service *pb.MicroService  `json:"service,omitempty"`
+	Domain  string                  `json:"domain,omitempty"`
+	Project string                  `json:"project,omitempty"`
+	Tags    map[string]string       `json:"tags,omitempty"`
+	Service *discovery.MicroService `json:"service,omitempty"`
 }
 
 type Schema struct {
@@ -93,30 +93,30 @@ type Schema struct {
 }
 
 type Instance struct {
-	Domain      string                   `json:"domain,omitempty"`
-	Project     string                   `json:"project,omitempty"`
-	RefreshTime time.Time                `json:"refreshTime,omitempty" bson:"refresh_time"`
-	Instance    *pb.MicroServiceInstance `json:"instance,omitempty"`
+	Domain      string                          `json:"domain,omitempty"`
+	Project     string                          `json:"project,omitempty"`
+	RefreshTime time.Time                       `json:"refreshTime,omitempty" bson:"refresh_time"`
+	Instance    *discovery.MicroServiceInstance `json:"instance,omitempty"`
 }
 
 type ConsumerDep struct {
-	Domain      string                 `json:"domain,omitempty"`
-	Project     string                 `json:"project,omitempty"`
-	ConsumerID  string                 `json:"consumerID,omitempty" bson:"consumer_id"`
-	UUID        string                 `json:"uuID,omitempty" bson:"uu_id"`
-	ConsumerDep *pb.ConsumerDependency `json:"consumerDep,omitempty" bson:"consumer_dep"`
+	Domain      string                        `json:"domain,omitempty"`
+	Project     string                        `json:"project,omitempty"`
+	ConsumerID  string                        `json:"consumerID,omitempty" bson:"consumer_id"`
+	UUID        string                        `json:"uuID,omitempty" bson:"uu_id"`
+	ConsumerDep *discovery.ConsumerDependency `json:"consumerDep,omitempty" bson:"consumer_dep"`
 }
 
 type DependencyRule struct {
-	Type       string                     `json:"type,omitempty"`
-	Domain     string                     `json:"domain,omitempty"`
-	Project    string                     `json:"project,omitempty"`
-	ServiceKey *pb.MicroServiceKey        `json:"serviceKey,omitempty" bson:"service_key"`
-	Dep        *pb.MicroServiceDependency `json:"dep,omitempty"`
+	Type       string                            `json:"type,omitempty"`
+	Domain     string                            `json:"domain,omitempty"`
+	Project    string                            `json:"project,omitempty"`
+	ServiceKey *discovery.MicroServiceKey        `json:"serviceKey,omitempty" bson:"service_key"`
+	Dep        *discovery.MicroServiceDependency `json:"dep,omitempty"`
 }
 
 type DelDepCacheKey struct {
-	Key  *pb.MicroServiceKey
+	Key  *discovery.MicroServiceKey
 	Type string
 }
 

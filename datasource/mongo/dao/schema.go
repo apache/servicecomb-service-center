@@ -20,25 +20,22 @@ package dao
 import (
 	"context"
 
+	"github.com/go-chassis/cari/db/mongo"
+	"github.com/go-chassis/cari/discovery"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
-	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
-	"github.com/go-chassis/cari/discovery"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/util"
 )
 
 func GetSchema(ctx context.Context, filter interface{}) (*model.Schema, error) {
-	findRes, err := client.GetMongoClient().FindOne(ctx, model.CollectionSchema, filter)
-	if err != nil {
-		return nil, err
-	}
-	if findRes.Err() != nil {
+	result := mongo.GetClient().GetDB().Collection(model.CollectionSchema).FindOne(ctx, filter)
+	if result.Err() != nil {
 		//not get any service,not db err
 		return nil, nil
 	}
 	var schema *model.Schema
-	err = findRes.Decode(&schema)
+	err := result.Decode(&schema)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +43,7 @@ func GetSchema(ctx context.Context, filter interface{}) (*model.Schema, error) {
 }
 
 func GetSchemas(ctx context.Context, filter interface{}) ([]*discovery.Schema, error) {
-	getRes, err := client.GetMongoClient().Find(ctx, model.CollectionSchema, filter)
+	getRes, err := mongo.GetClient().GetDB().Collection(model.CollectionSchema).Find(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -67,16 +64,13 @@ func GetSchemas(ctx context.Context, filter interface{}) ([]*discovery.Schema, e
 }
 
 func SchemaSummaryExist(ctx context.Context, serviceID, schemaID string) (bool, error) {
-	filter := mutil.NewBasicFilter(ctx, mutil.ServiceID(serviceID), mutil.SchemaID(schemaID))
-	res, err := client.GetMongoClient().FindOne(ctx, model.CollectionSchema, filter)
-	if err != nil {
-		return false, err
-	}
+	filter := util.NewBasicFilter(ctx, util.ServiceID(serviceID), util.SchemaID(schemaID))
+	res := mongo.GetClient().GetDB().Collection(model.CollectionSchema).FindOne(ctx, filter)
 	if res.Err() != nil {
 		return false, nil
 	}
 	var s model.Schema
-	err = res.Decode(&s)
+	err := res.Decode(&s)
 	if err != nil {
 		return false, err
 	}
@@ -84,12 +78,12 @@ func SchemaSummaryExist(ctx context.Context, serviceID, schemaID string) (bool, 
 }
 
 func CountSchema(ctx context.Context, serviceID string) (int64, error) {
-	filter := mutil.NewBasicFilter(ctx, mutil.ServiceID(serviceID))
-	return client.Count(ctx, model.CollectionSchema, filter)
+	filter := util.NewBasicFilter(ctx, util.ServiceID(serviceID))
+	return mongo.GetClient().GetDB().Collection(model.CollectionSchema).CountDocuments(ctx, filter)
 }
 
-func UpdateSchema(ctx context.Context, filter interface{}, update interface{}, opts ...*options.FindOneAndUpdateOptions) error {
-	_, err := client.GetMongoClient().FindOneAndUpdate(ctx, model.CollectionSchema, filter, update, opts...)
+func UpdateSchema(ctx context.Context, filter interface{}, update interface{}, opts ...*options.UpdateOptions) error {
+	_, err := mongo.GetClient().GetDB().Collection(model.CollectionSchema).UpdateOne(ctx, filter, update, opts...)
 	if err != nil {
 		return err
 	}

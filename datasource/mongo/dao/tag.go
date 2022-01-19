@@ -20,16 +20,14 @@ package dao
 import (
 	"context"
 
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
+	"github.com/go-chassis/cari/db/mongo"
+
+	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
 func GetTags(ctx context.Context, filter interface{}) (tags map[string]string, err error) {
-	result, err := client.GetMongoClient().FindOne(ctx, model.CollectionService, filter)
-	if err != nil {
-		return nil, err
-	}
+	result := mongo.GetClient().GetDB().Collection(model.CollectionService).FindOne(ctx, filter)
 	if result.Err() != nil {
 		return nil, result.Err()
 	}

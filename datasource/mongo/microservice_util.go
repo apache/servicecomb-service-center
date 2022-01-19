@@ -20,14 +20,15 @@ package mongo
 import (
 	"context"
 
-	"github.com/apache/servicecomb-service-center/datasource/cache"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/dao"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
-	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
-	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/go-chassis/cari/db/mongo"
 	"github.com/go-chassis/cari/discovery"
 	"go.mongodb.org/mongo-driver/bson"
+
+	"github.com/apache/servicecomb-service-center/datasource/cache"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/dao"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
+	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
 func GetServiceByID(ctx context.Context, serviceID string) (*model.Service, error) {
@@ -55,7 +56,8 @@ func ServiceExistID(ctx context.Context, serviceID string) (bool, error) {
 		return true, nil
 	}
 	filter := mutil.NewBasicFilter(ctx, mutil.ServiceServiceID(serviceID))
-	return client.GetMongoClient().DocExist(ctx, model.CollectionService, filter)
+	num, err := mongo.GetClient().GetDB().Collection(model.CollectionService).CountDocuments(ctx, filter)
+	return num != 0, err
 }
 
 func GetAllServicesByDomainProject(ctx context.Context) ([]*model.Service, error) {

@@ -21,9 +21,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
-	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
+	"github.com/go-chassis/cari/db/mongo"
+
+	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
@@ -31,7 +32,7 @@ func AddDomain(ctx context.Context, domain string) error {
 	d := model.Domain{
 		Domain: domain,
 	}
-	result, err := client.GetMongoClient().Insert(ctx, model.CollectionDomain, d)
+	result, err := mongo.GetClient().GetDB().Collection(model.CollectionDomain).InsertOne(ctx, d)
 	if err == nil {
 		log.Info(fmt.Sprintf("insert domain to mongodb success %s", result.InsertedID))
 	}
@@ -39,9 +40,13 @@ func AddDomain(ctx context.Context, domain string) error {
 }
 
 func ExistDomain(ctx context.Context, filter interface{}) (bool, error) {
-	return client.GetMongoClient().DocExist(ctx, model.CollectionDomain, filter)
+	result := mongo.GetClient().GetDB().Collection(model.CollectionDomain).FindOne(ctx, filter)
+	if result.Err() != nil {
+		return false, nil
+	}
+	return true, nil
 }
 
 func CountDomain(ctx context.Context) (int64, error) {
-	return client.GetMongoClient().Count(ctx, model.CollectionDomain, mutil.NewFilter())
+	return mongo.GetClient().GetDB().Collection(model.CollectionDomain).CountDocuments(ctx, util.NewFilter())
 }

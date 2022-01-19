@@ -19,10 +19,10 @@ package heartbeatcache
 
 import "time"
 
-// Store cache structure
-type instanceHeartbeatInfo struct {
-	serviceID   string
-	instanceID  string
-	ttl         int32
-	lastRefresh time.Time
+// InstanceHeartbeatInfo to store cache structure
+type InstanceHeartbeatInfo struct {
+	ServiceID   string
+	InstanceID  string
+	TTL         int32
+	LastRefresh time.Time
 }
