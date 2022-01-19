@@ -1,14 +1,18 @@
 package task
 
 import (
+	_ "github.com/go-chassis/cari/dlock/bootstrap"
+)
+
+import (
 	"context"
 	"errors"
 	"fmt"
 	"time"
 
-	datasourcedlock "github.com/apache/servicecomb-service-center/datasource/dlock"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/server/service/dlock"
+	serverconfig "github.com/apache/servicecomb-service-center/server/config"
+	"github.com/go-chassis/cari/dlock"
 
 	"github.com/go-chassis/foundation/gopool"
 )
@@ -19,6 +23,8 @@ type DistributedLock struct {
 	do                func(ctx context.Context)
 	key               string
 	isLock            bool
+
+	locker dlock.DLock
 }
 
 func (dl *DistributedLock) LockDo() {
@@ -28,14 +34,17 @@ func (dl *DistributedLock) LockDo() {
 		var ctx context.Context
 		var cancel context.CancelFunc
 		failCount := 0
+		dl.newLock()
+
 		for {
 			select {
 			case <-ticker.C:
 				if !dl.isLock {
-					err := dlock.TryLock(dl.key, dl.ttl)
+					err := dl.locker.TryLock(dl.key, dl.ttl)
 					if err != nil {
 						continue
 					}
+					log.Info(fmt.Sprintf("lock key %s success", dl.key))
 
 					ctx, cancel = context.WithCancel(context.Background())
 					dl.do(ctx)
@@ -43,13 +52,13 @@ func (dl *DistributedLock) LockDo() {
 					continue
 				}
 
-				err := dlock.Renew(dl.key)
+				err := dl.locker.Renew(dl.key)
 				if err == nil {
 					log.Info(fmt.Sprintf("renew lock %s success", dl.key))
 					continue
 				}
 
-				if !errors.Is(err, datasourcedlock.ErrDLockNotExists) {
+				if !errors.Is(err, dlock.ErrDLockNotExists) {
 					failCount++
 					log.Error("renew lock failed", err)
 					if failCount == 5 {
@@ -66,7 +75,25 @@ func (dl *DistributedLock) LockDo() {
 				log.Info(fmt.Sprintf("release lock %s", dl.key))
 				return
 			}
-
 		}
 	})
+}
+
+func (dl *DistributedLock) newLock() {
+	kind := serverconfig.GetString("registry.kind", "",
+		serverconfig.WithStandby("registry_plugin"))
+
+	for {
+		err := dlock.Init(dlock.Options{
+			Kind: kind,
+		})
+		if err == nil {
+			dl.locker = dlock.Instance()
+			log.Info("init lock success")
+			break
+		}
+
+		log.Warn(fmt.Sprintf("init dlock failed, %s", err.Error()))
+		time.Sleep(5 * time.Second)
+	}
 }

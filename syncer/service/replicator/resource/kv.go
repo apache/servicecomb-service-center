@@ -5,7 +5,6 @@ import (
 	"errors"
 	"sync"
 
-	svcconfig "github.com/apache/servicecomb-service-center/server/config"
 	v1sync "github.com/apache/servicecomb-service-center/syncer/api/v1"
 
 	"github.com/little-cui/etcdadpt"
@@ -23,7 +22,6 @@ const (
 var (
 	manager KeyManager
 
-	ErrNotImplement   = errors.New("not implement")
 	ErrRecordNonExist = errors.New("record non exist")
 )
 
@@ -110,37 +108,11 @@ type KeyManager interface {
 	Delete(ctx context.Context, key string) error
 }
 
-type mongoManager struct {
-}
-
-func (m *mongoManager) Get(_ context.Context, _ string) ([]byte, error) {
-	return nil, ErrNotImplement
-}
-
-func (m *mongoManager) Put(_ context.Context, _ string, _ []byte) error {
-	return ErrNotImplement
-}
-
-func (m *mongoManager) Post(_ context.Context, _ string, _ []byte) error {
-	return ErrNotImplement
-}
-
-func (m *mongoManager) Delete(_ context.Context, _ string) error {
-	return ErrNotImplement
-}
-
 type etcdManager struct {
 }
 
 func InitManager() {
-	kind := svcconfig.GetString("registry.kind", "",
-		svcconfig.WithStandby("registry_plugin"))
-	if kind == "etcd" {
-		manager = new(etcdManager)
-		return
-	}
-
-	manager = new(mongoManager)
+	manager = new(etcdManager)
 }
 
 func (e *etcdManager) Get(ctx context.Context, key string) ([]byte, error) {

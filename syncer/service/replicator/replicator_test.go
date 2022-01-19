@@ -19,7 +19,7 @@ func Test_replicatorManager_Persist(t *testing.T) {
 	assert.Equal(t, 0, len(r))
 
 	resource.RegisterResources("fork", func(event *v1sync.Event) resource.Resource {
-		return &forkResources{
+		return &mockResources{
 			loadCurrentResourceResult: nil,
 			needOperateResult:         nil,
 			operateResult:             resource.SuccessResult(),
@@ -63,24 +63,24 @@ func Test_replicatorManager_Persist(t *testing.T) {
 	}
 }
 
-type forkResources struct {
+type mockResources struct {
 	loadCurrentResourceResult *resource.Result
 	needOperateResult         *resource.Result
 	operateResult             *resource.Result
 }
 
-func (f *forkResources) LoadCurrentResource(_ context.Context) *resource.Result {
+func (f *mockResources) LoadCurrentResource(_ context.Context) *resource.Result {
 	return f.loadCurrentResourceResult
 }
 
-func (f *forkResources) NeedOperate(_ context.Context) *resource.Result {
+func (f *mockResources) NeedOperate(_ context.Context) *resource.Result {
 	return f.needOperateResult
 }
 
-func (f *forkResources) Operate(_ context.Context) *resource.Result {
+func (f *mockResources) Operate(_ context.Context) *resource.Result {
 	return f.operateResult
 }
 
-func (f forkResources) FailHandle(_ context.Context, _ int32) (*v1sync.Event, error) {
+func (f mockResources) FailHandle(_ context.Context, _ int32) (*v1sync.Event, error) {
 	return nil, nil
 }

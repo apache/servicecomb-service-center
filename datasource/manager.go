@@ -24,7 +24,6 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/rbac"
 	"github.com/apache/servicecomb-service-center/datasource/schema"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/server/config"
 )
 
 type dataSourceEngine func(opts Options) (DataSource, error)
@@ -32,7 +31,6 @@ type dataSourceEngine func(opts Options) (DataSource, error)
 var (
 	plugins        = make(map[string]dataSourceEngine)
 	dataSourceInst DataSource
-	EnableSync     bool
 )
 
 // load plugins configuration into plugins
@@ -63,12 +61,8 @@ func Init(opts Options) error {
 	err = dlock.Init(dlock.Options{
 		Kind: opts.Kind,
 	})
-	if err != nil {
-		return err
-	}
 
-	EnableSync = config.GetBool("syncer.enabled", false)
-	return nil
+	return err
 }
 
 func initDatasource(opts Options) error {

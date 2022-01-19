@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/apache/servicecomb-service-center/eventbase/datasource"
+	"github.com/apache/servicecomb-service-center/eventbase/model"
+	servicetask "github.com/apache/servicecomb-service-center/eventbase/service/task"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	serverconfig "github.com/apache/servicecomb-service-center/server/config"
 
@@ -20,7 +22,7 @@ func initDatabase() {
 }
 
 func ListTask(ctx context.Context) ([]*carisync.Task, error) {
-	return datasource.GetTaskDao().List(ctx)
+	return servicetask.List(ctx, &model.ListTaskRequest{})
 }
 
 type syncTasks []*carisync.Task
