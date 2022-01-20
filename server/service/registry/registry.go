@@ -22,13 +22,26 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
 	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
+	"github.com/apache/servicecomb-service-center/server/service/sync"
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/cari/pkg/errsvc"
 	"github.com/go-chassis/foundation/gopool"
 )
+
+func addDefaultContextValue(ctx context.Context) context.Context {
+	ctx = util.WithNoCache(ctx)
+	// set default domain/project
+	ctx = util.SetDomainProject(ctx, datasource.RegistryDomain, datasource.RegistryProject)
+	// register without quota check
+	ctx = util.SetContext(ctx, core.CtxScSelf, true)
+	// is a sync operation
+	return sync.SetContext(ctx)
+}
 
 func SelfRegister(ctx context.Context) error {
 	err := selfRegister(ctx)
@@ -41,7 +54,7 @@ func SelfRegister(ctx context.Context) error {
 }
 
 func selfRegister(pCtx context.Context) error {
-	ctx := core.AddDefaultContextValue(pCtx)
+	ctx := addDefaultContextValue(pCtx)
 	err := registerService(ctx)
 	if err != nil {
 		return err
@@ -96,7 +109,7 @@ func registerInstance(ctx context.Context) error {
 }
 
 func selfHeartBeat(pCtx context.Context) error {
-	ctx := core.AddDefaultContextValue(pCtx)
+	ctx := addDefaultContextValue(pCtx)
 	err := discosvc.SendHeartbeat(ctx, core.HeartbeatRequest())
 	if err != nil {
 		log.Error("send heartbeat failed", err)
@@ -133,7 +146,7 @@ func SelfUnregister(pCtx context.Context) error {
 	if len(core.Instance.InstanceId) == 0 {
 		return nil
 	}
-	ctx := core.AddDefaultContextValue(pCtx)
+	ctx := addDefaultContextValue(pCtx)
 	err := discosvc.UnregisterInstance(ctx, core.UnregisterInstanceRequest())
 	if err != nil {
 		log.Error(fmt.Sprintf("unregister service center instance[%s/%s] failed",
