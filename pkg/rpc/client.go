@@ -18,9 +18,11 @@
 package rpc
 
 import (
+	"crypto/tls"
 	"errors"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/resolver"
 	"google.golang.org/grpc/resolver/manual"
 )
@@ -33,39 +35,54 @@ type Config struct {
 	Addrs       []string
 	Scheme      string
 	ServiceName string
+	TLSConfig   *TLSConfig
+}
+
+type TLSConfig struct {
+	InsecureSkipVerify bool
 }
 
 func GetPickFirstLbConn(config *Config) (*grpc.ClientConn, error) {
-	return getLbConn(config.Addrs, config.Scheme, config.ServiceName, func() []grpc.DialOption {
+	return getLbConn(config, func() []grpc.DialOption {
 		return []grpc.DialOption{}
 	})
 }
 
 func GetRoundRobinLbConn(config *Config) (*grpc.ClientConn, error) {
-	return getLbConn(config.Addrs, config.Scheme, config.ServiceName, func() []grpc.DialOption {
+	return getLbConn(config, func() []grpc.DialOption {
 		return []grpc.DialOption{
 			grpc.WithDefaultServiceConfig(`{"loadBalancingConfig": [{"round_robin":{}}]}`),
 		}
 	})
 }
 
-func getLbConn(addrs []string, scheme, serviceName string, dialOptions func() []grpc.DialOption) (*grpc.ClientConn, error) {
-	if len(addrs) <= 0 {
+func getLbConn(config *Config, dialOptions func() []grpc.DialOption) (*grpc.ClientConn, error) {
+	addresses := config.Addrs
+	if len(addresses) <= 0 {
 		return nil, ErrAddrEmpty
 	}
 
-	addr := make([]resolver.Address, 0, len(addrs))
-	for _, a := range addrs {
+	addr := make([]resolver.Address, 0, len(addresses))
+	for _, a := range addresses {
 		addr = append(addr, resolver.Address{Addr: a})
 	}
 
-	r := manual.NewBuilderWithScheme(scheme)
+	r := manual.NewBuilderWithScheme(config.Scheme)
 	r.InitialState(resolver.State{Addresses: addr})
 
 	opinions := dialOptions()
-	opinions = append(opinions, grpc.WithInsecure())
+	if config.TLSConfig != nil {
+		cfg := &tls.Config{
+			InsecureSkipVerify: config.TLSConfig.InsecureSkipVerify,
+		}
+
+		opinions = append(opinions, grpc.WithTransportCredentials(credentials.NewTLS(cfg)))
+	} else {
+		opinions = append(opinions, grpc.WithInsecure())
+	}
+
 	opinions = append(opinions, grpc.WithResolvers(r))
 
-	conn, err := grpc.Dial(r.Scheme()+":///"+serviceName, opinions...)
+	conn, err := grpc.Dial(r.Scheme()+":///"+config.ServiceName, opinions...)
 	return conn, err
 }
