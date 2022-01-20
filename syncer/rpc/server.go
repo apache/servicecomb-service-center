@@ -26,8 +26,8 @@ import (
 	"github.com/apache/servicecomb-service-center/syncer/service/replicator/resource"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/server/config"
 	v1sync "github.com/apache/servicecomb-service-center/syncer/api/v1"
+	"github.com/apache/servicecomb-service-center/syncer/config"
 )
 
 const (
@@ -75,8 +75,7 @@ func (s *Server) Health(_ context.Context, _ *v1sync.HealthRequest) (*v1sync.Hea
 		LocalTimestamp: time.Now().UnixNano(),
 	}
 	// TODO enable to close syncer
-	syncerEnabled := config.GetBool("sync.enableOnStart", false)
-	if !syncerEnabled {
+	if !config.GetConfig().Sync.EnableOnStart {
 		resp.Status = HealthStatusClose
 		return resp, nil
 	}

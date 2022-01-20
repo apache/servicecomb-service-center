@@ -20,7 +20,6 @@ import (
 	"testing"
 
 	"github.com/apache/servicecomb-service-center/datasource"
-
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/go-chassis/cari/discovery"
 )

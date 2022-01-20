@@ -21,10 +21,9 @@ import (
 	"net/http"
 
 	"github.com/apache/servicecomb-service-center/pkg/chain"
-	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/config"
+	syncsvc "github.com/apache/servicecomb-service-center/server/service/sync"
 )
 
 const (
@@ -32,20 +31,6 @@ const (
 	queryNoCache   = "noCache"
 	queryCacheOnly = "cacheOnly"
 )
-
-const (
-	syncEnable = "1"
-)
-
-var enableSync string
-
-func init() {
-	enable := config.GetBool("sync.enableOnStart", false)
-	if enable {
-		enableSync = syncEnable
-	}
-	log.Info("enableSync is " + enableSync)
-}
 
 type Handler struct {
 }
@@ -64,7 +49,7 @@ func (c *Handler) Handle(i *chain.Invocation) {
 		v4.Write(r)
 	}
 
-	i.WithContext(util.CtxEnableSync, enableSync)
+	syncsvc.SetContext(i.Context())
 
 	c.commonQueryToContext(i)
 

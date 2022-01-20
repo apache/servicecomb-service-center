@@ -101,12 +101,6 @@ func getEndpoints() []string {
 	return []string{endpoint}
 }
 
-func AddDefaultContextValue(ctx context.Context) context.Context {
-	return util.WithNoCache(util.SetContext(util.SetDomainProject(ctx,
-		datasource.RegistryDomain, datasource.RegistryProject),
-		CtxScSelf, true))
-}
-
 func RegisterGlobalServices() {
 	for _, s := range strings.Split(config.GetRegistry().GlobalVisible, ",") {
 		if len(s) > 0 {
