@@ -2,6 +2,7 @@ package sync
 
 import (
 	"context"
+	"fmt"
 
 	// glint
 	_ "github.com/apache/servicecomb-service-center/eventbase/bootstrap"
@@ -32,7 +33,7 @@ func Work() {
 func work() {
 	err := replicator.Work()
 	if err != nil {
-		log.Warn(err.Error())
+		log.Warn(fmt.Sprintf("replicate work init failed, %s", err.Error()))
 		return
 	}
 
