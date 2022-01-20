@@ -36,6 +36,7 @@ const (
 )
 
 const (
+	ColumnName                 = "name"
 	ColumnDomain               = "domain"
 	ColumnProject              = "project"
 	ColumnTag                  = "tags"

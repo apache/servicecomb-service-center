@@ -31,6 +31,7 @@ import (
 	dmongo "github.com/go-chassis/cari/db/mongo"
 	"github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/cari/pkg/errsvc"
+	csync "github.com/go-chassis/cari/sync"
 	"github.com/go-chassis/foundation/gopool"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -41,6 +42,7 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/mongo/dao"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/heartbeat"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/sync"
 	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"github.com/apache/servicecomb-service-center/datasource/schema"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -48,6 +50,7 @@ import (
 	apt "github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
 	quotasvc "github.com/apache/servicecomb-service-center/server/service/quota"
+	"github.com/apache/servicecomb-service-center/syncer/service/event"
 )
 
 const baseTen = 10
@@ -104,8 +107,7 @@ func (ds *MetadataManager) RegisterService(ctx context.Context, request *discove
 			}, nil
 		}
 	}
-	insertRes, err := dmongo.GetClient().GetDB().Collection(model.CollectionService).InsertOne(ctx,
-		&model.Service{Domain: domain, Project: project, Service: service})
+	err := createServiceTxn(ctx, request, domain, project, service)
 	if err != nil {
 		if dao.IsDuplicateKey(err) {
 			serviceIDInner, err := GetServiceID(ctx, &discovery.MicroServiceKey{
@@ -130,11 +132,21 @@ func (ds *MetadataManager) RegisterService(ctx context.Context, request *discove
 			serviceFlag, remoteIP), err)
 		return nil, discovery.NewError(discovery.ErrInternal, err.Error())
 	}
-
-	log.Info(fmt.Sprintf("create micro-service[%s][%s] successfully,operator: %s", service.ServiceId, insertRes.InsertedID, remoteIP))
 	return &discovery.CreateServiceResponse{
 		ServiceId: service.ServiceId,
 	}, nil
+}
+
+func createServiceTxn(ctx context.Context, request *discovery.CreateServiceRequest, domain string, project string,
+	service *discovery.MicroService) error {
+	return dmongo.GetClient().ExecTxn(ctx, func(sessionContext mongo.SessionContext) error {
+		_, err := dmongo.GetClient().GetDB().Collection(model.CollectionService).InsertOne(ctx,
+			&model.Service{Domain: domain, Project: project, Tags: request.Tags, Service: service})
+		if err != nil {
+			return err
+		}
+		return sync.DoCreateOpts(sessionContext, datasource.ResourceService, request)
+	})
 }
 
 func (ds *MetadataManager) ListService(ctx context.Context, request *discovery.GetServicesRequest) (*discovery.GetServicesResponse, error) {
@@ -300,8 +312,7 @@ func (ds *MetadataManager) UnregisterService(ctx context.Context, request *disco
 		log.Error(fmt.Sprintf("micro-service[%s] failed, operator: %s", serviceID, remoteIP), err)
 		return discovery.NewError(discovery.ErrUnavailableBackend, err.Error())
 	}
-	_, err = dmongo.GetClient().GetDB().Collection(model.CollectionService).BulkWrite(ctx,
-		[]mongo.WriteModel{mongo.NewDeleteOneModel().SetFilter(bson.M{mutil.ConnectWithDot([]string{model.ColumnService, model.ColumnServiceID}): serviceID})})
+	err = deleteServiceTxn(ctx, err, serviceID, force)
 	if err != nil {
 		log.Error(fmt.Sprintf("micro-service[%s] failed, operator: %s", serviceID, remoteIP), err)
 		return discovery.NewError(discovery.ErrUnavailableBackend, err.Error())
@@ -325,6 +336,19 @@ func (ds *MetadataManager) UnregisterService(ctx context.Context, request *disco
 	return nil
 }
 
+func deleteServiceTxn(ctx context.Context, err error, serviceID string, force bool) error {
+	return dmongo.GetClient().ExecTxn(ctx, func(sessionContext mongo.SessionContext) error {
+		_, err = dmongo.GetClient().GetDB().Collection(model.CollectionService).BulkWrite(ctx,
+			[]mongo.WriteModel{mongo.NewDeleteOneModel().SetFilter(
+				bson.M{mutil.ConnectWithDot([]string{model.ColumnService, model.ColumnServiceID}): serviceID})})
+		if err != nil {
+			return err
+		}
+		return sync.DoDeleteOpts(sessionContext, datasource.ResourceService, serviceID,
+			&discovery.DeleteServiceRequest{ServiceId: serviceID, Force: force})
+	})
+}
+
 func (ds *MetadataManager) PutServiceProperties(ctx context.Context, request *discovery.UpdateServicePropsRequest) error {
 	filter := mutil.NewBasicFilter(ctx, mutil.ServiceServiceID(request.ServiceId))
 	setFilter := mutil.NewFilter(
@@ -334,7 +358,7 @@ func (ds *MetadataManager) PutServiceProperties(ctx context.Context, request *di
 	updateFilter := mutil.NewFilter(
 		mutil.Set(setFilter),
 	)
-	err := dao.UpdateService(ctx, filter, updateFilter)
+	err := updateServiceTxn(ctx, request, filter, updateFilter)
 	if err != nil {
 		log.Error(fmt.Sprintf("update service %s properties failed, update mongo failed", request.ServiceId), err)
 		if err == dao.ErrNoDocuments {
@@ -343,6 +367,16 @@ func (ds *MetadataManager) PutServiceProperties(ctx context.Context, request *di
 		return discovery.NewError(discovery.ErrUnavailableBackend, "Update doc in mongo failed.")
 	}
 	return nil
+}
+
+func updateServiceTxn(ctx context.Context, request *discovery.UpdateServicePropsRequest, filter bson.M, updateFilter bson.M) error {
+	return dmongo.GetClient().ExecTxn(ctx, func(sessionContext mongo.SessionContext) error {
+		err := dao.UpdateService(ctx, filter, updateFilter)
+		if err != nil {
+			return err
+		}
+		return sync.DoUpdateOpts(sessionContext, datasource.ResourceService, request)
+	})
 }
 
 func (ds *MetadataManager) GetServiceDetail(ctx context.Context, request *discovery.GetServiceRequest) (
@@ -1021,6 +1055,13 @@ func (ds *MetadataManager) RegisterInstance(ctx context.Context,
 	return RegisterInstanceSingle(ctx, request, isCustomID)
 }
 
+func sendEvent(ctx context.Context, action string, resourceType string, resource interface{}) {
+	if !util.EnableSync(ctx) {
+		return
+	}
+	event.Publish(ctx, action, resourceType, resource)
+}
+
 func RegisterInstanceSingle(ctx context.Context, request *discovery.RegisterInstanceRequest,
 	isUserDefinedID bool) (*discovery.RegisterInstanceResponse, error) {
 
@@ -1339,7 +1380,7 @@ func (ds *MetadataManager) PutInstance(ctx context.Context, request *discovery.R
 		log.Error(fmt.Sprintf("update instance %s/%s failed", serviceID, instanceID), err)
 		return err
 	}
-
+	sendEvent(ctx, csync.UpdateAction, datasource.ResourceInstance, instance)
 	log.Info(fmt.Sprintf("update instance[%s/%s] successfully", serviceID, instanceID))
 	return nil
 }
@@ -1419,7 +1460,7 @@ func (ds *MetadataManager) UnregisterInstance(ctx context.Context, request *disc
 	if result.DeletedCount == 0 {
 		return discovery.NewError(discovery.ErrInstanceNotExists, "Instance not found")
 	}
-
+	sendEvent(ctx, csync.DeleteAction, datasource.ResourceInstance, request)
 	log.Info(fmt.Sprintf("unregister instance[%s], operator %s", instanceFlag, remoteIP))
 	return nil
 }
@@ -1432,6 +1473,7 @@ func (ds *MetadataManager) SendHeartbeat(ctx context.Context, request *discovery
 		log.Error(fmt.Sprintf("heartbeat failed, instance %s operator %s", instanceFlag, remoteIP), err)
 		return err
 	}
+	sendEvent(ctx, csync.UpdateAction, datasource.ResourceHeartbeat, request)
 	return nil
 }
 
@@ -1460,6 +1502,8 @@ func (ds *MetadataManager) SendManyHeartbeat(ctx context.Context, request *disco
 	for hbRst := range instancesHbRst {
 		count++
 		instanceHbRstArr = append(instanceHbRstArr, hbRst)
+		sendEvent(ctx, csync.UpdateAction, datasource.ResourceHeartbeat,
+			&discovery.HeartbeatRequest{ServiceId: hbRst.ServiceId, InstanceId: hbRst.InstanceId})
 		if count == noMultiCounter {
 			close(instancesHbRst)
 		}
@@ -1506,6 +1550,7 @@ func registryInstance(ctx context.Context, request *discovery.RegisterInstanceRe
 		log.Error(fmt.Sprintf("fail to check instance, instance[%s]. operator %s", instance.InstanceId, remoteIP), err)
 	}
 
+	sendEvent(ctx, csync.CreateAction, datasource.ResourceInstance, request)
 	log.Info(fmt.Sprintf("register instance %s, instanceID %s, operator %s",
 		instanceFlag, insertRes.InsertedID, remoteIP))
 	return &discovery.RegisterInstanceResponse{

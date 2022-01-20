@@ -26,10 +26,13 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/rbac"
 	dmongo "github.com/go-chassis/cari/db/mongo"
 	rbacmodel "github.com/go-chassis/cari/rbac"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/dao"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/sync"
 	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/privacy"
@@ -68,7 +71,7 @@ func (ds *RbacDAO) CreateAccount(ctx context.Context, a *rbacmodel.Account) erro
 	a.ID = util.GenerateUUID()
 	a.CreateTime = strconv.FormatInt(time.Now().Unix(), 10)
 	a.UpdateTime = a.CreateTime
-	_, err = dmongo.GetClient().GetDB().Collection(model.CollectionAccount).InsertOne(ctx, a)
+	err = createAccountTxn(ctx, a)
 	if err != nil {
 		if dao.IsDuplicateKey(err) {
 			return rbac.ErrAccountDuplicated
@@ -77,6 +80,17 @@ func (ds *RbacDAO) CreateAccount(ctx context.Context, a *rbacmodel.Account) erro
 	}
 	log.Info("succeed to create new account: " + a.ID)
 	return nil
+}
+
+func createAccountTxn(ctx context.Context, a *rbacmodel.Account) error {
+	return dmongo.GetClient().ExecTxn(ctx, func(sessionContext mongo.SessionContext) error {
+		_, err := dmongo.GetClient().GetDB().Collection(model.CollectionAccount).InsertOne(sessionContext, a)
+		if err != nil {
+			return err
+		}
+		err = sync.DoCreateOpts(sessionContext, datasource.ResourceAccount, a)
+		return err
+	})
 }
 
 func (ds *RbacDAO) AccountExist(ctx context.Context, name string) (bool, error) {
@@ -136,16 +150,30 @@ func (ds *RbacDAO) DeleteAccount(ctx context.Context, names []string) (bool, err
 	if len(names) == 0 {
 		return false, nil
 	}
-	inFilter := mutil.NewFilter(mutil.In(names))
-	filter := mutil.NewFilter(mutil.AccountName(inFilter))
-	result, err := dmongo.GetClient().GetDB().Collection(model.CollectionAccount).DeleteMany(ctx, filter)
+	err := deleteAccountTxn(ctx, names, ds)
 	if err != nil {
 		return false, err
 	}
-	if result.DeletedCount == 0 {
-		return false, nil
-	}
 	return true, nil
+}
+
+func deleteAccountTxn(ctx context.Context, names []string, ds *RbacDAO) error {
+	return dmongo.GetClient().ExecTxn(ctx, func(sessionContext mongo.SessionContext) error {
+		for _, name := range names {
+			account, err := ds.GetAccount(sessionContext, name)
+			if err != nil {
+				return err
+			}
+			err = sync.DoDeleteOpts(sessionContext, datasource.ResourceAccount, account.Name, account)
+			if err != nil {
+				return err
+			}
+		}
+		inFilter := mutil.NewFilter(mutil.In(names))
+		filter := mutil.NewFilter(mutil.AccountName(inFilter))
+		_, err := dmongo.GetClient().GetDB().Collection(model.CollectionAccount).DeleteMany(ctx, filter)
+		return err
+	})
 }
 
 func (ds *RbacDAO) UpdateAccount(ctx context.Context, name string, account *rbacmodel.Account) error {
@@ -160,12 +188,19 @@ func (ds *RbacDAO) UpdateAccount(ctx context.Context, name string, account *rbac
 		mutil.AccountUpdateTime(strconv.FormatInt(time.Now().Unix(), 10)),
 	)
 	updateFilter := mutil.NewFilter(mutil.Set(setFilter))
-	res, err := dmongo.GetClient().GetDB().Collection(model.CollectionAccount).UpdateMany(ctx, filter, updateFilter)
-	if err != nil {
+	return updateAccountTxn(ctx, filter, updateFilter, account)
+}
+
+func updateAccountTxn(ctx context.Context, filter bson.M, updateFilter bson.M, account *rbacmodel.Account) error {
+	return dmongo.GetClient().ExecTxn(ctx, func(sessionContext mongo.SessionContext) error {
+		res, err := dmongo.GetClient().GetDB().Collection(model.CollectionAccount).UpdateMany(sessionContext, filter, updateFilter)
+		if err != nil {
+			return err
+		}
+		if res.ModifiedCount == 0 {
+			return mutil.ErrNoDataToUpdate
+		}
+		err = sync.DoUpdateOpts(sessionContext, datasource.ResourceAccount, account)
 		return err
-	}
-	if res.ModifiedCount == 0 {
-		return mutil.ErrNoDataToUpdate
-	}
-	return nil
+	})
 }

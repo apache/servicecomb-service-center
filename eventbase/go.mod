@@ -1,7 +1,7 @@
 module github.com/apache/servicecomb-service-center/eventbase
 
 require (
-	github.com/go-chassis/cari v0.5.1-0.20220119150556-8ae374a2649d
+	github.com/go-chassis/cari v0.5.1-0.20220121124340-cbf87fbeb1d7
 	github.com/go-chassis/go-archaius v1.5.4
 	github.com/go-chassis/openlog v1.1.3
 	github.com/little-cui/etcdadpt v0.3.2
