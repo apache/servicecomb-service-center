@@ -22,13 +22,15 @@ import (
 	"encoding/json"
 	"os"
 
-	"github.com/apache/servicecomb-service-center/datasource/etcd/mux"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/version"
+	"github.com/go-chassis/cari/dlock"
 	"github.com/little-cui/etcdadpt"
 )
+
+const versionLockKey = "/version-upgrade"
 
 type SCManager struct {
 }
@@ -44,23 +46,22 @@ func (sm *SCManager) UpgradeServerVersion(ctx context.Context) error {
 	return etcdadpt.PutBytes(ctx, path.GetServerInfoKey(), bytes)
 }
 func (sm *SCManager) UpgradeVersion(ctx context.Context) error {
-	lock, err := mux.Lock(mux.GlobalLock)
-
-	if err != nil {
+	if err := dlock.Lock(versionLockKey, -1); err != nil {
 		log.Error("wait for server ready failed", err)
 		return err
 	}
+	defer func() {
+		if err := dlock.Unlock(versionLockKey); err != nil {
+			log.Error("unlock failed", err)
+		}
+	}()
+
 	if needUpgrade(ctx) {
 		config.Server.Version = version.Ver().Version
-
 		if err := sm.UpgradeServerVersion(ctx); err != nil {
 			log.Error("upgrade server version failed", err)
 			os.Exit(1)
 		}
 	}
-	err = lock.Unlock()
-	if err != nil {
-		log.Error("", err)
-	}
-	return err
+	return nil
 }

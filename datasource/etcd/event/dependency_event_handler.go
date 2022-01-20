@@ -24,7 +24,6 @@ import (
 	"time"
 
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/mux"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
@@ -34,6 +33,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/config"
 	pb "github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/cari/dlock"
 	"github.com/go-chassis/foundation/backoff"
 	"github.com/go-chassis/foundation/gopool"
 	"github.com/go-chassis/foundation/stringutil"
@@ -41,7 +41,7 @@ import (
 	"github.com/little-cui/etcdadpt"
 )
 
-const DepQueueLock mux.ID = "/cse-sr/lock/dep-queue"
+const depQueueLockKey = "/dep-queue"
 
 // just for unit test
 var testMux sync.Mutex
@@ -81,22 +81,18 @@ func (h *DependencyEventHandler) backoff(f func(), retries int) int {
 
 func (h *DependencyEventHandler) tryWithBackoff(success func() error, backoff func(), retries int) (int, error) {
 	defer log.Recover()
-	lock, err := mux.Try(DepQueueLock)
-	if err != nil {
-		log.Error(fmt.Sprintf("try to lock %s failed", DepQueueLock), err)
-		return h.backoff(backoff, retries), err
-	}
 
-	if lock == nil {
+	if err := dlock.TryLock(depQueueLockKey, -1); err != nil {
+		log.Error(fmt.Sprintf("try to lock %s failed", depQueueLockKey), err)
 		return 0, nil
 	}
-
 	defer func() {
-		if err := lock.Unlock(); err != nil {
-			log.Error("", err)
+		if err := dlock.Unlock(depQueueLockKey); err != nil {
+			log.Error("unlock failed", err)
 		}
 	}()
-	err = success()
+
+	err := success()
 	if err != nil {
 		log.Error("handle dependency event failed", err)
 		return h.backoff(backoff, retries), err
