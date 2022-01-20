@@ -65,6 +65,9 @@ import (
 	_ "github.com/apache/servicecomb-service-center/server/job/account"
 	_ "github.com/apache/servicecomb-service-center/server/job/disco"
 
+	//dlock
+	_ "github.com/go-chassis/cari/dlock/bootstrap"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/handler/accesslog"
 	"github.com/apache/servicecomb-service-center/server/handler/auth"

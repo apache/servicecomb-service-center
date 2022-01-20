@@ -25,7 +25,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
 	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
-	"github.com/apache/servicecomb-service-center/server/service/dlock"
+	"github.com/go-chassis/cari/dlock"
 	"github.com/robfig/cron/v3"
 )
 
@@ -63,15 +63,18 @@ func startRetireServiceJob() {
 }
 
 func retireService(localPlan *datasource.RetirePlan) {
-	err := dlock.TryLock(retireServiceLockKey, retireServiceLockTTL)
-	if err != nil {
+	if err := dlock.TryLock(retireServiceLockKey, retireServiceLockTTL); err != nil {
 		log.Error(fmt.Sprintf("try lock %s failed", retireServiceLockKey), err)
 		return
 	}
-	defer dlock.Unlock(retireServiceLockKey)
+	defer func() {
+		if err := dlock.Unlock(retireServiceLockKey); err != nil {
+			log.Error("unlock failed", err)
+		}
+	}()
 
 	log.Info("start retire microservice")
-	err = discosvc.RetireService(context.Background(), localPlan)
+	err := discosvc.RetireService(context.Background(), localPlan)
 	if err != nil {
 		log.Error("retire microservice failed", err)
 	}

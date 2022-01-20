@@ -20,26 +20,17 @@ package etcd
 import (
 	"context"
 
-	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/state"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
 	"github.com/apache/servicecomb-service-center/pkg/dump"
-	"github.com/apache/servicecomb-service-center/pkg/etcdsync"
 	"github.com/apache/servicecomb-service-center/pkg/goutil"
 	"github.com/go-chassis/foundation/gopool"
 )
 
 type SysManager struct {
-	locks map[string]*etcdsync.DLock
 }
 
-func newSysManager() datasource.SystemManager {
-	inst := &SysManager{
-		locks: make(map[string]*etcdsync.DLock),
-	}
-	return inst
-}
 func (sm *SysManager) DumpCache(ctx context.Context) *dump.Cache {
 	var cache dump.Cache
 	goutil.New(gopool.Configure().WithContext(ctx).Workers(10)).

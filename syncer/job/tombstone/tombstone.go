@@ -22,8 +22,8 @@ import (
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
-	"github.com/apache/servicecomb-service-center/server/service/dlock"
 	"github.com/apache/servicecomb-service-center/syncer/service/tombstone"
+	"github.com/go-chassis/cari/dlock"
 	"github.com/robfig/cron/v3"
 )
 
@@ -57,7 +57,11 @@ func deleteExpireTombStone() {
 		log.Error(fmt.Sprintf("try lock %s failed", deleteExpireTombstoneLockKey), err)
 		return
 	}
-	defer dlock.Unlock(deleteExpireTombstoneLockKey)
+	defer func() {
+		if err := dlock.Unlock(deleteExpireTombstoneLockKey); err != nil {
+			log.Error("unlock failed", err)
+		}
+	}()
 
 	log.Info("start delete expire tombstone job")
 	err = tombstone.DeleteExpireTombStone()

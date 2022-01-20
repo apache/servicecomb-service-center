@@ -20,10 +20,10 @@ package datasource
 import (
 	"fmt"
 
-	"github.com/apache/servicecomb-service-center/datasource/dlock"
 	"github.com/apache/servicecomb-service-center/datasource/rbac"
 	"github.com/apache/servicecomb-service-center/datasource/schema"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/go-chassis/cari/dlock"
 )
 
 type dataSourceEngine func(opts Options) (DataSource, error)
@@ -57,7 +57,6 @@ func Init(opts Options) error {
 	if err != nil {
 		return err
 	}
-
 	err = dlock.Init(dlock.Options{
 		Kind: opts.Kind,
 	})

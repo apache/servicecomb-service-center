@@ -18,7 +18,6 @@ package etcd
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"strconv"
 	"time"
 
@@ -30,7 +29,6 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	esync "github.com/apache/servicecomb-service-center/datasource/etcd/sync"
 	"github.com/apache/servicecomb-service-center/datasource/rbac"
-	"github.com/apache/servicecomb-service-center/pkg/etcdsync"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/privacy"
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -50,16 +48,6 @@ type RbacDAO struct {
 }
 
 func (ds *RbacDAO) CreateAccount(ctx context.Context, a *crbac.Account) error {
-	lock, err := etcdsync.Lock("/account-creating/"+a.Name, -1, false)
-	if err != nil {
-		return fmt.Errorf("account %s is creating", a.Name)
-	}
-	defer func() {
-		err := lock.Unlock()
-		if err != nil {
-			log.Error("can not release account lock", err)
-		}
-	}()
 	exist, err := ds.AccountExist(ctx, a.Name)
 	if err != nil {
 		log.Error("can not save account info", err)

@@ -24,16 +24,18 @@ import (
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/event"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/mux"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/state"
 	tracer "github.com/apache/servicecomb-service-center/datasource/etcd/tracing"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
+	"github.com/go-chassis/cari/dlock"
 	"github.com/go-chassis/foundation/gopool"
 	"github.com/little-cui/etcdadpt"
 	"github.com/little-cui/etcdadpt/middleware/tracing"
 )
+
+const compactLockKey = "/etcd-compact"
 
 var clustersIndex = make(map[string]int)
 
@@ -99,7 +101,7 @@ func NewDataSource(opts datasource.Options) (datasource.DataSource, error) {
 		InstanceTTL:        opts.InstanceTTL,
 		InstanceProperties: opts.InstanceProperties,
 	}
-	inst.sysManager = newSysManager()
+	inst.sysManager = &SysManager{}
 	inst.depManager = &DepManager{}
 	inst.scManager = &SCManager{}
 	inst.metricsManager = &MetricsManager{}
@@ -172,19 +174,16 @@ func (ds *DataSource) autoCompact() {
 			case <-ctx.Done():
 				return
 			case <-time.After(interval):
-				lock, err := mux.Try(mux.GlobalLock)
-				if err != nil {
+				if err := dlock.TryLock(compactLockKey, -1); err != nil {
 					log.Error("can not compact backend by this service center instance now", err)
 					continue
 				}
-
-				err = etcdadpt.Instance().Compact(ctx, delta)
+				err := etcdadpt.Instance().Compact(ctx, delta)
 				if err != nil {
 					log.Error("", err)
 				}
-
-				if err := lock.Unlock(); err != nil {
-					log.Error("", err)
+				if err := dlock.Unlock(compactLockKey); err != nil {
+					log.Error("unlock failed", err)
 				}
 			}
 		}
