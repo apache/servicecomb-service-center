@@ -18,6 +18,7 @@
 package bootstrap
 
 import (
+	// datasource implements
 	_ "github.com/apache/servicecomb-service-center/eventbase/datasource/etcd"
 	_ "github.com/apache/servicecomb-service-center/eventbase/datasource/mongo"
 )

@@ -59,9 +59,6 @@ import (
 	//module 'admin'
 	_ "github.com/apache/servicecomb-service-center/server/rest/admin"
 
-	//module 'syncer'
-	_ "github.com/apache/servicecomb-service-center/server/rest/syncer"
-
 	//governance
 	_ "github.com/apache/servicecomb-service-center/server/service/gov/kie"
 

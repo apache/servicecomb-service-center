@@ -28,12 +28,10 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/mongo"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
-	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	simple "github.com/apache/servicecomb-service-center/pkg/time"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/event"
-	"github.com/apache/servicecomb-service-center/server/syncernotify"
 )
 
 // InstanceEventHandler is the handler to handle events
@@ -69,9 +67,6 @@ func (h InstanceEventHandler) OnEvent(evt sd.MongoEvent) {
 	if action == discovery.EVT_INIT {
 		return
 	}
-	if !syncernotify.GetSyncerNotifyCenter().Closed() {
-		NotifySyncerInstanceEvent(evt, microService)
-	}
 	consumerIDs, err := mongo.GetConsumerIDs(ctx, microService)
 	if err != nil {
 		log.Error(fmt.Sprintf("get service[%s][%s/%s/%s/%s]'s consumerIDs failed",
@@ -101,42 +96,4 @@ func PublishInstanceEvent(evt sd.MongoEvent, serviceKey *discovery.MicroServiceK
 			log.Error(fmt.Sprintf("publish event[%v] into channel failed", evt), err)
 		}
 	}
-}
-
-func NotifySyncerInstanceEvent(event sd.MongoEvent, microService *discovery.MicroService) {
-	instance := event.Value.(model.Instance).Instance
-	log.Info(fmt.Sprintf("instanceId : %s and serviceId : %s in NotifySyncerInstanceEvent", instance.InstanceId, instance.ServiceId))
-	instanceKey := util.StringJoin([]string{datasource.InstanceKeyPrefix, event.Value.(model.Instance).Domain,
-		event.Value.(model.Instance).Project, instance.ServiceId, instance.InstanceId}, datasource.SPLIT)
-
-	instanceKv := dump.KV{
-		Key:   instanceKey,
-		Value: instance,
-	}
-
-	dumpInstance := dump.Instance{
-		KV:    &instanceKv,
-		Value: instance,
-	}
-	serviceKey := util.StringJoin([]string{datasource.ServiceKeyPrefix, event.Value.(model.Instance).Domain,
-		event.Value.(model.Instance).Project, instance.ServiceId}, datasource.SPLIT)
-	serviceKv := dump.KV{
-		Key:   serviceKey,
-		Value: microService,
-	}
-
-	dumpService := dump.Microservice{
-		KV:    &serviceKv,
-		Value: microService,
-	}
-
-	instEvent := &dump.WatchInstanceChangedEvent{
-		Action:   string(event.Type),
-		Service:  &dumpService,
-		Instance: &dumpInstance,
-	}
-	syncernotify.GetSyncerNotifyCenter().AddEvent(instEvent)
-
-	log.Debug(fmt.Sprintf("success to add instance change event action [%s], instanceKey : %s to event queue",
-		instEvent.Action, instanceKey))
 }
