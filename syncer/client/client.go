@@ -12,13 +12,9 @@ var (
 	once sync.Once
 )
 
-const (
-	tlsEnable = "1"
-)
-
 func initConfig() {
-	mode := serverconfig.GetString("ssl.mode", "0", serverconfig.WithStandby("ssl_mode"))
-	if mode == tlsEnable {
+	mode := serverconfig.GetBool("ssl.enable", false)
+	if mode {
 		cfg = &grpc.TLSConfig{
 			InsecureSkipVerify: true,
 		}
