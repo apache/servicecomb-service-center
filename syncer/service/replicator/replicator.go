@@ -9,11 +9,17 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/rpc"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	v1sync "github.com/apache/servicecomb-service-center/syncer/api/v1"
+	syncerclient "github.com/apache/servicecomb-service-center/syncer/client"
 	"github.com/apache/servicecomb-service-center/syncer/config"
 	"github.com/apache/servicecomb-service-center/syncer/service/replicator/resource"
 
 	"github.com/go-chassis/foundation/gopool"
 	"google.golang.org/grpc"
+)
+
+const (
+	schema      = "grpc"
+	serviceName = "syncer"
 )
 
 var (
@@ -47,8 +53,9 @@ func InitSyncClient() error {
 	var err error
 	conn, err = rpc.GetRoundRobinLbConn(&rpc.Config{
 		Addrs:       peer.Endpoints,
-		Scheme:      "grpc",
-		ServiceName: "syncer",
+		Scheme:      schema,
+		ServiceName: serviceName,
+		TLSConfig:   syncerclient.RPClientConfig(),
 	})
 	return err
 }
@@ -97,6 +104,8 @@ func (r *replicatorManager) replicate(ctx context.Context, el *v1sync.EventList)
 	if err != nil {
 		return nil, err
 	}
+
+	log.Info(fmt.Sprintf("replicate events success %d", len(result.Results)))
 	return result, nil
 }
 

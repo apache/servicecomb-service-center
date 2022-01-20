@@ -25,6 +25,7 @@ import (
 	"github.com/apache/servicecomb-service-center/client"
 	grpc "github.com/apache/servicecomb-service-center/pkg/rpc"
 	v1sync "github.com/apache/servicecomb-service-center/syncer/api/v1"
+	syncerclient "github.com/apache/servicecomb-service-center/syncer/client"
 	"github.com/apache/servicecomb-service-center/syncer/config"
 	"github.com/apache/servicecomb-service-center/syncer/metrics"
 	"github.com/apache/servicecomb-service-center/syncer/rpc"
@@ -52,15 +53,14 @@ type Peer struct {
 }
 
 func Health() (*Resp, error) {
-
-	config := config.GetConfig()
-	if config.Sync == nil || len(config.Sync.Peers) <= 0 {
+	cfg := config.GetConfig()
+	if cfg.Sync == nil || len(cfg.Sync.Peers) <= 0 {
 		return nil, ErrConfigIsEmpty
 	}
 
-	resp := &Resp{Peers: make([]*Peer, 0, len(config.Sync.Peers))}
+	resp := &Resp{Peers: make([]*Peer, 0, len(cfg.Sync.Peers))}
 
-	for _, c := range config.Sync.Peers {
+	for _, c := range cfg.Sync.Peers {
 		if len(c.Endpoints) <= 0 {
 			continue
 		}
@@ -82,7 +82,12 @@ func Health() (*Resp, error) {
 }
 
 func getPeerStatus(peerName string, endpoints []string) string {
-	conn, err := grpc.GetRoundRobinLbConn(&grpc.Config{Addrs: endpoints, Scheme: scheme, ServiceName: serviceName})
+	conn, err := grpc.GetRoundRobinLbConn(&grpc.Config{
+		Addrs:       endpoints,
+		Scheme:      scheme,
+		ServiceName: serviceName,
+		TLSConfig:   syncerclient.RPClientConfig(),
+	})
 	if err != nil || conn == nil {
 		return rpc.HealthStatusAbnormal
 	}
