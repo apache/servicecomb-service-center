@@ -23,9 +23,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
 	"github.com/go-chassis/cari/discovery"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
 )
 
 var instanceCache *MongoCacher

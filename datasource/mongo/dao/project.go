@@ -21,13 +21,14 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
+	"github.com/go-chassis/cari/db/mongo"
+
+	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
 func AddProject(ctx context.Context, project model.Project) error {
-	result, err := client.GetMongoClient().Insert(ctx, model.CollectionProject, project)
+	result, err := mongo.GetClient().GetDB().Collection(model.CollectionProject).InsertOne(ctx, project)
 	if err == nil {
 		log.Info(fmt.Sprintf("insert project to mongodb success %s", result.InsertedID))
 	}
@@ -35,5 +36,9 @@ func AddProject(ctx context.Context, project model.Project) error {
 }
 
 func ExistProject(ctx context.Context, filter interface{}) (bool, error) {
-	return client.GetMongoClient().DocExist(ctx, model.CollectionProject, filter)
+	result := mongo.GetClient().GetDB().Collection(model.CollectionProject).FindOne(ctx, filter)
+	if result.Err() != nil {
+		return false, nil
+	}
+	return true, nil
 }

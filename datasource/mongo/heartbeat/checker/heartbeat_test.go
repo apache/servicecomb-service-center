@@ -15,35 +15,27 @@
  * limitations under the License.
  */
 
-package checker
+package checker_test
 
 import (
 	"context"
 	"testing"
 	"time"
 
-	_ "github.com/apache/servicecomb-service-center/server/init"
-	_ "github.com/apache/servicecomb-service-center/server/plugin/security/cipher/buildin"
+	"github.com/go-chassis/cari/db/mongo"
+	"github.com/go-chassis/cari/discovery"
+	"github.com/stretchr/testify/assert"
 
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/heartbeat/checker"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	pb "github.com/go-chassis/cari/discovery"
-	"github.com/go-chassis/go-chassis/v2/storage"
-	"github.com/stretchr/testify/assert"
+	_ "github.com/apache/servicecomb-service-center/test"
 )
-
-func init() {
-	config := storage.Options{
-		URI: "mongodb://localhost:27017",
-	}
-	client.NewMongoClient(config)
-}
 
 func TestUpdateInstanceRefreshTime(t *testing.T) {
 	t.Run("update instance refresh time: if the instance does not exist,the update should fail", func(t *testing.T) {
-		err := updateInstanceRefreshTime(context.Background(), "not-exist", "not-exist")
+		err := checker.UpdateInstanceRefreshTime(context.Background(), "not-exist", "not-exist")
 		log.Error("", err)
 		assert.NotNil(t, err)
 	})
@@ -51,24 +43,23 @@ func TestUpdateInstanceRefreshTime(t *testing.T) {
 	t.Run("update instance refresh time: if the instance does exist,the update should succeed", func(t *testing.T) {
 		instance1 := model.Instance{
 			RefreshTime: time.Now(),
-			Instance: &pb.MicroServiceInstance{
+			Instance: &discovery.MicroServiceInstance{
 				InstanceId: "instanceId1",
 				ServiceId:  "serviceId1",
 			},
 		}
-		_, err := client.GetMongoClient().Insert(context.Background(), model.CollectionInstance, instance1)
+		_, err := mongo.GetClient().GetDB().Collection(model.CollectionInstance).InsertOne(context.Background(), instance1)
 		assert.Equal(t, nil, err)
-		err = updateInstanceRefreshTime(context.Background(), instance1.Instance.ServiceId, instance1.Instance.InstanceId)
+		err = checker.UpdateInstanceRefreshTime(context.Background(), instance1.Instance.ServiceId, instance1.Instance.InstanceId)
 		assert.Equal(t, nil, err)
 		filter := util.NewFilter(util.InstanceServiceID(instance1.Instance.ServiceId), util.InstanceInstanceID(instance1.Instance.InstanceId))
-		result, err := client.GetMongoClient().FindOne(context.Background(), model.CollectionInstance, filter)
-		assert.Nil(t, err)
+		result := mongo.GetClient().GetDB().Collection(model.CollectionInstance).FindOne(context.Background(), filter)
 		var ins model.Instance
 		err = result.Decode(&ins)
 		assert.Nil(t, err)
 		assert.NotEqual(t, instance1.RefreshTime, ins.RefreshTime)
 		filter = util.NewFilter(util.InstanceServiceID(instance1.Instance.ServiceId), util.InstanceInstanceID(instance1.Instance.InstanceId))
-		_, err = client.GetMongoClient().Delete(context.Background(), model.CollectionInstance, filter)
+		_, err = mongo.GetClient().GetDB().Collection(model.CollectionInstance).DeleteOne(context.Background(), filter)
 		assert.Nil(t, err)
 	})
 }

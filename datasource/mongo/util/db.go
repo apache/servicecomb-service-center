@@ -27,7 +27,7 @@ import (
 	"go.mongodb.org/mongo-driver/x/bsonx"
 
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 

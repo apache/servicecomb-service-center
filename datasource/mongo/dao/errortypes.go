@@ -13,15 +13,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package client
+package dao
 
 import (
-	"errors"
+	"strings"
 )
 
-var (
-	ErrCollectionsNil = errors.New("collection is nil")
-	ErrOpenDbFailed   = errors.New("open db failed")
-	ErrRootCAMissing  = errors.New("rootCAFile is empty in config file")
-	ErrNoDocuments    = errors.New("no doc found")
+const (
+	DuplicateKey = "E11000"
 )
+
+func IsDuplicateKey(err error) bool {
+	return strings.Contains(err.Error(), DuplicateKey)
+}

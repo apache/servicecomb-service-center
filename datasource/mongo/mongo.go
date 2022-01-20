@@ -20,13 +20,15 @@ package mongo
 import (
 	"fmt"
 
+	"github.com/go-chassis/cari/db"
+	dconfig "github.com/go-chassis/cari/db/config"
+
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/heartbeat"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
-	"github.com/go-chassis/go-chassis/v2/storage"
+	"github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf"
 )
 
 const defaultExpireTime = 300
@@ -96,7 +98,7 @@ func (ds *DataSource) initialize() error {
 		return err
 	}
 	// create db index and validator
-	EnsureDB()
+	ensureDB()
 
 	// if fast register enabled, init fast register service
 	initFastRegister()
@@ -117,25 +119,26 @@ func (ds *DataSource) initPlugins() error {
 }
 
 func (ds *DataSource) initClient() error {
-	uri := config.GetString("registry.mongo.cluster.uri", "mongodb://localhost:27017", config.WithStandby("manager_cluster"))
-	sslEnable := config.GetBool("registry.mongo.cluster.sslEnabled", false)
-	rootCA := config.GetString("registry.mongo.cluster.rootCAFile", "/opt/ssl/ca.crt")
-	verifyPeer := config.GetBool("registry.mongo.cluster.verifyPeer", false)
-	certFile := config.GetString("registry.mongo.cluster.certFile", "")
-	keyFile := config.GetString("registry.mongo.cluster.keyFile", "")
+	cfg := dconfig.Config{Kind: "mongo"}
+	cfg.URI = config.GetString("registry.mongo.cluster.uri", "mongodb://localhost:27017",
+		config.WithStandby("manager_cluster"))
+	cfg.SSLEnabled = config.GetBool("ssl.enable", false)
+	cfg.Logger = log.Logger
+	if cfg.SSLEnabled {
+		tlsConfig, err := tlsconf.ClientConfig()
+		if err != nil {
+			log.Fatal("get datasource tlsConfig failed", err)
+			return err
+		}
+		cfg.TLSConfig = tlsConfig
+	}
 	poolSize := config.GetInt("registry.mongo.cluster.poolSize", defaultPoolSize)
 	if poolSize <= 0 {
 		log.Warn(fmt.Sprintf("mongo cluster poolSize[%d] is too small, set to default size", poolSize))
 		poolSize = defaultPoolSize
 	}
-	cfg := storage.NewConfig(uri, storage.SSLEnabled(sslEnable), storage.RootCA(rootCA), storage.VerifyPeer(verifyPeer), storage.CertFile(certFile), storage.KeyFile(keyFile), storage.PoolSize(poolSize))
-	client.NewMongoClient(cfg)
-	select {
-	case err := <-client.GetMongoClient().Err():
-		return err
-	case <-client.GetMongoClient().Ready():
-		return nil
-	}
+	cfg.PoolSize = poolSize
+	return db.Init(&cfg)
 }
 
 func (ds *DataSource) initStore() {

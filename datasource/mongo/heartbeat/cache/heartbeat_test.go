@@ -15,123 +15,118 @@
  * limitations under the License.
  */
 
-package heartbeatcache
+package heartbeatcache_test
 
 import (
 	"context"
 	"testing"
 	"time"
 
-	_ "github.com/apache/servicecomb-service-center/server/init"
-	_ "github.com/apache/servicecomb-service-center/server/plugin/security/cipher/buildin"
-
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
-	pb "github.com/go-chassis/cari/discovery"
-	"github.com/go-chassis/go-chassis/v2/storage"
+	"github.com/go-chassis/cari/db/mongo"
+	"github.com/go-chassis/cari/discovery"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/apache/servicecomb-service-center/datasource/mongo/heartbeat/cache"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
+	_ "github.com/apache/servicecomb-service-center/test"
 )
 
-func init() {
-	config := storage.Options{
-		URI: "mongodb://localhost:27017",
-	}
-	client.NewMongoClient(config)
-}
-
-var c = configuration()
+var c = heartbeatcache.Configuration()
 
 func TestAddCacheInstance(t *testing.T) {
-	t.Run("add cache instance: set the ttl to 2 seconds", func(t *testing.T) {
+	t.Run("add cache instance: set the ttl to 4 seconds", func(t *testing.T) {
 		instance1 := model.Instance{
 			RefreshTime: time.Now(),
-			Instance: &pb.MicroServiceInstance{
+			Instance: &discovery.MicroServiceInstance{
 				InstanceId: "instanceID1",
 				ServiceId:  "serviceID1",
-				HealthCheck: &pb.HealthCheck{
-					Interval: 1,
+				HealthCheck: &discovery.HealthCheck{
+					Interval: 2,
 					Times:    1,
 				},
 			},
 		}
 		err := c.AddHeartbeatTask(instance1.Instance.ServiceId, instance1.Instance.InstanceId, instance1.Instance.HealthCheck.Interval*(instance1.Instance.HealthCheck.Times+1))
 		assert.Equal(t, nil, err)
-		_, err = client.GetMongoClient().Insert(context.Background(), model.CollectionInstance, instance1)
+		_, err = mongo.GetClient().GetDB().Collection(model.CollectionInstance).InsertOne(context.Background(), instance1)
 		assert.Equal(t, nil, err)
-		info, ok := c.instanceHeartbeatStore.Get(instance1.Instance.InstanceId)
+		time.Sleep(1 * time.Second)
+		info, ok := c.InstanceHeartbeatStore.Get(instance1.Instance.InstanceId)
 		assert.Equal(t, true, ok)
 		if ok {
-			heartBeatInfo := info.(*instanceHeartbeatInfo)
-			assert.Equal(t, instance1.Instance.InstanceId, heartBeatInfo.instanceID)
-			assert.Equal(t, instance1.Instance.HealthCheck.Interval*(instance1.Instance.HealthCheck.Times+1), heartBeatInfo.ttl)
+			heartBeatInfo := info.(*heartbeatcache.InstanceHeartbeatInfo)
+			assert.Equal(t, instance1.Instance.InstanceId, heartBeatInfo.InstanceID)
+			assert.Equal(t, instance1.Instance.HealthCheck.Interval*(instance1.Instance.HealthCheck.Times+1), heartBeatInfo.TTL)
 		}
-		time.Sleep(2 * time.Second)
-		_, ok = c.instanceHeartbeatStore.Get(instance1.Instance.InstanceId)
+		time.Sleep(4 * time.Second)
+		_, ok = c.InstanceHeartbeatStore.Get(instance1.Instance.InstanceId)
 		assert.Equal(t, false, ok)
-		_, err = client.GetMongoClient().Delete(context.Background(), model.CollectionInstance, instance1)
+		_, err = mongo.GetClient().GetDB().Collection(model.CollectionInstance).DeleteOne(context.Background(), instance1)
 		assert.Equal(t, nil, err)
 	})
 
 	t.Run("add cache instance: do not set interval time", func(t *testing.T) {
-		instance1 := model.Instance{
+		instance2 := model.Instance{
 			RefreshTime: time.Now(),
-			Instance: &pb.MicroServiceInstance{
-				InstanceId: "instanceID1",
-				ServiceId:  "serviceID1",
-				HealthCheck: &pb.HealthCheck{
+			Instance: &discovery.MicroServiceInstance{
+				InstanceId: "instanceID2",
+				ServiceId:  "serviceID2",
+				HealthCheck: &discovery.HealthCheck{
 					Interval: 0,
 					Times:    0,
 				},
 			},
 		}
-		err := c.AddHeartbeatTask(instance1.Instance.ServiceId, instance1.Instance.InstanceId, instance1.Instance.HealthCheck.Interval*(instance1.Instance.HealthCheck.Times+1))
+		err := c.AddHeartbeatTask(instance2.Instance.ServiceId, instance2.Instance.InstanceId, instance2.Instance.HealthCheck.Interval*(instance2.Instance.HealthCheck.Times+1))
 		assert.Equal(t, nil, err)
-		_, err = client.GetMongoClient().Insert(context.Background(), model.CollectionInstance, instance1)
+		_, err = mongo.GetClient().GetDB().Collection(model.CollectionInstance).InsertOne(context.Background(), instance2)
 		assert.Equal(t, nil, err)
-		info, ok := c.instanceHeartbeatStore.Get(instance1.Instance.InstanceId)
+		time.Sleep(1 * time.Second)
+		info, ok := c.InstanceHeartbeatStore.Get(instance2.Instance.InstanceId)
 		assert.Equal(t, true, ok)
 		if ok {
-			heartBeatInfo := info.(*instanceHeartbeatInfo)
-			assert.Equal(t, instance1.Instance.InstanceId, heartBeatInfo.instanceID)
-			assert.Equal(t, int32(defaultTTL), heartBeatInfo.ttl)
+			heartBeatInfo := info.(*heartbeatcache.InstanceHeartbeatInfo)
+			assert.Equal(t, instance2.Instance.InstanceId, heartBeatInfo.InstanceID)
+			assert.Equal(t, int32(heartbeatcache.DefaultTTL), heartBeatInfo.TTL)
 		}
-		time.Sleep(defaultTTL * time.Second)
-		_, ok = c.instanceHeartbeatStore.Get(instance1.Instance.InstanceId)
+		time.Sleep(heartbeatcache.DefaultTTL * time.Second)
+		_, ok = c.InstanceHeartbeatStore.Get(instance2.Instance.InstanceId)
 		assert.Equal(t, false, ok)
-		_, err = client.GetMongoClient().Delete(context.Background(), model.CollectionInstance, instance1)
+		_, err = mongo.GetClient().GetDB().Collection(model.CollectionInstance).DeleteOne(context.Background(), instance2)
 		assert.Equal(t, nil, err)
 	})
 }
 
 func TestRemoveCacheInstance(t *testing.T) {
 	t.Run("remove cache instance: the instance has cache and can be deleted successfully", func(t *testing.T) {
-		instance1 := model.Instance{
+		instance3 := model.Instance{
 			RefreshTime: time.Now(),
-			Instance: &pb.MicroServiceInstance{
-				InstanceId: "instanceID1",
-				ServiceId:  "serviceID1",
-				HealthCheck: &pb.HealthCheck{
+			Instance: &discovery.MicroServiceInstance{
+				InstanceId: "instanceID3",
+				ServiceId:  "serviceID3",
+				HealthCheck: &discovery.HealthCheck{
 					Interval: 3,
 					Times:    1,
 				},
 			},
 		}
-		err := c.AddHeartbeatTask(instance1.Instance.ServiceId, instance1.Instance.InstanceId, instance1.Instance.HealthCheck.Interval*(instance1.Instance.HealthCheck.Times+1))
+		err := c.AddHeartbeatTask(instance3.Instance.ServiceId, instance3.Instance.InstanceId, instance3.Instance.HealthCheck.Interval*(instance3.Instance.HealthCheck.Times+1))
 		assert.Equal(t, nil, err)
-		_, err = client.GetMongoClient().Insert(context.Background(), model.CollectionInstance, instance1)
+		_, err = mongo.GetClient().GetDB().Collection(model.CollectionInstance).InsertOne(context.Background(), instance3)
 		assert.Equal(t, nil, err)
-		info, ok := c.instanceHeartbeatStore.Get(instance1.Instance.InstanceId)
+		time.Sleep(1 * time.Second)
+		info, ok := c.InstanceHeartbeatStore.Get(instance3.Instance.InstanceId)
 		assert.Equal(t, true, ok)
 		if ok {
-			heartBeatInfo := info.(*instanceHeartbeatInfo)
-			assert.Equal(t, instance1.Instance.InstanceId, heartBeatInfo.instanceID)
-			assert.Equal(t, instance1.Instance.HealthCheck.Interval*(instance1.Instance.HealthCheck.Times+1), heartBeatInfo.ttl)
+			heartBeatInfo := info.(*heartbeatcache.InstanceHeartbeatInfo)
+			assert.Equal(t, instance3.Instance.InstanceId, heartBeatInfo.InstanceID)
+			assert.Equal(t, instance3.Instance.HealthCheck.Interval*(instance3.Instance.HealthCheck.Times+1), heartBeatInfo.TTL)
 		}
 		time.Sleep(4 * time.Second)
-		c.RemoveCacheInstance(instance1.Instance.InstanceId)
-		_, ok = c.instanceHeartbeatStore.Get(instance1.Instance.InstanceId)
+		c.RemoveCacheInstance(instance3.Instance.InstanceId)
+		_, ok = c.InstanceHeartbeatStore.Get(instance3.Instance.InstanceId)
 		assert.Equal(t, false, ok)
-		_, err = client.GetMongoClient().Delete(context.Background(), model.CollectionInstance, instance1)
+		_, err = mongo.GetClient().GetDB().Collection(model.CollectionInstance).DeleteOne(context.Background(), instance3)
 		assert.Equal(t, nil, err)
 	})
 }

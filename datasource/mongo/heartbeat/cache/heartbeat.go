@@ -25,19 +25,20 @@ import (
 	"sync"
 	"time"
 
+	dmongo "github.com/go-chassis/cari/db/mongo"
+	"github.com/go-chassis/foundation/gopool"
 	"github.com/patrickmn/go-cache"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client/model"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
-	"github.com/go-chassis/foundation/gopool"
 )
 
 const (
-	defaultTTL              = 30
+	DefaultTTL              = 30
 	defaultCacheCapacity    = 10000
 	defaultWorkNum          = 10
 	defaultTimeout          = 10
@@ -49,47 +50,47 @@ var ErrHeartbeatTimeout = errors.New("heartbeat task waiting for processing time
 
 var (
 	once sync.Once
-	cfg  cacheConfig
+	cfg  CacheConfig
 )
 
-type cacheConfig struct {
-	cacheChan              chan *instanceHeartbeatInfo
-	instanceHeartbeatStore *cache.Cache
-	workerNum              int
-	heartbeatTaskTimeout   int
+type CacheConfig struct {
+	CacheChan              chan *InstanceHeartbeatInfo
+	InstanceHeartbeatStore *cache.Cache
+	WorkerNum              int
+	HeartbeatTaskTimeout   int
 }
 
-func configuration() *cacheConfig {
+func Configuration() *CacheConfig {
 	once.Do(func() {
-		cfg.workerNum = runtime.NumCPU()
+		cfg.WorkerNum = runtime.NumCPU()
 		num := config.GetInt("heartbeat.workerNum", defaultWorkNum)
 		if num != 0 {
-			cfg.workerNum = num
+			cfg.WorkerNum = num
 		}
-		cfg.heartbeatTaskTimeout = config.GetInt("heartbeat.timeout", defaultTimeout)
-		cfg.cacheChan = make(chan *instanceHeartbeatInfo, config.GetInt("heartbeat.cacheCapacity", defaultCacheCapacity))
-		cfg.instanceHeartbeatStore = cache.New(0, instanceCheckerInternal)
-		cfg.instanceHeartbeatStore.OnEvicted(func(k string, v interface{}) {
-			instanceInfo, ok := v.(*instanceHeartbeatInfo)
+		cfg.HeartbeatTaskTimeout = config.GetInt("heartbeat.timeout", defaultTimeout)
+		cfg.CacheChan = make(chan *InstanceHeartbeatInfo, config.GetInt("heartbeat.cacheCapacity", defaultCacheCapacity))
+		cfg.InstanceHeartbeatStore = cache.New(0, instanceCheckerInternal)
+		cfg.InstanceHeartbeatStore.OnEvicted(func(k string, v interface{}) {
+			instanceInfo, ok := v.(*InstanceHeartbeatInfo)
 			if ok && instanceInfo != nil {
 				ctx, cancel := context.WithTimeout(context.Background(), ctxTimeout)
 				defer cancel()
-				err := cleanInstance(ctx, instanceInfo.serviceID, instanceInfo.instanceID)
+				err := cleanInstance(ctx, instanceInfo.ServiceID, instanceInfo.InstanceID)
 				if err != nil {
 					log.Error("failed to cleanInstance in mongodb.", err)
 				}
 			}
 		})
-		for i := 1; i <= cfg.workerNum; i++ {
+		for i := 1; i <= cfg.WorkerNum; i++ {
 			gopool.Go(func(ctx context.Context) {
 				for {
 					select {
 					case <-ctx.Done():
 						log.Warn("heartbeat work protocol exit.")
 						return
-					case heartbeatInfo, ok := <-cfg.cacheChan:
+					case heartbeatInfo, ok := <-cfg.CacheChan:
 						if ok {
-							cfg.instanceHeartbeatStore.Set(heartbeatInfo.instanceID, heartbeatInfo, time.Duration(heartbeatInfo.ttl)*time.Second)
+							cfg.InstanceHeartbeatStore.Set(heartbeatInfo.InstanceID, heartbeatInfo, time.Duration(heartbeatInfo.TTL)*time.Second)
 						}
 					}
 				}
@@ -99,75 +100,63 @@ func configuration() *cacheConfig {
 	return &cfg
 }
 
-func (c *cacheConfig) AddHeartbeatTask(serviceID string, instanceID string, ttl int32) error {
+func (c *CacheConfig) AddHeartbeatTask(serviceID string, instanceID string, ttl int32) error {
 	// Unassigned setting default value is 30s
 	if ttl <= 0 {
-		ttl = defaultTTL
+		ttl = DefaultTTL
 	}
-	newInstance := &instanceHeartbeatInfo{
-		serviceID:   serviceID,
-		instanceID:  instanceID,
-		ttl:         ttl,
-		lastRefresh: time.Now(),
+	newInstance := &InstanceHeartbeatInfo{
+		ServiceID:   serviceID,
+		InstanceID:  instanceID,
+		TTL:         ttl,
+		LastRefresh: time.Now(),
 	}
 	select {
-	case c.cacheChan <- newInstance:
+	case c.CacheChan <- newInstance:
 		return nil
-	case <-time.After(time.Duration(c.heartbeatTaskTimeout) * time.Second):
+	case <-time.After(time.Duration(c.HeartbeatTaskTimeout) * time.Second):
 		log.Warn("the heartbeat's channel is full. ")
 		return ErrHeartbeatTimeout
 	}
 }
 
-func (c *cacheConfig) RemoveCacheInstance(instanceID string) {
-	c.instanceHeartbeatStore.Delete(instanceID)
+func (c *CacheConfig) RemoveCacheInstance(instanceID string) {
+	c.InstanceHeartbeatStore.Delete(instanceID)
 }
 
 func cleanInstance(ctx context.Context, serviceID string, instanceID string) error {
-	session, err := client.GetMongoClient().StartSession(ctx)
-	if err != nil {
-		return err
-	}
-	if err = session.StartTransaction(); err != nil {
-		return err
-	}
-	defer session.EndSession(ctx)
-
-	filter := util.NewFilter(util.InstanceServiceID(serviceID), util.InstanceInstanceID(instanceID))
-	result, err := client.GetMongoClient().FindOne(ctx, model.CollectionInstance, filter)
-	if err != nil {
-		log.Error("failed to query instance", err)
-		return err
-	}
-	var ins model.Instance
-	err = result.Decode(&ins)
-	if err != nil {
-		log.Error("decode instance failed", err)
-		return err
-	}
-	ttl := ins.Instance.HealthCheck.Interval * (ins.Instance.HealthCheck.Times + 1)
-	if ttl <= 0 {
-		ttl = defaultTTL
-	}
-	if isOutDate(ins.RefreshTime, ttl) {
-		return nil
-	}
-	err = removeDBInstance(ctx, ins.Instance.ServiceId, ins.Instance.InstanceId)
-	if err != nil {
-		log.Error("fail to remote instance in db", err)
-		errAbort := session.AbortTransaction(ctx)
-		if errAbort != nil {
-			return errAbort
+	var cleanFunc = func(sessionContext mongo.SessionContext) error {
+		filter := util.NewFilter(util.InstanceServiceID(serviceID), util.InstanceInstanceID(instanceID))
+		result := dmongo.GetClient().GetDB().Collection(model.CollectionInstance).FindOne(ctx, filter)
+		if result.Err() != nil {
+			log.Error("failed to query instance", result.Err())
+			return result.Err()
+		}
+		var ins model.Instance
+		err := result.Decode(&ins)
+		if err != nil {
+			log.Error("decode instance failed", err)
+			return err
+		}
+		ttl := ins.Instance.HealthCheck.Interval * (ins.Instance.HealthCheck.Times + 1)
+		if ttl <= 0 {
+			ttl = DefaultTTL
+		}
+		if isOutDate(ins.RefreshTime, ttl) {
+			return nil
+		}
+		err = removeDBInstance(ctx, ins.Instance.ServiceId, ins.Instance.InstanceId)
+		if err != nil {
+			log.Error("fail to remote instance in db", err)
 		}
 		return err
 	}
-	err = session.CommitTransaction(ctx)
-	return err
+	return dmongo.GetClient().ExecTxn(ctx, cleanFunc)
 }
 
 func removeDBInstance(ctx context.Context, serviceID string, instanceID string) error {
 	filter := util.NewFilter(util.InstanceServiceID(serviceID), util.InstanceInstanceID(instanceID))
-	res, err := client.GetMongoClient().DeleteOne(ctx, model.CollectionInstance, filter)
+	res, err := dmongo.GetClient().GetDB().Collection(model.CollectionInstance).DeleteOne(ctx, filter)
 	if err != nil {
 		log.Error("failed to clean instance", err)
 		return err
@@ -178,12 +167,12 @@ func removeDBInstance(ctx context.Context, serviceID string, instanceID string) 
 
 func findInstance(ctx context.Context, serviceID string, instanceID string) (*model.Instance, error) {
 	filter := util.NewFilter(util.InstanceServiceID(serviceID), util.InstanceInstanceID(instanceID))
-	result, err := client.GetMongoClient().FindOne(ctx, model.CollectionInstance, filter)
-	if err != nil {
-		return nil, err
+	result := dmongo.GetClient().GetDB().Collection(model.CollectionInstance).FindOne(ctx, filter)
+	if result.Err() != nil {
+		return nil, result.Err()
 	}
 	var ins model.Instance
-	err = result.Decode(&ins)
+	err := result.Decode(&ins)
 	if err != nil {
 		log.Error("decode instance failed", err)
 		return nil, err
@@ -196,10 +185,9 @@ func updateInstance(ctx context.Context, serviceID string, instanceID string) er
 	update := bson.M{
 		"$set": bson.M{model.ColumnRefreshTime: time.Now()},
 	}
-	result, err := client.GetMongoClient().FindOneAndUpdate(ctx, model.CollectionInstance, filter, update)
-	if err != nil {
-		log.Error("failed to update refresh time of instance", err)
-		return err
+	result := dmongo.GetClient().GetDB().Collection(model.CollectionInstance).FindOneAndUpdate(ctx, filter, update)
+	if result.Err() != nil {
+		log.Error("failed to update refresh time of instance", result.Err())
 	}
 	return result.Err()
 }

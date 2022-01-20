@@ -21,11 +21,11 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-chassis/cari/db/mongo"
 	"go.mongodb.org/mongo-driver/bson"
 	md "go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
-	"github.com/apache/servicecomb-service-center/datasource/mongo/client"
 	"github.com/apache/servicecomb-service-center/datasource/sdcommon"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 )
@@ -42,7 +42,7 @@ func (lw *mongoListWatch) List(op sdcommon.ListWatchConfig) (*sdcommon.ListWatch
 	otCtx, cancel := context.WithTimeout(op.Context, op.Timeout)
 	defer cancel()
 
-	resp, err := client.GetMongoClient().Find(otCtx, lw.Key, bson.M{})
+	resp, err := mongo.GetClient().GetDB().Collection(lw.Key).Find(otCtx, bson.M{})
 	if err != nil {
 		log.Error(fmt.Sprintf("list key %s failed", lw.Key), err)
 		return nil, err
@@ -78,7 +78,7 @@ func (lw *mongoListWatch) DoWatch(ctx context.Context, f func(*sdcommon.ListWatc
 		match := bson.D{{Key: "updateDescription.updatedFields.refresh_time", Value: bson.D{{Key: "$exists", Value: false}}}}
 		pipline = md.Pipeline{{{Key: "$match", Value: match}}}
 	}
-	resp, err := client.GetMongoClient().Watch(ctx, lw.Key, pipline, csOptions)
+	resp, err := mongo.GetClient().GetDB().Collection(lw.Key).Watch(ctx, pipline, csOptions)
 
 	if err != nil {
 		log.Error(fmt.Sprintf("watch table %s failed", lw.Key), err)

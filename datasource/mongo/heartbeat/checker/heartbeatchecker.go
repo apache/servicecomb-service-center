@@ -35,13 +35,13 @@ func init() {
 type HeartBeatChecker struct {
 }
 
-func NewHeartBeatChecker(opts heartbeat.Options) (heartbeat.HealthCheck, error) {
+func NewHeartBeatChecker() (heartbeat.HealthCheck, error) {
 	return &HeartBeatChecker{}, nil
 }
 
 func (h *HeartBeatChecker) Heartbeat(ctx context.Context, request *pb.HeartbeatRequest) (*pb.HeartbeatResponse, error) {
 	remoteIP := util.GetIPFromContext(ctx)
-	err := updateInstanceRefreshTime(ctx, request.ServiceId, request.InstanceId)
+	err := UpdateInstanceRefreshTime(ctx, request.ServiceId, request.InstanceId)
 	if err != nil {
 		log.Error(fmt.Sprintf("heartbeat failed, instance[%s]. operator %s", request.InstanceId, remoteIP), err)
 		resp := &pb.HeartbeatResponse{

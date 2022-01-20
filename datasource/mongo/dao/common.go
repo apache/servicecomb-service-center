@@ -13,33 +13,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package client
+package dao
 
 import (
-	"strings"
-
-	"go.mongodb.org/mongo-driver/mongo"
+	"errors"
 )
 
-const (
-	DuplicateKey      = "E11000"
-	CollectionsExists = 48
+var (
+	ErrNoDocuments = errors.New("no doc found")
 )
-
-func IsDuplicateKey(err error) bool {
-	return strings.Contains(err.Error(), DuplicateKey)
-}
-
-func IsCollectionsExist(err error) bool {
-	if err != nil {
-		cmdErr, ok := err.(mongo.CommandError)
-		if ok && cmdErr.Code == CollectionsExists {
-			return true
-		}
-	}
-	return false
-}
-
-func IsNoneDocErr(err error) bool {
-	return err == ErrNoDocuments
-}

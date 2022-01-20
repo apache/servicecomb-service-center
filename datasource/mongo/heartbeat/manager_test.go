@@ -27,12 +27,12 @@ import (
 )
 
 func TestInit(t *testing.T) {
-	t.Run("init heartbeat plugin, should not pass", func(t *testing.T) {
+	t.Run("init unknown heartbeat plugin, should not pass", func(t *testing.T) {
 		pluginName := heartbeat.ImplName("unknown")
 		err := heartbeat.Init(heartbeat.Options{PluginImplName: pluginName})
 		assert.Error(t, err)
 	})
-	t.Run("install and init heartbeat plugin, should pass", func(t *testing.T) {
+	t.Run("install and init checker heartbeat plugin, should pass", func(t *testing.T) {
 		pluginName := heartbeat.ImplName("checker")
 		err := heartbeat.Init(heartbeat.Options{
 			PluginImplName: pluginName,
