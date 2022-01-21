@@ -9,6 +9,7 @@ import (
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	v1sync "github.com/apache/servicecomb-service-center/syncer/api/v1"
+	"github.com/apache/servicecomb-service-center/syncer/metrics"
 	"github.com/apache/servicecomb-service-center/syncer/service/replicator"
 	"github.com/apache/servicecomb-service-center/syncer/service/replicator/resource"
 
@@ -23,6 +24,7 @@ var m Manager
 
 type Event struct {
 	*v1sync.Event
+	CanNotAbandon bool
 
 	Result chan<- *Result
 }
@@ -115,7 +117,27 @@ func (e *eventManager) Send(et *Event) {
 		e.cache.Store(et.Id, et)
 	}
 
+	if e.checkThreshold(et) {
+		return
+	}
+
 	e.events <- et
+}
+
+func (e *eventManager) checkThreshold(et *Event) bool {
+	metrics.PendingEventSet(int64(len(e.events)))
+	if len(e.events) < cap(e.events) {
+		return false
+	}
+
+	log.Warn(fmt.Sprintf("events reaches the limit %d", cap(e.events)))
+	if et.CanNotAbandon {
+		return false
+	}
+
+	log.Warn(fmt.Sprintf("drop event %s", et.Flag()))
+	metrics.AbandonEventAdd()
+	return true
 }
 
 func (e *eventManager) HandleResult() {
