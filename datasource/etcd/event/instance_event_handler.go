@@ -27,18 +27,11 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
-	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/event"
 	quotasvc "github.com/apache/servicecomb-service-center/server/service/quota"
-	"github.com/apache/servicecomb-service-center/server/syncernotify"
 	pb "github.com/go-chassis/cari/discovery"
-)
-
-const (
-	msKeyPrefix = "/cse-sr/ms/files/"
-	sep         = "/"
 )
 
 // InstanceEventHandler is the handler to handle:
@@ -78,10 +71,6 @@ func (h *InstanceEventHandler) OnEvent(evt kvstore.Event) {
 		log.Error(fmt.Sprintf("caught [%s] instance[%s/%s] event, endpoints %v, get cached provider's file failed",
 			action, providerID, providerInstanceID, instance.Endpoints), err)
 		return
-	}
-
-	if !syncernotify.GetSyncerNotifyCenter().Closed() {
-		NotifySyncerInstanceEvent(evt, domainProject, ms)
 	}
 
 	if event.Center().Closed() {
@@ -128,26 +117,4 @@ func PublishInstanceEvent(evt kvstore.Event, serviceKey *pb.MicroServiceKey, sub
 			log.Error(fmt.Sprintf("publish event[%v] into channel failed", evt), err)
 		}
 	}
-}
-
-func NotifySyncerInstanceEvent(evt kvstore.Event, domainProject string, ms *pb.MicroService) {
-	msInstance := evt.KV.Value.(*pb.MicroServiceInstance)
-
-	serviceKey := msKeyPrefix + domainProject + sep + ms.ServiceId
-	msKV := &dump.KV{Key: serviceKey, ClusterName: evt.KV.ClusterName}
-	service := &dump.Microservice{KV: msKV, Value: ms}
-
-	instKey := string(evt.KV.Key)
-	instKV := &dump.KV{Key: instKey, ClusterName: evt.KV.ClusterName}
-	instance := &dump.Instance{KV: instKV, Value: msInstance}
-
-	instEvent := &dump.WatchInstanceChangedEvent{
-		Action:   string(evt.Type),
-		Service:  service,
-		Instance: instance,
-	}
-
-	syncernotify.GetSyncerNotifyCenter().AddEvent(instEvent)
-
-	log.Debug(fmt.Sprintf("success to add instance change event: %v to event queue", instEvent))
 }

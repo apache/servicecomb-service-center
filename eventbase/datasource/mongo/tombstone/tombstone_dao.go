@@ -68,10 +68,10 @@ func (d *Dao) Delete(ctx context.Context, tombstones ...*sync.Tombstone) error {
 	for i, tombstone := range tombstones {
 		tombstonesIDs[i] = tombstone.ResourceID
 		dFilter := bson.D{
-			{model.ColumnResourceID, tombstone.ResourceID},
-			{model.ColumnResourceType, tombstone.ResourceType},
-			{model.ColumnDomain, tombstone.Domain},
-			{model.ColumnProject, tombstone.Project},
+			{Key: model.ColumnResourceID, Value: tombstone.ResourceID},
+			{Key: model.ColumnResourceType, Value: tombstone.ResourceType},
+			{Key: model.ColumnDomain, Value: tombstone.Domain},
+			{Key: model.ColumnProject, Value: tombstone.Project},
 		}
 		filter = append(filter, dFilter)
 	}

@@ -34,7 +34,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf"
 	"github.com/apache/servicecomb-service-center/server/service/gov"
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
-	snf "github.com/apache/servicecomb-service-center/server/syncernotify"
 	"github.com/go-chassis/foundation/gopool"
 	"github.com/little-cui/etcdadpt"
 )
@@ -54,10 +53,9 @@ type endpoint struct {
 }
 
 type ServiceCenterServer struct {
-	Endpoint            endpoint
-	APIServer           *APIServer
-	eventCenter         *nf.BusService
-	syncerNotifyService *snf.Service
+	Endpoint    endpoint
+	APIServer   *APIServer
+	eventCenter *nf.BusService
 }
 
 func (s *ServiceCenterServer) Run() {
@@ -87,7 +85,6 @@ func (s *ServiceCenterServer) initialize() {
 	s.initDatasource()
 	s.APIServer = GetAPIServer()
 	s.eventCenter = event.Center()
-	s.syncerNotifyService = snf.GetSyncerNotifyCenter()
 }
 
 func (s *ServiceCenterServer) initEndpoints() {
@@ -167,12 +164,6 @@ func (s *ServiceCenterServer) startServices() {
 	// notifications
 	s.eventCenter.Start()
 
-	// notify syncer
-	syncerEnabled := config.GetBool("syncer.enabled", false)
-	if syncerEnabled {
-		s.syncerNotifyService.Start()
-	}
-
 	// load server plugins
 	plugin.LoadPlugins()
 	rbac.Init()
@@ -201,10 +192,6 @@ func (s *ServiceCenterServer) Stop() {
 
 	if s.eventCenter != nil {
 		s.eventCenter.Stop()
-	}
-
-	if s.syncerNotifyService != nil {
-		s.syncerNotifyService.Stop()
 	}
 
 	gopool.CloseAndWait()

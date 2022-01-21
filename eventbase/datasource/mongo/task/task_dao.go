@@ -65,10 +65,10 @@ func (d *Dao) Delete(ctx context.Context, tasks ...*sync.Task) error {
 	for i, task := range tasks {
 		tasksIDs[i] = task.ID
 		dFilter := bson.D{
-			{model.ColumnDomain, task.Domain},
-			{model.ColumnProject, task.Project},
-			{model.ColumnID, task.ID},
-			{model.ColumnTimestamp, task.Timestamp},
+			{Key: model.ColumnDomain, Value: task.Domain},
+			{Key: model.ColumnProject, Value: task.Project},
+			{Key: model.ColumnID, Value: task.ID},
+			{Key: model.ColumnTimestamp, Value: task.Timestamp},
 		}
 		filter = append(filter, dFilter)
 	}

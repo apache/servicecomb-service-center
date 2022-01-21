@@ -28,7 +28,6 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/mongo/event"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/sd"
-	"github.com/apache/servicecomb-service-center/server/syncernotify"
 	_ "github.com/apache/servicecomb-service-center/test"
 )
 
@@ -48,21 +47,6 @@ func TestInstanceEventHandler_OnEvent(t *testing.T) {
 		h := event.InstanceEventHandler{}
 		h.OnEvent(mongoAssign())
 		assert.Error(t, assert.AnError)
-	})
-	t.Run("OnEvent test when syncer notify center open", func(t *testing.T) {
-		syncernotify.GetSyncerNotifyCenter().Start()
-		h := event.InstanceEventHandler{}
-		h.OnEvent(mongoAssign())
-		assert.Equal(t, false, t.Failed(), "add event succeed")
-	})
-}
-
-func TestNotifySyncerInstanceEvent(t *testing.T) {
-	t.Run("test when data is ok", func(t *testing.T) {
-		mongoEvent := mongoAssign()
-		microService := getMicroService()
-		event.NotifySyncerInstanceEvent(mongoEvent, microService)
-		assert.Equal(t, false, t.Failed())
 	})
 }
 

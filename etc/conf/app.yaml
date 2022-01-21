@@ -220,9 +220,6 @@ auth:
 auditlog:
   kind:
 
-syncer:
-  enabled: false
-
 heartbeat:
   # configuration of websocket long connection
   websocket:
