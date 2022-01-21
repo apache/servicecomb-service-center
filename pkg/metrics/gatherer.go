@@ -29,6 +29,8 @@ import (
 	"github.com/go-chassis/foundation/gopool"
 )
 
+const prefixName = FamilyName + "_"
+
 var families = mapset.NewSet(FamilyName)
 
 // EmptyGather just active when metrics disabled
@@ -92,6 +94,9 @@ func (mm *Gather) Collect() error {
 	records := NewMetrics()
 	for _, mf := range mfs {
 		name := RecordName(mf.GetName())
+		if len(name) == 0 {
+			continue
+		}
 		if d := Calculate(mf); d != nil {
 			records.put(name, d)
 		}
@@ -107,7 +112,10 @@ func RecordName(metricName string) string {
 	if !isSys && len(family) == 0 {
 		return ""
 	}
-	metricName = strings.TrimPrefix(metricName, family+"_")
+	if strings.Index(metricName, prefixName) == 0 {
+		// just compatible with sc old metric name without familyName
+		metricName = strings.TrimPrefix(metricName, prefixName)
+	}
 	return metricName
 }
 
