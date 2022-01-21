@@ -74,6 +74,8 @@ func Health() (*Resp, error) {
 		resp.Peers = append(resp.Peers, p)
 	}
 
+	reportMetrics(resp.Peers)
+
 	if len(resp.Peers) <= 0 {
 		return nil, ErrConfigIsEmpty
 	}
@@ -107,4 +109,16 @@ func reportClockDiff(peerName string, local int64, resp int64) {
 	curr := time.Now().UnixNano()
 	spent := (curr - local) / 2
 	metrics.PeersClockDiffSet(peerName, local+spent-resp)
+}
+
+func reportMetrics(peers []*Peer) {
+	var connectPeersCount int64
+	for _, peer := range peers {
+		if peer.Status == rpc.HealthStatusConnected {
+			connectPeersCount++
+		}
+	}
+
+	metrics.ConnectedPeersSet(int64(len(peers)))
+	metrics.PeersTotalSet(connectPeersCount)
 }
