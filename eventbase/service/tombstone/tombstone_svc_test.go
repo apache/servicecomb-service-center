@@ -21,17 +21,20 @@ import (
 	"context"
 	"testing"
 
+	"github.com/apache/servicecomb-service-center/eventbase/test"
 	"github.com/go-chassis/cari/sync"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/apache/servicecomb-service-center/eventbase/datasource"
 	"github.com/apache/servicecomb-service-center/eventbase/model"
 	"github.com/apache/servicecomb-service-center/eventbase/service/tombstone"
-	"github.com/apache/servicecomb-service-center/eventbase/test"
 )
 
 func init() {
-	err := datasource.Init(test.DBKind)
+	err := datasource.Init(&datasource.Config{
+		Kind:   test.DBKind,
+		Logger: nil,
+	})
 	if err != nil {
 		panic(err)
 	}

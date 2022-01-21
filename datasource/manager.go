@@ -66,7 +66,10 @@ func Init(opts Options) error {
 		return err
 	}
 	// init eventbase
-	err = datasource.Init(opts.Kind)
+	err = datasource.Init(&datasource.Config{
+		Kind:   opts.Kind,
+		Logger: log.Logger,
+	})
 	return err
 }
 

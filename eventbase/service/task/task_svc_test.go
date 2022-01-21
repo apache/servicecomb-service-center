@@ -32,7 +32,10 @@ import (
 )
 
 func init() {
-	err := datasource.Init(test.DBKind)
+	err := datasource.Init(&datasource.Config{
+		Kind:   test.DBKind,
+		Logger: nil,
+	})
 	if err != nil {
 		panic(err)
 	}
