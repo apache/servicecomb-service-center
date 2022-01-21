@@ -71,7 +71,10 @@ func init() {
 		Timeout: 10 * time.Second,
 	})
 
-	_ = edatasource.Init(kind)
+	_ = edatasource.Init(&edatasource.Config{
+		Kind:   kind,
+		Logger: nil,
+	})
 
 	_ = registry.SelfRegister(context.Background())
 }

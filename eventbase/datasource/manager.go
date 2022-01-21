@@ -19,12 +19,20 @@ package datasource
 
 import (
 	"fmt"
+
+	"github.com/go-chassis/openlog"
 )
 
 var (
 	dataSourceInst DataSource
 	plugins        = make(map[string]dataSourceEngine)
+
+	logger openlog.Logger
 )
+
+func Logger() openlog.Logger {
+	return logger
+}
 
 type dataSourceEngine func() DataSource
 
@@ -36,11 +44,20 @@ func RegisterPlugin(name string, engineFunc dataSourceEngine) {
 	plugins[name] = engineFunc
 }
 
-func Init(kind string) error {
-	f, ok := plugins[kind]
+type Config struct {
+	Kind   string
+	Logger openlog.Logger
+}
+
+func Init(c *Config) error {
+	f, ok := plugins[c.Kind]
 	if !ok {
-		return fmt.Errorf("do not support %s", kind)
+		return fmt.Errorf("do not support %s", c.Kind)
 	}
+	if c.Logger != nil {
+		logger = c.Logger
+	}
+
 	dataSourceInst = f()
 	return nil
 }

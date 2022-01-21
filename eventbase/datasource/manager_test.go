@@ -20,15 +20,18 @@ package datasource_test
 import (
 	"testing"
 
+	"github.com/apache/servicecomb-service-center/eventbase/test"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/apache/servicecomb-service-center/eventbase/datasource"
-	"github.com/apache/servicecomb-service-center/eventbase/test"
 )
 
 func TestInit(t *testing.T) {
 	t.Run("init config should pass with no error", func(t *testing.T) {
-		err := datasource.Init(test.DBKind)
+		err := datasource.Init(&datasource.Config{
+			Kind:   test.DBKind,
+			Logger: nil,
+		})
 		assert.Nil(t, err)
 		assert.NotNil(t, datasource.GetDataSource())
 	})

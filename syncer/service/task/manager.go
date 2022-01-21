@@ -31,8 +31,6 @@ func Work() {
 }
 
 func work() {
-	initDatabase()
-
 	dl := DistributedLock{
 		key:               taskName,
 		heartbeatDuration: heartbeatInternal,
@@ -166,9 +164,11 @@ func (m *manager) ListTasks(ctx context.Context) ([]*carisync.Task, error) {
 	}
 
 	noHandleTasks := make([]*carisync.Task, 0, len(tasks))
+	skipTaskIDs := make([]string, 0, len(tasks))
 	for _, t := range tasks {
 		_, ok := m.cache.Load(t.ID)
 		if ok {
+			skipTaskIDs = append(skipTaskIDs, t.ID)
 			continue
 		}
 		m.cache.Store(t.ID, t)
@@ -176,7 +176,8 @@ func (m *manager) ListTasks(ctx context.Context) ([]*carisync.Task, error) {
 		noHandleTasks = append(noHandleTasks, t)
 	}
 
-	log.Info(fmt.Sprintf("load task count %d", len(noHandleTasks)))
+	log.Info(fmt.Sprintf("load task raw count %d, to handle count %d, skip ids %v",
+		len(tasks), len(noHandleTasks), skipTaskIDs))
 
 	return noHandleTasks, nil
 }

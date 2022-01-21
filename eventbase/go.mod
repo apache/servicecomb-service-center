@@ -3,6 +3,7 @@ module github.com/apache/servicecomb-service-center/eventbase
 require (
 	github.com/go-chassis/cari v0.5.1-0.20220119150556-8ae374a2649d
 	github.com/go-chassis/go-archaius v1.5.4
+	github.com/go-chassis/openlog v1.1.3
 	github.com/little-cui/etcdadpt v0.3.2
 	github.com/stretchr/testify v1.7.0
 	go.mongodb.org/mongo-driver v1.4.2
@@ -22,7 +23,6 @@ require (
 	github.com/fsnotify/fsnotify v1.4.7 // indirect
 	github.com/go-chassis/foundation v0.4.0 // indirect
 	github.com/go-chassis/go-chassis/v2 v2.3.0 // indirect
-	github.com/go-chassis/openlog v1.1.3 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/gofrs/uuid v4.0.0+incompatible // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect

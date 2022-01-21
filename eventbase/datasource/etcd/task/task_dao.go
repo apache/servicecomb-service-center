@@ -21,11 +21,12 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/go-chassis/cari/sync"
-	"github.com/little-cui/etcdadpt"
-
 	"github.com/apache/servicecomb-service-center/eventbase/datasource"
 	"github.com/apache/servicecomb-service-center/eventbase/datasource/etcd/key"
+
+	"github.com/go-chassis/cari/sync"
+	"github.com/go-chassis/openlog"
+	"github.com/little-cui/etcdadpt"
 )
 
 type Dao struct {
@@ -95,6 +96,7 @@ func (d Dao) List(ctx context.Context, options ...datasource.TaskFindOption) ([]
 		task := sync.Task{}
 		err := json.Unmarshal(kv.Value, &task)
 		if err != nil {
+			datasource.Logger().Error("unmarshal task failed", openlog.WithErr(err))
 			continue
 		}
 		if !filterMatch(&task, opts) {
