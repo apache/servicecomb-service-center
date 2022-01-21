@@ -59,9 +59,7 @@ func Init(opts Options) error {
 	if err != nil {
 		return err
 	}
-	err = dlock.Init(dlock.Options{
-		Kind: opts.Kind,
-	})
+	err = dlock.Init(dlock.Options{Kind: opts.Kind})
 	if err != nil {
 		return err
 	}
