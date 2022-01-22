@@ -22,16 +22,17 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/go-chassis/cari/db/mongo"
+	dmongo "github.com/go-chassis/cari/db/mongo"
 	"github.com/go-chassis/cari/discovery"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-
-	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
-	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/sync"
+	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
@@ -97,61 +98,71 @@ func (ds *DepManager) ListProviders(ctx context.Context, request *discovery.GetD
 	}, nil
 }
 
-func (ds *DepManager) PutDependencies(ctx context.Context, dependencys []*discovery.ConsumerDependency, override bool) error {
-	domainProject := util.ParseDomainProject(ctx)
-	for _, dependency := range dependencys {
-		consumerFlag := util.StringJoin([]string{
-			dependency.Consumer.Environment,
-			dependency.Consumer.AppId,
-			dependency.Consumer.ServiceName,
-			dependency.Consumer.Version}, "/")
-		consumerInfo := discovery.DependenciesToKeys([]*discovery.MicroServiceKey{dependency.Consumer}, domainProject)[0]
-		providersInfo := discovery.DependenciesToKeys(dependency.Providers, domainProject)
+func (ds *DepManager) PutDependencies(ctx context.Context, dependencyInfos []*discovery.ConsumerDependency, override bool) error {
+	return updateDepTxn(ctx, dependencyInfos, override)
+}
 
-		if err := datasource.ParamsChecker(consumerInfo, providersInfo); err != nil {
-			log.Error(fmt.Sprintf("put request into dependency queue failed, override: %t consumer is %s",
-				override, consumerFlag), nil)
-			return err
-		}
+func updateDepTxn(ctx context.Context, dependencyInfos []*discovery.ConsumerDependency, override bool) error {
+	return dmongo.GetClient().ExecTxn(ctx, func(sessionContext mongo.SessionContext) error {
+		domainProject := util.ParseDomainProject(ctx)
+		for _, dependency := range dependencyInfos {
+			consumerFlag := util.StringJoin([]string{
+				dependency.Consumer.Environment,
+				dependency.Consumer.AppId,
+				dependency.Consumer.ServiceName,
+				dependency.Consumer.Version}, "/")
+			consumerInfo := discovery.DependenciesToKeys([]*discovery.MicroServiceKey{dependency.Consumer}, domainProject)[0]
+			providersInfo := discovery.DependenciesToKeys(dependency.Providers, domainProject)
 
-		consumerID, err := GetServiceID(ctx, consumerInfo)
-		if err != nil && !errors.Is(err, datasource.ErrNoData) {
-			log.Error(fmt.Sprintf("put request into dependency queue failed, override: %t, get consumer %s id failed",
-				override, consumerFlag), err)
-			return discovery.NewError(discovery.ErrInternal, err.Error())
-		}
-		if len(consumerID) == 0 {
-			log.Error(fmt.Sprintf("put request into dependency queue failed, override: %t consumer %s does not exist",
-				override, consumerFlag), err)
-			return discovery.NewError(discovery.ErrServiceNotExists, fmt.Sprintf("Consumer %s does not exist.", consumerFlag))
-		}
-
-		dependency.Override = override
-		if !override {
-			id := util.GenerateUUID()
-
-			domain := util.ParseDomain(ctx)
-			project := util.ParseProject(ctx)
-			data := &model.ConsumerDep{
-				Domain:      domain,
-				Project:     project,
-				ConsumerID:  consumerID,
-				UUID:        id,
-				ConsumerDep: dependency,
+			if err := datasource.ParamsChecker(consumerInfo, providersInfo); err != nil {
+				log.Error(fmt.Sprintf("put request into dependency queue failed, override: %t consumer is %s",
+					override, consumerFlag), nil)
+				return err
 			}
-			insertRes, err := mongo.GetClient().GetDB().Collection(model.CollectionDep).InsertOne(ctx, data)
-			if err != nil {
-				log.Error("failed to insert dep to mongodb", err)
+
+			consumerID, err := GetServiceID(ctx, consumerInfo)
+			if err != nil && !errors.Is(err, datasource.ErrNoData) {
+				log.Error(fmt.Sprintf("put request into dependency queue failed, override: %t, get consumer %s id failed",
+					override, consumerFlag), err)
 				return discovery.NewError(discovery.ErrInternal, err.Error())
 			}
-			log.Info(fmt.Sprintf("insert dep to mongodb success %s", insertRes.InsertedID))
+			if len(consumerID) == 0 {
+				log.Error(fmt.Sprintf("put request into dependency queue failed, override: %t consumer %s does not exist",
+					override, consumerFlag), err)
+				return discovery.NewError(discovery.ErrServiceNotExists, fmt.Sprintf("Consumer %s does not exist.", consumerFlag))
+			}
+
+			dependency.Override = override
+			if !override {
+				id := util.GenerateUUID()
+
+				domain := util.ParseDomain(ctx)
+				project := util.ParseProject(ctx)
+				data := &model.ConsumerDep{
+					Domain:      domain,
+					Project:     project,
+					ConsumerID:  consumerID,
+					UUID:        id,
+					ConsumerDep: dependency,
+				}
+
+				insertRes, err := dmongo.GetClient().GetDB().Collection(model.CollectionDep).InsertOne(ctx, data)
+				if err != nil {
+					log.Error("failed to insert dep to mongodb", err)
+					return discovery.NewError(discovery.ErrInternal, err.Error())
+				}
+				log.Info(fmt.Sprintf("insert dep to mongodb success %s", insertRes.InsertedID))
+			}
+			err = syncDependencyRule(ctx, domainProject, dependency)
+			if err != nil {
+				return err
+			}
 		}
-		err = syncDependencyRule(ctx, domainProject, dependency)
-		if err != nil {
-			return err
+		if override {
+			return sync.DoCreateOpts(ctx, datasource.ResourceDependency, dependencyInfos)
 		}
-	}
-	return nil
+		return sync.DoUpdateOpts(ctx, datasource.ResourceDependency, dependencyInfos)
+	})
 }
 
 func (ds *DepManager) DependencyHandle(ctx context.Context) (err error) {
@@ -187,7 +198,7 @@ func GetOldProviderRules(dep *datasource.Dependency) (*discovery.MicroServiceDep
 		Dependency: []*discovery.MicroServiceKey{},
 	}
 	filter := GenerateConsumerDependencyRuleKey(dep.DomainProject, dep.Consumer)
-	findRes := mongo.GetClient().GetDB().Collection(model.CollectionDep).FindOne(context.TODO(), filter)
+	findRes := dmongo.GetClient().GetDB().Collection(model.CollectionDep).FindOne(context.TODO(), filter)
 	if findRes.Err() != nil {
 		log.Error(fmt.Sprintf("get dependency rule [%v] failed", filter), findRes.Err())
 		return microServiceDependency, nil
@@ -205,7 +216,7 @@ func updateDeps(domainProject string, dep *datasource.Dependency) error {
 	var upsert = true
 	for _, r := range dep.DeleteDependencyRuleList {
 		filter := GenerateProviderDependencyRuleKey(domainProject, r)
-		_, err := mongo.GetClient().GetDB().Collection(model.CollectionDep).UpdateMany(context.TODO(), filter,
+		_, err := dmongo.GetClient().GetDB().Collection(model.CollectionDep).UpdateMany(context.TODO(), filter,
 			bson.M{"$pull": bson.M{mutil.ConnectWithDot([]string{model.ColumnDep, model.ColumnDependency}): dep.Consumer}})
 		if err != nil {
 			return err
@@ -216,7 +227,7 @@ func updateDeps(domainProject string, dep *datasource.Dependency) error {
 		data := bson.M{
 			"$addToSet": bson.M{mutil.ConnectWithDot([]string{model.ColumnDep, model.ColumnDependency}): dep.Consumer},
 		}
-		_, err := mongo.GetClient().GetDB().Collection(model.CollectionDep).UpdateMany(context.TODO(), filter,
+		_, err := dmongo.GetClient().GetDB().Collection(model.CollectionDep).UpdateMany(context.TODO(), filter,
 			data, &options.UpdateOptions{Upsert: &upsert})
 		if err != nil {
 			return err
@@ -224,7 +235,7 @@ func updateDeps(domainProject string, dep *datasource.Dependency) error {
 	}
 	filter := GenerateConsumerDependencyRuleKey(domainProject, dep.Consumer)
 	if len(dep.ProvidersRule) == 0 {
-		_, err := mongo.GetClient().GetDB().Collection(model.CollectionDep).DeleteMany(context.TODO(), filter)
+		_, err := dmongo.GetClient().GetDB().Collection(model.CollectionDep).DeleteMany(context.TODO(), filter)
 		if err != nil {
 			return err
 		}
@@ -232,7 +243,7 @@ func updateDeps(domainProject string, dep *datasource.Dependency) error {
 		updateData := bson.M{
 			"$set": bson.M{mutil.ConnectWithDot([]string{model.ColumnDep, model.ColumnDependency}): dep.ProvidersRule},
 		}
-		_, err := mongo.GetClient().GetDB().Collection(model.CollectionDep).UpdateMany(context.TODO(), filter,
+		_, err := dmongo.GetClient().GetDB().Collection(model.CollectionDep).UpdateMany(context.TODO(), filter,
 			updateData, &options.UpdateOptions{Upsert: &upsert})
 		if err != nil {
 			return err
@@ -293,7 +304,7 @@ func removeProviderRuleKeys(ctx context.Context, domainProject string, cache map
 }
 
 func GetDepRules(ctx context.Context, filter bson.M) ([]*model.DependencyRule, error) {
-	findRes, err := mongo.GetClient().GetDB().Collection(model.CollectionDep).Find(ctx, filter)
+	findRes, err := dmongo.GetClient().GetDB().Collection(model.CollectionDep).Find(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -329,7 +340,7 @@ func removeProviderDeps(ctx context.Context, depRule *model.DependencyRule, cach
 		model.ColumnServiceKey: depRule.ServiceKey,
 	}
 	if !exist {
-		_, err = mongo.GetClient().GetDB().Collection(model.CollectionDep).DeleteOne(ctx, filter)
+		_, err = dmongo.GetClient().GetDB().Collection(model.CollectionDep).DeleteOne(ctx, filter)
 		if err != nil {
 			return err
 		}
@@ -365,12 +376,12 @@ func removeConsumerDeps(ctx context.Context, depRule *model.DependencyRule, cach
 		model.ColumnServiceKey: depRule.ServiceKey,
 	}
 	if len(left) == 0 {
-		_, err = mongo.GetClient().GetDB().Collection(model.CollectionDep).DeleteOne(ctx, filter)
+		_, err = dmongo.GetClient().GetDB().Collection(model.CollectionDep).DeleteOne(ctx, filter)
 	} else {
 		updateData := bson.M{
 			"$set": bson.M{mutil.ConnectWithDot([]string{model.ColumnDep, model.ColumnDependency}): left},
 		}
-		_, err = mongo.GetClient().GetDB().Collection(model.CollectionDep).UpdateMany(ctx, filter, updateData)
+		_, err = dmongo.GetClient().GetDB().Collection(model.CollectionDep).UpdateMany(ctx, filter, updateData)
 	}
 	if err != nil {
 		return err
@@ -382,7 +393,7 @@ func TransferToMicroServiceDependency(ctx context.Context, filter bson.M) (*disc
 	microServiceDependency := &discovery.MicroServiceDependency{
 		Dependency: []*discovery.MicroServiceKey{},
 	}
-	result := mongo.GetClient().GetDB().Collection(model.CollectionDep).FindOne(ctx, filter)
+	result := dmongo.GetClient().GetDB().Collection(model.CollectionDep).FindOne(ctx, filter)
 	if result.Err() == nil {
 		var depRule *model.DependencyRule
 		err := result.Decode(&depRule)

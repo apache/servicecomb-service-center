@@ -22,12 +22,15 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/go-chassis/cari/db/mongo"
+	dmongo "github.com/go-chassis/cari/db/mongo"
 	rbacmodel "github.com/go-chassis/cari/rbac"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/dao"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/sync"
 	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"github.com/apache/servicecomb-service-center/datasource/rbac"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -46,7 +49,7 @@ func (ds *RbacDAO) CreateRole(ctx context.Context, r *rbacmodel.Role) error {
 	r.ID = util.GenerateUUID()
 	r.CreateTime = strconv.FormatInt(time.Now().Unix(), 10)
 	r.UpdateTime = r.CreateTime
-	_, err = mongo.GetClient().GetDB().Collection(model.CollectionRole).InsertOne(ctx, r)
+	err = createRoleTxn(ctx, r)
 	if err != nil {
 		if dao.IsDuplicateKey(err) {
 			return rbac.ErrRoleDuplicated
@@ -57,9 +60,19 @@ func (ds *RbacDAO) CreateRole(ctx context.Context, r *rbacmodel.Role) error {
 	return nil
 }
 
+func createRoleTxn(ctx context.Context, r *rbacmodel.Role) error {
+	return dmongo.GetClient().ExecTxn(ctx, func(sessionContext mongo.SessionContext) error {
+		_, err := dmongo.GetClient().GetDB().Collection(model.CollectionRole).InsertOne(ctx, r)
+		if err != nil {
+			return err
+		}
+		return sync.DoCreateOpts(sessionContext, datasource.ResourceRole, r)
+	})
+}
+
 func (ds *RbacDAO) RoleExist(ctx context.Context, name string) (bool, error) {
 	filter := mutil.NewFilter(mutil.RoleName(name))
-	count, err := mongo.GetClient().GetDB().Collection(model.CollectionRole).CountDocuments(ctx, filter)
+	count, err := dmongo.GetClient().GetDB().Collection(model.CollectionRole).CountDocuments(ctx, filter)
 	if err != nil {
 		return false, err
 	}
@@ -71,7 +84,7 @@ func (ds *RbacDAO) RoleExist(ctx context.Context, name string) (bool, error) {
 
 func (ds *RbacDAO) GetRole(ctx context.Context, name string) (*rbacmodel.Role, error) {
 	filter := mutil.NewFilter(mutil.RoleName(name))
-	result := mongo.GetClient().GetDB().Collection(model.CollectionRole).FindOne(ctx, filter)
+	result := dmongo.GetClient().GetDB().Collection(model.CollectionRole).FindOne(ctx, filter)
 	if result.Err() != nil {
 		return nil, rbac.ErrRoleNotExist
 	}
@@ -86,7 +99,7 @@ func (ds *RbacDAO) GetRole(ctx context.Context, name string) (*rbacmodel.Role, e
 
 func (ds *RbacDAO) ListRole(ctx context.Context) ([]*rbacmodel.Role, int64, error) {
 	filter := mutil.NewFilter()
-	cursor, err := mongo.GetClient().GetDB().Collection(model.CollectionRole).Find(ctx, filter)
+	cursor, err := dmongo.GetClient().GetDB().Collection(model.CollectionRole).Find(ctx, filter)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -105,7 +118,7 @@ func (ds *RbacDAO) ListRole(ctx context.Context) ([]*rbacmodel.Role, int64, erro
 }
 
 func (ds *RbacDAO) DeleteRole(ctx context.Context, name string) (bool, error) {
-	n, err := mongo.GetClient().GetDB().Collection(model.CollectionAccount).CountDocuments(ctx,
+	n, err := dmongo.GetClient().GetDB().Collection(model.CollectionAccount).CountDocuments(ctx,
 		bson.M{"roles": bson.M{"$in": []string{name}}})
 	if err != nil {
 		return false, err
@@ -113,15 +126,22 @@ func (ds *RbacDAO) DeleteRole(ctx context.Context, name string) (bool, error) {
 	if n > 0 {
 		return false, rbac.ErrRoleBindingExist
 	}
-	filter := mutil.NewFilter(mutil.RoleName(name))
-	result, err := mongo.GetClient().GetDB().Collection(model.CollectionRole).DeleteMany(ctx, filter)
+	err = deleteRoleTxn(ctx, name)
 	if err != nil {
 		return false, err
 	}
-	if result.DeletedCount == 0 {
-		return false, nil
-	}
 	return true, nil
+}
+
+func deleteRoleTxn(ctx context.Context, name string) error {
+	return dmongo.GetClient().ExecTxn(ctx, func(sessionContext mongo.SessionContext) error {
+		filter := mutil.NewFilter(mutil.RoleName(name))
+		_, err := dmongo.GetClient().GetDB().Collection(model.CollectionRole).DeleteOne(ctx, filter)
+		if err != nil {
+			return err
+		}
+		return sync.DoDeleteOpts(sessionContext, datasource.ResourceRole, name, name)
+	})
 }
 
 func (ds *RbacDAO) UpdateRole(ctx context.Context, name string, role *rbacmodel.Role) error {
@@ -133,9 +153,15 @@ func (ds *RbacDAO) UpdateRole(ctx context.Context, name string, role *rbacmodel.
 		mutil.RoleUpdateTime(strconv.FormatInt(time.Now().Unix(), 10)),
 	)
 	updateFilter := mutil.NewFilter(mutil.Set(setFilter))
-	_, err := mongo.GetClient().GetDB().Collection(model.CollectionRole).UpdateMany(ctx, filter, updateFilter)
-	if err != nil {
-		return err
-	}
-	return nil
+	return updateRoleTxn(ctx, filter, updateFilter, role)
+}
+
+func updateRoleTxn(ctx context.Context, filter bson.M, updateFilter bson.M, role *rbacmodel.Role) error {
+	return dmongo.GetClient().ExecTxn(ctx, func(sessionContext mongo.SessionContext) error {
+		_, err := dmongo.GetClient().GetDB().Collection(model.CollectionRole).UpdateMany(ctx, filter, updateFilter)
+		if err != nil {
+			return err
+		}
+		return sync.DoUpdateOpts(sessionContext, datasource.ResourceRole, role)
+	})
 }

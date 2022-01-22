@@ -31,6 +31,7 @@ func ensureDB() {
 	ensureInstance()
 	ensureSchema()
 	ensureDep()
+	ensureAccount()
 	ensureAccountLock()
 }
 
@@ -80,6 +81,12 @@ func ensureDep() {
 		model.ColumnDomain,
 		model.ColumnProject,
 		model.ColumnServiceKey)})
+}
+
+func ensureAccount() {
+	dmongo.EnsureCollection(model.CollectionAccount, nil, []mongo.IndexModel{util.BuildIndexDoc(
+		model.ColumnName),
+	})
 }
 
 func ensureAccountLock() {
