@@ -18,6 +18,7 @@
 package datasource
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/go-chassis/cari/dlock"
@@ -49,6 +50,10 @@ func Init(opts Options) error {
 
 	err := initDatasource(opts)
 	if err != nil {
+		return err
+	}
+	err = GetSyncManager().SyncAll(context.Background())
+	if err != nil && err != ErrSyncAllKeyExists {
 		return err
 	}
 	err = schema.Init(schema.Options{Kind: opts.Kind})
@@ -99,4 +104,7 @@ func GetDependencyManager() DependencyManager {
 }
 func GetMetricsManager() MetricsManager {
 	return dataSourceInst.MetricsManager()
+}
+func GetSyncManager() SyncManager {
+	return dataSourceInst.SyncManager()
 }

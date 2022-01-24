@@ -41,9 +41,11 @@ func TestGenerateETCDDomainKey(t *testing.T) {
 func TestGenerateAccountKey(t *testing.T) {
 	assert.Equal(t, "/cse-sr/accounts/admin", path.GenerateAccountKey("admin"))
 }
+
 func TestGenerateAccountSecretKey(t *testing.T) {
 	assert.Equal(t, "/cse-sr/rbac/secret", path.GenerateRBACSecretKey())
 }
+
 func TestGenerateDependencyRuleKey(t *testing.T) {
 	// consumer
 	k := path.GenerateConsumerDependencyRuleKey("a", nil)
