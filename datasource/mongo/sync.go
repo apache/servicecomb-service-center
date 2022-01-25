@@ -15,14 +15,20 @@
  * limitations under the License.
  */
 
-package datasource
+package mongo
 
-// DataSource is the DAO layer
-type DataSource interface {
-	SystemManager() SystemManager
-	DependencyManager() DependencyManager
-	MetadataManager() MetadataManager
-	SCManager() SCManager
-	MetricsManager() MetricsManager
-	SyncManager() SyncManager
+import (
+	"context"
+
+	"github.com/apache/servicecomb-service-center/pkg/log"
+)
+
+type SyncManager struct {
+}
+
+// SyncAll will list all services,accounts,roles,schemas,tags,deps and use tasks to store
+func (s *SyncManager) SyncAll(ctx context.Context) error {
+	// TODO mongo should implement it
+	log.Info("Mongo does not implement this method")
+	return nil
 }

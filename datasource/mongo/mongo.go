@@ -44,6 +44,7 @@ type DataSource struct {
 	depManager      datasource.DependencyManager
 	scManager       datasource.SCManager
 	metricsManager  datasource.MetricsManager
+	syncManager     datasource.SyncManager
 }
 
 func (ds *DataSource) SystemManager() datasource.SystemManager {
@@ -66,6 +67,10 @@ func (ds *DataSource) MetricsManager() datasource.MetricsManager {
 	return ds.metricsManager
 }
 
+func (ds *DataSource) SyncManager() datasource.SyncManager {
+	return ds.syncManager
+}
+
 func NewDataSource(opts datasource.Options) (datasource.DataSource, error) {
 	// TODO: construct a reasonable DataSource instance
 	inst := &DataSource{}
@@ -82,6 +87,7 @@ func NewDataSource(opts datasource.Options) (datasource.DataSource, error) {
 		InstanceProperties: opts.InstanceProperties,
 	}
 	inst.metricsManager = &MetricsManager{}
+	inst.syncManager = &SyncManager{}
 	return inst, nil
 }
 
