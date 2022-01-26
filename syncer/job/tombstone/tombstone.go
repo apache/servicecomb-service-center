@@ -34,7 +34,7 @@ const (
 )
 
 func init() {
-	cronStr := config.GetString("sync.tombstone.retire,cron", "")
+	cronStr := config.GetString("sync.tombstone.retire.cron", "")
 	if len(cronStr) <= 0 {
 		cronStr = defaultDeleteExpireTombstoneCron
 	}
