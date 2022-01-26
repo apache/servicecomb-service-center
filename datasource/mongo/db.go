@@ -33,6 +33,7 @@ func ensureDB() {
 	ensureDep()
 	ensureAccount()
 	ensureAccountLock()
+	ensureSyncLock()
 }
 
 func ensureService() {
@@ -92,4 +93,9 @@ func ensureAccount() {
 func ensureAccountLock() {
 	dmongo.EnsureCollection(model.CollectionAccountLock, nil, []mongo.IndexModel{
 		util.BuildIndexDoc(model.ColumnAccountLockKey)})
+}
+
+func ensureSyncLock() {
+	dmongo.EnsureCollection(model.CollectionSync, nil, []mongo.IndexModel{
+		util.BuildIndexDoc(model.ColumnKey)})
 }

@@ -3,41 +3,40 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except request compliance with
+ * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to request writing, software
+ * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
 
-package etcd_test
+package mongo_test
 
 import (
 	"context"
 	"strconv"
 	"testing"
 
+	dmongo "github.com/go-chassis/cari/db/mongo"
 	pb "github.com/go-chassis/cari/discovery"
 	crbac "github.com/go-chassis/cari/rbac"
 	"github.com/go-chassis/cari/sync"
 	"github.com/go-chassis/go-archaius"
-	"github.com/little-cui/etcdadpt"
 	"github.com/stretchr/testify/assert"
+	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/datasource/etcd"
+	"github.com/apache/servicecomb-service-center/datasource/mongo"
+	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
 	"github.com/apache/servicecomb-service-center/datasource/rbac"
-	"github.com/apache/servicecomb-service-center/datasource/schema"
-	"github.com/apache/servicecomb-service-center/eventbase/model"
+	emodel "github.com/apache/servicecomb-service-center/eventbase/model"
 	"github.com/apache/servicecomb-service-center/eventbase/service/task"
-	"github.com/apache/servicecomb-service-center/eventbase/service/tombstone"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	_ "github.com/apache/servicecomb-service-center/test"
 )
 
 func syncAllContext() context.Context {
@@ -54,69 +53,22 @@ func TestSyncAll(t *testing.T) {
 
 	t.Run("enableOnStart is true and syncAllKey exists will not do sync", func(t *testing.T) {
 		_ = archaius.Set("sync.enableOnStart", true)
-		err := etcdadpt.Put(syncAllContext(), etcd.SyncAllKey, "1")
+		_, err := dmongo.GetClient().GetDB().Collection(model.CollectionSync).InsertOne(syncAllContext(),
+			bson.M{"key": mongo.SyncAllKey})
 		assert.Nil(t, err)
 		err = datasource.GetSyncManager().SyncAll(syncAllContext())
 		assert.Equal(t, datasource.ErrSyncAllKeyExists, err)
-		isDeleted, err := etcdadpt.Delete(syncAllContext(), etcd.SyncAllKey)
-		assert.Equal(t, isDeleted, true)
-		assert.Nil(t, err)
-	})
-
-	t.Run("enableOnstart is true and syncAllKey not exists but SyncAllLockKey is lock will not do sync", func(t *testing.T) {
-		_ = archaius.Set("sync.enableOnStart", true)
-		lock, err := etcdadpt.TryLock(etcd.SyncAllLockKey, 600)
-		assert.Nil(t, err)
-		err = datasource.GetSyncManager().SyncAll(syncAllContext())
-		assert.Nil(t, err)
-		listTaskReq := model.ListTaskRequest{
-			Domain:  "sync-all",
-			Project: "sync-all",
-		}
-		tasks, err := task.List(syncAllContext(), &listTaskReq)
-		assert.NoError(t, err)
-		assert.Equal(t, 0, len(tasks))
-		err = lock.Unlock()
+		_, err = dmongo.GetClient().GetDB().Collection(model.CollectionSync).DeleteOne(syncAllContext(),
+			bson.M{"key": mongo.SyncAllKey})
 		assert.Nil(t, err)
 	})
 
 	t.Run("enableOnStart is true and syncAllKey not exists will do sync", func(t *testing.T) {
 		_ = archaius.Set("sync.enableOnStart", true)
-		var serviceID string
 		var accountName string
 		var roleName string
 		var consumerID string
 		var providerID string
-		t.Run("register a service and delete the task should pass", func(t *testing.T) {
-			resp, err := datasource.GetMetadataManager().RegisterService(syncAllContext(), &pb.CreateServiceRequest{
-				Service: &pb.MicroService{
-					AppId:       "sync_micro_service_group",
-					ServiceName: "sync_micro_service_sync_all",
-					Version:     "1.0.0",
-					Level:       "FRONT",
-					Status:      pb.MS_UP,
-				},
-			})
-			assert.NotNil(t, resp)
-			assert.NoError(t, err)
-			assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
-			serviceID = resp.ServiceId
-			listTaskReq := model.ListTaskRequest{
-				Domain:       "sync-all",
-				Project:      "sync-all",
-				ResourceType: datasource.ResourceService,
-				Action:       sync.CreateAction,
-				Status:       sync.PendingStatus,
-			}
-			tasks, err := task.List(syncAllContext(), &listTaskReq)
-			assert.NoError(t, err)
-			assert.Equal(t, 1, len(tasks))
-			err = task.Delete(syncAllContext(), tasks...)
-			assert.NoError(t, err)
-			tasks, err = task.List(syncAllContext(), &listTaskReq)
-			assert.NoError(t, err)
-			assert.Equal(t, 0, len(tasks))
-		})
 		t.Run("create a account and delete the task should pass", func(t *testing.T) {
 			a1 := crbac.Account{
 				ID:                  "sync-create-11111-sync-all",
@@ -132,7 +84,7 @@ func TestSyncAll(t *testing.T) {
 			r, err := rbac.Instance().GetAccount(syncAllContext(), a1.Name)
 			assert.NoError(t, err)
 			assert.Equal(t, a1, *r)
-			listTaskReq := model.ListTaskRequest{
+			listTaskReq := emodel.ListTaskRequest{
 				Domain:       "",
 				Project:      "",
 				ResourceType: datasource.ResourceAccount,
@@ -161,7 +113,7 @@ func TestSyncAll(t *testing.T) {
 			assert.Less(t, 0, dt)
 			assert.Equal(t, r.CreateTime, r.UpdateTime)
 			roleName = r1.Name
-			listTaskReq := model.ListTaskRequest{
+			listTaskReq := emodel.ListTaskRequest{
 				Domain:       "",
 				Project:      "",
 				ResourceType: datasource.ResourceRole,
@@ -171,63 +123,6 @@ func TestSyncAll(t *testing.T) {
 			assert.Equal(t, 1, len(tasks))
 			err = task.Delete(syncAllContext(), tasks...)
 			assert.NoError(t, err)
-		})
-		t.Run("put content with valid request and delete three task should pass", func(t *testing.T) {
-			err := schema.Instance().PutContent(syncAllContext(), &schema.PutContentRequest{
-				ServiceID: serviceID,
-				SchemaID:  "schemaID_sync_all",
-				Content: &schema.ContentItem{
-					Hash:    "hash_sync_all",
-					Summary: "summary_sync_all",
-					Content: "1111111111",
-				},
-			})
-			assert.NoError(t, err)
-			ref, err := schema.Instance().GetRef(syncAllContext(), &schema.RefRequest{
-				ServiceID: serviceID,
-				SchemaID:  "schemaID_sync_all",
-			})
-			assert.NoError(t, err)
-			assert.NotNil(t, ref)
-			assert.Equal(t, "summary_sync_all", ref.Summary)
-			assert.Equal(t, "hash_sync_all", ref.Hash)
-			listTaskReq := model.ListTaskRequest{
-				Domain:       "sync-all",
-				Project:      "sync-all",
-				Action:       sync.UpdateAction,
-				ResourceType: datasource.ResourceKV,
-				Status:       sync.PendingStatus,
-			}
-			tasks, err := task.List(syncAllContext(), &listTaskReq)
-			assert.NoError(t, err)
-			assert.Equal(t, 3, len(tasks))
-			err = task.Delete(syncAllContext(), tasks...)
-			assert.NoError(t, err)
-		})
-		t.Run("update a service tag and delete the task should pass", func(t *testing.T) {
-			err := datasource.GetMetadataManager().PutManyTags(syncAllContext(), &pb.AddServiceTagsRequest{
-				ServiceId: serviceID,
-				Tags: map[string]string{
-					"a": "test",
-					"b": "b",
-				},
-			})
-			assert.NoError(t, err)
-			listTaskReq := model.ListTaskRequest{
-				Domain:       "sync-all",
-				Project:      "sync-all",
-				ResourceType: datasource.ResourceKV,
-				Action:       sync.UpdateAction,
-				Status:       sync.PendingStatus,
-			}
-			tasks, err := task.List(syncAllContext(), &listTaskReq)
-			assert.NoError(t, err)
-			assert.Equal(t, 1, len(tasks))
-			err = task.Delete(syncAllContext(), tasks...)
-			assert.NoError(t, err)
-			tasks, err = task.List(syncAllContext(), &listTaskReq)
-			assert.NoError(t, err)
-			assert.Equal(t, 0, len(tasks))
 		})
 		t.Run("create a consumer service will create a service task should pass", func(t *testing.T) {
 			resp, err := datasource.GetMetadataManager().RegisterService(syncAllContext(), &pb.CreateServiceRequest{
@@ -242,7 +137,7 @@ func TestSyncAll(t *testing.T) {
 			assert.NotNil(t, resp)
 			assert.NoError(t, err)
 			consumerID = resp.ServiceId
-			listTaskReq := model.ListTaskRequest{
+			listTaskReq := emodel.ListTaskRequest{
 				Domain:       "sync-all",
 				Project:      "sync-all",
 				ResourceType: datasource.ResourceService,
@@ -272,7 +167,7 @@ func TestSyncAll(t *testing.T) {
 			assert.NoError(t, err)
 			providerID = resp.ServiceId
 
-			listTaskReq := model.ListTaskRequest{
+			listTaskReq := emodel.ListTaskRequest{
 				Domain:       "sync-all",
 				Project:      "sync-all",
 				ResourceType: datasource.ResourceService,
@@ -304,14 +199,14 @@ func TestSyncAll(t *testing.T) {
 						},
 					},
 				},
-			}, true)
+			}, false)
 			assert.NoError(t, err)
 
-			listTaskReq := model.ListTaskRequest{
+			listTaskReq := emodel.ListTaskRequest{
 				Domain:       "sync-all",
 				Project:      "sync-all",
 				ResourceType: datasource.ResourceDependency,
-				Action:       sync.CreateAction,
+				Action:       sync.UpdateAction,
 				Status:       sync.PendingStatus,
 			}
 			tasks, err := task.List(syncAllContext(), &listTaskReq)
@@ -327,39 +222,21 @@ func TestSyncAll(t *testing.T) {
 		t.Run("do sync will create task should pass", func(t *testing.T) {
 			err := datasource.GetSyncManager().SyncAll(syncAllContext())
 			assert.Nil(t, err)
-			listServiceTaskReq := model.ListTaskRequest{
+			listServiceTaskReq := emodel.ListTaskRequest{
 				Domain:       "sync-all",
 				Project:      "sync-all",
 				ResourceType: datasource.ResourceService,
 			}
 			tasks, err := task.List(syncAllContext(), &listServiceTaskReq)
 			assert.NoError(t, err)
-			assert.Equal(t, 3, len(tasks))
+			assert.Equal(t, 2, len(tasks))
 			err = task.Delete(syncAllContext(), tasks...)
 			assert.NoError(t, err)
 			tasks, err = task.List(syncAllContext(), &listServiceTaskReq)
 			assert.NoError(t, err)
 			assert.Equal(t, 0, len(tasks))
 
-			listKVTaskReq := model.ListTaskRequest{
-				Domain:       "sync-all",
-				Project:      "sync-all",
-				ResourceType: datasource.ResourceKV,
-			}
-			tasks, err = task.List(syncAllContext(), &listKVTaskReq)
-			assert.NoError(t, err)
-			// three schema and one tag
-			assert.Equal(t, 4, len(tasks))
-			err = task.Delete(syncAllContext(), tasks...)
-			assert.NoError(t, err)
-			tasks, err = task.List(syncAllContext(), &listKVTaskReq)
-			assert.NoError(t, err)
-			// three schema and one tag
-			assert.Equal(t, 0, len(tasks))
-			err = task.Delete(syncAllContext(), tasks...)
-			assert.NoError(t, err)
-
-			listAccountTaskReq := model.ListTaskRequest{
+			listAccountTaskReq := emodel.ListTaskRequest{
 				Domain:       "",
 				Project:      "",
 				ResourceType: datasource.ResourceAccount,
@@ -373,7 +250,7 @@ func TestSyncAll(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, 0, len(tasks))
 
-			listRoleTaskReq := model.ListTaskRequest{
+			listRoleTaskReq := emodel.ListTaskRequest{
 				Domain:       "",
 				Project:      "",
 				ResourceType: datasource.ResourceRole,
@@ -387,7 +264,7 @@ func TestSyncAll(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, 0, len(tasks))
 
-			listDepTaskReq := model.ListTaskRequest{
+			listDepTaskReq := emodel.ListTaskRequest{
 				Domain:       "sync-all",
 				Project:      "sync-all",
 				ResourceType: datasource.ResourceDependency,
@@ -397,38 +274,48 @@ func TestSyncAll(t *testing.T) {
 			assert.Equal(t, 1, len(tasks))
 			err = task.Delete(syncAllContext(), tasks...)
 			assert.NoError(t, err)
-			tasks, err = task.List(syncAllContext(), &listDepTaskReq)
-			assert.NoError(t, err)
-			assert.Equal(t, 0, len(tasks))
-
-			exist, err := etcdadpt.Exist(syncAllContext(), etcd.SyncAllKey)
-			assert.Equal(t, true, exist)
+			count, err := dmongo.GetClient().GetDB().Collection(model.CollectionSync).CountDocuments(syncAllContext(),
+				bson.M{"key": mongo.SyncAllKey})
 			assert.Nil(t, err)
-
-			isDelete, err := etcdadpt.Delete(syncAllContext(), etcd.SyncAllKey)
-			assert.Equal(t, true, isDelete)
+			assert.Equal(t, int64(1), count)
+			_, err = dmongo.GetClient().GetDB().Collection(model.CollectionSync).DeleteOne(syncAllContext(),
+				bson.M{"key": mongo.SyncAllKey})
 			assert.Nil(t, err)
 		})
 
 		t.Run("delete all resources should pass", func(t *testing.T) {
-			err := schema.Instance().DeleteRef(syncAllContext(), &schema.RefRequest{
-				ServiceID: serviceID,
-				SchemaID:  "schemaID_sync_all",
-			})
+			_, err := rbac.Instance().DeleteAccount(syncAllContext(), []string{accountName})
 			assert.NoError(t, err)
-			err = datasource.GetMetadataManager().DeleteSchema(syncAllContext(), &pb.DeleteSchemaRequest{
-				ServiceId: serviceID,
-				SchemaId:  "schemaID_sync_all",
-			})
-			err = datasource.GetMetadataManager().UnregisterService(syncAllContext(), &pb.DeleteServiceRequest{
-				ServiceId: serviceID,
-				Force:     true,
-			})
+			listAccountTaskReq := emodel.ListTaskRequest{
+				Domain:       "",
+				Project:      "",
+				ResourceType: datasource.ResourceAccount,
+			}
+			tasks, err := task.List(syncAllContext(), &listAccountTaskReq)
 			assert.NoError(t, err)
-			_, err = rbac.Instance().DeleteAccount(syncAllContext(), []string{accountName})
+			assert.Equal(t, 1, len(tasks))
+			err = task.Delete(syncAllContext(), tasks...)
 			assert.NoError(t, err)
+			tasks, err = task.List(syncAllContext(), &listAccountTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tasks))
+
 			_, err = rbac.Instance().DeleteRole(syncAllContext(), roleName)
 			assert.NoError(t, err)
+			listRoleTaskReq := emodel.ListTaskRequest{
+				Domain:       "",
+				Project:      "",
+				ResourceType: datasource.ResourceRole,
+			}
+			tasks, err = task.List(syncAllContext(), &listRoleTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 1, len(tasks))
+			err = task.Delete(syncAllContext(), tasks...)
+			assert.NoError(t, err)
+			tasks, err = task.List(syncAllContext(), &listRoleTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tasks))
+
 			err = datasource.GetMetadataManager().UnregisterService(syncAllContext(), &pb.DeleteServiceRequest{
 				ServiceId: consumerID, Force: true,
 			})
@@ -439,70 +326,20 @@ func TestSyncAll(t *testing.T) {
 			})
 			assert.NoError(t, err)
 
-			listSeviceTaskReq := model.ListTaskRequest{
+			listSeviceTaskReq := emodel.ListTaskRequest{
 				Domain:       "sync-all",
 				Project:      "sync-all",
 				ResourceType: datasource.ResourceService,
 			}
-			tasks, err := task.List(syncAllContext(), &listSeviceTaskReq)
+			tasks, err = task.List(syncAllContext(), &listSeviceTaskReq)
 			assert.NoError(t, err)
-			assert.Equal(t, 3, len(tasks))
+			assert.Equal(t, 2, len(tasks))
 			err = task.Delete(syncAllContext(), tasks...)
 			assert.NoError(t, err)
 			tasks, err = task.List(syncAllContext(), &listSeviceTaskReq)
 			assert.NoError(t, err)
 			assert.Equal(t, 0, len(tasks))
-			listAccountTaskReq := model.ListTaskRequest{
-				Domain:       "",
-				Project:      "",
-				ResourceType: datasource.ResourceAccount,
-			}
-			tasks, err = task.List(syncAllContext(), &listAccountTaskReq)
-			assert.NoError(t, err)
-			assert.Equal(t, 1, len(tasks))
-			err = task.Delete(syncAllContext(), tasks...)
-			assert.NoError(t, err)
-			tasks, err = task.List(syncAllContext(), &listAccountTaskReq)
-			assert.NoError(t, err)
-			assert.Equal(t, 0, len(tasks))
-
-			listRoleTaskReq := model.ListTaskRequest{
-				Domain:       "",
-				Project:      "",
-				ResourceType: datasource.ResourceRole,
-			}
-			tasks, err = task.List(syncAllContext(), &listRoleTaskReq)
-			assert.NoError(t, err)
-			assert.Equal(t, 1, len(tasks))
-			err = task.Delete(syncAllContext(), tasks...)
-			assert.NoError(t, err)
-			tasks, err = task.List(syncAllContext(), &listRoleTaskReq)
-			assert.NoError(t, err)
-			assert.Equal(t, 0, len(tasks))
-
-			listKVTaskReq := model.ListTaskRequest{
-				Domain:       "sync-all",
-				Project:      "sync-all",
-				ResourceType: datasource.ResourceKV,
-			}
-			tasks, err = task.List(syncAllContext(), &listKVTaskReq)
-			assert.NoError(t, err)
-			assert.Equal(t, 2, len(tasks))
-			err = task.Delete(syncAllContext(), tasks...)
-			assert.NoError(t, err)
-			tasks, err = task.List(syncAllContext(), &listKVTaskReq)
-			assert.NoError(t, err)
-			assert.Equal(t, 0, len(tasks))
-
-			tombstoneListReq := model.ListTombstoneRequest{
-				Domain:  "sync-all",
-				Project: "sync-all",
-			}
-			tombstones, err := tombstone.List(syncAllContext(), &tombstoneListReq)
-			assert.NoError(t, err)
-			assert.Equal(t, 7, len(tombstones))
-			err = tombstone.Delete(syncAllContext(), tombstones...)
-			assert.NoError(t, err)
 		})
 	})
+
 }
