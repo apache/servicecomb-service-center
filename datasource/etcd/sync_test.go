@@ -63,6 +63,23 @@ func TestSyncAll(t *testing.T) {
 		assert.Nil(t, err)
 	})
 
+	t.Run("enableOnstart is true and syncAllKey not exists but SyncAllLockKey is lock will not do sync", func(t *testing.T) {
+		_ = archaius.Set("sync.enableOnStart", true)
+		lock, err := etcdadpt.TryLock(etcd.SyncAllLockKey, 600)
+		assert.Nil(t, err)
+		err = datasource.GetSyncManager().SyncAll(syncAllContext())
+		assert.Nil(t, err)
+		listTaskReq := model.ListTaskRequest{
+			Domain:  "sync-all",
+			Project: "sync-all",
+		}
+		tasks, err := task.List(syncAllContext(), &listTaskReq)
+		assert.NoError(t, err)
+		assert.Equal(t, 0, len(tasks))
+		err = lock.Unlock()
+		assert.Nil(t, err)
+	})
+
 	t.Run("enableOnStart is true and syncAllKey not exists will do sync", func(t *testing.T) {
 		_ = archaius.Set("sync.enableOnStart", true)
 		var serviceID string

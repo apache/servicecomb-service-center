@@ -37,7 +37,11 @@ import (
 )
 
 const (
-	SyncAllKey = "/cse-sr/sync-all"
+	SyncAllKey     = "/cse-sr/sync-all"
+	SyncAllLockKey = "/cse-sr/sync-all-lock"
+
+	// one minutes
+	defaultLockTime = 60
 )
 
 var (
@@ -61,6 +65,17 @@ func (s *SyncManager) SyncAll(ctx context.Context) error {
 		log.Info(fmt.Sprintf("%s key already exists, do not need to do tasks", SyncAllKey))
 		return datasource.ErrSyncAllKeyExists
 	}
+	lock, err := etcdadpt.TryLock(SyncAllLockKey, defaultLockTime)
+	if err != nil || lock == nil {
+		log.Info(fmt.Sprintf("%s lock not acquired", SyncAllLockKey))
+		return nil
+	}
+	defer func(lock *etcdadpt.DLock) {
+		err := lock.Unlock()
+		if err != nil {
+			log.Error(fmt.Sprintf("fail to unlock the %s key", SyncAllLockKey), err)
+		}
+	}(lock)
 	err = syncAllAccounts(ctx)
 	if err != nil {
 		return err
