@@ -33,6 +33,7 @@ const (
 	CollectionRole        = "role"
 	CollectionDomain      = "domain"
 	CollectionProject     = "project"
+	CollectionSync        = "sync"
 )
 
 const (
@@ -75,6 +76,7 @@ const (
 	ColumnAccountLockKey       = "key"
 	ColumnAccountLockStatus    = "status"
 	ColumnAccountLockReleaseAt = "release_at"
+	ColumnKey                  = "key"
 )
 
 type Service struct {
