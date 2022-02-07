@@ -310,8 +310,8 @@ func TestSyncAll(t *testing.T) {
 			listTaskReq := model.ListTaskRequest{
 				Domain:       "sync-all",
 				Project:      "sync-all",
-				ResourceType: datasource.ResourceDependency,
-				Action:       sync.CreateAction,
+				ResourceType: datasource.ResourceKV,
+				Action:       sync.UpdateAction,
 				Status:       sync.PendingStatus,
 			}
 			tasks, err := task.List(syncAllContext(), &listTaskReq)
@@ -345,6 +345,8 @@ func TestSyncAll(t *testing.T) {
 				Domain:       "sync-all",
 				Project:      "sync-all",
 				ResourceType: datasource.ResourceKV,
+				Action:       sync.CreateAction,
+				Status:       sync.PendingStatus,
 			}
 			tasks, err = task.List(syncAllContext(), &listKVTaskReq)
 			assert.NoError(t, err)
@@ -390,7 +392,9 @@ func TestSyncAll(t *testing.T) {
 			listDepTaskReq := model.ListTaskRequest{
 				Domain:       "sync-all",
 				Project:      "sync-all",
-				ResourceType: datasource.ResourceDependency,
+				ResourceType: datasource.ResourceKV,
+				Action:       sync.UpdateAction,
+				Status:       sync.PendingStatus,
 			}
 			tasks, err = task.List(syncAllContext(), &listDepTaskReq)
 			assert.NoError(t, err)

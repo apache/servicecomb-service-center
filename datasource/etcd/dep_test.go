@@ -142,8 +142,8 @@ func TestSyncAddOrUpdateDependencies(t *testing.T) {
 			listTaskReq := model.ListTaskRequest{
 				Domain:       "sync-dep",
 				Project:      "sync-dep",
-				ResourceType: datasource.ResourceDependency,
-				Action:       sync.CreateAction,
+				ResourceType: datasource.ResourceKV,
+				Action:       sync.UpdateAction,
 				Status:       sync.PendingStatus,
 			}
 			tasks, err := task.List(context.Background(), &listTaskReq)
@@ -180,7 +180,7 @@ func TestSyncAddOrUpdateDependencies(t *testing.T) {
 			listTaskReq := model.ListTaskRequest{
 				Domain:       "sync-dep",
 				Project:      "sync-dep",
-				ResourceType: datasource.ResourceDependency,
+				ResourceType: datasource.ResourceKV,
 				Action:       sync.UpdateAction,
 				Status:       sync.PendingStatus,
 			}

@@ -31,7 +31,6 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
-	"github.com/apache/servicecomb-service-center/datasource/mongo/sync"
 	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -158,10 +157,7 @@ func updateDepTxn(ctx context.Context, dependencyInfos []*discovery.ConsumerDepe
 				return err
 			}
 		}
-		if override {
-			return sync.DoCreateOpts(ctx, datasource.ResourceDependency, dependencyInfos)
-		}
-		return sync.DoUpdateOpts(ctx, datasource.ResourceDependency, dependencyInfos)
+		return nil
 	})
 }
 

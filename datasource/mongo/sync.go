@@ -20,7 +20,6 @@ package mongo
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	dmongo "github.com/go-chassis/cari/db/mongo"
 	"github.com/go-chassis/cari/discovery"
@@ -67,10 +66,6 @@ func (s *SyncManager) SyncAll(ctx context.Context) error {
 		return err
 	}
 	err = syncAllServices(ctx)
-	if err != nil {
-		return err
-	}
-	err = syncAllDependencies(ctx)
 	if err != nil {
 		return err
 	}
@@ -168,41 +163,6 @@ func syncAllServices(ctx context.Context) error {
 		err = sync.DoCreateOpts(ctx, datasource.ResourceService, request)
 		if err != nil {
 			log.Error("failed to create service task", err)
-			return err
-		}
-	}
-	return nil
-}
-
-func syncAllDependencies(ctx context.Context) error {
-	cursor, err := dmongo.GetClient().GetDB().Collection(model.CollectionDep).Find(ctx, bson.M{})
-	if err != nil {
-		return err
-	}
-	depInfosMap := make(map[string][]*discovery.ConsumerDependency)
-	defer func(cursor *mongo.Cursor, ctx context.Context) {
-		err := cursor.Close(ctx)
-		if err != nil {
-			log.Error("fail to close mongo cursor", err)
-		}
-	}(cursor, ctx)
-	for cursor.Next(ctx) {
-		var tmp model.ConsumerDep
-		err := cursor.Decode(&tmp)
-		if err != nil {
-			return err
-		}
-		key := tmp.Domain + "/" + tmp.Project
-		depInfosMap[key] = append(depInfosMap[key], tmp.ConsumerDep)
-	}
-	for key, dependencies := range depInfosMap {
-		splitKey := strings.Split(key, "/")
-		domain, project := splitKey[0], splitKey[1]
-		putil.SetDomain(ctx, domain)
-		putil.SetProject(ctx, project)
-		err := sync.DoUpdateOpts(ctx, datasource.ResourceDependency, dependencies)
-		if err != nil {
-			log.Error("fail to create dep tasks", err)
 			return err
 		}
 	}
