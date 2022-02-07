@@ -183,41 +183,6 @@ func TestSyncAll(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, 0, len(tasks))
 		})
-		t.Run("create dependencies for microServices will create a dependency task should pass", func(t *testing.T) {
-			consumer := &pb.MicroServiceKey{
-				ServiceName: "sync_dep_consumer_sync_all",
-				AppId:       "sync_dep_group_sync_all",
-				Version:     "1.0.0",
-			}
-			err := datasource.GetDependencyManager().PutDependencies(syncAllContext(), []*pb.ConsumerDependency{
-				{
-					Consumer: consumer,
-					Providers: []*pb.MicroServiceKey{
-						{
-							AppId:       "sync_dep_group_sync_all",
-							ServiceName: "sync_dep_provider_sync_all",
-						},
-					},
-				},
-			}, false)
-			assert.NoError(t, err)
-
-			listTaskReq := emodel.ListTaskRequest{
-				Domain:       "sync-all",
-				Project:      "sync-all",
-				ResourceType: datasource.ResourceDependency,
-				Action:       sync.UpdateAction,
-				Status:       sync.PendingStatus,
-			}
-			tasks, err := task.List(syncAllContext(), &listTaskReq)
-			assert.NoError(t, err)
-			assert.Equal(t, 1, len(tasks))
-			err = task.Delete(syncAllContext(), tasks...)
-			assert.NoError(t, err)
-			tasks, err = task.List(syncAllContext(), &listTaskReq)
-			assert.NoError(t, err)
-			assert.Equal(t, 0, len(tasks))
-		})
 
 		t.Run("do sync will create task should pass", func(t *testing.T) {
 			err := datasource.GetSyncManager().SyncAll(syncAllContext())
@@ -264,16 +229,6 @@ func TestSyncAll(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, 0, len(tasks))
 
-			listDepTaskReq := emodel.ListTaskRequest{
-				Domain:       "sync-all",
-				Project:      "sync-all",
-				ResourceType: datasource.ResourceDependency,
-			}
-			tasks, err = task.List(syncAllContext(), &listDepTaskReq)
-			assert.NoError(t, err)
-			assert.Equal(t, 1, len(tasks))
-			err = task.Delete(syncAllContext(), tasks...)
-			assert.NoError(t, err)
 			count, err := dmongo.GetClient().GetDB().Collection(model.CollectionSync).CountDocuments(syncAllContext(),
 				bson.M{"key": mongo.SyncAllKey})
 			assert.Nil(t, err)

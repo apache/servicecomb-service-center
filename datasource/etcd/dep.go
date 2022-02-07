@@ -151,19 +151,15 @@ func (dm *DepManager) PutDependencies(ctx context.Context, dependencyInfos []*pb
 		}
 		key := path.GenerateConsumerDependencyQueueKey(domainProject, consumerID, id)
 		opts = append(opts, etcdadpt.OpPut(etcdadpt.WithStrKey(key), etcdadpt.WithValue(data)))
+		syncOpts, err := esync.GenUpdateOpts(ctx, datasource.ResourceKV, data, esync.WithOpts(map[string]string{"key": key}))
+		if err != nil {
+			log.Error("fail to create sync opts", err)
+			return pb.NewError(pb.ErrInternal, err.Error())
+		}
+		opts = append(opts, syncOpts...)
 	}
 
-	syncOpts, err := esync.GenCreateOpts(ctx, datasource.ResourceDependency, dependencyInfos)
-	if !override {
-		syncOpts, err = esync.GenUpdateOpts(ctx, datasource.ResourceDependency, dependencyInfos)
-	}
-	if err != nil {
-		log.Error("fail to create sync opts", err)
-		return pb.NewError(pb.ErrInternal, err.Error())
-	}
-	opts = append(opts, syncOpts...)
-
-	err = etcdadpt.Txn(ctx, opts)
+	err := etcdadpt.Txn(ctx, opts)
 	if err != nil {
 		log.Error(fmt.Sprintf("put request into dependency queue failed, override: %t, %v",
 			override, dependencyInfos), err)

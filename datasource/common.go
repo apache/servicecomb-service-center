@@ -27,11 +27,10 @@ const (
 	RegistryAppID         = "default"
 	Provider              = "p"
 
-	ResourceAccount    = "account"
-	ResourceRole       = "role"
-	ResourceDependency = "dependency"
-	ResourceService    = "service"
-	ResourceKV         = "kv"
-	ResourceInstance   = "instance"
-	ResourceHeartbeat  = "heartbeat"
+	ResourceAccount   = "account"
+	ResourceRole      = "role"
+	ResourceService   = "service"
+	ResourceKV        = "kv"
+	ResourceInstance  = "instance"
+	ResourceHeartbeat = "heartbeat"
 )

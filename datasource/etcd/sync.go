@@ -369,28 +369,15 @@ func syncAllDependencies(ctx context.Context) error {
 		return err
 	}
 	syncOpts := make([]etcdadpt.OpOptions, 0)
-	depInfosMap := make(map[string][]*discovery.ConsumerDependency)
 	for _, kv := range kvs {
-		dep := &discovery.ConsumerDependency{}
-		err = json.Unmarshal(kv.Value, dep)
-		if err != nil {
-			log.Error("fail to unmarshal dependency ", err)
-			return err
-		}
 		domain, project, err := getDomainProject(string(kv.Key), path.GetServiceDependencyQueueRootKey(""))
 		if err != nil {
 			log.Error("fail to get domain and project", err)
 			return err
 		}
-		key := domain + "/" + project
-		depInfosMap[key] = append(depInfosMap[key], dep)
-	}
-	for key, dependencies := range depInfosMap {
-		splitKey := strings.Split(key, "/")
-		domain, project := splitKey[0], splitKey[1]
 		putil.SetDomain(ctx, domain)
 		putil.SetProject(ctx, project)
-		opts, err := esync.GenUpdateOpts(ctx, datasource.ResourceDependency, dependencies)
+		opts, err := esync.GenUpdateOpts(ctx, datasource.ResourceKV, kv.Value, esync.WithOpts(map[string]string{"key": string(kv.Key)}))
 		if err != nil {
 			log.Error("fail to create dep opts", err)
 			return err
