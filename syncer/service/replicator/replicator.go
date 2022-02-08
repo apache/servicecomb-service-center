@@ -12,7 +12,6 @@ import (
 	syncerclient "github.com/apache/servicecomb-service-center/syncer/client"
 	"github.com/apache/servicecomb-service-center/syncer/config"
 	"github.com/apache/servicecomb-service-center/syncer/service/replicator/resource"
-
 	"github.com/go-chassis/foundation/gopool"
 	"google.golang.org/grpc"
 )
@@ -20,6 +19,11 @@ import (
 const (
 	schema      = "grpc"
 	serviceName = "syncer"
+)
+
+const (
+	reservedSize = 512 * 1024
+	maxSize      = 10*1024*1024 - reservedSize
 )
 
 var (
@@ -96,13 +100,62 @@ func (r *replicatorManager) Replicate(ctx context.Context, el *v1sync.EventList)
 	return r.replicate(ctx, el)
 }
 
+func pageEvents(source *v1sync.EventList, max int) []*v1sync.EventList {
+	els := make([]*v1sync.EventList, 0, 5)
+
+	size := 0
+	el := &v1sync.EventList{
+		Events: make([]*v1sync.Event, 0, 20),
+	}
+
+	for _, event := range source.Events {
+		lv := len(event.Value)
+		if size+lv < max {
+			el.Events = append(el.Events, event)
+			size += lv
+			continue
+		}
+
+		log.Info(fmt.Sprintf("size is %d", size))
+		els = append(els, el)
+
+		el = &v1sync.EventList{
+			Events: make([]*v1sync.Event, 0, 20),
+		}
+		el.Events = append(el.Events, event)
+		size = lv
+	}
+
+	log.Info(fmt.Sprintf("size is %d", size))
+	els = append(els, el)
+
+	return els
+}
+
 func (r *replicatorManager) replicate(ctx context.Context, el *v1sync.EventList) (*v1sync.Results, error) {
 	log.Info(fmt.Sprintf("start replicate events %d", len(el.Events)))
 
 	set := client.NewSet(conn)
-	result, err := set.EventServiceClient.Sync(ctx, el)
-	if err != nil {
-		return nil, err
+
+	els := pageEvents(el, maxSize)
+
+	result := &v1sync.Results{
+		Results: make(map[string]*v1sync.Result, len(el.Events)),
+	}
+
+	log.Info(fmt.Sprintf("page count %d to sync", len(els)))
+
+	for _, in := range els {
+		res, err := set.EventServiceClient.Sync(ctx, in)
+		if err != nil {
+			return nil, err
+		}
+
+		log.Info(fmt.Sprintf("replicate events success, count is %d", len(in.Events)))
+
+		for k, v := range res.Results {
+			result.Results[k] = v
+		}
 	}
 
 	log.Info(fmt.Sprintf("replicate events success %d", len(result.Results)))

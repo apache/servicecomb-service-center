@@ -189,8 +189,8 @@ github.com/go-chassis/foundation v0.4.0/go.mod h1:6NsIUaHghTFRGfCBcZN011zl196F6O
 github.com/go-chassis/go-archaius v1.5.1/go.mod h1:QPwvvtBxvwiC48rmydoAqxopqOr93RCQ6syWsIkXPXQ=
 github.com/go-chassis/go-archaius v1.5.4 h1:5mGXmBNfYnP8oc5KmXyds3kNMtWqlQ4VQKeyF2lvWs4=
 github.com/go-chassis/go-archaius v1.5.4/go.mod h1:ZyAZzEMPyEsyCP7KLYB/48eX/dDj8CzO/CL87P80AOc=
-github.com/go-chassis/go-chassis-extension/protocol/grpc v0.0.0-20210902082902-eb5df922afcd h1:RqGW+mW6U0+3QkvGXiDZfMwRb8PwW8bb1rI9tlm/jzo=
-github.com/go-chassis/go-chassis-extension/protocol/grpc v0.0.0-20210902082902-eb5df922afcd/go.mod h1:btid7R4NKuET4BCUkR74CL5EP0hk3J0jXSByjzwd9JM=
+github.com/go-chassis/go-chassis-extension/protocol/grpc v0.0.0-20220208081606-003611df45da h1:DoPFX1Fy3MLEb1RvgchInKspm8DkxQhrvZ5kOcjeZAs=
+github.com/go-chassis/go-chassis-extension/protocol/grpc v0.0.0-20220208081606-003611df45da/go.mod h1:btid7R4NKuET4BCUkR74CL5EP0hk3J0jXSByjzwd9JM=
 github.com/go-chassis/go-chassis/v2 v2.3.0 h1:qqFeRhox9Ov0GMfkFnr/ZBkhjhyGHy+SrMyDNbXl8co=
 github.com/go-chassis/go-chassis/v2 v2.3.0/go.mod h1:iyJ2DWSkqfnCmad/0Il9nXWHaob7RcwPGlIDRNxccH0=
 github.com/go-chassis/go-restful-swagger20 v1.0.3 h1:kWfeLwMwJZVkXP1zNyFpkmR41UZ55UTcOptTteXhvEs=
