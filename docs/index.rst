@@ -14,7 +14,6 @@ Welcome to servicecomb-service-center's documentation!
    intro
    get-started
    user-guides
-   plugin-tracing-guides
 
 .. toctree::
    :maxdepth: 2
