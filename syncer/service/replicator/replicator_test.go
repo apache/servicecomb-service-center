@@ -84,3 +84,37 @@ func (f *mockResources) Operate(_ context.Context) *resource.Result {
 func (f mockResources) FailHandle(_ context.Context, _ int32) (*v1sync.Event, error) {
 	return nil, nil
 }
+
+func Test_pageEvents(t *testing.T) {
+	t.Run("no page case", func(t *testing.T) {
+		source := &v1sync.EventList{
+			Events: []*v1sync.Event{
+				{
+					Value: []byte("hello"),
+				},
+			},
+		}
+		result := pageEvents(source, maxSize)
+		if assert.Equal(t, 1, len(result)) {
+			assert.Equal(t, []byte("hello"), result[0].Events[0].Value)
+		}
+	})
+
+	t.Run("page case", func(t *testing.T) {
+		source := &v1sync.EventList{
+			Events: []*v1sync.Event{
+				{
+					Value: []byte("11"),
+				},
+				{
+					Value: []byte("2"),
+				},
+			},
+		}
+		result := pageEvents(source, 3)
+		if assert.Equal(t, 2, len(result)) {
+			assert.Equal(t, []byte("11"), result[0].Events[0].Value)
+			assert.Equal(t, []byte("2"), result[1].Events[0].Value)
+		}
+	})
+}

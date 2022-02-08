@@ -5,6 +5,10 @@ servicecomb:
   protocols:
     grpc:
       listenAddress: 127.0.0.1:30105
+  transport:
+    maxBodyBytes:
+      grpc: 10485760
+
   handler:
     chain:
       Provider:
