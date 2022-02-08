@@ -7,6 +7,7 @@ Development guide
 
    dev-guides/dev-guide.md
    dev-guides/extendmodule.md
+   dev-guides/quota.md
    dev-guides/multidcs.rst
    dev-guides/multidcs2.rst
    dev-guides/helm.md

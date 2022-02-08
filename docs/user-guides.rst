@@ -11,6 +11,9 @@ User Guides
    user-guides/heartbeat.rst
    user-guides/sc-cluster.rst
    user-guides/integration-grafana.rst
+   user-guides/quota.md
+   plugin-tracing-guides
    user-guides/rbac.md
    user-guides/fast-registration.md
    user-guides/ux.md
+   user-guides/limits.md

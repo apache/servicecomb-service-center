@@ -1,4 +1,4 @@
-Tracing Plugins
+Tracing
 =========================
 
 .. toctree::
