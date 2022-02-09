@@ -35,8 +35,6 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/mongo/sync"
 	mutil "github.com/apache/servicecomb-service-center/datasource/mongo/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/privacy"
-	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
 func init() {
@@ -60,17 +58,7 @@ func (ds *RbacDAO) CreateAccount(ctx context.Context, a *rbacmodel.Account) erro
 	if exist {
 		return rbac.ErrAccountDuplicated
 	}
-	a.Password, err = privacy.ScryptPassword(a.Password)
-	if err != nil {
-		msg := fmt.Sprintf("failed to hash account pwd, account name %s", a.Name)
-		log.Error(msg, err)
-		return err
-	}
-	a.Role = ""
-	a.CurrentPassword = ""
-	a.ID = util.GenerateUUID()
-	a.CreateTime = strconv.FormatInt(time.Now().Unix(), 10)
-	a.UpdateTime = a.CreateTime
+
 	err = createAccountTxn(ctx, a)
 	if err != nil {
 		if dao.IsDuplicateKey(err) {

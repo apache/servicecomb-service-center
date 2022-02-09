@@ -225,7 +225,7 @@ func (m *manager) closeUpdateTasks() {
 
 func (m *manager) handleResult(res *event.Result) {
 	if res.Error != nil || res.Data.Code == resource.Fail {
-		log.Error("get event result, return error ", res.Error)
+		log.Error(fmt.Sprintf("get task %s result, return error", res.ID), res.Error)
 		m.cache.Range(func(key, value interface{}) bool {
 			if res.ID == key {
 				m.cache.Delete(key)
@@ -241,7 +241,7 @@ func (m *manager) handleResult(res *event.Result) {
 		return
 	}
 
-	log.Info(fmt.Sprintf("key,result: %s", res.ID))
+	log.Info(fmt.Sprintf("key: %s,result: %v", res.ID, res.Data))
 
 	t, ok := m.cache.LoadAndDelete(res.ID)
 	if !ok {

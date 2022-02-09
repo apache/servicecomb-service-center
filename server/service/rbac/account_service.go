@@ -21,10 +21,14 @@ package rbac
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"time"
 
 	"github.com/apache/servicecomb-service-center/datasource/rbac"
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/privacy"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	quotasvc "github.com/apache/servicecomb-service-center/server/service/quota"
 	"github.com/apache/servicecomb-service-center/server/service/validator"
 	"github.com/go-chassis/cari/discovery"
@@ -65,6 +69,18 @@ func CreateAccount(ctx context.Context, a *rbacmodel.Account) error {
 			log.Error("unlock failed", err)
 		}
 	}()
+
+	a.Password, err = privacy.ScryptPassword(a.Password)
+	if err != nil {
+		msg := fmt.Sprintf("failed to hash account pwd, account name %s", a.Name)
+		log.Error(msg, err)
+		return err
+	}
+	a.Role = ""
+	a.CurrentPassword = ""
+	a.ID = util.GenerateUUID()
+	a.CreateTime = strconv.FormatInt(time.Now().Unix(), 10)
+	a.UpdateTime = a.CreateTime
 
 	err = rbac.Instance().CreateAccount(ctx, a)
 	if err == nil {

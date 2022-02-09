@@ -2,13 +2,13 @@ package resource
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	"github.com/apache/servicecomb-service-center/datasource/rbac"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	servicerbac "github.com/apache/servicecomb-service-center/server/service/rbac"
 	v1sync "github.com/apache/servicecomb-service-center/syncer/api/v1"
 
-	"github.com/go-chassis/cari/pkg/errsvc"
 	rbacmodel "github.com/go-chassis/cari/rbac"
 )
 
@@ -27,7 +27,7 @@ func NewAccount(e *v1sync.Event) Resource {
 type accountManager interface {
 	CreateAccount(ctx context.Context, a *rbacmodel.Account) error
 	GetAccount(ctx context.Context, name string) (*rbacmodel.Account, error)
-	UpdateAccount(ctx context.Context, name string, account *rbacmodel.Account) error
+	UpdateAccount(ctx context.Context, account *rbacmodel.Account) error
 	DeleteAccount(ctx context.Context, name string) error
 }
 
@@ -67,7 +67,7 @@ func (a *account) LoadCurrentResource(ctx context.Context) *Result {
 
 	cur, err := a.manager.GetAccount(ctx, a.accountName)
 	if err != nil {
-		if errsvc.IsErrEqualCode(err, rbacmodel.ErrAccountNotExist) {
+		if errors.Is(err, rbac.ErrAccountNotExist) {
 			return nil
 		}
 		return FailResult(err)
@@ -103,7 +103,7 @@ func (a *account) UpdateHandle(ctx context.Context) error {
 			a.accountName))
 		return a.CreateHandle(ctx)
 	}
-	return a.manager.UpdateAccount(ctx, a.input.Name, a.input)
+	return a.manager.UpdateAccount(ctx, a.input)
 }
 
 func (a *account) DeleteHandle(ctx context.Context) error {
@@ -115,17 +115,18 @@ func (a *account) Operate(ctx context.Context) *Result {
 }
 
 func (a *account) CreateAccount(ctx context.Context, at *rbacmodel.Account) error {
-	return servicerbac.CreateAccount(ctx, at)
+	return rbac.Instance().CreateAccount(ctx, at)
 }
 
 func (a *account) GetAccount(ctx context.Context, name string) (*rbacmodel.Account, error) {
-	return servicerbac.GetAccount(ctx, name)
+	return rbac.Instance().GetAccount(ctx, name)
 }
 
-func (a *account) UpdateAccount(ctx context.Context, name string, account *rbacmodel.Account) error {
-	return servicerbac.UpdateAccount(ctx, name, account)
+func (a *account) UpdateAccount(ctx context.Context, account *rbacmodel.Account) error {
+	return rbac.Instance().UpdateAccount(ctx, account.Name, account)
 }
 
 func (a *account) DeleteAccount(ctx context.Context, name string) error {
-	return servicerbac.DeleteAccount(ctx, name)
+	_, err := rbac.Instance().DeleteAccount(ctx, []string{name})
+	return err
 }
