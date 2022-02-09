@@ -3,16 +3,15 @@ package resource
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"strconv"
 	"testing"
 	"time"
 
 	v1sync "github.com/apache/servicecomb-service-center/syncer/api/v1"
 
-	"github.com/go-chassis/cari/pkg/errsvc"
+	datasourcerbac "github.com/apache/servicecomb-service-center/datasource/rbac"
 	"github.com/go-chassis/cari/rbac"
-	rbacmodel "github.com/go-chassis/cari/rbac"
 	"github.com/go-chassis/cari/sync"
 	"github.com/stretchr/testify/assert"
 )
@@ -24,7 +23,7 @@ type mockAccount struct {
 func (f mockAccount) CreateAccount(_ context.Context, a *rbac.Account) error {
 	_, ok := f.accounts[a.Name]
 	if ok {
-		return rbacmodel.NewError(rbacmodel.ErrAccountConflict, "account exist")
+		return datasourcerbac.ErrAccountDuplicated
 	}
 
 	f.accounts[a.Name] = a
@@ -34,17 +33,16 @@ func (f mockAccount) CreateAccount(_ context.Context, a *rbac.Account) error {
 func (f mockAccount) GetAccount(_ context.Context, name string) (*rbac.Account, error) {
 	result, ok := f.accounts[name]
 	if !ok {
-		msg := fmt.Sprintf("account [%s] not exist", name)
-		return nil, rbacmodel.NewError(rbacmodel.ErrAccountNotExist, msg)
+		return nil, datasourcerbac.ErrAccountNotExist
 	}
 	return result, nil
 }
 
-func (f mockAccount) UpdateAccount(_ context.Context, name string, account *rbac.Account) error {
+func (f mockAccount) UpdateAccount(_ context.Context, account *rbac.Account) error {
+	name := account.Name
 	_, ok := f.accounts[name]
 	if !ok {
-		msg := fmt.Sprintf("account [%s] not exist", name)
-		return rbacmodel.NewError(rbacmodel.ErrAccountNotExist, msg)
+		return datasourcerbac.ErrAccountNotExist
 	}
 	f.accounts[name] = account
 	return nil
@@ -53,8 +51,7 @@ func (f mockAccount) UpdateAccount(_ context.Context, name string, account *rbac
 func (f mockAccount) DeleteAccount(_ context.Context, name string) error {
 	_, ok := f.accounts[name]
 	if !ok {
-		msg := fmt.Sprintf("account [%s] not exist", name)
-		return rbacmodel.NewError(rbacmodel.ErrAccountNotExist, msg)
+		return datasourcerbac.ErrAccountNotExist
 	}
 	delete(f.accounts, name)
 	return nil
@@ -162,7 +159,7 @@ func TestOperateAccount(t *testing.T) {
 				if assert.NotNil(t, result) && assert.Equal(t, Success, result.Status) {
 					_, err := a1.manager.GetAccount(ctx, "test")
 					assert.NotNil(t, err)
-					assert.True(t, errsvc.IsErrEqualCode(err, rbacmodel.ErrAccountNotExist))
+					assert.True(t, errors.Is(err, datasourcerbac.ErrAccountNotExist))
 				}
 			}
 		}
