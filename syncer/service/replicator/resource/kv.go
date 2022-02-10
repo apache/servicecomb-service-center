@@ -2,9 +2,12 @@ package resource
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"sync"
 
+	"github.com/apache/servicecomb-service-center/pkg/log"
 	v1sync "github.com/apache/servicecomb-service-center/syncer/api/v1"
 
 	"github.com/little-cui/etcdadpt"
@@ -12,6 +15,8 @@ import (
 
 const (
 	KV = "kv"
+
+	ComparableKey = "comparable"
 )
 
 const (
@@ -63,11 +68,35 @@ func (k *kv) LoadCurrentResource(ctx context.Context) *Result {
 	return nil
 }
 
+type Value struct {
+	Timestamp int64 `json:"$timestamp"`
+}
+
+func (k *kv) getUpdateTime() (int64, error) {
+	if k.cur == nil {
+		return 0, nil
+	}
+
+	comparable, ok := k.event.Opts[ComparableKey]
+	if !ok || comparable != "true" {
+		return 0, nil
+	}
+
+	v := new(Value)
+	err := json.Unmarshal(k.cur, v)
+	if err != nil {
+		log.Warn(fmt.Sprintf("unmarshal kv %s value failed, err %s", k.key, err.Error()))
+		return 0, err
+	}
+
+	return v.Timestamp, nil
+}
+
 func (k *kv) NeedOperate(ctx context.Context) *Result {
 	c := &checker{
 		curNotNil:  k.cur != nil,
 		event:      k.event,
-		updateTime: nil,
+		updateTime: k.getUpdateTime,
 		resourceID: k.key,
 	}
 	c.tombstoneLoader = c

@@ -80,8 +80,8 @@ func (a *account) NeedOperate(ctx context.Context) *Result {
 	c := &checker{
 		curNotNil: a.cur != nil,
 		event:     a.event,
-		updateTime: func() string {
-			return a.cur.UpdateTime
+		updateTime: func() (int64, error) {
+			return formatUpdateTimeSecond(a.cur.UpdateTime)
 		},
 		resourceID: a.input.Name,
 	}

@@ -92,8 +92,8 @@ func (m *microservice) NeedOperate(ctx context.Context) *Result {
 	c := &checker{
 		curNotNil: m.cur != nil,
 		event:     m.event,
-		updateTime: func() string {
-			return m.cur.ModTimestamp
+		updateTime: func() (int64, error) {
+			return formatUpdateTimeSecond(m.cur.ModTimestamp)
 		},
 		resourceID: m.serviceID,
 	}

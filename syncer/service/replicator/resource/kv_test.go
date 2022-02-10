@@ -2,6 +2,7 @@ package resource
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -160,4 +161,32 @@ func (f *mockKVManager) Delete(_ context.Context, key string) error {
 	}
 	delete(f.kvs, key)
 	return nil
+}
+
+func Test_kv_getUpdateTime(t *testing.T) {
+	now := time.Now().Unix()
+	data := []byte(fmt.Sprintf(`{"$timestamp": %d}`, now))
+	k := &kv{
+		key: "hello",
+		event: &v1sync.Event{
+			Opts: map[string]string{
+				ComparableKey: "true",
+			},
+		},
+		cur: data,
+	}
+	got, err := k.getUpdateTime()
+	if assert.Nil(t, err) {
+		assert.Equal(t, now, got)
+	}
+
+	k = &kv{
+		key:   "hello",
+		event: &v1sync.Event{},
+		cur:   data,
+	}
+	got, err = k.getUpdateTime()
+	if assert.Nil(t, err) {
+		assert.Equal(t, 0, got)
+	}
 }
