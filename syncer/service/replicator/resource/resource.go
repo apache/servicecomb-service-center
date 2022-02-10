@@ -278,10 +278,19 @@ type checker struct {
 	curNotNil bool
 
 	event      *v1sync.Event
-	updateTime func() string
+	updateTime func() (int64, error)
 	resourceID string
 
 	tombstoneLoader tombstoneLoader
+}
+
+func formatUpdateTimeSecond(src string) (int64, error) {
+	updateTime, err := strconv.ParseInt(src, 0, 0)
+	if err != nil {
+		return 0, err
+	}
+
+	return updateTime * 1000 * 1000 * 1000, nil
 }
 
 func (o *checker) needOperate(ctx context.Context) *Result {
@@ -290,13 +299,11 @@ func (o *checker) needOperate(ctx context.Context) *Result {
 			return nil
 		}
 
-		updateTime, err := strconv.ParseInt(o.updateTime(), 0, 0)
+		updateTime, err := o.updateTime()
 		if err != nil {
-			log.Error("parse update time failed", err)
+			log.Error("get update time failed", err)
 			return FailResult(err)
 		}
-
-		updateTime = updateTime * 1000 * 1000 * 1000
 		if updateTime >= o.event.Timestamp {
 			return SkipResult()
 		}

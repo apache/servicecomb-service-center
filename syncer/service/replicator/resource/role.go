@@ -89,8 +89,8 @@ func (r *role) NeedOperate(ctx context.Context) *Result {
 	checker := &checker{
 		curNotNil: r.cur != nil,
 		event:     r.event,
-		updateTime: func() string {
-			return r.cur.UpdateTime
+		updateTime: func() (int64, error) {
+			return formatUpdateTimeSecond(r.cur.UpdateTime)
 		},
 		resourceID: r.input.Name,
 	}

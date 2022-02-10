@@ -3,7 +3,6 @@ package resource
 import (
 	"context"
 	"errors"
-	"strconv"
 	"testing"
 	"time"
 
@@ -185,8 +184,8 @@ func TestNeedOperate(t *testing.T) {
 		c := &checker{
 			curNotNil: true,
 			event:     e,
-			updateTime: func() string {
-				return strconv.FormatInt(time.Now().Add(-time.Minute).Unix(), 10)
+			updateTime: func() (int64, error) {
+				return time.Now().Add(-time.Minute).Unix(), nil
 			},
 			resourceID: "",
 		}
@@ -194,8 +193,8 @@ func TestNeedOperate(t *testing.T) {
 		r := c.needOperate(ctx)
 		assert.Nil(t, r)
 
-		c.updateTime = func() string {
-			return strconv.FormatInt(time.Now().Add(time.Minute).Unix(), 10)
+		c.updateTime = func() (int64, error) {
+			return time.Now().Add(time.Minute).Unix(), nil
 		}
 
 		r = c.needOperate(ctx)
@@ -216,8 +215,8 @@ func TestNeedOperate(t *testing.T) {
 		c := &checker{
 			curNotNil: false,
 			event:     e,
-			updateTime: func() string {
-				return strconv.FormatInt(time.Now().Add(-time.Minute).Unix(), 10)
+			updateTime: func() (int64, error) {
+				return time.Now().Add(-time.Minute).Unix(), nil
 			},
 			resourceID: "",
 		}
