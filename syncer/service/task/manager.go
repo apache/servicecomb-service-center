@@ -228,7 +228,7 @@ func (m *manager) handleResult(res *event.Result) {
 		log.Error(fmt.Sprintf("get task %s result, return error", res.ID), res.Error)
 		m.cache.Range(func(key, value interface{}) bool {
 			m.cache.Delete(key)
-			return false
+			return true
 		})
 		return
 	}
