@@ -85,6 +85,7 @@ func (a *account) NeedOperate(ctx context.Context) *Result {
 		},
 		resourceID: a.input.Name,
 	}
+	c.tombstoneLoader = c
 	return c.needOperate(ctx)
 }
 
