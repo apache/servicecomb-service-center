@@ -128,23 +128,6 @@ func UpdateService(ctx context.Context, filter interface{}, update interface{}, 
 	return nil
 }
 
-func GetServicesVersions(ctx context.Context, filter interface{}) ([]string, error) {
-	res, err := mongo.GetClient().GetDB().Collection(model.CollectionService).Find(ctx, filter)
-	if err != nil {
-		return nil, nil
-	}
-	var versions []string
-	for res.Next(ctx) {
-		var tmp model.Service
-		err := res.Decode(&tmp)
-		if err != nil {
-			return nil, err
-		}
-		versions = append(versions, tmp.Service.Version)
-	}
-	return versions, nil
-}
-
 func CountService(ctx context.Context, filter interface{}) (int64, error) {
 	count, err := mongo.GetClient().GetDB().Collection(model.CollectionService).CountDocuments(ctx, filter)
 	if err != nil {

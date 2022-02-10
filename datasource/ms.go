@@ -46,7 +46,6 @@ type MetadataManager interface {
 	ListService(ctx context.Context, request *pb.GetServicesRequest) (*pb.GetServicesResponse, error)
 	GetService(ctx context.Context, request *pb.GetServiceRequest) (*pb.MicroService, error)
 
-	GetServiceDetail(ctx context.Context, request *pb.GetServiceRequest) (*pb.ServiceDetail, error)
 	ListServiceDetail(ctx context.Context, request *pb.GetServicesInfoRequest) (*pb.GetServicesInfoResponse, error)
 	GetOverview(ctx context.Context, request *pb.GetServicesRequest) (*pb.Statistics, error)
 	ListApp(ctx context.Context, request *pb.GetAppsRequest) (*pb.GetAppsResponse, error)
@@ -56,6 +55,7 @@ type MetadataManager interface {
 	PutServiceProperties(ctx context.Context, request *pb.UpdateServicePropsRequest) error
 	UnregisterService(ctx context.Context, request *pb.DeleteServiceRequest) error
 	CountService(ctx context.Context, request *pb.GetServiceCountRequest) (*pb.GetServiceCountResponse, error)
+	FindService(ctx context.Context, request *pb.MicroServiceKey) (*pb.GetServicesResponse, error)
 
 	// Instance management
 	RegisterInstance(ctx context.Context, request *pb.RegisterInstanceRequest) (*pb.RegisterInstanceResponse, error)

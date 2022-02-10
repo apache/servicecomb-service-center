@@ -20,186 +20,159 @@ import (
 	"context"
 	"testing"
 
-	"github.com/onsi/ginkgo/reporters"
-
 	_ "github.com/apache/servicecomb-service-center/test"
 
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/service/disco"
 	"github.com/apache/servicecomb-service-center/server/service/govern"
 	pb "github.com/go-chassis/cari/discovery"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	"github.com/go-chassis/cari/pkg/errsvc"
+	"github.com/stretchr/testify/assert"
 )
-
-func TestGovern(t *testing.T) {
-	RegisterFailHandler(Fail)
-	junitReporter := reporters.NewJUnitReporter("model.junit.xml")
-	RunSpecsWithDefaultAndCustomReporters(t, "model Suite", []Reporter{junitReporter})
-}
 
 func getContext() context.Context {
 	return util.WithNoCache(util.SetDomainProject(context.Background(), "default", "default"))
 }
 
-var _ = Describe("'Govern' service", func() {
-	Describe("execute 'get all' operation", func() {
-		Context("when get all services", func() {
-			It("should be passed", func() {
-				By("all options")
-				resp, err := govern.ListServiceDetail(getContext(), &pb.GetServicesInfoRequest{
-					Options: []string{"all"},
-				})
-				Expect(err).To(BeNil())
-				Expect(resp).ToNot(BeNil())
-
-				By("only service metadata")
-				resp, err = govern.ListServiceDetail(getContext(), &pb.GetServicesInfoRequest{
-					Options: []string{""},
-				})
-				Expect(err).To(BeNil())
-				Expect(resp).ToNot(BeNil())
-
-				By("custom options")
-				resp, err = govern.ListServiceDetail(getContext(), &pb.GetServicesInfoRequest{
-					Options: []string{"tags", "rules", "instances", "schemas", "statistics"},
-				})
-				Expect(err).To(BeNil())
-				Expect(resp).ToNot(BeNil())
-
-				By("'statistics' option")
-				resp, err = govern.ListServiceDetail(getContext(), &pb.GetServicesInfoRequest{
-					Options: []string{"statistics"},
-				})
-				Expect(err).To(BeNil())
-				Expect(resp).ToNot(BeNil())
-
-				By("get instance count")
-				resp, err = govern.ListServiceDetail(getContext(), &pb.GetServicesInfoRequest{
-					Options:   []string{"instances"},
-					CountOnly: true,
-				})
-				Expect(err).To(BeNil())
-				Expect(resp).ToNot(BeNil())
-			})
+func TestListServiceDetail(t *testing.T) {
+	t.Run("when get all services, should be passed", func(t *testing.T) {
+		resp, err := govern.ListServiceDetail(getContext(), &pb.GetServicesInfoRequest{
+			Options: []string{"all"},
 		})
+		assert.NoError(t, err)
+		assert.NotNil(t, resp)
 
-		Context("when get top graph", func() {
-			It("should be passed", func() {
-				respC, err := disco.RegisterService(getContext(), &pb.CreateServiceRequest{
-					Service: &pb.MicroService{
-						AppId:       "govern_service_group",
-						ServiceName: "govern_service_graph",
-						Version:     "1.0.0",
-						Level:       "FRONT",
-						Status:      pb.MS_UP,
-					},
-				})
-				Expect(err).To(BeNil())
-				Expect(respC.Response.GetCode()).To(Equal(pb.ResponseSuccess))
-
-				graph, err := govern.Draw(getContext(), false)
-				Expect(err).To(BeNil())
-				Expect(len(graph.Nodes)).ToNot(Equal(0))
-			})
+		resp, err = govern.ListServiceDetail(getContext(), &pb.GetServicesInfoRequest{
+			Options: []string{""},
 		})
+		assert.NoError(t, err)
+		assert.NotNil(t, resp)
+
+		resp, err = govern.ListServiceDetail(getContext(), &pb.GetServicesInfoRequest{
+			Options: []string{"tags", "rules", "instances", "schemas", "statistics"},
+		})
+		assert.NoError(t, err)
+		assert.NotNil(t, resp)
+
+		resp, err = govern.ListServiceDetail(getContext(), &pb.GetServicesInfoRequest{
+			Options: []string{"statistics"},
+		})
+		assert.NoError(t, err)
+		assert.NotNil(t, resp)
+
+		resp, err = govern.ListServiceDetail(getContext(), &pb.GetServicesInfoRequest{
+			Options:   []string{"instances"},
+			CountOnly: true,
+		})
+		assert.NoError(t, err)
+		assert.NotNil(t, resp)
 	})
 
-	Describe("execute 'get detail' operation", func() {
-		var (
-			serviceId string
-		)
+	t.Run("when get top graph, should be passed", func(t *testing.T) {
+		respC, err := disco.RegisterService(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				AppId:       "govern_service_group",
+				ServiceName: "govern_service_graph",
+				Version:     "1.0.0",
+				Level:       "FRONT",
+				Status:      pb.MS_UP,
+			},
+		})
+		assert.NoError(t, err)
+		assert.NotNil(t, respC)
 
-		It("should be passed", func() {
-			resp, err := disco.RegisterService(getContext(), &pb.CreateServiceRequest{
-				Service: &pb.MicroService{
-					AppId:       "govern_service_group",
-					ServiceName: "govern_service_name",
-					Version:     "3.0.0",
-					Level:       "FRONT",
-					Status:      pb.MS_UP,
-				},
-			})
-			Expect(err).To(BeNil())
-			Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
-			serviceId = resp.ServiceId
+		graph, err := govern.Draw(getContext(), false)
+		assert.NoError(t, err)
+		assert.NotEqual(t, 0, len(graph.Nodes))
+	})
+}
 
-			err = disco.PutSchema(getContext(), &pb.ModifySchemaRequest{
+func TestListApp(t *testing.T) {
+	t.Run("when request is invalid, should be failed", func(t *testing.T) {
+		resp, err := govern.ListApp(getContext(), &pb.GetAppsRequest{
+			Environment: "non-exist-env",
+		})
+		assert.True(t, errsvc.IsErrEqualCode(err, pb.ErrInvalidParams), err)
+		assert.Nil(t, resp)
+	})
+
+	t.Run("when request is valid, should be passed", func(t *testing.T) {
+		resp, err := govern.ListApp(getContext(), &pb.GetAppsRequest{})
+		assert.NoError(t, err)
+		assert.NotNil(t, resp)
+
+		resp, err = govern.ListApp(getContext(), &pb.GetAppsRequest{
+			Environment: pb.ENV_ACCEPT,
+		})
+		assert.NoError(t, err)
+		assert.NotNil(t, resp)
+	})
+}
+
+func TestGetServiceDetail(t *testing.T) {
+	var (
+		serviceId string
+	)
+
+	t.Run("prepare data, should be passed", func(t *testing.T) {
+		resp, err := disco.RegisterService(getContext(), &pb.CreateServiceRequest{
+			Service: &pb.MicroService{
+				AppId:       "govern_service_group",
+				ServiceName: "govern_service_name",
+				Version:     "3.0.0",
+				Level:       "FRONT",
+				Status:      pb.MS_UP,
+			},
+		})
+		assert.NoError(t, err)
+		assert.NotNil(t, resp)
+		serviceId = resp.ServiceId
+
+		err = disco.PutSchema(getContext(), &pb.ModifySchemaRequest{
+			ServiceId: serviceId,
+			SchemaId:  "schemaId",
+			Schema:    "detail",
+		})
+		assert.NoError(t, err)
+
+		_, err = disco.RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
+			Instance: &pb.MicroServiceInstance{
 				ServiceId: serviceId,
-				SchemaId:  "schemaId",
-				Schema:    "detail",
-			})
-			Expect(err).To(BeNil())
-
-			_, err = disco.RegisterInstance(getContext(), &pb.RegisterInstanceRequest{
-				Instance: &pb.MicroServiceInstance{
-					ServiceId: serviceId,
-					Endpoints: []string{
-						"govern:127.0.0.1:8080",
-					},
-					HostName: "UT-HOST",
-					Status:   pb.MSI_UP,
+				Endpoints: []string{
+					"govern:127.0.0.1:8080",
 				},
-			})
-			Expect(err).To(BeNil())
+				HostName: "UT-HOST",
+				Status:   pb.MSI_UP,
+			},
 		})
-
-		Context("when get invalid service detail", func() {
-			It("should be failed", func() {
-				resp, err := govern.GetServiceDetail(getContext(), &pb.GetServiceRequest{
-					ServiceId: "",
-				})
-				Expect(err).ToNot(BeNil())
-				Expect(resp).To(BeNil())
-			})
-		})
-
-		Context("when get a service detail", func() {
-			It("should be passed", func() {
-				respGetServiceDetail, err := govern.GetServiceDetail(getContext(), &pb.GetServiceRequest{
-					ServiceId: serviceId,
-				})
-				Expect(err).To(BeNil())
-				Expect(respGetServiceDetail).ToNot(BeNil())
-
-				err = disco.UnregisterService(getContext(), &pb.DeleteServiceRequest{
-					ServiceId: serviceId,
-					Force:     true,
-				})
-				Expect(err).To(BeNil())
-
-				respGetServiceDetail, err = govern.GetServiceDetail(getContext(), &pb.GetServiceRequest{
-					ServiceId: serviceId,
-				})
-				Expect(err).ToNot(BeNil())
-				Expect(respGetServiceDetail).To(BeNil())
-			})
-		})
+		assert.NoError(t, err)
 	})
 
-	Describe("execute 'get apps' operation", func() {
-		Context("when request is invalid", func() {
-			It("should be failed", func() {
-				resp, err := govern.ListApp(getContext(), &pb.GetAppsRequest{
-					Environment: "non-exist-env",
-				})
-				Expect(err).ToNot(BeNil())
-				Expect(resp).To(BeNil())
-			})
+	t.Run("when get invalid service detail, should be failed", func(t *testing.T) {
+		resp, err := govern.GetServiceDetail(getContext(), &pb.GetServiceRequest{
+			ServiceId: "",
 		})
-
-		Context("when request is valid", func() {
-			It("should be passed", func() {
-				resp, err := govern.ListApp(getContext(), &pb.GetAppsRequest{})
-				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
-
-				resp, err = govern.ListApp(getContext(), &pb.GetAppsRequest{
-					Environment: pb.ENV_ACCEPT,
-				})
-				Expect(err).To(BeNil())
-				Expect(resp.Response.GetCode()).To(Equal(pb.ResponseSuccess))
-			})
-		})
+		assert.True(t, errsvc.IsErrEqualCode(err, pb.ErrInvalidParams), err)
+		assert.Nil(t, resp)
 	})
-})
+
+	t.Run("when get a service detail, should be passed", func(t *testing.T) {
+		respGetServiceDetail, err := govern.GetServiceDetail(getContext(), &pb.GetServiceRequest{
+			ServiceId: serviceId,
+		})
+		assert.NoError(t, err)
+		assert.NotNil(t, respGetServiceDetail)
+
+		err = disco.UnregisterService(getContext(), &pb.DeleteServiceRequest{
+			ServiceId: serviceId,
+			Force:     true,
+		})
+		assert.NoError(t, err)
+
+		respGetServiceDetail, err = govern.GetServiceDetail(getContext(), &pb.GetServiceRequest{
+			ServiceId: serviceId,
+		})
+		assert.True(t, errsvc.IsErrEqualCode(err, pb.ErrServiceNotExists), err)
+		assert.Nil(t, respGetServiceDetail)
+	})
+}

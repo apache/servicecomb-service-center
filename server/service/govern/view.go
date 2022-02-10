@@ -19,9 +19,12 @@ package govern
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
 	"github.com/apache/servicecomb-service-center/server/service/validator"
 	pb "github.com/go-chassis/cari/discovery"
 )
@@ -34,11 +37,81 @@ func ListServiceDetail(ctx context.Context, in *pb.GetServicesInfoRequest) (*pb.
 func GetServiceDetail(ctx context.Context, in *pb.GetServiceRequest) (*pb.ServiceDetail, error) {
 	ctx = util.WithCacheOnly(ctx)
 
-	if len(in.ServiceId) == 0 {
+	serviceID := in.ServiceId
+	if len(serviceID) == 0 {
 		return nil, pb.NewError(pb.ErrInvalidParams, "Invalid request for getting service detail.")
 	}
 
-	return datasource.GetMetadataManager().GetServiceDetail(ctx, in)
+	service, err := discosvc.GetService(ctx, in)
+	if err != nil {
+		log.Error(fmt.Sprintf("get service[%s] failed", serviceID), err)
+		return nil, err
+	}
+
+	serviceInfo := new(pb.ServiceDetail)
+	serviceInfo.MicroService = service
+
+	key := &pb.MicroServiceKey{
+		Environment: service.Environment,
+		AppId:       service.AppId,
+		ServiceName: service.ServiceName,
+	}
+	versions, err := getServiceAllVersions(ctx, key)
+	if err != nil {
+		log.Error(fmt.Sprintf("get service[%s/%s/%s] all versions failed",
+			service.Environment, service.AppId, service.ServiceName), err)
+		return nil, pb.NewError(pb.ErrInternal, err.Error())
+	}
+	serviceInfo.MicroServiceVersions = versions
+
+	tagsResp, err := discosvc.ListTag(ctx, &pb.GetServiceTagsRequest{ServiceId: serviceID})
+	if err != nil {
+		log.Error(fmt.Sprintf("get service[%s] tags failed", serviceID), err)
+		return nil, err
+	}
+	serviceInfo.Tags = tagsResp.Tags
+
+	schemas, err := discosvc.ListSchema(ctx, &pb.GetAllSchemaRequest{ServiceId: serviceID, WithSchema: true})
+	if err != nil {
+		log.Error(fmt.Sprintf("get service[%s] schemas failed", serviceID), err)
+		return nil, err
+	}
+	serviceInfo.SchemaInfos = schemas
+
+	providerResp, err := discosvc.ListProviders(ctx, &pb.GetDependenciesRequest{ServiceId: serviceID})
+	if err != nil {
+		log.Error(fmt.Sprintf("get service[%s] providers failed", serviceID), err)
+		return nil, err
+	}
+	serviceInfo.Providers = providerResp.Providers
+
+	consumerResp, err := discosvc.ListConsumers(ctx, &pb.GetDependenciesRequest{ServiceId: serviceID})
+	if err != nil {
+		log.Error(fmt.Sprintf("get service[%s] consumers failed", serviceID), err)
+		return nil, err
+	}
+	serviceInfo.Consumers = consumerResp.Consumers
+
+	instResp, err := discosvc.ListInstance(ctx, &pb.GetInstancesRequest{ProviderServiceId: serviceID})
+	if err != nil {
+		log.Error(fmt.Sprintf("get service[%s] instances failed", serviceID), err)
+		return nil, err
+	}
+	serviceInfo.Instances = instResp.Instances
+
+	return serviceInfo, nil
+}
+
+func getServiceAllVersions(ctx context.Context, key *pb.MicroServiceKey) ([]string, error) {
+	resp, err := discosvc.FindService(ctx, key)
+	if err != nil {
+		return nil, err
+	}
+	versions := make([]string, 0, len(resp.Services))
+	for _, svc := range resp.Services {
+		versions = append(versions, svc.Version)
+	}
+	return versions, nil
 }
 
 func ListApp(ctx context.Context, in *pb.GetAppsRequest) (*pb.GetAppsResponse, error) {

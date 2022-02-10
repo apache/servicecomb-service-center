@@ -60,18 +60,6 @@ func ServiceExistID(ctx context.Context, serviceID string) (bool, error) {
 	return num != 0, err
 }
 
-func GetAllServicesByDomainProject(ctx context.Context) ([]*model.Service, error) {
-	services, exist := cache.GetServicesByDomainProject(util.ParseDomainProject(ctx))
-	if exist {
-		return services, nil
-	}
-
-	domain := util.ParseDomain(ctx)
-	project := util.ParseProject(ctx)
-	filter := bson.M{model.ColumnDomain: domain, model.ColumnProject: project}
-	return dao.GetServices(ctx, filter)
-}
-
 func GetAllMicroServicesByDomainProject(ctx context.Context) ([]*discovery.MicroService, error) {
 	services, exist := cache.GetMicroServicesByDomainProject(util.ParseDomainProject(ctx))
 	if exist {
