@@ -164,6 +164,8 @@ func (m *manager) ListTasks(ctx context.Context) ([]*carisync.Task, error) {
 		return nil, err
 	}
 
+	metrics.PendingTaskSet(int64(len(tasks)))
+
 	noHandleTasks := make([]*carisync.Task, 0, len(tasks))
 	skipTaskIDs := make([]string, 0, len(tasks))
 	for _, t := range tasks {
@@ -257,8 +259,6 @@ func (m *manager) handleResult(res *event.Result) {
 
 func (m *manager) handleTasks(sts syncTasks) {
 	sort.Sort(sts)
-
-	metrics.PendingTaskSet(int64(len(sts)))
 
 	for _, st := range sts {
 		m.eventSender.Send(toEvent(st, m.result))
