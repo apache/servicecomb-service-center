@@ -34,7 +34,7 @@ func getSyncRootKey() string {
 }
 
 func getTombstoneRootKey() string {
-	return split + tombstone
+	return split + syncer + split + tombstone
 }
 
 func TaskKey(domain, project, taskID string, timestamp int64) string {
