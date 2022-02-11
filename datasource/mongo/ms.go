@@ -248,6 +248,28 @@ func (ds *MetadataManager) ExistService(ctx context.Context, request *discovery.
 	return ids[0], nil
 }
 
+func (ds *MetadataManager) FindService(ctx context.Context, request *discovery.MicroServiceKey) (*discovery.GetServicesResponse, error) {
+	filter := mutil.NewBasicFilter(ctx,
+		mutil.ServiceEnv(request.Environment),
+		mutil.ServiceAppID(request.AppId),
+		mutil.ServiceServiceName(request.ServiceName),
+	)
+	res, err := dmongo.GetClient().GetDB().Collection(model.CollectionService).Find(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	result := &discovery.GetServicesResponse{}
+	for res.Next(ctx) {
+		var tmp model.Service
+		err := res.Decode(&tmp)
+		if err != nil {
+			return nil, err
+		}
+		result.Services = append(result.Services, tmp.Service)
+	}
+	return result, nil
+}
+
 func (ds *MetadataManager) UnregisterService(ctx context.Context, request *discovery.DeleteServiceRequest) error {
 	remoteIP := util.GetIPFromContext(ctx)
 	serviceID := request.ServiceId
@@ -377,42 +399,6 @@ func updateServiceTxn(ctx context.Context, request *discovery.UpdateServiceProps
 		}
 		return sync.DoUpdateOpts(sessionContext, datasource.ResourceService, request)
 	})
-}
-
-func (ds *MetadataManager) GetServiceDetail(ctx context.Context, request *discovery.GetServiceRequest) (
-	*discovery.ServiceDetail, error) {
-	mgSvc, err := GetServiceByID(ctx, request.ServiceId)
-	if err != nil {
-		if errors.Is(err, datasource.ErrNoData) {
-			return nil, discovery.NewError(discovery.ErrServiceNotExists, "Service does not exist.")
-		}
-		return nil, discovery.NewError(discovery.ErrInternal, err.Error())
-	}
-	svc := mgSvc.Service
-	key := &discovery.MicroServiceKey{
-		Environment: svc.Environment,
-		AppId:       svc.AppId,
-		ServiceName: svc.ServiceName,
-	}
-	filter := mutil.NewBasicFilter(ctx,
-		mutil.ServiceEnv(key.Environment),
-		mutil.ServiceAppID(key.AppId),
-		mutil.ServiceServiceName(key.ServiceName),
-	)
-	versions, err := dao.GetServicesVersions(ctx, filter)
-	if err != nil {
-		log.Error(fmt.Sprintf("get service %s %s %s all versions failed", svc.Environment, svc.AppId, svc.ServiceName), err)
-		return nil, discovery.NewError(discovery.ErrInternal, err.Error())
-	}
-	options := []string{"tags", "instances", "schemas", "dependencies"}
-	serviceInfo, err := getServiceDetailUtil(ctx, mgSvc, false, options)
-	if err != nil {
-		return nil, discovery.NewError(discovery.ErrInternal, err.Error())
-	}
-	serviceInfo.MicroService = svc
-	serviceInfo.MicroServiceVersions = versions
-	return serviceInfo, nil
-
 }
 
 func (ds *MetadataManager) ListServiceDetail(ctx context.Context, request *discovery.GetServicesInfoRequest) (*discovery.GetServicesInfoResponse, error) {

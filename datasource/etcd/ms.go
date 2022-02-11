@@ -194,47 +194,6 @@ func (ds *MetadataManager) GetService(ctx context.Context, request *pb.GetServic
 	return singleService, nil
 }
 
-func (ds *MetadataManager) GetServiceDetail(ctx context.Context, request *pb.GetServiceRequest) (
-	*pb.ServiceDetail, error) {
-	domainProject := util.ParseDomainProject(ctx)
-
-	service, err := eutil.GetService(ctx, domainProject, request.ServiceId)
-	if err != nil {
-		if errors.Is(err, datasource.ErrNoData) {
-			return nil, pb.NewError(pb.ErrServiceNotExists, "Service does not exist.")
-		}
-		return nil, pb.NewError(pb.ErrInternal, err.Error())
-	}
-
-	key := &pb.MicroServiceKey{
-		Tenant:      domainProject,
-		Environment: service.Environment,
-		AppId:       service.AppId,
-		ServiceName: service.ServiceName,
-		Version:     "",
-	}
-	versions, err := getServiceAllVersions(ctx, key)
-	if err != nil {
-		log.Error(fmt.Sprintf("get service[%s/%s/%s] all versions failed",
-			service.Environment, service.AppId, service.ServiceName), err)
-		return nil, pb.NewError(pb.ErrInternal, err.Error())
-	}
-
-	options := []string{"tags", "instances", "schemas", "dependencies"}
-	serviceInfo, err := getServiceDetailUtil(ctx, ServiceDetailOpt{
-		domainProject: domainProject,
-		service:       service,
-		options:       options,
-	})
-	if err != nil {
-		return nil, pb.NewError(pb.ErrInternal, err.Error())
-	}
-
-	serviceInfo.MicroService = service
-	serviceInfo.MicroServiceVersions = versions
-	return serviceInfo, nil
-}
-
 func (ds *MetadataManager) ListServiceDetail(ctx context.Context, request *pb.GetServicesInfoRequest) (
 	*pb.GetServicesInfoResponse, error) {
 	ctx = util.WithCacheOnly(ctx)
@@ -402,6 +361,28 @@ func (ds *MetadataManager) ExistService(ctx context.Context, request *pb.GetExis
 	}
 	// 约定多个时，取较新版本
 	return ids[0], nil
+}
+
+func (ds *MetadataManager) FindService(ctx context.Context, request *pb.MicroServiceKey) (*pb.GetServicesResponse, error) {
+	copyKey := *request
+	copyKey.Tenant = util.ParseDomainProject(ctx)
+	copyKey.Version = ""
+	key := path.GenerateServiceIndexKey(&copyKey)
+	opts := append(eutil.FromContext(ctx), etcdadpt.WithStrKey(key), etcdadpt.WithPrefix())
+
+	resp, err := sd.ServiceIndex().Search(ctx, opts...)
+	if err != nil {
+		return nil, err
+	}
+	result := &pb.GetServicesResponse{}
+	for _, kv := range resp.Kvs {
+		svc, err := ds.GetService(ctx, &pb.GetServiceRequest{ServiceId: kv.Value.(string)})
+		if err != nil {
+			return nil, err
+		}
+		result.Services = append(result.Services, svc)
+	}
+	return result, nil
 }
 
 func (ds *MetadataManager) PutServiceProperties(ctx context.Context, request *pb.UpdateServicePropsRequest) error {

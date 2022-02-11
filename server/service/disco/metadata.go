@@ -153,6 +153,10 @@ func ListService(ctx context.Context, in *pb.GetServicesRequest) (*pb.GetService
 	return resp, err
 }
 
+func FindService(ctx context.Context, in *pb.MicroServiceKey) (*pb.GetServicesResponse, error) {
+	return datasource.GetMetadataManager().FindService(ctx, in)
+}
+
 func UnregisterManyService(ctx context.Context, request *pb.DelServicesRequest) (*pb.DelServicesResponse, error) {
 	remoteIP := util.GetIPFromContext(ctx)
 

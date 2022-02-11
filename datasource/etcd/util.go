@@ -171,32 +171,6 @@ func revokeInstance(ctx context.Context, domainProject string, serviceID string,
 	return nil
 }
 
-// governServiceCtrl util
-func getServiceAllVersions(ctx context.Context, serviceKey *pb.MicroServiceKey) ([]string, error) {
-	var versions []string
-
-	copyKey := *serviceKey
-	copyKey.Version = ""
-	key := path.GenerateServiceIndexKey(&copyKey)
-
-	opts := append(serviceUtil.FromContext(ctx),
-		etcdadpt.WithStrKey(key),
-		etcdadpt.WithPrefix())
-
-	resp, err := sd.ServiceIndex().Search(ctx, opts...)
-	if err != nil {
-		return nil, err
-	}
-	if resp == nil || len(resp.Kvs) == 0 {
-		return versions, nil
-	}
-	for _, keyValue := range resp.Kvs {
-		key := path.GetInfoFromSvcIndexKV(keyValue.Key)
-		versions = append(versions, key.Version)
-	}
-	return versions, nil
-}
-
 func getServiceDetailUtil(ctx context.Context, serviceDetailOpt ServiceDetailOpt) (*pb.ServiceDetail, error) {
 	serviceID := serviceDetailOpt.service.ServiceId
 	options := serviceDetailOpt.options

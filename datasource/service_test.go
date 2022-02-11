@@ -709,31 +709,11 @@ func TestService_Detail(t *testing.T) {
 		})
 		assert.NoError(t, err)
 
-		log.Info("when get invalid service detail, should be failed")
-		respD, err := datasource.GetMetadataManager().GetServiceDetail(ctx, &pb.GetServiceRequest{
-			ServiceId: "",
-		})
-		assert.Error(t, err)
-		assert.Nil(t, respD)
-
-		log.Info("when get a service detail, should be passed")
-		respGetServiceDetail, err := datasource.GetMetadataManager().GetServiceDetail(ctx, &pb.GetServiceRequest{
-			ServiceId: serviceId,
-		})
-		assert.NoError(t, err)
-		assert.Equal(t, serviceId, respGetServiceDetail.MicroService.ServiceId)
-
 		err = datasource.GetMetadataManager().UnregisterService(ctx, &pb.DeleteServiceRequest{
 			ServiceId: serviceId,
 			Force:     true,
 		})
 		assert.NoError(t, err)
-
-		respGetServiceDetail, err = datasource.GetMetadataManager().GetServiceDetail(ctx, &pb.GetServiceRequest{
-			ServiceId: serviceId,
-		})
-		assert.Error(t, err)
-		assert.Nil(t, respGetServiceDetail)
 	})
 }
 
