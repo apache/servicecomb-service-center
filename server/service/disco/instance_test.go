@@ -24,11 +24,12 @@ import (
 	"strings"
 	"testing"
 
+	_ "github.com/apache/servicecomb-service-center/test"
+
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/core"
 	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
-	_ "github.com/apache/servicecomb-service-center/test"
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/cari/pkg/errsvc"
 	"github.com/stretchr/testify/assert"
@@ -1862,13 +1863,26 @@ func TestSendHeartbeat(t *testing.T) {
 	})
 
 	t.Run("when update a lease, should be passed", func(t *testing.T) {
-		err := discosvc.SendHeartbeat(ctx, &pb.HeartbeatRequest{
+		resp, err := discosvc.GetInstance(ctx, &pb.GetOneInstanceRequest{ProviderServiceId: serviceId, ProviderInstanceId: instanceId1})
+		assert.NoError(t, err)
+		resp.Instance.Properties = nil
+
+		err = discosvc.PutInstance(ctx, &pb.RegisterInstanceRequest{Instance: resp.Instance})
+		assert.NoError(t, err)
+
+		err = discosvc.SendHeartbeat(ctx, &pb.HeartbeatRequest{
 			ServiceId:  serviceId,
 			InstanceId: instanceId1,
 		})
 		assert.NoError(t, err)
 
-		err = discosvc.SendHeartbeat(ctx, &pb.HeartbeatRequest{
+		resp, err = discosvc.GetInstance(ctx, &pb.GetOneInstanceRequest{ProviderServiceId: serviceId, ProviderInstanceId: instanceId1})
+		assert.NoError(t, err)
+		assert.Equal(t, "test_engineID", resp.Instance.Properties["engineID"])
+	})
+
+	t.Run("when update lease with invalid request, should be failed", func(t *testing.T) {
+		err := discosvc.SendHeartbeat(ctx, &pb.HeartbeatRequest{
 			ServiceId:  "",
 			InstanceId: instanceId1,
 		})
@@ -2118,6 +2132,10 @@ func TestUpdateInstance(t *testing.T) {
 		})
 		assert.NoError(t, err)
 
+		resp, err := discosvc.GetInstance(ctx, &pb.GetOneInstanceRequest{ProviderServiceId: serviceId, ProviderInstanceId: instanceId})
+		assert.NoError(t, err)
+		assert.Equal(t, "test", resp.Instance.Properties["test"])
+
 		size := 1000
 		properties := make(map[string]string, size)
 		for i := 0; i < size; i++ {
@@ -2131,6 +2149,19 @@ func TestUpdateInstance(t *testing.T) {
 		})
 		assert.NoError(t, err)
 
+		err = discosvc.PutInstanceProperties(ctx, &pb.UpdateInstancePropsRequest{
+			ServiceId:  serviceId,
+			InstanceId: instanceId,
+		})
+		assert.NoError(t, err)
+
+		resp, err = discosvc.GetInstance(ctx, &pb.GetOneInstanceRequest{ProviderServiceId: serviceId, ProviderInstanceId: instanceId})
+		assert.NoError(t, err)
+		_, ok := resp.Instance.Properties["test"]
+		assert.False(t, ok)
+	})
+
+	t.Run("when update instance properties with invalid request, should be failed", func(t *testing.T) {
 		err = discosvc.PutInstanceProperties(ctx, &pb.UpdateInstancePropsRequest{
 			ServiceId:  serviceId,
 			InstanceId: "notexistins",
@@ -2196,12 +2227,6 @@ func TestUpdateInstance(t *testing.T) {
 		testErr = err.(*errsvc.Error)
 		assert.Error(t, testErr)
 		assert.Equal(t, pb.ErrInvalidParams, testErr.Code)
-
-		err = discosvc.PutInstanceProperties(ctx, &pb.UpdateInstancePropsRequest{
-			ServiceId:  serviceId,
-			InstanceId: instanceId,
-		})
-		assert.NoError(t, err)
 
 		err = discosvc.PutInstanceProperties(ctx, &pb.UpdateInstancePropsRequest{
 			ServiceId:  "notexistservice",

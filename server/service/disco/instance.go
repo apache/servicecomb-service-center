@@ -47,6 +47,13 @@ var (
 	propertiesMap map[string]string
 )
 
+func getInnerProperties() map[string]string {
+	once.Do(func() {
+		propertiesMap = config.GetStringMap("registry.instance.properties")
+	})
+	return propertiesMap
+}
+
 func RegisterInstance(ctx context.Context, in *pb.RegisterInstanceRequest) (*pb.RegisterInstanceResponse, error) {
 	remoteIP := util.GetIPFromContext(ctx)
 
@@ -104,27 +111,22 @@ func populateInstanceDefaultValue(ctx context.Context, instance *pb.MicroService
 	}
 	instance.Version = microservice.Version
 
-	setPropertiesToInstance(instance)
+	appendInnerPropertiesToInstance(instance)
 	return nil
 }
 
-func setPropertiesToInstance(instance *pb.MicroServiceInstance) {
+func appendInnerPropertiesToInstance(instance *pb.MicroServiceInstance) {
 	if instance.Properties == nil {
 		instance.Properties = make(map[string]string)
 	}
 
-	once.Do(func() {
-		propertiesMap = config.GetStringMap("registry.instance.properties")
-	})
-
-	if len(propertiesMap) <= 0 {
+	innerProps := getInnerProperties()
+	if len(innerProps) <= 0 {
 		return
 	}
 
-	for k, v := range propertiesMap {
-		if _, ok := instance.Properties[k]; !ok {
-			instance.Properties[k] = v
-		}
+	for k, v := range innerProps {
+		instance.Properties[k] = v
 	}
 }
 
@@ -141,13 +143,64 @@ func UnregisterInstance(ctx context.Context, in *pb.UnregisterInstanceRequest) e
 
 func SendHeartbeat(ctx context.Context, in *pb.HeartbeatRequest) error {
 	remoteIP := util.GetIPFromContext(ctx)
+	instanceID := in.InstanceId
+	serviceID := in.ServiceId
 
 	if err := validator.ValidateHeartbeatRequest(in); err != nil {
-		log.Error(fmt.Sprintf("heartbeat failed, invalid parameters, operator %s", remoteIP), err)
+		log.Error(fmt.Sprintf("send heartbeat[%s/%s] failed, invalid parameters, operator %s",
+			serviceID, instanceID, remoteIP), err)
 		return pb.NewError(pb.ErrInvalidParams, err.Error())
 	}
 
-	return datasource.GetMetadataManager().SendHeartbeat(ctx, in)
+	err := datasource.GetMetadataManager().SendHeartbeat(ctx, in)
+	if err != nil {
+		log.Error(fmt.Sprintf("send heartbeat[%s/%s] failed, operator %s", serviceID, instanceID, remoteIP), err)
+		return err
+	}
+
+	// append the inner properties
+	err = appendInnerProperties(ctx, serviceID, instanceID)
+	if err != nil {
+		log.Error(fmt.Sprintf("append inner instance[%s/%s] properties failed, operator %s",
+			serviceID, instanceID, remoteIP), err)
+		return err
+	}
+	return nil
+}
+
+func appendInnerProperties(ctx context.Context, serviceID string, instanceID string) error {
+	resp, err := datasource.GetMetadataManager().GetInstance(ctx, &pb.GetOneInstanceRequest{ProviderServiceId: serviceID, ProviderInstanceId: instanceID})
+	if err != nil {
+		log.Error(fmt.Sprintf("get instance[%s/%s] failed", serviceID, instanceID), err)
+		return err
+	}
+	instance := resp.Instance
+	if !shouldAppendInnerProperties(instance) {
+		return nil
+	}
+	props := make(map[string]string, len(resp.Instance.Properties))
+	for k, v := range resp.Instance.Properties {
+		props[k] = v
+	}
+	return PutInstanceProperties(ctx, &pb.UpdateInstancePropsRequest{
+		ServiceId:  serviceID,
+		InstanceId: instanceID,
+		Properties: props,
+	})
+}
+
+func shouldAppendInnerProperties(instance *pb.MicroServiceInstance) bool {
+	instProps := instance.Properties
+	innerProps := getInnerProperties()
+	if len(innerProps) == 0 {
+		return false
+	}
+	for k, v := range innerProps {
+		if prop, ok := instProps[k]; !ok || prop != v {
+			return true
+		}
+	}
+	return false
 }
 
 func SendManyHeartbeat(ctx context.Context, in *pb.HeartbeatSetRequest) (*pb.HeartbeatSetResponse, error) {
@@ -374,6 +427,13 @@ func PutInstanceProperties(ctx context.Context, in *pb.UpdateInstancePropsReques
 		return pb.NewError(pb.ErrInvalidParams, err.Error())
 	}
 
+	properties := getInnerProperties()
+	if in.Properties == nil {
+		in.Properties = make(map[string]string, len(properties))
+	}
+	for k, v := range properties {
+		in.Properties[k] = v
+	}
 	return datasource.GetMetadataManager().PutInstanceProperties(ctx, in)
 }
 

@@ -145,7 +145,7 @@ registry:
       name:
       region:
       availableZone:
-    # properties params for instance
+    # inner properties params for instance, sc will always append these to instance properties
     properties:
 
   schema:
