@@ -171,6 +171,7 @@ func SendHeartbeat(ctx context.Context, in *pb.HeartbeatRequest) error {
 func appendInnerProperties(ctx context.Context, serviceID string, instanceID string) error {
 	resp, err := datasource.GetMetadataManager().GetInstance(ctx, &pb.GetOneInstanceRequest{ProviderServiceId: serviceID, ProviderInstanceId: instanceID})
 	if err != nil {
+		log.Error(fmt.Sprintf("get instance[%s/%s] failed", serviceID, instanceID), err)
 		return err
 	}
 	instance := resp.Instance
