@@ -253,6 +253,12 @@ func (dao *SchemaDAO) PutContent(ctx context.Context, contentRequest *schema.Put
 		serviceKey := path.GenerateServiceKey(domainProject, serviceID)
 		existContentOptions = append(existContentOptions,
 			etcdadpt.OpPut(etcdadpt.WithStrKey(serviceKey), etcdadpt.WithValue(body)))
+		syncOpts, err := sync.GenUpdateOpts(ctx, datasource.ResourceKV, body, sync.WithOpts(map[string]string{"key": serviceKey}))
+		if err != nil {
+			log.Error("fail to create update opts", err)
+			return err
+		}
+		existContentOptions = append(existContentOptions, syncOpts...)
 	}
 	newContentOptions := append(existContentOptions,
 		etcdadpt.OpPut(etcdadpt.WithStrKey(contentKey), etcdadpt.WithStrValue(content.Content)))
@@ -389,14 +395,22 @@ func (dao *SchemaDAO) DeleteContent(ctx context.Context, contentRequest *schema.
 		log.Error(fmt.Sprintf("schema[%s] is reference by service", hash), nil)
 		return discovery.NewError(discovery.ErrInvalidParams, "Schema has reference.")
 	}
-
 	contentKey := path.GenerateServiceSchemaContentKey(domainProject, hash)
-	success, err := etcdadpt.Delete(ctx, contentKey)
+	opts := []etcdadpt.OpOptions{
+		etcdadpt.OpDel(etcdadpt.WithStrKey(contentKey)),
+	}
+	delOpts, err := sync.GenDeleteOpts(ctx, datasource.ResourceKV, contentKey, contentKey, sync.WithOpts(map[string]string{"key": contentKey}))
+	if err != nil {
+		log.Error("fail to create del opts", err)
+		return err
+	}
+	opts = append(opts, delOpts...)
+	resp, err := etcdadpt.TxnWithCmp(ctx, opts, etcdadpt.If(etcdadpt.ExistKey(contentKey)), nil)
 	if err != nil {
 		log.Error(fmt.Sprintf("delete schema content[%s] failed", hash), err)
 		return err
 	}
-	if !success {
+	if !resp.Succeeded {
 		log.Error(fmt.Sprintf("delete schema content[%s] failed", hash), schema.ErrSchemaContentNotFound)
 		return schema.ErrSchemaContentNotFound
 	}

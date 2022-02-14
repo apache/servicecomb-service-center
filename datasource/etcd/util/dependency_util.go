@@ -24,12 +24,15 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
-	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/util"
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/little-cui/etcdadpt"
+
+	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	esync "github.com/apache/servicecomb-service-center/datasource/etcd/sync"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
 func GetConsumerIds(ctx context.Context, domainProject string, provider *pb.MicroService) ([]string, error) {
@@ -120,11 +123,19 @@ func AddServiceVersionRule(ctx context.Context, domainProject string, consumer *
 
 	id := util.StringJoin([]string{provider.AppId, provider.ServiceName}, "_")
 	key := path.GenerateConsumerDependencyQueueKey(domainProject, consumer.ServiceId, id)
-	override, err := etcdadpt.InsertBytes(ctx, key, data)
+	opts := make([]etcdadpt.OpOptions, 0)
+	opts = append(opts, etcdadpt.OpPut(etcdadpt.WithStrKey(key), etcdadpt.WithValue(data)))
+	syncOpts, err := esync.GenUpdateOpts(ctx, datasource.ResourceKV, data, esync.WithOpts(map[string]string{"key": key}))
+	if err != nil {
+		log.Error("fail to create sync opts", err)
+		return pb.NewError(pb.ErrInternal, err.Error())
+	}
+	opts = append(opts, syncOpts...)
+	resp, err := etcdadpt.Instance().TxnWithCmp(ctx, opts, etcdadpt.If(etcdadpt.NotExistKey(key)), nil)
 	if err != nil {
 		return err
 	}
-	if override {
+	if resp.Succeeded {
 		log.Info(fmt.Sprintf("put in queue[%s/%s]: consumer[%s/%s/%s/%s] -> provider[%s/%s/%s]", consumer.ServiceId, id,
 			consumer.Environment, consumer.AppId, consumer.ServiceName, consumer.Version,
 			provider.Environment, provider.AppId, provider.ServiceName))

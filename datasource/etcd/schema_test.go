@@ -113,7 +113,8 @@ func TestSyncSchema(t *testing.T) {
 			}
 			tasks, err := task.List(schemaContext(), &listTaskReq)
 			assert.NoError(t, err)
-			assert.Equal(t, 3, len(tasks))
+			// append the schemaID into service.Schemas if schemaID is new will create a kv task
+			assert.Equal(t, 4, len(tasks))
 			err = task.Delete(schemaContext(), tasks...)
 			assert.NoError(t, err)
 		})

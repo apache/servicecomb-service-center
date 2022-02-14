@@ -23,15 +23,17 @@ import (
 	"fmt"
 	"strings"
 
+	pb "github.com/go-chassis/cari/discovery"
+	"github.com/little-cui/etcdadpt"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sync"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/config"
-	pb "github.com/go-chassis/cari/discovery"
-	"github.com/little-cui/etcdadpt"
 )
 
 /*
@@ -237,16 +239,23 @@ func GetAllServiceUtil(ctx context.Context) ([]*pb.MicroService, error) {
 	return services, nil
 }
 
-func UpdateService(domainProject string, serviceID string, service *pb.MicroService) (opt etcdadpt.OpOptions, err error) {
-	opt = etcdadpt.OpOptions{}
+func UpdateService(ctx context.Context, domainProject string, serviceID string, service *pb.MicroService) ([]etcdadpt.OpOptions, error) {
+	opts := make([]etcdadpt.OpOptions, 0)
 	key := path.GenerateServiceKey(domainProject, serviceID)
 	data, err := json.Marshal(service)
 	if err != nil {
 		log.Error("marshal service file failed", err)
-		return
+		return opts, err
 	}
-	opt = etcdadpt.OpPut(etcdadpt.WithStrKey(key), etcdadpt.WithValue(data))
-	return
+	opt := etcdadpt.OpPut(etcdadpt.WithStrKey(key), etcdadpt.WithValue(data))
+	opts = append(opts, opt)
+	syncOpts, err := sync.GenUpdateOpts(ctx, datasource.ResourceKV, data, sync.WithOpts(map[string]string{"key": key}))
+	if err != nil {
+		log.Error("fail to create update opts", err)
+		return opts, err
+	}
+	opts = append(opts, syncOpts...)
+	return opts, nil
 }
 
 func GetOneDomainProjectServiceCount(ctx context.Context, domainProject string) (int64, error) {
