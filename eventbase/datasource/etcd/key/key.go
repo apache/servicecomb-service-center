@@ -23,10 +23,11 @@ import (
 )
 
 const (
-	split     = "/"
-	syncer    = "syncer"
-	task      = "task"
-	tombstone = "tombstone"
+	split           = "/"
+	syncer          = "syncer"
+	task            = "task"
+	tombstone       = "tombstone"
+	TombstoneKeyLen = 6
 )
 
 func getSyncRootKey() string {
@@ -64,4 +65,12 @@ func TombstoneList(domain, project string) string {
 
 func TombstoneKey(domain, project, resourceType, resourceID string) string {
 	return strings.Join([]string{getTombstoneRootKey(), domain, project, resourceType, resourceID}, split)
+}
+
+func SplitTombstoneKey(keyInfo []byte) []string {
+	return strings.Split(string(keyInfo), split)
+}
+
+func JoinResourceID(infos []string) string {
+	return strings.Join(infos, split)
 }

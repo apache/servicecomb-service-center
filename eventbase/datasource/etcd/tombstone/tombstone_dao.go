@@ -97,6 +97,7 @@ func (d *Dao) List(ctx context.Context, options ...datasource.TombstoneFindOptio
 		if !filterMatch(&tombstone, opts) {
 			continue
 		}
+		formatTombstoneKey(&tombstone, kv.Key)
 		tombstones = append(tombstones, &tombstone)
 	}
 	return tombstones, nil
@@ -110,4 +111,24 @@ func filterMatch(tombstone *sync.Tombstone, options datasource.TombstoneFindOpti
 		return false
 	}
 	return true
+}
+
+func formatTombstoneKey(tombstone *sync.Tombstone, k []byte) {
+	keyInfo := key.SplitTombstoneKey(k)
+	if len(keyInfo) <= key.TombstoneKeyLen {
+		return
+	}
+	if len(tombstone.Domain) <= 0 {
+		tombstone.Domain = keyInfo[3]
+	}
+	if len(tombstone.Project) <= 0 {
+		tombstone.Project = keyInfo[4]
+	}
+	if len(tombstone.ResourceType) <= 0 {
+		tombstone.ResourceType = keyInfo[5]
+	}
+	if len(tombstone.ResourceID) <= 0 {
+		tombstone.ResourceID = key.JoinResourceID(keyInfo[key.TombstoneKeyLen:])
+	}
+	return
 }

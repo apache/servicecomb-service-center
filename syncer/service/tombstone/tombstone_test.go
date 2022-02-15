@@ -19,13 +19,13 @@ package tombstone_test
 
 import (
 	"context"
+	"github.com/apache/servicecomb-service-center/eventbase/test"
 	"testing"
 	"time"
 
 	"github.com/apache/servicecomb-service-center/eventbase/datasource"
 	"github.com/apache/servicecomb-service-center/eventbase/model"
 	"github.com/apache/servicecomb-service-center/eventbase/service/tombstone"
-	"github.com/apache/servicecomb-service-center/eventbase/test"
 	synctombstone "github.com/apache/servicecomb-service-center/syncer/service/tombstone"
 	"github.com/go-chassis/cari/sync"
 	"github.com/stretchr/testify/assert"
@@ -42,18 +42,19 @@ func init() {
 }
 
 const (
-	testDomain  = "expireTombstone"
-	testProject = "expireProject"
+	testDomain       = "expireTombstone"
+	testProject      = "expireProject"
+	testResourceType = "config"
 )
 
 func TestDeleteExpireTombStone(t *testing.T) {
-	tombstoneOne := sync.NewTombstone(testDomain, testProject, "config", "1")
+	tombstoneOne := sync.NewTombstone(testDomain, testProject, testResourceType, "1")
 	tombstoneOne.Timestamp = time.Now().Add(-time.Hour * 24).UnixNano()
 
-	tombstoneTwo := sync.NewTombstone(testDomain, testProject, "config", "2")
+	tombstoneTwo := sync.NewTombstone(testDomain, testProject, testResourceType, "2")
 	tombstoneTwo.Timestamp = time.Now().Add(-time.Hour * 23).UnixNano()
 
-	tombstoneThree := sync.NewTombstone(testDomain, testProject, "config", "3")
+	tombstoneThree := sync.NewTombstone(testDomain, testProject, testResourceType, "3")
 	tombstoneThree.Timestamp = time.Now().Add(-time.Hour * 25).UnixNano()
 
 	t.Run("to create three tasks for next get delete and list operations, should pass", func(t *testing.T) {
@@ -67,39 +68,54 @@ func TestDeleteExpireTombStone(t *testing.T) {
 
 	t.Run("list tombstone service", func(t *testing.T) {
 		listReq := model.ListTombstoneRequest{
-			Domain:          testDomain,
-			Project:         testProject,
 			BeforeTimestamp: time.Now().Add(-time.Hour * 24).UnixNano(),
 		}
 		tombstones, err := tombstone.List(context.Background(), &listReq)
 		assert.Nil(t, err)
 		assert.Equal(t, 2, len(tombstones))
+		assert.Equal(t, true, checkTombstoneData(tombstones))
 	})
 
 	t.Run("delete expire tombstone service", func(t *testing.T) {
 		err := synctombstone.DeleteExpireTombStone()
 		assert.Nil(t, err)
 
-		listReq := model.ListTombstoneRequest{
-			Domain:  testDomain,
-			Project: testProject,
-		}
+		listReq := model.ListTombstoneRequest{}
 		tombstones, err := tombstone.List(context.Background(), &listReq)
 		assert.Nil(t, err)
 		assert.Equal(t, 1, len(tombstones))
-
+		assert.Equal(t, true, checkTombstoneData(tombstones))
 	})
 
 	t.Run("delete all tombstones test data", func(t *testing.T) {
-		listReq := model.ListTombstoneRequest{
-			Domain:  testDomain,
-			Project: testProject,
-		}
+		listReq := model.ListTombstoneRequest{}
 		tombstones, err := tombstone.List(context.Background(), &listReq)
 		assert.Nil(t, err)
-
+		assert.Equal(t, true, checkTombstoneData(tombstones))
 		err = tombstone.Delete(context.Background(), tombstones...)
 		assert.Nil(t, err)
 	})
 
+}
+
+func checkTombstoneData(tombstones []*sync.Tombstone) bool {
+	if len(tombstones) <= 0 {
+		return true
+	}
+
+	for _, tombstone := range tombstones {
+		if tombstone.Domain != testDomain {
+			return false
+		}
+		if tombstone.Project != testProject {
+			return false
+		}
+		if tombstone.ResourceType != testResourceType {
+			return false
+		}
+		if len(tombstone.ResourceID) <= 0 {
+			return false
+		}
+	}
+	return true
 }
