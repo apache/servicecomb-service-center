@@ -157,3 +157,10 @@ func TestNewInstance(t *testing.T) {
 	i := NewInstance(nil)
 	assert.NotNil(t, i)
 }
+
+func TestFailHandlerInstance(t *testing.T) {
+	h := new(instance)
+	assert.False(t, h.CanDrop())
+	_, err := h.FailHandle(context.TODO(), NonImplement)
+	assert.Nil(t, err)
+}

@@ -66,3 +66,10 @@ func TestHeartbeat(t *testing.T) {
 	_, err = a.FailHandle(ctx, Success)
 	assert.Nil(t, err)
 }
+
+func TestFailHandlerHeartbeat(t *testing.T) {
+	h := new(heartbeat)
+	assert.True(t, h.CanDrop())
+	_, err := h.FailHandle(context.TODO(), NonImplement)
+	assert.Nil(t, err)
+}

@@ -153,10 +153,6 @@ func (e *eventManager) resultHandle(ctx context.Context) {
 			if !ok {
 				continue
 			}
-			if res.Error != nil {
-				log.Error("result is error ", res.Error)
-				continue
-			}
 
 			id := res.ID
 			et, ok := e.cache.LoadAndDelete(id)
@@ -165,9 +161,23 @@ func (e *eventManager) resultHandle(ctx context.Context) {
 				continue
 			}
 
-			r, result := resource.New(et.(*Event).Event)
+			event := et.(*Event).Event
+			r, result := resource.New(event)
 			if result != nil {
 				log.Warn(fmt.Sprintf("new resource failed, %s", result.Message))
+				continue
+			}
+
+			if res.Error != nil {
+				log.Error(fmt.Sprintf("result is error %s", event.Flag()), res.Error)
+				if r.CanDrop() {
+					log.Warn(fmt.Sprintf("drop event %s", event.Flag()))
+					continue
+				}
+				e.Send(&Event{
+					Event: event,
+				})
+
 				continue
 			}
 

@@ -168,6 +168,10 @@ func (i *instance) NeedOperate(ctx context.Context) *Result {
 	return c.needOperate(ctx)
 }
 
+func (i *instance) CanDrop() bool {
+	return false
+}
+
 func (i *instance) Operate(ctx context.Context) *Result {
 	return newOperator(i).operate(ctx, i.event.Action)
 }

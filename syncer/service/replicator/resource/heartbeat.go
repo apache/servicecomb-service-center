@@ -32,6 +32,7 @@ type heartbeat struct {
 	input *pb.HeartbeatRequest
 
 	manager metadataManager
+	defaultFailHandler
 }
 
 func (h *heartbeat) loadInput() error {
