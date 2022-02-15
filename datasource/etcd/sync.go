@@ -57,6 +57,7 @@ func (s *SyncManager) SyncAll(ctx context.Context) error {
 	if !enable {
 		return nil
 	}
+	ctx = putil.SetContext(ctx, putil.CtxEnableSync, "1")
 	exist, err := etcdadpt.Exist(ctx, SyncAllKey)
 	if err != nil {
 		return err
