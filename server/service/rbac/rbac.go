@@ -23,14 +23,16 @@ import (
 	"errors"
 	"io/ioutil"
 
-	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/server/config"
-	"github.com/apache/servicecomb-service-center/server/plugin/security/cipher"
 	"github.com/go-chassis/cari/pkg/errsvc"
 	"github.com/go-chassis/cari/rbac"
 	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-chassis/v2/security/authr"
 	"github.com/go-chassis/go-chassis/v2/security/secret"
+
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/server/config"
+	"github.com/apache/servicecomb-service-center/server/plugin/security/cipher"
+	"github.com/apache/servicecomb-service-center/server/service/sync"
 )
 
 const (
@@ -131,7 +133,8 @@ func initFirstTime() {
 		Roles:    []string{rbac.RoleAdmin},
 		Password: pwd,
 	}
-	err := CreateAccount(context.Background(), a)
+	ctx := sync.SetContext(context.Background())
+	err := CreateAccount(ctx, a)
 	if err == nil {
 		log.Info("root account init success")
 		return

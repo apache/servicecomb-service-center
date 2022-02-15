@@ -22,16 +22,18 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
-	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
-	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
-	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/util"
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/cari/pkg/errsvc"
 	"github.com/go-chassis/foundation/gopool"
 	"github.com/little-cui/etcdadpt"
+
+	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/sync"
+	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
 type ServiceDetailOpt struct {
@@ -105,15 +107,50 @@ func isExistSchemaSummary(ctx context.Context, domainProject, serviceID, schemaI
 	return true, nil
 }
 
-func schemaWithDatabaseOpera(invoke etcdadpt.Operation, domainProject string, serviceID string, schema *pb.Schema) []etcdadpt.OpOptions {
-	pluginOps := make([]etcdadpt.OpOptions, 0)
+func putSchema(ctx context.Context, domainProject string, serviceID string, schema *pb.Schema) ([]etcdadpt.OpOptions, error) {
+	opts := make([]etcdadpt.OpOptions, 0)
 	key := path.GenerateServiceSchemaKey(domainProject, serviceID, schema.SchemaId)
-	opt := invoke(etcdadpt.WithStrKey(key), etcdadpt.WithStrValue(schema.Schema))
-	pluginOps = append(pluginOps, opt)
+	onPutOpt := etcdadpt.OpPut(etcdadpt.WithStrKey(key), etcdadpt.WithStrValue(schema.Schema))
+	opts = append(opts, onPutOpt)
+	syncOpts, err := sync.GenUpdateOpts(ctx, datasource.ResourceKV, schema.Schema, sync.WithOpts(map[string]string{"key": key}))
+	if err != nil {
+		log.Error("fail to create update opts", err)
+		return opts, err
+	}
+	opts = append(opts, syncOpts...)
 	keySummary := path.GenerateServiceSchemaSummaryKey(domainProject, serviceID, schema.SchemaId)
-	opt = invoke(etcdadpt.WithStrKey(keySummary), etcdadpt.WithStrValue(schema.Summary))
-	pluginOps = append(pluginOps, opt)
-	return pluginOps
+	onPutOpt = etcdadpt.OpPut(etcdadpt.WithStrKey(keySummary), etcdadpt.WithStrValue(schema.Summary))
+	opts = append(opts, onPutOpt)
+	syncOpts, err = sync.GenUpdateOpts(ctx, datasource.ResourceKV, schema.Summary, sync.WithOpts(map[string]string{"key": keySummary}))
+	if err != nil {
+		log.Error("fail to create update opts", err)
+		return opts, err
+	}
+	opts = append(opts, syncOpts...)
+	return opts, nil
+}
+
+func deleteSchema(ctx context.Context, domainProject string, serviceID string, schema *pb.Schema) ([]etcdadpt.OpOptions, error) {
+	opts := make([]etcdadpt.OpOptions, 0)
+	key := path.GenerateServiceSchemaKey(domainProject, serviceID, schema.SchemaId)
+	onDelOpt := etcdadpt.OpDel(etcdadpt.WithStrKey(key), etcdadpt.WithStrValue(schema.Schema))
+	opts = append(opts, onDelOpt)
+	syncOpts, err := sync.GenDeleteOpts(ctx, datasource.ResourceKV, key, schema.Schema, sync.WithOpts(map[string]string{"key": key}))
+	if err != nil {
+		log.Error("fail to create update opts", err)
+		return opts, err
+	}
+	opts = append(opts, syncOpts...)
+	keySummary := path.GenerateServiceSchemaSummaryKey(domainProject, serviceID, schema.SchemaId)
+	onDelOpt = etcdadpt.OpDel(etcdadpt.WithStrKey(keySummary), etcdadpt.WithStrValue(schema.Summary))
+	opts = append(opts, onDelOpt)
+	syncOpts, err = sync.GenDeleteOpts(ctx, datasource.ResourceKV, keySummary, schema.Summary, sync.WithOpts(map[string]string{"key": keySummary}))
+	if err != nil {
+		log.Error("fail to create update opts", err)
+		return opts, err
+	}
+	opts = append(opts, syncOpts...)
+	return opts, nil
 }
 
 func isExistSchemaID(service *pb.MicroService, schemas []*pb.Schema) bool {
@@ -127,13 +164,22 @@ func isExistSchemaID(service *pb.MicroService, schemas []*pb.Schema) bool {
 	return true
 }
 
-func commitSchemaInfo(domainProject string, serviceID string, schema *pb.Schema) []etcdadpt.OpOptions {
+func commitSchemaInfo(ctx context.Context, domainProject string, serviceID string, schema *pb.Schema) ([]etcdadpt.OpOptions, error) {
 	if len(schema.Summary) != 0 {
-		return schemaWithDatabaseOpera(etcdadpt.OpPut, domainProject, serviceID, schema)
+		opts, err := putSchema(ctx, domainProject, serviceID, schema)
+		return opts, err
 	}
+	opts := make([]etcdadpt.OpOptions, 0)
 	key := path.GenerateServiceSchemaKey(domainProject, serviceID, schema.SchemaId)
 	opt := etcdadpt.OpPut(etcdadpt.WithStrKey(key), etcdadpt.WithStrValue(schema.Schema))
-	return []etcdadpt.OpOptions{opt}
+	opts = append(opts, opt)
+	syncOpts, err := sync.GenUpdateOpts(ctx, datasource.ResourceKV, schema.Schema, sync.WithOpts(map[string]string{"key": key}))
+	if err != nil {
+		log.Error("fail to create update opts", err)
+		return opts, err
+	}
+	opts = append(opts, syncOpts...)
+	return opts, nil
 }
 
 func getHeartbeatFunc(ctx context.Context, domainProject string, instancesHbRst chan<- *pb.InstanceHbRst, element *pb.HeartbeatSetElement) func(context.Context) {
