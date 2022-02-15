@@ -510,4 +510,82 @@ func TestSyncAll(t *testing.T) {
 			assert.NoError(t, err)
 		})
 	})
+
+	t.Run("enableOnStart is true ,syncAllKey not exists and context is context.Background() will do sync", func(t *testing.T) {
+		_ = archaius.Set("sync.enableOnStart", true)
+		var accountName string
+		ctx := util.WithNoCache(util.SetDomainProject(context.Background(), "sync-all-background", "sync-all-background"))
+		ctx = util.WithNoCache(util.SetContext(ctx, util.CtxEnableSync, "1"))
+		t.Run("create a account and delete the task should pass", func(t *testing.T) {
+			a1 := crbac.Account{
+				ID:                  "sync-create-11111-sync-all",
+				Name:                "sync-create-account1-sync-all",
+				Password:            "tnuocca-tset",
+				Roles:               []string{"admin"},
+				TokenExpirationTime: "2020-12-30",
+				CurrentPassword:     "tnuocca-tset1",
+			}
+			err := rbac.Instance().CreateAccount(ctx, &a1)
+			assert.NoError(t, err)
+			accountName = a1.Name
+			r, err := rbac.Instance().GetAccount(ctx, a1.Name)
+			assert.NoError(t, err)
+			assert.Equal(t, a1, *r)
+			listTaskReq := model.ListTaskRequest{
+				Domain:       "",
+				Project:      "",
+				ResourceType: datasource.ResourceAccount,
+			}
+			tasks, err := task.List(ctx, &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 1, len(tasks))
+			err = task.Delete(ctx, tasks...)
+			assert.NoError(t, err)
+			tasks, err = task.List(ctx, &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tasks))
+		})
+
+		t.Run("do sync will create task should pass", func(t *testing.T) {
+			err := datasource.GetSyncManager().SyncAll(context.Background())
+			assert.Nil(t, err)
+			listAccountTaskReq := model.ListTaskRequest{
+				Domain:       "",
+				Project:      "",
+				ResourceType: datasource.ResourceAccount,
+			}
+			tasks, err := task.List(ctx, &listAccountTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 1, len(tasks))
+			err = task.Delete(ctx, tasks...)
+			assert.NoError(t, err)
+			tasks, err = task.List(ctx, &listAccountTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tasks))
+		})
+		t.Run("delete account resource should pass", func(t *testing.T) {
+			_, err := rbac.Instance().DeleteAccount(ctx, []string{accountName})
+			assert.NoError(t, err)
+			listAccountTaskReq := model.ListTaskRequest{
+				Domain:       "",
+				Project:      "",
+				ResourceType: datasource.ResourceAccount,
+			}
+			tasks, err := task.List(ctx, &listAccountTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 1, len(tasks))
+			err = task.Delete(ctx, tasks...)
+			assert.NoError(t, err)
+
+			tombstoneListReq := model.ListTombstoneRequest{
+				Domain:  "sync-all-background",
+				Project: "sync-all-background",
+			}
+			tombstones, err := tombstone.List(ctx, &tombstoneListReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 1, len(tombstones))
+			err = tombstone.Delete(ctx, tombstones...)
+			assert.NoError(t, err)
+		})
+	})
 }
