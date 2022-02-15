@@ -157,6 +157,7 @@ func NonImplementResult() *Result {
 
 type FailHandler interface {
 	FailHandle(context.Context, int32) (*v1sync.Event, error)
+	CanDrop() bool
 }
 
 type defaultFailHandler struct {
@@ -164,6 +165,10 @@ type defaultFailHandler struct {
 
 func (d *defaultFailHandler) FailHandle(context.Context, int32) (*v1sync.Event, error) {
 	return nil, nil
+}
+
+func (d *defaultFailHandler) CanDrop() bool {
+	return true
 }
 
 type OperateHandler interface {

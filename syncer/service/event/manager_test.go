@@ -115,6 +115,10 @@ func (f forkResources) FailHandle(_ context.Context, _ int32) (*v1sync.Event, er
 	return nil, nil
 }
 
+func (f forkResources) CanDrop() bool {
+	return true
+}
+
 func TestNewManager(t *testing.T) {
 	nm := NewManager(ManagerInternal(defaultInternal), Replicator(new(mockReplicator)))
 	assert.NotNil(t, nm)

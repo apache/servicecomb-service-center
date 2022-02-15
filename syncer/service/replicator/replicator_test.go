@@ -85,6 +85,10 @@ func (f mockResources) FailHandle(_ context.Context, _ int32) (*v1sync.Event, er
 	return nil, nil
 }
 
+func (f mockResources) CanDrop() bool {
+	return true
+}
+
 func Test_pageEvents(t *testing.T) {
 	t.Run("no page case", func(t *testing.T) {
 		source := &v1sync.EventList{
