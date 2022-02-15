@@ -76,11 +76,11 @@ func (s *SyncManager) SyncAll(ctx context.Context) error {
 			log.Error(fmt.Sprintf("fail to unlock the %s key", SyncAllLockKey), err)
 		}
 	}(lock)
-	err = syncAllAccounts(ctx)
+	err = syncAllRoles(ctx)
 	if err != nil {
 		return err
 	}
-	err = syncAllRoles(ctx)
+	err = syncAllAccounts(ctx)
 	if err != nil {
 		return err
 	}

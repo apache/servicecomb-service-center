@@ -32,7 +32,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/plugin/security/cipher"
-	"github.com/apache/servicecomb-service-center/server/service/sync"
 )
 
 const (
@@ -133,8 +132,7 @@ func initFirstTime() {
 		Roles:    []string{rbac.RoleAdmin},
 		Password: pwd,
 	}
-	ctx := sync.SetContext(context.Background())
-	err := CreateAccount(ctx, a)
+	err := CreateAccount(context.Background(), a)
 	if err == nil {
 		log.Info("root account init success")
 		return
