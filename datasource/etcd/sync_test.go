@@ -133,8 +133,8 @@ func TestSyncAll(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, a1, *r)
 			listTaskReq := model.ListTaskRequest{
-				Domain:       "",
-				Project:      "",
+				Domain:       "sync-all",
+				Project:      "sync-all",
 				ResourceType: datasource.ResourceAccount,
 			}
 			tasks, err := task.List(syncAllContext(), &listTaskReq)
@@ -162,8 +162,8 @@ func TestSyncAll(t *testing.T) {
 			assert.Equal(t, r.CreateTime, r.UpdateTime)
 			roleName = r1.Name
 			listTaskReq := model.ListTaskRequest{
-				Domain:       "",
-				Project:      "",
+				Domain:       "sync-all",
+				Project:      "sync-all",
 				ResourceType: datasource.ResourceRole,
 			}
 			tasks, err := task.List(syncAllContext(), &listTaskReq)
@@ -458,8 +458,8 @@ func TestSyncAll(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, 0, len(tasks))
 			listAccountTaskReq := model.ListTaskRequest{
-				Domain:       "",
-				Project:      "",
+				Domain:       "sync-all",
+				Project:      "sync-all",
 				ResourceType: datasource.ResourceAccount,
 			}
 			tasks, err = task.List(syncAllContext(), &listAccountTaskReq)
@@ -472,8 +472,8 @@ func TestSyncAll(t *testing.T) {
 			assert.Equal(t, 0, len(tasks))
 
 			listRoleTaskReq := model.ListTaskRequest{
-				Domain:       "",
-				Project:      "",
+				Domain:       "sync-all",
+				Project:      "sync-all",
 				ResourceType: datasource.ResourceRole,
 			}
 			tasks, err = task.List(syncAllContext(), &listRoleTaskReq)
@@ -532,8 +532,8 @@ func TestSyncAll(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, a1, *r)
 			listTaskReq := model.ListTaskRequest{
-				Domain:       "",
-				Project:      "",
+				Domain:       "sync-all-background",
+				Project:      "sync-all-background",
 				ResourceType: datasource.ResourceAccount,
 			}
 			tasks, err := task.List(ctx, &listTaskReq)
@@ -557,6 +557,10 @@ func TestSyncAll(t *testing.T) {
 			tasks, err := task.List(ctx, &listAccountTaskReq)
 			assert.NoError(t, err)
 			assert.Equal(t, 1, len(tasks))
+			for _, v := range tasks {
+				assert.Equal(t, sync.Default, v.Domain)
+				assert.Equal(t, sync.Default, v.Project)
+			}
 			err = task.Delete(ctx, tasks...)
 			assert.NoError(t, err)
 			tasks, err = task.List(ctx, &listAccountTaskReq)
@@ -564,7 +568,8 @@ func TestSyncAll(t *testing.T) {
 			assert.Equal(t, 0, len(tasks))
 		})
 		t.Run("delete account resource should pass", func(t *testing.T) {
-			_, err := rbac.Instance().DeleteAccount(ctx, []string{accountName})
+			_, err := rbac.Instance().DeleteAccount(util.SetContext(context.Background(),
+				util.CtxEnableSync, "1"), []string{accountName})
 			assert.NoError(t, err)
 			listAccountTaskReq := model.ListTaskRequest{
 				Domain:       "",
@@ -574,16 +579,25 @@ func TestSyncAll(t *testing.T) {
 			tasks, err := task.List(ctx, &listAccountTaskReq)
 			assert.NoError(t, err)
 			assert.Equal(t, 1, len(tasks))
+			for _, v := range tasks {
+				assert.Equal(t, sync.Default, v.Domain)
+				assert.Equal(t, sync.Default, v.Project)
+			}
 			err = task.Delete(ctx, tasks...)
 			assert.NoError(t, err)
 
 			tombstoneListReq := model.ListTombstoneRequest{
-				Domain:  "sync-all-background",
-				Project: "sync-all-background",
+				Domain:       "",
+				Project:      "",
+				ResourceType: datasource.ResourceAccount,
 			}
 			tombstones, err := tombstone.List(ctx, &tombstoneListReq)
 			assert.NoError(t, err)
 			assert.Equal(t, 1, len(tombstones))
+			for _, v := range tasks {
+				assert.Equal(t, sync.Default, v.Domain)
+				assert.Equal(t, sync.Default, v.Project)
+			}
 			err = tombstone.Delete(ctx, tombstones...)
 			assert.NoError(t, err)
 		})
