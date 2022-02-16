@@ -27,6 +27,12 @@ import (
 )
 
 func Get(ctx context.Context, req *model.GetTombstoneRequest) (*sync.Tombstone, error) {
+	if len(req.Domain) == 0 {
+		req.Domain = sync.Default
+	}
+	if len(req.Project) == 0 {
+		req.Project = sync.Default
+	}
 	return datasource.GetTombstoneDao().Get(ctx, req)
 }
 
@@ -35,6 +41,12 @@ func Delete(ctx context.Context, tombstones ...*sync.Tombstone) error {
 }
 
 func List(ctx context.Context, request *model.ListTombstoneRequest) ([]*sync.Tombstone, error) {
+	if len(request.Domain) == 0 {
+		request.Domain = sync.Default
+	}
+	if len(request.Project) == 0 {
+		request.Project = sync.Default
+	}
 	opts := []datasource.TombstoneFindOption{
 		datasource.WithTombstoneDomain(request.Domain),
 		datasource.WithTombstoneProject(request.Project),

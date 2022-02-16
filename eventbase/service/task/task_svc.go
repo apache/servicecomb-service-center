@@ -35,6 +35,12 @@ func Update(ctx context.Context, task *sync.Task) error {
 }
 
 func List(ctx context.Context, request *model.ListTaskRequest) ([]*sync.Task, error) {
+	if len(request.Domain) == 0 {
+		request.Domain = sync.Default
+	}
+	if len(request.Project) == 0 {
+		request.Project = sync.Default
+	}
 	opts := []datasource.TaskFindOption{
 		datasource.WithDomain(request.Domain),
 		datasource.WithProject(request.Project),

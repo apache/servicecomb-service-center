@@ -21,13 +21,13 @@ import (
 	"context"
 	"testing"
 
-	"github.com/apache/servicecomb-service-center/eventbase/test"
 	"github.com/go-chassis/cari/sync"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/apache/servicecomb-service-center/eventbase/datasource"
 	"github.com/apache/servicecomb-service-center/eventbase/model"
 	"github.com/apache/servicecomb-service-center/eventbase/service/tombstone"
+	"github.com/apache/servicecomb-service-center/eventbase/test"
 )
 
 func init() {
@@ -44,6 +44,7 @@ func TestTombstoneService(t *testing.T) {
 	tombstoneOne := sync.NewTombstone("tombstone", "tombstone", "config", "111111")
 	tombstoneTwo := sync.NewTombstone("tombstone", "tombstone", "config", "222222")
 	tombstoneThree := sync.NewTombstone("tombstone", "tombstone", "config", "333333")
+	tombstoneFour := sync.NewTombstone("", "", "config", "444444")
 
 	t.Run("to create three tasks for next get delete and list operations, should pass", func(t *testing.T) {
 		_, err := datasource.GetDataSource().TombstoneDao().Create(context.Background(), tombstoneOne)
@@ -51,6 +52,8 @@ func TestTombstoneService(t *testing.T) {
 		_, err = datasource.GetDataSource().TombstoneDao().Create(context.Background(), tombstoneTwo)
 		assert.Nil(t, err)
 		_, err = datasource.GetDataSource().TombstoneDao().Create(context.Background(), tombstoneThree)
+		assert.Nil(t, err)
+		_, err = datasource.GetDataSource().TombstoneDao().Create(context.Background(), tombstoneFour)
 		assert.Nil(t, err)
 	})
 
@@ -84,7 +87,7 @@ func TestTombstoneService(t *testing.T) {
 	})
 
 	t.Run("delete tombstone service", func(t *testing.T) {
-		t.Run("delete all tombstones in default domain and default project should pass", func(t *testing.T) {
+		t.Run("delete all tombstones in tombstone domain and tombstone project should pass", func(t *testing.T) {
 			listReq := model.ListTombstoneRequest{
 				Domain:  "tombstone",
 				Project: "tombstone",
@@ -98,6 +101,21 @@ func TestTombstoneService(t *testing.T) {
 			assert.Nil(t, err)
 			assert.Equal(t, 0, len(dTombstones))
 		})
-	})
 
+		t.Run("delete all tombstones in empty domain and empty project should pass", func(t *testing.T) {
+			listReq := model.ListTombstoneRequest{
+				Domain:       "",
+				Project:      "",
+				ResourceType: "config",
+			}
+			tombstones, err := tombstone.List(context.Background(), &listReq)
+			assert.Nil(t, err)
+			assert.Equal(t, 1, len(tombstones))
+			err = tombstone.Delete(context.Background(), tombstones...)
+			assert.Nil(t, err)
+			dTombstones, err := tombstone.List(context.Background(), &listReq)
+			assert.Nil(t, err)
+			assert.Equal(t, 0, len(dTombstones))
+		})
+	})
 }

@@ -63,12 +63,22 @@ func TestTaskService(t *testing.T) {
 			ServiceName: "svc3",
 			Version:     "1.0",
 		})
+	taskFour, _ := sync.NewTask("", "", sync.UpdateAction, "service",
+		discovery.MicroService{
+			ServiceId:   "101",
+			AppId:       "appId4",
+			ServiceName: "svc4",
+			Version:     "1.0",
+		})
+
 	t.Run("to create three tasks for next delete update and list operations, should pass", func(t *testing.T) {
 		_, err := datasource.GetDataSource().TaskDao().Create(context.Background(), taskOne)
 		assert.Nil(t, err)
 		_, err = datasource.GetDataSource().TaskDao().Create(context.Background(), taskTwo)
 		assert.Nil(t, err)
 		_, err = datasource.GetDataSource().TaskDao().Create(context.Background(), taskThree)
+		assert.Nil(t, err)
+		_, err = datasource.GetDataSource().TaskDao().Create(context.Background(), taskFour)
 		assert.Nil(t, err)
 	})
 
@@ -103,7 +113,7 @@ func TestTaskService(t *testing.T) {
 	})
 
 	t.Run("delete task service", func(t *testing.T) {
-		t.Run("delete all tasks in default domain and default project should pass", func(t *testing.T) {
+		t.Run("delete all tasks in task domain and task project should pass", func(t *testing.T) {
 			listReq := model.ListTaskRequest{
 				Domain:  "task",
 				Project: "task",
@@ -111,6 +121,21 @@ func TestTaskService(t *testing.T) {
 			tasks, err := task.List(context.Background(), &listReq)
 			assert.Nil(t, err)
 			assert.Equal(t, 3, len(tasks))
+			err = task.Delete(context.Background(), tasks...)
+			assert.Nil(t, err)
+			dTasks, err := task.List(context.Background(), &listReq)
+			assert.Nil(t, err)
+			assert.Equal(t, 0, len(dTasks))
+		})
+		t.Run("delete all tasks in empty domain and empty project should pass", func(t *testing.T) {
+			listReq := model.ListTaskRequest{
+				Domain:       "",
+				Project:      "",
+				ResourceType: "service",
+			}
+			tasks, err := task.List(context.Background(), &listReq)
+			assert.Nil(t, err)
+			assert.Equal(t, 1, len(tasks))
 			err = task.Delete(context.Background(), tasks...)
 			assert.Nil(t, err)
 			dTasks, err := task.List(context.Background(), &listReq)

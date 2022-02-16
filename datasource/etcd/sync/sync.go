@@ -95,6 +95,12 @@ func genTaskOpt(ctx context.Context, action string, resourceType string, resourc
 	syncOpts *Options) (etcdadpt.OpOptions, error) {
 	domain := util.ParseDomain(ctx)
 	project := util.ParseProject(ctx)
+	if len(domain) == 0 {
+		domain = sync.Default
+	}
+	if len(project) == 0 {
+		project = sync.Default
+	}
 	task, err := sync.NewTask(domain, project, action, resourceType, resource)
 	if err != nil {
 		return etcdadpt.OpOptions{}, err
@@ -114,6 +120,12 @@ func genTaskOpt(ctx context.Context, action string, resourceType string, resourc
 func genTombstoneOpt(ctx context.Context, resourceType, resourceID string) (etcdadpt.OpOptions, error) {
 	domain := util.ParseDomain(ctx)
 	project := util.ParseProject(ctx)
+	if len(domain) == 0 {
+		domain = sync.Default
+	}
+	if len(project) == 0 {
+		project = sync.Default
+	}
 	tombstone := sync.NewTombstone(domain, project, resourceType, resourceID)
 	tombstoneBytes, err := json.Marshal(tombstone)
 	if err != nil {
