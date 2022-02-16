@@ -3,15 +3,15 @@ package resource
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"strconv"
 	"testing"
 	"time"
 
 	v1sync "github.com/apache/servicecomb-service-center/syncer/api/v1"
 
-	"github.com/go-chassis/cari/pkg/errsvc"
+	datasourcerbac "github.com/apache/servicecomb-service-center/datasource/rbac"
 	"github.com/go-chassis/cari/rbac"
-	rbacmodel "github.com/go-chassis/cari/rbac"
 	"github.com/go-chassis/cari/sync"
 	"github.com/stretchr/testify/assert"
 )
@@ -23,7 +23,7 @@ type mockRole struct {
 func (f mockRole) GetRole(_ context.Context, name string) (*rbac.Role, error) {
 	result, ok := f.roles[name]
 	if !ok {
-		return nil, rbacmodel.NewError(rbacmodel.ErrRoleNotExist, "")
+		return nil, datasourcerbac.ErrRoleNotExist
 	}
 	return result, nil
 }
@@ -31,7 +31,7 @@ func (f mockRole) GetRole(_ context.Context, name string) (*rbac.Role, error) {
 func (f mockRole) EditRole(_ context.Context, name string, r *rbac.Role) error {
 	_, ok := f.roles[name]
 	if !ok {
-		return rbacmodel.NewError(rbacmodel.ErrRoleNotExist, "")
+		return datasourcerbac.ErrRoleNotExist
 	}
 	f.roles[name] = r
 	return nil
@@ -40,7 +40,7 @@ func (f mockRole) EditRole(_ context.Context, name string, r *rbac.Role) error {
 func (f mockRole) CreateRole(_ context.Context, r *rbac.Role) error {
 	_, ok := f.roles[r.Name]
 	if ok {
-		return rbacmodel.NewError(rbacmodel.ErrRoleConflict, "role exist")
+		return datasourcerbac.ErrRoleDuplicated
 	}
 
 	f.roles[r.Name] = r
@@ -50,7 +50,7 @@ func (f mockRole) CreateRole(_ context.Context, r *rbac.Role) error {
 func (f mockRole) DeleteRole(_ context.Context, name string) error {
 	_, ok := f.roles[name]
 	if !ok {
-		return rbacmodel.NewError(rbacmodel.ErrRoleNotExist, "")
+		return datasourcerbac.ErrRoleNotExist
 	}
 
 	delete(f.roles, name)
@@ -170,7 +170,7 @@ func TestOperateRole(t *testing.T) {
 			if assert.NotNil(t, result) && assert.Equal(t, Success, result.Status) {
 				_, err := a1.manager.GetRole(ctx, "admin")
 				assert.NotNil(t, err)
-				assert.True(t, errsvc.IsErrEqualCode(err, rbacmodel.ErrRoleNotExist))
+				assert.True(t, errors.Is(err, datasourcerbac.ErrRoleNotExist))
 			}
 		}
 	}
