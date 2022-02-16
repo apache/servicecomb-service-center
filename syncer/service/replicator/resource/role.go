@@ -2,15 +2,14 @@ package resource
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	"github.com/apache/servicecomb-service-center/datasource/rbac"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	servicerbac "github.com/apache/servicecomb-service-center/server/service/rbac"
 	v1sync "github.com/apache/servicecomb-service-center/syncer/api/v1"
 
-	"github.com/go-chassis/cari/pkg/errsvc"
 	crbac "github.com/go-chassis/cari/rbac"
-	rbacmodel "github.com/go-chassis/cari/rbac"
 )
 
 const (
@@ -76,7 +75,7 @@ func (r *role) LoadCurrentResource(ctx context.Context) *Result {
 
 	cur, err := r.manager.GetRole(ctx, r.roleName)
 	if err != nil {
-		if errsvc.IsErrEqualCode(err, rbacmodel.ErrRoleNotExist) {
+		if errors.Is(err, rbac.ErrRoleNotExist) {
 			return nil
 		}
 		return FailResult(err)
@@ -125,17 +124,18 @@ func (r *role) Operate(ctx context.Context) *Result {
 }
 
 func (r *role) GetRole(ctx context.Context, name string) (*crbac.Role, error) {
-	return servicerbac.GetRole(ctx, name)
+	return rbac.Instance().GetRole(ctx, name)
 }
 
 func (r *role) EditRole(ctx context.Context, name string, role *crbac.Role) error {
-	return servicerbac.EditRole(ctx, name, role)
+	return rbac.Instance().UpdateRole(ctx, name, role)
 }
 
 func (r *role) CreateRole(ctx context.Context, role *crbac.Role) error {
-	return servicerbac.CreateRole(ctx, role)
+	return rbac.Instance().CreateRole(ctx, role)
 }
 
 func (r *role) DeleteRole(ctx context.Context, name string) error {
-	return servicerbac.DeleteRole(ctx, name)
+	_, err := rbac.Instance().DeleteRole(ctx, name)
+	return err
 }
