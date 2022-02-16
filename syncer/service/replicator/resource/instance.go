@@ -3,7 +3,7 @@ package resource
 import (
 	"context"
 
-	servicedisco "github.com/apache/servicecomb-service-center/server/service/disco"
+	"github.com/apache/servicecomb-service-center/datasource"
 	v1sync "github.com/apache/servicecomb-service-center/syncer/api/v1"
 
 	pb "github.com/go-chassis/cari/discovery"
@@ -71,39 +71,39 @@ type metadataManage struct {
 }
 
 func (m *metadataManage) RegisterService(ctx context.Context, request *pb.CreateServiceRequest) (*pb.CreateServiceResponse, error) {
-	return servicedisco.RegisterService(ctx, request)
+	return datasource.GetMetadataManager().RegisterService(ctx, request)
 }
 
 func (m *metadataManage) GetService(ctx context.Context, in *pb.GetServiceRequest) (*pb.MicroService, error) {
-	return servicedisco.GetService(ctx, in)
+	return datasource.GetMetadataManager().GetService(ctx, in)
 }
 
 func (m *metadataManage) PutServiceProperties(ctx context.Context, request *pb.UpdateServicePropsRequest) error {
-	return servicedisco.PutServiceProperties(ctx, request)
+	return datasource.GetMetadataManager().PutServiceProperties(ctx, request)
 }
 
 func (m *metadataManage) UnregisterService(ctx context.Context, request *pb.DeleteServiceRequest) error {
-	return servicedisco.UnregisterService(ctx, request)
+	return datasource.GetMetadataManager().UnregisterService(ctx, request)
 }
 
 func (m *metadataManage) RegisterInstance(ctx context.Context, in *pb.RegisterInstanceRequest) (*pb.RegisterInstanceResponse, error) {
-	return servicedisco.RegisterInstance(ctx, in)
+	return datasource.GetMetadataManager().RegisterInstance(ctx, in)
 }
 
 func (m *metadataManage) SendHeartbeat(ctx context.Context, in *pb.HeartbeatRequest) error {
-	return servicedisco.SendHeartbeat(ctx, in)
+	return datasource.GetMetadataManager().SendHeartbeat(ctx, in)
 }
 
 func (m *metadataManage) GetInstance(ctx context.Context, in *pb.GetOneInstanceRequest) (*pb.GetOneInstanceResponse, error) {
-	return servicedisco.GetInstance(ctx, in)
+	return datasource.GetMetadataManager().GetInstance(ctx, in)
 }
 
 func (m *metadataManage) PutInstance(ctx context.Context, in *pb.RegisterInstanceRequest) error {
-	return servicedisco.PutInstance(ctx, in)
+	return datasource.GetMetadataManager().PutInstance(ctx, in)
 }
 
 func (m *metadataManage) UnregisterInstance(ctx context.Context, in *pb.UnregisterInstanceRequest) error {
-	return servicedisco.UnregisterInstance(ctx, in)
+	return datasource.GetMetadataManager().UnregisterInstance(ctx, in)
 }
 
 type metadataManager interface {
