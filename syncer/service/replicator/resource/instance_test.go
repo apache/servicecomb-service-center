@@ -164,3 +164,37 @@ func TestFailHandlerInstance(t *testing.T) {
 	_, err := h.FailHandle(context.TODO(), NonImplement)
 	assert.Nil(t, err)
 }
+
+func TestInstanceFailHandle(t *testing.T) {
+	manager := &mockMetadata{
+		services: make(map[string]*pb.MicroService),
+	}
+	serviceID := "xxxx"
+	manager.services = map[string]*pb.MicroService{
+		serviceID: {
+			ServiceId: serviceID,
+		},
+	}
+	inst := &pb.RegisterInstanceRequest{
+		Instance: &pb.MicroServiceInstance{
+			ServiceId: serviceID,
+		},
+	}
+	v, _ := json.Marshal(inst)
+	e1 := &v1sync.Event{
+		Id:        "xx",
+		Action:    sync.CreateAction,
+		Subject:   Instance,
+		Opts:      nil,
+		Value:     v,
+		Timestamp: v1sync.Timestamp(),
+	}
+	res := &instance{
+		event:   e1,
+		manager: manager,
+	}
+	re, err := res.FailHandle(context.TODO(), MicroNonExist)
+	if assert.Nil(t, err) {
+		assert.Equal(t, "xx", re.Id)
+	}
+}

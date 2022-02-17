@@ -154,7 +154,7 @@ func loadServerConfig() ServerConfig {
 
 			EnablePProf: GetInt("server.pprof.mode", 0, WithStandby("enable_pprof")) != 0,
 
-			SslEnabled: GetBool("ssl.enable", true, WithStandby("ssl_mode")),
+			SslEnabled: GetInt("ssl.mode", 0, WithStandby("ssl_mode")) != 0,
 
 			LogRotateSize:   maxLogFileSize,
 			LogBackupCount:  maxLogBackupCount,
