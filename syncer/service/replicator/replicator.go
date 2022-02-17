@@ -154,6 +154,7 @@ func (r *replicatorManager) replicate(ctx context.Context, el *v1sync.EventList)
 		log.Info(fmt.Sprintf("replicate events success, count is %d", len(in.Events)))
 
 		for k, v := range res.Results {
+			log.Info(fmt.Sprintf("replicate event %s, %v", k, v))
 			result.Results[k] = v
 		}
 	}

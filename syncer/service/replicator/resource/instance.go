@@ -168,6 +168,31 @@ func (i *instance) NeedOperate(ctx context.Context) *Result {
 	return c.needOperate(ctx)
 }
 
+func (i *instance) FailHandle(ctx context.Context, code int32) (*v1sync.Event, error) {
+	if code != MicroNonExist {
+		return nil, nil
+	}
+
+	err := i.loadInput()
+	if err != nil {
+		return nil, err
+	}
+
+	serviceID := i.serviceID
+	_, err = i.manager.GetService(ctx,
+		&pb.GetServiceRequest{
+			ServiceId: serviceID,
+		})
+
+	if err != nil {
+		if errsvc.IsErrEqualCode(err, pb.ErrServiceNotExists) {
+			return nil, nil
+		}
+		return nil, nil
+	}
+	return i.event, nil
+}
+
 func (i *instance) CanDrop() bool {
 	return false
 }
