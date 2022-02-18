@@ -182,8 +182,9 @@ func (i *instance) FailHandle(ctx context.Context, code int32) (*v1sync.Event, e
 		return nil, err
 	}
 
-	ctx = util.SetDomain(ctx, i.event.Opts[string(util.CtxDomain)])
-	ctx = util.SetProject(ctx, i.event.Opts[string(util.CtxProject)])
+	ctx = util.SetDomainProject(ctx,
+		i.event.Opts[string(util.CtxDomain)],
+		i.event.Opts[string(util.CtxProject)])
 
 	serviceID := i.serviceID
 	_, err = i.manager.GetService(ctx,
