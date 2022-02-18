@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/util"
 	v1sync "github.com/apache/servicecomb-service-center/syncer/api/v1"
 	"github.com/apache/servicecomb-service-center/syncer/metrics"
 	"github.com/apache/servicecomb-service-center/syncer/service/replicator"
@@ -182,9 +181,6 @@ func (e *eventManager) resultHandle(ctx context.Context) {
 
 				continue
 			}
-
-			ctx = util.SetDomain(ctx, event.Opts[string(util.CtxDomain)])
-			ctx = util.SetProject(ctx, event.Opts[string(util.CtxProject)])
 
 			toSendEvent, err := r.FailHandle(ctx, res.Data.Code)
 			if err != nil {

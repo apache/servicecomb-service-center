@@ -6,6 +6,7 @@ import (
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	v1sync "github.com/apache/servicecomb-service-center/syncer/api/v1"
 
 	pb "github.com/go-chassis/cari/discovery"
@@ -180,6 +181,9 @@ func (i *instance) FailHandle(ctx context.Context, code int32) (*v1sync.Event, e
 	if err != nil {
 		return nil, err
 	}
+
+	ctx = util.SetDomain(ctx, i.event.Opts[string(util.CtxDomain)])
+	ctx = util.SetProject(ctx, i.event.Opts[string(util.CtxProject)])
 
 	serviceID := i.serviceID
 	_, err = i.manager.GetService(ctx,
