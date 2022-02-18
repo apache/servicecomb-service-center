@@ -174,6 +174,7 @@ func (e *eventManager) resultHandle(ctx context.Context) {
 					log.Warn(fmt.Sprintf("drop event %s", event.Flag()))
 					continue
 				}
+				log.Info(fmt.Sprintf("resend event %s", event.Flag()))
 				e.Send(&Event{
 					Event: event,
 				})
@@ -183,9 +184,11 @@ func (e *eventManager) resultHandle(ctx context.Context) {
 
 			toSendEvent, err := r.FailHandle(ctx, res.Data.Code)
 			if err != nil {
+				log.Warn(fmt.Sprintf("event %s fail handle failed, %s", event.Flag(), err.Error()))
 				continue
 			}
 			if toSendEvent != nil {
+				log.Info(fmt.Sprintf("resend event %s", toSendEvent.Flag()))
 				e.Send(&Event{
 					Event: toSendEvent,
 				})
