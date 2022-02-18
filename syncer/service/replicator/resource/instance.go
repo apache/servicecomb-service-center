@@ -2,8 +2,10 @@ package resource
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/pkg/log"
 	v1sync "github.com/apache/servicecomb-service-center/syncer/api/v1"
 
 	pb "github.com/go-chassis/cari/discovery"
@@ -132,6 +134,7 @@ func (i *instance) LoadCurrentResource(ctx context.Context) *Result {
 		})
 	if err != nil {
 		if errsvc.IsErrEqualCode(err, pb.ErrServiceNotExists) {
+			log.Warn(fmt.Sprintf("instance service not exist, %s", i.event.Flag()))
 			return MicroNonExistResult()
 		}
 		return FailResult(err)
@@ -186,9 +189,10 @@ func (i *instance) FailHandle(ctx context.Context, code int32) (*v1sync.Event, e
 
 	if err != nil {
 		if errsvc.IsErrEqualCode(err, pb.ErrServiceNotExists) {
+			log.Warn(fmt.Sprintf("service not exist %s, %s", serviceID, i.event.Flag()))
 			return nil, nil
 		}
-		return nil, nil
+		return nil, err
 	}
 	return i.event, nil
 }

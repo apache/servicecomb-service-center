@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	v1sync "github.com/apache/servicecomb-service-center/syncer/api/v1"
 	"github.com/apache/servicecomb-service-center/syncer/metrics"
 	"github.com/apache/servicecomb-service-center/syncer/service/replicator"
@@ -174,6 +175,7 @@ func (e *eventManager) resultHandle(ctx context.Context) {
 					log.Warn(fmt.Sprintf("drop event %s", event.Flag()))
 					continue
 				}
+				log.Info(fmt.Sprintf("resend event %s", event.Flag()))
 				e.Send(&Event{
 					Event: event,
 				})
@@ -181,11 +183,16 @@ func (e *eventManager) resultHandle(ctx context.Context) {
 				continue
 			}
 
+			ctx = util.SetDomain(ctx, event.Opts[string(util.CtxDomain)])
+			ctx = util.SetProject(ctx, event.Opts[string(util.CtxProject)])
+
 			toSendEvent, err := r.FailHandle(ctx, res.Data.Code)
 			if err != nil {
+				log.Warn(fmt.Sprintf("event %s fail handle failed, %s", event.Flag(), err.Error()))
 				continue
 			}
 			if toSendEvent != nil {
+				log.Info(fmt.Sprintf("resend event %s", toSendEvent.Flag()))
 				e.Send(&Event{
 					Event: toSendEvent,
 				})
