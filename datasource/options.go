@@ -25,8 +25,7 @@ import (
 type Options struct {
 	etcdadpt.Config
 
-	EnableCache       bool
-	SchemaNotEditable bool
+	EnableCache bool
 	// InstanceTTL: the default ttl of instance lease
 	InstanceTTL        int64
 	InstanceProperties map[string]string

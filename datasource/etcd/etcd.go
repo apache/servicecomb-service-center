@@ -104,7 +104,6 @@ func NewDataSource(opts datasource.Options) (datasource.DataSource, error) {
 		return nil, err
 	}
 	inst.metadataManager = &MetadataManager{
-		SchemaNotEditable:  opts.SchemaNotEditable,
 		InstanceTTL:        opts.InstanceTTL,
 		InstanceProperties: opts.InstanceProperties,
 	}

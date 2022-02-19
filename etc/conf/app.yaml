@@ -151,8 +151,6 @@ registry:
   schema:
     # if want disable Test Schema, SchemaDisable set true
     disable: false
-    # if want disable modification of Schema, SchemaNotEditable set true
-    notEditable: false
     # remove the schema without refs every 7d
     retire:
       cron: '0 2 * * *'

@@ -53,10 +53,6 @@ func InitRegistration() {
 		Version:     version.Ver().Version,
 		Status:      discovery.MS_UP,
 		Level:       "BACK",
-		Schemas: []string{
-			"servicecenter.grpc.api.ServiceCtrl",
-			"servicecenter.grpc.api.ServiceInstanceCtrl",
-		},
 		Properties: map[string]string{
 			discovery.PropAllowCrossApp: "true",
 		},
