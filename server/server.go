@@ -122,7 +122,6 @@ func (s *ServiceCenterServer) initDatasource() {
 			},
 		},
 		EnableCache:        config.GetRegistry().EnableCache,
-		SchemaNotEditable:  config.GetRegistry().SchemaNotEditable,
 		InstanceTTL:        config.GetRegistry().InstanceTTL,
 		InstanceProperties: config.GetStringMap("registry.instance.properties"),
 	}); err != nil {

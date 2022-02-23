@@ -22,35 +22,12 @@ import (
 	"testing"
 
 	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/datasource/etcd"
-	"github.com/apache/servicecomb-service-center/datasource/mongo"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	quotasvc "github.com/apache/servicecomb-service-center/server/service/quota"
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/cari/pkg/errsvc"
-	"github.com/go-chassis/go-archaius"
-	"github.com/little-cui/etcdadpt"
 	"github.com/stretchr/testify/assert"
 )
-
-func genLocalDatasource(editable bool) datasource.DataSource {
-	t := archaius.Get("TEST_MODE")
-	if t == nil {
-		t = "etcd"
-	}
-	if t == "etcd" {
-		ds, _ := etcd.NewDataSource(datasource.Options{
-			Config:            etcdadpt.Config{Kind: "etcd"},
-			SchemaNotEditable: !editable,
-		})
-
-		return ds
-	}
-	ds, _ := mongo.NewDataSource(datasource.Options{
-		SchemaNotEditable: !editable,
-	})
-	return ds
-}
 
 func TestSchema_Create(t *testing.T) {
 	var (
@@ -426,20 +403,8 @@ func TestSchema_Create(t *testing.T) {
 				Summary:  "second0summary_ms",
 			},
 		}
-		log.Info("schema edit not allowed, add a schema with new schemaId should fail")
-
-		localMicroServiceDs := genLocalDatasource(false).MetadataManager()
-		_, err = localMicroServiceDs.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
-			ServiceId: serviceIdPro1,
-			Schemas:   schemas,
-		})
-		testErr := err.(*errsvc.Error)
-		assert.Error(t, testErr)
-		assert.Equal(t, pb.ErrUndefinedSchemaID, testErr.Code)
-
 		log.Info("schema edit allowed, add a schema with new schemaId, should pass")
-		localMicroServiceDs = genLocalDatasource(true).MetadataManager()
-		_, err = localMicroServiceDs.ModifySchemas(getContext(), &pb.ModifySchemasRequest{
+		_, err = datasource.GetMetadataManager().ModifySchemas(getContext(), &pb.ModifySchemasRequest{
 			ServiceId: serviceIdPro1,
 			Schemas:   schemas,
 		})
@@ -484,21 +449,8 @@ func TestSchema_Create(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, []string{"first_schemaId_ms"}, service.Schemas)
 
-		log.Info("schema edit not allowed, modify schema should fail")
-		localMicroServiceDs := genLocalDatasource(false).MetadataManager()
-		_, err = localMicroServiceDs.ModifySchema(getContext(), &pb.ModifySchemaRequest{
-			ServiceId: serviceIdPro1,
-			SchemaId:  schemas[0].SchemaId,
-			Summary:   schemas[0].Summary,
-			Schema:    schemas[0].SchemaId,
-		})
-		testErr := err.(*errsvc.Error)
-		assert.Error(t, testErr)
-		assert.Equal(t, pb.ErrModifySchemaNotAllow, testErr.Code)
-
 		log.Info("schema edit allowed, add a schema with new schemaId, should pass")
-		localMicroServiceDs = genLocalDatasource(true).MetadataManager()
-		_, err = localMicroServiceDs.ModifySchema(getContext(), &pb.ModifySchemaRequest{
+		_, err = datasource.GetMetadataManager().ModifySchema(getContext(), &pb.ModifySchemaRequest{
 			ServiceId: serviceIdPro1,
 			SchemaId:  schemas[0].SchemaId,
 			Summary:   schemas[0].Summary,

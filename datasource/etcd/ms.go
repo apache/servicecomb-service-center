@@ -47,14 +47,7 @@ import (
 	"github.com/apache/servicecomb-service-center/syncer/service/event"
 )
 
-var (
-	ErrUndefinedSchemaID    = pb.NewError(pb.ErrUndefinedSchemaID, datasource.ErrUndefinedSchemaID.Error())
-	ErrModifySchemaNotAllow = pb.NewError(pb.ErrModifySchemaNotAllow, datasource.ErrModifySchemaNotAllow.Error())
-)
-
 type MetadataManager struct {
-	// SchemaNotEditable determines whether schema modification is not allowed
-	SchemaNotEditable bool
 	// InstanceTTL options
 	InstanceTTL        int64
 	InstanceProperties map[string]string
@@ -133,35 +126,36 @@ func (ds *MetadataManager) RegisterService(ctx context.Context, request *pb.Crea
 			serviceFlag, remoteIP), err)
 		return nil, pb.NewError(pb.ErrUnavailableBackend, err.Error())
 	}
-	if !resp.Succeeded {
-		if len(requestServiceID) != 0 {
-			if len(resp.Kvs) == 0 || requestServiceID != util.BytesToStringWithNoCopy(resp.Kvs[0].Value) {
-				log.Warn(fmt.Sprintf("create micro-service[%s] failed, service already exists, operator: %s",
-					serviceFlag, remoteIP))
-				return nil, pb.NewError(pb.ErrServiceAlreadyExists,
-					"ServiceID conflict or found the same service with different id.")
-			}
-		}
 
-		if len(resp.Kvs) == 0 {
-			// internal error?
-			log.Error(fmt.Sprintf("create micro-service[%s] failed, unexpected txn response, operator: %s",
-				serviceFlag, remoteIP), nil)
-			return nil, pb.NewError(pb.ErrInternal, "Unexpected txn response.")
-		}
-
-		existServiceID := util.BytesToStringWithNoCopy(resp.Kvs[0].Value)
-		log.Warn(fmt.Sprintf("create micro-service[%s][%s] failed, service already exists, operator: %s",
-			existServiceID, serviceFlag, remoteIP))
+	if resp.Succeeded {
+		log.Info(fmt.Sprintf("create micro-service[%s][%s] successfully, operator: %s",
+			service.ServiceId, serviceFlag, remoteIP))
 		return &pb.CreateServiceResponse{
-			ServiceId: existServiceID,
+			ServiceId: service.ServiceId,
 		}, nil
 	}
 
-	log.Info(fmt.Sprintf("create micro-service[%s][%s] successfully, operator: %s",
-		service.ServiceId, serviceFlag, remoteIP))
+	if len(requestServiceID) != 0 {
+		if len(resp.Kvs) == 0 || requestServiceID != util.BytesToStringWithNoCopy(resp.Kvs[0].Value) {
+			log.Warn(fmt.Sprintf("create micro-service[%s] failed, service already exists, operator: %s",
+				serviceFlag, remoteIP))
+			return nil, pb.NewError(pb.ErrServiceAlreadyExists,
+				"ServiceID conflict or found the same service with different id.")
+		}
+	}
+
+	if len(resp.Kvs) == 0 {
+		// internal error?
+		log.Error(fmt.Sprintf("create micro-service[%s] failed, unexpected txn response, operator: %s",
+			serviceFlag, remoteIP), nil)
+		return nil, pb.NewError(pb.ErrInternal, "Unexpected txn response.")
+	}
+
+	existServiceID := util.BytesToStringWithNoCopy(resp.Kvs[0].Value)
+	log.Warn(fmt.Sprintf("create micro-service[%s][%s] failed, service already exists, operator: %s",
+		existServiceID, serviceFlag, remoteIP))
 	return &pb.CreateServiceResponse{
-		ServiceId: service.ServiceId,
+		ServiceId: existServiceID,
 	}, nil
 }
 
@@ -1415,95 +1409,48 @@ func (ds *MetadataManager) modifySchemas(ctx context.Context, domainProject stri
 		return pb.NewError(pb.ErrUnavailableBackend, err.Error())
 	}
 
-	needUpdateSchemas, needAddSchemas, needDeleteSchemas, nonExistSchemaIds :=
+	needUpdateSchemas, needAddSchemas, needDeleteSchemas, _ :=
 		datasource.SchemasAnalysis(schemas, schemasFromDatabase, service.Schemas)
 
 	pluginOps := make([]etcdadpt.OpOptions, 0)
-	if !ds.isSchemaEditable() {
-		if len(service.Schemas) == 0 {
-			errQuota := quotasvc.ApplySchema(ctx, serviceID, int64(len(nonExistSchemaIds)))
-			if errQuota != nil {
-				log.Error(fmt.Sprintf("modify service[%s] schemas failed, operator: %s", serviceID, remoteIP), errQuota)
-				return errQuota
-			}
+	quotaSize := len(needAddSchemas) - len(needDeleteSchemas)
+	if quotaSize > 0 {
+		errQuota := quotasvc.ApplySchema(ctx, serviceID, int64(quotaSize))
+		if errQuota != nil {
+			log.Error(fmt.Sprintf("modify service[%s] schemas failed, operator: %s", serviceID, remoteIP), errQuota)
+			return errQuota
+		}
+	}
 
-			service.Schemas = nonExistSchemaIds
-			opts, err := eutil.UpdateService(ctx, domainProject, serviceID, service)
-			if err != nil {
-				log.Error(fmt.Sprintf("modify service[%s] schemas failed, update service.Schemas failed, operator: %s",
-					serviceID, remoteIP), err)
-				return pb.NewError(pb.ErrInternal, err.Error())
-			}
-			pluginOps = append(pluginOps, opts...)
-		} else {
-			if len(nonExistSchemaIds) != 0 {
-				errInfo := fmt.Errorf("non-existent schemaIDs %v", nonExistSchemaIds)
-				log.Error(fmt.Sprintf("modify service[%s] schemas failed, operator: %s", serviceID, remoteIP), errInfo)
-				return pb.NewError(pb.ErrUndefinedSchemaID, errInfo.Error())
-			}
-			for _, needUpdateSchema := range needUpdateSchemas {
-				exist, err := isExistSchemaSummary(ctx, domainProject, serviceID, needUpdateSchema.SchemaId)
-				if err != nil {
-					return pb.NewError(pb.ErrInternal, err.Error())
-				}
-				if !exist {
-					opts, err := putSchema(ctx, domainProject, serviceID, needUpdateSchema)
-					if err != nil {
-						return pb.NewError(pb.ErrInternal, err.Error())
-					}
-					pluginOps = append(pluginOps, opts...)
-				} else {
-					log.Warn(fmt.Sprintf("schema[%s/%s] and it's summary already exist, skip to update, operator: %s",
-						serviceID, needUpdateSchema.SchemaId, remoteIP))
-				}
-			}
-		}
+	var schemaIDs []string
+	for _, schema := range needAddSchemas {
+		log.Info(fmt.Sprintf("add new schema[%s/%s], operator: %s", serviceID, schema.SchemaId, remoteIP))
+		opts, _ := putSchema(ctx, domainProject, service.ServiceId, schema)
+		pluginOps = append(pluginOps, opts...)
+		schemaIDs = append(schemaIDs, schema.SchemaId)
+	}
 
-		for _, schema := range needAddSchemas {
-			log.Info(fmt.Sprintf("add new schema[%s/%s], operator: %s", serviceID, schema.SchemaId, remoteIP))
-			opts, _ := putSchema(ctx, domainProject, service.ServiceId, schema)
-			pluginOps = append(pluginOps, opts...)
-		}
-	} else {
-		quotaSize := len(needAddSchemas) - len(needDeleteSchemas)
-		if quotaSize > 0 {
-			errQuota := quotasvc.ApplySchema(ctx, serviceID, int64(quotaSize))
-			if errQuota != nil {
-				log.Error(fmt.Sprintf("modify service[%s] schemas failed, operator: %s", serviceID, remoteIP), errQuota)
-				return errQuota
-			}
-		}
+	for _, schema := range needUpdateSchemas {
+		log.Info(fmt.Sprintf("update schema[%s/%s], operator: %s", serviceID, schema.SchemaId, remoteIP))
+		opts, _ := putSchema(ctx, domainProject, serviceID, schema)
+		pluginOps = append(pluginOps, opts...)
+		schemaIDs = append(schemaIDs, schema.SchemaId)
+	}
 
-		var schemaIDs []string
-		for _, schema := range needAddSchemas {
-			log.Info(fmt.Sprintf("add new schema[%s/%s], operator: %s", serviceID, schema.SchemaId, remoteIP))
-			opts, _ := putSchema(ctx, domainProject, service.ServiceId, schema)
-			pluginOps = append(pluginOps, opts...)
-			schemaIDs = append(schemaIDs, schema.SchemaId)
-		}
-
-		for _, schema := range needUpdateSchemas {
-			log.Info(fmt.Sprintf("update schema[%s/%s], operator: %s", serviceID, schema.SchemaId, remoteIP))
-			opts, _ := putSchema(ctx, domainProject, serviceID, schema)
-			pluginOps = append(pluginOps, opts...)
-			schemaIDs = append(schemaIDs, schema.SchemaId)
-		}
-
-		for _, schema := range needDeleteSchemas {
-			log.Info(fmt.Sprintf("delete non-existent schema[%s/%s], operator: %s", serviceID, schema.SchemaId, remoteIP))
-			opts, _ := deleteSchema(ctx, domainProject, serviceID, schema)
-			pluginOps = append(pluginOps, opts...)
-		}
-
-		service.Schemas = schemaIDs
-		opts, err := eutil.UpdateService(ctx, domainProject, serviceID, service)
-		if err != nil {
-			log.Error(fmt.Sprintf("modify service[%s] schemas failed, update service.Schemas failed, operator: %s",
-				serviceID, remoteIP), err)
-			return pb.NewError(pb.ErrInternal, err.Error())
-		}
+	for _, schema := range needDeleteSchemas {
+		log.Info(fmt.Sprintf("delete non-existent schema[%s/%s], operator: %s", serviceID, schema.SchemaId, remoteIP))
+		opts, _ := deleteSchema(ctx, domainProject, serviceID, schema)
 		pluginOps = append(pluginOps, opts...)
 	}
+
+	service.Schemas = schemaIDs
+	opts, err := eutil.UpdateService(ctx, domainProject, serviceID, service)
+	if err != nil {
+		log.Error(fmt.Sprintf("modify service[%s] schemas failed, update service.Schemas failed, operator: %s",
+			serviceID, remoteIP), err)
+		return pb.NewError(pb.ErrInternal, err.Error())
+	}
+	pluginOps = append(pluginOps, opts...)
 
 	if len(pluginOps) != 0 {
 		resp, err := etcdadpt.TxnWithCmp(ctx, pluginOps,
@@ -1517,10 +1464,6 @@ func (ds *MetadataManager) modifySchemas(ctx context.Context, domainProject stri
 		}
 	}
 	return nil
-}
-
-func (ds *MetadataManager) isSchemaEditable() bool {
-	return !ds.SchemaNotEditable
 }
 
 func (ds *MetadataManager) modifySchema(ctx context.Context, serviceID string, schema *pb.Schema) *errsvc.Error {
@@ -1542,61 +1485,15 @@ func (ds *MetadataManager) modifySchema(ctx context.Context, serviceID string, s
 
 	var pluginOps []etcdadpt.OpOptions
 	isExist := isExistSchemaID(microService, []*pb.Schema{schema})
-
-	if !ds.isSchemaEditable() {
-		if len(microService.Schemas) != 0 && !isExist {
-			return ErrUndefinedSchemaID
-		}
-
-		key := path.GenerateServiceSchemaKey(domainProject, serviceID, schemaID)
-		respSchema, err := sd.Schema().Search(ctx, etcdadpt.WithStrKey(key), etcdadpt.WithCountOnly())
+	if !isExist {
+		microService.Schemas = append(microService.Schemas, schemaID)
+		opts, err := eutil.UpdateService(ctx, domainProject, serviceID, microService)
 		if err != nil {
-			log.Error(fmt.Sprintf("modify schema[%s/%s] failed, get schema summary failed, operator: %s",
+			log.Error(fmt.Sprintf("modify schema[%s/%s] failed, update microService.Schemas failed, operator: %s",
 				serviceID, schemaID, remoteIP), err)
-			return pb.NewError(pb.ErrUnavailableBackend, err.Error())
+			return pb.NewError(pb.ErrInternal, err.Error())
 		}
-
-		if respSchema.Count != 0 {
-			if len(schema.Summary) == 0 {
-				log.Error(fmt.Sprintf("schema readonly mode, schema[%s/%s] already exists, can not be changed, operator: %s",
-					serviceID, schemaID, remoteIP), err)
-				return ErrModifySchemaNotAllow
-			}
-
-			exist, err := isExistSchemaSummary(ctx, domainProject, serviceID, schemaID)
-			if err != nil {
-				log.Error(fmt.Sprintf("check schema[%s/%s] summary existence failed, operator: %s",
-					serviceID, schemaID, remoteIP), err)
-				return pb.NewError(pb.ErrInternal, err.Error())
-			}
-			if exist {
-				log.Error(fmt.Sprintf("schema readonly mode, schema[%s/%s] already exist, can not be changed, operator: %s",
-					serviceID, schemaID, remoteIP), err)
-				return ErrModifySchemaNotAllow
-			}
-		}
-
-		if len(microService.Schemas) == 0 {
-			microService.Schemas = append(microService.Schemas, schemaID)
-			opts, err := eutil.UpdateService(ctx, domainProject, serviceID, microService)
-			if err != nil {
-				log.Error(fmt.Sprintf("modify schema[%s/%s] failed, update microService.Schemas failed, operator: %s",
-					serviceID, schemaID, remoteIP), err)
-				return pb.NewError(pb.ErrInternal, err.Error())
-			}
-			pluginOps = append(pluginOps, opts...)
-		}
-	} else {
-		if !isExist {
-			microService.Schemas = append(microService.Schemas, schemaID)
-			opts, err := eutil.UpdateService(ctx, domainProject, serviceID, microService)
-			if err != nil {
-				log.Error(fmt.Sprintf("modify schema[%s/%s] failed, update microService.Schemas failed, operator: %s",
-					serviceID, schemaID, remoteIP), err)
-				return pb.NewError(pb.ErrInternal, err.Error())
-			}
-			pluginOps = append(pluginOps, opts...)
-		}
+		pluginOps = append(pluginOps, opts...)
 	}
 
 	opts, err := commitSchemaInfo(ctx, domainProject, serviceID, schema)

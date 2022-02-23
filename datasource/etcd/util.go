@@ -95,18 +95,6 @@ func checkSchemaInfoExist(ctx context.Context, key string) (bool, error) {
 	return true, nil
 }
 
-func isExistSchemaSummary(ctx context.Context, domainProject, serviceID, schemaID string) (bool, error) {
-	key := path.GenerateServiceSchemaSummaryKey(domainProject, serviceID, schemaID)
-	resp, err := sd.SchemaSummary().Search(ctx, etcdadpt.WithStrKey(key), etcdadpt.WithCountOnly())
-	if err != nil {
-		return true, err
-	}
-	if resp.Count == 0 {
-		return false, nil
-	}
-	return true, nil
-}
-
 func putSchema(ctx context.Context, domainProject string, serviceID string, schema *pb.Schema) ([]etcdadpt.OpOptions, error) {
 	opts := make([]etcdadpt.OpOptions, 0)
 	key := path.GenerateServiceSchemaKey(domainProject, serviceID, schema.SchemaId)

@@ -55,14 +55,7 @@ import (
 
 const baseTen = 10
 
-var (
-	ErrUndefinedSchemaID    = discovery.NewError(discovery.ErrUndefinedSchemaID, datasource.ErrUndefinedSchemaID.Error())
-	ErrModifySchemaNotAllow = discovery.NewError(discovery.ErrModifySchemaNotAllow, datasource.ErrModifySchemaNotAllow.Error())
-)
-
 type MetadataManager struct {
-	// SchemaNotEditable determines whether schema modification is not allowed
-	SchemaNotEditable bool
 	// InstanceTTL options
 	InstanceTTL        int64
 	InstanceProperties map[string]string
@@ -746,108 +739,56 @@ func (ds *MetadataManager) modifySchemas(ctx context.Context, service *discovery
 		return discovery.NewError(discovery.ErrUnavailableBackend, err.Error())
 	}
 
-	needUpdateSchemas, needAddSchemas, needDeleteSchemas, nonExistSchemaIds :=
+	needUpdateSchemas, needAddSchemas, needDeleteSchemas, _ :=
 		datasource.SchemasAnalysis(schemas, schemasFromDatabase, service.Schemas)
 
 	var schemasOps []mongo.WriteModel
 	var serviceOps []mongo.WriteModel
-	if !ds.isSchemaEditable() {
-		if len(service.Schemas) == 0 {
-			errQuota := quotasvc.ApplySchema(ctx, serviceID, int64(len(nonExistSchemaIds)))
-			if errQuota != nil {
-				log.Error(fmt.Sprintf("modify service[%s] schemas failed, operator: %s", serviceID, remoteIP), errQuota)
-				return errQuota
-			}
-			filter = mutil.NewDomainProjectFilter(domain, project, mutil.ServiceServiceID(serviceID))
-			setFilter := mutil.NewFilter(mutil.ServiceSchemas(nonExistSchemaIds))
-			updateFilter := mutil.NewFilter(mutil.Set(setFilter))
-			serviceOps = append(serviceOps, mongo.NewUpdateOneModel().SetUpdate(updateFilter).SetFilter(filter))
-		} else {
-			if len(nonExistSchemaIds) != 0 {
-				errInfo := fmt.Errorf("non-existent schemaIDs %v", nonExistSchemaIds)
-				log.Error(fmt.Sprintf("modify service %s schemas failed, operator: %s", serviceID, remoteIP), err)
-				return discovery.NewError(discovery.ErrUndefinedSchemaID, errInfo.Error())
-			}
-			for _, needUpdateSchema := range needUpdateSchemas {
-				exist, err := dao.SchemaSummaryExist(ctx, serviceID, needUpdateSchema.SchemaId)
-				if err != nil {
-					return discovery.NewError(discovery.ErrInternal, err.Error())
-				}
-				if !exist {
-					filter = mutil.NewDomainProjectFilter(domain, project, mutil.ServiceID(serviceID), mutil.SchemaID(needUpdateSchema.SchemaId))
-					setFilter := mutil.NewFilter(
-						mutil.Schema(needUpdateSchema.Schema),
-						mutil.SchemaSummary(needUpdateSchema.Summary),
-					)
-					updateFilter := mutil.NewFilter(
-						mutil.Set(setFilter),
-					)
-					schemasOps = append(schemasOps, mongo.NewUpdateOneModel().SetFilter(filter).SetUpdate(updateFilter))
-				} else {
-					log.Warn(fmt.Sprintf("schema[%s/%s] and it's summary already exist, skip to update, operator: %s",
-						serviceID, needUpdateSchema.SchemaId, remoteIP))
-				}
-			}
+	quotaSize := len(needAddSchemas) - len(needDeleteSchemas)
+	if quotaSize > 0 {
+		errQuota := quotasvc.ApplySchema(ctx, serviceID, int64(quotaSize))
+		if errQuota != nil {
+			log.Error(fmt.Sprintf("modify service[%s] schemas failed, operator: %s", serviceID, remoteIP), errQuota)
+			return errQuota
 		}
-
-		for _, schema := range needAddSchemas {
-			log.Info(fmt.Sprintf("add new schema[%s/%s], operator: %s", serviceID, schema.SchemaId, remoteIP))
-			schemasOps = append(schemasOps, mongo.NewInsertOneModel().SetDocument(&model.Schema{
-				Domain:        domain,
-				Project:       project,
-				ServiceID:     serviceID,
-				SchemaID:      schema.SchemaId,
-				Schema:        schema.Schema,
-				SchemaSummary: schema.Summary,
-			}))
-		}
-	} else {
-		quotaSize := len(needAddSchemas) - len(needDeleteSchemas)
-		if quotaSize > 0 {
-			errQuota := quotasvc.ApplySchema(ctx, serviceID, int64(quotaSize))
-			if errQuota != nil {
-				log.Error(fmt.Sprintf("modify service[%s] schemas failed, operator: %s", serviceID, remoteIP), errQuota)
-				return errQuota
-			}
-		}
-		var schemaIDs []string
-		for _, schema := range needAddSchemas {
-			log.Info(fmt.Sprintf("add new schema[%s/%s], operator: %s", serviceID, schema.SchemaId, remoteIP))
-			schemasOps = append(schemasOps, mongo.NewInsertOneModel().SetDocument(&model.Schema{
-				Domain:        domain,
-				Project:       project,
-				ServiceID:     serviceID,
-				SchemaID:      schema.SchemaId,
-				Schema:        schema.Schema,
-				SchemaSummary: schema.Summary,
-			}))
-			schemaIDs = append(schemaIDs, schema.SchemaId)
-		}
-
-		for _, schema := range needUpdateSchemas {
-			log.Info(fmt.Sprintf("update schema[%s/%s], operator: %s", serviceID, schema.SchemaId, remoteIP))
-			filter = mutil.NewDomainProjectFilter(domain, project, mutil.ServiceID(serviceID), mutil.SchemaID(schema.SchemaId))
-			setFilter := mutil.NewFilter(
-				mutil.Schema(schema.Schema),
-				mutil.SchemaSummary(schema.Summary),
-			)
-			updateFilter := mutil.NewFilter(
-				mutil.Set(setFilter),
-			)
-			schemasOps = append(schemasOps, mongo.NewUpdateOneModel().SetFilter(filter).SetUpdate(updateFilter))
-			schemaIDs = append(schemaIDs, schema.SchemaId)
-		}
-
-		for _, schema := range needDeleteSchemas {
-			log.Info(fmt.Sprintf("delete non-existent schema[%s/%s], operator: %s", serviceID, schema.SchemaId, remoteIP))
-			filter := mutil.NewDomainProjectFilter(domain, project, mutil.ServiceID(serviceID), mutil.SchemaID(schema.SchemaId))
-			schemasOps = append(schemasOps, mongo.NewDeleteOneModel().SetFilter(filter))
-		}
-		filter := mutil.NewDomainProjectFilter(domain, project, mutil.ServiceServiceID(serviceID))
-		setFilter := mutil.NewFilter(mutil.ServiceSchemas(schemaIDs))
-		updateFilter := mutil.NewFilter(mutil.Set(setFilter))
-		serviceOps = append(serviceOps, mongo.NewUpdateOneModel().SetUpdate(updateFilter).SetFilter(filter))
 	}
+	var schemaIDs []string
+	for _, schema := range needAddSchemas {
+		log.Info(fmt.Sprintf("add new schema[%s/%s], operator: %s", serviceID, schema.SchemaId, remoteIP))
+		schemasOps = append(schemasOps, mongo.NewInsertOneModel().SetDocument(&model.Schema{
+			Domain:        domain,
+			Project:       project,
+			ServiceID:     serviceID,
+			SchemaID:      schema.SchemaId,
+			Schema:        schema.Schema,
+			SchemaSummary: schema.Summary,
+		}))
+		schemaIDs = append(schemaIDs, schema.SchemaId)
+	}
+
+	for _, schema := range needUpdateSchemas {
+		log.Info(fmt.Sprintf("update schema[%s/%s], operator: %s", serviceID, schema.SchemaId, remoteIP))
+		filter := mutil.NewDomainProjectFilter(domain, project, mutil.ServiceID(serviceID), mutil.SchemaID(schema.SchemaId))
+		setFilter := mutil.NewFilter(
+			mutil.Schema(schema.Schema),
+			mutil.SchemaSummary(schema.Summary),
+		)
+		updateFilter := mutil.NewFilter(
+			mutil.Set(setFilter),
+		)
+		schemasOps = append(schemasOps, mongo.NewUpdateOneModel().SetFilter(filter).SetUpdate(updateFilter))
+		schemaIDs = append(schemaIDs, schema.SchemaId)
+	}
+
+	for _, schema := range needDeleteSchemas {
+		log.Info(fmt.Sprintf("delete non-existent schema[%s/%s], operator: %s", serviceID, schema.SchemaId, remoteIP))
+		filter := mutil.NewDomainProjectFilter(domain, project, mutil.ServiceID(serviceID), mutil.SchemaID(schema.SchemaId))
+		schemasOps = append(schemasOps, mongo.NewDeleteOneModel().SetFilter(filter))
+	}
+	filter = mutil.NewDomainProjectFilter(domain, project, mutil.ServiceServiceID(serviceID))
+	setFilter := mutil.NewFilter(mutil.ServiceSchemas(schemaIDs))
+	updateFilter := mutil.NewFilter(mutil.Set(setFilter))
+	serviceOps = append(serviceOps, mongo.NewUpdateOneModel().SetUpdate(updateFilter).SetFilter(filter))
 	if len(schemasOps) > 0 {
 		_, err = dmongo.GetClient().GetDB().Collection(model.CollectionSchema).BulkWrite(ctx, schemasOps)
 		if err != nil {
@@ -871,7 +812,6 @@ func (ds *MetadataManager) modifySchemas(ctx context.Context, service *discovery
 func (ds *MetadataManager) modifySchema(ctx context.Context, serviceID string, schema *discovery.Schema) *errsvc.Error {
 	domain := util.ParseDomain(ctx)
 	project := util.ParseProject(ctx)
-	remoteIP := util.GetIPFromContext(ctx)
 	svc, err := GetServiceByID(ctx, serviceID)
 	if err != nil {
 		if errors.Is(err, datasource.ErrNoData) {
@@ -888,35 +828,8 @@ func (ds *MetadataManager) modifySchema(ctx context.Context, serviceID string, s
 		}
 	}
 	var newSchemas []string
-	if !ds.isSchemaEditable() {
-		if len(microservice.Schemas) != 0 && !isExist {
-			return ErrUndefinedSchemaID
-		}
-		filter := mutil.NewDomainProjectFilter(domain, project, mutil.ServiceID(serviceID), mutil.SchemaID(schema.SchemaId))
-		respSchema, err := dao.GetSchema(ctx, filter)
-		if err != nil {
-			return discovery.NewError(discovery.ErrUnavailableBackend, err.Error())
-		}
-		if respSchema != nil {
-			if len(schema.Summary) == 0 {
-				log.Error(fmt.Sprintf("modify schema %s %s failed, get schema summary failed, operator: %s",
-					serviceID, schema.SchemaId, remoteIP), err)
-				return ErrModifySchemaNotAllow
-			}
-			if len(respSchema.SchemaSummary) != 0 {
-				log.Error(fmt.Sprintf("mode, schema %s %s already exist, can not be changed, operator: %s",
-					serviceID, schema.SchemaId, remoteIP), err)
-				return ErrModifySchemaNotAllow
-			}
-		}
-		if len(microservice.Schemas) == 0 {
-			copy(newSchemas, microservice.Schemas)
-			newSchemas = append(newSchemas, schema.SchemaId)
-		}
-	} else {
-		if !isExist {
-			newSchemas = append(microservice.Schemas, schema.SchemaId)
-		}
+	if !isExist {
+		newSchemas = append(microservice.Schemas, schema.SchemaId)
 	}
 	if len(newSchemas) != 0 {
 		filter := mutil.NewDomainProjectFilter(domain, project, mutil.ServiceServiceID(serviceID))
@@ -942,10 +855,6 @@ func (ds *MetadataManager) modifySchema(ctx context.Context, serviceID string, s
 		return discovery.NewError(discovery.ErrInternal, err.Error())
 	}
 	return nil
-}
-
-func (ds *MetadataManager) isSchemaEditable() bool {
-	return !ds.SchemaNotEditable
 }
 
 func getServiceDetailUtil(ctx context.Context, mgs *model.Service, countOnly bool, options []string) (*discovery.ServiceDetail, error) {
