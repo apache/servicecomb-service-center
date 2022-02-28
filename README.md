@@ -94,7 +94,7 @@ httpport = 30100
 
 Requirements
 
-+ [Go](https://golang.org) version 1.9+ is required to build the latest version of Service-Center.
++ [Go](https://golang.org) version 1.17+ is required to build the latest version of Service-Center.
 
 Download the Code
 ```sh
@@ -119,7 +119,7 @@ Build the Service-Center
 ```sh
 go build -o service-center github.com/apache/servicecomb-service-center/cmd/scserver
 ```
-First, you need to run a etcd(version: 3.x) as a database service and then modify the etcd IP and port in the Service Center configuration file (./etc/conf/app.conf : manager_cluster).
+First, you need to run an etcd(version: 3.x) as a database service and then modify the etcd IP and port in the Service Center configuration file (./etc/conf/app.conf : manager_cluster).
 ```sh
 wget https://github.com/coreos/etcd/releases/download/v3.1.8/etcd-v3.1.8-linux-amd64.tar.gz
 tar -xvf etcd-v3.1.8-linux-amd64.tar.gz
