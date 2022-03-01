@@ -63,6 +63,8 @@ See [here](https://github.com/apache/servicecomb-service-center/blob/master/scri
 
 ##### Step 1
 
+> If you are doing release for the first time, you can read this [document](https://doris.apache.org/branch-0.14/zh-CN/community/release-process.html#%E5%87%86%E5%A4%87%E7%8E%AF%E5%A2%83).
+
 Execute script, archive source code and generate summary and signature
 ```
 bash scripts/release/archive.sh apache-servicecomb-service-center 2.0.0 littlecui@apache.org
