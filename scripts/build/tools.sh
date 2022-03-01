@@ -122,21 +122,6 @@ build_scctl() {
     go build ${GO_BUILDMODE} --ldflags "${ldflags}" -o $BINARY_NAME github.com/apache/servicecomb-service-center/cmd/scctl
 }
 
-build_syncer() {
-    local app=$PACKAGE_PREFIX-$RELEASE-$GOOS-$GOARCH
-    ## Build the syncer releases
-    export GIT_COMMIT=$(git log  --pretty=format:'%h' -n 1)
-    export BUILD_NUMBER=$RELEASE
-    local ldflags="${GO_LDFLAGS} -X 'github.com/apache/servicecomb-service-center/syncer/version.BUILD_TAG=$(date +%Y%m%d%H%M%S).$BUILD_NUMBER.$GIT_COMMIT'"
-    ldflags="${ldflags} -X 'github.com/apache/servicecomb-service-center/syncer/version.VERSION=$BUILD_NUMBER'"
-
-    local BINARY_NAME=$app/syncer
-    if [ "$GOOS" == "windows" ]; then
-        BINARY_NAME=${BINARY_NAME}.exe
-    fi
-    go build ${GO_BUILDMODE} --ldflags "${ldflags}" -o $BINARY_NAME github.com/apache/servicecomb-service-center/cmd/syncer
-}
-
 ## Prepare the Configuration and Make package
 package() {
     local app=$PACKAGE_PREFIX-$RELEASE-$GOOS-$GOARCH
@@ -174,7 +159,6 @@ build() {
     if [ "${BUILD}" == "ALL" ]; then
       # tools
       build_scctl
-      build_syncer
       # sc frontend
       build_frontend
     fi
