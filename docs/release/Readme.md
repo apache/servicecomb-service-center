@@ -2,6 +2,7 @@
 
 #### Release Notes
 
+- [Service-Center-2.1.0 Release Notes](releaseNotes-2.1.0.md)
 - [Service-Center-2.0.0 Release Notes](releaseNotes-2.0.0.md)
 - [Service-Center-1.1.0 Release Notes](releaseNotes-1.1.0.md)
 - [Service-Center-1.0.0 Release Notes](releaseNotes-1.0.0.md)
