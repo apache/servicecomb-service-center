@@ -2,6 +2,7 @@
 
 #### Release Notes
 
+- [Service-Center-2.1.0 Release Notes](releaseNotes-2.1.0.md)
 - [Service-Center-2.0.0 Release Notes](releaseNotes-2.0.0.md)
 - [Service-Center-1.1.0 Release Notes](releaseNotes-1.1.0.md)
 - [Service-Center-1.0.0 Release Notes](releaseNotes-1.0.0.md)
@@ -62,6 +63,8 @@ See [here](https://github.com/apache/servicecomb-service-center/blob/master/scri
 #### Archive
 
 ##### Step 1
+
+> If you are doing release for the first time, you can read this [document](https://doris.apache.org/branch-0.14/zh-CN/community/release-process.html#%E5%87%86%E5%A4%87%E7%8E%AF%E5%A2%83).
 
 Execute script, archive source code and generate summary and signature
 ```
