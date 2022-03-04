@@ -137,8 +137,8 @@ func reportMetrics(peers []*Peer) {
 		}
 	}
 
-	metrics.ConnectedPeersSet(int64(len(peers)))
-	metrics.PeersTotalSet(connectPeersCount)
+	metrics.PeersTotalSet(int64(len(peers)))
+	metrics.ConnectedPeersSet(connectPeersCount)
 }
 
 func newRPCConn(endpoints []string) (*grpc.ClientConn, error) {
