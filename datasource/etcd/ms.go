@@ -82,8 +82,6 @@ func (ds *MetadataManager) RegisterService(ctx context.Context, request *pb.Crea
 		ctx = util.SetContext(ctx, uuid.ContextKey, index)
 		service.ServiceId = uuid.Generator().GetServiceID(ctx)
 	}
-	service.Timestamp = strconv.FormatInt(time.Now().Unix(), 10)
-	service.ModTimestamp = service.Timestamp
 
 	data, err := json.Marshal(service)
 	if err != nil {

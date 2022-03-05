@@ -20,6 +20,8 @@ package disco
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"time"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -69,7 +71,15 @@ func registerService(ctx context.Context, request *pb.CreateServiceRequest) (*pb
 		return nil, quotaErr
 	}
 
+	assignDefaultValue(service)
+
 	return datasource.GetMetadataManager().RegisterService(ctx, request)
+}
+
+func assignDefaultValue(service *pb.MicroService) {
+	formatTenBase := 10
+	service.Timestamp = strconv.FormatInt(time.Now().Unix(), formatTenBase)
+	service.ModTimestamp = service.Timestamp
 }
 
 func registerServiceDetails(ctx context.Context, in *pb.CreateServiceRequest, serviceID string) (*pb.CreateServiceResponse, error) {
