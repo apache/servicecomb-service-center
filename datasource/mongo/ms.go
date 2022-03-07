@@ -74,8 +74,6 @@ func (ds *MetadataManager) RegisterService(ctx context.Context, request *discove
 		ctx = util.SetContext(ctx, uuid.ContextKey, util.StringJoin([]string{domain, project, service.Environment, service.AppId, service.ServiceName, service.Alias, service.Version}, "/"))
 		service.ServiceId = uuid.Generator().GetServiceID(ctx)
 	}
-	service.Timestamp = strconv.FormatInt(time.Now().Unix(), 10)
-	service.ModTimestamp = service.Timestamp
 	// the service unique index in table is (serviceId/serviceEnv,serviceAppid,servicename,serviceVersion)
 	if len(service.Alias) != 0 {
 		serviceID, err := GetServiceID(ctx, &discovery.MicroServiceKey{
