@@ -16,8 +16,8 @@
  */
 'use strict';
 angular.module('serviceCenter.sc')
-    .controller('schemaController', ['$scope', 'apiConstant', 'httpService', '$stateParams', 'servicesList', '$q', '$mdDialog', 'YAML', '$http', '$state', '$document', '$interval',
-        function($scope, apiConstant, httpService, $stateParams, servicesList, $q, $mdDialog, YAML, $http, $state, $document, $interval) {
+    .controller('schemaController', ['$scope', 'apiConstant', 'httpService', '$stateParams', 'servicesInfo', '$q', '$mdDialog', 'YAML', '$http', '$state', '$document', '$interval',
+        function($scope, apiConstant, httpService, $stateParams, servicesInfo, $q, $mdDialog, YAML, $http, $state, $document, $interval) {
 
             var serviceId = $stateParams.serviceId;
             $scope.schemaName = [];
@@ -26,13 +26,9 @@ angular.module('serviceCenter.sc')
             var addresses = [];
             var instances = [];
             var promises = [];
-            if (servicesList && servicesList.data && servicesList.data.allServicesDetail) {
-                servicesList.data.allServicesDetail.forEach(function(serviceDetail) {
-                    var service = serviceDetail.microService;
-                    if (service.serviceId == serviceId) {
-                        $scope.schemaName = service.schemas || [];
-                    }
-                });
+            if (servicesInfo && servicesInfo.data && servicesInfo.data.service) {
+                var service = servicesInfo.data.service;
+                $scope.schemaName = service.schemas || [];
             }
 
             $scope.downloadAllSchema = function() {

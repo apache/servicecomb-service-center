@@ -57,15 +57,11 @@ angular.module('serviceCenter.router', [])
                         $(".loader").show();
                         var serviceId = $stateParams.serviceId;
                         var deferred = $q.defer();
-                        var url = apiConstant.api.allServices.url;
-                        var method = apiConstant.api.allServices.method;
+                        var url = apiConstant.api.particularService.url.replace('{{serviceId}}', serviceId);
+                        var method = apiConstant.api.particularService.method;
                         httpService.apiRequest(url, method, null, null, null).then(function(response) {
                             $(".loader").hide();
-                            if (response && response.data && response.data.allServicesDetail) {
-                                deferred.resolve(response);
-                            } else {
-                                deferred.resolve(response);
-                            }
+                            deferred.resolve(response);
                         }, function(error) {
                             $(".loader").hide();
                             deferred.reject(error);
@@ -116,18 +112,15 @@ angular.module('serviceCenter.router', [])
                     }
                 },
                 resolve: {
-                    servicesList: ['$q', 'httpService', 'apiConstant', function($q, httpService, apiConstant) {
+                    servicesInfo: ['$q', 'httpService', 'apiConstant', '$stateParams', function($q, httpService,  apiConstant, $stateParams) {
                         $(".loader").show();
                         var deferred = $q.defer();
-                        var url = apiConstant.api.allServices.url;
-                        var method = apiConstant.api.allServices.method;
+                        var serviceId = $stateParams.serviceId;
+                        var url = apiConstant.api.particularService.url.replace('{{serviceId}}', serviceId);
+                        var method = apiConstant.api.particularService.method;
                         httpService.apiRequest(url, method, null, null, null).then(function(response) {
                             $(".loader").hide();
-                            if (response && response.data && response.data.allServicesDetail) {
-                                deferred.resolve(response);
-                            } else {
-                                deferred.resolve(response);
-                            }
+                            deferred.resolve(response);
                         }, function(error) {
                             $(".loader").hide();
                             deferred.reject(error);
