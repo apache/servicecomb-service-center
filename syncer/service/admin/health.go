@@ -22,6 +22,8 @@ import (
 	"errors"
 	"time"
 
+	"google.golang.org/grpc"
+
 	"github.com/apache/servicecomb-service-center/client"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pkgrpc "github.com/apache/servicecomb-service-center/pkg/rpc"
@@ -30,7 +32,6 @@ import (
 	"github.com/apache/servicecomb-service-center/syncer/config"
 	"github.com/apache/servicecomb-service-center/syncer/metrics"
 	"github.com/apache/servicecomb-service-center/syncer/rpc"
-	"google.golang.org/grpc"
 )
 
 const (
@@ -62,8 +63,16 @@ type Peer struct {
 
 func init() {
 	cfg := config.GetConfig()
-	if cfg.Sync == nil || len(cfg.Sync.Peers) <= 0 {
+	if cfg.Sync == nil {
 		log.Warn("sync config is empty")
+		return
+	}
+	if !cfg.Sync.EnableOnStart {
+		log.Info("syncer is disabled")
+		return
+	}
+	if len(cfg.Sync.Peers) <= 0 {
+		log.Warn("peers parameter configuration is empty")
 		return
 	}
 	peerInfos = make([]*PeerInfo, 0, len(cfg.Sync.Peers))
@@ -83,6 +92,7 @@ func init() {
 		}
 	}
 }
+
 func Health() (*Resp, error) {
 	if len(peerInfos) <= 0 {
 		return nil, ErrConfigIsEmpty
