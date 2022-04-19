@@ -14,6 +14,7 @@ User Guides
    user-guides/quota.md
    plugin-tracing-guides
    user-guides/rbac.md
+   user-guides/syncer.md
    user-guides/fast-registration.md
    user-guides/ux.md
    user-guides/limits.md
