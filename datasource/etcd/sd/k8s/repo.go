@@ -1,3 +1,4 @@
+//go:build !nok8s
 // +build !nok8s
 
 /*
