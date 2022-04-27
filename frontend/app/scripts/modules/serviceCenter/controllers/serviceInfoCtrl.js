@@ -42,9 +42,9 @@ angular.module('serviceCenter.sc')
 			var providerUrl = apiConstant.api.provider.url;
 			var providerApi = providerUrl.replace('{{providerId}}', serviceId);
 			apis.push(providerApi);
-			var serviceUrl = apiConstant.api.particularService.url;
-			var particularServiceAPI = serviceUrl.replace('{{serviceId}}', serviceId);
-			apis.push(particularServiceAPI)
+			var serviceUrl = apiConstant.api.specifiedService.url;
+			var specifiedServiceAPI = serviceUrl.replace('{{serviceId}}', serviceId);
+			apis.push(specifiedServiceAPI)
 
 			var promises =[];
 			for (var i = 0; i < apis.length; i++) {

@@ -39,6 +39,10 @@ angular.module('serviceCenter')
                 url: 'v4/default/registry/microservices/{{serviceId}}/schemas/{{schemaId}}',
                 method: 'GET'
             },
+            specifiedService: {
+              url: 'v4/default/govern/microservices/{{serviceId}}?options=instances',
+              method: 'GET'
+            },
             allServices: {
                 url: 'v4/default/govern/microservices?options=instances,dependencies&withShared=true',
                 method: 'GET'
