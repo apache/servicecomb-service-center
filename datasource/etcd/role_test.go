@@ -35,7 +35,8 @@ import (
 )
 
 func roleContext() context.Context {
-	return util.WithNoCache(util.SetContext(context.Background(), util.CtxEnableSync, "1"))
+	ctx := util.WithNoCache(util.SetDomainProject(context.Background(), "sync-role", "sync-role"))
+	return util.WithNoCache(util.SetContext(ctx, util.CtxEnableSync, "1"))
 }
 
 func TestSyncRole(t *testing.T) {
@@ -43,13 +44,13 @@ func TestSyncRole(t *testing.T) {
 	t.Run("create role", func(t *testing.T) {
 		t.Run("creating a role and delete it will create two tasks and a tombstone should pass", func(t *testing.T) {
 			r1 := crbac.Role{
-				ID:    "create-11111",
-				Name:  "create-role",
+				ID:    "sync-create-11111",
+				Name:  "sync-create-role",
 				Perms: nil,
 			}
 			err := rbac.Instance().CreateRole(roleContext(), &r1)
 			assert.NoError(t, err)
-			r, err := rbac.Instance().GetRole(roleContext(), "create-role")
+			r, err := rbac.Instance().GetRole(roleContext(), "sync-create-role")
 			assert.NoError(t, err)
 			assert.Equal(t, r1, *r)
 			dt, _ := strconv.Atoi(r.CreateTime)
@@ -58,8 +59,8 @@ func TestSyncRole(t *testing.T) {
 			_, err = rbac.Instance().DeleteRole(roleContext(), r1.Name)
 			assert.NoError(t, err)
 			listTaskReq := model.ListTaskRequest{
-				Domain:       "",
-				Project:      "",
+				Domain:       "sync-role",
+				Project:      "sync-role",
 				ResourceType: datasource.ResourceRole,
 			}
 			tasks, err := task.List(roleContext(), &listTaskReq)
@@ -68,6 +69,8 @@ func TestSyncRole(t *testing.T) {
 			err = task.Delete(roleContext(), tasks...)
 			assert.NoError(t, err)
 			tombstoneListReq := model.ListTombstoneRequest{
+				Domain:       "sync-role",
+				Project:      "sync-role",
 				ResourceType: datasource.ResourceRole,
 			}
 			tombstones, err := tombstone.List(roleContext(), &tombstoneListReq)
@@ -83,12 +86,12 @@ func TestSyncRole(t *testing.T) {
 			func(t *testing.T) {
 				r2 := crbac.Role{
 					ID:    "update-22222",
-					Name:  "update-role-22222",
+					Name:  "sync-update-role-22222",
 					Perms: nil,
 				}
 				r3 := crbac.Role{
 					ID:    "update-33333",
-					Name:  "update-role-33333",
+					Name:  "sync-update-role-33333",
 					Perms: nil,
 				}
 				err := rbac.Instance().CreateRole(roleContext(), &r2)
@@ -96,18 +99,18 @@ func TestSyncRole(t *testing.T) {
 				err = rbac.Instance().CreateRole(roleContext(), &r3)
 				assert.NoError(t, err)
 				r2.ID = "update-22222-33333"
-				err = rbac.Instance().UpdateRole(roleContext(), "update-role-22222", &r2)
+				err = rbac.Instance().UpdateRole(roleContext(), "sync-update-role-22222", &r2)
 				assert.NoError(t, err)
 				r3.ID = "update-33333-44444"
-				err = rbac.Instance().UpdateRole(roleContext(), "update-role-33333", &r3)
+				err = rbac.Instance().UpdateRole(roleContext(), "sync-update-role-33333", &r3)
 				assert.NoError(t, err)
 				_, err = rbac.Instance().DeleteRole(roleContext(), r2.Name)
 				assert.NoError(t, err)
 				_, err = rbac.Instance().DeleteRole(roleContext(), r3.Name)
 				assert.NoError(t, err)
 				listTaskReq := model.ListTaskRequest{
-					Domain:       "",
-					Project:      "",
+					Domain:       "sync-role",
+					Project:      "sync-role",
 					ResourceType: datasource.ResourceRole,
 				}
 				tasks, err := task.List(roleContext(), &listTaskReq)
@@ -116,6 +119,8 @@ func TestSyncRole(t *testing.T) {
 				err = task.Delete(roleContext(), tasks...)
 				assert.NoError(t, err)
 				tombstoneListReq := model.ListTombstoneRequest{
+					Domain:       "sync-role",
+					Project:      "sync-role",
 					ResourceType: datasource.ResourceRole,
 				}
 				tombstones, err := tombstone.List(roleContext(), &tombstoneListReq)
@@ -123,7 +128,6 @@ func TestSyncRole(t *testing.T) {
 				assert.Equal(t, 2, len(tombstones))
 				err = tombstone.Delete(roleContext(), tombstones...)
 				assert.NoError(t, err)
-
 			})
 	})
 }

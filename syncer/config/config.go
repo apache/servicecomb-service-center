@@ -33,8 +33,9 @@ type Config struct {
 }
 
 type Sync struct {
-	EnableOnStart bool    `yaml:"enableOnStart"`
-	Peers         []*Peer `yaml:"peers"`
+	EnableOnStart bool       `yaml:"enableOnStart"`
+	Peers         []*Peer    `yaml:"peers"`
+	WhiteList     *WhiteList `yaml:"whitelist"`
 }
 
 type Peer struct {
@@ -42,6 +43,28 @@ type Peer struct {
 	Kind      string   `yaml:"kind"`
 	Endpoints []string `yaml:"endpoints"`
 	Mode      []string `yaml:"mode"`
+}
+
+// WhiteList of allowed syncs
+type WhiteList struct {
+	Service *Service `yaml:"service"`
+	Account *Account `yaml:"account"`
+	Role    *Role    `yaml:"role"`
+}
+
+// Service rules contain the services that are allowed to sync
+type Service struct {
+	Rules []string `yaml:"rules"`
+}
+
+// Account rules contain the account that are allowed to sync
+type Account struct {
+	Rules []string `yaml:"rules"`
+}
+
+// Role rules contain the role that are allowed to sync
+type Role struct {
+	Rules []string `yaml:"rules"`
 }
 
 func Init() error {

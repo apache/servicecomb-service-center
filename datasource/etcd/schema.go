@@ -158,14 +158,13 @@ func (dao *SchemaDAO) DeleteRef(ctx context.Context, refRequest *schema.RefReque
 		etcdadpt.OpDel(etcdadpt.WithStrKey(refKey)),
 		etcdadpt.OpDel(etcdadpt.WithStrKey(summaryKey)),
 	}
-
-	refOpts, err := sync.GenDeleteOpts(ctx, datasource.ResourceKV, refKey, refKey)
+	refOpts, err := sync.GenDeleteOpts(ctx, datasource.ResourceKV, refKey, refKey, sync.WithOpts(map[string]string{"key": refKey}))
 	if err != nil {
 		log.Error("fail to create delete opts", err)
 		return err
 	}
 	options = append(options, refOpts...)
-	summaryOpts, err := sync.GenDeleteOpts(ctx, datasource.ResourceKV, summaryKey, summaryKey)
+	summaryOpts, err := sync.GenDeleteOpts(ctx, datasource.ResourceKV, summaryKey, summaryKey, sync.WithOpts(map[string]string{"key": summaryKey}))
 	if err != nil {
 		log.Error("fail to create delete opts", err)
 		return err
@@ -367,12 +366,12 @@ func transformSchemaIDsAndOptions(ctx context.Context, domainProject string, ser
 			etcdadpt.OpDel(etcdadpt.WithStrKey(refKey)),
 			etcdadpt.OpDel(etcdadpt.WithStrKey(summaryKey)),
 		)
-		refOpts, err := sync.GenDeleteOpts(ctx, datasource.ResourceKV, refKey, refKey)
+		refOpts, err := sync.GenDeleteOpts(ctx, datasource.ResourceKV, refKey, refKey, sync.WithOpts(map[string]string{"key": refKey}))
 		if err != nil {
 			log.Error("fail to create update opts", err)
 		}
 		options = append(options, refOpts...)
-		summaryOpt, err := sync.GenDeleteOpts(ctx, datasource.ResourceKV, summaryKey, summaryKey)
+		summaryOpt, err := sync.GenDeleteOpts(ctx, datasource.ResourceKV, summaryKey, summaryKey, sync.WithOpts(map[string]string{"key": summaryKey}))
 		if err != nil {
 			log.Error("fail to create update opts", err)
 		}

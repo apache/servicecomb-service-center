@@ -445,7 +445,8 @@ func (ds *MetadataManager) RegisterInstance(ctx context.Context, request *pb.Reg
 func (ds *MetadataManager) registerInstance(ctx context.Context, request *pb.RegisterInstanceRequest) (string, error) {
 	remoteIP := util.GetIPFromContext(ctx)
 	instance := request.Instance
-
+	//先以domain/project的方式组装
+	domainProject := util.ParseDomainProject(ctx)
 	//允许自定义id
 	if len(instance.InstanceId) > 0 {
 		needRegister, err := ds.sendHeartbeatInstead(ctx, instance)
@@ -462,10 +463,6 @@ func (ds *MetadataManager) registerInstance(ctx context.Context, request *pb.Reg
 	ttl := ds.calcInstanceTTL(instance)
 	instanceFlag := fmt.Sprintf("ttl %ds, endpoints %v, host '%s', serviceID %s",
 		ttl, instance.Endpoints, instance.HostName, instance.ServiceId)
-
-	//先以domain/project的方式组装
-	domainProject := util.ParseDomainProject(ctx)
-
 	instanceID := instance.InstanceId
 	data, err := json.Marshal(instance)
 	if err != nil {
@@ -870,7 +867,6 @@ func (ds *MetadataManager) PutInstance(ctx context.Context, request *pb.Register
 func (ds *MetadataManager) PutInstanceStatus(ctx context.Context, request *pb.UpdateInstanceStatusRequest) error {
 	domainProject := util.ParseDomainProject(ctx)
 	updateStatusFlag := util.StringJoin([]string{request.ServiceId, request.InstanceId, request.Status}, path.SPLIT)
-
 	instance, err := eutil.GetInstance(ctx, domainProject, request.ServiceId, request.InstanceId)
 	if err != nil {
 		log.Error(fmt.Sprintf("update instance[%s] status failed", updateStatusFlag), err)
@@ -897,7 +893,6 @@ func (ds *MetadataManager) PutInstanceStatus(ctx context.Context, request *pb.Up
 func (ds *MetadataManager) PutInstanceProperties(ctx context.Context, request *pb.UpdateInstancePropsRequest) error {
 	domainProject := util.ParseDomainProject(ctx)
 	instanceFlag := util.StringJoin([]string{request.ServiceId, request.InstanceId}, path.SPLIT)
-
 	instance, err := eutil.GetInstance(ctx, domainProject, request.ServiceId, request.InstanceId)
 	if err != nil {
 		log.Error(fmt.Sprintf("update instance[%s] properties failed", instanceFlag), err)
@@ -945,6 +940,13 @@ func (ds *MetadataManager) SendManyHeartbeat(ctx context.Context, request *pb.He
 	for heartbeat := range instancesHbRst {
 		count++
 		instanceHbRstArr = append(instanceHbRstArr, heartbeat)
+		// heartbeat sent successfully service should exist
+		ok, _ := datasource.EnableSync(ctx, heartbeat.ServiceId)
+		if ok {
+			util.SetContext(ctx, util.CtxEnableSync, "1")
+		} else {
+			util.SetContext(ctx, util.CtxEnableSync, "0")
+		}
 		sendEvent(ctx, sync.UpdateAction, datasource.ResourceHeartbeat,
 			&pb.HeartbeatRequest{ServiceId: heartbeat.ServiceId, InstanceId: heartbeat.InstanceId})
 		if count == noMultiCounter {
@@ -1215,13 +1217,13 @@ func (ds *MetadataManager) DeleteSchema(ctx context.Context, request *pb.DeleteS
 	}
 	epSummaryKey := path.GenerateServiceSchemaSummaryKey(domainProject, request.ServiceId, request.SchemaId)
 	opts := []etcdadpt.OpOptions{etcdadpt.OpDel(etcdadpt.WithStrKey(epSummaryKey)), etcdadpt.OpDel(etcdadpt.WithStrKey(key))}
-	schemaKeyOpt, err := esync.GenDeleteOpts(ctx, datasource.ResourceKV, key, key)
+	schemaKeyOpt, err := esync.GenDeleteOpts(ctx, datasource.ResourceKV, key, key, esync.WithOpts(map[string]string{"key": key}))
 	if err != nil {
 		log.Error("fail to create delete opts", err)
 		return err
 	}
 	opts = append(opts, schemaKeyOpt...)
-	schemaSummaryKeyOpt, err := esync.GenDeleteOpts(ctx, datasource.ResourceKV, epSummaryKey, epSummaryKey)
+	schemaSummaryKeyOpt, err := esync.GenDeleteOpts(ctx, datasource.ResourceKV, epSummaryKey, epSummaryKey, esync.WithOpts(map[string]string{"key": epSummaryKey}))
 	if err != nil {
 		log.Error("fail to create delete opts", err)
 		return err
@@ -1251,13 +1253,6 @@ func (ds *MetadataManager) DeleteSchema(ctx context.Context, request *pb.DeleteS
 func (ds *MetadataManager) PutManyTags(ctx context.Context, request *pb.AddServiceTagsRequest) error {
 	remoteIP := util.GetIPFromContext(ctx)
 	domainProject := util.ParseDomainProject(ctx)
-
-	// service id存在性校验
-	if !eutil.ServiceExist(ctx, domainProject, request.ServiceId) {
-		log.Error(fmt.Sprintf("add service[%s]'s tags %v failed, service does not exist, operator: %s",
-			request.ServiceId, request.Tags, remoteIP), nil)
-		return pb.NewError(pb.ErrServiceNotExists, "Service does not exist.")
-	}
 
 	checkErr := eutil.AddTagIntoETCD(ctx, domainProject, request.ServiceId, request.Tags)
 	if checkErr != nil {
@@ -1294,12 +1289,6 @@ func (ds *MetadataManager) PutTag(ctx context.Context, request *pb.UpdateService
 	tagFlag := util.StringJoin([]string{request.Key, request.Value}, path.SPLIT)
 	domainProject := util.ParseDomainProject(ctx)
 
-	if !eutil.ServiceExist(ctx, domainProject, request.ServiceId) {
-		log.Error(fmt.Sprintf("update service[%s]'s tag[%s] failed, service does not exist, operator: %s",
-			request.ServiceId, tagFlag, remoteIP), err)
-		return pb.NewError(pb.ErrServiceNotExists, "Service does not exist.")
-	}
-
 	tags, err := eutil.GetTagsUtils(ctx, domainProject, request.ServiceId)
 	if err != nil {
 		log.Error(fmt.Sprintf("update service[%s]'s tag[%s] failed, get tag failed, operator: %s",
@@ -1334,12 +1323,6 @@ func (ds *MetadataManager) PutTag(ctx context.Context, request *pb.UpdateService
 func (ds *MetadataManager) DeleteManyTags(ctx context.Context, request *pb.DeleteServiceTagsRequest) error {
 	remoteIP := util.GetIPFromContext(ctx)
 	domainProject := util.ParseDomainProject(ctx)
-
-	if !eutil.ServiceExist(ctx, domainProject, request.ServiceId) {
-		log.Error(fmt.Sprintf("delete service[%s]'s tags %v failed, service does not exist, operator: %s",
-			request.ServiceId, request.Keys, remoteIP), nil)
-		return pb.NewError(pb.ErrServiceNotExists, "Service does not exist.")
-	}
 
 	tags, err := eutil.GetTagsUtils(ctx, domainProject, request.ServiceId)
 	if err != nil {

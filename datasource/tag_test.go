@@ -180,23 +180,13 @@ func TestTag_Update(t *testing.T) {
 	})
 
 	t.Run("the request is invalid", func(t *testing.T) {
-		log.Info("service does not exists")
-		err := datasource.GetMetadataManager().PutTag(ctx, &pb.UpdateServiceTagRequest{
-			ServiceId: "noneservice",
-			Key:       "a",
-			Value:     "update",
-		})
-		testErr := err.(*errsvc.Error)
-		assert.Error(t, testErr)
-		assert.Equal(t, pb.ErrServiceNotExists, testErr.Code)
-
 		log.Info("tag key does not exist")
-		err = datasource.GetMetadataManager().PutTag(ctx, &pb.UpdateServiceTagRequest{
+		err := datasource.GetMetadataManager().PutTag(ctx, &pb.UpdateServiceTagRequest{
 			ServiceId: serviceId,
 			Key:       "notexisttag",
 			Value:     "update",
 		})
-		testErr = err.(*errsvc.Error)
+		testErr := err.(*errsvc.Error)
 		assert.Error(t, testErr)
 		assert.Equal(t, pb.ErrTagNotExists, testErr.Code)
 
@@ -336,21 +326,12 @@ func TestTags_Delete(t *testing.T) {
 	})
 
 	t.Run("the request is invalid", func(t *testing.T) {
-		log.Info("service does not exits")
-		err := datasource.GetMetadataManager().DeleteManyTags(ctx, &pb.DeleteServiceTagsRequest{
-			ServiceId: "noneservice",
-			Keys:      []string{"a", "b"},
-		})
-		testErr := err.(*errsvc.Error)
-		assert.Error(t, testErr)
-		assert.Equal(t, pb.ErrServiceNotExists, testErr.Code)
-
 		log.Info("tag key does not exits")
-		err = datasource.GetMetadataManager().DeleteManyTags(ctx, &pb.DeleteServiceTagsRequest{
+		err := datasource.GetMetadataManager().DeleteManyTags(ctx, &pb.DeleteServiceTagsRequest{
 			ServiceId: serviceId,
 			Keys:      []string{"c"},
 		})
-		testErr = err.(*errsvc.Error)
+		testErr := err.(*errsvc.Error)
 		assert.Error(t, testErr)
 		assert.Equal(t, pb.ErrTagNotExists, testErr.Code)
 	})

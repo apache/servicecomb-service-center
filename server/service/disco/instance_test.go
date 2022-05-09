@@ -811,6 +811,7 @@ func TestFindManyInstances(t *testing.T) {
 		assert.Equal(t, pb.ErrInvalidParams, testErr.Code)
 
 		respFind, err = discosvc.FindManyInstances(ctx, &pb.BatchFindInstancesRequest{
+			ConsumerServiceId: serviceId1,
 			Services: []*pb.FindService{
 				{
 					Service: &pb.MicroServiceKey{
@@ -924,6 +925,7 @@ func TestFindManyInstances(t *testing.T) {
 		assert.Equal(t, instanceId4, respFind.Services.Updated[0].Instances[0].InstanceId)
 
 		respFind, err = discosvc.FindManyInstances(ctx, &pb.BatchFindInstancesRequest{
+			ConsumerServiceId: serviceId4,
 			Services: []*pb.FindService{
 				{
 					Service: &pb.MicroServiceKey{
@@ -1776,7 +1778,7 @@ func TestUnregisterInstance(t *testing.T) {
 		})
 		testErr = err.(*errsvc.Error)
 		assert.Error(t, testErr)
-		assert.Equal(t, pb.ErrInstanceNotExists, testErr.Code)
+		assert.Equal(t, pb.ErrServiceNotExists, testErr.Code)
 
 		err = discosvc.UnregisterInstance(ctx, &pb.UnregisterInstanceRequest{
 			ServiceId:  serviceId,
@@ -1928,7 +1930,7 @@ func TestSendHeartbeat(t *testing.T) {
 		})
 		testErr = err.(*errsvc.Error)
 		assert.Error(t, testErr)
-		assert.Equal(t, pb.ErrInstanceNotExists, testErr.Code)
+		assert.Equal(t, pb.ErrServiceNotExists, testErr.Code)
 
 		err = discosvc.SendHeartbeat(ctx, &pb.HeartbeatRequest{
 			ServiceId:  serviceId,
@@ -2101,7 +2103,7 @@ func TestUpdateInstance(t *testing.T) {
 		})
 		testErr = err.(*errsvc.Error)
 		assert.Error(t, testErr)
-		assert.Equal(t, pb.ErrInstanceNotExists, testErr.Code)
+		assert.Equal(t, pb.ErrServiceNotExists, testErr.Code)
 
 		err = discosvc.PutInstanceStatus(ctx, &pb.UpdateInstanceStatusRequest{
 			ServiceId:  serviceId,
@@ -2237,7 +2239,7 @@ func TestUpdateInstance(t *testing.T) {
 		})
 		testErr = err.(*errsvc.Error)
 		assert.Error(t, testErr)
-		assert.Equal(t, pb.ErrInstanceNotExists, testErr.Code)
+		assert.Equal(t, pb.ErrServiceNotExists, testErr.Code)
 	})
 
 	t.Run("when update instance with valid request, should be passed", func(t *testing.T) {
