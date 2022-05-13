@@ -165,6 +165,10 @@ You can follow the guide over [here](frontend/Readme.md#running-ui-from-source-c
 
 [Download Service Center](http://servicecomb.apache.org/release/service-center-downloads/)
 
+## Client
+
+- go https://github.com/go-chassis/sc-client
+
 ## Contact
 
 Bugs: [issues](https://issues.apache.org/jira/browse/SCB)
