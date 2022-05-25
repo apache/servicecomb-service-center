@@ -34,7 +34,17 @@ import (
 
 const (
 	InitVersion = "0"
-	minCacheTTL = 5 * time.Minute
+
+	defaultServiceClearInterval = 12 * time.Hour //0.5 day
+	defaultServiceTTL           = 24 * time.Hour //1 day
+
+	minServiceClearInterval = 30 * time.Second
+	minServiceTTL           = 30 * time.Second
+	minCacheTTL             = 5 * time.Minute
+
+	maxServiceClearInterval = 24 * time.Hour       //1 day
+	maxServiceTTL           = 24 * 365 * time.Hour //1 year
+
 )
 
 var ServerInfo = proto.NewServerInformation()
@@ -65,6 +75,16 @@ func newInfo() proto.ServerInformation {
 	maxLogBackupCount := beego.AppConfig.DefaultInt64("log_backup_count", 50)
 	if maxLogBackupCount < 0 || maxLogBackupCount > 100 {
 		maxLogBackupCount = 50
+	}
+
+	serviceClearInterval, err := time.ParseDuration(os.Getenv("SERVICE_CLEAR_INTERVAL"))
+	if err != nil || serviceClearInterval < minServiceClearInterval || serviceClearInterval > maxServiceClearInterval {
+		serviceClearInterval = defaultServiceClearInterval
+	}
+
+	serviceTTL, err := time.ParseDuration(os.Getenv("SERVICE_TTL"))
+	if err != nil || serviceTTL < minServiceTTL || serviceTTL > maxServiceTTL {
+		serviceTTL = defaultServiceTTL
 	}
 
 	cacheTTL, err := time.ParseDuration(
@@ -116,6 +136,10 @@ func newInfo() proto.ServerInformation {
 			EnableCache:  beego.AppConfig.DefaultInt("enable_cache", 1) != 0,
 			CacheTTL:     cacheTTL,
 			SelfRegister: beego.AppConfig.DefaultInt("self_register", 1) != 0,
+
+			ServiceClearEnabled:  os.Getenv("SERVICE_CLEAR_ENABLED") == "true",
+			ServiceClearInterval: serviceClearInterval,
+			ServiceTTL:           serviceTTL,
 
 			SchemaDisable: os.Getenv("SCHEMA_DISABLE") == "true",
 		},

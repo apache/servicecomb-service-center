@@ -36,6 +36,7 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin"
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
 	serviceUtil "github.com/apache/servicecomb-service-center/server/service/util"
+	"github.com/apache/servicecomb-service-center/server/task"
 	"github.com/apache/servicecomb-service-center/version"
 	"github.com/astaxie/beego"
 )
@@ -148,6 +149,40 @@ func (s *ServiceCenterServer) compactBackendService() {
 	})
 }
 
+// clear services who have no instance
+func (s *ServiceCenterServer) clearNoInstanceServices() {
+	if !core.ServerInfo.Config.ServiceClearEnabled {
+		return
+	}
+	log.Infof("service clear enabled, interval: %s, service TTL: %s",
+		core.ServerInfo.Config.ServiceClearInterval,
+		core.ServerInfo.Config.ServiceTTL)
+
+	s.goroutine.Do(func(ctx context.Context) {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(core.ServerInfo.Config.ServiceClearInterval):
+				lock, err := mux.Try(mux.ServiceClearLock)
+				if err != nil {
+					log.Errorf(err, "can not clear no instance services by this service center instance now")
+					continue
+				}
+				err = task.ClearNoInstanceServices(core.ServerInfo.Config.ServiceTTL)
+				if err := lock.Unlock(); err != nil {
+					log.Error("", err)
+				}
+				if err != nil {
+					log.Errorf(err, "no-instance services cleanup failed")
+					continue
+				}
+				log.Info("no-instance services cleanup succeed")
+			}
+		}
+	})
+}
+
 func (s *ServiceCenterServer) initialize() {
 	s.cacheService = backend.Store()
 	s.apiService = GetAPIServer()
@@ -174,6 +209,8 @@ func (s *ServiceCenterServer) startServices() {
 	if buildin != beego.AppConfig.DefaultString("registry_plugin", buildin) {
 		// compact backend automatically
 		s.compactBackendService()
+		// clean no-instance services automatically
+		s.clearNoInstanceServices()
 	}
 
 	// api service
