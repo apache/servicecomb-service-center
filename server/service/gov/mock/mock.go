@@ -105,7 +105,7 @@ func (d *Distributor) List(ctx context.Context, kind, project, app, env string) 
 }
 
 func checkPolicy(g *gov.Policy, kind, app, env string) bool {
-	return g.Kind == kind && g.Selector != nil && g.Selector.App == app && g.Selector.Environment == env
+	return g.Kind == kind && g.Selector != nil && g.Selector["app"] == app && g.Selector["environment"] == env
 }
 
 func (d *Distributor) Get(ctx context.Context, kind, id, project string) ([]byte, error) {

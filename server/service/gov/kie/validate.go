@@ -46,6 +46,7 @@ func (d *Validator) Validate(kind string, spec interface{}) error {
 	case "rate-limiting":
 		return rateLimitingValidate(spec)
 	case "circuit-breaker":
+	case "instance-isolation":
 	case "bulkhead":
 	case "loadbalancer":
 		return nil
