@@ -55,7 +55,7 @@ func (t *Governance) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	p := &model.Policy{
-		GovernancePolicy: &model.GovernancePolicy{Selector: &model.Selector{}},
+		GovernancePolicy: &model.GovernancePolicy{Selector: model.Selector{}},
 	}
 	err = json.Unmarshal(body, p)
 	if err != nil {

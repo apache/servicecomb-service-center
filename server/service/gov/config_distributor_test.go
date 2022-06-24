@@ -57,9 +57,9 @@ func TestCreate(t *testing.T) {
 	res, err := svc.Create(context.TODO(), MockKind, Project, &gov.Policy{
 		GovernancePolicy: &gov.GovernancePolicy{
 			Name: "Traffic2adminAPI",
-			Selector: &gov.Selector{
-				App:         MockApp,
-				Environment: MockEnv,
+			Selector: gov.Selector{
+				"app":         MockApp,
+				"environment": MockEnv,
 			},
 		},
 		Spec: map[string]interface{}{"retryNext": 3, "match": "traffic2adminAPI"},
@@ -73,9 +73,9 @@ func TestUpdate(t *testing.T) {
 	err := svc.Update(context.TODO(), MockKind, id, Project, &gov.Policy{
 		GovernancePolicy: &gov.GovernancePolicy{
 			Name: "Traffic2adminAPI",
-			Selector: &gov.Selector{
-				App:         MockApp,
-				Environment: MockEnv,
+			Selector: gov.Selector{
+				"app":         MockApp,
+				"environment": MockEnv,
 			},
 		},
 		Spec: map[string]interface{}{"retryNext": 3, "match": "traffic2adminAPI"},
@@ -87,9 +87,9 @@ func TestDisplay(t *testing.T) {
 	res, err := svc.Create(context.TODO(), MatchGroup, Project, &gov.Policy{
 		GovernancePolicy: &gov.GovernancePolicy{
 			Name: "Traffic2adminAPI",
-			Selector: &gov.Selector{
-				App:         MockApp,
-				Environment: MockEnv,
+			Selector: gov.Selector{
+				"app":         MockApp,
+				"environment": MockEnv,
 			},
 		},
 	})

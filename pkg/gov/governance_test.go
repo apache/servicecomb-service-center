@@ -50,9 +50,9 @@ func TestNewInstance(t *testing.T) {
 		GovernancePolicy: &gov.GovernancePolicy{
 			Name: "traffic2adminAPI",
 			ID:   "",
-			Selector: &gov.Selector{
-				App:         "default",
-				Environment: "development",
+			Selector: gov.Selector{
+				"app":         "default",
+				"environment": "development",
 			},
 		},
 		Spec: map[string]interface{}{

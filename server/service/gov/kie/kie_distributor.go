@@ -56,7 +56,7 @@ const (
 	Rules           = "rules"
 )
 
-var PolicyNames = []string{"retry", "rateLimiting", "circuitBreaker", "bulkhead"}
+var PolicyNames = []string{"retry", "rateLimiting", "circuitBreaker", "bulkhead", "instanceIsolation"}
 
 var rule = Validator{}
 
@@ -84,7 +84,7 @@ func (d *Distributor) Create(ctx context.Context, kind, project string, p *gov.P
 		Value:     string(yamlByte),
 		Status:    StatusEnabled,
 		ValueType: TypeText,
-		Labels:    map[string]string{KeyApp: p.Selector.App, KeyEnvironment: p.Selector.Environment},
+		Labels:    p.Selector,
 	}
 	res, err := d.client.Create(ctx, kv, kie.WithProject(project))
 	if err != nil {
@@ -140,12 +140,9 @@ func (d *Distributor) DeleteMatchGroup(ctx context.Context, id string, project s
 		return err
 	}
 
-	labels := make(map[string]string)
-	labels[KeyApp] = policy.Selector.App
-	labels[KeyEnvironment] = policy.Selector.Environment
 	ops := []kie.GetOption{
 		kie.WithKey("wildcard(" + KeyPrefix + "*." + policy.Name + ")"),
-		kie.WithLabels(labels),
+		kie.WithLabels(policy.Selector),
 		kie.WithRevision(0),
 		kie.WithGetProject(project),
 	}
@@ -340,7 +337,7 @@ func (d *Distributor) generateID(ctx context.Context, project string, p *gov.Pol
 		return nil
 	}
 	kind := KindMatchGroup
-	list, _, err := d.listDataByKind(ctx, kind, project, p.Selector.App, p.Selector.Environment)
+	list, _, err := d.listDataByKind(ctx, kind, project, p.Selector[KeyApp], p.Selector[KeyEnvironment])
 	if err != nil {
 		return err
 	}
@@ -377,7 +374,7 @@ func getID() string {
 func (d *Distributor) transform(kv *kie.KVDoc, kind string) (*gov.Policy, error) {
 	goc := &gov.Policy{
 		GovernancePolicy: &gov.GovernancePolicy{
-			Selector: &gov.Selector{},
+			Selector: gov.Selector{},
 		},
 	}
 	spec := make(map[string]interface{})
@@ -392,8 +389,7 @@ func (d *Distributor) transform(kv *kie.KVDoc, kind string) (*gov.Policy, error)
 	goc.Status = kv.Status
 	goc.Name = kv.Key[strings.LastIndex(kv.Key, ".")+1 : len(kv.Key)]
 	goc.Spec = spec
-	goc.Selector.App = kv.Labels[KeyApp]
-	goc.Selector.Environment = kv.Labels[KeyEnvironment]
+	goc.Selector = kv.Labels
 	goc.CreatTime = kv.CreatTime
 	goc.UpdateTime = kv.UpdateTime
 	return goc, nil
