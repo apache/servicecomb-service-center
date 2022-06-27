@@ -28,7 +28,7 @@ import (
 
 	_ "github.com/apache/servicecomb-service-center/test"
 
-	"github.com/astaxie/beego"
+	beego "github.com/beego/beego/v2/server/web"
 	"github.com/go-chassis/cari/rbac"
 	"github.com/stretchr/testify/assert"
 )

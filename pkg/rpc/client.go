@@ -23,6 +23,7 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/resolver"
 	"google.golang.org/grpc/resolver/manual"
 )
@@ -70,18 +71,16 @@ func getLbConn(config *Config, dialOptions func() []grpc.DialOption) (*grpc.Clie
 	r := manual.NewBuilderWithScheme(config.Scheme)
 	r.InitialState(resolver.State{Addresses: addr})
 
-	opinions := dialOptions()
+	cred := insecure.NewCredentials()
 	if config.TLSConfig != nil {
-		cfg := &tls.Config{
+		cred = credentials.NewTLS(&tls.Config{
 			InsecureSkipVerify: config.TLSConfig.InsecureSkipVerify,
-		}
-
-		opinions = append(opinions, grpc.WithTransportCredentials(credentials.NewTLS(cfg)))
-	} else {
-		opinions = append(opinions, grpc.WithInsecure())
+		})
 	}
 
-	opinions = append(opinions, grpc.WithResolvers(r))
+	opinions := append(dialOptions(),
+		grpc.WithTransportCredentials(cred),
+		grpc.WithResolvers(r))
 
 	conn, err := grpc.Dial(r.Scheme()+":///"+config.ServiceName, opinions...)
 	return conn, err

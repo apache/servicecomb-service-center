@@ -26,7 +26,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/dump"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	adminsvc "github.com/apache/servicecomb-service-center/server/service/admin"
-	"github.com/astaxie/beego"
+	beego "github.com/beego/beego/v2/server/web"
 	"github.com/go-chassis/cari/discovery"
 	"github.com/stretchr/testify/assert"
 )
