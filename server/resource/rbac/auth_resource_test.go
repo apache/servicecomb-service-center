@@ -34,7 +34,7 @@ import (
 	"github.com/apache/servicecomb-service-center/server/config"
 	v4 "github.com/apache/servicecomb-service-center/server/resource/rbac"
 	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
-	"github.com/astaxie/beego"
+	beego "github.com/beego/beego/v2/server/web"
 	rbacmodel "github.com/go-chassis/cari/rbac"
 	"github.com/go-chassis/go-archaius"
 	"github.com/go-chassis/go-chassis/v2/security/secret"

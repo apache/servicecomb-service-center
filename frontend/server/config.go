@@ -24,7 +24,7 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/astaxie/beego"
+	beego "github.com/beego/beego/v2/server/web"
 )
 
 type Config struct {
@@ -33,7 +33,7 @@ type Config struct {
 }
 
 func DefaultConfig() Config {
-	frontendIp := beego.AppConfig.String("frontend_host_ip")
+	frontendIp := beego.AppConfig.DefaultString("frontend_host_ip", "127.0.0.1")
 	frontendPort := beego.AppConfig.DefaultInt("frontend_host_port", 30103)
 
 	scIp := beego.AppConfig.DefaultString("httpaddr", "127.0.0.1")

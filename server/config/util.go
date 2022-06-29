@@ -21,7 +21,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/astaxie/beego"
+	beego "github.com/beego/beego/v2/server/web"
 	"github.com/go-chassis/go-archaius"
 	"github.com/iancoleman/strcase"
 	"github.com/spf13/cast"

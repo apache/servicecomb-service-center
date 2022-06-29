@@ -26,7 +26,7 @@ import (
 	"github.com/apache/servicecomb-service-center/server/config"
 	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 	_ "github.com/apache/servicecomb-service-center/test"
-	"github.com/astaxie/beego"
+	beego "github.com/beego/beego/v2/server/web"
 	"github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/cari/pkg/errsvc"
 	"github.com/go-chassis/cari/rbac"
