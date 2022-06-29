@@ -1,0 +1,225 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package event_test
+
+import (
+	"fmt"
+	"testing"
+
+	"github.com/apache/servicecomb-service-center/istio/pkg/event"
+	"github.com/stretchr/testify/assert"
+
+	"github.com/go-chassis/cari/discovery"
+	istioAPI "istio.io/api/networking/v1alpha3"
+)
+
+func mockNewMicroserviceEntryMultipleInstance() event.MicroserviceEntry {
+	ms := &discovery.MicroService{
+		ServiceId:   "testsvc123456",
+		AppId:       "Test-App",
+		ServiceName: "Test-Svc",
+	}
+
+	var insts []*event.InstanceEntry
+	ie := &event.InstanceEntry{
+		&discovery.MicroServiceInstance{
+			ServiceId:  "testsvc123456",
+			InstanceId: "testinst1a",
+			Endpoints:  []string{"rest://1.1.1.1:1111", "rest://1.1.1.1:2222?sslEnabled=true", "rest://1.1.1.1:3333"},
+			HostName:   "test-svc-host-1",
+		},
+	}
+	ie1 := &event.InstanceEntry{
+		&discovery.MicroServiceInstance{
+			ServiceId:  "testsvc123456",
+			InstanceId: "testinst2b",
+			Endpoints:  []string{"rest://2.2.2.2:1111", "rest://2.2.2.2:2222?sslEnabled=true", "rest://2.2.2.2:3333"},
+			HostName:   "test-svc-host-2",
+		},
+	}
+	insts = append(insts, ie, ie1)
+
+	return event.MicroserviceEntry{
+		MicroService: ms,
+		Instances:    insts,
+	}
+}
+
+func TestConvertMicroserviceToIstioMultipleInstance(t *testing.T) {
+	in := mockNewMicroserviceEntryMultipleInstance()
+	out := in.Convert().(*event.ServiceEntry)
+	insts := in.Instances
+
+	expectName := "test-svc"
+
+	assert.Equal(t, expectName, out.ServiceEntry.ObjectMeta.Name)
+	assert.Equal(t, 1, len(out.ServiceEntry.Spec.Hosts))
+	assert.Equal(t, expectName, out.ServiceEntry.Spec.Hosts[0])
+	assert.Equal(t, len(insts), len(out.ServiceEntry.Spec.Endpoints))
+
+	expectPort1 := &istioAPI.Port{Number: 1111, Protocol: "HTTP", Name: "HTTP-1111", TargetPort: 1111}
+	expectPort2 := &istioAPI.Port{Number: 2222, Protocol: "HTTPS", Name: "HTTPS-2222", TargetPort: 2222}
+	expectPort3 := &istioAPI.Port{Number: 3333, Protocol: "HTTP", Name: "HTTP-3333", TargetPort: 3333}
+	expectPorts := []*istioAPI.Port{expectPort1, expectPort2, expectPort3}
+	expectPortsMap := map[string]*istioAPI.Port{expectPort1.Name: expectPort1, expectPort2.Name: expectPort2, expectPort3.Name: expectPort3}
+
+	assert.Equal(t, len(expectPorts), len(out.ServiceEntry.Spec.Ports))
+
+	for _, outPort := range out.ServiceEntry.Spec.Ports {
+		assert.Contains(t, expectPortsMap, outPort.Name)
+		assert.Equal(t, expectPortsMap[outPort.Name], outPort)
+	}
+
+	assert.Equal(t, istioAPI.ServiceEntry_MESH_INTERNAL, out.ServiceEntry.Spec.Location)
+	assert.Equal(t, istioAPI.ServiceEntry_STATIC, out.ServiceEntry.Spec.Resolution)
+
+	for i, inst := range insts {
+		d := i + 1
+		expectWorkloadEntry := istioAPI.WorkloadEntry{
+			Address: fmt.Sprintf(`%d.%d.%d.%d`, d, d, d, d),
+			Ports: map[string]uint32{
+				"HTTP-1111":  1111,
+				"HTTPS-2222": 2222,
+				"HTTP-3333":  3333,
+			},
+			Labels: map[string]string{
+				"instanceId": inst.InstanceId,
+				"name":       inst.HostName,
+			},
+		}
+		assert.Equal(t, expectWorkloadEntry, *out.ServiceEntry.Spec.Endpoints[i])
+	}
+}
+
+func mockNewMicroserviceEntryInvalidEndpoints() event.MicroserviceEntry {
+	ms := &discovery.MicroService{
+		ServiceId:   "testsvc123456",
+		AppId:       "Test-App",
+		ServiceName: "Test-Svc",
+	}
+	var insts []*event.InstanceEntry
+	ie := &event.InstanceEntry{
+		&discovery.MicroServiceInstance{
+			ServiceId:  "testsvc123456",
+			InstanceId: "testinst1a",
+			Endpoints: []string{
+				"rest://1.1.1.1:1111",
+				"rest://1.1.1.1:1111?sslEnabled=true",
+				"foo://2.2.2.2:2222",  // Will cause warning; unsupported protocol, will default to http
+				"grpc://1.1.1.1:3333", // GRPC is also supported by istio
+			},
+			HostName: "test-svc-host-1",
+		},
+	}
+	ie1 := &event.InstanceEntry{
+		&discovery.MicroServiceInstance{
+			// Will fail to convert
+			ServiceId:  "testsvc123456",
+			InstanceId: "testinst3c",
+			Endpoints: []string{
+				"@@@@://4.4.4.4:1111", // Will cause instance to be skipped; invalid uri (protocol)
+			},
+			HostName: "test-svc-host-3",
+		},
+	}
+	ie2 := &event.InstanceEntry{
+		&discovery.MicroServiceInstance{
+			// Will fail to convert
+			ServiceId:  "testsvc123456",
+			InstanceId: "testinst4d",
+			Endpoints:  []string{}, // Will cause instance to be skipped; no endpoints
+			HostName:   "test-svc-host-4",
+		},
+	}
+	insts = append(insts, ie, ie1, ie2)
+
+	return event.MicroserviceEntry{
+		MicroService: ms,
+		Instances:    insts,
+	}
+}
+
+func TestConvertMicroserviceToIstioInvalidEndpoints(t *testing.T) {
+	in := mockNewMicroserviceEntryInvalidEndpoints()
+	out := in.Convert().(*event.ServiceEntry)
+	insts := in.Instances
+	expectName := "test-svc"
+
+	assert.Equal(t, expectName, out.ServiceEntry.ObjectMeta.Name)
+	assert.Equal(t, 1, len(out.ServiceEntry.Spec.Hosts))
+	assert.Equal(t, expectName, out.ServiceEntry.Spec.Hosts[0])
+	assert.Equal(t, 1, len(out.ServiceEntry.Spec.Endpoints))
+
+	expectPort1 := &istioAPI.Port{Number: 1111, Protocol: "HTTP", Name: "HTTP-1111", TargetPort: 1111}
+	expectPort2 := &istioAPI.Port{Number: 1111, Protocol: "HTTPS", Name: "HTTPS-1111", TargetPort: 1111}
+	expectPort3 := &istioAPI.Port{Number: 2222, Protocol: "HTTP", Name: "HTTP-2222", TargetPort: 2222}
+	expectPort4 := &istioAPI.Port{Number: 3333, Protocol: "GRPC", Name: "GRPC-3333", TargetPort: 3333}
+	expectPorts := []*istioAPI.Port{expectPort1, expectPort2, expectPort3, expectPort4}
+	expectPortsMap := map[string]*istioAPI.Port{expectPort1.Name: expectPort1, expectPort2.Name: expectPort2, expectPort3.Name: expectPort3, expectPort4.Name: expectPort4}
+
+	assert.Equal(t, len(expectPorts), len(out.ServiceEntry.Spec.Ports))
+	for _, outPort := range out.ServiceEntry.Spec.Ports {
+		assert.Contains(t, expectPortsMap, outPort.Name)
+		assert.Equal(t, outPort, expectPortsMap[outPort.Name])
+	}
+
+	assert.Equal(t, istioAPI.ServiceEntry_MESH_INTERNAL, out.ServiceEntry.Spec.Location)
+	assert.Equal(t, istioAPI.ServiceEntry_STATIC, out.ServiceEntry.Spec.Resolution)
+
+	d := 1
+	expectWorkloadEntry := istioAPI.WorkloadEntry{
+		Address: fmt.Sprintf(`%d.%d.%d.%d`, d, d, d, d),
+		Ports: map[string]uint32{
+			"HTTP-1111":  1111,
+			"HTTPS-1111": 1111,
+			"HTTP-2222":  2222,
+			"GRPC-3333":  3333,
+		},
+		Labels: map[string]string{
+			"instanceId": insts[0].InstanceId,
+			"name":       insts[0].HostName,
+		},
+	}
+	assert.Equal(t, expectWorkloadEntry, *out.ServiceEntry.Spec.Endpoints[0])
+}
+
+func mockNewMicroserviceEntryNoInstances() event.MicroserviceEntry {
+	ms := &discovery.MicroService{
+		ServiceId:   "testsvc123456",
+		AppId:       "Test-App",
+		ServiceName: "Test-Svc",
+	}
+	return event.MicroserviceEntry{
+		MicroService: ms,
+	}
+}
+
+func TestConvertMicroserviceToIstioNoInstances(t *testing.T) {
+	in := mockNewMicroserviceEntryNoInstances()
+	out := in.Convert().(*event.ServiceEntry)
+
+	expectName := "test-svc"
+
+	assert.Equal(t, expectName, out.ServiceEntry.ObjectMeta.Name)
+	assert.Equal(t, 1, len(out.ServiceEntry.Spec.Hosts))
+	assert.Equal(t, expectName, out.ServiceEntry.Spec.Hosts[0])
+	assert.Equal(t, 0, len(out.ServiceEntry.Spec.Endpoints))
+	assert.Equal(t, 0, len(out.ServiceEntry.Spec.Ports))
+	assert.Equal(t, istioAPI.ServiceEntry_MESH_INTERNAL, out.ServiceEntry.Spec.Location)
+	assert.Equal(t, istioAPI.ServiceEntry_STATIC, out.ServiceEntry.Spec.Resolution)
+}
