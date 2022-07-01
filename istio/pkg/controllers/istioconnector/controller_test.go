@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package istio
+package istioconnector
 
 import (
 	"testing"

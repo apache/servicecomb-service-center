@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package service_center
+package servicecenter
 
 import (
 	"reflect"
@@ -26,7 +26,7 @@ import (
 	"github.com/apache/servicecomb-service-center/istio/pkg/utils"
 	"github.com/go-chassis/cari/discovery"
 
-	client "github.com/apache/servicecomb-service-center/istio/pkg/controllers/service_center/client"
+	client "github.com/apache/servicecomb-service-center/istio/pkg/controllers/servicecenter/client"
 	"istio.io/pkg/log"
 )
 

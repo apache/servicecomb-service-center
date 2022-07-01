@@ -23,8 +23,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/apache/servicecomb-service-center/istio/pkg/controllers/istio"
-	"github.com/apache/servicecomb-service-center/istio/pkg/controllers/service_center"
+	"github.com/apache/servicecomb-service-center/istio/pkg/controllers/istioconnector"
+	"github.com/apache/servicecomb-service-center/istio/pkg/controllers/servicecenter"
 	"github.com/apache/servicecomb-service-center/istio/pkg/event"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -77,9 +77,9 @@ const (
 
 type Server struct {
 	// service center controller watches service center update, and push to istio controller
-	serviceCenterController *service_center.Controller
+	serviceCenterController *servicecenter.Controller
 	// istio controller receives updates from service center controller and push to k8s api server
-	istioController *istio.Controller
+	istioController *istioconnector.Controller
 	// channel for passing service center event from service center controller to istio controller
 	serviceCenterEvent chan []event.ChangeEvent
 }
@@ -89,12 +89,12 @@ func NewServer(args *Args) (*Server, error) {
 	changeEvent := make(chan []event.ChangeEvent, 1)
 
 	// Create a new istio controller, the controller is ready to push configs to istio
-	istioController, err := istio.NewController(args.Kubeconfig, changeEvent)
+	istioController, err := istioconnector.NewController(args.Kubeconfig, changeEvent)
 	if err != nil {
 		return nil, err
 	}
 
-	serviceCenterController := service_center.NewController(args.ServiceCenterAddr, changeEvent)
+	serviceCenterController := servicecenter.NewController(args.ServiceCenterAddr, changeEvent)
 
 	s := &Server{
 		serviceCenterController: serviceCenterController,

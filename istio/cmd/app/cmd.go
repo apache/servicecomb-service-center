@@ -35,7 +35,7 @@ var loggingOptions = log.DefaultOptions()
 // NewRootCommand creates servicecomb-service-center-istio service cli args
 func NewRootCommand() *cobra.Command {
 	rootCmd := &cobra.Command{
-		Use:   "servicecomb-service-center-to-istio",
+		Use:   "servicecenter-to-istio",
 		Short: "sc2mesh",
 		Long:  "sc2mesh synchronizes data from servicecomb service center to Istio",
 		Args:  cobra.ExactArgs(0),
