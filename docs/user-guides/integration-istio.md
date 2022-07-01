@@ -51,7 +51,7 @@ docker build -t servicecomb-service-center-istio:dev .
 
 ### 2.2 Run on VM
 ```
-./Servicecomb-service-center-istio --sc-addr=?SERVICE_CENTER_ADDRESS --kube-config=?KUBE_CONFIG_FILE_PATH
+./servicecomb-service-center-istio --sc-addr=?SERVICE_CENTER_ADDRESS --kube-config=?KUBE_CONFIG_FILE_PATH
 ```
 
 ### 2.3 Run in K8S
@@ -61,4 +61,4 @@ kubectl apply -f manifest/deployment.yaml
 ```
 
 ### 2.4 Input parameters
-![image](imgs/cmd.png)
+![image](integration-istio.png)
