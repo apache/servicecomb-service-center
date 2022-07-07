@@ -38,32 +38,40 @@ func TestDebouncing(t *testing.T) {
 		debouncedFn()
 	}
 
-	debouncer()
+	t.Run("add an event to the event queue, the event will be hold for 1 sec in the queue, if no more event comes in within 1 sec, then push it", func(t *testing.T) {
+		debouncer()
+		assert.Equal(t, 0, pushed)
+		assert.Equal(t, 1, eventQueue)
 
-	assert.Equal(t, 0, pushed)
-	assert.Equal(t, 1, eventQueue)
+		time.Sleep(time.Second * 2)
+		assert.Equal(t, 1, pushed)
+	})
 
-	time.Sleep(time.Second * 2)
-	assert.Equal(t, 1, pushed)
-
-	pushed = 0
-	debouncer()
-	time.Sleep(time.Millisecond * 500)
-	debouncer()
-	time.Sleep(time.Second * 2)
-	assert.Equal(t, 1, pushed)
-
-	pushed = 0
-	for i := 0; i < 20; i++ {
+	t.Run("add an event to the event queue, update the event after 500ms, the event should only be pushed once after 1 sec", func(t *testing.T) {
+		pushed = 0
 		debouncer()
 		time.Sleep(time.Millisecond * 500)
-	}
-	assert.Equal(t, 1, pushed)
-
-	pushed = 0
-	for i := 0; i < 20; i++ {
 		debouncer()
-		time.Sleep(time.Millisecond * 1500)
-	}
-	assert.Equal(t, 20, pushed)
+		time.Sleep(time.Second * 2)
+		assert.Equal(t, 1, pushed)
+	})
+
+	t.Run("continuously inserting events, each event 500s apart, only the latest event will be pushed", func(t *testing.T) {
+		pushed = 0
+		for i := 0; i < 20; i++ {
+			debouncer()
+			time.Sleep(time.Millisecond * 500)
+		}
+		assert.Equal(t, 1, pushed)
+	})
+
+	t.Run("continuously inserting events, each event 1500s apart, will trigger push operation for 20 times", func(t *testing.T) {
+		pushed = 0
+		for i := 0; i < 20; i++ {
+			debouncer()
+			time.Sleep(time.Millisecond * 1500)
+		}
+		assert.Equal(t, 20, pushed)
+	})
+
 }

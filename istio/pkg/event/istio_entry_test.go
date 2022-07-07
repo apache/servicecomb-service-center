@@ -15,13 +15,12 @@
  * limitations under the License.
  */
 
-package event_test
+package event
 
 import (
 	"fmt"
 	"testing"
 
-	"github.com/apache/servicecomb-service-center/istio/pkg/event"
 	"github.com/go-chassis/cari/discovery"
 	"github.com/stretchr/testify/assert"
 
@@ -30,8 +29,43 @@ import (
 	k8s "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func mockNewIstioServiceEntryNoWorkloads() event.ServiceEntry {
-	se := event.ServiceEntry{
+func TestConvertIstioEntryToMicroservice(t *testing.T) {
+	in := mockNewIstioEntry()
+	out := in.Convert()
+
+	t.Run("a serviceentry should be convertable", func(t *testing.T) {
+		assert.NotNil(t, out)
+	})
+
+	me := out.(*MicroserviceEntry)
+
+	t.Run("the prefix of istio entry service name should be automatically removed", func(t *testing.T) {
+		assert.Equal(t, "test-svc", me.MicroService.ServiceName)
+	})
+
+	t.Run("the number of microservice instances should be the same as the number of serviceentry hosts", func(t *testing.T) {
+		assert.Equal(t, len(in.ServiceEntry.Spec.Hosts), len(me.Instances))
+	})
+
+	t.Run("converted microservice instance should be as same as istio workload entry", func(t *testing.T) {
+		for i, host := range in.ServiceEntry.Spec.Hosts {
+			endpoints := []string{
+				fmt.Sprintf("rest://%s:%d", host, 1234),
+			}
+			expectInstance := &InstanceEntry{
+				&discovery.MicroServiceInstance{
+					HostName:  host,
+					Endpoints: endpoints,
+				},
+			}
+
+			assert.Equal(t, expectInstance, me.Instances[i])
+		}
+	})
+}
+
+func mockNewIstioEntry() ServiceEntry {
+	se := ServiceEntry{
 		ServiceEntry: &istioClient.ServiceEntry{
 			ObjectMeta: k8s.ObjectMeta{
 				Name: "synthetic-test-svc",
@@ -50,39 +84,4 @@ func mockNewIstioServiceEntryNoWorkloads() event.ServiceEntry {
 		},
 	}
 	return se
-}
-
-func TestConvertServiceEntryToMicroserviceNoWorkloads(t *testing.T) {
-	in := mockNewIstioServiceEntryNoWorkloads()
-	inIstio := in.ServiceEntry
-	out := in.Convert().(*event.MicroserviceEntry)
-
-	expectName := "test-svc"
-	assert.Equal(t, expectName, out.MicroService.ServiceName)
-
-	assert.Equal(t, len(inIstio.Spec.Hosts), len(out.Instances))
-
-	for i, host := range inIstio.Spec.Hosts {
-		endpoints := []string{
-			fmt.Sprintf("rest://%s:%d", host, 1234),
-		}
-		expectInstance := &event.InstanceEntry{
-			&discovery.MicroServiceInstance{
-				HostName:  host,
-				Endpoints: endpoints,
-			},
-		}
-
-		assert.Equal(t, expectInstance, out.Instances[i])
-	}
-}
-
-func TestNewServiceEntry(t *testing.T) {
-	inCurr := &istioClient.ServiceEntry{}
-	out := event.NewServiceEntry(inCurr)
-	expectServiceEntry := &event.ServiceEntry{
-		ServiceEntry:    inCurr,
-		WorkloadEntries: []*event.WorkloadEntry{},
-	}
-	assert.Equal(t, expectServiceEntry, out)
 }

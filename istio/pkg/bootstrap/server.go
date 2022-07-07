@@ -106,14 +106,14 @@ func NewServer(args *Args) (*Server, error) {
 }
 
 // start the server need to start both service center and istio controller
-func (s *Server) Start(args *Args, stop <-chan struct{}) error {
+func (s *Server) Start(ctx context.Context, args *Args) error {
 	// by default the leader election is disabled, just do regular start
 	if !args.HA {
-		s.doRun(stop)
+		s.doRun(ctx)
 		return nil
 	}
 
-	return s.doLeaderElectionRun(stop)
+	return s.doLeaderElectionRun(ctx)
 }
 
 // This function is used to enable leader election using k8s client-go api. leaderElectAndRun runs the leader election,
@@ -124,7 +124,7 @@ func (s *Server) Start(args *Args, stop <-chan struct{}) error {
 // Depend on this API at your own risk.
 //
 // Note: this API is also used by K8S controller and Cluster auto scaler.
-func (s *Server) doLeaderElectionRun(stop <-chan struct{}) error {
+func (s *Server) doLeaderElectionRun(ctx context.Context) error {
 	id, err := os.Hostname()
 	if err != nil {
 		return err
@@ -156,7 +156,7 @@ func (s *Server) doLeaderElectionRun(stop <-chan struct{}) error {
 		return err
 	}
 
-	leaderelection.RunOrDie(context.Background(), leaderelection.LeaderElectionConfig{
+	leaderelection.RunOrDie(ctx, leaderelection.LeaderElectionConfig{
 		Lock:            rl,
 		ReleaseOnCancel: true,
 		LeaseDuration:   defaultLeaseDuration,
@@ -164,7 +164,7 @@ func (s *Server) doLeaderElectionRun(stop <-chan struct{}) error {
 		RetryPeriod:     defaultRetryPeriod,
 		Callbacks: leaderelection.LeaderCallbacks{
 			OnStartedLeading: func(c context.Context) {
-				s.doRun(stop)
+				s.doRun(ctx)
 			},
 			OnStoppedLeading: func() {
 				log.Infof("%s: stopped leading", id)
@@ -174,20 +174,19 @@ func (s *Server) doLeaderElectionRun(stop <-chan struct{}) error {
 	return nil
 }
 
-func (s *Server) doRun(stop <-chan struct{}) {
-	go s.serviceCenterController.Run(stop)
-	go s.istioController.Run(stop)
+func (s *Server) doRun(ctx context.Context) {
+	go s.serviceCenterController.Run(ctx)
+	go s.istioController.Run(ctx)
 	log.Info("servicecenter2mesh Server Started !!!")
 
-	s.waitForShutdown(stop)
+	s.waitForShutdown(ctx)
 }
 
 // on server stop
-func (s *Server) waitForShutdown(stop <-chan struct{}) {
+func (s *Server) waitForShutdown(ctx context.Context) {
 	go func() {
-		<-stop
+		<-ctx.Done()
 		s.serviceCenterController.Stop()
-		s.istioController.Stop()
 		close(s.serviceCenterEvent)
 	}()
 }

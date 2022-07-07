@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package client
+package servicecenter
 
 import (
 	"sync"
@@ -34,34 +34,34 @@ const (
 )
 
 // Servicecomb Service Center go-chassis client
-type Client struct {
+type Connector struct {
 	client                  *sc.Client
 	cacheMutex              sync.Mutex
 	AppInstanceWatcherCache map[string]string // Maps appId to id of a instance watcher service. Need app-specific watchers to avoid cross-app errors.
 }
 
-func New(addr string) *Client {
+func NewConnector(addr string) *Connector {
 	registryClient, err := sc.NewClient(
 		sc.Options{
 			Endpoints: []string{addr},
 		})
 	if err != nil {
-		log.Errorf("Failed to create service center client, err[%v]\n", err)
+		log.Errorf("failed to create service center client, err[%v]\n", err)
 	}
-	return &Client{
+	return &Connector{
 		client:                  registryClient,
 		AppInstanceWatcherCache: map[string]string{},
 	}
 }
 
 // Check whether a service center MicroService exists in the registry.
-func (c *Client) GetServiceExistence(microServiceId string) bool {
+func (c *Connector) GetServiceExistence(microServiceId string) bool {
 	s, _ := c.client.GetMicroService(microServiceId, sc.WithGlobal())
 	return s != nil
 }
 
 // Retrieve all service center MicroServices, without their instances, from the registry.
-func (c *Client) GetAllServices() ([]*discovery.MicroService, error) {
+func (c *Connector) GetAllServices() ([]*discovery.MicroService, error) {
 	microservices, err := c.client.GetAllMicroServices(sc.WithGlobal())
 	if err != nil {
 		return nil, err
@@ -70,7 +70,7 @@ func (c *Client) GetAllServices() ([]*discovery.MicroService, error) {
 }
 
 // Register a new service center Watcher service that watches instance-level change events for all service center services sharing a specific appId.
-func (c *Client) RegisterAppInstanceWatcher(name string, appId string, callback func(event event.ChangeEvent)) (string, error) {
+func (c *Connector) RegisterAppInstanceWatcher(name string, appId string, callback func(event event.ChangeEvent)) (string, error) {
 	watcherService := &discovery.MicroService{
 		AppId:       appId,
 		ServiceName: name,
@@ -78,41 +78,46 @@ func (c *Client) RegisterAppInstanceWatcher(name string, appId string, callback 
 		Version:     "0.0.1",
 	}
 
-	prevId, _ := c.client.GetMicroServiceID(watcherService.AppId, watcherService.ServiceName, "0.0.1", watcherService.Environment, sc.WithGlobal())
+	prevId, err := c.client.GetMicroServiceID(watcherService.AppId, watcherService.ServiceName, "0.0.1", watcherService.Environment, sc.WithGlobal())
+	if err != nil {
+		log.Errorf("failed to get microservice id from service center registry with service name %s, err[%v]\n", name, err)
+		return "", err
+	}
+
 	if prevId != "" {
 		// Need to reregister existing watcher for this app to reestablish the websocket connection
-		log.Warnf("Instance watcher already exists in service center registry with id %s, attempting to unregister...\n", prevId)
+		log.Warnf("instance watcher already exists in service center registry with id %s, attempting to unregister...\n", prevId)
 		err := c.UnregisterInstanceWatcher(prevId)
 		if err != nil {
-			log.Errorf("Failed to unregister exising instance watcher in service center registry with id %s, err[%v]\n", prevId, err)
+			log.Errorf("failed to unregister exising instance watcher in service center registry with id %s, err[%v]\n", prevId, err)
 			return "", err
 		}
-		log.Infof("Successfully unregistered instance watcher, sleeping for %s before re-registering...\n", REREGISTER_INTERVAL)
+		log.Infof("successfully unregistered instance watcher, sleeping for %s before re-registering...\n", REREGISTER_INTERVAL)
 		// Sleep allows time for service center to unregister watcher consumer/producer relationships
 		// Re-registering too early will cause race conditions
 		time.Sleep(REREGISTER_INTERVAL)
 	}
 	id, err := c.client.RegisterService(watcherService)
 	if err != nil {
-		log.Errorf("Failed to register instance watcher in service center registry with service name %s, err[%v]\n", name, err)
+		log.Errorf("failed to register instance watcher in service center registry with service name %s, err[%v]\n", name, err)
 		return "", err
 	}
 	err = c.client.WatchMicroService(id, func(e *sc.MicroServiceInstanceChangedEvent) {
 		callback(event.ChangeEvent{Action: discovery.EventType(e.Action), Event: &event.InstanceEntry{MicroServiceInstance: e.Instance}})
 	})
 	if err != nil {
-		log.Errorf("Failed to watch service center instances using watcher service %s, err[%v]\n", name, err)
+		log.Errorf("failed to watch service center instances using watcher service %s, err[%v]\n", name, err)
 	}
 	// Cache the id of the app instance watcher service
 	c.AppInstanceWatcherCache[appId] = id
-	log.Debugf("Registered instance watcher with service name %s and id %s for appId %s\n", name, id, appId)
+	log.Debugf("registered instance watcher with service name %s and id %s for appId %s\n", name, id, appId)
 	return id, nil
 }
 
 // Unregister a service center Watcher service.
-func (c *Client) UnregisterInstanceWatcher(serviceId string) error {
+func (c *Connector) UnregisterInstanceWatcher(serviceId string) error {
 	if !c.GetServiceExistence(serviceId) {
-		log.Debug("Instance watcher no longer exists in registry, skipping unregister...")
+		log.Debug("instance watcher no longer exists in registry, skipping unregister...")
 		return nil
 	}
 	if serviceId != "" {
@@ -120,7 +125,7 @@ func (c *Client) UnregisterInstanceWatcher(serviceId string) error {
 		if !ok {
 			log.Warnf("failed to unregister instance watcher in service center registry with service name %s, err[%v]\n", serviceId, err)
 		} else {
-			log.Debug("Instance watcher successfully unregistered")
+			log.Debug("instance watcher successfully unregistered")
 		}
 		return err
 	} else {
@@ -129,7 +134,7 @@ func (c *Client) UnregisterInstanceWatcher(serviceId string) error {
 }
 
 // GetServiceInstances fetch newly received service instances.
-func (c *Client) GetServiceInstances(entries []*event.MicroserviceEntry) map[string][]*discovery.MicroServiceInstance {
+func (c *Connector) GetServiceInstances(entries []*event.MicroserviceEntry) map[string][]*discovery.MicroServiceInstance {
 	if len(entries) == 0 {
 		return nil
 	}
@@ -145,7 +150,7 @@ func (c *Client) GetServiceInstances(entries []*event.MicroserviceEntry) map[str
 			Alias:       s.Alias,
 		}
 		if _, ok := c.AppInstanceWatcherCache[appId]; !ok {
-			log.Errorf("Failed to watch new microservices for appId %s, watcher service failed to start\n", appId)
+			log.Errorf("failed to watch new microservices for appId %s, watcher service failed to start\n", appId)
 			continue
 		}
 		appServiceKeys[appId] = append(appServiceKeys[appId], &discovery.FindService{Service: key})
@@ -155,7 +160,7 @@ func (c *Client) GetServiceInstances(entries []*event.MicroserviceEntry) map[str
 		// Initial instance sync of services with same appId, will use app instance watcher for future instance updates
 		res, err := c.client.BatchFindInstances(c.AppInstanceWatcherCache[appId], keys, sc.WithGlobal(), sc.WithoutRevision())
 		if err != nil {
-			log.Errorf("Failed to watch new microservices, unable to get instances, err[%v]\n", err)
+			log.Errorf("failed to watch new microservices, unable to get instances, err[%v]\n", err)
 		}
 		for _, r := range res.Services.Updated {
 			e := entries[r.Index]
@@ -165,14 +170,14 @@ func (c *Client) GetServiceInstances(entries []*event.MicroserviceEntry) map[str
 	}
 	for _, e := range entries {
 		if _, ok := serviceInstanceMap[e.MicroService.ServiceId]; !ok {
-			log.Errorf("Failed to watch instances of service %s with id %s\n", e.MicroService.ServiceName, e.MicroService.ServiceId)
+			log.Errorf("failed to watch instances of service %s with id %s\n", e.MicroService.ServiceName, e.MicroService.ServiceId)
 		}
 	}
 	return serviceInstanceMap
 }
 
 // Save the ids of currently active service center Watcher services mapped to the appIds that they are responsible for.
-func (c *Client) RefreshAppInstanceWatcherCache(appWatcherIds map[string]string) {
+func (c *Connector) RefreshAppInstanceWatcherCache(appWatcherIds map[string]string) {
 	c.cacheMutex.Lock()
 	defer c.cacheMutex.Unlock()
 

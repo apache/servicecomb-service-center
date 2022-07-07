@@ -13,9 +13,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM golang
+## build consumer image
+FROM golang:1.17 as consumer
+WORKDIR /app
+COPY go.mod go.mod
+COPY go.sum go.sum
+COPY consumer/ consumer/
 
-COPY provider /
-COPY conf/* /conf/
+RUN go build -o consumersvc consumer/main.go
+CMD ["/app/consumersvc"]
 
-CMD ["/provider"]
+## build provider image
+FROM golang:1.17 as provider
+WORKDIR /app
+COPY go.mod go.mod
+COPY go.sum go.sum
+COPY provider/ provider/
+COPY provider/conf/* /app/conf/
+
+RUN go build -o providersvc provider/main.go
+CMD ["/app/providersvc"]

@@ -18,6 +18,7 @@
 package servicecenter
 
 import (
+	"context"
 	"reflect"
 	"sync"
 	"time"
@@ -26,56 +27,53 @@ import (
 	"github.com/apache/servicecomb-service-center/istio/pkg/utils"
 	"github.com/go-chassis/cari/discovery"
 
-	client "github.com/apache/servicecomb-service-center/istio/pkg/controllers/servicecenter/client"
 	"istio.io/pkg/log"
 )
 
 type Controller struct {
 	// servicecomb service center go-chassis API client
-	client *client.Client
+	conn *Connector
 	// Channel used to send and receive servicecomb service center change events from the service center controller
-	event chan []event.ChangeEvent
-	// Lock for service cache
-	cacheMutex sync.Mutex
+	events chan []event.ChangeEvent
 	// Cache of retrieved servicecomb service center microservices, mapped to their service ids
-	serviceCache map[string]*event.MicroserviceEntry
+	serviceCache sync.Map
 }
 
 func NewController(addr string, e chan []event.ChangeEvent) *Controller {
 	controller := &Controller{
-		client:       client.New(addr),
-		event:        e,
-		serviceCache: map[string]*event.MicroserviceEntry{},
+		conn:         NewConnector(addr),
+		events:       e,
+		serviceCache: sync.Map{},
 	}
 
 	return controller
 }
 
 // Run until a stop signal is received
-func (c *Controller) Run(stop <-chan struct{}) {
+func (c *Controller) Run(ctx context.Context) {
 	// start a new go routine to watch service center update
-	go c.watchServiceCenter(stop)
+	go c.watchServiceCenter(ctx)
 }
 
 // Stop the controller.
 func (c *Controller) Stop() {
 	// Unregister app instance watcher services
-	for _, id := range c.client.AppInstanceWatcherCache {
-		c.client.UnregisterInstanceWatcher(id)
+	for _, id := range c.conn.AppInstanceWatcherCache {
+		c.conn.UnregisterInstanceWatcher(id)
 	}
 }
 
 // Watch the service center registry for MicroService changes.
-func (c *Controller) watchServiceCenter(stop <-chan struct{}) {
+func (c *Controller) watchServiceCenter(ctx context.Context) {
 	for {
 		select {
-		case <-stop:
+		case <-ctx.Done():
 			return
 		default:
 			// Full sync all services from service center
-			services, err := c.client.GetAllServices()
+			services, err := c.conn.GetAllServices()
 			if err != nil {
-				log.Errorf("Failed to retrieve service center services from registry: err[%v]\n", err)
+				log.Errorf("failed to retrieve service center services from registry: err[%v]\n", err)
 			}
 			// Process received services
 			c.onServiceCenterUpdate(services)
@@ -89,20 +87,20 @@ func (c *Controller) watchServiceCenter(stop <-chan struct{}) {
 func (c *Controller) onServiceCenterUpdate(services []*discovery.MicroService) {
 	svcs := c.getChangedServices(services)
 	if len(svcs) > 0 {
-		c.event <- svcs
+		c.events <- svcs
 	}
 }
 
 // Send all instance events to Istio controller.
 func (c *Controller) onInstanceUpdate(e event.ChangeEvent) {
-	log.Debugf("New Service center instance event received from watcher: %+v\n", e)
-	c.event <- []event.ChangeEvent{e}
+	log.Debugf("new service center instance event received from watcher: %+v\n", e)
+	c.events <- []event.ChangeEvent{e}
 }
 
 // Get service center service changes, register watcher for newly created services.
 func (c *Controller) getChangedServices(services []*discovery.MicroService) []event.ChangeEvent {
 	// All non-watcher service center services mapped to their ids
-	currServices := map[string]*event.MicroserviceEntry{}
+	currServices := sync.Map{}
 	// All new non-watcher service center services
 	newServices := []*event.MicroserviceEntry{}
 	// IDs of current service center watcher services
@@ -115,10 +113,10 @@ func (c *Controller) getChangedServices(services []*discovery.MicroService) []ev
 		id := s.ServiceId
 		if name != utils.WATCHER_SVC_NAME && name != utils.SERVICECENTER_ETCD_NAME && name != utils.SERVICECENTER_MONGO_NAME {
 			entry := &event.MicroserviceEntry{MicroService: s}
-			if cachedEntry, ok := c.serviceCache[id]; !ok {
-				if _, ok := c.client.AppInstanceWatcherCache[appId]; !ok {
+			if cachedEntry, ok := c.serviceCache.Load(id); !ok {
+				if _, ok := c.conn.AppInstanceWatcherCache[appId]; !ok {
 					// Register new app instance watcher service
-					watcherId, err := c.client.RegisterAppInstanceWatcher(utils.WATCHER_SVC_NAME, appId, c.onInstanceUpdate)
+					watcherId, err := c.conn.RegisterAppInstanceWatcher(utils.WATCHER_SVC_NAME, appId, c.onInstanceUpdate)
 					if err != nil {
 						continue
 					}
@@ -129,32 +127,35 @@ func (c *Controller) getChangedServices(services []*discovery.MicroService) []ev
 				changeEvent := event.ChangeEvent{Action: discovery.EVT_CREATE, Event: entry}
 				changes = append(changes, changeEvent)
 				newServices = append(newServices, entry)
-				currServices[id] = entry
+				currServices.Store(id, entry)
 			} else {
-				if !reflect.DeepEqual(s, cachedEntry.MicroService) {
+				cachedEntryEvent := cachedEntry.(*event.MicroserviceEntry)
+				if !reflect.DeepEqual(s, cachedEntryEvent.MicroService) {
 					// Collect updated service
 					changeEvent := event.ChangeEvent{Action: discovery.EVT_UPDATE, Event: entry}
 					changes = append(changes, changeEvent)
-					currServices[id] = entry
+					currServices.Store(id, entry)
 				} else {
 					// No change, keep cache entry
-					currServices[id] = cachedEntry
+					currServices.Store(id, cachedEntry)
 				}
 			}
-		} else if name == utils.WATCHER_SVC_NAME && c.client.AppInstanceWatcherCache[appId] == id {
+		} else if name == utils.WATCHER_SVC_NAME && c.conn.AppInstanceWatcherCache[appId] == id {
 			// Watcher still exists as expected, record its current id
 			currAppInstanceWatcherIds[appId] = id
 		}
 	}
 	// Collect deleted services
-	for id, cachedEntry := range c.serviceCache {
-		if _, ok := currServices[id]; !ok {
+	c.serviceCache.Range(func(key, value interface{}) bool {
+		if _, ok := currServices.Load(key); !ok {
 			changes = append(changes, event.ChangeEvent{
 				Action: discovery.EVT_DELETE,
-				Event:  cachedEntry,
+				Event:  value.(*event.MicroserviceEntry),
 			})
 		}
-	}
+		return true
+	})
+
 	// Initial sync-up for newly created services; retrieve and start watching their instances
 	c.initNewServices(newServices)
 	// Update service ID cache with current services
@@ -166,35 +167,35 @@ func (c *Controller) getChangedServices(services []*discovery.MicroService) []ev
 }
 
 // Save MicroService(s) retrieved from service center registry
-func (c *Controller) refreshServiceCache(services map[string]*event.MicroserviceEntry) {
-	c.cacheMutex.Lock()
-	defer c.cacheMutex.Unlock()
-
+func (c *Controller) refreshServiceCache(services sync.Map) {
 	c.serviceCache = services
 }
 
 // Detect missing watcher services in registry. If a watcher service was expected but is missing, flag it to be re-registered.
 func (c *Controller) checkAppInstanceWatchers(currAppInstanceWatcherIds map[string]string) {
-	for appId := range c.client.AppInstanceWatcherCache {
+	for appId := range c.conn.AppInstanceWatcherCache {
 		if _, ok := currAppInstanceWatcherIds[appId]; !ok {
-			log.Warnf("Instance watcher for appId %s is invalid, invalidating its cache entries", appId)
+			log.Warnf("instance watcher for appId %s is invalid, invalidating its cache entries", appId)
 			// Watcher is missing for this app, remove all app's services from cache
-			newServiceCache := map[string]*event.MicroserviceEntry{}
-			for id, key := range c.serviceCache {
-				if key.MicroService.AppId != appId {
-					newServiceCache[id] = key
+			newServiceCache := sync.Map{}
+			c.serviceCache.Range(func(key, value interface{}) bool {
+				microServiceValue := value.(*event.MicroserviceEntry)
+				if microServiceValue.MicroService.AppId != appId {
+					newServiceCache.Store(key, value)
 				}
-			}
+				return true
+			})
+
 			c.refreshServiceCache(newServiceCache)
 		}
 	}
 	// Cache current watcher ids (if any are missing, will be re-registered on next sync)
-	c.client.RefreshAppInstanceWatcherCache(currAppInstanceWatcherIds)
+	c.conn.RefreshAppInstanceWatcherCache(currAppInstanceWatcherIds)
 }
 
 // Watch services, has side effect of adding instances to MicroserviceEntry(s)
 func (c *Controller) initNewServices(newServices []*event.MicroserviceEntry) {
-	serviceInstanceMap := c.client.GetServiceInstances(newServices)
+	serviceInstanceMap := c.conn.GetServiceInstances(newServices)
 	if serviceInstanceMap == nil {
 		return
 	}

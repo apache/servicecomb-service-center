@@ -62,3 +62,58 @@ kubectl apply -f manifest/deployment.yaml
 
 ### 2.4 Input parameters
 ![image](integration-istio.png)
+
+## 3 Best Practices
+We will use [consumer-provider](../../istio/examples/consumer-provider/) example to show how to use this tool.
+
+We have two services: Provider and Consumer:
+* `provider` is the provider of a service which calculates and returns the sum of the square root from 1 to a user provided parameter `x`.
+* `consumer` performs as both provider and consumer. As a consumer, it calls the api provided by `provider` to get the result of the sum of square roots;
+as a `provider`, it provides a service externally which returns the result it gets from `provider` to its clients.
+
+While Provider uses servicecomb service center tech stack, Consumer uses istio tech stack. Origionaly, Provider and Consumer couldn't discover each other. 
+
+In this demo, we are going to adopt our servicecomb-service-center-istio to brake the barrier between Provider and Consumer.
+
+The logical network and calling relationship of the Provider and Consumer is as follows：
+
+![image](integration-istio-demo.png)
+
+### 3.1 Build Provider and Consumer service images
+#### 3.1.1 Consumer
+```
+> docker build --target consumer -t consumer:dev .
+```
+
+#### 3.1.2 Provider
+Make sure you have already configed the registry related configuration (provider/conf/chassis.yaml)
+```
+> docker build --target provider -t provider:dev .
+```
+
+### 3.2 Deploy consumer and provider services
+#### 3.2.1 Consumer
+Because Consumer is Istio-based service, so it has to be run in the Kubernetes. We have our [deploument yaml](../../istio/examples/consumer-provider/manifest/consumer.yaml) file to deploy consumer into Kubernetes
+```
+> kubectl apply -f manifest/consumer.yaml
+```
+#### 3.2.2 Provider
+Provider service could be deployed either on a `VM` or `Kubernetes` cluster.
+
+For VM
+```
+# go to provider folder and run
+> ./provider
+```
+
+For Kubernetes
+```
+> kubectl apply -f manifest/provider.yaml
+```
+
+### 3.3 Testing
+Now you can try to request `consumer` service and you can get the response which is actually return from `provider` service.
+```
+> curl http://${consumerip}:${consuemrport}/sqrt?x=1000
+Get result from microservice provider: Sum of square root from 1 to 1000 is 21065.833111
+```

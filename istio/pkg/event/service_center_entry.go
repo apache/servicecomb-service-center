@@ -67,13 +67,13 @@ func (c *InstanceEntry) Convert() Event {
 	svcPortMap := map[string]*istioAPI.Port{}
 	var address string
 	if len(c.Endpoints) == 0 {
-		log.Errorf("Service center Microservice Instance %v has no endpoint found\n", c.InstanceId)
+		log.Errorf("service center Microservice Instance %v has no endpoint found\n", c.InstanceId)
 		return nil
 	}
 	for i, ep := range c.Endpoints {
 		u, err := url.Parse(ep)
 		if err != nil {
-			log.Errorf("Service center Microservice Instance %v has endpoint \"%v\" that could not be parsed as a valid URL\n", c.InstanceId, ep)
+			log.Errorf("service center Microservice Instance %v has endpoint \"%v\" that could not be parsed as a valid URL\n", c.InstanceId, ep)
 			return nil
 		}
 		if i == 0 {

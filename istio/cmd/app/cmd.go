@@ -18,10 +18,10 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/signal"
-	"syscall"
 
 	"github.com/apache/servicecomb-service-center/istio/pkg/bootstrap"
 
@@ -47,8 +47,10 @@ func NewRootCommand() *cobra.Command {
 		},
 		RunE: func(c *cobra.Command, args []string) error {
 			// Create the stop channel for all of the servers.
-			stop := make(chan struct{})
-
+			// ctx, cancelFunc := context.WithCancel(context.Background())
+			ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+			defer stop()
+			// defer cancelFunc()
 			// Create the server for the servicecomb-service-center-istio service.
 			server, err := bootstrap.NewServer(inputArgs)
 			if err != nil {
@@ -56,11 +58,11 @@ func NewRootCommand() *cobra.Command {
 			}
 
 			// Start the server
-			if err := server.Start(inputArgs, stop); err != nil {
+			if err := server.Start(ctx, inputArgs); err != nil {
 				return fmt.Errorf("failed to start servicecomb-service-center-istio service: %v", err)
 			}
 
-			waitSignal(stop)
+			waitSignal(ctx)
 
 			return nil
 		},
@@ -71,11 +73,8 @@ func NewRootCommand() *cobra.Command {
 }
 
 // WaitSignal awaits for SIGINT or SIGTERM and closes the channel
-func waitSignal(stop chan struct{}) {
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-	<-sigs
-	close(stop)
+func waitSignal(ctx context.Context) {
+	<-ctx.Done()
 	_ = log.Sync()
 }
 
