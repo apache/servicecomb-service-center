@@ -183,7 +183,7 @@ func (c *Controller) pushServiceEvent(e *event.MicroserviceEntry, action discove
 	if res := e.Convert(); res == nil {
 		return fmt.Errorf("failed to convert service center Service event to Istio ServiceEntry")
 	} else {
-		se = res.(*event.ServiceEntry)
+		se = res
 	}
 	name := se.ServiceEntry.GetName()
 	log.Debugf("syncing %s SERVICE event for service center service id %s...\n", string(action), serviceId)
@@ -264,7 +264,7 @@ func updateIstioServiceEndpoints(se *v1alpha3.ServiceEntry, action discovery.Eve
 	if res := event.NewServiceEntry(se).Convert(); res == nil {
 		return fmt.Errorf("failed to parse existing Istio ServiceEntry")
 	} else {
-		seAsMSE = res.(*event.MicroserviceEntry)
+		seAsMSE = res
 	}
 	switch discovery.EventType(action) {
 	case discovery.EVT_DELETE:
@@ -301,7 +301,7 @@ func updateIstioServiceEndpoints(se *v1alpha3.ServiceEntry, action discovery.Eve
 	if res := seAsMSE.Convert(); res == nil {
 		return fmt.Errorf("failed to parse changes for Istio ServiceEntry")
 	} else {
-		regenedSe = res.(*event.ServiceEntry).ServiceEntry
+		regenedSe = res.ServiceEntry
 	}
 	// Only take regened ports and new workloadentries, preserves rest of original serviceentry
 	se.Spec.Endpoints = regenedSe.Spec.Endpoints

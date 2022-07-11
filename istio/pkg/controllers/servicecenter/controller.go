@@ -58,9 +58,10 @@ func (c *Controller) Run(ctx context.Context) {
 // Stop the controller.
 func (c *Controller) Stop() {
 	// Unregister app instance watcher services
-	for _, id := range c.conn.AppInstanceWatcherCache {
-		c.conn.UnregisterInstanceWatcher(id)
-	}
+	c.conn.AppInstanceWatcherCache.Range(func(_, value interface{}) bool {
+		c.conn.UnregisterInstanceWatcher(value.(string))
+		return true
+	})
 }
 
 // Watch the service center registry for MicroService changes.
@@ -104,7 +105,7 @@ func (c *Controller) getChangedServices(services []*discovery.MicroService) []ev
 	// All new non-watcher service center services
 	newServices := []*event.MicroserviceEntry{}
 	// IDs of current service center watcher services
-	currAppInstanceWatcherIds := map[string]string{}
+	currAppInstanceWatcherIds := sync.Map{}
 	// Service events that must be pushed
 	changes := []event.ChangeEvent{}
 	for _, s := range services {
@@ -114,14 +115,14 @@ func (c *Controller) getChangedServices(services []*discovery.MicroService) []ev
 		if name != utils.WATCHER_SVC_NAME && name != utils.SERVICECENTER_ETCD_NAME && name != utils.SERVICECENTER_MONGO_NAME {
 			entry := &event.MicroserviceEntry{MicroService: s}
 			if cachedEntry, ok := c.serviceCache.Load(id); !ok {
-				if _, ok := c.conn.AppInstanceWatcherCache[appId]; !ok {
+				if _, ok := c.conn.AppInstanceWatcherCache.Load(appId); !ok {
 					// Register new app instance watcher service
 					watcherId, err := c.conn.RegisterAppInstanceWatcher(utils.WATCHER_SVC_NAME, appId, c.onInstanceUpdate)
 					if err != nil {
 						continue
 					}
 					// Record the id of the watcher service for this app
-					currAppInstanceWatcherIds[appId] = watcherId
+					currAppInstanceWatcherIds.Store(appId, watcherId)
 				}
 				// Collect newly created service
 				changeEvent := event.ChangeEvent{Action: discovery.EVT_CREATE, Event: entry}
@@ -140,9 +141,14 @@ func (c *Controller) getChangedServices(services []*discovery.MicroService) []ev
 					currServices.Store(id, cachedEntry)
 				}
 			}
-		} else if name == utils.WATCHER_SVC_NAME && c.conn.AppInstanceWatcherCache[appId] == id {
-			// Watcher still exists as expected, record its current id
-			currAppInstanceWatcherIds[appId] = id
+		} else if name == utils.WATCHER_SVC_NAME {
+			if k, ok := c.conn.AppInstanceWatcherCache.Load(appId); ok {
+				if k.(string) == id {
+					// Watcher still exists as expected, record its current id
+					currAppInstanceWatcherIds.Store(appId, id)
+				}
+			}
+
 		}
 	}
 	// Collect deleted services
@@ -172,9 +178,9 @@ func (c *Controller) refreshServiceCache(services sync.Map) {
 }
 
 // Detect missing watcher services in registry. If a watcher service was expected but is missing, flag it to be re-registered.
-func (c *Controller) checkAppInstanceWatchers(currAppInstanceWatcherIds map[string]string) {
-	for appId := range c.conn.AppInstanceWatcherCache {
-		if _, ok := currAppInstanceWatcherIds[appId]; !ok {
+func (c *Controller) checkAppInstanceWatchers(currAppInstanceWatcherIds sync.Map) {
+	c.conn.AppInstanceWatcherCache.Range(func(appId, _ interface{}) bool {
+		if _, ok := currAppInstanceWatcherIds.Load(appId); !ok {
 			log.Warnf("instance watcher for appId %s is invalid, invalidating its cache entries", appId)
 			// Watcher is missing for this app, remove all app's services from cache
 			newServiceCache := sync.Map{}
@@ -188,7 +194,8 @@ func (c *Controller) checkAppInstanceWatchers(currAppInstanceWatcherIds map[stri
 
 			c.refreshServiceCache(newServiceCache)
 		}
-	}
+		return true
+	})
 	// Cache current watcher ids (if any are missing, will be re-registered on next sync)
 	c.conn.RefreshAppInstanceWatcherCache(currAppInstanceWatcherIds)
 }

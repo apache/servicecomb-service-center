@@ -36,8 +36,7 @@ const (
 // Servicecomb Service Center go-chassis client
 type Connector struct {
 	client                  *sc.Client
-	cacheMutex              sync.Mutex
-	AppInstanceWatcherCache map[string]string // Maps appId to id of a instance watcher service. Need app-specific watchers to avoid cross-app errors.
+	AppInstanceWatcherCache sync.Map // Maps appId to id of a instance watcher service. Need app-specific watchers to avoid cross-app errors.
 }
 
 func NewConnector(addr string) *Connector {
@@ -50,7 +49,7 @@ func NewConnector(addr string) *Connector {
 	}
 	return &Connector{
 		client:                  registryClient,
-		AppInstanceWatcherCache: map[string]string{},
+		AppInstanceWatcherCache: sync.Map{},
 	}
 }
 
@@ -109,7 +108,7 @@ func (c *Connector) RegisterAppInstanceWatcher(name string, appId string, callba
 		log.Errorf("failed to watch service center instances using watcher service %s, err[%v]\n", name, err)
 	}
 	// Cache the id of the app instance watcher service
-	c.AppInstanceWatcherCache[appId] = id
+	c.AppInstanceWatcherCache.Store(appId, id)
 	log.Debugf("registered instance watcher with service name %s and id %s for appId %s\n", name, id, appId)
 	return id, nil
 }
@@ -149,7 +148,7 @@ func (c *Connector) GetServiceInstances(entries []*event.MicroserviceEntry) map[
 			Version:     s.Version,
 			Alias:       s.Alias,
 		}
-		if _, ok := c.AppInstanceWatcherCache[appId]; !ok {
+		if _, ok := c.AppInstanceWatcherCache.Load(appId); !ok {
 			log.Errorf("failed to watch new microservices for appId %s, watcher service failed to start\n", appId)
 			continue
 		}
@@ -157,16 +156,18 @@ func (c *Connector) GetServiceInstances(entries []*event.MicroserviceEntry) map[
 	}
 	serviceInstanceMap := map[string][]*discovery.MicroServiceInstance{}
 	for appId, keys := range appServiceKeys {
-		// Initial instance sync of services with same appId, will use app instance watcher for future instance updates
-		res, err := c.client.BatchFindInstances(c.AppInstanceWatcherCache[appId], keys, sc.WithGlobal(), sc.WithoutRevision())
-		if err != nil {
-			log.Errorf("failed to watch new microservices, unable to get instances, err[%v]\n", err)
+		if ks, ok := c.AppInstanceWatcherCache.Load(appId); ok {
+			// Initial instance sync of services with same appId, will use app instance watcher for future instance updates
+			res, err := c.client.BatchFindInstances(ks.(string), keys, sc.WithGlobal(), sc.WithoutRevision())
+			if err != nil {
+				log.Errorf("failed to watch new microservices, unable to get instances, err[%v]\n", err)
+			}
+			for _, r := range res.Services.Updated {
+				e := entries[r.Index]
+				serviceInstanceMap[e.MicroService.ServiceId] = r.Instances
+			}
+			log.Infof("Started watching instances of services with appId %s\n", appId)
 		}
-		for _, r := range res.Services.Updated {
-			e := entries[r.Index]
-			serviceInstanceMap[e.MicroService.ServiceId] = r.Instances
-		}
-		log.Infof("Started watching instances of services with appId %s\n", appId)
 	}
 	for _, e := range entries {
 		if _, ok := serviceInstanceMap[e.MicroService.ServiceId]; !ok {
@@ -177,9 +178,6 @@ func (c *Connector) GetServiceInstances(entries []*event.MicroserviceEntry) map[
 }
 
 // Save the ids of currently active service center Watcher services mapped to the appIds that they are responsible for.
-func (c *Connector) RefreshAppInstanceWatcherCache(appWatcherIds map[string]string) {
-	c.cacheMutex.Lock()
-	defer c.cacheMutex.Unlock()
-
+func (c *Connector) RefreshAppInstanceWatcherCache(appWatcherIds sync.Map) {
 	c.AppInstanceWatcherCache = appWatcherIds
 }

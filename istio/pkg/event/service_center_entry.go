@@ -60,7 +60,7 @@ type MicroserviceEntry struct {
 }
 
 // Convert a MicroServiceInstance to an Istio WorkloadEntry event.
-func (c *InstanceEntry) Convert() Event {
+func (c *InstanceEntry) Convert() *WorkloadEntry {
 	// Istio ServiceEntry port names mapped to the "internal" port number of their target WorkloadEntry
 	portMap := map[string]uint32{}
 	// Istio ServiceEntry port names mapped to port structs
@@ -106,7 +106,7 @@ func (c *InstanceEntry) Convert() Event {
 }
 
 // Convert a MicroService to an Istio ServiceEntry.
-func (c *MicroserviceEntry) Convert() Event {
+func (c *MicroserviceEntry) Convert() *ServiceEntry {
 	ms := c.MicroService
 	insts := c.Instances
 	name := strings.ToLower(ms.ServiceName)
@@ -119,7 +119,7 @@ func (c *MicroserviceEntry) Convert() Event {
 	for _, inst := range insts {
 		wle := inst.Convert()
 		if wle != nil {
-			workloadEntry := wle.(*WorkloadEntry)
+			workloadEntry := wle
 			for _, istioPort := range workloadEntry.ServicePorts {
 				svcPortMap[istioPort.Name] = istioPort
 			}

@@ -37,14 +37,12 @@ func TestConvertIstioEntryToMicroservice(t *testing.T) {
 		assert.NotNil(t, out)
 	})
 
-	me := out.(*MicroserviceEntry)
-
 	t.Run("the prefix of istio entry service name should be automatically removed", func(t *testing.T) {
-		assert.Equal(t, "test-svc", me.MicroService.ServiceName)
+		assert.Equal(t, "test-svc", out.MicroService.ServiceName)
 	})
 
 	t.Run("the number of microservice instances should be the same as the number of serviceentry hosts", func(t *testing.T) {
-		assert.Equal(t, len(in.ServiceEntry.Spec.Hosts), len(me.Instances))
+		assert.Equal(t, len(in.ServiceEntry.Spec.Hosts), len(out.Instances))
 	})
 
 	t.Run("converted microservice instance should be as same as istio workload entry", func(t *testing.T) {
@@ -59,7 +57,7 @@ func TestConvertIstioEntryToMicroservice(t *testing.T) {
 				},
 			}
 
-			assert.Equal(t, expectInstance, me.Instances[i])
+			assert.Equal(t, expectInstance, out.Instances[i])
 		}
 	})
 }

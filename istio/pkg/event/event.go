@@ -19,5 +19,4 @@ package event
 
 // Common interface for convertable service and instance structs used by Service center and Istio APIs.
 type Event interface {
-	Convert() Event
 }

@@ -36,7 +36,7 @@ type WorkloadEntry struct {
 }
 
 // Convert an Istio WorkloadEntry to a service center Microservice Instance event.
-func (c *WorkloadEntry) Convert() Event {
+func (c *WorkloadEntry) Convert() *InstanceEntry {
 	inst := convertIstioAddressToMicroserviceInstance(c.Address, c.ServicePorts)
 	if id, ok := c.Labels[InstanceIdLabel]; ok {
 		// WorkloadEntry was previously converted from service center Microservice instance; restore its id
@@ -83,7 +83,7 @@ func NewServiceEntry(curr *v1alpha3.ServiceEntry) *ServiceEntry {
 }
 
 // Convert an Istio ServiceEntry to a MicroService event
-func (s *ServiceEntry) Convert() Event {
+func (s *ServiceEntry) Convert() *MicroserviceEntry {
 	name := getMicroserviceNameFromIstio(s.ServiceEntry.Name)
 	ms := &discovery.MicroService{
 		ServiceName: name,
@@ -94,7 +94,7 @@ func (s *ServiceEntry) Convert() Event {
 		// Convert a ServiceEntry with WorkloadEntry(s)
 		for _, wle := range s.WorkloadEntries {
 			inst := wle.Convert()
-			insts = append(insts, inst.(*InstanceEntry))
+			insts = append(insts, inst)
 		}
 	} else if len(s.ServiceEntry.Spec.Ports) > 0 {
 		// Convert a ServiceEntry with Host(s) and Port(s) only

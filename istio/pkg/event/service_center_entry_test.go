@@ -35,18 +35,17 @@ func TestConvertMicroserviceToIstioMultipleInstance(t *testing.T) {
 		assert.NotNil(t, out)
 	})
 
-	sn := out.(*ServiceEntry)
 	t.Run("the microservice name should be converted to lowercase in istio service entry", func(t *testing.T) {
-		assert.Equal(t, strings.ToLower(in.MicroService.ServiceName), sn.ServiceEntry.ObjectMeta.Name)
+		assert.Equal(t, strings.ToLower(in.MicroService.ServiceName), out.ServiceEntry.ObjectMeta.Name)
 	})
 
 	t.Run("the microservice name should be converted to lowercase in istio service entry", func(t *testing.T) {
-		assert.Equal(t, 1, len(sn.ServiceEntry.Spec.Hosts))
-		assert.Equal(t, strings.ToLower(in.MicroService.ServiceName), sn.ServiceEntry.Spec.Hosts[0])
+		assert.Equal(t, 1, len(out.ServiceEntry.Spec.Hosts))
+		assert.Equal(t, strings.ToLower(in.MicroService.ServiceName), out.ServiceEntry.Spec.Hosts[0])
 	})
 
 	t.Run("the number of microservice instances should be the same as the number of converted serviceentry endpoints", func(t *testing.T) {
-		assert.Equal(t, len(in.Instances), len(sn.ServiceEntry.Spec.Endpoints))
+		assert.Equal(t, len(in.Instances), len(out.ServiceEntry.Spec.Endpoints))
 	})
 
 	t.Run("converted serviceentry port should be as same as that in microservice instance", func(t *testing.T) {
@@ -55,8 +54,8 @@ func TestConvertMicroserviceToIstioMultipleInstance(t *testing.T) {
 		expectPort3 := &istioAPI.Port{Number: 3333, Protocol: "HTTP", Name: "HTTP-3333", TargetPort: 3333}
 		expectPorts := []*istioAPI.Port{expectPort1, expectPort2, expectPort3}
 		expectPortsMap := map[string]*istioAPI.Port{expectPort1.Name: expectPort1, expectPort2.Name: expectPort2, expectPort3.Name: expectPort3}
-		assert.Equal(t, len(expectPorts), len(sn.ServiceEntry.Spec.Ports))
-		for _, outPort := range sn.ServiceEntry.Spec.Ports {
+		assert.Equal(t, len(expectPorts), len(out.ServiceEntry.Spec.Ports))
+		for _, outPort := range out.ServiceEntry.Spec.Ports {
 			assert.Contains(t, expectPortsMap, outPort.Name)
 			assert.Equal(t, expectPortsMap[outPort.Name], outPort)
 		}
@@ -77,7 +76,7 @@ func TestConvertMicroserviceToIstioMultipleInstance(t *testing.T) {
 					"name":       inst.HostName,
 				},
 			}
-			assert.Equal(t, expectWorkloadEntry, *sn.ServiceEntry.Spec.Endpoints[i])
+			assert.Equal(t, expectWorkloadEntry, *out.ServiceEntry.Spec.Endpoints[i])
 		}
 	})
 }
@@ -89,19 +88,17 @@ func TestConvertMicroserviceToIstioInvalidEndpoints(t *testing.T) {
 		assert.NotNil(t, out)
 	})
 
-	sn := out.(*ServiceEntry)
-
 	t.Run("the microservice name should be converted to lowercase in istio service entry", func(t *testing.T) {
-		assert.Equal(t, strings.ToLower(in.MicroService.ServiceName), sn.ServiceEntry.ObjectMeta.Name)
+		assert.Equal(t, strings.ToLower(in.MicroService.ServiceName), out.ServiceEntry.ObjectMeta.Name)
 	})
 
 	t.Run("the microservice name should be converted to lowercase in istio service entry", func(t *testing.T) {
-		assert.Equal(t, 1, len(sn.ServiceEntry.Spec.Hosts))
-		assert.Equal(t, strings.ToLower(in.MicroService.ServiceName), sn.ServiceEntry.Spec.Hosts[0])
+		assert.Equal(t, 1, len(out.ServiceEntry.Spec.Hosts))
+		assert.Equal(t, strings.ToLower(in.MicroService.ServiceName), out.ServiceEntry.Spec.Hosts[0])
 	})
 
 	t.Run("given 3 instance with 2 invalidate, should only convert the one that validate", func(t *testing.T) {
-		assert.Equal(t, 1, len(sn.ServiceEntry.Spec.Endpoints))
+		assert.Equal(t, 1, len(out.ServiceEntry.Spec.Endpoints))
 	})
 
 	t.Run("converted serviceentry port should be as same as that in microservice instance", func(t *testing.T) {
@@ -111,8 +108,8 @@ func TestConvertMicroserviceToIstioInvalidEndpoints(t *testing.T) {
 		expectPort4 := &istioAPI.Port{Number: 3333, Protocol: "GRPC", Name: "GRPC-3333", TargetPort: 3333}
 		expectPorts := []*istioAPI.Port{expectPort1, expectPort2, expectPort3, expectPort4}
 		expectPortsMap := map[string]*istioAPI.Port{expectPort1.Name: expectPort1, expectPort2.Name: expectPort2, expectPort3.Name: expectPort3, expectPort4.Name: expectPort4}
-		assert.Equal(t, len(expectPorts), len(sn.ServiceEntry.Spec.Ports))
-		for _, outPort := range sn.ServiceEntry.Spec.Ports {
+		assert.Equal(t, len(expectPorts), len(out.ServiceEntry.Spec.Ports))
+		for _, outPort := range out.ServiceEntry.Spec.Ports {
 			assert.Contains(t, expectPortsMap, outPort.Name)
 			assert.Equal(t, expectPortsMap[outPort.Name], outPort)
 		}
@@ -133,7 +130,7 @@ func TestConvertMicroserviceToIstioInvalidEndpoints(t *testing.T) {
 				"name":       in.Instances[0].HostName,
 			},
 		}
-		assert.Equal(t, expectWorkloadEntry, *sn.ServiceEntry.Spec.Endpoints[0])
+		assert.Equal(t, expectWorkloadEntry, *out.ServiceEntry.Spec.Endpoints[0])
 	})
 }
 
@@ -144,20 +141,18 @@ func TestConvertMicroserviceToIstioNoInstances(t *testing.T) {
 		assert.NotNil(t, out)
 	})
 
-	sn := out.(*ServiceEntry)
-
 	t.Run("the microservice name should be converted to lowercase in istio service entry", func(t *testing.T) {
-		assert.Equal(t, strings.ToLower(in.MicroService.ServiceName), sn.ServiceEntry.ObjectMeta.Name)
+		assert.Equal(t, strings.ToLower(in.MicroService.ServiceName), out.ServiceEntry.ObjectMeta.Name)
 	})
 
 	t.Run("the microservice name should be converted to lowercase in istio service entry", func(t *testing.T) {
-		assert.Equal(t, 1, len(sn.ServiceEntry.Spec.Hosts))
-		assert.Equal(t, strings.ToLower(in.MicroService.ServiceName), sn.ServiceEntry.Spec.Hosts[0])
+		assert.Equal(t, 1, len(out.ServiceEntry.Spec.Hosts))
+		assert.Equal(t, strings.ToLower(in.MicroService.ServiceName), out.ServiceEntry.Spec.Hosts[0])
 	})
 
 	t.Run("given no instances, the converted serviceEntry should have 0 endpoints and ports", func(t *testing.T) {
-		assert.Equal(t, 0, len(sn.ServiceEntry.Spec.Endpoints))
-		assert.Equal(t, 0, len(sn.ServiceEntry.Spec.Ports))
+		assert.Equal(t, 0, len(out.ServiceEntry.Spec.Endpoints))
+		assert.Equal(t, 0, len(out.ServiceEntry.Spec.Ports))
 	})
 }
 

@@ -63,7 +63,7 @@ kubectl apply -f manifest/deployment.yaml
 ### 2.4 Input parameters
 ![image](integration-istio.png)
 
-## 3 Best Practices
+## 3 Example
 We will use [consumer-provider](../../istio/examples/consumer-provider/) example to show how to use this tool.
 
 We have two services: Provider and Consumer:
@@ -74,10 +74,6 @@ as a `provider`, it provides a service externally which returns the result it ge
 While Provider uses servicecomb service center tech stack, Consumer uses istio tech stack. Origionaly, Provider and Consumer couldn't discover each other. 
 
 In this demo, we are going to adopt our servicecomb-service-center-istio to brake the barrier between Provider and Consumer.
-
-The logical network and calling relationship of the Provider and Consumer is as follows：
-
-![image](integration-istio-demo.png)
 
 ### 3.1 Build Provider and Consumer service images
 #### 3.1.1 Consumer
