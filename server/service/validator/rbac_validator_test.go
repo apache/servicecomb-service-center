@@ -43,6 +43,14 @@ func TestValidateCreateAccount(t *testing.T) {
 			}},
 			wantErr: false,
 		},
+		{name: "given blank account name",
+			args: args{a: &rbac.Account{
+				Name:     "",
+				Password: "Pwd0000_1",
+				Roles:    []string{"admin", "developer"},
+			}},
+			wantErr: true,
+		},
 		{name: "given invalid account name",
 			args: args{a: &rbac.Account{
 				Name:     "tester*",
@@ -129,6 +137,12 @@ func TestValidateCreateRole(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
+		{name: "given blank role name",
+			args: args{a: &rbac.Role{
+				Name: "",
+			}},
+			wantErr: true,
+		},
 		{name: "given invalid role name",
 			args: args{a: &rbac.Role{
 				Name: "tester*a",
