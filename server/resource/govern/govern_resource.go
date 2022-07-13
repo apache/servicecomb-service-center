@@ -78,6 +78,7 @@ func (res *Resource) ListService(w http.ResponseWriter, r *http.Request) {
 	request.ServiceName = query.Get("serviceName")
 	request.Environment = query.Get("env")
 	request.WithShared = util.StringTRUE(query.Get("withShared"))
+	request.Properties = rest.ParseQueries(query, "property")
 	countOnly := query.Get("countOnly")
 	if countOnly != "0" && countOnly != "1" && strings.TrimSpace(countOnly) != "" {
 		rest.WriteError(w, pb.ErrInvalidParams, "parameter countOnly must be 1 or 0")

@@ -25,11 +25,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	_ "github.com/apache/servicecomb-service-center/test"
-
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/resource/govern"
 	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
+	_ "github.com/apache/servicecomb-service-center/test"
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/stretchr/testify/assert"
 )
@@ -43,6 +42,8 @@ func TestResource_GetServiceDetail(t *testing.T) {
 
 	service, err := discosvc.RegisterService(ctx, &pb.CreateServiceRequest{Service: &pb.MicroService{
 		ServiceName: "get_service_detail",
+		Schemas:     []string{"test"},
+		Properties:  map[string]string{"test": "list"},
 	}})
 	assert.NoError(t, err)
 	serviceID := service.ServiceId
@@ -58,7 +59,10 @@ func TestResource_GetServiceDetail(t *testing.T) {
 		body, _ := io.ReadAll(w.Body)
 		err := json.Unmarshal(body, &resp)
 		assert.NoError(t, err)
-		assert.Equal(t, serviceID, resp.Service.MicroService.ServiceId)
+		detail := resp.Service
+		assert.Equal(t, serviceID, detail.MicroService.ServiceId)
+		assert.NotEmpty(t, detail.MicroService.Schemas)
+		assert.NotEmpty(t, detail.MicroService.Properties)
 	})
 
 	t.Run("query not exist service detail, should fail", func(t *testing.T) {
@@ -75,6 +79,8 @@ func TestResource_ListServiceDetail(t *testing.T) {
 	const serviceName = "list_service_detail"
 	service, err := discosvc.RegisterService(ctx, &pb.CreateServiceRequest{Service: &pb.MicroService{
 		ServiceName: serviceName,
+		Schemas:     []string{"test"},
+		Properties:  map[string]string{"test": "list"},
 	}})
 	assert.NoError(t, err)
 	serviceID := service.ServiceId
@@ -90,7 +96,10 @@ func TestResource_ListServiceDetail(t *testing.T) {
 		body, _ := io.ReadAll(w.Body)
 		err := json.Unmarshal(body, &resp)
 		assert.NoError(t, err)
-		assert.Equal(t, serviceID, resp.AllServicesDetail[0].MicroService.ServiceId)
+		detail := resp.AllServicesDetail[0]
+		assert.Equal(t, serviceID, detail.MicroService.ServiceId)
+		assert.NotEmpty(t, detail.MicroService.Properties)
+		assert.Empty(t, detail.MicroService.Schemas)
 		assert.NotEqual(t, int64(0), resp.Statistics.Services.Count)
 		assert.NotEqual(t, int64(0), resp.Statistics.Apps.Count)
 	})
@@ -108,6 +117,49 @@ func TestResource_ListServiceDetail(t *testing.T) {
 		assert.Equal(t, 0, len(resp.AllServicesDetail))
 		assert.NotEqual(t, int64(0), resp.Statistics.Services.Count)
 		assert.NotEqual(t, int64(0), resp.Statistics.Apps.Count)
+	})
+
+	t.Run("list service detail with properties filter, should ok", func(t *testing.T) {
+		r, _ := http.NewRequest(http.MethodGet, "/v4/default/govern/microservices?noCache=true&options=all&serviceName="+serviceName+"&property=test:list", nil)
+		w := httptest.NewRecorder()
+		rest.GetRouter().ServeHTTP(w, r)
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		var resp pb.GetServicesInfoResponse
+		body, _ := ioutil.ReadAll(w.Body)
+		err := json.Unmarshal(body, &resp)
+		assert.NoError(t, err)
+		assert.Equal(t, serviceID, resp.AllServicesDetail[0].MicroService.ServiceId)
+		assert.NotEqual(t, int64(0), resp.Statistics.Services.Count)
+		assert.NotEqual(t, int64(0), resp.Statistics.Apps.Count)
+	})
+
+	t.Run("list service detail with only properties filter, should ok", func(t *testing.T) {
+		r, _ := http.NewRequest(http.MethodGet, "/v4/default/govern/microservices?noCache=true&options=all&property=test:list", nil)
+		w := httptest.NewRecorder()
+		rest.GetRouter().ServeHTTP(w, r)
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		var resp pb.GetServicesInfoResponse
+		body, _ := ioutil.ReadAll(w.Body)
+		err := json.Unmarshal(body, &resp)
+		assert.NoError(t, err)
+		assert.Equal(t, serviceID, resp.AllServicesDetail[0].MicroService.ServiceId)
+		assert.NotEqual(t, int64(0), resp.Statistics.Services.Count)
+		assert.NotEqual(t, int64(0), resp.Statistics.Apps.Count)
+	})
+
+	t.Run("list service detail with not exist properties, should return empty", func(t *testing.T) {
+		r, _ := http.NewRequest(http.MethodGet, "/v4/default/govern/microservices?noCache=true&options=all&serviceName="+serviceName+"&property=none:none", nil)
+		w := httptest.NewRecorder()
+		rest.GetRouter().ServeHTTP(w, r)
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		var resp pb.GetServicesInfoResponse
+		body, _ := ioutil.ReadAll(w.Body)
+		err := json.Unmarshal(body, &resp)
+		assert.NoError(t, err)
+		assert.Equal(t, 0, len(resp.AllServicesDetail))
 	})
 }
 

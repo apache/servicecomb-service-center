@@ -269,6 +269,19 @@ func (ds *MetadataManager) filterServices(domainProject string, request *pb.GetS
 	if len(request.ServiceName) > 0 && request.ServiceName != service.ServiceName {
 		return false
 	}
+	if len(request.Properties) > 0 && !matchAllProperties(request.Properties, service) {
+		return false
+	}
+	return true
+}
+
+func matchAllProperties(properties map[string]string, service *pb.MicroService) bool {
+	for k, v := range properties {
+		val, ok := service.Properties[k]
+		if !ok || v != val {
+			return false
+		}
+	}
 	return true
 }
 

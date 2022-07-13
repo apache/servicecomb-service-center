@@ -140,7 +140,7 @@ func TestNewServiceOverview(t *testing.T) {
 		}, nil)
 		assert.NoError(t, err)
 		assert.Empty(t, overview.MicroService.Schemas)
-		assert.Empty(t, overview.MicroService.Properties)
+		assert.NotEmpty(t, overview.MicroService.Properties)
 	})
 
 	t.Run("has instance properties, should be ok", func(t *testing.T) {
