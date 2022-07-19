@@ -17,4 +17,5 @@ User Guides
    user-guides/syncer.md
    user-guides/fast-registration.md
    user-guides/ux.md
+   user-guides/integration-istio.md
    user-guides/limits.md
