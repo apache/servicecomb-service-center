@@ -23,6 +23,8 @@ import (
 	"strings"
 	"testing"
 
+	_ "github.com/apache/servicecomb-service-center/test"
+
 	"github.com/apache/servicecomb-service-center/syncer/config"
 	"github.com/stretchr/testify/assert"
 )

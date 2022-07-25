@@ -21,6 +21,3 @@ import (
 	_ "github.com/apache/servicecomb-service-center/syncer/job/tombstone"
 	_ "github.com/apache/servicecomb-service-center/syncer/resource"
 )
-
-func init() {
-}

@@ -202,7 +202,7 @@ func TestNeedOperate(t *testing.T) {
 			curNotNil: true,
 			event:     e,
 			updateTime: func() (int64, error) {
-				return time.Now().Add(-time.Minute).Unix(), nil
+				return time.Now().Add(-time.Minute).UnixNano(), nil
 			},
 			resourceID: "",
 		}
@@ -211,7 +211,7 @@ func TestNeedOperate(t *testing.T) {
 		assert.Nil(t, r)
 
 		c.updateTime = func() (int64, error) {
-			return time.Now().Add(time.Minute).Unix(), nil
+			return time.Now().Add(time.Minute).UnixNano(), nil
 		}
 
 		r = c.needOperate(ctx)

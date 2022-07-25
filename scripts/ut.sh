@@ -16,32 +16,23 @@
 # limitations under the License.
 
 set -e
-CURRENT_PATH=$(cd $(dirname $0);pwd)
-ROOT_PATH=$(dirname $CURRENT_PATH)
+CURRENT_PATH=$(cd $(dirname "$0");pwd)
+ROOT_PATH=$(dirname "$CURRENT_PATH")
 export GOPROXY=https://goproxy.cn,direct
-
 export COVERAGE_PATH=$(pwd)
-cd $1
+
+skip_dir=${1:-'vendor'}
+cd "$skip_dir"
 
 run_test() {
-  cd $1
-  if [ $(ls | grep _test.go | wc -l) -gt 0 ]; then
-        go test -cover -covermode atomic -coverprofile coverage.out
-        if [ -f coverage.out ]; then
-            sed '1d;$d' coverage.out >> $ROOT_PATH/coverage.txt
-        fi
-    fi
+  cd "$1"
+  go test -cover -covermode atomic -coverprofile coverage.out
+  if [ -f coverage.out ]; then
+      sed '1d;$d' coverage.out >> "$ROOT_PATH"/coverage.txt
+  fi
 }
 
-test_mode=${TEST_MODE}
-
-if [ ${test_mode} == "mongo" ];then
-  for d in $(go list -f '{{.Dir}}' ./... | grep -v vendor| grep -v syncer | grep -v broker | grep -v quota); do
-    run_test $d
-  done
-else
-  for d in $(go list -f '{{.Dir}}' ./... | grep -v vendor| grep -v syncer); do
-    run_test $d
-  done
-fi
+for d in $(go list -test -f '{{.Dir}}' all | grep servicecomb-service-center | grep -v "$skip_dir"); do
+  run_test "$d"
+done
 

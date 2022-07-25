@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package admin
+package admin_test
 
 import (
 	"errors"
@@ -25,6 +25,9 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/apache/servicecomb-service-center/syncer/service/admin"
+	_ "github.com/apache/servicecomb-service-center/test"
 
 	"github.com/apache/servicecomb-service-center/syncer/config"
 	"github.com/stretchr/testify/assert"
@@ -77,13 +80,13 @@ func TestHealth(t *testing.T) {
 	for _, test := range tests {
 		c.Sync = test.sync
 		config.SetConfig(c)
-		resp, err := Health()
+		resp, err := admin.Health()
 		hasErr := checkError(resp, err)
 		assert.Equal(t, hasErr, test.wantErr, fmt.Sprintf("%s. health, wantErr %+v", test.name, test.wantErr))
 	}
 }
 
-func checkError(resp *Resp, err error) bool {
+func checkError(resp *admin.Resp, err error) bool {
 	if err != nil {
 		return true
 	}
@@ -102,7 +105,7 @@ func TestHealthTotalTime(t *testing.T) {
 	changeConfigPath()
 	assert.NoError(t, config.Init())
 	now := time.Now()
-	_, err := Health()
+	_, err := admin.Health()
 	assert.NoError(t, err)
 	healthEndTime := time.Now()
 	if healthEndTime.Sub(now) >= time.Second*30 {

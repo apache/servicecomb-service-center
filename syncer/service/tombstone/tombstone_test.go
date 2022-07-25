@@ -19,9 +19,10 @@ package tombstone_test
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/eventbase/test"
 	"testing"
 	"time"
+
+	_ "github.com/apache/servicecomb-service-center/test"
 
 	"github.com/apache/servicecomb-service-center/eventbase/datasource"
 	"github.com/apache/servicecomb-service-center/eventbase/model"
@@ -30,16 +31,6 @@ import (
 	"github.com/go-chassis/cari/sync"
 	"github.com/stretchr/testify/assert"
 )
-
-func init() {
-	err := datasource.Init(&datasource.Config{
-		Kind:   test.DBKind,
-		Logger: nil,
-	})
-	if err != nil {
-		panic(err)
-	}
-}
 
 const (
 	testDomain       = "expireTombstone"

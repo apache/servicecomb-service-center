@@ -15,16 +15,18 @@
  * limitations under the License.
  */
 
-package event
+package event_test
 
 import (
 	"context"
 	"testing"
 	"time"
 
-	v1sync "github.com/apache/servicecomb-service-center/syncer/api/v1"
-	"github.com/apache/servicecomb-service-center/syncer/service/replicator/resource"
+	_ "github.com/apache/servicecomb-service-center/test"
 
+	v1sync "github.com/apache/servicecomb-service-center/syncer/api/v1"
+	"github.com/apache/servicecomb-service-center/syncer/service/event"
+	"github.com/apache/servicecomb-service-center/syncer/service/replicator/resource"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -44,9 +46,9 @@ func TestWork(t *testing.T) {
 		},
 		err: nil,
 	}
-	Work()
-	em := m.(*eventManager)
-	em.replicator = r
+	event.Work()
+	em := event.GetManager().(*event.EventManager)
+	em.Replicator = r
 
 	var f *forkResources
 	resource.RegisterResources("fork", func(event *v1sync.Event) resource.Resource {
@@ -58,7 +60,7 @@ func TestWork(t *testing.T) {
 		}
 		return f
 	})
-	Send(&Event{
+	event.Send(&event.Event{
 		Event: &v1sync.Event{
 			Id:        "xxx1",
 			Action:    "create",
@@ -69,11 +71,11 @@ func TestWork(t *testing.T) {
 	})
 
 	ctx := context.TODO()
-	Publish(ctx, "create", "fork", map[string]string{
+	event.Publish(ctx, "create", "fork", map[string]string{
 		"hello": "world",
 	})
-	result := make(chan *Result, 1)
-	Send(&Event{
+	result := make(chan *event.Result, 1)
+	event.Send(&event.Event{
 		Event: &v1sync.Event{
 			Id:        "xxx2",
 			Action:    "create",
@@ -137,6 +139,6 @@ func (f forkResources) CanDrop() bool {
 }
 
 func TestNewManager(t *testing.T) {
-	nm := NewManager(ManagerInternal(defaultInternal), Replicator(new(mockReplicator)))
+	nm := event.NewManager(event.ManagerInternal(event.DefaultInternal), event.Replicator(new(mockReplicator)))
 	assert.NotNil(t, nm)
 }
