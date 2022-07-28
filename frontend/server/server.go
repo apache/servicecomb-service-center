@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package server
 
 import (
@@ -43,19 +44,19 @@ func Serve(c Config) {
 
 	scProxy(c, e)
 
-	log.Printf("Error: %s", e.Start(c.FrontendAddr))
+	log.Printf("Error: %s\n", e.Start(c.FrontendAddr))
 }
 
 // setup proxy for requests to service center
 func scProxy(c Config, e *echo.Echo) {
-	scUrl, err := url.Parse(c.SCAddr)
+	scURL, err := url.Parse(c.SCAddr)
 	if err != nil {
 		log.Fatalf("Error parsing service center address:%s, err:%s", c.SCAddr, err)
 	}
 
 	targets := []*middleware.ProxyTarget{
 		{
-			URL: scUrl,
+			URL: scURL,
 		},
 	}
 	g := e.Group("/sc")

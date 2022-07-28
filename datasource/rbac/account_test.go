@@ -23,6 +23,8 @@ import (
 	"testing"
 	"time"
 
+	_ "github.com/apache/servicecomb-service-center/test"
+
 	"github.com/apache/servicecomb-service-center/datasource/rbac"
 	rbacmodel "github.com/go-chassis/cari/rbac"
 	"github.com/stretchr/testify/assert"
@@ -36,6 +38,7 @@ var (
 		Roles:               []string{"admin"},
 		TokenExpirationTime: "2020-12-30",
 		CurrentPassword:     "tnuocca-tset1",
+		CreateTime:          strconv.FormatInt(time.Now().Unix(), 10),
 	}
 	a2 = rbacmodel.Account{
 		ID:                  "11111-22222-33333-44444",
@@ -44,10 +47,13 @@ var (
 		Roles:               []string{"admin"},
 		TokenExpirationTime: "2020-12-30",
 		CurrentPassword:     "tnuocca-tset2",
+		CreateTime:          strconv.FormatInt(time.Now().Unix(), 10),
 	}
 )
 
 func TestAccount(t *testing.T) {
+	a1.UpdateTime = a1.CreateTime
+
 	t.Run("add and get account", func(t *testing.T) {
 		err := rbac.Instance().CreateAccount(context.Background(), &a1)
 		assert.NoError(t, err)

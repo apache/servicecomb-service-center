@@ -94,7 +94,7 @@ func Replicator(r replicator.Replicator) ManagerOption {
 
 func NewManager(os ...ManagerOption) Manager {
 	mo := toManagerOptions(os...)
-	em := &EventManager{
+	em := &ManagerImpl{
 		events:     make(chan *Event, 1000),
 		result:     make(chan *Result, 1000),
 		internal:   mo.internal,
@@ -116,7 +116,7 @@ type Manager interface {
 	HandleResult()
 }
 
-type EventManager struct {
+type ManagerImpl struct {
 	events chan *Event
 
 	internal time.Duration
@@ -128,7 +128,7 @@ type EventManager struct {
 	Replicator replicator.Replicator
 }
 
-func (e *EventManager) Send(et *Event) {
+func (e *ManagerImpl) Send(et *Event) {
 	if et.Result == nil {
 		et.Result = e.result
 		e.cache.Store(et.Id, et)
@@ -141,7 +141,7 @@ func (e *EventManager) Send(et *Event) {
 	e.events <- et
 }
 
-func (e *EventManager) checkThreshold(et *Event) bool {
+func (e *ManagerImpl) checkThreshold(et *Event) bool {
 	metrics.PendingEventSet(int64(len(e.events)))
 	if len(e.events) < cap(e.events) {
 		return false
@@ -157,13 +157,13 @@ func (e *EventManager) checkThreshold(et *Event) bool {
 	return true
 }
 
-func (e *EventManager) HandleResult() {
+func (e *ManagerImpl) HandleResult() {
 	gopool.Go(func(ctx context.Context) {
 		e.resultHandle(ctx)
 	})
 }
 
-func (e *EventManager) resultHandle(ctx context.Context) {
+func (e *ManagerImpl) resultHandle(ctx context.Context) {
 	for {
 		select {
 		case res, ok := <-e.result:
@@ -217,7 +217,7 @@ func (e *EventManager) resultHandle(ctx context.Context) {
 	}
 }
 
-func (e *EventManager) Close() {
+func (e *ManagerImpl) Close() {
 	e.ticker.Stop()
 	close(e.result)
 }
@@ -236,13 +236,13 @@ func (s syncEvents) Swap(i, j int) {
 	s[i], s[j] = s[j], s[i]
 }
 
-func (e *EventManager) HandleEvent() {
+func (e *ManagerImpl) HandleEvent() {
 	gopool.Go(func(ctx context.Context) {
 		e.handleEvent(ctx)
 	})
 }
 
-func (e *EventManager) handleEvent(ctx context.Context) {
+func (e *ManagerImpl) handleEvent(ctx context.Context) {
 	events := make([]*Event, 0, 100)
 	e.ticker = time.NewTicker(e.internal)
 	for {
@@ -273,7 +273,7 @@ func (e *EventManager) handleEvent(ctx context.Context) {
 	}
 }
 
-func (e *EventManager) handle(ctx context.Context, es syncEvents) {
+func (e *ManagerImpl) handle(ctx context.Context, es syncEvents) {
 	sort.Sort(es)
 
 	sendEvents := make([]*v1sync.Event, 0, len(es))

@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package v3
 
 import (
@@ -27,19 +28,19 @@ type MicroServiceService struct {
 	v4.ServiceResource
 }
 
-func (this *MicroServiceService) URLPatterns() []rest.Route {
+func (s *MicroServiceService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{http.MethodGet, "/registry/v3/existence", this.ResourceExist},
-		{http.MethodGet, "/registry/v3/microservices", this.ListService},
-		{http.MethodGet, "/registry/v3/microservices/:serviceId", this.GetService},
-		{http.MethodPost, "/registry/v3/microservices", this.RegisterService},
-		{http.MethodPut, "/registry/v3/microservices/:serviceId/properties", this.PutServiceProperties},
-		{http.MethodDelete, "/registry/v3/microservices/:serviceId", this.UnregisterService},
-		{http.MethodDelete, "/registry/v3/microservices", this.UnregisterManyService},
+		{Method: http.MethodGet, Path: "/registry/v3/existence", Func: s.ResourceExist},
+		{Method: http.MethodGet, Path: "/registry/v3/microservices", Func: s.ListService},
+		{Method: http.MethodGet, Path: "/registry/v3/microservices/:serviceId", Func: s.GetService},
+		{Method: http.MethodPost, Path: "/registry/v3/microservices", Func: s.RegisterService},
+		{Method: http.MethodPut, Path: "/registry/v3/microservices/:serviceId/properties", Func: s.PutServiceProperties},
+		{Method: http.MethodDelete, Path: "/registry/v3/microservices/:serviceId", Func: s.UnregisterService},
+		{Method: http.MethodDelete, Path: "/registry/v3/microservices", Func: s.UnregisterManyService},
 		// tags
-		{http.MethodPost, "/registry/v3/microservices/:serviceId/tags", this.PutManyTags},
-		{http.MethodPut, "/registry/v3/microservices/:serviceId/tags/:key", this.PutTag},
-		{http.MethodGet, "/registry/v3/microservices/:serviceId/tags", this.ListTag},
-		{http.MethodDelete, "/registry/v3/microservices/:serviceId/tags/:key", this.DeleteManyTags},
+		{Method: http.MethodPost, Path: "/registry/v3/microservices/:serviceId/tags", Func: s.PutManyTags},
+		{Method: http.MethodPut, Path: "/registry/v3/microservices/:serviceId/tags/:key", Func: s.PutTag},
+		{Method: http.MethodGet, Path: "/registry/v3/microservices/:serviceId/tags", Func: s.ListTag},
+		{Method: http.MethodDelete, Path: "/registry/v3/microservices/:serviceId/tags/:key", Func: s.DeleteManyTags},
 	}
 }

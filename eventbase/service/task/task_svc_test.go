@@ -135,7 +135,7 @@ func TestTaskService(t *testing.T) {
 			}
 			tasks, err := task.List(context.Background(), &listReq)
 			assert.Nil(t, err)
-			assert.Equal(t, 1, len(tasks))
+			assert.NotEqual(t, 0, len(tasks))
 			err = task.Delete(context.Background(), tasks...)
 			assert.Nil(t, err)
 			dTasks, err := task.List(context.Background(), &listReq)

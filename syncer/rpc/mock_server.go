@@ -15,15 +15,38 @@
  * limitations under the License.
  */
 
-package main
+package rpc
 
 import (
-	"github.com/apache/servicecomb-service-center/frontend/server"
+	"context"
+	"net"
+	"time"
+
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	v1sync "github.com/apache/servicecomb-service-center/syncer/api/v1"
+	"github.com/go-chassis/foundation/gopool"
+	"google.golang.org/grpc"
 )
 
-func main() {
-	cfg := server.DefaultConfig()
+const wait = 100 * time.Millisecond
 
-	// run frontend web server
-	server.Serve(cfg)
+func MockServer(address string, srv v1sync.EventServiceServer) *grpc.Server {
+	server := grpc.NewServer()
+	v1sync.RegisterEventServiceServer(server, srv)
+
+	gopool.Go(func(context.Context) {
+		lis, err := net.Listen("tcp", address)
+		if err != nil {
+			log.Fatal("new tcp connection failed", err)
+		}
+
+		err = server.Serve(lis)
+		if err != nil {
+			log.Fatal("grpc server serve failed", err)
+		}
+	})
+
+	time.Sleep(wait)
+
+	return server
 }

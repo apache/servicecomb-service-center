@@ -19,7 +19,6 @@ package admin
 
 import (
 	"net/http"
-
 	"strings"
 
 	"github.com/apache/servicecomb-service-center/pkg/dump"
@@ -27,11 +26,11 @@ import (
 	adminsvc "github.com/apache/servicecomb-service-center/server/service/admin"
 )
 
-// Service 治理相关接口服务
+// ControllerV4 治理相关接口服务
 type ControllerV4 struct {
 }
 
-// URLPatterns 路由
+// URLPatterns 路由.
 func (ctrl *ControllerV4) URLPatterns() []rest.Route {
 	return []rest.Route{
 		{Method: http.MethodGet, Path: "/v4/:project/admin/alarms", Func: ctrl.AlarmList},

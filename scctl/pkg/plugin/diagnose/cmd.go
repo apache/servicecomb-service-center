@@ -36,7 +36,7 @@ func NewDiagnoseCommand(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "diagnose [options]",
 		Short:   "Output the service center diagnostic report",
-		Run:     DiagnoseCommandFunc,
+		Run:     CommandFunc,
 		Example: parent.CommandPath() + ` diagnose --addr "http://127.0.0.1:30100" --etcd-addr "http://127.0.0.1:2379";`,
 	}
 

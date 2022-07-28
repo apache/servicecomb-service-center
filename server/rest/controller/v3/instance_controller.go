@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package v3
 
 import (
@@ -27,16 +28,16 @@ type MicroServiceInstanceService struct {
 	v4.InstanceResource
 }
 
-func (this *MicroServiceInstanceService) URLPatterns() []rest.Route {
+func (s *MicroServiceInstanceService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{http.MethodGet, "/registry/v3/instances", this.FindInstances},
-		{http.MethodGet, "/registry/v3/microservices/:serviceId/instances", this.ListInstance},
-		{http.MethodGet, "/registry/v3/microservices/:serviceId/instances/:instanceId", this.GetInstance},
-		{http.MethodPost, "/registry/v3/microservices/:serviceId/instances", this.RegisterInstance},
-		{http.MethodDelete, "/registry/v3/microservices/:serviceId/instances/:instanceId", this.UnregisterInstance},
-		{http.MethodPut, "/registry/v3/microservices/:serviceId/instances/:instanceId/properties", this.PutInstanceProperties},
-		{http.MethodPut, "/registry/v3/microservices/:serviceId/instances/:instanceId/status", this.PutInstanceStatus},
-		{http.MethodPut, "/registry/v3/microservices/:serviceId/instances/:instanceId/heartbeat", this.SendHeartbeat},
-		{http.MethodPut, "/registry/v3/heartbeats", this.SendManyHeartbeat},
+		{Method: http.MethodGet, Path: "/registry/v3/instances", Func: s.FindInstances},
+		{Method: http.MethodGet, Path: "/registry/v3/microservices/:serviceId/instances", Func: s.ListInstance},
+		{Method: http.MethodGet, Path: "/registry/v3/microservices/:serviceId/instances/:instanceId", Func: s.GetInstance},
+		{Method: http.MethodPost, Path: "/registry/v3/microservices/:serviceId/instances", Func: s.RegisterInstance},
+		{Method: http.MethodDelete, Path: "/registry/v3/microservices/:serviceId/instances/:instanceId", Func: s.UnregisterInstance},
+		{Method: http.MethodPut, Path: "/registry/v3/microservices/:serviceId/instances/:instanceId/properties", Func: s.PutInstanceProperties},
+		{Method: http.MethodPut, Path: "/registry/v3/microservices/:serviceId/instances/:instanceId/status", Func: s.PutInstanceStatus},
+		{Method: http.MethodPut, Path: "/registry/v3/microservices/:serviceId/instances/:instanceId/heartbeat", Func: s.SendHeartbeat},
+		{Method: http.MethodPut, Path: "/registry/v3/heartbeats", Func: s.SendManyHeartbeat},
 	}
 }

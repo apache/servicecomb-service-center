@@ -47,7 +47,7 @@ func TestWork(t *testing.T) {
 		err: nil,
 	}
 	event.Work()
-	em := event.GetManager().(*event.EventManager)
+	em := event.GetManager().(*event.ManagerImpl)
 	em.Replicator = r
 
 	var f *forkResources

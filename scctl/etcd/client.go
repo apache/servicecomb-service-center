@@ -31,7 +31,7 @@ import (
 func NewEtcdClient(cfg Config) (*clientv3.Client, error) {
 	var (
 		endpoints = strings.Split(cfg.Addrs, ",")
-		cliTls    *tls.Config
+		cliTLS    *tls.Config
 	)
 	for _, ip := range endpoints {
 		if strings.Contains(ip, "https://") {
@@ -44,7 +44,7 @@ func NewEtcdClient(cfg Config) (*clientv3.Client, error) {
 				tlsutil.WithCert(cfg.CertFile),
 				tlsutil.WithKey(cfg.CertKeyFile),
 				tlsutil.WithKeyPass(cfg.CertKeyPWD))
-			cliTls, _ = tlsutil.GetClientTLSConfig(opts...)
+			cliTLS, _ = tlsutil.GetClientTLSConfig(opts...)
 			break
 		}
 	}
@@ -52,7 +52,7 @@ func NewEtcdClient(cfg Config) (*clientv3.Client, error) {
 	client, err := clientv3.New(clientv3.Config{
 		Endpoints:   endpoints,
 		DialTimeout: 10 * time.Second,
-		TLS:         cliTls,
+		TLS:         cliTLS,
 	})
 	if err != nil {
 		return nil, err

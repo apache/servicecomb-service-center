@@ -49,7 +49,7 @@ var typeMap = map[string]string{
 
 type etcdResponse map[string][]*mvccpb.KeyValue
 
-func DiagnoseCommandFunc(_ *cobra.Command, args []string) {
+func CommandFunc(_ *cobra.Command, args []string) {
 	// initialize sc/etcd clients
 	scClient, err := client.NewSCClient(cmd.ScClientConfig)
 	if err != nil {
@@ -74,7 +74,7 @@ func DiagnoseCommandFunc(_ *cobra.Command, args []string) {
 	}
 
 	// diagnose go...
-	err, details := diagnose(cache, etcdResp)
+	details, err := diagnose(cache, etcdResp)
 	if err != nil {
 		fmt.Println(details)                // stdout
 		cmd.StopAndExit(cmd.ExitError, err) // stderr
@@ -100,7 +100,7 @@ func setResponse(ctx context.Context, etcdClient *clientv3.Client, key, prefix s
 	return nil
 }
 
-func diagnose(cache *dump.Cache, etcdResp etcdResponse) (err error, details string) {
+func diagnose(cache *dump.Cache, etcdResp etcdResponse) (details string, err error) {
 	var (
 		service  = ServiceCompareHolder{Cache: cache.Microservices, Kvs: etcdResp[service]}
 		instance = InstanceCompareHolder{Cache: cache.Instances, Kvs: etcdResp[instance]}
@@ -115,9 +115,9 @@ func diagnose(cache *dump.Cache, etcdResp etcdResponse) (err error, details stri
 	)
 	writeResult(&b, &full, sr, ir)
 	if b.Len() > 0 {
-		return fmt.Errorf("error: %s", b.String()), full.String()
+		return full.String(), fmt.Errorf("error: %s", b.String())
 	}
-	return nil, ""
+	return "", nil
 }
 
 func writeResult(b *bytes.Buffer, full *bytes.Buffer, rss ...*CompareResult) {

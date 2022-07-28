@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package v3
 
 import (
@@ -25,7 +26,7 @@ import (
 	"github.com/apache/servicecomb-service-center/version"
 )
 
-var versionJsonCache []byte
+var versionJSONCache []byte
 
 const APIVersion = "3.0.0"
 
@@ -34,7 +35,7 @@ func init() {
 		Set:        version.Ver(),
 		APIVersion: APIVersion,
 	}
-	versionJsonCache, _ = json.Marshal(result)
+	versionJSONCache, _ = json.Marshal(result)
 }
 
 type MainService struct {
@@ -43,11 +44,11 @@ type MainService struct {
 
 func (s *MainService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{http.MethodGet, "/version", s.GetVersion},
-		{http.MethodGet, "/health", s.ClusterHealth},
+		{Method: http.MethodGet, Path: "/version", Func: s.GetVersion},
+		{Method: http.MethodGet, Path: "/health", Func: s.ClusterHealth},
 	}
 }
 
 func (s *MainService) GetVersion(w http.ResponseWriter, r *http.Request) {
-	rest.WriteResponse(w, r, nil, versionJsonCache)
+	rest.WriteResponse(w, r, nil, versionJSONCache)
 }

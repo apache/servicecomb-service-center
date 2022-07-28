@@ -53,10 +53,10 @@ echo "${green}Preparing the env for UT....${reset}"
 
 if [ ${db_name} == "etcd" ];then
   export TEST_MODE=etcd
-  [ $? == 0 ] && ut_for_dir datasource/mongo
+  [ $? == 0 ] && ut_for_dir 'datasource/mongo'
 elif [ ${db_name} == "mongo" ];then
   export TEST_MODE=mongo
-  [ $? == 0 ] && ut_for_dir
+  [ $? == 0 ] && ut_for_dir 'datasource/etcd\|datasource/schema'
 else
   echo "${db_name} non-existent"
 	exit 1

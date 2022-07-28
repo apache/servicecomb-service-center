@@ -22,7 +22,6 @@ export GOPROXY=https://goproxy.cn,direct
 export COVERAGE_PATH=$(pwd)
 
 skip_dir=${1:-'vendor'}
-cd "$skip_dir"
 
 run_test() {
   cd "$1"
@@ -32,7 +31,7 @@ run_test() {
   fi
 }
 
-for d in $(go list -test -f '{{.Dir}}' all | grep servicecomb-service-center | grep -v "$skip_dir"); do
+for d in $(go list -test -f '{{.Dir}}' all | grep servicecomb-service-center | grep -v "eventbase\\|integration\\|test\\|vendor\\|$skip_dir" | sort | uniq); do
   run_test "$d"
 done
 

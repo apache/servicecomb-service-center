@@ -20,6 +20,7 @@ package schema
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -47,8 +48,8 @@ func (m *Mux) SchemaHandleFunc(c echo.Context) (err error) {
 		response   *http.Response
 		req        *http.Request
 		instanceIP = r.Header.Get("X-InstanceIP")
-		requestUrl = strings.Replace(r.RequestURI, "testSchema/", "", 1)
-		url        = "http://" + instanceIP + requestUrl
+		requestURL = strings.Replace(r.RequestURI, "testSchema/", "", 1)
+		url        = "http://" + instanceIP + requestURL
 	)
 
 	switch r.Method {
@@ -61,14 +62,20 @@ func (m *Mux) SchemaHandleFunc(c echo.Context) (err error) {
 	case "DELETE":
 		req, err = http.NewRequest(http.MethodDelete, url, r.Body)
 	default:
-		c.String(http.StatusNotFound, "Method not found")
+		oerr := c.String(http.StatusNotFound, "Method not found")
+		if oerr != nil {
+			log.Printf("Error: %s\n", oerr)
+		}
 		return
 
 	}
 
 	if err != nil {
-		c.String(http.StatusInternalServerError,
+		oerr := c.String(http.StatusInternalServerError,
 			fmt.Sprintf("( Error while creating request due to : %s", err))
+		if oerr != nil {
+			log.Printf("Error: %s\n", oerr)
+		}
 		return
 	}
 
@@ -86,17 +93,26 @@ func (m *Mux) SchemaHandleFunc(c echo.Context) (err error) {
 	client := http.Client{Timeout: time.Second * 20}
 	response, err = client.Do(req)
 	if err != nil {
-		c.String(http.StatusNotFound,
+		oerr := c.String(http.StatusNotFound,
 			fmt.Sprintf("( Error while sending request due to : %s", err))
+		if oerr != nil {
+			log.Printf("Error: %s\n", oerr)
+		}
 		return
 	}
 	respBody, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		c.String(http.StatusNotFound,
+		oerr := c.String(http.StatusNotFound,
 			fmt.Sprintf("(could not fetch response body for error %s", err))
+		if oerr != nil {
+			log.Printf("Error: %s\n", oerr)
+		}
 		return
 	}
 
-	c.String(http.StatusOK, string(respBody))
+	oerr := c.String(http.StatusOK, string(respBody))
+	if oerr != nil {
+		log.Printf("Error: %s\n", oerr)
+	}
 	return nil
 }

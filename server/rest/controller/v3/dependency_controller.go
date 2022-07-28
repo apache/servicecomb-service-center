@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package v3
 
 import (
@@ -27,9 +28,9 @@ type DependencyService struct {
 	v4.DependencyService
 }
 
-func (this *DependencyService) URLPatterns() []rest.Route {
+func (s *DependencyService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{http.MethodGet, "/registry/v3/microservices/:consumerId/providers", this.ListProviders},
-		{http.MethodGet, "/registry/v3/microservices/:providerId/consumers", this.ListConsumers},
+		{Method: http.MethodGet, Path: "/registry/v3/microservices/:consumerId/providers", Func: s.ListProviders},
+		{Method: http.MethodGet, Path: "/registry/v3/microservices/:providerId/consumers", Func: s.ListConsumers},
 	}
 }

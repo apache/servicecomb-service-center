@@ -35,14 +35,14 @@ func NewClusterCommand(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "cluster [options]",
 		Short: "Output the registry clusters managed by service center",
-		Run:   ClusterCommandFunc,
+		Run:   CommandFunc,
 	}
 
 	parent.AddCommand(cmd)
 	return cmd
 }
 
-func ClusterCommandFunc(_ *cobra.Command, args []string) {
+func CommandFunc(_ *cobra.Command, args []string) {
 	scClient, err := client.NewSCClient(cmd.ScClientConfig)
 	if err != nil {
 		cmd.StopAndExit(cmd.ExitError, err)
@@ -51,9 +51,9 @@ func ClusterCommandFunc(_ *cobra.Command, args []string) {
 	if scErr != nil {
 		cmd.StopAndExit(cmd.ExitError, scErr)
 	}
-	records := make(map[string]*ClusterRecord)
+	records := make(map[string]*Record)
 	for name, endpoints := range clusters {
-		records[name] = &ClusterRecord{
+		records[name] = &Record{
 			Name: name, Endpoints: endpoints,
 		}
 	}

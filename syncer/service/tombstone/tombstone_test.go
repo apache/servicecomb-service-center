@@ -59,6 +59,8 @@ func TestDeleteExpireTombStone(t *testing.T) {
 
 	t.Run("list tombstone service", func(t *testing.T) {
 		listReq := model.ListTombstoneRequest{
+			Domain:          testDomain,
+			Project:         testProject,
 			BeforeTimestamp: time.Now().Add(-time.Hour * 24).UnixNano(),
 		}
 		tombstones, err := tombstone.List(context.Background(), &listReq)
@@ -71,7 +73,7 @@ func TestDeleteExpireTombStone(t *testing.T) {
 		err := synctombstone.DeleteExpireTombStone()
 		assert.Nil(t, err)
 
-		listReq := model.ListTombstoneRequest{}
+		listReq := model.ListTombstoneRequest{Domain: testDomain, Project: testProject}
 		tombstones, err := tombstone.List(context.Background(), &listReq)
 		assert.Nil(t, err)
 		assert.Equal(t, 1, len(tombstones))
@@ -82,7 +84,6 @@ func TestDeleteExpireTombStone(t *testing.T) {
 		listReq := model.ListTombstoneRequest{}
 		tombstones, err := tombstone.List(context.Background(), &listReq)
 		assert.Nil(t, err)
-		assert.Equal(t, true, checkTombstoneData(tombstones))
 		err = tombstone.Delete(context.Background(), tombstones...)
 		assert.Nil(t, err)
 	})

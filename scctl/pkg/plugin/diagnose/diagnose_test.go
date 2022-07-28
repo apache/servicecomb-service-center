@@ -59,7 +59,7 @@ func TestNewDiagnoseCommand(t *testing.T) {
 	}
 
 	//for {
-	err, details := diagnose(&dump.Cache{Microservices: services, Instances: instances}, etcdResponse{service: kvs})
+	details, err := diagnose(&dump.Cache{Microservices: services, Instances: instances}, etcdResponse{service: kvs})
 	if err == nil || len(details) == 0 {
 		t.Fatalf("TestNewDiagnoseCommand failed")
 	}
