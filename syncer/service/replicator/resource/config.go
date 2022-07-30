@@ -21,39 +21,20 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"path/filepath"
-	"strings"
 
 	kiemodel "github.com/apache/servicecomb-kie/pkg/model"
-	kiecfg "github.com/apache/servicecomb-kie/server/config"
 	kiedb "github.com/apache/servicecomb-kie/server/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/config"
-	"github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf"
 	v1sync "github.com/apache/servicecomb-service-center/syncer/api/v1"
-	"github.com/little-cui/etcdadpt"
 )
 
 const Config = "config"
 
 func NewConfig(e *v1sync.Event) Resource {
 	kind := config.GetString("registry.kind", "etcd", config.WithStandby("registry_plugin"))
-	uri := config.GetString("registry.etcd.cluster.endpoints", "http://127.0.0.1:2379", config.WithStandby("manager_cluster"))
-	isHTTPS := strings.Contains(strings.ToLower(uri), "https://")
-	tlsOpts := tlsconf.GetOptions()
-	kiecfg.Configurations.DB.Kind = kind
-	err := kiedb.Init(kiecfg.DB{
-		Kind:        kind,
-		URI:         uri,
-		SSLEnabled:  config.GetSSL().SslEnabled && isHTTPS,
-		Timeout:     config.GetDuration("registry.etcd.request.timeout", etcdadpt.DefaultRequestTimeout, config.WithStandby("registry_timeout")).String(),
-		RootCA:      filepath.Join(tlsOpts.Dir, "trust.cer"),
-		CertFile:    filepath.Join(tlsOpts.Dir, "server.cer"),
-		KeyFile:     filepath.Join(tlsOpts.Dir, "server_key.pem"),
-		CertPwdFile: filepath.Join(tlsOpts.Dir, "cert_pwd"),
-		VerifyPeer:  tlsOpts.VerifyPeer,
-	})
+	err := kiedb.Init(kind)
 	if err != nil {
 		log.Fatal(fmt.Sprintf("kie datasource[%s] init failed", kind), err)
 	}
