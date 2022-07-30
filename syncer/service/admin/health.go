@@ -62,6 +62,10 @@ type Peer struct {
 }
 
 func init() {
+	Init()
+}
+
+func Init() {
 	cfg := config.GetConfig()
 	if cfg.Sync == nil {
 		log.Warn("sync config is empty")

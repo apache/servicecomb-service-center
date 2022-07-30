@@ -26,21 +26,21 @@ var (
 	clusterTableHeader = []string{"CLUSTER", "ENDPOINTS"}
 )
 
-type ClusterRecord struct {
+type Record struct {
 	Name      string
 	Endpoints []string
 }
 
-func (s *ClusterRecord) EndpointsString() string {
+func (s *Record) EndpointsString() string {
 	return util.StringJoin(s.Endpoints, "\n")
 }
 
-func (s *ClusterRecord) PrintBody(fmt string) []string {
+func (s *Record) PrintBody(fmt string) []string {
 	return []string{s.Name, s.EndpointsString()}
 }
 
 type ClustersPrinter struct {
-	Records map[string]*ClusterRecord
+	Records map[string]*Record
 	flags   []interface{}
 }
 

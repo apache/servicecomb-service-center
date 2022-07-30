@@ -204,6 +204,6 @@ func Test_kv_getUpdateTime(t *testing.T) {
 	}
 	got, err = k.getUpdateTime()
 	if assert.Nil(t, err) {
-		assert.Equal(t, 0, got)
+		assert.Equal(t, 0, int(got))
 	}
 }

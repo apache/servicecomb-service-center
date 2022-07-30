@@ -35,7 +35,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/service/gov"
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
 	"github.com/go-chassis/foundation/gopool"
-	"github.com/little-cui/etcdadpt"
 )
 
 var server ServiceCenterServer
@@ -100,26 +99,24 @@ func (s *ServiceCenterServer) initDatasource() {
 		log.Fatal("get datasource tlsConfig failed", err)
 	}
 	if err := datasource.Init(datasource.Options{
-		Config: etcdadpt.Config{
-			Kind:       kind,
-			Logger:     log.Logger,
-			SslEnabled: config.GetSSL().SslEnabled,
-			TLSConfig:  tlsConfig,
-			ConnectedFunc: func() {
-				err := alarm.Clear(alarm.IDBackendConnectionRefuse)
-				if err != nil {
-					log.Error("", err)
-				}
-			},
-			ErrorFunc: func(err error) {
-				if err == nil {
-					return
-				}
-				err = alarm.Raise(alarm.IDBackendConnectionRefuse, alarm.AdditionalContext("%v", err))
-				if err != nil {
-					log.Error("", err)
-				}
-			},
+		Kind:       kind,
+		Logger:     log.Logger,
+		SslEnabled: config.GetSSL().SslEnabled,
+		TLSConfig:  tlsConfig,
+		ConnectedFunc: func() {
+			err := alarm.Clear(alarm.IDBackendConnectionRefuse)
+			if err != nil {
+				log.Error("", err)
+			}
+		},
+		ErrorFunc: func(err error) {
+			if err == nil {
+				return
+			}
+			err = alarm.Raise(alarm.IDBackendConnectionRefuse, alarm.AdditionalContext("%v", err))
+			if err != nil {
+				log.Error("", err)
+			}
 		},
 		EnableCache:        config.GetRegistry().EnableCache,
 		InstanceTTL:        config.GetRegistry().InstanceTTL,

@@ -41,7 +41,7 @@ import (
 )
 
 var (
-	AppId       string
+	AppID       string
 	ServiceName string
 	Version     string
 	SaveDir     string
@@ -55,12 +55,12 @@ func NewSchemaCommand(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "schema [options]",
 		Short: "Output the microservice schema information of the service center ",
-		Run:   SchemaCommandFunc,
+		Run:   CommandFunc,
 	}
 
 	cmd.Flags().StringVarP(&SaveDir, "save-dir", "s", "",
 		"the directory to save the schemas data")
-	cmd.Flags().StringVar(&AppId, "app", "", "the application name of microservice")
+	cmd.Flags().StringVar(&AppID, "app", "", "the application name of microservice")
 	cmd.Flags().StringVar(&ServiceName, "name", "", "the name of microservice")
 	cmd.Flags().StringVar(&Version, "version", "", "the semantic version of microservice")
 
@@ -83,7 +83,7 @@ func saveDirectory(root string, ms *dump.Microservice) string {
 	return filepath.Join(root, "schemas", domain, project, ms.Value.Environment, ms.Value.AppId, ms.Value.ServiceName+".v"+ms.Value.Version)
 }
 
-func SchemaCommandFunc(_ *cobra.Command, args []string) {
+func CommandFunc(_ *cobra.Command, args []string) {
 	scClient, err := client.NewSCClient(cmd.ScClientConfig)
 	if err != nil {
 		cmd.StopAndExit(cmd.ExitError, err)
@@ -107,7 +107,7 @@ func SchemaCommandFunc(_ *cobra.Command, args []string) {
 		if !get.AllDomains && strings.Index(domainProject+path.SPLIT, get.Domain+path.SPLIT) != 0 {
 			continue
 		}
-		if len(AppId) > 0 && ms.Value.AppId != AppId {
+		if len(AppID) > 0 && ms.Value.AppId != AppID {
 			continue
 		}
 		if len(ServiceName) > 0 && ms.Value.ServiceName != ServiceName {

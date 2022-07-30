@@ -40,13 +40,13 @@ func NewGetCommand(parent *cobra.Command) *cobra.Command {
 		Use:     "version",
 		Aliases: []string{"ver"},
 		Short:   "Output the version of tool and service center",
-		Run:     VersionCommandFunc,
+		Run:     CommandFunc,
 	}
 	parent.AddCommand(cmd)
 	return cmd
 }
 
-func VersionCommandFunc(_ *cobra.Command, _ []string) {
+func CommandFunc(_ *cobra.Command, _ []string) {
 	defer cmd.StopAndExit(cmd.ExitSuccess)
 	fmt.Print(version.TOOL_NAME, " ")
 	version.Ver().Print()

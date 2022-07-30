@@ -33,10 +33,10 @@ type Config struct {
 }
 
 func DefaultConfig() Config {
-	frontendIp := beego.AppConfig.DefaultString("frontend_host_ip", "127.0.0.1")
+	frontendIP := beego.AppConfig.DefaultString("frontend_host_ip", "127.0.0.1")
 	frontendPort := beego.AppConfig.DefaultInt("frontend_host_port", 30103)
 
-	scIp := beego.AppConfig.DefaultString("httpaddr", "127.0.0.1")
+	scIP := beego.AppConfig.DefaultString("httpaddr", "127.0.0.1")
 	scPort := beego.AppConfig.DefaultInt("httpport", 30100)
 
 	// command line flags
@@ -44,7 +44,7 @@ func DefaultConfig() Config {
 	flag.Parse()
 
 	cfg := Config{}
-	cfg.SCAddr = fmt.Sprintf("http://%s/", net.JoinHostPort(url.PathEscape(scIp), strconv.Itoa(scPort)))
-	cfg.FrontendAddr = net.JoinHostPort(frontendIp, strconv.Itoa(*port))
+	cfg.SCAddr = fmt.Sprintf("http://%s/", net.JoinHostPort(url.PathEscape(scIP), strconv.Itoa(scPort)))
+	cfg.FrontendAddr = net.JoinHostPort(frontendIP, strconv.Itoa(*port))
 	return cfg
 }

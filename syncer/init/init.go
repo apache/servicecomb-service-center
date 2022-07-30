@@ -25,6 +25,9 @@ import (
 	//grpc plugin
 	_ "github.com/go-chassis/go-chassis-extension/protocol/grpc/server"
 
+	// kie db
+	_ "github.com/apache/servicecomb-kie/server/datasource/etcd"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	syncv1 "github.com/apache/servicecomb-service-center/syncer/api/v1"
 	"github.com/apache/servicecomb-service-center/syncer/config"

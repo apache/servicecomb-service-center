@@ -33,22 +33,22 @@ var (
 	shortInstanceTableHeader  = []string{"HOST", "ENDPOINTS", "VERSION", "SERVICE", "APPID", "LEASE", "AGE"}
 )
 
-type InstanceRecord struct {
+type Record struct {
 	model.Instance
 }
 
-func (s *InstanceRecord) FrameworksString() string {
+func (s *Record) FrameworksString() string {
 	if s.Framework == nil || len(s.Framework.Name) == 0 {
 		return ""
 	}
 	return s.Framework.Name
 }
 
-func (s *InstanceRecord) EndpointsString() string {
+func (s *Record) EndpointsString() string {
 	return util.StringJoin(s.Endpoints, "\n")
 }
 
-func (s *InstanceRecord) LeaseString() string {
+func (s *Record) LeaseString() string {
 	if s.Lease < 0 {
 		return ""
 	}
@@ -58,53 +58,53 @@ func (s *InstanceRecord) LeaseString() string {
 	return writer.TimeFormat(time.Duration(s.Lease) * time.Second)
 }
 
-func (s *InstanceRecord) AgeString() string {
+func (s *Record) AgeString() string {
 	return writer.TimeFormat(s.Age())
 }
 
-func (s *InstanceRecord) Domain() string {
+func (s *Record) Domain() string {
 	domain, _ := util.FromDomainProject(s.DomainProject)
 	return domain
 }
 
-func (s *InstanceRecord) PrintBody(fmt string, all bool) []string {
+func (s *Record) PrintBody(fmt string, all bool) []string {
 	switch {
 	case fmt == "wide":
-		return []string{s.Domain(), s.Host, s.EndpointsString(), s.Version, s.ServiceName, s.AppId, s.Environment,
+		return []string{s.Domain(), s.Host, s.EndpointsString(), s.Version, s.ServiceName, s.AppID, s.Environment,
 			s.FrameworksString(), s.LeaseString(), s.AgeString()}
 	case all:
 		return []string{s.Domain(), s.Host, s.EndpointsString(), s.Version, s.ServiceName,
-			s.AppId, s.LeaseString(), s.AgeString()}
+			s.AppID, s.LeaseString(), s.AgeString()}
 	default:
 		return []string{s.Host, s.EndpointsString(), s.Version, s.ServiceName,
-			s.AppId, s.LeaseString(), s.AgeString()}
+			s.AppID, s.LeaseString(), s.AgeString()}
 	}
 }
 
-type InstancePrinter struct {
-	Records map[string]*InstanceRecord
+type Printer struct {
+	Records map[string]*Record
 	flags   []interface{}
 }
 
-func (sp *InstancePrinter) SetOutputFormat(f string, all bool) {
+func (sp *Printer) SetOutputFormat(f string, all bool) {
 	sp.Flags(f, all)
 }
 
-func (sp *InstancePrinter) Flags(flags ...interface{}) []interface{} {
+func (sp *Printer) Flags(flags ...interface{}) []interface{} {
 	if len(flags) > 0 {
 		sp.flags = flags
 	}
 	return sp.flags
 }
 
-func (sp *InstancePrinter) PrintBody() (slice [][]string) {
+func (sp *Printer) PrintBody() (slice [][]string) {
 	for _, s := range sp.Records {
 		slice = append(slice, s.PrintBody(sp.flags[0].(string), sp.flags[1].(bool)))
 	}
 	return
 }
 
-func (sp *InstancePrinter) PrintTitle() []string {
+func (sp *Printer) PrintTitle() []string {
 	switch {
 	case sp.flags[0] == "wide":
 		return longInstanceTableHeader
@@ -115,6 +115,6 @@ func (sp *InstancePrinter) PrintTitle() []string {
 	}
 }
 
-func (sp *InstancePrinter) Sorter() *writer.RecordsSorter {
+func (sp *Printer) Sorter() *writer.RecordsSorter {
 	return nil
 }

@@ -8,6 +8,7 @@ replace (
 
 require (
 	github.com/NYTimes/gziphandler v1.1.1
+	github.com/apache/servicecomb-kie v0.2.1-0.20220725091517-2ff76fd2d869
 	github.com/apache/servicecomb-service-center/eventbase v0.0.0-20220624011743-417c1e9a3e18
 	github.com/beego/beego/v2 v2.0.2
 	github.com/cheggaaa/pb v1.0.25

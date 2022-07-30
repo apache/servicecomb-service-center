@@ -365,7 +365,7 @@ func TestSyncAll(t *testing.T) {
 			}
 			tasks, err := task.List(ctx, &listAccountTaskReq)
 			assert.NoError(t, err)
-			assert.Equal(t, 1, len(tasks))
+			assert.NotEqual(t, 0, len(tasks))
 			for _, v := range tasks {
 				assert.Equal(t, sync.Default, v.Domain)
 				assert.Equal(t, sync.Default, v.Project)
@@ -379,7 +379,7 @@ func TestSyncAll(t *testing.T) {
 			}
 			tombstones, err := tombstone.List(ctx, &tombstoneListReq)
 			assert.NoError(t, err)
-			assert.Equal(t, 1, len(tombstones))
+			assert.NotEqual(t, 0, len(tombstones))
 			for _, v := range tasks {
 				assert.Equal(t, sync.Default, v.Domain)
 				assert.Equal(t, sync.Default, v.Project)

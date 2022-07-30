@@ -87,16 +87,6 @@ func (ds *DataSource) SyncManager() datasource.SyncManager {
 func NewDataSource(opts datasource.Options) (datasource.DataSource, error) {
 	log.Warn("data source enable etcd mode")
 
-	etcdCfg := Configuration()
-	etcdCfg.Kind = opts.Kind
-	etcdCfg.Logger = opts.Logger
-	etcdCfg.SslEnabled = opts.SslEnabled
-	etcdCfg.TLSConfig = opts.TLSConfig
-	etcdCfg.ConnectedFunc = opts.ConnectedFunc
-	etcdCfg.ErrorFunc = opts.ErrorFunc
-	opts.Config = etcdCfg
-	opts.Config.Init()
-	opts.SslEnabled = opts.SslEnabled && strings.Contains(strings.ToLower(opts.ClusterAddresses), "https://")
 	inst := &DataSource{
 		Options: &opts,
 	}
@@ -140,8 +130,16 @@ func (ds *DataSource) initClustersIndex() {
 
 func (ds *DataSource) initPlugins() {
 	// registry
+	etcdCfg := Configuration()
+	etcdCfg.Kind = ds.Options.Kind
+	etcdCfg.Logger = ds.Options.Logger
+	isHTTPS := strings.Contains(strings.ToLower(etcdCfg.ClusterAddresses), "https://")
+	etcdCfg.SslEnabled = ds.Options.SslEnabled && isHTTPS
+	etcdCfg.TLSConfig = ds.Options.TLSConfig
+	etcdCfg.ConnectedFunc = ds.Options.ConnectedFunc
+	etcdCfg.ErrorFunc = ds.Options.ErrorFunc
 	tracing.Register(tracer.New())
-	err := etcdadpt.Init(ds.Options.Config)
+	err := etcdadpt.Init(etcdCfg)
 	if err != nil {
 		log.Fatal("client init failed", err)
 	}
@@ -152,7 +150,7 @@ func (ds *DataSource) initPlugins() {
 	kind := config.GetString("discovery.kind", "etcd", config.WithStandby("discovery_plugin"))
 	err = state.Init(state.Config{
 		Kind:        kind,
-		ClusterName: ds.Options.ClusterName,
+		ClusterName: etcdCfg.ClusterName,
 		Logger:      ds.Options.Logger,
 		EnableCache: ds.Options.EnableCache,
 	})

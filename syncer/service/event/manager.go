@@ -34,7 +34,7 @@ import (
 )
 
 const (
-	defaultInternal = 500 * time.Millisecond
+	DefaultInternal = 500 * time.Millisecond
 )
 
 var m Manager
@@ -77,7 +77,7 @@ func ManagerInternal(i time.Duration) ManagerOption {
 
 func toManagerOptions(os ...ManagerOption) *managerOptions {
 	mo := new(managerOptions)
-	mo.internal = defaultInternal
+	mo.internal = DefaultInternal
 	mo.replicator = replicator.Manager()
 	for _, o := range os {
 		o(mo)
@@ -94,11 +94,11 @@ func Replicator(r replicator.Replicator) ManagerOption {
 
 func NewManager(os ...ManagerOption) Manager {
 	mo := toManagerOptions(os...)
-	em := &eventManager{
+	em := &ManagerImpl{
 		events:     make(chan *Event, 1000),
 		result:     make(chan *Result, 1000),
 		internal:   mo.internal,
-		replicator: mo.replicator,
+		Replicator: mo.replicator,
 	}
 	return em
 }
@@ -116,7 +116,7 @@ type Manager interface {
 	HandleResult()
 }
 
-type eventManager struct {
+type ManagerImpl struct {
 	events chan *Event
 
 	internal time.Duration
@@ -125,10 +125,10 @@ type eventManager struct {
 	cache  sync.Map
 	result chan *Result
 
-	replicator replicator.Replicator
+	Replicator replicator.Replicator
 }
 
-func (e *eventManager) Send(et *Event) {
+func (e *ManagerImpl) Send(et *Event) {
 	if et.Result == nil {
 		et.Result = e.result
 		e.cache.Store(et.Id, et)
@@ -141,7 +141,7 @@ func (e *eventManager) Send(et *Event) {
 	e.events <- et
 }
 
-func (e *eventManager) checkThreshold(et *Event) bool {
+func (e *ManagerImpl) checkThreshold(et *Event) bool {
 	metrics.PendingEventSet(int64(len(e.events)))
 	if len(e.events) < cap(e.events) {
 		return false
@@ -157,13 +157,13 @@ func (e *eventManager) checkThreshold(et *Event) bool {
 	return true
 }
 
-func (e *eventManager) HandleResult() {
+func (e *ManagerImpl) HandleResult() {
 	gopool.Go(func(ctx context.Context) {
 		e.resultHandle(ctx)
 	})
 }
 
-func (e *eventManager) resultHandle(ctx context.Context) {
+func (e *ManagerImpl) resultHandle(ctx context.Context) {
 	for {
 		select {
 		case res, ok := <-e.result:
@@ -217,7 +217,7 @@ func (e *eventManager) resultHandle(ctx context.Context) {
 	}
 }
 
-func (e *eventManager) Close() {
+func (e *ManagerImpl) Close() {
 	e.ticker.Stop()
 	close(e.result)
 }
@@ -236,13 +236,13 @@ func (s syncEvents) Swap(i, j int) {
 	s[i], s[j] = s[j], s[i]
 }
 
-func (e *eventManager) HandleEvent() {
+func (e *ManagerImpl) HandleEvent() {
 	gopool.Go(func(ctx context.Context) {
 		e.handleEvent(ctx)
 	})
 }
 
-func (e *eventManager) handleEvent(ctx context.Context) {
+func (e *ManagerImpl) handleEvent(ctx context.Context) {
 	events := make([]*Event, 0, 100)
 	e.ticker = time.NewTicker(e.internal)
 	for {
@@ -273,7 +273,7 @@ func (e *eventManager) handleEvent(ctx context.Context) {
 	}
 }
 
-func (e *eventManager) handle(ctx context.Context, es syncEvents) {
+func (e *ManagerImpl) handle(ctx context.Context, es syncEvents) {
 	sort.Sort(es)
 
 	sendEvents := make([]*v1sync.Event, 0, len(es))
@@ -281,7 +281,7 @@ func (e *eventManager) handle(ctx context.Context, es syncEvents) {
 		sendEvents = append(sendEvents, event.Event)
 	}
 
-	result, err := e.replicator.Replicate(ctx, &v1sync.EventList{
+	result, err := e.Replicator.Replicate(ctx, &v1sync.EventList{
 		Events: sendEvents,
 	})
 

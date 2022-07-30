@@ -14,12 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package version
 
 import (
 	"github.com/apache/servicecomb-service-center/version"
 )
 
+//nolint
 var (
 	// no need to modify
 	// please use:

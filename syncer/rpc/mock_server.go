@@ -15,29 +15,38 @@
  * limitations under the License.
  */
 
-package config_test
+package rpc
 
 import (
-	"os"
-	"path/filepath"
-	"strings"
-	"testing"
+	"context"
+	"net"
+	"time"
 
-	_ "github.com/apache/servicecomb-service-center/test"
-
-	"github.com/apache/servicecomb-service-center/syncer/config"
-	"github.com/stretchr/testify/assert"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	v1sync "github.com/apache/servicecomb-service-center/syncer/api/v1"
+	"github.com/go-chassis/foundation/gopool"
+	"google.golang.org/grpc"
 )
 
-func TestGetConfig(t *testing.T) {
-	changeConfigPath()
-	assert.NoError(t, config.Init())
-	assert.NotNil(t, config.GetConfig().Sync)
-}
+const wait = 100 * time.Millisecond
 
-func changeConfigPath() {
-	workDir, _ := os.Getwd()
-	replacePath := filepath.Join("syncer", "config")
-	workDir = strings.ReplaceAll(workDir, replacePath, "etc")
-	os.Setenv("APP_ROOT", workDir)
+func MockServer(address string, srv v1sync.EventServiceServer) *grpc.Server {
+	server := grpc.NewServer()
+	v1sync.RegisterEventServiceServer(server, srv)
+
+	gopool.Go(func(context.Context) {
+		lis, err := net.Listen("tcp", address)
+		if err != nil {
+			log.Fatal("new tcp connection failed", err)
+		}
+
+		err = server.Serve(lis)
+		if err != nil {
+			log.Fatal("grpc server serve failed", err)
+		}
+	})
+
+	time.Sleep(wait)
+
+	return server
 }

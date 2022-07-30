@@ -40,14 +40,14 @@ func NewHealthCommand(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "health [options]",
 		Short: "Output the health check result of service center",
-		Run:   HealthCommandFunc,
+		Run:   CommandFunc,
 	}
 
 	parent.AddCommand(cmd)
 	return cmd
 }
 
-func HealthCommandFunc(_ *cobra.Command, args []string) {
+func CommandFunc(_ *cobra.Command, args []string) {
 	scClient, err := client.NewSCClient(cmd.ScClientConfig)
 	if err != nil {
 		cmd.StopAndExit(ExistInternal, err)

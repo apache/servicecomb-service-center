@@ -28,23 +28,23 @@ type Config struct {
 	SaveDir string
 }
 
-type SchemaWriter interface {
+type Writer interface {
 	Write([]*pb.Schema) error
 }
 
-func NewSchemaWriter(cfg Config) SchemaWriter {
+func NewSchemaWriter(cfg Config) Writer {
 	switch {
 	case len(cfg.SaveDir) == 0:
-		return &SchemaStdoutWriter{}
+		return &StdoutWriter{}
 	default:
-		return &SchemaFileWriter{cfg.SaveDir}
+		return &FileWriter{cfg.SaveDir}
 	}
 }
 
-type SchemaStdoutWriter struct {
+type StdoutWriter struct {
 }
 
-func (w *SchemaStdoutWriter) Write(schemas []*pb.Schema) error {
+func (w *StdoutWriter) Write(schemas []*pb.Schema) error {
 	for _, schema := range schemas {
 		_, err := os.Stdout.WriteString(schema.Schema)
 		if err != nil {
@@ -54,11 +54,11 @@ func (w *SchemaStdoutWriter) Write(schemas []*pb.Schema) error {
 	return nil
 }
 
-type SchemaFileWriter struct {
+type FileWriter struct {
 	Dir string
 }
 
-func (w *SchemaFileWriter) Write(schemas []*pb.Schema) error {
+func (w *FileWriter) Write(schemas []*pb.Schema) error {
 	err := os.MkdirAll(w.Dir, 0750)
 	if err != nil {
 		return err

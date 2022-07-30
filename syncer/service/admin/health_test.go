@@ -15,22 +15,43 @@
  * limitations under the License.
  */
 
-package admin
+package admin_test
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
+	_ "github.com/apache/servicecomb-service-center/test"
+
+	v1sync "github.com/apache/servicecomb-service-center/syncer/api/v1"
 	"github.com/apache/servicecomb-service-center/syncer/config"
+	syncrpc "github.com/apache/servicecomb-service-center/syncer/rpc"
+	"github.com/apache/servicecomb-service-center/syncer/service/admin"
 	"github.com/stretchr/testify/assert"
 )
 
+type mockServer struct {
+	v1sync.UnimplementedEventServiceServer
+}
+
+func (s *mockServer) Health(ctx context.Context, request *v1sync.HealthRequest) (*v1sync.HealthReply, error) {
+	return &v1sync.HealthReply{Status: syncrpc.HealthStatusConnected}, nil
+}
+
 func TestHealth(t *testing.T) {
+	port := 30101 + rand.Intn(1000)
+	addr := fmt.Sprintf("127.0.0.1:%d", port)
+
+	server := syncrpc.MockServer(addr, &mockServer{})
+	defer server.Stop()
+
 	c := config.GetConfig()
 	tests := []struct {
 		name    string
@@ -41,14 +62,22 @@ func TestHealth(t *testing.T) {
 			sync:    nil,
 			wantErr: true,
 		},
-		{name: "check no dataCenter",
+		{name: "check disable is true",
 			sync: &config.Sync{
 				Peers: []*config.Peer{},
 			},
 			wantErr: true,
 		},
+		{name: "check no dataCenter",
+			sync: &config.Sync{
+				EnableOnStart: true,
+				Peers:         []*config.Peer{},
+			},
+			wantErr: true,
+		},
 		{name: "check no endpoints",
 			sync: &config.Sync{
+				EnableOnStart: true,
 				Peers: []*config.Peer{
 					{Endpoints: nil},
 				},
@@ -57,6 +86,7 @@ func TestHealth(t *testing.T) {
 		},
 		{name: "check endpoints is empty",
 			sync: &config.Sync{
+				EnableOnStart: true,
 				Peers: []*config.Peer{
 					{Endpoints: []string{}},
 				},
@@ -66,8 +96,9 @@ func TestHealth(t *testing.T) {
 
 		{name: "given normal config",
 			sync: &config.Sync{
+				EnableOnStart: true,
 				Peers: []*config.Peer{
-					{Endpoints: []string{"127.0.0.1:30105"}},
+					{Endpoints: []string{addr}},
 				},
 			},
 			wantErr: false,
@@ -77,13 +108,14 @@ func TestHealth(t *testing.T) {
 	for _, test := range tests {
 		c.Sync = test.sync
 		config.SetConfig(c)
-		resp, err := Health()
+		admin.Init()
+		resp, err := admin.Health()
 		hasErr := checkError(resp, err)
 		assert.Equal(t, hasErr, test.wantErr, fmt.Sprintf("%s. health, wantErr %+v", test.name, test.wantErr))
 	}
 }
 
-func checkError(resp *Resp, err error) bool {
+func checkError(resp *admin.Resp, err error) bool {
 	if err != nil {
 		return true
 	}
@@ -102,7 +134,7 @@ func TestHealthTotalTime(t *testing.T) {
 	changeConfigPath()
 	assert.NoError(t, config.Init())
 	now := time.Now()
-	_, err := Health()
+	_, err := admin.Health()
 	assert.NoError(t, err)
 	healthEndTime := time.Now()
 	if healthEndTime.Sub(now) >= time.Second*30 {

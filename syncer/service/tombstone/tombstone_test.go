@@ -19,9 +19,10 @@ package tombstone_test
 
 import (
 	"context"
-	"github.com/apache/servicecomb-service-center/eventbase/test"
 	"testing"
 	"time"
+
+	_ "github.com/apache/servicecomb-service-center/test"
 
 	"github.com/apache/servicecomb-service-center/eventbase/datasource"
 	"github.com/apache/servicecomb-service-center/eventbase/model"
@@ -30,16 +31,6 @@ import (
 	"github.com/go-chassis/cari/sync"
 	"github.com/stretchr/testify/assert"
 )
-
-func init() {
-	err := datasource.Init(&datasource.Config{
-		Kind:   test.DBKind,
-		Logger: nil,
-	})
-	if err != nil {
-		panic(err)
-	}
-}
 
 const (
 	testDomain       = "expireTombstone"
@@ -68,6 +59,8 @@ func TestDeleteExpireTombStone(t *testing.T) {
 
 	t.Run("list tombstone service", func(t *testing.T) {
 		listReq := model.ListTombstoneRequest{
+			Domain:          testDomain,
+			Project:         testProject,
 			BeforeTimestamp: time.Now().Add(-time.Hour * 24).UnixNano(),
 		}
 		tombstones, err := tombstone.List(context.Background(), &listReq)
@@ -80,7 +73,7 @@ func TestDeleteExpireTombStone(t *testing.T) {
 		err := synctombstone.DeleteExpireTombStone()
 		assert.Nil(t, err)
 
-		listReq := model.ListTombstoneRequest{}
+		listReq := model.ListTombstoneRequest{Domain: testDomain, Project: testProject}
 		tombstones, err := tombstone.List(context.Background(), &listReq)
 		assert.Nil(t, err)
 		assert.Equal(t, 1, len(tombstones))
@@ -91,7 +84,6 @@ func TestDeleteExpireTombStone(t *testing.T) {
 		listReq := model.ListTombstoneRequest{}
 		tombstones, err := tombstone.List(context.Background(), &listReq)
 		assert.Nil(t, err)
-		assert.Equal(t, true, checkTombstoneData(tombstones))
 		err = tombstone.Delete(context.Background(), tombstones...)
 		assert.Nil(t, err)
 	})

@@ -25,6 +25,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/apache/servicecomb-service-center/syncer/service/event"
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/cari/pkg/errsvc"
 	"github.com/go-chassis/cari/sync"
@@ -44,7 +45,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
 	quotasvc "github.com/apache/servicecomb-service-center/server/service/quota"
-	"github.com/apache/servicecomb-service-center/syncer/service/event"
 )
 
 type MetadataManager struct {

@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package v3
 
 import (
@@ -27,8 +28,8 @@ type WatchService struct {
 	v4.WatchService
 }
 
-func (this *WatchService) URLPatterns() []rest.Route {
+func (s *WatchService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{http.MethodGet, "/registry/v3/microservices/:serviceId/watcher", this.Watch},
+		{Method: http.MethodGet, Path: "/registry/v3/microservices/:serviceId/watcher", Func: s.Watch},
 	}
 }

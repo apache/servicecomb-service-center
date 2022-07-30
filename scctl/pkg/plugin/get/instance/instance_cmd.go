@@ -40,13 +40,13 @@ func NewInstanceCommand(parent *cobra.Command) *cobra.Command {
 		Use:     "instance [options]",
 		Aliases: []string{"inst"},
 		Short:   "Output the instance information of the service center ",
-		Run:     InstanceCommandFunc,
+		Run:     CommandFunc,
 	}
 	parent.AddCommand(cmd)
 	return cmd
 }
 
-func InstanceCommandFunc(_ *cobra.Command, args []string) {
+func CommandFunc(_ *cobra.Command, args []string) {
 	scClient, err := client.NewSCClient(cmd.ScClientConfig)
 	if err != nil {
 		cmd.StopAndExit(cmd.ExitError, err)
@@ -61,7 +61,7 @@ func InstanceCommandFunc(_ *cobra.Command, args []string) {
 		svcMap[ms.Value.ServiceId] = ms
 	}
 
-	records := make(map[string]*InstanceRecord)
+	records := make(map[string]*Record)
 	for _, inst := range cache.Instances {
 		domainProject := model.GetDomainProject(inst)
 		if !get.AllDomains && strings.Index(domainProject+path.SPLIT, get.Domain+path.SPLIT) != 0 {
@@ -75,13 +75,13 @@ func InstanceCommandFunc(_ *cobra.Command, args []string) {
 
 		instance, ok := records[inst.Value.InstanceId]
 		if !ok {
-			instance = &InstanceRecord{
+			instance = &Record{
 				Instance: model.Instance{
 					DomainProject: domainProject,
 					Host:          inst.Value.HostName,
 					Endpoints:     inst.Value.Endpoints,
 					Environment:   svc.Value.Environment,
-					AppId:         svc.Value.AppId,
+					AppID:         svc.Value.AppId,
 					ServiceName:   svc.Value.ServiceName,
 					Version:       svc.Value.Version,
 					Framework:     svc.Value.Framework,
@@ -93,7 +93,7 @@ func InstanceCommandFunc(_ *cobra.Command, args []string) {
 		instance.UpdateTimestamp(inst.Value.Timestamp)
 	}
 
-	sp := &InstancePrinter{Records: records}
+	sp := &Printer{Records: records}
 	sp.SetOutputFormat(get.Output, get.AllDomains)
 	writer.PrintTable(sp)
 }

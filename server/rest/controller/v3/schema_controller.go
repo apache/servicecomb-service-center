@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package v3
 
 import (
@@ -27,12 +28,12 @@ type SchemaService struct {
 	v4.SchemaResource
 }
 
-func (this *SchemaService) URLPatterns() []rest.Route {
+func (s *SchemaService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{http.MethodGet, "/registry/v3/microservices/:serviceId/schemas/:schemaId", this.GetSchema},
-		{http.MethodPut, "/registry/v3/microservices/:serviceId/schemas/:schemaId", this.PutSchema},
-		{http.MethodDelete, "/registry/v3/microservices/:serviceId/schemas/:schemaId", this.DeleteSchema},
-		{http.MethodPost, "/registry/v3/microservices/:serviceId/schemas", this.PutSchemas},
-		{http.MethodGet, "/registry/v3/microservices/:serviceId/schemas", this.ListSchema},
+		{Method: http.MethodGet, Path: "/registry/v3/microservices/:serviceId/schemas/:schemaId", Func: s.GetSchema},
+		{Method: http.MethodPut, Path: "/registry/v3/microservices/:serviceId/schemas/:schemaId", Func: s.PutSchema},
+		{Method: http.MethodDelete, Path: "/registry/v3/microservices/:serviceId/schemas/:schemaId", Func: s.DeleteSchema},
+		{Method: http.MethodPost, Path: "/registry/v3/microservices/:serviceId/schemas", Func: s.PutSchemas},
+		{Method: http.MethodGet, Path: "/registry/v3/microservices/:serviceId/schemas", Func: s.ListSchema},
 	}
 }

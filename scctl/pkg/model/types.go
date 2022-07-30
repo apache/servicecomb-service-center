@@ -42,7 +42,7 @@ func GetDomainProject(resource interface{}) (domainProject string) {
 type Service struct {
 	DomainProject string
 	Environment   string
-	AppId         string
+	AppID         string
 	ServiceName   string
 	Versions      []string
 	Frameworks    []*discovery.FrameWork
@@ -89,7 +89,7 @@ type Instance struct {
 	Host          string
 	Endpoints     []string
 	Environment   string
-	AppId         string
+	AppID         string
 	ServiceName   string
 	Version       string
 	Framework     *discovery.FrameWork

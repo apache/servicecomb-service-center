@@ -37,7 +37,6 @@ import (
 	"github.com/go-chassis/cari/db"
 	"github.com/go-chassis/cari/db/config"
 	"github.com/go-chassis/go-archaius"
-	"github.com/little-cui/etcdadpt"
 )
 
 func init() {
@@ -59,9 +58,7 @@ func init() {
 	}
 
 	_ = datasource.Init(datasource.Options{
-		Config: etcdadpt.Config{
-			Kind: kind,
-		},
+		Kind: kind,
 	})
 	_ = metrics.Init(metrics.Options{})
 
