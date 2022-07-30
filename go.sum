@@ -93,6 +93,10 @@ github.com/alicebob/miniredis v2.5.0+incompatible/go.mod h1:8HZjEj4yU0dwhYHky+Dx
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
 github.com/apache/servicecomb-kie v0.2.1-0.20220725091517-2ff76fd2d869 h1:P4jg4QemhLxOvaJt8chzCjHipIiSgPy2I8J1xMkSga4=
 github.com/apache/servicecomb-kie v0.2.1-0.20220725091517-2ff76fd2d869/go.mod h1:64faZcMJTiTzcIFBO+4/i2TlzfILq1PUoB5DF61J+Bk=
+github.com/apache/servicecomb-kie v0.2.1-0.20220730030322-a03aaf31cbdd h1:6azoQKFID9dveUu3He/ntxd2Rgu4Deze2D3bl2GJWSE=
+github.com/apache/servicecomb-kie v0.2.1-0.20220730030322-a03aaf31cbdd/go.mod h1:64faZcMJTiTzcIFBO+4/i2TlzfILq1PUoB5DF61J+Bk=
+github.com/apache/servicecomb-kie v0.2.1-0.20220730063957-66e6f5efd400 h1:zvkDWVT9EIybCbPUHPOplIt9D85v8d9nbGYXrZwHu9c=
+github.com/apache/servicecomb-kie v0.2.1-0.20220730063957-66e6f5efd400/go.mod h1:64faZcMJTiTzcIFBO+4/i2TlzfILq1PUoB5DF61J+Bk=
 github.com/apache/thrift v0.0.0-20180125231006-3d556248a8b9 h1:ymi1nHra1RZXqjg5xvka4YVyK+3uKPk2B9HUlPRIiBc=
 github.com/apache/thrift v0.0.0-20180125231006-3d556248a8b9/go.mod h1:cp2SuWMxlEZw2r+iP2GNCdIi4C1qmUzdZFSVb+bacwQ=
 github.com/armon/circbuf v0.0.0-20150827004946-bbbad097214e/go.mod h1:3U/XgcO3hCbHZ8TKRvWD2dDTCfh9M9ya+I9JpbB7O8o=
