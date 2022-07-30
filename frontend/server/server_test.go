@@ -21,8 +21,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"sync"
 	"testing"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
@@ -39,20 +39,14 @@ func init() {
 }
 
 func TestStatic(t *testing.T) {
-	var wg sync.WaitGroup
-
 	cfg := Config{
 		SCAddr:       "http://" + SCAddr,
 		FrontendAddr: FrontAddr,
 	}
 
-	wg.Add(1)
-	go func() {
-		wg.Done()
-		Serve(cfg)
-	}()
+	go Serve(cfg)
+	time.Sleep(500 * time.Millisecond)
 
-	wg.Wait()
 	res, err := http.Get("http://" + FrontAddr)
 	assert.NoError(t, err, "Error accessing frontend: %s", err)
 	assert.Equal(t, http.StatusOK, res.StatusCode, "Expected http %d, got %d", http.StatusOK, res.StatusCode)
@@ -60,10 +54,8 @@ func TestStatic(t *testing.T) {
 }
 
 func TestSCProxy(t *testing.T) {
-	var wg sync.WaitGroup
 	greeting := "Hi, there!"
 
-	wg.Add(1)
 	// simulate service center backend
 	go func() {
 		e := echo.New()
@@ -71,11 +63,10 @@ func TestSCProxy(t *testing.T) {
 		e.GET("/sayHi", func(c echo.Context) error {
 			return c.String(http.StatusOK, greeting)
 		})
-		wg.Done()
 		_ = e.Start(SCAddr)
 	}()
+	time.Sleep(500 * time.Millisecond)
 
-	wg.Wait()
 	res, err := http.Get("http://" + FrontAddr + "/sc/sayHi")
 	assert.NoError(t, err, "Error accessing sc proxy: %s", err)
 	assert.Equal(t, http.StatusOK, res.StatusCode, "Expected http %d, got %d", http.StatusOK, res.StatusCode)
@@ -91,20 +82,14 @@ func TestSCProxy(t *testing.T) {
 }
 
 func TestDirectoryTraversal(t *testing.T) {
-	var wg sync.WaitGroup
-
 	cfg := Config{
 		SCAddr:       "http://" + SCAddr,
 		FrontendAddr: FrontAddr,
 	}
 
-	wg.Add(1)
-	go func() {
-		wg.Done()
-		Serve(cfg)
-	}()
+	go Serve(cfg)
+	time.Sleep(500 * time.Millisecond)
 
-	wg.Wait()
 	res, err := http.Get("http://" + FrontAddr + "/..\\schema/schemahandler.go")
 	assert.NoError(t, err, "Error accessing frontend: %s", err)
 	assert.Equal(t, http.StatusNotFound, res.StatusCode, "Expected http status is 404")
