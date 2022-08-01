@@ -75,7 +75,7 @@ GO111MODULE=on go mod vendor
 Build the Service-Center
 
 ```sh
-go build -o service-center
+go build -o service-center github.com/apache/servicecomb-service-center/cmd/scserver
 ```
 
 First, you need to run a etcd(version: 3.x) as a database service and then modify the etcd IP and port in the Service Center configuration file (./etc/conf/app.conf : manager_cluster).
