@@ -37,7 +37,15 @@ type Distributor struct {
 
 const MatchGroup = "match-group"
 
-var PolicyNames = []string{"retry", "rateLimiting", "circuitBreaker", "bulkhead", "instanceIsolation", "faultInjection"}
+var PolicyNames = []string{
+	"retry",
+	"rateLimiting",
+	"circuitBreaker",
+	"instanceIsolation",
+	"faultInjection",
+	"bulkhead",
+	"loadbalancer",
+}
 
 func (d *Distributor) Create(ctx context.Context, kind, project string, p *gov.Policy) ([]byte, error) {
 	id, _ := uuid.NewV4()
