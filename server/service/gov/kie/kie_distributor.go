@@ -56,7 +56,15 @@ const (
 	Rules           = "rules"
 )
 
-var PolicyNames = []string{"retry", "rateLimiting", "circuitBreaker", "bulkhead", "instanceIsolation", "faultInjection"}
+var PolicyNames = []string{
+	"retry",
+	"rateLimiting",
+	"circuitBreaker",
+	"instanceIsolation",
+	"faultInjection",
+	"bulkhead",
+	"loadbalancer",
+}
 
 var rule = Validator{}
 
