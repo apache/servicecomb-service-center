@@ -15,7 +15,8 @@
  * limitations under the License.
  */
 
-package gov
+//Package grc include API of governance(grc is the abbreviation of governance)
+package grc
 
 import (
 	"errors"
@@ -32,21 +33,29 @@ import (
 
 type ValueType string
 
-//policies saves kind and policy schemas
-var policies = make(map[string]*spec.Schema)
+//policySchemas saves policy kind and schema
+var policySchemas = make(map[string]*spec.Schema)
 
-//RegisterPolicy register a contract of one kind of policy
+//RegisterPolicySchema register a contract of one kind of policy
 //this API is not thread safe, only use it during sc init
-func RegisterPolicy(kind string, schema *spec.Schema) {
-	policies[kind] = schema
+func RegisterPolicySchema(kind string, schema *spec.Schema) {
+	policySchemas[kind] = schema
+	log.Info("register policy schema: " + kind)
 }
 
-//ValidateSpec validates spec attributes
-func ValidateSpec(kind string, spec interface{}) error {
-	schema, ok := policies[kind]
+// ValidatePolicySpec validates spec attributes
+// it first us legacy mechanism Validate 3 kinds of policy.
+// then it use new mechanism to validate all of other policy
+func ValidatePolicySpec(kind string, spec interface{}) error {
+	// TODO this legacy API should be removed. after 3 kinds of policy schema is registered by "RegisterPolicySchema"
+	err := Validate(kind, spec)
+	if err != nil {
+		return err
+	}
+	schema, ok := policySchemas[kind]
 	if !ok {
-		log.Warn(fmt.Sprintf("can not recognize %s", kind))
-		return nil
+		log.Warn(fmt.Sprintf("can not recognize policy %s", kind))
+		return &ErrIllegalItem{"not support kind yet", kind}
 	}
 	validator := validate.NewSchemaValidator(schema, nil, "", strfmt.Default)
 	errs := validator.Validate(spec).Errors

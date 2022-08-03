@@ -26,35 +26,21 @@ import (
 	"strings"
 	"time"
 
-	"github.com/apache/servicecomb-service-center/pkg/gov"
-	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/server/config"
-	svc "github.com/apache/servicecomb-service-center/server/service/gov"
-	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 	"github.com/ghodss/yaml"
 	"github.com/go-chassis/foundation/httpclient"
 	"github.com/go-chassis/kie-client"
+
+	"github.com/apache/servicecomb-service-center/pkg/gov"
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/server/config"
+	grcsvc "github.com/apache/servicecomb-service-center/server/service/grc"
+	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 )
 
 type Distributor struct {
 	name   string
 	client *kie.Client
 }
-
-const (
-	KeyPrefix       = "servicecomb."
-	KindMatchGroup  = "match-group"
-	GroupNamePrefix = "scene-"
-	StatusEnabled   = "enabled"
-	TypeText        = "text"
-	KeyApp          = "app"
-	KeyEnvironment  = "environment"
-	EnvAll          = "all"
-	Alias           = "alias"
-	Method          = "method"
-	Matches         = "matches"
-	Rules           = "rules"
-)
 
 var PolicyNames = []string{
 	"retry",
@@ -66,21 +52,14 @@ var PolicyNames = []string{
 	"loadbalancer",
 }
 
-var rule = Validator{}
-
 func (d *Distributor) Create(ctx context.Context, kind, project string, p *gov.Policy) ([]byte, error) {
-	if kind == KindMatchGroup {
+	if kind == grcsvc.KindMatchGroup {
 		err := d.generateID(ctx, project, p)
 		if err != nil {
 			return nil, err
 		}
 	}
-
-	err := rule.Validate(kind, p.Spec)
-	if err != nil {
-		return nil, err
-	}
-	if kind == KindMatchGroup {
+	if kind == grcsvc.KindMatchGroup {
 		setAliasIfEmpty(p.Spec, p.Name)
 	}
 	yamlByte, err := yaml.Marshal(p.Spec)
@@ -90,8 +69,8 @@ func (d *Distributor) Create(ctx context.Context, kind, project string, p *gov.P
 	kv := kie.KVRequest{
 		Key:       toGovKeyPrefix(kind) + p.Name,
 		Value:     string(yamlByte),
-		Status:    StatusEnabled,
-		ValueType: TypeText,
+		Status:    grcsvc.StatusEnabled,
+		ValueType: grcsvc.TypeText,
 		Labels:    p.Selector,
 	}
 	res, err := d.client.Create(ctx, kv, kie.WithProject(project))
@@ -103,11 +82,7 @@ func (d *Distributor) Create(ctx context.Context, kind, project string, p *gov.P
 }
 
 func (d *Distributor) Update(ctx context.Context, kind, id, project string, p *gov.Policy) error {
-	err := rule.Validate(kind, p.Spec)
-	if err != nil {
-		return err
-	}
-	if kind == KindMatchGroup {
+	if kind == grcsvc.KindMatchGroup {
 		setAliasIfEmpty(p.Spec, p.Name)
 	}
 	yamlByte, err := yaml.Marshal(p.Spec)
@@ -128,7 +103,7 @@ func (d *Distributor) Update(ctx context.Context, kind, id, project string, p *g
 }
 
 func (d *Distributor) Delete(ctx context.Context, kind, id, project string) error {
-	if kind == KindMatchGroup {
+	if kind == grcsvc.KindMatchGroup {
 		// should remove all policies of this group
 		return d.DeleteMatchGroup(ctx, id, project)
 	}
@@ -142,14 +117,14 @@ func (d *Distributor) Delete(ctx context.Context, kind, id, project string) erro
 }
 
 func (d *Distributor) DeleteMatchGroup(ctx context.Context, id string, project string) error {
-	policy, err := d.getPolicy(ctx, KindMatchGroup, id, project)
+	policy, err := d.getPolicy(ctx, grcsvc.KindMatchGroup, id, project)
 	if err != nil {
 		log.Error("kie get failed", err)
 		return err
 	}
 
 	ops := []kie.GetOption{
-		kie.WithKey("wildcard(" + KeyPrefix + "*." + policy.Name + ")"),
+		kie.WithKey("wildcard(" + grcsvc.KeyPrefix + "*." + policy.Name + ")"),
 		kie.WithLabels(policy.Selector),
 		kie.WithRevision(0),
 		kie.WithGetProject(project),
@@ -176,7 +151,7 @@ func (d *Distributor) DeleteMatchGroup(ctx context.Context, id string, project s
 }
 
 func (d *Distributor) Display(ctx context.Context, project, app, env string) ([]byte, error) {
-	list, _, err := d.listDataByKind(ctx, KindMatchGroup, project, app, env)
+	list, _, err := d.listDataByKind(ctx, grcsvc.KindMatchGroup, project, app, env)
 	if err != nil {
 		return nil, err
 	}
@@ -197,7 +172,7 @@ func (d *Distributor) Display(ctx context.Context, project, app, env string) ([]
 	}
 	r := make([]*gov.DisplayData, 0, list.Total)
 	for _, item := range list.Data {
-		match, err := d.transform(item, KindMatchGroup)
+		match, err := d.transform(item, grcsvc.KindMatchGroup)
 		if err != nil {
 			log.Warn(fmt.Sprintf("transform config failed: key is [%s], value is [%s]", item.Key, item.Value))
 			continue
@@ -270,7 +245,7 @@ func (d *Distributor) getPolicy(ctx context.Context, kind string, id string, pro
 }
 
 func (d *Distributor) Type() string {
-	return svc.ConfigDistributorKie
+	return grcsvc.ConfigDistributorKie
 }
 func (d *Distributor) Name() string {
 	return d.name
@@ -290,7 +265,7 @@ func initClient(endpoint string) *kie.Client {
 	return client
 }
 
-func new(opts config.DistributorOptions) (svc.ConfigDistributor, error) {
+func new(opts config.DistributorOptions) (grcsvc.ConfigDistributor, error) {
 	return &Distributor{name: opts.Name, client: initClient(opts.Endpoint)}, nil
 }
 
@@ -323,11 +298,11 @@ func (d *Distributor) listDataByKind(ctx context.Context, kind, project, app, en
 		kie.WithGetProject(project),
 	}
 	labels := map[string]string{}
-	if env != EnvAll {
-		labels[KeyEnvironment] = env
+	if env != grcsvc.EnvAll {
+		labels[grcsvc.KeyEnvironment] = env
 	}
 	if app != "" {
-		labels[KeyApp] = app
+		labels[grcsvc.KeyApp] = app
 	}
 	if len(labels) > 0 {
 		ops = append(ops, kie.WithLabels(labels))
@@ -344,8 +319,8 @@ func (d *Distributor) generateID(ctx context.Context, project string, p *gov.Pol
 	if p.Name != "" {
 		return nil
 	}
-	kind := KindMatchGroup
-	list, _, err := d.listDataByKind(ctx, kind, project, p.Selector[KeyApp], p.Selector[KeyEnvironment])
+	kind := grcsvc.KindMatchGroup
+	list, _, err := d.listDataByKind(ctx, kind, project, p.Selector[grcsvc.KeyApp], p.Selector[grcsvc.KeyEnvironment])
 	if err != nil {
 		return err
 	}
@@ -376,7 +351,7 @@ func getID() string {
 	for i := 0; i < 4; i++ {
 		result = append(result, b[r.Intn(len(b))])
 	}
-	return GroupNamePrefix + string(result)
+	return grcsvc.GroupNamePrefix + string(result)
 }
 
 func (d *Distributor) transform(kv *kie.KVDoc, kind string) (*gov.Policy, error) {
@@ -404,9 +379,9 @@ func (d *Distributor) transform(kv *kie.KVDoc, kind string) (*gov.Policy, error)
 }
 
 func toGovKeyPrefix(kind string) string {
-	return KeyPrefix + toSnake(kind) + "."
+	return grcsvc.KeyPrefix + toSnake(kind) + "."
 }
 
 func init() {
-	svc.InstallDistributor(svc.ConfigDistributorKie, new)
+	grcsvc.InstallDistributor(grcsvc.ConfigDistributorKie, new)
 }

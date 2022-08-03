@@ -27,8 +27,9 @@ Postman-Token: bf33f47f-acfe-76fe-8c53-d1f79a46b246
 	"instance": 
 	{
 	    "endpoints": [
-			"ase://127.0.0.1:99841"
+			"grpc://127.0.0.1:99841"
 		],
+		"virtualAddress": "xxx.xxx.xxx.local:8080"
 		"hostName":"ase",
 		"status":"UP",
 		"environment":"production",

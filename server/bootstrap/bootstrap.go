@@ -60,7 +60,8 @@ import (
 	_ "github.com/apache/servicecomb-service-center/server/rest/admin"
 
 	//governance
-	_ "github.com/apache/servicecomb-service-center/server/service/gov/kie"
+	_ "github.com/apache/servicecomb-service-center/server/ext/policy"
+	_ "github.com/apache/servicecomb-service-center/server/service/grc/kie"
 
 	//metrics
 	_ "github.com/apache/servicecomb-service-center/server/rest/metrics"
