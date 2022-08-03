@@ -1,22 +1,36 @@
 # Benchmark
 Use [k6](https://k6.io/) to call service center API
+## How to use scripts
+Install k6
+```shell
+k6 run --vus 10 --duration 30s register/register_random_service.js
+```
 ## service center and etcd deployed in local host
+Resource Consumption:
+- 2 cpu cores
+- 8 GB memory
+
+k6, service center, etcd all in one VM
 #### virtual user 10
 |  scene | TPS  |  Latency | sc mem  | etcd mem  |
 |---|---|---|---|---|
-| register growing instance  |  348.244462/s  | p(90)=76.64ms p(95)=84.73ms  |  95 | 256  |
-| register same instance | 1937.723719/s  |  p(90)=5.04ms  p(95)=22.23ms |   |   |
-| find one instance  | 1374.776952/s  | p(90)=13.93ms p(95)=43.8ms  |  76m | 232  |
-| find 100 instance  | 1838.609097/s  | p(90)=5.49ms   p(95)=21.32ms  | 72  | 196  |
-| find 1000 instance  |  267.533417/s  | p(90)=75.23ms p(95)=90.71ms  |  106 | 234  |
-| heartbeat one instance  |  3430.479538/s  | p(90)=1.75ms  p(95)=4.28ms  | 75m  |  195m |
+| register growing instance  |  699/s  | p(90)=24.02ms  p(95)=32.26ms  |  83 | 283  |
+| register same instance | 5069/s  |  p(90)=3.72ms  p(95)=5.62ms | 70  | 123  |
+| heartbeat one instance  |  7068/s  | p(90)=2.66ms  p(95)=4.28ms  | 52m  |  145m |
+| find one instance  | 7577/s  | p(90)=2.42ms  p(95)=3.9ms  |  51m | 144  |
+| find 100 instance  | 3242/s  | p(90)=6.7ms    p(95)=10.01ms  | 72  | 196  |
+| find 1000 instance  |  544/s  | p(90)=75.23ms p(95)=90.71ms  |  106 | 234  |
+
 ## service center with embedded etcd in local host
 #### virtual user 10
 |  scene | TPS  |  Latency | sc mem  | etcd mem  |
 |---|---|---|---|---|
-| register growing instance  |  478.132249/s | p(90)=63.74ms  p(95)=74.8ms  |  206m |   |
-| register same instance |2773.890508/s   |  p(90)=3.03ms  p(95)=7.62ms |  156m |   |
-| find one instance  | 4182.78487/s  | p(90)=1.76ms  p(95)=3.7ms  |  175m |   |
-| find 100 instance  | 1531.041088/s  | p(90)=8.62ms   p(95)=33.72ms  |  171m |   |
-| find 1000 instance  | 253.041503/s  | p(90)=81.54ms p(95)=97.55ms  |  240m |   |
-| heartbeat one instance  | 3232.36232/s  | p(90)=2.25ms p(95)=5.34ms  |  156m |   |
+| register growing instance  |  561/s | p(90)=19.11ms p(95)=26.7ms  |  330m |   |
+| register same instance |5042/s   |  p(90)=3.69ms  p(95)=5.69ms |  156m |   |
+| heartbeat one instance  | 6513/s  | p(90)=2.94ms  p(95)=4.73ms  |  156m |   |
+| find one instance  | 6580/s  | p(90)=2.81ms  p(95)=4.61ms  |  175m |   |
+| find 100 instance  | 2843/s  |  p(90)=7.82ms   p(95)=11.62ms  |  200m |   |
+| find 1000 instance  | 546/s  | p(90)=28.69ms p(95)=36.78ms  |  200m |   |
+
+
+

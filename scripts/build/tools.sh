@@ -20,7 +20,6 @@
 set -e
 
 # GO flags
-export GOPROXY=${GOPROXY:-"https://goproxy.cn"}
 export GOOS=${GOOS:-"linux"}
 export GOARCH=${GOARCH:-"amd64"}
 export CGO_ENABLED=${CGO_ENABLED:-0} # prevent to compile cgo file

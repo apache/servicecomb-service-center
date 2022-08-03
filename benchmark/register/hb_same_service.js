@@ -47,21 +47,13 @@ export function setup() {
     http.post(url2, payload2, params2);
 }
 export default function () {
-    const url = 'http://127.0.0.1:30100/v4/default/registry/heartbeats';
-    const payload = JSON.stringify({
-        Instances: [
-            {
-                serviceId: "test3",
-                instanceId: "1"
-            }
-        ]
-    });
+    const url = 'http://127.0.0.1:30100/v4/default/registry/microservices/test3/instances/1/heartbeat';
 
-    const params = {
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    };
+    http.put(url);
+}
 
-    http.post(url, payload, params);
+export function teardown(data) {
+    const url = 'http://127.0.0.1:30100/v4/default/registry/microservices/test3?force=1';
+
+    http.del(url);
 }
