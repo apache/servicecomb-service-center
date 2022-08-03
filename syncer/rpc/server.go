@@ -77,6 +77,7 @@ func (s *Server) Health(_ context.Context, _ *v1sync.HealthRequest) (*v1sync.Hea
 	// TODO enable to close syncer
 	if !config.GetConfig().Sync.EnableOnStart {
 		resp.Status = HealthStatusClose
+		log.Error("unexpected health check when syncer is closed", nil)
 		return resp, nil
 	}
 	return resp, nil
