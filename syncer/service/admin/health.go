@@ -130,7 +130,7 @@ func getPeerStatus(peerName string, clientConn *grpc.ClientConn) string {
 	set := client.NewSet(clientConn)
 	reply, err := set.EventServiceClient.Health(context.Background(), &v1sync.HealthRequest{})
 	if err != nil || reply == nil {
-		log.Warn("health request is err")
+		log.Error("get peer health failed", err)
 		return rpc.HealthStatusAbnormal
 	}
 	reportClockDiff(peerName, local, reply.LocalTimestamp)
