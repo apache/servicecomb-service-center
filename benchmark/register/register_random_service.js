@@ -46,3 +46,8 @@ export default function () {
 
     http.post(url, payload, params);
 }
+export function teardown(data) {
+    const url = 'http://127.0.0.1:30100/v4/default/registry/microservices/test3?force=1';
+
+    http.del(url);
+}

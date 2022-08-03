@@ -50,3 +50,9 @@ export default function () {
     const url = 'http://127.0.0.1:30100/v4/default/registry/instances?appId=default&serviceName=test3';
     http.get(url);
 }
+
+export function teardown(data) {
+    const url = 'http://127.0.0.1:30100/v4/default/registry/microservices/test3?force=1';
+
+    http.del(url);
+}

@@ -18,7 +18,6 @@
 set -e
 CURRENT_PATH=$(cd $(dirname "$0");pwd)
 ROOT_PATH=$(dirname "$CURRENT_PATH")
-export GOPROXY=https://goproxy.cn,direct
 export COVERAGE_PATH=$(pwd)
 
 skip_dir=${1:-'vendor'}
