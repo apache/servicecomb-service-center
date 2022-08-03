@@ -35,7 +35,7 @@ import (
 )
 
 const (
-	scheme      = "health_rpc"
+	scheme      = "grpc"
 	serviceName = "syncer"
 )
 
