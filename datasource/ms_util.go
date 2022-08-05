@@ -152,7 +152,6 @@ func NewServiceOverview(serviceDetail *discovery.ServiceDetail, innerProperties 
 	if err != nil {
 		return nil, discovery.NewError(discovery.ErrInternal, err.Error())
 	}
-	tmpServiceDetail.MicroService.Properties = nil
 	tmpServiceDetail.MicroService.Schemas = nil
 	instances := tmpServiceDetail.Instances
 	for _, instance := range instances {
