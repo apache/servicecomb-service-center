@@ -19,12 +19,14 @@ package govern
 
 import (
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	governsvc "github.com/apache/servicecomb-service-center/server/service/govern"
 	pb "github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/foundation/stringutil"
 )
 
 // Service 治理相关接口服务
@@ -78,7 +80,7 @@ func (res *Resource) ListService(w http.ResponseWriter, r *http.Request) {
 	request.ServiceName = query.Get("serviceName")
 	request.Environment = query.Get("env")
 	request.WithShared = util.StringTRUE(query.Get("withShared"))
-	request.Properties = rest.ParseQueries(query, "property")
+	request.Properties = ParseProperties(query, "property")
 	countOnly := query.Get("countOnly")
 	if countOnly != "0" && countOnly != "1" && strings.TrimSpace(countOnly) != "" {
 		rest.WriteError(w, pb.ErrInvalidParams, "parameter countOnly must be 1 or 0")
@@ -93,6 +95,21 @@ func (res *Resource) ListService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	rest.WriteResponse(w, r, nil, resp)
+}
+
+func ParseProperties(query url.Values, key string) map[string]string {
+	propertyList := query[key]
+	properties := make(map[string]string, len(propertyList))
+	for _, kv := range propertyList {
+		if !strings.Contains(kv, ":") {
+			properties[kv] = ""
+			continue
+		}
+
+		k, v := stringutil.SplitToTwo(kv, ":")
+		properties[k] = v
+	}
+	return properties
 }
 
 func (res *Resource) GetOverview(w http.ResponseWriter, r *http.Request) {

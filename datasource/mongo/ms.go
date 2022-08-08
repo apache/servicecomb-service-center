@@ -57,8 +57,7 @@ const baseTen = 10
 
 type MetadataManager struct {
 	// InstanceTTL options
-	InstanceTTL        int64
-	InstanceProperties map[string]string
+	InstanceTTL int64
 }
 
 func (ds *MetadataManager) RegisterService(ctx context.Context, request *discovery.CreateServiceRequest) (*discovery.CreateServiceResponse, error) {
@@ -390,80 +389,6 @@ func updateServiceTxn(ctx context.Context, request *discovery.UpdateServiceProps
 		}
 		return sync.DoUpdateOpts(sessionContext, datasource.ResourceService, request)
 	})
-}
-
-func (ds *MetadataManager) ListServiceDetail(ctx context.Context, request *discovery.GetServicesInfoRequest) (*discovery.GetServicesInfoResponse, error) {
-	optionMap := make(map[string]struct{}, len(request.Options))
-	for _, opt := range request.Options {
-		optionMap[opt] = struct{}{}
-	}
-
-	options := make([]string, 0, len(optionMap))
-	if _, ok := optionMap["all"]; ok {
-		optionMap["statistics"] = struct{}{}
-		options = []string{"tags", "instances", "schemas", "dependencies"}
-	} else {
-		for opt := range optionMap {
-			options = append(options, opt)
-		}
-	}
-	var st *discovery.Statistics
-	if _, ok := optionMap["statistics"]; ok {
-		var err error
-		st, err = statistics(ctx, request.WithShared)
-		if err != nil {
-			return nil, discovery.NewError(discovery.ErrInternal, err.Error())
-		}
-		if len(optionMap) == 1 {
-			return &discovery.GetServicesInfoResponse{
-				Statistics: st,
-			}, nil
-		}
-	}
-	filters := ds.filterServices(ctx, request)
-	services, err := dao.GetServices(ctx, filters)
-	if err != nil {
-		log.Error("get all services by domain failed", err)
-		return nil, discovery.NewError(discovery.ErrInternal, err.Error())
-	}
-	allServiceDetails := make([]*discovery.ServiceDetail, 0, len(services))
-	domainProject := util.ParseDomainProject(ctx)
-	for _, mgSvc := range services {
-		if !request.WithShared && datasource.IsGlobal(discovery.MicroServiceToKey(domainProject, mgSvc.Service)) {
-			continue
-		}
-
-		serviceDetail, err := getServiceDetailUtil(ctx, mgSvc, request.CountOnly, options)
-		if err != nil {
-			return nil, discovery.NewError(discovery.ErrInternal, err.Error())
-		}
-		serviceDetail.MicroService = mgSvc.Service
-		tmpServiceDetail, err := datasource.NewServiceOverview(serviceDetail, ds.InstanceProperties)
-		if err != nil {
-			return nil, err
-		}
-		allServiceDetails = append(allServiceDetails, tmpServiceDetail)
-	}
-
-	return &discovery.GetServicesInfoResponse{
-		AllServicesDetail: allServiceDetails,
-		Statistics:        st,
-	}, nil
-}
-
-func (ds *MetadataManager) filterServices(ctx context.Context, request *discovery.GetServicesInfoRequest) bson.M {
-	var opts []func(filter bson.M)
-
-	if len(request.Environment) > 0 {
-		opts = append(opts, mutil.ServiceEnv(request.Environment))
-	}
-	if len(request.AppId) > 0 {
-		opts = append(opts, mutil.ServiceAppID(request.AppId))
-	}
-	if len(request.ServiceName) > 0 {
-		opts = append(opts, mutil.ServiceServiceName(request.ServiceName))
-	}
-	return mutil.NewBasicFilter(ctx, opts...)
 }
 
 func (ds *MetadataManager) GetOverview(ctx context.Context, request *discovery.GetServicesRequest) (
@@ -853,73 +778,6 @@ func (ds *MetadataManager) modifySchema(ctx context.Context, serviceID string, s
 		return discovery.NewError(discovery.ErrInternal, err.Error())
 	}
 	return nil
-}
-
-func getServiceDetailUtil(ctx context.Context, mgs *model.Service, countOnly bool, options []string) (*discovery.ServiceDetail, error) {
-	serviceDetail := new(discovery.ServiceDetail)
-	serviceID := mgs.Service.ServiceId
-	domainProject := util.ParseDomainProject(ctx)
-	domain := util.ParseDomain(ctx)
-	project := util.ParseProject(ctx)
-	if countOnly {
-		serviceDetail.Statics = new(discovery.Statistics)
-	}
-	for _, opt := range options {
-		expr := opt
-		switch expr {
-		case "tags":
-			serviceDetail.Tags = mgs.Tags
-		case "instances":
-			if countOnly {
-				instanceCount, err := CountInstance(ctx, serviceID)
-				if err != nil {
-					log.Error(fmt.Sprintf("get number of service [%s]'s instances failed", serviceID), err)
-					return nil, err
-				}
-				serviceDetail.Statics.Instances = &discovery.StInstance{
-					Count: instanceCount,
-				}
-				continue
-			}
-			filter := mutil.NewDomainProjectFilter(domain, project, mutil.InstanceServiceID(serviceID))
-			instances, err := dao.GetMicroServiceInstances(ctx, filter)
-			if err != nil {
-				log.Error(fmt.Sprintf("get service[%s]'s all instances failed", serviceID), err)
-				return nil, err
-			}
-			serviceDetail.Instances = instances
-		case "schemas":
-			filter := mutil.NewDomainProjectFilter(domain, project, mutil.ServiceID(serviceID))
-			schemas, err := dao.GetSchemas(ctx, filter)
-			if err != nil {
-				log.Error(fmt.Sprintf("get service %s's all schemas failed", mgs.Service.ServiceId), err)
-				return nil, err
-			}
-			serviceDetail.SchemaInfos = schemas
-		case "dependencies":
-			service := mgs.Service
-			consumers, err := GetConsumers(ctx, domainProject, service,
-				WithoutSelfDependency(), WithSameDomainProject())
-			if err != nil {
-				log.Error(fmt.Sprintf("get service[%s][%s/%s/%s/%s]'s all consumers failed",
-					service.ServiceId, service.Environment, service.AppId, service.ServiceName, service.Version), err)
-			}
-			providers, err := GetProviders(ctx, domainProject, service,
-				WithoutSelfDependency(), WithSameDomainProject())
-			if err != nil {
-				log.Error(fmt.Sprintf("get service[%s][%s/%s/%s/%s]'s all providers failed",
-					service.ServiceId, service.Environment, service.AppId, service.ServiceName, service.Version), err)
-				return nil, err
-			}
-			serviceDetail.Consumers = consumers
-			serviceDetail.Providers = providers
-		case "":
-			continue
-		default:
-			log.Info(fmt.Sprintf("request option %s is invalid", opt))
-		}
-	}
-	return serviceDetail, nil
 }
 
 // Instance management
@@ -1814,4 +1672,8 @@ func formatRevision(consumerServiceID string, instances []*discovery.MicroServic
 	}
 	s := fmt.Sprintf("%s.%x", consumerServiceID, sha1.Sum(data))
 	return fmt.Sprintf("%x", sha1.Sum(util.StringToBytesWithNoCopy(s))), nil
+}
+
+func (ds *MetadataManager) Statistics(ctx context.Context, withShared bool) (*discovery.Statistics, error) {
+	return statistics(ctx, withShared)
 }

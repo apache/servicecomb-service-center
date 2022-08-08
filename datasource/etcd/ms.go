@@ -49,8 +49,7 @@ import (
 
 type MetadataManager struct {
 	// InstanceTTL options
-	InstanceTTL        int64
-	InstanceProperties map[string]string
+	InstanceTTL int64
 }
 
 // RegisterService implement:
@@ -184,105 +183,6 @@ func (ds *MetadataManager) GetService(ctx context.Context, request *pb.GetServic
 		return nil, pb.NewError(pb.ErrInternal, err.Error())
 	}
 	return singleService, nil
-}
-
-func (ds *MetadataManager) ListServiceDetail(ctx context.Context, request *pb.GetServicesInfoRequest) (
-	*pb.GetServicesInfoResponse, error) {
-	ctx = util.WithCacheOnly(ctx)
-
-	optionMap := make(map[string]struct{}, len(request.Options))
-	for _, opt := range request.Options {
-		optionMap[opt] = struct{}{}
-	}
-
-	options := make([]string, 0, len(optionMap))
-	if _, ok := optionMap["all"]; ok {
-		optionMap["statistics"] = struct{}{}
-		options = []string{"tags", "instances", "schemas", "dependencies"}
-	} else {
-		for opt := range optionMap {
-			options = append(options, opt)
-		}
-	}
-
-	var st *pb.Statistics
-	if _, ok := optionMap["statistics"]; ok {
-		var err error
-		st, err = statistics(ctx, request.WithShared)
-		if err != nil {
-			return nil, pb.NewError(pb.ErrInternal, err.Error())
-		}
-		if len(optionMap) == 1 {
-			return &pb.GetServicesInfoResponse{
-				Statistics: st,
-			}, nil
-		}
-	}
-
-	//获取所有服务
-	services, err := eutil.GetAllServiceUtil(ctx)
-	if err != nil {
-		log.Error("get all services by domain failed", err)
-		return nil, pb.NewError(pb.ErrInternal, err.Error())
-	}
-
-	allServiceDetails := make([]*pb.ServiceDetail, 0, len(services))
-	domainProject := util.ParseDomainProject(ctx)
-	for _, service := range services {
-		if !ds.filterServices(domainProject, request, service) {
-			continue
-		}
-
-		serviceDetail, err := getServiceDetailUtil(ctx, ServiceDetailOpt{
-			domainProject: domainProject,
-			service:       service,
-			countOnly:     request.CountOnly,
-			options:       options,
-		})
-		if err != nil {
-			return nil, pb.NewError(pb.ErrInternal, err.Error())
-		}
-		serviceDetail.MicroService = service
-		tmpServiceDetail, err := datasource.NewServiceOverview(serviceDetail, ds.InstanceProperties)
-		if err != nil {
-			return nil, err
-		}
-		allServiceDetails = append(allServiceDetails, tmpServiceDetail)
-	}
-
-	return &pb.GetServicesInfoResponse{
-		AllServicesDetail: allServiceDetails,
-		Statistics:        st,
-	}, nil
-}
-
-func (ds *MetadataManager) filterServices(domainProject string, request *pb.GetServicesInfoRequest, service *pb.MicroService) bool {
-	if !request.WithShared && datasource.IsGlobal(pb.MicroServiceToKey(domainProject, service)) {
-		return false
-	}
-	if len(request.Environment) > 0 && request.Environment != service.Environment {
-		return false
-	}
-	if len(request.AppId) > 0 && request.AppId != service.AppId {
-		return false
-	}
-	if len(request.ServiceName) > 0 && request.ServiceName != service.ServiceName {
-		return false
-	}
-	if len(request.Properties) > 0 && !matchAllProperties(request.Properties, service) {
-		return false
-	}
-	return true
-}
-
-func matchAllProperties(properties map[string]string, service *pb.MicroService) bool {
-	for k, v := range properties {
-		val, ok := service.Properties[k]
-		if !ok || v != val {
-			return false
-		}
-	}
-	return true
 }
 
 func (ds *MetadataManager) GetOverview(ctx context.Context, request *pb.GetServicesRequest) (
@@ -1664,4 +1564,8 @@ func (ds *MetadataManager) UnregisterService(ctx context.Context, request *pb.De
 
 	log.Info(fmt.Sprintf("%s micro-service[%s] successfully, operator: %s", title, serviceID, remoteIP))
 	return nil
+}
+
+func (ds *MetadataManager) Statistics(ctx context.Context, withShared bool) (*pb.Statistics, error) {
+	return statistics(ctx, withShared)
 }

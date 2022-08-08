@@ -21,14 +21,18 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"reflect"
 	"testing"
+
+	_ "github.com/apache/servicecomb-service-center/test"
 
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/resource/govern"
 	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
-	_ "github.com/apache/servicecomb-service-center/test"
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/stretchr/testify/assert"
 )
@@ -187,4 +191,34 @@ func TestResource_ListApp(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Contains(t, resp.AppIds, "list_app_app")
 	})
+}
+
+func TestParseProperties(t *testing.T) {
+	type args struct {
+		query url.Values
+		key   string
+	}
+	tests := []struct {
+		name string
+		args args
+		want map[string]string
+	}{
+		{"invalid queries", args{nil, "any"}, map[string]string{}},
+		{"invalid queries", args{url.Values{}, "any"}, map[string]string{}},
+		{"invalid queries", args{url.Values{"a": {"b:a"}}, "other"}, map[string]string{}},
+		{"valid queries", args{url.Values{"a": {""}}, "a"}, map[string]string{"": ""}},
+		{"valid queries", args{url.Values{"a": {"b"}}, "a"}, map[string]string{"b": ""}},
+		{"valid queries", args{url.Values{"a": {"b:"}}, "a"}, map[string]string{"b": ""}},
+		{"valid queries", args{url.Values{"a": {":"}}, "a"}, map[string]string{"": ""}},
+		{"valid queries", args{url.Values{"a": {":a"}}, "a"}, map[string]string{"": "a"}},
+		{"valid queries", args{url.Values{"a": {"b:a"}}, "a"}, map[string]string{"b": "a"}},
+		{"valid queries", args{url.Values{"a": {"b:a", "c:d"}}, "a"}, map[string]string{"b": "a", "c": "d"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := govern.ParseProperties(tt.args.query, tt.args.key); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("ParseProperties() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }

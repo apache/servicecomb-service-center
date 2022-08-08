@@ -35,32 +35,52 @@ func getContext() context.Context {
 }
 
 func TestListServiceDetail(t *testing.T) {
+	ctx := getContext()
+	respC, err := disco.RegisterService(ctx, &pb.CreateServiceRequest{
+		Service: &pb.MicroService{
+			AppId:       "govern_service_group",
+			ServiceName: "govern_service_graph",
+			Version:     "1.0.0",
+			Level:       "FRONT",
+			Status:      pb.MS_UP,
+		},
+	})
+	assert.NoError(t, err)
+	assert.NotNil(t, respC)
+	defer disco.UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: respC.ServiceId, Force: true})
+
 	t.Run("when get all services, should be passed", func(t *testing.T) {
-		resp, err := govern.ListServiceDetail(getContext(), &pb.GetServicesInfoRequest{
+		resp, err := govern.ListServiceDetail(ctx, &pb.GetServicesInfoRequest{
 			Options: []string{"all"},
 		})
 		assert.NoError(t, err)
 		assert.NotNil(t, resp)
+		assert.NotNil(t, resp.Statistics)
+		assert.NotNil(t, resp.AllServicesDetail)
 
-		resp, err = govern.ListServiceDetail(getContext(), &pb.GetServicesInfoRequest{
+		resp, err = govern.ListServiceDetail(ctx, &pb.GetServicesInfoRequest{
 			Options: []string{""},
 		})
 		assert.NoError(t, err)
 		assert.NotNil(t, resp)
+		assert.Nil(t, resp.Statistics)
+		assert.NotNil(t, resp.AllServicesDetail)
 
-		resp, err = govern.ListServiceDetail(getContext(), &pb.GetServicesInfoRequest{
+		resp, err = govern.ListServiceDetail(ctx, &pb.GetServicesInfoRequest{
 			Options: []string{"tags", "rules", "instances", "schemas", "statistics"},
 		})
 		assert.NoError(t, err)
 		assert.NotNil(t, resp)
 
-		resp, err = govern.ListServiceDetail(getContext(), &pb.GetServicesInfoRequest{
+		resp, err = govern.ListServiceDetail(ctx, &pb.GetServicesInfoRequest{
 			Options: []string{"statistics"},
 		})
 		assert.NoError(t, err)
 		assert.NotNil(t, resp)
+		assert.NotNil(t, resp.Statistics)
+		assert.Nil(t, resp.AllServicesDetail)
 
-		resp, err = govern.ListServiceDetail(getContext(), &pb.GetServicesInfoRequest{
+		resp, err = govern.ListServiceDetail(ctx, &pb.GetServicesInfoRequest{
 			Options:   []string{"instances"},
 			CountOnly: true,
 		})
@@ -69,19 +89,8 @@ func TestListServiceDetail(t *testing.T) {
 	})
 
 	t.Run("when get top graph, should be passed", func(t *testing.T) {
-		respC, err := disco.RegisterService(getContext(), &pb.CreateServiceRequest{
-			Service: &pb.MicroService{
-				AppId:       "govern_service_group",
-				ServiceName: "govern_service_graph",
-				Version:     "1.0.0",
-				Level:       "FRONT",
-				Status:      pb.MS_UP,
-			},
-		})
-		assert.NoError(t, err)
-		assert.NotNil(t, respC)
 
-		graph, err := govern.Draw(getContext(), false)
+		graph, err := govern.Draw(ctx, false)
 		assert.NoError(t, err)
 		assert.NotEqual(t, 0, len(graph.Nodes))
 	})
@@ -174,5 +183,67 @@ func TestGetServiceDetail(t *testing.T) {
 		})
 		assert.True(t, errsvc.IsErrEqualCode(err, pb.ErrServiceNotExists), err)
 		assert.Nil(t, respGetServiceDetail)
+	})
+}
+
+func TestNewServiceOverview(t *testing.T) {
+	t.Run("no instances, should be ok", func(t *testing.T) {
+		_, err := govern.NewServiceOverview(&pb.ServiceDetail{
+			MicroService: &pb.MicroService{},
+		}, nil)
+		assert.NoError(t, err)
+
+		_, err = govern.NewServiceOverview(&pb.ServiceDetail{
+			MicroService: &pb.MicroService{},
+			Instances:    []*pb.MicroServiceInstance{},
+		}, nil)
+		assert.NoError(t, err)
+	})
+
+	t.Run("has schema or service properties, should be ok", func(t *testing.T) {
+		overview, err := govern.NewServiceOverview(&pb.ServiceDetail{
+			MicroService: &pb.MicroService{
+				Schemas:    []string{"test"},
+				Properties: map[string]string{"test": "A"},
+			},
+		}, nil)
+		assert.NoError(t, err)
+		assert.Empty(t, overview.MicroService.Schemas)
+		assert.NotEmpty(t, overview.MicroService.Properties)
+	})
+
+	t.Run("has instance properties, should be ok", func(t *testing.T) {
+		overview, err := govern.NewServiceOverview(&pb.ServiceDetail{
+			MicroService: &pb.MicroService{},
+			Instances: []*pb.MicroServiceInstance{
+				{
+					Properties: map[string]string{"test": "A"},
+				},
+			},
+		}, nil)
+		assert.NoError(t, err)
+		assert.Empty(t, overview.Instances[0].Properties)
+
+		overview, err = govern.NewServiceOverview(&pb.ServiceDetail{
+			MicroService: &pb.MicroService{},
+			Instances: []*pb.MicroServiceInstance{
+				{
+					Properties: map[string]string{"test": "A"},
+				},
+			},
+		}, map[string]string{"inner": "B"})
+		assert.NoError(t, err)
+		assert.Empty(t, overview.Instances[0].Properties)
+
+		overview, err = govern.NewServiceOverview(&pb.ServiceDetail{
+			MicroService: &pb.MicroService{},
+			Instances: []*pb.MicroServiceInstance{
+				{
+					Properties: map[string]string{"test": "A", "inner": "C"},
+				},
+			},
+		}, map[string]string{"inner": "B"})
+		assert.NoError(t, err)
+		assert.Equal(t, "C", overview.Instances[0].Properties["inner"])
 	})
 }

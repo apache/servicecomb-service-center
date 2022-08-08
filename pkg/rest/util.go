@@ -22,14 +22,11 @@ import (
 	"errors"
 	"io"
 	"net/http"
-	"net/url"
-	"strings"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/cari/pkg/errsvc"
-	"github.com/go-chassis/foundation/stringutil"
 	"github.com/go-chassis/go-chassis/v2/pkg/codec"
 )
 
@@ -118,19 +115,4 @@ func ReadBody(r *http.Request) ([]byte, error) {
 	}
 	r.Body = io.NopCloser(bytes.NewReader(data))
 	return data, nil
-}
-
-func ParseQueries(query url.Values, key string) map[string]string {
-	propertyList := query[key]
-	properties := make(map[string]string, len(propertyList))
-	for _, kv := range propertyList {
-		if !strings.Contains(kv, ":") {
-			properties[kv] = ""
-			continue
-		}
-
-		k, v := stringutil.SplitToTwo(kv, ":")
-		properties[k] = v
-	}
-	return properties
 }
