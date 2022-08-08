@@ -3,14 +3,20 @@ module github.com/apache/servicecomb-service-center
 replace (
 	github.com/apache/servicecomb-service-center/api => ./api
 	github.com/apache/servicecomb-service-center/eventbase => ./eventbase
+	// github.com/openzipkin/zipkin-go-opentracing depends on
 	github.com/apache/thrift => github.com/apache/thrift v0.0.0-20180125231006-3d556248a8b9
+	// beego depends on
+	go.opentelemetry.io/otel => go.opentelemetry.io/otel v0.20.0
+	go.opentelemetry.io/otel/sdk => go.opentelemetry.io/otel/sdk v0.20.0
+	go.opentelemetry.io/otel/trace => go.opentelemetry.io/otel/trace v0.20.0
+	github.com/go-logr/logr => github.com/go-logr/logr v0.2.0
 )
 
 require (
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/apache/servicecomb-kie v0.2.1-0.20220730063957-66e6f5efd400
 	github.com/apache/servicecomb-service-center/eventbase v0.0.0-20220120070230-26997eb876ca
-	github.com/beego/beego/v2 v2.0.2
+	github.com/beego/beego/v2 v2.0.4
 	github.com/cheggaaa/pb v1.0.25
 	github.com/deckarep/golang-set v1.8.0
 	github.com/elithrar/simple-scrypt v1.3.0
@@ -89,7 +95,7 @@ require (
 	github.com/go-chassis/sc-client v0.6.1-0.20210918130508-2b9daad232da // indirect
 	github.com/go-chassis/seclog v1.3.1-0.20210917082355-52c40864f240 // indirect
 	github.com/go-logfmt/logfmt v0.5.0 // indirect
-	github.com/go-logr/logr v0.2.0 // indirect
+	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-openapi/jsonpointer v0.19.3 // indirect
 	github.com/go-openapi/jsonreference v0.19.3 // indirect
 	github.com/go-openapi/swag v0.19.5 // indirect
@@ -150,13 +156,13 @@ require (
 	go.etcd.io/etcd/server/v3 v3.5.4 // indirect
 	go.opentelemetry.io/contrib v0.20.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.20.0 // indirect
-	go.opentelemetry.io/otel v0.20.0 // indirect
+	go.opentelemetry.io/otel v1.7.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp v0.20.0 // indirect
 	go.opentelemetry.io/otel/metric v0.20.0 // indirect
-	go.opentelemetry.io/otel/sdk v0.20.0 // indirect
+	go.opentelemetry.io/otel/sdk v1.7.0 // indirect
 	go.opentelemetry.io/otel/sdk/export/metric v0.20.0 // indirect
 	go.opentelemetry.io/otel/sdk/metric v0.20.0 // indirect
-	go.opentelemetry.io/otel/trace v0.20.0 // indirect
+	go.opentelemetry.io/otel/trace v1.7.0 // indirect
 	go.opentelemetry.io/proto/otlp v0.7.0 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
