@@ -24,16 +24,20 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	_ "github.com/apache/servicecomb-service-center/test"
+
 	"github.com/apache/servicecomb-service-center/pkg/gov"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/config"
 	v1 "github.com/apache/servicecomb-service-center/server/resource/gov"
-	svc "github.com/apache/servicecomb-service-center/server/service/gov"
+	grcsvc "github.com/apache/servicecomb-service-center/server/service/grc"
 	"github.com/go-chassis/go-archaius"
 	"github.com/stretchr/testify/assert"
 
-	_ "github.com/apache/servicecomb-service-center/server/service/gov/mock"
+	_ "github.com/apache/servicecomb-service-center/server/service/grc/mock"
+
+	_ "github.com/apache/servicecomb-service-center/server/ext/policy"
 )
 
 func init() {
@@ -44,7 +48,7 @@ func init() {
 			},
 		},
 	}
-	err := svc.Init()
+	err := grcsvc.Init()
 	if err != nil {
 		log.Fatal("", err)
 	}
@@ -53,19 +57,27 @@ func TestGovernance_Create(t *testing.T) {
 	err := archaius.Init(archaius.WithMemorySource(), archaius.WithENVSource())
 	assert.NoError(t, err)
 
-	svc.Init()
+	grcsvc.Init()
 	rest.RegisterServant(&v1.Governance{})
 
-	t.Run("create policy", func(t *testing.T) {
+	t.Run("create load balancing, should success", func(t *testing.T) {
 		b, _ := json.Marshal(&gov.Policy{
 			GovernancePolicy: &gov.GovernancePolicy{Name: "test"},
 			Spec: map[string]interface{}{
-				"backoff": &gov.BackOffPolicy{InitialInterval: 1}}})
-
-		r, _ := http.NewRequest(http.MethodPost, "/v1/default/gov/loadBalancer", bytes.NewBuffer(b))
+				"rule": "rr",
+			}})
+		r, _ := http.NewRequest(http.MethodPost, "/v1/default/gov/loadbalancer", bytes.NewBuffer(b))
 		w := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code)
 	})
-
+	t.Run("create load balancing without rule, should failed", func(t *testing.T) {
+		b, _ := json.Marshal(&gov.Policy{
+			GovernancePolicy: &gov.GovernancePolicy{Name: "test"},
+			Spec:             map[string]interface{}{}})
+		r, _ := http.NewRequest(http.MethodPost, "/v1/default/gov/loadbalancer", bytes.NewBuffer(b))
+		w := httptest.NewRecorder()
+		rest.GetRouter().ServeHTTP(w, r)
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
 }

@@ -15,14 +15,14 @@
  * limitations under the License.
  */
 
-package gov_test
+package grc_test
 
 import (
+	"github.com/apache/servicecomb-service-center/server/service/grc"
 	"testing"
 
 	"k8s.io/kube-openapi/pkg/validation/spec"
 
-	"github.com/apache/servicecomb-service-center/server/service/gov"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -45,9 +45,9 @@ func TestPolicySchema_Validate(t *testing.T) {
 						SchemaProps: spec.SchemaProps{Type: []string{"integer"}}},
 				},
 			}}
-		gov.RegisterPolicy("custom", schema)
+		grc.RegisterPolicySchema("custom", schema)
 		t.Run("given right content, should no error", func(t *testing.T) {
-			err := gov.ValidateSpec("custom", map[string]interface{}{
+			err := grc.ValidatePolicySpec("custom", map[string]interface{}{
 				"allow":   true,
 				"timeout": "5s",
 				"name":    "a",
@@ -58,7 +58,7 @@ func TestPolicySchema_Validate(t *testing.T) {
 			assert.NoError(t, err)
 		})
 		t.Run("given value with wrong type, should return error", func(t *testing.T) {
-			err := gov.ValidateSpec("custom", map[string]interface{}{
+			err := grc.ValidatePolicySpec("custom", map[string]interface{}{
 				"allow":   "str",
 				"timeout": "5s",
 				"name":    "a",
@@ -69,7 +69,7 @@ func TestPolicySchema_Validate(t *testing.T) {
 			assert.Error(t, err)
 		})
 		t.Run("do not give required value, should return error", func(t *testing.T) {
-			err := gov.ValidateSpec("custom", map[string]interface{}{
+			err := grc.ValidatePolicySpec("custom", map[string]interface{}{
 				"allow":   true,
 				"timeout": "5s",
 				"age":     10,

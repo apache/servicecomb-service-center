@@ -26,8 +26,7 @@ import (
 	model "github.com/apache/servicecomb-service-center/pkg/gov"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
-	"github.com/apache/servicecomb-service-center/server/service/gov"
-	"github.com/apache/servicecomb-service-center/server/service/gov/kie"
+	"github.com/apache/servicecomb-service-center/server/service/grc"
 	"github.com/go-chassis/cari/discovery"
 )
 
@@ -63,15 +62,15 @@ func (t *Governance) Create(w http.ResponseWriter, r *http.Request) {
 		rest.WriteError(w, discovery.ErrInvalidParams, err.Error())
 		return
 	}
-	err = gov.ValidateSpec(kind, p.Spec)
+	err = grc.ValidatePolicySpec(kind, p.Spec)
 	if err != nil {
-		log.Error("validate policy err", err)
+		log.Error(fmt.Sprintf("validate policy [%s] err", kind), err)
 		rest.WriteError(w, discovery.ErrInvalidParams, err.Error())
 		return
 	}
-	id, err := gov.Create(r.Context(), kind, project, p)
+	id, err := grc.Create(r.Context(), kind, project, p)
 	if err != nil {
-		if _, ok := err.(*kie.ErrIllegalItem); ok {
+		if _, ok := err.(*grc.ErrIllegalItem); ok {
 			log.Error("", err)
 			rest.WriteError(w, discovery.ErrInvalidParams, err.Error())
 			return
@@ -101,16 +100,16 @@ func (t *Governance) Put(w http.ResponseWriter, r *http.Request) {
 		rest.WriteError(w, discovery.ErrInvalidParams, err.Error())
 		return
 	}
-	err = gov.ValidateSpec(kind, p.Spec)
+	err = grc.ValidatePolicySpec(kind, p.Spec)
 	if err != nil {
 		log.Error("validate policy err", err)
 		rest.WriteError(w, discovery.ErrInvalidParams, err.Error())
 		return
 	}
 	log.Info(fmt.Sprintf("update %v", &p))
-	err = gov.Update(r.Context(), kind, id, project, p)
+	err = grc.Update(r.Context(), kind, id, project, p)
 	if err != nil {
-		if _, ok := err.(*kie.ErrIllegalItem); ok {
+		if _, ok := err.(*grc.ErrIllegalItem); ok {
 			log.Error("", err)
 			rest.WriteError(w, discovery.ErrInvalidParams, err.Error())
 			return
@@ -131,9 +130,9 @@ func (t *Governance) ListOrDisPlay(w http.ResponseWriter, r *http.Request) {
 	var body []byte
 	var err error
 	if kind == DisplayKey {
-		body, err = gov.Display(r.Context(), project, app, environment)
+		body, err = grc.Display(r.Context(), project, app, environment)
 	} else {
-		body, err = gov.List(r.Context(), kind, project, app, environment)
+		body, err = grc.List(r.Context(), kind, project, app, environment)
 	}
 	if err != nil {
 		processError(w, err, "list gov err")
@@ -148,7 +147,7 @@ func (t *Governance) Get(w http.ResponseWriter, r *http.Request) {
 	kind := query.Get(KindKey)
 	id := query.Get(IDKey)
 	project := query.Get(ProjectKey)
-	body, err := gov.Get(r.Context(), kind, id, project)
+	body, err := grc.Get(r.Context(), kind, id, project)
 	if err != nil {
 		processError(w, err, "get gov err")
 		return
@@ -162,7 +161,7 @@ func (t *Governance) Delete(w http.ResponseWriter, r *http.Request) {
 	kind := query.Get(KindKey)
 	id := query.Get(IDKey)
 	project := query.Get(ProjectKey)
-	err := gov.Delete(r.Context(), kind, id, project)
+	err := grc.Delete(r.Context(), kind, id, project)
 	if err != nil {
 		processError(w, err, "delete gov err")
 		return

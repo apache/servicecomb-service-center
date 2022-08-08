@@ -27,7 +27,7 @@ import (
 
 	"github.com/apache/servicecomb-service-center/pkg/gov"
 	"github.com/apache/servicecomb-service-center/server/config"
-	svc "github.com/apache/servicecomb-service-center/server/service/gov"
+	grcsvc "github.com/apache/servicecomb-service-center/server/service/grc"
 )
 
 type Distributor struct {
@@ -126,14 +126,14 @@ func (d *Distributor) Get(ctx context.Context, kind, id, project string) ([]byte
 }
 
 func (d *Distributor) Type() string {
-	return svc.ConfigDistributorMock
+	return grcsvc.ConfigDistributorMock
 }
 func (d *Distributor) Name() string {
 	return d.name
 }
-func new(opts config.DistributorOptions) (svc.ConfigDistributor, error) {
+func new(opts config.DistributorOptions) (grcsvc.ConfigDistributor, error) {
 	return &Distributor{name: opts.Name, lbPolicies: map[string]*gov.Policy{}}, nil
 }
 func init() {
-	svc.InstallDistributor(svc.ConfigDistributorMock, new)
+	grcsvc.InstallDistributor(grcsvc.ConfigDistributorMock, new)
 }

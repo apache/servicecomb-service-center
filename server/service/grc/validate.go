@@ -15,14 +15,26 @@
  * limitations under the License.
  */
 
-package kie
+package grc
 
 import (
 	"fmt"
 )
 
-type Validator struct {
-}
+const (
+	KeyPrefix       = "servicecomb."
+	KindMatchGroup  = "match-group"
+	GroupNamePrefix = "scene-"
+	StatusEnabled   = "enabled"
+	TypeText        = "text"
+	KeyApp          = "app"
+	KeyEnvironment  = "environment"
+	EnvAll          = "all"
+	Alias           = "alias"
+	Method          = "method"
+	Matches         = "matches"
+	Rules           = "rules"
+)
 
 type ErrIllegalItem struct {
 	err string
@@ -37,7 +49,11 @@ func (e *ErrIllegalItem) Error() string {
 	return fmt.Sprintf("illegal item : %v , msg: %s", e.val, e.err)
 }
 
-func (d *Validator) Validate(kind string, spec interface{}) error {
+// Validate is a legacy API, it is not extensible due to its bad design pattern
+// Please use grc.RegisterPolicySchema
+// it only response for validate 3 kinds of policy. if it is not this 3 kinds, it will not return error,
+// it return nil error, and let grc.ValidatePolicySpec to do the job
+func Validate(kind string, spec interface{}) error {
 	switch kind {
 	case "match-group":
 		return matchValidate(spec)
@@ -45,16 +61,9 @@ func (d *Validator) Validate(kind string, spec interface{}) error {
 		return retryValidate(spec)
 	case "rate-limiting":
 		return rateLimitingValidate(spec)
-	case "circuit-breaker":
-	case "instance-isolation":
-	case "fault-injection":
-	case "bulkhead":
-	case "loadbalancer":
-		return nil
 	default:
-		return &ErrIllegalItem{"not support kind yet", kind}
+		return nil
 	}
-	return nil
 }
 
 func matchValidate(val interface{}) error {

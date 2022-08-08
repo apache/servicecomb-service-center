@@ -15,18 +15,19 @@
  * limitations under the License.
  */
 
-package gov_test
+package grc_test
 
 import (
 	"context"
 	"encoding/json"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/apache/servicecomb-service-center/pkg/gov"
 	"github.com/apache/servicecomb-service-center/server/config"
-	svc "github.com/apache/servicecomb-service-center/server/service/gov"
-	_ "github.com/apache/servicecomb-service-center/server/service/gov/mock"
-	"github.com/stretchr/testify/assert"
+	grcsvc "github.com/apache/servicecomb-service-center/server/service/grc"
+	_ "github.com/apache/servicecomb-service-center/server/service/grc/mock"
 )
 
 const Project = "default"
@@ -47,14 +48,14 @@ func init() {
 			},
 		},
 	}
-	err := svc.Init()
+	err := grcsvc.Init()
 	if err != nil {
 		panic(err)
 	}
 }
 
 func TestCreate(t *testing.T) {
-	res, err := svc.Create(context.TODO(), MockKind, Project, &gov.Policy{
+	res, err := grcsvc.Create(context.TODO(), MockKind, Project, &gov.Policy{
 		GovernancePolicy: &gov.GovernancePolicy{
 			Name: "Traffic2adminAPI",
 			Selector: gov.Selector{
@@ -70,7 +71,7 @@ func TestCreate(t *testing.T) {
 }
 
 func TestUpdate(t *testing.T) {
-	err := svc.Update(context.TODO(), MockKind, id, Project, &gov.Policy{
+	err := grcsvc.Update(context.TODO(), MockKind, id, Project, &gov.Policy{
 		GovernancePolicy: &gov.GovernancePolicy{
 			Name: "Traffic2adminAPI",
 			Selector: gov.Selector{
@@ -84,7 +85,7 @@ func TestUpdate(t *testing.T) {
 }
 
 func TestDisplay(t *testing.T) {
-	res, err := svc.Create(context.TODO(), MatchGroup, Project, &gov.Policy{
+	res, err := grcsvc.Create(context.TODO(), MatchGroup, Project, &gov.Policy{
 		GovernancePolicy: &gov.GovernancePolicy{
 			Name: "Traffic2adminAPI",
 			Selector: gov.Selector{
@@ -96,7 +97,7 @@ func TestDisplay(t *testing.T) {
 	id = string(res)
 	assert.NoError(t, err)
 	policies := &[]*gov.DisplayData{}
-	res, err = svc.Display(context.TODO(), Project, MockApp, MockEnv)
+	res, err = grcsvc.Display(context.TODO(), Project, MockApp, MockEnv)
 	assert.NoError(t, err)
 	err = json.Unmarshal(res, policies)
 	assert.NoError(t, err)
@@ -105,7 +106,7 @@ func TestDisplay(t *testing.T) {
 
 func TestList(t *testing.T) {
 	policies := &[]*gov.Policy{}
-	res, err := svc.List(context.TODO(), MockKind, Project, MockApp, MockEnv)
+	res, err := grcsvc.List(context.TODO(), MockKind, Project, MockApp, MockEnv)
 	assert.NoError(t, err)
 	err = json.Unmarshal(res, policies)
 	assert.NoError(t, err)
@@ -114,7 +115,7 @@ func TestList(t *testing.T) {
 
 func TestGet(t *testing.T) {
 	policy := &gov.Policy{}
-	res, err := svc.Get(context.TODO(), MockKind, id, Project)
+	res, err := grcsvc.Get(context.TODO(), MockKind, id, Project)
 	assert.NoError(t, err)
 	err = json.Unmarshal(res, policy)
 	assert.NoError(t, err)
@@ -122,8 +123,8 @@ func TestGet(t *testing.T) {
 }
 
 func TestDelete(t *testing.T) {
-	err := svc.Delete(context.TODO(), MockKind, id, Project)
+	err := grcsvc.Delete(context.TODO(), MockKind, id, Project)
 	assert.NoError(t, err)
-	res, _ := svc.Get(context.TODO(), MockKind, id, Project)
+	res, _ := grcsvc.Get(context.TODO(), MockKind, id, Project)
 	assert.Nil(t, res)
 }

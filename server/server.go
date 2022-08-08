@@ -32,7 +32,7 @@ import (
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/event"
 	"github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf"
-	"github.com/apache/servicecomb-service-center/server/service/gov"
+	"github.com/apache/servicecomb-service-center/server/service/grc"
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
 	"github.com/go-chassis/foundation/gopool"
 )
@@ -163,7 +163,7 @@ func (s *ServiceCenterServer) startServices() {
 	// load server plugins
 	plugin.LoadPlugins()
 	rbac.Init()
-	if err := gov.Init(); err != nil {
+	if err := grc.Init(); err != nil {
 		log.Fatal("init gov failed", err)
 	}
 	// check version
