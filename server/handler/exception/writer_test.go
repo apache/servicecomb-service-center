@@ -19,7 +19,7 @@ package exception_test
 
 import (
 	"bytes"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -53,7 +53,7 @@ func TestAsyncWriter_Flush(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusCreated, resp.StatusCode)
 		assert.Equal(t, "b", resp.Header.Get("a"))
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		assert.NoError(t, err)
 		assert.Equal(t, "Bye", string(body))
 	})

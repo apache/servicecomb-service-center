@@ -21,7 +21,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 
@@ -79,7 +79,7 @@ func (s *SchemaResource) GetSchema(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *SchemaResource) PutSchema(w http.ResponseWriter, r *http.Request) {
-	message, err := ioutil.ReadAll(r.Body)
+	message, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
 		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
@@ -106,7 +106,7 @@ func (s *SchemaResource) PutSchema(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *SchemaResource) PutSchemas(w http.ResponseWriter, r *http.Request) {
-	message, err := ioutil.ReadAll(r.Body)
+	message, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
 		rest.WriteError(w, pb.ErrInvalidParams, err.Error())

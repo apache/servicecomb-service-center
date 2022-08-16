@@ -18,8 +18,9 @@
 package grc_test
 
 import (
-	"github.com/apache/servicecomb-service-center/server/service/grc"
 	"testing"
+
+	"github.com/apache/servicecomb-service-center/server/service/grc"
 
 	"k8s.io/kube-openapi/pkg/validation/spec"
 

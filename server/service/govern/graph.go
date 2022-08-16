@@ -28,7 +28,7 @@ import (
 	"github.com/go-chassis/cari/discovery"
 )
 
-//Node 节点信息
+// Node 节点信息
 type Node struct {
 	ID       string   `json:"id"`
 	Name     string   `json:"name"`
@@ -40,7 +40,7 @@ type Node struct {
 	Visits   []string `json:"-"`
 }
 
-//Line 连接线信息
+// Line 连接线信息
 type Line struct {
 	From        Node   `json:"from"`
 	To          Node   `json:"to"`
@@ -49,12 +49,12 @@ type Line struct {
 	Description string `json:"descriptor"`
 }
 
-//Circle 环信息
+// Circle 环信息
 type Circle struct {
 	Nodes []Node `json:"nodes"`
 }
 
-//Graph 图全集信息
+// Graph 图全集信息
 type Graph struct {
 	Nodes   []Node   `json:"nodes"`
 	Lines   []Line   `json:"lines"`

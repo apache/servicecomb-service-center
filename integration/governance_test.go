@@ -19,7 +19,7 @@ package integrationtest_test
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"math/rand"
 	"net/http"
 	"strconv"
@@ -65,7 +65,7 @@ var _ = Describe("MicroService Api Test", func() {
 
 			// Validate the service creation
 			Expect(resp.StatusCode).To(Equal(http.StatusOK))
-			respbody, _ := ioutil.ReadAll(resp.Body)
+			respbody, _ := io.ReadAll(resp.Body)
 			serviceId = gojson.Json(string(respbody)).Get("serviceId").Tostring()
 			Expect(len(serviceId)).Should(BeNumerically("==", LengthUUID))
 
@@ -104,7 +104,7 @@ var _ = Describe("MicroService Api Test", func() {
 
 			// Validate the instance registration
 			Expect(resp.StatusCode).To(Equal(http.StatusOK))
-			respbody, _ = ioutil.ReadAll(resp.Body)
+			respbody, _ = io.ReadAll(resp.Body)
 			serviceInstanceID = gojson.Json(string(respbody)).Get("instanceId").Tostring()
 			Expect(len(serviceId)).Should(BeNumerically("==", LengthUUID))
 
@@ -138,7 +138,7 @@ var _ = Describe("MicroService Api Test", func() {
 				resp, err := scclient.Do(req)
 				Expect(err).To(BeNil())
 				defer resp.Body.Close()
-				respbody, _ := ioutil.ReadAll(resp.Body)
+				respbody, _ := io.ReadAll(resp.Body)
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 				servicesStruct := map[string]map[string]map[string]interface{}{}
 				json.Unmarshal(respbody, &servicesStruct)
@@ -165,7 +165,7 @@ var _ = Describe("MicroService Api Test", func() {
 				resp, err := scclient.Do(req)
 				Expect(err).To(BeNil())
 				defer resp.Body.Close()
-				respbody, _ := ioutil.ReadAll(resp.Body)
+				respbody, _ := io.ReadAll(resp.Body)
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 				relationStruct := map[string][]map[string]interface{}{}
 				json.Unmarshal(respbody, &relationStruct)
@@ -187,7 +187,7 @@ var _ = Describe("MicroService Api Test", func() {
 				resp, err := scclient.Do(req)
 				Expect(err).To(BeNil())
 				defer resp.Body.Close()
-				respbody, _ := ioutil.ReadAll(resp.Body)
+				respbody, _ := io.ReadAll(resp.Body)
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 				relationStruct := map[string][]map[string]map[string]interface{}{}
 
@@ -212,7 +212,7 @@ var _ = Describe("MicroService Api Test", func() {
 				resp, err := scclient.Do(req)
 				Expect(err).To(BeNil())
 				defer resp.Body.Close()
-				respbody, _ := ioutil.ReadAll(resp.Body)
+				respbody, _ := io.ReadAll(resp.Body)
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 				appIdsStruct := map[string][]string{}
 
@@ -258,7 +258,7 @@ func BenchmarkGovernance(b *testing.B) {
 
 	// Validate the service creation
 	Expect(resp.StatusCode).To(Equal(http.StatusOK))
-	respbody, _ := ioutil.ReadAll(resp.Body)
+	respbody, _ := io.ReadAll(resp.Body)
 	serviceId := gojson.Json(string(respbody)).Get("serviceId").Tostring()
 	Expect(len(serviceId)).Should(BeNumerically("==", LengthUUID))
 

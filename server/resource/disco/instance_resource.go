@@ -18,11 +18,12 @@
 package disco
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
+
+	"github.com/go-chassis/go-chassis/v2/pkg/codec"
 
 	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
 
@@ -51,7 +52,7 @@ func (s *InstanceResource) URLPatterns() []rest.Route {
 	}
 }
 func (s *InstanceResource) RegisterInstance(w http.ResponseWriter, r *http.Request) {
-	message, err := ioutil.ReadAll(r.Body)
+	message, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
 		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
@@ -59,7 +60,7 @@ func (s *InstanceResource) RegisterInstance(w http.ResponseWriter, r *http.Reque
 	}
 
 	request := &pb.RegisterInstanceRequest{}
-	err = json.Unmarshal(message, request)
+	err = codec.Decode(message, request)
 	if err != nil {
 		log.Error(fmt.Sprintf("invalid json: %s", util.BytesToStringWithNoCopy(message)), err)
 		rest.WriteError(w, pb.ErrInvalidParams, "Unmarshal error")
@@ -93,7 +94,7 @@ func (s *InstanceResource) SendHeartbeat(w http.ResponseWriter, r *http.Request)
 }
 
 func (s *InstanceResource) SendManyHeartbeat(w http.ResponseWriter, r *http.Request) {
-	message, err := ioutil.ReadAll(r.Body)
+	message, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
 		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
@@ -101,7 +102,7 @@ func (s *InstanceResource) SendManyHeartbeat(w http.ResponseWriter, r *http.Requ
 	}
 
 	request := &pb.HeartbeatSetRequest{}
-	err = json.Unmarshal(message, request)
+	err = codec.Decode(message, request)
 	if err != nil {
 		log.Error(fmt.Sprintf("invalid json: %s", util.BytesToStringWithNoCopy(message)), err)
 		rest.WriteError(w, pb.ErrInvalidParams, "Unmarshal error")
@@ -167,7 +168,7 @@ func (s *InstanceResource) FindInstances(w http.ResponseWriter, r *http.Request)
 }
 
 func (s *InstanceResource) InstancesAction(w http.ResponseWriter, r *http.Request) {
-	message, err := ioutil.ReadAll(r.Body)
+	message, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
 		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
@@ -187,7 +188,7 @@ func (s *InstanceResource) InstancesAction(w http.ResponseWriter, r *http.Reques
 
 func findManyInstances(w http.ResponseWriter, r *http.Request, body []byte) {
 	request := &pb.BatchFindInstancesRequest{}
-	err := json.Unmarshal(body, request)
+	err := codec.Decode(body, request)
 	if err != nil {
 		log.Error(fmt.Sprintf("invalid json: %s", util.BytesToStringWithNoCopy(body)), err)
 		rest.WriteError(w, pb.ErrInvalidParams, "Unmarshal error")
@@ -284,7 +285,7 @@ func (s *InstanceResource) PutInstanceStatus(w http.ResponseWriter, r *http.Requ
 
 func (s *InstanceResource) PutInstanceProperties(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
-	message, err := ioutil.ReadAll(r.Body)
+	message, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
 		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
@@ -294,7 +295,7 @@ func (s *InstanceResource) PutInstanceProperties(w http.ResponseWriter, r *http.
 		ServiceId:  query.Get(":serviceId"),
 		InstanceId: query.Get(":instanceId"),
 	}
-	err = json.Unmarshal(message, request)
+	err = codec.Decode(message, request)
 	if err != nil {
 		log.Error(fmt.Sprintf("invalid json: %s", util.BytesToStringWithNoCopy(message)), err)
 		rest.WriteError(w, pb.ErrInvalidParams, "Unmarshal error")

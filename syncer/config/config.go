@@ -59,7 +59,7 @@ func Init() error {
 	return nil
 }
 
-//Reload reload the all configurations
+// Reload reload the all configurations
 func Reload() error {
 	err := archaius.UnmarshalConfig(&config)
 	if err != nil {

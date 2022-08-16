@@ -19,7 +19,7 @@ package schema
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"strings"
@@ -100,7 +100,7 @@ func (m *Mux) SchemaHandleFunc(c echo.Context) (err error) {
 		}
 		return
 	}
-	respBody, err := ioutil.ReadAll(response.Body)
+	respBody, err := io.ReadAll(response.Body)
 	if err != nil {
 		oerr := c.String(http.StatusNotFound,
 			fmt.Sprintf("(could not fetch response body for error %s", err))

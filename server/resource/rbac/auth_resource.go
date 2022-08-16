@@ -19,7 +19,7 @@ package rbac
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/apache/servicecomb-service-center/datasource/rbac"
@@ -39,7 +39,7 @@ const DefaultTokenExpirationDuration = "12h"
 type AuthResource struct {
 }
 
-//URLPatterns define htp pattern
+// URLPatterns define htp pattern
 func (ar *AuthResource) URLPatterns() []rest.Route {
 	return []rest.Route{
 		{Method: http.MethodPost, Path: "/v4/token", Func: ar.Login},
@@ -55,7 +55,7 @@ func (ar *AuthResource) URLPatterns() []rest.Route {
 }
 
 func (ar *AuthResource) CreateAccount(w http.ResponseWriter, req *http.Request) {
-	body, err := ioutil.ReadAll(req.Body)
+	body, err := io.ReadAll(req.Body)
 	if err != nil {
 		log.Error("read body err", err)
 		rest.WriteError(w, discovery.ErrInternal, err.Error())
@@ -89,7 +89,7 @@ func (ar *AuthResource) DeleteAccount(w http.ResponseWriter, req *http.Request) 
 
 func (ar *AuthResource) UpdateAccount(w http.ResponseWriter, req *http.Request) {
 	name := req.URL.Query().Get(":name")
-	body, err := ioutil.ReadAll(req.Body)
+	body, err := io.ReadAll(req.Body)
 	if err != nil {
 		log.Error("read body err", err)
 		rest.WriteError(w, discovery.ErrInternal, err.Error())
@@ -137,7 +137,7 @@ func (ar *AuthResource) GetAccount(w http.ResponseWriter, r *http.Request) {
 }
 
 func (ar *AuthResource) ChangePassword(w http.ResponseWriter, req *http.Request) {
-	body, err := ioutil.ReadAll(req.Body)
+	body, err := io.ReadAll(req.Body)
 	if err != nil {
 		log.Error("read body err", err)
 		rest.WriteError(w, discovery.ErrInternal, err.Error())
@@ -160,7 +160,7 @@ func (ar *AuthResource) ChangePassword(w http.ResponseWriter, req *http.Request)
 }
 
 func (ar *AuthResource) Login(w http.ResponseWriter, r *http.Request) {
-	body, err := ioutil.ReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body err", err)
 		rest.WriteError(w, discovery.ErrInternal, err.Error())

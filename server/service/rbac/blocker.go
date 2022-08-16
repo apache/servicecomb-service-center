@@ -41,9 +41,9 @@ type LoginFailureLimiter struct {
 	Key     string
 }
 
-//TryLockAccount try to lock the account login attempt
+// TryLockAccount try to lock the account login attempt
 // it use time/rate to allow certainty failure,
-//it will ban client if rate limiter can not accept failures
+// it will ban client if rate limiter can not accept failures
 func TryLockAccount(key string) {
 	var c interface{}
 	var l *LoginFailureLimiter
@@ -69,9 +69,9 @@ func TryLockAccount(key string) {
 	}
 }
 
-//IsBanned check if a client is banned, and if client ban time expire,
-//it will release the client from banned status
-//use account name plus ip as key will maximum reduce the client conflicts
+// IsBanned check if a client is banned, and if client ban time expire,
+// it will release the client from banned status
+// use account name plus ip as key will maximum reduce the client conflicts
 func IsBanned(key string) bool {
 	banned, err := accountsvc.IsBanned(context.TODO(), key)
 	if err != nil {

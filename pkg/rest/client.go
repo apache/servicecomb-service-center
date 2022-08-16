@@ -23,7 +23,6 @@ import (
 	"crypto/tls"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -135,7 +134,7 @@ func (client *URLClient) HTTPDoWithContext(ctx context.Context, method string, r
 	case "gzip":
 		reader, err := NewGZipBodyReader(resp.Body)
 		if err != nil {
-			_, err = io.Copy(ioutil.Discard, resp.Body)
+			_, err = io.Copy(io.Discard, resp.Body)
 			if err != nil {
 				log.Error("", err)
 				resp.Body.Close()

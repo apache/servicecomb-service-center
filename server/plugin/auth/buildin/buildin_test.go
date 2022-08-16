@@ -20,9 +20,9 @@ package buildin_test
 // initialize
 import (
 	"context"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	_ "github.com/apache/servicecomb-service-center/test"
@@ -63,9 +63,9 @@ func TestTokenAuthenticator_Identify(t *testing.T) {
 
 		b, err := secret.RSAPrivate2Bytes(pri)
 		assert.NoError(t, err)
-		ioutil.WriteFile("./private.key", b, 0600)
+		os.WriteFile("./private.key", b, 0600)
 		b, err = secret.RSAPublicKey2Bytes(pub)
-		err = ioutil.WriteFile("./rbac.pub", b, 0600)
+		err = os.WriteFile("./rbac.pub", b, 0600)
 		assert.NoError(t, err)
 
 		archaius.Set(rbacsvc.InitPassword, "Complicated_password1")

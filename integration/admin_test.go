@@ -17,7 +17,7 @@
 package integrationtest_test
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	. "github.com/apache/servicecomb-service-center/integration"
@@ -31,7 +31,7 @@ var _ = Describe("Admin Api Test", func() {
 		req, _ := http.NewRequest(GET, SCURL+DUMP, nil)
 		req.Header.Set("X-Domain-Name", "default")
 		resp, err := scclient.Do(req)
-		respbody, _ := ioutil.ReadAll(resp.Body)
+		respbody, _ := io.ReadAll(resp.Body)
 		_, d := gojson.Json(string(respbody)).Getpath("cache", "services").ToArray()
 		Expect(err).To(BeNil())
 		Expect(resp.StatusCode).To(Equal(http.StatusOK))

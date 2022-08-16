@@ -17,7 +17,7 @@
 
 package schema
 
-//Options contains configuration for plugins
+// Options contains configuration for plugins
 type Options struct {
 	Kind string
 }

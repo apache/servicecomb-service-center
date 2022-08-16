@@ -21,7 +21,7 @@ import (
 	"time"
 )
 
-//Options contains metrics configs
+// Options contains metrics configs
 type Options struct {
 	Interval     time.Duration
 	InstanceName string

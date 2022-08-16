@@ -19,3 +19,4 @@ User Guides
    user-guides/ux.md
    user-guides/integration-istio.md
    user-guides/limits.md
+   user-guides/turbo.md

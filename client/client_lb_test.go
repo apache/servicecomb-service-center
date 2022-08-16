@@ -20,7 +20,7 @@ package client
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -43,7 +43,7 @@ func TestNewLBClient(t *testing.T) {
 
 	svc := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		b, _ := ioutil.ReadAll(req.Body)
+		b, _ := io.ReadAll(req.Body)
 		w.Write(b)
 	}))
 	defer svc.Close()

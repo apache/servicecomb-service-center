@@ -21,9 +21,9 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 	"time"
 
@@ -69,9 +69,9 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	ioutil.WriteFile("./private.key", b, 0600)
+	os.WriteFile("./private.key", b, 0600)
 	b, err = secret.RSAPublicKey2Bytes(pub)
-	err = ioutil.WriteFile("./rbac.pub", b, 0600)
+	err = os.WriteFile("./rbac.pub", b, 0600)
 	if err != nil {
 		panic(err)
 	}
@@ -482,7 +482,6 @@ func BenchmarkAuthResource_LoginP(b *testing.B) {
 	b.ReportAllocs()
 }
 
-//
 func BenchmarkAuthResource_Login(b *testing.B) {
 	body, _ := json.Marshal(&rbacmodel.Account{Name: "root", Password: devPwd1})
 	b.ResetTimer()

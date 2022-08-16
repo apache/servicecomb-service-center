@@ -17,10 +17,10 @@
 
 package gov
 
-//GovernancePolicy is a unified struct
-//all governance policy must extend this struct
-//Name is the policy name, for example: "rate-limit-payment-api"
-//MD is metadata.
+// GovernancePolicy is a unified struct
+// all governance policy must extend this struct
+// Name is the policy name, for example: "rate-limit-payment-api"
+// MD is metadata.
 type GovernancePolicy struct {
 	Name       string   `json:"name,omitempty"`
 	ID         string   `json:"id,omitempty"`
@@ -30,13 +30,13 @@ type GovernancePolicy struct {
 	Selector   Selector `json:"selector,omitempty"`
 }
 
-//DisplayData define display data
+// DisplayData define display data
 type DisplayData struct {
 	Policies   []*Policy `json:"policies,omitempty"`
 	MatchGroup *Policy   `json:"matchGroup,omitempty"`
 }
 
-//Policy define policy and fault tolerant policy
+// Policy define policy and fault tolerant policy
 type Policy struct {
 	*GovernancePolicy
 	Kind string                 `json:"kind,omitempty"`

@@ -48,19 +48,19 @@ var UPDATEINSTANCESTATUS = "/v4/default/registry/microservices/:serviceId/instan
 var INSTANCEHEARTBEAT = "/v4/default/registry/microservices/:serviceId/instances/:instanceId/heartbeat"
 var INSTANCEWATCHER = "/v4/default/registry/microservices/:serviceId/watcher"
 
-//Governance API's
+// Governance API's
 var GETGOVERNANCESERVICEDETAILS = "/v4/default/govern/microservices/:serviceId"
 var GETRELATIONGRAPH = "/v4/default/govern/relations"
 var GETALLSERVICEGOVERNANCEINFO = "/v4/default/govern/microservices"
 var GETALLAPPS = "/v4/default/govern/apps"
 
-//Tag API's
+// Tag API's
 var ADDTAGE = "/v4/default/registry/microservices/:serviceId/tags"
 var UPDATETAG = "/v4/default/registry/microservices/:serviceId/tags/:key"
 var GETTAGS = "/v4/default/registry/microservices/:serviceId/tags"
 var DELETETAG = "/v4/default/registry/microservices/:serviceId/tags/:key"
 
-//Admin API's
+// Admin API's
 var DUMP = "/v4/default/admin/dump"
 
 // HTTP METHODS

@@ -21,7 +21,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 
@@ -57,7 +57,7 @@ func (s *ServiceResource) URLPatterns() []rest.Route {
 }
 
 func (s *ServiceResource) RegisterService(w http.ResponseWriter, r *http.Request) {
-	message, err := ioutil.ReadAll(r.Body)
+	message, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
 		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
@@ -80,7 +80,7 @@ func (s *ServiceResource) RegisterService(w http.ResponseWriter, r *http.Request
 }
 
 func (s *ServiceResource) PutServiceProperties(w http.ResponseWriter, r *http.Request) {
-	message, err := ioutil.ReadAll(r.Body)
+	message, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
 		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
@@ -205,7 +205,7 @@ func (s *ServiceResource) GetService(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *ServiceResource) UnregisterManyService(w http.ResponseWriter, r *http.Request) {
-	message, err := ioutil.ReadAll(r.Body)
+	message, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
 		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
@@ -231,7 +231,7 @@ func (s *ServiceResource) UnregisterManyService(w http.ResponseWriter, r *http.R
 }
 
 func (s *ServiceResource) PutManyTags(w http.ResponseWriter, r *http.Request) {
-	message, err := ioutil.ReadAll(r.Body)
+	message, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
 		rest.WriteError(w, pb.ErrInvalidParams, err.Error())

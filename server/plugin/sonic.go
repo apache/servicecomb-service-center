@@ -15,9 +15,28 @@
  * limitations under the License.
  */
 
-package rbac
+package plugin
 
-// Options contains configuration for plugins
-type Options struct {
-	Kind string
+import (
+	"github.com/bytedance/sonic"
+	"github.com/go-chassis/cari/codec"
+	codecChassis "github.com/go-chassis/go-chassis/v2/pkg/codec"
+)
+
+func init() {
+	codecChassis.Install("bytedance/sonic", newDefault)
+}
+
+type Sonic struct {
+}
+
+func newDefault(opts codecChassis.Options) (codec.Codec, error) {
+	return &Sonic{}, nil
+}
+func (s *Sonic) Encode(v any) ([]byte, error) {
+	return sonic.Marshal(v)
+}
+
+func (s *Sonic) Decode(data []byte, v any) error {
+	return sonic.Unmarshal(data, v)
 }

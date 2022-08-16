@@ -19,7 +19,7 @@ package rbac
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/go-chassis/cari/discovery"
@@ -36,7 +36,7 @@ var ErrConflictRole int32 = 409002
 type RoleResource struct {
 }
 
-//URLPatterns define http pattern
+// URLPatterns define http pattern
 func (rr *RoleResource) URLPatterns() []rest.Route {
 	return []rest.Route{
 		{Method: http.MethodGet, Path: "/v4/roles", Func: rr.ListRoles},
@@ -47,7 +47,7 @@ func (rr *RoleResource) URLPatterns() []rest.Route {
 	}
 }
 
-//ListRoles list all roles and there's permissions
+// ListRoles list all roles and there's permissions
 func (rr *RoleResource) ListRoles(w http.ResponseWriter, req *http.Request) {
 	rs, num, err := rbacsvc.ListRole(req.Context())
 	if err != nil {
@@ -62,7 +62,7 @@ func (rr *RoleResource) ListRoles(w http.ResponseWriter, req *http.Request) {
 	rest.WriteResponse(w, req, nil, resp)
 }
 
-//roleParse parse the role info from the request body
+// roleParse parse the role info from the request body
 func (rr *RoleResource) roleParse(body []byte) (*rbac.Role, error) {
 	role := &rbac.Role{}
 	err := json.Unmarshal(body, role)
@@ -74,9 +74,9 @@ func (rr *RoleResource) roleParse(body []byte) (*rbac.Role, error) {
 	return role, nil
 }
 
-//CreateRole create new role and assign permissions
+// CreateRole create new role and assign permissions
 func (rr *RoleResource) CreateRole(w http.ResponseWriter, req *http.Request) {
-	body, err := ioutil.ReadAll(req.Body)
+	body, err := io.ReadAll(req.Body)
 	if err != nil {
 		log.Error("read body err", err)
 		rest.WriteError(w, discovery.ErrInternal, err.Error())
@@ -97,10 +97,10 @@ func (rr *RoleResource) CreateRole(w http.ResponseWriter, req *http.Request) {
 	rest.WriteResponse(w, req, nil, nil)
 }
 
-//UpdateRole update role permissions
+// UpdateRole update role permissions
 func (rr *RoleResource) UpdateRole(w http.ResponseWriter, req *http.Request) {
 	name := req.URL.Query().Get(":roleName")
-	body, err := ioutil.ReadAll(req.Body)
+	body, err := io.ReadAll(req.Body)
 	if err != nil {
 		log.Error("read body err", err)
 		rest.WriteError(w, discovery.ErrInternal, err.Error())
@@ -121,7 +121,7 @@ func (rr *RoleResource) UpdateRole(w http.ResponseWriter, req *http.Request) {
 	rest.WriteResponse(w, req, nil, nil)
 }
 
-//GetRole get the role info according to role name
+// GetRole get the role info according to role name
 func (rr *RoleResource) GetRole(w http.ResponseWriter, r *http.Request) {
 	resp, err := rbacsvc.GetRole(r.Context(), r.URL.Query().Get(":roleName"))
 	if err != nil {
@@ -133,7 +133,7 @@ func (rr *RoleResource) GetRole(w http.ResponseWriter, r *http.Request) {
 	rest.WriteResponse(w, r, nil, resp)
 }
 
-//DeleteRole delete the role info by role name
+// DeleteRole delete the role info by role name
 func (rr *RoleResource) DeleteRole(w http.ResponseWriter, req *http.Request) {
 	n := req.URL.Query().Get(":roleName")
 

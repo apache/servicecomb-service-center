@@ -21,7 +21,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -95,7 +94,7 @@ func CommandFunc(_ *cobra.Command, args []string) {
 
 	var progressBarWriter io.Writer = os.Stdout
 	if len(SaveDir) == 0 {
-		progressBarWriter = ioutil.Discard
+		progressBarWriter = io.Discard
 	}
 	progressBar := pb.NewProgressBar(len(cache.Microservices), progressBarWriter)
 	defer progressBar.FinishPrint("Finished.")

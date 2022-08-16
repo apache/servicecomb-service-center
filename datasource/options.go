@@ -24,7 +24,7 @@ import (
 	"github.com/go-chassis/openlog"
 )
 
-//Options contains configuration for plugins
+// Options contains configuration for plugins
 type Options struct {
 	// Kind plugin kind, can be 'etcd' or 'mongo'
 	Kind string `json:"-"`

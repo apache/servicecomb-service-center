@@ -17,7 +17,7 @@
 package server
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -72,7 +72,7 @@ func TestSCProxy(t *testing.T) {
 	assert.Equal(t, http.StatusOK, res.StatusCode, "Expected http %d, got %d", http.StatusOK, res.StatusCode)
 	defer res.Body.Close()
 
-	body, err := ioutil.ReadAll(res.Body)
+	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		t.Errorf("Error reading body: %s", err)
 	}

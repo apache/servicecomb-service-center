@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-//Package grc include API of governance(grc is the abbreviation of governance)
+// Package grc include API of governance(grc is the abbreviation of governance)
 package grc
 
 import (
@@ -33,11 +33,11 @@ import (
 
 type ValueType string
 
-//policySchemas saves policy kind and schema
+// policySchemas saves policy kind and schema
 var policySchemas = make(map[string]*spec.Schema)
 
-//RegisterPolicySchema register a contract of one kind of policy
-//this API is not thread safe, only use it during sc init
+// RegisterPolicySchema register a contract of one kind of policy
+// this API is not thread safe, only use it during sc init
 func RegisterPolicySchema(kind string, schema *spec.Schema) {
 	policySchemas[kind] = schema
 	log.Info("register policy schema: " + kind)

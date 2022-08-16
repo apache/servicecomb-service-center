@@ -35,7 +35,7 @@ import (
 )
 
 // InstanceEventHandler is the handler to handle events
-//as instance registry or instance delete, and notify syncer
+// as instance registry or instance delete, and notify syncer
 type InstanceEventHandler struct {
 }
 

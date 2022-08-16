@@ -20,7 +20,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"io/ioutil"
+	"io"
 	"net/http"
 	"testing"
 
@@ -49,7 +49,7 @@ var _ = Describe("Basic Api Test", func() {
 				Expect(err).To(BeNil())
 				defer resp.Body.Close()
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
-				respbody, _ := ioutil.ReadAll(resp.Body)
+				respbody, _ := io.ReadAll(resp.Body)
 				Expect(gojson.Json(string(respbody)).Get("apiVersion").Tostring()).To(Equal("4.0.0"))
 			})
 		})

@@ -32,7 +32,7 @@ import (
 	"github.com/golang-jwt/jwt"
 )
 
-//EmbeddedAuthenticator is sc default auth plugin, RBAC data is persisted in etcd
+// EmbeddedAuthenticator is sc default auth plugin, RBAC data is persisted in etcd
 type EmbeddedAuthenticator struct {
 }
 
@@ -40,7 +40,7 @@ func newEmbeddedAuthenticator(opts *authr.Options) (authr.Authenticator, error) 
 	return &EmbeddedAuthenticator{}, nil
 }
 
-//Login check db user and password,will verify and return token for valid account
+// Login check db user and password,will verify and return token for valid account
 func (a *EmbeddedAuthenticator) Login(ctx context.Context, user string, password string, opts ...authr.LoginOption) (string, error) {
 	ip := util.GetIPFromContext(ctx)
 	if IsBanned(MakeBanKey(user, ip)) {
@@ -83,7 +83,7 @@ func (a *EmbeddedAuthenticator) Login(ctx context.Context, user string, password
 	return tokenStr, nil
 }
 
-//Authenticate parse a token to claims
+// Authenticate parse a token to claims
 func (a *EmbeddedAuthenticator) Authenticate(ctx context.Context, tokenStr string) (interface{}, error) {
 	p, err := jwt.ParseRSAPublicKeyFromPEM([]byte(PublicKey()))
 	if err != nil {

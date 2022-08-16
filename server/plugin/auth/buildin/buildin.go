@@ -159,7 +159,7 @@ func (ba *TokenAuthenticator) VerifyToken(req *http.Request) (interface{}, error
 	return claims, nil
 }
 
-//this method decouple business code and perm checks
+// this method decouple business code and perm checks
 func checkPerm(roleList []string, req *http.Request) ([]map[string]string, error) {
 	hasAdmin, normalRoles := filterRoles(roleList)
 	if hasAdmin {

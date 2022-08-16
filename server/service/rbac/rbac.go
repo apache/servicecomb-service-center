@@ -21,7 +21,7 @@ import (
 	"context"
 	"crypto/rsa"
 	"errors"
-	"io/ioutil"
+	"os"
 
 	"github.com/go-chassis/cari/pkg/errsvc"
 	"github.com/go-chassis/cari/rbac"
@@ -46,7 +46,7 @@ var (
 	ErrSamePassword         = errors.New("the password can not be same as old one")
 )
 
-//Init decide whether enable rbac function and save the build-in roles to db
+// Init decide whether enable rbac function and save the build-in roles to db
 func Init() {
 	if !Enabled() {
 		log.Info("rbac is disabled")
@@ -87,11 +87,11 @@ func initBuildInAccount() {
 	}
 }
 
-//read key to memory
+// read key to memory
 func readPrivateKey() {
 	pf := config.GetString("rbac.privateKeyFile", "", config.WithStandby("rbac_rsa_private_key_file"))
 	// 打开文件
-	data, err := ioutil.ReadFile(pf)
+	data, err := os.ReadFile(pf)
 	if err != nil {
 		log.Fatal("can not read private key", err)
 		return
@@ -104,11 +104,11 @@ func readPrivateKey() {
 	log.Info("read private key success")
 }
 
-//read key to memory
+// read key to memory
 func readPublicKey() {
 	pf := config.GetString("rbac.publicKeyFile", "", config.WithStandby("rbac_rsa_public_key_file"))
 	// 打开文件
-	content, err := ioutil.ReadFile(pf)
+	content, err := os.ReadFile(pf)
 	if err != nil {
 		log.Fatal("can not find public key", err)
 		return
@@ -161,12 +161,12 @@ func Enabled() bool {
 	return config.GetRBAC().EnableRBAC
 }
 
-//PublicKey get public key to verify a token
+// PublicKey get public key to verify a token
 func PublicKey() string {
 	return archaius.GetString("rbac_public_key", "")
 }
 
-//privateKey get decrypted private key to verify a token
+// privateKey get decrypted private key to verify a token
 func privateKey() string {
 	ep := archaius.GetString("rbac_private_key", "")
 	p, err := cipher.Decrypt(ep)
@@ -177,7 +177,7 @@ func privateKey() string {
 	return p
 }
 
-//GetPrivateKey return rsa key instance
+// GetPrivateKey return rsa key instance
 func GetPrivateKey() (*rsa.PrivateKey, error) {
 	sk := privateKey()
 	p, err := secret.ParseRSAPrivateKey(sk)
@@ -188,7 +188,7 @@ func GetPrivateKey() (*rsa.PrivateKey, error) {
 	return p, nil
 }
 
-//MakeBanKey return ban key
+// MakeBanKey return ban key
 func MakeBanKey(name, ip string) string {
 	return name + "::" + ip
 }

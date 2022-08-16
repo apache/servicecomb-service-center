@@ -20,7 +20,7 @@ package v4
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -42,9 +42,9 @@ func (s *DependencyService) URLPatterns() []rest.Route {
 	}
 }
 
-//Deprecated
+// Deprecated
 func (s *DependencyService) AddDependencies(w http.ResponseWriter, r *http.Request) {
-	requestBody, err := ioutil.ReadAll(r.Body)
+	requestBody, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
 		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
@@ -67,9 +67,9 @@ func (s *DependencyService) AddDependencies(w http.ResponseWriter, r *http.Reque
 	rest.WriteResponse(w, r, nil, nil)
 }
 
-//Deprecated
+// Deprecated
 func (s *DependencyService) PutDependencies(w http.ResponseWriter, r *http.Request) {
-	requestBody, err := ioutil.ReadAll(r.Body)
+	requestBody, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
 		rest.WriteError(w, pb.ErrInvalidParams, err.Error())

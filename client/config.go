@@ -18,7 +18,7 @@
 package client
 
 import (
-	"io/ioutil"
+	"os"
 	"strings"
 	"time"
 
@@ -39,7 +39,7 @@ type Config struct {
 func (cfg *Config) Merge() rest.URLClientOption {
 	ssl := strings.Contains(cfg.Endpoints[0], "https://")
 	if ssl && len(cfg.CertKeyPWD) == 0 && len(cfg.CertKeyPWDPath) > 0 {
-		content, _ := ioutil.ReadFile(cfg.CertKeyPWDPath)
+		content, _ := os.ReadFile(cfg.CertKeyPWDPath)
 		cfg.CertKeyPWD = string(content)
 	}
 	cfg.SSLEnabled = ssl

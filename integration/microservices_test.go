@@ -19,7 +19,7 @@ package integrationtest_test
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"math/rand"
 	"net/http"
 	"strconv"
@@ -69,7 +69,7 @@ var _ = Describe("MicroService Api Test", func() {
 
 				// Validate the service creation
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
-				respbody, _ := ioutil.ReadAll(resp.Body)
+				respbody, _ := io.ReadAll(resp.Body)
 				serviceId = gojson.Json(string(respbody)).Get("serviceId").Tostring()
 				Expect(len(serviceId)).Should(BeNumerically("==", LengthUUID))
 
@@ -111,7 +111,7 @@ var _ = Describe("MicroService Api Test", func() {
 
 				// Validate the service creation
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
-				respbody, _ := ioutil.ReadAll(resp.Body)
+				respbody, _ := io.ReadAll(resp.Body)
 				serviceId = gojson.Json(string(respbody)).Get("serviceId").Tostring()
 				Expect(len(serviceId)).Should(BeNumerically("==", LengthUUID))
 			})
@@ -151,7 +151,7 @@ var _ = Describe("MicroService Api Test", func() {
 					req, _ := http.NewRequest(GET, SCURL+CHECKEXISTENCE+"?type=microservice&appId="+serviceAppId+"&serviceName="+serviceName+"&version="+serviceVersion, nil)
 					req.Header.Set("X-Domain-Name", "default")
 					resp, _ := scclient.Do(req)
-					respbody, _ := ioutil.ReadAll(resp.Body)
+					respbody, _ := io.ReadAll(resp.Body)
 					Expect(resp.StatusCode).To(Equal(http.StatusOK))
 					Expect(gojson.Json(string(respbody)).Get("serviceId").Tostring()).To(Equal(serviceId))
 				})
@@ -171,7 +171,7 @@ var _ = Describe("MicroService Api Test", func() {
 					req, _ := http.NewRequest(GET, SCURL+url, nil)
 					req.Header.Set("X-Domain-Name", "default")
 					resp, _ := scclient.Do(req)
-					respbody, _ := ioutil.ReadAll(resp.Body)
+					respbody, _ := io.ReadAll(resp.Body)
 					Expect(resp.StatusCode).To(Equal(http.StatusOK))
 					serviceRetrived := (gojson.Json(string(respbody)).Get("service")).Getdata()
 					Expect(serviceRetrived["serviceName"]).To(Equal(serviceName))
@@ -192,7 +192,7 @@ var _ = Describe("MicroService Api Test", func() {
 					req, _ := http.NewRequest(GET, SCURL+GETALLSERVICE, nil)
 					req.Header.Set("X-Domain-Name", "default")
 					resp, _ := scclient.Do(req)
-					respbody, _ := ioutil.ReadAll(resp.Body)
+					respbody, _ := io.ReadAll(resp.Body)
 					Expect(resp.StatusCode).To(Equal(http.StatusOK))
 					servicesStruct := map[string][]map[string]interface{}{}
 					json.Unmarshal(respbody, &servicesStruct)
@@ -210,7 +210,7 @@ var _ = Describe("MicroService Api Test", func() {
 					req, _ := http.NewRequest(GET, SCURL+GETALLSERVICE, nil)
 					req.Header.Set("X-Domain-Name", "default1")
 					resp, _ := scclient.Do(req)
-					respbody, _ := ioutil.ReadAll(resp.Body)
+					respbody, _ := io.ReadAll(resp.Body)
 					Expect(resp.StatusCode).To(Equal(http.StatusOK))
 					Expect(strings.TrimSpace(string(respbody))).To(Equal("{}"))
 				})
@@ -290,7 +290,7 @@ var _ = Describe("MicroService Api Test", func() {
 
 					// Validate the service creation
 					Expect(resp.StatusCode).To(Equal(http.StatusOK))
-					respbody, _ := ioutil.ReadAll(resp.Body)
+					respbody, _ := io.ReadAll(resp.Body)
 					consumerServiceID := gojson.Json(string(respbody)).Get("serviceId").Tostring()
 
 					//Create Dependency
@@ -377,7 +377,7 @@ var _ = Describe("MicroService Api Test", func() {
 
 					// Validate the service creation
 					Expect(resp.StatusCode).To(Equal(http.StatusOK))
-					respbody, _ := ioutil.ReadAll(resp.Body)
+					respbody, _ := io.ReadAll(resp.Body)
 					consumerServiceID := gojson.Json(string(respbody)).Get("serviceId").Tostring()
 
 					//Create Dependency
@@ -430,7 +430,7 @@ var _ = Describe("MicroService Api Test", func() {
 					req, _ = http.NewRequest(GET, SCURL+url, nil)
 					req.Header.Set("X-Domain-Name", "default")
 					resp, _ = scclient.Do(req)
-					respbody, _ = ioutil.ReadAll(resp.Body)
+					respbody, _ = io.ReadAll(resp.Body)
 					Expect(resp.StatusCode).To(Equal(http.StatusOK))
 					servicesStruct := map[string][]map[string]interface{}{}
 
@@ -449,7 +449,7 @@ var _ = Describe("MicroService Api Test", func() {
 					req, _ = http.NewRequest(GET, SCURL+url, nil)
 					req.Header.Set("X-Domain-Name", "default")
 					resp, _ = scclient.Do(req)
-					respbody, _ = ioutil.ReadAll(resp.Body)
+					respbody, _ = io.ReadAll(resp.Body)
 					Expect(resp.StatusCode).To(Equal(http.StatusOK))
 					servicesStruct = map[string][]map[string]interface{}{}
 
@@ -468,7 +468,7 @@ var _ = Describe("MicroService Api Test", func() {
 					req, _ = http.NewRequest(GET, SCURL+url, nil)
 					req.Header.Set("X-Domain-Name", "default")
 					resp, _ = scclient.Do(req)
-					respbody, _ = ioutil.ReadAll(resp.Body)
+					respbody, _ = io.ReadAll(resp.Body)
 					Expect(resp.StatusCode).To(Equal(http.StatusOK))
 					servicesStruct = map[string][]map[string]interface{}{}
 
@@ -501,7 +501,7 @@ var _ = Describe("MicroService Api Test", func() {
 					req, _ = http.NewRequest(GET, SCURL+url, nil)
 					req.Header.Set("X-Domain-Name", "default")
 					resp, _ = scclient.Do(req)
-					respbody, _ = ioutil.ReadAll(resp.Body)
+					respbody, _ = io.ReadAll(resp.Body)
 					Expect(resp.StatusCode).To(Equal(http.StatusOK))
 					servicesStruct = map[string][]map[string]interface{}{}
 					json.Unmarshal(respbody, &servicesStruct)
@@ -572,7 +572,7 @@ func BenchmarkRegisterMicroServiceAndDelete(b *testing.B) {
 
 		// Validate the service creation
 		Expect(resp.StatusCode).To(Equal(http.StatusOK))
-		respbody, _ := ioutil.ReadAll(resp.Body)
+		respbody, _ := io.ReadAll(resp.Body)
 		serviceId := gojson.Json(string(respbody)).Get("serviceId").Tostring()
 		Expect(len(serviceId)).Should(BeNumerically("==", LengthUUID))
 		if serviceId != "" {
@@ -616,7 +616,7 @@ func getServiceName(serviceId string) {
 	req, _ := http.NewRequest(GET, SCURL+url, nil)
 	req.Header.Set("X-Domain-Name", "default")
 	resp, _ := scclient.Do(req)
-	respbody, _ := ioutil.ReadAll(resp.Body)
+	respbody, _ := io.ReadAll(resp.Body)
 	Expect(resp.StatusCode).To(Equal(http.StatusOK))
 	serviceRetrived := (gojson.Json(string(respbody)).Get("service")).Getdata()
 	serviceName = serviceRetrived["serviceName"].(string)

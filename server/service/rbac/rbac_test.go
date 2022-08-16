@@ -19,7 +19,7 @@ package rbac_test
 
 import (
 	"context"
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/apache/servicecomb-service-center/pkg/privacy"
@@ -56,9 +56,9 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	ioutil.WriteFile("./private.key", b, 0600)
+	os.WriteFile("./private.key", b, 0600)
 	b, err = secret.RSAPublicKey2Bytes(pub)
-	err = ioutil.WriteFile("./rbac.pub", b, 0600)
+	err = os.WriteFile("./rbac.pub", b, 0600)
 	if err != nil {
 		panic(err)
 	}

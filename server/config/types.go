@@ -26,7 +26,7 @@ const (
 	EnvironmentProd = "prod"
 )
 
-//AppConfig is yaml file struct
+// AppConfig is yaml file struct
 type AppConfig struct {
 	Gov    *Gov          `yaml:"gov"`
 	Server *ServerConfig `yaml:"server"`

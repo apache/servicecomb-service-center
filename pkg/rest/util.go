@@ -19,15 +19,15 @@ package rest
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/cari/pkg/errsvc"
+	"github.com/go-chassis/go-chassis/v2/pkg/codec"
 )
 
 var errNilRequestBody = errors.New("request body is nil")
@@ -44,7 +44,7 @@ func WriteServiceError(w http.ResponseWriter, err error) {
 		return
 	}
 	status := e.StatusCode()
-	b, err := json.Marshal(e)
+	b, err := codec.Encode(e)
 	if err != nil {
 		log.Error("json marshal failed", err)
 		status = http.StatusInternalServerError
@@ -85,7 +85,7 @@ func WriteResponse(w http.ResponseWriter, r *http.Request, resp *discovery.Respo
 	case []byte:
 		data = body
 	default:
-		data, err = json.Marshal(body)
+		data, err = codec.Encode(body)
 		if err != nil {
 			WriteError(w, discovery.ErrInternal, err.Error())
 			return
@@ -109,10 +109,10 @@ func ReadBody(r *http.Request) ([]byte, error) {
 		return nil, errNilRequestBody
 	}
 
-	data, err := ioutil.ReadAll(r.Body)
+	data, err := io.ReadAll(r.Body)
 	if err != nil {
 		return nil, err
 	}
-	r.Body = ioutil.NopCloser(bytes.NewReader(data))
+	r.Body = io.NopCloser(bytes.NewReader(data))
 	return data, nil
 }

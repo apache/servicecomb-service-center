@@ -19,7 +19,7 @@ package integrationtest_test
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"math/rand"
 	"net/http"
 	"strconv"
@@ -64,7 +64,7 @@ var _ = Describe("MicroService Api Test", func() {
 
 			// Validate the service creation
 			Expect(resp.StatusCode).To(Equal(http.StatusOK))
-			respbody, _ := ioutil.ReadAll(resp.Body)
+			respbody, _ := io.ReadAll(resp.Body)
 			serviceId = gojson.Json(string(respbody)).Get("serviceId").Tostring()
 			Expect(len(serviceId)).Should(BeNumerically("==", LengthUUID))
 		})
@@ -178,7 +178,7 @@ var _ = Describe("MicroService Api Test", func() {
 				req.Header.Set("X-Domain-Name", "default")
 				req.Header.Set("X-ConsumerId", serviceId)
 				resp, _ = scclient.Do(req)
-				respbody, _ := ioutil.ReadAll(resp.Body)
+				respbody, _ := io.ReadAll(resp.Body)
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 				tagsStruct := map[string]interface{}{}
 				json.Unmarshal(respbody, &tagsStruct)
@@ -192,7 +192,7 @@ var _ = Describe("MicroService Api Test", func() {
 				req.Header.Set("X-Domain-Name", "default")
 				req.Header.Set("X-ConsumerId", serviceId)
 				resp, _ := scclient.Do(req)
-				respbody, _ := ioutil.ReadAll(resp.Body)
+				respbody, _ := io.ReadAll(resp.Body)
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 				Expect(string(bytes.TrimSpace(respbody))).To(Equal("{}"))
 			})
@@ -246,7 +246,7 @@ var _ = Describe("MicroService Api Test", func() {
 				req.Header.Set("X-Domain-Name", "default")
 				req.Header.Set("X-ConsumerId", serviceId)
 				resp, _ = scclient.Do(req)
-				respbody, _ := ioutil.ReadAll(resp.Body)
+				respbody, _ := io.ReadAll(resp.Body)
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 				tagsStruct := map[string]interface{}{}
 				json.Unmarshal(respbody, &tagsStruct)
@@ -344,7 +344,7 @@ var _ = Describe("MicroService Api Test", func() {
 				req.Header.Set("X-Domain-Name", "default")
 				req.Header.Set("X-ConsumerId", serviceId)
 				resp, _ = scclient.Do(req)
-				respbody, _ := ioutil.ReadAll(resp.Body)
+				respbody, _ := io.ReadAll(resp.Body)
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 				Expect(string(bytes.TrimSpace(respbody))).To(Equal("{}"))
 			})
@@ -387,7 +387,7 @@ var _ = Describe("MicroService Api Test", func() {
 				req.Header.Set("X-Domain-Name", "default")
 				req.Header.Set("X-ConsumerId", serviceId)
 				resp, _ = scclient.Do(req)
-				respbody, _ := ioutil.ReadAll(resp.Body)
+				respbody, _ := io.ReadAll(resp.Body)
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 				tagsStruct := map[string]interface{}{}
 				json.Unmarshal(respbody, &tagsStruct)
