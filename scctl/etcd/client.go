@@ -19,7 +19,7 @@ package etcd
 
 import (
 	"crypto/tls"
-	"io/ioutil"
+	"os"
 	"strings"
 	"time"
 
@@ -36,7 +36,7 @@ func NewEtcdClient(cfg Config) (*clientv3.Client, error) {
 	for _, ip := range endpoints {
 		if strings.Contains(ip, "https://") {
 			if len(cfg.CertKeyPWD) == 0 && len(cfg.CertKeyPWDPath) > 0 {
-				content, _ := ioutil.ReadFile(cfg.CertKeyPWDPath)
+				content, _ := os.ReadFile(cfg.CertKeyPWDPath)
 				cfg.CertKeyPWD = string(content)
 			}
 			opts := append(tlsutil.DefaultClientTLSOptions(),

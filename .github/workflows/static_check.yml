@@ -5,10 +5,10 @@ jobs:
     name: Merge check
     runs-on: ubuntu-latest
     steps:
-      - name: Set up Go 1.17
+      - name: Set up Go 1.18
         uses: actions/setup-go@v1
         with:
-          go-version: 1.17
+          go-version: 1.18
         id: go
       - name: Check out code into the Go module directory
         uses: actions/checkout@v1
@@ -18,10 +18,10 @@ jobs:
   ut4etcd:
     runs-on: ubuntu-latest
     steps:
-      - name: Set up Go 1.17
+      - name: Set up Go 1.18
         uses: actions/setup-go@v1
         with:
-          go-version: 1.17
+          go-version: 1.18
         id: go
       - name: Check out code into the Go module directory
         uses: actions/checkout@v1
@@ -31,10 +31,10 @@ jobs:
   ut4mongo:
     runs-on: ubuntu-latest
     steps:
-      - name: Set up Go 1.17
+      - name: Set up Go 1.18
         uses: actions/setup-go@v1
         with:
-          go-version: 1.17
+          go-version: 1.18
         id: go
       - name: Check out code into the Go module directory
         uses: actions/checkout@v1
@@ -46,10 +46,10 @@ jobs:
   integration-test:
     runs-on: ubuntu-latest
     steps:
-      - name: Set up Go 1.17
+      - name: Set up Go 1.18
         uses: actions/setup-go@v1
         with:
-          go-version: 1.17
+          go-version: 1.18
         id: go
       - name: Check out code into the Go module directory
         uses: actions/checkout@v1

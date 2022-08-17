@@ -43,42 +43,42 @@ var (
 	App = &AppConfig{Server: Server}
 )
 
-//GetProfile return active profile
+// GetProfile return active profile
 func GetProfile() *ServerConfig {
 	return App.Server
 }
 
-//GetGov return governance configs
+// GetGov return governance configs
 func GetGov() *Gov {
 	return App.Gov
 }
 
-//GetServer return the http server configs
+// GetServer return the http server configs
 func GetServer() ServerConfigDetail {
 	return App.Server.Config
 }
 
-//GetSSL return the ssl configs
+// GetSSL return the ssl configs
 func GetSSL() ServerConfigDetail {
 	return App.Server.Config
 }
 
-//GetLog return the log configs
+// GetLog return the log configs
 func GetLog() ServerConfigDetail {
 	return App.Server.Config
 }
 
-//GetRegistry return the registry configs
+// GetRegistry return the registry configs
 func GetRegistry() ServerConfigDetail {
 	return App.Server.Config
 }
 
-//GetPlugin return the plugin configs
+// GetPlugin return the plugin configs
 func GetPlugin() ServerConfigDetail {
 	return App.Server.Config
 }
 
-//GetRBAC return the rbac configs
+// GetRBAC return the rbac configs
 func GetRBAC() ServerConfigDetail {
 	return App.Server.Config
 }
@@ -106,7 +106,7 @@ func Init() {
 	version.Ver().Log()
 }
 
-//Reload reload the all configurations
+// Reload reload the all configurations
 func Reload() error {
 	err := archaius.UnmarshalConfig(App)
 	if err != nil {

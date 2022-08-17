@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-//Package test prepare service center required module before UT
+// Package test prepare service center required module before UT
 package test
 
 import (

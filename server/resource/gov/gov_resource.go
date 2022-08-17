@@ -20,7 +20,7 @@ package gov
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	model "github.com/apache/servicecomb-service-center/pkg/gov"
@@ -42,12 +42,12 @@ const (
 	DisplayKey     = "display"
 )
 
-//Create gov config
+// Create gov config
 func (t *Governance) Create(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	kind := query.Get(KindKey)
 	project := query.Get(ProjectKey)
-	body, err := ioutil.ReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body err", err)
 		rest.WriteError(w, discovery.ErrInternal, err.Error())
@@ -82,13 +82,13 @@ func (t *Governance) Create(w http.ResponseWriter, r *http.Request) {
 	rest.WriteResponse(w, r, nil, &model.Policy{GovernancePolicy: &model.GovernancePolicy{ID: string(id)}})
 }
 
-//Put gov config
+// Put gov config
 func (t *Governance) Put(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	kind := query.Get(KindKey)
 	id := query.Get(IDKey)
 	project := query.Get(ProjectKey)
-	body, err := ioutil.ReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		processError(w, err, "read body err")
 		return
@@ -120,7 +120,7 @@ func (t *Governance) Put(w http.ResponseWriter, r *http.Request) {
 	rest.WriteResponse(w, r, nil, nil)
 }
 
-//ListOrDisPlay return all gov config
+// ListOrDisPlay return all gov config
 func (t *Governance) ListOrDisPlay(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	kind := query.Get(KindKey)
@@ -141,7 +141,7 @@ func (t *Governance) ListOrDisPlay(w http.ResponseWriter, r *http.Request) {
 	rest.WriteResponse(w, r, nil, body)
 }
 
-//Get gov config
+// Get gov config
 func (t *Governance) Get(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	kind := query.Get(KindKey)
@@ -155,7 +155,7 @@ func (t *Governance) Get(w http.ResponseWriter, r *http.Request) {
 	rest.WriteResponse(w, r, nil, body)
 }
 
-//Delete delete gov config
+// Delete delete gov config
 func (t *Governance) Delete(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	kind := query.Get(KindKey)

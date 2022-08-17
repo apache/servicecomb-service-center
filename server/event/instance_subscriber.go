@@ -49,7 +49,7 @@ func (w *InstanceSubscriber) OnAccept() {
 	log.Debug(fmt.Sprintf("accepted by event service, %s watcher %s %s", w.Type(), w.Group(), w.Subject()))
 }
 
-//被通知
+// 被通知
 func (w *InstanceSubscriber) OnMessage(evt event.Event) {
 	if w.Err() != nil {
 		return

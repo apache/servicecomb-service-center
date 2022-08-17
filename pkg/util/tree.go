@@ -17,7 +17,7 @@
 
 package util
 
-//The Tree is binary sort Tree
+// The Tree is binary sort Tree
 type Tree struct {
 	root        *Node
 	isAddToLeft func(node *Node, addRes interface{}) bool
@@ -38,7 +38,7 @@ func (t *Tree) GetRoot() *Node {
 	return t.root
 }
 
-//add res into Tree
+// add res into Tree
 func (t *Tree) AddNode(res interface{}) *Node {
 	return t.addNode(t.root, res)
 }
@@ -60,7 +60,7 @@ func (t *Tree) addNode(n *Node, res interface{}) *Node {
 	return n
 }
 
-//middle oder traversal, handle is the func that deals with the res, n is the start node to traversal
+// middle oder traversal, handle is the func that deals with the res, n is the start node to traversal
 func (t *Tree) InOrderTraversal(n *Node, handle func(res interface{}) error) error {
 	if n == nil {
 		return nil

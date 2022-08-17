@@ -32,8 +32,8 @@ var doNothingFunc = func(_ chain.Result) {}
 
 // Router is a HTTP request multiplexer
 // Attention:
-//   1. not thread-safe, must be initialized completely before serve http request
-//   2. redirect not supported
+//  1. not thread-safe, must be initialized completely before serve http request
+//  2. redirect not supported
 type Router struct {
 	handlers  map[string][]*urlPatternHandler
 	chainName string

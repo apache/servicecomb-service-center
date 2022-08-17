@@ -36,10 +36,10 @@ type NewDistributors func(opts config.DistributorOptions) (ConfigDistributor, er
 var distributors = map[string]ConfigDistributor{}
 var distributorPlugins = map[string]NewDistributors{}
 
-//ConfigDistributor persist and distribute Governance policy
-//typically, a ConfigDistributor interact with a config server, like ctrip apollo, kie.
-//or service mesh system like istio, linkerd.
-//ConfigDistributor will convert standard servicecomb gov config to concrete spec, that data plane can recognize.
+// ConfigDistributor persist and distribute Governance policy
+// typically, a ConfigDistributor interact with a config server, like ctrip apollo, kie.
+// or service mesh system like istio, linkerd.
+// ConfigDistributor will convert standard servicecomb gov config to concrete spec, that data plane can recognize.
 type ConfigDistributor interface {
 	Create(ctx context.Context, kind, project string, policy *model.Policy) ([]byte, error)
 	Update(ctx context.Context, kind, id, project string, p *model.Policy) error
@@ -51,13 +51,13 @@ type ConfigDistributor interface {
 	Name() string
 }
 
-//InstallDistributor install a plugin to distribute and persist config
+// InstallDistributor install a plugin to distribute and persist config
 func InstallDistributor(t string, newDistributors NewDistributors) {
 	distributorPlugins[t] = newDistributors
 }
 
-//Init create distributors according to gov config.
-//it may creates multiple distributors. and distribute policy one by one
+// Init create distributors according to gov config.
+// it may creates multiple distributors. and distribute policy one by one
 func Init() error {
 	for name, opts := range config.GetGov().DistMap {
 		opts.Name = name

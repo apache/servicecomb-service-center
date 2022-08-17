@@ -22,7 +22,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	pb "github.com/go-chassis/cari/discovery"
@@ -57,7 +57,7 @@ func (c *Client) CreateSchemas(ctx context.Context, domain, project, serviceID s
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return pb.NewError(pb.ErrInternal, err.Error())
 	}
@@ -90,7 +90,7 @@ func (c *Client) UpdateSchema(ctx context.Context, domain, project, serviceID st
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return pb.NewError(pb.ErrInternal, err.Error())
 	}
@@ -118,7 +118,7 @@ func (c *Client) DeleteSchema(ctx context.Context, domain, project, serviceID st
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return pb.NewError(pb.ErrInternal, err.Error())
 	}
@@ -140,7 +140,7 @@ func (c *Client) GetSchemasByServiceID(ctx context.Context, domain, project, ser
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, pb.NewError(pb.ErrInternal, err.Error())
 	}
@@ -169,7 +169,7 @@ func (c *Client) GetSchemaBySchemaID(ctx context.Context, domain, project, servi
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, pb.NewError(pb.ErrInternal, err.Error())
 	}

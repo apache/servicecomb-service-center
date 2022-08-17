@@ -20,7 +20,6 @@ package buildin
 import (
 	"crypto/tls"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sync"
@@ -48,7 +47,7 @@ func GetSSLPath(path string) string {
 }
 
 func GetPassphase() (decrypt string) {
-	passphase, err := ioutil.ReadFile(GetSSLPath("cert_pwd"))
+	passphase, err := os.ReadFile(GetSSLPath("cert_pwd"))
 	if err != nil {
 		log.Error("read file cert_pwd failed.", err)
 	}

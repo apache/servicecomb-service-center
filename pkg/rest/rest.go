@@ -34,7 +34,7 @@ func RegisterServant(group RouteGroup) {
 	router.RegisterServant(group)
 }
 
-//GetRouter return the router fo REST service
+// GetRouter return the router fo REST service
 func GetRouter() http.Handler {
 	return router
 }

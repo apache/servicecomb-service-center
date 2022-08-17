@@ -19,7 +19,6 @@ package plugin
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"plugin"
@@ -63,13 +62,13 @@ func (pm *Loader) ReloadPlugins() error {
 		return fmt.Errorf("'plugins_dir' is unset")
 	}
 
-	files, err := ioutil.ReadDir(dir)
+	files, err := os.ReadDir(dir)
 	if err != nil {
 		return err
 	}
 
 	for _, file := range files {
-		if !file.Mode().IsRegular() {
+		if !file.Type().IsRegular() {
 			continue
 		}
 

@@ -21,7 +21,7 @@ import (
 	"github.com/apache/servicecomb-service-center/version"
 )
 
-//nolint
+// nolint
 var (
 	// no need to modify
 	// please use:

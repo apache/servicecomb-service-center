@@ -35,7 +35,7 @@ const (
 	MaxTokenDuration time.Duration = time.Hour * 24
 )
 
-//MatchString ensures TokenExpirationTime is a valid time.Duration and in legal range.
+// MatchString ensures TokenExpirationTime is a valid time.Duration and in legal range.
 func (p *TokenExpirationTimeChecker) MatchString(s string) bool {
 	duration, err := time.ParseDuration(s)
 	if err != nil {

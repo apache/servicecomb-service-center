@@ -21,7 +21,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 
@@ -52,7 +52,7 @@ func (c *Client) CreateService(ctx context.Context, domain, project string, serv
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", pb.NewError(pb.ErrInternal, err.Error())
 	}
@@ -81,7 +81,7 @@ func (c *Client) DeleteService(ctx context.Context, domain, project, serviceID s
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return pb.NewError(pb.ErrInternal, err.Error())
 	}
@@ -121,7 +121,7 @@ func (c *Client) existence(ctx context.Context, domain, project string, query ur
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, pb.NewError(pb.ErrInternal, err.Error())
 	}

@@ -20,7 +20,7 @@ package client
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/apache/servicecomb-service-center/pkg/dump"
@@ -66,7 +66,7 @@ func (c *Client) GetScVersion(ctx context.Context) (*version.Set, *errsvc.Error)
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, discovery.NewError(discovery.ErrInternal, err.Error())
 	}
@@ -94,7 +94,7 @@ func (c *Client) GetScCache(ctx context.Context) (*dump.Cache, *errsvc.Error) {
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, discovery.NewError(discovery.ErrInternal, err.Error())
 	}
@@ -122,7 +122,7 @@ func (c *Client) GetClusters(ctx context.Context) (etcdadpt.Clusters, *errsvc.Er
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, discovery.NewError(discovery.ErrInternal, err.Error())
 	}
@@ -150,7 +150,7 @@ func (c *Client) HealthCheck(ctx context.Context) *errsvc.Error {
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return discovery.NewError(discovery.ErrInternal, err.Error())
 	}

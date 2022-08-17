@@ -118,7 +118,7 @@ func (s *BusService) closeBuses() {
 	s.mux.RUnlock()
 }
 
-//通知内容塞到队列里
+// 通知内容塞到队列里
 func (s *BusService) Fire(evt Event) error {
 	if s.Closed() {
 		return errors.New("add notify evt failed for server shutdown")

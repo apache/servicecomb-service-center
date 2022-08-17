@@ -21,7 +21,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -129,7 +129,7 @@ func TestSchemaRouter_GetSchema(t *testing.T) {
 		assert.Equal(t, http.StatusOK, w.Code)
 
 		var resp pb.GetSchemaResponse
-		body, _ := ioutil.ReadAll(w.Body)
+		body, _ := io.ReadAll(w.Body)
 		err := json.Unmarshal(body, &resp)
 		assert.NoError(t, err)
 		assert.Equal(t, "xxx", resp.Schema)
@@ -285,7 +285,7 @@ func TestSchemaRouter_ListSchema(t *testing.T) {
 		assert.Equal(t, http.StatusOK, w.Code)
 
 		var resp pb.GetAllSchemaResponse
-		body, _ := ioutil.ReadAll(w.Body)
+		body, _ := io.ReadAll(w.Body)
 		err := json.Unmarshal(body, &resp)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(resp.Schemas))
@@ -314,7 +314,7 @@ func TestSchemaRouter_ListSchema(t *testing.T) {
 		assert.Equal(t, http.StatusOK, w.Code)
 
 		var resp pb.GetAllSchemaResponse
-		body, _ := ioutil.ReadAll(w.Body)
+		body, _ := io.ReadAll(w.Body)
 		err := json.Unmarshal(body, &resp)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(resp.Schemas))
@@ -329,7 +329,7 @@ func TestSchemaRouter_ListSchema(t *testing.T) {
 		rest.GetRouter().ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code)
 
-		body, _ = ioutil.ReadAll(w.Body)
+		body, _ = io.ReadAll(w.Body)
 		err = json.Unmarshal(body, &resp)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(resp.Schemas))

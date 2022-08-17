@@ -20,7 +20,7 @@ package govern_test
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -55,7 +55,7 @@ func TestResource_GetServiceDetail(t *testing.T) {
 		assert.Equal(t, http.StatusOK, w.Code)
 
 		var resp pb.GetServiceDetailResponse
-		body, _ := ioutil.ReadAll(w.Body)
+		body, _ := io.ReadAll(w.Body)
 		err := json.Unmarshal(body, &resp)
 		assert.NoError(t, err)
 		assert.Equal(t, serviceID, resp.Service.MicroService.ServiceId)
@@ -87,7 +87,7 @@ func TestResource_ListServiceDetail(t *testing.T) {
 		assert.Equal(t, http.StatusOK, w.Code)
 
 		var resp pb.GetServicesInfoResponse
-		body, _ := ioutil.ReadAll(w.Body)
+		body, _ := io.ReadAll(w.Body)
 		err := json.Unmarshal(body, &resp)
 		assert.NoError(t, err)
 		assert.Equal(t, serviceID, resp.AllServicesDetail[0].MicroService.ServiceId)
@@ -102,7 +102,7 @@ func TestResource_ListServiceDetail(t *testing.T) {
 		assert.Equal(t, http.StatusOK, w.Code)
 
 		var resp pb.GetServicesInfoResponse
-		body, _ := ioutil.ReadAll(w.Body)
+		body, _ := io.ReadAll(w.Body)
 		err := json.Unmarshal(body, &resp)
 		assert.NoError(t, err)
 		assert.Equal(t, 0, len(resp.AllServicesDetail))
@@ -130,7 +130,7 @@ func TestResource_ListApp(t *testing.T) {
 		assert.Equal(t, http.StatusOK, w.Code)
 
 		var resp pb.GetAppsResponse
-		body, _ := ioutil.ReadAll(w.Body)
+		body, _ := io.ReadAll(w.Body)
 		err := json.Unmarshal(body, &resp)
 		assert.NoError(t, err)
 		assert.Contains(t, resp.AppIds, "list_app_app")

@@ -17,7 +17,7 @@
 
 package gov
 
-//RateLimiter limit request rate
+// RateLimiter limit request rate
 type RateLimiter struct {
 	*GovernancePolicy
 	Spec *LimiterSpec `json:"spec,omitempty"`

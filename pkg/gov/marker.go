@@ -17,7 +17,7 @@
 
 package gov
 
-//TrafficMarker marks request, it assign a name to request in runtime
+// TrafficMarker marks request, it assign a name to request in runtime
 type TrafficMarker struct {
 	*GovernancePolicy
 	Spec *MatchSpec `json:"spec,omitempty"`
@@ -27,7 +27,7 @@ type MatchSpec struct {
 	TrafficMarkPolicy string         `json:"trafficMarkPolicy,omitempty"`
 }
 
-//MatchPolicy specify a request mach policy
+// MatchPolicy specify a request mach policy
 type MatchPolicy struct {
 	Headers  map[string]map[string]string `json:"headers,omitempty"`
 	APIPaths map[string]string            `json:"apiPath,omitempty"`

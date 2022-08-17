@@ -51,7 +51,7 @@ func (d *Distributor) Create(ctx context.Context, kind, project string, p *gov.P
 	id, _ := uuid.NewV4()
 	p.ID = id.String()
 	p.Kind = kind
-	log.Println(fmt.Sprintf("create %v", &p))
+	log.Printf("create %v", &p)
 	d.lbPolicies[p.GovernancePolicy.ID] = p
 	return []byte(p.ID), nil
 }

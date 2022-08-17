@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-//Package rbac is dao layer API to help service center manage account, policy and role info
+// Package rbac is dao layer API to help service center manage account, policy and role info
 package rbac
 
 import (
@@ -36,7 +36,7 @@ import (
 	rbacmodel "github.com/go-chassis/cari/rbac"
 )
 
-//CreateAccount save account info
+// CreateAccount save account info
 func CreateAccount(ctx context.Context, a *rbacmodel.Account) error {
 	quotaErr := quotasvc.ApplyAccount(ctx, 1)
 	if quotaErr != nil {
@@ -165,7 +165,7 @@ func DeleteAccount(ctx context.Context, name string) error {
 	return err
 }
 
-//EditAccount save account info
+// EditAccount save account info
 func EditAccount(ctx context.Context, a *rbacmodel.Account) error {
 	exist, err := rbac.Instance().AccountExist(ctx, a.Name)
 	if err != nil {

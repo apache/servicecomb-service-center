@@ -395,12 +395,12 @@ func CleanUpDependencyRules(ctx context.Context, domainProject string) error {
 		return err
 	}
 
-	kOps, err := RemoveProviderRuleKeys(ctx, domainProject, cache)
+	opts, err := RemoveProviderRuleKeys(ctx, domainProject, cache)
 	if err != nil {
 		return err
 	}
 
-	ops := append(append([]etcdadpt.OpOptions(nil), pOps...), kOps...)
+	ops := append(append([]etcdadpt.OpOptions(nil), pOps...), opts...)
 	if len(ops) == 0 {
 		return nil
 	}

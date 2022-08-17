@@ -68,7 +68,8 @@ func (i *Invocation) WithContext(key util.CtxKey, val interface{}) *Invocation {
 // and the callbacks seq like below:
 // when i.Next(WithFunc(CB1)).Next(WithAsyncFunc(CB2)).Next(WithFunc(CB3)).Invoke(CB0)
 // then i.Success/Fail() -> CB3 -> CB1 -> CB0(invoke)             goroutine 0
-//                                              \-> CB2(async)    goroutine 1
+//
+//	\-> CB2(async)    goroutine 1
 func (i *Invocation) Next(opts ...InvocationOption) {
 	var op InvocationOp
 	for _, opt := range opts {

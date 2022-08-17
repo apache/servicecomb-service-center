@@ -21,7 +21,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 
@@ -54,7 +54,7 @@ func (c *Client) RegisterInstance(ctx context.Context, domain, project, serviceI
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", discovery.NewError(discovery.ErrInternal, err.Error())
 	}
@@ -83,7 +83,7 @@ func (c *Client) UnregisterInstance(ctx context.Context, domain, project, servic
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return discovery.NewError(discovery.ErrInternal, err.Error())
 	}
@@ -113,7 +113,7 @@ func (c *Client) DiscoveryInstances(ctx context.Context, domain, project, consum
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, discovery.NewError(discovery.ErrInternal, err.Error())
 	}
@@ -143,7 +143,7 @@ func (c *Client) Heartbeat(ctx context.Context, domain, project, serviceID, inst
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return discovery.NewError(discovery.ErrInternal, err.Error())
 	}
@@ -172,7 +172,7 @@ func (c *Client) HeartbeatSet(ctx context.Context, domain, project string, insta
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, discovery.NewError(discovery.ErrInternal, err.Error())
 	}
@@ -202,7 +202,7 @@ func (c *Client) GetInstancesByServiceID(ctx context.Context, domain, project, p
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, discovery.NewError(discovery.ErrInternal, err.Error())
 	}
@@ -232,7 +232,7 @@ func (c *Client) GetInstanceByInstanceID(ctx context.Context, domain, project, p
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, discovery.NewError(discovery.ErrInternal, err.Error())
 	}

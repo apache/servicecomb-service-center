@@ -19,7 +19,7 @@ package integrationtest_test
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 
@@ -52,7 +52,7 @@ var _ = Describe("MicroService Api schema Test", func() {
 		req, _ := http.NewRequest(POST, SCURL+REGISTERMICROSERVICE, bodyBuf)
 		req.Header.Set("X-Domain-Name", "default")
 		resp, err := scclient.Do(req)
-		respbody, _ := ioutil.ReadAll(resp.Body)
+		respbody, _ := io.ReadAll(resp.Body)
 		serviceId = gojson.Json(string(respbody)).Get("serviceId").Tostring()
 		Expect(err).To(BeNil())
 		defer resp.Body.Close()

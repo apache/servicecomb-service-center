@@ -37,7 +37,7 @@ import (
 )
 
 /*
-	get Service by service id
+get Service by service id
 */
 func GetServiceWithRev(ctx context.Context, domain string, id string, rev int64) (*pb.MicroService, error) {
 	key := path.GenerateServiceKey(domain, id)
@@ -78,8 +78,8 @@ func getServicesRawData(ctx context.Context, domainProject string) ([]*kvstore.K
 	return resp.Kvs, err
 }
 
-//GetAllServicesAcrossDomainProject get services of all domains, projects
-//the map's key is domainProject
+// GetAllServicesAcrossDomainProject get services of all domains, projects
+// the map's key is domainProject
 func GetAllServicesAcrossDomainProject(ctx context.Context) (map[string][]*pb.MicroService, error) {
 	key := path.GetServiceRootKey("")
 	opts := append(FromContext(ctx),

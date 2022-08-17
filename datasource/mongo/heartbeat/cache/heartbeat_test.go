@@ -22,11 +22,12 @@ import (
 	"testing"
 	"time"
 
+	heartbeatcache "github.com/apache/servicecomb-service-center/datasource/mongo/heartbeat/cache"
+
 	"github.com/go-chassis/cari/db/mongo"
 	"github.com/go-chassis/cari/discovery"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/apache/servicecomb-service-center/datasource/mongo/heartbeat/cache"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/model"
 	_ "github.com/apache/servicecomb-service-center/test"
 )

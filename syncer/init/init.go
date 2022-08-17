@@ -33,6 +33,11 @@ import (
 	"github.com/apache/servicecomb-service-center/syncer/config"
 	"github.com/apache/servicecomb-service-center/syncer/rpc"
 	"github.com/go-chassis/go-chassis/v2"
+
+	//codec
+	_ "github.com/apache/servicecomb-service-center/server/plugin"
+	_ "github.com/go-chassis/go-chassis-extension/codec/gojson"
+
 	chassisServer "github.com/go-chassis/go-chassis/v2/core/server"
 )
 

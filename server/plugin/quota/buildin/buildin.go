@@ -89,7 +89,7 @@ func (q *Quota) GetQuota(ctx context.Context, t quota.ResourceType) int64 {
 	}
 }
 
-//向配额中心上报配额使用量
+// 向配额中心上报配额使用量
 func (q *Quota) RemandQuotas(ctx context.Context, resourceType quota.ResourceType) {
 	df, ok := plugin.DynamicPluginFunc(quota.QUOTA, "RemandQuotas").(func(context.Context, quota.ResourceType))
 	if ok {
