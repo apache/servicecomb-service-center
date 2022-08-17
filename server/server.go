@@ -22,6 +22,11 @@ import (
 	"crypto/tls"
 	"os"
 
+	syncv1 "github.com/apache/servicecomb-service-center/syncer/api/v1"
+	"github.com/apache/servicecomb-service-center/syncer/rpc"
+	"github.com/go-chassis/go-chassis/v2"
+	chassisServer "github.com/go-chassis/go-chassis/v2/core/server"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	nf "github.com/apache/servicecomb-service-center/pkg/event"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -62,6 +67,14 @@ func (s *ServiceCenterServer) Run() {
 
 	s.startServices()
 
+	chassis.RegisterSchema("grpc", &rpc.Server{},
+		chassisServer.WithRPCServiceDesc(&syncv1.EventService_ServiceDesc))
+
+	go func() {
+		if err := chassis.Run(); err != nil {
+			log.Warn(err.Error())
+		}
+	}()
 	signal.RegisterListener()
 
 	s.waitForQuit()

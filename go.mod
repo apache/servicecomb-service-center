@@ -26,7 +26,7 @@ require (
 	github.com/go-chassis/go-archaius v1.5.6
 	github.com/go-chassis/go-chassis-extension/codec/gojson v0.0.0-20220816060440-fe98a5615d3f
 	github.com/go-chassis/go-chassis-extension/protocol/grpc v0.0.0-20220208081606-003611df45da
-	github.com/go-chassis/go-chassis/v2 v2.5.3-0.20220816092530-36ea4f26040a
+	github.com/go-chassis/go-chassis/v2 v2.6.0
 	github.com/go-chassis/kie-client v0.2.0
 	github.com/go-chassis/openlog v1.1.3
 	github.com/gofrs/uuid v4.0.0+incompatible

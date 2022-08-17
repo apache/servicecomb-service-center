@@ -252,8 +252,8 @@ github.com/go-chassis/go-chassis-extension/codec/gojson v0.0.0-20220816060440-fe
 github.com/go-chassis/go-chassis-extension/protocol/grpc v0.0.0-20220208081606-003611df45da h1:DoPFX1Fy3MLEb1RvgchInKspm8DkxQhrvZ5kOcjeZAs=
 github.com/go-chassis/go-chassis-extension/protocol/grpc v0.0.0-20220208081606-003611df45da/go.mod h1:btid7R4NKuET4BCUkR74CL5EP0hk3J0jXSByjzwd9JM=
 github.com/go-chassis/go-chassis/v2 v2.3.0/go.mod h1:iyJ2DWSkqfnCmad/0Il9nXWHaob7RcwPGlIDRNxccH0=
-github.com/go-chassis/go-chassis/v2 v2.5.3-0.20220816092530-36ea4f26040a h1:cuIYtFgaYD+nkATeYuFtuSEEq95SNRMd96zrO0uHhEE=
-github.com/go-chassis/go-chassis/v2 v2.5.3-0.20220816092530-36ea4f26040a/go.mod h1:GF1OzxYMEZBYTM8rDdcufrnGMTj7qoUfRbaZZjGiORE=
+github.com/go-chassis/go-chassis/v2 v2.6.0 h1:WQmLbP8mXqmBUmSTOCR0oQCEAmfjumPx3owIeXt2/hA=
+github.com/go-chassis/go-chassis/v2 v2.6.0/go.mod h1:GF1OzxYMEZBYTM8rDdcufrnGMTj7qoUfRbaZZjGiORE=
 github.com/go-chassis/go-restful-swagger20 v1.0.3/go.mod h1:eW62fYuzlNFDvIacB6AV8bhUDCTy4myfTCv0bT9Gbb0=
 github.com/go-chassis/go-restful-swagger20 v1.0.4-0.20220704025524-9243cbee26b7 h1:EOIGW+inOz52zh6vgr9EQHvvgL2w/VghAeCQIFOVUSE=
 github.com/go-chassis/go-restful-swagger20 v1.0.4-0.20220704025524-9243cbee26b7/go.mod h1:pSGkT+ksxlMgytyJb4IAz8aZih6OLE1++d9CE6aO9Hg=

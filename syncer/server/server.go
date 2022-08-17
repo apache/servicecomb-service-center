@@ -22,10 +22,16 @@ import (
 	"github.com/apache/servicecomb-service-center/syncer/config"
 	"github.com/apache/servicecomb-service-center/syncer/metrics"
 	"github.com/apache/servicecomb-service-center/syncer/service/sync"
-	"github.com/go-chassis/go-chassis/v2"
+
+	// kie db
+	_ "github.com/apache/servicecomb-kie/server/datasource/etcd"
 )
 
 func Run() {
+	if err := config.Init(); err != nil {
+		log.Error("syncer config init failed", err)
+	}
+
 	if !config.GetConfig().Sync.EnableOnStart {
 		log.Warn("syncer is disabled")
 		return
@@ -37,7 +43,4 @@ func Run() {
 		log.Error("syncer metrics init failed", err)
 	}
 
-	if err := chassis.Run(); err != nil {
-		log.Warn(err.Error())
-	}
 }
