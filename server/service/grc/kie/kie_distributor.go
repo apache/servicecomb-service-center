@@ -49,7 +49,7 @@ var PolicyNames = []string{
 	"instanceIsolation",
 	"faultInjection",
 	"bulkhead",
-	"loadbalancer",
+	"loadbalance",
 }
 
 func (d *Distributor) Create(ctx context.Context, kind, project string, p *gov.Policy) ([]byte, error) {

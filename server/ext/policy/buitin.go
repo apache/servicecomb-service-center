@@ -23,7 +23,7 @@ import (
 )
 
 func init() {
-	grc.RegisterPolicySchema("loadbalancer", &spec.Schema{
+	grc.RegisterPolicySchema("loadbalance", &spec.Schema{
 		SchemaProps: spec.SchemaProps{
 			Type:     []string{"object"},
 			Required: []string{"rule"},

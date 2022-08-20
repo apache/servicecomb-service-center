@@ -66,7 +66,7 @@ func TestGovernance_Create(t *testing.T) {
 			Spec: map[string]interface{}{
 				"rule": "rr",
 			}})
-		r, _ := http.NewRequest(http.MethodPost, "/v1/default/gov/loadbalancer", bytes.NewBuffer(b))
+		r, _ := http.NewRequest(http.MethodPost, "/v1/default/gov/loadbalance", bytes.NewBuffer(b))
 		w := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code)
@@ -75,7 +75,7 @@ func TestGovernance_Create(t *testing.T) {
 		b, _ := json.Marshal(&gov.Policy{
 			GovernancePolicy: &gov.GovernancePolicy{Name: "test"},
 			Spec:             map[string]interface{}{}})
-		r, _ := http.NewRequest(http.MethodPost, "/v1/default/gov/loadbalancer", bytes.NewBuffer(b))
+		r, _ := http.NewRequest(http.MethodPost, "/v1/default/gov/loadbalance", bytes.NewBuffer(b))
 		w := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w, r)
 		assert.Equal(t, http.StatusBadRequest, w.Code)
