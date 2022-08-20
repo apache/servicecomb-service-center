@@ -118,9 +118,8 @@ func (s *ServiceCenterServer) initDatasource() {
 				log.Error("", err)
 			}
 		},
-		EnableCache:        config.GetRegistry().EnableCache,
-		InstanceTTL:        config.GetRegistry().InstanceTTL,
-		InstanceProperties: config.GetStringMap("registry.instance.properties"),
+		EnableCache: config.GetRegistry().EnableCache,
+		InstanceTTL: config.GetRegistry().InstanceTTL,
 	}); err != nil {
 		log.Fatal("init datasource failed", err)
 	}

@@ -43,6 +43,5 @@ type Options struct {
 
 	EnableCache bool
 	// InstanceTTL: the default ttl of instance lease
-	InstanceTTL        int64
-	InstanceProperties map[string]string
+	InstanceTTL int64
 }

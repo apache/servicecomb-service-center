@@ -94,8 +94,7 @@ func NewDataSource(opts datasource.Options) (datasource.DataSource, error) {
 		return nil, err
 	}
 	inst.metadataManager = &MetadataManager{
-		InstanceTTL:        opts.InstanceTTL,
-		InstanceProperties: opts.InstanceProperties,
+		InstanceTTL: opts.InstanceTTL,
 	}
 	inst.sysManager = &SysManager{}
 	inst.depManager = &DepManager{}

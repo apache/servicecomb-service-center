@@ -46,7 +46,6 @@ type MetadataManager interface {
 	ListService(ctx context.Context, request *pb.GetServicesRequest) (*pb.GetServicesResponse, error)
 	GetService(ctx context.Context, request *pb.GetServiceRequest) (*pb.MicroService, error)
 
-	ListServiceDetail(ctx context.Context, request *pb.GetServicesInfoRequest) (*pb.GetServicesInfoResponse, error)
 	GetOverview(ctx context.Context, request *pb.GetServicesRequest) (*pb.Statistics, error)
 	ListApp(ctx context.Context, request *pb.GetAppsRequest) (*pb.GetAppsResponse, error)
 
@@ -92,4 +91,6 @@ type MetadataManager interface {
 	// RetireService retire the 'RetirePlan.Reserve' latest versions for each of service,
 	// delete other versions which doesn't register any instances.
 	RetireService(ctx context.Context, plan *RetirePlan) error
+
+	Statistics(ctx context.Context, withShared bool) (*pb.Statistics, error)
 }

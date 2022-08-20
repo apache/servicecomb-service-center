@@ -24,6 +24,7 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/schema"
 	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
+	"github.com/apache/servicecomb-service-center/server/service/govern"
 	"github.com/apache/servicecomb-service-center/test"
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/stretchr/testify/assert"
@@ -63,7 +64,7 @@ func TestRetireService(t *testing.T) {
 		err := discosvc.RetireService(ctx, &datasource.RetirePlan{Reserve: 1})
 		assert.NoError(t, err)
 
-		resp, err := datasource.GetMetadataManager().ListServiceDetail(ctx, &pb.GetServicesInfoRequest{
+		resp, err := govern.ListServiceDetail(ctx, &pb.GetServicesInfoRequest{
 			ServiceName: serviceIDPrefix,
 		})
 		assert.NoError(t, err)

@@ -36,13 +36,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
-type ServiceDetailOpt struct {
-	domainProject string
-	service       *pb.MicroService
-	countOnly     bool
-	options       []string
-}
-
 // schema
 func getSchemaSummary(ctx context.Context, domainProject string, serviceID string, schemaID string) (string, error) {
 	key := path.GenerateServiceSchemaSummaryKey(domainProject, serviceID, schemaID)
@@ -203,99 +196,6 @@ func revokeInstance(ctx context.Context, domainProject string, serviceID string,
 		return pb.NewError(pb.ErrUnavailableBackend, err.Error())
 	}
 	return nil
-}
-
-func getServiceDetailUtil(ctx context.Context, serviceDetailOpt ServiceDetailOpt) (*pb.ServiceDetail, error) {
-	serviceID := serviceDetailOpt.service.ServiceId
-	options := serviceDetailOpt.options
-	domainProject := serviceDetailOpt.domainProject
-	serviceDetail := new(pb.ServiceDetail)
-	if serviceDetailOpt.countOnly {
-		serviceDetail.Statics = new(pb.Statistics)
-	}
-
-	for _, opt := range options {
-		expr := opt
-		switch expr {
-		case "tags":
-			tags, err := serviceUtil.GetTagsUtils(ctx, domainProject, serviceID)
-			if err != nil {
-				log.Error(fmt.Sprintf("get service[%s]'s all tags failed", serviceID), err)
-				return nil, err
-			}
-			serviceDetail.Tags = tags
-		case "instances":
-			if serviceDetailOpt.countOnly {
-				instanceCount, err := serviceUtil.GetInstanceCountOfOneService(ctx, domainProject, serviceID)
-				if err != nil {
-					log.Error(fmt.Sprintf("get number of service[%s]'s instances failed", serviceID), err)
-					return nil, err
-				}
-				serviceDetail.Statics.Instances = &pb.StInstance{
-					Count: instanceCount}
-				continue
-			}
-			instances, err := serviceUtil.GetAllInstancesOfOneService(ctx, domainProject, serviceID)
-			if err != nil {
-				log.Error(fmt.Sprintf("get service[%s]'s all instances failed", serviceID), err)
-				return nil, err
-			}
-			serviceDetail.Instances = instances
-		case "schemas":
-			schemas, err := getSchemaInfoUtil(ctx, domainProject, serviceID)
-			if err != nil {
-				log.Error(fmt.Sprintf("get service[%s]'s all schemas failed", serviceID), err)
-				return nil, err
-			}
-			serviceDetail.SchemaInfos = schemas
-		case "dependencies":
-			service := serviceDetailOpt.service
-			consumers, err := serviceUtil.GetConsumers(ctx, domainProject, service,
-				serviceUtil.WithoutSelfDependency(),
-				serviceUtil.WithSameDomainProject())
-			if err != nil {
-				log.Error(fmt.Sprintf("get service[%s][%s/%s/%s/%s]'s all consumers failed",
-					service.ServiceId, service.Environment, service.AppId, service.ServiceName, service.Version), err)
-				return nil, err
-			}
-			providers, err := serviceUtil.GetProviders(ctx, domainProject, service,
-				serviceUtil.WithoutSelfDependency(),
-				serviceUtil.WithSameDomainProject())
-			if err != nil {
-				log.Error(fmt.Sprintf("get service[%s][%s/%s/%s/%s]'s all providers failed",
-					service.ServiceId, service.Environment, service.AppId, service.ServiceName, service.Version), err)
-				return nil, err
-			}
-
-			serviceDetail.Consumers = consumers
-			serviceDetail.Providers = providers
-		case "":
-			continue
-		default:
-			log.Error(fmt.Sprintf("request option[%s] is invalid", opt), nil)
-		}
-	}
-	return serviceDetail, nil
-}
-
-func getSchemaInfoUtil(ctx context.Context, domainProject string, serviceID string) ([]*pb.Schema, error) {
-	key := path.GenerateServiceSchemaKey(domainProject, serviceID, "")
-
-	resp, err := sd.Schema().Search(ctx,
-		etcdadpt.WithStrKey(key),
-		etcdadpt.WithPrefix())
-	if err != nil {
-		log.Error(fmt.Sprintf("get service[%s]'s schemas failed", serviceID), err)
-		return make([]*pb.Schema, 0), err
-	}
-	schemas := make([]*pb.Schema, 0, len(resp.Kvs))
-	for _, kv := range resp.Kvs {
-		schemaInfo := &pb.Schema{}
-		schemaInfo.Schema = util.BytesToStringWithNoCopy(kv.Value.([]byte))
-		schemaInfo.SchemaId = util.BytesToStringWithNoCopy(kv.Key[len(key):])
-		schemas = append(schemas, schemaInfo)
-	}
-	return schemas, nil
 }
 
 func statistics(ctx context.Context, withShared bool) (*pb.Statistics, error) {
