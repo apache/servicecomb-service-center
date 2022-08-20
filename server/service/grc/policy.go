@@ -55,7 +55,7 @@ func ValidatePolicySpec(kind string, spec interface{}) error {
 	schema, ok := policySchemas[kind]
 	if !ok {
 		log.Warn(fmt.Sprintf("can not recognize policy %s", kind))
-		return &ErrIllegalItem{"not support kind yet", kind}
+		return nil
 	}
 	validator := validate.NewSchemaValidator(schema, nil, "", strfmt.Default)
 	errs := validator.Validate(spec).Errors
