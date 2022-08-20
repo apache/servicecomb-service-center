@@ -44,31 +44,20 @@ func RegisterPolicySchema(kind string, schema *spec.Schema) {
 }
 
 // ValidatePolicySpec validates spec attributes
-// it first us legacy mechanism Validate 3 kinds of policy.
-// then it use new mechanism to validate all of other policy
 func ValidatePolicySpec(kind string, spec interface{}) error {
-	// TODO this legacy API should be removed. after 3 kinds of policy schema is registered by "RegisterPolicySchema"
-	err := Validate(kind, spec)
-	if err != nil {
-		return err
-	}
 	schema, ok := policySchemas[kind]
 	if !ok {
 		log.Warn(fmt.Sprintf("can not recognize policy %s", kind))
-		return nil
+		return &ErrIllegalItem{"not support kind yet", kind}
 	}
-	validator := validate.NewSchemaValidator(schema, nil, "", strfmt.Default)
+	validator := validate.NewSchemaValidator(schema, nil, kind, strfmt.Default)
 	errs := validator.Validate(spec).Errors
 	if len(errs) != 0 {
 		var str []string
-		for i, err := range errs {
-			if i != 0 {
-				str = append(str, ";", err.Error())
-			} else {
-				str = append(str, err.Error())
-			}
+		for _, err := range errs {
+			str = append(str, err.Error())
 		}
-		return errors.New(strings.Join(str, ";"))
+		return errors.New(strings.Join(str, "; "))
 	}
 	return nil
 }

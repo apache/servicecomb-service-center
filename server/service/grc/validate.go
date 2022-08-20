@@ -30,10 +30,6 @@ const (
 	KeyApp          = "app"
 	KeyEnvironment  = "environment"
 	EnvAll          = "all"
-	Alias           = "alias"
-	Method          = "method"
-	Matches         = "matches"
-	Rules           = "rules"
 )
 
 type ErrIllegalItem struct {
@@ -41,116 +37,6 @@ type ErrIllegalItem struct {
 	val interface{}
 }
 
-var (
-	methodSet map[string]bool
-)
-
 func (e *ErrIllegalItem) Error() string {
 	return fmt.Sprintf("illegal item : %v , msg: %s", e.val, e.err)
-}
-
-// Validate is a legacy API, it is not extensible due to its bad design pattern
-// Please use grc.RegisterPolicySchema
-// it only response for validate 3 kinds of policy. if it is not this 3 kinds, it will not return error,
-// it return nil error, and let grc.ValidatePolicySpec to do the job
-func Validate(kind string, spec interface{}) error {
-	switch kind {
-	case "match-group":
-		return matchValidate(spec)
-	case "retry":
-		return retryValidate(spec)
-	case "rate-limiting":
-		return rateLimitingValidate(spec)
-	default:
-		return nil
-	}
-}
-
-func matchValidate(val interface{}) error {
-	spec, ok := val.(map[string]interface{})
-	if !ok {
-		return &ErrIllegalItem{"can not cast to map", val}
-	}
-	if spec[Matches] == nil {
-		return nil
-	}
-	alias, ok := spec[Alias].(string)
-	if !ok {
-		return &ErrIllegalItem{"alias must be string", alias}
-	}
-	matches, ok := spec[Matches].([]interface{})
-	if !ok {
-		return &ErrIllegalItem{"don't have matches", spec}
-	}
-	for _, match := range matches {
-		match, ok := match.(map[string]interface{})
-		if !ok {
-			return &ErrIllegalItem{"match can not cast to map", match}
-		}
-		if match["name"] == nil {
-			return &ErrIllegalItem{"match's name can not be null", match}
-		}
-		if match["apiPath"] == nil && match["headers"] == nil && match[Method] == nil {
-			return &ErrIllegalItem{"match must have a match item [apiPath/headers/methods]", match}
-		}
-		//apiPath & headers do not check
-		if match[Method] != nil {
-			methods, ok := match[Method].([]interface{})
-			if !ok {
-				return &ErrIllegalItem{"methods must be a list", match}
-			}
-			for _, method := range methods {
-				methodStr, ok := method.(string)
-				if !ok {
-					return &ErrIllegalItem{"method must be a string", method}
-				}
-				if !methodSet[methodStr] {
-					return &ErrIllegalItem{"method must be one of the GET/POST/PUT/DELETE/PATCH", method}
-				}
-			}
-		}
-	}
-	return nil
-}
-
-func retryValidate(val interface{}) error {
-	err := policyValidate(val)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func rateLimitingValidate(val interface{}) error {
-	err := policyValidate(val)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func policyValidate(val interface{}) error {
-	spec, ok := val.(map[string]interface{})
-	if !ok {
-		return &ErrIllegalItem{"policy can not cast to map", val}
-	}
-	if spec[Rules] != nil {
-		rules, ok := spec[Rules].(map[string]interface{})
-		if !ok {
-			return &ErrIllegalItem{"policy's rules can not cast to map", spec}
-		}
-		if "" == rules["match"] {
-			return &ErrIllegalItem{"policy's rules match can not be nil", spec}
-		}
-	}
-	return nil
-}
-
-func init() {
-	methodSet = make(map[string]bool)
-	methodSet["GET"] = true
-	methodSet["POST"] = true
-	methodSet["DELETE"] = true
-	methodSet["PUT"] = true
-	methodSet["PATCH"] = true
 }
