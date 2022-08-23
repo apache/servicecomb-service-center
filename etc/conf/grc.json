@@ -1,0 +1,138 @@
+{
+  "gov": {
+    "match-group": {
+      "validationSpec": {
+        "type": "object",
+        "required": [
+          "matches",
+          "alias"
+        ],
+        "properties": {
+          "alias": {
+            "type": "string",
+            "minLength": 1
+          },
+          "matches": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": [
+                "name"
+              ],
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "apiPath": {
+                  "type": "object",
+                  "minProperties": 1
+                },
+                "headers": {
+                  "type": "object"
+                },
+                "method": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "GET",
+                      "POST",
+                      "DELETE",
+                      "PUT",
+                      "PATCH"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "policies": {
+      "retry": {
+        "validationSpec": {
+          "type": "object",
+          "required": [
+            "maxAttempts"
+          ],
+          "properties": {
+            "retryOnSame": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      },
+      "rate-limiting": {
+        "validationSpec": {
+          "type": "object",
+          "required": [
+            "rate"
+          ]
+        }
+      },
+      "loadbalance": {
+        "validationSpec": {
+          "type": "object",
+          "required": [
+            "rule"
+          ],
+          "properties": {
+            "rule": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      },
+      "circuit-breaker": {
+        "validationSpec": {
+          "type": "object",
+          "required": [
+            "minimumNumberOfCalls"
+          ],
+          "properties": {
+            "minimumNumberOfCalls": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      },
+      "instance-isolation": {
+        "validationSpec": {
+          "type": "object",
+          "required": [
+            "minimumNumberOfCalls"
+          ]
+        }
+      },
+      "fault-injection": {
+        "validationSpec": {
+          "type": "object",
+          "required": [
+            "percentage"
+          ],
+          "properties": {
+            "percentage": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        }
+      },
+      "bulkhead": {
+        "validationSpec": {
+          "type": "object",
+          "required": [
+            "maxConcurrentCalls"
+          ]
+        }
+      }
+    }
+  }
+}

@@ -20,16 +20,16 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"path/filepath"
 	"runtime"
 	"time"
-
-	"github.com/go-chassis/go-archaius"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/plugin"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/version"
+	"github.com/go-chassis/go-archaius"
 )
 
 const (
@@ -93,7 +93,7 @@ func Init() {
 
 	err = archaius.AddFile(filepath.Join(util.GetAppRoot(), "conf", "app.yaml"))
 	if err != nil {
-		log.Warn(fmt.Sprintf("can not add config file source, error: %s", err))
+		log.Warn(fmt.Sprintf("can not add app config file source, error: %s", err))
 	}
 
 	err = Reload()
@@ -112,10 +112,17 @@ func Reload() error {
 	if err != nil {
 		return err
 	}
+
 	*Server = loadServerConfig()
 	if GetLog().LogLevel == "DEBUG" {
 		body, _ := json.MarshalIndent(archaius.GetConfigs(), "", "  ")
 		log.Debug(fmt.Sprintf("finish to reload configurations\n%s", body))
+	}
+
+	grcCfg := loadGrcConfig()
+	if grcCfg != nil {
+		App.Gov.MatchGroup = grcCfg.MatchGroup
+		App.Gov.Policies = grcCfg.Policies
 	}
 	return nil
 }
@@ -186,4 +193,24 @@ func setCPUs() {
 	cores := runtime.NumCPU()
 	runtime.GOMAXPROCS(cores)
 	log.Info(fmt.Sprintf("service center is running simultaneously with %d CPU cores", cores))
+}
+
+func loadGrcConfig() *Gov {
+	grcFile := filepath.Join(util.GetAppRoot(), "conf", "grc.json")
+	bytes, err := os.ReadFile(grcFile)
+	if err != nil {
+		log.Warn(fmt.Sprintf("can not add grc config file source, error: %s", err))
+		return nil
+	}
+	var policies AppConfig
+	err = json.Unmarshal(bytes, &policies)
+	if err != nil {
+		log.Error("unmarshal grc config failed", err)
+		return nil
+	}
+	if policies.Gov == nil {
+		log.Warn("no grc config load")
+		return nil
+	}
+	return policies.Gov
 }

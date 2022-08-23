@@ -19,6 +19,7 @@ package config
 
 import (
 	"github.com/apache/servicecomb-service-center/pkg/plugin"
+	"k8s.io/kube-openapi/pkg/validation/spec"
 )
 
 const (
@@ -32,7 +33,13 @@ type AppConfig struct {
 	Server *ServerConfig `yaml:"server"`
 }
 type Gov struct {
-	DistMap map[string]DistributorOptions `yaml:",inline"`
+	DistMap    map[string]DistributorOptions `json:"-" yaml:",inline"`
+	MatchGroup *Policy                       `json:"match-group" yaml:"-"`
+	Policies   Policies                      `yaml:"-"`
+}
+type Policies map[string]Policy
+type Policy struct {
+	ValidationSpec *spec.Schema
 }
 type DistributorOptions struct {
 	Name     string `yaml:"name"`

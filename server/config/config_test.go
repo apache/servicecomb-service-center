@@ -31,24 +31,63 @@ import (
 
 func TestInit(t *testing.T) {
 	defer archaius.Clean()
-	b := []byte(`
+
+	dir := filepath.Join(util.GetAppRoot(), "conf")
+	os.Mkdir(dir, 0750)
+	defer os.Remove(dir)
+
+	govFile := filepath.Join(dir, "app.yaml")
+	f1, err := os.Create(govFile)
+	assert.NoError(t, err)
+	defer os.Remove(govFile)
+	_, err = io.WriteString(f1, `
 gov:
   kieSever1:
-   type: kie
-   endpoint: 127.0.0.1:30110
-
+    type: kie
+    endpoint: 127.0.0.1:30110
 `)
-	dir := filepath.Join(util.GetAppRoot(), "conf")
-	defer os.Remove(dir)
-	os.Mkdir(dir, 0750)
-	file := filepath.Join(dir, "app.yaml")
-	defer os.Remove(file)
-	f1, err := os.Create(file)
 	assert.NoError(t, err)
-	_, err = io.WriteString(f1, string(b))
+
+	policyFile := filepath.Join(dir, "grc.json")
+	f2, err := os.Create(policyFile)
 	assert.NoError(t, err)
+	defer os.Remove(policyFile)
+	_, err = io.WriteString(f2, `
+{
+  "gov": {
+    "match-group": {
+      "validationSpec": {
+        "type": "object",
+        "properties": {
+          "alias": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "policies": {
+      "retry": {
+        "validationSpec": {
+          "type": "object",
+          "properties": {
+            "retryOnSame": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    }
+  }
+}`)
+	assert.NoError(t, err)
+
 	config.Init()
 	assert.NoError(t, err)
 	assert.Equal(t, "kie", config.GetGov().DistMap["kieSever1"].Type)
 	assert.Equal(t, "127.0.0.1:30110", config.GetGov().DistMap["kieSever1"].Endpoint)
+
+	assert.NotNil(t, config.GetGov().Policies["match-group"])
+	assert.NotNil(t, config.GetGov().Policies["policies"])
 }

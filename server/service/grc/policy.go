@@ -19,7 +19,6 @@
 package grc
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
@@ -32,6 +31,8 @@ import (
 )
 
 type ValueType string
+
+var PolicyNames []string
 
 // policySchemas saves policy kind and schema
 var policySchemas = make(map[string]*spec.Schema)
@@ -48,7 +49,7 @@ func ValidatePolicySpec(kind string, spec interface{}) error {
 	schema, ok := policySchemas[kind]
 	if !ok {
 		log.Warn(fmt.Sprintf("can not recognize policy %s", kind))
-		return &ErrIllegalItem{"not support kind yet", kind}
+		return fmt.Errorf("not support kind[%s] yet", kind)
 	}
 	validator := validate.NewSchemaValidator(schema, nil, kind, strfmt.Default)
 	errs := validator.Validate(spec).Errors
@@ -57,7 +58,7 @@ func ValidatePolicySpec(kind string, spec interface{}) error {
 		for _, err := range errs {
 			str = append(str, err.Error())
 		}
-		return errors.New(strings.Join(str, "; "))
+		return fmt.Errorf("illegal policy[%s] spec, msg: %s", kind, strings.Join(str, "; "))
 	}
 	return nil
 }

@@ -42,16 +42,6 @@ type Distributor struct {
 	client *kie.Client
 }
 
-var PolicyNames = []string{
-	"retry",
-	"rateLimiting",
-	"circuitBreaker",
-	"instanceIsolation",
-	"faultInjection",
-	"bulkhead",
-	"loadbalance",
-}
-
 func (d *Distributor) Create(ctx context.Context, kind, project string, p *gov.Policy) ([]byte, error) {
 	if kind == grcsvc.KindMatchGroup {
 		err := d.generateID(ctx, project, p)
@@ -156,7 +146,7 @@ func (d *Distributor) Display(ctx context.Context, project, app, env string) ([]
 		return nil, err
 	}
 	policyMap := make(map[string]*gov.Policy)
-	for _, kind := range PolicyNames {
+	for _, kind := range grcsvc.PolicyNames {
 		policies, _, err := d.listDataByKind(ctx, kind, project, app, env)
 		if err != nil {
 			continue
@@ -179,7 +169,7 @@ func (d *Distributor) Display(ctx context.Context, project, app, env string) ([]
 
 		}
 		var policies []*gov.Policy
-		for _, kind := range PolicyNames {
+		for _, kind := range grcsvc.PolicyNames {
 			if policyMap[match.Name+kind] != nil {
 				policies = append(policies, policyMap[match.Name+kind])
 			}

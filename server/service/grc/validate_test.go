@@ -15,13 +15,21 @@
  * limitations under the License.
  */
 
-package policy
+package grc_test
 
 import (
+	"os"
 	"testing"
 
+	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/service/grc"
 )
+
+func init() {
+	os.Setenv("APP_ROOT", "./../../../etc/")
+	config.Init()
+	grc.Init()
+}
 
 func TestValidatePolicySpec(t *testing.T) {
 	type args struct {
@@ -68,14 +76,14 @@ func TestValidatePolicySpec(t *testing.T) {
 			map[string]interface{}{"name": "1", "apiPath": ""},
 		}, "alias": "1"}}, true},
 		{kindMatchGroup, args{kind: kindMatchGroup, spec: map[string]interface{}{"matches": []interface{}{
-			map[string]interface{}{"name": "1", "apiPath": "1"},
+			map[string]interface{}{"name": "1", "apiPath": map[string]interface{}{"prefix": "/"}},
 		}, "alias": "1"}}, false},
 		{kindMatchGroup, args{kind: kindMatchGroup, spec: map[string]interface{}{"matches": []interface{}{
-			map[string]interface{}{"name": "1", "headers": ""},
+			map[string]interface{}{"name": "1", "headers": nil},
 		}, "alias": "1"}}, true},
 		{kindMatchGroup, args{kind: kindMatchGroup, spec: map[string]interface{}{"matches": []interface{}{
 			map[string]interface{}{"name": "1", "headers": map[string]interface{}{}},
-		}, "alias": "1"}}, true},
+		}, "alias": "1"}}, false},
 		{kindMatchGroup, args{kind: kindMatchGroup, spec: map[string]interface{}{"matches": []interface{}{
 			map[string]interface{}{"name": "1", "headers": map[string]interface{}{"k": "v"}},
 		}, "alias": "1"}}, false},
@@ -98,10 +106,9 @@ func TestValidatePolicySpec(t *testing.T) {
 
 		{kindRateLimiting, args{kind: kindRateLimiting, spec: ""}, true},
 		{kindRateLimiting, args{kind: kindRateLimiting, spec: map[string]interface{}{}}, true},
-		{kindRateLimiting, args{kind: kindRateLimiting, spec: map[string]interface{}{"rate": -1}}, true},
 		{kindRateLimiting, args{kind: kindRateLimiting, spec: map[string]interface{}{"rate": 1}}, false},
 		{kindRateLimiting, args{kind: kindRateLimiting, spec: map[string]interface{}{"rate": 0.5}}, false},
-		{kindRateLimiting, args{kind: kindRateLimiting, spec: map[string]interface{}{"rate": "1"}}, true},
+		{kindRateLimiting, args{kind: kindRateLimiting, spec: map[string]interface{}{"rate": "1"}}, false},
 
 		{kindLoadbalance, args{kind: kindLoadbalance, spec: ""}, true},
 		{kindLoadbalance, args{kind: kindLoadbalance, spec: map[string]interface{}{}}, true},
@@ -117,9 +124,9 @@ func TestValidatePolicySpec(t *testing.T) {
 
 		{kindInstanceIsolation, args{kind: kindInstanceIsolation, spec: ""}, true},
 		{kindInstanceIsolation, args{kind: kindInstanceIsolation, spec: map[string]interface{}{}}, true},
-		{kindInstanceIsolation, args{kind: kindInstanceIsolation, spec: map[string]interface{}{"minimumNumberOfCalls": -1}}, true},
+		{kindInstanceIsolation, args{kind: kindInstanceIsolation, spec: map[string]interface{}{"minimumNumberOfCalls": -1}}, false},
 		{kindInstanceIsolation, args{kind: kindInstanceIsolation, spec: map[string]interface{}{"minimumNumberOfCalls": 1}}, false},
-		{kindInstanceIsolation, args{kind: kindInstanceIsolation, spec: map[string]interface{}{"minimumNumberOfCalls": "1"}}, true},
+		{kindInstanceIsolation, args{kind: kindInstanceIsolation, spec: map[string]interface{}{"minimumNumberOfCalls": "1"}}, false},
 
 		{kindFaultInjection, args{kind: kindFaultInjection, spec: ""}, true},
 		{kindFaultInjection, args{kind: kindFaultInjection, spec: map[string]interface{}{}}, true},
@@ -130,9 +137,9 @@ func TestValidatePolicySpec(t *testing.T) {
 
 		{kindBulkhead, args{kind: kindBulkhead, spec: ""}, true},
 		{kindBulkhead, args{kind: kindBulkhead, spec: map[string]interface{}{}}, true},
-		{kindBulkhead, args{kind: kindBulkhead, spec: map[string]interface{}{"maxConcurrentCalls": -1}}, true},
+		{kindBulkhead, args{kind: kindBulkhead, spec: map[string]interface{}{"maxConcurrentCalls": -1}}, false},
 		{kindBulkhead, args{kind: kindBulkhead, spec: map[string]interface{}{"maxConcurrentCalls": 1}}, false},
-		{kindBulkhead, args{kind: kindBulkhead, spec: map[string]interface{}{"maxConcurrentCalls": "1"}}, true},
+		{kindBulkhead, args{kind: kindBulkhead, spec: map[string]interface{}{"maxConcurrentCalls": "1"}}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

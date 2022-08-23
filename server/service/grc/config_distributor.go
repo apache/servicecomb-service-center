@@ -19,6 +19,7 @@ package grc
 
 import (
 	"context"
+	"errors"
 
 	model "github.com/apache/servicecomb-service-center/pkg/gov"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -30,6 +31,8 @@ const (
 	ConfigDistributorIstio = "istio"
 	ConfigDistributorMock  = "mock"
 )
+
+var ErrNoConfig = errors.New("no gov config")
 
 type NewDistributors func(opts config.DistributorOptions) (ConfigDistributor, error)
 
@@ -57,8 +60,13 @@ func InstallDistributor(t string, newDistributors NewDistributors) {
 }
 
 // Init create distributors according to gov config.
-// it may creates multiple distributors. and distribute policy one by one
+// it may creates multiple distributors and distribute policy one by one,
+// the policy config loaded from grc.json file.
 func Init() error {
+	if config.GetGov() == nil {
+		return ErrNoConfig
+	}
+
 	for name, opts := range config.GetGov().DistMap {
 		opts.Name = name
 		f, ok := distributorPlugins[name]
@@ -72,6 +80,19 @@ func Init() error {
 			return err
 		}
 		distributors[name+"::"+opts.Type] = cd
+	}
+
+	if config.GetGov().MatchGroup != nil {
+		RegisterPolicySchema(KindMatchGroup, config.GetGov().MatchGroup.ValidationSpec)
+	}
+
+	if config.GetGov().Policies != nil {
+		var names []string
+		for kind, policy := range config.GetGov().Policies {
+			RegisterPolicySchema(kind, policy.ValidationSpec)
+			names = append(names, kind)
+		}
+		PolicyNames = names
 	}
 	return nil
 }

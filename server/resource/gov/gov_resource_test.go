@@ -24,6 +24,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	_ "github.com/apache/servicecomb-service-center/server/service/grc/mock"
+	"k8s.io/kube-openapi/pkg/validation/spec"
+
 	_ "github.com/apache/servicecomb-service-center/test"
 
 	"github.com/apache/servicecomb-service-center/pkg/gov"
@@ -34,17 +37,18 @@ import (
 	grcsvc "github.com/apache/servicecomb-service-center/server/service/grc"
 	"github.com/go-chassis/go-archaius"
 	"github.com/stretchr/testify/assert"
-
-	_ "github.com/apache/servicecomb-service-center/server/service/grc/mock"
-
-	_ "github.com/apache/servicecomb-service-center/server/ext/policy"
 )
 
 func init() {
 	config.App.Gov = &config.Gov{
-		DistMap: map[string]config.DistributorOptions{
+		Policies: config.Policies{
 			"mock": {
-				Type: "mock",
+				ValidationSpec: &spec.Schema{
+					SchemaProps: spec.SchemaProps{
+						Type:     []string{"object"},
+						Required: []string{"rule"},
+					},
+				},
 			},
 		},
 	}
@@ -53,11 +57,11 @@ func init() {
 		log.Fatal("", err)
 	}
 }
+
 func TestGovernance_Create(t *testing.T) {
 	err := archaius.Init(archaius.WithMemorySource(), archaius.WithENVSource())
 	assert.NoError(t, err)
 
-	grcsvc.Init()
 	rest.RegisterServant(&v1.Governance{})
 
 	t.Run("create load balancing, should success", func(t *testing.T) {
@@ -66,7 +70,7 @@ func TestGovernance_Create(t *testing.T) {
 			Spec: map[string]interface{}{
 				"rule": "rr",
 			}})
-		r, _ := http.NewRequest(http.MethodPost, "/v1/default/gov/loadbalance", bytes.NewBuffer(b))
+		r, _ := http.NewRequest(http.MethodPost, "/v1/default/gov/mock", bytes.NewBuffer(b))
 		w := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code)
@@ -75,7 +79,7 @@ func TestGovernance_Create(t *testing.T) {
 		b, _ := json.Marshal(&gov.Policy{
 			GovernancePolicy: &gov.GovernancePolicy{Name: "test"},
 			Spec:             map[string]interface{}{}})
-		r, _ := http.NewRequest(http.MethodPost, "/v1/default/gov/loadbalance", bytes.NewBuffer(b))
+		r, _ := http.NewRequest(http.MethodPost, "/v1/default/gov/mock", bytes.NewBuffer(b))
 		w := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w, r)
 		assert.Equal(t, http.StatusBadRequest, w.Code)
