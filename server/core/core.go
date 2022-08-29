@@ -28,6 +28,7 @@ import (
 
 	//go-chassis plugin
 	_ "github.com/go-chassis/go-chassis-extension/codec/gojson"
+	_ "github.com/go-chassis/go-chassis-extension/protocol/fiber4r"
 	_ "github.com/go-chassis/go-chassis-extension/protocol/grpc/server"
 	_ "github.com/go-chassis/go-chassis/v2/middleware/monitoring"
 	_ "github.com/go-chassis/go-chassis/v2/middleware/ratelimiter"

@@ -33,7 +33,7 @@ func (s *MicroServiceInstanceService) URLPatterns() []rest.Route {
 		{Method: http.MethodGet, Path: "/registry/v3/instances", Func: s.FindInstances},
 		{Method: http.MethodGet, Path: "/registry/v3/microservices/:serviceId/instances", Func: s.ListInstance},
 		{Method: http.MethodGet, Path: "/registry/v3/microservices/:serviceId/instances/:instanceId", Func: s.GetInstance},
-		{Method: http.MethodPost, Path: "/registry/v3/microservices/:serviceId/instances", Func: s.RegisterInstance},
+		{Method: http.MethodPost, Path: "/registry/v3/microservices/:serviceId/instances", Func: s.LegacyRegisterInstance},
 		{Method: http.MethodDelete, Path: "/registry/v3/microservices/:serviceId/instances/:instanceId", Func: s.UnregisterInstance},
 		{Method: http.MethodPut, Path: "/registry/v3/microservices/:serviceId/instances/:instanceId/properties", Func: s.PutInstanceProperties},
 		{Method: http.MethodPut, Path: "/registry/v3/microservices/:serviceId/instances/:instanceId/status", Func: s.PutInstanceStatus},

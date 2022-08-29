@@ -43,15 +43,17 @@ func (s *InstanceResource) URLPatterns() []rest.Route {
 		{Method: http.MethodPost, Path: "/v4/:project/registry/instances/action", Func: s.InstancesAction},
 		{Method: http.MethodGet, Path: "/v4/:project/registry/microservices/:serviceId/instances", Func: s.ListInstance},
 		{Method: http.MethodGet, Path: "/v4/:project/registry/microservices/:serviceId/instances/:instanceId", Func: s.GetInstance},
-		{Method: http.MethodPost, Path: "/v4/:project/registry/microservices/:serviceId/instances", Func: s.RegisterInstance},
+		{Method: http.MethodPost, Path: "/v4/:project/registry/microservices/:serviceId/instances",
+			Func: s.LegacyRegisterInstance},
 		{Method: http.MethodDelete, Path: "/v4/:project/registry/microservices/:serviceId/instances/:instanceId", Func: s.UnregisterInstance},
 		{Method: http.MethodPut, Path: "/v4/:project/registry/microservices/:serviceId/instances/:instanceId/properties", Func: s.PutInstanceProperties},
 		{Method: http.MethodPut, Path: "/v4/:project/registry/microservices/:serviceId/instances/:instanceId/status", Func: s.PutInstanceStatus},
-		{Method: http.MethodPut, Path: "/v4/:project/registry/microservices/:serviceId/instances/:instanceId/heartbeat", Func: s.SendHeartbeat},
+		{Method: http.MethodPut, Path: "/v4/:project/registry/microservices/:serviceId/instances/:instanceId/heartbeat",
+			Func: s.SendHeartbeat},
 		{Method: http.MethodPut, Path: "/v4/:project/registry/heartbeats", Func: s.SendManyHeartbeat},
 	}
 }
-func (s *InstanceResource) RegisterInstance(w http.ResponseWriter, r *http.Request) {
+func (s *InstanceResource) LegacyRegisterInstance(w http.ResponseWriter, r *http.Request) {
 	message, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)

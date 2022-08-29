@@ -107,6 +107,7 @@ func populateInstanceDefaultValue(ctx context.Context, instance *pb.MicroService
 
 	microservice, err := GetService(ctx, &pb.GetServiceRequest{ServiceId: instance.ServiceId})
 	if err != nil {
+		log.Error("can not get service:"+instance.ServiceId, err)
 		return pb.NewError(pb.ErrServiceNotExists, "Invalid 'serviceID' in request body.")
 	}
 	instance.Version = microservice.Version

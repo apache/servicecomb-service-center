@@ -22,8 +22,12 @@ import (
 	"crypto/tls"
 	"os"
 
+	"github.com/apache/servicecomb-service-center/server/middleware"
+	"github.com/apache/servicecomb-service-center/server/resource/disco"
 	syncv1 "github.com/apache/servicecomb-service-center/syncer/api/v1"
 	"github.com/apache/servicecomb-service-center/syncer/rpc"
+	"github.com/gofiber/fiber/v2"
+
 	"github.com/go-chassis/go-chassis/v2"
 	chassisServer "github.com/go-chassis/go-chassis/v2/core/server"
 
@@ -39,16 +43,17 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf"
 	"github.com/apache/servicecomb-service-center/server/service/grc"
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
+	syncConfig "github.com/apache/servicecomb-service-center/syncer/config"
 	"github.com/go-chassis/foundation/gopool"
 )
 
-var server ServiceCenterServer
+var sc ServiceCenterServer
 
 func Run() {
 	if err := command.ParseConfig(os.Args); err != nil {
 		log.Fatal(err.Error(), err)
 	}
-	server.Run()
+	sc.Run()
 }
 
 type endpoint struct {
@@ -67,17 +72,42 @@ func (s *ServiceCenterServer) Run() {
 
 	s.startServices()
 
-	chassis.RegisterSchema("grpc", &rpc.Server{},
-		chassisServer.WithRPCServiceDesc(&syncv1.EventService_ServiceDesc))
+	s.startChassis()
 
-	go func() {
-		if err := chassis.Run(); err != nil {
-			log.Warn(err.Error())
-		}
-	}()
 	signal.RegisterListener()
 
 	s.waitForQuit()
+}
+
+func (s *ServiceCenterServer) startChassis() {
+	go func() {
+		mask := make([]string, 0)
+		if !syncConfig.GetConfig().Sync.EnableOnStart {
+			mask = append(mask, "grpc")
+		} else {
+			chassis.RegisterSchema("grpc", &rpc.Server{},
+				chassisServer.WithRPCServiceDesc(&syncv1.EventService_ServiceDesc))
+		}
+		if !config.GetBool("server.turbo", false) {
+			log.Info("turbo is disabled")
+			mask = append(mask, "rest")
+		} else {
+			app := fiber.New(fiber.Config{})
+
+			app.Use(middleware.PrepareContextFor)
+
+			app.Post("/v4/:project/registry/microservices/:serviceId/instances",
+				disco.FiberRegisterInstance)
+			app.Put("/v4/:project/registry/microservices/:serviceId/instances/:instanceId/heartbeat",
+				disco.FiberSendHeartbeat)
+			app.Get("/v4/:project/registry/instances", disco.FiberFindInstances)
+			chassis.RegisterSchema("rest", app)
+			log.Info("turbo is enabled")
+		}
+		if err := chassis.Run(chassisServer.WithServerMask(mask...)); err != nil {
+			log.Warn(err.Error())
+		}
+	}()
 }
 
 func (s *ServiceCenterServer) waitForQuit() {
@@ -100,8 +130,8 @@ func (s *ServiceCenterServer) initialize() {
 }
 
 func (s *ServiceCenterServer) initEndpoints() {
-	s.Endpoint.Host = config.GetString("server.host", "", config.WithStandby("httpaddr"))
-	s.Endpoint.Port = config.GetString("server.port", "", config.WithStandby("httpport"))
+	s.Endpoint.Host = config.GetString("server.host", "127.0.0.1", config.WithStandby("httpaddr"))
+	s.Endpoint.Port = config.GetString("server.port", "30100", config.WithStandby("httpport"))
 }
 
 func (s *ServiceCenterServer) initDatasource() {
@@ -172,7 +202,7 @@ func (s *ServiceCenterServer) startServices() {
 	// notifications
 	s.eventCenter.Start()
 
-	// load server plugins
+	// load sc plugins
 	plugin.LoadPlugins()
 	rbac.Init()
 	if err := grc.Init(); err != nil {
@@ -189,7 +219,7 @@ func (s *ServiceCenterServer) startServices() {
 }
 
 func (s *ServiceCenterServer) startAPIService() {
-	s.APIServer.Listen(s.Endpoint.Host, s.Endpoint.Port)
+	s.APIServer.SetHostPort(s.Endpoint.Host, s.Endpoint.Port)
 	s.APIServer.Start()
 }
 
