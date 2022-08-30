@@ -122,8 +122,26 @@ type docResource interface {
 }
 
 func (c *kvConfig) Create(ctx context.Context, doc *kiemodel.KVDoc) error {
-	_, err := kiedb.GetBroker().GetKVDao().Create(ctx, doc)
-	return err
+	revision, err := kiedb.GetBroker().GetRevisionDao().ApplyRevision(ctx, doc.Domain)
+	if err != nil {
+		return fmt.Errorf("apply kv revision failed, %s", err.Error())
+	}
+	completeKV(doc, revision)
+	doc, err = kiedb.GetBroker().GetKVDao().Create(ctx, doc)
+	if err != nil {
+		return fmt.Errorf("create kv failed, %s", err.Error())
+	}
+	err = kiedb.GetBroker().GetHistoryDao().AddHistory(ctx, doc)
+	if err != nil {
+		log.Warn(fmt.Sprintf("can not updateKeyValue version for [%s] [%s] in [%s], err: %s",
+			doc.Key, doc.Labels, doc.Domain, err))
+	}
+	return nil
+}
+
+func completeKV(kv *kiemodel.KVDoc, revision int64) {
+	kv.UpdateRevision = revision
+	kv.CreateRevision = revision
 }
 
 func (c *kvConfig) Get(ctx context.Context, ID string) (*kiemodel.KVDoc, error) {
@@ -137,14 +155,39 @@ func (c *kvConfig) Get(ctx context.Context, ID string) (*kiemodel.KVDoc, error) 
 }
 
 func (c *kvConfig) Update(ctx context.Context, doc *kiemodel.KVDoc) error {
-	return kiedb.GetBroker().GetKVDao().Update(ctx, doc)
+	var err error
+	doc.UpdateRevision, err = kiedb.GetBroker().GetRevisionDao().ApplyRevision(ctx, doc.Domain)
+	if err != nil {
+		return fmt.Errorf("apply kv revision failed, %s", err.Error())
+	}
+	err = kiedb.GetBroker().GetKVDao().Update(ctx, doc)
+	if err != nil {
+		return fmt.Errorf("update kv failed, %s", err.Error())
+	}
+	err = kiedb.GetBroker().GetHistoryDao().AddHistory(ctx, doc)
+	if err != nil {
+		log.Warn(fmt.Sprintf("can not add revision for [%s] [%s] in [%s], err: %s",
+			doc.Key, doc.Labels, doc.Domain, err.Error()))
+	}
+	return nil
 }
 
 func (c *kvConfig) Delete(ctx context.Context, ID string) error {
 	domain := util.ParseDomain(ctx)
 	project := util.ParseProject(ctx)
 	_, err := kiedb.GetBroker().GetKVDao().FindOneAndDelete(ctx, ID, project, domain)
-	return err
+	if err != nil {
+		return fmt.Errorf("delete kv failed, %s", err.Error())
+	}
+	_, err = kiedb.GetBroker().GetRevisionDao().ApplyRevision(ctx, domain)
+	if err != nil {
+		return fmt.Errorf("the kv [%s] is deleted, but increase revision failed, %s", ID, err.Error())
+	}
+	err = kiedb.GetBroker().GetHistoryDao().DelayDeletionTime(ctx, []string{ID}, project, domain)
+	if err != nil {
+		log.Warn(fmt.Sprintf("add delete time to [%s] failed, err: %s", ID, err.Error()))
+	}
+	return nil
 }
 
 func (c *kvConfig) CreateHandle(ctx context.Context) error {
