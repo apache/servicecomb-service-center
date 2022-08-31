@@ -17,10 +17,6 @@
 
 package grc
 
-import (
-	"fmt"
-)
-
 const (
 	KeyPrefix       = "servicecomb."
 	KindMatchGroup  = "match-group"
@@ -31,12 +27,3 @@ const (
 	KeyEnvironment  = "environment"
 	EnvAll          = "all"
 )
-
-type ErrIllegalItem struct {
-	err string
-	val interface{}
-}
-
-func (e *ErrIllegalItem) Error() string {
-	return fmt.Sprintf("illegal item : %v , msg: %s", e.val, e.err)
-}

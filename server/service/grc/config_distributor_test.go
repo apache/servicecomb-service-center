@@ -39,12 +39,10 @@ const MockApp = ""
 var id = ""
 
 func init() {
-	config.App = &config.AppConfig{
-		Gov: &config.Gov{
-			DistMap: map[string]config.DistributorOptions{
-				"mock": {
-					Type: "mock",
-				},
+	config.App.Gov = &config.Gov{
+		DistMap: map[string]config.DistributorOptions{
+			"mock": {
+				Type: "mock",
 			},
 		},
 	}

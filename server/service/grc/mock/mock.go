@@ -37,16 +37,6 @@ type Distributor struct {
 
 const MatchGroup = "match-group"
 
-var PolicyNames = []string{
-	"retry",
-	"rateLimiting",
-	"circuitBreaker",
-	"instanceIsolation",
-	"faultInjection",
-	"bulkhead",
-	"loadbalance",
-}
-
 func (d *Distributor) Create(ctx context.Context, kind, project string, p *gov.Policy) ([]byte, error) {
 	id, _ := uuid.NewV4()
 	p.ID = id.String()
@@ -81,7 +71,7 @@ func (d *Distributor) Display(ctx context.Context, project, app, env string) ([]
 	}
 	policyMap := make(map[string]*gov.Policy)
 	for _, g := range d.lbPolicies {
-		for _, kind := range PolicyNames {
+		for _, kind := range grcsvc.PolicyNames {
 			if checkPolicy(g, kind, app, env) {
 				policyMap[g.Name+kind] = g
 			}
@@ -90,7 +80,7 @@ func (d *Distributor) Display(ctx context.Context, project, app, env string) ([]
 	r := make([]*gov.DisplayData, 0, len(list))
 	for _, g := range list {
 		policies := make([]*gov.Policy, 0)
-		for _, kind := range PolicyNames {
+		for _, kind := range grcsvc.PolicyNames {
 			policies = append(policies, policyMap[g.Name+kind])
 		}
 		r = append(r, &gov.DisplayData{

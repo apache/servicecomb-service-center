@@ -70,11 +70,6 @@ func (t *Governance) Create(w http.ResponseWriter, r *http.Request) {
 	}
 	id, err := grc.Create(r.Context(), kind, project, p)
 	if err != nil {
-		if _, ok := err.(*grc.ErrIllegalItem); ok {
-			log.Error("", err)
-			rest.WriteError(w, discovery.ErrInvalidParams, err.Error())
-			return
-		}
 		processError(w, err, "create gov data err")
 		return
 	}
@@ -102,18 +97,13 @@ func (t *Governance) Put(w http.ResponseWriter, r *http.Request) {
 	}
 	err = grc.ValidatePolicySpec(kind, p.Spec)
 	if err != nil {
-		log.Error("validate policy err", err)
+		log.Error(fmt.Sprintf("validate policy [%s] err", kind), err)
 		rest.WriteError(w, discovery.ErrInvalidParams, err.Error())
 		return
 	}
 	log.Info(fmt.Sprintf("update %v", &p))
 	err = grc.Update(r.Context(), kind, id, project, p)
 	if err != nil {
-		if _, ok := err.(*grc.ErrIllegalItem); ok {
-			log.Error("", err)
-			rest.WriteError(w, discovery.ErrInvalidParams, err.Error())
-			return
-		}
 		processError(w, err, "put gov err")
 		return
 	}
