@@ -18,7 +18,6 @@
 package kie
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -26,6 +25,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/ghodss/yaml"
 	"github.com/go-chassis/foundation/httpclient"
 	"github.com/go-chassis/kie-client"
@@ -259,28 +259,6 @@ func new(opts config.DistributorOptions) (grcsvc.ConfigDistributor, error) {
 	return &Distributor{name: opts.Name, client: initClient(opts.Endpoint)}, nil
 }
 
-func toSnake(name string) string {
-	if name == "" {
-		return ""
-	}
-	temp := strings.Split(name, "-")
-	var buffer bytes.Buffer
-	for num, v := range temp {
-		vv := []rune(v)
-		if num == 0 {
-			buffer.WriteString(string(vv))
-			continue
-		}
-		if len(vv) > 0 {
-			if vv[0] >= 'a' && vv[0] <= 'z' { //首字母大写
-				vv[0] -= 32
-			}
-			buffer.WriteString(string(vv))
-		}
-	}
-	return buffer.String()
-}
-
 func (d *Distributor) listDataByKind(ctx context.Context, kind, project, app, env string) (*kie.KVResponse, int, error) {
 	ops := []kie.GetOption{
 		kie.WithKey("beginWith(" + toGovKeyPrefix(kind) + ")"),
@@ -369,7 +347,7 @@ func (d *Distributor) transform(kv *kie.KVDoc, kind string) (*gov.Policy, error)
 }
 
 func toGovKeyPrefix(kind string) string {
-	return grcsvc.KeyPrefix + toSnake(kind) + "."
+	return grcsvc.KeyPrefix + util.ToSnake(kind) + "."
 }
 
 func init() {
