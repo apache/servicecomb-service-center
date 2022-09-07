@@ -23,6 +23,7 @@ import (
 
 	model "github.com/apache/servicecomb-service-center/pkg/gov"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/config"
 )
 
@@ -90,7 +91,7 @@ func Init() error {
 		var names []string
 		for kind, policy := range config.GetGov().Policies {
 			RegisterPolicySchema(kind, policy.ValidationSpec)
-			names = append(names, kind)
+			names = append(names, util.ToSnake(kind))
 		}
 		PolicyNames = names
 	}

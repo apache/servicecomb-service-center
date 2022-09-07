@@ -155,3 +155,26 @@ func TestIsVersionOrHealthPattern(t *testing.T) {
 	assert.True(t, IsVersionOrHealthPattern("/v4/a/registry/health"))
 	assert.False(t, IsVersionOrHealthPattern("/health/a"))
 }
+
+func TestToSnake(t *testing.T) {
+	type args struct {
+		name string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{"single word", args{"a"}, "a"},
+		{"2 words", args{"a-b"}, "aB"},
+		{"3 words", args{"a-b-cc"}, "aBCc"},
+		{"invalid", args{"a.b"}, "a.b"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ToSnake(tt.args.name); got != tt.want {
+				t.Errorf("ToSnake() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

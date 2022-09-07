@@ -25,7 +25,6 @@ import (
 	"testing"
 
 	_ "github.com/apache/servicecomb-service-center/server/service/grc/mock"
-	"k8s.io/kube-openapi/pkg/validation/spec"
 
 	_ "github.com/apache/servicecomb-service-center/test"
 
@@ -37,6 +36,7 @@ import (
 	grcsvc "github.com/apache/servicecomb-service-center/server/service/grc"
 	"github.com/go-chassis/go-archaius"
 	"github.com/stretchr/testify/assert"
+	"k8s.io/kube-openapi/pkg/validation/spec"
 )
 
 func init() {

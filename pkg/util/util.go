@@ -18,6 +18,7 @@
 package util
 
 import (
+	"bytes"
 	"runtime"
 	"strings"
 	"unsafe"
@@ -145,4 +146,26 @@ func ToDomainProject(domain, project string) (domainProject string) {
 
 func IsVersionOrHealthPattern(pattern string) bool {
 	return strings.HasSuffix(pattern, "/version") || strings.HasSuffix(pattern, "/health")
+}
+
+func ToSnake(name string) string {
+	if name == "" {
+		return ""
+	}
+	temp := strings.Split(name, "-")
+	var buffer bytes.Buffer
+	for num, v := range temp {
+		vv := []rune(v)
+		if num == 0 {
+			buffer.WriteString(string(vv))
+			continue
+		}
+		if len(vv) > 0 {
+			if vv[0] >= 'a' && vv[0] <= 'z' { //首字母大写
+				vv[0] -= 32
+			}
+			buffer.WriteString(string(vv))
+		}
+	}
+	return buffer.String()
 }
