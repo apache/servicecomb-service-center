@@ -192,7 +192,7 @@ func (c *kvConfig) Delete(ctx context.Context, ID string) error {
 
 func (c *kvConfig) CreateHandle(ctx context.Context) error {
 	if c.cur != nil {
-		log.Warn(fmt.Sprintf("create config but doc id exist, %s", c.resourceID))
+		log.Warn(fmt.Sprintf("create config action but doc id exist, %s", c.resourceID))
 		return c.UpdateHandle(ctx)
 	}
 	return c.resource.Create(ctx, c.input)
@@ -200,7 +200,7 @@ func (c *kvConfig) CreateHandle(ctx context.Context) error {
 
 func (c *kvConfig) UpdateHandle(ctx context.Context) error {
 	if c.cur == nil {
-		log.Warn(fmt.Sprintf("update action but account not exist, %s", c.resourceID))
+		log.Warn(fmt.Sprintf("update config action but doc id not exist, %s", c.resourceID))
 		return c.CreateHandle(ctx)
 	}
 	return c.resource.Update(ctx, c.input)
