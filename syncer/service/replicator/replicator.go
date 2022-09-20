@@ -213,7 +213,7 @@ func (r *replicatorManager) Persist(ctx context.Context, el *v1sync.EventList) [
 		result = r.Operate(ctx)
 		results = append(results, result.WithEventID(event.Id))
 
-		log.Info(fmt.Sprintf("operate resource %s, %s", event.Flag(), result.Flag()))
+		log.Info(fmt.Sprintf("operate resource, event: %s, result: %s", event.Flag(), result.Flag()))
 	}
 
 	for _, result := range results {
