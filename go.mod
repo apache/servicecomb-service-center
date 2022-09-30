@@ -34,7 +34,7 @@ require (
 	github.com/iancoleman/strcase v0.2.0
 	github.com/jinzhu/copier v0.3.5
 	github.com/karlseguin/ccache v2.0.3-0.20170217060820-3ba9789cfd2c+incompatible
-	github.com/labstack/echo/v4 v4.7.2
+	github.com/labstack/echo/v4 v4.9.0
 	github.com/little-cui/etcdadpt v0.4.0
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/onsi/ginkgo v1.15.0
