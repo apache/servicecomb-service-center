@@ -33,6 +33,7 @@ import (
 	"github.com/apache/servicecomb-service-center/server/service/validator"
 	"github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/cari/dlock"
+	"github.com/go-chassis/cari/pkg/errsvc"
 	rbacmodel "github.com/go-chassis/cari/rbac"
 )
 
@@ -216,4 +217,31 @@ func AccountUsage(ctx context.Context) (int64, error) {
 		return 0, err
 	}
 	return used, nil
+}
+
+func BatchCreateAccounts(ctx context.Context, req *rbacmodel.BatchCreateAccountsRequest) (*rbacmodel.BatchCreateAccountsResponse, error) {
+	err := validator.ValidateBatchCreateAccountsRequest(req)
+	if err != nil {
+		log.Error("batch create accounts failed", err)
+		return nil, discovery.NewError(discovery.ErrInvalidParams, err.Error())
+	}
+
+	var resp rbacmodel.BatchCreateAccountsResponse
+	var failed int
+	for _, account := range req.Accounts {
+		err := CreateAccount(ctx, account)
+		errEx, ok := err.(*errsvc.Error)
+		if err != nil && !ok {
+			errEx = discovery.NewError(discovery.ErrInternal, err.Error())
+		}
+		if errEx != nil {
+			failed++
+		}
+		resp.Accounts = append(resp.Accounts, &rbacmodel.BatchCreateAccountItemResponse{
+			Name:  account.Name,
+			Error: errEx,
+		})
+	}
+	log.Info(fmt.Sprintf("batch create accounts finish, succeed: %d, failed: %d", len(resp.Accounts)-failed, failed))
+	return &resp, nil
 }

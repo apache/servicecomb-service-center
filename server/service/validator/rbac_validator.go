@@ -25,7 +25,7 @@ import (
 var createAccountValidator = &validate.Validator{}
 var updateAccountValidator = &validate.Validator{}
 var createRoleValidator = &validate.Validator{}
-
+var batchCreateAccountsRequestValidator = &validate.Validator{}
 var changePWDValidator = &validate.Validator{}
 var accountLoginValidator = &validate.Validator{}
 
@@ -34,6 +34,8 @@ func init() {
 	createAccountValidator.AddRule("Roles", &validate.Rule{Min: 1, Max: 5, Regexp: nameRegex})
 	createAccountValidator.AddRule("Password", &validate.Rule{Regexp: &validate.PasswordChecker{}})
 	createAccountValidator.AddRule("Status", &validate.Rule{Regexp: accountStatusRegex})
+
+	batchCreateAccountsRequestValidator.AddRule("Accounts", &validate.Rule{Min: 1, Max: 20})
 
 	updateAccountValidator.AddRule("Roles", createAccountValidator.GetRule("Roles"))
 	updateAccountValidator.AddRule("Status", createAccountValidator.GetRule("Status"))
@@ -53,7 +55,13 @@ func ValidateCreateAccount(a *rbac.Account) error {
 	}
 	return createAccountValidator.Validate(a)
 }
-
+func ValidateBatchCreateAccountsRequest(a *rbac.BatchCreateAccountsRequest) error {
+	err := baseCheck(a)
+	if err != nil {
+		return err
+	}
+	return batchCreateAccountsRequestValidator.Validate(a)
+}
 func ValidateUpdateAccount(a *rbac.Account) error {
 	err := baseCheck(a)
 	if err != nil {

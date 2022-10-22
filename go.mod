@@ -20,7 +20,7 @@ require (
 	github.com/cheggaaa/pb v1.0.25
 	github.com/deckarep/golang-set v1.8.0
 	github.com/elithrar/simple-scrypt v1.3.0
-	github.com/go-chassis/cari v0.8.0
+	github.com/go-chassis/cari v0.9.0
 	github.com/go-chassis/foundation v0.4.0
 	github.com/go-chassis/go-archaius v1.5.6
 	github.com/go-chassis/go-chassis-extension/codec/gojson v0.0.0-20220816060440-fe98a5615d3f
