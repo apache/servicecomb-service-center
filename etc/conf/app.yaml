@@ -169,7 +169,10 @@ rbac:
   publicKeyFile: ./public.key
   releaseLockAfter: 15m # failure login attempt causes account blocking, that is block duration
   retainLockHistoryFor: 20m # the ttl of lock history
-  scope: '*' # specify auth resource scope, can be account,role,service,service/schema,...
+  # specify auth resource scope, can be account,role,service,service/schema,...
+  # The authenticator skip the authentication of the request, if the resource type of the request is not specified in the scope
+  # The authenticator always authenticate the request with the HTTP Header 'Authorization'.
+  scope: '*'
 
 metrics:
   # enable to start metrics gather

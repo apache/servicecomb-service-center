@@ -55,22 +55,13 @@ func (ba *TokenAuthenticator) Identify(req *http.Request) error {
 		return nil
 	}
 
-	pattern, ok := req.Context().Value(rest.CtxMatchPattern).(string)
-	if !ok {
-		pattern = req.URL.Path
-		log.Warn("can not find api pattern")
-	}
+	pattern := getRequestPattern(req)
 
-	if !rbacsvc.MustAuth(pattern) {
-		return nil
-	}
-
-	account, err := ba.VerifyRequest(req)
-	if err != nil {
+	account, err := ba.mustAuth(req, pattern)
+	if account == nil || err != nil {
 		return err
 	}
 
-	// if account not exist should return auth failure
 	err = accountExist(req.Context(), account.Name)
 	if err != nil {
 		return err
@@ -87,6 +78,26 @@ func (ba *TokenAuthenticator) Identify(req *http.Request) error {
 
 	util.SetRequestContext(req, authHandler.CtxResourceLabels, matchedLabels)
 	return nil
+}
+
+func getRequestPattern(req *http.Request) string {
+	pattern, ok := req.Context().Value(rest.CtxMatchPattern).(string)
+	if !ok {
+		pattern = req.URL.Path
+		log.Warn("can not find api pattern")
+	}
+	return pattern
+}
+
+func (ba *TokenAuthenticator) mustAuth(req *http.Request, pattern string) (*rbacmodel.Account, error) {
+	account, err := ba.VerifyRequest(req)
+	if err == nil {
+		return account, nil
+	}
+	if rbacsvc.MustAuth(pattern) {
+		return nil, err
+	}
+	return nil, nil
 }
 
 func (ba *TokenAuthenticator) VerifyRequest(req *http.Request) (*rbacmodel.Account, error) {
