@@ -219,11 +219,49 @@ func TestGetAccount(t *testing.T) {
 		assert.Equal(t, rbac.ErrAccountNotExist, svcErr.Code)
 	})
 }
+
 func TestListAccount(t *testing.T) {
 	t.Run("list account, should succeed", func(t *testing.T) {
 		accounts, n, err := rbacsvc.ListAccount(context.TODO())
 		assert.Nil(t, err)
 		assert.True(t, n > 0)
 		assert.Equal(t, n, int64(len(accounts)))
+	})
+}
+
+func TestBatchCreateAccounts(t *testing.T) {
+	ctx := context.TODO()
+
+	t.Run("batch create invalid accounts, should failed", func(t *testing.T) {
+		resp, err := rbacsvc.BatchCreateAccounts(ctx, &rbac.BatchCreateAccountsRequest{})
+		assert.Nil(t, resp)
+		assert.Error(t, err)
+		svcErr := err.(*errsvc.Error)
+		assert.Equal(t, discovery.ErrInvalidParams, svcErr.Code)
+	})
+	t.Run("batch create accounts, should succeed", func(t *testing.T) {
+		a1 := newAccount("TestBatchCreateAccounts_account_1")
+		a2 := newAccount("TestBatchCreateAccounts_account_no_pwd")
+		a2.Password = ""
+
+		defer func() {
+			rbacsvc.DeleteAccount(ctx, "TestBatchCreateAccounts_account_1")
+			rbacsvc.DeleteAccount(ctx, "TestBatchCreateAccounts_account_no_pwd")
+		}()
+
+		resp, err := rbacsvc.BatchCreateAccounts(ctx, &rbac.BatchCreateAccountsRequest{
+			Accounts: []*rbac.Account{a1, a2},
+		})
+		assert.NotNil(t, resp)
+		assert.NoError(t, err)
+		assert.Equal(t, 2, len(resp.Accounts))
+
+		item := resp.Accounts[0]
+		assert.Equal(t, "TestBatchCreateAccounts_account_1", item.Name)
+		assert.Nil(t, item.Error)
+
+		item = resp.Accounts[1]
+		assert.Equal(t, "TestBatchCreateAccounts_account_no_pwd", item.Name)
+		assert.NotEmpty(t, item.Code)
 	})
 }

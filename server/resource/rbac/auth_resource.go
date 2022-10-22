@@ -45,6 +45,7 @@ func (ar *AuthResource) URLPatterns() []rest.Route {
 		{Method: http.MethodPost, Path: "/v4/token", Func: ar.Login},
 		{Method: http.MethodGet, Path: "/v4/self-perms", Func: ar.ListSelfPerms},
 		{Method: http.MethodPost, Path: "/v4/accounts", Func: ar.CreateAccount},
+		{Method: http.MethodPost, Path: "/v4/accounts/batch-create", Func: ar.BatchCreateAccount},
 		{Method: http.MethodGet, Path: "/v4/accounts", Func: ar.ListAccount},
 		{Method: http.MethodGet, Path: "/v4/accounts/:name", Func: ar.GetAccount},
 		{Method: http.MethodDelete, Path: "/v4/accounts/:name", Func: ar.DeleteAccount},
@@ -214,6 +215,28 @@ func (ar *AuthResource) ListLock(w http.ResponseWriter, r *http.Request) {
 	resp := &rbac.LockResponse{
 		Total: n,
 		Locks: al,
+	}
+	rest.WriteResponse(w, r, nil, resp)
+}
+
+func (ar *AuthResource) BatchCreateAccount(w http.ResponseWriter, r *http.Request) {
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		log.Error("read body err", err)
+		rest.WriteError(w, discovery.ErrInternal, err.Error())
+		return
+	}
+	a := &rbacmodel.BatchCreateAccountsRequest{}
+	if err = json.Unmarshal(body, a); err != nil {
+		log.Error("json err", err)
+		rest.WriteError(w, discovery.ErrInvalidParams, err.Error())
+		return
+	}
+	resp, err := rbacsvc.BatchCreateAccounts(r.Context(), a)
+	if err != nil {
+		log.Error(errorsEx.MsgBatchCreateAccountsFailed, err)
+		rest.WriteServiceError(w, err)
+		return
 	}
 	rest.WriteResponse(w, r, nil, resp)
 }
