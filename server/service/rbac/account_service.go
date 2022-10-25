@@ -79,7 +79,9 @@ func CreateAccount(ctx context.Context, a *rbacmodel.Account) error {
 	}
 	a.Role = ""
 	a.CurrentPassword = ""
-	a.ID = util.GenerateUUID()
+	if a.ID == "" {
+		a.ID = util.GenerateUUID()
+	}
 	a.CreateTime = strconv.FormatInt(time.Now().Unix(), 10)
 	a.UpdateTime = a.CreateTime
 

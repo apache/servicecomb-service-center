@@ -52,19 +52,20 @@ func newAccount(name string) *rbac.Account {
 }
 
 func TestCreateAccount(t *testing.T) {
+	ctx := context.TODO()
 	t.Run("create account, should succeed", func(t *testing.T) {
 		a := newAccount("TestCreateAccount_create_account")
-		err := rbacsvc.CreateAccount(context.TODO(), a)
+		err := rbacsvc.CreateAccount(ctx, a)
 		assert.Nil(t, err)
 	})
 	t.Run("create account twice, should return: "+rbac.NewError(rbac.ErrAccountConflict, "").Error(), func(t *testing.T) {
 		name := "TestCreateAccount_create_account_twice"
 		a := newAccount(name)
-		err := rbacsvc.CreateAccount(context.TODO(), a)
+		err := rbacsvc.CreateAccount(ctx, a)
 		assert.Nil(t, err)
 
 		a = newAccount(name)
-		err = rbacsvc.CreateAccount(context.TODO(), a)
+		err = rbacsvc.CreateAccount(ctx, a)
 		assert.NotNil(t, err)
 		svcErr := err.(*errsvc.Error)
 		assert.Equal(t, rbac.ErrAccountConflict, svcErr.Code)
@@ -72,10 +73,23 @@ func TestCreateAccount(t *testing.T) {
 	t.Run("account has invalid role, should return: "+rbac.NewError(rbac.ErrAccountHasInvalidRole, "").Error(), func(t *testing.T) {
 		a := newAccount("TestCreateAccount_account_has_invalid_role")
 		a.Roles = append(a.Roles, "invalid_role")
-		err := rbacsvc.CreateAccount(context.TODO(), a)
+		err := rbacsvc.CreateAccount(ctx, a)
 		assert.NotNil(t, err)
 		svcErr := err.(*errsvc.Error)
 		assert.Equal(t, rbac.ErrAccountHasInvalidRole, svcErr.Code)
+	})
+	t.Run("account has id, should succeed", func(t *testing.T) {
+		accountName := "TestCreateAccount_account_has_id"
+		a := newAccount(accountName)
+		a.ID = "specifyID"
+		err := rbacsvc.CreateAccount(ctx, a)
+		assert.NoError(t, err)
+
+		defer rbacsvc.DeleteAccount(ctx, accountName)
+
+		account, err := rbacsvc.GetAccount(ctx, accountName)
+		assert.NoError(t, err)
+		assert.Equal(t, "specifyID", account.ID)
 	})
 }
 
