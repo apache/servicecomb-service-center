@@ -22,9 +22,8 @@ import (
 	"context"
 	"time"
 
-	_ "github.com/apache/servicecomb-service-center/syncer/init"
-
 	_ "github.com/apache/servicecomb-service-center/server/init"
+	_ "github.com/apache/servicecomb-service-center/syncer/init"
 
 	_ "github.com/apache/servicecomb-service-center/syncer/bootstrap"
 
