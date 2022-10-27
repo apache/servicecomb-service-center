@@ -228,6 +228,11 @@ func BatchCreateAccounts(ctx context.Context, req *rbacmodel.BatchCreateAccounts
 		return nil, discovery.NewError(discovery.ErrInvalidParams, err.Error())
 	}
 
+	err = populateAccounts(req.Accounts)
+	if err != nil {
+		return nil, err
+	}
+
 	var resp rbacmodel.BatchCreateAccountsResponse
 	var failed int
 	for _, account := range req.Accounts {
@@ -246,4 +251,25 @@ func BatchCreateAccounts(ctx context.Context, req *rbacmodel.BatchCreateAccounts
 	}
 	log.Info(fmt.Sprintf("batch create accounts finish, succeed: %d, failed: %d", len(resp.Accounts)-failed, failed))
 	return &resp, nil
+}
+
+func populateAccounts(accounts []*rbacmodel.Account) error {
+	for _, account := range accounts {
+		err := populateAccount(account)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func populateAccount(account *rbacmodel.Account) error {
+	var err error
+	if len(account.Password) == 0 {
+		account.Password, err = util.GeneratePassword()
+		if err != nil {
+			return discovery.NewError(discovery.ErrInternal, err.Error())
+		}
+	}
+	return nil
 }

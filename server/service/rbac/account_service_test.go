@@ -257,18 +257,21 @@ func TestBatchCreateAccounts(t *testing.T) {
 		a1 := newAccount("TestBatchCreateAccounts_account_1")
 		a2 := newAccount("TestBatchCreateAccounts_account_no_pwd")
 		a2.Password = ""
+		a3 := newAccount("TestBatchCreateAccounts_account_invalid_pwd")
+		a3.Password = "1"
 
 		defer func() {
 			rbacsvc.DeleteAccount(ctx, "TestBatchCreateAccounts_account_1")
 			rbacsvc.DeleteAccount(ctx, "TestBatchCreateAccounts_account_no_pwd")
+			rbacsvc.DeleteAccount(ctx, "TestBatchCreateAccounts_account_invalid_pwd")
 		}()
 
 		resp, err := rbacsvc.BatchCreateAccounts(ctx, &rbac.BatchCreateAccountsRequest{
-			Accounts: []*rbac.Account{a1, a2},
+			Accounts: []*rbac.Account{a1, a2, a3},
 		})
 		assert.NotNil(t, resp)
 		assert.NoError(t, err)
-		assert.Equal(t, 2, len(resp.Accounts))
+		assert.Equal(t, 3, len(resp.Accounts))
 
 		item := resp.Accounts[0]
 		assert.Equal(t, "TestBatchCreateAccounts_account_1", item.Name)
@@ -276,6 +279,10 @@ func TestBatchCreateAccounts(t *testing.T) {
 
 		item = resp.Accounts[1]
 		assert.Equal(t, "TestBatchCreateAccounts_account_no_pwd", item.Name)
+		assert.Nil(t, item.Error)
+
+		item = resp.Accounts[2]
+		assert.Equal(t, "TestBatchCreateAccounts_account_invalid_pwd", item.Name)
 		assert.NotEmpty(t, item.Code)
 	})
 }

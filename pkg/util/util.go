@@ -22,7 +22,20 @@ import (
 	"runtime"
 	"strings"
 	"unsafe"
+
+	"github.com/cloudflare/gokey"
 )
+
+const TypePass = "pass"
+
+var passwordSpec = &gokey.PasswordSpec{
+	Length:         8,
+	Upper:          1,
+	Lower:          1,
+	Digits:         1,
+	Special:        1,
+	AllowedSpecial: "-~!@#$%^&*()_=+|<>{}[]",
+}
 
 func SafeCloseChan(c chan struct{}) {
 	if c == nil {
@@ -168,4 +181,16 @@ func ToSnake(name string) string {
 		}
 	}
 	return buffer.String()
+}
+
+func GeneratePassword() (string, error) {
+	seed, err := gokey.GenerateEncryptedKeySeed(TypePass)
+	if err != nil {
+		return "", err
+	}
+	pass, err := gokey.GetPass(TypePass, "", seed, passwordSpec)
+	if err != nil {
+		return "", err
+	}
+	return pass, nil
 }

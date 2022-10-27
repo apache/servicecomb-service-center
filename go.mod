@@ -18,6 +18,7 @@ require (
 	github.com/apache/servicecomb-service-center/eventbase v0.0.0-20220120070230-26997eb876ca
 	github.com/beego/beego/v2 v2.0.4
 	github.com/cheggaaa/pb v1.0.25
+	github.com/cloudflare/gokey v0.1.2
 	github.com/deckarep/golang-set v1.8.0
 	github.com/elithrar/simple-scrypt v1.3.0
 	github.com/go-chassis/cari v0.9.0
@@ -58,7 +59,7 @@ require (
 	go.etcd.io/etcd/client/v3 v3.5.4
 	go.mongodb.org/mongo-driver v1.5.1
 	go.uber.org/zap v1.20.0
-	golang.org/x/crypto v0.0.0-20220131195533-30dcbda58838
+	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba
 	google.golang.org/grpc v1.46.0
 	google.golang.org/protobuf v1.28.0
