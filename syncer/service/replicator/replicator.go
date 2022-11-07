@@ -19,6 +19,7 @@ package replicator
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/apache/servicecomb-service-center/client"
@@ -169,6 +170,19 @@ func (r *replicatorManager) replicate(ctx context.Context, el *v1sync.EventList)
 		}
 
 		log.Info(fmt.Sprintf("replicate events success, count is %d", len(in.Events)))
+		for _, event := range in.Events {
+			s, err := json.Marshal(event)
+			if err != nil {
+				log.Error("failed to marshal event", err)
+				continue
+			}
+			log.Info(fmt.Sprintf("replicated event:%s", string(s)))
+			log.Info(fmt.Sprintf("event id: %v", event.Id))
+			log.Info(fmt.Sprintf("event action:%v", event.Action))
+			log.Info(fmt.Sprintf("event subject:%v", event.Subject))
+			log.Info(fmt.Sprintf("event value:%v", event.Value))
+			log.Info(fmt.Sprintf("event timestamp:%v\n\n", event.Timestamp))
+		}
 
 		for k, v := range res.Results {
 			log.Info(fmt.Sprintf("replicate event %s, %v", k, v))
@@ -189,6 +203,18 @@ func (r *replicatorManager) Persist(ctx context.Context, el *v1sync.EventList) [
 	for _, event := range el.Events {
 		log.Info(fmt.Sprintf("start handle event %s", event.Flag()))
 
+		s, err := json.Marshal(event)
+		if err != nil {
+			log.Error("failed to marshal event", err)
+			continue
+		}
+		log.Info(fmt.Sprintf("before persisting event:%v", string(s)))
+		log.Info(fmt.Sprintf("event id: %v", event.Id))
+		log.Info(fmt.Sprintf("event action:%v", event.Action))
+		log.Info(fmt.Sprintf("event subject:%v", event.Subject))
+		log.Info(fmt.Sprintf("event timestamp:%v", event.Timestamp))
+		log.Info(fmt.Sprintf("event value:%v\n\n", event.Value))
+
 		r, result := resource.New(event)
 		if result != nil {
 			results = append(results, result.WithEventID(event.Id))
@@ -200,12 +226,14 @@ func (r *replicatorManager) Persist(ctx context.Context, el *v1sync.EventList) [
 
 		result = r.LoadCurrentResource(ctx)
 		if result != nil {
+			log.Info(fmt.Sprintf("failed to load current resource: %s", event.Id))
 			results = append(results, result.WithEventID(event.Id))
 			continue
 		}
 
 		result = r.NeedOperate(ctx)
 		if result != nil {
+			log.Info(fmt.Sprintf("failed to need operate resource: %s", event.Id))
 			results = append(results, result.WithEventID(event.Id))
 			continue
 		}
@@ -214,6 +242,9 @@ func (r *replicatorManager) Persist(ctx context.Context, el *v1sync.EventList) [
 		results = append(results, result.WithEventID(event.Id))
 
 		log.Info(fmt.Sprintf("operate resource, event: %s, result: %s", event.Flag(), result.Flag()))
+
+		log.Info(fmt.Sprintf("after operating event: %s", string(s)))
+
 	}
 
 	for _, result := range results {
