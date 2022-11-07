@@ -19,6 +19,7 @@ package replicator
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 
@@ -181,7 +182,14 @@ func (r *replicatorManager) replicate(ctx context.Context, el *v1sync.EventList)
 			log.Info(fmt.Sprintf("event action:%v", event.Action))
 			log.Info(fmt.Sprintf("event subject:%v", event.Subject))
 			log.Info(fmt.Sprintf("event value:%v", event.Value))
-			log.Info(fmt.Sprintf("event timestamp:%v\n\n", event.Timestamp))
+			log.Info(fmt.Sprintf("event timestamp:%v", event.Timestamp))
+
+			val, err := base64.StdEncoding.DecodeString(string(event.Value))
+			if err != nil {
+				log.Error(fmt.Sprintf("failed to decode base64 string: %v", string(s)), err)
+				continue
+			}
+			log.Info(fmt.Sprintf("decoded event value: %s\n\n", string(val)))
 		}
 
 		for k, v := range res.Results {
@@ -213,7 +221,14 @@ func (r *replicatorManager) Persist(ctx context.Context, el *v1sync.EventList) [
 		log.Info(fmt.Sprintf("event action:%v", event.Action))
 		log.Info(fmt.Sprintf("event subject:%v", event.Subject))
 		log.Info(fmt.Sprintf("event timestamp:%v", event.Timestamp))
-		log.Info(fmt.Sprintf("event value:%v\n\n", event.Value))
+		log.Info(fmt.Sprintf("event value:%v", event.Value))
+
+		val, err := base64.StdEncoding.DecodeString(string(event.Value))
+		if err != nil {
+			log.Error(fmt.Sprintf("failed to decode base64 string: %v", string(s)), err)
+			continue
+		}
+		log.Info(fmt.Sprintf("decoded event value: %s\n\n", string(val)))
 
 		r, result := resource.New(event)
 		if result != nil {
