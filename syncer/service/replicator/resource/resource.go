@@ -327,6 +327,7 @@ func (o *checker) needOperate(ctx context.Context) *Result {
 			return FailResult(err)
 		}
 		if updateTime >= o.event.Timestamp {
+			log.Info(fmt.Sprintf("skip operate event: %v, updatetime: %v, event timestamp: %v", o.event.Id, updateTime, o.event.Timestamp))
 			return SkipResult()
 		}
 
