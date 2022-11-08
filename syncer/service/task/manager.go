@@ -185,29 +185,21 @@ func (m *manager) ListTasks(ctx context.Context) ([]*carisync.Task, error) {
 
 	noHandleTasks := make([]*carisync.Task, 0, len(tasks))
 	skipTaskIDs := make([]string, 0, len(tasks))
-	allTaskIDs := make([]string, 0, len(tasks))
+	allTaskIDs := make(map[string]bool)
 	for _, t := range tasks {
 		log.Info(fmt.Sprintf("list task id: %v", t.ID))
+		allTaskIDs[t.ID] = true
 		_, ok := m.cache.Load(t.ID)
 		if ok {
 			skipTaskIDs = append(skipTaskIDs, t.ID)
 			continue
 		}
 		m.cache.Store(t.ID, t)
-		allTaskIDs = append(allTaskIDs, t.ID)
 		noHandleTasks = append(noHandleTasks, t)
 		log.Info(fmt.Sprintf("no handle task id: %v", t.ID))
 	}
-	allTaskIDs = append(allTaskIDs, skipTaskIDs...)
 	m.cache.Range(func(key, value any) bool {
-		needDelete := true
-		for _, tID := range allTaskIDs {
-			if tID == key {
-				needDelete = false
-				break
-			}
-		}
-		if needDelete {
+		if _, ok := allTaskIDs[key.(string)]; !ok {
 			m.cache.Delete(key)
 		}
 		return true
