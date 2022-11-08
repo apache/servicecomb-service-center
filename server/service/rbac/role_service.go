@@ -32,6 +32,8 @@ import (
 	rbacmodel "github.com/go-chassis/cari/rbac"
 )
 
+const isMigrated = "/cse-sr/role-migrated-lock"
+
 func CreateRole(ctx context.Context, r *rbacmodel.Role) error {
 	err := validator.ValidateCreateRole(r)
 	if err != nil {
@@ -156,4 +158,23 @@ func RoleUsage(ctx context.Context) (int64, error) {
 		return 0, err
 	}
 	return used, nil
+}
+
+func migrateOldRoles() {
+	if err := dlock.Lock(isMigrated, -1); err != nil {
+		log.Error("old role is migrating", err)
+		return
+	}
+	defer func() {
+		if err := dlock.Unlock(isMigrated); err != nil {
+			log.Error("unlock failed", err)
+		}
+	}()
+
+	err := rbac.Instance().MigrateOldRoles(context.Background())
+	if err != nil {
+		log.Error("migrate old role failed", err)
+		return
+	}
+	log.Info("migrate old role success")
 }

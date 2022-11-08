@@ -38,4 +38,5 @@ type RoleManager interface {
 	ListRole(ctx context.Context) ([]*rbac.Role, int64, error)
 	DeleteRole(ctx context.Context, name string) (bool, error)
 	UpdateRole(ctx context.Context, name string, role *rbac.Role) error
+	MigrateOldRoles(ctx context.Context) error
 }
