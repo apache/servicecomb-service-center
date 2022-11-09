@@ -312,7 +312,11 @@ func formatUpdateTimeSecond(src string) (int64, error) {
 		return 0, err
 	}
 
-	return updateTime * 1000 * 1000 * 1000, nil
+	return secToNanoSec(updateTime), nil
+}
+
+func secToNanoSec(timestamp int64) int64 {
+	return timestamp * 1000 * 1000 * 1000
 }
 
 func (o *checker) needOperate(ctx context.Context) *Result {

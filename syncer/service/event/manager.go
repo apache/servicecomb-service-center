@@ -34,7 +34,11 @@ import (
 )
 
 const (
-	DefaultInternal = 500 * time.Millisecond
+	DefaultInternal    = 500 * time.Millisecond
+	eventChanSize      = 1000
+	batchEventChanSize = 100
+	resChanSize        = 1000
+	eventSliceSize     = 100
 )
 
 var m Manager
@@ -95,10 +99,11 @@ func Replicator(r replicator.Replicator) ManagerOption {
 func NewManager(os ...ManagerOption) Manager {
 	mo := toManagerOptions(os...)
 	em := &ManagerImpl{
-		events:     make(chan *Event, 1000),
-		result:     make(chan *Result, 1000),
-		internal:   mo.internal,
-		Replicator: mo.replicator,
+		events:      make(chan *Event, eventChanSize),
+		batchEvents: make(chan []*Event, batchEventChanSize),
+		result:      make(chan *Result, resChanSize),
+		internal:    mo.internal,
+		Replicator:  mo.replicator,
 	}
 	return em
 }
@@ -117,7 +122,8 @@ type Manager interface {
 }
 
 type ManagerImpl struct {
-	events chan *Event
+	events      chan *Event
+	batchEvents chan []*Event
 
 	internal time.Duration
 	ticker   *time.Ticker
@@ -238,12 +244,15 @@ func (s syncEvents) Swap(i, j int) {
 
 func (e *ManagerImpl) HandleEvent() {
 	gopool.Go(func(ctx context.Context) {
-		e.handleEvent(ctx)
+		e.handleBatchEvents(ctx)
+	})
+	gopool.Go(func(ctx context.Context) {
+		e.readAndPackEvents(ctx)
 	})
 }
 
-func (e *ManagerImpl) handleEvent(ctx context.Context) {
-	events := make([]*Event, 0, 100)
+func (e *ManagerImpl) readAndPackEvents(ctx context.Context) {
+	events := make([]*Event, 0, eventSliceSize)
 	e.ticker = time.NewTicker(e.internal)
 	for {
 		select {
@@ -253,8 +262,8 @@ func (e *ManagerImpl) handleEvent(ctx context.Context) {
 			}
 			send := events[:]
 
-			events = make([]*Event, 0, 100)
-			go e.handle(ctx, send)
+			events = make([]*Event, 0, eventSliceSize)
+			e.batchEvents <- send
 		case event, ok := <-e.events:
 			if !ok {
 				return
@@ -263,9 +272,24 @@ func (e *ManagerImpl) handleEvent(ctx context.Context) {
 			events = append(events, event)
 			if len(events) > 50 {
 				send := events[:]
-				events = make([]*Event, 0, 100)
-				go e.handle(ctx, send)
+				events = make([]*Event, 0, eventSliceSize)
+				e.batchEvents <- send
 			}
+		case <-ctx.Done():
+			e.Close()
+			return
+		}
+	}
+}
+
+func (e *ManagerImpl) handleBatchEvents(ctx context.Context) {
+	for {
+		select {
+		case send, ok := <-e.batchEvents:
+			if !ok {
+				return
+			}
+			e.handle(ctx, send)
 		case <-ctx.Done():
 			e.Close()
 			return
