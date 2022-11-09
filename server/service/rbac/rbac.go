@@ -57,6 +57,7 @@ func Init() {
 	if err != nil {
 		log.Fatal("can not enable auth module", err)
 	}
+	migrateOldRoles()
 	// build-in role init
 	initBuildInRole()
 	initBuildInAccount()

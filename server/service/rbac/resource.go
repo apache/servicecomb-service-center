@@ -29,6 +29,7 @@ import (
 
 const (
 	ResourceAccount = "account"
+	ResourceConfig  = "config"
 	ResourceRole    = "role"
 	ResourceService = "service"
 	ResourceGovern  = "governance"

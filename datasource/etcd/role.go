@@ -20,6 +20,7 @@ package etcd
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -32,6 +33,17 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/rbac"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
+)
+
+const isMigrated = "/cse-sr/role-migrated"
+
+var (
+	resources   = crbac.BuildResourceList(rbacsvc.ResourceConfig)
+	configPerms = &crbac.Permission{
+		Resources: resources,
+		Verbs:     []string{"*"},
+	}
 )
 
 func (rm *RbacDAO) CreateRole(ctx context.Context, r *crbac.Role) error {
@@ -155,4 +167,31 @@ func (rm *RbacDAO) UpdateRole(ctx context.Context, name string, role *crbac.Role
 	}
 	opts = append(opts, syncOpts...)
 	return etcdadpt.Txn(ctx, opts)
+}
+func (rm *RbacDAO) MigrateOldRoles(ctx context.Context) error {
+	exist, err := etcdadpt.Exist(ctx, isMigrated)
+	if err != nil {
+		return err
+	}
+	if exist {
+		return nil
+	}
+	rs, _, err := rbac.Instance().ListRole(ctx)
+	if err != nil {
+		return err
+	}
+	for _, role := range rs {
+		role.Perms = append(role.Perms, configPerms)
+		err = rbac.Instance().UpdateRole(ctx, role.Name, role)
+		if err != nil {
+			log.Error(fmt.Sprintf("edit role [%s] info faied", role.Name), err)
+			return err
+		}
+	}
+	err = etcdadpt.Put(ctx, isMigrated, "true")
+	if err != nil {
+		log.Error("can not save migrated flag", err)
+		return err
+	}
+	return nil
 }

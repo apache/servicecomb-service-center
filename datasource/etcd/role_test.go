@@ -22,9 +22,6 @@ import (
 	"strconv"
 	"testing"
 
-	crbac "github.com/go-chassis/cari/rbac"
-	"github.com/stretchr/testify/assert"
-
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/rbac"
 	"github.com/apache/servicecomb-service-center/eventbase/model"
@@ -32,6 +29,9 @@ import (
 	"github.com/apache/servicecomb-service-center/eventbase/service/tombstone"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	_ "github.com/apache/servicecomb-service-center/test"
+	crbac "github.com/go-chassis/cari/rbac"
+	"github.com/little-cui/etcdadpt"
+	"github.com/stretchr/testify/assert"
 )
 
 func roleContext() context.Context {
@@ -125,5 +125,60 @@ func TestSyncRole(t *testing.T) {
 				assert.NoError(t, err)
 
 			})
+	})
+
+	t.Run("migrate old role", func(t *testing.T) {
+		t.Run("create two roles, then migrate them, and migrate again, should paas test", func(t *testing.T) {
+			ctx := context.Background()
+			r4 := crbac.Role{
+				ID:    "migrate-44444",
+				Name:  "migrate-role-44444",
+				Perms: nil,
+			}
+			r5 := crbac.Role{
+				ID:    "migrate-55555",
+				Name:  "migrate-role-55555",
+				Perms: nil,
+			}
+
+			err := rbac.Instance().CreateRole(ctx, &r4)
+			assert.NoError(t, err)
+			err = rbac.Instance().CreateRole(ctx, &r5)
+			assert.NoError(t, err)
+			r, err := rbac.Instance().GetRole(ctx, "migrate-role-44444")
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(r.Perms))
+			r, err = rbac.Instance().GetRole(ctx, "migrate-role-55555")
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(r.Perms))
+
+			_, err = etcdadpt.Delete(ctx, "/cse-sr/role-migrated")
+			assert.NoError(t, err)
+			err = rbac.Instance().MigrateOldRoles(ctx)
+			assert.NoError(t, err)
+
+			r, err = rbac.Instance().GetRole(ctx, "migrate-role-44444")
+			assert.NoError(t, err)
+			assert.Equal(t, r.Perms[0].Resources[0].Type, "config")
+			assert.Equal(t, r.Perms[0].Verbs[0], "*")
+			r, err = rbac.Instance().GetRole(ctx, "migrate-role-55555")
+			assert.NoError(t, err)
+			assert.Equal(t, r.Perms[0].Resources[0].Type, "config")
+			assert.Equal(t, r.Perms[0].Verbs[0], "*")
+
+			err = rbac.Instance().MigrateOldRoles(ctx)
+			assert.NoError(t, err)
+			r, err = rbac.Instance().GetRole(ctx, "migrate-role-44444")
+			assert.NoError(t, err)
+			assert.Equal(t, 1, len(r.Perms))
+			r, err = rbac.Instance().GetRole(ctx, "migrate-role-55555")
+			assert.NoError(t, err)
+			assert.Equal(t, 1, len(r.Perms))
+
+			_, err = rbac.Instance().DeleteRole(ctx, r4.Name)
+			assert.NoError(t, err)
+			_, err = rbac.Instance().DeleteRole(ctx, r5.Name)
+			assert.NoError(t, err)
+		})
 	})
 }

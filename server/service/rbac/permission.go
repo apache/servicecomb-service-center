@@ -36,7 +36,7 @@ var (
 // AdminPerms allocate all resource permissions
 func AdminPerms() []*rbac.Permission {
 	resources := rbac.BuildResourceList(
-		ResourceAccount, ResourceRole,
+		ResourceAccount, ResourceConfig, ResourceRole,
 		ResourceService, ResourceGovern, ResourceOps, ResourceSchema)
 	perm := []*rbac.Permission{
 		{

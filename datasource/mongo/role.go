@@ -165,3 +165,7 @@ func updateRoleTxn(ctx context.Context, filter bson.M, updateFilter bson.M, role
 		return sync.DoUpdateOpts(sessionContext, datasource.ResourceRole, role)
 	})
 }
+
+func (ds *RbacDAO) MigrateOldRoles(ctx context.Context) error {
+	return nil
+}
