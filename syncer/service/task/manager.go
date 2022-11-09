@@ -185,19 +185,27 @@ func (m *manager) ListTasks(ctx context.Context) ([]*carisync.Task, error) {
 
 	noHandleTasks := make([]*carisync.Task, 0, len(tasks))
 	skipTaskIDs := make([]string, 0, len(tasks))
+	allTaskIDs := make(map[string]struct{}, len(tasks))
 	for _, t := range tasks {
+		allTaskIDs[t.ID] = struct{}{}
 		_, ok := m.cache.Load(t.ID)
 		if ok {
 			skipTaskIDs = append(skipTaskIDs, t.ID)
 			continue
 		}
 		m.cache.Store(t.ID, t)
-
 		noHandleTasks = append(noHandleTasks, t)
 	}
+	m.cache.Range(func(key, value any) bool {
+		if _, ok := allTaskIDs[key.(string)]; !ok {
+			m.cache.Delete(key)
+		}
+		return true
+	})
 
-	log.Info(fmt.Sprintf("load task raw count %d, to handle count %d, skip ids %v",
-		len(tasks), len(noHandleTasks), skipTaskIDs))
+	log.Info(fmt.Sprintf("load task raw count %d, to handle count %d",
+		len(tasks), len(noHandleTasks)))
+	log.Info(fmt.Sprintf("skip ids %v", skipTaskIDs))
 
 	return noHandleTasks, nil
 }
@@ -259,7 +267,7 @@ func (m *manager) handleResult(res *event.Result) {
 
 	log.Info(fmt.Sprintf("key: %s,result: %v", res.ID, res.Data))
 
-	t, ok := m.cache.LoadAndDelete(res.ID)
+	t, ok := m.cache.Load(res.ID)
 	if !ok {
 		return
 	}
