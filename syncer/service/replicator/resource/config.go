@@ -101,7 +101,7 @@ func (c *kvConfig) NeedOperate(ctx context.Context) *Result {
 		curNotNil: c.cur != nil,
 		event:     c.event,
 		updateTime: func() (int64, error) {
-			return SecToNanoSec(c.cur.UpdateTime), nil
+			return secToNanoSec(c.cur.UpdateTime), nil
 		},
 		resourceID: kiedb.TombstoneID(c.input),
 	}

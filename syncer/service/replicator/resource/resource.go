@@ -312,10 +312,10 @@ func formatUpdateTimeSecond(src string) (int64, error) {
 		return 0, err
 	}
 
-	return SecToNanoSec(updateTime), nil
+	return secToNanoSec(updateTime), nil
 }
 
-func SecToNanoSec(timestamp int64) int64 {
+func secToNanoSec(timestamp int64) int64 {
 	return timestamp * 1000 * 1000 * 1000
 }
 
