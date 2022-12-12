@@ -19,46 +19,25 @@ package privacy_test
 
 import (
 	"crypto/sha512"
+	"github.com/stretchr/testify/assert"
 	"testing"
 
 	"github.com/apache/servicecomb-service-center/pkg/privacy"
 	scrypt "github.com/elithrar/simple-scrypt"
-	"github.com/go-chassis/foundation/stringutil"
-	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/pbkdf2"
 )
 
-func TestHashPassword(t *testing.T) {
-	h, _ := privacy.HashPassword("test")
-	t.Log(h)
-	mac, _ := privacy.ScryptPassword("test")
-	t.Log(mac)
-
-	t.Run("given old hash result, should be compatible", func(t *testing.T) {
-		same := privacy.SamePassword(h, "test")
-		assert.True(t, same)
-	})
-
-	sameMac := privacy.SamePassword(mac, "test")
-	assert.True(t, sameMac)
-
-	t.Run("use different params for scrypt, should be compatible", func(t *testing.T) {
-		h2, _ := scrypt.GenerateFromPassword([]byte("test"), scrypt.Params{N: 1024, R: 8, P: 1, SaltLen: 8, DKLen: 32})
-		same := privacy.SamePassword(stringutil.Bytes2str(h2), "test")
-		assert.True(t, same)
-	})
+type mockPassword struct {
 }
-func BenchmarkBcrypt(b *testing.B) {
-	h, _ := privacy.HashPassword("test")
-	for i := 0; i < b.N; i++ {
-		same := privacy.SamePassword(h, "test")
-		if !same {
-			panic("")
-		}
 
-	}
-	b.ReportAllocs()
+func (m mockPassword) EncryptPassword(pwd string) (string, error) {
+	return "encrypt password", nil
 }
+
+func (m mockPassword) CheckPassword(hashedPwd, pwd string) bool {
+	return true
+}
+
 func BenchmarkScrypt(b *testing.B) {
 	h, _ := privacy.ScryptPassword("test")
 	for i := 0; i < b.N; i++ {
@@ -116,4 +95,11 @@ func BenchmarkPbkdf2(b *testing.B) {
 		}
 	})
 	b.ReportAllocs()
+}
+func TestDefaultManager(t *testing.T) {
+	privacy.DefaultManager = &mockPassword{}
+	password, _ := privacy.DefaultManager.EncryptPassword("")
+	assert.Equal(t, "encrypt password", password)
+	samePassword := privacy.DefaultManager.CheckPassword("", "")
+	assert.True(t, samePassword)
 }
