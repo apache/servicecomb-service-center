@@ -21,7 +21,6 @@ import (
 	"strings"
 
 	scrypt "github.com/elithrar/simple-scrypt"
-	"github.com/go-chassis/foundation/stringutil"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -33,23 +32,26 @@ const (
 
 var ScryptParams = scrypt.Params{N: 1024, R: 8, P: 1, SaltLen: 8, DKLen: 32}
 
-// HashPassword
-// Deprecated: use ScryptPassword, this is only for unit test to test compatible with old version
-func HashPassword(pwd string) (string, error) {
-	hash, err := bcrypt.GenerateFromPassword([]byte(pwd), 14)
-	if err != nil {
-		return "", err
-	}
-	return stringutil.Bytes2str(hash), nil
+// DefaultManager default manager
+var DefaultManager PasswordManager = &passwordManager{}
+
+type PasswordManager interface {
+	EncryptPassword(pwd string) (string, error)
+	CheckPassword(hashedPwd, pwd string) bool
 }
-func ScryptPassword(pwd string) (string, error) {
+
+type passwordManager struct {
+}
+
+func (p *passwordManager) EncryptPassword(pwd string) (string, error) {
 	hash, err := scrypt.GenerateFromPassword([]byte(pwd), ScryptParams)
 	if err != nil {
 		return "", err
 	}
 	return string(hash), nil
 }
-func SamePassword(hashedPwd, pwd string) bool {
+
+func (p *passwordManager) CheckPassword(hashedPwd, pwd string) bool {
 	if strings.HasPrefix(hashedPwd, algBcrypt) {
 		err := bcrypt.CompareHashAndPassword([]byte(hashedPwd), []byte(pwd))
 		if err == bcrypt.ErrMismatchedHashAndPassword {
@@ -62,5 +64,11 @@ func SamePassword(hashedPwd, pwd string) bool {
 		log.Warn("incorrect password attempts")
 	}
 	return err == nil
+}
 
+func ScryptPassword(pwd string) (string, error) {
+	return DefaultManager.EncryptPassword(pwd)
+}
+func SamePassword(hashedPwd, pwd string) bool {
+	return DefaultManager.CheckPassword(hashedPwd, pwd)
 }
