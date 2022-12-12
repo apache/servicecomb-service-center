@@ -19,11 +19,11 @@ package privacy_test
 
 import (
 	"crypto/sha512"
-	"github.com/stretchr/testify/assert"
 	"testing"
 
 	"github.com/apache/servicecomb-service-center/pkg/privacy"
 	scrypt "github.com/elithrar/simple-scrypt"
+	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/pbkdf2"
 )
 
@@ -97,7 +97,11 @@ func BenchmarkPbkdf2(b *testing.B) {
 	b.ReportAllocs()
 }
 func TestDefaultManager(t *testing.T) {
+	currentManager := privacy.DefaultManager
 	privacy.DefaultManager = &mockPassword{}
+	defer func() {
+		privacy.DefaultManager = currentManager
+	}()
 	password, _ := privacy.DefaultManager.EncryptPassword("")
 	assert.Equal(t, "encrypt password", password)
 	samePassword := privacy.DefaultManager.CheckPassword("", "")
