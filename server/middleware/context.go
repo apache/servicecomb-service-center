@@ -15,32 +15,18 @@
  * limitations under the License.
  */
 
-package server
+package middleware
 
 import (
-	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/syncer/config"
-	"github.com/apache/servicecomb-service-center/syncer/metrics"
-	"github.com/apache/servicecomb-service-center/syncer/service/sync"
-
-	// kie db
-	_ "github.com/apache/servicecomb-kie/server/datasource/etcd"
+	"github.com/gofiber/fiber/v2"
 )
 
-func Run() {
-	if err := config.Init(); err != nil {
-		log.Error("syncer config init failed", err)
-	}
+func PrepareContextFor(c *fiber.Ctx) error {
+	var (
+		v4 v4Context
+	)
 
-	if !config.GetConfig().Sync.EnableOnStart {
-		log.Warn("syncer is disabled")
-		return
-	}
+	v4.Write(c)
 
-	sync.Init()
-
-	if err := metrics.Init(); err != nil {
-		log.Error("syncer metrics init failed", err)
-	}
-
+	return c.Next()
 }

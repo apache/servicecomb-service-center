@@ -24,6 +24,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-chassis/go-chassis/v2"
+
+	//go-chassis plugin
+	_ "github.com/go-chassis/go-chassis-extension/codec/gojson"
+	_ "github.com/go-chassis/go-chassis-extension/protocol/fiber4r"
+	_ "github.com/go-chassis/go-chassis-extension/protocol/grpc/server"
+	_ "github.com/go-chassis/go-chassis/v2/middleware/monitoring"
+	_ "github.com/go-chassis/go-chassis/v2/middleware/ratelimiter"
+
 	// import the grace package and parse grace cmd line
 	_ "github.com/apache/servicecomb-service-center/pkg/grace"
 
@@ -38,6 +47,9 @@ const (
 )
 
 func Initialize() {
+	if err := chassis.Init(); err != nil {
+		log.Warn(err.Error())
+	}
 	// initialize configuration
 	config.Init()
 	// Logging

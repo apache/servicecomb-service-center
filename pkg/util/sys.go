@@ -84,6 +84,6 @@ func GetProcCPUUsage() (pt float64, ct float64) {
 	ct = stat.CPUTotal.User + stat.CPUTotal.Nice + stat.CPUTotal.System +
 		stat.CPUTotal.Idle + stat.CPUTotal.Iowait + stat.CPUTotal.IRQ +
 		stat.CPUTotal.SoftIRQ + stat.CPUTotal.Steal + stat.CPUTotal.Guest
-	pt = float64(pstat.UTime+pstat.STime+pstat.CUTime+pstat.CSTime) / 100
+	pt = float64(pstat.UTime+pstat.STime+uint(pstat.CUTime)+uint(pstat.CSTime)) / 100
 	return
 }

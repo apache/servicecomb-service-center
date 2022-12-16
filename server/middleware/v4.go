@@ -15,28 +15,41 @@
  * limitations under the License.
  */
 
-package plugin
+package middleware
 
 import (
-	"github.com/bytedance/sonic"
-	"github.com/go-chassis/cari/codec"
-	codecChassis "github.com/go-chassis/go-chassis/v2/pkg/codec"
+	"net/http"
+	"strings"
+
+	"github.com/gofiber/fiber/v2"
+
+	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
-func init() {
-	codecChassis.Install("bytedance/sonic", newDefault)
+type v4Context struct {
 }
 
-type Sonic struct {
+func (v *v4Context) IsMatch(r *http.Request) bool {
+	return strings.Index(r.RequestURI, "/v4/") == 0
 }
 
-func newDefault(opts codecChassis.Options) (codec.Codec, error) {
-	return &Sonic{}, nil
-}
-func (s *Sonic) Encode(v any) ([]byte, error) {
-	return sonic.Marshal(v)
-}
+func (v *v4Context) Write(c *fiber.Ctx) {
+	domain, project := util.ParseDomain(c.UserContext()), util.ParseProject(c.UserContext())
 
-func (s *Sonic) Decode(data []byte, v any) error {
-	return sonic.Unmarshal(data, v)
+	if len(domain) == 0 {
+		domain = c.Get("X-Domain-Name")
+		if len(domain) == 0 {
+			domain = "default"
+		}
+		util.SetFiberContext(c, util.CtxDomain, domain)
+	}
+
+	if len(project) == 0 {
+		project = c.Params("project")
+		if len(project) == 0 {
+			project = datasource.RegistryProject
+		}
+		util.SetFiberContext(c, util.CtxProject, project)
+	}
 }

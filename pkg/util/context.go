@@ -22,6 +22,8 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 const (
@@ -119,6 +121,13 @@ func SetRequestContext(r *http.Request, key CtxKey, val interface{}) *http.Reque
 		*r = *nr
 	}
 	return r
+}
+func SetFiberContext(c *fiber.Ctx, key CtxKey, val interface{}) {
+	ctx := c.UserContext()
+	ctx = SetContext(ctx, key, val)
+	if ctx != c.UserContext() {
+		c.SetUserContext(ctx)
+	}
 }
 
 func ParseDomainProject(ctx context.Context) string {

@@ -61,7 +61,7 @@ func (s *APIServer) graceDone() {
 	grace.Before(s.MarkForked)
 	grace.After(s.Stop)
 	if err := grace.Done(); err != nil {
-		log.Error("server reload failed", err)
+		log.Error("sc reload failed", err)
 	}
 }
 
@@ -69,7 +69,7 @@ func (s *APIServer) MarkForked() {
 	s.forked = true
 }
 
-func (s *APIServer) Listen(ip, port string) {
+func (s *APIServer) SetHostPort(ip, port string) {
 	if len(ip) == 0 {
 		return
 	}
@@ -102,6 +102,7 @@ func (s *APIServer) Start() {
 
 	err := s.serve()
 	if err != nil {
+		log.Error("error to serve: ", err)
 		s.err <- err
 		return
 	}
@@ -137,12 +138,13 @@ func (s *APIServer) Stop() {
 
 	s.goroutine.Close(true)
 
-	log.Info("api server stopped")
+	log.Info("api sc stopped")
 }
 
 func (s *APIServer) selfRegister() {
 	err := registry.SelfRegister(context.Background())
 	if err != nil {
+		log.Error("register error: ", err)
 		s.err <- err
 		return
 	}
