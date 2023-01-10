@@ -18,18 +18,18 @@
 package buildin_test
 
 import (
-	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
-	_ "github.com/apache/servicecomb-service-center/test"
-
 	"context"
 	"net/http"
 	"strings"
 	"testing"
 
+	_ "github.com/apache/servicecomb-service-center/test"
+
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/plugin/auth"
 	"github.com/apache/servicecomb-service-center/server/plugin/auth/buildin"
+	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
 	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 	"github.com/go-chassis/cari/discovery"
 	"github.com/stretchr/testify/assert"

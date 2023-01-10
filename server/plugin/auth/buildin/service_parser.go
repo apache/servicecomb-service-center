@@ -37,6 +37,7 @@ const (
 	LabelAppID       = "appId"
 	LabelServiceName = "serviceName"
 	QueryEnv         = "env"
+	HeaderConsumerID = "X-ConsumerId"
 )
 
 var (
@@ -126,15 +127,36 @@ func ByServiceKey(r *http.Request) (*auth.ResourceScope, error) {
 		return nil, ErrCtxMatchPatternNotFound
 	}
 
+	env, err := fromServiceKeyEnv(r, query.Get(QueryEnv))
+	if err != nil {
+		return nil, err
+	}
+
 	return &auth.ResourceScope{
 		Type: rbacmodel.GetResource(apiPath),
 		Labels: []map[string]string{{
-			LabelEnvironment: query.Get(QueryEnv),
+			LabelEnvironment: env,
 			LabelAppID:       query.Get(LabelAppID),
 			LabelServiceName: query.Get(LabelServiceName),
 		}},
 		Verb: rbac.MethodToVerbs[r.Method],
 	}, nil
+}
+
+func fromServiceKeyEnv(r *http.Request, queryEnv string) (string, error) {
+	env := queryEnv
+	if len(env) > 0 {
+		return env, nil
+	}
+	consumerID := r.Header.Get(HeaderConsumerID)
+	if len(consumerID) != 0 {
+		service, err := datasource.GetMetadataManager().GetService(r.Context(), &discovery.GetServiceRequest{ServiceId: consumerID})
+		if err != nil {
+			return "", err
+		}
+		env = service.Environment
+	}
+	return env, nil
 }
 
 func ByRequestBody(r *http.Request) (*auth.ResourceScope, error) {
