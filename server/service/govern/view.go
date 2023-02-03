@@ -73,7 +73,7 @@ func ListServiceDetail(ctx context.Context, in *pb.GetServicesInfoRequest) (*pb.
 	}
 
 	//获取所有服务
-	resp, err := discosvc.ListService(ctx, &pb.GetServicesRequest{})
+	resp, err := discosvc.ListService(ctx, &pb.GetServicesRequest{WithShared: in.WithShared})
 	if err != nil {
 		log.Error("get all services by domain failed", err)
 		return nil, pb.NewError(pb.ErrInternal, err.Error())

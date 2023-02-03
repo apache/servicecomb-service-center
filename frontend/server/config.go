@@ -30,11 +30,17 @@ import (
 type Config struct {
 	FrontendAddr string
 	SCAddr       string
+	EndpointCIDR *net.IPNet
 }
 
 func DefaultConfig() Config {
 	frontendIP := beego.AppConfig.DefaultString("frontend_host_ip", "127.0.0.1")
 	frontendPort := beego.AppConfig.DefaultInt("frontend_host_port", 30103)
+	endpointCIDR := beego.AppConfig.DefaultString("frontend_endpoint_cidr", "127.0.0.1/32")
+	_, ipNet, err := net.ParseCIDR(endpointCIDR)
+	if err != nil {
+		panic("parse frontend_endpoint_cidr failed, err: " + err.Error())
+	}
 
 	scIP := beego.AppConfig.DefaultString("httpaddr", "127.0.0.1")
 	scPort := beego.AppConfig.DefaultInt("httpport", 30100)
@@ -46,5 +52,6 @@ func DefaultConfig() Config {
 	cfg := Config{}
 	cfg.SCAddr = fmt.Sprintf("http://%s/", net.JoinHostPort(url.PathEscape(scIP), strconv.Itoa(scPort)))
 	cfg.FrontendAddr = net.JoinHostPort(frontendIP, strconv.Itoa(*port))
+	cfg.EndpointCIDR = ipNet
 	return cfg
 }

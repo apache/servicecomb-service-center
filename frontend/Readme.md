@@ -78,6 +78,23 @@ We Welcome our community members to come forward and help us to build this UI to
 |6|Schema List for MicroServices|Done|
 |7|Test Schema for MicroServices|Done|
 |8|Pact Broker Support|Done|
-|9|Topology View for Microservices Relationship|TBD|
+|9|Topology View for Microservices Relationship|Done|
 
 Any Contribution(issues,PR,Documentation,Translation) will be highly appreciated.
+
+#### Feature: Test Schema for MicroServices
+
+Schema testing is convenient for microservice developer can directly call the API
+provided in the schema file through the frontend console.
+
+Since this feature will allow frontend to raise an HTTP request to access microservice
+instance. For security reasons, it is necessary to confirm the microservice instance IP
+network segment before using schema testing, and configure CIDR in `app.conf`
+
+```shell
+# etc/app.conf
+
+# Frontend Configurations
+frontend_endpoint_cidr = 192.168.0.0/24
+```
+
