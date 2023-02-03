@@ -22,10 +22,11 @@ import (
 	"os"
 	"testing"
 
+	_ "github.com/apache/servicecomb-service-center/test"
+
 	"github.com/apache/servicecomb-service-center/pkg/privacy"
 	"github.com/apache/servicecomb-service-center/server/config"
 	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
-	_ "github.com/apache/servicecomb-service-center/test"
 	beego "github.com/beego/beego/v2/server/web"
 	"github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/cari/pkg/errsvc"
@@ -68,10 +69,12 @@ func init() {
 }
 
 func TestInitRBAC(t *testing.T) {
+	ctx := context.Background()
+
 	t.Run("login and authenticate", func(t *testing.T) {
-		token, err := authr.Login(context.Background(), "root", "Complicated_password1")
+		token, err := authr.Login(ctx, "root", "Complicated_password1")
 		assert.NoError(t, err)
-		claims, err := authr.Authenticate(context.Background(), token)
+		claims, err := authr.Authenticate(ctx, token)
 		assert.NoError(t, err)
 		assert.Equal(t, "root", claims.(map[string]interface{})[rbac.ClaimsUser])
 	})
@@ -80,35 +83,43 @@ func TestInitRBAC(t *testing.T) {
 		rbacsvc.Init()
 	})
 
-	t.Run("change pwd,admin can change any one password", func(t *testing.T) {
-		persisted := newAccount("admin_change_other_pwd")
-		err := rbacsvc.CreateAccount(context.Background(), persisted)
+	t.Run("get private key after init should be not nil", func(t *testing.T) {
+		key, err := rbacsvc.GetPrivateKey()
 		assert.NoError(t, err)
-		context.Background()
+		assert.NotNil(t, key)
+	})
+
+	t.Run("change pwd,admin can change any one password", func(t *testing.T) {
+		accountName := "admin_change_other_pwd"
+		persisted := newAccount(accountName)
+		err := rbacsvc.CreateAccount(ctx, persisted)
+		assert.NoError(t, err)
+		defer rbacsvc.DeleteAccount(ctx, accountName)
 
 		claims := map[string]interface{}{
 			rbac.ClaimsUser:  "test",
 			rbac.ClaimsRoles: []interface{}{rbac.RoleAdmin},
 		}
-		ctx := context.WithValue(context.Background(), rbacsvc.CtxRequestClaims, claims)
+		ctx := context.WithValue(ctx, rbacsvc.CtxRequestClaims, claims)
 		err = rbacsvc.ChangePassword(ctx, &rbac.Account{Name: persisted.Name, Password: "Complicated_password2"})
 		assert.NoError(t, err)
-		a, err := rbacsvc.GetAccount(context.Background(), persisted.Name)
+		a, err := rbacsvc.GetAccount(ctx, persisted.Name)
 		assert.NoError(t, err)
 		assert.True(t, privacy.SamePassword(a.Password, "Complicated_password2"))
 	})
 	t.Run("admin change self, must provide current pwd", func(t *testing.T) {
-		name := "admin_change_self"
-		a := newAccount(name)
+		accountName := "admin_change_self"
+		a := newAccount(accountName)
 		a.Roles = []string{rbac.RoleAdmin}
 		err := rbacsvc.CreateAccount(context.TODO(), a)
 		assert.Nil(t, err)
+		defer rbacsvc.DeleteAccount(ctx, accountName)
 
 		claims := map[string]interface{}{
-			rbac.ClaimsUser:  name,
+			rbac.ClaimsUser:  accountName,
 			rbac.ClaimsRoles: []interface{}{rbac.RoleAdmin},
 		}
-		ctx := context.WithValue(context.Background(), rbacsvc.CtxRequestClaims, claims)
+		ctx := context.WithValue(ctx, rbacsvc.CtxRequestClaims, claims)
 		err = rbacsvc.ChangePassword(ctx, &rbac.Account{Name: a.Name, CurrentPassword: "", Password: testPwd1})
 		assert.True(t, errsvc.IsErrEqualCode(err, discovery.ErrInvalidParams))
 
@@ -116,33 +127,39 @@ func TestInitRBAC(t *testing.T) {
 		assert.Nil(t, err)
 	})
 	t.Run("change self password", func(t *testing.T) {
-		a := newAccount("change_self_pwd")
-		err := rbacsvc.CreateAccount(context.Background(), a)
+		accountName := "change_self_pwd"
+		a := newAccount(accountName)
+		err := rbacsvc.CreateAccount(ctx, a)
 		assert.NoError(t, err)
+		defer rbacsvc.DeleteAccount(ctx, accountName)
+
 		claims := map[string]interface{}{
-			rbac.ClaimsUser:  "change_self_pwd",
+			rbac.ClaimsUser:  accountName,
 			rbac.ClaimsRoles: []interface{}{rbac.RoleDeveloper},
 		}
-		ctx := context.WithValue(context.Background(), rbacsvc.CtxRequestClaims, claims)
+		ctx := context.WithValue(ctx, rbacsvc.CtxRequestClaims, claims)
 		err = rbacsvc.ChangePassword(ctx, &rbac.Account{Name: a.Name, CurrentPassword: testPwd0, Password: testPwd1})
 		assert.NoError(t, err)
-		resp, err := rbacsvc.GetAccount(context.Background(), a.Name)
+		resp, err := rbacsvc.GetAccount(ctx, a.Name)
 		assert.NoError(t, err)
 		assert.True(t, privacy.SamePassword(resp.Password, testPwd1))
 	})
 	t.Run("no admin account change other user password, should return: "+discovery.NewError(discovery.ErrForbidden, "").Error(), func(t *testing.T) {
-		a := newAccount("test")
+		accountName := "test"
+		a := newAccount(accountName)
+		defer rbacsvc.DeleteAccount(ctx, accountName)
+
 		claims := map[string]interface{}{
 			rbac.ClaimsUser:  "change_other_user_password",
 			rbac.ClaimsRoles: []interface{}{rbac.RoleDeveloper},
 		}
-		ctx := context.WithValue(context.Background(), rbacsvc.CtxRequestClaims, claims)
+		ctx := context.WithValue(ctx, rbacsvc.CtxRequestClaims, claims)
 		err := rbacsvc.ChangePassword(ctx, &rbac.Account{Name: a.Name, CurrentPassword: testPwd0, Password: testPwd1})
 		assert.True(t, errsvc.IsErrEqualCode(err, discovery.ErrForbidden))
 	})
 }
 
-func BenchmarkAuthResource_Login(b *testing.B) {
+func BenchmarkAuthResource_LoginP(b *testing.B) {
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			_, err := authr.Login(context.TODO(), "root", "Complicated_password1")
@@ -153,7 +170,7 @@ func BenchmarkAuthResource_Login(b *testing.B) {
 	})
 	b.ReportAllocs()
 }
-func BenchmarkAuthResource_Login2(b *testing.B) {
+func BenchmarkAuthResource_Login(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_, err := authr.Login(context.TODO(), "root", "Complicated_password1")
 		if err != nil {

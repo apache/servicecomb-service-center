@@ -38,24 +38,51 @@ func (m mockPassword) CheckPassword(hashedPwd, pwd string) bool {
 	return true
 }
 
-func BenchmarkScrypt(b *testing.B) {
+func BenchmarkSamePassword(b *testing.B) {
 	h, _ := privacy.ScryptPassword("test")
 	for i := 0; i < b.N; i++ {
 		same := privacy.SamePassword(h, "test")
 		if !same {
-			panic("")
+			b.Fatal()
 		}
 
 	}
 	b.ReportAllocs()
 }
-func BenchmarkScryptP(b *testing.B) {
+func BenchmarkSamePasswordP500(b *testing.B) {
 	h, _ := privacy.ScryptPassword("test")
+	b.SetParallelism(500)
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			same := privacy.SamePassword(h, "test")
 			if !same {
-				panic("")
+				b.Fatal()
+			}
+		}
+	})
+	b.ReportAllocs()
+}
+func BenchmarkSamePasswordP1000(b *testing.B) {
+	h, _ := privacy.ScryptPassword("test")
+	b.SetParallelism(1000)
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			same := privacy.SamePassword(h, "test")
+			if !same {
+				b.Fatal()
+			}
+		}
+	})
+	b.ReportAllocs()
+}
+func BenchmarkSamePasswordP5000(b *testing.B) {
+	h, _ := privacy.ScryptPassword("test")
+	b.SetParallelism(5000)
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			same := privacy.SamePassword(h, "test")
+			if !same {
+				b.Fatal()
 			}
 		}
 	})
