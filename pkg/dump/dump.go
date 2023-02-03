@@ -180,10 +180,9 @@ type Request struct {
 }
 
 type Response struct {
-	Response  *discovery.Response    `json:"-"`
-	Info      *version.Set           `json:"info,omitempty"`
-	AppConfig map[string]interface{} `json:"appConf,omitempty"`
-	Cache     *Cache                 `json:"cache,omitempty"`
+	Response *discovery.Response `json:"-"`
+	Info     *version.Set        `json:"info,omitempty"`
+	Cache    *Cache              `json:"cache,omitempty"`
 }
 
 type WatchInstanceChangedEvent struct {

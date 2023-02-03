@@ -26,7 +26,6 @@ import (
 	"github.com/apache/servicecomb-service-center/version"
 	mapset "github.com/deckarep/golang-set"
 	"github.com/go-chassis/cari/discovery"
-	"github.com/go-chassis/go-archaius"
 )
 
 func Dump(ctx context.Context, in *dump.Request) (*dump.Response, error) {
@@ -65,13 +64,10 @@ func appendData(ctx context.Context, option string, resp *dump.Response) {
 	switch option {
 	case "info":
 		resp.Info = version.Ver()
-	case "config":
-		resp.AppConfig = archaius.GetConfigs()
 	case "cache":
 		resp.Cache = datasource.GetSystemManager().DumpCache(ctx)
 	case "all":
 		appendData(ctx, "info", resp)
-		appendData(ctx, "config", resp)
 		appendData(ctx, "cache", resp)
 	}
 }
