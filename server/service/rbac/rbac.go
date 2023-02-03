@@ -44,6 +44,9 @@ var (
 	ErrNoPermChangeAccount  = errors.New("can not change other account password")
 	ErrWrongPassword        = errors.New("current pwd is wrong")
 	ErrSamePassword         = errors.New("the password can not be same as old one")
+	ErrNoPrivateKey         = errors.New("read private key failed")
+
+	privateKey *rsa.PrivateKey
 )
 
 // Init decide whether enable rbac function and save the build-in roles to db
@@ -97,9 +100,20 @@ func readPrivateKey() {
 		log.Fatal("can not read private key", err)
 		return
 	}
-	err = archaius.Set("rbac_private_key", string(data))
+	content := string(data)
+	err = archaius.Set("rbac_private_key", content)
 	if err != nil {
 		log.Fatal("can not init rbac", err)
+		return
+	}
+	privateKeyContent, err := cipher.Decrypt(content)
+	if err != nil {
+		log.Warn("cipher fallback: " + err.Error())
+		privateKeyContent = content
+	}
+	privateKey, err = secret.ParseRSAPrivateKey(privateKeyContent)
+	if err != nil {
+		log.Error("can not parse private key", err)
 		return
 	}
 	log.Info("read private key success")
@@ -167,26 +181,12 @@ func PublicKey() string {
 	return archaius.GetString("rbac_public_key", "")
 }
 
-// privateKey get decrypted private key to verify a token
-func privateKey() string {
-	ep := archaius.GetString("rbac_private_key", "")
-	p, err := cipher.Decrypt(ep)
-	if err != nil {
-		log.Warn("cipher fallback: " + err.Error())
-		return ep
-	}
-	return p
-}
-
 // GetPrivateKey return rsa key instance
 func GetPrivateKey() (*rsa.PrivateKey, error) {
-	sk := privateKey()
-	p, err := secret.ParseRSAPrivateKey(sk)
-	if err != nil {
-		log.Error("can not get key:", err)
-		return nil, err
+	if privateKey == nil {
+		return nil, ErrNoPrivateKey
 	}
-	return p, nil
+	return privateKey, nil
 }
 
 // MakeBanKey return ban key
