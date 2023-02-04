@@ -26,7 +26,7 @@
     "ng-devui": "^11.1.0",
     "ngx-monaco-editor": "^9.0.0",
     "rxjs": "~6.6.0",
-    "swagger-ui": "^4.1.3",
+    "swagger-ui": "^4.15.5",
     "tslib": "^2.0.0",
     "zone.js": "~0.11.3"
   },
