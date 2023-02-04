@@ -22,7 +22,7 @@ require (
 	github.com/go-chassis/kie-client v0.0.0-20201210060018-938c7680a9ab // indirect
 	github.com/go-chassis/sc-client v0.6.1-0.20210918130508-2b9daad232da // indirect
 	github.com/go-chassis/seclog v1.3.1-0.20210917082355-52c40864f240 // indirect
-	github.com/gogo/protobuf v1.3.1 // indirect
+	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.4.2 // indirect
 	github.com/gorilla/websocket v1.4.3-0.20210424162022-e8629af678b7 // indirect
 	github.com/hashicorp/go-version v1.0.0 // indirect
@@ -37,8 +37,8 @@ require (
 	github.com/prometheus/common v0.2.0 // indirect
 	github.com/prometheus/procfs v0.0.0-20181005140218-185b4288413d // indirect
 	github.com/spf13/cast v1.2.0 // indirect
-	golang.org/x/net v0.0.0-20191004110552-13f9640d40b9 // indirect
-	golang.org/x/sys v0.0.0-20190826190057-c7b8b68b1456 // indirect
+	golang.org/x/net v0.0.0-20201021035429-f5854403a974 // indirect
+	golang.org/x/sys v0.0.0-20200930185726-fdedc70b468f // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4 // indirect
 	google.golang.org/protobuf v1.23.0 // indirect
