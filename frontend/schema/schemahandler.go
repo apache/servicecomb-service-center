@@ -18,9 +18,11 @@
 package schema
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -28,9 +30,14 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+var (
+	ErrInvalidInstanceIP = errors.New("invalid HTTP Header X-InstanceIP")
+)
+
 type Mux struct {
 	// Disable represents frontend proxy service api or not
-	Disable bool
+	Disable        bool
+	SchemaTestCIDR *net.IPNet
 }
 
 func (m *Mux) SchemaHandleFunc(c echo.Context) (err error) {
@@ -42,8 +49,6 @@ func (m *Mux) SchemaHandleFunc(c echo.Context) (err error) {
 
 	r := c.Request()
 
-	//	protocol:= r.Header.Get("X-InstanceProtocol")
-	//	sslActive:=r.Header.Get("X-InstanceSSL")
 	var (
 		response   *http.Response
 		req        *http.Request
@@ -51,6 +56,12 @@ func (m *Mux) SchemaHandleFunc(c echo.Context) (err error) {
 		requestURL = strings.Replace(r.RequestURI, "testSchema/", "", 1)
 		url        = "http://" + instanceIP + requestURL
 	)
+
+	if err := m.checkInstanceHost(instanceIP); err != nil {
+		c.Response().WriteHeader(http.StatusForbidden)
+		_, _ = c.Response().Write([]byte(err.Error()))
+		return err
+	}
 
 	switch r.Method {
 	case "GET":
@@ -67,7 +78,6 @@ func (m *Mux) SchemaHandleFunc(c echo.Context) (err error) {
 			log.Printf("Error: %s\n", oerr)
 		}
 		return
-
 	}
 
 	if err != nil {
@@ -113,6 +123,17 @@ func (m *Mux) SchemaHandleFunc(c echo.Context) (err error) {
 	oerr := c.String(http.StatusOK, string(respBody))
 	if oerr != nil {
 		log.Printf("Error: %s\n", oerr)
+	}
+	return nil
+}
+
+func (m *Mux) checkInstanceHost(instanceIP string) error {
+	host, _, err := net.SplitHostPort(instanceIP)
+	if err != nil {
+		return err
+	}
+	if !m.SchemaTestCIDR.Contains(net.ParseIP(host)) {
+		return ErrInvalidInstanceIP
 	}
 	return nil
 }

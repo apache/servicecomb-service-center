@@ -39,7 +39,10 @@ func Serve(c Config) {
 	staticPath := filepath.Join(dir, "app")
 	e.Static("/", staticPath)
 
-	m := schema.Mux{Disable: os.Getenv("SCHEMA_DISABLE") == "true"}
+	m := schema.Mux{
+		Disable:        os.Getenv("SCHEMA_DISABLE") == "true",
+		SchemaTestCIDR: c.EndpointCIDR,
+	}
 	e.Any("/testSchema/*", m.SchemaHandleFunc)
 
 	scProxy(c, e)
