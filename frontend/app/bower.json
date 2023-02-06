@@ -1,5 +1,5 @@
 {
-  "name": "Service-Center Management Console",
+  "name": "frontend",
   "homepage": "https://github.com/apache/servicecomb-service-center",
   "description": "Frontend to manage the micro-services",
   "main": "index.html",
