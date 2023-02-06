@@ -54,29 +54,6 @@ sudo bash scripts/docker/build-image/build.sh
 ```
 it builds an image servicecomb/service-center
 
-### Running Frontend using the Release
-
-You can download our latest release from ServiceComb Website and then untar it and run start-frontend.sh/start-frontend.bat.
-This will bring up the Service-Center UI on [http://127.0.0.1:30103](http://127.0.0.1:30103).
-
-Windows(apache-servicecomb-service-center-XXX-windows-amd64.zip):
-```
-start-frontend.bat
-```
-
-Linux(apache-servicecomb-service-center-XXXX-linux-amd64.tar.gz):
-```sh
-./start-frontend.sh
-```
-
-Note: By default frontend runs on 127.0.0.1, if you want to change this then you can change it in `conf/app.conf`.
-```
-frontend_host_ip=127.0.0.1
-frontend_host_port=30103
-```
-
-You can follow the guide over [here](frontend/Readme.md#running-ui-from-source-code) to run the Frontend from source.
-
 ## Get The Latest Release
 
 [Download Service Center](http://servicecomb.apache.org/release/service-center-downloads/)
