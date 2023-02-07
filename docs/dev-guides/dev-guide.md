@@ -1,12 +1,12 @@
-# Development Guide
+# Development with Service-Center
 
 This chapter is about how to implement the feature of micro-service discovery with ServiceCenter,
-and you can get more detail at [here](https://github.com/apache/servicecomb-service-center/blob/master/server/core/swagger/v3.yaml)
+and you can get more detail at [here](https://github.com/apache/servicecomb-service-center/blob/master/docs/openapi/v4.yaml)
 
 ## Micro-service registration
 ```bash
 curl -X POST \
-  http://127.0.0.1:30100/registry/v3/microservices \
+  http://127.0.0.1:30100/v4/default/registry/microservices \
   -H 'content-type: application/json' \
   -H 'x-domain-name: default' \
   -d '{
@@ -34,7 +34,7 @@ according to the ServiceCenter definition: One process should be registered as o
 
 ```bash
 curl -X POST \
-  http://127.0.0.1:30100/registry/v3/microservices/a3fae679211211e8a831286ed488fc1b/instances \
+  http://127.0.0.1:30100/v4/default/registry/microservices/a3fae679211211e8a831286ed488fc1b/instances \
   -H 'content-type: application/json' \
   -H 'x-domain-name: default' \
   -d '{
@@ -64,7 +64,7 @@ the next step is that discovery the micro-service instance by service name and v
 
 ```bash
 curl -X GET \
-  'http://127.0.0.1:30100/registry/v3/instances?appId=default&serviceName=DemoService&version=latest' \
+  'http://127.0.0.1:30100/v4/default/registry/instances?appId=default&serviceName=DemoService&version=latest' \
   -H 'content-type: application/json' \
   -H 'x-consumerid: a3fae679211211e8a831286ed488fc1b' \
   -H 'x-domain-name: default'

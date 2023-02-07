@@ -17,15 +17,15 @@ Welcome to servicecomb-service-center's documentation!
 
 .. toctree::
    :maxdepth: 2
-   :caption: Development Documentations
-
-   dev-guides
-
-.. toctree::
-   :maxdepth: 2
    :caption: Design Documentations
 
    design-guides
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Development Documentations
+
+   dev-guides
 
 .. toctree::
    :maxdepth: 2

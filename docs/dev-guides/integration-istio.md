@@ -1,5 +1,7 @@
-# User Guide
+# Integrate with Istio
 This instructions will lead you to getting start with using Servicecomb-service-center-istio
+
+![image](integration-istio.png)
 
 ## 1. Install dependencies
 This tool can be used both inside a k8s cluster and a standalone service running on a VM.
@@ -61,7 +63,7 @@ kubectl apply -f manifest/deployment.yaml
 ```
 
 ### 2.4 Input parameters
-![image](integration-istio.png)
+![image](istio-cli.png)
 
 ## 3 Example
 We will use [consumer-provider](../../istio/examples/consumer-provider/) example to show how to use this tool.

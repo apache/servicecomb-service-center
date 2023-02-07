@@ -1,4 +1,6 @@
-# Quota plugins
+# Extend plugins
+
+The following takes the extended quota management plugin as an example.
 
 ### Standard Plugins
 
