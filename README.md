@@ -64,8 +64,9 @@ it builds an image servicecomb/service-center
 
 ## Ecosystem
 
-- [kitex](https://github.com/cloudwego/kitex): [registry plugin](https://github.com/kitex-contrib/registry-servicecomb)
-- [go-chassis](https://github.com/go-chassis/go-chassis): default registry
+- [Go-Chassis](https://github.com/go-chassis/go-chassis): default registry
+- [Kratos](https://github.com/go-kratos/kratos): [registry plugin](https://github.com/go-kratos/kratos/tree/main/contrib/registry/servicecomb)
+- [CloudWeGo-kitex](https://github.com/cloudwego/kitex): [registry plugin](https://github.com/kitex-contrib/registry-servicecomb)
 
 ## Contact
 
