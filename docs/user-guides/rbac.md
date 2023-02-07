@@ -41,7 +41,7 @@ To securely distribute your root account and private key,
 you can use kubernetes [secret](https://kubernetes.io/zh/docs/tasks/inject-data-application/distribute-credentials-secure/)
 ### Generate a token 
 Token is the only credential to access rest API, before you access any API, you need to get a token from service center
-```shell script
+```shell
 curl -X POST \
   http://127.0.0.1:30100/v4/token \
   -d '{"name":"root",
@@ -58,7 +58,7 @@ in each request you must add token to  http header:
 Authorization: Bearer {token}
 ```
 for example:
-```shell script
+```shell
 curl -X GET \
   'http://127.0.0.1:30100/v4/default/registry/microservices/{service-id}/instances' \
   -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1OTI4OTQ1NTEsInVzZXIiOiJyb290In0.FfLOSvVmHT9qCZSe_6iPf4gNjbXLwCrkXxKHsdJoQ8w' 
@@ -66,7 +66,7 @@ curl -X GET \
 
 ### Change password
 You must supply a current password and token to update to new password
-```shell script
+```shell
 curl -X POST \
   http://127.0.0.1:30100/v4/account/root/password \
   -H 'Authorization: Bearer {your_token}' \
@@ -79,7 +79,7 @@ curl -X POST \
 ### create a new account 
 You can create new account named "peter", and his role is developer.
 How to add roles and allocate resources please refer to next section.
-```shell script
+```shell
 curl -X POST \
   http://127.0.0.1:30100/v4/account \
   -H 'Accept: */*' \
@@ -213,7 +213,7 @@ A role "TeamA" can get and create any services but can only delete or update "or
 You can also create a new role and give perms to this role.
 
 1. You can add new role and allocate resources to new role. For example, a new role named "tester" and allocate resources to "tester". 
-```shell script
+```shell
 curl -X POST \
   http://127.0.0.1:30100/v4/role \
   -H 'Accept: */*' \
@@ -251,7 +251,7 @@ curl -X POST \
 }'
 ```
 2.then, assigning roles "tester" and "tester2" to user account "peter", "tester2" is a empty role has not any resources.
-```shell script
+```shell
 curl -X POST \
   http://127.0.0.1:30100/v4/account \
   -H 'Accept: */*' \
@@ -265,7 +265,7 @@ curl -X POST \
 ```
 
 3.Next, generate a token for the user.
-```shell script
+```shell
 curl -X POST \
   http://127.0.0.1:30100/v4/token \
   -d '{
@@ -277,7 +277,7 @@ curl -X POST \
 4.finally, user "peter" carry token to access resources.
 
 for example 
-```shell script
+```shell
 curl -X POST \
   http://127.0.0.1:30100/v4/default/registry/microservices \
   -H 'Accept: */*' \
@@ -293,7 +293,7 @@ curl -X POST \
 ```
 would be ok.
 
-```shell script
+```shell
 curl -X DElETE \
   http://127.0.0.1:30100/v4/default/registry/microservices \
   -H 'Accept: */*' \

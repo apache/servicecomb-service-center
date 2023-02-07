@@ -25,11 +25,9 @@ const (
 	WATCHER_SVC_NAME string = "servicecenter-watcher"
 	// Reserved service name used by ServiceCenter, will be ignored.
 	// This is the default name of the ServiceCenter in an etcd-based registry
-	// (https://github.com/apache/servicecomb-service-center/blob/6f26aaa7698691d40e17c6644ac71d51b6770772/examples/etcd_data_struct.yaml#L7).
 	SERVICECENTER_ETCD_NAME string = "SERVICECENTER"
 	// Reserved service name used by ServiceCenter, will be ignored.
 	// This is the default name of the ServiceCenter in a MongoDB-based registry
-	// (https://github.com/apache/servicecomb-service-center/blob/6f26aaa7698691d40e17c6644ac71d51b6770772/examples/mongodb_data_struct.yaml#L27).
 	SERVICECENTER_MONGO_NAME string = "SERVICE-CENTER"
 	// Time in seconds to wait before syncing new services from service center registry.
 	PULL_INTERVAL time.Duration = time.Second * 5

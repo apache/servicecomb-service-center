@@ -3,20 +3,21 @@
 Service center(SC) support an extend modules mechanism that developers can new some features in SC easily. 
 
 ## Just 4 steps, you can add a module in service center
-1. Create a module(package) under the github.com/apache/servicecomb-service-center/server package.
+1. Create a module(package) under the github.com/apache/servicecomb-service-center/server/resource package.
 1. Here you just need to implement the controller and service interfaces in your module.
 1. And register service to SC when the module initializes.
 1. Import the package in github.com/apache/servicecomb-service-center/server/bootstrap/bootstrap.go
 
 ## Quit start for the RESTful module
 
-Implement the [ROAServantService](https://github.com/apache/servicecomb-service-center/tree/master/pkg/rest/roa.go) interface.
+Implement the [RouteGroup](https://github.com/apache/servicecomb-service-center/tree/master/pkg/rest/types.go) interface.
 
 ```go
 package hello
 
 import (
 	"net/http"
+    
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 )
 
@@ -43,10 +44,10 @@ Register the service in SC ROA framework when the module initializes.
 ```go
 package hello
 
-import roa "github.com/apache/servicecomb-service-center/pkg/rest"
+import "github.com/apache/servicecomb-service-center/pkg/rest"
 
 func init() {
-    roa.RegisterServant(&HelloService{})
+    rest.RegisterServant(&HelloService{})
 }
 ```
 
@@ -54,9 +55,5 @@ Modify [bootstarp.go](https://github.com/apache/servicecomb-service-center/tree/
 
 ```go
 // module
-import _ "github.com/apache/servicecomb-service-center/server/hello"
+import _ "github.com/apache/servicecomb-service-center/server/resource/hello"
 ```
-
-## About GRPC module
-
-To see [govern](https://github.com/apache/servicecomb-service-center/tree/master/server/rest/govern) module for help.
