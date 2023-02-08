@@ -15,16 +15,40 @@
  * limitations under the License.
  */
 
-package admin
+package v3
 
 import (
-	roa "github.com/apache/servicecomb-service-center/pkg/rest"
+	"encoding/json"
+	"net/http"
+
+	"github.com/apache/servicecomb-service-center/pkg/rest"
+	v4 "github.com/apache/servicecomb-service-center/server/resource/v4/sys"
+	"github.com/apache/servicecomb-service-center/version"
 )
 
+var versionJSONCache []byte
+
+const APIVersion = "3.0.0"
+
 func init() {
-	registerREST()
+	result := v4.VersionResponse{
+		Set:        version.Ver(),
+		APIVersion: APIVersion,
+	}
+	versionJSONCache, _ = json.Marshal(result)
 }
 
-func registerREST() {
-	roa.RegisterServant(&ControllerV4{})
+type MainService struct {
+	v4.Resource
+}
+
+func (s *MainService) URLPatterns() []rest.Route {
+	return []rest.Route{
+		{Method: http.MethodGet, Path: "/version", Func: s.GetVersion},
+		{Method: http.MethodGet, Path: "/health", Func: s.ClusterHealth},
+	}
+}
+
+func (s *MainService) GetVersion(w http.ResponseWriter, r *http.Request) {
+	rest.WriteResponse(w, r, nil, versionJSONCache)
 }

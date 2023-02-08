@@ -32,7 +32,7 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/rbac"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/config"
-	v4 "github.com/apache/servicecomb-service-center/server/resource/rbac"
+	v4 "github.com/apache/servicecomb-service-center/server/resource/v4/rbac"
 	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 	beego "github.com/beego/beego/v2/server/web"
 	rbacmodel "github.com/go-chassis/cari/rbac"
@@ -474,7 +474,7 @@ func BenchmarkAuthResource_LoginP(b *testing.B) {
 			w := httptest.NewRecorder()
 			rest.GetRouter().ServeHTTP(w, r)
 			if w.Code != http.StatusOK {
-				panic(w.Code)
+				b.Fatal(w.Code)
 			}
 		}
 	})
@@ -489,7 +489,7 @@ func BenchmarkAuthResource_Login(b *testing.B) {
 		w := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w, r)
 		if w.Code != http.StatusOK {
-			panic(w.Code)
+			b.Fatal(w.Code)
 		}
 
 	}

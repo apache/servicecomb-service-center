@@ -23,7 +23,7 @@ import (
 	"time"
 
 	dao "github.com/apache/servicecomb-service-center/datasource/rbac"
-	"github.com/apache/servicecomb-service-center/server/resource/rbac"
+	"github.com/apache/servicecomb-service-center/server/resource/v4/rbac"
 	accountsvc "github.com/apache/servicecomb-service-center/server/service/account"
 	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 	"github.com/stretchr/testify/assert"

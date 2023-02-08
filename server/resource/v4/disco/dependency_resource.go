@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package v4
+package disco
 
 import (
 	"encoding/json"
@@ -30,10 +30,10 @@ import (
 	pb "github.com/go-chassis/cari/discovery"
 )
 
-type DependencyService struct {
+type DependencyResource struct {
 }
 
-func (s *DependencyService) URLPatterns() []rest.Route {
+func (s *DependencyResource) URLPatterns() []rest.Route {
 	return []rest.Route{
 		{Method: http.MethodPost, Path: "/v4/:project/registry/dependencies", Func: s.AddDependencies},
 		{Method: http.MethodPut, Path: "/v4/:project/registry/dependencies", Func: s.PutDependencies},
@@ -43,7 +43,7 @@ func (s *DependencyService) URLPatterns() []rest.Route {
 }
 
 // Deprecated
-func (s *DependencyService) AddDependencies(w http.ResponseWriter, r *http.Request) {
+func (s *DependencyResource) AddDependencies(w http.ResponseWriter, r *http.Request) {
 	requestBody, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
@@ -68,7 +68,7 @@ func (s *DependencyService) AddDependencies(w http.ResponseWriter, r *http.Reque
 }
 
 // Deprecated
-func (s *DependencyService) PutDependencies(w http.ResponseWriter, r *http.Request) {
+func (s *DependencyResource) PutDependencies(w http.ResponseWriter, r *http.Request) {
 	requestBody, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
@@ -92,7 +92,7 @@ func (s *DependencyService) PutDependencies(w http.ResponseWriter, r *http.Reque
 	rest.WriteResponse(w, r, nil, nil)
 }
 
-func (s *DependencyService) ListProviders(w http.ResponseWriter, r *http.Request) {
+func (s *DependencyResource) ListProviders(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	request := &pb.GetDependenciesRequest{
 		ServiceId:  query.Get(":consumerId"),
@@ -107,7 +107,7 @@ func (s *DependencyService) ListProviders(w http.ResponseWriter, r *http.Request
 	rest.WriteResponse(w, r, nil, resp)
 }
 
-func (s *DependencyService) ListConsumers(w http.ResponseWriter, r *http.Request) {
+func (s *DependencyResource) ListConsumers(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	request := &pb.GetDependenciesRequest{
 		ServiceId:  query.Get(":providerId"),

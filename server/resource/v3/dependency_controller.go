@@ -21,15 +21,16 @@ import (
 	"net/http"
 
 	"github.com/apache/servicecomb-service-center/pkg/rest"
-	v4 "github.com/apache/servicecomb-service-center/server/rest/controller/v4"
+	v4 "github.com/apache/servicecomb-service-center/server/resource/v4/disco"
 )
 
-type WatchService struct {
-	v4.WatchService
+type DependencyService struct {
+	v4.DependencyResource
 }
 
-func (s *WatchService) URLPatterns() []rest.Route {
+func (s *DependencyService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{Method: http.MethodGet, Path: "/registry/v3/microservices/:serviceId/watcher", Func: s.Watch},
+		{Method: http.MethodGet, Path: "/registry/v3/microservices/:consumerId/providers", Func: s.ListProviders},
+		{Method: http.MethodGet, Path: "/registry/v3/microservices/:providerId/consumers", Func: s.ListConsumers},
 	}
 }

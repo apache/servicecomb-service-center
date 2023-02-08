@@ -21,7 +21,7 @@ import (
 	"net/http"
 
 	"github.com/apache/servicecomb-service-center/pkg/rest"
-	v4 "github.com/apache/servicecomb-service-center/server/resource/disco"
+	v4 "github.com/apache/servicecomb-service-center/server/resource/v4/disco"
 )
 
 type MicroServiceService struct {

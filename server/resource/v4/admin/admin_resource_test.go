@@ -15,18 +15,24 @@
  * limitations under the License.
  */
 
-package v4
+package admin_test
 
 import (
-	roa "github.com/apache/servicecomb-service-center/pkg/rest"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	_ "github.com/apache/servicecomb-service-center/test"
+
+	"github.com/apache/servicecomb-service-center/pkg/rest"
+	"github.com/stretchr/testify/assert"
 )
 
-func init() {
-	initRouter()
-}
-
-func initRouter() {
-	roa.RegisterServant(&MainService{})
-	roa.RegisterServant(&DependencyService{})
-	roa.RegisterServant(&WatchService{})
+func TestResource_Clusters(t *testing.T) {
+	t.Run("get clusters, should ok", func(t *testing.T) {
+		r, _ := http.NewRequest(http.MethodGet, "/v4/default/admin/clusters", nil)
+		w := httptest.NewRecorder()
+		rest.GetRouter().ServeHTTP(w, r)
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
 }

@@ -25,14 +25,13 @@ import (
 	"testing"
 
 	_ "github.com/apache/servicecomb-service-center/server/service/grc/mock"
-
 	_ "github.com/apache/servicecomb-service-center/test"
 
 	"github.com/apache/servicecomb-service-center/pkg/gov"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/config"
-	v1 "github.com/apache/servicecomb-service-center/server/resource/gov"
+	v1 "github.com/apache/servicecomb-service-center/server/resource/v4/gov"
 	grcsvc "github.com/apache/servicecomb-service-center/server/service/grc"
 	"github.com/go-chassis/go-archaius"
 	"github.com/stretchr/testify/assert"

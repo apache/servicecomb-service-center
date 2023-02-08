@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package v4
+package pubsub
 
 import (
 	"net/http"
@@ -39,11 +39,11 @@ func init() {
 	exception.RegisterWhitelist(http.MethodGet, APIHeartbeat)
 }
 
-type WatchService struct {
+type Resource struct {
 	//
 }
 
-func (s *WatchService) URLPatterns() []rest.Route {
+func (s *Resource) URLPatterns() []rest.Route {
 	return []rest.Route{
 		{Method: http.MethodGet, Path: APIWatch, Func: s.Watch},
 		{Method: http.MethodGet, Path: APIHeartbeat, Func: s.Heartbeat},
@@ -63,7 +63,7 @@ func upgrade(w http.ResponseWriter, r *http.Request) (*websocket.Conn, error) {
 	return conn, err
 }
 
-func (s *WatchService) Watch(w http.ResponseWriter, r *http.Request) {
+func (s *Resource) Watch(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrade(w, r)
 	if err != nil {
 		return
@@ -76,7 +76,7 @@ func (s *WatchService) Watch(w http.ResponseWriter, r *http.Request) {
 	}, conn)
 }
 
-func (s *WatchService) Heartbeat(w http.ResponseWriter, r *http.Request) {
+func (s *Resource) Heartbeat(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrade(w, r)
 	if err != nil {
 		log.Error("failed to establish connection", err)

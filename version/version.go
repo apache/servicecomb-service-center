@@ -35,10 +35,10 @@ var (
 
 type Set struct {
 	Version   string `json:"version"`
-	BuildTag  string `json:"buildTag"`
-	GoVersion string `json:"goVersion"`
-	OS        string `json:"os"`
-	Arch      string `json:"arch"`
+	BuildTag  string `json:"-"`
+	GoVersion string `json:"-"`
+	OS        string `json:"-"`
+	Arch      string `json:"-"`
 }
 
 func (vs *Set) Print() {

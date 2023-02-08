@@ -30,12 +30,9 @@ import (
 	//mongo
 	_ "github.com/apache/servicecomb-service-center/datasource/mongo/bootstrap"
 
-	//rest v3 api
-	_ "github.com/apache/servicecomb-service-center/server/rest/controller/v3"
-
-	//rest v4 api
-	_ "github.com/apache/servicecomb-service-center/server/resource"
-	_ "github.com/apache/servicecomb-service-center/server/rest/controller/v4"
+	//resource
+	_ "github.com/apache/servicecomb-service-center/server/resource/v3"
+	_ "github.com/apache/servicecomb-service-center/server/resource/v4"
 
 	//cipher
 	_ "github.com/apache/servicecomb-service-center/server/plugin/security/cipher/buildin"
@@ -55,9 +52,6 @@ import (
 
 	//tlsconf
 	_ "github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf/buildin"
-
-	//module 'admin'
-	_ "github.com/apache/servicecomb-service-center/server/rest/admin"
 
 	//governance
 	_ "github.com/apache/servicecomb-service-center/server/service/grc/kie"

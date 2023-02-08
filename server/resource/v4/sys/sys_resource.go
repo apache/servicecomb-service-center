@@ -15,40 +15,57 @@
  * limitations under the License.
  */
 
-package v3
+package sys
 
 import (
 	"encoding/json"
 	"net/http"
+	"sync"
 
 	"github.com/apache/servicecomb-service-center/pkg/rest"
-	v4 "github.com/apache/servicecomb-service-center/server/rest/controller/v4"
+	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
 	"github.com/apache/servicecomb-service-center/version"
 )
 
-var versionJSONCache []byte
+var (
+	versionJSONCache []byte
+	parseVersionOnce sync.Once
+)
 
-const APIVersion = "3.0.0"
+const APIVersion = "4.0.0"
 
-func init() {
-	result := v4.Result{
-		Set:        version.Ver(),
-		APIVersion: APIVersion,
-	}
-	versionJSONCache, _ = json.Marshal(result)
+type VersionResponse struct {
+	*version.Set
+	APIVersion string `json:"apiVersion"`
 }
 
-type MainService struct {
-	v4.MainService
+type Resource struct {
+	//
 }
 
-func (s *MainService) URLPatterns() []rest.Route {
+func (s *Resource) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{Method: http.MethodGet, Path: "/version", Func: s.GetVersion},
-		{Method: http.MethodGet, Path: "/health", Func: s.ClusterHealth},
+		{Method: http.MethodGet, Path: "/v4/:project/registry/version", Func: s.GetVersion},
+		{Method: http.MethodGet, Path: "/v4/:project/registry/health", Func: s.ClusterHealth},
 	}
 }
 
-func (s *MainService) GetVersion(w http.ResponseWriter, r *http.Request) {
+func (s *Resource) ClusterHealth(w http.ResponseWriter, r *http.Request) {
+	resp, err := discosvc.ClusterHealth(r.Context())
+	if err != nil {
+		rest.WriteServiceError(w, err)
+		return
+	}
+	rest.WriteResponse(w, r, nil, resp)
+}
+
+func (s *Resource) GetVersion(w http.ResponseWriter, r *http.Request) {
+	parseVersionOnce.Do(func() {
+		result := VersionResponse{
+			version.Ver(),
+			APIVersion,
+		}
+		versionJSONCache, _ = json.Marshal(result)
+	})
 	rest.WriteResponse(w, r, nil, versionJSONCache)
 }
