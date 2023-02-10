@@ -84,6 +84,16 @@ func TestTokenAuthenticator_Identify(t *testing.T) {
 		assert.Equal(t, carirbac.ErrNoAuthHeader, svcErr.Code)
 	})
 
+	t.Run("without auth header but rbac.scope has value role and account, should pass", func(t *testing.T) {
+		_ = archaius.Set("rbac.scope", "role,account")
+		rbacsvc.InitResourceMap()
+		r := httptest.NewRequest(http.MethodGet, "/any", nil)
+		err := ta.Identify(r)
+		assert.NoError(t, err)
+		_ = archaius.Set("rbac.scope", "*")
+		rbacsvc.InitResourceMap()
+	})
+
 	t.Run("with wrong auth header should failed", func(t *testing.T) {
 		r := httptest.NewRequest(http.MethodGet, "/any", nil)
 		r.Header.Set(restful.HeaderAuth, "Bear")
