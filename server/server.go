@@ -22,8 +22,12 @@ import (
 	"crypto/tls"
 	"os"
 
+	"github.com/apache/servicecomb-service-center/pkg/plugin"
+	"github.com/apache/servicecomb-service-center/pkg/signal"
 	"github.com/apache/servicecomb-service-center/server/middleware"
-	"github.com/apache/servicecomb-service-center/server/resource/disco"
+	"github.com/apache/servicecomb-service-center/server/resource/v4/disco"
+	"github.com/apache/servicecomb-service-center/server/service/grc"
+	"github.com/apache/servicecomb-service-center/server/service/rbac"
 	syncv1 "github.com/apache/servicecomb-service-center/syncer/api/v1"
 	"github.com/apache/servicecomb-service-center/syncer/rpc"
 	"github.com/gofiber/fiber/v2"
@@ -34,15 +38,11 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource"
 	nf "github.com/apache/servicecomb-service-center/pkg/event"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/pkg/plugin"
-	"github.com/apache/servicecomb-service-center/pkg/signal"
 	"github.com/apache/servicecomb-service-center/server/alarm"
 	"github.com/apache/servicecomb-service-center/server/command"
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/event"
 	"github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf"
-	"github.com/apache/servicecomb-service-center/server/service/grc"
-	"github.com/apache/servicecomb-service-center/server/service/rbac"
 	syncConfig "github.com/apache/servicecomb-service-center/syncer/config"
 	"github.com/go-chassis/foundation/gopool"
 )
@@ -74,40 +74,47 @@ func (s *ServiceCenterServer) Run() {
 
 	s.startChassis()
 
-	signal.RegisterListener()
-
 	s.waitForQuit()
 }
 
 func (s *ServiceCenterServer) startChassis() {
-	go func() {
+	gopool.Go(func(_ context.Context) {
 		mask := make([]string, 0)
-		if !syncConfig.GetConfig().Sync.EnableOnStart {
+		if !s.enableSyncer() {
 			mask = append(mask, "grpc")
-		} else {
-			chassis.RegisterSchema("grpc", &rpc.Server{},
-				chassisServer.WithRPCServiceDesc(&syncv1.EventService_ServiceDesc))
 		}
-		if !config.GetBool("server.turbo", false) {
-			log.Info("turbo is disabled")
+		if !s.enableTurbo() {
 			mask = append(mask, "rest")
-		} else {
-			app := fiber.New(fiber.Config{})
-
-			app.Use(middleware.PrepareContextFor)
-
-			app.Post("/v4/:project/registry/microservices/:serviceId/instances",
-				disco.FiberRegisterInstance)
-			app.Put("/v4/:project/registry/microservices/:serviceId/instances/:instanceId/heartbeat",
-				disco.FiberSendHeartbeat)
-			app.Get("/v4/:project/registry/instances", disco.FiberFindInstances)
-			chassis.RegisterSchema("rest", app)
-			log.Info("turbo is enabled")
 		}
 		if err := chassis.Run(chassisServer.WithServerMask(mask...)); err != nil {
 			log.Warn(err.Error())
 		}
-	}()
+	})
+}
+
+func (s *ServiceCenterServer) enableSyncer() bool {
+	if !syncConfig.GetConfig().Sync.EnableOnStart {
+		return false
+	}
+	chassis.RegisterSchema("grpc", &rpc.Server{},
+		chassisServer.WithRPCServiceDesc(&syncv1.EventService_ServiceDesc))
+	return true
+}
+
+func (s *ServiceCenterServer) enableTurbo() bool {
+	if !config.GetBool("server.turbo", false) {
+		log.Info("turbo is disabled")
+		return false
+	}
+	app := fiber.New(fiber.Config{})
+	app.Use(middleware.PrepareContextFor)
+	app.Post("/v4/:project/registry/microservices/:serviceId/instances", disco.FiberRegisterInstance)
+	app.Put("/v4/:project/registry/microservices/:serviceId/instances/:instanceId/heartbeat",
+		disco.FiberSendHeartbeat)
+	app.Get("/v4/:project/registry/instances", disco.FiberFindInstances)
+	chassis.RegisterSchema("rest", app)
+	log.Info("turbo is enabled")
+	return true
 }
 
 func (s *ServiceCenterServer) waitForQuit() {
@@ -120,11 +127,22 @@ func (s *ServiceCenterServer) waitForQuit() {
 }
 
 func (s *ServiceCenterServer) initialize() {
+	signal.RegisterListener()
+
+	plugin.LoadPlugins()
+
 	s.initEndpoints()
-	// SSL
+
 	s.initSSL()
-	// Datasource
+
 	s.initDatasource()
+
+	rbac.Init()
+
+	if err := grc.Init(); err != nil {
+		log.Fatal("init gov failed", err)
+	}
+
 	s.APIServer = GetAPIServer()
 	s.eventCenter = event.Center()
 }
@@ -201,13 +219,6 @@ func (s *ServiceCenterServer) initSSL() {
 func (s *ServiceCenterServer) startServices() {
 	// notifications
 	s.eventCenter.Start()
-
-	// load sc plugins
-	plugin.LoadPlugins()
-	rbac.Init()
-	if err := grc.Init(); err != nil {
-		log.Fatal("init gov failed", err)
-	}
 	// check version
 	if config.GetRegistry().SelfRegister {
 		if err := datasource.GetSCManager().UpgradeVersion(context.Background()); err != nil {

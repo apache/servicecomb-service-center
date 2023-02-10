@@ -572,8 +572,8 @@ github.com/labstack/gommon v0.3.1/go.mod h1:uW6kP17uPlLJsD3ijUYn3/M5bAxtlZhMI6m3
 github.com/leodido/go-urn v1.2.1 h1:BqpAaACuzVSgi/VLzGZIobT2z4v53pjosyNd9Yv6n/w=
 github.com/leodido/go-urn v1.2.1/go.mod h1:zt4jvISO2HfUBqxjfIshjdMTYS56ZS/qv49ictyFfxY=
 github.com/little-cui/etcdadpt v0.3.2/go.mod h1:HnRRpIrVEVNWobkiCvG2EHLWKKZ+L047EcI29ma2zA4=
-github.com/little-cui/etcdadpt v0.4.0 h1:IIoRv+lIxFBsM1ptn9mGpdmBMqEafMnQF3UuE7ekDFg=
-github.com/little-cui/etcdadpt v0.4.0/go.mod h1:wt9bqwpcPP3fPuxQpJKtsKOyS45/jI1JCrdSrdqT9lo=
+github.com/little-cui/etcdadpt v0.5.2 h1:b7e0zV85RkZOusF+X4i6qqk3akS5fZ0kM/oc6kFl7to=
+github.com/little-cui/etcdadpt v0.5.2/go.mod h1:+G/9krUdTHrhh6mwJtq/USk9l4BDK1wpSiq7+TLMGvc=
 github.com/lyft/protoc-gen-star v0.5.3/go.mod h1:V0xaHgaf5oCCqmcxYcWiDfTiKsZsRc87/1qhoTACD8w=
 github.com/magiconair/properties v1.8.1/go.mod h1:PppfXfuXeibc/6YijjN8zIbojt8czPbwD3XqdrwzmxQ=
 github.com/magiconair/properties v1.8.5/go.mod h1:y3VJvCyxH9uVvJTWEGAELF3aiYNyPKd5NZ3oSwXrF60=

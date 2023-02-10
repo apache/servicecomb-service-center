@@ -26,12 +26,12 @@ import (
 	adminsvc "github.com/apache/servicecomb-service-center/server/service/admin"
 )
 
-// ControllerV4 治理相关接口服务
-type ControllerV4 struct {
+// Resource 治理相关接口服务
+type Resource struct {
 }
 
 // URLPatterns 路由.
-func (ctrl *ControllerV4) URLPatterns() []rest.Route {
+func (ctrl *Resource) URLPatterns() []rest.Route {
 	return []rest.Route{
 		{Method: http.MethodGet, Path: "/v4/:project/admin/alarms", Func: ctrl.AlarmList},
 		{Method: http.MethodDelete, Path: "/v4/:project/admin/alarms", Func: ctrl.ClearAlarm},
@@ -40,7 +40,7 @@ func (ctrl *ControllerV4) URLPatterns() []rest.Route {
 	}
 }
 
-func (ctrl *ControllerV4) Dump(w http.ResponseWriter, r *http.Request) {
+func (ctrl *Resource) Dump(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	var options []string
 	if s := strings.TrimSpace(query.Get("options")); len(s) > 0 {
@@ -54,21 +54,21 @@ func (ctrl *ControllerV4) Dump(w http.ResponseWriter, r *http.Request) {
 	rest.WriteResponse(w, r, resp.Response, resp)
 }
 
-func (ctrl *ControllerV4) Clusters(w http.ResponseWriter, r *http.Request) {
+func (ctrl *Resource) Clusters(w http.ResponseWriter, r *http.Request) {
 	request := &dump.ClustersRequest{}
 	ctx := r.Context()
 	resp, _ := adminsvc.Clusters(ctx, request)
 	rest.WriteResponse(w, r, resp.Response, resp)
 }
 
-func (ctrl *ControllerV4) AlarmList(w http.ResponseWriter, r *http.Request) {
+func (ctrl *Resource) AlarmList(w http.ResponseWriter, r *http.Request) {
 	request := &dump.AlarmListRequest{}
 	ctx := r.Context()
 	resp, _ := adminsvc.AlarmList(ctx, request)
 	rest.WriteResponse(w, r, resp.Response, resp)
 }
 
-func (ctrl *ControllerV4) ClearAlarm(w http.ResponseWriter, r *http.Request) {
+func (ctrl *Resource) ClearAlarm(w http.ResponseWriter, r *http.Request) {
 	request := &dump.ClearAlarmRequest{}
 	ctx := r.Context()
 	resp, _ := adminsvc.ClearAlarm(ctx, request)

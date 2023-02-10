@@ -21,19 +21,15 @@ import (
 	"net/http"
 
 	"github.com/apache/servicecomb-service-center/pkg/rest"
-	v4 "github.com/apache/servicecomb-service-center/server/resource/disco"
+	v4 "github.com/apache/servicecomb-service-center/server/resource/v4/pubsub"
 )
 
-type SchemaService struct {
-	v4.SchemaResource
+type WatchService struct {
+	v4.Resource
 }
 
-func (s *SchemaService) URLPatterns() []rest.Route {
+func (s *WatchService) URLPatterns() []rest.Route {
 	return []rest.Route{
-		{Method: http.MethodGet, Path: "/registry/v3/microservices/:serviceId/schemas/:schemaId", Func: s.GetSchema},
-		{Method: http.MethodPut, Path: "/registry/v3/microservices/:serviceId/schemas/:schemaId", Func: s.PutSchema},
-		{Method: http.MethodDelete, Path: "/registry/v3/microservices/:serviceId/schemas/:schemaId", Func: s.DeleteSchema},
-		{Method: http.MethodPost, Path: "/registry/v3/microservices/:serviceId/schemas", Func: s.PutSchemas},
-		{Method: http.MethodGet, Path: "/registry/v3/microservices/:serviceId/schemas", Func: s.ListSchema},
+		{Method: http.MethodGet, Path: "/registry/v3/microservices/:serviceId/watcher", Func: s.Watch},
 	}
 }

@@ -30,7 +30,7 @@ import (
 
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/resource/disco"
+	"github.com/apache/servicecomb-service-center/server/resource/v4/disco"
 	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/stretchr/testify/assert"

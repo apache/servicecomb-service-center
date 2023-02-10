@@ -15,14 +15,17 @@
  * limitations under the License.
  */
 
-package resource
+package v4
 
 import (
 	roa "github.com/apache/servicecomb-service-center/pkg/rest"
-	"github.com/apache/servicecomb-service-center/server/resource/disco"
-	"github.com/apache/servicecomb-service-center/server/resource/gov"
-	"github.com/apache/servicecomb-service-center/server/resource/govern"
-	"github.com/apache/servicecomb-service-center/server/resource/rbac"
+	"github.com/apache/servicecomb-service-center/server/resource/v4/admin"
+	"github.com/apache/servicecomb-service-center/server/resource/v4/disco"
+	"github.com/apache/servicecomb-service-center/server/resource/v4/gov"
+	"github.com/apache/servicecomb-service-center/server/resource/v4/govern"
+	"github.com/apache/servicecomb-service-center/server/resource/v4/pubsub"
+	"github.com/apache/servicecomb-service-center/server/resource/v4/rbac"
+	"github.com/apache/servicecomb-service-center/server/resource/v4/sys"
 	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 )
 
@@ -38,6 +41,10 @@ func initRouter() {
 	roa.RegisterServant(&disco.ServiceResource{})
 	roa.RegisterServant(&disco.SchemaResource{})
 	roa.RegisterServant(&disco.InstanceResource{})
+	roa.RegisterServant(&disco.DependencyResource{})
+	roa.RegisterServant(&pubsub.Resource{})
 	roa.RegisterServant(&gov.Governance{})
 	roa.RegisterServant(&govern.Resource{})
+	roa.RegisterServant(&sys.Resource{})
+	roa.RegisterServant(&admin.Resource{})
 }
