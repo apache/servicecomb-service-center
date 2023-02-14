@@ -19,14 +19,17 @@ package server
 
 import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	syncv1 "github.com/apache/servicecomb-service-center/syncer/api/v1"
 	"github.com/apache/servicecomb-service-center/syncer/config"
 	"github.com/apache/servicecomb-service-center/syncer/metrics"
+	"github.com/apache/servicecomb-service-center/syncer/rpc"
+	"github.com/apache/servicecomb-service-center/syncer/service/admin"
 	"github.com/apache/servicecomb-service-center/syncer/service/sync"
-
-	// kie db
-	_ "github.com/apache/servicecomb-kie/server/datasource/etcd"
+	"github.com/go-chassis/go-chassis/v2"
+	chassisServer "github.com/go-chassis/go-chassis/v2/core/server"
 )
 
+// Run register chassis schema and run syncer services before chassis.Run()
 func Run() {
 	if err := config.Init(); err != nil {
 		log.Error("syncer config init failed", err)
@@ -37,10 +40,14 @@ func Run() {
 		return
 	}
 
+	chassis.RegisterSchema("grpc", rpc.NewServer(),
+		chassisServer.WithRPCServiceDesc(&syncv1.EventService_ServiceDesc))
+
+	admin.Init()
+
 	sync.Init()
 
 	if err := metrics.Init(); err != nil {
 		log.Error("syncer metrics init failed", err)
 	}
-
 }

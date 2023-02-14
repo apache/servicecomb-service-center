@@ -26,9 +26,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	serverconfig "github.com/apache/servicecomb-service-center/server/config"
 	"github.com/go-chassis/cari/dlock"
-
-	// glint
-	_ "github.com/go-chassis/cari/dlock/bootstrap"
 	"github.com/go-chassis/foundation/gopool"
 )
 

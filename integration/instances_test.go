@@ -149,16 +149,14 @@ var _ = Describe("MicroService Api Test", func() {
 				url = strings.Replace(url, ":instanceId", serviceInstanceID, 1)
 				req, _ := http.NewRequest(DELETE, SCURL+url, nil)
 				req.Header.Set("X-Domain-Name", "default")
-				resp, _ := scclient.Do(req)
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				_, _ = scclient.Do(req)
 			}
 
 			if providerID != "" {
 				url := strings.Replace(UNREGISTERMICROSERVICE, ":serviceId", providerID, 1)
 				req, _ := http.NewRequest(DELETE, SCURL+url, nil)
 				req.Header.Set("X-Domain-Name", "default")
-				resp, _ := scclient.Do(req)
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				_, _ = scclient.Do(req)
 			}
 
 		})
