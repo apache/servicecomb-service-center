@@ -15,6 +15,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+write_config() {
+  cp -r etc/conf conf
+  cat <<EOM > conf/syncer.yaml
+sync:
+  enableOnStart: true
+  peers:
+    - name: dc
+      endpoints: ["127.0.0.1:30105"]
+EOM
+}
+
 echo "${green}Building Service-center${reset}"
 
 go build -o service-center github.com/apache/servicecomb-service-center/cmd/scserver
@@ -37,9 +48,11 @@ while ! nc -z 127.0.0.1 2379; do
 done
 echo "${green}Etcd is running......${reset}"
 
-echo "${green}Running the service-center for IT....${reset}"
 
-cp -r etc/conf conf
+echo "${green}Preparing the config for IT....${reset}"
+write_config
+
+echo "${green}Running the service-center for IT....${reset}"
 ./service-center > start-sc.log 2>&1 &
 
 if [ $? == 0 ]; then

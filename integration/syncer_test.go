@@ -14,11 +14,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package integrationtest_test
 
-package init
+import (
+	"io"
+	"net/http"
 
-import "github.com/apache/servicecomb-service-center/server/core"
+	. "github.com/apache/servicecomb-service-center/integration"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"github.com/widuu/gojson"
+)
 
-func init() {
-	core.Init()
-}
+var _ = Describe("Syncedr Api Test", func() {
+	It("health check", func() {
+		req, _ := http.NewRequest(GET, SCURL+SYNCER_HEALTH, nil)
+		resp, err := scclient.Do(req)
+		respbody, _ := io.ReadAll(resp.Body)
+		data := string(respbody)
+		By("response: " + data)
+		s := gojson.Json(data).Get("peers").Getindex(1).Get("status").Tostring()
+		Expect(err).To(BeNil())
+		Expect(resp.StatusCode).To(Equal(http.StatusOK))
+		Expect(s).To(Equal("CONNECTED"))
+		defer resp.Body.Close()
+	})
+})

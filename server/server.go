@@ -24,8 +24,6 @@ import (
 
 	"github.com/apache/servicecomb-service-center/server/middleware"
 	"github.com/apache/servicecomb-service-center/server/resource/disco"
-	syncv1 "github.com/apache/servicecomb-service-center/syncer/api/v1"
-	"github.com/apache/servicecomb-service-center/syncer/rpc"
 	"github.com/gofiber/fiber/v2"
 
 	"github.com/go-chassis/go-chassis/v2"
@@ -43,7 +41,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf"
 	"github.com/apache/servicecomb-service-center/server/service/grc"
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
-	syncConfig "github.com/apache/servicecomb-service-center/syncer/config"
 	"github.com/go-chassis/foundation/gopool"
 )
 
@@ -82,12 +79,6 @@ func (s *ServiceCenterServer) Run() {
 func (s *ServiceCenterServer) startChassis() {
 	go func() {
 		mask := make([]string, 0)
-		if !syncConfig.GetConfig().Sync.EnableOnStart {
-			mask = append(mask, "grpc")
-		} else {
-			chassis.RegisterSchema("grpc", &rpc.Server{},
-				chassisServer.WithRPCServiceDesc(&syncv1.EventService_ServiceDesc))
-		}
 		if !config.GetBool("server.turbo", false) {
 			log.Info("turbo is disabled")
 			mask = append(mask, "rest")

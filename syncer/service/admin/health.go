@@ -61,10 +61,6 @@ type Peer struct {
 	Status    string   `json:"status"`
 }
 
-func init() {
-	Init()
-}
-
 func Init() {
 	cfg := config.GetConfig()
 	if cfg.Sync == nil {

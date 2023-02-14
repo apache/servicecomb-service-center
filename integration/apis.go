@@ -63,6 +63,9 @@ var DELETETAG = "/v4/default/registry/microservices/:serviceId/tags/:key"
 // Admin API's
 var DUMP = "/v4/default/admin/dump"
 
+// Syncer API's
+var SYNCER_HEALTH = "/v1/syncer/health"
+
 // HTTP METHODS
 var GET = "GET"
 var POST = "POST"
