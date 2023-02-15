@@ -46,7 +46,8 @@ const (
 	defaultCollectPeriod = 30 * time.Second
 )
 
-func Initialize() {
+// Init init chassis and sc configs
+func Init() {
 	if err := chassis.Init(); err != nil {
 		log.Warn(err.Error())
 	}

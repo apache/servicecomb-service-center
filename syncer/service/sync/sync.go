@@ -20,13 +20,10 @@ package sync
 import (
 	"fmt"
 
-	"github.com/apache/servicecomb-service-center/syncer/service/event"
-	"github.com/apache/servicecomb-service-center/syncer/service/task"
-
-	// glint
-	_ "github.com/apache/servicecomb-service-center/eventbase/bootstrap"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/syncer/service/event"
 	"github.com/apache/servicecomb-service-center/syncer/service/replicator"
+	"github.com/apache/servicecomb-service-center/syncer/service/task"
 )
 
 func Init() {

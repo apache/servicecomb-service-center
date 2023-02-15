@@ -18,6 +18,9 @@
 package bootstrap
 
 import (
+	_ "github.com/apache/servicecomb-kie/server/datasource/etcd"
+	_ "github.com/apache/servicecomb-service-center/eventbase/bootstrap"
 	_ "github.com/apache/servicecomb-service-center/syncer/job/tombstone"
 	_ "github.com/apache/servicecomb-service-center/syncer/resource"
+	_ "github.com/go-chassis/cari/dlock/bootstrap"
 )

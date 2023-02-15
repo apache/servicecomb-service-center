@@ -150,6 +150,9 @@ var _ = Describe("MicroService Api Test", func() {
 				req, _ := http.NewRequest(DELETE, SCURL+url, nil)
 				req.Header.Set("X-Domain-Name", "default")
 				resp, _ := scclient.Do(req)
+				defer resp.Body.Close()
+				respbody, _ := io.ReadAll(resp.Body)
+				By(string(respbody))
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 			}
 
@@ -158,6 +161,7 @@ var _ = Describe("MicroService Api Test", func() {
 				req, _ := http.NewRequest(DELETE, SCURL+url, nil)
 				req.Header.Set("X-Domain-Name", "default")
 				resp, _ := scclient.Do(req)
+				defer resp.Body.Close()
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 			}
 

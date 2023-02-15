@@ -37,7 +37,7 @@ var closeCh = make(chan struct{})
 
 func init() {
 	testing.Init()
-	core.Initialize()
+	core.Init()
 }
 
 type watcherConn struct {
