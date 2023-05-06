@@ -56,8 +56,6 @@ type instance struct {
 	cur     *pb.MicroServiceInstance
 
 	manager metadataManager
-
-	defaultFailHandler
 }
 
 func (i *instance) loadInput() error {
