@@ -27,14 +27,13 @@ type Config struct {
 	LogRotateSize  int
 	LogBackupCount int
 	// days
-	LogBackupAge int
-	CallerSkip   int
-	NoTime       bool // if true, not record time
-	NoLevel      bool // if true, not record level
-	NoCaller     bool // if true, not record caller
-	// Event driven
-	FlushFunc   func()
-	RecoverFunc func(r interface{})
+	LogBackupAge   int
+	CallerSkip     int
+	NoTime         bool // if true, not record time
+	NoLevel        bool // if true, not record level
+	NoCaller       bool // if true, not record caller
+	ReplaceGlobals bool
+	RedirectStdLog bool
 }
 
 func (cfg Config) WithCallerSkip(s int) Config {
@@ -57,17 +56,12 @@ func (cfg Config) WithNoLevel(b bool) Config {
 	return cfg
 }
 
-func (cfg Config) WithNoCaller(b bool) Config {
-	cfg.NoCaller = b
+func (cfg Config) WithReplaceGlobals(b bool) Config {
+	cfg.ReplaceGlobals = b
 	return cfg
 }
 
-func (cfg Config) WithExitFunc(f func()) Config {
-	cfg.FlushFunc = f
-	return cfg
-}
-
-func (cfg Config) WithRecoverFunc(f func(itf interface{})) Config {
-	cfg.RecoverFunc = f
+func (cfg Config) WithRedirectStdLog(b bool) Config {
+	cfg.RedirectStdLog = b
 	return cfg
 }

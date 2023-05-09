@@ -25,29 +25,37 @@ import (
 )
 
 const (
-	globalCallerSkip = 2
-	defaultLogLevel  = "DEBUG"
+	globalCallerSkip        = 2
+	globalRecoverCallerSkip = 4
+	defaultLogLevel         = "DEBUG"
 )
 
 var (
-	Configure = DefaultConfig()
-	Logger    = NewLogger(Configure)
+	flushFunc   = func() {}
+	recoverFunc = func(r interface{}) {}
+	Logger      = NewLogger(DefaultConfig())
 )
 
 func Init(cfg Config) {
-	Configure = cfg
-	Logger = NewLogger(cfg.WithCallerSkip(globalCallerSkip))
+	logger := NewZapLogger(cfg.
+		WithCallerSkip(cfg.CallerSkip + globalCallerSkip).
+		WithReplaceGlobals(true).
+		WithRedirectStdLog(true))
+	flushFunc = logger.Sync
+	recoverFunc = func(r interface{}) {
+		logger.Recover(r, cfg.CallerSkip+globalRecoverCallerSkip)
+	}
+	Logger = logger
 }
 
 func NewLogger(cfg Config) openlog.Logger {
-	return NewZapLogger(cfg)
+	return NewZapLogger(cfg.WithCallerSkip(cfg.CallerSkip + globalCallerSkip))
 }
 
 func DefaultConfig() Config {
 	return Config{
 		LoggerLevel:   defaultLogLevel,
 		LogFormatText: true,
-		CallerSkip:    globalCallerSkip,
 	}
 }
 
@@ -72,9 +80,7 @@ func Fatal(msg string, err error) {
 }
 
 func Flush() {
-	if Configure.FlushFunc != nil {
-		Configure.FlushFunc()
-	}
+	flushFunc()
 }
 
 func NilOrWarn(start time.Time, message string) {
@@ -105,9 +111,7 @@ func InfoOrWarn(start time.Time, message string) {
 
 // Panic is a function can only be called in defer function.
 func Panic(r interface{}) {
-	if Configure.RecoverFunc != nil {
-		Configure.RecoverFunc(r)
-	}
+	recoverFunc(r)
 }
 
 // Recover is a function call recover() and print the stack in log
