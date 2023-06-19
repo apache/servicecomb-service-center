@@ -30,9 +30,7 @@ import (
 )
 
 func (c *LBClient) WebsocketDial(ctx context.Context, api string, headers http.Header) (conn websocket.Conn, err error) {
-	dialer := &websocket.DialConfig(c.TLS)
-	
-	{TLSClientConfig: c.TLS}
+	dialer := &websocket.DialConfig{TLSClientConfig: c.TLS}
 
 	var errs []string
 	for i := 0; i < c.Retries; i++ {

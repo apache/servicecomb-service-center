@@ -24,7 +24,7 @@ import (
 
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/cari/pkg/errsvc"
-	"golang.org/x/net/go"
+	"golang.org/x/net/websocket"
 )
 
 const (
@@ -42,12 +42,12 @@ func (c *Client) Watch(ctx context.Context, domain, project, selfServiceID strin
 
 	for {
 		var message string
-		err := websocket.Message.Receive(conn, &message)
+		err := websocket.JSON.Receive(conn, &message)
 		if err != nil {
 			log.Println(err)
 			break
 		}
-
+		callback(message)
 	}
 	return pb.NewError(pb.ErrInternal, err.Error())
 }
