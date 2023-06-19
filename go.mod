@@ -10,6 +10,7 @@ replace (
 	go.opentelemetry.io/otel => go.opentelemetry.io/otel v0.20.0
 	go.opentelemetry.io/otel/sdk => go.opentelemetry.io/otel/sdk v0.20.0
 	go.opentelemetry.io/otel/trace => go.opentelemetry.io/otel/trace v0.20.0
+	golang.org/x/net/websocket => golang.org/x/net/websocket v0.7.0
 )
 
 require (
@@ -32,7 +33,6 @@ require (
 	github.com/gofiber/fiber/v2 v2.36.0
 	github.com/gofrs/uuid v4.0.0+incompatible
 	github.com/golang-jwt/jwt v3.2.2+incompatible
-	github.com/gorilla/websocket v1.4.3-0.20210424162022-e8629af678b7
 	github.com/iancoleman/strcase v0.2.0
 	github.com/jinzhu/copier v0.3.5
 	github.com/karlseguin/ccache v2.0.3-0.20170217060820-3ba9789cfd2c+incompatible
@@ -75,6 +75,7 @@ require (
 require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-chassis/go-chassis-extension/protocol/fiber4r v0.0.0-20220825091211-99d5e9810fd7
+	golang.org/x/net v0.0.0-20220225172249-27dd8689420f
 )
 
 require (
@@ -119,6 +120,7 @@ require (
 	github.com/google/go-cmp v0.5.8 // indirect
 	github.com/google/gofuzz v1.1.0 // indirect
 	github.com/googleapis/gnostic v0.5.1 // indirect
+	github.com/gorilla/websocket v1.4.3-0.20210424162022-e8629af678b7 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0 // indirect
@@ -179,7 +181,6 @@ require (
 	go.opentelemetry.io/proto/otlp v0.7.0 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
-	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
 	golang.org/x/oauth2 v0.0.0-20220223155221-ee480838109b // indirect
 	golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f // indirect
 	golang.org/x/sys v0.0.0-20220811171246-fbc7d0a398ab // indirect

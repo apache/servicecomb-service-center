@@ -26,7 +26,7 @@ import (
 
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/cari/pkg/errsvc"
-	"github.com/gorilla/websocket"
+	"golang.org/x/net/websocket"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -51,7 +51,7 @@ var (
 
 type client struct {
 	cxt        context.Context
-	conn       *websocket.Conn
+	conn       websocket.Conn
 	serviceID  string
 	instanceID string
 }
@@ -65,7 +65,7 @@ func configuration() {
 	})
 }
 
-func newClient(ctx context.Context, conn *websocket.Conn, serviceID string, instanceID string) *client {
+func newClient(ctx context.Context, conn websocket.Conn, serviceID string, instanceID string) *client {
 	configuration()
 	return &client{
 		cxt:        ctx,
@@ -153,7 +153,7 @@ func (c *client) handleMessage() {
 	}
 }
 
-func SendEstablishError(conn *websocket.Conn, err error) {
+func SendEstablishError(conn websocket.Conn, err error) {
 	remoteAddr := conn.RemoteAddr().String()
 	log.Error(fmt.Sprintf("establish[%s] websocket failed.", remoteAddr), err)
 	if err := conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(pb.ErrWebsocketInstanceNotExists,
@@ -162,7 +162,7 @@ func SendEstablishError(conn *websocket.Conn, err error) {
 	}
 }
 
-func Heartbeat(ctx context.Context, conn *websocket.Conn, serviceID string, instanceID string) {
+func Heartbeat(ctx context.Context, conn websocket.Conn, serviceID string, instanceID string) {
 	domain := util.ParseDomain(ctx)
 	client := newClient(ctx, conn, serviceID, instanceID)
 	metrics.ReportSubscriber(domain, Websocket, 1)
@@ -175,7 +175,7 @@ func process(client *client) {
 	client.handleMessage()
 }
 
-func WatchHeartbeat(ctx context.Context, in *pb.HeartbeatRequest, conn *websocket.Conn) {
+func WatchHeartbeat(ctx context.Context, in *pb.HeartbeatRequest, conn websocket.Conn) {
 	log.Info(fmt.Sprintf("new a web socket with service[%s] ,instance[%s]", in.ServiceId, in.InstanceId))
 	if err := preOp(ctx, in); err != nil {
 		SendEstablishError(conn, err)

@@ -27,8 +27,8 @@ import (
 
 	"github.com/apache/servicecomb-service-center/server/service/heartbeat"
 
-	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/net/websocket"
 
 	"github.com/apache/servicecomb-service-center/server/core"
 )
@@ -41,8 +41,8 @@ func init() {
 }
 
 type watcherConn struct {
-	clientConn *websocket.Conn
-	serverConn *websocket.Conn
+	clientConn websocket.Conn
+	serverConn websocket.Conn
 }
 
 func (h *watcherConn) Test() {
