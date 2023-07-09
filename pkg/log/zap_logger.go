@@ -158,17 +158,11 @@ func (l *ZapLogger) Recover(r interface{}, callerSkip int) {
 		e.Caller.TrimmedPath(),
 		r,
 		e.Stack)
-	err := StderrSyncer.Sync() // sync immediately, for server may exit abnormally
-	if err != nil {
-		log.Println(err)
-	}
+	_ = StderrSyncer.Sync() // sync immediately, for server may exit abnormally
 	if err := l.zapLogger.Core().With([]zap.Field{zap.Reflect("recover", r)}).Write(e, nil); err != nil {
 		fmt.Fprintf(StderrSyncer, "%s\tERROR\t%v\n", time.Now().Format("2006-01-02T15:04:05.000Z0700"), err)
 		fmt.Fprintln(StderrSyncer, util.BytesToStringWithNoCopy(debug.Stack()))
-		err = StderrSyncer.Sync()
-		if err != nil {
-			log.Println(err)
-		}
+		_ = StderrSyncer.Sync()
 		return
 	}
 }
@@ -195,22 +189,16 @@ func NewZapLogger(cfg Config) *ZapLogger {
 		opts = append(opts, zap.AddCaller(), zap.AddCallerSkip(cfg.CallerSkip))
 	}
 	l := zap.New(toZapConfig(cfg), opts...)
-	// zap internal log
-	_ = zap.ReplaceGlobals(l)
-	// golang log
-	_ = zap.RedirectStdLog(l)
+	if cfg.ReplaceGlobals {
+		_ = zap.ReplaceGlobals(l)
+	}
+	if cfg.RedirectStdLog {
+		_ = zap.RedirectStdLog(l)
+	}
 	logger := &ZapLogger{
 		Config:    cfg,
 		zapLogger: l,
 		zapSugar:  l.Sugar(),
-	}
-	if cfg.FlushFunc == nil {
-		cfg.FlushFunc = logger.Sync
-	}
-	if cfg.RecoverFunc == nil {
-		cfg.RecoverFunc = func(r interface{}) {
-			logger.Recover(r, 3)
-		}
 	}
 	return logger
 }

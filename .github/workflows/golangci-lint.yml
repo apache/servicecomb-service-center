@@ -9,5 +9,5 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v2
         with:
-          version: v1.48.0
+          version: v1.51.2
           args: --timeout=5m --skip-dirs='api,test,.*/controller/(v3|v4)$,.*/bootstrap$,examples,integration' --enable gofmt,revive,gocyclo,goimports --skip-files=.*_test.go$

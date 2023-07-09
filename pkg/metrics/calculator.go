@@ -69,8 +69,8 @@ func metricCounterOf(details *Details, m []*dto.Metric) {
 
 func metricSummaryOf(details *Details, m []*dto.Metric) {
 	var (
-		count uint64  = 0
-		sum   float64 = 0
+		count uint64
+		sum   float64
 	)
 	for _, d := range m {
 		count += d.GetSummary().GetSampleCount()
@@ -87,8 +87,8 @@ func metricSummaryOf(details *Details, m []*dto.Metric) {
 
 func metricHistogramOf(details *Details, m []*dto.Metric) {
 	var (
-		count uint64  = 0
-		sum   float64 = 0
+		count uint64
+		sum   float64
 	)
 	for _, d := range m {
 		count += d.GetHistogram().GetSampleCount()
