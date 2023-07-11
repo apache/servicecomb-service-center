@@ -7,7 +7,7 @@ require (
 	github.com/little-cui/etcdadpt v0.4.0
 	github.com/stretchr/testify v1.7.2
 	go.mongodb.org/mongo-driver v1.5.1
-	golang/x/net/websocket v0.7.0
+	golang.org/x/net/websocket v0.7.0
 )
 
 require (

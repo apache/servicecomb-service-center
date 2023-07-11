@@ -7,7 +7,7 @@ require (
 	github.com/go-chassis/openlog v1.1.3
 	github.com/gorilla/mux v1.8.0
 	github.com/rs/cors v1.8.2
-	golang/x/net/websocket v0.7.0
+	golang.org/x/net/websocket v0.7.0
 )
 
 require (

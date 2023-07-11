@@ -24,7 +24,7 @@ import (
 
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/cari/pkg/errsvc"
-	"golang.org/x/net/websocket"
+	"golang/x/net/websocket"
 )
 
 const (
