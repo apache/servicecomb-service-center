@@ -19,6 +19,7 @@ package disco
 
 import (
 	"fmt"
+	"github.com/apache/servicecomb-service-center/datasource"
 	"io"
 	"net/http"
 	"strings"
@@ -51,6 +52,7 @@ func (s *InstanceResource) URLPatterns() []rest.Route {
 		{Method: http.MethodPut, Path: "/v4/:project/registry/microservices/:serviceId/instances/:instanceId/heartbeat",
 			Func: s.SendHeartbeat},
 		{Method: http.MethodPut, Path: "/v4/:project/registry/heartbeats", Func: s.SendManyHeartbeat},
+		{Method: http.MethodPut, Path: "/v4/:project/registry/instances/status", Func: s.UpdateManyInstanceStatus},
 	}
 }
 func (s *InstanceResource) LegacyRegisterInstance(w http.ResponseWriter, r *http.Request) {
@@ -310,4 +312,27 @@ func (s *InstanceResource) PutInstanceProperties(w http.ResponseWriter, r *http.
 		return
 	}
 	rest.WriteResponse(w, r, nil, nil)
+}
+
+func (s *InstanceResource) UpdateManyInstanceStatus(w http.ResponseWriter, r *http.Request) {
+	request := &UpdateManyInstanceStatusRequest{}
+	message, _ := io.ReadAll(r.Body)
+	err := codec.Decode(message, request)
+	if err != nil {
+		log.Error(fmt.Sprintf("invalid json: %s", util.BytesToStringWithNoCopy(message)), err)
+		rest.WriteError(w, pb.ErrInvalidParams, "Unmarshal error")
+		return
+	}
+	err = discosvc.UpdateManyInstanceStatus(r.Context(), &request.Matches, request.Status)
+	if err != nil {
+		log.Error("can not update instance properties", err)
+		rest.WriteServiceError(w, err)
+		return
+	}
+	rest.WriteResponse(w, r, nil, nil)
+}
+
+type UpdateManyInstanceStatusRequest struct {
+	Matches datasource.MatchPolicy `json:"matches,omitempty"`
+	Status  string                 `json:"status,omitempty"`
 }

@@ -485,3 +485,8 @@ func InstanceUsage(ctx context.Context, request *pb.GetServiceCountRequest) (int
 	}
 	return resp.Count, nil
 }
+
+func UpdateManyInstanceStatus(ctx context.Context, match *datasource.MatchPolicy, status string) error {
+	err := datasource.GetMetadataManager().UpdateManyInstanceStatus(ctx, match, status)
+	return err
+}

@@ -1677,3 +1677,7 @@ func formatRevision(consumerServiceID string, instances []*discovery.MicroServic
 func (ds *MetadataManager) Statistics(ctx context.Context, withShared bool) (*discovery.Statistics, error) {
 	return statistics(ctx, withShared)
 }
+
+func (ds *MetadataManager) UpdateManyInstanceStatus(ctx context.Context, match *datasource.MatchPolicy, status string) error {
+	return nil
+}

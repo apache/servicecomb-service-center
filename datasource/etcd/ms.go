@@ -39,6 +39,7 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
 	esync "github.com/apache/servicecomb-service-center/datasource/etcd/sync"
 	eutil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
+	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/datasource/schema"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -1568,4 +1569,57 @@ func (ds *MetadataManager) UnregisterService(ctx context.Context, request *pb.De
 
 func (ds *MetadataManager) Statistics(ctx context.Context, withShared bool) (*pb.Statistics, error) {
 	return statistics(ctx, withShared)
+}
+
+func (ds *MetadataManager) UpdateManyInstanceStatus(ctx context.Context, match *datasource.MatchPolicy, status string) error {
+	resp, _ := ds.ListManyInstances(ctx, &pb.GetAllInstancesRequest{})
+	instances := resp.Instances
+	if len(instances) == 0 {
+		return nil
+	}
+	options := make([]etcdadpt.OpOptions, 0)
+	cmps := make([]etcdadpt.CmpOptions, 0)
+
+	domainProject := util.ParseDomainProject(ctx)
+
+	for _, instance := range instances {
+		var t = true
+		for k, v := range match.Properties {
+			value, ok := instance.Properties[k]
+			if ok {
+				if value != v {
+					t = false
+					break
+				}
+			} else {
+				t = false
+				break
+			}
+		}
+		if t {
+			key := path.GenerateInstanceKey(domainProject, instance.ServiceId, instance.InstanceId)
+			//更新状态
+			instance.Status = status
+			data, err := json.Marshal(instance)
+			leaseID, err := serviceUtil.GetLeaseID(ctx, domainProject, instance.ServiceId, instance.InstanceId)
+			options = append(options, etcdadpt.Ops(etcdadpt.OpPut(etcdadpt.WithStrKey(key), etcdadpt.WithValue(data), etcdadpt.WithLease(leaseID)))...)
+			if err != nil {
+				log.Error(fmt.Sprintf("get leaseId error"), err)
+				continue
+			}
+
+			cmps = append(cmps, etcdadpt.If(etcdadpt.NotEqualVer(path.GenerateServiceKey(domainProject, instance.ServiceId), 0))...)
+		}
+	}
+	_, err := etcdadpt.TxnWithCmp(ctx,
+		options,
+		cmps,
+		nil)
+
+	if err != nil {
+		log.Error(fmt.Sprintf("UpdateManyInstanceStatus error"), err)
+
+		return pb.NewError(pb.ErrUnavailableBackend, err.Error())
+	}
+	return nil
 }
