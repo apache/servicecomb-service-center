@@ -38,6 +38,10 @@ var (
 	ErrModifySchemaNotAllow = errors.New("schema already exist, can not be changed request")
 )
 
+type MatchPolicy struct {
+	Properties map[string]string `json:"properties,omitempty"`
+}
+
 // Attention: request validation must be finished before the following interface being invoked!!!
 // MetadataManager contains the CRUD of cache metadata
 type MetadataManager interface {
@@ -93,4 +97,6 @@ type MetadataManager interface {
 	RetireService(ctx context.Context, plan *RetirePlan) error
 
 	Statistics(ctx context.Context, withShared bool) (*pb.Statistics, error)
+
+	UpdateManyInstanceStatus(ctx context.Context, match *MatchPolicy, status string) error
 }
