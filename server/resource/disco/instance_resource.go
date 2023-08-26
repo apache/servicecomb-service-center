@@ -19,18 +19,17 @@ package disco
 
 import (
 	"fmt"
-	"github.com/apache/servicecomb-service-center/datasource"
 	"io"
 	"net/http"
 	"strings"
 
 	"github.com/go-chassis/go-chassis/v2/pkg/codec"
 
-	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
-
+	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
 	pb "github.com/go-chassis/cari/discovery"
 )
 
