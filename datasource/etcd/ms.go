@@ -1600,14 +1600,13 @@ func (ds *MetadataManager) UpdateManyInstanceStatus(ctx context.Context, match *
 			key := path.GenerateInstanceKey(domainProject, instance.ServiceId, instance.InstanceId)
 			//更新状态
 			instance.Status = status
-			data, err := json.Marshal(instance)
+			data, _ := json.Marshal(instance)
 			leaseID, err := serviceUtil.GetLeaseID(ctx, domainProject, instance.ServiceId, instance.InstanceId)
-			options = append(options, etcdadpt.Ops(etcdadpt.OpPut(etcdadpt.WithStrKey(key), etcdadpt.WithValue(data), etcdadpt.WithLease(leaseID)))...)
 			if err != nil {
-				log.Error(fmt.Sprintf("get leaseId error"), err)
+				log.Error(fmt.Sprintf("get leaseId %s error", instance.InstanceId), err)
 				continue
 			}
-
+			options = append(options, etcdadpt.Ops(etcdadpt.OpPut(etcdadpt.WithStrKey(key), etcdadpt.WithValue(data), etcdadpt.WithLease(leaseID)))...)
 			cmps = append(cmps, etcdadpt.If(etcdadpt.NotEqualVer(path.GenerateServiceKey(domainProject, instance.ServiceId), 0))...)
 		}
 	}
@@ -1617,7 +1616,7 @@ func (ds *MetadataManager) UpdateManyInstanceStatus(ctx context.Context, match *
 		nil)
 
 	if err != nil {
-		log.Error(fmt.Sprintf("UpdateManyInstanceStatus error"), err)
+		log.Error("UpdateManyInstanceStatus error", err)
 
 		return pb.NewError(pb.ErrUnavailableBackend, err.Error())
 	}
