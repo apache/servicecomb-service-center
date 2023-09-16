@@ -25,10 +25,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/ghodss/yaml"
 	"github.com/go-chassis/foundation/httpclient"
 	"github.com/go-chassis/kie-client"
+
+	"github.com/apache/servicecomb-service-center/pkg/util"
 
 	"github.com/apache/servicecomb-service-center/pkg/gov"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -36,6 +37,8 @@ import (
 	grcsvc "github.com/apache/servicecomb-service-center/server/service/grc"
 	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 )
+
+const Priority = -1
 
 type Distributor struct {
 	name   string
@@ -61,6 +64,7 @@ func (d *Distributor) Create(ctx context.Context, kind, project string, p *gov.P
 		Value:     string(yamlByte),
 		Status:    grcsvc.StatusEnabled,
 		ValueType: grcsvc.TypeText,
+		Priority:  Priority,
 		Labels:    p.Selector,
 	}
 	res, err := d.client.Create(ctx, kv, kie.WithProject(project))

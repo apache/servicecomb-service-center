@@ -14,7 +14,7 @@ replace (
 
 require (
 	github.com/NYTimes/gziphandler v1.1.1
-	github.com/apache/servicecomb-kie v0.2.1-0.20220730063957-66e6f5efd400
+	github.com/apache/servicecomb-kie v0.2.1-0.20230916085640-4d917719ec79
 	github.com/apache/servicecomb-service-center/eventbase v0.0.0-20220120070230-26997eb876ca
 	github.com/beego/beego/v2 v2.0.4
 	github.com/cheggaaa/pb v1.0.25
@@ -26,8 +26,8 @@ require (
 	github.com/go-chassis/go-archaius v1.5.6
 	github.com/go-chassis/go-chassis-extension/codec/gojson v0.0.0-20220816060440-fe98a5615d3f
 	github.com/go-chassis/go-chassis-extension/protocol/grpc v0.0.0-20220208081606-003611df45da
-	github.com/go-chassis/go-chassis/v2 v2.7.0
-	github.com/go-chassis/kie-client v0.2.0
+	github.com/go-chassis/go-chassis/v2 v2.7.1
+	github.com/go-chassis/kie-client v0.2.1-0.20230916082929-a48f84588280
 	github.com/go-chassis/openlog v1.1.3
 	github.com/gofiber/fiber/v2 v2.36.0
 	github.com/gofrs/uuid v4.0.0+incompatible
