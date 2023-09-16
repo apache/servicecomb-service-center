@@ -88,8 +88,8 @@ github.com/alecthomas/units v0.0.0-20190924025748-f65c72e2690d/go.mod h1:rBZYJk5
 github.com/andybalholm/brotli v1.0.4 h1:V7DdXeJtZscaqfNuAdSRuRFzuiKlHSC/Zh3zl9qY3JY=
 github.com/andybalholm/brotli v1.0.4/go.mod h1:fO7iG3H7G2nSZ7m0zPUDn85XEX2GTukHGRSepvi9Eig=
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
-github.com/apache/servicecomb-kie v0.2.1-0.20220730063957-66e6f5efd400 h1:zvkDWVT9EIybCbPUHPOplIt9D85v8d9nbGYXrZwHu9c=
-github.com/apache/servicecomb-kie v0.2.1-0.20220730063957-66e6f5efd400/go.mod h1:64faZcMJTiTzcIFBO+4/i2TlzfILq1PUoB5DF61J+Bk=
+github.com/apache/servicecomb-kie v0.2.1-0.20230916085640-4d917719ec79 h1:Zgm7NEeV3zilo5lx6bJQg37J+h8WlU2/vzKme7b3VRU=
+github.com/apache/servicecomb-kie v0.2.1-0.20230916085640-4d917719ec79/go.mod h1:VmyMIucS8JY0lrv55ZUonj6E1m5ximDVzdiAKGmDU48=
 github.com/apache/thrift v0.0.0-20180125231006-3d556248a8b9 h1:ymi1nHra1RZXqjg5xvka4YVyK+3uKPk2B9HUlPRIiBc=
 github.com/apache/thrift v0.0.0-20180125231006-3d556248a8b9/go.mod h1:cp2SuWMxlEZw2r+iP2GNCdIi4C1qmUzdZFSVb+bacwQ=
 github.com/armon/circbuf v0.0.0-20150827004946-bbbad097214e h1:QEF07wC0T1rKkctt1RINW/+RMTVmiwxETico2l3gxJA=
@@ -99,7 +99,7 @@ github.com/armon/go-metrics v0.3.10 h1:FR+drcQStOe+32sYyJYyZ7FIdgoGGBnwLl+flodp8
 github.com/armon/go-metrics v0.3.10/go.mod h1:4O98XIr/9W0sxpJ8UaYkvjk10Iff7SnFrb4QAOwNTFc=
 github.com/armon/go-radix v0.0.0-20180808171621-7fddfc383310/go.mod h1:ufUuZ+zHj4x4TnLV4JWEpy2hxWSpsRywHrMgIH9cCH8=
 github.com/armon/go-radix v1.0.0 h1:F4z6KzEeeQIMeLFa97iZU6vupzoecKdU5TX24SNppXI=
-github.com/armon/go-radix v1.0.0/go.mod h1:ufUuZ+zHj4x4TnLV4JWEpy2hxWSpsRywHrMgIH9cCH8=
+github.com/armon/go-radix v1.0.0/go.mod h1:TsTFsXBVHVK4HQ+UrFSsQEhBXZGCDqoY+cr+sUq5ZmA=
 github.com/asaskevich/govalidator v0.0.0-20190424111038-f61b66f89f4a h1:idn718Q4B6AGu/h5Sxe66HYVdqdGu2l9Iebqhi/AEoA=
 github.com/asaskevich/govalidator v0.0.0-20190424111038-f61b66f89f4a/go.mod h1:lB+ZfQJz7igIIfQNfa7Ml4HSf2uFQQRzpGGRXenZAgY=
 github.com/aws/aws-sdk-go v1.34.28 h1:sscPpn/Ns3i0F4HPEWAVcwdIRaZZCuL7llJ2/60yPIk=
@@ -252,14 +252,15 @@ github.com/go-chassis/go-chassis-extension/protocol/fiber4r v0.0.0-2022082509121
 github.com/go-chassis/go-chassis-extension/protocol/grpc v0.0.0-20220208081606-003611df45da h1:DoPFX1Fy3MLEb1RvgchInKspm8DkxQhrvZ5kOcjeZAs=
 github.com/go-chassis/go-chassis-extension/protocol/grpc v0.0.0-20220208081606-003611df45da/go.mod h1:btid7R4NKuET4BCUkR74CL5EP0hk3J0jXSByjzwd9JM=
 github.com/go-chassis/go-chassis/v2 v2.3.0/go.mod h1:iyJ2DWSkqfnCmad/0Il9nXWHaob7RcwPGlIDRNxccH0=
-github.com/go-chassis/go-chassis/v2 v2.7.0 h1:ElNe4uaTLa0GdaklPCuNt/JPMvB36+XStQ5yigcMymM=
-github.com/go-chassis/go-chassis/v2 v2.7.0/go.mod h1:uzFDzYKzpQrCff8xgPMUEi4ku0VAF6DbXdz57iXYqQM=
+github.com/go-chassis/go-chassis/v2 v2.7.1 h1:bkYntNY0l5UVRJVQePCD+l+fR/QNqVHxnEjpJxzUBGQ=
+github.com/go-chassis/go-chassis/v2 v2.7.1/go.mod h1:uzFDzYKzpQrCff8xgPMUEi4ku0VAF6DbXdz57iXYqQM=
 github.com/go-chassis/go-restful-swagger20 v1.0.3/go.mod h1:eW62fYuzlNFDvIacB6AV8bhUDCTy4myfTCv0bT9Gbb0=
 github.com/go-chassis/go-restful-swagger20 v1.0.4-0.20220704025524-9243cbee26b7 h1:EOIGW+inOz52zh6vgr9EQHvvgL2w/VghAeCQIFOVUSE=
 github.com/go-chassis/go-restful-swagger20 v1.0.4-0.20220704025524-9243cbee26b7/go.mod h1:pSGkT+ksxlMgytyJb4IAz8aZih6OLE1++d9CE6aO9Hg=
 github.com/go-chassis/kie-client v0.0.0-20201210060018-938c7680a9ab/go.mod h1:UTdbtyN5ge/v9DmQzdVRxQP7z51Q4z6hyl+W6ZpUHFM=
-github.com/go-chassis/kie-client v0.2.0 h1:9/BXLu8HaH9b7WLIrtizfhtbBaQEZlsbsk9c8z+mhgc=
 github.com/go-chassis/kie-client v0.2.0/go.mod h1:JCyQeOZcr3ti79tc8tix0VzkC2YpB5j7PRbsOmQGcKQ=
+github.com/go-chassis/kie-client v0.2.1-0.20230916082929-a48f84588280 h1:+YrZ/HlcziWctvO6NunQ0sicBZNkBHHnNtfR1MCwNwE=
+github.com/go-chassis/kie-client v0.2.1-0.20230916082929-a48f84588280/go.mod h1:JCyQeOZcr3ti79tc8tix0VzkC2YpB5j7PRbsOmQGcKQ=
 github.com/go-chassis/openlog v1.1.2/go.mod h1:+eYCADVxWyJkwsFMUBrMxyQlNqW+UUsCxvR2LrYZUaA=
 github.com/go-chassis/openlog v1.1.3 h1:XqIOvZ8YPJ9o9lLtLBskQNNWolK5kC6a4Sv7r4s9sZ4=
 github.com/go-chassis/openlog v1.1.3/go.mod h1:+eYCADVxWyJkwsFMUBrMxyQlNqW+UUsCxvR2LrYZUaA=
@@ -559,7 +560,6 @@ github.com/konsorten/go-windows-terminal-sequences v1.0.3/go.mod h1:T0+1ngSBFLxv
 github.com/kr/fs v0.1.0/go.mod h1:FFnZGqtBN9Gxj7eW1uZ42v5BccTP0vu6NEaFoC2HwRg=
 github.com/kr/logfmt v0.0.0-20140226030751-b84e30acd515/go.mod h1:+0opPa2QZZtGFBFZlji/RkVcI2GknAs/DXo4wKdlNEc=
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=
-github.com/kr/pretty v0.2.0 h1:s5hAObm+yFO5uHYt5dYjxi2rXrsnmRpJx4OYvIWUaQs=
 github.com/kr/pretty v0.2.0/go.mod h1:ipq/a2n7PKx3OHsz4KJII5eveXtPO4qwEXGdVfWzfnI=
 github.com/kr/pty v1.1.1/go.mod h1:pFQYn66WHrOpPYNljwOMqo10TkYh1fy3cYio2l3bCsQ=
 github.com/kr/text v0.1.0/go.mod h1:4Jbv+DJW3UT/LiOwJeYQe1efqtUx/iVham/4vfdArNI=
@@ -631,6 +631,7 @@ github.com/munnerz/goautoneg v0.0.0-20120707110453-a547fc61f48d/go.mod h1:+n7T8m
 github.com/mwitkow/go-conntrack v0.0.0-20161129095857-cc309e4a2223/go.mod h1:qRWi+5nqEBWmkhHvq77mSJWrCKwh8bxhgT7d/eI7P4U=
 github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f/go.mod h1:qRWi+5nqEBWmkhHvq77mSJWrCKwh8bxhgT7d/eI7P4U=
 github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f/go.mod h1:ZdcZmHo+o7JKHSa8/e818NopupXU1YMK5fe1lsApnBw=
+github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e h1:fD57ERR4JtEqsWbfPhv4DMiApHyliiK5xCTNVSPiaAs=
 github.com/nxadm/tail v1.4.4 h1:DQuhQpB1tVlglWS2hLQ5OV6B5r8aGxSrPc5Qo6uTN78=
 github.com/nxadm/tail v1.4.4/go.mod h1:kenIhsEOeOJmVchQTgglprH7qJGnHDVpk1VPCcaMI8A=
 github.com/oklog/ulid v1.3.1/go.mod h1:CirwcVhetQ6Lv90oh/F+FBtV6XMibvdAFo93nm5qn4U=
@@ -1370,8 +1371,8 @@ google.golang.org/protobuf v1.28.1/go.mod h1:HV8QOd/L58Z+nl8r43ehVNZIU/HEI6OcFqw
 gopkg.in/alecthomas/kingpin.v2 v2.2.6/go.mod h1:FMv+mEhP44yOT+4EoQTLFTRgOQ1FBLkstjWtayDeSgw=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
-gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 h1:YR8cESwS4TdDjEe65xsg0ogRM/Nc3DYOhEAlW+xobZo=
 gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
+gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f h1:BLraFXnmrev5lT+xlilqcH8XK9/i0At2xKjWk4p6zsU=
 gopkg.in/cheggaaa/pb.v1 v1.0.28 h1:n1tBJnnK2r7g9OW2btFH91V92STTUevLXYFb8gy9EMk=
 gopkg.in/cheggaaa/pb.v1 v1.0.28/go.mod h1:V/YB90LKu/1FcN3WVnfiiE5oMCibMjukxqG/qStrOgw=
 gopkg.in/errgo.v2 v2.1.0/go.mod h1:hNsd1EY+bozCKY1Ytp96fpM3vjJbqLJn88ws8XvfDNI=
