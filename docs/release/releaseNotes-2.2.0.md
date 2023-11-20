@@ -4,7 +4,8 @@
 ## Bug
 - [SCB-2816](https://issues.apache.org/jira/browse/SCB-2816) - no log print when panic
 - [SCB-2817](https://issues.apache.org/jira/browse/SCB-2817) - syncer init failed
-- [SCB-2818](https://issues.apache.org/jira/browse/SCB-2818) - frontend SSRF
+- [SCB-2818](https://issues.apache.org/jira/browse/SCB-2818) - frontend SSRF-[**CVE-2023-44313**]
+- [SCB-2839](https://issues.apache.org/jira/browse/SCB-2839) - server information leak in dump API-[**CVE-2023-44312**]
 - [SCB-2820](https://issues.apache.org/jira/browse/SCB-2820) - return 'no permission' when discover provider in specify env
 - [SCB-2826](https://issues.apache.org/jira/browse/SCB-2826) - syncer log print typo
 - [SCB-2827](https://issues.apache.org/jira/browse/SCB-2827) - gov list return wrong kind
