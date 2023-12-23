@@ -19,9 +19,13 @@ package schema
 
 import (
 	"fmt"
-
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/server/config"
+	"strings"
 )
+
+var StorageType = ""
+var RootFilePath = ""
 
 type initFunc func(opts Options) (DAO, error)
 
@@ -41,8 +45,14 @@ func Init(opts Options) error {
 	if opts.Kind == "" {
 		return nil
 	}
+	kind := opts.Kind
+	if strings.Trim(config.GetRegistry().SchemaRootPath, " ") != "" {
+		kind = "local_with_embeded_etcd"
+		StorageType = "local"
+		RootFilePath = config.GetRegistry().SchemaRootPath
+	}
 
-	engineFunc, ok := plugins[opts.Kind]
+	engineFunc, ok := plugins[kind]
 	if !ok {
 		return fmt.Errorf("plugin implement not supported [%s]", opts.Kind)
 	}
