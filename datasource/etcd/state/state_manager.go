@@ -22,14 +22,13 @@ import (
 	"context"
 	"fmt"
 	"sync"
-	"time"
+
+	"github.com/go-chassis/foundation/gopool"
 
 	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
 	"github.com/apache/servicecomb-service-center/pkg/goutil"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/config"
-	"github.com/go-chassis/foundation/gopool"
 )
 
 type Manager struct {
@@ -108,7 +107,6 @@ func (s *Manager) stopStates() {
 
 func (s *Manager) Run() {
 	s.goroutine.Do(s.store)
-	s.goroutine.Do(s.autoClearCache)
 }
 
 func (s *Manager) store(ctx context.Context) {
@@ -128,31 +126,6 @@ func (s *Manager) store(ctx context.Context) {
 	util.SafeCloseChan(s.ready)
 
 	log.Debug("all states are ready")
-}
-
-func (s *Manager) autoClearCache(ctx context.Context) {
-	ttl := config.GetRegistry().CacheTTL
-	if ttl == 0 {
-		return
-	}
-
-	log.Info(fmt.Sprintf("start auto clear cache in %v", ttl))
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.After(ttl):
-			for _, t := range kvstore.Types {
-				cache, ok := s.getOrCreateState(t).Cache().(kvstore.Cache)
-				if !ok {
-					log.Error("the discovery adaptor does not implement the Cache", nil)
-					continue
-				}
-				cache.MarkDirty()
-			}
-			log.Warn("caches are marked dirty!")
-		}
-	}
 }
 
 func (s *Manager) Stop() {
