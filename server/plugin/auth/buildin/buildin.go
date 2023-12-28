@@ -57,6 +57,10 @@ func (ba *TokenAuthenticator) Identify(req *http.Request) error {
 
 	pattern := getRequestPattern(req)
 
+	if !rbacsvc.MustAuth(pattern) {
+		return nil
+	}
+
 	account, err := ba.mustAuth(req, pattern)
 	if account == nil || err != nil {
 		return err
