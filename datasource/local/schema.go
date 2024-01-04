@@ -20,7 +20,6 @@ package local
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/apache/servicecomb-service-center/datasource"
 	_ "github.com/apache/servicecomb-service-center/datasource"
@@ -38,11 +37,12 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
-	"syscall"
 )
 
-var mutexMap = make(map[string]*sync.Mutex)
-var mutexLock = &sync.Mutex{}
+var MutexMap = make(map[string]*sync.Mutex)
+var mutexMapLock = &sync.Mutex{}
+var rollbackMutexLock = &sync.Mutex{}
+var createDirMutexLock = &sync.Mutex{}
 
 func init() {
 	schema.Install("local_with_embeded_etcd", NewSchemaDAO)
@@ -53,6 +53,18 @@ func NewSchemaDAO(opts schema.Options) (schema.DAO, error) {
 	return &SchemaDAO{}, nil
 }
 
+func GetOrCreateMutex(path string) *sync.Mutex {
+	mutexMapLock.Lock()
+	mutex, ok := MutexMap[path]
+	if !ok {
+		mutex = &sync.Mutex{}
+		MutexMap[path] = mutex
+	}
+	mutexMapLock.Unlock()
+
+	return mutex
+}
+
 type SchemaDAO struct{}
 
 func ExistDir(path string) error {
@@ -60,6 +72,8 @@ func ExistDir(path string) error {
 	if err != nil {
 		// create the dir if not exist
 		if os.IsNotExist(err) {
+			createDirMutexLock.Lock()
+			defer createDirMutexLock.Unlock()
 			err = os.MkdirAll(path, fs.ModePerm)
 			if err != nil {
 				log.Error(fmt.Sprintf("failed to makr dir %s ", path), err)
@@ -75,10 +89,21 @@ func ExistDir(path string) error {
 }
 
 func MoveDir(srcDir string, dstDir string) (err error) {
+	srcMutex := GetOrCreateMutex(srcDir)
+	dstMutex := GetOrCreateMutex(dstDir)
+	srcMutex.Lock()
+	dstMutex.Lock()
+	defer srcMutex.Unlock()
+	defer dstMutex.Unlock()
+
 	var movedFiles []string
 	files, err := os.ReadDir(srcDir)
 	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
 		log.Error("move schema files failed ", err)
+		return err
 	}
 	for _, file := range files {
 		err = ExistDir(dstDir)
@@ -109,8 +134,14 @@ func MoveDir(srcDir string, dstDir string) (err error) {
 	return err
 }
 
-func createOrUpdateFile(filepath string, content []byte, rollbackOperations *[]FileDoRecord) error {
+func createOrUpdateFile(filepath string, content []byte, rollbackOperations *[]FileDoRecord, isRollback bool) error {
 	err := ExistDir(pathutil.Dir(filepath))
+	if !isRollback {
+		mutex := GetOrCreateMutex(pathutil.Dir(filepath))
+		mutex.Lock()
+		defer mutex.Unlock()
+	}
+
 	if err != nil {
 		log.Error(fmt.Sprintf("failed to build new schema file dir %s", filepath), err)
 		return err
@@ -123,7 +154,7 @@ func createOrUpdateFile(filepath string, content []byte, rollbackOperations *[]F
 	}
 
 	if fileExist {
-		oldcontent, err := ReadFile(filepath)
+		oldcontent, err := os.ReadFile(filepath)
 		if err != nil {
 			log.Error(fmt.Sprintf("failed to read content to file %s ", filepath), err)
 			return err
@@ -142,14 +173,21 @@ func createOrUpdateFile(filepath string, content []byte, rollbackOperations *[]F
 	return nil
 }
 
-func deleteFile(filepath string, rollbackOperations *[]FileDoRecord) error {
+func deleteFile(filepath string, rollbackOperations *[]FileDoRecord, isRollback bool) error {
+	if !isRollback {
+		mutex := GetOrCreateMutex(filepath)
+		mutex.Lock()
+		defer delete(MutexMap, filepath)
+		defer mutex.Unlock()
+	}
+
 	_, err := os.Stat(filepath)
 	if err != nil {
 		log.Error(fmt.Sprintf("file does not exist when deleting file %s ", filepath), err)
 		return nil
 	}
 
-	oldcontent, err := ReadFile(filepath)
+	oldcontent, err := os.ReadFile(filepath)
 	if err != nil {
 		log.Error(fmt.Sprintf("failed to read content to file %s ", filepath), err)
 		return err
@@ -183,7 +221,7 @@ func CleanDir(dir string) error {
 			continue
 		}
 		filepath := filepath.Join(dir, file.Name())
-		err = deleteFile(filepath, &rollbackOperations)
+		err = deleteFile(filepath, &rollbackOperations, false)
 		if err != nil {
 			break
 		}
@@ -206,6 +244,10 @@ func CleanDir(dir string) error {
 }
 
 func ReadFile(filepath string) ([]byte, error) {
+	mutex := GetOrCreateMutex(filepath)
+	mutex.Lock()
+	defer mutex.Unlock()
+
 	// check the file is empty
 	content, err := os.ReadFile(filepath)
 	if err != nil {
@@ -234,7 +276,7 @@ func ReadAllFiles(dir string) ([]string, [][]byte, error) {
 
 	var contentArray [][]byte
 	for _, file := range files {
-		content, err := os.ReadFile(file)
+		content, err := ReadFile(file)
 		if err != nil {
 			log.Error(fmt.Sprintf("failed to read content from schema file %s ", file), err)
 			return nil, nil, err
@@ -248,9 +290,9 @@ func rollback(rollbackOperations []FileDoRecord) {
 	var err error
 	for _, fileOperation := range rollbackOperations {
 		if fileOperation.content == nil {
-			err = deleteFile(fileOperation.filepath, &[]FileDoRecord{})
+			err = deleteFile(fileOperation.filepath, &[]FileDoRecord{}, true)
 		} else {
-			err = createOrUpdateFile(fileOperation.filepath, fileOperation.content, &[]FileDoRecord{})
+			err = createOrUpdateFile(fileOperation.filepath, fileOperation.content, &[]FileDoRecord{}, true)
 		}
 		if err != nil {
 			log.Error("Occur error when rolling back schema files:  ", err)
@@ -276,6 +318,9 @@ func (s *SchemaDAO) GetRef(ctx context.Context, refRequest *schema.RefRequest) (
 	content, err := ReadFile(servicepath)
 	if err != nil {
 		log.Error(fmt.Sprintf("read service[%s] schema content file [%s] failed ", serviceID, schemaID), err)
+		if os.IsNotExist(err) {
+			return nil, schema.ErrSchemaNotFound
+		}
 		return nil, err
 	}
 
@@ -357,22 +402,7 @@ func (s *SchemaDAO) DeleteRef(ctx context.Context, refRequest *schema.RefRequest
 	schemaID := refRequest.SchemaID
 	schemaPath := filepath.Join(schema.RootFilePath, domainProject, serviceID, schemaID+".json")
 
-	// get the mutex lock
-	servicepath := filepath.Join(schema.RootFilePath, domainProject, serviceID)
-
-	mutexLock.Lock()
-	mutex, ok := mutexMap[servicepath]
-	if !ok {
-		mutex = &sync.Mutex{}
-		mutexMap[servicepath] = mutex
-	}
-	mutexLock.Unlock()
-
-	// add lock
-	mutex.Lock()
-	defer mutex.Unlock()
-
-	err := deleteFile(schemaPath, &rollbackOperations)
+	err := deleteFile(schemaPath, &rollbackOperations, false)
 
 	if err != nil {
 		log.Error("Occur error when delete schema file, begain rollback... ", err)
@@ -411,28 +441,22 @@ func (s *SchemaDAO) PutContent(ctx context.Context, contentRequest *schema.PutCo
 	domainProject := util.ParseDomainProject(ctx)
 	serviceID := contentRequest.ServiceID
 	servicepath := filepath.Join(schema.RootFilePath, domainProject, serviceID)
-	mutexLock.Lock()
-	mutex, ok := mutexMap[servicepath]
-	if !ok {
-		mutex = &sync.Mutex{}
-		mutexMap[servicepath] = mutex
-	}
-	mutexLock.Unlock()
-
-	// add lock
-	mutex.Lock()
-	defer mutex.Unlock()
+	schemaPath := filepath.Join(servicepath, contentRequest.SchemaID+".json")
 
 	var err error
-
 	defer func() {
 		if err != nil {
 			rollback(rollbackOperations)
 		}
 	}()
 
+	// query service schema
+	service, serviceErr := datasource.GetMetadataManager().GetService(ctx, &discovery.GetServiceRequest{
+		ServiceId: serviceID,
+	})
+	err = serviceErr
 	if err != nil {
-		log.Error("Occur error when clean schema files before update schemas, begain rollback... ", err)
+		log.Error(fmt.Sprintf("get service[%s] failed, service not exist", serviceID), err)
 		return err
 	}
 
@@ -444,19 +468,9 @@ func (s *SchemaDAO) PutContent(ctx context.Context, contentRequest *schema.PutCo
 		return err
 	}
 
-	err = createOrUpdateFile(filepath.Join(servicepath, contentRequest.SchemaID+".json"), schemaBytes, &rollbackOperations)
+	err = createOrUpdateFile(schemaPath, schemaBytes, &rollbackOperations, false)
 	if err != nil {
 		log.Error("Occur error when create schema files when update schemas, begain rollback... ", err)
-		return err
-	}
-
-	// update service schema
-	service, serviceErr := datasource.GetMetadataManager().GetService(ctx, &discovery.GetServiceRequest{
-		ServiceId: serviceID,
-	})
-	err = serviceErr
-	if err != nil {
-		log.Error(fmt.Sprintf("get service[%s] failed when update schemas", serviceID), err)
 		return err
 	}
 
@@ -480,8 +494,13 @@ func (s *SchemaDAO) PutContent(ctx context.Context, contentRequest *schema.PutCo
 	return nil
 }
 
+// update schemas in service
 func updateServiceSchema(ctx context.Context, serviceID string, service *discovery.MicroService) error {
-	// update schemas in service
+	// get the mutex lock
+	serviceMutex := GetOrCreateMutex(serviceID)
+	serviceMutex.Lock()
+	defer serviceMutex.Unlock()
+
 	domainProject := util.ParseDomainProject(ctx)
 	body, err := json.Marshal(service)
 	if err != nil {
@@ -497,6 +516,7 @@ func updateServiceSchema(ctx context.Context, serviceID string, service *discove
 	serviceOpts, err := etcdsync.GenUpdateOpts(ctx, datasource.ResourceKV, body, etcdsync.WithOpts(map[string]string{"key": serviceKey}))
 	if err != nil {
 		log.Error("fail to create update opts", err)
+		return err
 	}
 	options = append(options, serviceOpts...)
 	err = etcdadpt.Txn(ctx, options)
@@ -508,39 +528,34 @@ func (s *SchemaDAO) PutManyContent(ctx context.Context, contentRequest *schema.P
 	rollbackOperations := []FileDoRecord{}
 	domainProject := util.ParseDomainProject(ctx)
 	serviceID := contentRequest.ServiceID
+	servicepath := filepath.Join(schema.RootFilePath, domainProject, serviceID)
 
 	if len(contentRequest.SchemaIDs) != len(contentRequest.Contents) {
 		log.Error(fmt.Sprintf("service[%s] contents request invalid", serviceID), nil)
 		return discovery.NewError(discovery.ErrInvalidParams, "contents request invalid")
 	}
 
-	// get the mutex lock
-	servicepath := filepath.Join(schema.RootFilePath, domainProject, serviceID)
-
-	mutexLock.Lock()
-	mutex, ok := mutexMap[servicepath]
-	if !ok {
-		mutex = &sync.Mutex{}
-		mutexMap[servicepath] = mutex
-	}
-	mutexLock.Unlock()
-
-	// add lock
-	mutex.Lock()
-	defer mutex.Unlock()
-
 	var err error
-
 	defer func() {
 		if err != nil {
 			rollback(rollbackOperations)
 		}
 	}()
 
+	// query service schema
+	service, serviceErr := datasource.GetMetadataManager().GetService(ctx, &discovery.GetServiceRequest{
+		ServiceId: serviceID,
+	})
+	err = serviceErr
+	if err != nil {
+		log.Error(fmt.Sprintf("get service[%s] failed, service not exist", serviceID), err)
+		return err
+	}
+
 	// get all the files under this dir
 	existedFiles, readErr := os.ReadDir(servicepath)
 	err = readErr
-	if err != nil && !errors.Is(err, syscall.ERROR_FILE_NOT_FOUND) && !errors.Is(err, syscall.ENOTDIR) {
+	if err != nil && !os.IsNotExist(err) {
 		return err
 	}
 	err = nil
@@ -551,7 +566,7 @@ func (s *SchemaDAO) PutManyContent(ctx context.Context, contentRequest *schema.P
 			continue
 		}
 		filepath := servicepath + "/" + file.Name()
-		err = deleteFile(filepath, &rollbackOperations)
+		err = deleteFile(filepath, &rollbackOperations, false)
 		if err != nil {
 			break
 		}
@@ -572,7 +587,7 @@ func (s *SchemaDAO) PutManyContent(ctx context.Context, contentRequest *schema.P
 			openlog.Error("fail to marshal kv " + err.Error())
 			return err
 		}
-		err = createOrUpdateFile(servicepath+"/"+schemaId+".json", schemaBytes, &rollbackOperations)
+		err = createOrUpdateFile(servicepath+"/"+schemaId+".json", schemaBytes, &rollbackOperations, false)
 		if err != nil {
 			break
 		}
@@ -586,13 +601,6 @@ func (s *SchemaDAO) PutManyContent(ctx context.Context, contentRequest *schema.P
 	// update service schema
 	if contentRequest.Init {
 		return nil
-	}
-	service, err := datasource.GetMetadataManager().GetService(ctx, &discovery.GetServiceRequest{
-		ServiceId: serviceID,
-	})
-	if err != nil {
-		log.Error(fmt.Sprintf("get service[%s] failed when update schemas", serviceID), err)
-		return err
 	}
 
 	service.Schemas = contentRequest.SchemaIDs

@@ -55,6 +55,8 @@ type MetadataManager struct {
 	InstanceTTL int64
 }
 
+const LOCAL = "local"
+
 // RegisterService implement:
 // 1. capsule request to etcd kv format
 // 2. invoke etcd client to store data
@@ -92,7 +94,7 @@ func (ds *MetadataManager) RegisterService(ctx context.Context, request *pb.Crea
 		return nil, pb.NewError(pb.ErrInternal, err.Error())
 	}
 
-	if schema.StorageType == "local" {
+	if schema.StorageType == LOCAL {
 		contents := make([]*schema.ContentItem, len(service.Schemas))
 		err = schema.Instance().PutManyContent(ctx, &schema.PutManyContentRequest{
 			ServiceID: service.ServiceId,
@@ -100,17 +102,20 @@ func (ds *MetadataManager) RegisterService(ctx context.Context, request *pb.Crea
 			Contents:  contents,
 			Init:      true,
 		})
-	}
+		if err != nil {
+			return nil, err
+		}
 
-	if err != nil {
-		return nil, err
+		serviceMutex := local.GetOrCreateMutex(service.ServiceId)
+		serviceMutex.Lock()
+		defer serviceMutex.Unlock()
 	}
 
 	defer func() {
-		if err != nil {
+		if schema.StorageType == LOCAL && err != nil {
 			cleanDirErr := local.CleanDir(filepath.Join(schema.RootFilePath, domainProject, service.ServiceId))
 			if cleanDirErr != nil {
-				log.Error(fmt.Sprintf("clean dir error when rollback in RegisterService"), err)
+				log.Error(fmt.Sprintf("clean dir error when rollback in RegisterService"), cleanDirErr)
 			}
 		}
 	}()
@@ -1470,25 +1475,37 @@ func (ds *MetadataManager) UnregisterService(ctx context.Context, request *pb.De
 	}
 
 	// try to delete schema files
-	if schema.StorageType == "local" {
-		err = local.MoveDir(filepath.Join(schema.RootFilePath, domainProject, serviceID), filepath.Join(schema.RootFilePath, "tmp", domainProject, serviceID))
+	if schema.StorageType == LOCAL {
+		tmpPath := filepath.Join(schema.RootFilePath, "tmp", domainProject, serviceID)
+		originPath := filepath.Join(schema.RootFilePath, domainProject, serviceID)
+
+		err = local.MoveDir(originPath, tmpPath)
 		if err != nil {
 			log.Error(fmt.Sprintf("%s micro-service[%s] failed, clean local schmea dir failed, operator: %s",
 				title, serviceID, remoteIP), err)
 			return err
 		}
+
+		serviceMutex := local.GetOrCreateMutex(serviceID)
+		serviceMutex.Lock()
+		defer serviceMutex.Unlock()
 	}
 
 	defer func() {
-		if err != nil {
-			err = local.MoveDir(filepath.Join(schema.RootFilePath, "tmp", domainProject, serviceID), filepath.Join(schema.RootFilePath, domainProject, serviceID))
+		if schema.StorageType == LOCAL {
+			tmpPath := filepath.Join(schema.RootFilePath, "tmp", domainProject, serviceID)
+			originPath := filepath.Join(schema.RootFilePath, domainProject, serviceID)
+			var rollbackErr error
 			if err != nil {
-				log.Error("clean dir error when rollback in UnregisterService", err)
-			}
-		} else {
-			err = local.CleanDir(filepath.Join(schema.RootFilePath, "tmp", domainProject, serviceID))
-			if err != nil {
-				log.Error("clean tmp dir error when rollback in UnregisterService", err)
+				rollbackErr = local.MoveDir(tmpPath, originPath)
+				if rollbackErr != nil {
+					log.Error("clean dir error when rollback in UnregisterService", err)
+				}
+			} else {
+				rollbackErr = local.CleanDir(tmpPath)
+				if rollbackErr != nil {
+					log.Error("clean tmp dir error when rollback in UnregisterService", err)
+				}
 			}
 		}
 	}()
