@@ -59,9 +59,16 @@ func ExistDir(path string) error {
 	_, err := os.ReadDir(path)
 	if err != nil {
 		// create the dir if not exist
-		err = os.MkdirAll(path, fs.ModePerm)
+		if os.IsNotExist(err) {
+			err = os.MkdirAll(path, fs.ModePerm)
+			if err != nil {
+				log.Error(fmt.Sprintf("failed to makr dir %s ", path), err)
+				return err
+			}
+			return nil
+		}
 		if err != nil {
-			log.Error(fmt.Sprintf("failed to makr dir %s ", path), err)
+			log.Error(fmt.Sprintf("failed to read dir %s ", path), err)
 		}
 	}
 	return err
@@ -71,15 +78,18 @@ func MoveDir(srcDir string, dstDir string) (err error) {
 	var movedFiles []string
 	files, err := os.ReadDir(srcDir)
 	if err != nil {
-		log.Error(fmt.Sprintf("move schema files failed "), err)
+		log.Error("move schema files failed ", err)
 	}
 	for _, file := range files {
-		ExistDir(dstDir)
+		err = ExistDir(dstDir)
+		if err != nil {
+			return err
+		}
 		srcFile := filepath.Join(srcDir, file.Name())
 		dstFile := filepath.Join(dstDir, file.Name())
 		err = os.Rename(srcFile, dstFile)
 		if err != nil {
-			log.Error(fmt.Sprintf("move schema files failed "), err)
+			log.Error("move schema files failed ", err)
 			break
 		}
 		movedFiles = append(movedFiles, file.Name())
@@ -90,13 +100,16 @@ func MoveDir(srcDir string, dstDir string) (err error) {
 		for _, fileName := range movedFiles {
 			srcFile := filepath.Join(srcDir, fileName)
 			dstFile := filepath.Join(dstDir, fileName)
-			os.Rename(dstFile, srcFile)
+			err = os.Rename(dstFile, srcFile)
+			if err != nil {
+				log.Error("Occur error when move schema rollback... ", err)
+			}
 		}
 	}
 	return err
 }
 
-func createOrUpdateFile(filepath string, content []byte, rollbackOperations []FileDoRecord) error {
+func createOrUpdateFile(filepath string, content []byte, rollbackOperations *[]FileDoRecord) error {
 	err := ExistDir(pathutil.Dir(filepath))
 	if err != nil {
 		log.Error(fmt.Sprintf("failed to build new schema file dir %s", filepath), err)
@@ -115,9 +128,9 @@ func createOrUpdateFile(filepath string, content []byte, rollbackOperations []Fi
 			log.Error(fmt.Sprintf("failed to read content to file %s ", filepath), err)
 			return err
 		}
-		rollbackOperations = append(rollbackOperations, FileDoRecord{filepath: filepath, content: oldcontent})
+		*rollbackOperations = append(*rollbackOperations, FileDoRecord{filepath: filepath, content: oldcontent})
 	} else {
-		rollbackOperations = append(rollbackOperations, FileDoRecord{filepath: filepath, content: nil})
+		*rollbackOperations = append(*rollbackOperations, FileDoRecord{filepath: filepath, content: nil})
 	}
 
 	err = os.WriteFile(filepath, content, 0666)
@@ -129,7 +142,7 @@ func createOrUpdateFile(filepath string, content []byte, rollbackOperations []Fi
 	return nil
 }
 
-func deleteFile(filepath string, rollbackOperations []FileDoRecord) error {
+func deleteFile(filepath string, rollbackOperations *[]FileDoRecord) error {
 	_, err := os.Stat(filepath)
 	if err != nil {
 		log.Error(fmt.Sprintf("file does not exist when deleting file %s ", filepath), err)
@@ -142,7 +155,7 @@ func deleteFile(filepath string, rollbackOperations []FileDoRecord) error {
 		return err
 	}
 
-	rollbackOperations = append(rollbackOperations, FileDoRecord{filepath: filepath, content: oldcontent})
+	*rollbackOperations = append(*rollbackOperations, FileDoRecord{filepath: filepath, content: oldcontent})
 
 	err = os.Remove(filepath)
 	if err != nil {
@@ -170,7 +183,7 @@ func CleanDir(dir string) error {
 			continue
 		}
 		filepath := filepath.Join(dir, file.Name())
-		err = deleteFile(filepath, rollbackOperations)
+		err = deleteFile(filepath, &rollbackOperations)
 		if err != nil {
 			break
 		}
@@ -235,9 +248,9 @@ func rollback(rollbackOperations []FileDoRecord) {
 	var err error
 	for _, fileOperation := range rollbackOperations {
 		if fileOperation.content == nil {
-			err = deleteFile(fileOperation.filepath, []FileDoRecord{})
+			err = deleteFile(fileOperation.filepath, &[]FileDoRecord{})
 		} else {
-			err = createOrUpdateFile(fileOperation.filepath, fileOperation.content, []FileDoRecord{})
+			err = createOrUpdateFile(fileOperation.filepath, fileOperation.content, &[]FileDoRecord{})
 		}
 		if err != nil {
 			log.Error("Occur error when rolling back schema files:  ", err)
@@ -359,7 +372,7 @@ func (s *SchemaDAO) DeleteRef(ctx context.Context, refRequest *schema.RefRequest
 	mutex.Lock()
 	defer mutex.Unlock()
 
-	err := deleteFile(schemaPath, rollbackOperations)
+	err := deleteFile(schemaPath, &rollbackOperations)
 
 	if err != nil {
 		log.Error("Occur error when delete schema file, begain rollback... ", err)
@@ -431,7 +444,7 @@ func (s *SchemaDAO) PutContent(ctx context.Context, contentRequest *schema.PutCo
 		return err
 	}
 
-	err = createOrUpdateFile(filepath.Join(servicepath, contentRequest.SchemaID+".json"), schemaBytes, rollbackOperations)
+	err = createOrUpdateFile(filepath.Join(servicepath, contentRequest.SchemaID+".json"), schemaBytes, &rollbackOperations)
 	if err != nil {
 		log.Error("Occur error when create schema files when update schemas, begain rollback... ", err)
 		return err
@@ -486,7 +499,7 @@ func updateServiceSchema(ctx context.Context, serviceID string, service *discove
 		log.Error("fail to create update opts", err)
 	}
 	options = append(options, serviceOpts...)
-	etcdadpt.Txn(ctx, options)
+	err = etcdadpt.Txn(ctx, options)
 
 	return err
 }
@@ -538,7 +551,7 @@ func (s *SchemaDAO) PutManyContent(ctx context.Context, contentRequest *schema.P
 			continue
 		}
 		filepath := servicepath + "/" + file.Name()
-		err = deleteFile(filepath, rollbackOperations)
+		err = deleteFile(filepath, &rollbackOperations)
 		if err != nil {
 			break
 		}
@@ -559,7 +572,7 @@ func (s *SchemaDAO) PutManyContent(ctx context.Context, contentRequest *schema.P
 			openlog.Error("fail to marshal kv " + err.Error())
 			return err
 		}
-		err = createOrUpdateFile(servicepath+"/"+schemaId+".json", schemaBytes, rollbackOperations)
+		err = createOrUpdateFile(servicepath+"/"+schemaId+".json", schemaBytes, &rollbackOperations)
 		if err != nil {
 			break
 		}

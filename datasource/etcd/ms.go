@@ -108,7 +108,10 @@ func (ds *MetadataManager) RegisterService(ctx context.Context, request *pb.Crea
 
 	defer func() {
 		if err != nil {
-			local.CleanDir(filepath.Join(schema.RootFilePath, domainProject, service.ServiceId))
+			cleanDirErr := local.CleanDir(filepath.Join(schema.RootFilePath, domainProject, service.ServiceId))
+			if cleanDirErr != nil {
+				log.Error(fmt.Sprintf("clean dir error when rollback in RegisterService"), err)
+			}
 		}
 	}()
 
@@ -1468,7 +1471,7 @@ func (ds *MetadataManager) UnregisterService(ctx context.Context, request *pb.De
 
 	// try to delete schema files
 	if schema.StorageType == "local" {
-		local.MoveDir(filepath.Join(schema.RootFilePath, domainProject, serviceID), filepath.Join(schema.RootFilePath, "tmp", domainProject, serviceID))
+		err = local.MoveDir(filepath.Join(schema.RootFilePath, domainProject, serviceID), filepath.Join(schema.RootFilePath, "tmp", domainProject, serviceID))
 		if err != nil {
 			log.Error(fmt.Sprintf("%s micro-service[%s] failed, clean local schmea dir failed, operator: %s",
 				title, serviceID, remoteIP), err)
@@ -1478,9 +1481,15 @@ func (ds *MetadataManager) UnregisterService(ctx context.Context, request *pb.De
 
 	defer func() {
 		if err != nil {
-			local.MoveDir(filepath.Join(schema.RootFilePath, "tmp", domainProject, serviceID), filepath.Join(schema.RootFilePath, domainProject, serviceID))
+			err = local.MoveDir(filepath.Join(schema.RootFilePath, "tmp", domainProject, serviceID), filepath.Join(schema.RootFilePath, domainProject, serviceID))
+			if err != nil {
+				log.Error("clean dir error when rollback in UnregisterService", err)
+			}
 		} else {
-			local.CleanDir(filepath.Join(schema.RootFilePath, "tmp", domainProject, serviceID))
+			err = local.CleanDir(filepath.Join(schema.RootFilePath, "tmp", domainProject, serviceID))
+			if err != nil {
+				log.Error("clean tmp dir error when rollback in UnregisterService", err)
+			}
 		}
 	}()
 
