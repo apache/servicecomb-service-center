@@ -57,10 +57,6 @@ func (ba *TokenAuthenticator) Identify(req *http.Request) error {
 
 	pattern := getRequestPattern(req)
 
-	if !rbacsvc.MustAuth(pattern) {
-		return nil
-	}
-
 	account, err := ba.mustAuth(req, pattern)
 	if account == nil || err != nil {
 		return err
@@ -94,14 +90,14 @@ func getRequestPattern(req *http.Request) string {
 }
 
 func (ba *TokenAuthenticator) mustAuth(req *http.Request, pattern string) (*rbacmodel.Account, error) {
+	if !rbacsvc.MustAuth(pattern) {
+		return nil, nil
+	}
 	account, err := ba.VerifyRequest(req)
 	if err == nil {
 		return account, nil
 	}
-	if rbacsvc.MustAuth(pattern) {
-		return nil, err
-	}
-	return nil, nil
+	return nil, err
 }
 
 func (ba *TokenAuthenticator) VerifyRequest(req *http.Request) (*rbacmodel.Account, error) {
