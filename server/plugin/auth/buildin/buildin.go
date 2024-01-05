@@ -90,14 +90,10 @@ func getRequestPattern(req *http.Request) string {
 }
 
 func (ba *TokenAuthenticator) mustAuth(req *http.Request, pattern string) (*rbacmodel.Account, error) {
-	account, err := ba.VerifyRequest(req)
-	if err == nil {
-		return account, nil
+	if !rbacsvc.MustAuth(pattern) {
+		return nil, nil
 	}
-	if rbacsvc.MustAuth(pattern) {
-		return nil, err
-	}
-	return nil, nil
+	return ba.VerifyRequest(req)
 }
 
 func (ba *TokenAuthenticator) VerifyRequest(req *http.Request) (*rbacmodel.Account, error) {
