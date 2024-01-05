@@ -93,11 +93,7 @@ func (ba *TokenAuthenticator) mustAuth(req *http.Request, pattern string) (*rbac
 	if !rbacsvc.MustAuth(pattern) {
 		return nil, nil
 	}
-	account, err := ba.VerifyRequest(req)
-	if err == nil {
-		return account, nil
-	}
-	return nil, err
+	return ba.VerifyRequest(req)
 }
 
 func (ba *TokenAuthenticator) VerifyRequest(req *http.Request) (*rbacmodel.Account, error) {
