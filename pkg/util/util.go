@@ -61,7 +61,7 @@ func StringToBytesWithNoCopy(s string) []byte {
 		&struct {
 			string
 			Cap int
-		}{str, len(str)},
+		}{s, len(s)},
 	))
 }
 
