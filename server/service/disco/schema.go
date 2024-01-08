@@ -32,6 +32,8 @@ import (
 	pb "github.com/go-chassis/cari/discovery"
 )
 
+const LOCAL = "local"
+
 // ExistSchema only return the summary without content if schema exist
 func ExistSchema(ctx context.Context, request *pb.GetSchemaRequest) (*pb.Schema, error) {
 	remoteIP := util.GetIPFromContext(ctx)
@@ -48,6 +50,7 @@ func ExistSchema(ctx context.Context, request *pb.GetSchemaRequest) (*pb.Schema,
 		ServiceID: serviceID,
 		SchemaID:  schemaID,
 	})
+
 	if err != nil {
 		if errors.Is(err, schema.ErrSchemaNotFound) {
 			return existOldSchema(ctx, request)
@@ -56,6 +59,16 @@ func ExistSchema(ctx context.Context, request *pb.GetSchemaRequest) (*pb.Schema,
 			serviceID, schemaID, remoteIP), nil)
 		return nil, err
 	}
+
+	// return directly when using local fs
+	if schema.StorageType == LOCAL {
+		return &pb.Schema{
+			SchemaId: schemaID,
+			Schema:   ref.Content,
+			Summary:  ref.Summary,
+		}, nil
+	}
+
 	return &pb.Schema{
 		SchemaId: schemaID,
 		Summary:  ref.Summary,
@@ -92,6 +105,7 @@ func GetSchema(ctx context.Context, request *pb.GetSchemaRequest) (*pb.Schema, e
 		ServiceID: serviceID,
 		SchemaID:  schemaID,
 	})
+
 	if err != nil {
 		if errors.Is(err, schema.ErrSchemaNotFound) {
 			return getOldSchema(ctx, request)
@@ -99,6 +113,15 @@ func GetSchema(ctx context.Context, request *pb.GetSchemaRequest) (*pb.Schema, e
 		log.Error(fmt.Sprintf("get service[%s] schema-ref[%s] failed, operator: %s",
 			serviceID, schemaID, remoteIP), nil)
 		return nil, err
+	}
+
+	// return directly when using local fs
+	if schema.StorageType == LOCAL {
+		return &pb.Schema{
+			SchemaId: schemaID,
+			Schema:   ref.Content,
+			Summary:  ref.Summary,
+		}, nil
 	}
 
 	content, err := schema.Instance().GetContent(ctx, &schema.ContentRequest{
@@ -138,15 +161,37 @@ func ListSchema(ctx context.Context, request *pb.GetAllSchemaRequest) ([]*pb.Sch
 		return nil, pb.NewError(pb.ErrInvalidParams, checkErr.Error())
 	}
 
-	schemaIDs, err := getOldSchemaIDs(ctx, serviceID)
+	schemaRefs, err := schema.Instance().ListRef(ctx, &schema.RefRequest{
+		ServiceID: serviceID,
+	})
 	if err != nil {
 		log.Error(fmt.Sprintf("list service[%s] schemaIDs failed, operator: %s", serviceID, remoteIP), nil)
 		return nil, err
 	}
 
-	requests, err := mergeRequests(ctx, serviceID, schemaIDs)
+	// return directly when using local fs
+	if schema.StorageType == LOCAL {
+		schemas := make([]*pb.Schema, 0, len(schemaRefs))
+		for _, ref := range schemaRefs {
+			item := &pb.Schema{
+				SchemaId: ref.SchemaID,
+				Summary:  ref.Summary,
+				Schema:   ref.Content,
+			}
+			schemas = append(schemas, item)
+		}
+		return schemas, nil
+	}
+
+	oldSchemaIDs, err := getOldSchemaIDs(ctx, serviceID)
 	if err != nil {
-		log.Error(fmt.Sprintf("list service[%s] schema-refs failed, operator: %s", serviceID, remoteIP), nil)
+		log.Error(fmt.Sprintf("list service[%s] schemaIDs failed, operator: %s", serviceID, remoteIP), err)
+		return nil, err
+	}
+
+	requests, err := mergeRequests(ctx, serviceID, schemaRefs, oldSchemaIDs)
+	if err != nil {
+		log.Error(fmt.Sprintf("list service[%s] schema-refs failed, operator: %s", serviceID, remoteIP), err)
 		return nil, err
 	}
 
@@ -190,14 +235,7 @@ func getOldSchemaIDs(ctx context.Context, serviceID string) ([]string, error) {
 	return schemaIDs, nil
 }
 
-func mergeRequests(ctx context.Context, serviceID string, oldSchemaIDs []string) ([]*pb.GetSchemaRequest, error) {
-	refs, err := schema.Instance().ListRef(ctx, &schema.RefRequest{
-		ServiceID: serviceID,
-	})
-	if err != nil {
-		return nil, err
-	}
-
+func mergeRequests(ctx context.Context, serviceID string, refs []*schema.Ref, oldSchemaIDs []string) ([]*pb.GetSchemaRequest, error) {
 	set := mapset.NewSet()
 	for _, schemaID := range oldSchemaIDs {
 		set.Add(schemaID)
@@ -237,6 +275,7 @@ func DeleteSchema(ctx context.Context, request *pb.DeleteSchemaRequest) error {
 		ServiceID: request.ServiceId,
 		SchemaID:  request.SchemaId,
 	})
+
 	if err != nil {
 		if errors.Is(err, schema.ErrSchemaNotFound) {
 			return deleteOldSchema(ctx, request)
@@ -246,6 +285,11 @@ func DeleteSchema(ctx context.Context, request *pb.DeleteSchemaRequest) error {
 		return err
 	}
 	log.Info(fmt.Sprintf("delete service[%s] schema[%s], operator: %s", request.ServiceId, request.SchemaId, remoteIP))
+
+	// return directly when using local fs
+	if schema.StorageType == LOCAL {
+		return err
+	}
 
 	err = deleteOldSchema(ctx, request)
 	if err != nil && !errors.Is(err, schema.ErrSchemaNotFound) {
