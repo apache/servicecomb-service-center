@@ -183,7 +183,8 @@ func loadServerConfig() ServerConfig {
 			GlobalVisible: GetString("registry.service.globalVisible", "", WithENV("CSE_SHARED_SERVICES")),
 			InstanceTTL:   GetInt64("registry.instance.ttl", 0, WithENV("INSTANCE_TTL")),
 
-			SchemaDisable: GetBool("registry.schema.disable", false, WithENV("SCHEMA_DISABLE")),
+			SchemaDisable:  GetBool("registry.schema.disable", false, WithENV("SCHEMA_DISABLE")),
+			SchemaRootPath: GetString("registry.schema.schemaRootPath", "", WithENV("SCHEMA_ROOT_PATH")),
 
 			EnableRBAC: GetBool("rbac.enable", false, WithStandby("rbac_enabled")),
 		},
