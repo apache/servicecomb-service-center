@@ -29,8 +29,8 @@ import (
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/event"
 	"github.com/apache/servicecomb-service-center/server/pubsub/ws"
-	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/net/websocket"
 )
 
 var closeCh = make(chan struct{})
@@ -42,8 +42,8 @@ func init() {
 
 type watcherConn struct {
 	MockServer *httptest.Server
-	ClientConn *websocket.Conn
-	ServerConn *websocket.Conn
+	ClientConn websocket.Conn
+	ServerConn websocket.Conn
 }
 
 func (h *watcherConn) Test() {

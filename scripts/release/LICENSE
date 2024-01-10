@@ -297,11 +297,11 @@ For details, see https://github.com/golang/protobuf
 You can find a copy of the License at licenses/LICENSE-golang-protobuf
 
 ================================================================
-For gorilla/websocket (ea4d1f681babbce9545c9c5f3d5194a789c89f5b)
+For golang.org/x/net/websocket (v0.7.0)
 ================================================================
-This product bundles gorilla/websocket which is licensed under
+This product bundles golang.org/x/net/websocket which is licensed under
 the 2-Clause BSD License.
-For details, see https://github.com/gorilla/websocket
+For details, see https://golang.org/x/net/websocket
 You can find a copy of the License at licenses/LICENSE-gorilla-websocket
 
 ================================================================

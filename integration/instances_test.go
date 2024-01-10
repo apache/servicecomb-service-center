@@ -34,9 +34,9 @@ import (
 
 	. "github.com/apache/servicecomb-service-center/integration"
 	"github.com/go-chassis/cari/discovery"
-	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/assert"
 	"github.com/widuu/gojson"
+	"golang.org/x/net/websocket"
 )
 
 var _ = Describe("MicroService Api Test", func() {

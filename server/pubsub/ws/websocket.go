@@ -27,7 +27,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	pb "github.com/go-chassis/cari/discovery"
-	"github.com/gorilla/websocket"
+	"golang.org/x/net/websocket"
 )
 
 const Websocket = "Websocket"
@@ -36,7 +36,7 @@ var errServiceNotExist = errors.New("service does not exist")
 
 type WebSocket struct {
 	Options
-	Conn          *websocket.Conn
+	Conn          websocket.Conn
 	RemoteAddr    string
 	DomainProject string
 	ConsumerID    string
@@ -196,7 +196,7 @@ func (wh *WebSocket) SetIdle() {
 	}
 }
 
-func NewWebSocket(domainProject, serviceID string, conn *websocket.Conn) *WebSocket {
+func NewWebSocket(domainProject, serviceID string, conn websocket.Conn) *WebSocket {
 	ws := &WebSocket{
 		Options:       ToOptions(),
 		DomainProject: domainProject,

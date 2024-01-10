@@ -23,7 +23,7 @@ import (
 	"fmt"
 
 	pb "github.com/go-chassis/cari/discovery"
-	"github.com/gorilla/websocket"
+	"golang.org/x/net/websocket"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"

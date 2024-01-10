@@ -19,13 +19,12 @@ package client
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/cari/pkg/errsvc"
-	"github.com/gorilla/websocket"
+	"golang/x/net/websocket"
 )
 
 const (
@@ -42,20 +41,13 @@ func (c *Client) Watch(ctx context.Context, domain, project, selfServiceID strin
 	}
 
 	for {
-		messageType, message, err := conn.ReadMessage()
+		var message string
+		err := websocket.JSON.Receive(conn, &message)
 		if err != nil {
 			log.Println(err)
 			break
 		}
-		if messageType == websocket.TextMessage {
-			data := &pb.WatchInstanceResponse{}
-			err := json.Unmarshal(message, data)
-			if err != nil {
-				log.Println(err)
-				break
-			}
-			callback(data)
-		}
+		callback(message)
 	}
 	return pb.NewError(pb.ErrInternal, err.Error())
 }

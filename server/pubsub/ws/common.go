@@ -27,10 +27,10 @@ import (
 	"github.com/apache/servicecomb-service-center/server/event"
 	"github.com/apache/servicecomb-service-center/server/metrics"
 	"github.com/go-chassis/foundation/gopool"
-	"github.com/gorilla/websocket"
+	"golang.org/x/net/websocket"
 )
 
-func Watch(ctx context.Context, serviceID string, conn *websocket.Conn) {
+func Watch(ctx context.Context, serviceID string, conn websocket.Conn) {
 	domainProject := util.ParseDomainProject(ctx)
 	domain := util.ParseDomain(ctx)
 

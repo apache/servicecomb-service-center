@@ -7,6 +7,7 @@ require (
 	github.com/go-chassis/openlog v1.1.3
 	github.com/gorilla/mux v1.8.0
 	github.com/rs/cors v1.8.2
+	golang.org/x/net/websocket v0.7.0
 )
 
 require (
@@ -24,7 +25,6 @@ require (
 	github.com/go-chassis/seclog v1.3.1-0.20210917082355-52c40864f240 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.4.3 // indirect
-	github.com/gorilla/websocket v1.4.3-0.20210424162022-e8629af678b7 // indirect
 	github.com/hashicorp/go-version v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.10 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect

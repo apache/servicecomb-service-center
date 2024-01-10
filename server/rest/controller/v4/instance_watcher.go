@@ -26,7 +26,7 @@ import (
 	"github.com/apache/servicecomb-service-center/server/pubsub"
 	"github.com/apache/servicecomb-service-center/server/service/heartbeat"
 	pb "github.com/go-chassis/cari/discovery"
-	"github.com/gorilla/websocket"
+	"golang.org/x/net/websocket"
 )
 
 const (
@@ -50,7 +50,7 @@ func (s *WatchService) URLPatterns() []rest.Route {
 	}
 }
 
-func upgrade(w http.ResponseWriter, r *http.Request) (*websocket.Conn, error) {
+func upgrade(w http.ResponseWriter, r *http.Request) (websocket.Conn, error) {
 	var upgrader = websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool {
 			return true
