@@ -60,7 +60,7 @@ func toString(in *discovery.MicroServiceKey) string {
 	return path.GenerateProviderDependencyRuleKey(in.Tenant, in)
 }
 
-func ParseAddOrUpdateRules(ctx context.Context, dep *Dependency, oldProviderRules *discovery.MicroServiceDependency) {
+func ParseAddOrUpdateRules(_ context.Context, dep *Dependency, oldProviderRules *discovery.MicroServiceDependency) {
 	deleteDependencyRuleList := make([]*discovery.MicroServiceKey, 0, len(oldProviderRules.Dependency))
 	createDependencyRuleList := make([]*discovery.MicroServiceKey, 0, len(dep.ProvidersRule))
 	existDependencyRuleList := make([]*discovery.MicroServiceKey, 0, len(oldProviderRules.Dependency))
@@ -83,7 +83,7 @@ func ParseAddOrUpdateRules(ctx context.Context, dep *Dependency, oldProviderRule
 	setDep(dep, createDependencyRuleList, existDependencyRuleList, deleteDependencyRuleList)
 }
 
-func ParseOverrideRules(ctx context.Context, dep *Dependency, oldProviderRules *discovery.MicroServiceDependency) {
+func ParseOverrideRules(_ context.Context, dep *Dependency, oldProviderRules *discovery.MicroServiceDependency) {
 	deleteDependencyRuleList := make([]*discovery.MicroServiceKey, 0, len(oldProviderRules.Dependency))
 	createDependencyRuleList := make([]*discovery.MicroServiceKey, 0, len(dep.ProvidersRule))
 	existDependencyRuleList := make([]*discovery.MicroServiceKey, 0, len(oldProviderRules.Dependency))

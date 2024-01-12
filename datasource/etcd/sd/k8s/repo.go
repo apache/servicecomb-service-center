@@ -37,6 +37,6 @@ func (r *Repository) New(t kvstore.Type, cfg *kvstore.Options) state.State {
 	return adaptor.NewK8sAdaptor(t, cfg)
 }
 
-func NewRepository(opts state.Config) state.Repository {
+func NewRepository(_ state.Config) state.Repository {
 	return &Repository{}
 }

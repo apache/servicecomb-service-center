@@ -58,7 +58,7 @@ func (h *HeartBeatCache) Heartbeat(ctx context.Context, request *pb.HeartbeatReq
 }
 
 // CheckInstance func is to add instance related information to the cache
-func (h *HeartBeatCache) CheckInstance(ctx context.Context, instance *pb.MicroServiceInstance) error {
+func (h *HeartBeatCache) CheckInstance(_ context.Context, instance *pb.MicroServiceInstance) error {
 	return h.Cfg.AddHeartbeatTask(instance.ServiceId, instance.InstanceId, instance.HealthCheck.Interval*(instance.HealthCheck.Times+1))
 }
 

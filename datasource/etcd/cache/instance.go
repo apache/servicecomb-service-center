@@ -96,8 +96,8 @@ func (f *FindInstancesCache) GetWithProviderID(ctx context.Context, consumer *pb
 func (f *FindInstancesCache) Remove(provider *pb.MicroServiceKey) {
 	f.Tree.Remove(context.WithValue(context.Background(), CtxProviderKey, provider))
 	if len(provider.Alias) > 0 {
-		copy := *provider
-		copy.ServiceName = copy.Alias
-		f.Tree.Remove(context.WithValue(context.Background(), CtxProviderKey, &copy))
+		copyProvider := *provider
+		copyProvider.ServiceName = copyProvider.Alias
+		f.Tree.Remove(context.WithValue(context.Background(), CtxProviderKey, &copyProvider))
 	}
 }

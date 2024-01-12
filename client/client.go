@@ -35,7 +35,7 @@ type Client struct {
 	Cfg Config
 }
 
-func (c *Client) CommonHeaders(ctx context.Context) http.Header {
+func (c *Client) CommonHeaders(_ context.Context) http.Header {
 	var headers = make(http.Header)
 	// TODO overwrote by context values
 	if len(c.Cfg.Token) > 0 {

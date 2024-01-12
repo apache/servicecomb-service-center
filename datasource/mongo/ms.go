@@ -139,7 +139,7 @@ func createServiceTxn(ctx context.Context, request *discovery.CreateServiceReque
 	})
 }
 
-func (ds *MetadataManager) ListService(ctx context.Context, request *discovery.GetServicesRequest) (*discovery.GetServicesResponse, error) {
+func (ds *MetadataManager) ListService(ctx context.Context, _ *discovery.GetServicesRequest) (*discovery.GetServicesResponse, error) {
 	services, err := GetAllMicroServicesByDomainProject(ctx)
 	if err != nil {
 		return nil, discovery.NewError(discovery.ErrInternal, "get services data failed.")
@@ -391,7 +391,7 @@ func updateServiceTxn(ctx context.Context, request *discovery.UpdateServiceProps
 	})
 }
 
-func (ds *MetadataManager) GetOverview(ctx context.Context, request *discovery.GetServicesRequest) (
+func (ds *MetadataManager) GetOverview(ctx context.Context, _ *discovery.GetServicesRequest) (
 	*discovery.Statistics, error) {
 	ctx = util.WithCacheOnly(ctx)
 	st, err := statistics(ctx, false)
@@ -1070,7 +1070,7 @@ func (ds *MetadataManager) ListInstance(ctx context.Context, request *discovery.
 	}, nil
 }
 
-func (ds *MetadataManager) ListManyInstances(ctx context.Context, request *discovery.GetAllInstancesRequest) (*discovery.GetAllInstancesResponse, error) {
+func (ds *MetadataManager) ListManyInstances(ctx context.Context, _ *discovery.GetAllInstancesRequest) (*discovery.GetAllInstancesResponse, error) {
 	findRes, err := GetInstances(ctx)
 	if err != nil {
 		return nil, err
@@ -1241,10 +1241,9 @@ func (ds *MetadataManager) SendManyHeartbeat(ctx context.Context, request *disco
 			log.Warn(fmt.Sprintf("instance[%s/%s] is duplicate request heartbeat set",
 				heartbeatElement.ServiceId, heartbeatElement.InstanceId))
 			continue
-		} else {
-			existFlag[heartbeatElement.ServiceId+heartbeatElement.InstanceId] = true
-			noMultiCounter++
 		}
+		existFlag[heartbeatElement.ServiceId+heartbeatElement.InstanceId] = true
+		noMultiCounter++
 		gopool.Go(getHeartbeatFunc(ctx, domainProject, instancesHbRst, heartbeatElement))
 	}
 
@@ -1511,7 +1510,7 @@ func KeepAliveLease(ctx context.Context, request *discovery.HeartbeatRequest) er
 	return nil
 }
 
-func getHeartbeatFunc(ctx context.Context, domainProject string, instancesHbRst chan<- *discovery.InstanceHbRst, element *discovery.HeartbeatSetElement) func(context.Context) {
+func getHeartbeatFunc(ctx context.Context, _ string, instancesHbRst chan<- *discovery.InstanceHbRst, element *discovery.HeartbeatSetElement) func(context.Context) {
 	return func(_ context.Context) {
 		hbRst := &discovery.InstanceHbRst{
 			ServiceId:  element.ServiceId,
@@ -1646,7 +1645,7 @@ func allowAcrossDimension(ctx context.Context, providerService *model.Service, c
 	return nil
 }
 
-func DeleteDependencyForDeleteService(domainProject string, serviceID string, service *discovery.MicroServiceKey) error {
+func DeleteDependencyForDeleteService(domainProject string, _ string, service *discovery.MicroServiceKey) error {
 	conDep := new(discovery.ConsumerDependency)
 	conDep.Consumer = service
 	conDep.Providers = []*discovery.MicroServiceKey{}
@@ -1678,6 +1677,6 @@ func (ds *MetadataManager) Statistics(ctx context.Context, withShared bool) (*di
 	return statistics(ctx, withShared)
 }
 
-func (ds *MetadataManager) UpdateManyInstanceStatus(ctx context.Context, match *datasource.MatchPolicy, status string) error {
+func (ds *MetadataManager) UpdateManyInstanceStatus(_ context.Context, _ *datasource.MatchPolicy, _ string) error {
 	return nil
 }

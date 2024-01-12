@@ -62,7 +62,7 @@ func (s *baseSubscriber) Err() error             { return s.err }
 func (s *baseSubscriber) SetError(err error)     { s.err = err }
 func (s *baseSubscriber) Close()                 {}
 func (s *baseSubscriber) OnAccept()              {}
-func (s *baseSubscriber) OnMessage(job Event) {
+func (s *baseSubscriber) OnMessage(_ Event) {
 	s.SetError(errors.New("do not call base notifier OnMessage method"))
 }
 

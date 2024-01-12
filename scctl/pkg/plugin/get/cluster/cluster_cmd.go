@@ -42,7 +42,7 @@ func NewClusterCommand(parent *cobra.Command) *cobra.Command {
 	return cmd
 }
 
-func CommandFunc(_ *cobra.Command, args []string) {
+func CommandFunc(_ *cobra.Command, _ []string) {
 	scClient, err := client.NewSCClient(cmd.ScClientConfig)
 	if err != nil {
 		cmd.StopAndExit(cmd.ExitError, err)

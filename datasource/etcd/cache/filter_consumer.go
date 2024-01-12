@@ -30,7 +30,7 @@ func (f *ConsumerFilter) Name(ctx context.Context, _ *cache.Node) string {
 	return ctx.Value(CtxConsumerID).(string)
 }
 
-func (f *ConsumerFilter) Init(ctx context.Context, parent *cache.Node) (node *cache.Node, err error) {
+func (f *ConsumerFilter) Init(_ context.Context, _ *cache.Node) (node *cache.Node, err error) {
 	node = cache.NewNode()
 	node.Cache.Set(DepResult, &DependencyRuleItem{})
 	return
