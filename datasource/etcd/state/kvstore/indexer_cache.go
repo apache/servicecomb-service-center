@@ -33,7 +33,7 @@ type CacheIndexer struct {
 	Cache CacheReader
 }
 
-func (i *CacheIndexer) Search(ctx context.Context, opts ...etcdadpt.OpOption) (resp *Response, _ error) {
+func (i *CacheIndexer) Search(_ context.Context, opts ...etcdadpt.OpOption) (resp *Response, _ error) {
 	op := etcdadpt.OpGet(opts...)
 	if op.Prefix {
 		resp = i.searchByPrefix(op)

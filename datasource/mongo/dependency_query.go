@@ -325,7 +325,7 @@ func findServiceKeysByAlias(ctx context.Context, key *discovery.MicroServiceKey,
 
 type ServiceVersionFilter func(ctx context.Context, filter bson.D) ([]string, error)
 
-func findServiceKeys(ctx context.Context, version string, filter bson.D) (newFilter bson.D) {
+func findServiceKeys(_ context.Context, version string, filter bson.D) (newFilter bson.D) {
 	filter = append(filter, bson.E{Key: util.ConnectWithDot([]string{model.ColumnService, model.ColumnVersion}), Value: version})
 	return filter
 }

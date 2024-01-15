@@ -70,7 +70,7 @@ type Quota struct {
 	RoleQuota     int64
 }
 
-func (q *Quota) GetQuota(ctx context.Context, t quota.ResourceType) int64 {
+func (q *Quota) GetQuota(_ context.Context, t quota.ResourceType) int64 {
 	switch t {
 	case quotasvc.TypeInstance:
 		return q.InstanceQuota

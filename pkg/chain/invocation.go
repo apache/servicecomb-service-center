@@ -19,11 +19,9 @@ package chain
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/go-chassis/cari/discovery"
 )
 
 type InvocationOption func(op InvocationOp) InvocationOp
@@ -121,7 +119,7 @@ func (i *Invocation) Invoke(last CallbackFunc) {
 		// this recover only catch the exceptions raised in sync invocations.
 		// The async invocations will be catch by gopool pkg then it never
 		// change the callback results.
-		i.Fail(discovery.NewError(discovery.ErrInternal, fmt.Sprintf("%v", itf)))
+		// i.Fail(discovery.NewError(discovery.ErrInternal, fmt.Sprintf("%v", itf)))
 	}()
 	i.Func = last
 	i.chain.Next(i)

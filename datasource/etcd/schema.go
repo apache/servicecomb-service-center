@@ -43,7 +43,7 @@ func init() {
 	schema.Install("embedded_etcd", NewSchemaDAO)
 }
 
-func NewSchemaDAO(opts schema.Options) (schema.DAO, error) {
+func NewSchemaDAO(_ schema.Options) (schema.DAO, error) {
 	return &SchemaDAO{}, nil
 }
 

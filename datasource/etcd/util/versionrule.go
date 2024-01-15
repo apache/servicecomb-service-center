@@ -97,7 +97,7 @@ func LessEqual(start, end string) bool {
 }
 
 // Latest return latest version kv
-func Latest(sorted []string, kvs []*kvstore.KeyValue, start, end string) []string {
+func Latest(sorted []string, kvs []*kvstore.KeyValue, _, _ string) []string {
 	if len(sorted) == 0 {
 		return []string{}
 	}
@@ -139,7 +139,7 @@ func Range(sorted []string, kvs []*kvstore.KeyValue, start, end string) []string
 }
 
 // AtLess return version >= start
-func AtLess(sorted []string, kvs []*kvstore.KeyValue, start, end string) []string {
+func AtLess(sorted []string, kvs []*kvstore.KeyValue, start, _ string) []string {
 	total := len(sorted)
 	if total == 0 {
 		return []string{}

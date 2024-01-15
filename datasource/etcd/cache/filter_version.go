@@ -39,7 +39,7 @@ func (f *VersionFilter) Name(ctx context.Context, _ *cache.Node) string {
 	return ""
 }
 
-func (f *VersionFilter) Init(ctx context.Context, parent *cache.Node) (node *cache.Node, err error) {
+func (f *VersionFilter) Init(ctx context.Context, _ *cache.Node) (node *cache.Node, err error) {
 	instance, ok := ctx.Value(CtxProviderInstanceKey).(*pb.HeartbeatSetElement)
 	if ok {
 		node = cache.NewNode()

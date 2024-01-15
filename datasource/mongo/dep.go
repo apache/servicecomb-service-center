@@ -161,7 +161,7 @@ func updateDepTxn(ctx context.Context, dependencyInfos []*discovery.ConsumerDepe
 	})
 }
 
-func (ds *DepManager) DependencyHandle(ctx context.Context) (err error) {
+func (ds *DepManager) DependencyHandle(_ context.Context) (err error) {
 	return nil
 }
 
@@ -326,10 +326,9 @@ func removeProviderDeps(ctx context.Context, depRule *model.DependencyRule, cach
 	if !ok {
 		_, exist, err = FindServiceIds(ctx, depRule.ServiceKey, false)
 		if err != nil {
+			cache[id] = exist
 			return err
 		}
-
-		cache[id] = exist
 	}
 
 	filter := bson.M{

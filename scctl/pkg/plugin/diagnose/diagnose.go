@@ -49,7 +49,7 @@ var typeMap = map[string]string{
 
 type etcdResponse map[string][]*mvccpb.KeyValue
 
-func CommandFunc(_ *cobra.Command, args []string) {
+func CommandFunc(_ *cobra.Command, _ []string) {
 	// initialize sc/etcd clients
 	scClient, err := client.NewSCClient(cmd.ScClientConfig)
 	if err != nil {

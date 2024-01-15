@@ -40,7 +40,7 @@ func init() {
 	rbac.Install("embedded_etcd", NewRbacDAO)
 }
 
-func NewRbacDAO(opts rbac.Options) (rbac.DAO, error) {
+func NewRbacDAO(_ rbac.Options) (rbac.DAO, error) {
 	return &RbacDAO{}, nil
 }
 
@@ -187,7 +187,7 @@ func (ds *RbacDAO) DeleteAccount(ctx context.Context, names []string) (bool, err
 	return true, nil
 }
 
-func (ds *RbacDAO) UpdateAccount(ctx context.Context, name string, account *crbac.Account) error {
+func (ds *RbacDAO) UpdateAccount(ctx context.Context, _ string, account *crbac.Account) error {
 	var (
 		opts []etcdadpt.OpOptions
 		err  error
