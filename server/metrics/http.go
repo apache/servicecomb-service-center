@@ -67,7 +67,7 @@ var (
 		}, []string{"method", "instance", "api", "domain"})
 )
 
-func ReportRequestCompleted(w http.ResponseWriter, r *http.Request, start time.Time) {
+func ReportRequestCompleted(_ http.ResponseWriter, r *http.Request, start time.Time) {
 	instance := metrics.InstanceName()
 	elapsed := float64(time.Since(start).Nanoseconds()) / float64(time.Microsecond)
 	route, _ := r.Context().Value(rest.CtxMatchFunc).(string)

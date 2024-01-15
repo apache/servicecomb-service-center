@@ -38,7 +38,7 @@ func (f *ServiceFilter) Name(ctx context.Context, _ *cache.Node) string {
 		provider.ServiceName}, "/")
 }
 
-func (f *ServiceFilter) Init(ctx context.Context, parent *cache.Node) (node *cache.Node, err error) {
+func (f *ServiceFilter) Init(_ context.Context, _ *cache.Node) (node *cache.Node, err error) {
 	node = cache.NewNode()
 	return
 }

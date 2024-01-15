@@ -36,7 +36,7 @@ import (
 type EmbeddedAuthenticator struct {
 }
 
-func newEmbeddedAuthenticator(opts *authr.Options) (authr.Authenticator, error) {
+func newEmbeddedAuthenticator(_ *authr.Options) (authr.Authenticator, error) {
 	return &EmbeddedAuthenticator{}, nil
 }
 
@@ -84,7 +84,7 @@ func (a *EmbeddedAuthenticator) Login(ctx context.Context, user string, password
 }
 
 // Authenticate parse a token to claims
-func (a *EmbeddedAuthenticator) Authenticate(ctx context.Context, tokenStr string) (interface{}, error) {
+func (a *EmbeddedAuthenticator) Authenticate(_ context.Context, tokenStr string) (interface{}, error) {
 	p, err := jwt.ParseRSAPublicKeyFromPEM([]byte(PublicKey()))
 	if err != nil {
 		log.Error("can not parse public key", err)
