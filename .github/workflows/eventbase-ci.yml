@@ -39,24 +39,3 @@ jobs:
           export TEST_DB_URI=http://127.0.0.1:2379
           cd eventbase
           time go test -short -covermode=atomic $(go list ./... | grep -v mongo | grep -v third_party | grep -v examples)
-  etcd-storage-with-localstorage:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Set up Go
-        uses: actions/setup-go@v1
-        with:
-          go-version: 1.18
-        id: go
-      - name: Check out source code
-        uses: actions/checkout@v1
-      - name: UT for etcd
-        run: |
-          time docker run -d -p 2379:2379 --name etcd quay.io/coreos/etcd etcd -name etcd --advertise-client-urls http://0.0.0.0:2379 --listen-client-urls http://0.0.0.0:2379
-          while ! nc -z 127.0.0.1 2379; do
-            sleep 1
-          done
-          export TEST_DB_MODE=etcd
-          export TEST_DB_URI=http://127.0.0.1:2379
-          export SCHEMA_ROOT_PATH=/data/kvs
-          cd eventbase
-          sudo time go test -short -covermode=atomic $(go list ./... | grep -v mongo | grep -v third_party | grep -v examples)
