@@ -26,10 +26,10 @@ import (
 type SCManager struct {
 }
 
-func (ds *SCManager) UpgradeVersion(ctx context.Context) error {
+func (ds *SCManager) UpgradeVersion(_ context.Context) error {
 	return nil
 }
 
-func (ds *SCManager) GetClusters(ctx context.Context) (etcdadpt.Clusters, error) {
+func (ds *SCManager) GetClusters(_ context.Context) (etcdadpt.Clusters, error) {
 	return nil, nil
 }

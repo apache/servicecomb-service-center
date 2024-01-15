@@ -29,7 +29,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
-func (c *LBClient) WebsocketDial(ctx context.Context, api string, headers http.Header) (conn *websocket.Conn, err error) {
+func (c *LBClient) WebsocketDial(_ context.Context, api string, headers http.Header) (conn *websocket.Conn, err error) {
 	dialer := &websocket.Dialer{TLSClientConfig: c.TLS}
 	var errs []string
 	for i := 0; i < c.Retries; i++ {

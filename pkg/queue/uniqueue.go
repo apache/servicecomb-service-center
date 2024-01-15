@@ -45,8 +45,6 @@ func (uq *UniQueue) Put(value interface{}) (e error) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Panic(r)
-
-			e = fmt.Errorf("%v", r)
 		}
 	}()
 

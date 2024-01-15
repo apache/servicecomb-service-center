@@ -175,7 +175,7 @@ func (c *Syncer) checkWithConflictHandleFunc(local *Cacher, remote dump.Getter, 
 	}
 }
 
-func (c *Syncer) skipHandleFunc(origin *dump.KV, conflict dump.Getter, index int) {
+func (c *Syncer) skipHandleFunc(_ *dump.KV, _ dump.Getter, _ int) {
 }
 
 func (c *Syncer) logConflictFunc(origin *dump.KV, conflict dump.Getter, index int) {

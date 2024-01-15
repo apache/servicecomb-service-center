@@ -55,7 +55,7 @@ func (h *HeartBeatChecker) Heartbeat(ctx context.Context, request *pb.HeartbeatR
 	}, nil
 }
 
-func (h *HeartBeatChecker) CheckInstance(ctx context.Context, instance *pb.MicroServiceInstance) error {
+func (h *HeartBeatChecker) CheckInstance(_ context.Context, _ *pb.MicroServiceInstance) error {
 	// do nothing
 	return nil
 }

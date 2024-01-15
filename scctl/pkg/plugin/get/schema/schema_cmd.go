@@ -82,7 +82,7 @@ func saveDirectory(root string, ms *dump.Microservice) string {
 	return filepath.Join(root, "schemas", domain, project, ms.Value.Environment, ms.Value.AppId, ms.Value.ServiceName+".v"+ms.Value.Version)
 }
 
-func CommandFunc(_ *cobra.Command, args []string) {
+func CommandFunc(_ *cobra.Command, _ []string) {
 	scClient, err := client.NewSCClient(cmd.ScClientConfig)
 	if err != nil {
 		cmd.StopAndExit(cmd.ExitError, err)
