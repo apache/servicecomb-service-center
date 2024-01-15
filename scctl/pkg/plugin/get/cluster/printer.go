@@ -35,7 +35,7 @@ func (s *Record) EndpointsString() string {
 	return util.StringJoin(s.Endpoints, "\n")
 }
 
-func (s *Record) PrintBody(fmt string) []string {
+func (s *Record) PrintBody(_ string) []string {
 	return []string{s.Name, s.EndpointsString()}
 }
 

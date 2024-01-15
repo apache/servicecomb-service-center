@@ -50,7 +50,7 @@ type k8sListWatcher struct {
 	cb OnEventFunc
 }
 
-func (w *k8sListWatcher) Handle(ctx context.Context, obj interface{}) {
+func (w *k8sListWatcher) Handle(_ context.Context, obj interface{}) {
 	if w.cb == nil {
 		return
 	}

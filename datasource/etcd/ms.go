@@ -188,7 +188,7 @@ func (ds *MetadataManager) RegisterService(ctx context.Context, request *pb.Crea
 	}, nil
 }
 
-func (ds *MetadataManager) ListService(ctx context.Context, request *pb.GetServicesRequest) (
+func (ds *MetadataManager) ListService(ctx context.Context, _ *pb.GetServicesRequest) (
 	*pb.GetServicesResponse, error) {
 	services, err := eutil.GetAllServiceUtil(ctx)
 	if err != nil {
@@ -217,7 +217,7 @@ func (ds *MetadataManager) GetService(ctx context.Context, request *pb.GetServic
 	return singleService, nil
 }
 
-func (ds *MetadataManager) GetOverview(ctx context.Context, request *pb.GetServicesRequest) (
+func (ds *MetadataManager) GetOverview(ctx context.Context, _ *pb.GetServicesRequest) (
 	*pb.Statistics, error) {
 	ctx = util.WithCacheOnly(ctx)
 	st, err := statistics(ctx, false)
@@ -879,10 +879,9 @@ func (ds *MetadataManager) SendManyHeartbeat(ctx context.Context, request *pb.He
 			log.Warn(fmt.Sprintf("instance[%s/%s] is duplicate request heartbeat set",
 				heartbeatElement.ServiceId, heartbeatElement.InstanceId))
 			continue
-		} else {
-			existFlag[heartbeatElement.ServiceId+heartbeatElement.InstanceId] = true
-			noMultiCounter++
 		}
+		existFlag[heartbeatElement.ServiceId+heartbeatElement.InstanceId] = true
+		noMultiCounter++
 		gopool.Go(getHeartbeatFunc(ctx, domainProject, instancesHbRst, heartbeatElement))
 	}
 	count := 0
@@ -944,7 +943,7 @@ func (ds *MetadataManager) SendHeartbeat(ctx context.Context, request *pb.Heartb
 	return nil
 }
 
-func (ds *MetadataManager) ListManyInstances(ctx context.Context, request *pb.GetAllInstancesRequest) (*pb.GetAllInstancesResponse, error) {
+func (ds *MetadataManager) ListManyInstances(ctx context.Context, _ *pb.GetAllInstancesRequest) (*pb.GetAllInstancesResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
 	key := path.GetInstanceRootKey(domainProject) + path.SPLIT
 	opts := append(eutil.FromContext(ctx), etcdadpt.WithStrKey(key), etcdadpt.WithPrefix())

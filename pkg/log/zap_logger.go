@@ -114,15 +114,15 @@ type ZapLogger struct {
 	zapSugar  *zap.SugaredLogger
 }
 
-func (l *ZapLogger) Debug(msg string, opts ...openlog.Option) {
+func (l *ZapLogger) Debug(msg string, _ ...openlog.Option) {
 	l.zapLogger.Debug(msg)
 }
 
-func (l *ZapLogger) Info(msg string, opts ...openlog.Option) {
+func (l *ZapLogger) Info(msg string, _ ...openlog.Option) {
 	l.zapLogger.Info(msg)
 }
 
-func (l *ZapLogger) Warn(msg string, opts ...openlog.Option) {
+func (l *ZapLogger) Warn(msg string, _ ...openlog.Option) {
 	l.zapLogger.Warn(msg)
 }
 

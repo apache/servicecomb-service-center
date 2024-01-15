@@ -37,7 +37,7 @@ type Distributor struct {
 
 const MatchGroup = "match-group"
 
-func (d *Distributor) Create(ctx context.Context, kind, project string, p *gov.Policy) ([]byte, error) {
+func (d *Distributor) Create(_ context.Context, kind, _ string, p *gov.Policy) ([]byte, error) {
 	id, _ := uuid.NewV4()
 	p.ID = id.String()
 	p.Kind = kind
@@ -46,7 +46,7 @@ func (d *Distributor) Create(ctx context.Context, kind, project string, p *gov.P
 	return []byte(p.ID), nil
 }
 
-func (d *Distributor) Update(ctx context.Context, kind, id, project string, p *gov.Policy) error {
+func (d *Distributor) Update(_ context.Context, kind, id, _ string, p *gov.Policy) error {
 	if d.lbPolicies[id] == nil {
 		return fmt.Errorf("id not exsit")
 	}
@@ -57,12 +57,12 @@ func (d *Distributor) Update(ctx context.Context, kind, id, project string, p *g
 	return nil
 }
 
-func (d *Distributor) Delete(ctx context.Context, kind, id, project string) error {
+func (d *Distributor) Delete(_ context.Context, _, id, _ string) error {
 	delete(d.lbPolicies, id)
 	return nil
 }
 
-func (d *Distributor) Display(ctx context.Context, project, app, env string) ([]byte, error) {
+func (d *Distributor) Display(_ context.Context, _, app, env string) ([]byte, error) {
 	list := make([]*gov.Policy, 0)
 	for _, g := range d.lbPolicies {
 		if checkPolicy(g, MatchGroup, app, env) {
@@ -91,7 +91,7 @@ func (d *Distributor) Display(ctx context.Context, project, app, env string) ([]
 	b, _ := json.MarshalIndent(r, "", "  ")
 	return b, nil
 }
-func (d *Distributor) List(ctx context.Context, kind, project, app, env string) ([]byte, error) {
+func (d *Distributor) List(_ context.Context, kind, _, app, env string) ([]byte, error) {
 	r := make([]*gov.Policy, 0, len(d.lbPolicies))
 	for _, g := range d.lbPolicies {
 		if checkPolicy(g, kind, app, env) {
@@ -106,7 +106,7 @@ func checkPolicy(g *gov.Policy, kind, app, env string) bool {
 	return g.Kind == kind && g.Selector != nil && g.Selector["app"] == app && g.Selector["environment"] == env
 }
 
-func (d *Distributor) Get(ctx context.Context, kind, id, project string) ([]byte, error) {
+func (d *Distributor) Get(_ context.Context, _, id, _ string) ([]byte, error) {
 	r := d.lbPolicies[id]
 	if r == nil {
 		return nil, nil
@@ -121,9 +121,9 @@ func (d *Distributor) Type() string {
 func (d *Distributor) Name() string {
 	return d.name
 }
-func new(opts config.DistributorOptions) (grcsvc.ConfigDistributor, error) {
+func newMock(opts config.DistributorOptions) (grcsvc.ConfigDistributor, error) {
 	return &Distributor{name: opts.Name, lbPolicies: map[string]*gov.Policy{}}, nil
 }
 func init() {
-	grcsvc.InstallDistributor(grcsvc.ConfigDistributorMock, new)
+	grcsvc.InstallDistributor(grcsvc.ConfigDistributorMock, newMock)
 }

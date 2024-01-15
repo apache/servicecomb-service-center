@@ -41,7 +41,7 @@ func init() {
 	rbac.Install("mongo", NewRbacDAO)
 }
 
-func NewRbacDAO(opts rbac.Options) (rbac.DAO, error) {
+func NewRbacDAO(_ rbac.Options) (rbac.DAO, error) {
 	return &RbacDAO{}, nil
 }
 

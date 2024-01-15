@@ -93,10 +93,8 @@ func (m *Mux) SchemaHandleFunc(c echo.Context) (err error) {
 		for _, val := range values {
 			if key == "Accept-Encoding" || key == "Connection" || key == "X-Schemaname" || key == "Cookie" || key == "User-Agent" || key == "AppleWebKit" || key == "Dnt" || key == "Referer" || key == "Accept-Language" {
 				continue
-			} else {
-				req.Header.Add(key, val)
 			}
-
+			req.Header.Add(key, val)
 		}
 	}
 	req.Header.Add("Content-Type", "application/json")
