@@ -21,6 +21,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	pb "github.com/go-chassis/cari/discovery"
@@ -31,6 +32,8 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sync"
+	"github.com/apache/servicecomb-service-center/datasource/local"
+	"github.com/apache/servicecomb-service-center/datasource/schema"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/config"
@@ -247,6 +250,32 @@ func UpdateService(ctx context.Context, domainProject string, serviceID string, 
 		log.Error("marshal service file failed", err)
 		return opts, err
 	}
+
+	if schema.StorageType == "local" {
+		contents := make([]*schema.ContentItem, len(service.Schemas))
+		err = schema.Instance().PutManyContent(ctx, &schema.PutManyContentRequest{
+			ServiceID: service.ServiceId,
+			SchemaIDs: service.Schemas,
+			Contents:  contents,
+			Init:      true,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		serviceMutex := local.GetOrCreateMutex(service.ServiceId)
+		serviceMutex.Lock()
+		defer serviceMutex.Unlock()
+	}
+	defer func() {
+		if schema.StorageType == "local" && err != nil {
+			cleanDirErr := local.CleanDir(filepath.Join(schema.RootFilePath, domainProject, service.ServiceId))
+			if cleanDirErr != nil {
+				log.Error("clean dir error when rollback in RegisterService", cleanDirErr)
+			}
+		}
+	}()
+
 	opt := etcdadpt.OpPut(etcdadpt.WithStrKey(key), etcdadpt.WithValue(data))
 	opts = append(opts, opt)
 	syncOpts, err := sync.GenUpdateOpts(ctx, datasource.ResourceKV, data, sync.WithOpts(map[string]string{"key": key}))

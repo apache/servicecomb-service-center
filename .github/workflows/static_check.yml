@@ -43,6 +43,20 @@ jobs:
           sudo docker-compose -f ./scripts/docker-compose.yaml up -d
           sleep 20
           bash -x scripts/ut_test_in_docker.sh mongo
+  local:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Go 1.18
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.18
+        id: go
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v1
+      - name: UT-LOCAL_STORAGE
+        run: |
+          rm -rf /data/schemas
+          bash -x scripts/ut_test_in_docker.sh local
   integration-test:
     runs-on: ubuntu-latest
     steps:

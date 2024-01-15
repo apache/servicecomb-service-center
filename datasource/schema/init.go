@@ -47,11 +47,11 @@ func Init(opts Options) error {
 		return nil
 	}
 	kind := opts.Kind
-	if strings.Trim(config.GetString("schema.root.path", "", config.WithStandby("schemaRootPath")), " ") != "" {
-		log.Warn("llllllllllocal")
+	rootFilePath := config.GetString("schema.root.path", "", config.WithStandby("schemaRootPath"))
+	if strings.Trim(rootFilePath, " ") != "" {
 		kind = "local"
 		StorageType = "local"
-		RootFilePath = config.GetRegistry().SchemaRootPath
+		RootFilePath = rootFilePath
 	}
 
 	engineFunc, ok := plugins[kind]
