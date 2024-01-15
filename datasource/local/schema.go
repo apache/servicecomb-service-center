@@ -24,6 +24,7 @@ import (
 	"io/fs"
 	"os"
 	pathutil "path"
+	"path/filepath"
 	"strings"
 	"sync"
 
@@ -36,8 +37,6 @@ import (
 	"github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/openlog"
 	"github.com/little-cui/etcdadpt"
-	
-	"path/filepath"
 )
 
 var MutexMap = make(map[string]*sync.RWMutex)
@@ -49,7 +48,7 @@ func init() {
 	schema.Install("local", NewSchemaDAO)
 }
 
-func NewSchemaDAO(opts schema.Options) (schema.DAO, error) {
+func NewSchemaDAO(_ schema.Options) (schema.DAO, error) {
 	return &SchemaDAO{}, nil
 }
 
@@ -356,6 +355,9 @@ func (s *SchemaDAO) ListRef(ctx context.Context, refRequest *schema.RefRequest) 
 	schemaIDs, contents, err := ReadAllFiles(dir)
 
 	if err != nil {
+		if os.IsNotExist(err) {
+			return make([]*schema.Ref, 0), nil
+		}
 		log.Error(fmt.Sprintf("read service[%s] schema content files failed ", serviceID), err)
 		return nil, err
 	}
@@ -433,7 +435,7 @@ func (s *SchemaDAO) DeleteRef(ctx context.Context, refRequest *schema.RefRequest
 	return nil
 }
 
-func (s *SchemaDAO) GetContent(ctx context.Context, contentRequest *schema.ContentRequest) (*schema.Content, error) {
+func (s *SchemaDAO) GetContent(_ context.Context, _ *schema.ContentRequest) (*schema.Content, error) {
 	// no usage, should not be called
 	log.Error("Occur error when call SchemaDAO.GetContent, this method should not be called in any condition", schema.ErrSchemaNotFound)
 	return nil, schema.ErrSchemaNotFound
@@ -477,13 +479,13 @@ func (s *SchemaDAO) PutContent(ctx context.Context, contentRequest *schema.PutCo
 		return err
 	}
 
-	var schemaIdValid = false
-	for _, serviceSchemaId := range service.Schemas {
-		if serviceSchemaId == contentRequest.SchemaID {
-			schemaIdValid = true
+	var schemaIDValid = false
+	for _, serviceSchemaID := range service.Schemas {
+		if serviceSchemaID == contentRequest.SchemaID {
+			schemaIDValid = true
 		}
 	}
-	if !schemaIdValid {
+	if !schemaIDValid {
 		err = schema.ErrSchemaNotFound
 		log.Error(fmt.Sprintf("update service[%s] failed when valide schema id", serviceID), err)
 		return err
@@ -571,7 +573,7 @@ func (s *SchemaDAO) PutManyContent(ctx context.Context, contentRequest *schema.P
 
 	// create or update files
 	for i := 0; i < len(contentRequest.SchemaIDs); i++ {
-		schemaId := contentRequest.SchemaIDs[i]
+		schemaID := contentRequest.SchemaIDs[i]
 		schema := contentRequest.Contents[i]
 
 		schemaBytes, marshalErr := json.Marshal(schema)
@@ -580,7 +582,7 @@ func (s *SchemaDAO) PutManyContent(ctx context.Context, contentRequest *schema.P
 			openlog.Error("fail to marshal kv " + err.Error())
 			return err
 		}
-		err = createOrUpdateFile(servicepath+"/"+schemaId+".json", schemaBytes, &rollbackOperations, false)
+		err = createOrUpdateFile(servicepath+"/"+schemaID+".json", schemaBytes, &rollbackOperations, false)
 		if err != nil {
 			break
 		}
@@ -614,13 +616,13 @@ func (s *SchemaDAO) PutManyContent(ctx context.Context, contentRequest *schema.P
 	return err
 }
 
-func (s *SchemaDAO) DeleteContent(ctx context.Context, contentRequest *schema.ContentRequest) error {
+func (s *SchemaDAO) DeleteContent(_ context.Context, _ *schema.ContentRequest) error {
 	// no usage, should not be called
 	log.Error("Occur error when call SchemaDAO.DeleteContent, this method should not be called in any condition", schema.ErrSchemaContentNotFound)
 	return schema.ErrSchemaContentNotFound
 }
 
-func (s *SchemaDAO) DeleteNoRefContents(ctx context.Context) (int, error) {
+func (s *SchemaDAO) DeleteNoRefContents(_ context.Context) (int, error) {
 	// no usage, should not be called
 	log.Error("Occur error when call SchemaDAO.DeleteNoRefContents, this method should not be called in any condition", schema.ErrSchemaNotFound)
 	return 0, schema.ErrSchemaNotFound
