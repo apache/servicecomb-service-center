@@ -58,8 +58,6 @@ func InvokeInterceptors(w http.ResponseWriter, req *http.Request) (err error) {
 	defer func() {
 		if itf := recover(); itf != nil {
 			log.Panic(itf)
-			err = fmt.Errorf("%v", itf)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}()
 	for _, intc = range interceptors {

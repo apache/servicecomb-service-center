@@ -202,10 +202,9 @@ func UnregisterManyService(ctx context.Context, request *pb.DelServicesRequest) 
 		if _, ok := existFlag[serviceID]; ok {
 			log.Warn(fmt.Sprintf("duplicate micro-service[%s] serviceID", serviceID))
 			continue
-		} else {
-			existFlag[serviceID] = true
-			nuoMultiCount++
 		}
+		existFlag[serviceID] = true
+		nuoMultiCount++
 
 		//执行删除服务操作
 		gopool.Go(getDeleteServiceFunc(ctx, serviceID, request.Force, serviceRespChan))

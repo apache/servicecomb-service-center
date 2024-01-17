@@ -168,9 +168,8 @@ func (dr *DependencyRelation) GetDependencyConsumers(opts ...DependencyRelationF
 				log.Warn(fmt.Sprintf("consumer[%s/%s/%s/%s] does not exist",
 					consumer.Environment, consumer.AppId, consumer.ServiceName, consumer.Version))
 				continue
-			} else {
-				return nil, err
 			}
+			return nil, err
 		}
 
 		if op.NonSelf && service.ServiceId == dr.provider.ServiceId {
@@ -234,9 +233,9 @@ func (dr *DependencyRelation) GetDependencyConsumersOfProvider() ([]*pb.MicroSer
 }
 
 func (dr *DependencyRelation) GetConsumerOfSameServiceNameAndAppID(provider *pb.MicroServiceKey) ([]*pb.MicroServiceKey, error) {
-	copy := *provider
-	copy.Version = ""
-	prefix := path.GenerateProviderDependencyRuleKey(dr.domainProject, &copy)
+	copyProvider := *provider
+	copyProvider.Version = ""
+	prefix := path.GenerateProviderDependencyRuleKey(dr.domainProject, &copyProvider)
 
 	opts := append(FromContext(dr.ctx),
 		etcdadpt.WithStrKey(prefix),

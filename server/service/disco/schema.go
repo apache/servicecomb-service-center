@@ -235,7 +235,7 @@ func getOldSchemaIDs(ctx context.Context, serviceID string) ([]string, error) {
 	return schemaIDs, nil
 }
 
-func mergeRequests(ctx context.Context, serviceID string, refs []*schema.Ref, oldSchemaIDs []string) ([]*pb.GetSchemaRequest, error) {
+func mergeRequests(_ context.Context, serviceID string, refs []*schema.Ref, oldSchemaIDs []string) ([]*pb.GetSchemaRequest, error) {
 	set := mapset.NewSet()
 	for _, schemaID := range oldSchemaIDs {
 		set.Add(schemaID)

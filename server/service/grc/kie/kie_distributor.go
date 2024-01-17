@@ -259,7 +259,7 @@ func initClient(endpoint string) *kie.Client {
 	return client
 }
 
-func new(opts config.DistributorOptions) (grcsvc.ConfigDistributor, error) {
+func kieDistributorNew(opts config.DistributorOptions) (grcsvc.ConfigDistributor, error) {
 	return &Distributor{name: opts.Name, client: initClient(opts.Endpoint)}, nil
 }
 
@@ -355,5 +355,5 @@ func toGovKeyPrefix(kind string) string {
 }
 
 func init() {
-	grcsvc.InstallDistributor(grcsvc.ConfigDistributorKie, new)
+	grcsvc.InstallDistributor(grcsvc.ConfigDistributorKie, kieDistributorNew)
 }

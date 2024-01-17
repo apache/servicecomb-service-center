@@ -56,7 +56,7 @@ func (s *SchemaResource) URLPatterns() []rest.Route {
 	return r
 }
 
-func (s *SchemaResource) DisableSchema(w http.ResponseWriter, r *http.Request) {
+func (s *SchemaResource) DisableSchema(w http.ResponseWriter, _ *http.Request) {
 	rest.WriteError(w, pb.ErrForbidden, errModifySchemaDisabled.Error())
 }
 

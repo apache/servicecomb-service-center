@@ -41,7 +41,7 @@ func (bus *Bus) Fire(evt Event) {
 	bus.Add(queue.Task{Payload: evt})
 }
 
-func (bus *Bus) Handle(ctx context.Context, payload interface{}) {
+func (bus *Bus) Handle(_ context.Context, payload interface{}) {
 	bus.fireAtOnce(payload.(Event))
 }
 

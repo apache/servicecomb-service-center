@@ -26,7 +26,7 @@ import (
 	"github.com/apache/servicecomb-service-center/server/alarm"
 )
 
-func Clusters(ctx context.Context, in *dump.ClustersRequest) (*dump.ClustersResponse, error) {
+func Clusters(ctx context.Context, _ *dump.ClustersRequest) (*dump.ClustersResponse, error) {
 	clusters, err := datasource.GetSCManager().GetClusters(ctx)
 	if err != nil {
 		return nil, err
@@ -36,13 +36,13 @@ func Clusters(ctx context.Context, in *dump.ClustersRequest) (*dump.ClustersResp
 	}, nil
 }
 
-func AlarmList(ctx context.Context, in *dump.AlarmListRequest) (*dump.AlarmListResponse, error) {
+func AlarmList(_ context.Context, _ *dump.AlarmListRequest) (*dump.AlarmListResponse, error) {
 	return &dump.AlarmListResponse{
 		Alarms: alarm.ListAll(),
 	}, nil
 }
 
-func ClearAlarm(ctx context.Context, in *dump.ClearAlarmRequest) (*dump.ClearAlarmResponse, error) {
+func ClearAlarm(_ context.Context, _ *dump.ClearAlarmRequest) (*dump.ClearAlarmResponse, error) {
 	alarm.ClearAll()
 	log.Info("service center alarms are cleared")
 	return &dump.ClearAlarmResponse{}, nil

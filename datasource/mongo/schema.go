@@ -30,25 +30,25 @@ func init() {
 	schema.Install("mongo", NewSchemaDAO)
 }
 
-func NewSchemaDAO(opts schema.Options) (schema.DAO, error) {
+func NewSchemaDAO(_ schema.Options) (schema.DAO, error) {
 	return &SchemaDAO{}, nil
 }
 
 type SchemaDAO struct{}
 
-func (s *SchemaDAO) GetRef(ctx context.Context, refRequest *schema.RefRequest) (*schema.Ref, error) {
+func (s *SchemaDAO) GetRef(_ context.Context, _ *schema.RefRequest) (*schema.Ref, error) {
 	return nil, schema.ErrSchemaNotFound
 }
 
-func (s *SchemaDAO) ListRef(ctx context.Context, refRequest *schema.RefRequest) ([]*schema.Ref, error) {
+func (s *SchemaDAO) ListRef(_ context.Context, _ *schema.RefRequest) ([]*schema.Ref, error) {
 	return nil, nil
 }
 
-func (s *SchemaDAO) DeleteRef(ctx context.Context, refRequest *schema.RefRequest) error {
+func (s *SchemaDAO) DeleteRef(_ context.Context, _ *schema.RefRequest) error {
 	return schema.ErrSchemaNotFound
 }
 
-func (s *SchemaDAO) GetContent(ctx context.Context, contentRequest *schema.ContentRequest) (*schema.Content, error) {
+func (s *SchemaDAO) GetContent(_ context.Context, _ *schema.ContentRequest) (*schema.Content, error) {
 	return nil, schema.ErrSchemaNotFound
 }
 
@@ -85,10 +85,10 @@ func (s *SchemaDAO) PutManyContent(ctx context.Context, contentRequest *schema.P
 	return nil
 }
 
-func (s *SchemaDAO) DeleteContent(ctx context.Context, contentRequest *schema.ContentRequest) error {
+func (s *SchemaDAO) DeleteContent(_ context.Context, _ *schema.ContentRequest) error {
 	return schema.ErrSchemaContentNotFound
 }
 
-func (s *SchemaDAO) DeleteNoRefContents(ctx context.Context) (int, error) {
+func (s *SchemaDAO) DeleteNoRefContents(_ context.Context) (int, error) {
 	return 0, nil
 }

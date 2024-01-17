@@ -22,17 +22,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/apache/servicecomb-service-center/datasource/local"
+	"os"
 	"path/filepath"
 	"strconv"
 	"time"
-
-	"github.com/apache/servicecomb-service-center/syncer/service/event"
-	pb "github.com/go-chassis/cari/discovery"
-	"github.com/go-chassis/cari/pkg/errsvc"
-	"github.com/go-chassis/cari/sync"
-	"github.com/go-chassis/foundation/gopool"
-	"github.com/little-cui/etcdadpt"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/cache"
@@ -42,12 +35,19 @@ import (
 	esync "github.com/apache/servicecomb-service-center/datasource/etcd/sync"
 	eutil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
+	"github.com/apache/servicecomb-service-center/datasource/local"
 	"github.com/apache/servicecomb-service-center/datasource/schema"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
 	quotasvc "github.com/apache/servicecomb-service-center/server/service/quota"
+	"github.com/apache/servicecomb-service-center/syncer/service/event"
+	pb "github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/cari/pkg/errsvc"
+	"github.com/go-chassis/cari/sync"
+	"github.com/go-chassis/foundation/gopool"
+	"github.com/little-cui/etcdadpt"
 )
 
 type MetadataManager struct {
@@ -188,7 +188,7 @@ func (ds *MetadataManager) RegisterService(ctx context.Context, request *pb.Crea
 	}, nil
 }
 
-func (ds *MetadataManager) ListService(ctx context.Context, request *pb.GetServicesRequest) (
+func (ds *MetadataManager) ListService(ctx context.Context, _ *pb.GetServicesRequest) (
 	*pb.GetServicesResponse, error) {
 	services, err := eutil.GetAllServiceUtil(ctx)
 	if err != nil {
@@ -217,7 +217,7 @@ func (ds *MetadataManager) GetService(ctx context.Context, request *pb.GetServic
 	return singleService, nil
 }
 
-func (ds *MetadataManager) GetOverview(ctx context.Context, request *pb.GetServicesRequest) (
+func (ds *MetadataManager) GetOverview(ctx context.Context, _ *pb.GetServicesRequest) (
 	*pb.Statistics, error) {
 	ctx = util.WithCacheOnly(ctx)
 	st, err := statistics(ctx, false)
@@ -879,10 +879,9 @@ func (ds *MetadataManager) SendManyHeartbeat(ctx context.Context, request *pb.He
 			log.Warn(fmt.Sprintf("instance[%s/%s] is duplicate request heartbeat set",
 				heartbeatElement.ServiceId, heartbeatElement.InstanceId))
 			continue
-		} else {
-			existFlag[heartbeatElement.ServiceId+heartbeatElement.InstanceId] = true
-			noMultiCounter++
 		}
+		existFlag[heartbeatElement.ServiceId+heartbeatElement.InstanceId] = true
+		noMultiCounter++
 		gopool.Go(getHeartbeatFunc(ctx, domainProject, instancesHbRst, heartbeatElement))
 	}
 	count := 0
@@ -944,7 +943,7 @@ func (ds *MetadataManager) SendHeartbeat(ctx context.Context, request *pb.Heartb
 	return nil
 }
 
-func (ds *MetadataManager) ListManyInstances(ctx context.Context, request *pb.GetAllInstancesRequest) (*pb.GetAllInstancesResponse, error) {
+func (ds *MetadataManager) ListManyInstances(ctx context.Context, _ *pb.GetAllInstancesRequest) (*pb.GetAllInstancesResponse, error) {
 	domainProject := util.ParseDomainProject(ctx)
 	key := path.GetInstanceRootKey(domainProject) + path.SPLIT
 	opts := append(eutil.FromContext(ctx), etcdadpt.WithStrKey(key), etcdadpt.WithPrefix())
@@ -1505,6 +1504,10 @@ func (ds *MetadataManager) UnregisterService(ctx context.Context, request *pb.De
 				rollbackErr = local.CleanDir(tmpPath)
 				if rollbackErr != nil {
 					log.Error("clean tmp dir error when rollback in UnregisterService", err)
+				}
+				rollbackErr = os.Remove(originPath)
+				if rollbackErr != nil {
+					log.Error("clean origin dir error when rollback in UnregisterService", err)
 				}
 			}
 		}

@@ -19,9 +19,10 @@ package schema
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
-	"strings"
 )
 
 var StorageType = ""
@@ -46,10 +47,11 @@ func Init(opts Options) error {
 		return nil
 	}
 	kind := opts.Kind
-	if strings.Trim(config.GetRegistry().SchemaRootPath, " ") != "" {
-		kind = "local_with_embeded_etcd"
+	rootFilePath := config.GetString("schema.root.path", "", config.WithStandby("schemaRootPath"))
+	if strings.Trim(rootFilePath, " ") != "" {
+		kind = "local"
 		StorageType = "local"
-		RootFilePath = config.GetRegistry().SchemaRootPath
+		RootFilePath = rootFilePath
 	}
 
 	engineFunc, ok := plugins[kind]
