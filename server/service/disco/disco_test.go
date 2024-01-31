@@ -22,8 +22,61 @@ import (
 	_ "github.com/apache/servicecomb-service-center/test"
 
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/syncer/config"
+)
+
+const (
+	microserviceDomain  = "sync-microservice"
+	microserviceProject = "sync-microservice"
+	tagDomain           = "sync-tag"
+	tagProject          = "sync-tag"
+	schemaDomain        = "sync-schema"
+	schemaProject       = "sync-schema"
+	depDomain           = "sync-dependency"
+	depProject          = "sync-dependency"
 )
 
 func getContext() context.Context {
 	return util.WithNoCache(util.SetDomainProject(context.Background(), "default", "default"))
+}
+
+func microServiceGetContext() context.Context {
+	ctx := util.WithNoCache(util.SetDomainProject(context.Background(), microserviceDomain,
+		microserviceProject))
+	return util.WithNoCache(util.SetContext(ctx, util.CtxEnableSync, "1"))
+}
+
+func schemaContext() context.Context {
+	ctx := util.WithNoCache(util.SetDomainProject(context.Background(), schemaDomain, schemaProject))
+	return util.WithNoCache(util.SetContext(ctx, util.CtxEnableSync, "1"))
+}
+
+func tagContext() context.Context {
+	ctx := util.WithNoCache(util.SetDomainProject(context.Background(), tagDomain, tagProject))
+	return util.WithNoCache(util.SetContext(ctx, util.CtxEnableSync, "1"))
+}
+
+func depContext() context.Context {
+	ctx := util.WithNoCache(util.SetDomainProject(context.Background(), depDomain, depProject))
+	return util.WithNoCache(util.SetContext(ctx, util.CtxEnableSync, "1"))
+}
+
+func initWhiteList() {
+	cfg := config.Config{
+		Sync: &config.Sync{
+			EnableOnStart: true,
+			WhiteList: &config.WhiteList{
+				Service: &config.Service{
+					Rules: []string{"sync*"},
+				},
+				Account: &config.Account{
+					Rules: []string{"sync*"},
+				},
+				Role: &config.Role{
+					Rules: []string{"sync*"},
+				},
+			},
+		},
+	}
+	config.SetConfig(cfg)
 }

@@ -21,12 +21,18 @@ import (
 	"strings"
 	"testing"
 
+	pb "github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/cari/pkg/errsvc"
+	"github.com/go-chassis/cari/sync"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/eventbase/model"
+	"github.com/apache/servicecomb-service-center/eventbase/service/task"
+	"github.com/apache/servicecomb-service-center/eventbase/service/tombstone"
 	"github.com/apache/servicecomb-service-center/server/service/disco"
 	quotasvc "github.com/apache/servicecomb-service-center/server/service/quota"
-	pb "github.com/go-chassis/cari/discovery"
+	"github.com/apache/servicecomb-service-center/test"
 )
 
 var (
@@ -471,5 +477,312 @@ func TestDeleteManyTags(t *testing.T) {
 		})
 		assert.NoError(t, err)
 		assert.Equal(t, "", resp.Tags["a"])
+	})
+}
+
+func TestSyncTag(t *testing.T) {
+	if !test.IsETCD() {
+		return
+	}
+	initWhiteList()
+
+	var serviceID string
+	var serviceIDNotInWhiteList string
+
+	t.Run("create service", func(t *testing.T) {
+		t.Run("register a microservice named sync_micro_service_tag will create a task should pass", func(t *testing.T) {
+			resp, err := disco.RegisterService(tagContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "sync_tag_group",
+					ServiceName: "sync_micro_service_tag",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
+				},
+			})
+			assert.NotNil(t, resp)
+			assert.NoError(t, err)
+			assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
+			serviceID = resp.ServiceId
+			listTaskReq := model.ListTaskRequest{
+				Domain:       tagDomain,
+				Project:      tagProject,
+				ResourceType: datasource.ResourceService,
+				Action:       sync.CreateAction,
+				Status:       sync.PendingStatus,
+			}
+			tasks, err := task.List(tagContext(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 1, len(tasks))
+			err = task.Delete(tagContext(), tasks...)
+			assert.NoError(t, err)
+			tasks, err = task.List(tagContext(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tasks))
+		})
+
+		t.Run("register a microservice named BBB will not create a task should pass", func(t *testing.T) {
+			resp, err := disco.RegisterService(tagContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "sync_tag_group",
+					ServiceName: "BBB",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
+				},
+			})
+			assert.NotNil(t, resp)
+			assert.NoError(t, err)
+			assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
+			serviceIDNotInWhiteList = resp.ServiceId
+			listTaskReq := model.ListTaskRequest{
+				Domain:       tagDomain,
+				Project:      tagProject,
+				ResourceType: datasource.ResourceService,
+				Action:       sync.CreateAction,
+				Status:       sync.PendingStatus,
+			}
+			tasks, err := task.List(tagContext(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tasks))
+		})
+	})
+
+	t.Run("add tags", func(t *testing.T) {
+		t.Run("add tags for a microservice named sync_micro_service_tag will create a task should pass", func(t *testing.T) {
+			err := disco.PutManyTags(tagContext(), &pb.AddServiceTagsRequest{
+				ServiceId: serviceID,
+				Tags: map[string]string{
+					"a": "test",
+					"b": "b",
+				},
+			})
+			assert.NoError(t, err)
+
+			listTaskReq := model.ListTaskRequest{
+				Domain:       tagDomain,
+				Project:      tagProject,
+				ResourceType: datasource.ResourceKV,
+				Action:       sync.UpdateAction,
+				Status:       sync.PendingStatus,
+			}
+			tasks, err := task.List(tagContext(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 1, len(tasks))
+			err = task.Delete(tagContext(), tasks...)
+			assert.NoError(t, err)
+			tasks, err = task.List(tagContext(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tasks))
+		})
+
+		t.Run("add tags for a microservice named BBB will not create a task should pass", func(t *testing.T) {
+			err := disco.PutManyTags(tagContext(), &pb.AddServiceTagsRequest{
+				ServiceId: serviceIDNotInWhiteList,
+				Tags: map[string]string{
+					"a": "test",
+					"b": "b",
+				},
+			})
+			assert.NoError(t, err)
+
+			listTaskReq := model.ListTaskRequest{
+				Domain:       tagDomain,
+				Project:      tagProject,
+				ResourceType: datasource.ResourceKV,
+				Action:       sync.UpdateAction,
+				Status:       sync.PendingStatus,
+			}
+			tasks, err := task.List(tagContext(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tasks))
+		})
+	})
+
+	t.Run("update a tag", func(t *testing.T) {
+		t.Run("update a microservice named sync_micro_service_tag tag will create a task should pass", func(t *testing.T) {
+			err := disco.PutTag(tagContext(), &pb.UpdateServiceTagRequest{
+				ServiceId: serviceID,
+				Key:       "a",
+				Value:     "update",
+			})
+			assert.NoError(t, err)
+
+			listTaskReq := model.ListTaskRequest{
+				Domain:       tagDomain,
+				Project:      tagProject,
+				ResourceType: datasource.ResourceKV,
+				Action:       sync.UpdateAction,
+				Status:       sync.PendingStatus,
+			}
+			tasks, err := task.List(tagContext(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 1, len(tasks))
+			err = task.Delete(tagContext(), tasks...)
+			assert.NoError(t, err)
+			tasks, err = task.List(tagContext(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tasks))
+		})
+
+		t.Run("update a microservice named BBB tag will not create a task should pass", func(t *testing.T) {
+			err := disco.PutTag(tagContext(), &pb.UpdateServiceTagRequest{
+				ServiceId: serviceIDNotInWhiteList,
+				Key:       "a",
+				Value:     "update",
+			})
+			assert.NoError(t, err)
+
+			listTaskReq := model.ListTaskRequest{
+				Domain:       tagDomain,
+				Project:      tagProject,
+				ResourceType: datasource.ResourceKV,
+				Action:       sync.UpdateAction,
+				Status:       sync.PendingStatus,
+			}
+			tasks, err := task.List(tagContext(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tasks))
+		})
+	})
+
+	t.Run("delete tags", func(t *testing.T) {
+		t.Run("delete a microservice named sync_micro_service_tag's tags will create a task and a tombstone should pass", func(t *testing.T) {
+			err := disco.DeleteManyTags(tagContext(), &pb.DeleteServiceTagsRequest{
+				ServiceId: serviceID,
+				Keys:      []string{"a", "b"},
+			})
+			assert.NoError(t, err)
+
+			respGetTags, err := disco.ListTag(tagContext(), &pb.GetServiceTagsRequest{
+				ServiceId: serviceID,
+			})
+			assert.NoError(t, err)
+
+			assert.Equal(t, "", respGetTags.Tags["a"])
+			assert.Equal(t, "", respGetTags.Tags["b"])
+			listTaskReq := model.ListTaskRequest{
+				Domain:       tagDomain,
+				Project:      tagProject,
+				ResourceType: datasource.ResourceKV,
+				Action:       sync.DeleteAction,
+				Status:       sync.PendingStatus,
+			}
+			tasks, err := task.List(tagContext(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 1, len(tasks))
+			err = task.Delete(tagContext(), tasks...)
+			assert.NoError(t, err)
+			tasks, err = task.List(tagContext(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tasks))
+			tombstoneListReq := model.ListTombstoneRequest{
+				Domain:       tagDomain,
+				Project:      tagProject,
+				ResourceType: datasource.ResourceKV,
+			}
+			tombstones, err := tombstone.List(tagContext(), &tombstoneListReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 1, len(tombstones))
+			err = tombstone.Delete(tagContext(), tombstones...)
+			assert.NoError(t, err)
+		})
+
+		t.Run("delete a microservice named BBB's tags will not create a task and a tombstone should pass", func(t *testing.T) {
+			err := disco.DeleteManyTags(tagContext(), &pb.DeleteServiceTagsRequest{
+				ServiceId: serviceIDNotInWhiteList,
+				Keys:      []string{"a", "b"},
+			})
+			assert.NoError(t, err)
+
+			respGetTags, err := disco.ListTag(tagContext(), &pb.GetServiceTagsRequest{
+				ServiceId: serviceID,
+			})
+			assert.NoError(t, err)
+
+			assert.Equal(t, "", respGetTags.Tags["a"])
+			assert.Equal(t, "", respGetTags.Tags["b"])
+			listTaskReq := model.ListTaskRequest{
+				Domain:       tagDomain,
+				Project:      tagProject,
+				ResourceType: datasource.ResourceKV,
+				Action:       sync.DeleteAction,
+				Status:       sync.PendingStatus,
+			}
+			tasks, err := task.List(tagContext(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tasks))
+			tombstoneListReq := model.ListTombstoneRequest{
+				Domain:       tagDomain,
+				Project:      tagProject,
+				ResourceType: datasource.ResourceKV,
+			}
+			tombstones, err := tombstone.List(tagContext(), &tombstoneListReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tombstones))
+		})
+	})
+
+	t.Run("unregister microservice", func(t *testing.T) {
+		t.Run("unregister a microservice named sync_micro_service_tag will create a task and a tombstone should pass", func(t *testing.T) {
+			err := disco.UnregisterService(tagContext(), &pb.DeleteServiceRequest{
+				ServiceId: serviceID,
+				Force:     true,
+			})
+			assert.NoError(t, err)
+
+			listTaskReq := model.ListTaskRequest{
+				Domain:       tagDomain,
+				Project:      tagProject,
+				ResourceType: datasource.ResourceService,
+				Action:       sync.DeleteAction,
+				Status:       sync.PendingStatus,
+			}
+			tasks, err := task.List(tagContext(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 1, len(tasks))
+			err = task.Delete(tagContext(), tasks...)
+			assert.NoError(t, err)
+			tasks, err = task.List(tagContext(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tasks))
+			tombstoneListReq := model.ListTombstoneRequest{
+				Domain:       tagDomain,
+				Project:      tagProject,
+				ResourceType: datasource.ResourceService,
+			}
+			tombstones, err := tombstone.List(tagContext(), &tombstoneListReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 1, len(tombstones))
+			err = tombstone.Delete(tagContext(), tombstones...)
+			assert.NoError(t, err)
+		})
+
+		t.Run("unregister a microservice named BBB will not create a task and a tombstone should pass", func(t *testing.T) {
+			err := disco.UnregisterService(tagContext(), &pb.DeleteServiceRequest{
+				ServiceId: serviceIDNotInWhiteList,
+				Force:     true,
+			})
+			assert.NoError(t, err)
+
+			listTaskReq := model.ListTaskRequest{
+				Domain:       tagDomain,
+				Project:      tagProject,
+				ResourceType: datasource.ResourceService,
+				Action:       sync.DeleteAction,
+				Status:       sync.PendingStatus,
+			}
+			tasks, err := task.List(tagContext(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tasks))
+			tombstoneListReq := model.ListTombstoneRequest{
+				Domain:       tagDomain,
+				Project:      tagProject,
+				ResourceType: datasource.ResourceService,
+			}
+			tombstones, err := tombstone.List(tagContext(), &tombstoneListReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tombstones))
+		})
 	})
 }

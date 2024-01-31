@@ -71,6 +71,13 @@ func RegisterInstance(ctx context.Context, in *pb.RegisterInstanceRequest) (*pb.
 	if popErr := populateInstanceDefaultValue(ctx, in.Instance); popErr != nil {
 		return nil, popErr
 	}
+
+	if ok, err := datasource.EnableSync(ctx, in.Instance.ServiceId); err != nil {
+		return nil, err
+	} else if !ok {
+		util.SetContext(ctx, util.CtxEnableSync, "0")
+	}
+
 	return datasource.GetMetadataManager().RegisterInstance(ctx, in)
 }
 
@@ -139,6 +146,12 @@ func UnregisterInstance(ctx context.Context, in *pb.UnregisterInstanceRequest) e
 		return pb.NewError(pb.ErrInvalidParams, err.Error())
 	}
 
+	if ok, err := datasource.EnableSync(ctx, in.ServiceId); err != nil {
+		return err
+	} else if !ok {
+		util.SetContext(ctx, util.CtxEnableSync, "0")
+	}
+
 	return datasource.GetMetadataManager().UnregisterInstance(ctx, in)
 }
 
@@ -151,6 +164,12 @@ func SendHeartbeat(ctx context.Context, in *pb.HeartbeatRequest) error {
 		log.Error(fmt.Sprintf("send heartbeat[%s/%s] failed, invalid parameters, operator %s",
 			serviceID, instanceID, remoteIP), err)
 		return pb.NewError(pb.ErrInvalidParams, err.Error())
+	}
+
+	if ok, err := datasource.EnableSync(ctx, in.ServiceId); err != nil {
+		return err
+	} else if !ok {
+		util.SetContext(ctx, util.CtxEnableSync, "0")
 	}
 
 	err := datasource.GetMetadataManager().SendHeartbeat(ctx, in)
@@ -242,6 +261,12 @@ func FindInstances(ctx context.Context, in *pb.FindInstancesRequest) (*pb.FindIn
 	if err := validator.ValidateFindInstancesRequest(in); err != nil {
 		log.Error(fmt.Sprintf("find instance failed: invalid parameters, operator: %s", remoteIP), err)
 		return nil, pb.NewError(pb.ErrInvalidParams, err.Error())
+	}
+
+	if ok, err := datasource.EnableSync(ctx, in.ConsumerServiceId); err != nil {
+		return nil, err
+	} else if !ok {
+		util.SetContext(ctx, util.CtxEnableSync, "0")
 	}
 
 	return datasource.GetMetadataManager().FindInstances(ctx, in)
@@ -416,6 +441,12 @@ func PutInstanceStatus(ctx context.Context, in *pb.UpdateInstanceStatusRequest) 
 		return pb.NewError(pb.ErrInvalidParams, err.Error())
 	}
 
+	if ok, err := datasource.EnableSync(ctx, in.ServiceId); err != nil {
+		return err
+	} else if !ok {
+		util.SetContext(ctx, util.CtxEnableSync, "0")
+	}
+
 	return datasource.GetMetadataManager().PutInstanceStatus(ctx, in)
 }
 
@@ -435,6 +466,13 @@ func PutInstanceProperties(ctx context.Context, in *pb.UpdateInstancePropsReques
 	for k, v := range properties {
 		in.Properties[k] = v
 	}
+
+	if ok, err := datasource.EnableSync(ctx, in.ServiceId); err != nil {
+		return err
+	} else if !ok {
+		util.SetContext(ctx, util.CtxEnableSync, "0")
+	}
+
 	return datasource.GetMetadataManager().PutInstanceProperties(ctx, in)
 }
 

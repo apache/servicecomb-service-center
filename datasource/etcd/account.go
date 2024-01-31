@@ -56,7 +56,6 @@ func (ds *RbacDAO) CreateAccount(ctx context.Context, a *crbac.Account) error {
 	if exist {
 		return rbac.ErrAccountDuplicated
 	}
-
 	opts, err := GenAccountOpts(a, etcdadpt.ActionPut)
 	if err != nil {
 		log.Error("", err)

@@ -34,6 +34,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	putil "github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/config"
+	svc "github.com/apache/servicecomb-service-center/syncer/whitelist/service"
 )
 
 const (
@@ -46,6 +47,7 @@ const (
 
 var (
 	ErrWithoutDomainProject = errors.New("key without domain and project")
+	ErrWithoutServiceID     = errors.New("key without serviceID")
 )
 
 type SyncManager struct {
@@ -177,6 +179,10 @@ func syncAllTags(ctx context.Context) error {
 		}
 		putil.SetDomain(ctx, domain)
 		putil.SetProject(ctx, project)
+		serviceID := getServiceID(string(kv.Key), path.GetServiceTagRootKey(domainProject(domain, project)))
+		if ok, err := datasource.EnableSync(ctx, serviceID); err != nil || !ok {
+			continue
+		}
 		opts, err := esync.GenCreateOpts(ctx, datasource.ResourceKV, kv.Value,
 			esync.WithOpts(map[string]string{"key": string(kv.Key)}))
 		if err != nil {
@@ -204,6 +210,9 @@ func syncAllServices(ctx context.Context) error {
 		if err != nil {
 			log.Error("fail to unmarshal service", err)
 			return err
+		}
+		if !svc.IsExistInWhiteList(service.ServiceName) {
+			continue
 		}
 		domain, project, err := getDomainProject(string(kv.Key), path.GetServiceRootKey(""))
 		if err != nil {
@@ -262,6 +271,7 @@ func syncAllServiceSchemas(ctx context.Context) error {
 		}
 		putil.SetDomain(ctx, domain)
 		putil.SetProject(ctx, project)
+
 		opts, err := esync.GenCreateOpts(ctx, datasource.ResourceKV, kv.Value,
 			esync.WithOpts(map[string]string{"key": string(kv.Key)}))
 		if err != nil {
@@ -291,6 +301,10 @@ func syncAllServiceSchemaRefs(ctx context.Context) error {
 		}
 		putil.SetDomain(ctx, domain)
 		putil.SetProject(ctx, project)
+		serviceID := getServiceID(string(kv.Key), path.GetServiceSchemaRefRootKey(domainProject(domain, project)))
+		if ok, err := datasource.EnableSync(ctx, serviceID); err != nil || !ok {
+			continue
+		}
 		opts, err := esync.GenCreateOpts(ctx, datasource.ResourceKV, kv.Value,
 			esync.WithOpts(map[string]string{"key": string(kv.Key)}))
 		if err != nil {
@@ -349,6 +363,10 @@ func syncAllServiceSchemaSummaries(ctx context.Context) error {
 		}
 		putil.SetDomain(ctx, domain)
 		putil.SetProject(ctx, project)
+		serviceID := getServiceID(string(kv.Key), path.GetServiceSchemaSummaryRootKey(domainProject(domain, project)))
+		if ok, err := datasource.EnableSync(ctx, serviceID); err != nil || !ok {
+			continue
+		}
 		opts, err := esync.GenCreateOpts(ctx, datasource.ResourceKV, kv.Value,
 			esync.WithOpts(map[string]string{"key": string(kv.Key)}))
 		if err != nil {
@@ -378,6 +396,10 @@ func syncAllDependencies(ctx context.Context) error {
 		}
 		putil.SetDomain(ctx, domain)
 		putil.SetProject(ctx, project)
+		serviceID := getServiceID(string(kv.Key), path.GetServiceDependencyQueueRootKey(domainProject(domain, project)))
+		if ok, err := datasource.EnableSync(ctx, serviceID); err != nil || !ok {
+			continue
+		}
 		opts, err := esync.GenUpdateOpts(ctx, datasource.ResourceKV, kv.Value, esync.WithOpts(map[string]string{"key": string(kv.Key)}))
 		if err != nil {
 			log.Error("fail to create dep opts", err)
@@ -405,4 +427,21 @@ func getDomainProject(key string, prefixKey string) (domain string, project stri
 	domain = splitStr[0]
 	project = splitStr[1]
 	return
+}
+
+func getServiceID(key string, prefixKey string) string {
+	splitKey := strings.Split(key, prefixKey)
+	if len(splitKey) != 2 {
+		return ""
+	}
+	suffixKey := splitKey[len(splitKey)-1]
+	splitStr := strings.Split(suffixKey, "/")
+	if len(splitStr) == 0 {
+		return ""
+	}
+	return splitStr[0]
+}
+
+func domainProject(domain string, project string) string {
+	return domain + "/" + project + "/"
 }

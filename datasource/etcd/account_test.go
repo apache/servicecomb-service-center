@@ -34,12 +34,14 @@ import (
 )
 
 func accountContext() context.Context {
-	return util.WithNoCache(util.SetContext(context.Background(), util.CtxEnableSync, "1"))
+	ctx := util.WithNoCache(util.SetDomainProject(context.Background(), "sync-account", "sync-account"))
+	return util.WithNoCache(util.SetContext(ctx, util.CtxEnableSync, "1"))
 }
 
 func TestSyncAccount(t *testing.T) {
 
 	t.Run("create account", func(t *testing.T) {
+
 		t.Run("creating a account then delete it will create two tasks and a tombstone should pass",
 			func(t *testing.T) {
 				a1 := crbac.Account{
@@ -58,8 +60,8 @@ func TestSyncAccount(t *testing.T) {
 				_, err = rbac.Instance().DeleteAccount(accountContext(), []string{a1.Name})
 				assert.NoError(t, err)
 				listTaskReq := model.ListTaskRequest{
-					Domain:       "",
-					Project:      "",
+					Domain:       "sync-account",
+					Project:      "sync-account",
 					ResourceType: datasource.ResourceAccount,
 				}
 				tasks, err := task.List(accountContext(), &listTaskReq)
@@ -68,6 +70,8 @@ func TestSyncAccount(t *testing.T) {
 				err = task.Delete(accountContext(), tasks...)
 				assert.NoError(t, err)
 				tombstoneListReq := model.ListTombstoneRequest{
+					Domain:       "sync-account",
+					Project:      "sync-account",
 					ResourceType: datasource.ResourceAccount,
 				}
 				tombstones, err := tombstone.List(accountContext(), &tombstoneListReq)
@@ -110,8 +114,8 @@ func TestSyncAccount(t *testing.T) {
 				_, err = rbac.Instance().DeleteAccount(accountContext(), []string{a2.Name, a3.Name})
 				assert.NoError(t, err)
 				listTaskReq := model.ListTaskRequest{
-					Domain:       "",
-					Project:      "",
+					Domain:       "sync-account",
+					Project:      "sync-account",
 					ResourceType: datasource.ResourceAccount,
 				}
 				tasks, err := task.List(accountContext(), &listTaskReq)
@@ -120,6 +124,8 @@ func TestSyncAccount(t *testing.T) {
 				err = task.Delete(accountContext(), tasks...)
 				assert.NoError(t, err)
 				tombstoneListReq := model.ListTombstoneRequest{
+					Domain:       "sync-account",
+					Project:      "sync-account",
 					ResourceType: datasource.ResourceAccount,
 				}
 				tombstones, err := tombstone.List(accountContext(), &tombstoneListReq)
@@ -127,7 +133,6 @@ func TestSyncAccount(t *testing.T) {
 				assert.Equal(t, 2, len(tombstones))
 				err = tombstone.Delete(accountContext(), tombstones...)
 				assert.NoError(t, err)
-
 			})
 	})
 }

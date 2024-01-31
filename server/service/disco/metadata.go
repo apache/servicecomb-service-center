@@ -23,14 +23,16 @@ import (
 	"strconv"
 	"time"
 
+	pb "github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/foundation/gopool"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
 	quotasvc "github.com/apache/servicecomb-service-center/server/service/quota"
 	"github.com/apache/servicecomb-service-center/server/service/validator"
-	pb "github.com/go-chassis/cari/discovery"
-	"github.com/go-chassis/foundation/gopool"
+	svc "github.com/apache/servicecomb-service-center/syncer/whitelist/service"
 )
 
 func RegisterService(ctx context.Context, request *pb.CreateServiceRequest) (*pb.CreateServiceResponse, error) {
@@ -72,6 +74,11 @@ func registerService(ctx context.Context, request *pb.CreateServiceRequest) (*pb
 	}
 
 	assignDefaultValue(service)
+
+	// If the synchronization is not in the whitelist, it will be set to fail
+	if !svc.IsExistInWhiteList(service.ServiceName) {
+		util.SetContext(ctx, util.CtxEnableSync, "0")
+	}
 
 	return datasource.GetMetadataManager().RegisterService(ctx, request)
 }
@@ -156,6 +163,12 @@ func UnregisterService(ctx context.Context, request *pb.DeleteServiceRequest) er
 	if err := validator.ValidateDeleteServiceRequest(request); err != nil {
 		log.Error(fmt.Sprintf("delete micro-service[%s] failed, operator: %s", request.ServiceId, remoteIP), err)
 		return pb.NewError(pb.ErrInvalidParams, err.Error())
+	}
+
+	if ok, err := datasource.EnableSync(ctx, request.ServiceId); err != nil {
+		return err
+	} else if !ok {
+		util.SetContext(ctx, util.CtxEnableSync, "0")
 	}
 
 	return datasource.GetMetadataManager().UnregisterService(ctx, request)
@@ -269,6 +282,12 @@ func PutServiceProperties(ctx context.Context, request *pb.UpdateServicePropsReq
 		log.Error(fmt.Sprintf("update service[%s] properties failed, operator: %s",
 			request.ServiceId, remoteIP), err)
 		return pb.NewError(pb.ErrInvalidParams, err.Error())
+	}
+
+	if ok, err := datasource.EnableSync(ctx, request.ServiceId); err != nil {
+		return err
+	} else if !ok {
+		util.SetContext(ctx, util.CtxEnableSync, "0")
 	}
 
 	return datasource.GetMetadataManager().PutServiceProperties(ctx, request)

@@ -21,10 +21,15 @@ import (
 	"testing"
 
 	"github.com/go-chassis/cari/pkg/errsvc"
+	"github.com/go-chassis/cari/sync"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/eventbase/model"
+	"github.com/apache/servicecomb-service-center/eventbase/service/task"
+	"github.com/apache/servicecomb-service-center/eventbase/service/tombstone"
 	"github.com/apache/servicecomb-service-center/server/service/disco"
+	"github.com/apache/servicecomb-service-center/test"
 	pb "github.com/go-chassis/cari/discovery"
 )
 
@@ -655,6 +660,260 @@ func TestPutDependencies(t *testing.T) {
 		})
 		assert.NoError(t, err)
 		assert.Equal(t, 0, len(respPro.Providers))
+	})
+}
+
+func TestSyncDependency(t *testing.T) {
+	if !test.IsETCD() {
+		return
+	}
+
+	var consumerID string
+	var providerID string
+	var consumerIDNotInWhiteList string
+	var providerIDNotInWhiteList string
+
+	initWhiteList()
+
+	t.Run("register microservices", func(t *testing.T) {
+		t.Run("create a consumer service named sync_dep_consumer and a provider service named sync_dep_provider"+
+			"will create two tasks should pass", func(t *testing.T) {
+			resp, err := disco.RegisterService(depContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "sync_dep_group",
+					ServiceName: "sync_dep_consumer",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
+				},
+			})
+			assert.NoError(t, err)
+			consumerID = resp.ServiceId
+
+			resp, err = disco.RegisterService(depContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "sync_dep_group",
+					ServiceName: "sync_dep_provider",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
+				},
+			})
+			assert.NoError(t, err)
+			providerID = resp.ServiceId
+
+			listTaskReq := model.ListTaskRequest{
+				Domain:       depDomain,
+				Project:      depProject,
+				ResourceType: datasource.ResourceService,
+				Action:       sync.CreateAction,
+				Status:       sync.PendingStatus,
+			}
+			tasks, err := task.List(microServiceGetContext(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 2, len(tasks))
+			err = task.Delete(microServiceGetContext(), tasks...)
+			assert.NoError(t, err)
+			tasks, err = task.List(microServiceGetContext(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tasks))
+		})
+
+		t.Run("create a consumer service named dep_consumer and a provider service named dep_provider"+
+			"will not create two tasks should pass", func(t *testing.T) {
+			resp, err := disco.RegisterService(depContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "dep_group",
+					ServiceName: "dep_consumer",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
+				},
+			})
+			assert.NoError(t, err)
+			consumerIDNotInWhiteList = resp.ServiceId
+
+			resp, err = disco.RegisterService(depContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "dep_group",
+					ServiceName: "dep_provider",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
+				},
+			})
+			assert.NoError(t, err)
+			providerIDNotInWhiteList = resp.ServiceId
+
+			listTaskReq := model.ListTaskRequest{
+				Domain:       depDomain,
+				Project:      depProject,
+				ResourceType: datasource.ResourceService,
+				Action:       sync.CreateAction,
+				Status:       sync.PendingStatus,
+			}
+			tasks, err := task.List(depContext(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tasks))
+		})
+	})
+
+	t.Run("FindInstances", func(t *testing.T) {
+		t.Run("consumer named sync_dep_consumer finding instances provider named sync_dep_consumer will create a task", func(t *testing.T) {
+			_, err := disco.FindInstances(depContext(), &pb.FindInstancesRequest{
+				ConsumerServiceId: consumerID,
+				AppId:             "sync_dep_group",
+				ServiceName:       "sync_dep_provider",
+			})
+			assert.NoError(t, err)
+
+			DependencyHandle()
+
+			respGetP, err := disco.ListConsumers(depContext(), &pb.GetDependenciesRequest{
+				ServiceId: providerID,
+			})
+			assert.NoError(t, err)
+			assert.Equal(t, 1, len(respGetP.Consumers))
+			assert.Equal(t, consumerID, respGetP.Consumers[0].ServiceId)
+
+			respGetC, err := disco.ListProviders(depContext(), &pb.GetDependenciesRequest{
+				ServiceId: consumerID,
+			})
+			assert.NoError(t, err)
+			assert.Equal(t, 1, len(respGetC.Providers))
+
+			listTaskReq := model.ListTaskRequest{
+				Domain:       depDomain,
+				Project:      depProject,
+				ResourceType: datasource.ResourceKV,
+				Action:       sync.UpdateAction,
+				Status:       sync.PendingStatus,
+			}
+
+			tasks, err := task.List(depContext(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 1, len(tasks))
+			err = task.Delete(depContext(), tasks...)
+			assert.NoError(t, err)
+			tasks, err = task.List(depContext(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tasks))
+		})
+	})
+
+	t.Run("consumer named dep_consumer finding instances provider named dep_consumer will not create a task ", func(t *testing.T) {
+		_, err := disco.FindInstances(depContext(), &pb.FindInstancesRequest{
+			ConsumerServiceId: consumerIDNotInWhiteList,
+			AppId:             "dep_group",
+			ServiceName:       "dep_provider",
+		})
+		assert.NoError(t, err)
+
+		DependencyHandle()
+
+		respGetP, err := disco.ListConsumers(depContext(), &pb.GetDependenciesRequest{
+			ServiceId: providerIDNotInWhiteList,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, 1, len(respGetP.Consumers))
+		assert.Equal(t, consumerIDNotInWhiteList, respGetP.Consumers[0].ServiceId)
+
+		respGetC, err := disco.ListProviders(depContext(), &pb.GetDependenciesRequest{
+			ServiceId: consumerIDNotInWhiteList,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, 1, len(respGetC.Providers))
+
+		listTaskReq := model.ListTaskRequest{
+			Domain:       depDomain,
+			Project:      depProject,
+			ResourceType: datasource.ResourceKV,
+			Action:       sync.UpdateAction,
+			Status:       sync.PendingStatus,
+		}
+
+		tasks, err := task.List(depContext(), &listTaskReq)
+		assert.NoError(t, err)
+		assert.Equal(t, 0, len(tasks))
+	})
+
+	t.Run("unregister microservices", func(t *testing.T) {
+		t.Run("unregister a consumer service named sync_dep_consumer and a provider service named sync_dep_provider"+
+			" will create two tasks and two tombstones should pass", func(t *testing.T) {
+			err := disco.UnregisterService(depContext(), &pb.DeleteServiceRequest{
+				ServiceId: consumerID,
+				Force:     true,
+			})
+			assert.NoError(t, err)
+
+			err = disco.UnregisterService(depContext(), &pb.DeleteServiceRequest{
+				ServiceId: providerID,
+				Force:     true,
+			})
+			assert.NoError(t, err)
+
+			listTaskReq := model.ListTaskRequest{
+				Domain:       depDomain,
+				Project:      depProject,
+				ResourceType: datasource.ResourceService,
+				Action:       sync.DeleteAction,
+				Status:       sync.PendingStatus,
+			}
+
+			tasks, err := task.List(depContext(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 2, len(tasks))
+			err = task.Delete(depContext(), tasks...)
+			assert.NoError(t, err)
+			tasks, err = task.List(depContext(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tasks))
+			tombstoneListReq := model.ListTombstoneRequest{
+				Domain:       depDomain,
+				Project:      depProject,
+				ResourceType: datasource.ResourceService,
+			}
+			tombstones, err := tombstone.List(depContext(), &tombstoneListReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 2, len(tombstones))
+			err = tombstone.Delete(depContext(), tombstones...)
+			assert.NoError(t, err)
+		})
+
+		t.Run("unregister a consumer service named dep_consumer and a provider service named dep_provider "+
+			"will not create two tasks and two tombstones should pass", func(t *testing.T) {
+			err := disco.UnregisterService(depContext(), &pb.DeleteServiceRequest{
+				ServiceId: consumerIDNotInWhiteList,
+				Force:     true,
+			})
+			assert.NoError(t, err)
+
+			err = disco.UnregisterService(depContext(), &pb.DeleteServiceRequest{
+				ServiceId: providerIDNotInWhiteList,
+				Force:     true,
+			})
+			assert.NoError(t, err)
+
+			listTaskReq := model.ListTaskRequest{
+				Domain:       depDomain,
+				Project:      depProject,
+				ResourceType: datasource.ResourceService,
+				Action:       sync.DeleteAction,
+				Status:       sync.PendingStatus,
+			}
+
+			tasks, err := task.List(depContext(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tasks))
+			tombstoneListReq := model.ListTombstoneRequest{
+				Domain:       depDomain,
+				Project:      depProject,
+				ResourceType: datasource.ResourceService,
+			}
+			tombstones, err := tombstone.List(depContext(), &tombstoneListReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tombstones))
+		})
 	})
 }
 

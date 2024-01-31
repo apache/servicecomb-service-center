@@ -22,14 +22,20 @@ import (
 	"strings"
 	"testing"
 
+	pb "github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/cari/pkg/errsvc"
+	csync "github.com/go-chassis/cari/sync"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/schema"
+	"github.com/apache/servicecomb-service-center/eventbase/model"
+	"github.com/apache/servicecomb-service-center/eventbase/service/task"
+	"github.com/apache/servicecomb-service-center/eventbase/service/tombstone"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/service/disco"
 	quotasvc "github.com/apache/servicecomb-service-center/server/service/quota"
-	pb "github.com/go-chassis/cari/discovery"
-	"github.com/go-chassis/cari/pkg/errsvc"
-	"github.com/stretchr/testify/assert"
+	"github.com/apache/servicecomb-service-center/test"
 )
 
 const (
@@ -1127,5 +1133,406 @@ func TestSchemaUsage(t *testing.T) {
 		usage, err := disco.Usage(ctx, serviceID)
 		assert.NoError(t, err)
 		assert.Equal(t, int64(1), usage)
+	})
+}
+
+func TestSyncSchema(t *testing.T) {
+	if !test.IsETCD() {
+		return
+	}
+	initWhiteList()
+
+	var serviceID string
+	var serviceIDNotInWhiteList string
+
+	t.Run("register a microservice", func(t *testing.T) {
+		t.Run("register a microservice named sync_schemas_service will create a service task should pass", func(t *testing.T) {
+			resp, err := disco.RegisterService(schemaContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "sync_schemas_prod",
+					ServiceName: "sync_schemas_service",
+					Version:     "1.0.1",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
+					Environment: pb.ENV_PROD,
+				},
+			})
+			assert.NoError(t, err)
+			assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
+			serviceID = resp.ServiceId
+			listTaskReq := model.ListTaskRequest{
+				Domain:       schemaDomain,
+				Project:      schemaProject,
+				Action:       csync.CreateAction,
+				ResourceType: datasource.ResourceService,
+				Status:       csync.PendingStatus,
+			}
+			tasks, err := task.List(context.Background(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 1, len(tasks))
+			err = task.Delete(context.Background(), tasks...)
+			assert.NoError(t, err)
+		})
+
+		t.Run("register a microservice named CCC will not create a service task should pass", func(t *testing.T) {
+			resp, err := disco.RegisterService(schemaContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "sync_schemas_prod",
+					ServiceName: "CCC",
+					Version:     "1.0.1",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
+					Environment: pb.ENV_PROD,
+				},
+			})
+			assert.NoError(t, err)
+			assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
+			serviceIDNotInWhiteList = resp.ServiceId
+			listTaskReq := model.ListTaskRequest{
+				Domain:       schemaDomain,
+				Project:      schemaProject,
+				Action:       csync.CreateAction,
+				ResourceType: datasource.ResourceService,
+				Status:       csync.PendingStatus,
+			}
+			tasks, err := task.List(context.Background(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tasks))
+		})
+	})
+
+	t.Run("put schema will execute the PutContent func", func(t *testing.T) {
+		t.Run("update a microservice named sync_schemas_service's schema with valid request, will create 3 kv tasks(hash summary content) should pass", func(t *testing.T) {
+			err := disco.PutSchema(schemaContext(), &pb.ModifySchemaRequest{
+				ServiceId: serviceID,
+				SchemaId:  "12345678",
+				Schema:    "schema-one",
+				Summary:   "12345678",
+			})
+			assert.NoError(t, err)
+
+			ref, err := disco.GetSchema(schemaContext(), &pb.GetSchemaRequest{
+				ServiceId: serviceID,
+				SchemaId:  "12345678",
+			})
+			assert.NoError(t, err)
+			assert.NotNil(t, ref)
+			assert.Equal(t, "12345678", ref.Summary)
+			assert.Equal(t, "schema-one", ref.Schema)
+			listTaskReq := model.ListTaskRequest{
+				Domain:       schemaDomain,
+				Project:      schemaProject,
+				Action:       csync.UpdateAction,
+				ResourceType: datasource.ResourceKV,
+				Status:       csync.PendingStatus,
+			}
+			tasks, err := task.List(schemaContext(), &listTaskReq)
+			assert.NoError(t, err)
+			// append the schemaID into service.Schemas if schemaID is new will create a kv task
+			assert.Equal(t, 4, len(tasks))
+			err = task.Delete(schemaContext(), tasks...)
+			assert.NoError(t, err)
+		})
+
+		t.Run("update a microservice named CCC's schema with valid request, will not create 3 kv tasks(hash summary content) should pass", func(t *testing.T) {
+			err := disco.PutSchema(schemaContext(), &pb.ModifySchemaRequest{
+				ServiceId: serviceIDNotInWhiteList,
+				SchemaId:  "87654321",
+				Schema:    "schema-two",
+				Summary:   "87654321",
+			})
+			assert.NoError(t, err)
+
+			ref, err := disco.GetSchema(schemaContext(), &pb.GetSchemaRequest{
+				ServiceId: serviceIDNotInWhiteList,
+				SchemaId:  "87654321",
+			})
+			assert.NoError(t, err)
+			assert.NotNil(t, ref)
+			assert.Equal(t, "87654321", ref.Summary)
+			assert.Equal(t, "schema-two", ref.Schema)
+			listTaskReq := model.ListTaskRequest{
+				Domain:       schemaDomain,
+				Project:      schemaProject,
+				Action:       csync.UpdateAction,
+				ResourceType: datasource.ResourceKV,
+				Status:       csync.PendingStatus,
+			}
+			tasks, err := task.List(schemaContext(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tasks))
+		})
+	})
+
+	t.Run("put schemas will execute the PutManyContent func", func(t *testing.T) {
+		t.Run("update a microservice named sync_schemas_service's schemas with valid request, will create 7 kv update task (2 ref tasks, 2 content tasks, 2 summary tasks"+
+			" 1 service task), two delete kv task, two tombstones(ref and summary) should pass", func(t *testing.T) {
+			err := disco.PutSchemas(schemaContext(), &pb.ModifySchemasRequest{
+				ServiceId: serviceID,
+				Schemas: []*pb.Schema{
+					{
+						SchemaId: "11111111",
+						Summary:  "11111111",
+						Schema:   "11111111",
+					},
+					{
+						SchemaId: "22222222",
+						Summary:  "22222222",
+						Schema:   "22222222",
+					},
+				},
+			})
+			assert.NoError(t, err)
+			ref, err := disco.GetSchema(schemaContext(), &pb.GetSchemaRequest{
+				ServiceId: serviceID,
+				SchemaId:  "11111111",
+			})
+			assert.NoError(t, err)
+			assert.NotNil(t, ref)
+			assert.Equal(t, "11111111", ref.Summary)
+			assert.Equal(t, "11111111", ref.Schema)
+			ref, err = disco.GetSchema(schemaContext(), &pb.GetSchemaRequest{
+				ServiceId: serviceID,
+				SchemaId:  "22222222",
+			})
+			assert.NoError(t, err)
+			assert.NotNil(t, ref)
+			assert.Equal(t, "22222222", ref.Summary)
+			assert.Equal(t, "22222222", ref.Schema)
+			listTaskReq := model.ListTaskRequest{
+				Domain:       schemaDomain,
+				Project:      schemaProject,
+				Action:       csync.UpdateAction,
+				ResourceType: datasource.ResourceKV,
+				Status:       csync.PendingStatus,
+			}
+			tasks, err := task.List(schemaContext(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 7, len(tasks))
+			err = task.Delete(schemaContext(), tasks...)
+			assert.NoError(t, err)
+			listTaskReq = model.ListTaskRequest{
+				Domain:       schemaDomain,
+				Project:      schemaProject,
+				Action:       csync.DeleteAction,
+				ResourceType: datasource.ResourceKV,
+				Status:       csync.PendingStatus,
+			}
+			tasks, err = task.List(schemaContext(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 2, len(tasks))
+			err = task.Delete(schemaContext(), tasks...)
+			assert.NoError(t, err)
+			tombstoneListReq := model.ListTombstoneRequest{
+				Domain:       schemaDomain,
+				Project:      schemaProject,
+				ResourceType: datasource.ResourceKV,
+			}
+			tombstones, err := tombstone.List(schemaContext(), &tombstoneListReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 2, len(tombstones))
+			err = tombstone.Delete(schemaContext(), tombstones...)
+			assert.NoError(t, err)
+		})
+
+		t.Run("update a microservice named CCC's schemas with valid request, will not create 7 kv update task (2 ref tasks, 2 content tasks, 2 summary tasks"+
+			" 1 service task), two delete kv task, two tombstones(ref and summary) should pass", func(t *testing.T) {
+			err := disco.PutSchemas(schemaContext(), &pb.ModifySchemasRequest{
+				ServiceId: serviceIDNotInWhiteList,
+				Schemas: []*pb.Schema{
+					{
+						SchemaId: "33333333",
+						Summary:  "33333333",
+						Schema:   "33333333",
+					},
+					{
+						SchemaId: "44444444",
+						Summary:  "44444444",
+						Schema:   "44444444",
+					},
+				},
+			})
+			assert.NoError(t, err)
+			ref, err := disco.GetSchema(schemaContext(), &pb.GetSchemaRequest{
+				ServiceId: serviceIDNotInWhiteList,
+				SchemaId:  "33333333",
+			})
+			assert.NoError(t, err)
+			assert.NotNil(t, ref)
+			assert.Equal(t, "33333333", ref.Summary)
+			assert.Equal(t, "33333333", ref.Schema)
+			ref, err = disco.GetSchema(schemaContext(), &pb.GetSchemaRequest{
+				ServiceId: serviceIDNotInWhiteList,
+				SchemaId:  "44444444",
+			})
+			assert.NoError(t, err)
+			assert.NotNil(t, ref)
+			assert.Equal(t, "44444444", ref.Summary)
+			assert.Equal(t, "44444444", ref.Schema)
+			listTaskReq := model.ListTaskRequest{
+				Domain:       schemaDomain,
+				Project:      schemaProject,
+				Action:       csync.UpdateAction,
+				ResourceType: datasource.ResourceKV,
+				Status:       csync.PendingStatus,
+			}
+			tasks, err := task.List(schemaContext(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tasks))
+			listTaskReq = model.ListTaskRequest{
+				Domain:       schemaDomain,
+				Project:      schemaProject,
+				Action:       csync.DeleteAction,
+				ResourceType: datasource.ResourceKV,
+				Status:       csync.PendingStatus,
+			}
+			tasks, err = task.List(schemaContext(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tasks))
+			tombstoneListReq := model.ListTombstoneRequest{
+				Domain:       schemaDomain,
+				Project:      schemaProject,
+				ResourceType: datasource.ResourceKV,
+			}
+			tombstones, err := tombstone.List(schemaContext(), &tombstoneListReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tombstones))
+		})
+
+	})
+
+	t.Run("delete schemas ", func(t *testing.T) {
+		t.Run("delete a microservice named sync_schemas_service's schemas 11111111 and 22222222 will create 4 tasks(2 from DeleteRef, 2 from DeleteSchema ) "+
+			"and 4 tombstones (2 from DeleteRef, 2 from DeleteSchema) should pass", func(t *testing.T) {
+			err := disco.DeleteSchema(schemaContext(), &pb.DeleteSchemaRequest{
+				ServiceId: serviceID,
+				SchemaId:  "11111111",
+			})
+			assert.NoError(t, err)
+
+			err = disco.DeleteSchema(schemaContext(), &pb.DeleteSchemaRequest{
+				ServiceId: serviceID,
+				SchemaId:  "22222222",
+			})
+			assert.NoError(t, err)
+			listTaskReq := model.ListTaskRequest{
+				Domain:       schemaDomain,
+				Project:      schemaProject,
+				Action:       csync.DeleteAction,
+				ResourceType: datasource.ResourceKV,
+				Status:       csync.PendingStatus,
+			}
+			tasks, err := task.List(schemaContext(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 4, len(tasks))
+			err = task.Delete(schemaContext(), tasks...)
+			assert.NoError(t, err)
+			tombstoneListReq := model.ListTombstoneRequest{
+				Domain:       schemaDomain,
+				Project:      schemaProject,
+				ResourceType: datasource.ResourceKV,
+			}
+			tombstones, err := tombstone.List(schemaContext(), &tombstoneListReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 4, len(tombstones))
+			err = tombstone.Delete(context.Background(), tombstones...)
+			assert.NoError(t, err)
+		})
+
+		t.Run("delete a microservice named CCC's schemas 33333333 and 44444444 will not create 4 tasks(2 from DeleteRef, 2 from DeleteSchema ) "+
+			"and 4 tombstones (2 from DeleteRef, 2 from DeleteSchema) should pass", func(t *testing.T) {
+			err := disco.DeleteSchema(schemaContext(), &pb.DeleteSchemaRequest{
+				ServiceId: serviceIDNotInWhiteList,
+				SchemaId:  "33333333",
+			})
+			assert.NoError(t, err)
+
+			err = disco.DeleteSchema(schemaContext(), &pb.DeleteSchemaRequest{
+				ServiceId: serviceIDNotInWhiteList,
+				SchemaId:  "44444444",
+			})
+			assert.NoError(t, err)
+			listTaskReq := model.ListTaskRequest{
+				Domain:       schemaDomain,
+				Project:      schemaProject,
+				Action:       csync.DeleteAction,
+				ResourceType: datasource.ResourceKV,
+				Status:       csync.PendingStatus,
+			}
+			tasks, err := task.List(schemaContext(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tasks))
+			tombstoneListReq := model.ListTombstoneRequest{
+				Domain:       schemaDomain,
+				Project:      schemaProject,
+				ResourceType: datasource.ResourceKV,
+			}
+			tombstones, err := tombstone.List(schemaContext(), &tombstoneListReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tombstones))
+		})
+	})
+
+	t.Run("unregister microservice", func(t *testing.T) {
+		t.Run("unregister a microservice named sync_schemas_service will create a task and a tombstone should pass", func(t *testing.T) {
+			err := disco.UnregisterService(schemaContext(), &pb.DeleteServiceRequest{
+				ServiceId: serviceID,
+				Force:     true,
+			})
+			assert.NoError(t, err)
+
+			listTaskReq := model.ListTaskRequest{
+				Domain:       schemaDomain,
+				Project:      schemaProject,
+				ResourceType: datasource.ResourceService,
+				Action:       csync.DeleteAction,
+				Status:       csync.PendingStatus,
+			}
+			tasks, err := task.List(schemaContext(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 1, len(tasks))
+			err = task.Delete(context.Background(), tasks...)
+			assert.NoError(t, err)
+			tasks, err = task.List(schemaContext(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tasks))
+			tombstoneListReq := model.ListTombstoneRequest{
+				Domain:       schemaDomain,
+				Project:      schemaProject,
+				ResourceType: datasource.ResourceService,
+			}
+			tombstones, err := tombstone.List(schemaContext(), &tombstoneListReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 1, len(tombstones))
+			err = tombstone.Delete(schemaContext(), tombstones...)
+			assert.NoError(t, err)
+		})
+
+		t.Run("unregister a microservice named CCC will not create a task and a tombstone should pass", func(t *testing.T) {
+			err := disco.UnregisterService(schemaContext(), &pb.DeleteServiceRequest{
+				ServiceId: serviceIDNotInWhiteList,
+				Force:     true,
+			})
+			assert.NoError(t, err)
+
+			listTaskReq := model.ListTaskRequest{
+				Domain:       schemaDomain,
+				Project:      schemaProject,
+				ResourceType: datasource.ResourceService,
+				Action:       csync.DeleteAction,
+				Status:       csync.PendingStatus,
+			}
+			tasks, err := task.List(schemaContext(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tasks))
+			tombstoneListReq := model.ListTombstoneRequest{
+				Domain:       schemaDomain,
+				Project:      schemaProject,
+				ResourceType: datasource.ResourceService,
+			}
+			tombstones, err := tombstone.List(schemaContext(), &tombstoneListReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tombstones))
+		})
 	})
 }

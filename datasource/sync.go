@@ -20,10 +20,36 @@ package datasource
 import (
 	"context"
 	"errors"
+	"fmt"
+
+	pb "github.com/go-chassis/cari/discovery"
+
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	svc "github.com/apache/servicecomb-service-center/syncer/whitelist/service"
 )
 
 var ErrSyncAllKeyExists = errors.New("sync all key already exists")
 
 type SyncManager interface {
 	SyncAll(ctx context.Context) error
+}
+
+// EnableSync implement:
+// 1.Check if the service exists
+// 2.Check if the service is in the whitelist
+func EnableSync(ctx context.Context, serviceID string) (bool, error) {
+	remoteIP := util.GetIPFromContext(ctx)
+	microservice, err := GetMetadataManager().GetService(ctx, &pb.GetServiceRequest{
+		ServiceId: serviceID,
+	})
+	if err != nil {
+		log.Error(fmt.Sprintf("get service[%s] failed, operator: %s", serviceID, remoteIP), err)
+		return false, err
+	}
+	// Whether the service is in the whitelist. If the service is in the whitelist and needs to be synced.
+	if !svc.IsExistInWhiteList(microservice.ServiceName) {
+		return false, nil
+	}
+	return true, nil
 }
