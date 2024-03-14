@@ -26,14 +26,15 @@ import (
 	"strings"
 	"time"
 
+	pb "github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/cari/pkg/errsvc"
+	"github.com/little-cui/etcdadpt"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	pb "github.com/go-chassis/cari/discovery"
-	"github.com/go-chassis/cari/pkg/errsvc"
-	"github.com/little-cui/etcdadpt"
 )
 
 func GetLeaseID(ctx context.Context, domainProject string, serviceID string, instanceID string) (int64, error) {
@@ -101,12 +102,16 @@ func GetAllInstancesOfOneService(ctx context.Context, domainProject string, serv
 	return instances, nil
 }
 
-func GetInstanceCountOfOneService(ctx context.Context, domainProject string, serviceID string) (int64, error) {
+func GetInstanceCountOfOneService(ctx context.Context, domainProject string, serviceID string, isGlobalInstance bool) (int64, error) {
 	key := path.GenerateInstanceKey(domainProject, serviceID, "")
 	opts := append(FromContext(ctx),
 		etcdadpt.WithStrKey(key),
 		etcdadpt.WithPrefix(),
-		etcdadpt.WithCountOnly())
+		etcdadpt.WithCountOnly(),
+		etcdadpt.WithInstanceSearch())
+	if isGlobalInstance {
+		opts = append(opts, etcdadpt.WithGlobalInstanceSearch())
+	}
 	resp, err := sd.Instance().Search(ctx, opts...)
 	if err != nil {
 		log.Error(fmt.Sprintf("get number of service[%s]'s instances failed", serviceID), err)

@@ -70,6 +70,10 @@ func (c Cache) GetPrefix(prefix string, arr *[]*kvstore.KeyValue) (s int) {
 	return
 }
 
+func (c Cache) GetTotalInstanceCount(_ string, _ *[]*kvstore.KeyValue) (s int) {
+	return 0
+}
+
 func (c Cache) append(tmp []*kvstore.KeyValue, arr *[]*kvstore.KeyValue,
 	exists map[string]struct{}) (s int) {
 	for _, kv := range tmp {

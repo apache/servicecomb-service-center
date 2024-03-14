@@ -49,6 +49,7 @@ type CacheReader interface {
 	GetAll(arr *[]*KeyValue) int
 	// GetPrefix gets values by the key prefix
 	GetPrefix(prefix string, arr *[]*KeyValue) int
+	GetTotalInstanceCount(prefix string, arr *[]*KeyValue) int
 	// ForEach executes the given function for each of the k-v
 	ForEach(iter func(k string, v *KeyValue) (next bool))
 }

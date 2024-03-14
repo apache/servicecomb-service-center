@@ -305,7 +305,8 @@ func GetOneDomainProjectInstanceCount(ctx context.Context, domainProject string)
 	opts := append(FromContext(ctx),
 		etcdadpt.WithStrKey(key),
 		etcdadpt.WithCountOnly(),
-		etcdadpt.WithPrefix())
+		etcdadpt.WithPrefix(),
+		etcdadpt.WithInstanceSearch())
 	resp, err := sd.Instance().Search(ctx, opts...)
 	if err != nil {
 		return 0, err
@@ -320,7 +321,7 @@ func GetGlobalInstanceCount(ctx context.Context) (int64, error) {
 	}
 	var count int64
 	for _, serviceID := range serviceIDs {
-		n, err := GetInstanceCountOfOneService(ctx, datasource.RegistryDomainProject, serviceID)
+		n, err := GetInstanceCountOfOneService(ctx, datasource.RegistryDomainProject, serviceID, true)
 		if err != nil {
 			return 0, err
 		}

@@ -47,6 +47,15 @@ func (n *mockCache) GetPrefix(prefix string, arr *[]*KeyValue) int {
 	}
 	return 0
 }
+func (n *mockCache) GetTotalInstanceCount(prefix string, arr *[]*KeyValue) int {
+	if prefix == n.Key {
+		if arr != nil {
+			*arr = append(*arr, n.KV)
+		}
+		return 1
+	}
+	return 0
+}
 func (n *mockCache) ForEach(iter func(k string, v *KeyValue) (next bool)) {}
 func (n *mockCache) Put(k string, v *KeyValue) {
 	n.Key = k

@@ -27,12 +27,13 @@ import (
 
 	pb "github.com/go-chassis/cari/discovery"
 
+	"github.com/go-chassis/foundation/gopool"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/state/parser"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/value"
 	"github.com/apache/servicecomb-service-center/datasource/sdcommon"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/go-chassis/foundation/gopool"
 )
 
 type mockCache struct {
@@ -58,6 +59,17 @@ func (n *mockCache) GetPrefix(prefix string, arr *[]*kvstore.KeyValue) int {
 	}
 	return 0
 }
+
+func (n *mockCache) GetTotalInstanceCount(prefix string, arr *[]*kvstore.KeyValue) int {
+	if prefix == n.Key {
+		if arr != nil {
+			*arr = append(*arr, n.KV)
+		}
+		return 1
+	}
+	return 0
+}
+
 func (n *mockCache) ForEach(iter func(k string, v *kvstore.KeyValue) (next bool)) {
 	iter(n.Key, n.KV)
 }
@@ -456,5 +468,5 @@ func BenchmarkFilter(b *testing.B) {
 	b.ReportAllocs()
 
 	// TODO bad performance!!!
-	//10	 167974203 ns/op	92637508 B/op	   80028 allocs/op
+	// 10	 167974203 ns/op	92637508 B/op	   80028 allocs/op
 }

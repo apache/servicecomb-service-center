@@ -41,9 +41,10 @@ func (n *mockCache) GetAll(arr *[]*kvstore.KeyValue) (i int) {
 	}
 	return i
 }
-func (n *mockCache) GetPrefix(prefix string, arr *[]*kvstore.KeyValue) int        { return 0 }
-func (n *mockCache) ForEach(iter func(k string, v *kvstore.KeyValue) (next bool)) {}
-func (n *mockCache) Put(k string, v *kvstore.KeyValue)                            { n.c[k] = v }
+func (n *mockCache) GetPrefix(prefix string, arr *[]*kvstore.KeyValue) int             { return 0 }
+func (n *mockCache) GetTotalInstanceCount(prefix string, arr *[]*kvstore.KeyValue) int { return 0 }
+func (n *mockCache) ForEach(iter func(k string, v *kvstore.KeyValue) (next bool))      {}
+func (n *mockCache) Put(k string, v *kvstore.KeyValue)                                 { n.c[k] = v }
 
 func TestInstanceEventDeferHandler_OnCondition(t *testing.T) {
 	iedh := &InstanceEventDeferHandler{

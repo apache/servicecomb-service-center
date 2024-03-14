@@ -24,12 +24,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/go-chassis/foundation/gopool"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
 	"github.com/apache/servicecomb-service-center/pkg/goutil"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/config"
-	"github.com/go-chassis/foundation/gopool"
 )
 
 type Manager struct {

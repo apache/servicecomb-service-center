@@ -24,15 +24,22 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
+const InitCount = 1
+const InitLayer = 2
+const SPLIT = "/"
+const InstanceCacheName = "INSTANCE"
+
 // KvCache implements Cache.
 // KvCache is dedicated to stores service discovery data,
 // e.g. service, instance, lease.
 type KvCache struct {
-	Cfg   *Options
-	name  string
-	store map[string]map[string]*KeyValue
-	rwMux sync.RWMutex
-	dirty bool
+	Cfg       *Options
+	name      string
+	store     map[string]map[string]*KeyValue
+	count     int // the number of leaf node
+	keyLayers int // the number of layers of leaf nodes
+	rwMux     sync.RWMutex
+	dirty     bool
 }
 
 func (c *KvCache) Name() string {
@@ -66,6 +73,13 @@ func (c *KvCache) GetAll(arr *[]*KeyValue) (count int) {
 func (c *KvCache) GetPrefix(prefix string, arr *[]*KeyValue) (count int) {
 	c.rwMux.RLock()
 	count = c.getPrefixKey(arr, prefix)
+	c.rwMux.RUnlock()
+	return
+}
+
+func (c *KvCache) GetTotalInstanceCount(prefix string, arr *[]*KeyValue) (count int) {
+	c.rwMux.RLock()
+	count = c.getTotalInstanceCount(arr, prefix)
 	c.rwMux.RUnlock()
 	return
 }
@@ -118,6 +132,19 @@ func (c *KvCache) prefix(key string) string {
 	return key[:strings.LastIndex(key[:len(key)-1], "/")+1]
 }
 
+func (c *KvCache) getTotalInstanceCount(arr *[]*KeyValue, prefix string) (count int) {
+	_, ok := c.store[prefix]
+	if !ok {
+		return 0
+	}
+
+	if arr == nil && c.name == InstanceCacheName {
+		count = c.count
+		return
+	}
+	return
+}
+
 func (c *KvCache) getPrefixKey(arr *[]*KeyValue, prefix string) (count int) {
 	keysRef, ok := c.store[prefix]
 	if !ok {
@@ -156,6 +183,17 @@ func (c *KvCache) addPrefixKey(key string, val *KeyValue) {
 		return
 	}
 	keys, ok := c.store[prefix]
+	if strings.Count(key, SPLIT) > c.keyLayers && c.name == InstanceCacheName {
+		c.count = InitCount
+		c.keyLayers = strings.Count(key, SPLIT)
+	} else if strings.Count(key, SPLIT) == c.keyLayers && c.name == InstanceCacheName {
+		if ok {
+			_, exist := keys[key]
+			if !exist {
+				c.count++
+			}
+		}
+	}
 	if !ok {
 		// build parent index key and new child nodes
 		keys = make(map[string]*KeyValue)
@@ -178,6 +216,9 @@ func (c *KvCache) deletePrefixKey(key string) {
 	if !ok {
 		return
 	}
+	if strings.Count(key, SPLIT) == c.keyLayers && c.name == InstanceCacheName {
+		c.count--
+	}
 	delete(m, key)
 
 	// remove parent which has no child
@@ -189,8 +230,10 @@ func (c *KvCache) deletePrefixKey(key string) {
 
 func NewKvCache(name string, cfg *Options) *KvCache {
 	return &KvCache{
-		Cfg:   cfg,
-		name:  name,
-		store: make(map[string]map[string]*KeyValue),
+		Cfg:       cfg,
+		name:      name,
+		store:     make(map[string]map[string]*KeyValue),
+		count:     InitCount,
+		keyLayers: InitLayer,
 	}
 }

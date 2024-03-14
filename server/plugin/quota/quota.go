@@ -22,9 +22,10 @@ import (
 	"errors"
 	"fmt"
 
+	pb "github.com/go-chassis/cari/discovery"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/plugin"
-	pb "github.com/go-chassis/cari/discovery"
 )
 
 const QUOTA plugin.Kind = "quota"

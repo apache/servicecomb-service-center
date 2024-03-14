@@ -22,9 +22,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/little-cui/etcdadpt"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/little-cui/etcdadpt"
 )
 
 // CacheIndexer implements kvstore.Indexer.
@@ -62,10 +63,13 @@ func (i *CacheIndexer) search(op etcdadpt.OpOptions) *Response {
 
 func (i *CacheIndexer) searchByPrefix(op etcdadpt.OpOptions) *Response {
 	resp := new(Response)
-
 	prefix := util.BytesToStringWithNoCopy(op.Key)
+	if op.InstanceSearch && !op.GlobalInstanceSearch {
+		resp.Count = int64(i.Cache.GetTotalInstanceCount(prefix, nil))
+	} else {
+		resp.Count = int64(i.Cache.GetPrefix(prefix, nil))
+	}
 
-	resp.Count = int64(i.Cache.GetPrefix(prefix, nil))
 	if resp.Count == 0 || op.CountOnly {
 		return resp
 	}

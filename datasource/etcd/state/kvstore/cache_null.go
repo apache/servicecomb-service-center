@@ -25,17 +25,18 @@ var (
 type nullCache struct {
 }
 
-func (n *nullCache) Name() string                                      { return "NULL" }
-func (n *nullCache) Size() int                                         { return 0 }
-func (n *nullCache) Get(_ string) *KeyValue                            { return nil }
-func (n *nullCache) GetAll(_ *[]*KeyValue) int                         { return 0 }
-func (n *nullCache) GetPrefix(_ string, _ *[]*KeyValue) int            { return 0 }
-func (n *nullCache) ForEach(_ func(k string, v *KeyValue) (next bool)) {}
-func (n *nullCache) Put(_ string, _ *KeyValue)                         {}
-func (n *nullCache) Remove(_ string)                                   {}
-func (n *nullCache) MarkDirty()                                        {}
-func (n *nullCache) Dirty() bool                                       { return false }
-func (n *nullCache) Clear()                                            {}
+func (n *nullCache) Name() string                                       { return "NULL" }
+func (n *nullCache) Size() int                                          { return 0 }
+func (n *nullCache) Get(_ string) *KeyValue                             { return nil }
+func (n *nullCache) GetAll(_ *[]*KeyValue) int                          { return 0 }
+func (n *nullCache) GetPrefix(_ string, _ *[]*KeyValue) int             { return 0 }
+func (n *nullCache) GetTotalInstanceCount(_ string, _ *[]*KeyValue) int { return 0 }
+func (n *nullCache) ForEach(_ func(k string, v *KeyValue) (next bool))  {}
+func (n *nullCache) Put(_ string, _ *KeyValue)                          {}
+func (n *nullCache) Remove(_ string)                                    {}
+func (n *nullCache) MarkDirty()                                         {}
+func (n *nullCache) Dirty() bool                                        { return false }
+func (n *nullCache) Clear()                                             {}
 
 type nullCacher struct {
 }
