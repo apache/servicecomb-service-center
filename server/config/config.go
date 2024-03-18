@@ -25,11 +25,12 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/go-chassis/go-archaius"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/plugin"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/version"
-	"github.com/go-chassis/go-archaius"
 )
 
 const (
@@ -39,7 +40,7 @@ const (
 
 var (
 	Server = NewServerConfig()
-	//App is application root config
+	// App is application root config
 	App = &AppConfig{Server: Server}
 )
 
@@ -134,7 +135,7 @@ func loadServerConfig() ServerConfig {
 	}
 
 	maxLogFileSize := GetInt64("log.rotateSize", 20, WithStandby("log_rotate_size"))
-	if maxLogFileSize <= 0 || maxLogFileSize > 50 {
+	if maxLogFileSize <= 0 || maxLogFileSize > 500 {
 		maxLogFileSize = 20
 	}
 	maxLogBackupCount := GetInt64("log.backupCount", 50, WithStandby("log_backup_count"))
