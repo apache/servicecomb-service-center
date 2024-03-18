@@ -135,7 +135,7 @@ func loadServerConfig() ServerConfig {
 	}
 
 	maxLogFileSize := GetInt64("log.rotateSize", 20, WithStandby("log_rotate_size"))
-	if maxLogFileSize <= 0 || maxLogFileSize > 50 {
+	if maxLogFileSize <= 0 || maxLogFileSize > 500 {
 		maxLogFileSize = 20
 	}
 	maxLogBackupCount := GetInt64("log.backupCount", 50, WithStandby("log_backup_count"))
