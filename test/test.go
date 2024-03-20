@@ -49,6 +49,13 @@ func init() {
 		_ = archaius.Set("registry.kind", "etcd")
 		_ = archaius.Set("registry.etcd.cluster.name", "sc-0")
 		_ = archaius.Set("registry.etcd.cluster.endpoints", "sc-0="+uri+",sc-1=http://127.0.0.2:2379")
+	} else if IsLOCAL() {
+		_ = archaius.Set("registry.cache.mode", 0)
+		_ = archaius.Set("discovery.kind", "etcd")
+		_ = archaius.Set("registry.kind", "etcd")
+		_ = archaius.Set("registry.etcd.cluster.name", "sc-0")
+		_ = archaius.Set("registry.etcd.cluster.endpoints", "sc-0="+uri+",sc-1=http://127.0.0.2:2379")
+		_ = archaius.Set("schema.root.path", "/data/schemas")
 	} else {
 		_ = archaius.Set("registry.heartbeat.kind", "checker")
 		kind = "mongo"
@@ -80,4 +87,9 @@ func IsETCD() bool {
 		t = "etcd"
 	}
 	return t == "etcd"
+}
+
+func IsLOCAL() bool {
+	t := archaius.Get("TEST_MODE")
+	return t == "local"
 }

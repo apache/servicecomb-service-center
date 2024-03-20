@@ -71,6 +71,8 @@ type ServerConfigDetail struct {
 	// if want disable Test Schema, SchemaDisable set true
 	SchemaDisable bool `json:"schemaDisable"`
 
+	SchemaRootPath string `json:"-"`
+
 	// instance ttl in seconds
 	InstanceTTL int64 `json:"-"`
 }

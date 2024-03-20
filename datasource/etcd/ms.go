@@ -22,15 +22,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strconv"
 	"time"
-
-	"github.com/apache/servicecomb-service-center/syncer/service/event"
-	pb "github.com/go-chassis/cari/discovery"
-	"github.com/go-chassis/cari/pkg/errsvc"
-	"github.com/go-chassis/cari/sync"
-	"github.com/go-chassis/foundation/gopool"
-	"github.com/little-cui/etcdadpt"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/cache"
@@ -40,12 +35,19 @@ import (
 	esync "github.com/apache/servicecomb-service-center/datasource/etcd/sync"
 	eutil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
+	"github.com/apache/servicecomb-service-center/datasource/local"
 	"github.com/apache/servicecomb-service-center/datasource/schema"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
 	quotasvc "github.com/apache/servicecomb-service-center/server/service/quota"
+	"github.com/apache/servicecomb-service-center/syncer/service/event"
+	pb "github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/cari/pkg/errsvc"
+	"github.com/go-chassis/cari/sync"
+	"github.com/go-chassis/foundation/gopool"
+	"github.com/little-cui/etcdadpt"
 )
 
 type MetadataManager struct {
@@ -53,12 +55,14 @@ type MetadataManager struct {
 	InstanceTTL int64
 }
 
+const LOCAL = "local"
+
 // RegisterService implement:
 // 1. capsule request to etcd kv format
 // 2. invoke etcd client to store data
 // 3. check etcd-client response && construct createServiceResponse
 func (ds *MetadataManager) RegisterService(ctx context.Context, request *pb.CreateServiceRequest) (
-	*pb.CreateServiceResponse, error) {
+	response *pb.CreateServiceResponse, err error) {
 	remoteIP := util.GetIPFromContext(ctx)
 	service := request.Service
 	serviceFlag := util.StringJoin([]string{
@@ -89,6 +93,32 @@ func (ds *MetadataManager) RegisterService(ctx context.Context, request *pb.Crea
 			serviceFlag, remoteIP), err)
 		return nil, pb.NewError(pb.ErrInternal, err.Error())
 	}
+
+	if schema.StorageType == LOCAL {
+		contents := make([]*schema.ContentItem, len(service.Schemas))
+		err = schema.Instance().PutManyContent(ctx, &schema.PutManyContentRequest{
+			ServiceID: service.ServiceId,
+			SchemaIDs: service.Schemas,
+			Contents:  contents,
+			Init:      true,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		serviceMutex := local.GetOrCreateMutex(service.ServiceId)
+		serviceMutex.Lock()
+		defer serviceMutex.Unlock()
+	}
+
+	defer func() {
+		if schema.StorageType == LOCAL && err != nil {
+			cleanDirErr := local.CleanDir(filepath.Join(schema.RootFilePath, domainProject, service.ServiceId))
+			if cleanDirErr != nil {
+				log.Error("clean dir error when rollback in RegisterService", cleanDirErr)
+			}
+		}
+	}()
 
 	key := path.GenerateServiceKey(domainProject, service.ServiceId)
 	alias := path.GenerateServiceAliasKey(serviceKey)
@@ -128,6 +158,7 @@ func (ds *MetadataManager) RegisterService(ctx context.Context, request *pb.Crea
 	if resp.Succeeded {
 		log.Info(fmt.Sprintf("create micro-service[%s][%s] successfully, operator: %s",
 			service.ServiceId, serviceFlag, remoteIP))
+
 		return &pb.CreateServiceResponse{
 			ServiceId: service.ServiceId,
 		}, nil
@@ -1425,7 +1456,7 @@ func (ds *MetadataManager) modifySchema(ctx context.Context, serviceID string, s
 	return nil
 }
 
-func (ds *MetadataManager) UnregisterService(ctx context.Context, request *pb.DeleteServiceRequest) error {
+func (ds *MetadataManager) UnregisterService(ctx context.Context, request *pb.DeleteServiceRequest) (err error) {
 	serviceID := request.ServiceId
 	force := request.Force
 	remoteIP := util.GetIPFromContext(ctx)
@@ -1441,6 +1472,46 @@ func (ds *MetadataManager) UnregisterService(ctx context.Context, request *pb.De
 		log.Error(fmt.Sprintf("%s micro-service[%s] failed, operator: %s", title, serviceID, remoteIP), err)
 		return pb.NewError(pb.ErrInvalidParams, err.Error())
 	}
+
+	// try to delete schema files
+	if schema.StorageType == LOCAL {
+		tmpPath := filepath.Join(schema.RootFilePath, "tmp", domainProject, serviceID)
+		originPath := filepath.Join(schema.RootFilePath, domainProject, serviceID)
+
+		err = local.MoveDir(originPath, tmpPath)
+		if err != nil {
+			log.Error(fmt.Sprintf("%s micro-service[%s] failed, clean local schmea dir failed, operator: %s",
+				title, serviceID, remoteIP), err)
+			return err
+		}
+
+		serviceMutex := local.GetOrCreateMutex(serviceID)
+		serviceMutex.Lock()
+		defer serviceMutex.Unlock()
+	}
+
+	defer func() {
+		if schema.StorageType == LOCAL {
+			tmpPath := filepath.Join(schema.RootFilePath, "tmp", domainProject, serviceID)
+			originPath := filepath.Join(schema.RootFilePath, domainProject, serviceID)
+			var rollbackErr error
+			if err != nil {
+				rollbackErr = local.MoveDir(tmpPath, originPath)
+				if rollbackErr != nil {
+					log.Error("clean dir error when rollback in UnregisterService", err)
+				}
+			} else {
+				rollbackErr = local.CleanDir(tmpPath)
+				if rollbackErr != nil {
+					log.Error("clean tmp dir error when rollback in UnregisterService", err)
+				}
+				rollbackErr = os.Remove(originPath)
+				if rollbackErr != nil {
+					log.Error("clean origin dir error when rollback in UnregisterService", err)
+				}
+			}
+		}
+	}()
 
 	microservice, err := eutil.GetService(ctx, domainProject, serviceID)
 	if err != nil {
@@ -1518,7 +1589,7 @@ func (ds *MetadataManager) UnregisterService(ctx context.Context, request *pb.De
 	}
 	opts = append(opts, optDeleteDep)
 
-	//删除schemas
+	// 删除schemas
 	opts = append(opts, etcdadpt.OpDel(
 		etcdadpt.WithStrKey(path.GenerateServiceSchemaKey(domainProject, serviceID, "")),
 		etcdadpt.WithPrefix()))
