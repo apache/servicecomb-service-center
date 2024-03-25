@@ -19,10 +19,18 @@ package buildin
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
+
+	"github.com/form3tech-oss/jwt-go"
+	rbacmodel "github.com/go-chassis/cari/rbac"
+	"github.com/go-chassis/go-chassis/v2/security/authr"
+	"github.com/go-chassis/go-chassis/v2/server/restful"
+	"github.com/patrickmn/go-cache"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/plugin"
@@ -32,12 +40,14 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/auth"
 	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 	"github.com/apache/servicecomb-service-center/server/service/rbac/token"
-	rbacmodel "github.com/go-chassis/cari/rbac"
-	"github.com/go-chassis/go-chassis/v2/security/authr"
-	"github.com/go-chassis/go-chassis/v2/server/restful"
 )
 
 var ErrNoRoles = errors.New("no role found in token")
+var tokenCache = cache.New(cacheDefaultExpireTime, cacheDefaultCleanUpTime)
+
+const cacheErrorItemExpTime = 5 * time.Minute
+const cacheDefaultExpireTime = 5 * time.Minute
+const cacheDefaultCleanUpTime = 10 * time.Minute
 
 func init() {
 	plugin.RegisterPlugin(plugin.Plugin{Kind: auth.AUTH, Name: "buildin", New: New})
@@ -152,6 +162,15 @@ func (ba *TokenAuthenticator) VerifyToken(req *http.Request) (interface{}, error
 	if v == "" {
 		return nil, rbacmodel.NewError(rbacmodel.ErrNoAuthHeader, "")
 	}
+	claims, ok := tokenCache.Get(v)
+	if ok {
+		switch claimsVal := claims.(type) {
+		case error:
+			return nil, claimsVal
+		default:
+			return claimsVal, nil
+		}
+	}
 	s := strings.Split(v, " ")
 	if len(s) != 2 {
 		return nil, rbacmodel.ErrInvalidHeader
@@ -160,10 +179,35 @@ func (ba *TokenAuthenticator) VerifyToken(req *http.Request) (interface{}, error
 
 	claims, err := authr.Authenticate(req.Context(), to)
 	if err != nil {
+		SetTokenToCache(tokenCache, v, err)
 		return nil, err
 	}
+	SetTokenToCache(tokenCache, v, claims)
 	token.WithRequest(req, to)
 	return claims, nil
+}
+
+func SetTokenToCache(tokenCache *cache.Cache, rawToken string, claims interface{}) {
+	switch claimsVal := claims.(type) {
+	case error:
+		tokenCache.Set(rawToken, claimsVal, cacheErrorItemExpTime)
+	case jwt.MapClaims:
+		var expr int64
+		switch exp := claimsVal["exp"].(type) {
+		case float64:
+			expr = int64(exp)
+		case json.Number:
+			expr, _ = exp.Int64()
+		default:
+			expr = time.Now().Add(cacheDefaultExpireTime).Unix()
+		}
+		expDur := time.Until(time.Unix(expr, 0))
+		if expDur > 0 {
+			tokenCache.Set(rawToken, claimsVal, expDur)
+		}
+	default:
+		return
+	}
 }
 
 // this method decouple business code and perm checks
@@ -172,12 +216,12 @@ func checkPerm(roleList []string, req *http.Request) ([]map[string]string, error
 	if hasAdmin {
 		return nil, nil
 	}
-	//todo fast check for dev role
+	// todo fast check for dev role
 	targetResource := FromRequest(req)
 	if targetResource == nil {
 		return nil, errors.New("no valid resouce scope")
 	}
-	//TODO add project
+	// TODO add project
 	project := req.URL.Query().Get(":project")
 	return rbacsvc.Allow(req.Context(), project, normalRoles, targetResource)
 }
