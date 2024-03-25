@@ -20,18 +20,18 @@ package buildin_test
 // initialize
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
+	"time"
+
+	"github.com/form3tech-oss/jwt-go"
+	"github.com/patrickmn/go-cache"
 
 	_ "github.com/apache/servicecomb-service-center/test"
 
-	"github.com/apache/servicecomb-service-center/pkg/rest"
-	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/apache/servicecomb-service-center/server/config"
-	"github.com/apache/servicecomb-service-center/server/plugin/auth/buildin"
-	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 	beego "github.com/beego/beego/v2/server/web"
 	"github.com/go-chassis/cari/pkg/errsvc"
 	carirbac "github.com/go-chassis/cari/rbac"
@@ -41,6 +41,12 @@ import (
 	"github.com/go-chassis/go-chassis/v2/security/secret"
 	"github.com/go-chassis/go-chassis/v2/server/restful"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/apache/servicecomb-service-center/pkg/rest"
+	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/config"
+	"github.com/apache/servicecomb-service-center/server/plugin/auth/buildin"
+	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 )
 
 func init() {
@@ -173,5 +179,21 @@ func TestTokenAuthenticator_Identify(t *testing.T) {
 				assert.Equal(t, tt.wantVerb, scopes.Verb)
 			})
 		}
+	})
+}
+
+func TestSetTokenToCache(t *testing.T) {
+	tokenCache1 := cache.New(5*time.Minute, 10*time.Minute)
+	rawToken1 := "**1"
+	rawToken2 := "**2"
+	deleta, _ := time.ParseDuration("10m")
+	claims := &jwt.MapClaims{"exp": float64(time.Now().Add(deleta).Unix())}
+	t.Run("test Cache", func(t *testing.T) {
+		buildin.SetTokenToCache(tokenCache1, rawToken1, claims)
+		buildin.SetTokenToCache(tokenCache1, rawToken2, errors.New("bad token"))
+		res1, _ := tokenCache1.Get(rawToken1)
+		res2, _ := tokenCache1.Get(rawToken2)
+		assert.NotNil(t, res1)
+		assert.NotNil(t, res2)
 	})
 }

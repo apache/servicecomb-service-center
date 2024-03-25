@@ -73,6 +73,7 @@ require (
 )
 
 require (
+	github.com/form3tech-oss/jwt-go v3.2.3+incompatible
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-chassis/go-chassis-extension/protocol/fiber4r v0.0.0-20220825091211-99d5e9810fd7
 )
@@ -99,7 +100,6 @@ require (
 	github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21 // indirect
 	github.com/eapache/queue v1.1.0 // indirect
 	github.com/emicklei/go-restful v2.15.1-0.20220703112237-d9c71e118c95+incompatible // indirect
-	github.com/form3tech-oss/jwt-go v3.2.3+incompatible // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/go-chassis/go-restful-swagger20 v1.0.4-0.20220704025524-9243cbee26b7 // indirect
 	github.com/go-chassis/sc-client v0.6.1-0.20220728072125-dacdd0c834bf // indirect
