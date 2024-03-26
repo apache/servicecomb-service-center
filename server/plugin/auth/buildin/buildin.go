@@ -26,7 +26,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/form3tech-oss/jwt-go"
 	rbacmodel "github.com/go-chassis/cari/rbac"
 	"github.com/go-chassis/go-chassis/v2/security/authr"
 	"github.com/go-chassis/go-chassis/v2/server/restful"
@@ -191,7 +190,7 @@ func SetTokenToCache(tokenCache *cache.Cache, rawToken string, claims interface{
 	switch claimsVal := claims.(type) {
 	case error:
 		tokenCache.Set(rawToken, claimsVal, cacheErrorItemExpTime)
-	case jwt.MapClaims:
+	case map[string]interface{}:
 		var expr int64
 		switch exp := claimsVal["exp"].(type) {
 		case float64:
