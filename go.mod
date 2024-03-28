@@ -2,7 +2,7 @@ module github.com/apache/servicecomb-service-center
 
 replace (
 	github.com/apache/servicecomb-service-center/api => ./api
-	github.com/apache/servicecomb-service-center/eventbase => ./eventbase
+	//github.com/apache/servicecomb-service-center/eventbase => ./eventbase
 	// github.com/openzipkin/zipkin-go-opentracing depends on
 	github.com/apache/thrift => github.com/apache/thrift v0.0.0-20180125231006-3d556248a8b9
 	github.com/go-logr/logr => github.com/go-logr/logr v0.2.0
@@ -15,7 +15,7 @@ replace (
 require (
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/apache/servicecomb-kie v0.2.1-0.20230916085640-4d917719ec79
-	github.com/apache/servicecomb-service-center/eventbase v0.0.0-20220120070230-26997eb876ca
+	github.com/apache/servicecomb-service-center/eventbase v0.0.0-20240318132810-b133e42a18f1
 	github.com/beego/beego/v2 v2.0.4
 	github.com/cheggaaa/pb v1.0.25
 	github.com/cloudflare/gokey v0.1.2
@@ -179,12 +179,12 @@ require (
 	go.opentelemetry.io/proto/otlp v0.7.0 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
-	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
+	golang.org/x/net v0.7.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20220223155221-ee480838109b // indirect
 	golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f // indirect
-	golang.org/x/sys v0.0.0-20220811171246-fbc7d0a398ab // indirect
-	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
-	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/sys v0.5.0 // indirect
+	golang.org/x/term v0.5.0 // indirect
+	golang.org/x/text v0.7.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20211208223120-3a66f561d7aa // indirect
 	gopkg.in/cheggaaa/pb.v1 v1.0.28 // indirect

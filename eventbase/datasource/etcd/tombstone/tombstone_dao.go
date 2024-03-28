@@ -22,7 +22,7 @@ import (
 	"encoding/json"
 
 	"github.com/go-chassis/cari/sync"
-	"github.com/little-cui/etcdadpt"
+	"github.com/go-chassis/etcdadpt"
 
 	"github.com/apache/servicecomb-service-center/eventbase/datasource"
 	"github.com/apache/servicecomb-service-center/eventbase/datasource/etcd/key"
