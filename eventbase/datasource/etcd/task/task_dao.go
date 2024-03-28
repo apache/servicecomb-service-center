@@ -25,8 +25,8 @@ import (
 	"github.com/apache/servicecomb-service-center/eventbase/datasource/etcd/key"
 
 	"github.com/go-chassis/cari/sync"
+	"github.com/go-chassis/etcdadpt"
 	"github.com/go-chassis/openlog"
-	"github.com/little-cui/etcdadpt"
 )
 
 type Dao struct {
