@@ -24,6 +24,9 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/go-chassis/cari/pkg/errsvc"
+	"github.com/go-chassis/etcdadpt"
+
 	"github.com/apache/servicecomb-service-center/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
@@ -32,8 +35,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf"
-	"github.com/go-chassis/cari/pkg/errsvc"
-	"github.com/little-cui/etcdadpt"
 )
 
 var (

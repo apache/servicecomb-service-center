@@ -25,7 +25,7 @@ import (
 	"strings"
 
 	pb "github.com/go-chassis/cari/discovery"
-	"github.com/little-cui/etcdadpt"
+	"github.com/go-chassis/etcdadpt"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
@@ -96,7 +96,7 @@ func DependencyRuleExistWithKey(ctx context.Context, key string, target *pb.Micr
 			return false, err
 		}
 		if isEqual {
-			//删除之前的依赖
+			// 删除之前的依赖
 			return true, nil
 		}
 	}
@@ -104,7 +104,7 @@ func DependencyRuleExistWithKey(ctx context.Context, key string, target *pb.Micr
 }
 
 func AddServiceVersionRule(ctx context.Context, domainProject string, consumer *pb.MicroService, provider *pb.MicroServiceKey) error {
-	//创建依赖一致
+	// 创建依赖一致
 	consumerKey := pb.MicroServiceToKey(domainProject, consumer)
 	exist, err := DependencyRuleExist(ctx, provider, consumerKey)
 	if exist || err != nil {
@@ -241,7 +241,7 @@ func parseOverrideRules(ctx context.Context, dep *Dependency) (createDependencyR
 }
 
 func syncDependencyRule(ctx context.Context, dep *Dependency, filter func(context.Context, *Dependency) (_, _, _ []*pb.MicroServiceKey)) error {
-	//更新consumer的providers的值,consumer的版本是确定的
+	// 更新consumer的providers的值,consumer的版本是确定的
 	consumerFlag := strings.Join([]string{dep.Consumer.Environment, dep.Consumer.AppId, dep.Consumer.ServiceName, dep.Consumer.Version}, "/")
 
 	createDependencyRuleList, existDependencyRuleList, deleteDependencyRuleList := filter(ctx, dep)

@@ -21,12 +21,13 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/little-cui/etcdadpt"
+	"github.com/go-chassis/etcdadpt"
+
+	"github.com/go-chassis/go-archaius"
 
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/plugin/tracing"
-	"github.com/go-chassis/go-archaius"
 )
 
 func init() {

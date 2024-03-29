@@ -22,11 +22,12 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/go-chassis/etcdadpt"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	simple "github.com/apache/servicecomb-service-center/pkg/time"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/metrics"
-	"github.com/little-cui/etcdadpt"
 )
 
 const leaseProfTimeFmt = "15:04:05.000"

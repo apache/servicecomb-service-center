@@ -22,16 +22,17 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/apache/servicecomb-service-center/datasource"
-	"github.com/apache/servicecomb-service-center/datasource/rbac"
 	"github.com/apache/servicecomb-service-center/eventbase/model"
 	"github.com/apache/servicecomb-service-center/eventbase/service/task"
 	"github.com/apache/servicecomb-service-center/eventbase/service/tombstone"
+	crbac "github.com/go-chassis/cari/rbac"
+	"github.com/go-chassis/etcdadpt"
+	"github.com/stretchr/testify/assert"
+
+	"github.com/apache/servicecomb-service-center/datasource"
+	"github.com/apache/servicecomb-service-center/datasource/rbac"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	_ "github.com/apache/servicecomb-service-center/test"
-	crbac "github.com/go-chassis/cari/rbac"
-	"github.com/little-cui/etcdadpt"
-	"github.com/stretchr/testify/assert"
 )
 
 func roleContext() context.Context {

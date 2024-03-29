@@ -21,10 +21,11 @@ import (
 	"context"
 	"testing"
 
+	"github.com/go-chassis/etcdadpt"
+	"go.etcd.io/etcd/api/v3/mvccpb"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/state/parser"
-	"github.com/little-cui/etcdadpt"
-	"go.etcd.io/etcd/api/v3/mvccpb"
 )
 
 func TestEtcdIndexer_Search(t *testing.T) {

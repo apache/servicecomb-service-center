@@ -22,8 +22,9 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/go-chassis/etcdadpt"
+
 	"github.com/apache/servicecomb-service-center/pkg/task"
-	"github.com/little-cui/etcdadpt"
 )
 
 var closedCh = make(chan struct{})

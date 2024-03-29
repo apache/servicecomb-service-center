@@ -26,7 +26,7 @@ import (
 
 	"github.com/go-chassis/cari/discovery"
 	crbac "github.com/go-chassis/cari/rbac"
-	"github.com/little-cui/etcdadpt"
+	"github.com/go-chassis/etcdadpt"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"

@@ -22,10 +22,11 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/go-chassis/etcdadpt"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/rbac"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/little-cui/etcdadpt"
 )
 
 func (al *RbacDAO) UpsertLock(ctx context.Context, lock *rbac.Lock) error {
@@ -73,7 +74,7 @@ func (al *RbacDAO) ListLock(ctx context.Context) ([]*rbac.Lock, int64, error) {
 		err = json.Unmarshal(v.Value, lock)
 		if err != nil {
 			log.Error("account lock info format invalid:", err)
-			continue //do not fail if some account is invalid
+			continue // do not fail if some account is invalid
 		}
 		locks = append(locks, lock)
 	}

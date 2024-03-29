@@ -24,7 +24,7 @@ import (
 
 	mapset "github.com/deckarep/golang-set"
 	"github.com/go-chassis/cari/discovery"
-	"github.com/little-cui/etcdadpt"
+	"github.com/go-chassis/etcdadpt"
 	"go.etcd.io/etcd/api/v3/mvccpb"
 
 	"github.com/apache/servicecomb-service-center/datasource"

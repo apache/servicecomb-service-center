@@ -22,12 +22,13 @@ import (
 	"errors"
 	"fmt"
 
+	pb "github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/etcdadpt"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	pb "github.com/go-chassis/cari/discovery"
-	"github.com/little-cui/etcdadpt"
 )
 
 // DependencyRelationFilterOpt contains SameDomainProject and NonSelf flag

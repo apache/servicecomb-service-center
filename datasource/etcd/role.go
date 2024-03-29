@@ -25,7 +25,7 @@ import (
 	"time"
 
 	crbac "github.com/go-chassis/cari/rbac"
-	"github.com/little-cui/etcdadpt"
+	"github.com/go-chassis/etcdadpt"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
@@ -113,7 +113,7 @@ func (rm *RbacDAO) ListRole(ctx context.Context) ([]*crbac.Role, int64, error) {
 		err = json.Unmarshal(v.Value, r)
 		if err != nil {
 			log.Error("role info format invalid:", err)
-			continue //do not fail if some role is invalid
+			continue // do not fail if some role is invalid
 		}
 
 		roles = append(roles, r)

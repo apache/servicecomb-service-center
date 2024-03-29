@@ -24,8 +24,8 @@ import (
 	"time"
 
 	crbac "github.com/go-chassis/cari/rbac"
+	"github.com/go-chassis/etcdadpt"
 	"github.com/go-chassis/foundation/stringutil"
-	"github.com/little-cui/etcdadpt"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
@@ -142,7 +142,7 @@ func (ds *RbacDAO) ListAccount(ctx context.Context) ([]*crbac.Account, int64, er
 		err = json.Unmarshal(v.Value, a)
 		if err != nil {
 			log.Error("account info format invalid:", err)
-			continue //do not fail if some account is invalid
+			continue // do not fail if some account is invalid
 		}
 		a.Password = ""
 		ds.compatibleOldVersionAccount(a)
@@ -159,7 +159,7 @@ func (ds *RbacDAO) DeleteAccount(ctx context.Context, names []string) (bool, err
 		a, err := ds.GetAccount(ctx, name)
 		if err != nil {
 			log.Error("", err)
-			continue //do not fail if some account is invalid
+			continue // do not fail if some account is invalid
 		}
 		if a == nil {
 			log.Warn("can not find account")
@@ -168,7 +168,7 @@ func (ds *RbacDAO) DeleteAccount(ctx context.Context, names []string) (bool, err
 		opts, err := GenAccountOpts(a, etcdadpt.ActionDelete)
 		if err != nil {
 			log.Error("", err)
-			continue //do not fail if some account is invalid
+			continue // do not fail if some account is invalid
 
 		}
 		allOpts = append(allOpts, opts...)

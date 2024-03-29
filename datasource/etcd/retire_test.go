@@ -22,13 +22,14 @@ import (
 	"reflect"
 	"testing"
 
+	pb "github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/etcdadpt"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
-	pb "github.com/go-chassis/cari/discovery"
-	"github.com/little-cui/etcdadpt"
-	"github.com/stretchr/testify/assert"
 )
 
 const domainProject = "default/default"

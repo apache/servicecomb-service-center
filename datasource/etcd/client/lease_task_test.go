@@ -21,10 +21,11 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
-	"github.com/little-cui/etcdadpt"
-	"github.com/little-cui/etcdadpt/buildin"
+	"github.com/go-chassis/etcdadpt"
+	"github.com/go-chassis/etcdadpt/buildin"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/apache/servicecomb-service-center/datasource/etcd/client"
 )
 
 type mockRegistry struct {

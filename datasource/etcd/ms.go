@@ -27,6 +27,12 @@ import (
 	"strconv"
 	"time"
 
+	pb "github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/cari/pkg/errsvc"
+	"github.com/go-chassis/cari/sync"
+	"github.com/go-chassis/etcdadpt"
+	"github.com/go-chassis/foundation/gopool"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/cache"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
@@ -43,11 +49,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
 	quotasvc "github.com/apache/servicecomb-service-center/server/service/quota"
 	"github.com/apache/servicecomb-service-center/syncer/service/event"
-	pb "github.com/go-chassis/cari/discovery"
-	"github.com/go-chassis/cari/pkg/errsvc"
-	"github.com/go-chassis/cari/sync"
-	"github.com/go-chassis/foundation/gopool"
-	"github.com/little-cui/etcdadpt"
 )
 
 type MetadataManager struct {
@@ -391,7 +392,7 @@ func (ds *MetadataManager) registerInstance(ctx context.Context, request *pb.Reg
 	remoteIP := util.GetIPFromContext(ctx)
 	instance := request.Instance
 
-	//允许自定义id
+	// 允许自定义id
 	if len(instance.InstanceId) > 0 {
 		needRegister, err := ds.sendHeartbeatInstead(ctx, instance)
 		if err != nil {
@@ -408,7 +409,7 @@ func (ds *MetadataManager) registerInstance(ctx context.Context, request *pb.Reg
 	instanceFlag := fmt.Sprintf("ttl %ds, endpoints %v, host '%s', serviceID %s",
 		ttl, instance.Endpoints, instance.HostName, instance.ServiceId)
 
-	//先以domain/project的方式组装
+	// 先以domain/project的方式组装
 	domainProject := util.ParseDomainProject(ctx)
 
 	instanceID := instance.InstanceId
@@ -1251,7 +1252,7 @@ func (ds *MetadataManager) PutTag(ctx context.Context, request *pb.UpdateService
 		return pb.NewError(pb.ErrInternal, err.Error())
 	}
 
-	//check if the tag exists
+	// check if the tag exists
 	if _, ok := tags[request.Key]; !ok {
 		log.Error(fmt.Sprintf("update service[%s]'s tag[%s] failed, tag does not exist, operator: %s",
 			request.ServiceId, tagFlag, remoteIP), nil)
@@ -1580,7 +1581,7 @@ func (ds *MetadataManager) UnregisterService(ctx context.Context, request *pb.De
 	}
 	opts = append(opts, syncOpts...)
 
-	//删除依赖规则
+	// 删除依赖规则
 	optDeleteDep, err := eutil.DeleteDependencyForDeleteService(domainProject, serviceID, serviceKey)
 	if err != nil {
 		log.Error(fmt.Sprintf("%s micro-service[%s] failed, delete dependency failed, operator: %s",
@@ -1600,11 +1601,11 @@ func (ds *MetadataManager) UnregisterService(ctx context.Context, request *pb.De
 		etcdadpt.WithStrKey(path.GenerateServiceSchemaRefKey(domainProject, serviceID, "")),
 		etcdadpt.WithPrefix()))
 
-	//删除tags
+	// 删除tags
 	opts = append(opts, etcdadpt.OpDel(
 		etcdadpt.WithStrKey(path.GenerateServiceTagKey(domainProject, serviceID))))
 
-	//删除instances
+	// 删除instances
 	opts = append(opts, etcdadpt.OpDel(
 		etcdadpt.WithStrKey(path.GenerateInstanceKey(domainProject, serviceID, "")),
 		etcdadpt.WithPrefix()))
@@ -1612,7 +1613,7 @@ func (ds *MetadataManager) UnregisterService(ctx context.Context, request *pb.De
 		etcdadpt.WithStrKey(path.GenerateInstanceLeaseKey(domainProject, serviceID, "")),
 		etcdadpt.WithPrefix()))
 
-	//删除实例
+	// 删除实例
 	err = eutil.DeleteServiceAllInstances(ctx, serviceID)
 	if err != nil {
 		log.Error(fmt.Sprintf("%s micro-service[%s] failed, revoke all instances failed, operator: %s",
@@ -1668,7 +1669,7 @@ func (ds *MetadataManager) UpdateManyInstanceStatus(ctx context.Context, match *
 		}
 		if t {
 			key := path.GenerateInstanceKey(domainProject, instance.ServiceId, instance.InstanceId)
-			//更新状态
+			// 更新状态
 			instance.Status = status
 			data, _ := json.Marshal(instance)
 			leaseID, err := serviceUtil.GetLeaseID(ctx, domainProject, instance.ServiceId, instance.InstanceId)

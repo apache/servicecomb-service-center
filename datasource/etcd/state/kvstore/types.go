@@ -23,10 +23,11 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/etcdadpt"
+
 	simple "github.com/apache/servicecomb-service-center/pkg/time"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/go-chassis/cari/discovery"
-	"github.com/little-cui/etcdadpt"
 )
 
 var (

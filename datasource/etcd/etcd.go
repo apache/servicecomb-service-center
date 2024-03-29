@@ -24,6 +24,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-chassis/cari/dlock"
+	"github.com/go-chassis/etcdadpt"
+	"github.com/go-chassis/etcdadpt/middleware/tracing"
+	"github.com/go-chassis/foundation/gopool"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/event"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
@@ -31,10 +36,6 @@ import (
 	tracer "github.com/apache/servicecomb-service-center/datasource/etcd/tracing"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
-	"github.com/go-chassis/cari/dlock"
-	"github.com/go-chassis/foundation/gopool"
-	"github.com/little-cui/etcdadpt"
-	"github.com/little-cui/etcdadpt/middleware/tracing"
 )
 
 const compactLockKey = "/etcd-compact"
@@ -43,7 +44,7 @@ var clustersIndex = make(map[string]int)
 
 func init() {
 	datasource.Install("etcd", NewDataSource)
-	datasource.Install("embeded_etcd", NewDataSource) //TODO remove misspell in future
+	datasource.Install("embeded_etcd", NewDataSource) // TODO remove misspell in future
 	datasource.Install("embedded_etcd", NewDataSource)
 
 	sd.RegisterInnerTypes()
