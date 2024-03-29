@@ -22,14 +22,15 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/go-chassis/cari/pkg/errsvc"
+	"github.com/go-chassis/etcdadpt"
+
 	"github.com/apache/servicecomb-service-center/client"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/go-chassis/cari/pkg/errsvc"
-	"github.com/little-cui/etcdadpt"
 )
 
 // ClusterIndexer implements kvstore.Indexer.

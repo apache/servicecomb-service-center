@@ -18,8 +18,9 @@
 package tracing
 
 import (
+	"github.com/go-chassis/etcdadpt/middleware/tracing"
+
 	tracesvc "github.com/apache/servicecomb-service-center/server/plugin/tracing"
-	"github.com/little-cui/etcdadpt/middleware/tracing"
 )
 
 type Tracer struct{}

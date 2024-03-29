@@ -25,17 +25,18 @@ import (
 	"sync"
 	"time"
 
+	rmodel "github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/etcdadpt"
+	"github.com/go-chassis/foundation/backoff"
+	"github.com/go-chassis/foundation/gopool"
+	"github.com/go-chassis/foundation/timeutil"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
 	"github.com/apache/servicecomb-service-center/datasource/sdcommon"
 	"github.com/apache/servicecomb-service-center/pkg/goutil"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/config"
-	rmodel "github.com/go-chassis/cari/discovery"
-	"github.com/go-chassis/foundation/backoff"
-	"github.com/go-chassis/foundation/gopool"
-	"github.com/go-chassis/foundation/timeutil"
-	"github.com/little-cui/etcdadpt"
 )
 
 // KvCacher implements kvstore.Cacher.

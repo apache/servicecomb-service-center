@@ -20,7 +20,7 @@ package datasource
 import (
 	"context"
 
-	"github.com/little-cui/etcdadpt"
+	"github.com/go-chassis/etcdadpt"
 )
 
 // SCManager contains the APIs of registration of SC itself

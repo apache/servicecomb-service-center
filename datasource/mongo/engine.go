@@ -20,7 +20,7 @@ package mongo
 import (
 	"context"
 
-	"github.com/little-cui/etcdadpt"
+	"github.com/go-chassis/etcdadpt"
 )
 
 type SCManager struct {

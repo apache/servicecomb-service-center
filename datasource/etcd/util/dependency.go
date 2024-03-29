@@ -22,10 +22,11 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/etcdadpt"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/go-chassis/cari/discovery"
-	"github.com/little-cui/etcdadpt"
 )
 
 // Dependency contains dependency rules
@@ -54,7 +55,7 @@ func (dep *Dependency) removeConsumerOfProviderRule(ctx context.Context) ([]etcd
 			}
 			log.Debug(fmt.Sprintf("tmp and dep.Consumer not equal, tmp %v, consumer %v", tmp, dep.Consumer))
 		}
-		//删除后，如果不存在依赖规则了，就删除该provider的依赖规则，如果有，则更新该依赖规则
+		// 删除后，如果不存在依赖规则了，就删除该provider的依赖规则，如果有，则更新该依赖规则
 		if len(consumerValue.Dependency) == 0 {
 			opts = append(opts, etcdadpt.OpDel(etcdadpt.WithStrKey(proProkey)))
 			continue

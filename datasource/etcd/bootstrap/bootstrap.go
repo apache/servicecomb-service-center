@@ -18,12 +18,12 @@
 package bootstrap
 
 import (
-	//registry
-	_ "github.com/little-cui/etcdadpt/buildin"
-	_ "github.com/little-cui/etcdadpt/embedded"
-	_ "github.com/little-cui/etcdadpt/remote"
+	// registry
+	_ "github.com/go-chassis/etcdadpt/buildin"
+	_ "github.com/go-chassis/etcdadpt/embedded"
+	_ "github.com/go-chassis/etcdadpt/remote"
 
-	//discovery
+	// discovery
 	_ "github.com/apache/servicecomb-service-center/datasource/etcd/sd/aggregate"
 	_ "github.com/apache/servicecomb-service-center/datasource/etcd/sd/k8s"
 	_ "github.com/apache/servicecomb-service-center/datasource/etcd/sd/servicecenter"

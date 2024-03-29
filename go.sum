@@ -88,10 +88,8 @@ github.com/alecthomas/units v0.0.0-20190924025748-f65c72e2690d/go.mod h1:rBZYJk5
 github.com/andybalholm/brotli v1.0.4 h1:V7DdXeJtZscaqfNuAdSRuRFzuiKlHSC/Zh3zl9qY3JY=
 github.com/andybalholm/brotli v1.0.4/go.mod h1:fO7iG3H7G2nSZ7m0zPUDn85XEX2GTukHGRSepvi9Eig=
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
-github.com/apache/servicecomb-kie v0.2.1-0.20230916085640-4d917719ec79 h1:Zgm7NEeV3zilo5lx6bJQg37J+h8WlU2/vzKme7b3VRU=
-github.com/apache/servicecomb-kie v0.2.1-0.20230916085640-4d917719ec79/go.mod h1:VmyMIucS8JY0lrv55ZUonj6E1m5ximDVzdiAKGmDU48=
-github.com/apache/servicecomb-service-center/eventbase v0.0.0-20240318132810-b133e42a18f1 h1:BL+ehaSIdaaF68y1cS9BOmpakkebhU7I2qEj0DKtfo0=
-github.com/apache/servicecomb-service-center/eventbase v0.0.0-20240318132810-b133e42a18f1/go.mod h1:taHEYQulRNTvIpAPsksqfrtZ+pRwQE6x4QK+pgmEk/o=
+github.com/apache/servicecomb-kie v0.2.1-0.20240329063729-0a30c3ff4b7f h1:rcZ9+qGCvaL+7y9ZWZlXyrsBWLzz3ASv23kz772IJGY=
+github.com/apache/servicecomb-kie v0.2.1-0.20240329063729-0a30c3ff4b7f/go.mod h1:wsulAgXNA7Uh5UbwymmbI2K0ZpviDEzNnM1sv5hXNmQ=
 github.com/apache/thrift v0.0.0-20180125231006-3d556248a8b9 h1:ymi1nHra1RZXqjg5xvka4YVyK+3uKPk2B9HUlPRIiBc=
 github.com/apache/thrift v0.0.0-20180125231006-3d556248a8b9/go.mod h1:cp2SuWMxlEZw2r+iP2GNCdIi4C1qmUzdZFSVb+bacwQ=
 github.com/armon/circbuf v0.0.0-20150827004946-bbbad097214e h1:QEF07wC0T1rKkctt1RINW/+RMTVmiwxETico2l3gxJA=
@@ -237,8 +235,10 @@ github.com/go-chassis/cari v0.4.0/go.mod h1:av/19fqwEP4eOC8unL/z67AAbFDwXUCko6SK
 github.com/go-chassis/cari v0.5.0/go.mod h1:av/19fqwEP4eOC8unL/z67AAbFDwXUCko6SKa4Avrd8=
 github.com/go-chassis/cari v0.5.1-0.20210823023004-74041d1363c4/go.mod h1:av/19fqwEP4eOC8unL/z67AAbFDwXUCko6SKa4Avrd8=
 github.com/go-chassis/cari v0.6.0/go.mod h1:mSDRCOQXGmlD69A6NG0hsv0UP1xbVPtL6HCGI6X1tqs=
-github.com/go-chassis/cari v0.9.0 h1:skvo2PX8nLyu26CCg7qUMv7yP2DY73GrBW9M5tWj63c=
-github.com/go-chassis/cari v0.9.0/go.mod h1:vM13BN0TT505ZKqeJ+hUfzZvfn4nN0vgE6IpBOTWcTc=
+github.com/go-chassis/cari v0.9.1-0.20240328115504-88da93faaca7 h1:XlCtMt+l1hcpfbiFRoSYWYr0q6Ak9g/UGFXSKoqmbT4=
+github.com/go-chassis/cari v0.9.1-0.20240328115504-88da93faaca7/go.mod h1:ibqLyh+Q+1n9PlldW3glD9G+2s/yeSyVMCCkQWKRwuE=
+github.com/go-chassis/etcdadpt v0.5.3-0.20240328092602-984e34b756fe h1:peLHEt3wzab6nKVcmcu0qkj1+ZXK6D1ymtiyyMBv/XA=
+github.com/go-chassis/etcdadpt v0.5.3-0.20240328092602-984e34b756fe/go.mod h1:HV8OZ1Npu+lttD+pJA5nUxWZR3/SBFetTh7w8nYFkUA=
 github.com/go-chassis/foundation v0.2.2-0.20201210043510-9f6d3de40234/go.mod h1:2PjwqpVwYEVaAldl5A58a08viH8p27pNeYaiE3ZxOBA=
 github.com/go-chassis/foundation v0.2.2/go.mod h1:2PjwqpVwYEVaAldl5A58a08viH8p27pNeYaiE3ZxOBA=
 github.com/go-chassis/foundation v0.3.0/go.mod h1:2PjwqpVwYEVaAldl5A58a08viH8p27pNeYaiE3ZxOBA=
@@ -574,8 +574,6 @@ github.com/labstack/gommon v0.3.1/go.mod h1:uW6kP17uPlLJsD3ijUYn3/M5bAxtlZhMI6m3
 github.com/leodido/go-urn v1.2.1 h1:BqpAaACuzVSgi/VLzGZIobT2z4v53pjosyNd9Yv6n/w=
 github.com/leodido/go-urn v1.2.1/go.mod h1:zt4jvISO2HfUBqxjfIshjdMTYS56ZS/qv49ictyFfxY=
 github.com/little-cui/etcdadpt v0.3.2/go.mod h1:HnRRpIrVEVNWobkiCvG2EHLWKKZ+L047EcI29ma2zA4=
-github.com/little-cui/etcdadpt v0.4.0 h1:IIoRv+lIxFBsM1ptn9mGpdmBMqEafMnQF3UuE7ekDFg=
-github.com/little-cui/etcdadpt v0.4.0/go.mod h1:wt9bqwpcPP3fPuxQpJKtsKOyS45/jI1JCrdSrdqT9lo=
 github.com/lyft/protoc-gen-star v0.5.3/go.mod h1:V0xaHgaf5oCCqmcxYcWiDfTiKsZsRc87/1qhoTACD8w=
 github.com/magiconair/properties v1.8.1/go.mod h1:PppfXfuXeibc/6YijjN8zIbojt8czPbwD3XqdrwzmxQ=
 github.com/magiconair/properties v1.8.5/go.mod h1:y3VJvCyxH9uVvJTWEGAELF3aiYNyPKd5NZ3oSwXrF60=

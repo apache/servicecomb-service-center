@@ -22,6 +22,10 @@ import (
 	"fmt"
 	"sync/atomic"
 
+	pb "github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/etcdadpt"
+	"github.com/go-chassis/foundation/gopool"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
@@ -30,9 +34,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/goutil"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	pb "github.com/go-chassis/cari/discovery"
-	"github.com/go-chassis/foundation/gopool"
-	"github.com/little-cui/etcdadpt"
 )
 
 const poolSizeOfRotation = 5

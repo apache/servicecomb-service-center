@@ -18,9 +18,10 @@
 package dump
 
 import (
-	"github.com/apache/servicecomb-service-center/server/alarm/model"
 	"github.com/go-chassis/cari/discovery"
-	"github.com/little-cui/etcdadpt"
+	"github.com/go-chassis/etcdadpt"
+
+	"github.com/apache/servicecomb-service-center/server/alarm/model"
 )
 
 type AlarmListRequest struct {

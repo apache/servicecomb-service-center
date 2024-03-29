@@ -22,12 +22,13 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/go-chassis/etcdadpt"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/version"
-	"github.com/little-cui/etcdadpt"
 )
 
 func loadServerVersion(ctx context.Context) error {

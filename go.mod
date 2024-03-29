@@ -2,7 +2,7 @@ module github.com/apache/servicecomb-service-center
 
 replace (
 	github.com/apache/servicecomb-service-center/api => ./api
-	//github.com/apache/servicecomb-service-center/eventbase => ./eventbase
+	github.com/apache/servicecomb-service-center/eventbase => ./eventbase
 	// github.com/openzipkin/zipkin-go-opentracing depends on
 	github.com/apache/thrift => github.com/apache/thrift v0.0.0-20180125231006-3d556248a8b9
 	github.com/go-logr/logr => github.com/go-logr/logr v0.2.0
@@ -14,14 +14,15 @@ replace (
 
 require (
 	github.com/NYTimes/gziphandler v1.1.1
-	github.com/apache/servicecomb-kie v0.2.1-0.20230916085640-4d917719ec79
-	github.com/apache/servicecomb-service-center/eventbase v0.0.0-20240318132810-b133e42a18f1
+	github.com/apache/servicecomb-kie v0.2.1-0.20240329063729-0a30c3ff4b7f
+	github.com/apache/servicecomb-service-center/eventbase v0.0.0-20240328150344-01abe81dc5d0
 	github.com/beego/beego/v2 v2.0.4
 	github.com/cheggaaa/pb v1.0.25
 	github.com/cloudflare/gokey v0.1.2
 	github.com/deckarep/golang-set v1.8.0
 	github.com/elithrar/simple-scrypt v1.3.0
-	github.com/go-chassis/cari v0.9.0
+	github.com/go-chassis/cari v0.9.1-0.20240328115504-88da93faaca7
+	github.com/go-chassis/etcdadpt v0.5.3-0.20240328092602-984e34b756fe
 	github.com/go-chassis/foundation v0.4.0
 	github.com/go-chassis/go-archaius v1.5.6
 	github.com/go-chassis/go-chassis-extension/codec/gojson v0.0.0-20220816060440-fe98a5615d3f
@@ -37,7 +38,6 @@ require (
 	github.com/jinzhu/copier v0.3.5
 	github.com/karlseguin/ccache v2.0.3-0.20170217060820-3ba9789cfd2c+incompatible
 	github.com/labstack/echo/v4 v4.9.0
-	github.com/little-cui/etcdadpt v0.4.0
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/onsi/ginkgo v1.15.0
 	github.com/onsi/gomega v1.10.5

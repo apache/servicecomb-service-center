@@ -21,9 +21,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-chassis/etcdadpt"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/task"
-	"github.com/little-cui/etcdadpt"
 )
 
 // KeepAlive will always return ok when cache is unavailable

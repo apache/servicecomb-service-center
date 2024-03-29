@@ -20,8 +20,9 @@ package util
 import (
 	"context"
 
+	"github.com/go-chassis/etcdadpt"
+
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/little-cui/etcdadpt"
 )
 
 func FromContext(ctx context.Context) []etcdadpt.OpOption {

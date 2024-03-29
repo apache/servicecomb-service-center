@@ -20,8 +20,9 @@ package etcd
 import (
 	"time"
 
+	"github.com/go-chassis/etcdadpt"
+
 	"github.com/apache/servicecomb-service-center/server/config"
-	"github.com/little-cui/etcdadpt"
 )
 
 func Configuration() etcdadpt.Config {

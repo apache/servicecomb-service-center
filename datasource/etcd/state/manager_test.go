@@ -22,9 +22,10 @@ import (
 
 	_ "github.com/apache/servicecomb-service-center/test"
 
-	"github.com/apache/servicecomb-service-center/datasource/etcd/state"
-	"github.com/little-cui/etcdadpt"
+	"github.com/go-chassis/etcdadpt"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/apache/servicecomb-service-center/datasource/etcd/state"
 )
 
 func TestInit(t *testing.T) {

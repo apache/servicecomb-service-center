@@ -25,9 +25,10 @@ import (
 
 	"go.etcd.io/etcd/api/v3/mvccpb"
 
+	"github.com/go-chassis/etcdadpt"
+	"github.com/go-chassis/etcdadpt/buildin"
+
 	"github.com/apache/servicecomb-service-center/datasource/sdcommon"
-	"github.com/little-cui/etcdadpt"
-	"github.com/little-cui/etcdadpt/buildin"
 )
 
 type mockRegistry struct {

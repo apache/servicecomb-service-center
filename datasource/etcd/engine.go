@@ -22,12 +22,13 @@ import (
 	"encoding/json"
 	"os"
 
+	"github.com/go-chassis/cari/dlock"
+	"github.com/go-chassis/etcdadpt"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/version"
-	"github.com/go-chassis/cari/dlock"
-	"github.com/little-cui/etcdadpt"
 )
 
 const versionLockKey = "/version-upgrade"

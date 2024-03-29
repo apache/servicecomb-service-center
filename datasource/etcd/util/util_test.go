@@ -25,12 +25,13 @@ import (
 
 	_ "github.com/apache/servicecomb-service-center/test"
 
+	proto "github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/etcdadpt"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	proto "github.com/go-chassis/cari/discovery"
-	"github.com/little-cui/etcdadpt"
-	"github.com/stretchr/testify/assert"
 )
 
 func getContextWith(domain string, project string) context.Context {
@@ -132,10 +133,10 @@ func TestGetService(t *testing.T) {
 		assert.Equal(t, datasource.ErrNoData, err)
 	})
 
-	//_, err = serviceUtil.GetServiceWithRev(context.Background(), "", "", 1)
-	//if err != nil {
+	// _, err = serviceUtil.GetServiceWithRev(context.Background(), "", "", 1)
+	// if err != nil {
 	//	t.Fatalf("TestGetService failed")
-	//}
+	// }
 }
 
 func TestServiceExist(t *testing.T) {

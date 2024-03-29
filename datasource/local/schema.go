@@ -28,15 +28,16 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/etcdadpt"
+	"github.com/go-chassis/openlog"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	etcdsync "github.com/apache/servicecomb-service-center/datasource/etcd/sync"
 	"github.com/apache/servicecomb-service-center/datasource/schema"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/go-chassis/cari/discovery"
-	"github.com/go-chassis/openlog"
-	"github.com/little-cui/etcdadpt"
 )
 
 var MutexMap = make(map[string]*sync.RWMutex)

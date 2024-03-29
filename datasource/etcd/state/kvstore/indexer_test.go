@@ -21,7 +21,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/little-cui/etcdadpt"
+	"github.com/go-chassis/etcdadpt"
 )
 
 type mockCache struct {

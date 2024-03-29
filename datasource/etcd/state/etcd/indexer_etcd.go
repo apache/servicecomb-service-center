@@ -22,11 +22,12 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/go-chassis/etcdadpt"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/state/parser"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/little-cui/etcdadpt"
 )
 
 // Indexer implements kvstore.Indexer.

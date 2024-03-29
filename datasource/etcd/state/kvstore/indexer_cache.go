@@ -22,9 +22,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/go-chassis/etcdadpt"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/little-cui/etcdadpt"
 )
 
 // CacheIndexer implements kvstore.Indexer.

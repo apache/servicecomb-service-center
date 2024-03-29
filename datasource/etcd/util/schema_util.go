@@ -20,8 +20,9 @@ package util
 import (
 	"context"
 
+	"github.com/go-chassis/etcdadpt"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
-	"github.com/little-cui/etcdadpt"
 )
 
 func CheckSchemaInfoExist(ctx context.Context, key string) (bool, error) {

@@ -22,12 +22,13 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/go-chassis/etcdadpt"
+
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/sd"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/little-cui/etcdadpt"
 )
 
 func GetAllDomainRawData(ctx context.Context) ([]*kvstore.KeyValue, error) {

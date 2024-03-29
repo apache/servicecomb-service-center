@@ -25,17 +25,18 @@ import (
 	pb "github.com/go-chassis/cari/discovery"
 	crbac "github.com/go-chassis/cari/rbac"
 	"github.com/go-chassis/cari/sync"
+	"github.com/go-chassis/etcdadpt"
 	"github.com/go-chassis/go-archaius"
-	"github.com/little-cui/etcdadpt"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/apache/servicecomb-service-center/eventbase/model"
+	"github.com/apache/servicecomb-service-center/eventbase/service/task"
+	"github.com/apache/servicecomb-service-center/eventbase/service/tombstone"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd"
 	"github.com/apache/servicecomb-service-center/datasource/rbac"
 	"github.com/apache/servicecomb-service-center/datasource/schema"
-	"github.com/apache/servicecomb-service-center/eventbase/model"
-	"github.com/apache/servicecomb-service-center/eventbase/service/task"
-	"github.com/apache/servicecomb-service-center/eventbase/service/tombstone"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	_ "github.com/apache/servicecomb-service-center/test"
 )
