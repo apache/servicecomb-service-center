@@ -166,6 +166,6 @@ func updateRoleTxn(ctx context.Context, filter bson.M, updateFilter bson.M, role
 	})
 }
 
-func (ds *RbacDAO) MigrateOldRoles(ctx context.Context) error {
+func (ds *RbacDAO) MigrateOldRoles(_ context.Context) error {
 	return nil
 }

@@ -25,21 +25,22 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/go-chassis/go-archaius"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/plugin"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/version"
-	"github.com/go-chassis/go-archaius"
 )
 
 const (
 	InitVersion = "0"
-	minCacheTTL = 5 * time.Minute
+	minCacheTTL = 60 * time.Minute
 )
 
 var (
 	Server = NewServerConfig()
-	//App is application root config
+	// App is application root config
 	App = &AppConfig{Server: Server}
 )
 

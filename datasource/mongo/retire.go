@@ -23,6 +23,6 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource"
 )
 
-func (ds *MetadataManager) RetireService(ctx context.Context, plan *datasource.RetirePlan) error {
+func (ds *MetadataManager) RetireService(_ context.Context, _ *datasource.RetirePlan) error {
 	return nil
 }

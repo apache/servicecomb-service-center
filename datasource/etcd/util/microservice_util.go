@@ -163,17 +163,17 @@ func searchServiceIDFromAlias(ctx context.Context, key *pb.MicroServiceKey) (str
 }
 
 func GetServiceAllVersions(ctx context.Context, key *pb.MicroServiceKey, alias bool) (*kvstore.Response, error) {
-	copy := *key
-	copy.Version = ""
+	copyKey := *key
+	copyKey.Version = ""
 	var (
 		prefix  string
 		indexer kvstore.Indexer
 	)
 	if alias {
-		prefix = path.GenerateServiceAliasKey(&copy)
+		prefix = path.GenerateServiceAliasKey(&copyKey)
 		indexer = sd.ServiceAlias()
 	} else {
-		prefix = path.GenerateServiceIndexKey(&copy)
+		prefix = path.GenerateServiceIndexKey(&copyKey)
 		indexer = sd.ServiceIndex()
 	}
 	opts := append(FromContext(ctx),
