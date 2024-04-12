@@ -25,13 +25,15 @@ import (
 
 	_ "github.com/apache/servicecomb-service-center/test"
 
-	"github.com/apache/servicecomb-service-center/syncer/config"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/apache/servicecomb-service-center/syncer/config"
 )
 
 func TestGetConfig(t *testing.T) {
 	changeConfigPath()
-	assert.NoError(t, config.Init())
+	err, _ := config.Init()
+	assert.NoError(t, err)
 	assert.NotNil(t, config.GetConfig().Sync)
 }
 

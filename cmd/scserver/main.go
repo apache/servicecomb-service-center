@@ -29,6 +29,6 @@ import (
 )
 
 func main() {
-	syncsvr.Run()
+	go syncsvr.Run()
 	server.Run()
 }

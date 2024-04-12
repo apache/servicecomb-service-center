@@ -18,6 +18,11 @@
 package server
 
 import (
+	"time"
+
+	"github.com/go-chassis/go-chassis/v2"
+	chassisServer "github.com/go-chassis/go-chassis/v2/core/server"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	syncv1 "github.com/apache/servicecomb-service-center/syncer/api/v1"
 	"github.com/apache/servicecomb-service-center/syncer/config"
@@ -25,29 +30,42 @@ import (
 	"github.com/apache/servicecomb-service-center/syncer/rpc"
 	"github.com/apache/servicecomb-service-center/syncer/service/admin"
 	"github.com/apache/servicecomb-service-center/syncer/service/sync"
-	"github.com/go-chassis/go-chassis/v2"
-	chassisServer "github.com/go-chassis/go-chassis/v2/core/server"
 )
+
+const syncRefreshTime = 15 * time.Second
 
 // Run register chassis schema and run syncer services before chassis.Run()
 func Run() {
-	if err := config.Init(); err != nil {
-		log.Error("syncer config init failed", err)
-	}
+	ticker := time.NewTicker(syncRefreshTime)
+	defer ticker.Stop()
 
-	if !config.GetConfig().Sync.EnableOnStart {
-		log.Warn("syncer is disabled")
-		return
-	}
+	for {
+		select {
+		case <-ticker.C:
+			err, isRefresh := config.Init()
+			if err != nil {
+				log.Error("syncer config init failed", err)
+			}
+			if !isRefresh {
+				return
+			}
 
-	chassis.RegisterSchema("grpc", rpc.NewServer(),
-		chassisServer.WithRPCServiceDesc(&syncv1.EventService_ServiceDesc))
+			if !config.GetConfig().Sync.EnableOnStart {
+				log.Warn("syncer is disabled")
+				return
+			}
 
-	admin.Init()
+			chassis.RegisterSchema("grpc", rpc.NewServer(),
+				chassisServer.WithRPCServiceDesc(&syncv1.EventService_ServiceDesc))
 
-	sync.Init()
+			admin.Init()
 
-	if err := metrics.Init(); err != nil {
-		log.Error("syncer metrics init failed", err)
+			sync.Init()
+
+			if err := metrics.Init(); err != nil {
+				log.Error("syncer metrics init failed", err)
+			}
+
+		}
 	}
 }

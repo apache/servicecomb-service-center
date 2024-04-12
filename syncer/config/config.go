@@ -20,10 +20,12 @@ package config
 import (
 	"fmt"
 	"path/filepath"
+	"reflect"
+
+	"github.com/go-chassis/go-archaius"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/go-chassis/go-archaius"
 )
 
 var config Config
@@ -44,28 +46,32 @@ type Peer struct {
 	Mode      []string `yaml:"mode"`
 }
 
-func Init() error {
-	err := archaius.AddFile(filepath.Join(util.GetAppRoot(), "conf", "syncer.yaml"))
+func Init() (error, bool) {
+	err := archaius.AddFile(filepath.Join(util.GetAppRoot(), "conf", "syncer", "syncer.yaml"))
 	if err != nil {
 		log.Warn(fmt.Sprintf("can not add syncer config file source, error: %s", err))
-		return err
+		return err, false
 	}
 
-	err = Reload()
+	err, isRefresh := Reload()
 	if err != nil {
 		log.Fatal("reload syncer configs failed", err)
-		return err
+		return err, false
 	}
-	return nil
+	return nil, isRefresh
 }
 
 // Reload all configurations
-func Reload() error {
+func Reload() (error, bool) {
+	oldConfig := config
 	err := archaius.UnmarshalConfig(&config)
 	if err != nil {
-		return err
+		return err, false
 	}
-	return nil
+	if !reflect.DeepEqual(oldConfig, config) {
+		return nil, true
+	}
+	return nil, false
 }
 
 // GetConfig return the syncer full configurations

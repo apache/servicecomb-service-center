@@ -30,11 +30,12 @@ import (
 
 	_ "github.com/apache/servicecomb-service-center/test"
 
+	"github.com/stretchr/testify/assert"
+
 	v1sync "github.com/apache/servicecomb-service-center/syncer/api/v1"
 	"github.com/apache/servicecomb-service-center/syncer/config"
 	syncrpc "github.com/apache/servicecomb-service-center/syncer/rpc"
 	"github.com/apache/servicecomb-service-center/syncer/service/admin"
-	"github.com/stretchr/testify/assert"
 )
 
 type mockServer struct {
@@ -132,9 +133,10 @@ func checkError(resp *admin.Resp, err error) bool {
 
 func TestHealthTotalTime(t *testing.T) {
 	changeConfigPath()
-	assert.NoError(t, config.Init())
+	err, _ := config.Init()
+	assert.NoError(t, err)
 	now := time.Now()
-	_, err := admin.Health()
+	_, err = admin.Health()
 	assert.NoError(t, err)
 	healthEndTime := time.Now()
 	if healthEndTime.Sub(now) >= time.Second*30 {
