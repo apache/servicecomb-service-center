@@ -21,9 +21,10 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/go-chassis/go-archaius"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/go-chassis/go-archaius"
 )
 
 var config Config
@@ -45,7 +46,7 @@ type Peer struct {
 }
 
 func Init() error {
-	err := archaius.AddFile(filepath.Join(util.GetAppRoot(), "conf", "syncer.yaml"))
+	err := archaius.AddFile(filepath.Join(util.GetAppRoot(), "conf", "syncer", "syncer.yaml"))
 	if err != nil {
 		log.Warn(fmt.Sprintf("can not add syncer config file source, error: %s", err))
 		return err

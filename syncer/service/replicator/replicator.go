@@ -21,6 +21,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-chassis/foundation/gopool"
+	"google.golang.org/grpc"
+
 	"github.com/apache/servicecomb-service-center/client"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rpc"
@@ -29,8 +32,6 @@ import (
 	syncerclient "github.com/apache/servicecomb-service-center/syncer/client"
 	"github.com/apache/servicecomb-service-center/syncer/config"
 	"github.com/apache/servicecomb-service-center/syncer/service/replicator/resource"
-	"github.com/go-chassis/foundation/gopool"
-	"google.golang.org/grpc"
 )
 
 const (
@@ -165,6 +166,16 @@ func (r *replicatorManager) replicate(ctx context.Context, el *v1sync.EventList)
 	for _, in := range els {
 		res, err := set.EventServiceClient.Sync(ctx, in)
 		if err != nil {
+			err1 := config.Reload()
+			if err1 != nil {
+				log.Error("reload syncer config fail", err1)
+				return nil, err
+			}
+			err2 := InitSyncClient()
+			if err2 != nil {
+				log.Error("reInit syncClient fail", err2)
+				return nil, err
+			}
 			return nil, err
 		}
 
