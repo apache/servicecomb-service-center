@@ -22,11 +22,12 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/go-chassis/cari/discovery"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/config"
 	"github.com/apache/servicecomb-service-center/version"
-	"github.com/go-chassis/cari/discovery"
 )
 
 var (
@@ -87,7 +88,7 @@ func InitRegistration() {
 func getEndpoints() []string {
 	hostPort := config.GetString("registry.instance.endpoint",
 		config.GetString("server.host", "127.0.0.1", config.WithStandby("httpaddr")))
-	if strings.LastIndex(hostPort, ":") < 0 {
+	if strings.LastIndex(hostPort, ":") < 0 && config.GetString("is.dns.name", "false") == "false" {
 		hostPort += ":" + config.GetString("server.port", "30100", config.WithStandby("httpport"))
 	}
 	endpoint := fmt.Sprintf("rest://%s/", hostPort)
