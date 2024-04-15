@@ -18,29 +18,21 @@
 package kvstore
 
 import (
-	regexp2 "regexp"
 	"strings"
 	"sync"
 
 	"github.com/apache/servicecomb-service-center/pkg/util"
 )
 
-const InitCount = 1
-const InitLayer = 2
-const SPLIT = "/"
-const DomainProjectLayer = 6
-
 // KvCache implements Cache.
 // KvCache is dedicated to stores service discovery data,
 // e.g. service, instance, lease.
 type KvCache struct {
-	Cfg       *Options
-	name      string
-	store     map[string]map[string]*KeyValue
-	rwMux     sync.RWMutex
-	dirty     bool
-	count     map[string]int // the number of leaf node
-	keyLayers int            // the number of layers of leaf nodes
+	Cfg   *Options
+	name  string
+	store map[string]map[string]*KeyValue
+	rwMux sync.RWMutex
+	dirty bool
 }
 
 func (c *KvCache) Name() string {
@@ -69,12 +61,6 @@ func (c *KvCache) GetAll(arr *[]*KeyValue) (count int) {
 	count = c.getPrefixKey(arr, c.Cfg.Key)
 	c.rwMux.RUnlock()
 	return
-}
-
-func (c *KvCache) getCacheDomainProjectKey(key string) string {
-	regexp, _ := regexp2.Compile(`/(\w)+-(\w)+/(\w)+/(\w)+/(\w)+/(\w)+/`)
-	domainProjectKey := regexp.FindString(key)
-	return domainProjectKey
 }
 
 func (c *KvCache) GetPrefix(prefix string, arr *[]*KeyValue) (count int) {
@@ -138,11 +124,6 @@ func (c *KvCache) getPrefixKey(arr *[]*KeyValue, prefix string) (count int) {
 		return 0
 	}
 
-	if arr == nil && strings.Count(prefix, SPLIT) == DomainProjectLayer {
-		count = c.count[prefix]
-		return
-	}
-
 	// TODO support sort option
 	if arr == nil {
 		for key := range keysRef {
@@ -175,10 +156,6 @@ func (c *KvCache) addPrefixKey(key string, val *KeyValue) {
 		return
 	}
 	keys, ok := c.store[prefix]
-	if strings.Count(key, SPLIT) > c.keyLayers {
-		c.count[c.getCacheDomainProjectKey(key)] = InitCount
-		c.keyLayers = strings.Count(key, SPLIT)
-	}
 	if !ok {
 		// build parent index key and new child nodes
 		keys = make(map[string]*KeyValue)
@@ -189,8 +166,6 @@ func (c *KvCache) addPrefixKey(key string, val *KeyValue) {
 			keys[key] = val
 		}
 		return
-	} else if _, ok := keys[key]; !ok {
-		c.count[c.getCacheDomainProjectKey(key)]++
 	}
 
 	keys[key], key = val, prefix
@@ -203,9 +178,6 @@ func (c *KvCache) deletePrefixKey(key string) {
 	if !ok {
 		return
 	}
-	if strings.Count(key, SPLIT) == c.keyLayers {
-		c.count[c.getCacheDomainProjectKey(key)]--
-	}
 	delete(m, key)
 
 	// remove parent which has no child
@@ -217,10 +189,8 @@ func (c *KvCache) deletePrefixKey(key string) {
 
 func NewKvCache(name string, cfg *Options) *KvCache {
 	return &KvCache{
-		Cfg:       cfg,
-		name:      name,
-		store:     make(map[string]map[string]*KeyValue),
-		count:     make(map[string]int),
-		keyLayers: InitLayer,
+		Cfg:   cfg,
+		name:  name,
+		store: make(map[string]map[string]*KeyValue),
 	}
 }
