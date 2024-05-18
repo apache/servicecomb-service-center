@@ -22,15 +22,16 @@ import (
 	"fmt"
 	"time"
 
+	pb "github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/cari/pkg/errsvc"
+	"github.com/go-chassis/foundation/gopool"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
 	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
 	"github.com/apache/servicecomb-service-center/server/service/sync"
-	pb "github.com/go-chassis/cari/discovery"
-	"github.com/go-chassis/cari/pkg/errsvc"
-	"github.com/go-chassis/foundation/gopool"
 )
 
 func addDefaultContextValue(ctx context.Context) context.Context {
@@ -75,11 +76,12 @@ func registerService(ctx context.Context) error {
 	}
 
 	log.Warn(fmt.Sprintf("service center service[%s] already registered", serviceID))
-	core.Service, err = discosvc.GetService(ctx, core.GetServiceRequest(serviceID))
+	service, err := discosvc.GetService(ctx, core.GetServiceRequest(serviceID))
 	if err != nil {
 		log.Error(fmt.Sprintf("query service center service[%s] info failed", serviceID), err)
 		return err
 	}
+	core.Service = service
 	return nil
 }
 
@@ -131,7 +133,7 @@ func autoSelfHeartBeat() {
 				if err == nil {
 					continue
 				}
-				//服务不存在，创建服务
+				// 服务不存在，创建服务
 				err = selfRegister(ctx)
 				if err != nil {
 					log.Error(fmt.Sprintf("retry to register[%s/%s/%s/%s] failed",
