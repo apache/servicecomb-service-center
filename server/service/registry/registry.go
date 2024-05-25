@@ -77,11 +77,12 @@ func registerService(ctx context.Context) error {
 	}
 
 	log.Warn(fmt.Sprintf("service center service[%s] already registered", serviceID))
-	core.Service, err = discosvc.GetService(ctx, core.GetServiceRequest(serviceID))
+	service, err := discosvc.GetService(ctx, core.GetServiceRequest(serviceID))
 	if err != nil {
 		log.Error(fmt.Sprintf("query service center service[%s] info failed", serviceID), err)
 		return err
 	}
+	core.Service = service
 	return nil
 }
 

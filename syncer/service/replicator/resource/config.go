@@ -21,9 +21,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 
 	kiemodel "github.com/apache/servicecomb-kie/pkg/model"
 	kiedb "github.com/apache/servicecomb-kie/server/datasource"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/config"
@@ -32,17 +34,23 @@ import (
 
 const Config = "config"
 
+var configOnce sync.Once
+
 func NewConfig(e *v1sync.Event) Resource {
-	kind := config.GetString("registry.kind", "etcd", config.WithStandby("registry_plugin"))
-	err := kiedb.Init(kind)
-	if err != nil {
-		log.Fatal(fmt.Sprintf("kie datasource[%s] init failed", kind), err)
-	}
+	configOnce.Do(initKieResouece)
 	c := &kvConfig{
 		event: e,
 	}
 	c.resource = c
 	return c
+}
+
+func initKieResouece() {
+	kind := config.GetString("registry.kind", "etcd", config.WithStandby("registry_plugin"))
+	err := kiedb.Init(kind)
+	if err != nil {
+		log.Fatal(fmt.Sprintf("kie datasource[%s] init failed", kind), err)
+	}
 }
 
 type kvConfig struct {
