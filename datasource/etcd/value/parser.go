@@ -18,8 +18,11 @@
 package value
 
 import (
-	"github.com/apache/servicecomb-service-center/datasource/etcd/state/parser"
 	"github.com/go-chassis/cari/discovery"
+
+	ev "github.com/go-chassis/cari/env"
+
+	"github.com/apache/servicecomb-service-center/datasource/etcd/state/parser"
 )
 
 var (
@@ -28,10 +31,12 @@ var (
 	newRule            parser.CreateValueFunc = func() interface{} { return new(discovery.ServiceRule) }
 	newDependencyRule  parser.CreateValueFunc = func() interface{} { return new(discovery.MicroServiceDependency) }
 	newDependencyQueue parser.CreateValueFunc = func() interface{} { return new(discovery.ConsumerDependency) }
+	newEnvironment     parser.CreateValueFunc = func() interface{} { return new(ev.Environment) }
 
 	ServiceParser         = parser.New(newService, parser.JSONUnmarshal)
 	InstanceParser        = parser.New(newInstance, parser.JSONUnmarshal)
 	RuleParser            = parser.New(newRule, parser.JSONUnmarshal)
 	DependencyRuleParser  = parser.New(newDependencyRule, parser.JSONUnmarshal)
 	DependencyQueueParser = parser.New(newDependencyQueue, parser.JSONUnmarshal)
+	EnvironmentParser     = parser.New(newEnvironment, parser.JSONUnmarshal)
 )

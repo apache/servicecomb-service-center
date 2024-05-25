@@ -20,10 +20,11 @@ package validator
 import (
 	"regexp"
 
+	"github.com/go-chassis/cari/discovery"
+
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/pkg/validate"
 	quotasvc "github.com/apache/servicecomb-service-center/server/service/quota"
-	"github.com/go-chassis/cari/discovery"
 )
 
 var (
@@ -50,24 +51,23 @@ var (
 	serviceIDRangeRegex, _ = regexp.Compile(`^\S{1,64}$`)
 	aliasRegex, _          = regexp.Compile(`^[a-zA-Z0-9_\-.:]*$`)
 	registerByRegex, _     = regexp.Compile("^(" + util.StringJoin([]string{discovery.REGISTERBY_SDK, discovery.REGISTERBY_SIDECAR, discovery.REGISTERBY_PLATFORM}, "|") + ")*$")
-	envRegex, _            = regexp.Compile("^(" + util.StringJoin([]string{
-		discovery.ENV_DEV, discovery.ENV_TEST, discovery.ENV_ACCEPT, discovery.ENV_PROD}, "|") + ")*$")
-	schemaIDRegex, _      = regexp.Compile(`^[a-zA-Z0-9]{1,160}$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]{0,158}[a-zA-Z0-9]$`)
-	accountStatusRegex, _ = regexp.Compile(`^(active|inactive)$|^$`)
+	envRegex, _            = regexp.Compile(`^\S*$`)
+	schemaIDRegex, _       = regexp.Compile(`^[a-zA-Z0-9]{1,160}$|^[a-zA-Z0-9][a-zA-Z0-9_\-.]{0,158}[a-zA-Z0-9]$`)
+	accountStatusRegex, _  = regexp.Compile(`^(active|inactive)$|^$`)
 )
 
 func MicroServiceKeyValidator() *validate.Validator {
 	return microServiceKeyValidator.Init(func(v *validate.Validator) {
-		v.AddRule("Environment", &validate.Rule{Regexp: envRegex})
+		v.AddRule("Environment", &validate.Rule{Min: 1, Max: 128, Regexp: envRegex})
 		v.AddRule("AppId", &validate.Rule{Min: 1, Max: 160, Regexp: nameRegex})
-		v.AddRule("ServiceName", &validate.Rule{Min: 1, Max: 128, Regexp: nameRegex})
+		v.AddRule("ServiceName", &validate.Rule{Max: 128, Regexp: nameRegex})
 		v.AddRule("Version", &validate.Rule{Min: 1, Max: 64, Regexp: versionRegex})
 	})
 }
 
 func MicroServiceSearchKeyValidator() *validate.Validator {
 	return microServiceKeySearchValidator.Init(func(v *validate.Validator) {
-		v.AddRule("Environment", &validate.Rule{Regexp: envRegex})
+		v.AddRule("Environment", &validate.Rule{Min: 0, Max: 128, Regexp: envRegex})
 		v.AddRule("AppId", &validate.Rule{Min: 1, Max: 160, Regexp: nameRegex})
 		// support name or alias
 		v.AddRule("ServiceName", &validate.Rule{Min: 1, Max: 160 + 1 + 128, Regexp: serviceNameForFindRegex})

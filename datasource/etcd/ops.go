@@ -21,11 +21,15 @@ import (
 	"context"
 	"strings"
 
+	pb "github.com/go-chassis/cari/discovery"
+	ev "github.com/go-chassis/cari/env"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd/path"
 	serviceUtil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
-	pb "github.com/go-chassis/cari/discovery"
 )
+
+const preEnvNum int64 = 4
 
 func (ds *MetadataManager) CountService(ctx context.Context, request *pb.GetServiceCountRequest) (*pb.GetServiceCountResponse, error) {
 	domainProject := request.Domain
@@ -83,4 +87,21 @@ func (ds *MetadataManager) getGlobalInstanceCount(ctx context.Context, domainPro
 		return 0, err
 	}
 	return global, nil
+}
+
+func (ds *MetadataManager) CountEnvironment(ctx context.Context, request *ev.GetEnvironmentCountRequest) (*ev.GetEnvironmentCountResponse, error) {
+	domainProject := request.Domain
+	if request.Project != "" {
+		domainProject += path.SPLIT + request.Project
+	}
+	all, err := serviceUtil.GetOneDomainProjectEnvironmentCount(ctx, domainProject)
+	if err != nil {
+		return nil, err
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &ev.GetEnvironmentCountResponse{
+		Count: all - preEnvNum,
+	}, nil
 }

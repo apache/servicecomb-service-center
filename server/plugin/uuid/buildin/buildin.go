@@ -51,3 +51,11 @@ func (du *UUID) GetInstanceID(_ context.Context) string {
 	}
 	return util.GenerateUUID()
 }
+
+func (du *UUID) GetEnvID(_ context.Context) string {
+	df, ok := plugin.DynamicPluginFunc(uuid.UUID, "GetEnvID").(func() string)
+	if ok {
+		return df()
+	}
+	return util.GenerateUUID()
+}

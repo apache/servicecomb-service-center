@@ -22,6 +22,7 @@ import (
 	"errors"
 
 	pb "github.com/go-chassis/cari/discovery"
+	ev "github.com/go-chassis/cari/env"
 )
 
 const (
@@ -59,6 +60,14 @@ type MetadataManager interface {
 	UnregisterService(ctx context.Context, request *pb.DeleteServiceRequest) error
 	CountService(ctx context.Context, request *pb.GetServiceCountRequest) (*pb.GetServiceCountResponse, error)
 	FindService(ctx context.Context, request *pb.MicroServiceKey) (*pb.GetServicesResponse, error)
+
+	// Environment management
+	ListEnvironments(ctx context.Context) (*ev.GetEnvironmentsResponse, error)
+	RegisterEnvironment(ctx context.Context, request *ev.CreateEnvironmentRequest) (*ev.CreateEnvironmentResponse, error)
+	GetEnvironment(ctx context.Context, request *ev.GetEnvironmentRequest) (*ev.Environment, error)
+	UpdateEnvironment(ctx context.Context, request *ev.UpdateEnvironmentRequest) error
+	UnregisterEnvironment(ctx context.Context, request *ev.DeleteEnvironmentRequest) error
+	CountEnvironment(ctx context.Context, request *ev.GetEnvironmentCountRequest) (*ev.GetEnvironmentCountResponse, error)
 
 	// Instance management
 	RegisterInstance(ctx context.Context, request *pb.RegisterInstanceRequest) (*pb.RegisterInstanceResponse, error)
