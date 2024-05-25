@@ -23,10 +23,12 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/apache/servicecomb-service-center/eventbase/datasource"
 	"github.com/apache/servicecomb-service-center/eventbase/model"
 	"github.com/apache/servicecomb-service-center/eventbase/service/tombstone"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	v1sync "github.com/apache/servicecomb-service-center/syncer/api/v1"
 
@@ -49,6 +51,7 @@ const (
 	ResultStatusMicroNonExist = "microNonExist"
 	ResultStatusInstNonExist  = "instNonExist"
 	ResultStatusNonImplement  = "nonImplement"
+	oneDaySecond              = 86400
 )
 
 var codeDescriber = map[int32]string{
@@ -343,6 +346,9 @@ func (o *checker) needOperate(ctx context.Context) *Result {
 	case sync.UpdateAction:
 		if len(o.resourceID) == 0 {
 			return nil
+		}
+		if o.event.Timestamp+oneDaySecond >= time.Now().Unix() {
+			return SkipResult()
 		}
 
 		ts, err := o.tombstoneLoader.get(ctx, &model.GetTombstoneRequest{
