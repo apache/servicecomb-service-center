@@ -21,6 +21,8 @@ import (
 	"github.com/go-chassis/cari/discovery"
 
 	"github.com/apache/servicecomb-service-center/pkg/util"
+
+	ev "github.com/go-chassis/cari/env"
 )
 
 const (
@@ -28,6 +30,7 @@ const (
 	RegistryRootKey          = "cse-sr"
 	RegistrySysKey           = "sys"
 	RegistryServiceKey       = "ms"
+	RegistryEnvironmentKey   = "envs"
 	RegistryInstanceKey      = "inst"
 	RegistryFile             = "files"
 	RegistryIndex            = "indexes"
@@ -381,5 +384,43 @@ func GenerateMetricsKey(name, utc, domain string) string {
 		name,
 		utc,
 		domain,
+	}, SPLIT)
+}
+
+func GenerateEnvironmentKey(domainProject string, envId string) string {
+	return util.StringJoin([]string{
+		GetEnvironmentRootKey(domainProject),
+		envId,
+	}, SPLIT)
+}
+
+func GetEnvironmentRootKey(domainProject string) string {
+	return util.StringJoin([]string{
+		GetRootKey(),
+		RegistryEnvironmentKey,
+		domainProject,
+	}, SPLIT)
+}
+
+func GenerateEnvironmentIndexKey(key *ev.EnvironmentKey) string {
+	return util.StringJoin([]string{
+		GetEnvironmentIndexRootKey(key.Tenant),
+		key.Name,
+	}, SPLIT)
+}
+
+func GetEnvironmentIndexRootKey(domainProject string) string {
+	return util.StringJoin([]string{
+		GetRootKey(),
+		RegistryEnvironmentKey,
+		RegistryIndex,
+		domainProject,
+	}, SPLIT)
+}
+
+func GenerateServiceEnvIndexKey(domainProject string, name string) string {
+	return util.StringJoin([]string{
+		GetServiceIndexRootKey(domainProject),
+		name,
 	}, SPLIT)
 }

@@ -37,6 +37,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
+	ev "github.com/go-chassis/cari/env"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/cache"
 	"github.com/apache/servicecomb-service-center/datasource/mongo/dao"
@@ -298,7 +300,7 @@ func (ds *MetadataManager) UnregisterService(ctx context.Context, request *disco
 				serviceID, l, remoteIP), err)
 			return discovery.NewError(discovery.ErrDependedOnConsumer, "Can not delete this service, other service rely it.")
 		}
-		//todo wait for dep interface
+		// todo wait for dep interface
 		num, err := dmongo.GetClient().GetDB().Collection(model.CollectionInstance).CountDocuments(ctx, bson.M{mutil.ConnectWithDot([]string{model.ColumnInstance, model.ColumnServiceID}): serviceID})
 		if err != nil {
 			log.Error(fmt.Sprintf("delete micro-service[%s] failed, get instances number failed, operator: %s",
@@ -1437,7 +1439,7 @@ func (ds *MetadataManager) findInstance(ctx context.Context, request *discovery.
 }
 
 func (ds *MetadataManager) reshapeProviderKey(ctx context.Context, provider *discovery.MicroServiceKey, providerID string) (*discovery.MicroServiceKey, error) {
-	//维护version的规则,service name 可能是别名，所以重新获取
+	// 维护version的规则,service name 可能是别名，所以重新获取
 	providerService, err := GetServiceByID(ctx, providerID)
 	if err != nil {
 		return nil, err
@@ -1678,5 +1680,26 @@ func (ds *MetadataManager) Statistics(ctx context.Context, withShared bool) (*di
 }
 
 func (ds *MetadataManager) UpdateManyInstanceStatus(_ context.Context, _ *datasource.MatchPolicy, _ string) error {
+	return nil
+}
+
+func (ds *MetadataManager) ListEnvironments(ctx context.Context) (*ev.GetEnvironmentsResponse, error) {
+	return nil, nil
+}
+
+func (ds *MetadataManager) RegisterEnvironment(ctx context.Context, request *ev.CreateEnvironmentRequest) (*ev.CreateEnvironmentResponse, error) {
+	return nil, nil
+}
+
+func (ds *MetadataManager) GetEnvironment(ctx context.Context, request *ev.GetEnvironmentRequest) (
+	*ev.Environment, error) {
+	return nil, nil
+}
+
+func (ds *MetadataManager) UpdateEnvironment(ctx context.Context, request *ev.UpdateEnvironmentRequest) (err error) {
+	return nil
+}
+
+func (ds *MetadataManager) UnregisterEnvironment(ctx context.Context, request *ev.DeleteEnvironmentRequest) (err error) {
 	return nil
 }

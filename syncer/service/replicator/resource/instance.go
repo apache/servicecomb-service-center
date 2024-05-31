@@ -27,6 +27,7 @@ import (
 	v1sync "github.com/apache/servicecomb-service-center/syncer/api/v1"
 
 	pb "github.com/go-chassis/cari/discovery"
+	ev "github.com/go-chassis/cari/env"
 	"github.com/go-chassis/cari/pkg/errsvc"
 )
 
@@ -122,6 +123,22 @@ func (m *metadataManage) PutInstance(ctx context.Context, in *pb.RegisterInstanc
 
 func (m *metadataManage) UnregisterInstance(ctx context.Context, in *pb.UnregisterInstanceRequest) error {
 	return datasource.GetMetadataManager().UnregisterInstance(ctx, in)
+}
+
+func (m *metadataManage) RegisterEnvironment(ctx context.Context, in *ev.CreateEnvironmentRequest) (*ev.CreateEnvironmentResponse, error) {
+	return datasource.GetMetadataManager().RegisterEnvironment(ctx, in)
+}
+
+func (m *metadataManage) GetEnvironment(ctx context.Context, in *ev.GetEnvironmentRequest) (*ev.Environment, error) {
+	return datasource.GetMetadataManager().GetEnvironment(ctx, in)
+}
+
+func (m *metadataManage) UpdateEnvironment(ctx context.Context, in *ev.UpdateEnvironmentRequest) error {
+	return datasource.GetMetadataManager().UpdateEnvironment(ctx, in)
+}
+
+func (m *metadataManage) UnregisterEnvironment(ctx context.Context, in *ev.DeleteEnvironmentRequest) error {
+	return datasource.GetMetadataManager().UnregisterEnvironment(ctx, in)
 }
 
 type metadataManager interface {

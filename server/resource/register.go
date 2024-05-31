@@ -40,4 +40,5 @@ func initRouter() {
 	roa.RegisterServant(&disco.InstanceResource{})
 	roa.RegisterServant(&gov.Governance{})
 	roa.RegisterServant(&govern.Resource{})
+	roa.RegisterServant(&disco.EnvironmentResource{})
 }

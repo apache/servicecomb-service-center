@@ -235,8 +235,8 @@ github.com/go-chassis/cari v0.4.0/go.mod h1:av/19fqwEP4eOC8unL/z67AAbFDwXUCko6SK
 github.com/go-chassis/cari v0.5.0/go.mod h1:av/19fqwEP4eOC8unL/z67AAbFDwXUCko6SKa4Avrd8=
 github.com/go-chassis/cari v0.5.1-0.20210823023004-74041d1363c4/go.mod h1:av/19fqwEP4eOC8unL/z67AAbFDwXUCko6SKa4Avrd8=
 github.com/go-chassis/cari v0.6.0/go.mod h1:mSDRCOQXGmlD69A6NG0hsv0UP1xbVPtL6HCGI6X1tqs=
-github.com/go-chassis/cari v0.9.1-0.20240328115504-88da93faaca7 h1:XlCtMt+l1hcpfbiFRoSYWYr0q6Ak9g/UGFXSKoqmbT4=
-github.com/go-chassis/cari v0.9.1-0.20240328115504-88da93faaca7/go.mod h1:ibqLyh+Q+1n9PlldW3glD9G+2s/yeSyVMCCkQWKRwuE=
+github.com/go-chassis/cari v0.9.1-0.20240531100749-8955107d022d h1:nQnEl2jV0MEzN+/+019tiwKKliRGiXLGvau4zmTIyIc=
+github.com/go-chassis/cari v0.9.1-0.20240531100749-8955107d022d/go.mod h1:ibqLyh+Q+1n9PlldW3glD9G+2s/yeSyVMCCkQWKRwuE=
 github.com/go-chassis/etcdadpt v0.5.3-0.20240328092602-984e34b756fe h1:peLHEt3wzab6nKVcmcu0qkj1+ZXK6D1ymtiyyMBv/XA=
 github.com/go-chassis/etcdadpt v0.5.3-0.20240328092602-984e34b756fe/go.mod h1:HV8OZ1Npu+lttD+pJA5nUxWZR3/SBFetTh7w8nYFkUA=
 github.com/go-chassis/foundation v0.2.2-0.20201210043510-9f6d3de40234/go.mod h1:2PjwqpVwYEVaAldl5A58a08viH8p27pNeYaiE3ZxOBA=
@@ -1038,8 +1038,8 @@ golang.org/x/sync v0.0.0-20200625203802-6e8e738ad208/go.mod h1:RxMgew5VJxzue5/jJ
 golang.org/x/sync v0.0.0-20201020160332-67f06af15bc9/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
 golang.org/x/sync v0.0.0-20201207232520-09787c993a3a/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
 golang.org/x/sync v0.0.0-20210220032951-036812b2e83c/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
-golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f h1:Ax0t5p6N38Ga0dThY21weqDEyz2oklo4IvDkpigvkD8=
-golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
+golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4 h1:uVc8UZUe6tr40fFVnUP5Oj+veunVezqYl9z7DYw9xzw=
+golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
 golang.org/x/sys v0.0.0-20170830134202-bb24a47a89ea/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
 golang.org/x/sys v0.0.0-20180823144017-11551d06cbcc/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
 golang.org/x/sys v0.0.0-20180830151530-49385e6e1522/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=

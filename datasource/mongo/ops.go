@@ -21,6 +21,7 @@ import (
 	"context"
 
 	"github.com/go-chassis/cari/discovery"
+	ev "github.com/go-chassis/cari/env"
 	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/apache/servicecomb-service-center/datasource/mongo/dao"
@@ -72,4 +73,8 @@ func (ds *MetadataManager) getNotGlobalServiceFilter(ctx context.Context) (bson.
 		serviceIDs = append(serviceIDs, service.Service.ServiceId)
 	}
 	return util.NewFilter(util.NotIn(serviceIDs)), nil
+}
+
+func (ds *MetadataManager) CountEnvironment(ctx context.Context, request *ev.GetEnvironmentCountRequest) (*ev.GetEnvironmentCountResponse, error) {
+	return nil, nil
 }

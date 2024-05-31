@@ -25,6 +25,7 @@ import (
 	"strings"
 
 	pb "github.com/go-chassis/cari/discovery"
+	ev "github.com/go-chassis/cari/env"
 	"github.com/go-chassis/etcdadpt"
 
 	"github.com/apache/servicecomb-service-center/datasource"
@@ -380,4 +381,29 @@ func getGlobalEnvironment() string {
 		env = pb.ENV_DEV
 	}
 	return env
+}
+
+func GetEnvironment(ctx context.Context, domainProject string, EnvironmentID string) (*ev.Environment, error) {
+	key := path.GenerateEnvironmentKey(domainProject, EnvironmentID)
+	opts := append(FromContext(ctx), etcdadpt.WithStrKey(key))
+	environmentResp, err := sd.Environment().Search(ctx, opts...)
+	if err != nil {
+		return nil, err
+	}
+	if len(environmentResp.Kvs) == 0 {
+		return nil, datasource.ErrNoData
+	}
+	return environmentResp.Kvs[0].Value.(*ev.Environment), nil
+}
+
+func ServiceEnvExist(ctx context.Context, serviceEnvKey string) bool {
+	opts := append(FromContext(ctx),
+		etcdadpt.WithStrKey(serviceEnvKey),
+		etcdadpt.WithCountOnly(),
+		etcdadpt.WithPrefix())
+	resp, err := sd.ServiceIndex().Search(ctx, opts...)
+	if err != nil || resp.Count == 0 {
+		return false
+	}
+	return true
 }

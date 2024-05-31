@@ -21,6 +21,9 @@ import (
 	"context"
 	"fmt"
 
+	pb "github.com/go-chassis/cari/discovery"
+	ev "github.com/go-chassis/cari/env"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/plugin"
 	"github.com/apache/servicecomb-service-center/pkg/util"
@@ -29,16 +32,16 @@ import (
 	"github.com/apache/servicecomb-service-center/server/service/disco"
 	quotasvc "github.com/apache/servicecomb-service-center/server/service/quota"
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
-	pb "github.com/go-chassis/cari/discovery"
 )
 
 const (
-	defaultServiceLimit  int64 = 50000
-	defaultInstanceLimit int64 = 150000
-	defaultSchemaLimit   int64 = 100
-	defaultTagLimit      int64 = 100
-	defaultAccountLimit  int64 = 1000
-	defaultRoleLimit     int64 = 100
+	defaultServiceLimit     int64 = 50000
+	defaultInstanceLimit    int64 = 150000
+	defaultSchemaLimit      int64 = 100
+	defaultTagLimit         int64 = 100
+	defaultAccountLimit     int64 = 1000
+	defaultRoleLimit        int64 = 100
+	defaultEnvironmentLimit int64 = 50
 )
 
 func init() {
@@ -47,12 +50,13 @@ func init() {
 
 func New() plugin.Instance {
 	q := &Quota{
-		ServiceQuota:  config.GetInt64("quota.cap.service.limit", defaultServiceLimit, config.WithENV("QUOTA_SERVICE")),
-		InstanceQuota: config.GetInt64("quota.cap.instance.limit", defaultInstanceLimit, config.WithENV("QUOTA_INSTANCE")),
-		SchemaQuota:   config.GetInt64("quota.cap.schema.limit", defaultSchemaLimit, config.WithENV("QUOTA_SCHEMA")),
-		TagQuota:      config.GetInt64("quota.cap.tag.limit", defaultTagLimit, config.WithENV("QUOTA_TAG")),
-		AccountQuota:  config.GetInt64("quota.cap.account.limit", defaultAccountLimit, config.WithENV("QUOTA_ACCOUNT")),
-		RoleQuota:     config.GetInt64("quota.cap.role.limit", defaultRoleLimit, config.WithENV("QUOTA_ROLE")),
+		ServiceQuota:     config.GetInt64("quota.cap.service.limit", defaultServiceLimit, config.WithENV("QUOTA_SERVICE")),
+		InstanceQuota:    config.GetInt64("quota.cap.instance.limit", defaultInstanceLimit, config.WithENV("QUOTA_INSTANCE")),
+		SchemaQuota:      config.GetInt64("quota.cap.schema.limit", defaultSchemaLimit, config.WithENV("QUOTA_SCHEMA")),
+		TagQuota:         config.GetInt64("quota.cap.tag.limit", defaultTagLimit, config.WithENV("QUOTA_TAG")),
+		AccountQuota:     config.GetInt64("quota.cap.account.limit", defaultAccountLimit, config.WithENV("QUOTA_ACCOUNT")),
+		RoleQuota:        config.GetInt64("quota.cap.role.limit", defaultRoleLimit, config.WithENV("QUOTA_ROLE")),
+		EnvironmentQuota: config.GetInt64("quota.cap.environment.limit", defaultEnvironmentLimit, config.WithENV("QUOTA_ENVIRONMENT")),
 	}
 	log.Info(fmt.Sprintf("quota init, service: %d, instance: %d, schema: %d/service, tag: %d/service"+
 		", account: %d, role: %d",
@@ -62,12 +66,13 @@ func New() plugin.Instance {
 }
 
 type Quota struct {
-	ServiceQuota  int64
-	InstanceQuota int64
-	SchemaQuota   int64
-	TagQuota      int64
-	AccountQuota  int64
-	RoleQuota     int64
+	ServiceQuota     int64
+	InstanceQuota    int64
+	SchemaQuota      int64
+	TagQuota         int64
+	AccountQuota     int64
+	RoleQuota        int64
+	EnvironmentQuota int64
 }
 
 func (q *Quota) GetQuota(_ context.Context, t quota.ResourceType) int64 {
@@ -84,6 +89,8 @@ func (q *Quota) GetQuota(_ context.Context, t quota.ResourceType) int64 {
 		return q.AccountQuota
 	case quotasvc.TypeRole:
 		return q.RoleQuota
+	case quotasvc.TypeEnvironment:
+		return q.EnvironmentQuota
 	default:
 		return 0
 	}
@@ -119,6 +126,11 @@ func (q *Quota) Usage(ctx context.Context, req *quota.Request) (int64, error) {
 		return rbac.AccountUsage(ctx)
 	case quotasvc.TypeRole:
 		return rbac.RoleUsage(ctx)
+	case quotasvc.TypeEnvironment:
+		return disco.EnvironmentUsage(ctx, &ev.GetEnvironmentCountRequest{
+			Domain:  util.ParseDomain(ctx),
+			Project: util.ParseProject(ctx),
+		})
 	default:
 		return 0, nil
 	}

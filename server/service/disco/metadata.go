@@ -19,9 +19,13 @@ package disco
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
+
+	pb "github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/foundation/gopool"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -29,12 +33,10 @@ import (
 	"github.com/apache/servicecomb-service-center/server/core"
 	quotasvc "github.com/apache/servicecomb-service-center/server/service/quota"
 	"github.com/apache/servicecomb-service-center/server/service/validator"
-	pb "github.com/go-chassis/cari/discovery"
-	"github.com/go-chassis/foundation/gopool"
 )
 
 func RegisterService(ctx context.Context, request *pb.CreateServiceRequest) (*pb.CreateServiceResponse, error) {
-	//create service
+	// create service
 	resp, err := registerService(ctx, request)
 	if err != nil {
 		return nil, err
@@ -44,7 +46,7 @@ func RegisterService(ctx context.Context, request *pb.CreateServiceRequest) (*pb
 		return resp, nil
 	}
 
-	//create tag,rule,instances
+	// create tag,rule,instances
 	return registerServiceDetails(ctx, request, resp.ServiceId)
 }
 
@@ -59,6 +61,11 @@ func registerService(ctx context.Context, request *pb.CreateServiceRequest) (*pb
 	service := request.Service
 	serviceFlag := util.StringJoin([]string{
 		service.Environment, service.AppId, service.ServiceName, service.Version}, "/")
+	_, ok := EnvMap.Load(service.Environment)
+	if !ok {
+		log.Error(fmt.Sprintf("create micro-service[%s] failed, operator: %s", serviceFlag, remoteIP), errors.New("env not exist"))
+		return nil, pb.NewError(pb.ErrInvalidParams, "env not exist")
+	}
 	datasource.SetServiceDefaultValue(service)
 
 	if err := validator.ValidateCreateServiceRequest(request); err != nil {
@@ -85,7 +92,7 @@ func assignDefaultValue(service *pb.MicroService) {
 func registerServiceDetails(ctx context.Context, in *pb.CreateServiceRequest, serviceID string) (*pb.CreateServiceResponse, error) {
 	var chanLen = 0
 	errorsCh := make(chan error, 10)
-	//create tags
+	// create tags
 	if in.Tags != nil && len(in.Tags) != 0 {
 		chanLen++
 		gopool.Go(func(_ context.Context) {
@@ -198,7 +205,7 @@ func UnregisterManyService(ctx context.Context, request *pb.DelServicesRequest) 
 	// 批量删除服务
 	serviceRespChan := make(chan *pb.DelServicesRspInfo, len(request.ServiceIds))
 	for _, serviceID := range request.ServiceIds {
-		//ServiceId重复性检查
+		// ServiceId重复性检查
 		if _, ok := existFlag[serviceID]; ok {
 			log.Warn(fmt.Sprintf("duplicate micro-service[%s] serviceID", serviceID))
 			continue
@@ -206,11 +213,11 @@ func UnregisterManyService(ctx context.Context, request *pb.DelServicesRequest) 
 		existFlag[serviceID] = true
 		nuoMultiCount++
 
-		//执行删除服务操作
+		// 执行删除服务操作
 		gopool.Go(getDeleteServiceFunc(ctx, serviceID, request.Force, serviceRespChan))
 	}
 
-	//获取批量删除服务的结果
+	// 获取批量删除服务的结果
 	count := 0
 	responseCode := pb.ResponseSuccess
 	delServiceRspInfo := make([]*pb.DelServicesRspInfo, 0, len(serviceRespChan))
@@ -220,7 +227,7 @@ func UnregisterManyService(ctx context.Context, request *pb.DelServicesRequest) 
 			responseCode = pb.ErrInvalidParams
 		}
 		delServiceRspInfo = append(delServiceRspInfo, serviceRespItem)
-		//结果收集over，关闭通道
+		// 结果收集over，关闭通道
 		if count == nuoMultiCount {
 			close(serviceRespChan)
 		}

@@ -32,6 +32,7 @@ const (
 type IDGenerator interface {
 	GetServiceID(ctx context.Context) string
 	GetInstanceID(ctx context.Context) string
+	GetEnvID(ctx context.Context) string
 }
 
 func Generator() IDGenerator {

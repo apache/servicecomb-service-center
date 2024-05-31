@@ -46,6 +46,7 @@ var (
 	TypeDependencyQueue kvstore.Type
 	TypeInstance        kvstore.Type
 	TypeLease           kvstore.Type
+	TypeEnvironment     kvstore.Type
 )
 
 func RegisterInnerTypes() {
@@ -80,4 +81,7 @@ func RegisterInnerTypes() {
 	TypeProject = state.MustRegister("PROJECT", path.GetProjectRootKey(""),
 		state.WithInitSize(100),
 		state.WithParser(parser.StringParser))
+	TypeEnvironment = state.MustRegister("ENVIRONMENT", path.GetEnvironmentRootKey(""),
+		state.WithInitSize(100),
+		state.WithParser(value.EnvironmentParser))
 }

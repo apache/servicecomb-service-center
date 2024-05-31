@@ -31,3 +31,4 @@ func DependencyRule() state.State  { return state.Get(TypeDependencyRule) }
 func DependencyQueue() state.State { return state.Get(TypeDependencyQueue) }
 func Domain() state.State          { return state.Get(TypeDomain) }
 func Project() state.State         { return state.Get(TypeProject) }
+func Environment() state.State     { return state.Get(TypeEnvironment) }

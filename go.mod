@@ -21,7 +21,7 @@ require (
 	github.com/cloudflare/gokey v0.1.2
 	github.com/deckarep/golang-set v1.8.0
 	github.com/elithrar/simple-scrypt v1.3.0
-	github.com/go-chassis/cari v0.9.1-0.20240328115504-88da93faaca7
+	github.com/go-chassis/cari v0.9.1-0.20240531100749-8955107d022d
 	github.com/go-chassis/etcdadpt v0.5.3-0.20240328092602-984e34b756fe
 	github.com/go-chassis/foundation v0.4.0
 	github.com/go-chassis/go-archaius v1.5.6
@@ -181,7 +181,7 @@ require (
 	go.uber.org/multierr v1.6.0 // indirect
 	golang.org/x/net v0.7.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20220223155221-ee480838109b // indirect
-	golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f // indirect
+	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4 // indirect
 	golang.org/x/sys v0.5.0 // indirect
 	golang.org/x/term v0.5.0 // indirect
 	golang.org/x/text v0.7.0 // indirect

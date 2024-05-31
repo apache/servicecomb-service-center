@@ -28,6 +28,7 @@ import (
 	"time"
 
 	pb "github.com/go-chassis/cari/discovery"
+	ev "github.com/go-chassis/cari/env"
 	"github.com/go-chassis/cari/pkg/errsvc"
 	"github.com/go-chassis/cari/sync"
 	"github.com/go-chassis/etcdadpt"
@@ -47,6 +48,7 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
+	"github.com/apache/servicecomb-service-center/server/service/disco"
 	quotasvc "github.com/apache/servicecomb-service-center/server/service/quota"
 	"github.com/apache/servicecomb-service-center/syncer/service/event"
 )
@@ -1691,5 +1693,229 @@ func (ds *MetadataManager) UpdateManyInstanceStatus(ctx context.Context, match *
 
 		return pb.NewError(pb.ErrUnavailableBackend, err.Error())
 	}
+	return nil
+}
+
+func (ds *MetadataManager) ListEnvironments(ctx context.Context) (
+	*ev.GetEnvironmentsResponse, error) {
+	envs, err := eutil.GetAllEnvironmentUtil(ctx)
+	if err != nil {
+		log.Error("get all services by domain failed", err)
+		return nil, pb.NewError(pb.ErrInternal, err.Error())
+	}
+
+	return &ev.GetEnvironmentsResponse{
+		Environments: envs,
+	}, nil
+}
+
+func (ds *MetadataManager) RegisterEnvironment(ctx context.Context, request *ev.CreateEnvironmentRequest) (
+	response *ev.CreateEnvironmentResponse, err error) {
+	remoteIP := util.GetIPFromContext(ctx)
+	env := request.Environment
+	envFlag := util.StringJoin([]string{
+		env.Name, env.Description}, "/")
+	log.Info("will create environment:" + envFlag)
+	domainProject := util.ParseDomainProject(ctx)
+	envKey := &ev.EnvironmentKey{
+		Tenant: domainProject,
+		Name:   env.Name,
+	}
+	envIndex := path.GenerateEnvironmentIndexKey(envKey)
+	// 产生全局environment id
+	requestEnvID := env.ID
+	if len(requestEnvID) == 0 {
+		ctx = util.SetContext(ctx, uuid.ContextKey, envIndex)
+		env.ID = uuid.Generator().GetEnvID(ctx)
+	}
+	data, err := json.Marshal(env)
+	if err != nil {
+		log.Error(fmt.Sprintf("create Environment[%s] failed, json marshal environment failed, operator: %s",
+			envFlag, remoteIP), err)
+		return nil, pb.NewError(pb.ErrInternal, err.Error())
+	}
+	key := path.GenerateEnvironmentKey(domainProject, env.ID)
+
+	opts := []etcdadpt.OpOptions{
+		etcdadpt.OpPut(etcdadpt.WithStrKey(key), etcdadpt.WithValue(data)),
+		etcdadpt.OpPut(etcdadpt.WithStrKey(envIndex), etcdadpt.WithStrValue(env.ID)),
+	}
+	uniqueCmpOpts := []etcdadpt.CmpOptions{
+		etcdadpt.NotExistKey(key),
+		etcdadpt.NotExistKey(envIndex),
+	}
+	failOpts := []etcdadpt.OpOptions{
+		etcdadpt.OpGet(etcdadpt.WithStrKey(envIndex)),
+	}
+
+	syncOpts, err := esync.GenCreateOpts(ctx, datasource.ResourceEnvironment, request)
+	if err != nil {
+		log.Error("fail to create sync opts", err)
+		return nil, pb.NewError(pb.ErrInternal, err.Error())
+	}
+	opts = append(opts, syncOpts...)
+
+	resp, err := etcdadpt.TxnWithCmp(ctx, opts, uniqueCmpOpts, failOpts)
+	if err != nil {
+		log.Error(fmt.Sprintf("create environment[%s] failed, operator: %s",
+			envFlag, remoteIP), err)
+		return nil, pb.NewError(pb.ErrUnavailableBackend, err.Error())
+	}
+
+	if resp.Succeeded {
+		log.Info(fmt.Sprintf("create environment[%s][%s] successfully, operator: %s",
+			env.ID, envFlag, remoteIP))
+		disco.EnvMap.Store(request.Environment.Name, struct{}{})
+		return &ev.CreateEnvironmentResponse{
+			EnvId: env.ID,
+		}, nil
+	}
+
+	if len(requestEnvID) != 0 {
+		if len(resp.Kvs) == 0 || requestEnvID != util.BytesToStringWithNoCopy(resp.Kvs[0].Value) {
+			log.Warn(fmt.Sprintf("create environment[%s] failed, environment already exists, operator: %s",
+				envFlag, remoteIP))
+			return nil, pb.NewError(pb.ErrEnvironmentAlreadyExists,
+				"ServiceID conflict or found the same service with different id.")
+		}
+	}
+
+	if len(resp.Kvs) == 0 {
+		// internal error?
+		log.Error(fmt.Sprintf("create environment[%s] failed, unexpected txn response, operator: %s",
+			envFlag, remoteIP), nil)
+		return nil, pb.NewError(pb.ErrInternal, "Unexpected txn response.")
+	}
+
+	existEnvironmentID := util.BytesToStringWithNoCopy(resp.Kvs[0].Value)
+	log.Warn(fmt.Sprintf("create environment[%s][%s] failed, environment already exists, operator: %s",
+		existEnvironmentID, envFlag, remoteIP))
+	disco.EnvMap.Store(request.Environment.Name, struct{}{})
+	return &ev.CreateEnvironmentResponse{
+		EnvId: existEnvironmentID,
+	}, nil
+}
+
+func (ds *MetadataManager) GetEnvironment(ctx context.Context, request *ev.GetEnvironmentRequest) (
+	*ev.Environment, error) {
+	domainProject := util.ParseDomainProject(ctx)
+	singleEnvironment, err := eutil.GetEnvironment(ctx, domainProject, request.EnvironmentId)
+
+	if err != nil {
+		if errors.Is(err, datasource.ErrNoData) {
+			log.Debug(fmt.Sprintf("get environment[%s] failed, environment does not exist in db", request.EnvironmentId))
+			return nil, pb.NewError(pb.ErrEnvironmentNotExists, "environment does not exist.")
+		}
+		log.Error(fmt.Sprintf("get environment[%s] failed, get environment file failed", request.EnvironmentId), err)
+		return nil, pb.NewError(pb.ErrInternal, err.Error())
+	}
+	return singleEnvironment, nil
+}
+
+func (ds *MetadataManager) UpdateEnvironment(ctx context.Context, request *ev.UpdateEnvironmentRequest) (err error) {
+	remoteIP := util.GetIPFromContext(ctx)
+	domainProject := util.ParseDomainProject(ctx)
+	envkey := path.GenerateEnvironmentKey(domainProject, request.Environment.ID)
+	oldEnvironment, err := eutil.GetEnvironment(ctx, domainProject, request.Environment.ID)
+	if err != nil {
+		if errors.Is(err, datasource.ErrNoData) {
+			log.Debug(fmt.Sprintf("environment does not exist, update environment[%s] failed, operator: %s",
+				request.Environment.ID, remoteIP))
+			return pb.NewError(pb.ErrEnvironmentNotExists, "Environment does not exist.")
+		}
+		log.Error(fmt.Sprintf("update environment[%s] failed, get environment failed, operator: %s",
+			request.Environment.ID, remoteIP), err)
+		return pb.NewError(pb.ErrInternal, err.Error())
+	}
+	request.Environment.ModTimestamp = strconv.FormatInt(time.Now().Unix(), 10)
+	request.Environment.Timestamp = oldEnvironment.Timestamp
+	data, err := json.Marshal(request.Environment)
+	if err != nil {
+		log.Error(fmt.Sprintf("update environment[%s] failed, json marshal environment failed, operator: %s",
+			request.Environment.ID, remoteIP), err)
+		return pb.NewError(pb.ErrInternal, err.Error())
+	}
+
+	opts := []etcdadpt.OpOptions{
+		etcdadpt.OpPut(etcdadpt.WithStrKey(envkey), etcdadpt.WithValue(data)),
+	}
+	syncOpts, err := esync.GenUpdateOpts(ctx, datasource.ResourceEnvironment, request)
+	if err != nil {
+		log.Error("fail to create task", err)
+		return pb.NewError(pb.ErrInternal, err.Error())
+	}
+	opts = append(opts, syncOpts...)
+
+	// Set key file
+	resp, err := etcdadpt.TxnWithCmp(ctx, opts, etcdadpt.If(etcdadpt.NotEqualVer(envkey, 0)), nil)
+	if err != nil {
+		log.Error(fmt.Sprintf("update environment[%s] properties failed, operator: %s", request.Environment.ID, remoteIP), err)
+		return pb.NewError(pb.ErrUnavailableBackend, err.Error())
+	}
+	if !resp.Succeeded {
+		log.Error(fmt.Sprintf("update environment[%s] failed, environment does not exist, operator: %s",
+			request.Environment.ID, remoteIP), err)
+		return pb.NewError(pb.ErrEnvironmentNotExists, "environment does not exist.")
+	}
+
+	log.Info(fmt.Sprintf("update environment[%s] successfully, operator: %s", request.Environment.ID, remoteIP))
+	return nil
+}
+
+func (ds *MetadataManager) UnregisterEnvironment(ctx context.Context, request *ev.DeleteEnvironmentRequest) (err error) {
+	environmentId := request.EnvironmentId
+	remoteIP := util.GetIPFromContext(ctx)
+	domainProject := util.ParseDomainProject(ctx)
+
+	environment, err := eutil.GetEnvironment(ctx, domainProject, environmentId)
+	if err != nil {
+		if errors.Is(err, datasource.ErrNoData) {
+			log.Debug(fmt.Sprintf("environment does not exist, del environmentId[%s] failed, operator: %s",
+				environmentId, remoteIP))
+			return pb.NewError(pb.ErrEnvironmentNotExists, "environment does not exist.")
+		}
+		log.Error(fmt.Sprintf("del environment[%s] failed, get environment file failed, operator: %s",
+			environmentId, remoteIP), err)
+		return pb.NewError(pb.ErrInternal, err.Error())
+	}
+
+	serviceEnvKey := path.GenerateServiceEnvIndexKey(domainProject, environment.Name)
+	if serviceUtil.ServiceEnvExist(ctx, serviceEnvKey) {
+		log.Error(fmt.Sprintf("del environment[%s] failed, get environment file failed, operator: %s",
+			environmentId, remoteIP), errors.New("this env has services"))
+		return pb.NewError(pb.ErrInternal, "this env has services")
+	}
+	environmentIdKey := path.GenerateEnvironmentKey(domainProject, environmentId)
+	envKey := &ev.EnvironmentKey{
+		Tenant: domainProject,
+		Name:   environment.Name,
+	}
+	opts := []etcdadpt.OpOptions{
+		etcdadpt.OpDel(etcdadpt.WithStrKey(path.GenerateEnvironmentIndexKey(envKey))),
+		etcdadpt.OpDel(etcdadpt.WithStrKey(environmentIdKey)),
+	}
+	syncOpts, err := esync.GenDeleteOpts(ctx, datasource.ResourceEnvironment, environmentId,
+		&ev.DeleteEnvironmentRequest{EnvironmentId: environmentId})
+	if err != nil {
+		log.Error("fail to sync opt", err)
+		return pb.NewError(pb.ErrInternal, err.Error())
+	}
+	opts = append(opts, syncOpts...)
+
+	resp, err := etcdadpt.TxnWithCmp(ctx, opts, etcdadpt.If(etcdadpt.NotEqualVer(environmentIdKey, 0)), nil)
+	if err != nil {
+		log.Error(fmt.Sprintf("del environment[%s] failed, operator: %s", environmentId, remoteIP), err)
+		return pb.NewError(pb.ErrUnavailableBackend, err.Error())
+	}
+	if !resp.Succeeded {
+		log.Error(fmt.Sprintf("del environment[%s] failed, environment does not exist, operator: %s",
+			environmentId, remoteIP), err)
+		return pb.NewError(pb.ErrEnvironmentNotExists, "environmentId does not exist.")
+	}
+
+	quotasvc.RemandEnvironment(ctx)
+
+	log.Info(fmt.Sprintf("del environment[%s] successfully, operator: %s", environmentId, remoteIP))
+	disco.EnvMap.Delete(environment.Name)
 	return nil
 }
