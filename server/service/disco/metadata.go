@@ -61,10 +61,12 @@ func registerService(ctx context.Context, request *pb.CreateServiceRequest) (*pb
 	service := request.Service
 	serviceFlag := util.StringJoin([]string{
 		service.Environment, service.AppId, service.ServiceName, service.Version}, "/")
-	_, ok := EnvMap.Load(service.Environment)
-	if !ok {
-		log.Error(fmt.Sprintf("create micro-service[%s] failed, operator: %s", serviceFlag, remoteIP), errors.New("env not exist"))
-		return nil, pb.NewError(pb.ErrInvalidParams, "env not exist")
+	if !core.IsSCInstance(ctx) {
+		_, ok := EnvMap.Load(service.Environment)
+		if !ok {
+			log.Error(fmt.Sprintf("create micro-service[%s] failed, operator: %s", serviceFlag, remoteIP), errors.New("env not exist"))
+			return nil, pb.NewError(pb.ErrInvalidParams, "env not exist")
+		}
 	}
 	datasource.SetServiceDefaultValue(service)
 
