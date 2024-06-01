@@ -22,15 +22,17 @@ import (
 	"fmt"
 	"time"
 
+	pb "github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/cari/env"
+	"github.com/go-chassis/cari/pkg/errsvc"
+	"github.com/go-chassis/foundation/gopool"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
 	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
 	"github.com/apache/servicecomb-service-center/server/service/sync"
-	pb "github.com/go-chassis/cari/discovery"
-	"github.com/go-chassis/cari/pkg/errsvc"
-	"github.com/go-chassis/foundation/gopool"
 )
 
 func addDefaultContextValue(ctx context.Context) context.Context {
@@ -131,7 +133,7 @@ func autoSelfHeartBeat() {
 				if err == nil {
 					continue
 				}
-				//服务不存在，创建服务
+				// 服务不存在，创建服务
 				err = selfRegister(ctx)
 				if err != nil {
 					log.Error(fmt.Sprintf("retry to register[%s/%s/%s/%s] failed",
@@ -156,4 +158,32 @@ func SelfUnregister(pCtx context.Context) error {
 	log.Warn(fmt.Sprintf("unregister service center instance[%s/%s]",
 		core.Service.ServiceId, core.Instance.InstanceId))
 	return nil
+}
+
+func SelfEnvRegister(ctx context.Context) error {
+	err := selfEnvRegister(ctx)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func selfEnvRegister(pCtx context.Context) error {
+	ctx := addDefaultEnvContextValue(pCtx)
+	var req = new(env.CreateEnvironmentRequest)
+	preEnv := env.Environment{Name: ""}
+	req.Environment = &preEnv
+	_, err := discosvc.RegistryEnvironment(ctx, req)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func addDefaultEnvContextValue(ctx context.Context) context.Context {
+	// set default domain/project
+	ctx = util.SetDomainProject(ctx, datasource.RegistryDomain, datasource.RegistryProject)
+	ctx = util.SetContext(ctx, discosvc.PreEnv, true)
+	ctx = util.SetContext(ctx, util.CtxRemoteIP, "127.0.0.1")
+	return ctx
 }
