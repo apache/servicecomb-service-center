@@ -1765,7 +1765,7 @@ func (ds *MetadataManager) RegisterEnvironment(ctx context.Context, request *ev.
 	if resp.Succeeded {
 		log.Info(fmt.Sprintf("create environment[%s][%s] successfully, operator: %s",
 			env.ID, envFlag, remoteIP))
-		disco.EnvMap.Store(request.Environment.Name, struct{}{})
+		disco.EnvMap.Store(request.Environment.ID, struct{}{})
 		return &ev.CreateEnvironmentResponse{
 			EnvId: env.ID,
 		}, nil
@@ -1790,7 +1790,7 @@ func (ds *MetadataManager) RegisterEnvironment(ctx context.Context, request *ev.
 	existEnvironmentID := util.BytesToStringWithNoCopy(resp.Kvs[0].Value)
 	log.Warn(fmt.Sprintf("create environment[%s][%s] failed, environment already exists, operator: %s",
 		existEnvironmentID, envFlag, remoteIP))
-	disco.EnvMap.Store(request.Environment.Name, struct{}{})
+	disco.EnvMap.Store(request.Environment.ID, struct{}{})
 	return &ev.CreateEnvironmentResponse{
 		EnvId: existEnvironmentID,
 	}, nil
@@ -1879,7 +1879,7 @@ func (ds *MetadataManager) UnregisterEnvironment(ctx context.Context, request *e
 		return pb.NewError(pb.ErrInternal, err.Error())
 	}
 
-	serviceEnvKey := path.GenerateServiceEnvIndexKey(domainProject, environment.Name)
+	serviceEnvKey := path.GenerateServiceEnvIndexKey(domainProject, environment.ID)
 	if serviceUtil.ServiceEnvExist(ctx, serviceEnvKey) {
 		log.Error(fmt.Sprintf("del environment[%s] failed, get environment file failed, operator: %s",
 			environmentId, remoteIP), errors.New("this env has services"))
@@ -1916,6 +1916,6 @@ func (ds *MetadataManager) UnregisterEnvironment(ctx context.Context, request *e
 	quotasvc.RemandEnvironment(ctx)
 
 	log.Info(fmt.Sprintf("del environment[%s] successfully, operator: %s", environmentId, remoteIP))
-	disco.EnvMap.Delete(environment.Name)
+	disco.EnvMap.Delete(environment.ID)
 	return nil
 }

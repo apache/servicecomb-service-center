@@ -418,9 +418,9 @@ func GetEnvironmentIndexRootKey(domainProject string) string {
 	}, SPLIT)
 }
 
-func GenerateServiceEnvIndexKey(domainProject string, name string) string {
+func GenerateServiceEnvIndexKey(domainProject string, envId string) string {
 	return util.StringJoin([]string{
 		GetServiceIndexRootKey(domainProject),
-		name,
+		envId,
 	}, SPLIT)
 }
