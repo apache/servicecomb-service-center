@@ -28,6 +28,7 @@ import (
 	"github.com/go-chassis/foundation/gopool"
 
 	"github.com/apache/servicecomb-service-center/datasource"
+	eutil "github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
@@ -62,8 +63,9 @@ func registerService(ctx context.Context, request *pb.CreateServiceRequest) (*pb
 	serviceFlag := util.StringJoin([]string{
 		service.Environment, service.AppId, service.ServiceName, service.Version}, "/")
 	if !core.IsSCInstance(ctx) {
-		_, ok := EnvMap.Load(service.Environment)
-		if !ok {
+		domainProject := util.ParseDomainProject(ctx)
+		_, err := eutil.GetEnvironment(ctx, domainProject, service.Environment)
+		if err != nil {
 			log.Error(fmt.Sprintf("create micro-service[%s] failed, operator: %s", serviceFlag, remoteIP), errors.New("env not exist"))
 			return nil, pb.NewError(pb.ErrInvalidParams, "env not exist")
 		}

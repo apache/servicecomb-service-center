@@ -42,6 +42,13 @@ func getEnvironmentsRawData(ctx context.Context, domainProject string) ([]*kvsto
 	if err != nil {
 		return nil, err
 	}
+	opts1 := append(FromContext(ctx),
+		etcdadpt.WithStrKey(key))
+	resp1, err := sd.Environment().Search(ctx, opts1...)
+	if err != nil {
+		return nil, err
+	}
+	resp.Kvs = append(resp.Kvs, resp1.Kvs[0])
 	return resp.Kvs, err
 }
 
