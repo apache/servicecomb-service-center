@@ -48,7 +48,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/plugin/uuid"
-	"github.com/apache/servicecomb-service-center/server/service/disco"
 	quotasvc "github.com/apache/servicecomb-service-center/server/service/quota"
 	"github.com/apache/servicecomb-service-center/syncer/service/event"
 )
@@ -1724,10 +1723,11 @@ func (ds *MetadataManager) RegisterEnvironment(ctx context.Context, request *ev.
 	envIndex := path.GenerateEnvironmentIndexKey(envKey)
 	// 产生全局environment id
 	requestEnvID := env.ID
-	if len(requestEnvID) == 0 {
+	if len(requestEnvID) == 0 && len(env.Name) != 0 {
 		ctx = util.SetContext(ctx, uuid.ContextKey, envIndex)
 		env.ID = uuid.Generator().GetEnvID(ctx)
 	}
+	envIndex = util.StringJoin([]string{envIndex, env.ID}, "/")
 	data, err := json.Marshal(env)
 	if err != nil {
 		log.Error(fmt.Sprintf("create Environment[%s] failed, json marshal environment failed, operator: %s",
@@ -1765,7 +1765,6 @@ func (ds *MetadataManager) RegisterEnvironment(ctx context.Context, request *ev.
 	if resp.Succeeded {
 		log.Info(fmt.Sprintf("create environment[%s][%s] successfully, operator: %s",
 			env.ID, envFlag, remoteIP))
-		disco.EnvMap.Store(request.Environment.ID, struct{}{})
 		return &ev.CreateEnvironmentResponse{
 			EnvId: env.ID,
 		}, nil
@@ -1790,7 +1789,6 @@ func (ds *MetadataManager) RegisterEnvironment(ctx context.Context, request *ev.
 	existEnvironmentID := util.BytesToStringWithNoCopy(resp.Kvs[0].Value)
 	log.Warn(fmt.Sprintf("create environment[%s][%s] failed, environment already exists, operator: %s",
 		existEnvironmentID, envFlag, remoteIP))
-	disco.EnvMap.Store(request.Environment.ID, struct{}{})
 	return &ev.CreateEnvironmentResponse{
 		EnvId: existEnvironmentID,
 	}, nil
@@ -1916,6 +1914,5 @@ func (ds *MetadataManager) UnregisterEnvironment(ctx context.Context, request *e
 	quotasvc.RemandEnvironment(ctx)
 
 	log.Info(fmt.Sprintf("del environment[%s] successfully, operator: %s", environmentId, remoteIP))
-	disco.EnvMap.Delete(environment.ID)
 	return nil
 }

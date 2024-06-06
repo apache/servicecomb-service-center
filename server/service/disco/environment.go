@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-	sync1 "sync"
 	"time"
 
 	pb "github.com/go-chassis/cari/discovery"
@@ -18,7 +17,6 @@ import (
 )
 
 var PreEnv util.CtxKey = "_pre_env"
-var EnvMap sync1.Map
 
 func ListEnvironments(ctx context.Context) (*ev.GetEnvironmentsResponse, error) {
 	return datasource.GetMetadataManager().ListEnvironments(ctx)

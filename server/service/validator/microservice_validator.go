@@ -58,7 +58,7 @@ var (
 
 func MicroServiceKeyValidator() *validate.Validator {
 	return microServiceKeyValidator.Init(func(v *validate.Validator) {
-		v.AddRule("Environment", &validate.Rule{Min: 1, Max: 128, Regexp: envRegex})
+		v.AddRule("Environment", &validate.Rule{Min: 0, Max: 128, Regexp: envRegex})
 		v.AddRule("AppId", &validate.Rule{Min: 1, Max: 160, Regexp: nameRegex})
 		v.AddRule("ServiceName", &validate.Rule{Max: 128, Regexp: nameRegex})
 		v.AddRule("Version", &validate.Rule{Min: 1, Max: 64, Regexp: versionRegex})

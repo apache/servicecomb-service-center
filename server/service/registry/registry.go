@@ -171,7 +171,7 @@ func SelfEnvRegister(ctx context.Context) error {
 func selfEnvRegister(pCtx context.Context) error {
 	ctx := addDefaultEnvContextValue(pCtx)
 	var req = new(env.CreateEnvironmentRequest)
-	preEnv := env.Environment{Name: ""}
+	preEnv := env.Environment{Name: "", ID: "", Description: "this is prepared env,whose id and name are empty"}
 	req.Environment = &preEnv
 	_, err := discosvc.RegistryEnvironment(ctx, req)
 	if err != nil {
