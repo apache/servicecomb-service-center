@@ -1889,7 +1889,7 @@ func (ds *MetadataManager) UnregisterEnvironment(ctx context.Context, request *e
 		Name:   environment.Name,
 	}
 	opts := []etcdadpt.OpOptions{
-		etcdadpt.OpDel(etcdadpt.WithStrKey(path.GenerateEnvironmentIndexKey(envKey))),
+		etcdadpt.OpDel(etcdadpt.WithStrKey(util.StringJoin([]string{path.GenerateEnvironmentIndexKey(envKey), environmentId}, "/"))),
 		etcdadpt.OpDel(etcdadpt.WithStrKey(environmentIdKey)),
 	}
 	syncOpts, err := esync.GenDeleteOpts(ctx, datasource.ResourceEnvironment, environmentId,
