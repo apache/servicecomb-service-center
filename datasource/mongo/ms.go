@@ -1683,23 +1683,23 @@ func (ds *MetadataManager) UpdateManyInstanceStatus(_ context.Context, _ *dataso
 	return nil
 }
 
-func (ds *MetadataManager) ListEnvironments(ctx context.Context) (*ev.GetEnvironmentsResponse, error) {
+func (ds *MetadataManager) ListEnvironments(_ context.Context) (*ev.GetEnvironmentsResponse, error) {
 	return nil, nil
 }
 
-func (ds *MetadataManager) RegisterEnvironment(ctx context.Context, request *ev.CreateEnvironmentRequest) (*ev.CreateEnvironmentResponse, error) {
+func (ds *MetadataManager) RegisterEnvironment(_ context.Context, _ *ev.CreateEnvironmentRequest) (*ev.CreateEnvironmentResponse, error) {
 	return nil, nil
 }
 
-func (ds *MetadataManager) GetEnvironment(ctx context.Context, request *ev.GetEnvironmentRequest) (
+func (ds *MetadataManager) GetEnvironment(_ context.Context, _ *ev.GetEnvironmentRequest) (
 	*ev.Environment, error) {
 	return nil, nil
 }
 
-func (ds *MetadataManager) UpdateEnvironment(ctx context.Context, request *ev.UpdateEnvironmentRequest) (err error) {
+func (ds *MetadataManager) UpdateEnvironment(_ context.Context, _ *ev.UpdateEnvironmentRequest) (err error) {
 	return nil
 }
 
-func (ds *MetadataManager) UnregisterEnvironment(ctx context.Context, request *ev.DeleteEnvironmentRequest) (err error) {
+func (ds *MetadataManager) UnregisterEnvironment(_ context.Context, _ *ev.DeleteEnvironmentRequest) (err error) {
 	return nil
 }

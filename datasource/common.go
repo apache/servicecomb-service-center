@@ -30,7 +30,7 @@ const (
 	ResourceAccount     = "account"
 	ResourceRole        = "role"
 	ResourceService     = "service"
-	ResourceEnvironment = "env"
+	ResourceEnvironment = "environment"
 	ResourceKV          = "kv"
 	ResourceInstance    = "instance"
 	ResourceHeartbeat   = "heartbeat"

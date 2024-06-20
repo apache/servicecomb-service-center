@@ -43,7 +43,7 @@ type environment struct {
 	updateInput *ev.UpdateEnvironmentRequest
 	deleteInput *ev.DeleteEnvironmentRequest
 
-	envId string
+	envID string
 
 	cur *ev.Environment
 
@@ -62,17 +62,17 @@ type environmentManager interface {
 func (e *environment) loadInput() error {
 	e.createInput = new(ev.CreateEnvironmentRequest)
 	cre := newInputParam(e.createInput, func() {
-		e.envId = e.createInput.Environment.ID
+		e.envID = e.createInput.Environment.ID
 	})
 
 	e.updateInput = new(ev.UpdateEnvironmentRequest)
 	upd := newInputParam(e.updateInput, func() {
-		e.envId = e.updateInput.Environment.ID
+		e.envID = e.updateInput.Environment.ID
 	})
 
 	e.deleteInput = new(ev.DeleteEnvironmentRequest)
 	del := newInputParam(e.deleteInput, func() {
-		e.envId = e.deleteInput.EnvironmentId
+		e.envID = e.deleteInput.EnvironmentId
 	})
 
 	return newInputLoader(
@@ -90,7 +90,7 @@ func (e *environment) LoadCurrentResource(ctx context.Context) *Result {
 	}
 
 	cur, err := e.manager.GetEnvironment(ctx, &ev.GetEnvironmentRequest{
-		EnvironmentId: e.envId,
+		EnvironmentId: e.envID,
 	})
 	if err != nil {
 		if errsvc.IsErrEqualCode(err, pb.ErrServiceNotExists) {
@@ -110,7 +110,7 @@ func (e *environment) NeedOperate(ctx context.Context) *Result {
 		updateTime: func() (int64, error) {
 			return formatUpdateTimeSecond(e.cur.ModTimestamp)
 		},
-		resourceID: e.envId,
+		resourceID: e.envID,
 	}
 	c.tombstoneLoader = c
 	return c.needOperate(ctx)

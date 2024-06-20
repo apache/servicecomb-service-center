@@ -75,6 +75,6 @@ func (ds *MetadataManager) getNotGlobalServiceFilter(ctx context.Context) (bson.
 	return util.NewFilter(util.NotIn(serviceIDs)), nil
 }
 
-func (ds *MetadataManager) CountEnvironment(ctx context.Context, request *ev.GetEnvironmentCountRequest) (*ev.GetEnvironmentCountResponse, error) {
+func (ds *MetadataManager) CountEnvironment(_ context.Context, _ *ev.GetEnvironmentCountRequest) (*ev.GetEnvironmentCountResponse, error) {
 	return nil, nil
 }

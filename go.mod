@@ -21,7 +21,7 @@ require (
 	github.com/cloudflare/gokey v0.1.2
 	github.com/deckarep/golang-set v1.8.0
 	github.com/elithrar/simple-scrypt v1.3.0
-	github.com/go-chassis/cari v0.9.1-0.20240531100749-8955107d022d
+	github.com/go-chassis/cari v0.9.1-0.20240620034337-b6769eaccc12
 	github.com/go-chassis/etcdadpt v0.5.3-0.20240328092602-984e34b756fe
 	github.com/go-chassis/foundation v0.4.0
 	github.com/go-chassis/go-archaius v1.5.6

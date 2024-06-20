@@ -77,7 +77,7 @@ func (s *EnvironmentResource) GetEnvironment(w http.ResponseWriter, r *http.Requ
 
 func (s *EnvironmentResource) UpdateEnvironment(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
-	environmentId := query.Get(":environmentId")
+	environmentID := query.Get(":environmentId")
 	message, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Error("read body failed", err)
@@ -91,7 +91,7 @@ func (s *EnvironmentResource) UpdateEnvironment(w http.ResponseWriter, r *http.R
 		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
-	request.Environment.ID = environmentId
+	request.Environment.ID = environmentID
 	err = discosvc.UpdateEnvironment(r.Context(), &request)
 	if err != nil {
 		log.Error("update environment failed", err)
@@ -103,14 +103,14 @@ func (s *EnvironmentResource) UpdateEnvironment(w http.ResponseWriter, r *http.R
 
 func (s *EnvironmentResource) UnRegistryEnvironment(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
-	environmentId := query.Get(":environmentId")
+	environmentID := query.Get(":environmentId")
 
 	request := &ev.DeleteEnvironmentRequest{
-		EnvironmentId: environmentId,
+		EnvironmentId: environmentID,
 	}
 	err := discosvc.UnRegistryEnvironment(r.Context(), request)
 	if err != nil {
-		log.Error(fmt.Sprintf("delete environment[%s] failed", environmentId), err)
+		log.Error(fmt.Sprintf("delete environment[%s] failed", environmentID), err)
 		rest.WriteServiceError(w, err)
 		return
 	}
