@@ -37,15 +37,38 @@ import (
 	"github.com/apache/servicecomb-service-center/eventbase/service/task"
 	"github.com/apache/servicecomb-service-center/eventbase/service/tombstone"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/service/disco"
+	"github.com/apache/servicecomb-service-center/syncer/config"
 	_ "github.com/apache/servicecomb-service-center/test"
 )
 
+const (
+	syncAllDomain  = "sync-all"
+	syncAllProject = "sync-all"
+)
+
 func syncAllContext() context.Context {
-	ctx := util.WithNoCache(util.SetDomainProject(context.Background(), "sync-all", "sync-all"))
+	ctx := util.WithNoCache(util.SetDomainProject(context.Background(), syncAllDomain, syncAllProject))
 	return util.WithNoCache(util.SetContext(ctx, util.CtxEnableSync, "1"))
 }
 
+func syncSwitchOnConfig() {
+	cfg := config.Config{
+		Sync: &config.Sync{
+			EnableOnStart: true,
+			WhiteList: &config.WhiteList{
+				Service: &config.Service{
+					Rules: []string{"sync*"},
+				},
+			},
+		},
+	}
+	config.SetConfig(cfg)
+}
+
 func TestSyncAll(t *testing.T) {
+	syncSwitchOnConfig()
+
 	t.Run("enableOnStart is false will not do sync", func(t *testing.T) {
 		_ = archaius.Set("sync.enableOnStart", false)
 		err := datasource.GetSyncManager().SyncAll(syncAllContext())
@@ -70,8 +93,8 @@ func TestSyncAll(t *testing.T) {
 		err = datasource.GetSyncManager().SyncAll(syncAllContext())
 		assert.Nil(t, err)
 		listTaskReq := model.ListTaskRequest{
-			Domain:  "sync-all",
-			Project: "sync-all",
+			Domain:  syncAllDomain,
+			Project: syncAllProject,
 		}
 		tasks, err := task.List(syncAllContext(), &listTaskReq)
 		assert.NoError(t, err)
@@ -102,8 +125,8 @@ func TestSyncAll(t *testing.T) {
 			assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
 			serviceID = resp.ServiceId
 			listTaskReq := model.ListTaskRequest{
-				Domain:       "sync-all",
-				Project:      "sync-all",
+				Domain:       syncAllDomain,
+				Project:      syncAllProject,
 				ResourceType: datasource.ResourceService,
 				Action:       sync.CreateAction,
 				Status:       sync.PendingStatus,
@@ -133,8 +156,8 @@ func TestSyncAll(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, a1, *r)
 			listTaskReq := model.ListTaskRequest{
-				Domain:       "sync-all",
-				Project:      "sync-all",
+				Domain:       syncAllDomain,
+				Project:      syncAllProject,
 				ResourceType: datasource.ResourceAccount,
 			}
 			tasks, err := task.List(syncAllContext(), &listTaskReq)
@@ -162,8 +185,8 @@ func TestSyncAll(t *testing.T) {
 			assert.Equal(t, r.CreateTime, r.UpdateTime)
 			roleName = r1.Name
 			listTaskReq := model.ListTaskRequest{
-				Domain:       "sync-all",
-				Project:      "sync-all",
+				Domain:       syncAllDomain,
+				Project:      syncAllProject,
 				ResourceType: datasource.ResourceRole,
 			}
 			tasks, err := task.List(syncAllContext(), &listTaskReq)
@@ -192,8 +215,8 @@ func TestSyncAll(t *testing.T) {
 			assert.Equal(t, "summary_sync_all", ref.Summary)
 			assert.Equal(t, "hash_sync_all", ref.Hash)
 			listTaskReq := model.ListTaskRequest{
-				Domain:       "sync-all",
-				Project:      "sync-all",
+				Domain:       syncAllDomain,
+				Project:      syncAllProject,
 				Action:       sync.UpdateAction,
 				ResourceType: datasource.ResourceKV,
 				Status:       sync.PendingStatus,
@@ -215,8 +238,8 @@ func TestSyncAll(t *testing.T) {
 			})
 			assert.NoError(t, err)
 			listTaskReq := model.ListTaskRequest{
-				Domain:       "sync-all",
-				Project:      "sync-all",
+				Domain:       syncAllDomain,
+				Project:      syncAllProject,
 				ResourceType: datasource.ResourceKV,
 				Action:       sync.UpdateAction,
 				Status:       sync.PendingStatus,
@@ -244,8 +267,8 @@ func TestSyncAll(t *testing.T) {
 			assert.NoError(t, err)
 			consumerID = resp.ServiceId
 			listTaskReq := model.ListTaskRequest{
-				Domain:       "sync-all",
-				Project:      "sync-all",
+				Domain:       syncAllDomain,
+				Project:      syncAllProject,
 				ResourceType: datasource.ResourceService,
 				Action:       sync.CreateAction,
 				Status:       sync.PendingStatus,
@@ -274,8 +297,8 @@ func TestSyncAll(t *testing.T) {
 			providerID = resp.ServiceId
 
 			listTaskReq := model.ListTaskRequest{
-				Domain:       "sync-all",
-				Project:      "sync-all",
+				Domain:       syncAllDomain,
+				Project:      syncAllProject,
 				ResourceType: datasource.ResourceService,
 				Action:       sync.CreateAction,
 				Status:       sync.PendingStatus,
@@ -309,8 +332,8 @@ func TestSyncAll(t *testing.T) {
 			assert.NoError(t, err)
 
 			listTaskReq := model.ListTaskRequest{
-				Domain:       "sync-all",
-				Project:      "sync-all",
+				Domain:       syncAllDomain,
+				Project:      syncAllProject,
 				ResourceType: datasource.ResourceKV,
 				Action:       sync.UpdateAction,
 				Status:       sync.PendingStatus,
@@ -329,8 +352,8 @@ func TestSyncAll(t *testing.T) {
 			err := datasource.GetSyncManager().SyncAll(syncAllContext())
 			assert.Nil(t, err)
 			listServiceTaskReq := model.ListTaskRequest{
-				Domain:       "sync-all",
-				Project:      "sync-all",
+				Domain:       syncAllDomain,
+				Project:      syncAllProject,
 				ResourceType: datasource.ResourceService,
 			}
 			tasks, err := task.List(syncAllContext(), &listServiceTaskReq)
@@ -343,8 +366,8 @@ func TestSyncAll(t *testing.T) {
 			assert.Equal(t, 0, len(tasks))
 
 			listKVTaskReq := model.ListTaskRequest{
-				Domain:       "sync-all",
-				Project:      "sync-all",
+				Domain:       syncAllDomain,
+				Project:      syncAllProject,
 				ResourceType: datasource.ResourceKV,
 				Action:       sync.CreateAction,
 				Status:       sync.PendingStatus,
@@ -391,8 +414,8 @@ func TestSyncAll(t *testing.T) {
 			assert.Equal(t, 0, len(tasks))
 
 			listDepTaskReq := model.ListTaskRequest{
-				Domain:       "sync-all",
-				Project:      "sync-all",
+				Domain:       syncAllDomain,
+				Project:      syncAllProject,
 				ResourceType: datasource.ResourceKV,
 				Action:       sync.UpdateAction,
 				Status:       sync.PendingStatus,
@@ -602,4 +625,271 @@ func TestSyncAll(t *testing.T) {
 			assert.NoError(t, err)
 		})
 	})
+
+	t.Run("enableOnStart is true ,syncAllKey not exists and the service name is not in the whitelist will not do sync", func(t *testing.T) {
+		_ = archaius.Set("sync.enableOnStart", true)
+		var serviceIDNotInWhiteList string
+		var consumerIDNotInWhiteList string
+		var providerIDNotInWhiteList string
+		t.Run("register a service named AAA will not create task should pass", func(t *testing.T) {
+			resp, err := disco.RegisterService(syncAllContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "sync_micro_service_group",
+					ServiceName: "AAA",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
+				},
+			})
+			assert.NotNil(t, resp)
+			assert.NoError(t, err)
+			assert.Equal(t, pb.ResponseSuccess, resp.Response.GetCode())
+			serviceIDNotInWhiteList = resp.ServiceId
+			assert.NotNil(t, serviceIDNotInWhiteList)
+			listTaskReq := model.ListTaskRequest{
+				Domain:       syncAllDomain,
+				Project:      syncAllProject,
+				ResourceType: datasource.ResourceService,
+				Action:       sync.CreateAction,
+				Status:       sync.PendingStatus,
+			}
+			tasks, err := task.List(syncAllContext(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tasks))
+		})
+		t.Run("update a microservice named AAA's schema with valid request will not create tasks should pass", func(t *testing.T) {
+			err := disco.PutSchema(syncAllContext(), &pb.ModifySchemaRequest{
+				ServiceId: serviceIDNotInWhiteList,
+				SchemaId:  "87654321",
+				Schema:    "schema-three",
+				Summary:   "87654321",
+			})
+			assert.NoError(t, err)
+
+			ref, err := disco.GetSchema(syncAllContext(), &pb.GetSchemaRequest{
+				ServiceId: serviceIDNotInWhiteList,
+				SchemaId:  "87654321",
+			})
+			assert.NoError(t, err)
+			assert.NotNil(t, ref)
+			assert.Equal(t, "87654321", ref.Summary)
+			assert.Equal(t, "schema-three", ref.Schema)
+			listTaskReq := model.ListTaskRequest{
+				Domain:       syncAllDomain,
+				Project:      syncAllProject,
+				Action:       sync.UpdateAction,
+				ResourceType: datasource.ResourceKV,
+				Status:       sync.PendingStatus,
+			}
+			tasks, err := task.List(syncAllContext(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tasks))
+		})
+		t.Run("update a service named AAA tag will not create task should pass", func(t *testing.T) {
+			err := disco.PutManyTags(syncAllContext(), &pb.AddServiceTagsRequest{
+				ServiceId: serviceIDNotInWhiteList,
+				Tags: map[string]string{
+					"a": "test",
+					"b": "b",
+				},
+			})
+			assert.NoError(t, err)
+
+			listTaskReq := model.ListTaskRequest{
+				Domain:       syncAllDomain,
+				Project:      syncAllProject,
+				ResourceType: datasource.ResourceKV,
+				Action:       sync.UpdateAction,
+				Status:       sync.PendingStatus,
+			}
+			tasks, err := task.List(syncAllContext(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tasks))
+		})
+		t.Run("create a consumer service named consumer_AAA  will not create a task should pass", func(t *testing.T) {
+			resp, err := disco.RegisterService(syncAllContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "sync_dep_group_sync_all",
+					ServiceName: "consumer_AAA",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
+				},
+			})
+			assert.NoError(t, err)
+			consumerIDNotInWhiteList = resp.ServiceId
+
+			listTaskReq := model.ListTaskRequest{
+				Domain:       syncAllDomain,
+				Project:      syncAllProject,
+				ResourceType: datasource.ResourceService,
+				Action:       sync.CreateAction,
+				Status:       sync.PendingStatus,
+			}
+			tasks, err := task.List(syncAllContext(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tasks))
+		})
+		t.Run("create one provider service will create one service task should pass", func(t *testing.T) {
+			resp, err := disco.RegisterService(syncAllContext(), &pb.CreateServiceRequest{
+				Service: &pb.MicroService{
+					AppId:       "sync_dep_group_sync_all",
+					ServiceName: "provider_AAA",
+					Version:     "1.0.0",
+					Level:       "FRONT",
+					Status:      pb.MS_UP,
+				},
+			})
+			assert.NoError(t, err)
+			assert.NotNil(t, resp)
+			providerIDNotInWhiteList = resp.ServiceId
+
+			listTaskReq := model.ListTaskRequest{
+				Domain:       syncAllDomain,
+				Project:      syncAllProject,
+				ResourceType: datasource.ResourceService,
+				Action:       sync.CreateAction,
+				Status:       sync.PendingStatus,
+			}
+			tasks, err := task.List(syncAllContext(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tasks))
+		})
+		t.Run("consumer named consumer_AAA finding instances provider named provider_AAA will not create a dependency task should pass", func(t *testing.T) {
+			_, err := disco.FindInstances(syncAllContext(), &pb.FindInstancesRequest{
+				ConsumerServiceId: consumerIDNotInWhiteList,
+				AppId:             "sync_dep_group_sync_all",
+				ServiceName:       "provider_AAA",
+			})
+			assert.NoError(t, err)
+
+			dependencyHandle()
+
+			respGetP, err := disco.ListConsumers(syncAllContext(), &pb.GetDependenciesRequest{
+				ServiceId: providerIDNotInWhiteList,
+			})
+			assert.NoError(t, err)
+			assert.Equal(t, 1, len(respGetP.Consumers))
+			assert.Equal(t, consumerIDNotInWhiteList, respGetP.Consumers[0].ServiceId)
+
+			respGetC, err := disco.ListProviders(syncAllContext(), &pb.GetDependenciesRequest{
+				ServiceId: consumerIDNotInWhiteList,
+			})
+			assert.NoError(t, err)
+			assert.Equal(t, 1, len(respGetC.Providers))
+
+			listTaskReq := model.ListTaskRequest{
+				Domain:       syncAllDomain,
+				Project:      syncAllProject,
+				ResourceType: datasource.ResourceKV,
+				Action:       sync.UpdateAction,
+				Status:       sync.PendingStatus,
+			}
+
+			tasks, err := task.List(syncAllContext(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tasks))
+		})
+
+		t.Run("do sync will create task should pass", func(t *testing.T) {
+			err := datasource.GetSyncManager().SyncAll(syncAllContext())
+
+			listServiceTaskReq := model.ListTaskRequest{
+				Domain:       syncAllDomain,
+				Project:      syncAllProject,
+				ResourceType: datasource.ResourceService,
+			}
+			tasks, err := task.List(syncAllContext(), &listServiceTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tasks))
+
+			listKVTaskReq := model.ListTaskRequest{
+				Domain:       syncAllDomain,
+				Project:      syncAllProject,
+				ResourceType: datasource.ResourceKV,
+				Action:       sync.CreateAction,
+				Status:       sync.PendingStatus,
+			}
+			tasks, err = task.List(syncAllContext(), &listKVTaskReq)
+			assert.NoError(t, err)
+			// only schema-content
+			assert.Equal(t, 1, len(tasks))
+			err = task.Delete(syncAllContext(), tasks...)
+			assert.NoError(t, err)
+			tasks, err = task.List(syncAllContext(), &listKVTaskReq)
+			assert.NoError(t, err)
+			// three schema and one tag
+			assert.Equal(t, 0, len(tasks))
+
+			listDepTaskReq := model.ListTaskRequest{
+				Domain:       syncAllDomain,
+				Project:      syncAllProject,
+				ResourceType: datasource.ResourceKV,
+				Action:       sync.UpdateAction,
+				Status:       sync.PendingStatus,
+			}
+			tasks, err = task.List(syncAllContext(), &listDepTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tasks))
+
+			exist, err := etcdadpt.Exist(syncAllContext(), etcd.SyncAllKey)
+			assert.Equal(t, true, exist)
+			assert.Nil(t, err)
+
+			isDelete, err := etcdadpt.Delete(syncAllContext(), etcd.SyncAllKey)
+			assert.Equal(t, true, isDelete)
+			assert.Nil(t, err)
+		})
+
+		t.Run("delete all resources should pass", func(t *testing.T) {
+
+			err := disco.UnregisterService(syncAllContext(), &pb.DeleteServiceRequest{
+				ServiceId: serviceIDNotInWhiteList,
+				Force:     true,
+			})
+			assert.NoError(t, err)
+			err = disco.UnregisterService(syncAllContext(), &pb.DeleteServiceRequest{
+				ServiceId: consumerIDNotInWhiteList,
+				Force:     true,
+			})
+			assert.NoError(t, err)
+			err = disco.UnregisterService(syncAllContext(), &pb.DeleteServiceRequest{
+				ServiceId: providerIDNotInWhiteList,
+				Force:     true,
+			})
+			assert.NoError(t, err)
+
+			listSeviceTaskReq := model.ListTaskRequest{
+				Domain:       "sync-all",
+				Project:      "sync-all",
+				ResourceType: datasource.ResourceService,
+			}
+			tasks, err := task.List(syncAllContext(), &listSeviceTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tasks))
+
+			listKVTaskReq := model.ListTaskRequest{
+				Domain:       "sync-all",
+				Project:      "sync-all",
+				ResourceType: datasource.ResourceKV,
+			}
+			tasks, err = task.List(syncAllContext(), &listKVTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tasks))
+
+			tombstoneListReq := model.ListTombstoneRequest{
+				Domain:  "sync-all",
+				Project: "sync-all",
+			}
+			tombstones, err := tombstone.List(syncAllContext(), &tombstoneListReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tombstones))
+			err = tombstone.Delete(syncAllContext(), tombstones...)
+			assert.NoError(t, err)
+		})
+	})
+}
+
+func dependencyHandle() {
+	datasource.GetDependencyManager().DependencyHandle(syncAllContext())
 }

@@ -37,6 +37,12 @@ func PutManyTags(ctx context.Context, in *pb.AddServiceTagsRequest) error {
 		return pb.NewError(pb.ErrInvalidParams, err.Error())
 	}
 
+	if ok, err := datasource.EnableSync(ctx, in.ServiceId); err != nil {
+		return err
+	} else if !ok {
+		util.SetContext(ctx, util.CtxEnableSync, "0")
+	}
+
 	return datasource.GetMetadataManager().PutManyTags(ctx, in)
 }
 
@@ -49,6 +55,12 @@ func PutTag(ctx context.Context, in *pb.UpdateServiceTagRequest) error {
 		return pb.NewError(pb.ErrInvalidParams, err.Error())
 	}
 
+	if ok, err := datasource.EnableSync(ctx, in.ServiceId); err != nil {
+		return err
+	} else if !ok {
+		util.SetContext(ctx, util.CtxEnableSync, "0")
+	}
+
 	return datasource.GetMetadataManager().PutTag(ctx, in)
 }
 
@@ -58,6 +70,12 @@ func DeleteManyTags(ctx context.Context, in *pb.DeleteServiceTagsRequest) error 
 	if err := validator.ValidateDeleteServiceTagsRequest(in); err != nil {
 		log.Error(fmt.Sprintf("delete service[%s]'s tags %v failed, operator: %s", in.ServiceId, in.Keys, remoteIP), err)
 		return pb.NewError(pb.ErrInvalidParams, err.Error())
+	}
+
+	if ok, err := datasource.EnableSync(ctx, in.ServiceId); err != nil {
+		return err
+	} else if !ok {
+		util.SetContext(ctx, util.CtxEnableSync, "0")
 	}
 
 	return datasource.GetMetadataManager().DeleteManyTags(ctx, in)

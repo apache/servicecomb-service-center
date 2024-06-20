@@ -22,14 +22,15 @@ import (
 	"errors"
 	"fmt"
 
+	mapset "github.com/deckarep/golang-set"
+	pb "github.com/go-chassis/cari/discovery"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/schema"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	quotasvc "github.com/apache/servicecomb-service-center/server/service/quota"
 	"github.com/apache/servicecomb-service-center/server/service/validator"
-	mapset "github.com/deckarep/golang-set"
-	pb "github.com/go-chassis/cari/discovery"
 )
 
 // ExistSchema only return the summary without content if schema exist
@@ -225,12 +226,10 @@ func DeleteSchema(ctx context.Context, request *pb.DeleteSchemaRequest) error {
 		return pb.NewError(pb.ErrInvalidParams, checkErr.Error())
 	}
 
-	_, svcErr := datasource.GetMetadataManager().GetService(ctx, &pb.GetServiceRequest{
-		ServiceId: request.ServiceId,
-	})
-	if svcErr != nil {
-		log.Error(fmt.Sprintf("get service[%s] failed, operator: %s", request.ServiceId, remoteIP), svcErr)
-		return svcErr
+	if ok, err := datasource.EnableSync(ctx, request.ServiceId); err != nil {
+		return err
+	} else if !ok {
+		util.SetContext(ctx, util.CtxEnableSync, "0")
 	}
 
 	err := schema.Instance().DeleteRef(ctx, &schema.RefRequest{
@@ -250,7 +249,7 @@ func DeleteSchema(ctx context.Context, request *pb.DeleteSchemaRequest) error {
 	err = deleteOldSchema(ctx, request)
 	if err != nil && !errors.Is(err, schema.ErrSchemaNotFound) {
 		log.Error(fmt.Sprintf("delete old service[%s] schema[%s] failed, operator: %s",
-			request.ServiceId, request.SchemaId, remoteIP), svcErr)
+			request.ServiceId, request.SchemaId, remoteIP), err)
 		return err
 	}
 	return nil
@@ -270,6 +269,12 @@ func PutSchemas(ctx context.Context, request *pb.ModifySchemasRequest) error {
 	if checkErr := validator.ValidatePutSchemas(request); checkErr != nil {
 		log.Error(fmt.Sprintf("invalid modify service[%s] schemas request, operator: %s", serviceID, remoteIP), checkErr)
 		return pb.NewError(pb.ErrInvalidParams, "Invalid request.")
+	}
+
+	if ok, err := datasource.EnableSync(ctx, request.ServiceId); err != nil {
+		return err
+	} else if !ok {
+		util.SetContext(ctx, util.CtxEnableSync, "0")
 	}
 
 	// no need to check quota usage because overwrite existing.
@@ -320,6 +325,12 @@ func PutSchema(ctx context.Context, request *pb.ModifySchemaRequest) error {
 	if len(request.Summary) == 0 {
 		log.Warn(fmt.Sprintf("service[%s] schema[%s]'s summary is empty, operator: %s",
 			serviceID, schemaID, remoteIP))
+	}
+
+	if ok, err := datasource.EnableSync(ctx, request.ServiceId); err != nil {
+		return err
+	} else if !ok {
+		util.SetContext(ctx, util.CtxEnableSync, "0")
 	}
 
 	err := schema.Instance().PutContent(ctx,

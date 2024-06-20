@@ -64,6 +64,7 @@ func (rm *RbacDAO) CreateRole(ctx context.Context, r *crbac.Role) error {
 		log.Error("role info is invalid", err)
 		return err
 	}
+
 	opts := []etcdadpt.OpOptions{
 		etcdadpt.OpPut(etcdadpt.WithStrKey(key), etcdadpt.WithValue(value)),
 	}
@@ -150,9 +151,9 @@ func RoleBindingExists(ctx context.Context, role string) (bool, error) {
 	}
 	return total > 0, nil
 }
-func (rm *RbacDAO) UpdateRole(ctx context.Context, name string, role *crbac.Role) error {
-	role.UpdateTime = strconv.FormatInt(time.Now().Unix(), 10)
-	value, err := json.Marshal(role)
+func (rm *RbacDAO) UpdateRole(ctx context.Context, name string, r *crbac.Role) error {
+	r.UpdateTime = strconv.FormatInt(time.Now().Unix(), 10)
+	value, err := json.Marshal(r)
 	if err != nil {
 		log.Error("role info is invalid", err)
 		return err
@@ -160,7 +161,7 @@ func (rm *RbacDAO) UpdateRole(ctx context.Context, name string, role *crbac.Role
 	opts := []etcdadpt.OpOptions{
 		etcdadpt.OpPut(etcdadpt.WithStrKey(path.GenerateRBACRoleKey(name)), etcdadpt.WithValue(value)),
 	}
-	syncOpts, err := esync.GenUpdateOpts(ctx, datasource.ResourceRole, role)
+	syncOpts, err := esync.GenUpdateOpts(ctx, datasource.ResourceRole, r)
 	if err != nil {
 		log.Error("fail to create sync opts", err)
 		return err
