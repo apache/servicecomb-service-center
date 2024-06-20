@@ -1775,7 +1775,7 @@ func (ds *MetadataManager) RegisterEnvironment(ctx context.Context, request *ev.
 			log.Warn(fmt.Sprintf("create environment[%s] failed, environment already exists, operator: %s",
 				envFlag, remoteIP))
 			return nil, pb.NewError(pb.ErrEnvironmentAlreadyExists,
-				"ServiceID conflict or found the same service with different id.")
+				"EnvID conflict.")
 		}
 	}
 
@@ -1881,7 +1881,7 @@ func (ds *MetadataManager) UnregisterEnvironment(ctx context.Context, request *e
 	if serviceUtil.ServiceEnvExist(ctx, serviceEnvKey) {
 		log.Error(fmt.Sprintf("del environment[%s] failed, get environment file failed, operator: %s",
 			environmentId, remoteIP), errors.New("this env has services"))
-		return pb.NewError(pb.ErrInternal, "this env has services")
+		return pb.NewError(pb.ErrUnregistryedEnv, "this env has services")
 	}
 	environmentIdKey := path.GenerateEnvironmentKey(domainProject, environmentId)
 	envKey := &ev.EnvironmentKey{

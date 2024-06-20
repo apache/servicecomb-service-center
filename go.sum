@@ -235,8 +235,8 @@ github.com/go-chassis/cari v0.4.0/go.mod h1:av/19fqwEP4eOC8unL/z67AAbFDwXUCko6SK
 github.com/go-chassis/cari v0.5.0/go.mod h1:av/19fqwEP4eOC8unL/z67AAbFDwXUCko6SKa4Avrd8=
 github.com/go-chassis/cari v0.5.1-0.20210823023004-74041d1363c4/go.mod h1:av/19fqwEP4eOC8unL/z67AAbFDwXUCko6SKa4Avrd8=
 github.com/go-chassis/cari v0.6.0/go.mod h1:mSDRCOQXGmlD69A6NG0hsv0UP1xbVPtL6HCGI6X1tqs=
-github.com/go-chassis/cari v0.9.1-0.20240531100749-8955107d022d h1:nQnEl2jV0MEzN+/+019tiwKKliRGiXLGvau4zmTIyIc=
-github.com/go-chassis/cari v0.9.1-0.20240531100749-8955107d022d/go.mod h1:ibqLyh+Q+1n9PlldW3glD9G+2s/yeSyVMCCkQWKRwuE=
+github.com/go-chassis/cari v0.9.1-0.20240620034337-b6769eaccc12 h1:aIES1QkxyVrCUvR6UD/U8qN9cXHLf3scp2I4+8NbQR4=
+github.com/go-chassis/cari v0.9.1-0.20240620034337-b6769eaccc12/go.mod h1:ibqLyh+Q+1n9PlldW3glD9G+2s/yeSyVMCCkQWKRwuE=
 github.com/go-chassis/etcdadpt v0.5.3-0.20240328092602-984e34b756fe h1:peLHEt3wzab6nKVcmcu0qkj1+ZXK6D1ymtiyyMBv/XA=
 github.com/go-chassis/etcdadpt v0.5.3-0.20240328092602-984e34b756fe/go.mod h1:HV8OZ1Npu+lttD+pJA5nUxWZR3/SBFetTh7w8nYFkUA=
 github.com/go-chassis/foundation v0.2.2-0.20201210043510-9f6d3de40234/go.mod h1:2PjwqpVwYEVaAldl5A58a08viH8p27pNeYaiE3ZxOBA=
