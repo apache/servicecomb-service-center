@@ -1861,58 +1861,58 @@ func (ds *MetadataManager) UpdateEnvironment(ctx context.Context, request *ev.Up
 }
 
 func (ds *MetadataManager) UnregisterEnvironment(ctx context.Context, request *ev.DeleteEnvironmentRequest) (err error) {
-	environmentId := request.EnvironmentId
+	environmentID := request.EnvironmentId
 	remoteIP := util.GetIPFromContext(ctx)
 	domainProject := util.ParseDomainProject(ctx)
 
-	environment, err := eutil.GetEnvironment(ctx, domainProject, environmentId)
+	environment, err := eutil.GetEnvironment(ctx, domainProject, environmentID)
 	if err != nil {
 		if errors.Is(err, datasource.ErrNoData) {
-			log.Debug(fmt.Sprintf("environment does not exist, del environmentId[%s] failed, operator: %s",
-				environmentId, remoteIP))
+			log.Debug(fmt.Sprintf("environment does not exist, del environmentID[%s] failed, operator: %s",
+				environmentID, remoteIP))
 			return pb.NewError(pb.ErrEnvironmentNotExists, "environment does not exist.")
 		}
 		log.Error(fmt.Sprintf("del environment[%s] failed, get environment file failed, operator: %s",
-			environmentId, remoteIP), err)
+			environmentID, remoteIP), err)
 		return pb.NewError(pb.ErrInternal, err.Error())
 	}
 
 	serviceEnvKey := path.GenerateServiceEnvIndexKey(domainProject, environment.ID)
 	if serviceUtil.ServiceEnvExist(ctx, serviceEnvKey) {
 		log.Error(fmt.Sprintf("del environment[%s] failed, get environment file failed, operator: %s",
-			environmentId, remoteIP), errors.New("this env has services"))
+			environmentID, remoteIP), errors.New("this env has services"))
 		return pb.NewError(pb.ErrUnregistryedEnv, "this env has services")
 	}
-	environmentIdKey := path.GenerateEnvironmentKey(domainProject, environmentId)
+	environmentIDKey := path.GenerateEnvironmentKey(domainProject, environmentID)
 	envKey := &ev.EnvironmentKey{
 		Tenant: domainProject,
 		Name:   environment.Name,
 	}
 	opts := []etcdadpt.OpOptions{
-		etcdadpt.OpDel(etcdadpt.WithStrKey(util.StringJoin([]string{path.GenerateEnvironmentIndexKey(envKey), environmentId}, "/"))),
-		etcdadpt.OpDel(etcdadpt.WithStrKey(environmentIdKey)),
+		etcdadpt.OpDel(etcdadpt.WithStrKey(util.StringJoin([]string{path.GenerateEnvironmentIndexKey(envKey), environmentID}, "/"))),
+		etcdadpt.OpDel(etcdadpt.WithStrKey(environmentIDKey)),
 	}
-	syncOpts, err := esync.GenDeleteOpts(ctx, datasource.ResourceEnvironment, environmentId,
-		&ev.DeleteEnvironmentRequest{EnvironmentId: environmentId})
+	syncOpts, err := esync.GenDeleteOpts(ctx, datasource.ResourceEnvironment, environmentID,
+		&ev.DeleteEnvironmentRequest{EnvironmentId: environmentID})
 	if err != nil {
 		log.Error("fail to sync opt", err)
 		return pb.NewError(pb.ErrInternal, err.Error())
 	}
 	opts = append(opts, syncOpts...)
 
-	resp, err := etcdadpt.TxnWithCmp(ctx, opts, etcdadpt.If(etcdadpt.NotEqualVer(environmentIdKey, 0)), nil)
+	resp, err := etcdadpt.TxnWithCmp(ctx, opts, etcdadpt.If(etcdadpt.NotEqualVer(environmentIDKey, 0)), nil)
 	if err != nil {
-		log.Error(fmt.Sprintf("del environment[%s] failed, operator: %s", environmentId, remoteIP), err)
+		log.Error(fmt.Sprintf("del environment[%s] failed, operator: %s", environmentID, remoteIP), err)
 		return pb.NewError(pb.ErrUnavailableBackend, err.Error())
 	}
 	if !resp.Succeeded {
 		log.Error(fmt.Sprintf("del environment[%s] failed, environment does not exist, operator: %s",
-			environmentId, remoteIP), err)
-		return pb.NewError(pb.ErrEnvironmentNotExists, "environmentId does not exist.")
+			environmentID, remoteIP), err)
+		return pb.NewError(pb.ErrEnvironmentNotExists, "environmentID does not exist.")
 	}
 
 	quotasvc.RemandEnvironment(ctx)
 
-	log.Info(fmt.Sprintf("del environment[%s] successfully, operator: %s", environmentId, remoteIP))
+	log.Info(fmt.Sprintf("del environment[%s] successfully, operator: %s", environmentID, remoteIP))
 	return nil
 }

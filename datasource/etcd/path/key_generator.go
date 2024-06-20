@@ -387,10 +387,10 @@ func GenerateMetricsKey(name, utc, domain string) string {
 	}, SPLIT)
 }
 
-func GenerateEnvironmentKey(domainProject string, envId string) string {
+func GenerateEnvironmentKey(domainProject string, envID string) string {
 	return util.StringJoin([]string{
 		GetEnvironmentRootKey(domainProject),
-		envId,
+		envID,
 	}, SPLIT)
 }
 
@@ -418,9 +418,9 @@ func GetEnvironmentIndexRootKey(domainProject string) string {
 	}, SPLIT)
 }
 
-func GenerateServiceEnvIndexKey(domainProject string, envId string) string {
+func GenerateServiceEnvIndexKey(domainProject string, envID string) string {
 	return util.StringJoin([]string{
 		GetServiceIndexRootKey(domainProject),
-		envId,
+		envID,
 	}, SPLIT)
 }
