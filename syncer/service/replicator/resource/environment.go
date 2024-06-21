@@ -93,7 +93,7 @@ func (e *environment) LoadCurrentResource(ctx context.Context) *Result {
 		EnvironmentId: e.envID,
 	})
 	if err != nil {
-		if errsvc.IsErrEqualCode(err, pb.ErrServiceNotExists) {
+		if errsvc.IsErrEqualCode(err, pb.ErrEnvironmentNotExists) {
 			return nil
 		}
 
