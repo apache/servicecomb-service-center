@@ -186,7 +186,8 @@ func loadServerConfig() ServerConfig {
 			SchemaDisable:  GetBool("registry.schema.disable", false, WithENV("SCHEMA_DISABLE")),
 			SchemaRootPath: GetString("registry.schema.schemaRootPath", "", WithENV("SCHEMA_ROOT_PATH")),
 
-			EnableRBAC: GetBool("rbac.enable", false, WithStandby("rbac_enabled")),
+			EnableRBAC:     GetBool("rbac.enable", false, WithStandby("rbac_enabled")),
+			AllowMissToken: GetBool("rbac.allowMissToken", false, WithStandby("rbac_allow_missToken")),
 		},
 	}
 }
