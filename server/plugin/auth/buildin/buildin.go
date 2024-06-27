@@ -22,7 +22,13 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"reflect"
 	"strings"
+
+	"github.com/go-chassis/cari/pkg/errsvc"
+	rbacmodel "github.com/go-chassis/cari/rbac"
+	"github.com/go-chassis/go-chassis/v2/security/authr"
+	"github.com/go-chassis/go-chassis/v2/server/restful"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/plugin"
@@ -32,12 +38,11 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/auth"
 	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 	"github.com/apache/servicecomb-service-center/server/service/rbac/token"
-	rbacmodel "github.com/go-chassis/cari/rbac"
-	"github.com/go-chassis/go-chassis/v2/security/authr"
-	"github.com/go-chassis/go-chassis/v2/server/restful"
 )
 
 var ErrNoRoles = errors.New("no role found in token")
+
+const disCoveryType = "*errsvc.Error"
 
 func init() {
 	plugin.RegisterPlugin(plugin.Plugin{Kind: auth.AUTH, Name: "buildin", New: New})
@@ -90,15 +95,22 @@ func getRequestPattern(req *http.Request) string {
 }
 
 func (ba *TokenAuthenticator) mustAuth(req *http.Request, pattern string) (*rbacmodel.Account, error) {
-	if !rbacsvc.MustAuth(pattern) {
-		return nil, nil
+	account, err := ba.VerifyRequest(req)
+	if err == nil {
+		return account, err
 	}
-	return ba.VerifyRequest(req)
+	if rbacsvc.MustAuth(pattern) {
+		return nil, err
+	}
+	return nil, nil
 }
 
 func (ba *TokenAuthenticator) VerifyRequest(req *http.Request) (*rbacmodel.Account, error) {
 	claims, err := ba.VerifyToken(req)
 	if err != nil {
+		if reflect.TypeOf(err).String() == disCoveryType && err.(*errsvc.Error).Code == rbacmodel.ErrNoAuthHeader && rbacsvc.AllowMissToken() {
+			return nil, nil
+		}
 		log.Error(fmt.Sprintf("verify request token failed, %s %s", req.Method, req.RequestURI), err)
 		return nil, err
 	}
@@ -172,12 +184,12 @@ func checkPerm(roleList []string, req *http.Request) ([]map[string]string, error
 	if hasAdmin {
 		return nil, nil
 	}
-	//todo fast check for dev role
+	// todo fast check for dev role
 	targetResource := FromRequest(req)
 	if targetResource == nil {
 		return nil, errors.New("no valid resouce scope")
 	}
-	//TODO add project
+	// TODO add project
 	project := req.URL.Query().Get(":project")
 	return rbacsvc.Allow(req.Context(), project, normalRoles, targetResource)
 }

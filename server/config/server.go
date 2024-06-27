@@ -48,7 +48,8 @@ type ServerConfigDetail struct {
 	EnablePProf bool `json:"enablePProf"`
 	EnableCache bool `json:"enableCache"`
 
-	EnableRBAC bool `json:"enableRBAC"`
+	EnableRBAC     bool `json:"enableRBAC"`
+	AllowMissToken bool `json:"AllowMissToken"`
 
 	LogRotateSize   int64  `json:"-"`
 	LogBackupCount  int64  `json:"-"`
@@ -64,7 +65,7 @@ type ServerConfigDetail struct {
 
 	SelfRegister bool `json:"selfRegister"`
 
-	//CacheTTL is the ttl of cache
+	// CacheTTL is the ttl of cache
 	CacheTTL      time.Duration `json:"cacheTTL"`
 	GlobalVisible string        `json:"-"`
 
