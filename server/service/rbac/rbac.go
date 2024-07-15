@@ -135,7 +135,7 @@ func readPublicKey() {
 	log.Info("read public key success")
 }
 func initFirstTime() {
-	//handle root account
+	// handle root account
 	pwd := getPassword()
 	if len(pwd) == 0 {
 		log.Warn("skip init root account! Cause by " + InitPassword + " is empty. " +
@@ -174,6 +174,10 @@ func getPassword() string {
 
 func Enabled() bool {
 	return config.GetRBAC().EnableRBAC
+}
+
+func AllowMissToken() bool {
+	return config.GetRBAC().AllowMissToken
 }
 
 // PublicKey get public key to verify a token

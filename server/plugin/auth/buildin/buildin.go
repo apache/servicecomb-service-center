@@ -23,9 +23,11 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"reflect"
 	"strings"
 	"time"
 
+	"github.com/go-chassis/cari/pkg/errsvc"
 	rbacmodel "github.com/go-chassis/cari/rbac"
 	"github.com/go-chassis/go-chassis/v2/security/authr"
 	"github.com/go-chassis/go-chassis/v2/server/restful"
@@ -47,6 +49,10 @@ var tokenCache = cache.New(cacheDefaultExpireTime, cacheDefaultCleanUpTime)
 const cacheErrorItemExpTime = 5 * time.Minute
 const cacheDefaultExpireTime = 5 * time.Minute
 const cacheDefaultCleanUpTime = 10 * time.Minute
+const getEnvirOnMentPath = "environments"
+const getVerb = "get"
+
+const disCoveryType = "*errsvc.Error"
 
 func init() {
 	plugin.RegisterPlugin(plugin.Plugin{Kind: auth.AUTH, Name: "buildin", New: New})
@@ -99,15 +105,22 @@ func getRequestPattern(req *http.Request) string {
 }
 
 func (ba *TokenAuthenticator) mustAuth(req *http.Request, pattern string) (*rbacmodel.Account, error) {
-	if !rbacsvc.MustAuth(pattern) {
-		return nil, nil
+	account, err := ba.VerifyRequest(req)
+	if err == nil {
+		return account, err
 	}
-	return ba.VerifyRequest(req)
+	if rbacsvc.MustAuth(pattern) {
+		return nil, err
+	}
+	return nil, nil
 }
 
 func (ba *TokenAuthenticator) VerifyRequest(req *http.Request) (*rbacmodel.Account, error) {
 	claims, err := ba.VerifyToken(req)
 	if err != nil {
+		if reflect.TypeOf(err).String() == disCoveryType && err.(*errsvc.Error).Code == rbacmodel.ErrNoAuthHeader && rbacsvc.AllowMissToken() {
+			return nil, nil
+		}
 		log.Error(fmt.Sprintf("verify request token failed, %s %s", req.Method, req.RequestURI), err)
 		return nil, err
 	}
@@ -213,6 +226,11 @@ func SetTokenToCache(tokenCache *cache.Cache, rawToken string, claims interface{
 func checkPerm(roleList []string, req *http.Request) ([]map[string]string, error) {
 	hasAdmin, normalRoles := filterRoles(roleList)
 	if hasAdmin {
+		return nil, nil
+	}
+	pattern := getRequestPattern(req)
+	verb := rbacsvc.MethodToVerbs[req.Method]
+	if strings.Contains(pattern, getEnvirOnMentPath) && verb == getVerb {
 		return nil, nil
 	}
 	// todo fast check for dev role
