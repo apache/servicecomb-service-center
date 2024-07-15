@@ -47,6 +47,8 @@ var tokenCache = cache.New(cacheDefaultExpireTime, cacheDefaultCleanUpTime)
 const cacheErrorItemExpTime = 5 * time.Minute
 const cacheDefaultExpireTime = 5 * time.Minute
 const cacheDefaultCleanUpTime = 10 * time.Minute
+const getEnvirOnMentPath = "environments"
+const getVerb = "get"
 
 func init() {
 	plugin.RegisterPlugin(plugin.Plugin{Kind: auth.AUTH, Name: "buildin", New: New})
@@ -213,6 +215,11 @@ func SetTokenToCache(tokenCache *cache.Cache, rawToken string, claims interface{
 func checkPerm(roleList []string, req *http.Request) ([]map[string]string, error) {
 	hasAdmin, normalRoles := filterRoles(roleList)
 	if hasAdmin {
+		return nil, nil
+	}
+	pattern := getRequestPattern(req)
+	verb := rbacsvc.MethodToVerbs[req.Method]
+	if strings.Contains(pattern, getEnvirOnMentPath) && verb == getVerb {
 		return nil, nil
 	}
 	// todo fast check for dev role
