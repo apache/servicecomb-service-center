@@ -175,7 +175,13 @@ func (ba *TokenAuthenticator) VerifyToken(req *http.Request) (interface{}, error
 		return nil, rbacmodel.NewError(rbacmodel.ErrNoAuthHeader, "")
 	}
 	claims, ok := tokenCache.Get(v)
+	s := strings.Split(v, " ")
+	if len(s) != 2 {
+		return nil, rbacmodel.ErrInvalidHeader
+	}
+	to := s[1]
 	if ok {
+		token.WithRequest(req, to)
 		switch claimsVal := claims.(type) {
 		case error:
 			return nil, claimsVal
@@ -183,11 +189,6 @@ func (ba *TokenAuthenticator) VerifyToken(req *http.Request) (interface{}, error
 			return claimsVal, nil
 		}
 	}
-	s := strings.Split(v, " ")
-	if len(s) != 2 {
-		return nil, rbacmodel.ErrInvalidHeader
-	}
-	to := s[1]
 
 	claims, err := authr.Authenticate(req.Context(), to)
 	if err != nil {
