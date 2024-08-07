@@ -21,9 +21,10 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/go-chassis/go-archaius"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	"github.com/go-chassis/go-archaius"
 )
 
 var config Config
@@ -33,8 +34,12 @@ type Config struct {
 }
 
 type Sync struct {
-	EnableOnStart bool    `yaml:"enableOnStart"`
-	Peers         []*Peer `yaml:"peers"`
+	EnableOnStart bool `yaml:"enableOnStart"`
+	// When RbacEnabled is true, syncer's API requires the rbac token,
+	// and service-center also provides the rbac token to communicate with peer.
+	// At the same time, service-center rbac must be enabled.
+	RbacEnabled bool    `yaml:"rbacEnabled"`
+	Peers       []*Peer `yaml:"peers"`
 }
 
 type Peer struct {
@@ -42,6 +47,8 @@ type Peer struct {
 	Kind      string   `yaml:"kind"`
 	Endpoints []string `yaml:"endpoints"`
 	Mode      []string `yaml:"mode"`
+	// The token to communicate with peer, this takes effect only when RbacEnabled is true
+	Token string `yaml:"token"`
 }
 
 func Init() error {

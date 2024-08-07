@@ -20,13 +20,17 @@ package admin
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
+	"github.com/go-chassis/go-chassis/v2/server/restful"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 
 	"github.com/apache/servicecomb-service-center/client"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pkgrpc "github.com/apache/servicecomb-service-center/pkg/rpc"
+	"github.com/apache/servicecomb-service-center/server/plugin/security/cipher"
 	v1sync "github.com/apache/servicecomb-service-center/syncer/api/v1"
 	syncerclient "github.com/apache/servicecomb-service-center/syncer/client"
 	"github.com/apache/servicecomb-service-center/syncer/config"
@@ -59,25 +63,15 @@ type Peer struct {
 	Mode      []string `json:"mode"`
 	Endpoints []string `json:"endpoints"`
 	Status    string   `json:"status"`
+	Token     string   `json:"-"`
 }
 
 func Init() {
 	cfg := config.GetConfig()
-	if cfg.Sync == nil {
-		log.Warn("sync config is empty")
-		return
-	}
-	if !cfg.Sync.EnableOnStart {
-		log.Info("syncer is disabled")
-		return
-	}
-	if len(cfg.Sync.Peers) <= 0 {
-		log.Warn("peers parameter configuration is empty")
-		return
-	}
 	peerInfos = make([]*PeerInfo, 0, len(cfg.Sync.Peers))
 	for _, c := range cfg.Sync.Peers {
 		if len(c.Endpoints) <= 0 {
+			log.Warn("no endpoints of peer: " + c.Name)
 			continue
 		}
 		p := &Peer{
@@ -86,10 +80,21 @@ func Init() {
 			Mode:      c.Mode,
 			Endpoints: c.Endpoints,
 		}
-		conn, err := newRPCConn(p.Endpoints)
-		if err == nil {
-			peerInfos = append(peerInfos, &PeerInfo{Peer: p, ClientConn: conn})
+		if config.GetConfig().Sync.RbacEnabled {
+			plainToken, err := cipher.Decrypt(c.Token)
+			if err != nil {
+				log.Error(fmt.Sprintf("decrypt token of peer %s failed, use original content", c.Name), err)
+				plainToken = c.Token
+			}
+			p.Token = plainToken
 		}
+
+		conn, err := newRPCConn(p.Endpoints)
+		if err != nil {
+			log.Error(fmt.Sprintf("new client failed for peer: %s", c.Name), err)
+			continue
+		}
+		peerInfos = append(peerInfos, &PeerInfo{Peer: p, ClientConn: conn})
 	}
 }
 
@@ -103,7 +108,7 @@ func Health() (*Resp, error) {
 		if len(peerInfo.Peer.Endpoints) <= 0 {
 			continue
 		}
-		status := getPeerStatus(peerInfo.Peer.Name, peerInfo.ClientConn)
+		status := getPeerStatus(peerInfo)
 		resp.Peers = append(resp.Peers, &Peer{
 			Name:      peerInfo.Peer.Name,
 			Kind:      peerInfo.Peer.Kind,
@@ -117,19 +122,25 @@ func Health() (*Resp, error) {
 	return resp, nil
 }
 
-func getPeerStatus(peerName string, clientConn *grpc.ClientConn) string {
-	if clientConn == nil {
+func getPeerStatus(peerInfo *PeerInfo) string {
+	if peerInfo.ClientConn == nil {
 		log.Warn("clientConn is nil")
 		return rpc.HealthStatusAbnormal
 	}
 	local := time.Now().UnixNano()
-	set := client.NewSet(clientConn)
-	reply, err := set.EventServiceClient.Health(context.Background(), &v1sync.HealthRequest{})
+	set := client.NewSet(peerInfo.ClientConn)
+	ctx := context.Background()
+	if config.GetConfig().Sync.RbacEnabled {
+		ctx = metadata.NewOutgoingContext(ctx, metadata.New(map[string]string{
+			restful.HeaderAuth: "Bearer " + peerInfo.Peer.Token,
+		}))
+	}
+	reply, err := set.EventServiceClient.Health(ctx, &v1sync.HealthRequest{})
 	if err != nil || reply == nil {
 		log.Error("get peer health failed", err)
 		return rpc.HealthStatusAbnormal
 	}
-	reportClockDiff(peerName, local, reply.LocalTimestamp)
+	reportClockDiff(peerInfo.Peer.Name, local, reply.LocalTimestamp)
 	return reply.Status
 }
 
@@ -158,4 +169,8 @@ func newRPCConn(endpoints []string) (*grpc.ClientConn, error) {
 		ServiceName: serviceName,
 		TLSConfig:   syncerclient.RPClientConfig(),
 	})
+}
+
+func Peers() []*PeerInfo {
+	return peerInfos
 }
