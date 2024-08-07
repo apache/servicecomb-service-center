@@ -21,16 +21,20 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-chassis/foundation/gopool"
+	"github.com/go-chassis/go-chassis/v2/server/restful"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
+
 	"github.com/apache/servicecomb-service-center/client"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rpc"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/plugin/security/cipher"
 	v1sync "github.com/apache/servicecomb-service-center/syncer/api/v1"
 	syncerclient "github.com/apache/servicecomb-service-center/syncer/client"
 	"github.com/apache/servicecomb-service-center/syncer/config"
 	"github.com/apache/servicecomb-service-center/syncer/service/replicator/resource"
-	"github.com/go-chassis/foundation/gopool"
-	"google.golang.org/grpc"
 )
 
 const (
@@ -48,7 +52,8 @@ var (
 )
 
 var (
-	conn *grpc.ClientConn
+	conn      *grpc.ClientConn
+	peerToken = ""
 )
 
 func Work() error {
@@ -68,8 +73,7 @@ func Work() error {
 }
 
 func InitSyncClient() error {
-	cfg := config.GetConfig()
-	peer := cfg.Sync.Peers[0]
+	peer := config.GetConfig().Sync.Peers[0]
 	log.Info(fmt.Sprintf("peer is %v", peer))
 	var err error
 	conn, err = rpc.GetRoundRobinLbConn(&rpc.Config{
@@ -78,7 +82,19 @@ func InitSyncClient() error {
 		ServiceName: serviceName,
 		TLSConfig:   syncerclient.RPClientConfig(),
 	})
-	return err
+	if err != nil {
+		log.Error("get rpc client failed", err)
+		return err
+	}
+	if !config.GetConfig().Sync.RbacEnabled {
+		return nil
+	}
+	peerToken, err = cipher.Decrypt(peer.Token)
+	if err != nil {
+		log.Error("decrypt peer token failed, use original content", err)
+		peerToken = peer.Token
+	}
+	return nil
 }
 
 func Close() {
@@ -161,6 +177,11 @@ func (r *replicatorManager) replicate(ctx context.Context, el *v1sync.EventList)
 	}
 
 	log.Info(fmt.Sprintf("page count %d to sync", len(els)))
+	if config.GetConfig().Sync.RbacEnabled {
+		ctx = metadata.NewOutgoingContext(ctx, metadata.New(map[string]string{
+			restful.HeaderAuth: "Bearer " + peerToken,
+		}))
+	}
 
 	for _, in := range els {
 		res, err := set.EventServiceClient.Sync(ctx, in)

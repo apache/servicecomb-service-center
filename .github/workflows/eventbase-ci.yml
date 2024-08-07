@@ -13,7 +13,7 @@ jobs:
         uses: actions/checkout@v1
       - name: UT test
         run: |
-          sudo docker-compose -f ./scripts/docker-compose.yaml up -d
+          sudo docker compose -f ./scripts/docker-compose.yaml up -d
           sleep 20
           export TEST_DB_MODE=mongo
           export TEST_DB_URI=mongodb://127.0.0.1:27017
@@ -31,7 +31,7 @@ jobs:
         uses: actions/checkout@v1
       - name: UT for etcd
         run: |
-          time docker run -d -p 2379:2379 --name etcd quay.io/coreos/etcd etcd -name etcd --advertise-client-urls http://0.0.0.0:2379 --listen-client-urls http://0.0.0.0:2379
+          time docker run -d -p 2379:2379 --name etcd quay.io/coreos/etcd:v3.5.15 etcd -name etcd --advertise-client-urls http://0.0.0.0:2379 --listen-client-urls http://0.0.0.0:2379
           while ! nc -z 127.0.0.1 2379; do
             sleep 1
           done
