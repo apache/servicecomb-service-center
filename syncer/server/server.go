@@ -18,6 +18,9 @@
 package server
 
 import (
+	"github.com/go-chassis/go-chassis/v2"
+	chassisServer "github.com/go-chassis/go-chassis/v2/core/server"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	syncv1 "github.com/apache/servicecomb-service-center/syncer/api/v1"
 	"github.com/apache/servicecomb-service-center/syncer/config"
@@ -25,8 +28,6 @@ import (
 	"github.com/apache/servicecomb-service-center/syncer/rpc"
 	"github.com/apache/servicecomb-service-center/syncer/service/admin"
 	"github.com/apache/servicecomb-service-center/syncer/service/sync"
-	"github.com/go-chassis/go-chassis/v2"
-	chassisServer "github.com/go-chassis/go-chassis/v2/core/server"
 )
 
 // Run register chassis schema and run syncer services before chassis.Run()
@@ -38,6 +39,15 @@ func Run() {
 	if !config.GetConfig().Sync.EnableOnStart {
 		log.Warn("syncer is disabled")
 		return
+	}
+
+	if len(config.GetConfig().Sync.Peers) <= 0 {
+		log.Warn("peers parameter configuration is empty")
+		return
+	}
+
+	if config.GetConfig().Sync.RbacEnabled {
+		log.Info("syncer rbac enabled")
 	}
 
 	chassis.RegisterSchema("grpc", rpc.NewServer(),

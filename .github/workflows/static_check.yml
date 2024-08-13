@@ -40,7 +40,7 @@ jobs:
         uses: actions/checkout@v1
       - name: UT-MONGO
         run: |
-          sudo docker-compose -f ./scripts/docker-compose.yaml up -d
+          sudo docker compose -f ./scripts/docker-compose.yaml up -d
           sleep 20
           bash -x scripts/ut_test_in_docker.sh mongo
   integration-test:
