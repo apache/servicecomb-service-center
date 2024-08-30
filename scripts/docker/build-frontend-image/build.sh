@@ -42,7 +42,6 @@ cd $SCRIPT_DIR
 
 # copy the conf folder to build-frontend-image/frontend
 cp -rp $PACKAGE_DIR/app $PACKAGE_DIR/conf $PACKAGE_DIR/frontend start.sh frontend
-rm -rf frontend/app/bower_components
 
 chmod 500 frontend/start.sh frontend/frontend
 
