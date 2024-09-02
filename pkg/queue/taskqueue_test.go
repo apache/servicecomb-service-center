@@ -20,6 +20,7 @@ package queue
 import (
 	"context"
 	"testing"
+	"time"
 )
 
 type mockWorker struct {
@@ -32,7 +33,6 @@ func (h *mockWorker) Handle(ctx context.Context, obj interface{}) {
 
 func TestNewEventQueue(t *testing.T) {
 	h := &mockWorker{make(chan interface{}, 1)}
-
 	q := NewTaskQueue(0)
 	q.AddWorker(h)
 
@@ -58,4 +58,16 @@ func TestNewEventQueue(t *testing.T) {
 	}
 	q.Stop()
 	q.Add(Task{Payload: 3})
+}
+
+func TestTaskQueue_Add(t *testing.T) {
+	h := &mockWorker{make(chan interface{}, 10000)}
+	q := NewTaskQueue(5)
+	q.AddWorker(h)
+	q.Run()
+	time.Sleep(100 * time.Millisecond)
+	for i := 0; i < 10000; i++ {
+		go q.Add(Task{Payload: 1})
+	}
+	q.Stop()
 }

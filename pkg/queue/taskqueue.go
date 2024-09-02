@@ -19,8 +19,11 @@ package queue
 
 import (
 	"context"
+	"fmt"
+	"sync"
 
 	"github.com/apache/servicecomb-service-center/pkg/goutil"
+	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/go-chassis/foundation/gopool"
 )
 
@@ -42,8 +45,10 @@ type Task struct {
 type TaskQueue struct {
 	Workers []Worker
 
-	taskCh    chan Task
-	goroutine *gopool.Pool
+	taskChLock sync.RWMutex
+	taskChSize int
+	taskCh     chan Task
+	goroutine  *gopool.Pool
 }
 
 // AddWorker is the method to add Worker
@@ -53,7 +58,24 @@ func (q *TaskQueue) AddWorker(w Worker) {
 
 // Add is the method to add task in queue, one task will be handled by all workers
 func (q *TaskQueue) Add(t Task) {
-	q.taskCh <- t
+	q.taskChLock.RLock()
+	select {
+	case q.taskCh <- t:
+		q.taskChLock.RUnlock()
+	default:
+		q.taskChLock.RUnlock()
+		q.resetTaskCh()
+	}
+}
+
+func (q *TaskQueue) resetTaskCh() {
+	q.taskChLock.Lock()
+	defer q.taskChLock.Unlock()
+
+	log.Warn(fmt.Sprintf("taskCh[%d] is full, reset taskCh", q.taskChSize))
+	close(q.taskCh)
+	q.taskCh = make(chan Task, q.taskChSize)
+	q.Run()
 }
 
 func (q *TaskQueue) dispatch(ctx context.Context, w Worker, obj interface{}) {
@@ -82,7 +104,11 @@ func (q *TaskQueue) Run() {
 			select {
 			case <-ctx.Done():
 				return
-			case task := <-q.taskCh:
+			case task, ok := <-q.taskCh:
+				if !ok {
+					log.Warn("taskCh is closed")
+					return
+				}
 				q.Do(ctx, task)
 			}
 		}
@@ -99,7 +125,8 @@ func NewTaskQueue(size int) *TaskQueue {
 		size = eventQueueSize
 	}
 	return &TaskQueue{
-		taskCh:    make(chan Task, size),
-		goroutine: goutil.New(gopool.Configure()),
+		taskChSize: size,
+		taskCh:     make(chan Task, size),
+		goroutine:  goutil.New(gopool.Configure()),
 	}
 }
