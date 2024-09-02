@@ -42,6 +42,7 @@ type Ref struct {
 	SchemaID  string `json:"schemaId" bson:"schema_id"`
 	Hash      string
 	Summary   string
+	Content   string
 }
 
 type ContentRequest struct {
@@ -71,6 +72,7 @@ type PutManyContentRequest struct {
 	ServiceID string `json:"serviceId" bson:"service_id"`
 	SchemaIDs []string
 	Contents  []*ContentItem
+	Init      bool
 }
 
 type DAO interface {

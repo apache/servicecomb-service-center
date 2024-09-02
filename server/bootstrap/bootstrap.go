@@ -30,6 +30,9 @@ import (
 	//mongo
 	_ "github.com/apache/servicecomb-service-center/datasource/mongo/bootstrap"
 
+	//local
+	_ "github.com/apache/servicecomb-service-center/datasource/local/bootstrap"
+
 	//rest v3 api
 	_ "github.com/apache/servicecomb-service-center/server/rest/controller/v3"
 
