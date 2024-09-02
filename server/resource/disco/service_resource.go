@@ -25,12 +25,13 @@ import (
 	"net/http"
 	"strings"
 
+	pb "github.com/go-chassis/cari/discovery"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
-	pb "github.com/go-chassis/cari/discovery"
 )
 
 var trueOrFalse = map[string]bool{"true": true, "false": false, "1": true, "0": false}
@@ -211,8 +212,16 @@ func (s *ServiceResource) UnregisterManyService(w http.ResponseWriter, r *http.R
 		rest.WriteError(w, pb.ErrInvalidParams, err.Error())
 		return
 	}
-
-	request := &pb.DelServicesRequest{}
+	query := r.URL.Query()
+	force := query.Get("force")
+	b, ok := trueOrFalse[force]
+	if force != "" && !ok {
+		rest.WriteError(w, pb.ErrInvalidParams, "parameter force must be false or true")
+		return
+	}
+	request := &pb.DelServicesRequest{
+		Force: b,
+	}
 
 	err = json.Unmarshal(message, request)
 	if err != nil {
