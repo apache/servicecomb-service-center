@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/apache/servicecomb-service-center/eventbase/service/task"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	v1sync "github.com/apache/servicecomb-service-center/syncer/api/v1"
@@ -254,7 +255,10 @@ func (m *manager) handleResult(res *event.Result) {
 	if res.Error != nil || res.Data.Code == resource.Fail {
 		log.Error(fmt.Sprintf("get task %s result, return error", res.ID), res.Error)
 		m.cache.Range(func(key, value interface{}) bool {
-			m.cache.Delete(key)
+			if key == res.ID {
+				m.cache.Delete(key)
+				return false
+			}
 			return true
 		})
 		return
