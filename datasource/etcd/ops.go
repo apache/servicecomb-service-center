@@ -98,9 +98,6 @@ func (ds *MetadataManager) CountEnvironment(ctx context.Context, request *ev.Get
 	if err != nil {
 		return nil, err
 	}
-	if err != nil {
-		return nil, err
-	}
 	return &ev.GetEnvironmentCountResponse{
 		Count: all - preEnvNum,
 	}, nil

@@ -22,12 +22,16 @@ import (
 	"crypto/tls"
 	"os"
 
+	"github.com/gofiber/fiber/v2"
+
+	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/middleware"
 	"github.com/apache/servicecomb-service-center/server/resource/disco"
-	"github.com/gofiber/fiber/v2"
 
 	"github.com/go-chassis/go-chassis/v2"
 	chassisServer "github.com/go-chassis/go-chassis/v2/core/server"
+
+	"github.com/go-chassis/foundation/gopool"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	nf "github.com/apache/servicecomb-service-center/pkg/event"
@@ -41,7 +45,6 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf"
 	"github.com/apache/servicecomb-service-center/server/service/grc"
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
-	"github.com/go-chassis/foundation/gopool"
 )
 
 var sc ServiceCenterServer
@@ -211,6 +214,7 @@ func (s *ServiceCenterServer) startServices() {
 
 func (s *ServiceCenterServer) startAPIService() {
 	s.APIServer.SetHostPort(s.Endpoint.Host, s.Endpoint.Port)
+	rest.Init()
 	s.APIServer.Start()
 }
 

@@ -25,12 +25,13 @@ import (
 
 	"github.com/go-chassis/go-chassis/v2/pkg/codec"
 
+	pb "github.com/go-chassis/cari/discovery"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
-	pb "github.com/go-chassis/cari/discovery"
 )
 
 type InstanceResource struct {
@@ -167,6 +168,10 @@ func (s *InstanceResource) FindInstances(w http.ResponseWriter, r *http.Request)
 		w.WriteHeader(http.StatusNotModified)
 		return
 	}
+	if len(resp.Instances) == 0 && rest.IsWithinRestartProtection() {
+		w.WriteHeader(rest.RestartProtectHttpCode)
+		return
+	}
 	rest.WriteResponse(w, r, nil, resp)
 }
 
@@ -264,6 +269,10 @@ func (s *InstanceResource) ListInstance(w http.ResponseWriter, r *http.Request) 
 	w.Header().Set(util.HeaderRev, ov)
 	if len(iv) > 0 && iv == ov {
 		w.WriteHeader(http.StatusNotModified)
+		return
+	}
+	if len(resp.Instances) == 0 && rest.IsWithinRestartProtection() {
+		w.WriteHeader(rest.RestartProtectHttpCode)
 		return
 	}
 	rest.WriteResponse(w, r, nil, resp)

@@ -20,8 +20,10 @@ package rpc
 import (
 	"crypto/tls"
 	"errors"
+	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/backoff"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/resolver"
@@ -50,9 +52,12 @@ func GetPickFirstLbConn(config *Config) (*grpc.ClientConn, error) {
 }
 
 func GetRoundRobinLbConn(config *Config) (*grpc.ClientConn, error) {
+	connBackoff := backoff.DefaultConfig
+	connBackoff.MaxDelay = 30 * time.Second
 	return getLbConn(config, func() []grpc.DialOption {
 		return []grpc.DialOption{
 			grpc.WithDefaultServiceConfig(`{"loadBalancingConfig": [{"round_robin":{}}]}`),
+			grpc.WithConnectParams(grpc.ConnectParams{Backoff: connBackoff}),
 		}
 	})
 }
