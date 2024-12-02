@@ -2,7 +2,6 @@ package protect
 
 import (
 	"fmt"
-	"github.com/apache/servicecomb-service-center/pkg/util"
 	"net/http"
 	"time"
 
@@ -22,7 +21,7 @@ var (
 	enableInstanceNullProtect bool
 	restartProtectInterval    time.Duration
 	RestartProtectHttpCode    int
-	validProtectCode          = []int{http.StatusNotModified, http.StatusUnprocessableEntity, http.StatusInternalServerError}
+	validProtectCode          = map[int]struct{}{http.StatusNotModified: {}, http.StatusUnprocessableEntity: {}, http.StatusInternalServerError: {}}
 )
 
 const (
@@ -33,6 +32,9 @@ const (
 
 func Init() {
 	enableInstanceNullProtect = config.GetBool("instance_null_protect.enable", false)
+	if !enableInstanceNullProtect {
+		return
+	}
 	restartProtectInterval = time.Duration(config.GetInt("instance_null_protect.restart_protect_interval", 120)) * time.Second
 	if restartProtectInterval > maxInterval || restartProtectInterval < minInterval {
 		log.Warn(fmt.Sprintf("invalid instance_null_protect.restart_protect_interval: %d,"+
@@ -40,7 +42,7 @@ func Init() {
 		restartProtectInterval = defaultRestartProtectInterval
 	}
 	RestartProtectHttpCode = config.GetInt("instance_null_protect.http_status", http.StatusNotModified)
-	if !util.Contains(validProtectCode, RestartProtectHttpCode) {
+	if _, ok := validProtectCode[RestartProtectHttpCode]; !ok {
 		log.Warn(fmt.Sprintf("invalid instance_null_protect.http_status: %d, must be %v", RestartProtectHttpCode, validProtectCode))
 		RestartProtectHttpCode = http.StatusNotModified
 	}
