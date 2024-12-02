@@ -49,6 +49,7 @@ func Init() {
 	// file exist, not first launch, set protection time window of restartProtectInterval
 	startupTimestamp = time.Now().UnixNano()
 	isWithinProtection = true
+	log.Info("set restart instance null protection")
 }
 
 func IsWithinRestartProtection() bool {
