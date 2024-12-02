@@ -42,7 +42,7 @@ func Init() {
 		}
 		file.Close()
 	} else if err != nil {
-		log.Info("failed to stat flag file")
+		log.Error(firstLaunchFlagPath, errors.New("failed to stat flag file"))
 		os.Exit(1)
 	}
 	// file exist, not first launch, set protection time window of restartProtectInterval
