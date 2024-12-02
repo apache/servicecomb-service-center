@@ -31,7 +31,7 @@ func Init() {
 	enableInstanceNullProtect = config.GetBool("instance_null_protect.enable", true)
 	restartProtectInterval = time.Duration(config.GetInt("instance_null_protect.restart_protect_interval", 120)) * time.Second
 	RestartProtectHttpCode = config.GetInt("instance_null_protect.http_status", 304)
-	firstLaunchFlagPath = filepath.Join(util.GetAppRoot(), "first_launch.flag")
+	firstLaunchFlagPath = filepath.Join(config.GetString("log.file", "", config.WithStandby("logfile")), "first_launch.flag")
 
 	_, err := os.Stat(firstLaunchFlagPath)
 	// first launch, need not instance null protection
