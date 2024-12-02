@@ -17,6 +17,7 @@
 package util
 
 import (
+	"net/http"
 	"os"
 	"testing"
 
@@ -183,4 +184,10 @@ func TestGeneratePassword(t *testing.T) {
 	password, err := GeneratePassword()
 	assert.NoError(t, err)
 	assert.Equal(t, 8, len(password), password)
+}
+
+func TestContains(t *testing.T) {
+	slc := []int{http.StatusNotModified, http.StatusUnprocessableEntity, http.StatusInternalServerError}
+	assert.True(t, Contains(slc, 304))
+	assert.False(t, Contains(slc, 100))
 }

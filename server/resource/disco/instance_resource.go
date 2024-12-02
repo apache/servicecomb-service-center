@@ -19,6 +19,7 @@ package disco
 
 import (
 	"fmt"
+	"github.com/apache/servicecomb-service-center/pkg/protect"
 	"io"
 	"net/http"
 	"strings"
@@ -168,8 +169,8 @@ func (s *InstanceResource) FindInstances(w http.ResponseWriter, r *http.Request)
 		w.WriteHeader(http.StatusNotModified)
 		return
 	}
-	if len(resp.Instances) == 0 && rest.IsWithinRestartProtection() {
-		w.WriteHeader(rest.RestartProtectHttpCode)
+	if len(resp.Instances) == 0 && protect.IsWithinRestartProtection() {
+		w.WriteHeader(protect.RestartProtectHttpCode)
 		return
 	}
 	rest.WriteResponse(w, r, nil, resp)
@@ -271,8 +272,8 @@ func (s *InstanceResource) ListInstance(w http.ResponseWriter, r *http.Request) 
 		w.WriteHeader(http.StatusNotModified)
 		return
 	}
-	if len(resp.Instances) == 0 && rest.IsWithinRestartProtection() {
-		w.WriteHeader(rest.RestartProtectHttpCode)
+	if len(resp.Instances) == 0 && protect.IsWithinRestartProtection() {
+		w.WriteHeader(protect.RestartProtectHttpCode)
 		return
 	}
 	rest.WriteResponse(w, r, nil, resp)

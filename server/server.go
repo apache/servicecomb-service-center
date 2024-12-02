@@ -20,11 +20,11 @@ package server
 import (
 	"context"
 	"crypto/tls"
+	"github.com/apache/servicecomb-service-center/pkg/protect"
 	"os"
 
 	"github.com/gofiber/fiber/v2"
 
-	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/server/middleware"
 	"github.com/apache/servicecomb-service-center/server/resource/disco"
 
@@ -214,7 +214,7 @@ func (s *ServiceCenterServer) startServices() {
 
 func (s *ServiceCenterServer) startAPIService() {
 	s.APIServer.SetHostPort(s.Endpoint.Host, s.Endpoint.Port)
-	rest.Init()
+	protect.Init()
 	s.APIServer.Start()
 }
 
