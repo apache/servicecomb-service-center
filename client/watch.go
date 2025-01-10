@@ -41,15 +41,17 @@ func (c *Client) Watch(ctx context.Context, domain, project, selfServiceID strin
 		return pb.NewError(pb.ErrInternal, err.Error())
 	}
 
+	var messageType int
+	var message []byte
 	for {
-		messageType, message, err := conn.ReadMessage()
+		messageType, message, err = conn.ReadMessage()
 		if err != nil {
 			log.Println(err)
 			break
 		}
 		if messageType == websocket.TextMessage {
 			data := &pb.WatchInstanceResponse{}
-			err := json.Unmarshal(message, data)
+			err = json.Unmarshal(message, data)
 			if err != nil {
 				log.Println(err)
 				break
