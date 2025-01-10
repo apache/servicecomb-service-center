@@ -18,8 +18,9 @@
 package validator
 
 import (
-	"github.com/apache/servicecomb-service-center/pkg/validate"
 	"github.com/go-chassis/cari/rbac"
+
+	"github.com/apache/servicecomb-service-center/pkg/validate"
 )
 
 var createAccountValidator = &validate.Validator{}
@@ -30,7 +31,7 @@ var changePWDValidator = &validate.Validator{}
 var accountLoginValidator = &validate.Validator{}
 
 func init() {
-	createAccountValidator.AddRule("Name", &validate.Rule{Min: 1, Max: 64, Regexp: nameRegex})
+	createAccountValidator.AddRule("Name", &validate.Rule{Min: 1, Max: 64, Regexp: accountNameRegex})
 	createAccountValidator.AddRule("Roles", &validate.Rule{Min: 1, Max: 5, Regexp: nameRegex})
 	createAccountValidator.AddRule("Password", &validate.Rule{Regexp: &validate.PasswordChecker{}})
 	createAccountValidator.AddRule("Status", &validate.Rule{Regexp: accountStatusRegex})
@@ -43,7 +44,7 @@ func init() {
 	createRoleValidator.AddRule("Name", &validate.Rule{Min: 1, Max: 64, Regexp: nameRegex})
 
 	changePWDValidator.AddRule("Password", &validate.Rule{Regexp: &validate.PasswordChecker{}})
-	changePWDValidator.AddRule("Name", &validate.Rule{Regexp: nameRegex})
+	changePWDValidator.AddRule("Name", &validate.Rule{Regexp: accountNameRegex})
 
 	accountLoginValidator.AddRule("TokenExpirationTime", &validate.Rule{Regexp: &validate.TokenExpirationTimeChecker{}})
 }
