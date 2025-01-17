@@ -1,13 +1,16 @@
 package protect
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"time"
 
-	"github.com/apache/servicecomb-service-center/server/config"
+	"github.com/go-chassis/foundation/gopool"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/server/config"
+	"github.com/apache/servicecomb-service-center/server/service/registry"
 )
 
 /**
@@ -16,18 +19,18 @@ indicating that sdk not need to clear cache
 */
 
 var (
-	isWithinProtection        bool
-	startupTimestamp          int64
 	enableInstanceNullProtect bool
 	restartProtectInterval    time.Duration
 	RestartProtectHttpCode    int
 	validProtectCode          = map[int]struct{}{http.StatusNotModified: {}, http.StatusUnprocessableEntity: {}, http.StatusInternalServerError: {}}
+	globalProtectionChecker   ProtectionChecker
 )
 
 const (
 	maxInterval                   = 60 * 60 * 24 * time.Second
 	minInterval                   = 0 * time.Second
 	defaultRestartProtectInterval = 120 * time.Second
+	defaultReadinessCheckInterval = 5 * time.Second // the null instance protection should start again when server is unready
 )
 
 func Init() {
@@ -50,24 +53,52 @@ func Init() {
 	log.Info(fmt.Sprintf("instance_null_protect.enable: %t", enableInstanceNullProtect))
 	log.Info(fmt.Sprintf("instance_null_protect.restart_protect_interval: %d", restartProtectInterval))
 	log.Info(fmt.Sprintf("instance_null_protect.http_status: %d", RestartProtectHttpCode))
-	startupTimestamp = time.Now().UnixNano()
-	isWithinProtection = true
+
+	StartProtectionAndStopDelayed()
+	gopool.Go(watch)
+
 }
 
-func IsWithinRestartProtection() bool {
+func watch(ctx context.Context) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(defaultReadinessCheckInterval):
+			err := registry.Readiness(ctx)
+			if err != nil {
+				AlwaysProtection()
+				continue
+			}
+			StartProtectionAndStopDelayed()
+		}
+	}
+}
+
+func ShouldProtectOnNullInstance() bool {
 	if !enableInstanceNullProtect {
 		return false
 	}
 
-	if !isWithinProtection {
-		return false
+	if globalProtectionChecker == nil { // protect by default
+		return true
 	}
 
-	if time.Now().Add(-restartProtectInterval).UnixNano() > startupTimestamp {
-		log.Info("restart protection stop")
-		isWithinProtection = false
-		return false
+	return GetGlobalProtectionChecker().CheckProtection()
+}
+
+func StartProtectionAndStopDelayed() {
+	if _, ok := globalProtectionChecker.(*DelayedStopProtectChecker); ok {
+		return
 	}
-	log.Info("within restart protection")
-	return true
+	globalProtectionChecker = NewDelayedSuccessChecker(restartProtectInterval)
+	log.Info("start protection and stop delayed on null instance")
+}
+
+func AlwaysProtection() {
+	if globalProtectionChecker == nil {
+		return
+	}
+	globalProtectionChecker = nil
+	log.Info("always protect on null instance")
 }

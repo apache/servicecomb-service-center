@@ -12,19 +12,20 @@ func TestIsWithinRestartProtection(t *testing.T) {
 
 	// protection switch off
 	enableInstanceNullProtect = false
-	assert.False(t, IsWithinRestartProtection())
-	// within protection
+	assert.False(t, ShouldProtectOnNullInstance())
+
 	enableInstanceNullProtect = true
-	isWithinProtection = true
-	startupTimestamp = time.Now().Add(-1 * time.Minute).UnixNano()
-	assert.True(t, IsWithinRestartProtection())
+	AlwaysProtection()
+	assert.True(t, ShouldProtectOnNullInstance())
 
 	// protection delay exceed
-	enableInstanceNullProtect = true
-	isWithinProtection = true
-	startupTimestamp = time.Now().Add(-2 * time.Minute).Unix()
-	assert.False(t, IsWithinRestartProtection())
+	restartProtectInterval = 1 * time.Second
+	StartProtectionAndStopDelayed()
+	assert.True(t, ShouldProtectOnNullInstance())
+	time.Sleep(restartProtectInterval)
+	assert.False(t, ShouldProtectOnNullInstance())
 
-	// always false after exceed
-	assert.False(t, IsWithinRestartProtection())
+	// only the first takes effects
+	StartProtectionAndStopDelayed()
+	assert.False(t, ShouldProtectOnNullInstance())
 }

@@ -31,6 +31,7 @@ const (
 
 const (
 	IDBackendConnectionRefuse model.ID = "BackendConnectionRefuse"
+	IDScSelfHeartbeatFailed   model.ID = "ScSelfHeartbeatFailed"
 	IDInternalError           model.ID = "InternalError"
 	IDIncrementPullError      model.ID = "IncrementPullError"
 	IDWebsocketOfScSyncerLost model.ID = "WebsocketOfScSyncerLost"

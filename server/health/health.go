@@ -23,10 +23,18 @@ import (
 	"github.com/apache/servicecomb-service-center/server/alarm"
 )
 
-var healthChecker Checker = &DefaultHealthChecker{}
+var healthChecker Checker = &NullChecker{}
+var readinessChecker Checker = &DefaultHealthChecker{}
 
 type Checker interface {
 	Healthy() error
+}
+
+type NullChecker struct {
+}
+
+func (n NullChecker) Healthy() error {
+	return nil
 }
 
 type DefaultHealthChecker struct {
@@ -34,7 +42,10 @@ type DefaultHealthChecker struct {
 
 func (hc *DefaultHealthChecker) Healthy() error {
 	for _, a := range alarm.ListAll() {
-		if a.ID == alarm.IDBackendConnectionRefuse && a.Status != alarm.Cleared {
+		if a.Status == alarm.Cleared {
+			continue
+		}
+		if a.ID == alarm.IDBackendConnectionRefuse || a.ID == alarm.IDScSelfHeartbeatFailed {
 			return errors.New(a.FieldString(alarm.FieldAdditionalContext))
 		}
 	}
@@ -47,4 +58,12 @@ func SetGlobalHealthChecker(hc Checker) {
 
 func GlobalHealthChecker() Checker {
 	return healthChecker
+}
+
+func SetGlobalReadinessChecker(hc Checker) {
+	readinessChecker = hc
+}
+
+func GlobalReadinessChecker() Checker {
+	return readinessChecker
 }

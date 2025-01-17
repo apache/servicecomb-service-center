@@ -74,6 +74,7 @@ func add2WhiteAPIList() {
 	rbac.Add2WhiteAPIList(APITokenGranter)
 	rbac.Add2WhiteAPIList("/v4/:project/registry/version", "/version")
 	rbac.Add2WhiteAPIList("/v4/:project/registry/health", "/health")
+	rbac.Add2WhiteAPIList("/v4/:project/registry/health/readiness")
 
 	// user can list self permission without account get permission
 	Add2CheckPermWhiteAPIList(APISelfPerms)

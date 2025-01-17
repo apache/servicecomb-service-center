@@ -19,17 +19,16 @@ package disco
 
 import (
 	"fmt"
-	"github.com/apache/servicecomb-service-center/pkg/protect"
 	"io"
 	"net/http"
 	"strings"
 
-	"github.com/go-chassis/go-chassis/v2/pkg/codec"
-
 	pb "github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/go-chassis/v2/pkg/codec"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/protect"
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
@@ -169,7 +168,7 @@ func (s *InstanceResource) FindInstances(w http.ResponseWriter, r *http.Request)
 		w.WriteHeader(http.StatusNotModified)
 		return
 	}
-	if len(resp.Instances) == 0 && protect.IsWithinRestartProtection() {
+	if len(resp.Instances) == 0 && protect.ShouldProtectOnNullInstance() {
 		w.WriteHeader(protect.RestartProtectHttpCode)
 		return
 	}
@@ -272,7 +271,7 @@ func (s *InstanceResource) ListInstance(w http.ResponseWriter, r *http.Request) 
 		w.WriteHeader(http.StatusNotModified)
 		return
 	}
-	if len(resp.Instances) == 0 && protect.IsWithinRestartProtection() {
+	if len(resp.Instances) == 0 && protect.ShouldProtectOnNullInstance() {
 		w.WriteHeader(protect.RestartProtectHttpCode)
 		return
 	}

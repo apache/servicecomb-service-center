@@ -22,6 +22,8 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/apache/servicecomb-service-center/server/service/registry"
+
 	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
 
 	"github.com/apache/servicecomb-service-center/pkg/rest"
@@ -48,6 +50,7 @@ func (s *MainService) URLPatterns() []rest.Route {
 	return []rest.Route{
 		{Method: http.MethodGet, Path: "/v4/:project/registry/version", Func: s.GetVersion},
 		{Method: http.MethodGet, Path: "/v4/:project/registry/health", Func: s.ClusterHealth},
+		{Method: http.MethodGet, Path: "/v4/:project/registry/health/readiness", Func: s.Readiness},
 	}
 }
 
@@ -58,6 +61,15 @@ func (s *MainService) ClusterHealth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	rest.WriteResponse(w, r, nil, resp)
+}
+
+func (s *MainService) Readiness(w http.ResponseWriter, r *http.Request) {
+	err := registry.Readiness(r.Context())
+	if err != nil {
+		rest.WriteServiceError(w, err)
+		return
+	}
+	rest.WriteResponse(w, r, nil, nil)
 }
 
 func (s *MainService) GetVersion(w http.ResponseWriter, r *http.Request) {

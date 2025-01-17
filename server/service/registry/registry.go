@@ -30,6 +30,7 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/util"
+	"github.com/apache/servicecomb-service-center/server/alarm"
 	"github.com/apache/servicecomb-service-center/server/core"
 	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
 	"github.com/apache/servicecomb-service-center/server/service/sync"
@@ -132,14 +133,19 @@ func autoSelfHeartBeat() {
 			case <-time.After(time.Duration(core.Instance.HealthCheck.Interval) * time.Second):
 				err := selfHeartBeat(ctx)
 				if err == nil {
+					alarm.Clear(alarm.IDScSelfHeartbeatFailed)
 					continue
 				}
+				// 为什么不在重试失败后再上报告警？
+				// 重试过程有多个etcd请求，这些请求在很长时间后才会超时失败，影响异常状态的刷新，因此心跳失败后立即上报告警
+				alarm.Raise(alarm.IDScSelfHeartbeatFailed, alarm.AdditionalContext("%v", err))
 				// 服务不存在，创建服务
 				err = selfRegister(ctx)
 				if err != nil {
 					log.Error(fmt.Sprintf("retry to register[%s/%s/%s/%s] failed",
 						core.Service.Environment, core.Service.AppId, core.Service.ServiceName, core.Service.Version), err)
 				}
+				alarm.Clear(alarm.IDScSelfHeartbeatFailed)
 			}
 		}
 	})
