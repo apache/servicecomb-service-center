@@ -30,7 +30,7 @@ func mockFunc(w http.ResponseWriter, r *http.Request) error {
 	case 1:
 		return errors.New("error")
 	case 0:
-		panic(errors.New("panic"))
+		return errors.New("panic")
 	default:
 		i++
 	}

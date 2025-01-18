@@ -27,7 +27,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/form3tech-oss/jwt-go"
 	"github.com/patrickmn/go-cache"
 
 	_ "github.com/apache/servicecomb-service-center/test"
@@ -187,7 +186,7 @@ func TestSetTokenToCache(t *testing.T) {
 	rawToken1 := "**1"
 	rawToken2 := "**2"
 	deleta, _ := time.ParseDuration("10m")
-	claims := &jwt.MapClaims{"exp": float64(time.Now().Add(deleta).Unix())}
+	claims := map[string]interface{}{"exp": float64(time.Now().Add(deleta).Unix())}
 	t.Run("test Cache", func(t *testing.T) {
 		buildin.SetTokenToCache(tokenCache1, rawToken1, claims)
 		buildin.SetTokenToCache(tokenCache1, rawToken2, errors.New("bad token"))
