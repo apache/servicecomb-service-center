@@ -55,7 +55,7 @@ type Server struct {
 }
 
 func (s *Server) Sync(ctx context.Context, events *v1sync.EventList) (*v1sync.Results, error) {
-	recordFirstReceivedRequestTime()
+	RecordFirstReceivedRequestTime()
 	err := auth(ctx)
 	if err != nil {
 		log.Error("auth failed", err)
@@ -69,7 +69,7 @@ func (s *Server) Sync(ctx context.Context, events *v1sync.EventList) (*v1sync.Re
 	return s.toResults(res), nil
 }
 
-func recordFirstReceivedRequestTime() {
+func RecordFirstReceivedRequestTime() {
 	if IsNotReceiveSyncRequest() {
 		firstReceiveTime = time.Now()
 		log.Info(fmt.Sprintf("receive first received request time: %s", firstReceiveTime))

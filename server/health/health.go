@@ -28,9 +28,16 @@ import (
 	"github.com/apache/servicecomb-service-center/syncer/rpc"
 )
 
-var healthChecker Checker = &NullChecker{}
-var readinessChecker Checker = &DefaultHealthChecker{}
-var syncReadinessChecker Checker = &SyncReadinessChecker{startupTime: time.Now()}
+var (
+	healthChecker        Checker = &NullChecker{}
+	readinessChecker     Checker = &DefaultHealthChecker{}
+	syncReadinessChecker Checker = &SyncReadinessChecker{}
+)
+
+var (
+	scNotReadyError     = errors.New("sc api server is not ready")
+	syncerNotReadyError = errors.New("the syncer module is not ready")
+)
 
 type Checker interface {
 	Healthy() error
@@ -50,12 +57,18 @@ type SyncReadinessChecker struct {
 	startupTime time.Time
 }
 
+func SetStartupTime(startupTime time.Time) {
+	syncReadinessChecker.(*SyncReadinessChecker).startupTime = startupTime
+}
+
 func (src *SyncReadinessChecker) Healthy() error {
 	err := defaultHealth()
 	if err != nil {
 		return err
 	}
-
+	if src.startupTime.IsZero() {
+		return scNotReadyError
+	}
 	passTime := src.startupTime.Add(30 * time.Second)
 	if !rpc.IsNotReceiveSyncRequest() && rpc.GetFirstReceiveTime().Sub(src.startupTime) < 30*time.Second {
 		passTime = passTime.Add(rpc.GetFirstReceiveTime().Sub(src.startupTime))
@@ -67,7 +80,7 @@ func (src *SyncReadinessChecker) Healthy() error {
 	if nowTime.After(passTime) {
 		return nil
 	}
-	return errors.New("the syncer module is not ready")
+	return syncerNotReadyError
 }
 
 func (hc *DefaultHealthChecker) Healthy() error {
