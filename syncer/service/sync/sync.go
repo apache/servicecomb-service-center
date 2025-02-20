@@ -22,8 +22,6 @@ import (
 	"time"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
-	"github.com/apache/servicecomb-service-center/server"
-	"github.com/apache/servicecomb-service-center/server/health"
 	"github.com/apache/servicecomb-service-center/syncer/service/event"
 	"github.com/apache/servicecomb-service-center/syncer/service/replicator"
 	"github.com/apache/servicecomb-service-center/syncer/service/task"
@@ -44,19 +42,4 @@ func Init() {
 	event.Work()
 
 	task.Work()
-
-	go initScStartupTime()
-
-}
-
-func initScStartupTime() {
-	i := 1
-	for ; i <= apiServerStartCheckTimes; i++ {
-		time.Sleep(apiServerStartCheckInterval)
-		// 等待sc api server初始化完成
-		if !server.GetAPIServer().IsClose() {
-			health.SetStartupTime(time.Now())
-			break
-		}
-	}
 }

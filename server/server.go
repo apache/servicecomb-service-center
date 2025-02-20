@@ -20,8 +20,11 @@ package server
 import (
 	"context"
 	"crypto/tls"
-	"github.com/apache/servicecomb-service-center/pkg/protect"
 	"os"
+	"time"
+
+	"github.com/apache/servicecomb-service-center/pkg/protect"
+	"github.com/apache/servicecomb-service-center/server/health"
 
 	"github.com/gofiber/fiber/v2"
 
@@ -45,6 +48,11 @@ import (
 	"github.com/apache/servicecomb-service-center/server/plugin/security/tlsconf"
 	"github.com/apache/servicecomb-service-center/server/service/grc"
 	"github.com/apache/servicecomb-service-center/server/service/rbac"
+)
+
+const (
+	apiServerStartCheckInterval = 1 * time.Second
+	apiServerStartCheckTimes    = 120 // 共检查2分钟
 )
 
 var sc ServiceCenterServer
@@ -76,7 +84,21 @@ func (s *ServiceCenterServer) Run() {
 
 	signal.RegisterListener()
 
+	go initScStartupTime()
+
 	s.waitForQuit()
+}
+
+func initScStartupTime() {
+	i := 1
+	for ; i <= apiServerStartCheckTimes; i++ {
+		time.Sleep(apiServerStartCheckInterval)
+		// 等待sc api server初始化完成
+		if !GetAPIServer().IsClose() {
+			health.SetStartupTime(time.Now())
+			break
+		}
+	}
 }
 
 func (s *ServiceCenterServer) startChassis() {
