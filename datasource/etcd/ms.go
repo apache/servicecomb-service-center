@@ -342,7 +342,12 @@ func (ds *MetadataManager) PutServiceProperties(ctx context.Context, request *pb
 	}
 
 	copyServiceRef := *microservice
-	copyServiceRef.Properties = request.Properties
+	if request.Properties != nil {
+		copyServiceRef.Properties = request.Properties
+	}
+	if request.Framework != nil {
+		copyServiceRef.Framework = request.Framework
+	}
 	copyServiceRef.ModTimestamp = strconv.FormatInt(time.Now().Unix(), 10)
 
 	data, err := json.Marshal(copyServiceRef)

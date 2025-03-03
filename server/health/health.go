@@ -19,12 +19,25 @@ package health
 
 import (
 	"errors"
+	"fmt"
+	"time"
 
+	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/alarm"
+	"github.com/apache/servicecomb-service-center/syncer/config"
+	"github.com/apache/servicecomb-service-center/syncer/rpc"
 )
 
-var healthChecker Checker = &NullChecker{}
-var readinessChecker Checker = &DefaultHealthChecker{}
+var (
+	healthChecker        Checker = &NullChecker{}
+	readinessChecker     Checker = &DefaultHealthChecker{}
+	syncReadinessChecker Checker = &SyncReadinessChecker{}
+)
+
+var (
+	scNotReadyError     = errors.New("sc api server is not ready")
+	syncerNotReadyError = errors.New("the syncer module is not ready")
+)
 
 type Checker interface {
 	Healthy() error
@@ -40,7 +53,41 @@ func (n NullChecker) Healthy() error {
 type DefaultHealthChecker struct {
 }
 
+type SyncReadinessChecker struct {
+	startupTime time.Time
+}
+
+func SetStartupTime(startupTime time.Time) {
+	syncReadinessChecker.(*SyncReadinessChecker).startupTime = startupTime
+}
+
+func (src *SyncReadinessChecker) Healthy() error {
+	err := defaultHealth()
+	if err != nil {
+		return err
+	}
+	if src.startupTime.IsZero() {
+		return scNotReadyError
+	}
+	passTime := src.startupTime.Add(30 * time.Second)
+	if !rpc.IsNotReceiveSyncRequest() && rpc.GetFirstReceiveTime().Sub(src.startupTime) < 30*time.Second {
+		passTime = passTime.Add(rpc.GetFirstReceiveTime().Sub(src.startupTime))
+	} else {
+		log.Warn(fmt.Sprintf("first sync request is not received or received 30 seconds after startup,%s,%s", rpc.GetFirstReceiveTime(), src.startupTime))
+		passTime = passTime.Add(30 * time.Second)
+	}
+	nowTime := time.Now()
+	if nowTime.After(passTime) {
+		return nil
+	}
+	return syncerNotReadyError
+}
+
 func (hc *DefaultHealthChecker) Healthy() error {
+	return defaultHealth()
+}
+
+func defaultHealth() error {
 	for _, a := range alarm.ListAll() {
 		if a.Status == alarm.Cleared {
 			continue
@@ -65,5 +112,8 @@ func SetGlobalReadinessChecker(hc Checker) {
 }
 
 func GlobalReadinessChecker() Checker {
+	if config.GetConfig().Sync.EnableOnStart {
+		return syncReadinessChecker
+	}
 	return readinessChecker
 }

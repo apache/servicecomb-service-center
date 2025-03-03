@@ -10,7 +10,7 @@ import (
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
-	"github.com/apache/servicecomb-service-center/server/service/registry"
+	"github.com/apache/servicecomb-service-center/server/health"
 )
 
 /**
@@ -65,7 +65,7 @@ func watch(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-time.After(defaultReadinessCheckInterval):
-			err := registry.Readiness(ctx)
+			err := health.GlobalReadinessChecker().Healthy()
 			if err != nil {
 				AlwaysProtection()
 				continue

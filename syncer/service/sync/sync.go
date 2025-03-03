@@ -19,11 +19,17 @@ package sync
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/syncer/service/event"
 	"github.com/apache/servicecomb-service-center/syncer/service/replicator"
 	"github.com/apache/servicecomb-service-center/syncer/service/task"
+)
+
+const (
+	apiServerStartCheckInterval = 1 * time.Second
+	apiServerStartCheckTimes    = 120 // 共检查2分钟
 )
 
 func Init() {

@@ -25,6 +25,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/apache/servicecomb-service-center/pkg/protect"
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/cari/pkg/errsvc"
 
@@ -400,12 +401,18 @@ func AppendFindResponse(ctx context.Context, index int64, resp *pb.Response, ins
 		(*failedResult).Indexes = append((*failedResult).Indexes, index)
 		return
 	}
+
+	if len(instances) == 0 && protect.ShouldProtectOnNullInstance() {
+		*notModifiedResult = append(*notModifiedResult, index)
+		return
+	}
 	iv, _ := ctx.Value(util.CtxRequestRevision).(string)
 	ov, _ := ctx.Value(util.CtxResponseRevision).(string)
 	if len(iv) > 0 && iv == ov {
 		*notModifiedResult = append(*notModifiedResult, index)
 		return
 	}
+
 	*updatedResult = append(*updatedResult, &pb.FindResult{
 		Index:     index,
 		Instances: instances,

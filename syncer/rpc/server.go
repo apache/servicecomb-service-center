@@ -40,6 +40,8 @@ const (
 	RbacAllowedRoleName    = "sync-admin"
 )
 
+var firstReceiveTime time.Time
+
 func NewServer() *Server {
 	return &Server{
 		replicator: replicator.Manager(),
@@ -53,6 +55,7 @@ type Server struct {
 }
 
 func (s *Server) Sync(ctx context.Context, events *v1sync.EventList) (*v1sync.Results, error) {
+	RecordFirstReceivedRequestTime()
 	err := auth(ctx)
 	if err != nil {
 		log.Error("auth failed", err)
@@ -64,6 +67,21 @@ func (s *Server) Sync(ctx context.Context, events *v1sync.EventList) (*v1sync.Re
 	res := s.replicator.Persist(ctx, events)
 
 	return s.toResults(res), nil
+}
+
+func RecordFirstReceivedRequestTime() {
+	if IsNotReceiveSyncRequest() {
+		firstReceiveTime = time.Now()
+		log.Info(fmt.Sprintf("receive first received request time: %s", firstReceiveTime))
+	}
+}
+
+func IsNotReceiveSyncRequest() bool {
+	return firstReceiveTime.IsZero()
+}
+
+func GetFirstReceiveTime() time.Time {
+	return firstReceiveTime
 }
 
 func generateFailedResults(events *v1sync.EventList, err error) (*v1sync.Results, error) {

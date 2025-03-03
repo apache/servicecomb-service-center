@@ -25,21 +25,22 @@ import (
 
 	_ "github.com/apache/servicecomb-service-center/test"
 
+	"github.com/go-chassis/cari/discovery"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/plugin/auth"
 	"github.com/apache/servicecomb-service-center/server/plugin/auth/buildin"
 	discosvc "github.com/apache/servicecomb-service-center/server/service/disco"
 	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
-	"github.com/go-chassis/cari/discovery"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestGetAPIParseFunc(t *testing.T) {
 	rbacsvc.InitResourceMap()
 
 	var serviceIDA, serviceIDB string
-	ctx := context.Background()
+	ctx := util.WithNoCache(util.SetDomainProject(context.Background(), "default", "default"))
 	defer discosvc.UnregisterManyService(ctx, &discovery.DelServicesRequest{ServiceIds: []string{serviceIDA, serviceIDB}, Force: true})
 
 	response, err := discosvc.RegisterService(ctx, &discovery.CreateServiceRequest{
