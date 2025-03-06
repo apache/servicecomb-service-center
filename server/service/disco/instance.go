@@ -25,9 +25,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/apache/servicecomb-service-center/pkg/protect"
 	pb "github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/cari/pkg/errsvc"
+
+	"github.com/apache/servicecomb-service-center/pkg/protect"
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -74,6 +75,10 @@ func RegisterInstance(ctx context.Context, in *pb.RegisterInstanceRequest) (*pb.
 	if popErr := populateInstanceDefaultValue(ctx, in.Instance); popErr != nil {
 		return nil, popErr
 	}
+	var reRegistration bool
+	if len(in.Instance.InstanceId) != 0 {
+		reRegistration = true
+	}
 	resp, err := datasource.GetMetadataManager().RegisterInstance(ctx, in)
 	if err != nil {
 		log.Error(fmt.Sprintf("register instance failed, endpoints %v, host '%s', serviceID %s, operator %s",
@@ -81,7 +86,7 @@ func RegisterInstance(ctx context.Context, in *pb.RegisterInstanceRequest) (*pb.
 		return nil, err
 	}
 	// re-register instance with id, should sync properties to peer
-	if len(in.Instance.InstanceId) != 0 {
+	if reRegistration {
 		in.Instance.Properties[reRegisterTimestamp] = time.Now().String()
 		err = PutInstanceProperties(ctx, &pb.UpdateInstancePropsRequest{
 			InstanceId: in.Instance.InstanceId,
