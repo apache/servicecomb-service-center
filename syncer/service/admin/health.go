@@ -30,6 +30,8 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/apache/servicecomb-service-center/client"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/event"
+	"github.com/apache/servicecomb-service-center/datasource/etcd/state/kvstore"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	pkgrpc "github.com/apache/servicecomb-service-center/pkg/rpc"
 	"github.com/apache/servicecomb-service-center/server/plugin/security/cipher"
@@ -43,6 +45,10 @@ import (
 const (
 	scheme      = "grpc"
 	serviceName = "syncer"
+
+	// eventPushCheckIntervalBySecond is suggested to be checkPeerHealthIntervalBySecond*1/3
+	checkPeerHealthIntervalBySecond = 15
+	eventPushCheckIntervalBySecond  = 5
 )
 
 var (
@@ -101,14 +107,16 @@ func Init() {
 	}
 
 	globalHealthChecker = &HealthChecker{
-		checkIntervalBySecond: 15,
-		// 最近8次检查，5次失败即视为不健康，120s。
-		checkWindow: NewHealthCheckWindow(8, 5),
-		// 同步恢复期间，最近6次检查，2次失败即视为不健康，即最多1次失败，90s。
-		syncRecoveryWindow:    NewHealthCheckWindow(6, 2),
+		checkIntervalBySecond: checkPeerHealthIntervalBySecond,
+		// 失败阈值，最近8次检查，5次失败即视为不健康，120s。
+		failureWindow: NewHealthCheckWindow(8, 5),
+		// 恢复阈值，最近6次检查，最多2次失败即视为不健康，即最多1次失败，90s。
+		recoveryWindow:        NewHealthCheckWindow(6, 2),
 		shouldTrustPeerServer: true, // 默认信任对端，只有通过检查，确认对端无法连接，即两个SC同步异常，才认为对端数据不可信任
 	}
 	globalHealthChecker.RunChecker()
+	h := NewInstanceEventHandler(globalHealthChecker, eventPushCheckIntervalBySecond*time.Second, event.NewInstanceEventHandler())
+	kvstore.AddEventHandler(h)
 }
 
 func checkPeerStatus() (*Resp, error) {

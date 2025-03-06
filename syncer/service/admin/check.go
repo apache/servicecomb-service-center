@@ -21,9 +21,9 @@ type HealthChecker struct {
 	latestCheckErr        error
 
 	// 为了容忍网络抖动，使用滑动窗口判断状态
-	checkWindow *HealthCheckWindow
-	// 由于数据同步需要时间，因此设定一个同步恢复窗口，更小，成功率要求更高，用于数据同步的恢复
-	syncRecoveryWindow    *HealthCheckWindow
+	failureWindow *HealthCheckWindow
+	// 恢复窗口，成功率要求更高，用于数据同步的恢复
+	recoveryWindow        *HealthCheckWindow
 	shouldTrustPeerServer bool
 }
 
@@ -45,16 +45,16 @@ func (h *HealthChecker) ShouldTrustPeerServer() bool {
 }
 
 func (h *HealthChecker) AddResult(pass bool) {
-	h.checkWindow.AddResult(pass)
-	h.syncRecoveryWindow.AddResult(pass)
+	h.failureWindow.AddResult(pass)
+	h.recoveryWindow.AddResult(pass)
 
 	shouldTrustPeerServerNew := true
 	if h.shouldTrustPeerServer {
 		// 健康 > 不健康
-		shouldTrustPeerServerNew = h.checkWindow.IsHealthy()
+		shouldTrustPeerServerNew = h.failureWindow.IsHealthy()
 	} else {
-		// 不健康 > 健康，还要加上syncRecoveryWindow的判断
-		shouldTrustPeerServerNew = h.checkWindow.IsHealthy() && h.syncRecoveryWindow.IsHealthy()
+		// 不健康 > 健康
+		shouldTrustPeerServerNew = h.recoveryWindow.IsHealthy()
 	}
 	if h.shouldTrustPeerServer != shouldTrustPeerServerNew {
 		log.Info(fmt.Sprintf("should trust peer server changed, old: %v, new: %v", h.shouldTrustPeerServer, shouldTrustPeerServerNew))
