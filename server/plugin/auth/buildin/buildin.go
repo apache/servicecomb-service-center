@@ -118,8 +118,6 @@ func (ba *TokenAuthenticator) mustAuth(req *http.Request, pattern string) (*rbac
 func (ba *TokenAuthenticator) VerifyRequest(req *http.Request) (*rbacmodel.Account, error) {
 	claims, err := ba.VerifyToken(req)
 	if err != nil {
-		bytes, _ := json.Marshal(err)
-		log.Info(fmt.Sprintf("debug: err type %s, err: [%s] , allow miss %t", reflect.TypeOf(err).String(), string(bytes), rbacsvc.AllowMissToken()))
 		if reflect.TypeOf(err).String() == disCoveryType && err.(*errsvc.Error).Code == rbacmodel.ErrNoAuthHeader && rbacsvc.AllowMissToken() {
 			return nil, nil
 		}
