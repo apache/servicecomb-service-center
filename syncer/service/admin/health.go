@@ -106,7 +106,7 @@ func Init() {
 		checkWindow: NewHealthCheckWindow(8, 5),
 		// 同步恢复期间，最近6次检查，2次失败即视为不健康，即最多1次失败，90s。
 		syncRecoveryWindow:    NewHealthCheckWindow(6, 2),
-		shouldTrustPeerServer: true, // 默认信任对端，只有通过检查确认不对端琺连接，两个SC割裂，才认为对端不可信任
+		shouldTrustPeerServer: true, // 默认信任对端，只有通过检查，确认对端无法连接，即两个SC同步异常，才认为对端数据不可信任
 	}
 	globalHealthChecker.RunChecker()
 }
@@ -136,7 +136,7 @@ func checkPeerStatus() (*Resp, error) {
 }
 
 func Health() (*Resp, error) {
-	return globalHealthChecker.LatestHealthCheckResult()
+	return checkPeerStatus()
 }
 
 func getPeerStatus(peerInfo *PeerInfo) string {
