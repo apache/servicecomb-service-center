@@ -29,6 +29,7 @@ import (
 	"github.com/apache/servicecomb-service-center/datasource/etcd/util"
 	"github.com/apache/servicecomb-service-center/pkg/cache"
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	util2 "github.com/apache/servicecomb-service-center/pkg/util"
 )
 
 type InstancesFilter struct {
@@ -91,14 +92,22 @@ func (f *InstancesFilter) findInstances(ctx context.Context, domainProject, serv
 		return
 	}
 
+	requiredProperties, _ := ctx.Value(util2.CtxRequiredInstancePropertiesOnDisco).(map[string]string)
 	for _, kv := range resp.Kvs {
+		inst := kv.Value.(*pb.MicroServiceInstance)
+		if inst == nil {
+			continue
+		}
+		if !util2.IsMapFullyMatch(inst.Properties, requiredProperties) {
+			continue
+		}
 		if i, ok := getOrCreateClustersIndex()[kv.ClusterName]; ok {
 			if kv.ModRevision > maxRevs[i] {
 				maxRevs[i] = kv.ModRevision
 			}
 			counts[i]++
 		}
-		instances = append(instances, kv.Value.(*pb.MicroServiceInstance))
+		instances = append(instances, inst)
 	}
 	return
 }

@@ -23,6 +23,8 @@ import (
 
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/config"
+	"github.com/apache/servicecomb-service-center/server/service/disco"
+	"github.com/apache/servicecomb-service-center/syncer/service/admin"
 )
 
 var (
@@ -40,6 +42,9 @@ func Enable() bool {
 }
 
 func SetContext(ctx context.Context) context.Context {
+	if Enable() && !admin.ShouldTrustPeerServer() { // 不信任对端SC，则服务发现时，只保留在本SC注册的实例
+		util.SetContext(ctx, util.CtxRequiredInstancePropertiesOnDisco, disco.GetInnerProperties())
+	}
 	var val string
 	if Enable() {
 		val = "1"

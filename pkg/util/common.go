@@ -22,13 +22,14 @@ import "os"
 type CtxKey string
 
 const (
-	HeaderRev                  = "X-Resource-Revision"
-	CtxGlobal           CtxKey = "global"
-	CtxNocache          CtxKey = "noCache"
-	CtxCacheOnly        CtxKey = "cacheOnly"
-	CtxRequestRevision  CtxKey = "requestRev"
-	CtxResponseRevision CtxKey = "responseRev"
-	CtxEnableSync       CtxKey = "enableSync"
+	HeaderRev                                   = "X-Resource-Revision"
+	CtxGlobal                            CtxKey = "global"
+	CtxNocache                           CtxKey = "noCache"
+	CtxCacheOnly                         CtxKey = "cacheOnly"
+	CtxRequestRevision                   CtxKey = "requestRev"
+	CtxResponseRevision                  CtxKey = "responseRev"
+	CtxEnableSync                        CtxKey = "enableSync"
+	CtxRequiredInstancePropertiesOnDisco CtxKey = "requiredInstancePropertiesOnDisco"
 )
 
 func GetAppRoot() string {

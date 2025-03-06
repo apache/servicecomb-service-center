@@ -46,8 +46,9 @@ const (
 )
 
 var (
-	peerInfos        []*PeerInfo
-	ErrConfigIsEmpty = errors.New("sync config is empty")
+	peerInfos           []*PeerInfo
+	ErrConfigIsEmpty    = errors.New("sync config is empty")
+	globalHealthChecker *HealthChecker
 )
 
 type Resp struct {
@@ -98,9 +99,19 @@ func Init() {
 		}
 		peerInfos = append(peerInfos, &PeerInfo{Peer: p, ClientConn: conn})
 	}
+
+	globalHealthChecker = &HealthChecker{
+		checkIntervalBySecond: 15,
+		// 最近8次检查，5次失败即视为不健康，120s。
+		checkWindow: NewHealthCheckWindow(8, 5),
+		// 同步恢复期间，最近6次检查，2次失败即视为不健康，即最多1次失败，90s。
+		syncRecoveryWindow:    NewHealthCheckWindow(6, 2),
+		shouldTrustPeerServer: true, // 默认信任对端，只有通过检查确认不对端琺连接，两个SC割裂，才认为对端不可信任
+	}
+	globalHealthChecker.RunChecker()
 }
 
-func Health() (*Resp, error) {
+func checkPeerStatus() (*Resp, error) {
 	if len(peerInfos) <= 0 {
 		return nil, ErrConfigIsEmpty
 	}
@@ -122,6 +133,10 @@ func Health() (*Resp, error) {
 
 	reportMetrics(resp.Peers)
 	return resp, nil
+}
+
+func Health() (*Resp, error) {
+	return globalHealthChecker.LatestHealthCheckResult()
 }
 
 func getPeerStatus(peerInfo *PeerInfo) string {

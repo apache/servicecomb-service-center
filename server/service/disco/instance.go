@@ -50,7 +50,7 @@ var (
 	propertiesMap map[string]string
 )
 
-func getInnerProperties() map[string]string {
+func GetInnerProperties() map[string]string {
 	once.Do(func() {
 		propertiesMap = config.GetStringMap("registry.instance.properties")
 	})
@@ -139,7 +139,7 @@ func appendInnerPropertiesToInstance(instance *pb.MicroServiceInstance) {
 		instance.Properties = make(map[string]string)
 	}
 
-	innerProps := getInnerProperties()
+	innerProps := GetInnerProperties()
 	if len(innerProps) <= 0 {
 		return
 	}
@@ -210,7 +210,7 @@ func appendInnerProperties(ctx context.Context, serviceID string, instanceID str
 
 func shouldAppendInnerProperties(instance *pb.MicroServiceInstance) bool {
 	instProps := instance.Properties
-	innerProps := getInnerProperties()
+	innerProps := GetInnerProperties()
 	if len(innerProps) == 0 {
 		return false
 	}
@@ -452,7 +452,7 @@ func PutInstanceProperties(ctx context.Context, in *pb.UpdateInstancePropsReques
 		return pb.NewError(pb.ErrInvalidParams, err.Error())
 	}
 
-	properties := getInnerProperties()
+	properties := GetInnerProperties()
 	if in.Properties == nil {
 		in.Properties = make(map[string]string, len(properties))
 	}

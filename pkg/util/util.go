@@ -194,3 +194,19 @@ func GeneratePassword() (string, error) {
 	}
 	return pass, nil
 }
+
+func IsMapFullyMatch(source, required map[string]string) bool {
+	if len(required) == 0 {
+		return true
+	}
+	if len(source) < len(required) {
+		return false
+	}
+
+	for key, value := range required {
+		if resourceValue, exists := source[key]; !exists || resourceValue != value {
+			return false
+		}
+	}
+	return true
+}

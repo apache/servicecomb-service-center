@@ -184,3 +184,86 @@ func TestGeneratePassword(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 8, len(password), password)
 }
+
+func TestIsMapFullyMatch(t *testing.T) {
+	type args struct {
+		resource map[string]string
+		required map[string]string
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "source/required nil",
+			args: args{},
+			want: true,
+		},
+		{
+			name: "required nil",
+			args: args{
+				resource: map[string]string{
+					"k1": "v1",
+				},
+				required: nil,
+			},
+			want: true,
+		},
+		{
+			name: "source nil",
+			args: args{
+				resource: nil,
+				required: map[string]string{
+					"k1": "v1",
+				},
+			},
+			want: false,
+		},
+		{
+			name: "source is larger",
+			args: args{
+				resource: map[string]string{
+					"k1": "v1",
+					"k2": "v2",
+				},
+				required: map[string]string{
+					"k1": "v1",
+				},
+			},
+			want: true,
+		},
+		{
+			name: "source is smaller",
+			args: args{
+				resource: map[string]string{
+					"k1": "v1",
+				},
+				required: map[string]string{
+					"k1": "v1",
+					"k2": "v2",
+				},
+			},
+			want: false,
+		},
+		{
+			name: "source equals required",
+			args: args{
+				resource: map[string]string{
+					"k1": "v1",
+					"k2": "v2",
+				},
+				required: map[string]string{
+					"k1": "v1",
+					"k2": "v2",
+				},
+			},
+			want: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equalf(t, tt.want, IsMapFullyMatch(tt.args.resource, tt.args.required), "IsMapFullyMatch(%v, %v)", tt.args.resource, tt.args.required)
+		})
+	}
+}
