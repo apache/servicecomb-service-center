@@ -54,6 +54,7 @@ func Init(opts Options) error {
 	}
 	err = GetSyncManager().SyncAll(context.Background())
 	if err != nil && err != ErrSyncAllKeyExists {
+		log.Fatal("sync all failed", err)
 		return err
 	}
 	err = schema.Init(schema.Options{Kind: opts.Kind})
