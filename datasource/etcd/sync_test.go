@@ -29,16 +29,15 @@ import (
 	"github.com/go-chassis/go-archaius"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/apache/servicecomb-service-center/eventbase/model"
-	"github.com/apache/servicecomb-service-center/eventbase/service/task"
-	"github.com/apache/servicecomb-service-center/eventbase/service/tombstone"
-
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/datasource/etcd"
 	"github.com/apache/servicecomb-service-center/datasource/rbac"
 	"github.com/apache/servicecomb-service-center/datasource/schema"
+	"github.com/apache/servicecomb-service-center/eventbase/model"
+	"github.com/apache/servicecomb-service-center/eventbase/service/task"
+	"github.com/apache/servicecomb-service-center/eventbase/service/tombstone"
 	"github.com/apache/servicecomb-service-center/pkg/util"
-	_ "github.com/apache/servicecomb-service-center/test"
+	"github.com/apache/servicecomb-service-center/syncer/config"
 )
 
 func syncAllContext() context.Context {
@@ -47,25 +46,17 @@ func syncAllContext() context.Context {
 }
 
 func TestSyncAll(t *testing.T) {
+
 	t.Run("enableOnStart is false will not do sync", func(t *testing.T) {
 		_ = archaius.Set("sync.enableOnStart", false)
 		err := datasource.GetSyncManager().SyncAll(syncAllContext())
 		assert.Nil(t, err)
 	})
 
-	t.Run("enableOnStart is true and syncAllKey exists will not do sync", func(t *testing.T) {
-		_ = archaius.Set("sync.enableOnStart", true)
-		err := etcdadpt.Put(syncAllContext(), etcd.SyncAllKey, "1")
-		assert.Nil(t, err)
-		err = datasource.GetSyncManager().SyncAll(syncAllContext())
-		assert.Equal(t, datasource.ErrSyncAllKeyExists, err)
-		isDeleted, err := etcdadpt.Delete(syncAllContext(), etcd.SyncAllKey)
-		assert.Equal(t, isDeleted, true)
-		assert.Nil(t, err)
-	})
-
 	t.Run("enableOnstart is true and syncAllKey not exists but SyncAllLockKey is lock will not do sync", func(t *testing.T) {
 		_ = archaius.Set("sync.enableOnStart", true)
+		config.SetConfig(config.Config{Sync: &config.Sync{
+			Peers: []*config.Peer{{Endpoints: []string{"127.0.0.1:30105", "127.0.0.2:30105"}}}}})
 		lock, err := etcdadpt.TryLock(etcd.SyncAllLockKey, 600)
 		assert.Nil(t, err)
 		err = datasource.GetSyncManager().SyncAll(syncAllContext())
@@ -81,13 +72,79 @@ func TestSyncAll(t *testing.T) {
 		assert.Nil(t, err)
 	})
 
+	t.Run("enableOnStart is true and syncAllKey exists and syncAllPeersKey not exist will put key but not sync", func(t *testing.T) {
+		_ = archaius.Set("sync.enableOnStart", true)
+		config.SetConfig(config.Config{Sync: &config.Sync{
+			Peers: []*config.Peer{{Endpoints: []string{"127.0.0.1:30105", "127.0.0.2:30105"}}}}})
+		err := etcdadpt.Put(syncAllContext(), etcd.SyncAllKey, "1")
+		assert.Nil(t, err)
+		kv, err := etcdadpt.Get(syncAllContext(), etcd.SyncAllPeersKey)
+		assert.Nil(t, err)
+		assert.Nil(t, kv)
+
+		err = datasource.GetSyncManager().SyncAll(syncAllContext())
+		assert.Nil(t, err)
+		listTaskReq := model.ListTaskRequest{
+			Domain:  "sync-all",
+			Project: "sync-all",
+		}
+		tasks, err := task.List(syncAllContext(), &listTaskReq)
+		assert.NoError(t, err)
+		assert.Equal(t, 0, len(tasks))
+		peers, err := etcdadpt.Get(syncAllContext(), etcd.SyncAllPeersKey)
+		assert.NoError(t, err)
+		assert.Equal(t, "127.0.0.1:30105,127.0.0.2:30105", string(peers.Value))
+		_, err = etcdadpt.Delete(syncAllContext(), etcd.SyncAllPeersKey)
+		assert.Nil(t, err)
+		_, err = etcdadpt.Delete(syncAllContext(), etcd.SyncAllKey)
+		assert.Nil(t, err)
+	})
+
+	t.Run("enableOnStart is true and syncAllKey exists and syncAllPeersKey map current peers will not do sync", func(t *testing.T) {
+		_ = archaius.Set("sync.enableOnStart", true)
+		config.SetConfig(config.Config{Sync: &config.Sync{
+			Peers: []*config.Peer{{Endpoints: []string{"127.0.0.1:30105", "127.0.0.2:30105"}}}}})
+		err := etcdadpt.Put(syncAllContext(), etcd.SyncAllKey, "1")
+		assert.Nil(t, err)
+		err = etcdadpt.Put(syncAllContext(), etcd.SyncAllPeersKey, "127.0.0.1:30105,127.0.0.2:30105")
+		assert.NoError(t, err)
+
+		err = datasource.GetSyncManager().SyncAll(syncAllContext())
+		assert.Nil(t, err)
+		listTaskReq := model.ListTaskRequest{
+			Domain:  "sync-all",
+			Project: "sync-all",
+		}
+		tasks, err := task.List(syncAllContext(), &listTaskReq)
+		assert.NoError(t, err)
+		assert.Equal(t, 0, len(tasks))
+		peers, err := etcdadpt.Get(syncAllContext(), etcd.SyncAllPeersKey)
+		assert.NoError(t, err)
+		assert.Equal(t, "127.0.0.1:30105,127.0.0.2:30105", string(peers.Value))
+
+		_, err = etcdadpt.Delete(syncAllContext(), etcd.SyncAllPeersKey)
+		assert.Nil(t, err)
+		_, err = etcdadpt.Delete(syncAllContext(), etcd.SyncAllKey)
+		assert.Nil(t, err)
+	})
+
 	t.Run("enableOnStart is true and syncAllKey not exists will do sync", func(t *testing.T) {
 		_ = archaius.Set("sync.enableOnStart", true)
+		config.SetConfig(config.Config{Sync: &config.Sync{
+			Peers: []*config.Peer{{Endpoints: []string{"127.0.0.1:30105", "127.0.0.2:30105"}}}}})
 		var serviceID string
 		var accountName string
 		var roleName string
 		var consumerID string
 		var providerID string
+
+		exist, err := etcdadpt.Exist(syncAllContext(), etcd.SyncAllKey)
+		assert.False(t, exist)
+		assert.NoError(t, err)
+		peers, err := etcdadpt.Get(syncAllContext(), etcd.SyncAllPeersKey)
+		assert.Nil(t, peers)
+		assert.NoError(t, err)
+
 		t.Run("register a service and delete the task should pass", func(t *testing.T) {
 			resp, err := datasource.GetMetadataManager().RegisterService(syncAllContext(), &pb.CreateServiceRequest{
 				Service: &pb.MicroService{
@@ -414,6 +471,14 @@ func TestSyncAll(t *testing.T) {
 			isDelete, err := etcdadpt.Delete(syncAllContext(), etcd.SyncAllKey)
 			assert.Equal(t, true, isDelete)
 			assert.Nil(t, err)
+
+			peers, err := etcdadpt.Get(syncAllContext(), etcd.SyncAllPeersKey)
+			assert.NoError(t, err)
+			assert.Equal(t, "127.0.0.1:30105,127.0.0.2:30105", string(peers.Value))
+
+			isDelete, err = etcdadpt.Delete(syncAllContext(), etcd.SyncAllPeersKey)
+			assert.Equal(t, true, isDelete)
+			assert.Nil(t, err)
 		})
 
 		t.Run("delete all resources should pass", func(t *testing.T) {
@@ -512,8 +577,116 @@ func TestSyncAll(t *testing.T) {
 		})
 	})
 
+	t.Run("enableOnStart is true and syncAllKey exists and syncAllPeersKey do not map current peers will do sync", func(t *testing.T) {
+		_ = archaius.Set("sync.enableOnStart", true)
+		config.SetConfig(config.Config{Sync: &config.Sync{
+			Peers: []*config.Peer{{Endpoints: []string{"127.0.0.3:30105", "127.0.0.4:30105"}}}}})
+		err := etcdadpt.Put(syncAllContext(), etcd.SyncAllKey, "1")
+		assert.Nil(t, err)
+		err = etcdadpt.Put(syncAllContext(), etcd.SyncAllPeersKey, "127.0.0.1:30105,127.0.0.2:30105")
+		assert.NoError(t, err)
+
+		var accountName string
+
+		t.Run("create a account and delete the task should pass", func(t *testing.T) {
+			a1 := crbac.Account{
+				ID:                  "sync-create-11111-sync-all",
+				Name:                "sync-create-account1-sync-all",
+				Password:            "tnuocca-tset",
+				Roles:               []string{"admin"},
+				TokenExpirationTime: "2020-12-30",
+				CurrentPassword:     "tnuocca-tset1",
+			}
+			err := rbac.Instance().CreateAccount(syncAllContext(), &a1)
+			assert.NoError(t, err)
+			accountName = a1.Name
+			r, err := rbac.Instance().GetAccount(syncAllContext(), a1.Name)
+			assert.NoError(t, err)
+			assert.Equal(t, a1, *r)
+			listTaskReq := model.ListTaskRequest{
+				Domain:       "sync-all",
+				Project:      "sync-all",
+				ResourceType: datasource.ResourceAccount,
+			}
+			tasks, err := task.List(syncAllContext(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 1, len(tasks))
+			err = task.Delete(syncAllContext(), tasks...)
+			assert.NoError(t, err)
+			tasks, err = task.List(syncAllContext(), &listTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tasks))
+		})
+
+		t.Run("do sync will create task should pass", func(t *testing.T) {
+			err := datasource.GetSyncManager().SyncAll(syncAllContext())
+			assert.Nil(t, err)
+
+			listAccountTaskReq := model.ListTaskRequest{
+				Domain:       "",
+				Project:      "",
+				ResourceType: datasource.ResourceAccount,
+			}
+			tasks, err := task.List(syncAllContext(), &listAccountTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 1, len(tasks))
+			err = task.Delete(syncAllContext(), tasks...)
+			assert.NoError(t, err)
+			tasks, err = task.List(syncAllContext(), &listAccountTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tasks))
+
+			exist, err := etcdadpt.Exist(syncAllContext(), etcd.SyncAllKey)
+			assert.Equal(t, true, exist)
+			assert.Nil(t, err)
+
+			isDelete, err := etcdadpt.Delete(syncAllContext(), etcd.SyncAllKey)
+			assert.Equal(t, true, isDelete)
+			assert.Nil(t, err)
+
+			peers, err := etcdadpt.Get(syncAllContext(), etcd.SyncAllPeersKey)
+			assert.NoError(t, err)
+			assert.Equal(t, "127.0.0.3:30105,127.0.0.4:30105", string(peers.Value))
+
+			isDelete, err = etcdadpt.Delete(syncAllContext(), etcd.SyncAllPeersKey)
+			assert.Equal(t, true, isDelete)
+			assert.Nil(t, err)
+		})
+
+		t.Run("delete all resources should pass", func(t *testing.T) {
+			_, err = rbac.Instance().DeleteAccount(syncAllContext(), []string{accountName})
+			assert.NoError(t, err)
+
+			listAccountTaskReq := model.ListTaskRequest{
+				Domain:       "sync-all",
+				Project:      "sync-all",
+				ResourceType: datasource.ResourceAccount,
+			}
+			tasks, err := task.List(syncAllContext(), &listAccountTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 1, len(tasks))
+			err = task.Delete(syncAllContext(), tasks...)
+			assert.NoError(t, err)
+			tasks, err = task.List(syncAllContext(), &listAccountTaskReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 0, len(tasks))
+
+			tombstoneListReq := model.ListTombstoneRequest{
+				Domain:  "sync-all",
+				Project: "sync-all",
+			}
+			tombstones, err := tombstone.List(syncAllContext(), &tombstoneListReq)
+			assert.NoError(t, err)
+			assert.Equal(t, 1, len(tombstones))
+			err = tombstone.Delete(syncAllContext(), tombstones...)
+			assert.NoError(t, err)
+		})
+	})
+
 	t.Run("enableOnStart is true ,syncAllKey not exists and context is context.Background() will do sync", func(t *testing.T) {
 		_ = archaius.Set("sync.enableOnStart", true)
+		config.SetConfig(config.Config{Sync: &config.Sync{
+			Peers: []*config.Peer{{Endpoints: []string{"127.0.0.1:30105", "127.0.0.2:30105"}}}}})
 		var accountName string
 		ctx := util.WithNoCache(util.SetDomainProject(context.Background(), "sync-all-background", "sync-all-background"))
 		ctx = util.WithNoCache(util.SetContext(ctx, util.CtxEnableSync, "1"))
