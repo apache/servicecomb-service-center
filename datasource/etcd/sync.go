@@ -34,11 +34,13 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	putil "github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/config"
+	syncconfig "github.com/apache/servicecomb-service-center/syncer/config"
 )
 
 const (
-	SyncAllKey     = "/cse-sr/sync-all"
-	SyncAllLockKey = "/cse-sr/sync-all-lock"
+	SyncAllKey      = "/cse-sr/sync-all"
+	SyncAllPeersKey = "/cse-sr/sync-all/peers"
+	SyncAllLockKey  = "/cse-sr/sync-all-lock"
 
 	// one minutes
 	defaultLockTime = 60
@@ -55,17 +57,31 @@ type SyncManager struct {
 func (s *SyncManager) SyncAll(ctx context.Context) error {
 	enable := config.GetBool("sync.enableOnStart", false)
 	if !enable {
-		return nil
+		return s.clearSyncHistory(ctx)
 	}
+	peers := strings.Join(syncconfig.GetConfig().Sync.Peers[0].Endpoints, ",")
 	ctx = putil.SetContext(ctx, putil.CtxEnableSync, "1")
 	exist, err := etcdadpt.Exist(ctx, SyncAllKey)
 	if err != nil {
 		return err
 	}
-	if exist {
-		log.Info(fmt.Sprintf("%s key already exists, do not need to do tasks", SyncAllKey))
-		return datasource.ErrSyncAllKeyExists
+	if !exist {
+		return s.syncAll(ctx, peers)
 	}
+	kv, err := etcdadpt.Get(ctx, SyncAllPeersKey)
+	if err != nil {
+		return err
+	}
+	if kv == nil {
+		return etcdadpt.Put(ctx, SyncAllPeersKey, peers)
+	}
+	if s.peerEqual(peers, string(kv.Value)) {
+		return nil
+	}
+	return s.syncAll(ctx, peers)
+}
+
+func (s *SyncManager) syncAll(ctx context.Context, peer string) error {
 	lock, err := etcdadpt.TryLock(SyncAllLockKey, defaultLockTime)
 	if err != nil || lock == nil {
 		log.Info(fmt.Sprintf("%s lock not acquired", SyncAllLockKey))
@@ -101,7 +117,41 @@ func (s *SyncManager) SyncAll(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	return etcdadpt.Put(ctx, SyncAllKey, "1")
+	opts := []etcdadpt.OpOptions{
+		etcdadpt.OpPut(etcdadpt.WithStrKey(SyncAllKey), etcdadpt.WithValue([]byte("1"))),
+		etcdadpt.OpPut(etcdadpt.WithStrKey(SyncAllPeersKey),
+			etcdadpt.WithValue([]byte(peer))),
+	}
+	return etcdadpt.Txn(ctx, opts)
+}
+
+func (s *SyncManager) clearSyncHistory(ctx context.Context) error {
+	existAllKey, err := etcdadpt.Exist(ctx, SyncAllKey)
+	if err != nil {
+		log.Error("get sync all key failed", err)
+		return err
+	}
+	if existAllKey {
+		_, err = etcdadpt.Delete(ctx, SyncAllKey)
+		if err != nil {
+			log.Error("clear sync all key failed", err)
+			return err
+		}
+	}
+	existPeerKey, err := etcdadpt.Exist(ctx, SyncAllPeersKey)
+	if err != nil {
+		log.Error("get sync all peers key failed", err)
+		return err
+	}
+	if existPeerKey {
+		_, err = etcdadpt.Delete(ctx, SyncAllPeersKey)
+		if err != nil {
+			log.Error("clear sync all peers key failed", err)
+			return err
+		}
+	}
+	log.Info("finish clear sync all history")
+	return nil
 }
 
 func syncAllAccounts(ctx context.Context) error {
@@ -405,4 +455,27 @@ func getDomainProject(key string, prefixKey string) (domain string, project stri
 	domain = splitStr[0]
 	project = splitStr[1]
 	return
+}
+
+func (s *SyncManager) peerEqual(peers1, peers2 string) bool {
+	p1 := strings.Split(peers1, ",")
+	m1 := make(map[string]struct{}, len(p1))
+	for _, ep := range p1 {
+		m1[ep] = struct{}{}
+	}
+	p2 := strings.Split(peers2, ",")
+	m2 := make(map[string]struct{}, len(p2))
+	for _, ep := range p2 {
+		m2[ep] = struct{}{}
+	}
+	if len(m1) != len(m2) {
+		return false
+	}
+	for k := range m2 {
+		_, ok := m1[k]
+		if !ok {
+			return false
+		}
+	}
+	return true
 }
