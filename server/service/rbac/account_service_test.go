@@ -22,9 +22,10 @@ import (
 	"context"
 	"testing"
 
-	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 	"github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/cari/pkg/errsvc"
+
+	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 
 	_ "github.com/apache/servicecomb-service-center/test"
 
@@ -42,7 +43,7 @@ const (
 	testPwd1 = "Ab@11111"
 )
 
-func newAccount(name string) *rbac.Account {
+func newAdminAccount(name string) *rbac.Account {
 	return &rbac.Account{
 		Name:     name,
 		Password: testPwd0,
@@ -54,24 +55,24 @@ func newAccount(name string) *rbac.Account {
 func TestCreateAccount(t *testing.T) {
 	ctx := context.TODO()
 	t.Run("create account, should succeed", func(t *testing.T) {
-		a := newAccount("TestCreateAccount_create_account")
+		a := newAdminAccount("TestCreateAccount_create_account")
 		err := rbacsvc.CreateAccount(ctx, a)
 		assert.Nil(t, err)
 	})
 	t.Run("create account twice, should return: "+rbac.NewError(rbac.ErrAccountConflict, "").Error(), func(t *testing.T) {
 		name := "TestCreateAccount_create_account_twice"
-		a := newAccount(name)
+		a := newAdminAccount(name)
 		err := rbacsvc.CreateAccount(ctx, a)
 		assert.Nil(t, err)
 
-		a = newAccount(name)
+		a = newAdminAccount(name)
 		err = rbacsvc.CreateAccount(ctx, a)
 		assert.NotNil(t, err)
 		svcErr := err.(*errsvc.Error)
 		assert.Equal(t, rbac.ErrAccountConflict, svcErr.Code)
 	})
 	t.Run("account has invalid role, should return: "+rbac.NewError(rbac.ErrAccountHasInvalidRole, "").Error(), func(t *testing.T) {
-		a := newAccount("TestCreateAccount_account_has_invalid_role")
+		a := newAdminAccount("TestCreateAccount_account_has_invalid_role")
 		a.Roles = append(a.Roles, "invalid_role")
 		err := rbacsvc.CreateAccount(ctx, a)
 		assert.NotNil(t, err)
@@ -80,7 +81,7 @@ func TestCreateAccount(t *testing.T) {
 	})
 	t.Run("account has id, should succeed", func(t *testing.T) {
 		accountName := "TestCreateAccount_account_has_id"
-		a := newAccount(accountName)
+		a := newAdminAccount(accountName)
 		a.ID = "specifyID"
 		err := rbacsvc.CreateAccount(ctx, a)
 		assert.NoError(t, err)
@@ -95,7 +96,7 @@ func TestCreateAccount(t *testing.T) {
 
 func TestDeleteAccount(t *testing.T) {
 	t.Run("delete account, should succeed", func(t *testing.T) {
-		a := newAccount("TestDeleteAccount_delete_account")
+		a := newAdminAccount("TestDeleteAccount_delete_account")
 		err := rbacsvc.CreateAccount(context.TODO(), a)
 		assert.Nil(t, err)
 
@@ -121,7 +122,7 @@ func TestDeleteAccount(t *testing.T) {
 		assert.Equal(t, rbac.ErrForbidOperateBuildInAccount, svcErr.Code)
 	})
 	t.Run("delete self, should return: "+rbac.NewError(rbac.ErrForbidOperateSelfAccount, "").Error(), func(t *testing.T) {
-		a := newAccount("TestDeleteAccount_delete_self")
+		a := newAdminAccount("TestDeleteAccount_delete_self")
 		err := rbacsvc.CreateAccount(context.TODO(), a)
 		assert.Nil(t, err)
 		claims := map[string]interface{}{
@@ -138,11 +139,11 @@ func TestDeleteAccount(t *testing.T) {
 func TestUpdateAccount(t *testing.T) {
 	t.Run("update account, should succeed", func(t *testing.T) {
 		name := "TestUpdateAccount_update_account"
-		a := newAccount(name)
+		a := newAdminAccount(name)
 		err := rbacsvc.CreateAccount(context.TODO(), a)
 		assert.Nil(t, err)
 
-		a = newAccount(name)
+		a = newAdminAccount(name)
 		a.Roles = []string{rbac.RoleAdmin, rbac.RoleDeveloper}
 		err = rbacsvc.UpdateAccount(context.TODO(), a.Name, a)
 		assert.Nil(t, err)
@@ -152,14 +153,14 @@ func TestUpdateAccount(t *testing.T) {
 	})
 	t.Run("update no exist account, should return: "+rbac.NewError(rbac.ErrAccountNotExist, "").Error(), func(t *testing.T) {
 		name := "TestUpdateAccount_update_no_exist_account"
-		a := newAccount(name)
+		a := newAdminAccount(name)
 		err := rbacsvc.UpdateAccount(context.TODO(), a.Name, a)
 		assert.NotNil(t, err)
 		svcErr := err.(*errsvc.Error)
 		assert.Equal(t, rbac.ErrAccountNotExist, svcErr.Code)
 	})
 	t.Run("update root, should return: "+discovery.NewError(rbac.ErrForbidOperateBuildInAccount, "").Error(), func(t *testing.T) {
-		a := newAccount("root")
+		a := newAdminAccount("root")
 		err := rbacsvc.UpdateAccount(context.TODO(), a.Name, a)
 		assert.NotNil(t, err)
 		svcErr := err.(*errsvc.Error)
@@ -167,7 +168,7 @@ func TestUpdateAccount(t *testing.T) {
 	})
 	t.Run("account has invalid role, should return: "+rbac.NewError(rbac.ErrAccountHasInvalidRole, "").Error(), func(t *testing.T) {
 		name := "TestUpdateAccount_account_has_invalid_role"
-		a := newAccount(name)
+		a := newAdminAccount(name)
 		err := rbacsvc.CreateAccount(context.TODO(), a)
 		assert.Nil(t, err)
 
@@ -179,11 +180,11 @@ func TestUpdateAccount(t *testing.T) {
 	})
 	t.Run("roles status empty both, should return: "+discovery.NewError(discovery.ErrInvalidParams, "").Error(), func(t *testing.T) {
 		name := "TestUpdateAccount_roles_status_empty_both"
-		a := newAccount(name)
+		a := newAdminAccount(name)
 		err := rbacsvc.CreateAccount(context.TODO(), a)
 		assert.Nil(t, err)
 
-		a = newAccount(name)
+		a = newAdminAccount(name)
 		a.Roles = nil
 		a.Status = ""
 		err = rbacsvc.UpdateAccount(context.TODO(), a.Name, a)
@@ -193,11 +194,11 @@ func TestUpdateAccount(t *testing.T) {
 	})
 	t.Run("update self, should return: "+rbac.NewError(rbac.ErrForbidOperateSelfAccount, "").Error(), func(t *testing.T) {
 		name := "TestDeleteAccount_update_self"
-		a := newAccount(name)
+		a := newAdminAccount(name)
 		err := rbacsvc.CreateAccount(context.TODO(), a)
 		assert.Nil(t, err)
 
-		a = newAccount(name)
+		a = newAdminAccount(name)
 		claims := map[string]interface{}{
 			rbac.ClaimsUser: a.Name,
 		}
@@ -211,7 +212,7 @@ func TestUpdateAccount(t *testing.T) {
 
 func TestEditAccount(t *testing.T) {
 	t.Run("edit no exist account, should return: "+rbac.NewError(rbac.ErrAccountNotExist, "").Error(), func(t *testing.T) {
-		a := newAccount("TestEditAccount_edit_no_exist_account")
+		a := newAdminAccount("TestEditAccount_edit_no_exist_account")
 		err := rbacsvc.UpdateAccount(context.TODO(), a.Name, a)
 		assert.NotNil(t, err)
 		svcErr := err.(*errsvc.Error)
@@ -254,10 +255,10 @@ func TestBatchCreateAccounts(t *testing.T) {
 		assert.Equal(t, discovery.ErrInvalidParams, svcErr.Code)
 	})
 	t.Run("batch create accounts, should succeed", func(t *testing.T) {
-		a1 := newAccount("TestBatchCreateAccounts_account_1")
-		a2 := newAccount("TestBatchCreateAccounts_account_no_pwd")
+		a1 := newAdminAccount("TestBatchCreateAccounts_account_1")
+		a2 := newAdminAccount("TestBatchCreateAccounts_account_no_pwd")
 		a2.Password = ""
-		a3 := newAccount("TestBatchCreateAccounts_account_invalid_pwd")
+		a3 := newAdminAccount("TestBatchCreateAccounts_account_invalid_pwd")
 		a3.Password = "1"
 
 		defer func() {

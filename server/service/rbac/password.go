@@ -21,12 +21,13 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/cari/rbac"
+
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/privacy"
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/service/validator"
-	"github.com/go-chassis/cari/discovery"
-	"github.com/go-chassis/cari/rbac"
 )
 
 func ChangePassword(ctx context.Context, a *rbac.Account) error {
@@ -40,20 +41,29 @@ func ChangePassword(ctx context.Context, a *rbac.Account) error {
 		return discovery.NewError(discovery.ErrInternal, err.Error())
 	}
 
-	// change self password, need to check password mismatch
-	if changer.Name == a.Name {
-		return changePassword(ctx, a.Name, a.CurrentPassword, a.Password)
-	}
-
-	// change other user's password, only admin role can do this and no need
-	// supply current password
-	for _, r := range changer.Roles {
-		if r == rbac.RoleAdmin {
-			return changePasswordForcibly(ctx, a.Name, a.Password)
+	// non-admin user can only change self
+	if !changer.HasAdminRole() {
+		if changer.Name == a.Name {
+			return changePassword(ctx, a.Name, a.CurrentPassword, a.Password)
 		}
+		return discovery.NewError(discovery.ErrForbidden, ErrNoPermChangeAccount.Error())
 	}
 
-	// other cases, change password is forbidden
+	// admin user can reset self or non-admin without password
+	if a.Name == changer.Name {
+		return changePasswordForcibly(ctx, a.Name, a.Password)
+	}
+
+	curAccount, err := GetAccount(ctx, a.Name)
+	if err != nil {
+		return discovery.NewError(discovery.ErrInternal, err.Error())
+	}
+
+	if !curAccount.HasAdminRole() {
+		return changePasswordForcibly(ctx, a.Name, a.Password)
+	}
+
+	// cannot change other admins' password
 	return discovery.NewError(discovery.ErrForbidden, ErrNoPermChangeAccount.Error())
 }
 

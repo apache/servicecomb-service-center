@@ -24,9 +24,6 @@ import (
 
 	_ "github.com/apache/servicecomb-service-center/test"
 
-	"github.com/apache/servicecomb-service-center/pkg/privacy"
-	"github.com/apache/servicecomb-service-center/server/config"
-	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 	beego "github.com/beego/beego/v2/server/web"
 	"github.com/go-chassis/cari/discovery"
 	"github.com/go-chassis/cari/pkg/errsvc"
@@ -35,6 +32,10 @@ import (
 	"github.com/go-chassis/go-chassis/v2/security/authr"
 	"github.com/go-chassis/go-chassis/v2/security/secret"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/apache/servicecomb-service-center/pkg/privacy"
+	"github.com/apache/servicecomb-service-center/server/config"
+	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
 )
 
 func init() {
@@ -89,15 +90,16 @@ func TestInitRBAC(t *testing.T) {
 		assert.NotNil(t, key)
 	})
 
-	t.Run("change pwd,admin can change any one password", func(t *testing.T) {
-		accountName := "admin_change_other_pwd"
-		persisted := newAccount(accountName)
+	t.Run("admin can change non-admin password", func(t *testing.T) {
+		accountName := "admin_change_non_admin_pwd"
+		persisted := newAdminAccount(accountName)
+		persisted.Roles = []string{rbac.RoleDeveloper}
 		err := rbacsvc.CreateAccount(ctx, persisted)
 		assert.NoError(t, err)
 		defer rbacsvc.DeleteAccount(ctx, accountName)
 
 		claims := map[string]interface{}{
-			rbac.ClaimsUser:  "test",
+			rbac.ClaimsUser:  "test_admin",
 			rbac.ClaimsRoles: []interface{}{rbac.RoleAdmin},
 		}
 		ctx := context.WithValue(ctx, rbacsvc.CtxRequestClaims, claims)
@@ -107,17 +109,33 @@ func TestInitRBAC(t *testing.T) {
 		assert.NoError(t, err)
 		assert.True(t, privacy.SamePassword(a.Password, "Complicated_password2"))
 	})
-	t.Run("admin change self, must provide current pwd", func(t *testing.T) {
-		accountName := "admin_change_self"
-		a := newAccount(accountName)
-		a.Roles = []string{rbac.RoleAdmin}
+	t.Run("admin change other admin, should return: "+discovery.NewError(discovery.ErrForbidden, "").Error(), func(t *testing.T) {
+		accountName := "test"
+		a := newAdminAccount(accountName)
+		err := rbacsvc.CreateAccount(ctx, a)
+		assert.NoError(t, err)
+		defer rbacsvc.DeleteAccount(ctx, accountName)
+
+		claims := map[string]interface{}{
+			rbac.ClaimsUser:  "change_other_user_password",
+			rbac.ClaimsRoles: []interface{}{rbac.RoleAdmin},
+		}
+		ctx := context.WithValue(ctx, rbacsvc.CtxRequestClaims, claims)
+		err = rbacsvc.ChangePassword(ctx, &rbac.Account{Name: a.Name, CurrentPassword: testPwd0, Password: testPwd1})
+		assert.True(t, errsvc.IsErrEqualCode(err, discovery.ErrForbidden))
+	})
+
+	t.Run("non-admin change self, must provide current pwd", func(t *testing.T) {
+		accountName := "non_admin_change_self"
+		a := newAdminAccount(accountName)
+		a.Roles = []string{rbac.RoleDeveloper}
 		err := rbacsvc.CreateAccount(context.TODO(), a)
 		assert.Nil(t, err)
 		defer rbacsvc.DeleteAccount(ctx, accountName)
 
 		claims := map[string]interface{}{
 			rbac.ClaimsUser:  accountName,
-			rbac.ClaimsRoles: []interface{}{rbac.RoleAdmin},
+			rbac.ClaimsRoles: []interface{}{rbac.RoleDeveloper},
 		}
 		ctx := context.WithValue(ctx, rbacsvc.CtxRequestClaims, claims)
 		err = rbacsvc.ChangePassword(ctx, &rbac.Account{Name: a.Name, CurrentPassword: "", Password: testPwd1})
@@ -126,27 +144,29 @@ func TestInitRBAC(t *testing.T) {
 		err = rbacsvc.ChangePassword(ctx, &rbac.Account{Name: a.Name, CurrentPassword: testPwd0, Password: testPwd1})
 		assert.Nil(t, err)
 	})
-	t.Run("change self password", func(t *testing.T) {
-		accountName := "change_self_pwd"
-		a := newAccount(accountName)
+
+	t.Run("admin change self password may not provide current pwd", func(t *testing.T) {
+		accountName := "admin_change_self"
+		a := newAdminAccount(accountName)
 		err := rbacsvc.CreateAccount(ctx, a)
 		assert.NoError(t, err)
 		defer rbacsvc.DeleteAccount(ctx, accountName)
 
 		claims := map[string]interface{}{
 			rbac.ClaimsUser:  accountName,
-			rbac.ClaimsRoles: []interface{}{rbac.RoleDeveloper},
+			rbac.ClaimsRoles: []interface{}{rbac.RoleAdmin},
 		}
 		ctx := context.WithValue(ctx, rbacsvc.CtxRequestClaims, claims)
-		err = rbacsvc.ChangePassword(ctx, &rbac.Account{Name: a.Name, CurrentPassword: testPwd0, Password: testPwd1})
+		err = rbacsvc.ChangePassword(ctx, &rbac.Account{Name: a.Name, Password: testPwd1})
 		assert.NoError(t, err)
 		resp, err := rbacsvc.GetAccount(ctx, a.Name)
 		assert.NoError(t, err)
 		assert.True(t, privacy.SamePassword(resp.Password, testPwd1))
 	})
+
 	t.Run("no admin account change other user password, should return: "+discovery.NewError(discovery.ErrForbidden, "").Error(), func(t *testing.T) {
 		accountName := "test"
-		a := newAccount(accountName)
+		a := newAdminAccount(accountName)
 		defer rbacsvc.DeleteAccount(ctx, accountName)
 
 		claims := map[string]interface{}{
