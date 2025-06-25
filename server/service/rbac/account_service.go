@@ -190,12 +190,13 @@ func EditAccount(ctx context.Context, a *rbacmodel.Account) error {
 }
 
 func checkRoles(ctx context.Context, a *rbacmodel.Account) error {
-	for _, roleName := range a.Roles {
-		if a.Name == RootName && roleName != rbacmodel.RoleAdmin {
-			log.Error(fmt.Sprintf("root has non-admin role [%s]", roleName), rbac.ErrRootMustAdmin)
-			return rbac.ErrRootMustAdmin
-		}
+	// root must have the only role admin
+	if a.Name == RootName && (len(a.Roles) == 0 || len(a.Roles) >= 2 || a.Roles[0] != rbacmodel.RoleAdmin) {
+		log.Error(fmt.Sprintf("root has non-admin role %v", a.Roles), rbac.ErrRootMustAdmin)
+		return rbac.ErrRootMustAdmin
+	}
 
+	for _, roleName := range a.Roles {
 		exist, err := RoleExist(ctx, roleName)
 		if err != nil {
 			log.Error(fmt.Sprintf("check role [%s] exist failed", roleName), err)
