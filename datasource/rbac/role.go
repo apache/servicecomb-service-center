@@ -28,6 +28,7 @@ var (
 	ErrRoleDuplicated = errors.New("role is duplicated")
 	ErrRoleCanNotEdit = errors.New("role can not be edited")
 	ErrRoleNotExist   = errors.New("role not exist")
+	ErrRootMustAdmin  = errors.New("root must only have admin")
 )
 
 // RoleManager contains the RBAC CRUD

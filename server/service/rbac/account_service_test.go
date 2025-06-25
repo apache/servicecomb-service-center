@@ -26,7 +26,6 @@ import (
 	"github.com/go-chassis/cari/pkg/errsvc"
 
 	rbacsvc "github.com/apache/servicecomb-service-center/server/service/rbac"
-
 	_ "github.com/apache/servicecomb-service-center/test"
 
 	beego "github.com/beego/beego/v2/server/web"
@@ -91,6 +90,18 @@ func TestCreateAccount(t *testing.T) {
 		account, err := rbacsvc.GetAccount(ctx, accountName)
 		assert.NoError(t, err)
 		assert.Equal(t, "specifyID", account.ID)
+	})
+	t.Run("create root with non-admin roles, should fail", func(t *testing.T) {
+		accountName := "root"
+		a := newAdminAccount(accountName)
+		a.Roles = append(a.Roles, rbac.RoleDeveloper)
+		a.ID = "specifyID"
+		err := rbacsvc.CreateAccount(ctx, a)
+		svcErr := err.(*errsvc.Error)
+		assert.Equal(t, rbac.ErrAccountHasInvalidRole, svcErr.Code)
+		assert.Equal(t, err.Error(), `Account has invalid role(s)(root must only have admin)`)
+
+		defer rbacsvc.DeleteAccount(ctx, accountName)
 	})
 }
 

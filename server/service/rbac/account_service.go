@@ -24,6 +24,11 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/cari/dlock"
+	"github.com/go-chassis/cari/pkg/errsvc"
+	rbacmodel "github.com/go-chassis/cari/rbac"
+
 	"github.com/apache/servicecomb-service-center/datasource/rbac"
 	errorsEx "github.com/apache/servicecomb-service-center/pkg/errors"
 	"github.com/apache/servicecomb-service-center/pkg/log"
@@ -31,10 +36,6 @@ import (
 	"github.com/apache/servicecomb-service-center/pkg/util"
 	quotasvc "github.com/apache/servicecomb-service-center/server/service/quota"
 	"github.com/apache/servicecomb-service-center/server/service/validator"
-	"github.com/go-chassis/cari/discovery"
-	"github.com/go-chassis/cari/dlock"
-	"github.com/go-chassis/cari/pkg/errsvc"
-	rbacmodel "github.com/go-chassis/cari/rbac"
 )
 
 // CreateAccount save account info
@@ -56,7 +57,7 @@ func CreateAccount(ctx context.Context, a *rbacmodel.Account) error {
 		log.Error(fmt.Sprintf("create account [%s] failed", a.Name), err)
 		return discovery.NewError(discovery.ErrInvalidParams, err.Error())
 	}
-	if err = checkRoleNames(ctx, a.Roles); err != nil {
+	if err = checkRoles(ctx, a); err != nil {
 		return rbacmodel.NewError(rbacmodel.ErrAccountHasInvalidRole, err.Error())
 	}
 
@@ -122,7 +123,7 @@ func UpdateAccount(ctx context.Context, name string, a *rbacmodel.Account) error
 	if len(a.Roles) != 0 {
 		oldAccount.Roles = a.Roles
 	}
-	if err = checkRoleNames(ctx, oldAccount.Roles); err != nil {
+	if err = checkRoles(ctx, oldAccount); err != nil {
 		return rbacmodel.NewError(rbacmodel.ErrAccountHasInvalidRole, err.Error())
 	}
 	err = rbac.Instance().UpdateAccount(ctx, name, oldAccount)
@@ -188,11 +189,16 @@ func EditAccount(ctx context.Context, a *rbacmodel.Account) error {
 	return nil
 }
 
-func checkRoleNames(ctx context.Context, roles []string) error {
-	for _, name := range roles {
-		exist, err := RoleExist(ctx, name)
+func checkRoles(ctx context.Context, a *rbacmodel.Account) error {
+	for _, roleName := range a.Roles {
+		if a.Name == RootName && roleName != rbacmodel.RoleAdmin {
+			log.Error(fmt.Sprintf("root has non-admin role [%s]", roleName), rbac.ErrRootMustAdmin)
+			return rbac.ErrRootMustAdmin
+		}
+
+		exist, err := RoleExist(ctx, roleName)
 		if err != nil {
-			log.Error(fmt.Sprintf("check role [%s] exist failed", name), err)
+			log.Error(fmt.Sprintf("check role [%s] exist failed", roleName), err)
 			return err
 		}
 		if !exist {
