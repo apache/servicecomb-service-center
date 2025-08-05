@@ -32,6 +32,7 @@ type MetricsReporter interface {
 	InstanceAdd(delta float64, labels MetricsLabels)
 	SchemaAdd(delta float64, labels MetricsLabels)
 	FrameworkSet(labels MetricsLabels)
+	SetFrameworkValue(value float64, labels MetricsLabels)
 }
 
 type MetricsManager interface {

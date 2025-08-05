@@ -20,12 +20,13 @@ package metrics
 import (
 	"context"
 
+	"github.com/go-chassis/go-chassis/v2/pkg/metrics"
+
 	"github.com/apache/servicecomb-service-center/datasource"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	metricsvc "github.com/apache/servicecomb-service-center/pkg/metrics"
 	promutil "github.com/apache/servicecomb-service-center/pkg/prometheus"
 	quotasvc "github.com/apache/servicecomb-service-center/server/service/quota"
-	"github.com/go-chassis/go-chassis/v2/pkg/metrics"
 )
 
 var metaReporter = &MetaReporter{}
@@ -108,6 +109,10 @@ func (m *MetaReporter) SchemaAdd(delta float64, ml datasource.MetricsLabels) {
 	}
 }
 func (m *MetaReporter) FrameworkSet(ml datasource.MetricsLabels) {
+	m.SetFrameworkValue(1, ml)
+}
+
+func (m *MetaReporter) SetFrameworkValue(value float64, ml datasource.MetricsLabels) {
 	instance := metricsvc.InstanceName()
 	labels := map[string]string{
 		"instance":         instance,
@@ -116,7 +121,7 @@ func (m *MetaReporter) FrameworkSet(ml datasource.MetricsLabels) {
 		"domain":           ml.Domain,
 		"project":          ml.Project,
 	}
-	if err := metrics.GaugeSet(KeyFrameworkTotal, 1, labels); err != nil {
+	if err := metrics.GaugeSet(KeyFrameworkTotal, value, labels); err != nil {
 		log.Error("gauge set failed", err)
 	}
 }

@@ -21,8 +21,10 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/apache/servicecomb-service-center/pkg/buffer"
+	"github.com/go-chassis/go-chassis/v2/pkg/metrics"
 	dto "github.com/prometheus/client_model/go"
+
+	"github.com/apache/servicecomb-service-center/pkg/buffer"
 )
 
 // Pxx represents p99 p90 p50
@@ -166,4 +168,17 @@ func ToLabelNames(structure interface{}) []string {
 		labelNames = append(labelNames, tag)
 	}
 	return labelNames
+}
+
+func GetMetrics(name string) (*dto.MetricFamily, error) {
+	fmls, err := metrics.GetSystemPrometheusRegistry().Gather()
+	if err != nil {
+		return nil, err
+	}
+	for _, family := range fmls {
+		if family.GetName() == name {
+			return family, nil
+		}
+	}
+	return nil, nil
 }

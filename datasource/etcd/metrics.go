@@ -33,6 +33,15 @@ import (
 type MetricsManager struct {
 }
 
+var (
+	defaultLabel = datasource.MetricsLabels{
+		Domain:           datasource.RegistryDomain,
+		Project:          datasource.RegistryProject,
+		Framework:        discovery.Unknown,
+		FrameworkVersion: discovery.Unknown,
+	}
+)
+
 func (m *MetricsManager) Report(ctx context.Context, r datasource.MetricsReporter) error {
 	reportDomains(ctx, r)
 	reportServices(ctx, r)
@@ -63,6 +72,7 @@ func reportSchemas(ctx context.Context, r datasource.MetricsReporter) {
 		log.Error("query all schemas failed", err)
 		return
 	}
+	isSchemaMetricSet := false
 	for _, keyValue := range schemaKeysResp.Kvs {
 		domainProject, _, _ := path.GetInfoFromSchemaSummaryKV(keyValue.Key)
 		domain, project := path.SplitDomainProject(domainProject)
@@ -71,6 +81,10 @@ func reportSchemas(ctx context.Context, r datasource.MetricsReporter) {
 			Project: project,
 		}
 		r.SchemaAdd(1, labels)
+		isSchemaMetricSet = true
+	}
+	if !isSchemaMetricSet {
+		r.SchemaAdd(0, defaultLabel)
 	}
 }
 
@@ -84,6 +98,7 @@ func reportServices(ctx context.Context, r datasource.MetricsReporter) {
 		log.Error("query all microservices failed", err)
 		return
 	}
+	isMetricSet := false
 	for _, keyValue := range servicesResp.Kvs {
 		service := keyValue.Value.(*discovery.MicroService)
 		_, domainProject := path.GetInfoFromSvcKV(keyValue.Key)
@@ -99,12 +114,20 @@ func reportServices(ctx context.Context, r datasource.MetricsReporter) {
 			FrameworkVersion: frameworkVersion,
 		}
 		r.ServiceAdd(1, labels)
-
-		reportInstances(ctx, r, domainProject, service)
+		instanceCount := getInstanceCount4Service(ctx, domainProject, service)
+		r.FrameworkSet(labels)
+		r.InstanceAdd(float64(instanceCount), labels)
+		isMetricSet = true
+	}
+	// 0也应该是有效的指标，无指标是异常场景
+	if !isMetricSet {
+		r.ServiceAdd(0, defaultLabel)
+		r.SetFrameworkValue(0, defaultLabel)
+		r.InstanceAdd(0, defaultLabel)
 	}
 }
 
-func reportInstances(ctx context.Context, r datasource.MetricsReporter, domainProject string, service *discovery.MicroService) {
+func getInstanceCount4Service(ctx context.Context, domainProject string, service *discovery.MicroService) (instanceCount int64) {
 	instancesResp, err := sd.Instance().Search(ctx,
 		etcdadpt.WithCacheOnly(), etcdadpt.WithCountOnly(),
 		etcdadpt.WithStrKey(path.GenerateInstanceKey(domainProject, service.ServiceId, "")),
@@ -113,18 +136,5 @@ func reportInstances(ctx context.Context, r datasource.MetricsReporter, domainPr
 		log.Error(fmt.Sprintf("query microservice %s isntances failed", service.ServiceId), err)
 		return
 	}
-	if instancesResp.Count == 0 {
-		return
-	}
-	count := float64(instancesResp.Count)
-	domain, project := path.SplitDomainProject(domainProject)
-	frameworkName, frameworkVersion := discovery.ToFrameworkLabel(service)
-	labels := datasource.MetricsLabels{
-		Domain:           domain,
-		Project:          project,
-		Framework:        frameworkName,
-		FrameworkVersion: frameworkVersion,
-	}
-	r.FrameworkSet(labels)
-	r.InstanceAdd(count, labels)
+	return instancesResp.Count
 }
