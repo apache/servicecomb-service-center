@@ -348,7 +348,7 @@ func (o *checker) needOperate(ctx context.Context) *Result {
 		if len(o.resourceID) == 0 {
 			return nil
 		}
-		if o.event.Timestamp+oneDaySecond >= time.Now().Unix() {
+		if time.Now().Unix()-o.event.Timestamp >= oneDaySecond {
 			return SkipResult()
 		}
 
