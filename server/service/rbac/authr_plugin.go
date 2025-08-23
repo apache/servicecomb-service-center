@@ -21,10 +21,11 @@ import (
 	"context"
 	"crypto/rsa"
 	"fmt"
+	"net/http"
+	"strings"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/privacy"
-	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/go-chassis/cari/pkg/errsvc"
 	"github.com/go-chassis/cari/rbac"
 	"github.com/go-chassis/go-chassis/v2/security/authr"
@@ -42,8 +43,14 @@ func newEmbeddedAuthenticator(_ *authr.Options) (authr.Authenticator, error) {
 
 // Login check db user and password,will verify and return token for valid account
 func (a *EmbeddedAuthenticator) Login(ctx context.Context, user string, password string, opts ...authr.LoginOption) (string, error) {
-	ip := util.GetIPFromContext(ctx)
-	if IsBanned(MakeBanKey(user, ip)) {
+	// Get x-real-ip directly from context
+	var ip string
+	if req, ok := ctx.Value("http_request").(*http.Request); ok && req != nil {
+		ip = strings.TrimSpace(req.Header.Get("x-real-ip"))
+	}
+
+	shouldCheckBan := ip != ""
+	if shouldCheckBan && IsBanned(MakeBanKey(user, ip)) {
 		log.Warn(fmt.Sprintf("ip [%s] is banned, account: %s", ip, user))
 		return "", ErrAccountBlocked
 	}
@@ -54,14 +61,18 @@ func (a *EmbeddedAuthenticator) Login(ctx context.Context, user string, password
 	account, err := GetAccount(ctx, user)
 	if err != nil {
 		if errsvc.IsErrEqualCode(err, rbac.ErrAccountNotExist) {
-			TryLockAccount(MakeBanKey(user, ip))
+			if shouldCheckBan {
+				TryLockAccount(MakeBanKey(user, ip))
+			}
 			return "", UserOrPwdWrongError()
 		}
 		return "", err
 	}
 	same := privacy.SamePassword(account.Password, password)
 	if !same {
-		TryLockAccount(MakeBanKey(user, ip))
+		if shouldCheckBan {
+			TryLockAccount(MakeBanKey(user, ip))
+		}
 		return "", UserOrPwdWrongError()
 	}
 
