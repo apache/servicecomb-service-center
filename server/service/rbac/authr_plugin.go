@@ -26,6 +26,7 @@ import (
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/pkg/privacy"
+	"github.com/apache/servicecomb-service-center/pkg/rest"
 	"github.com/go-chassis/cari/pkg/errsvc"
 	"github.com/go-chassis/cari/rbac"
 	"github.com/go-chassis/go-chassis/v2/security/authr"
@@ -45,7 +46,7 @@ func newEmbeddedAuthenticator(_ *authr.Options) (authr.Authenticator, error) {
 func (a *EmbeddedAuthenticator) Login(ctx context.Context, user string, password string, opts ...authr.LoginOption) (string, error) {
 	// Get x-real-ip directly from context
 	var ip string
-	if req, ok := ctx.Value("http_request").(*http.Request); ok && req != nil {
+	if req, ok := ctx.Value(rest.CtxRequest).(*http.Request); ok && req != nil {
 		ip = strings.TrimSpace(req.Header.Get("x-real-ip"))
 	}
 
