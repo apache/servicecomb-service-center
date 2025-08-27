@@ -30,6 +30,8 @@ var batchCreateAccountsRequestValidator = &validate.Validator{}
 var changePWDValidator = &validate.Validator{}
 var accountLoginValidator = &validate.Validator{}
 
+var PasswordCustomValidator = "passwordCustomValidator"
+
 func init() {
 	createAccountValidator.AddRule("Name", &validate.Rule{Min: 1, Max: 64, Regexp: accountNameRegex})
 	createAccountValidator.AddRule("Roles", &validate.Rule{Min: 1, Max: 5, Regexp: nameRegex})
@@ -84,8 +86,13 @@ func ValidateAccountLogin(a *rbac.Account) error {
 	}
 	return accountLoginValidator.Validate(a)
 }
+
 func ValidateChangePWD(a *rbac.Account) error {
 	err := baseCheck(a)
+	if err != nil {
+		return err
+	}
+	err = customValidate(a.Password, PasswordCustomValidator)
 	if err != nil {
 		return err
 	}
