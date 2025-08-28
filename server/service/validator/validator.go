@@ -18,34 +18,29 @@
 package validator
 
 import (
+	"bufio"
+	"encoding/base64"
 	"errors"
 	"fmt"
+	"os"
 	"reflect"
+
+	"github.com/go-chassis/cari/rbac"
 
 	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
 type CustomValidator interface {
-	validate(v interface{}) (bool, error)
+	Validate(v interface{}) (bool, error)
 }
 
 var customValidators = map[string]CustomValidator{}
 
-func RegisterCustomValidator(name string, validator CustomValidator) {
+func registerCustomValidator(name string, validator CustomValidator) {
 	customValidators[name] = validator
 }
 
-// 定义一个具体的类型
-type StringValidator struct{}
-
-// 实现 CustomValidator[string] 接口
-func (sv *StringValidator) validate(v interface{}) (bool, error) {
-	// 简单的验证逻辑，例如检查字符串长度
-	return len(v.(string)) > 0, nil
-}
-
 func baseCheck(v interface{}) error {
-	RegisterCustomValidator("StringValidator", &StringValidator{})
 	if v == nil {
 		return errors.New("data is nil")
 	}
@@ -57,21 +52,75 @@ func baseCheck(v interface{}) error {
 }
 
 func customValidate(v interface{}, targetValidators ...string) error {
+	if len(customValidators) == 0 {
+		return nil
+	}
 	for _, validatorName := range targetValidators {
 		validator, exists := customValidators[validatorName]
 		if !exists {
 			log.Info(fmt.Sprintf("validator:%s is not registered,skip", validatorName))
 			continue
 		}
-		validate, err := validator.validate(v)
+		validate, err := validator.Validate(v)
 		if err != nil {
 			return err
 		}
 		if !validate {
-			return errors.New(fmt.Sprintf("validate failed,validator:%s", validatorName))
+			return errors.New(fmt.Sprintf("Validate failed,validator:%s", validatorName))
 		}
 		return nil
 	}
-
 	return nil
+}
+
+func initCustomValidator() {
+	weakPasswordPath := os.Getenv(`WEAK_PASSWORD_PATH`)
+	if weakPasswordPath == "" {
+		return
+	}
+	weakPasswords, err := LoadWeakPasswords(weakPasswordPath)
+	if err != nil {
+		log.Error("failed to load weak password", err)
+		return
+	}
+	registerCustomValidator(PasswordCustomValidator, &passwordValidator{weakPasswords: weakPasswords})
+}
+
+type passwordValidator struct {
+	weakPasswords map[string]struct{}
+}
+
+func (pv *passwordValidator) Validate(v interface{}) (bool, error) {
+	account := v.(*rbac.Account)
+	_, exist := pv.weakPasswords[account.Password]
+	if exist {
+		return false, errors.New("the password is a weak password")
+	}
+	return true, nil
+}
+
+// LoadWeakPasswords loads the weak passwords from the file, decodes them from Base64, and stores them in a map.
+func LoadWeakPasswords(filePath string) (map[string]struct{}, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	weakPasswords := make(map[string]struct{})
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		encodedPassword := scanner.Text()
+		decodedPassword, err := base64.StdEncoding.DecodeString(encodedPassword)
+		if err != nil {
+			return nil, err
+		}
+		weakPasswords[string(decodedPassword)] = struct{}{}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
+	return weakPasswords, nil
 }

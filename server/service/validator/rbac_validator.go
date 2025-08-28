@@ -49,10 +49,16 @@ func init() {
 	changePWDValidator.AddRule("Name", &validate.Rule{Regexp: accountNameRegex})
 
 	accountLoginValidator.AddRule("TokenExpirationTime", &validate.Rule{Regexp: &validate.TokenExpirationTimeChecker{}})
+
+	initCustomValidator()
 }
 
 func ValidateCreateAccount(a *rbac.Account) error {
 	err := baseCheck(a)
+	if err != nil {
+		return err
+	}
+	err = customValidate(a, PasswordCustomValidator)
 	if err != nil {
 		return err
 	}
@@ -92,7 +98,7 @@ func ValidateChangePWD(a *rbac.Account) error {
 	if err != nil {
 		return err
 	}
-	err = customValidate(a.Password, PasswordCustomValidator)
+	err = customValidate(a, PasswordCustomValidator)
 	if err != nil {
 		return err
 	}
