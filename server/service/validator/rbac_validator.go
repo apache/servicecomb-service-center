@@ -18,8 +18,16 @@
 package validator
 
 import (
+	"bufio"
+	"encoding/base64"
+	"errors"
+	"os"
+	"path/filepath"
+
 	"github.com/go-chassis/cari/rbac"
 
+	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/pkg/validate"
 )
 
@@ -51,6 +59,55 @@ func init() {
 	accountLoginValidator.AddRule("TokenExpirationTime", &validate.Rule{Regexp: &validate.TokenExpirationTimeChecker{}})
 
 	initCustomValidator()
+}
+
+func initPasswordCustomValidator() {
+	weakPasswordPath := filepath.Join(util.GetAppRoot(), "conf", "weakpassord.txt")
+	weakPasswords, err := loadWeakPasswords(weakPasswordPath)
+	if err != nil {
+		log.Error("failed to load weak password", err)
+		return
+	}
+	registerCustomValidator(PasswordCustomValidator, &passwordValidator{weakPasswords: weakPasswords})
+}
+
+type passwordValidator struct {
+	weakPasswords map[string]struct{}
+}
+
+func (pv *passwordValidator) Validate(v interface{}) (bool, error) {
+	account := v.(*rbac.Account)
+	_, exist := pv.weakPasswords[account.Password]
+	if exist {
+		return false, errors.New("the password is a weak password")
+	}
+	return true, nil
+}
+
+// loadWeakPasswords loads the weak passwords from the file, decodes them from Base64, and stores them in a map.
+func loadWeakPasswords(filePath string) (map[string]struct{}, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	weakPasswords := make(map[string]struct{})
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		encodedPassword := scanner.Text()
+		decodedPassword, err := base64.StdEncoding.DecodeString(encodedPassword)
+		if err != nil {
+			return nil, err
+		}
+		weakPasswords[string(decodedPassword)] = struct{}{}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
+	return weakPasswords, nil
 }
 
 func ValidateCreateAccount(a *rbac.Account) error {

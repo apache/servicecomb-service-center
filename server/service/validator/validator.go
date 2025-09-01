@@ -18,16 +18,12 @@
 package validator
 
 import (
-	"bufio"
-	"encoding/base64"
 	"errors"
 	"fmt"
-	"os"
 	"reflect"
 
-	"github.com/go-chassis/cari/rbac"
-
 	"github.com/apache/servicecomb-service-center/pkg/log"
+	"github.com/apache/servicecomb-service-center/server/config"
 )
 
 type CustomValidator interface {
@@ -74,53 +70,8 @@ func customValidate(v interface{}, targetValidators ...string) error {
 }
 
 func initCustomValidator() {
-	weakPasswordPath := os.Getenv(`WEAK_PASSWORD_PATH`)
-	if weakPasswordPath == "" {
+	if !config.GetServer().EnableCustomValidate {
 		return
 	}
-	weakPasswords, err := LoadWeakPasswords(weakPasswordPath)
-	if err != nil {
-		log.Error("failed to load weak password", err)
-		return
-	}
-	registerCustomValidator(PasswordCustomValidator, &passwordValidator{weakPasswords: weakPasswords})
-}
-
-type passwordValidator struct {
-	weakPasswords map[string]struct{}
-}
-
-func (pv *passwordValidator) Validate(v interface{}) (bool, error) {
-	account := v.(*rbac.Account)
-	_, exist := pv.weakPasswords[account.Password]
-	if exist {
-		return false, errors.New("the password is a weak password")
-	}
-	return true, nil
-}
-
-// LoadWeakPasswords loads the weak passwords from the file, decodes them from Base64, and stores them in a map.
-func LoadWeakPasswords(filePath string) (map[string]struct{}, error) {
-	file, err := os.Open(filePath)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	weakPasswords := make(map[string]struct{})
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		encodedPassword := scanner.Text()
-		decodedPassword, err := base64.StdEncoding.DecodeString(encodedPassword)
-		if err != nil {
-			return nil, err
-		}
-		weakPasswords[string(decodedPassword)] = struct{}{}
-	}
-
-	if err := scanner.Err(); err != nil {
-		return nil, err
-	}
-
-	return weakPasswords, nil
+	initPasswordCustomValidator()
 }

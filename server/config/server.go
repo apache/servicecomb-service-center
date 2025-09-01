@@ -48,8 +48,9 @@ type ServerConfigDetail struct {
 	EnablePProf bool `json:"enablePProf"`
 	EnableCache bool `json:"enableCache"`
 
-	EnableRBAC     bool `json:"enableRBAC"`
-	AllowMissToken bool `json:"AllowMissToken"`
+	EnableRBAC           bool `json:"enableRBAC"`
+	AllowMissToken       bool `json:"AllowMissToken"`
+	EnableCustomValidate bool `json:"EnableCustomValidate"`
 
 	LogRotateSize   int64  `json:"-"`
 	LogBackupCount  int64  `json:"-"`
