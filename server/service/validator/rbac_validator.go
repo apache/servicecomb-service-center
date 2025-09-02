@@ -66,7 +66,7 @@ func initPasswordCustomValidator() {
 	weakPasswords, err := loadWeakPasswords(weakPasswordPath)
 	if err != nil {
 		log.Error("failed to load weak password", err)
-		return
+		panic(err)
 	}
 	registerCustomValidator(PasswordCustomValidator, &passwordValidator{weakPasswords: weakPasswords})
 }

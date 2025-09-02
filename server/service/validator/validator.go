@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/apache/servicecomb-service-center/pkg/log"
 	"github.com/apache/servicecomb-service-center/server/config"
 )
 
@@ -47,15 +46,17 @@ func baseCheck(v interface{}) error {
 	return nil
 }
 
+// customValidate 自定义校验，校验器不存在或校验失败返回err
+// v: 待校验数据
+// targetValidators: 待使用的自定义校验器
 func customValidate(v interface{}, targetValidators ...string) error {
-	if len(customValidators) == 0 {
+	if !config.GetServer().EnableCustomValidate {
 		return nil
 	}
 	for _, validatorName := range targetValidators {
 		validator, exists := customValidators[validatorName]
 		if !exists {
-			log.Info(fmt.Sprintf("validator:%s is not registered,skip", validatorName))
-			continue
+			return errors.New(fmt.Sprintf("validator:%s is not registered", validatorName))
 		}
 		validate, err := validator.Validate(v)
 		if err != nil {
@@ -64,7 +65,6 @@ func customValidate(v interface{}, targetValidators ...string) error {
 		if !validate {
 			return errors.New(fmt.Sprintf("Validate failed,validator:%s", validatorName))
 		}
-		return nil
 	}
 	return nil
 }

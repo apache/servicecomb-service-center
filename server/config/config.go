@@ -188,7 +188,7 @@ func loadServerConfig() ServerConfig {
 
 			EnableRBAC:           GetBool("rbac.enable", false, WithStandby("rbac_enabled")),
 			AllowMissToken:       GetBool("rbac.allowMissToken", false, WithStandby("rbac_allow_missToken")),
-			EnableCustomValidate: GetBool("registry.enableCustomValidate", true, WithStandby("enable_custom_validate")),
+			EnableCustomValidate: GetBool("registry.enableCustomValidate", false, WithStandby("enable_custom_validate")),
 		},
 	}
 }
