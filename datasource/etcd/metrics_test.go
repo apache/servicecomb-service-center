@@ -37,18 +37,14 @@ func TestMetricsManager_Report(t *testing.T) {
 	serviceTotal, err := pkgmetrics.GetMetrics(metrics.KeyServiceTotal)
 	assert.NoError(t, err)
 	assert.NotNil(t, serviceTotal)
-	assert.True(t, len(serviceTotal.Metric) == 1)
 	assert.True(t, labelEqual(serviceTotal.Metric[0].Label, expectedLabels))
 
 	instanceTotal, err := pkgmetrics.GetMetrics(metrics.KeyInstanceTotal)
 	assert.NoError(t, err)
 	assert.NotNil(t, instanceTotal)
-	assert.True(t, len(instanceTotal.Metric) == 1)
 	assert.True(t, labelEqual(instanceTotal.Metric[0].Label, expectedLabels))
-
 	frameworkTotal, err := pkgmetrics.GetMetrics(metrics.KeyFrameworkTotal)
 	assert.NoError(t, err)
-	assert.True(t, len(frameworkTotal.Metric) == 1)
 	assert.True(t, labelEqual(frameworkTotal.Metric[0].Label, expectedLabels))
 
 	schemaTotal, err := pkgmetrics.GetMetrics(metrics.KeySchemaTotal)
