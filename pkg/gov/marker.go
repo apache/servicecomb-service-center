@@ -31,5 +31,5 @@ type MatchSpec struct {
 type MatchPolicy struct {
 	Headers  map[string]map[string]string `json:"headers,omitempty"`
 	APIPaths map[string]string            `json:"apiPath,omitempty"`
-	Methods  []string                     `json:"methods,omitempty"`
+	Methods  []string                     `json:"method,omitempty"`
 }

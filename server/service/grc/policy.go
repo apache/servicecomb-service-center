@@ -19,6 +19,7 @@
 package grc
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -27,6 +28,7 @@ import (
 
 	"k8s.io/kube-openapi/pkg/validation/spec"
 
+	"github.com/apache/servicecomb-service-center/pkg/gov"
 	"github.com/apache/servicecomb-service-center/pkg/log"
 )
 
@@ -51,8 +53,17 @@ func ValidatePolicySpec(kind string, spec interface{}) error {
 		log.Warn(fmt.Sprintf("can not recognize policy %s", kind))
 		return fmt.Errorf("not support kind[%s] yet", kind)
 	}
-	validator := validate.NewSchemaValidator(schema, nil, kind, strfmt.Default)
-	errs := validator.Validate(spec).Errors
+	mathSpec := &gov.MatchSpec{}
+	err := convertInterfaceToType(spec, mathSpec)
+	if err != nil {
+		return err
+	}
+	err = checkMathSpec(mathSpec)
+	if err != nil {
+		return err
+	}
+	schemaValidator := validate.NewSchemaValidator(schema, nil, kind, strfmt.Default)
+	errs := schemaValidator.Validate(spec).Errors
 	if len(errs) != 0 {
 		var str []string
 		for _, err := range errs {
@@ -60,5 +71,40 @@ func ValidatePolicySpec(kind string, spec interface{}) error {
 		}
 		return fmt.Errorf("illegal policy[%s] spec, msg: %s", kind, strings.Join(str, "; "))
 	}
+
+	return nil
+}
+
+func checkMathSpec(matchSpec *gov.MatchSpec) error {
+	if matchSpec == nil || matchSpec.MatchPolicies == nil {
+		return fmt.Errorf("match-group.spec or match-group.spec.matches can not  null")
+	}
+	for i, policy := range matchSpec.MatchPolicies {
+		if len(policy.APIPaths) == 0 {
+			return fmt.Errorf("match-group.spec.matches[%d].apiPath can not be empty", i)
+		}
+		for key, path := range policy.APIPaths {
+			if len(path) == 0 {
+				return fmt.Errorf("match-group.spec.matches[%d].apiPath[%s] path can not be empty", i, key)
+			}
+		}
+		if policy.Methods == nil || len(policy.Methods) == 0 {
+			return fmt.Errorf("match-group.spec.matches[%d].method can not be empty", i)
+		}
+	}
+	return nil
+}
+
+// convertInterfaceToType 使用 JSON 序列化和反序列化将 interface{} 类型的值转换为目标类型
+func convertInterfaceToType(src interface{}, target interface{}) error {
+	jsonBytes, err := json.Marshal(src)
+	if err != nil {
+		return fmt.Errorf("failed to marshal source: %w", err)
+	}
+
+	if err := json.Unmarshal(jsonBytes, target); err != nil {
+		return fmt.Errorf("failed to unmarshal to target: %w", err)
+	}
+
 	return nil
 }
