@@ -34,6 +34,11 @@ func TestMetricsManager_Report(t *testing.T) {
 	assert.True(t, len(domainTotal.Metric) == 1)
 	assert.True(t, labelEqual(domainTotal.Metric[0].Label, map[string]string{"instance": pkgmetrics.InstanceName()}))
 
+	microserviceTotal, err := pkgmetrics.GetMetrics(metrics.KeyMicroserviceTotal)
+	assert.NoError(t, err)
+	assert.NotNil(t, microserviceTotal)
+	assert.True(t, labelEqual(microserviceTotal.Metric[0].Label, expectedLabels))
+
 	serviceTotal, err := pkgmetrics.GetMetrics(metrics.KeyServiceTotal)
 	assert.NoError(t, err)
 	assert.NotNil(t, serviceTotal)
