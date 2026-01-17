@@ -28,7 +28,10 @@ import (
 )
 
 const (
-	SubSystem            = "db"
+	SubSystem = "db"
+	// 微服务数量：环境-应用-服务名称 相同的认为是同一个服务
+	KeyMicroserviceTotal = metricsvc.FamilyName + "_" + SubSystem + "_" + "microservice_total"
+	// 微服务版本数量：环境-应用-服务名称-版本
 	KeyServiceTotal      = metricsvc.FamilyName + "_" + SubSystem + "_" + "service_total"
 	KeyInstanceTotal     = metricsvc.FamilyName + "_" + SubSystem + "_" + "instance_total"
 	KeyServiceUsage      = metricsvc.FamilyName + "_" + SubSystem + "_" + "service_usage"
@@ -59,8 +62,15 @@ func InitMetaMetrics() (err error) {
 		return
 	}
 	if err = metrics.CreateGauge(metrics.GaugeOpts{
-		Key:    KeyServiceTotal,
+		Key:    KeyMicroserviceTotal,
 		Help:   "Gauge of microservice created in Service Center",
+		Labels: []string{"instance", "framework", "frameworkVersion", "domain", "project"},
+	}); err != nil {
+		return
+	}
+	if err = metrics.CreateGauge(metrics.GaugeOpts{
+		Key:    KeyServiceTotal,
+		Help:   "Gauge of microservice version created in Service Center",
 		Labels: []string{"instance", "framework", "frameworkVersion", "domain", "project"},
 	}); err != nil {
 		return
