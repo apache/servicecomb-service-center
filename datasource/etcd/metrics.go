@@ -103,7 +103,7 @@ func reportServices(ctx context.Context, r datasource.MetricsReporter) {
 		return
 	}
 	isMetricSet := false
-	recordedMetricsService := make(map[string]bool, len(servicesResp.Kvs))
+	recordedMetricsMicroservicesWithoutVersion := make(map[string]struct{}, len(servicesResp.Kvs))
 	for _, keyValue := range servicesResp.Kvs {
 		service := keyValue.Value.(*discovery.MicroService)
 		_, domainProject := path.GetInfoFromSvcKV(keyValue.Key)
@@ -118,9 +118,10 @@ func reportServices(ctx context.Context, r datasource.MetricsReporter) {
 			Framework:        frameworkName,
 			FrameworkVersion: frameworkVersion,
 		}
-		if !recordedMetricsService[getServiceKey(service)] {
+		_, exist := recordedMetricsMicroservicesWithoutVersion[getServiceKey(service)]
+		if !exist {
 			r.MicroServiceAdd(1, labels)
-			recordedMetricsService[getServiceKey(service)] = true
+			recordedMetricsMicroservicesWithoutVersion[getServiceKey(service)] = struct{}{}
 		}
 		r.ServiceAdd(1, labels)
 		instanceCount := getInstanceCount4Service(ctx, domainProject, service)
