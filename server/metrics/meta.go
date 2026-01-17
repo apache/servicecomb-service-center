@@ -63,14 +63,14 @@ func InitMetaMetrics() (err error) {
 	}
 	if err = metrics.CreateGauge(metrics.GaugeOpts{
 		Key:    KeyMicroserviceTotal,
-		Help:   "Gauge of microservice created in Service Center",
+		Help:   "Gauge of version-independent microservice created in Service Center",
 		Labels: []string{"instance", "framework", "frameworkVersion", "domain", "project"},
 	}); err != nil {
 		return
 	}
 	if err = metrics.CreateGauge(metrics.GaugeOpts{
 		Key:    KeyServiceTotal,
-		Help:   "Gauge of microservice version created in Service Center",
+		Help:   "Gauge of microservice with version created in Service Center",
 		Labels: []string{"instance", "framework", "frameworkVersion", "domain", "project"},
 	}); err != nil {
 		return
