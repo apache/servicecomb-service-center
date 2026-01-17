@@ -88,6 +88,10 @@ func reportSchemas(ctx context.Context, r datasource.MetricsReporter) {
 	}
 }
 
+func getServiceKey(service *discovery.MicroService) string {
+	return  fmt.Sprintf("%s/%s/%s", service.Environment, service.AppId, service.ServiceName)
+}
+
 func reportServices(ctx context.Context, r datasource.MetricsReporter) {
 	key := path.GetServiceRootKey("")
 	servicesResp, err := sd.Service().Search(ctx,
@@ -99,6 +103,7 @@ func reportServices(ctx context.Context, r datasource.MetricsReporter) {
 		return
 	}
 	isMetricSet := false
+	recordedMetricsService := make(map[string]bool, len(servicesResp.Kvs))
 	for _, keyValue := range servicesResp.Kvs {
 		service := keyValue.Value.(*discovery.MicroService)
 		_, domainProject := path.GetInfoFromSvcKV(keyValue.Key)
@@ -113,6 +118,10 @@ func reportServices(ctx context.Context, r datasource.MetricsReporter) {
 			Framework:        frameworkName,
 			FrameworkVersion: frameworkVersion,
 		}
+		if !recordedMetricsService[getServiceKey(service)] {
+			r.MicroServiceAdd(1, labels)
+			recordedMetricsService[getServiceKey(service)] = true
+		}
 		r.ServiceAdd(1, labels)
 		instanceCount := getInstanceCount4Service(ctx, domainProject, service)
 		r.FrameworkSet(labels)
@@ -121,6 +130,7 @@ func reportServices(ctx context.Context, r datasource.MetricsReporter) {
 	}
 	// 0也应该是有效的指标，无指标是异常场景
 	if !isMetricSet {
+		r.MicroServiceAdd(0, defaultLabel)
 		r.ServiceAdd(0, defaultLabel)
 		r.SetFrameworkValue(0, defaultLabel)
 		r.InstanceAdd(0, defaultLabel)
