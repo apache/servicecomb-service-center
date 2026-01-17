@@ -260,6 +260,25 @@ func (dao *SchemaDAO) PutContent(ctx context.Context, contentRequest *schema.Put
 		}
 		existContentOptions = append(existContentOptions, syncOpts...)
 	}
+
+	// 分成两条事务：
+	// 事务1：刷新ref/sum。
+	// 事务2：创建content 或 刷新ref/sum。
+	// 通常契约内容较大，ref/sum较小，因此事务2远大于事务1。
+	// 假设content 5k，ref/sum 0.5k，则事务2的body大小是事务1的11倍，content越大，差距越大。
+	// 大部分请求content不变，只执行事务1，不执行事务2，从而减少etcd压力。否则每次都执行事务2，将容易引发etcd OOM。
+
+	cmp, err := etcdadpt.TxnWithCmp(ctx, existContentOptions, etcdadpt.If(etcdadpt.ExistKey(contentKey)), nil)
+	if err != nil {
+		log.Error(fmt.Sprintf("put kv[%s] failed", refKey), err)
+		return err
+	}
+	if cmp.Succeeded {
+		log.Info(fmt.Sprintf("put kv[%s] without content", refKey))
+		return nil
+	}
+	log.Info(fmt.Sprintf("kv[%s] not exist, try create it", refKey))
+
 	newContentOptions := append(existContentOptions,
 		etcdadpt.OpPut(etcdadpt.WithStrKey(contentKey), etcdadpt.WithStrValue(content.Content)))
 	contentOpts, err := sync.GenUpdateOpts(ctx, datasource.ResourceKV, content.Content, sync.WithOpts(map[string]string{"key": contentKey}))
@@ -269,7 +288,7 @@ func (dao *SchemaDAO) PutContent(ctx context.Context, contentRequest *schema.Put
 	}
 	newContentOptions = append(newContentOptions, contentOpts...)
 
-	cmp, err := etcdadpt.TxnWithCmp(ctx, newContentOptions, etcdadpt.If(etcdadpt.NotExistKey(contentKey)), existContentOptions)
+	cmp, err = etcdadpt.TxnWithCmp(ctx, newContentOptions, etcdadpt.If(etcdadpt.NotExistKey(contentKey)), existContentOptions)
 	if err != nil {
 		log.Error(fmt.Sprintf("put kv[%s] failed", refKey), err)
 		return err
