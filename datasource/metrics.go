@@ -28,6 +28,7 @@ type MetricsLabels struct {
 
 type MetricsReporter interface {
 	DomainAdd(delta float64)
+	MicroServiceAdd(delta float64, labels MetricsLabels)
 	ServiceAdd(delta float64, labels MetricsLabels)
 	InstanceAdd(delta float64, labels MetricsLabels)
 	SchemaAdd(delta float64, labels MetricsLabels)
