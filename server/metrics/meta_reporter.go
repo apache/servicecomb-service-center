@@ -43,6 +43,19 @@ func (m *MetaReporter) DomainAdd(delta float64) {
 		log.Error("gauge add failed", err)
 	}
 }
+func (m *MetaReporter) MicroServiceAdd(delta float64, ml datasource.MetricsLabels) {
+	instance := metricsvc.InstanceName()
+	labels := map[string]string{
+		"instance":         instance,
+		"framework":        ml.Framework,
+		"frameworkVersion": ml.FrameworkVersion,
+		"domain":           ml.Domain,
+		"project":          ml.Project,
+	}
+	if err := metrics.GaugeAdd(KeyMicroserviceTotal, delta, labels); err != nil {
+		log.Error("gauge add failed", err)
+	}
+}
 func (m *MetaReporter) ServiceAdd(delta float64, ml datasource.MetricsLabels) {
 	instance := metricsvc.InstanceName()
 	labels := map[string]string{
@@ -131,6 +144,11 @@ func GetMetaReporter() *MetaReporter {
 
 func ResetMetaMetrics() {
 	err := metrics.Reset(KeyDomainTotal)
+	if err != nil {
+		log.Error("reset metrics failed", err)
+		return
+	}
+	err = metrics.Reset(KeyMicroserviceTotal)
 	if err != nil {
 		log.Error("reset metrics failed", err)
 		return
