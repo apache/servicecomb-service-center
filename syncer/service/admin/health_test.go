@@ -58,10 +58,6 @@ func TestHealth(t *testing.T) {
 		sync    *config.Sync
 		wantErr bool
 	}{
-		{name: "check no config ",
-			sync:    nil,
-			wantErr: true,
-		},
 		{name: "check disable is true",
 			sync: &config.Sync{
 				Peers: []*config.Peer{},

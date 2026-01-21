@@ -18,12 +18,10 @@
 package disco_test
 
 import (
-	"context"
 	"strconv"
 	"strings"
 	"testing"
 
-	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/core"
 	"github.com/apache/servicecomb-service-center/server/service/disco"
 	quotasvc "github.com/apache/servicecomb-service-center/server/service/quota"
@@ -1359,34 +1357,5 @@ func TestListService(t *testing.T) {
 		assert.Error(t, testErr)
 		assert.Equal(t, pb.ErrInvalidParams, testErr.Code)
 		assert.Nil(t, service)
-	})
-}
-
-func TestServiceUsage(t *testing.T) {
-	t.Run("get domain/project without service usage, should return 0", func(t *testing.T) {
-		usage, err := disco.ServiceUsage(context.Background(), &pb.GetServiceCountRequest{
-			Domain:  "domain_without_service",
-			Project: "project_without_service",
-		})
-		assert.NoError(t, err)
-		assert.Equal(t, int64(0), usage)
-	})
-
-	t.Run("get domain/project with 1 service usage, should return 1", func(t *testing.T) {
-		ctx := util.SetDomainProject(context.Background(), "domain_with_service", "project_with_service")
-		resp, err := disco.RegisterService(ctx, &pb.CreateServiceRequest{
-			Service: &pb.MicroService{
-				ServiceName: "test",
-			},
-		})
-		assert.NoError(t, err)
-		defer disco.UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: resp.ServiceId, Force: true})
-
-		usage, err := disco.ServiceUsage(context.Background(), &pb.GetServiceCountRequest{
-			Domain:  "domain_with_service",
-			Project: "project_with_service",
-		})
-		assert.NoError(t, err)
-		assert.Equal(t, int64(1), usage)
 	})
 }

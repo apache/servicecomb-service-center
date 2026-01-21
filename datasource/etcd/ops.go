@@ -31,6 +31,7 @@ import (
 
 const preEnvNum int64 = 4
 
+// todo add UT
 func (ds *MetadataManager) CountService(ctx context.Context, request *pb.GetServiceCountRequest) (*pb.GetServiceCountResponse, error) {
 	domainProject := request.Domain
 	if request.Project != "" {
@@ -60,6 +61,7 @@ func (ds *MetadataManager) getGlobalServiceCount(ctx context.Context, domainProj
 	return global, nil
 }
 
+// todo add UT
 func (ds *MetadataManager) CountInstance(ctx context.Context, request *pb.GetServiceCountRequest) (*pb.GetServiceCountResponse, error) {
 	domainProject := request.Domain
 	if request.Project != "" {

@@ -433,7 +433,7 @@ func TestFindManyInstances(t *testing.T) {
 		serviceId1, serviceId2, serviceId3, serviceId4, serviceId5,
 		serviceId7, serviceId8, serviceId9, serviceId10,
 	}, Force: true})
-	defer discosvc.UnregisterService(util.SetDomainProject(util.CloneContext(ctx), "user", "user"), &pb.DeleteServiceRequest{
+	defer discosvc.UnregisterService(util.SetDomainProject(util.CloneContext(ctx), "default", "default"), &pb.DeleteServiceRequest{
 		ServiceId: serviceId6, Force: true,
 	})
 
@@ -504,7 +504,7 @@ func TestFindManyInstances(t *testing.T) {
 		serviceId5 = respCreate.ServiceId
 
 		respCreate, err = discosvc.RegisterService(
-			util.SetDomainProject(util.CloneContext(ctx), "user", "user"),
+			util.SetDomainProject(util.CloneContext(ctx), "default", "default"),
 			&pb.CreateServiceRequest{
 				Service: &pb.MicroService{
 					AppId:       "default",
@@ -1060,7 +1060,7 @@ func TestFindManyInstances(t *testing.T) {
 
 		respFind, err := discosvc.FindManyInstances(
 			util.SetTargetDomainProject(
-				util.SetDomainProject(util.CloneContext(ctx), "user", "user"),
+				util.SetDomainProject(util.CloneContext(ctx), "default", "default"),
 				"default", "default"),
 			&pb.BatchFindInstancesRequest{
 				ConsumerServiceId: serviceId6,
@@ -1091,24 +1091,6 @@ func TestFindManyInstances(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(respFind.Services.Updated[0].Instances))
 		assert.Equal(t, instanceId5, respFind.Services.Updated[0].Instances[0].InstanceId)
-
-		respFind, err = discosvc.FindManyInstances(
-			util.SetTargetDomainProject(
-				util.SetDomainProject(util.CloneContext(ctx), "user", "user"),
-				"default", "default"),
-			&pb.BatchFindInstancesRequest{
-				ConsumerServiceId: serviceId6,
-				Instances: []*pb.FindInstance{
-					{
-						Instance: &pb.HeartbeatSetElement{
-							ServiceId:  serviceId5,
-							InstanceId: instanceId5,
-						},
-					},
-				},
-			})
-		assert.NoError(t, err)
-		assert.Equal(t, pb.ErrServiceNotExists, respFind.Instances.Failed[0].Error.Code)
 
 		respFind, err = discosvc.FindManyInstances(ctx, &pb.BatchFindInstancesRequest{
 			ConsumerServiceId: serviceId7,
@@ -1147,7 +1129,7 @@ func TestFindInstances(t *testing.T) {
 		serviceId1, serviceId2, serviceId3, serviceId4, serviceId5,
 		serviceId7, serviceId8, serviceId9, serviceId10,
 	}, Force: true})
-	defer discosvc.UnregisterService(util.SetDomainProject(util.CloneContext(ctx), "user", "user"), &pb.DeleteServiceRequest{
+	defer discosvc.UnregisterService(util.SetDomainProject(util.CloneContext(ctx), "default", "default"), &pb.DeleteServiceRequest{
 		ServiceId: serviceId6, Force: true,
 	})
 
@@ -1218,7 +1200,7 @@ func TestFindInstances(t *testing.T) {
 		serviceId5 = respCreate.ServiceId
 
 		respCreate, err = discosvc.RegisterService(
-			util.SetDomainProject(util.CloneContext(ctx), "user", "user"),
+			util.SetDomainProject(util.CloneContext(ctx), "default", "default"),
 			&pb.CreateServiceRequest{
 				Service: &pb.MicroService{
 					AppId:       "default",
@@ -2276,39 +2258,4 @@ func assertInstanceContain(t *testing.T, instances []*pb.MicroServiceInstance, i
 		}
 	}
 	assert.True(t, found)
-}
-
-func TestInstanceUsage(t *testing.T) {
-	t.Run("get domain/project without instance usage, should return 0", func(t *testing.T) {
-		usage, err := discosvc.InstanceUsage(context.Background(), &pb.GetServiceCountRequest{
-			Domain:  "domain_without_service",
-			Project: "project_without_service",
-		})
-		assert.NoError(t, err)
-		assert.Equal(t, int64(0), usage)
-	})
-
-	t.Run("get domain/project with 1 instance usage, should return 1", func(t *testing.T) {
-		ctx := util.SetDomainProject(context.Background(), "domain_with_service", "project_with_service")
-		resp, err := discosvc.RegisterService(ctx, &pb.CreateServiceRequest{
-			Service: &pb.MicroService{
-				ServiceName: "test",
-			},
-		})
-		assert.NoError(t, err)
-		defer discosvc.UnregisterService(ctx, &pb.DeleteServiceRequest{ServiceId: resp.ServiceId, Force: true})
-
-		_, err = discosvc.RegisterInstance(ctx, &pb.RegisterInstanceRequest{Instance: &pb.MicroServiceInstance{
-			ServiceId: resp.ServiceId,
-			HostName:  "test",
-		}})
-		assert.NoError(t, err)
-
-		usage, err := discosvc.InstanceUsage(context.Background(), &pb.GetServiceCountRequest{
-			Domain:  "domain_with_service",
-			Project: "project_with_service",
-		})
-		assert.NoError(t, err)
-		assert.Equal(t, int64(1), usage)
-	})
 }

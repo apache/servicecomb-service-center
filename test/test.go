@@ -20,6 +20,8 @@ package test
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"time"
 
 	_ "github.com/apache/servicecomb-service-center/server/init"
@@ -30,10 +32,14 @@ import (
 
 	"github.com/apache/servicecomb-service-center/datasource"
 	edatasource "github.com/apache/servicecomb-service-center/eventbase/datasource"
+	"github.com/apache/servicecomb-service-center/pkg/util"
 	"github.com/apache/servicecomb-service-center/server/metrics"
+	"github.com/apache/servicecomb-service-center/server/service/disco"
 	"github.com/apache/servicecomb-service-center/server/service/registry"
 	"github.com/go-chassis/cari/db"
 	"github.com/go-chassis/cari/db/config"
+	pb "github.com/go-chassis/cari/discovery"
+	"github.com/go-chassis/cari/env"
 	"github.com/go-chassis/go-archaius"
 )
 
@@ -79,6 +85,7 @@ func init() {
 	})
 
 	_ = registry.SelfRegister(context.Background())
+	preEnvRegistry()
 }
 
 func IsETCD() bool {
@@ -92,4 +99,29 @@ func IsETCD() bool {
 func IsLOCAL() bool {
 	t := archaius.Get("TEST_MODE")
 	return t == "local"
+}
+
+func preEnvRegistry() {
+	ctx := util.SetContext(context.Background(), disco.PreEnv, true)
+	ctx = util.SetContext(ctx, util.CtxRemoteIP, "127.0.0.1")
+	preEnvRegistryWithCtx(ctx)
+
+	ctx = util.SetContext(context.Background(), disco.PreEnv, true)
+	ctx = util.SetContext(ctx, util.CtxRemoteIP, "127.0.0.1")
+	ctx = util.SetContext(ctx, util.CtxDomain, "default")
+	ctx = util.SetContext(ctx, util.CtxProject, "default")
+	preEnvRegistryWithCtx(ctx)
+}
+
+func preEnvRegistryWithCtx(ctx context.Context) {
+	for _, v := range []string{pb.ENV_PROD, pb.ENV_TEST, pb.ENV_ACCEPT, pb.ENV_DEV, ""} {
+		envBody := env.Environment{Name: v, ID: v}
+		var req = new(env.CreateEnvironmentRequest)
+		req.Environment = &envBody
+		_, err := disco.RegistryEnvironment(ctx, req)
+		if err != nil {
+			fmt.Println("prepare environments fail, will exit", err)
+			os.Exit(1)
+		}
+	}
 }

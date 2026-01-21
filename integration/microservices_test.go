@@ -19,13 +19,13 @@ package integrationtest_test
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"math/rand"
 	"net/http"
 	"strconv"
 	"strings"
 	"testing"
-	"time"
 
 	. "github.com/apache/servicecomb-service-center/integration"
 	. "github.com/onsi/ginkgo"
@@ -351,6 +351,8 @@ var _ = Describe("MicroService Api Test", func() {
 
 				It("Get Dependencies for providers and consumers", func() {
 					getServiceName(serviceId)
+
+					// Action: create consumer
 					schema := []string{"testSchema"}
 					properties := map[string]string{"attr1": "aa"}
 					consumerAppName := strconv.Itoa(rand.Intn(15))
@@ -380,7 +382,7 @@ var _ = Describe("MicroService Api Test", func() {
 					respbody, _ := io.ReadAll(resp.Body)
 					consumerServiceID := gojson.Json(string(respbody)).Get("serviceId").Tostring()
 
-					//Create Dependency
+					// Action: add Dependency
 					consumer := map[string]string{
 						"appId":       "consumerAppId",
 						"serviceName": consumerAppName,
@@ -401,6 +403,7 @@ var _ = Describe("MicroService Api Test", func() {
 						"dependencies": dependencyArray,
 					}
 					body, _ = json.Marshal(bodyParams)
+					fmt.Println("--create provider body", string(body))
 					bodyBuf = bytes.NewReader(body)
 					req, _ = http.NewRequest(UPDATE, SCURL+CREATEDEPENDENCIES, bodyBuf)
 					req.Header.Set("X-Domain-Name", "default")
@@ -411,9 +414,10 @@ var _ = Describe("MicroService Api Test", func() {
 					// Validate the dependency creation
 					Expect(resp.StatusCode).To(Equal(http.StatusOK))
 
-					// add new dependency
+					// Action: add new dependency
 					dependency["providers"] = []interface{}{consumer}
 					body, _ = json.Marshal(bodyParams)
+					fmt.Println("--create provider body2", string(body))
 					bodyBuf = bytes.NewReader(body)
 					req, _ = http.NewRequest(POST, SCURL+CREATEDEPENDENCIES, bodyBuf)
 					req.Header.Set("X-Domain-Name", "default")
@@ -425,8 +429,8 @@ var _ = Describe("MicroService Api Test", func() {
 					Expect(resp.StatusCode).To(Equal(http.StatusOK))
 
 					//Get Provider by ConsumerID
-					<-time.After(time.Second)
-					url := strings.Replace(GETCONPRODEPENDENCY, ":consumerId", consumerServiceID, 1)
+					waitScCacheRefreshed()
+					url := strings.Replace(ApiGetProviders, ":consumerId", consumerServiceID, 1)
 					req, _ = http.NewRequest(GET, SCURL+url, nil)
 					req.Header.Set("X-Domain-Name", "default")
 					resp, _ = scclient.Do(req)
@@ -436,6 +440,7 @@ var _ = Describe("MicroService Api Test", func() {
 
 					json.Unmarshal(respbody, &servicesStruct)
 					foundMicroService := false
+					fmt.Println("---providers 1", servicesStruct["providers"])
 					for _, services := range servicesStruct["providers"] {
 						if services["serviceName"] == serviceName {
 							foundMicroService = true
@@ -445,7 +450,7 @@ var _ = Describe("MicroService Api Test", func() {
 					Expect(foundMicroService).To(Equal(true))
 
 					//Get Consumer by ProviderID
-					url = strings.Replace(GETPROCONDEPENDENCY, ":providerId", serviceId, 1)
+					url = strings.Replace(ApiGetConsumers, ":providerId", serviceId, 1)
 					req, _ = http.NewRequest(GET, SCURL+url, nil)
 					req.Header.Set("X-Domain-Name", "default")
 					resp, _ = scclient.Do(req)
@@ -464,7 +469,7 @@ var _ = Describe("MicroService Api Test", func() {
 					Expect(foundMicroService).To(Equal(true))
 
 					//Get new dependency by ConsumerID
-					url = strings.Replace(GETCONPRODEPENDENCY, ":consumerId", consumerServiceID, 1)
+					url = strings.Replace(ApiGetProviders, ":consumerId", consumerServiceID, 1)
 					req, _ = http.NewRequest(GET, SCURL+url, nil)
 					req.Header.Set("X-Domain-Name", "default")
 					resp, _ = scclient.Do(req)
@@ -473,6 +478,7 @@ var _ = Describe("MicroService Api Test", func() {
 					servicesStruct = map[string][]map[string]interface{}{}
 
 					json.Unmarshal(respbody, &servicesStruct)
+					fmt.Println("---providers 2", servicesStruct["providers"])
 					foundMicroService = false
 					for _, services := range servicesStruct["providers"] {
 						if services["serviceName"] == consumerAppName {
@@ -482,8 +488,14 @@ var _ = Describe("MicroService Api Test", func() {
 					}
 					Expect(foundMicroService).To(Equal(true))
 
-					// override the dependency
-					dependency["providers"] = []interface{}{}
+					// Action: override the dependency
+					dependency = map[string]interface{}{
+						"consumer": consumer,
+					}
+					dependencyArray = []interface{}{dependency}
+					bodyParams = map[string]interface{}{
+						"dependencies": dependencyArray,
+					}
 					body, _ = json.Marshal(bodyParams)
 					bodyBuf = bytes.NewReader(body)
 					req, _ = http.NewRequest(UPDATE, SCURL+CREATEDEPENDENCIES, bodyBuf)
@@ -496,8 +508,8 @@ var _ = Describe("MicroService Api Test", func() {
 					Expect(resp.StatusCode).To(Equal(http.StatusOK))
 
 					//Get Provider by ConsumerID again
-					<-time.After(time.Second)
-					url = strings.Replace(GETCONPRODEPENDENCY, ":consumerId", consumerServiceID, 1)
+					waitScCacheRefreshed()
+					url = strings.Replace(ApiGetProviders, ":consumerId", consumerServiceID, 1)
 					req, _ = http.NewRequest(GET, SCURL+url, nil)
 					req.Header.Set("X-Domain-Name", "default")
 					resp, _ = scclient.Do(req)
@@ -505,9 +517,10 @@ var _ = Describe("MicroService Api Test", func() {
 					Expect(resp.StatusCode).To(Equal(http.StatusOK))
 					servicesStruct = map[string][]map[string]interface{}{}
 					json.Unmarshal(respbody, &servicesStruct)
+					fmt.Println("---providers 3", servicesStruct["providers"])
 					Expect(len(servicesStruct["providers"])).To(Equal(0))
 
-					//Delete Consumer and Provider
+					// Action: Delete Consumer and Provider
 					url = strings.Replace(UNREGISTERMICROSERVICE, ":serviceId", consumerServiceID, 1)
 					req, _ = http.NewRequest(DELETE, SCURL+url, nil)
 					req.Header.Set("X-Domain-Name", "default")
@@ -524,14 +537,14 @@ var _ = Describe("MicroService Api Test", func() {
 
 				It("Invalid scenario for GET Providers and Consumers", func() {
 					//Get Provider by ConsumerID
-					url := strings.Replace(GETCONPRODEPENDENCY, ":consumerId", "wrongID", 1)
+					url := strings.Replace(ApiGetProviders, ":consumerId", "wrongID", 1)
 					req, _ := http.NewRequest(GET, SCURL+url, nil)
 					req.Header.Set("X-Domain-Name", "default")
 					resp, _ := scclient.Do(req)
 					Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
 
 					//Get Consumer by ProviderID
-					url = strings.Replace(GETPROCONDEPENDENCY, ":providerId", "wrongID", 1)
+					url = strings.Replace(ApiGetConsumers, ":providerId", "wrongID", 1)
 					req, _ = http.NewRequest(GET, SCURL+url, nil)
 					req.Header.Set("X-Domain-Name", "default")
 					resp, _ = scclient.Do(req)

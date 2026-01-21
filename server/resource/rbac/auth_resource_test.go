@@ -321,29 +321,29 @@ func TestAuthResource_Login2(t *testing.T) {
 		b, _ := json.Marshal(&rbacmodel.Account{Name: devAccount, Password: devPwd1})
 
 		r, _ := http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(b))
-		r.RemoteAddr = "1.1.1.1"
+		r.Header.Set("x-real-ip", "1.1.1.1")
 		w := httptest.NewRecorder()
 		rest.GetRouter().ServeHTTP(w, r)
 		assert.Equal(t, http.StatusUnauthorized, w.Code)
 
 		r, _ = http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(b))
-		r.RemoteAddr = "1.1.1.1"
+		r.Header.Set("x-real-ip", "1.1.1.1")
 		rest.GetRouter().ServeHTTP(w, r)
 		assert.Equal(t, http.StatusUnauthorized, w.Code)
 
 		r, _ = http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(b))
-		r.RemoteAddr = "1.1.1.1"
+		r.Header.Set("x-real-ip", "1.1.1.1")
 		rest.GetRouter().ServeHTTP(w, r)
 		assert.Equal(t, http.StatusUnauthorized, w.Code)
 
 		r, _ = http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(b))
-		r.RemoteAddr = "1.1.1.1"
+		r.Header.Set("x-real-ip", "1.1.1.1")
 		rest.GetRouter().ServeHTTP(w, r)
 		assert.Equal(t, http.StatusUnauthorized, w.Code)
 
 		w = httptest.NewRecorder()
 		r, _ = http.NewRequest(http.MethodPost, "/v4/token", bytes.NewBuffer(b))
-		r.RemoteAddr = "1.1.1.1"
+		r.Header.Set("x-real-ip", "1.1.1.1")
 		rest.GetRouter().ServeHTTP(w, r)
 		assert.Equal(t, http.StatusForbidden, w.Code)
 	})

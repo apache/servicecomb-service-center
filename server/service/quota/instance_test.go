@@ -33,7 +33,7 @@ import (
 func TestApplyInstance(t *testing.T) {
 	//var id string
 	ctx := context.TODO()
-	ctx = util.SetDomainProject(ctx, "quota", "quota")
+	ctx = util.SetDomainProject(ctx, "default", "default")
 	t.Run("create 1 instance,should success", func(t *testing.T) {
 		resp, err := discosvc.RegisterService(ctx, &pb.CreateServiceRequest{
 			Service: &pb.MicroService{

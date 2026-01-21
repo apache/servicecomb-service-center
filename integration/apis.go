@@ -33,8 +33,8 @@ var GETSCHEMAS = "/v4/default/registry/microservices/:serviceId/schemas"
 var UPDATESCHEMAS = "/v4/default/registry/microservices/:serviceId/schemas"
 var DELETESCHEMA = "/v4/default/registry/microservices/:serviceId/schemas/:schemaId"
 var CREATEDEPENDENCIES = "/v4/default/registry/dependencies"
-var GETCONPRODEPENDENCY = "/v4/default/registry/microservices/:consumerId/providers"
-var GETPROCONDEPENDENCY = "/v4/default/registry/microservices/:providerId/consumers"
+var ApiGetProviders = "/v4/default/registry/microservices/:consumerId/providers"
+var ApiGetConsumers = "/v4/default/registry/microservices/:providerId/consumers"
 
 // Instance API's
 var FINDINSTANCE = "/v4/default/registry/instances"

@@ -64,6 +64,8 @@ func TestGetAPIParseFunc(t *testing.T) {
 	newRequest := func(method, url string, body string) *http.Request {
 		request, _ := http.NewRequest(method, url, strings.NewReader(body))
 		util.SetRequestContext(request, rest.CtxMatchPattern, url)
+		util.SetRequestContext(request, util.CtxDomain, "default")
+		util.SetRequestContext(request, util.CtxProject, "default")
 		return request
 	}
 	tests := []struct {

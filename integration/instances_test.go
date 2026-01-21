@@ -40,7 +40,7 @@ import (
 )
 
 var _ = Describe("MicroService Api Test", func() {
-	var serviceName = ""
+	var testServiceName = ""
 	var providerID = ""
 	var consumerID = ""
 	var serviceAppId = "integrationtestAppIdInstance"
@@ -51,10 +51,10 @@ var _ = Describe("MicroService Api Test", func() {
 		BeforeEach(func() {
 			schema := []string{"testSchema"}
 			properties := map[string]string{"attr1": "aa"}
-			serviceName = strconv.Itoa(rand.Intn(15))
-			alias = serviceAppId + ":" + serviceName
+			testServiceName = strconv.Itoa(rand.Intn(15))
+			alias = serviceAppId + ":" + testServiceName
 			servicemap := map[string]interface{}{
-				"serviceName": serviceName,
+				"serviceName": testServiceName,
 				"alias":       alias,
 				"appId":       serviceAppId,
 				"version":     serviceVersion,
@@ -82,7 +82,7 @@ var _ = Describe("MicroService Api Test", func() {
 			Expect(len(providerID)).Should(BeNumerically("==", LengthUUID))
 
 			servicemap = map[string]interface{}{
-				"serviceName": "C_" + serviceName,
+				"serviceName": "C_" + testServiceName,
 				"appId":       serviceAppId,
 				"version":     serviceVersion,
 			}
@@ -284,7 +284,7 @@ var _ = Describe("MicroService Api Test", func() {
 
 		By("Discover MicroService Instance API", func() {
 			It("Find Micro-service Info by AppID", func() {
-				req, _ := http.NewRequest(GET, SCURL+FINDINSTANCE+"?appId="+serviceAppId+"&serviceName="+serviceName+"&version="+serviceVersion, nil)
+				req, _ := http.NewRequest(GET, SCURL+FINDINSTANCE+"?appId="+serviceAppId+"&serviceName="+testServiceName+"&version="+serviceVersion, nil)
 				req.Header.Set("X-Domain-Name", "default")
 				req.Header.Set("X-ConsumerId", consumerID)
 				resp, _ := scclient.Do(req)
@@ -305,7 +305,7 @@ var _ = Describe("MicroService Api Test", func() {
 				time.Sleep(3 * time.Second)
 
 				//Get Provider by ConsumerID
-				url := strings.Replace(GETCONPRODEPENDENCY, ":consumerId", consumerID, 1)
+				url := strings.Replace(ApiGetProviders, ":consumerId", consumerID, 1)
 				req, _ = http.NewRequest(GET, SCURL+url, nil)
 				req.Header.Set("X-Domain-Name", "default")
 				resp, _ = scclient.Do(req)
@@ -316,7 +316,7 @@ var _ = Describe("MicroService Api Test", func() {
 				Expect(providerID).To(Equal(respStruct["providers"][0]["serviceId"]))
 
 				//Get Consumer by ProviderID
-				url = strings.Replace(GETPROCONDEPENDENCY, ":providerId", providerID, 1)
+				url = strings.Replace(ApiGetConsumers, ":providerId", providerID, 1)
 				req, _ = http.NewRequest(GET, SCURL+url, nil)
 				req.Header.Set("X-Domain-Name", "default")
 				resp, _ = scclient.Do(req)
@@ -335,7 +335,7 @@ var _ = Describe("MicroService Api Test", func() {
 			})
 
 			It("Find Micro-service Info by invalid AppID", func() {
-				req, _ := http.NewRequest(GET, SCURL+FINDINSTANCE+"?appId=XXXX&serviceName="+serviceName+"&version="+serviceVersion, nil)
+				req, _ := http.NewRequest(GET, SCURL+FINDINSTANCE+"?appId=XXXX&serviceName="+testServiceName+"&version="+serviceVersion, nil)
 				req.Header.Set("X-Domain-Name", "default")
 				req.Header.Set("X-ConsumerId", consumerID)
 				resp, _ := scclient.Do(req)
@@ -416,7 +416,7 @@ var _ = Describe("MicroService Api Test", func() {
 			})
 
 			It("Find Micro-Service Instance with rev", func() {
-				req, _ := http.NewRequest(GET, SCURL+FINDINSTANCE+"?appId="+serviceAppId+"&serviceName="+serviceName+"&version="+serviceVersion, nil)
+				req, _ := http.NewRequest(GET, SCURL+FINDINSTANCE+"?appId="+serviceAppId+"&serviceName="+testServiceName+"&version="+serviceVersion, nil)
 				req.Header.Set("X-Domain-Name", "default")
 				req.Header.Set("X-ConsumerId", consumerID)
 				resp, _ := scclient.Do(req)
@@ -425,7 +425,7 @@ var _ = Describe("MicroService Api Test", func() {
 				rev := resp.Header.Get("X-Resource-Revision")
 				Expect(rev).NotTo(BeEmpty())
 
-				req, _ = http.NewRequest(GET, SCURL+FINDINSTANCE+"?appId="+serviceAppId+"&serviceName="+serviceName+"&version="+serviceVersion+"&rev="+rev, nil)
+				req, _ = http.NewRequest(GET, SCURL+FINDINSTANCE+"?appId="+serviceAppId+"&serviceName="+testServiceName+"&version="+serviceVersion+"&rev="+rev, nil)
 				req.Header.Set("X-Domain-Name", "default")
 				req.Header.Set("X-ConsumerId", consumerID)
 				resp, _ = scclient.Do(req)
@@ -446,7 +446,7 @@ var _ = Describe("MicroService Api Test", func() {
 				provider := map[string]interface{}{
 					"service": map[string]interface{}{
 						"appId":       serviceAppId,
-						"serviceName": serviceName,
+						"serviceName": testServiceName,
 						"version":     serviceVersion,
 					},
 				}

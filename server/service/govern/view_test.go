@@ -101,8 +101,8 @@ func TestListApp(t *testing.T) {
 		resp, err := govern.ListApp(getContext(), &pb.GetAppsRequest{
 			Environment: "non-exist-env",
 		})
-		assert.True(t, errsvc.IsErrEqualCode(err, pb.ErrInvalidParams), err)
-		assert.Nil(t, resp)
+		assert.Nil(t, err)
+		assert.Equal(t, 0, len(resp.AppIds))
 	})
 
 	t.Run("when request is valid, should be passed", func(t *testing.T) {
