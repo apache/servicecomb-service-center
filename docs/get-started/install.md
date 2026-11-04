@@ -25,7 +25,7 @@ docker pull servicecomb/service-center
 docker run -d -p 30100:30100 servicecomb/service-center
 ```
 
-Note: The Releases of Service-Center uses emebeded etcd, if you want to use the seperate instance of etcd then you can deploy the etcd seperately and configure the etcd ip over here.
+Note: The Releases of Service-Center uses emebeded etcd, if you want to use the separate instance of etcd then you can deploy the etcd seperately and configure the etcd ip over here.
 ```
 vi conf/app.conf
 
